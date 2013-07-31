@@ -298,7 +298,7 @@ int main (int argc, char *argv[])
    (app->tstop)  = tstop;
    (app->ntime)  = ntime;
 
-   warp_Init(comm, tstart, tstop, ntime, app,
+   warp_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
              my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_Dot, my_Write,
              my_BufSize, my_BufPack, my_BufUnpack,
              &core);

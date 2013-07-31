@@ -110,7 +110,8 @@
  *   iupper_x    (dim_x)-dimensional array with integer indices of
  *               local space interval upper bounds
  *   object_type object type of vector to access different hypre solvers 
- *   solver      solver used at each time step
+ *   solver      array of solvers used at each time step on different
+ *               time levels
  *   n_pre       number of pre-relaxation sweeps in spatial solve
  *   n_post      number of post-relaxation sweeps in spatial solve
  *   rap         coarse-grid operator type for spatial solver
@@ -150,7 +151,8 @@ typedef struct _warp_App_struct {
    int                     pi, pj;
    int                     ilower_x[2], iupper_x[2];
    int                     object_type;
-   HYPRE_StructSolver      solver;
+   HYPRE_StructSolver     *solver;
+   int                    *max_num_iterations;
    int                     n_pre, n_post;
    int                     rap, relax, skip;
 } my_App;
@@ -1238,6 +1240,8 @@ my_Phi(warp_App     app,
    int part = 0;
    int var = 0;
 
+   int num_iterations;
+
    /* -----------------------------------------------------------------
     * Set up the discretization matrix.
     * If no variable coefficients, check matrix lookup table if matrix 
@@ -1256,7 +1260,7 @@ my_Phi(warp_App     app,
    if( A_idx == -1.0 ){
       A_idx = i;
       app->nA++;
-   printf( "Create new matrix %d\n", A_idx );
+/*   printf( "Create new matrix %d\n", A_idx );*/
       /* No matrix for time step tstop-tstart exists. 
        * We can add if statement here to compare to spatial step size
        * and use explicit or implicit scheme. */   
@@ -1270,16 +1274,12 @@ my_Phi(warp_App     app,
                    app->nlx, app->nly, app->px, app->py, app->pi,
                    app->pj );
 
-      if( app->nA == 1 )
-         /* First matrix just got created, so we can set up the PFMG
-          * solver using this matrix and u->x as dummy vectors. 
-          * Note that for our particular problem, the dimension of
-          * the matrix and vectors do not change, so we only have
-          * to create the solver once. */
-         setUpStructSolver( app->comm_x, &(app->solver), &sA, &sb, 
-                            &sx, app->A[A_idx], u->x, u->x, app->rap,
-                            app->relax, app->n_pre, app->n_post, 
-                            app->skip );
+      
+      /* Set up the PFMG solver using u->x as dummy vectors. */
+      setUpStructSolver( app->comm_x, &(app->solver[A_idx]), &sA, &sb, 
+                         &sx, app->A[A_idx], u->x, u->x, app->rap,
+                         app->relax, app->n_pre, app->n_post, 
+                         app->skip );
    } 
 
    /* -----------------------------------------------------------------
@@ -1309,7 +1309,11 @@ my_Phi(warp_App     app,
    HYPRE_SStructMatrixGetObject( app->A[A_idx], (void **) &sA );
    HYPRE_SStructVectorGetObject( b, (void **) &sb );
    HYPRE_SStructVectorGetObject( u->x, (void **) &sx );
-   HYPRE_StructPFMGSolve( app->solver, sA, sb, sx );
+   
+   HYPRE_StructPFMGSolve( app->solver[A_idx], sA, sb, sx );
+   HYPRE_StructPFMGGetNumIterations( app->solver[A_idx], &num_iterations );
+   app->max_num_iterations[A_idx] = max((app->max_num_iterations[A_idx]),
+                                        num_iterations);
 
    /* free memory */
    HYPRE_SStructVectorDestroy( b );
@@ -1397,8 +1401,9 @@ my_Clone(warp_App     app,
    /* Create an empty vector object. */
    HYPRE_SStructVectorCreate( app->comm_x, app->grid_x, &(v->x) );
    
-   /* Set the object type (by default HYPRE_SSTRUCT). */
+   /* Set the object type (by default HYPRE_SSTRUCT) and initialize. */
    HYPRE_SStructVectorSetObjectType( v->x, app->object_type );
+   HYPRE_SStructVectorInitialize( v->x );
 
    /* Set the values. */
    values = (double *) malloc( (app->nlx)*(app->nly)*sizeof(double) );
@@ -1407,7 +1412,6 @@ my_Clone(warp_App     app,
       for( var = 0; var < app->nvars; var++ ){
          HYPRE_SStructVectorGetBoxValues( u->x, part, app->ilower_x,
                                           app->iupper_x, var, values );
-         HYPRE_SStructVectorInitialize( v->x );
          HYPRE_SStructVectorSetBoxValues( v->x, part, app->ilower_x,
                                           app->iupper_x, var, values );
       }
@@ -1860,9 +1864,9 @@ int main (int argc, char *argv[])
    MPI_Comm_split( comm, tcolor, myid, &comm_t );
 
    MPI_Comm_size( comm_t, &num_procs );
-   printf( "number of processors in time:  %d\n", num_procs );
+/*   printf( "number of processors in time:  %d\n", num_procs );*/
    MPI_Comm_size( comm_x, &num_procs );
-   printf( "number of processors in space: %d\n", num_procs );
+/*   printf( "number of processors in space: %d\n", num_procs );*/
    
    /* Determine position in the processor grid. */
    MPI_Comm_rank( comm_x, &myid );
@@ -1878,7 +1882,7 @@ int main (int argc, char *argv[])
    /* Determine tstop. */
    tstop =  tstart + nt*dt;
 
-   printf("Time interval [%.4lf, %.4lf]\n", tstart, tstop);
+/*   printf("Time interval [%.4lf, %.4lf]\n", tstart, tstop);*/
 
    /* -----------------------------------------------------------------
     * Set up App structure.
@@ -1945,7 +1949,14 @@ int main (int argc, char *argv[])
       app->dt_A[i] = -1.0;
    app->nA = 0;
 
-   warp_Init(comm_t, tstart, tstop, nt, app,
+   /* Allocate memory for array of solvers. */
+   app->solver = (HYPRE_StructSolver*) malloc( (app->max_levels)*
+                                               sizeof(HYPRE_StructSolver));
+
+   /* Allocate memory for array of iteration counts. */
+   app->max_num_iterations = (int*) calloc( (app->max_levels),  sizeof(int) );
+
+   warp_Init(comm, comm_t, tstart, tstop, nt, app,
              my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_Dot, 
              my_Write, my_BufSize, my_BufPack, my_BufUnpack,
              &core);
@@ -1965,16 +1976,30 @@ int main (int argc, char *argv[])
 
    warp_PrintStats(core);
 
+   /* Print some additional statistics */
+   MPI_Comm_rank( comm, &myid );
+   if( myid == 0 )
+   {
+      for( i = 0; i < app->nA; i++ ){
+         printf( "max iterations on level %d: %d\n",
+                 i, app->max_num_iterations[i] );
+      }
+      printf( "\n");
+   }
+
    /* Free memory */
    HYPRE_SStructGridDestroy( app->grid_x );
    HYPRE_SStructStencilDestroy( app->stencil );
    HYPRE_SStructGraphDestroy( app->graph );
    free( app->vartypes );
    free( app->dt_A );
-   for( i = 0; i < app->nA; i++ )
+   for( i = 0; i < app->nA; i++ ){
       HYPRE_SStructMatrixDestroy( app->A[i] );
+      HYPRE_StructPFMGDestroy( app->solver[i] );
+   }
    free( app->A );
-   HYPRE_StructPFMGDestroy( app->solver );
+   free( app->solver );
+   free( app->max_num_iterations );
    free( app );
    warp_Destroy(core);
    MPI_Comm_free( &comm_x );

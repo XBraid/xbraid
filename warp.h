@@ -158,7 +158,8 @@ typedef struct _warp_Core_struct *warp_Core;
  * Create a core object with the required initial data.
  **/
 warp_Int
-warp_Init(MPI_Comm              comm,
+warp_Init(MPI_Comm              comm_world,
+          MPI_Comm              comm,
           warp_Float            tstart,
           warp_Float            tstop,
           warp_Int              ntime,

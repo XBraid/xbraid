@@ -63,7 +63,8 @@ typedef struct
 
 typedef struct _warp_Core_struct
 {
-   MPI_Comm             comm;
+   MPI_Comm             comm_world;
+   MPI_Comm             comm;      /* communicator for the time dimension */
    warp_Float           tstart;    /* start time */
    warp_Float           tstop;     /* start time */
    warp_Int             ntime;     /* initial number of time intervals */

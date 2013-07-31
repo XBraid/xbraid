@@ -1259,10 +1259,16 @@ _warp_FInterp(warp_Core  core,
    }
    for (ii = -1; ii <= (iupper-ilower); ii++)
    {
-      _warp_CoreFcn(core, free)(app, va[ii]);
-      va[ii] = NULL;
-      _warp_CoreFcn(core, free)(app, wa[ii]);
-      wa[ii] = NULL;
+      if (va[ii] != NULL)
+      {
+         _warp_CoreFcn(core, free)(app, va[ii]);
+         va[ii] = NULL;
+      }
+      if (wa[ii] != NULL)
+      {
+         _warp_CoreFcn(core, free)(app, wa[ii]);
+         wa[ii] = NULL;
+      }
    }
 
    return _warp_error_flag;
@@ -1340,7 +1346,8 @@ _warp_FWrite(warp_Core  core,
  *--------------------------------------------------------------------------*/
 
 warp_Int
-warp_Init(MPI_Comm              comm,
+warp_Init(MPI_Comm              comm_world,
+          MPI_Comm              comm,
           warp_Float            tstart,
           warp_Float            tstop,
           warp_Int              ntime,
@@ -1362,6 +1369,7 @@ warp_Init(MPI_Comm              comm,
 
    core = _warp_CTAlloc(_warp_Core, 1);
 
+   _warp_CoreElt(core, comm_world) = comm_world;
    _warp_CoreElt(core, comm)       = comm;
    _warp_CoreElt(core, tstart)     = tstart;
    _warp_CoreElt(core, tstop)      = tstop;
@@ -1559,7 +1567,7 @@ warp_Destroy(warp_Core  core)
 warp_Int
 warp_PrintStats(warp_Core  core)
 {
-   MPI_Comm     comm       = _warp_CoreElt(core, comm);
+   MPI_Comm     comm_world = _warp_CoreElt(core, comm_world);
    warp_Float   tstart     = _warp_CoreElt(core, tstart);
    warp_Float   tstop      = _warp_CoreElt(core, tstop);
    warp_Int     ntime      = _warp_CoreElt(core, ntime);
@@ -1575,7 +1583,7 @@ warp_PrintStats(warp_Core  core)
 
    warp_Int     myid;
 
-   MPI_Comm_rank(comm, &myid);
+   MPI_Comm_rank(comm_world, &myid);
    if ( myid == 0 )
    {
       printf("\n");
