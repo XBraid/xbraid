@@ -1730,9 +1730,9 @@ int main (int argc, char *argv[])
    pt          = 1;  
    n_pre       = 1;
    n_post      = 1;
-   rap         = 0;
-   relax       = 2;
-   skip        = 0;
+   rap         = 1;
+   relax       = 3;
+   skip        = 1;
 
    MPI_Comm_rank( comm, &myid );
    MPI_Comm_size( comm, &num_procs );
