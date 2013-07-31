@@ -305,7 +305,7 @@ int main (int argc, char *argv[])
 
    warp_SetMaxLevels(core, max_levels);
    warp_SetNRelax(core, nrelax);
-   warp_SetTol(core, tol);
+   warp_SetAbsTol(core, tol);
    warp_SetCFactor(core, -1, cfactor);
    /*warp_SetCFactor(core,  0, 10);*/
    warp_SetMaxIter(core, max_iter);

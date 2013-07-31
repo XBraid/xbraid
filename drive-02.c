@@ -1965,7 +1965,7 @@ int main (int argc, char *argv[])
 
    warp_SetNRelax(core, nrelax);
 
-   warp_SetTol(core, tol);
+   warp_SetRelTol(core, tol);
 
    warp_SetCFactor(core, -1, cfactor);
    /*warp_SetCFactor(core,  0, 10);*/

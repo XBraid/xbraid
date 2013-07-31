@@ -1392,6 +1392,7 @@ warp_Init(MPI_Comm              comm_world,
    _warp_CoreElt(core, max_levels) = max_levels;
    _warp_CoreElt(core, nrelax)     = 1;
    _warp_CoreElt(core, tol)        = 1.0e-09;
+   _warp_CoreElt(core, rtol)       = 0;
 
    _warp_CoreElt(core, cfactors)   = _warp_CTAlloc(warp_Int, max_levels);
    _warp_CoreElt(core, cfdefault)  = 2;
@@ -1420,6 +1421,7 @@ warp_Drive(warp_Core  core)
    warp_Float    tstop    = _warp_CoreElt(core, tstop);
    warp_Int      ntime    = _warp_CoreElt(core, ntime);
    warp_Float    tol      = _warp_CoreElt(core, tol);
+   warp_Int      rtol     = _warp_CoreElt(core, rtol);
    warp_Int      max_iter = _warp_CoreElt(core, max_iter);
 
    warp_Int      nlevels, iter;
@@ -1480,6 +1482,10 @@ warp_Drive(warp_Core  core)
 
             /* F-relax then restrict */
             _warp_FRestrict(core, level, &rnorm);
+            if (rtol && (level == 0) && (iter == 0))
+            {
+               tol *= rnorm;
+            }
 
             level++;
          }
@@ -1574,6 +1580,7 @@ warp_PrintStats(warp_Core  core)
    warp_Int     max_levels = _warp_CoreElt(core, max_levels);
    warp_Int     nrelax     = _warp_CoreElt(core, nrelax);
    warp_Float   tol        = _warp_CoreElt(core, tol);
+   warp_Int     rtol       = _warp_CoreElt(core, rtol);
    /*warp_Int    *cfactors   = _warp_CoreElt(core, cfactors);*/
    warp_Int     cfdefault  = _warp_CoreElt(core, cfdefault);
    warp_Int     max_iter   = _warp_CoreElt(core, max_iter);
@@ -1596,6 +1603,7 @@ warp_PrintStats(warp_Core  core)
       printf("  coarsening factor    = %d\n", cfdefault);
       printf("  num F-C relaxations  = %d\n", nrelax);
       printf("  stopping tolerance   = %e\n", tol);
+      printf("  relative tolerance?  = %d\n", rtol);
       printf("  max iterations       = %d\n", max_iter);
       printf("  iterations           = %d\n", niter);
       printf("  residual norm        = %e\n", rnorm);
@@ -1633,10 +1641,23 @@ warp_SetNRelax(warp_Core  core,
  *--------------------------------------------------------------------------*/
 
 warp_Int
-warp_SetTol(warp_Core   core,
-            warp_Float  tol)
+warp_SetAbsTol(warp_Core   core,
+               warp_Float  tol)
 {
    _warp_CoreElt(core, tol) = tol;
+
+   return _warp_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
+warp_SetRelTol(warp_Core   core,
+               warp_Float  tol)
+{
+   _warp_CoreElt(core, tol)  = tol;
+   _warp_CoreElt(core, rtol) = 1;
 
    return _warp_error_flag;
 }

@@ -212,8 +212,15 @@ warp_SetNRelax(warp_Core  core,
  * Set absolute stopping tolerance.
  **/
 warp_Int
-warp_SetTol(warp_Core   core,
-            warp_Float  tol);
+warp_SetAbsTol(warp_Core   core,
+               warp_Float  atol);
+
+/**
+ * Set absolute stopping tolerance.
+ **/
+warp_Int
+warp_SetRelTol(warp_Core   core,
+               warp_Float  rtol);
 
 /**
  * Set the coarsening factor {\tt cfactor} on grid level {\tt level} (level 0 is

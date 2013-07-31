@@ -86,6 +86,7 @@ typedef struct _warp_Core_struct
    warp_Int             max_levels;
    warp_Int             nrelax;    /* number of pre-relaxations */
    warp_Float           tol;       /* stopping tolerance */
+   warp_Int             rtol;      /* use relative tolerance */
    warp_Int            *cfactors;  /* coarsening factors */
    warp_Int             cfdefault; /* default coarsening factor*/
    warp_Int             max_iter;
