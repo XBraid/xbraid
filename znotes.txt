@@ -34,7 +34,9 @@ should not restrict ourselves to only these items.  Anything is on the table.
   the same approach that PETSc uses.  If a relative criteria is desired, users
   will need to modify the 'tol' parameter by multiplying it by an initial
   residual norm (or something).  I think this is the best approach, but I'd like
-  to discuss this.
+  to discuss this. 
+  --> One alternative would be to stop based on ||r_1|| / ||r_k|| where r is
+      the residual evaluated at C-points.  
 
 - Currently, the parallel distribution assumes equal computational cost at each
   temporal point.  This may not be the case for users doing refinement in both
