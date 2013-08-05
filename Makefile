@@ -26,10 +26,10 @@ WARP_HEADERS = _warp.h warp.h
 
 WARP_FILES = util.c warp.c
 
-all: drive-01 drive-02
+all: drive-01 drive-02 drive-03
 
 clean: cleanout
-	rm -f *.o drive-01 drive-02
+	rm -f *.o drive-01 drive-02 drive-03
 cleanout:
 	rm -f drive*.out.*
 
@@ -42,5 +42,9 @@ drive-01: drive-01.c ${WARP_FILES}
 	${CC} -o $@ $@.c ${WARP_FILES} ${LFLAGS}
 
 drive-02: drive-02.c ${WARP_FILES}
+	@echo  "Building" $@ "... "
+	${CC} -o $@ $@.c ${WARP_FILES} ${HYPRE_FLAGS} ${LFLAGS}
+
+drive-03: drive-03.c ${WARP_FILES}
 	@echo  "Building" $@ "... "
 	${CC} -o $@ $@.c ${WARP_FILES} ${HYPRE_FLAGS} ${LFLAGS}
