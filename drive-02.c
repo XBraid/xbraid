@@ -124,6 +124,8 @@
  *                  relax = 2: R/B Gauss-Seidel (default)
  *                  relax = 3: R/B Gauss-Seidel (non-symmetric)
  *   skip        skip levels in spatial PFMG solver (0 or 1)
+ *   max_iter_x  maximum number of spatial MG iterations
+ *   write       save the solution to files (1) or not (0)
  */
 typedef struct _warp_App_struct {
    MPI_Comm                comm_t;
@@ -155,6 +157,9 @@ typedef struct _warp_App_struct {
    int                    *max_num_iterations;
    int                     n_pre, n_post;
    int                     rap, relax, skip;
+   int                     max_iter_x;
+   double                  tol_x;
+   int                     write;
 } my_App;
 
 /* struct my_Vector contains local information specific to one time point
@@ -1168,6 +1173,8 @@ setUpStructSolver( MPI_Comm             comm,
                    HYPRE_SStructMatrix  A,
                    HYPRE_SStructVector  b,
                    HYPRE_SStructVector  x,
+                   int                  max_iter,
+                   double               tol,
                    int                  rap,
                    int                  relax,
                    int                  n_pre,
@@ -1185,8 +1192,8 @@ setUpStructSolver( MPI_Comm             comm,
 
    /* Set PFMG options. */
    HYPRE_StructPFMGCreate( comm, &solver );
-   HYPRE_StructPFMGSetMaxIter( solver, 50 );
-   HYPRE_StructPFMGSetTol( solver, 1.0e-09 );
+   HYPRE_StructPFMGSetMaxIter( solver, max_iter );
+   HYPRE_StructPFMGSetTol( solver, tol );
    HYPRE_StructPFMGSetRelChange( solver, 0 );
    HYPRE_StructPFMGSetRAPType( solver, rap );
    HYPRE_StructPFMGSetRelaxType( solver, relax );
@@ -1277,9 +1284,9 @@ my_Phi(warp_App     app,
       
       /* Set up the PFMG solver using u->x as dummy vectors. */
       setUpStructSolver( app->comm_x, &(app->solver[A_idx]), &sA, &sb, 
-                         &sx, app->A[A_idx], u->x, u->x, app->rap,
-                         app->relax, app->n_pre, app->n_post, 
-                         app->skip );
+                         &sx, app->A[A_idx], u->x, u->x, app->max_iter_x,
+                         app->tol_x, app->rap, app->relax, app->n_pre, 
+                         app->n_post, app->skip );
    } 
 
    /* -----------------------------------------------------------------
@@ -1544,11 +1551,7 @@ my_Write(warp_App     app,
    int var = 0;
 
    /*  damping factor */
-   double damping = 1.0 / ( 1 + ((2*(app->K)*(app->dt))/
-                                 ((app->dx)*(app->dx)))*(1-cos(app->dx)) 
-                              + ((2*(app->K)*(app->dt))/
-                                 ((app->dy)*(app->dy)))*(1-cos(app->dy)));
-   double damping_nt = 1.0; 
+   double damping, damping_nt = 1.0; 
 
    int i, j, m;
    int  pi  = (app->pi);
@@ -1557,31 +1560,39 @@ my_Write(warp_App     app,
    int  nlx = (app->nlx);
    int  nly = (app->nly);
 
-   index = ((t-tstart) / ((tstop-tstart)/ntime) + 0.1);
+   /* Write computed solution and true discrete solution to files. */
+   if( app->write ){
+      damping = 1.0 / ( 1 + ((2*(app->K)*(app->dt))/
+                             ((app->dx)*(app->dx)))*(1-cos(app->dx)) 
+                          + ((2*(app->K)*(app->dt))/
+                             ((app->dy)*(app->dy)))*(1-cos(app->dy)));
 
-   /* damping factor after index time steps */
-   for( i = 1; i <= index; i++ )
-      damping_nt *= damping;
+      index = ((t-tstart) / ((tstop-tstart)/ntime) + 0.1);
 
-   MPI_Comm_rank(comm, &myid);
+      /* damping factor after index time steps */
+      for( i = 1; i <= index; i++ )
+         damping_nt *= damping;
 
-   sprintf(filename, "%s.%07d.%05d", "drive-02.out", index, myid);
-   file = fopen(filename, "w");
+      MPI_Comm_rank(comm, &myid);
 
-   values = (double *) malloc( nlx*nly*sizeof(double) );
-   HYPRE_SStructVectorGetBoxValues( u->x, part, app->ilower_x, 
+      sprintf(filename, "%s.%07d.%05d", "drive-02.out", index, myid);
+      file = fopen(filename, "w");
+
+      values = (double *) malloc( nlx*nly*sizeof(double) );
+      HYPRE_SStructVectorGetBoxValues( u->x, part, app->ilower_x, 
                                     app->iupper_x, var, values );
-   m = 0;
-   for( j = 0; j < nly; j++ )
-      for( i = 0; i < nlx; i++ )
-         fprintf(file, "%06d %.14e --- discrete solution %.14e\n", 
-                 pj*px*nlx*nly+pi*nlx+j*px*nlx+i,
-                 values[m++], 
-                 damping_nt*sin((app->ilower_x[0]+i)*(app->dx))
-                           *sin((app->ilower_x[1]+j)*(app->dy)));
-   fflush(file);
-   fclose(file);
-   free( values );
+      m = 0;
+      for( j = 0; j < nly; j++ )
+         for( i = 0; i < nlx; i++ )
+            fprintf(file, "%06d %.14e --- discrete solution %.14e\n", 
+                    pj*px*nlx*nly+pi*nlx+j*px*nlx+i,
+                    values[m++], 
+                    damping_nt*sin((app->ilower_x[0]+i)*(app->dx))
+                              *sin((app->ilower_x[1]+j)*(app->dy)));
+      fflush(file);
+      fclose(file);
+      free( values );
+   }
 
    return 0;
 }
@@ -1681,6 +1692,7 @@ int main (int argc, char *argv[])
    MPI_Comm    comm, comm_x, comm_t;
    int         myid, num_procs;
    int         xcolor, tcolor;
+   double      mystarttime, myendtime, mytime, maxtime;
 
    /* We consider a 2D problem. */
    int ndim = 2;
@@ -1707,7 +1719,12 @@ int main (int argc, char *argv[])
    int pi, pj;
 
    int n_pre, n_post;
-   int rap, relax, skip;
+   int rap, relax, skip, max_iter_x;
+   double tol_x;
+
+   int nA_max, *max_num_iterations_global;
+
+   int write;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -1734,6 +1751,9 @@ int main (int argc, char *argv[])
    rap         = 1;
    relax       = 3;
    skip        = 1;
+   max_iter_x  = 50;
+   tol_x       = 1.0e-09;
+   write       = 0;
 
    MPI_Comm_rank( comm, &myid );
    MPI_Comm_size( comm, &num_procs );
@@ -1801,6 +1821,18 @@ int main (int argc, char *argv[])
          arg_index++;
          sym = atoi(argv[arg_index++]);
       }
+      else if( strcmp(argv[arg_index], "-iter") == 0 ){
+         arg_index++;
+         max_iter_x = atoi(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-tolx") == 0 ){
+          arg_index++;
+          tol_x = atof(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-write") == 0 ){
+         arg_index++;
+         write = 1;
+      }
       else if( strcmp(argv[arg_index], "-help") == 0 )
       {
          print_usage = 1;
@@ -1825,6 +1857,8 @@ int main (int argc, char *argv[])
       printf("  -tol <tol>          : set stopping tolerance (default: 1e-09)\n");
       printf("  -cf  <cfactor>      : set coarsening factor (default: 2)\n");
       printf("  -mi  <max_iter>     : set max iterations (default: 100)\n");
+      printf("  -iter <max_iter_x>  : maximum number of PFMG iterations (default: 50)\n"); 
+      printf("  -tolx <tol_x>       : stopping tolerance for PFMG (default: 1e-09)\n"); 
       printf("  -v <n_pre> <n_post> : number of pre and post relaxations in PFMG\n");
       printf("  -rap <r>            : coarse grid operator type in PFMG\n");
       printf("                        0 - Galerkin (default)\n");
@@ -1837,6 +1871,7 @@ int main (int argc, char *argv[])
       printf("                        3 - R/B Gauss-Seidel (nonsymmetric)\n");
       printf("  -skip <s>           : skip levels in PFMG (0 or 1)\n");      
       printf("  -sym <s>            : symmetric storage (1) or not (0)\n");
+      printf("  -write <w>          : save the solution to files\n");
       printf("\n");
    }
 
@@ -1920,6 +1955,9 @@ int main (int argc, char *argv[])
    (app->rap)         = rap;
    (app->relax)       = relax;
    (app->skip)        = skip;
+   (app->max_iter_x)  = max_iter_x;
+   (app->tol_x)       = tol_x;
+   (app->write)       = write;
 
    /* Set the variable types. */
    (app->vartypes)   = (HYPRE_SStructVariable*) malloc( nvars* 
@@ -1961,6 +1999,11 @@ int main (int argc, char *argv[])
 
    /* Allocate memory for array of iteration counts. */
    app->max_num_iterations = (int*) calloc( (app->max_levels),  sizeof(int) );
+   for( i = 0; i < app->max_levels; i++ )
+      app->max_num_iterations[i] = 0;
+
+   /* Start timer. */
+   mystarttime = MPI_Wtime();
 
    warp_Init(comm, comm_t, tstart, tstop, nt, app,
              my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_Dot, 
@@ -1984,15 +2027,38 @@ int main (int argc, char *argv[])
 
    warp_Drive(core);
 
+   /* Stop timer. */
+   myendtime = MPI_Wtime();
+   mytime    = myendtime - mystarttime;
+
    warp_PrintStats(core);
 
    /* Print some additional statistics */
    MPI_Comm_rank( comm, &myid );
+
+   /* Compute maximum time */
+   MPI_Reduce( &mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, 0, comm );
+
+   /* Determine maximum number of iterations in spatial solves
+    * on each time level */
+   MPI_Allreduce( &(app->nA), &nA_max, 1, MPI_INT, MPI_MAX, comm ); 
+   max_num_iterations_global = (int*) malloc( nA_max*sizeof(int) ); 
+   for( i = 0; i < nA_max; i++ )
+      MPI_Allreduce( &(app->max_num_iterations[i]), 
+                     &max_num_iterations_global[i], 1, MPI_INT,
+                     MPI_MAX, comm );
+
    if( myid == 0 )
    {
-      for( i = 0; i < app->nA; i++ ){
-         printf( "max iterations on level %d: %d\n",
-                 i, app->max_num_iterations[i] );
+      printf( "  runtime: %.5lfs\n\n", maxtime );
+      printf( "spatial problem size       : %d x %d\n", 
+              (app->px)*(app->nlx), (app->py)*(app->nly) );
+      printf( "spatial stopping tolerance : %e\n", 
+              app->tol_x );
+
+      for( i = 0; i < nA_max; i++ ){
+         printf( "max iterations on level %d  : %d\n",
+                 i, max_num_iterations_global[i] );
       }
       printf( "\n");
    }
