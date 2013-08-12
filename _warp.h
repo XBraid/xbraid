@@ -89,10 +89,11 @@ typedef struct _warp_Core_struct
    warp_Int            *nrels;     /* number of pre-relaxations on each level */
    warp_Int             nrdefault; /* default number of pre-relaxations */
    warp_Int            *cfactors;  /* coarsening factors */
-   warp_Int             cfdefault; /* default coarsening factor*/
+   warp_Int             cfdefault; /* default coarsening factor */
    warp_Int             max_iter;
    warp_Int             niter;     /* number of iterations */
    warp_Float           rnorm;     /* residual norm */
+   warp_Int             fmg;       /* use FMG cycle */
 
    warp_Int             gupper;    /* global upper index on the fine grid */
 

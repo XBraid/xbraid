@@ -227,6 +227,7 @@ int main (int argc, char *argv[])
    double     tol        = 1.0e-06;
    int        cfactor    = 2;
    int        max_iter   = 100;
+   int        fmg        = 0;
 
    int        arg_index;
 
@@ -257,6 +258,7 @@ int main (int argc, char *argv[])
             printf("  -tol <tol>        : set stopping tolerance\n");
             printf("  -cf  <cfactor>    : set coarsening factor\n");
             printf("  -mi  <max_iter>   : set max iterations\n");
+            printf("  -fmg              : use FMG cycling\n");
             printf("\n");
          }
          exit(1);
@@ -291,6 +293,11 @@ int main (int argc, char *argv[])
          arg_index++;
          max_iter = atoi(argv[arg_index++]);
       }
+      else if ( strcmp(argv[arg_index], "-fmg") == 0 )
+      {
+         arg_index++;
+         fmg = 1;
+      }
       else
       {
          arg_index++;
@@ -320,6 +327,10 @@ int main (int argc, char *argv[])
    warp_SetCFactor(core, -1, cfactor);
    /*warp_SetCFactor(core,  0, 10);*/
    warp_SetMaxIter(core, max_iter);
+   if (fmg)
+   {
+      warp_SetFMG(core);
+   }
 
    warp_Drive(core);
 

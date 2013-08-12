@@ -242,6 +242,12 @@ warp_Int
 warp_SetMaxIter(warp_Core  core,
                 warp_Int   max_iter);
 
+/**
+ * Use FMG cycling.
+ **/
+warp_Int
+warp_SetFMG(warp_Core  core);
+
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 

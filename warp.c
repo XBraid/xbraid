@@ -1531,8 +1531,10 @@ warp_Init(MPI_Comm              comm_world,
    _warp_CoreElt(core, cfdefault)  = 2;
 
    _warp_CoreElt(core, max_iter)   = 100;
+   _warp_CoreElt(core, max_iter)   = 100;
    _warp_CoreElt(core, niter)      = 0;
    _warp_CoreElt(core, rnorm)      = 0.0;
+   _warp_CoreElt(core, fmg)        = 0;
 
    _warp_CoreElt(core, gupper)     = ntime;
 
@@ -1557,13 +1559,14 @@ warp_Drive(warp_Core  core)
    warp_Int      ntime    = _warp_CoreElt(core, ntime);
    warp_Float    tol      = _warp_CoreElt(core, tol);
    warp_Int      rtol     = _warp_CoreElt(core, rtol);
+   warp_Int      fmg      = _warp_CoreElt(core, fmg);
    warp_Int      max_iter = _warp_CoreElt(core, max_iter);
 
    warp_Int      nlevels, iter;
    warp_Float    rnorm;
    warp_Int      ilower, iupper;
    warp_Float   *ta;
-   warp_Int      level, down, done, i, refined;
+   warp_Int      level, fmglevel, down, done, i, refined;
    _warp_Grid   *grid;
 
    level = 0;
@@ -1587,8 +1590,12 @@ warp_Drive(warp_Core  core)
    /* Set initial values at C-points */
    _warp_InitGuess(core, 0);
 
-   /* Use absolute residual test - build scaling into 'tol' parameter */
-
+   /* Set cycling variables */
+   fmglevel = 0;
+   if (fmg)
+   {
+      fmglevel = nlevels-1;
+   }
    down = 1;
    done = 0;
    if ((nlevels <= 1) || (tol <= 0.0))
@@ -1604,12 +1611,6 @@ warp_Drive(warp_Core  core)
 
       if (down)
       {
-         /* Set initial guess on coarse levels */
-         if (level > 0)
-         {
-            _warp_InitGuess(core, level);
-         }
-
          if (level < (nlevels-1))
          {
             /* CF-relaxation */
@@ -1617,6 +1618,10 @@ warp_Drive(warp_Core  core)
 
             /* F-relax then restrict */
             _warp_FRestrict(core, level, &rnorm);
+            /* Set initial guess on next coarser level */
+            _warp_InitGuess(core, level+1);
+
+            /* Adjust tolerance */
             if (rtol && (level == 0) && (iter == 0))
             {
                tol *= rnorm;
@@ -1638,10 +1643,18 @@ warp_Drive(warp_Core  core)
       {
          if (level > 0)
          {
-            /* F-relax then interpolate */
-            _warp_FInterp(core, level);
-
-            level--;
+            if (level >= fmglevel)
+            {
+               /* F-relax then interpolate */
+               _warp_FInterp(core, level);
+               
+               level--;
+            }
+            else
+            {
+               fmglevel--;
+               down = 1;
+            }
          }
          else
          {
@@ -1663,6 +1676,10 @@ warp_Drive(warp_Core  core)
 
             iter++;
 
+            if (fmg)
+            {
+               fmglevel = nlevels-1;
+            }
             down = 1;
          }
       }
@@ -1845,6 +1862,17 @@ warp_SetMaxIter(warp_Core  core,
                 warp_Int   max_iter)
 {
    _warp_CoreElt(core, max_iter) = max_iter;
+
+   return _warp_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
+warp_SetFMG(warp_Core  core)
+{
+   _warp_CoreElt(core, fmg) = 1;
 
    return _warp_error_flag;
 }
