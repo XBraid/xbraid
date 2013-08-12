@@ -1673,7 +1673,7 @@ int main (int argc, char *argv[])
    warp_Core  core;
    my_App    *app;
    int        max_levels;
-   int        nrelax;
+   int        nrelax, nrelax0;
    double     tol;
    int        cfactor;
    int        max_iter;
@@ -1716,6 +1716,7 @@ int main (int argc, char *argv[])
    comm        = MPI_COMM_WORLD;
    max_levels  = 1;
    nrelax      = 1;
+   nrelax0     = -1;
    tol         = 1.0e-09;
    cfactor     = 2;
    max_iter    = 100;
@@ -1762,6 +1763,10 @@ int main (int argc, char *argv[])
       else if( strcmp(argv[arg_index], "-nu") == 0 ){
           arg_index++;
           nrelax = atoi(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-nu0") == 0 ){
+          arg_index++;
+          nrelax0 = atoi(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-tol") == 0 ){
           arg_index++;
@@ -1816,6 +1821,7 @@ int main (int argc, char *argv[])
       printf("  -nt  <n>            : number of time steps (default: 32)\n"); 
       printf("  -ml  <max_levels>   : set max number of time levels (default: 1)\n");
       printf("  -nu  <nrelax>       : set num F-C relaxations (default: 1)\n");
+      printf("  -nu0 <nrelax>       : set num F-C relaxations on level 0\n");
       printf("  -tol <tol>          : set stopping tolerance (default: 1e-09)\n");
       printf("  -cf  <cfactor>      : set coarsening factor (default: 2)\n");
       printf("  -mi  <max_iter>     : set max iterations (default: 100)\n");
@@ -1963,7 +1969,11 @@ int main (int argc, char *argv[])
 
    warp_SetMaxLevels( core, max_levels );
 
-   warp_SetNRelax(core, nrelax);
+   warp_SetNRelax(core, -1, nrelax);
+   if (nrelax0 > -1)
+   {
+      warp_SetNRelax(core,  0, nrelax0);
+   }
 
    warp_SetRelTol(core, tol);
 

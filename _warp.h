@@ -66,7 +66,7 @@ typedef struct _warp_Core_struct
    MPI_Comm             comm_world;
    MPI_Comm             comm;      /* communicator for the time dimension */
    warp_Float           tstart;    /* start time */
-   warp_Float           tstop;     /* start time */
+   warp_Float           tstop;     /* stop time */
    warp_Int             ntime;     /* initial number of time intervals */
    warp_App             app;       /* application data for the user */
 
@@ -84,9 +84,10 @@ typedef struct _warp_Core_struct
    warp_PtFcnRefine     refine;    /* (optional) return a refined vector */
 
    warp_Int             max_levels;
-   warp_Int             nrelax;    /* number of pre-relaxations */
    warp_Float           tol;       /* stopping tolerance */
    warp_Int             rtol;      /* use relative tolerance */
+   warp_Int            *nrels;     /* number of pre-relaxations on each level */
+   warp_Int             nrdefault; /* default number of pre-relaxations */
    warp_Int            *cfactors;  /* coarsening factors */
    warp_Int             cfdefault; /* default coarsening factor*/
    warp_Int             max_iter;
@@ -94,6 +95,8 @@ typedef struct _warp_Core_struct
    warp_Float           rnorm;     /* residual norm */
 
    warp_Int             gupper;    /* global upper index on the fine grid */
+
+   warp_Int            *rfactors;  /* refinement factors for finest grid (if any) */
 
    warp_Int             nlevels;
    _warp_Grid         **grids;

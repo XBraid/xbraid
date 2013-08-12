@@ -202,13 +202,6 @@ warp_SetMaxLevels(warp_Core  core,
                   warp_Int   max_levels);
 
 /**
- * Set number of multigrid relaxation sweeps.
- **/
-warp_Int
-warp_SetNRelax(warp_Core  core,
-               warp_Int   nrelax);
-
-/**
  * Set absolute stopping tolerance.
  **/
 warp_Int
@@ -221,6 +214,16 @@ warp_SetAbsTol(warp_Core   core,
 warp_Int
 warp_SetRelTol(warp_Core   core,
                warp_Float  rtol);
+
+/**
+ * Set the number of relaxation sweeps {\tt nrelax} on grid level {\tt level}
+ * (level 0 is the finest grid).  The default is 1 on all levels.  To change the
+ * default factor, use {\tt level} = -1.
+ **/
+warp_Int
+warp_SetNRelax(warp_Core  core,
+               warp_Int   level,
+               warp_Int   nrelax);
 
 /**
  * Set the coarsening factor {\tt cfactor} on grid level {\tt level} (level 0 is

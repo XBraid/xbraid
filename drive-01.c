@@ -223,6 +223,7 @@ int main (int argc, char *argv[])
 
    int        max_levels = 1;
    int        nrelax     = 1;
+   int        nrelax0    = -1;
    double     tol        = 1.0e-06;
    int        cfactor    = 2;
    int        max_iter   = 100;
@@ -252,6 +253,7 @@ int main (int argc, char *argv[])
             printf("\n");
             printf("  -ml  <max_levels> : set max levels\n");
             printf("  -nu  <nrelax>     : set num F-C relaxations\n");
+            printf("  -nu0 <nrelax>     : set num F-C relaxations on level 0\n");
             printf("  -tol <tol>        : set stopping tolerance\n");
             printf("  -cf  <cfactor>    : set coarsening factor\n");
             printf("  -mi  <max_iter>   : set max iterations\n");
@@ -268,6 +270,11 @@ int main (int argc, char *argv[])
       {
          arg_index++;
          nrelax = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-nu0") == 0 )
+      {
+         arg_index++;
+         nrelax0 = atoi(argv[arg_index++]);
       }
       else if ( strcmp(argv[arg_index], "-tol") == 0 ) 
       {
@@ -304,7 +311,11 @@ int main (int argc, char *argv[])
              &core);
 
    warp_SetMaxLevels(core, max_levels);
-   warp_SetNRelax(core, nrelax);
+   warp_SetNRelax(core, -1, nrelax);
+   if (nrelax0 > -1)
+   {
+      warp_SetNRelax(core,  0, nrelax0);
+   }
    warp_SetAbsTol(core, tol);
    warp_SetCFactor(core, -1, cfactor);
    /*warp_SetCFactor(core,  0, 10);*/

@@ -605,25 +605,26 @@ warp_Int
 _warp_Step(warp_Core     core,
            warp_Int      level,
            warp_Int      index,
-           warp_Vector   u,
-           warp_Int     *rfactor)
+           warp_Vector   u)
 {
-   warp_App       app    = _warp_CoreElt(core, app);
-   _warp_Grid   **grids  = _warp_CoreElt(core, grids);
-   warp_Int       ilower = _warp_GridElt(grids[level], ilower);
-   warp_Vector   *va     = _warp_GridElt(grids[level], va);
-   warp_Vector   *wa     = _warp_GridElt(grids[level], wa);
+   warp_App       app      = _warp_CoreElt(core, app);
+   warp_Int      *rfactors = _warp_CoreElt(core, rfactors);
+   _warp_Grid   **grids    = _warp_CoreElt(core, grids);
+   warp_Int       ilower   = _warp_GridElt(grids[level], ilower);
+   warp_Vector   *va       = _warp_GridElt(grids[level], va);
+   warp_Vector   *wa       = _warp_GridElt(grids[level], wa);
 
-   warp_Int       ii;
+   warp_Int       rfactor, ii;
 
    ii = index-ilower;
    if (level == 0)
    {
-      _warp_Phi(core, level, index, 0, u, rfactor);
+      _warp_Phi(core, level, index, 0, u, &rfactor);
+      rfactors[ii] = rfactor;
    }
    else
    {
-      _warp_Phi(core, level, index, 1, u, rfactor);
+      _warp_Phi(core, level, index, 1, u, &rfactor);
       _warp_CoreFcn(core, sum)(app, 1.0, va[ii], 1.0, u);
       _warp_CoreFcn(core, sum)(app, 1.0, wa[ii], 1.0, u);
    }
@@ -785,6 +786,8 @@ _warp_InitHierarchy(warp_Core    core,
    MPI_Comm      comm       = _warp_CoreElt(core, comm);
    warp_Int      max_levels = _warp_CoreElt(core, max_levels);
    warp_Float    tol        = _warp_CoreElt(core, tol);
+   warp_Int     *nrels      = _warp_CoreElt(core, nrels);
+   warp_Int      nrdefault  = _warp_CoreElt(core, nrdefault);
    warp_Int     *cfactors   = _warp_CoreElt(core, cfactors);
    warp_Int      cfdefault  = _warp_CoreElt(core, cfdefault);
    warp_Int      gupper     = _warp_CoreElt(core, gupper);
@@ -814,6 +817,20 @@ _warp_InitHierarchy(warp_Core    core,
    {
       max_levels = 1;
       _warp_CoreElt(core, max_levels) = max_levels;
+   }
+
+   /* Allocate space for rfactors */
+   ilower = _warp_GridElt(grids[0], ilower);
+   iupper = _warp_GridElt(grids[0], iupper);
+   _warp_CoreElt(core, rfactors) = _warp_CTAlloc(warp_Int, iupper-ilower+1);
+
+   /* Set up nrels array */
+   for (level = 0; level < max_levels; level++)
+   {
+      if (nrels[level] < 0)
+      {
+         nrels[level] = nrdefault;
+      }
    }
 
    /* Coarsen global grid to determine nlevels */
@@ -991,14 +1008,15 @@ _warp_CFRelax(warp_Core  core,
               warp_Int   level)
 {
    warp_App       app      = _warp_CoreElt(core, app);
-   warp_Int       nrelax   = _warp_CoreElt(core, nrelax);
+   warp_Int      *nrels    = _warp_CoreElt(core, nrels);
    _warp_Grid   **grids    = _warp_CoreElt(core, grids);
    warp_Int       ncpoints = _warp_GridElt(grids[level], ncpoints);
 
    warp_Vector    u;
    warp_Int       flo, fhi, fi, ci;
-   warp_Int       nu, interval, c_level, rfactor;
+   warp_Int       nu, nrelax, interval, c_level;
 
+   nrelax  = nrels[level];
    c_level = level+1;
 
    for (nu = 0; nu < nrelax; nu++)
@@ -1022,14 +1040,14 @@ _warp_CFRelax(warp_Core  core,
          /* F-relaxation */
          for (fi = flo; fi <= fhi; fi++)
          {
-            _warp_Step(core, level, fi, u, &rfactor);
+            _warp_Step(core, level, fi, u);
             _warp_USetVector(core, level, fi, u);
          }
 
          /* C-relaxation */
          if (ci > 0)
          {
-            _warp_Step(core, level, ci, u, &rfactor);
+            _warp_Step(core, level, ci, u);
             _warp_USetVector(core, level, ci, u);
          }
 
@@ -1065,8 +1083,7 @@ _warp_FRestrict(warp_Core    core,
    warp_Vector         c_u, *c_va, *c_wa;
 
    warp_Vector         u, r;
-   warp_Int            flo, fhi, fi, ci;
-   warp_Int            interval, rfactor;
+   warp_Int            interval, flo, fhi, fi, ci, rfactor;
    warp_Float          rnorm, grnorm, rdot;
 
    c_level  = level+1;
@@ -1096,7 +1113,7 @@ _warp_FRestrict(warp_Core    core,
       /* F-relaxation */
       for (fi = flo; fi <= fhi; fi++)
       {
-         _warp_Step(core, level, fi, r, &rfactor);
+         _warp_Step(core, level, fi, r);
          _warp_USetVector(core, level, fi, r);
       }
 
@@ -1104,7 +1121,7 @@ _warp_FRestrict(warp_Core    core,
       if (ci > 0)
       {
          /* Compute residual */
-         _warp_Step(core, level, ci, r, &rfactor);
+         _warp_Step(core, level, ci, r);
          _warp_UGetVectorRef(core, level, ci, &u);
          _warp_CoreFcn(core, sum)(app, -1.0, u, 1.0, r);
 
@@ -1198,7 +1215,7 @@ _warp_FInterp(warp_Core  core,
 
    warp_Vector    u, e;
    warp_Int       flo, fhi, fi, ci, ii;
-   warp_Int       interval, rfactor;
+   warp_Int       interval;
 
    f_level   = level-1;
    f_ilower  = _warp_GridElt(grids[f_level], ilower);
@@ -1218,7 +1235,7 @@ _warp_FInterp(warp_Core  core,
       }
       for (fi = flo; fi <= fhi; fi++)
       {
-         _warp_Step(core, level, fi, u, &rfactor);
+         _warp_Step(core, level, fi, u);
          _warp_USetVector(core, level, fi, u);
          e = va[fi-ilower];
          _warp_CoreFcn(core, sum)(app, 1.0, u, -1.0, e);
@@ -1284,9 +1301,118 @@ _warp_FInterp(warp_Core  core,
 
 warp_Int
 _warp_FRefine(warp_Core   core,
-              warp_Int   *nlevels_ptr)
+              warp_Int   *refined_ptr)
 {
-   *nlevels_ptr = _warp_CoreElt(core, nlevels);
+#if 0 /* Finish writing later */
+   warp_Int     *rfactors = _warp_CoreElt(core, rfactors);
+   warp_Int      nlevels  = _warp_CoreElt(core, nlevels);
+   _warp_Grid  **grids    = _warp_CoreElt(core, grids);
+   warp_Int      ilower   = _warp_GridElt(grids[0], ilower);
+   warp_Int      iupper   = _warp_GridElt(grids[0], iupper);
+   warp_Int      cfactor  = _warp_GridElt(grids[0], cfactor);
+
+   warp_Int      lrefine, refine;
+
+   lrefine = 0;
+   for (i = ilower; i <= iupper; i++)
+   {
+      if (rfactors[i] > 1)
+      {
+         lrefine = 1;
+         break;
+      }
+   }
+   MPI_Allreduce(&lrefine, &refine, 1, MPI_INT, MPI_MAX, comm);
+
+   if (refine)
+   {
+      /* Compute and save interpolated values */
+      ua = _warp_CTAlloc(warp_Vector, (ilower-iupper+1));
+
+      _warp_UCommInitF(core, 0);
+
+      /* Start from the right-most interval */
+      for (interval = ncpoints; interval > -1; interval--)
+      {
+         _warp_UGetInterval(core, 0, interval, &flo, &fhi, &ci);
+
+         /* Relax and interpolate F-points */
+         if (flo <= fhi)
+         {
+            _warp_UGetVector(core, 0, flo-1, &u);
+         }
+         for (fi = flo; fi <= fhi; fi++)
+         {
+            _warp_Step(core, 0, fi, u);
+            _warp_USetVector(core, 0, fi, u);
+            _warp_CoreFcn(core, clone)(app, u, &ua[fi-ilower]);
+         }
+         if (flo <= fhi)
+         {
+            _warp_CoreFcn(core, free)(app, u);
+         }
+
+         /* Interpolate C-points */
+         if (ci > 0)
+         {
+            _warp_UGetVectorRef(core, 0, ci, &u);
+            ua[ci-ilower] = u;
+         }
+      }
+
+      _warp_UCommWait(core, 0);
+
+      /* Create new finest grid */
+      f_cfactor = cfactor;
+      _warp_MapCoarseToFine(ilower, f_cfactor, f_ilower);
+      _warp_MapCoarseToFine(iupper, f_cfactor, f_iupper);
+      f_iupper += f_cfactor-1;
+      _warp_GridInit(core, 0, f_ilower, f_iupper, &f_grid);
+
+      /* Change gupper (this currently does not match tstop) */
+      gupper = _warp_CoreElt(core, gupper);
+      gupper = (gupper+1)*f_cfactor - 1;
+      _warp_CoreElt(core, gupper) = gupper;
+
+      /* Set t values */
+      f_ta = _warp_GridElt(f_grid, ta);
+      ta   = _warp_GridElt(grids[0], ta);
+      for (i = ilower; i <= iupper; i++)
+      {
+         _warp_MapCoarseToFine(i, f_cfactor, f_i);
+         tstart = ta[i-ilower];
+         /* RDF - START HERE*/
+         for (j = 0; j < f_cfactor; j++)
+         {
+            ta[i-ilower] = f_ta[f_i-f_ilower];
+            f_ta[f_i-f_ilower] = tstart + (((warp_Float)i)/ntime)*(tstop-tstart);
+         }
+      }
+
+      /* Initialize new hierarchy */
+      for (level = 0; level < nlevels; level++)
+      {
+         _warp_GridDestroy(core, grids[level]);
+      }
+      _warp_InitHierarchy(core, f_grid);
+      nlevels = _warp_CoreElt(core, nlevels);
+
+      /* Do the spatial refinement here and set the fine grid unknowns */
+      for (i = ilower; i <= iupper; i++)
+      {
+         _warp_MapCoarseToFine(i, f_cfactor, f_index);
+         _warp_Refine(core, 0, f_index, ua[i-ilower], &f_u);
+         _warp_USetVectorRef(core, 0, f_index, f_u);
+         _warp_CoreFcn(core, free)(app, ua[i-ilower]);
+      }
+
+      _warp_TFree(ua);
+   }
+
+   *refined_ptr = refine;
+#endif
+
+   *refined_ptr = 0;
 
    return _warp_error_flag;
 }
@@ -1304,8 +1430,7 @@ _warp_FWrite(warp_Core  core,
    warp_Int       ncpoints = _warp_GridElt(grids[level], ncpoints);
 
    warp_Vector   u;
-   warp_Int      flo, fhi, fi, ci;
-   warp_Int      interval, rfactor;
+   warp_Int      interval, flo, fhi, fi, ci;
 
    _warp_UCommInitF(core, level);
 
@@ -1321,7 +1446,7 @@ _warp_FWrite(warp_Core  core,
       }
       for (fi = flo; fi <= fhi; fi++)
       {
-         _warp_Step(core, level, fi, u, &rfactor);
+         _warp_Step(core, level, fi, u);
          _warp_USetVector(core, level, fi, u);
          _warp_UWriteVector(core, level, fi, u);
       }
@@ -1365,7 +1490,8 @@ warp_Init(MPI_Comm              comm_world,
           warp_Core            *core_ptr)
 {
    _warp_Core  *core;
-   warp_Int     max_levels = 30;
+   warp_Int    *nrels;
+   warp_Int     level, max_levels = 30;
 
    core = _warp_CTAlloc(_warp_Core, 1);
 
@@ -1390,9 +1516,16 @@ warp_Init(MPI_Comm              comm_world,
    _warp_CoreElt(core, refine)     = NULL;
 
    _warp_CoreElt(core, max_levels) = max_levels;
-   _warp_CoreElt(core, nrelax)     = 1;
    _warp_CoreElt(core, tol)        = 1.0e-09;
    _warp_CoreElt(core, rtol)       = 0;
+
+   nrels = _warp_TAlloc(warp_Int, max_levels);
+   for (level = 0; level < max_levels; level++)
+   {
+      nrels[level] = -1;
+   }
+   _warp_CoreElt(core, nrels)      = nrels;
+   _warp_CoreElt(core, nrdefault)  = 1;
 
    _warp_CoreElt(core, cfactors)   = _warp_CTAlloc(warp_Int, max_levels);
    _warp_CoreElt(core, cfdefault)  = 2;
@@ -1402,6 +1535,8 @@ warp_Init(MPI_Comm              comm_world,
    _warp_CoreElt(core, rnorm)      = 0.0;
 
    _warp_CoreElt(core, gupper)     = ntime;
+
+   _warp_CoreElt(core, rfactors)   = NULL;
 
    _warp_CoreElt(core, nlevels)    = 0;
    _warp_CoreElt(core, grids)      = _warp_CTAlloc(_warp_Grid *, max_levels);
@@ -1428,7 +1563,7 @@ warp_Drive(warp_Core  core)
    warp_Float    rnorm;
    warp_Int      ilower, iupper;
    warp_Float   *ta;
-   warp_Int      level, down, done, i, rfactor = 0;
+   warp_Int      level, down, done, i, refined;
    _warp_Grid   *grid;
 
    level = 0;
@@ -1511,10 +1646,11 @@ warp_Drive(warp_Core  core)
          else
          {
             /* Finest grid - refine grid if desired, else check convergence */
+            _warp_FRefine(core, &refined);
 
-            if (rfactor)
+            if (refined)
             {
-               _warp_FRefine(core, &nlevels);
+               nlevels = _warp_CoreElt(core, nlevels);
             }
             else
             {
@@ -1549,12 +1685,13 @@ warp_Destroy(warp_Core  core)
 {
    if (core)
    {
-      warp_Int     *cfactors   = _warp_CoreElt(core, cfactors);
       warp_Int      nlevels    = _warp_CoreElt(core, nlevels);
       _warp_Grid  **grids      = _warp_CoreElt(core, grids);
       warp_Int      level;
 
-      _warp_TFree(cfactors);
+      _warp_TFree(_warp_CoreElt(core, nrels));
+      _warp_TFree(_warp_CoreElt(core, cfactors));
+      _warp_TFree(_warp_CoreElt(core, rfactors));
       for (level = 0; level < nlevels; level++)
       {
          _warp_GridDestroy(core, grids[level]);
@@ -1578,7 +1715,8 @@ warp_PrintStats(warp_Core  core)
    warp_Float   tstop      = _warp_CoreElt(core, tstop);
    warp_Int     ntime      = _warp_CoreElt(core, ntime);
    warp_Int     max_levels = _warp_CoreElt(core, max_levels);
-   warp_Int     nrelax     = _warp_CoreElt(core, nrelax);
+   warp_Int    *nrels      = _warp_CoreElt(core, nrels);
+   warp_Int     nrdefault  = _warp_CoreElt(core, nrdefault);
    warp_Float   tol        = _warp_CoreElt(core, tol);
    warp_Int     rtol       = _warp_CoreElt(core, rtol);
    /*warp_Int    *cfactors   = _warp_CoreElt(core, cfactors);*/
@@ -1601,7 +1739,8 @@ warp_PrintStats(warp_Core  core)
       printf("  max number of levels = %d\n", max_levels);
       printf("  number of levels     = %d\n", nlevels);
       printf("  coarsening factor    = %d\n", cfdefault);
-      printf("  num F-C relaxations  = %d\n", nrelax);
+      printf("  num F-C relaxations  = %d\n", nrdefault);
+      printf("  num rels on level 0  = %d\n", nrels[0]);
       printf("  stopping tolerance   = %e\n", tol);
       printf("  relative tolerance?  = %d\n", rtol);
       printf("  max iterations       = %d\n", max_iter);
@@ -1629,18 +1768,6 @@ warp_SetMaxLevels(warp_Core  core,
  *--------------------------------------------------------------------------*/
 
 warp_Int
-warp_SetNRelax(warp_Core  core,
-               warp_Int   nrelax)
-{
-   _warp_CoreElt(core, nrelax) = nrelax;
-
-   return _warp_error_flag;
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-warp_Int
 warp_SetAbsTol(warp_Core   core,
                warp_Float  tol)
 {
@@ -1658,6 +1785,30 @@ warp_SetRelTol(warp_Core   core,
 {
    _warp_CoreElt(core, tol)  = tol;
    _warp_CoreElt(core, rtol) = 1;
+
+   return _warp_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
+warp_SetNRelax(warp_Core  core,
+               warp_Int   level,
+               warp_Int   nrelax)
+{
+   warp_Int  *nrels = _warp_CoreElt(core, nrels);
+
+   if (level < 0)
+   {
+      /* Set default value */
+      _warp_CoreElt(core, nrdefault) = nrelax;
+   }
+   else
+   {
+      /* Set factor on specified level */
+      nrels[level] = nrelax;
+   }
 
    return _warp_error_flag;
 }
