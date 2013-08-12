@@ -2400,6 +2400,7 @@ int main (int argc, char *argv[])
    double     tol;
    int        cfactor;
    int        max_iter;
+   int        fmg;
 
    MPI_Comm    comm, comm_x, comm_t;
    int         myid, num_procs;
@@ -2446,6 +2447,7 @@ int main (int argc, char *argv[])
    tol         = 1.0e-09;
    cfactor     = 2;
    max_iter    = 100;
+   fmg         = 0;
    K           = 1.0;
    nlx         = 16;
    nly         = 16;
@@ -2513,6 +2515,10 @@ int main (int argc, char *argv[])
           arg_index++;
           max_iter = atoi(argv[arg_index++]);
       }
+      else if ( strcmp(argv[arg_index], "-fmg") == 0 ){
+         arg_index++;
+         fmg = 1;
+      }
       else if( strcmp(argv[arg_index], "-v") == 0 ){
          arg_index++;
          n_pre = atoi(argv[arg_index++]);
@@ -2570,6 +2576,7 @@ int main (int argc, char *argv[])
       printf("  -tol <tol>            : set stopping tolerance (default: 1e-09)\n");
       printf("  -cf  <cfactor>        : set coarsening factor (default: 2)\n");
       printf("  -mi  <max_iter>       : set max iterations (default: 100)\n");
+      printf("  -fmg                  : use FMG cycling\n");
       printf("  -iter <max_iter_x>    : maximum number of PFMG iterations (default: 50)\n"); 
       printf("  -tolx <tol_x>         : stopping tolerance for PFMG (default: 1e-09)\n"); 
       printf("  -v <n_pre> <n_post>   : number of pre and post relaxations in PFMG\n");
@@ -2743,6 +2750,10 @@ int main (int argc, char *argv[])
    /*warp_SetCFactor(core,  0, 10);*/
    
    warp_SetMaxIter(core, max_iter);
+   if (fmg)
+   {
+      warp_SetFMG(core);
+   }
 
    warp_Drive(core);
 
