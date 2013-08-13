@@ -2435,6 +2435,8 @@ int main (int argc, char *argv[])
    int rap, relax, skip, max_iter_x;
    double tol_x;
 
+   int nA_max, *max_num_iterations_global;
+
    int write;
 
    /* Initialize MPI */
@@ -2727,6 +2729,8 @@ int main (int argc, char *argv[])
 
    /* Allocate memory for array of iteration counts. */
    app->max_num_iterations = (int*) calloc( (app->max_levels),  sizeof(int) );
+   for( i = 0; i < app->max_levels; i++ )
+      app->max_num_iterations[i] = 0;
 
    /* Start timer. */
    mystarttime = MPI_Wtime();
@@ -2765,15 +2769,30 @@ int main (int argc, char *argv[])
 
    /* Print some additional statistics */
    MPI_Comm_rank( comm, &myid );
+
    /* Compute maximum time */
    MPI_Reduce( &mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, 0, comm );
+
+   /* Determine maximum number of iterations in spatial solves
+    * on each time level */
+   MPI_Allreduce( &(app->nA), &nA_max, 1, MPI_INT, MPI_MAX, comm ); 
+   max_num_iterations_global = (int*) malloc( nA_max*sizeof(int) ); 
+   for( i = 0; i < nA_max; i++ )
+      MPI_Allreduce( &(app->max_num_iterations[i]), 
+                     &max_num_iterations_global[i], 1, MPI_INT,
+                     MPI_MAX, comm );
+
    if( myid == 0 )
    {
-      printf( "\n  runtime: %.5lfs\n\n", maxtime );
+      printf( "  runtime: %.5lfs\n\n", maxtime );
+      printf( "spatial problem size       : %d x %d\n", 
+              (app->px)*(app->nlx), (app->py)*(app->nly) );
+      printf( "spatial stopping tolerance : %e\n", 
+              app->tol_x );
 
-      for( i = 0; i < app->nA; i++ ){
-         printf( "max iterations on level %d: %d\n",
-                 i, app->max_num_iterations[i] );
+      for( i = 0; i < nA_max; i++ ){
+         printf( "max iterations on level %d  : %d\n",
+                 i, max_num_iterations_global[i] );
       }
       printf( "\n");
    }
