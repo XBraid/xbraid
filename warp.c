@@ -580,6 +580,7 @@ warp_Int
 _warp_Phi(warp_Core     core,
           warp_Int      level,
           warp_Int      index,
+          warp_Float    accuracy,
           warp_Int      gzero,
           warp_Vector   u,
           warp_Int     *rfactor)
@@ -592,7 +593,7 @@ _warp_Phi(warp_Core     core,
    warp_Int      ii;
 
    ii = index-ilower;
-   _warp_CoreFcn(core, phi)(app, ta[ii-1], ta[ii], gzero, u, rfactor);
+   _warp_CoreFcn(core, phi)(app, ta[ii-1], ta[ii], accuracy, gzero, u, rfactor);
 
    return _warp_error_flag;
 }
@@ -605,6 +606,7 @@ warp_Int
 _warp_Step(warp_Core     core,
            warp_Int      level,
            warp_Int      index,
+           warp_Float    accuracy,
            warp_Vector   u)
 {
    warp_App       app      = _warp_CoreElt(core, app);
@@ -619,12 +621,12 @@ _warp_Step(warp_Core     core,
    ii = index-ilower;
    if (level == 0)
    {
-      _warp_Phi(core, level, index, 0, u, &rfactor);
+      _warp_Phi(core, level, index, accuracy, 0, u, &rfactor);
       rfactors[ii] = rfactor;
    }
    else
    {
-      _warp_Phi(core, level, index, 1, u, &rfactor);
+      _warp_Phi(core, level, index, accuracy, 1, u, &rfactor);
       _warp_CoreFcn(core, sum)(app, 1.0, va[ii], 1.0, u);
       _warp_CoreFcn(core, sum)(app, 1.0, wa[ii], 1.0, u);
    }
@@ -1040,14 +1042,14 @@ _warp_CFRelax(warp_Core  core,
          /* F-relaxation */
          for (fi = flo; fi <= fhi; fi++)
          {
-            _warp_Step(core, level, fi, u);
+            _warp_Step(core, level, fi, 1.0, u);
             _warp_USetVector(core, level, fi, u);
          }
 
          /* C-relaxation */
          if (ci > 0)
          {
-            _warp_Step(core, level, ci, u);
+            _warp_Step(core, level, ci, 1.0, u);
             _warp_USetVector(core, level, ci, u);
          }
 
@@ -1084,7 +1086,7 @@ _warp_FRestrict(warp_Core    core,
 
    warp_Vector         u, r;
    warp_Int            interval, flo, fhi, fi, ci, rfactor;
-   warp_Float          rnorm, grnorm, rdot;
+   warp_Float          rnorm, grnorm, rdot, accuracy;
 
    c_level  = level+1;
    c_ilower = _warp_GridElt(grids[c_level], ilower);
@@ -1093,6 +1095,15 @@ _warp_FRestrict(warp_Core    core,
    c_wa     = _warp_GridElt(grids[c_level], wa);
 
    rnorm = 0.0;
+
+   if (level == 0)
+   {
+      accuracy = 0.0;
+   }
+   else
+   {
+      accuracy = 1.0;
+   }
 
    _warp_UCommInit(core, level);
 
@@ -1113,7 +1124,7 @@ _warp_FRestrict(warp_Core    core,
       /* F-relaxation */
       for (fi = flo; fi <= fhi; fi++)
       {
-         _warp_Step(core, level, fi, r);
+         _warp_Step(core, level, fi, accuracy, r);
          _warp_USetVector(core, level, fi, r);
       }
 
@@ -1121,7 +1132,7 @@ _warp_FRestrict(warp_Core    core,
       if (ci > 0)
       {
          /* Compute residual */
-         _warp_Step(core, level, ci, r);
+         _warp_Step(core, level, ci, accuracy, r);
          _warp_UGetVectorRef(core, level, ci, &u);
          _warp_CoreFcn(core, sum)(app, -1.0, u, 1.0, r);
 
@@ -1174,7 +1185,7 @@ _warp_FRestrict(warp_Core    core,
             _warp_CommWait(core, &recv_handle);
          }
          _warp_CoreFcn(core, clone)(app, c_va[c_ii-1], &c_u);
-         _warp_Phi(core, c_level, c_i, 1, c_u, &rfactor);
+         _warp_Phi(core, c_level, c_i, 1.0, 1, c_u, &rfactor);
          _warp_CoreFcn(core, sum)(app, -1.0, c_u, 1.0, c_wa[c_ii]);
          _warp_CoreFcn(core, free)(app, c_u);
       }
@@ -1235,7 +1246,7 @@ _warp_FInterp(warp_Core  core,
       }
       for (fi = flo; fi <= fhi; fi++)
       {
-         _warp_Step(core, level, fi, u);
+         _warp_Step(core, level, fi, 1.0, u);
          _warp_USetVector(core, level, fi, u);
          e = va[fi-ilower];
          _warp_CoreFcn(core, sum)(app, 1.0, u, -1.0, e);
@@ -1343,7 +1354,7 @@ _warp_FRefine(warp_Core   core,
          }
          for (fi = flo; fi <= fhi; fi++)
          {
-            _warp_Step(core, 0, fi, u);
+            _warp_Step(core, 0, fi, 1.0, u);
             _warp_USetVector(core, 0, fi, u);
             _warp_CoreFcn(core, clone)(app, u, &ua[fi-ilower]);
          }
@@ -1446,7 +1457,7 @@ _warp_FWrite(warp_Core  core,
       }
       for (fi = flo; fi <= fhi; fi++)
       {
-         _warp_Step(core, level, fi, u);
+         _warp_Step(core, level, fi, 0.0, u);
          _warp_USetVector(core, level, fi, u);
          _warp_UWriteVector(core, level, fi, u);
       }

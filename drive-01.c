@@ -57,6 +57,7 @@ int
 my_Phi(warp_App     app,
        double       tstart,
        double       tstop,
+       double       accuracy,
        int          gzero,
        warp_Vector  u,
        int         *rfactor_ptr)
