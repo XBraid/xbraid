@@ -47,6 +47,7 @@ typedef warp_Int
 (*warp_PtFcnPhi)(warp_App      app,
                  warp_Float    tstart,
                  warp_Float    tstop,
+                 warp_Float    accuracy,
                  warp_Int      gzero,
                  warp_Vector   u,
                  warp_Int     *rfactor_ptr);
