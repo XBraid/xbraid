@@ -1017,6 +1017,16 @@ _warp_CFRelax(warp_Core  core,
    warp_Vector    u;
    warp_Int       flo, fhi, fi, ci;
    warp_Int       nu, nrelax, interval, c_level;
+   warp_Float     accuracy;
+
+   if (level == 0)
+   {
+      accuracy = 0.0;
+   }
+   else
+   {
+      accuracy = 1.0;
+   }
 
    nrelax  = nrels[level];
    c_level = level+1;
@@ -1042,14 +1052,14 @@ _warp_CFRelax(warp_Core  core,
          /* F-relaxation */
          for (fi = flo; fi <= fhi; fi++)
          {
-            _warp_Step(core, level, fi, 1.0, u);
+            _warp_Step(core, level, fi, accuracy, u);
             _warp_USetVector(core, level, fi, u);
          }
 
          /* C-relaxation */
          if (ci > 0)
          {
-            _warp_Step(core, level, ci, 1.0, u);
+            _warp_Step(core, level, ci, accuracy, u);
             _warp_USetVector(core, level, ci, u);
          }
 
@@ -1580,6 +1590,10 @@ warp_Drive(warp_Core  core)
    warp_Int      level, fmglevel, down, done, i, refined;
    _warp_Grid   *grid;
 
+   MPI_Comm     comm_world = _warp_CoreElt(core, comm_world);
+   warp_Int     myid;
+   MPI_Comm_rank(comm_world, &myid);
+
    level = 0;
    rnorm = 0.0;
 
@@ -1616,6 +1630,10 @@ warp_Drive(warp_Core  core)
    }
 
    iter = 0;
+   if ( myid == 0 )
+   {
+      printf("initial stopping tolerance = %e\n", tol);
+   }
    while (!done)
    {
       /* Down cycle */
@@ -1679,6 +1697,10 @@ warp_Drive(warp_Core  core)
             else
             {
                /* Note that this residual is based on an earlier iterate */
+               if ( myid == 0 )
+               {
+                  printf("|| r_%d || = %e\n", iter, rnorm);
+               }
                if ((rnorm < tol) || (iter == max_iter-1))
                {
                   done = 1;
@@ -1694,6 +1716,11 @@ warp_Drive(warp_Core  core)
             down = 1;
          }
       }
+   }
+
+   if ( myid == 0 )
+   {
+      printf("modified stopping tolerance = %e\n", tol);
    }
 
    /* F-relax and write solution to file */

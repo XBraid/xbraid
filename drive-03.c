@@ -135,7 +135,10 @@
  *   skip        skip levels in spatial PFMG solver (0 or 1)
  *   max_iter_x  maximum number of spatial MG iterations
  *   tol_x       stopping tolerance for spatial MG
- *   write       save the solution to files (1) or not (0)
+ *   explicit    use explicit discretization (1) or not (0)
+ *   scheme      int array of integration scheme used: explicit or
+ *               implicit 
+ *   write       save the solution/error/error norm to files
  */
 typedef struct _warp_App_struct {
    MPI_Comm                comm_t;
@@ -169,6 +172,8 @@ typedef struct _warp_App_struct {
    int                     rap, relax, skip;
    int                     max_iter_x;
    double                  tol_x;
+   int                    *scheme;
+   int                     explicit;
    int                     write;
 } my_App;
 
@@ -212,8 +217,181 @@ double B0(double x, double y, double z){
     return 0.0;
 }
 
+
 /* --------------------------------------------------------------------
- * Apply boundary conditions:
+ * Apply boundary conditions for explicit scheme:
+ * Put the boundary conditions in the vector. 
+ * -------------------------------------------------------------------- */
+void 
+addBoundary( HYPRE_SStructVector  b, 
+             double               K, 
+             double               dx, 
+             double               dy,
+             double               dz, 
+             double               dt,
+             int                  nlx, 
+             int                  nly,
+             int                  nlz,
+             int                  px, 
+             int                  py, 
+             int                  pz,
+	     int                  pi, 
+             int                  pj,
+             int                  pk )
+{
+   int i, j, k, m;
+   
+   int bc_ilower[3];
+   int bc_iupper[3];
+   double *bvalues;
+
+   /* We have one part and one variable. */
+   int part = 0;
+   int var = 0;
+       
+   /* Allocate vector for values on boundary planes */
+   bvalues = (double *) malloc( (max3(nlx, nly, nlz)+1)*
+                                (max3(nlx, nly, nlz)+1)*sizeof(double) );     
+  
+       
+   /* a) xy-plane boundaries: z = 0 or z = PI */  
+   /* Processors at z = 0 */
+   if( pk == 0 ){
+      bc_ilower[0] = pi*nlx;
+      bc_ilower[1] = pj*nly;
+      bc_ilower[2] = pk*nlz;
+
+      bc_iupper[0] = bc_ilower[0] + nlx-1;
+      bc_iupper[1] = bc_ilower[1] + nly-1;
+      bc_iupper[2] = bc_ilower[2];
+
+      /* Put the boundary conditions in b */
+      for( m = 0, j = 0; j < nly; j++ )
+         for( i = 0; i < nlx; i++, m++ )
+            bvalues[m] = B0( (bc_ilower[0]+i)*dx,
+                             (bc_ilower[1]+j)*dy,
+                              bc_ilower[2]*dz );
+
+       HYPRE_SStructVectorSetBoxValues(b, part, bc_ilower,
+                                       bc_iupper, var, bvalues);
+   }
+       
+   /* Processors at z = PI */
+   if( pk == pz-1 ){
+      bc_ilower[0] = pi*nlx;
+      bc_ilower[1] = pj*nly;
+      bc_ilower[2] = pk*nlz + nlz-1;
+           
+      bc_iupper[0] = bc_ilower[0] + nlx-1;
+      bc_iupper[1] = bc_ilower[1] + nly-1;
+      bc_iupper[2] = bc_ilower[2];
+           
+      /* Put the boundary conditions in b */
+      for( m = 0, j = 0; j < nly; j++ )
+         for( i = 0; i < nlx; i++, m++ )
+            bvalues[m] = B0( (bc_ilower[0]+i)*dx,
+                             (bc_ilower[1]+j)*dy,
+                              bc_ilower[2]*dz );
+           
+      HYPRE_SStructVectorSetBoxValues(b, part, bc_ilower,
+                                      bc_iupper, var, bvalues);
+   }
+
+   /* b) xz-plane boundaries: y = 0 or y = PI */
+   /* Processors at y = 0 */
+   if( pj == 0 ){
+      bc_ilower[0] = pi*nlx;
+      bc_ilower[1] = pj*nly;
+      bc_ilower[2] = pk*nlz;
+           
+      bc_iupper[0] = bc_ilower[0] + nlx-1;
+      bc_iupper[1] = bc_ilower[1];
+      bc_iupper[2] = bc_ilower[2] + nlz-1;
+           
+      /* Put the boundary conditions in b */
+      for( m = 0, k = 0; k < nlz; k++ )
+         for( i = 0; i < nlx; i++, m++ )
+            bvalues[m] = B0( (bc_ilower[0]+i)*dx,
+                              bc_ilower[1]*dy,
+                             (bc_ilower[2]+k)*dz );
+           
+      HYPRE_SStructVectorSetBoxValues(b, part, bc_ilower,
+                                      bc_iupper, var, bvalues);
+   }
+       
+   /* Processors at y = PI */
+   if( pj == py-1 ){
+      bc_ilower[0] = pi*nlx;
+      bc_ilower[1] = pj*nly + nly-1;
+      bc_ilower[2] = pk*nlz;
+           
+      bc_iupper[0] = bc_ilower[0] + nlx-1;
+      bc_iupper[1] = bc_ilower[1];
+      bc_iupper[2] = bc_ilower[2] + nlz-1;
+           
+      /* Put the boundary conditions in b */
+      for( m = 0, k = 0; k < nlz; k++ )
+         for( i = 0; i < nlx; i++, m++ )
+            bvalues[m] = B0( (bc_ilower[0]+i)*dx,
+                              bc_ilower[1]*dy,
+                             (bc_ilower[2]+k)*dz );
+           
+      HYPRE_SStructVectorSetBoxValues(b, part, bc_ilower,
+                                      bc_iupper, var, bvalues);
+   }
+ 
+   /* c) yz-plane boundaries: x = 0 or x = PI */
+   /* Processors at x = 0 */
+   if( pi == 0 ){
+      bc_ilower[0] = pi*nlx;
+      bc_ilower[1] = pj*nly;
+      bc_ilower[2] = pk*nlz;
+           
+      bc_iupper[0] = bc_ilower[0];
+      bc_iupper[1] = bc_ilower[1] + nly-1;
+      bc_iupper[2] = bc_ilower[2] + nlz-1;
+           
+      /* Put the boundary conditions in b */
+      for( m = 0, k = 0; k < nlz; k++ )
+         for( j = 0; j < nly; j++, m++ )
+            bvalues[m] = B0(  bc_ilower[0]*dx,
+                             (bc_ilower[1]+j)*dy,
+                             (bc_ilower[2]+k)*dz );
+           
+      HYPRE_SStructVectorSetBoxValues(b, part, bc_ilower,
+                                      bc_iupper, var, bvalues);
+   }
+       
+   /* Processors at x = PI */
+   if( pi == px-1 ){
+      bc_ilower[0] = pi*nlx + nlx-1;
+      bc_ilower[1] = pj*nly;
+      bc_ilower[2] = pk*nlz;
+           
+      bc_iupper[0] = bc_ilower[0];
+      bc_iupper[1] = bc_ilower[1] + nly-1;
+      bc_iupper[2] = bc_ilower[2] + nlz-1;
+          
+      /* Put the boundary conditions in b */
+      for( m = 0, k = 0; k < nlz; k++ )
+         for( j = 0; j < nly; j++, m++ )
+            bvalues[m] = B0( (bc_ilower[0]+i)*dx,
+                              bc_ilower[1]*dy,
+                             (bc_ilower[2]+k)*dz );
+           
+      HYPRE_SStructVectorSetBoxValues(b, part, bc_ilower,
+                                      bc_iupper, var, bvalues);
+   }
+
+   free(bvalues);
+
+   /* Finalize the vector assembly. */
+   HYPRE_SStructVectorAssemble(b);
+}
+
+
+/* --------------------------------------------------------------------
+ * Apply boundary conditions for implicit scheme:
  * To incorporate the boundary conditions, we removed the connections 
  * between the interior and boundary nodes in the discretization matrix. 
  * We adjust for removing these connections by appropriately modifying
@@ -1126,7 +1304,7 @@ setUpGraph( MPI_Comm               comm,
 
 
 /* --------------------------------------------------------------------
- * Set up the discretization matrix. 
+ * Set up the implicit discretization matrix. 
  * First, we set the stencil values at every node neglecting the 
  * boundary. Then, we correct the matrix stencil at boundary nodes.
  * We have to eliminate the coefficients reaching outside of the domain
@@ -1134,27 +1312,27 @@ setUpGraph( MPI_Comm               comm,
  * the connections between the interior nodes and boundary nodes.
  * -------------------------------------------------------------------- */
 void
-setUpMatrix( MPI_Comm             comm,
-             HYPRE_SStructMatrix *A_ptr,
-             HYPRE_SStructGraph   graph, 
-             int                  sym,
-             int                  object_type,
-             double               K, 
-             double               dx, 
-             double               dy,
-             double               dz, 
-             double               dt,
-             int                 *ilower, 
-             int                 *iupper,
-             int                  nlx, 
-             int                  nly,
-             int                  nlz,
-             int                  px, 
-             int                  py,
-             int                  pz,
-             int                  pi, 
-             int                  pj,
-             int                  pk )   
+setUpImplicitMatrix( MPI_Comm             comm,
+                     HYPRE_SStructMatrix *A_ptr,
+                     HYPRE_SStructGraph   graph, 
+                     int                  sym,
+                     int                  object_type,
+                     double               K, 
+                     double               dx, 
+                     double               dy,
+                     double               dz, 
+                     double               dt,
+                     int                 *ilower, 
+                     int                 *iupper,
+                     int                  nlx, 
+                     int                  nly,
+                     int                  nlz,
+                     int                  px, 
+                     int                  py,
+                     int                  pz,
+                     int                  pi, 
+                     int                  pj,
+                     int                  pk )   
 {
    int i, j, k, m, idx;
 
@@ -1857,6 +2035,259 @@ setUpMatrix( MPI_Comm             comm,
 
 
 /* --------------------------------------------------------------------
+ * Set up the explicit discretization matrix. 
+ * First, we set the stencil values at every node neglecting the 
+ * boundary. Then, we correct the matrix stencil at boundary nodes.
+ * We have to eliminate the coefficients reaching outside of the domain
+ * boundary. 
+ * -------------------------------------------------------------------- */
+void
+setUpExplicitMatrix( MPI_Comm             comm,
+                     HYPRE_SStructMatrix *A_ptr,
+                     HYPRE_SStructGraph   graph, 
+                     int                  sym,
+                     int                  object_type,
+                     double               K, 
+                     double               dx, 
+                     double               dy,
+                     double               dz, 
+                     double               dt,
+                     int                 *ilower, 
+                     int                 *iupper,
+                     int                  nlx, 
+                     int                  nly,
+                     int                  nlz,
+                     int                  px, 
+                     int                  py,
+                     int                  pz,
+                     int                  pi, 
+                     int                  pj,
+                     int                  pk )   
+{
+   int i, j, k, m, idx;
+
+   /* We have one part and one variable. */
+   int part = 0;
+   int var = 0;
+
+   int stencil_indices[7] = {0, 1, 2, 3, 4, 5, 6};
+   int nentries;
+
+   double *values, *bvalues;
+   int bc_ilower[3];
+   int bc_iupper[3];
+
+   HYPRE_SStructMatrix A;
+
+   /* Create an empty matrix object. */
+   HYPRE_SStructMatrixCreate( comm, graph, &A);
+
+   /* Use symmetric storage? The function below is for symmetric stencil
+    * entries (use HYPRE_SStructMatrixSetNSSymmetric for non-stencil 
+    * entries). */
+   HYPRE_SStructMatrixSetSymmetric( A, part, var, var, sym );
+
+   /* Set the object type. */
+   HYPRE_SStructMatrixSetObjectType( A, object_type );
+
+   /* Indicate that the matrix coefficients are ready to be set. */
+   HYPRE_SStructMatrixInitialize( A );
+
+   /* 1. neglect boundaries */
+   /* Set the stencil values. */
+   if (sym == 0)
+   {
+      nentries = 7;
+      values = (double *) malloc( nentries*(nlx*nly*nlz)
+                                          *sizeof(double) );
+
+      /* The order is left-to-right, bottom-to-top, front-to-back */
+      for( m = 0, k = 0; k < nlz; k++ )
+         for( j = 0; j < nly; j++ )
+            for( i = 0; i < nlx; i++, m+=nentries ){
+               for( idx = 1; idx <= 2; idx++ )
+                  values[m+idx] = K*(dt/(dx*dx));
+               for( idx = 3; idx <= 4; idx++ )
+                  values[m+idx] = K*(dt/(dy*dy));
+               for( idx = 5; idx <= 6; idx++ )
+                  values[m+idx] = K*(dt/(dz*dz));
+                     
+               values[m] = 1.0 - 2*K*( (dt/(dx*dx)) + (dt/(dy*dy))
+                                                    + (dt/(dz*dz)) );
+                 }
+
+      HYPRE_SStructMatrixSetBoxValues( A, part, ilower, iupper, var, 
+                                       nentries, stencil_indices, 
+                                       values );
+
+      free(values);
+   }
+   else /* Symmetric storage */
+   {
+      nentries = 4;
+      values = (double *) malloc( nentries*(nlx*nly*nlz)
+                                          *sizeof(double) );
+
+      /* The order is left-to-right, bottom-to-top, front-to-back */
+      for( m = 0, k = 0; k < nlz; k++ )
+         for( j = 0; j < nly; j++ )
+            for( i = 0; i < nlx; i++, m+=nentries ){
+               values[m+1] = K*(dt/(dx*dx));
+               values[m+2] = K*(dt/(dy*dy));
+               values[m+3] = K*(dt/(dz*dz));
+               values[m] = 1.0 - 2*K*( (dt/(dx*dx)) + (dt/(dy*dy))
+                                                    + (dt/(dz*dz)) );
+            }
+      HYPRE_SStructMatrixSetBoxValues( A, part, ilower, iupper, var,
+                                       nentries, stencil_indices, 
+                                       values );
+
+      free(values);
+   }
+
+   /* 2. correct stencils at boundary nodes */     
+   /* Allocate vectors for values on boundary planes */
+   values  = (double *) malloc( nentries*(max3(nlx,nly,nlz)+1)*
+                                (max3(nlx,nly,nlz)+1)*sizeof(double) );
+   bvalues = (double *) malloc( (max3(nlx,nly,nlz)+1)*
+                                (max3(nlx,nly,nlz)+1)*sizeof(double) );     
+       
+   /* a) xy-plane boundaries: z = 0 or z = PI */
+   /* The stencil at the boundary nodes is 1-0-0-0-0-0-0. Because
+    * we have I x_b = u_0. */
+   for( m = 0, j = 0; j < nly; j++ )
+      for( i = 0; i < nlx; i++, m += nentries ){
+         values[m] = 1.0;
+         for( idx = 1; idx < nentries; idx++ )
+            values[m+idx] = 0.0;
+      }
+      
+   /* Processors at z = 0 */
+   if( pk == 0 ){
+      bc_ilower[0] = pi*nlx;
+      bc_ilower[1] = pj*nly;
+      bc_ilower[2] = pk*nlz;
+
+      bc_iupper[0] = bc_ilower[0] + nlx-1;
+      bc_iupper[1] = bc_ilower[1] + nly-1;
+      bc_iupper[2] = bc_ilower[2];
+
+      /* Modify the matrix */
+      HYPRE_SStructMatrixSetBoxValues(A, part, bc_ilower, bc_iupper,
+                                      var, nentries,
+                                      stencil_indices, values);
+   }
+       
+   /* Processors at z = PI */
+   if( pk == pz-1 ){
+      bc_ilower[0] = pi*nlx;
+      bc_ilower[1] = pj*nly;
+      bc_ilower[2] = pk*nlz + nlz-1;
+           
+      bc_iupper[0] = bc_ilower[0] + nlx-1;
+      bc_iupper[1] = bc_ilower[1] + nly-1;
+      bc_iupper[2] = bc_ilower[2];
+           
+      /* Modify the matrix */
+      HYPRE_SStructMatrixSetBoxValues(A, part, bc_ilower, bc_iupper,
+                                      var, nentries,
+                                      stencil_indices, values);
+   }   
+
+   /* b) xz-plane boundaries: y = 0 or y = PI */
+   /* The stencil at the boundary nodes is 1-0-0-0-0. Because
+    * we have I x_b = u_b. */
+   for( m = 0, k = 0; k < nlz; k++ )
+      for( i = 0; i < nlx; i++, m += nentries ){
+         values[m] = 1.0;
+         for( idx = 1; idx < nentries; idx++ )
+            values[m+idx] = 0.0;
+      }
+       
+   /* Processors at y = 0 */
+   if( pj == 0 ){
+      bc_ilower[0] = pi*nlx;
+      bc_ilower[1] = pj*nly;
+      bc_ilower[2] = pk*nlz;
+           
+      bc_iupper[0] = bc_ilower[0] + nlx-1;
+      bc_iupper[1] = bc_ilower[1];
+      bc_iupper[2] = bc_ilower[2] + nlz-1;
+           
+      /* Modify the matrix. */
+      HYPRE_SStructMatrixSetBoxValues(A, part, bc_ilower, bc_iupper,
+                                      var, nentries,
+                                      stencil_indices, values);
+   }
+       
+   /* Processors at y = PI */
+   if( pj == py-1 ){
+      bc_ilower[0] = pi*nlx;
+      bc_ilower[1] = pj*nly + nly-1;
+      bc_ilower[2] = pk*nlz;
+           
+      bc_iupper[0] = bc_ilower[0] + nlx-1;
+      bc_iupper[1] = bc_ilower[1];
+      bc_iupper[2] = bc_ilower[2] + nlz-1;
+           
+      /* Modify the matrix */
+      HYPRE_SStructMatrixSetBoxValues(A, part, bc_ilower, bc_iupper,
+                                      var, nentries,
+                                      stencil_indices, values);
+   }
+       
+   /* c) yz-plane boundaries: x = 0 or x = PI */    
+   /* The stencil at the boundary nodes is 1-0-0-0-0. Because
+    * we have I x_b = u_b. */
+   for( m = 0, k = 0; k < nlz; k++ )
+      for( j = 0; j < nly; j++, m += nentries ){
+         values[m] = 1.0;
+            for( idx = 1; idx < nentries; idx++ )
+               values[m+idx] = 0.0;
+      }
+       
+   /* Processors at x = 0 */
+   if( pi == 0 ){
+      bc_ilower[0] = pi*nlx;
+      bc_ilower[1] = pj*nly;
+      bc_ilower[2] = pk*nlz;
+           
+      bc_iupper[0] = bc_ilower[0];
+      bc_iupper[1] = bc_ilower[1] + nly-1;
+      bc_iupper[2] = bc_ilower[2] + nlz-1;
+           
+      /* Modify the matrix */
+      HYPRE_SStructMatrixSetBoxValues(A, part, bc_ilower, bc_iupper,
+                                      var, nentries,
+                                      stencil_indices, values);
+   }
+       
+   /* Processors at x = PI */
+   if( pi == px-1 ){
+      bc_ilower[0] = pi*nlx + nlx-1;
+      bc_ilower[1] = pj*nly;
+      bc_ilower[2] = pk*nlz;
+           
+      bc_iupper[0] = bc_ilower[0];
+      bc_iupper[1] = bc_ilower[1] + nly-1;
+      bc_iupper[2] = bc_ilower[2] + nlz-1;
+           
+      /* Modify the matrix */
+      HYPRE_SStructMatrixSetBoxValues(A, part, bc_ilower, bc_iupper,
+                                      var, nentries,
+                                      stencil_indices, values);
+   }
+
+   free(values);    
+
+   /* Finalize the matrix assembly. */
+   HYPRE_SStructMatrixAssemble( A );
+
+   *A_ptr = A;
+}
+
+
+/* --------------------------------------------------------------------
  * Set up PFMG solver.
  * -------------------------------------------------------------------- */
 void
@@ -1887,7 +2318,7 @@ setUpStructSolver( MPI_Comm             comm,
 
    /* Set PFMG options. */
    HYPRE_StructPFMGCreate( comm, &solver );
-   HYPRE_StructPFMGSetMaxIter( solver, max_iter );
+   HYPRE_StructPFMGSetMaxIter( solver, 50 );
    HYPRE_StructPFMGSetTol( solver, tol );
    HYPRE_StructPFMGSetRelChange( solver, 0 );
    HYPRE_StructPFMGSetRAPType( solver, rap );
@@ -1900,6 +2331,8 @@ setUpStructSolver( MPI_Comm             comm,
 
    /* Set up PFMG solver. */
    HYPRE_StructPFMGSetup( solver, sA, sb, sx );
+
+   HYPRE_StructPFMGSetMaxIter( solver, max_iter );
 
    *solver_ptr = solver;
    *sA_ptr     = sA;
@@ -1943,7 +2376,7 @@ my_Phi(warp_App     app,
    int part = 0;
    int var = 0;
 
-   int num_iterations;
+   int num_iterations, cfl = 0;
 
    /* -----------------------------------------------------------------
     * Set up the discretization matrix.
@@ -1960,68 +2393,137 @@ my_Phi(warp_App     app,
       }
    }
 
+   /* check CFL condition */
+   if( (app->K)*( (tstop-tstart)/((app->dx)*(app->dx))
+                 +(tstop-tstart)/((app->dy)*(app->dy))
+                 +(tstop-tstart)/((app->dz)*(app->dz)) ) < 0.5 ){
+      cfl = 1;
+   }
+
    if( A_idx == -1.0 ){
       A_idx = i;
       app->nA++;
 /*   printf( "Create new matrix %d\n", A_idx );*/
-      /* No matrix for time step tstop-tstart exists. 
-       * We can add if statement here to compare to spatial step size
-       * and use explicit or implicit scheme. */   
-      /* Add entry to matrix lookup table. */
+      /* No matrix for time step tstop-tstart exists.  
+       * Add entry to matrix lookup table. */
+
       app->dt_A[A_idx] = tstop-tstart;
 
-      /* Set up the discretization matrix. */
-      setUpMatrix( app->comm_x, &(app->A[A_idx]), app->graph, 
-                   app->sym, app->object_type, app->K, app->dx, app->dy,
-                   app->dz, app->dt_A[A_idx], app->ilower_x,  
-                   app->iupper_x, app->nlx, app->nly, app->nlz, app->px, 
-                   app->py, app->pz, app->pi, app->pj, app->pk );
+      /* If we want to use an explicit scheme, check CFL condition 
+       * to determine whether we can still use explicit scheme for
+       * this time step size or if we have to switch to implicit 
+       * scheme. */
+      if( app->explicit && cfl ){
+         /* Set up the explicit discretization matrix. */
+         setUpExplicitMatrix( app->comm_x, &(app->A[A_idx]), app->graph, 
+                              app->sym, app->object_type, app->K, app->dx, 
+                              app->dy, app->dz, app->dt_A[A_idx],  
+                              app->ilower_x, app->iupper_x, app->nlx, 
+                              app->nly, app->nlz, app->px, app->py, 
+                              app->pz, app->pi, app->pj, app->pk );
+
+         app->scheme[A_idx] = 1;
+      }
+      else{
+         /* Set up the implicit discretization matrix. */
+         setUpImplicitMatrix( app->comm_x, &(app->A[A_idx]), app->graph, 
+                              app->sym, app->object_type, app->K, app->dx, 
+                              app->dy, app->dz, app->dt_A[A_idx], 
+                              app->ilower_x, app->iupper_x, app->nlx, 
+                              app->nly, app->nlz, app->px, app->py,
+                              app->pz, app->pi, app->pj, app->pk );
 
       
-      /* Set up the PFMG solver using u->x as dummy vectors. */
-      setUpStructSolver( app->comm_x, &(app->solver[A_idx]), &sA, &sb, 
-                         &sx, app->A[A_idx], u->x, u->x, app->max_iter_x,
-                         app->tol_x, app->rap, app->relax, app->n_pre, 
-                         app->n_post, app->skip );
+         /* Set up the PFMG solver using u->x as dummy vectors. */
+         setUpStructSolver( app->comm_x, &(app->solver[A_idx]), &sA, &sb, 
+                            &sx, app->A[A_idx], u->x, u->x, 
+                            app->max_iter_x, app->tol_x, app->rap, 
+                            app->relax, app->n_pre, app->n_post, 
+                            app->skip );
+      }
    } 
 
-   /* -----------------------------------------------------------------
-    * Set up the right-hand side vector. 
-    * The right-hand side is the solution from the previous time step
-    * modified to incorporate the boundary conditions and the right-
-    * hand side of the PDE (here, we assume a zero RHS of the PDE).
-    * ----------------------------------------------------------------- */
-   values = (double *) malloc( (app->nlx)*(app->nly)*
-                               (app->nlz)*sizeof(double) );
-   HYPRE_SStructVectorGather( u->x );
-   HYPRE_SStructVectorGetBoxValues( u->x, part, app->ilower_x,
-                                    app->iupper_x, var, values );
-   HYPRE_SStructVectorCreate( app->comm_x, app->grid_x, &b );
-   HYPRE_SStructVectorSetObjectType( b, app->object_type );
-   HYPRE_SStructVectorInitialize( b );
-   HYPRE_SStructVectorSetBoxValues( b, part, app->ilower_x,
-                                    app->iupper_x, var, values );
-   free( values );
-   addBoundaryToRHS( b, app->K, app->dx, app->dy, app->dz, tstop-tstart,
-                     app->nlx, app->nly, app->nlz, app->px, app->py, 
-                     app->pz, app->pi, app->pj, app->pk, gzero );
-   /* add infos from RHS of PDE here */ 
+   if( app->explicit && cfl ){
+      /* Set up a vector for the MatVec result and modify the solution
+       * from the previous time step to incorporate the boundary 
+       * conditions. */    
+      values = (double *) malloc( (app->nlx)*(app->nly)*
+                                  (app->nlz)*sizeof(double) );
+      HYPRE_SStructVectorGather( u->x );
+      HYPRE_SStructVectorGetBoxValues( u->x, part, app->ilower_x,
+                                       app->iupper_x, var, values );
+      HYPRE_SStructVectorCreate( app->comm_x, app->grid_x, &b );
+      HYPRE_SStructVectorSetObjectType( b, app->object_type );
+      HYPRE_SStructVectorInitialize( b );
+      HYPRE_SStructVectorSetBoxValues( b, part, app->ilower_x,
+                                       app->iupper_x, var, values );
+      free( values );
 
-   /* -----------------------------------------------------------------
-    * Time integration to next time point: Solve the system Ax = b.
-    * ----------------------------------------------------------------- */
-   HYPRE_SStructMatrixGetObject( app->A[A_idx], (void **) &sA );
-   HYPRE_SStructVectorGetObject( b, (void **) &sb );
-   HYPRE_SStructVectorGetObject( u->x, (void **) &sx );
+      addBoundary( b, app->K, app->dx, app->dy, app->dz, tstop-tstart,
+                   app->nlx, app->nly, app->nlz, app->px, app->py, 
+                   app->pz, app->pi, app->pj, app->pk );
+
+      /* --------------------------------------------------------------
+       * Time integration to next time point: Perform MatVec x = Ab.
+       * -------------------------------------------------------------- */
+      HYPRE_SStructMatrixGetObject( app->A[A_idx], (void **) &sA );
+      HYPRE_SStructVectorGetObject( u->x, (void **) &sx );
+      HYPRE_SStructVectorGetObject( b, (void **) &sb );
+      HYPRE_StructMatrixMatvec( 1, sA, sb, 0, sx );
+
+      /* free memory */
+      HYPRE_SStructVectorDestroy( b );
+   }
+   else{
+      /* --------------------------------------------------------------
+       * Set up the right-hand side vector. 
+       * The right-hand side is the solution from the previous time 
+       * step modified to incorporate the boundary conditions and the 
+       * right-hand side of the PDE (here, we assume a zero RHS of the 
+       * PDE).
+       * -------------------------------------------------------------- */
+      values = (double *) malloc( (app->nlx)*(app->nly)*
+                                  (app->nlz)*sizeof(double) );
+      HYPRE_SStructVectorGather( u->x );
+      HYPRE_SStructVectorGetBoxValues( u->x, part, app->ilower_x,
+                                       app->iupper_x, var, values );
+      HYPRE_SStructVectorCreate( app->comm_x, app->grid_x, &b );
+      HYPRE_SStructVectorSetObjectType( b, app->object_type );
+      HYPRE_SStructVectorInitialize( b );
+      HYPRE_SStructVectorSetBoxValues( b, part, app->ilower_x,
+                                       app->iupper_x, var, values );
+      free( values );
+      addBoundaryToRHS( b, app->K, app->dx, app->dy, app->dz, tstop-tstart,
+                        app->nlx, app->nly, app->nlz, app->px, app->py, 
+                        app->pz, app->pi, app->pj, app->pk, gzero );
+      /* add infos from RHS of PDE here */ 
+
+      /* --------------------------------------------------------------
+       * Time integration to next time point: Solve the system Ax = b.
+       * -------------------------------------------------------------- */
+      HYPRE_SStructMatrixGetObject( app->A[A_idx], (void **) &sA );
+      HYPRE_SStructVectorGetObject( b, (void **) &sb );
+      HYPRE_SStructVectorGetObject( u->x, (void **) &sx );
+
+      /* tolerance-based spatial solves */
+      if( accuracy == 0.0 ){       
+         HYPRE_StructPFMGSetMaxIter( app->solver[A_idx], 50 );
+      }
+
+      /* fixed-iteration spatial solves */
+      if( accuracy == 1.0 ){     
+         HYPRE_StructPFMGSetMaxIter( app->solver[A_idx], app->max_iter_x );
+      }
    
-   HYPRE_StructPFMGSolve( app->solver[A_idx], sA, sb, sx );
-   HYPRE_StructPFMGGetNumIterations( app->solver[A_idx], &num_iterations );
-   app->max_num_iterations[A_idx] = max((app->max_num_iterations[A_idx]),
-                                        num_iterations);
+      HYPRE_StructPFMGSolve( app->solver[A_idx], sA, sb, sx );
+      HYPRE_StructPFMGGetNumIterations( app->solver[A_idx],
+                                        &num_iterations );
+      app->max_num_iterations[A_idx] = max((app->max_num_iterations[A_idx]),
+                                           num_iterations);
 
-   /* free memory */
-   HYPRE_SStructVectorDestroy( b );
-
+      /* free memory */
+      HYPRE_SStructVectorDestroy( b );
+   }
    /* no refinement */
    *rfactor_ptr = 1;
 
@@ -2256,7 +2758,10 @@ my_Write(warp_App     app,
    int var = 0;
 
    /*  damping factor */
-   double damping, damping_nt = 1.0; 
+   double damping, damping_nt = 1.0;  
+
+   /* error norm */
+   double enorm = 0.0;
 
    int i, j, k, m;
    int  pi  = (app->pi);
@@ -2270,12 +2775,22 @@ my_Write(warp_App     app,
 
    /* Write computed solution and true discrete solution to files. */
    if( app->write ){
-      damping = 1.0 / ( 1 + ((2*(app->K)*(app->dt))/
-                             ((app->dx)*(app->dx)))*(1-cos(app->dx)) 
-                          + ((2*(app->K)*(app->dt))/
-                             ((app->dy)*(app->dy)))*(1-cos(app->dy)) 
-                          + ((2*(app->K)*(app->dt))/
-                             ((app->dz)*(app->dz)))*(1-cos(app->dz)));
+      if( app->explicit )
+         /* forward (explicit) Euler */
+         damping = 1 + ((2*(app->K)*(app->dt))/
+                        ((app->dx)*(app->dx)))*(cos(app->dx)-1) 
+                     + ((2*(app->K)*(app->dt))/
+                        ((app->dy)*(app->dy)))*(cos(app->dy)-1) 
+                     + ((2*(app->K)*(app->dt))/
+                        ((app->dz)*(app->dz)))*(cos(app->dz)-1);
+      else
+         /* backward (implicit) Euler */
+         damping = 1.0 / ( 1 + ((2*(app->K)*(app->dt))/
+                                ((app->dx)*(app->dx)))*(1-cos(app->dx)) 
+                             + ((2*(app->K)*(app->dt))/
+                                ((app->dy)*(app->dy)))*(1-cos(app->dy)) 
+                             + ((2*(app->K)*(app->dt))/
+                                ((app->dz)*(app->dz)))*(1-cos(app->dz)));
 
       index = ((t-tstart) / ((tstop-tstart)/ntime) + 0.1);
 
@@ -2294,14 +2809,22 @@ my_Write(warp_App     app,
       m = 0;
       for( k = 0; k < nlz; k++ )
          for( j = 0; j < nly; j++ )
-            for( i = 0; i < nlx; i++ )
-               fprintf(file, "%06d %.14e --- discrete solution %.14e\n", 
+            for( i = 0; i < nlx; i++ ){
+               enorm += pow(values[m++] - 
+                         damping_nt*sin((app->ilower_x[0]+i)*(app->dx))
+                              *sin((app->ilower_x[1]+j)*(app->dy))
+                              *sin((app->ilower_x[2]+k)*(app->dz)),2);
+
+               /*fprintf(file, "%06d %.14e --- discrete solution %.14e\n", 
                        pk*py*px*nlx*nly + pj*px*nlx*nly +
                        pi*nlx + k*px*nlx*py*nly + j*px*nlx + i, 
                        values[m++], 
                        damping_nt*sin((app->ilower_x[0]+i)*(app->dx))
                                  *sin((app->ilower_x[1]+j)*(app->dy))
-                                 *sin((app->ilower_x[2]+k)*(app->dz)));
+                                 *sin((app->ilower_x[2]+k)*(app->dz)));*/
+            }
+      fprintf(file, "%.14e\n", sqrt(enorm));
+
       fflush(file);
       fclose(file);
       free( values );
@@ -2399,7 +2922,7 @@ int main (int argc, char *argv[])
    int        max_levels;
    int        nrelax, nrelax0;
    double     tol;
-   int        cfactor;
+   int        cfactor, cfactor0;
    int        max_iter;
    int        fmg;
 
@@ -2436,9 +2959,9 @@ int main (int argc, char *argv[])
    int rap, relax, skip, max_iter_x;
    double tol_x;
 
-   int nA_max, *max_num_iterations_global;
+   int nA_max, *max_num_iterations_global, *explicit_scheme_global;
 
-   int write;
+   int write, explicit;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -2449,6 +2972,7 @@ int main (int argc, char *argv[])
    nrelax0     = -1;
    tol         = 1.0e-09;
    cfactor     = 2;
+   cfactor0    = -1;
    max_iter    = 100;
    fmg         = 0;
    K           = 1.0;
@@ -2469,6 +2993,7 @@ int main (int argc, char *argv[])
    skip        = 1;
    max_iter_x  = 50;
    tol_x       = 1.0e-09;
+   explicit    = 0;
    write       = 0;
 
    MPI_Comm_rank( comm, &myid );
@@ -2514,6 +3039,10 @@ int main (int argc, char *argv[])
           arg_index++;
           cfactor = atoi(argv[arg_index++]);
       }
+      else if( strcmp(argv[arg_index], "-cf0") == 0 ){
+          arg_index++;
+          cfactor0 = atoi(argv[arg_index++]);
+      }
       else if( strcmp(argv[arg_index], "-mi") == 0 ){
           arg_index++;
           max_iter = atoi(argv[arg_index++]);
@@ -2551,6 +3080,10 @@ int main (int argc, char *argv[])
           arg_index++;
           tol_x = atof(argv[arg_index++]);
       }
+      else if( strcmp(argv[arg_index], "-expl") == 0 ){
+         arg_index++;
+         explicit = 1;
+      }
       else if( strcmp(argv[arg_index], "-write") == 0 ){
          arg_index++;
          write = 1;
@@ -2577,7 +3110,8 @@ int main (int argc, char *argv[])
       printf("  -nu  <nrelax>         : set num F-C relaxations (default: 1)\n");
       printf("  -nu0 <nrelax>         : set num F-C relaxations on level 0\n");
       printf("  -tol <tol>            : set stopping tolerance (default: 1e-09)\n");
-      printf("  -cf  <cfactor>        : set coarsening factor (default: 2)\n");
+      printf("  -cf  <cfactor>        : set coarsening factor (default: 2)\n");   
+      printf("  -cf0  <cfactor>       : set coarsening factor on level 0\n");
       printf("  -mi  <max_iter>       : set max iterations (default: 100)\n");
       printf("  -fmg                  : use FMG cycling\n");
       printf("  -iter <max_iter_x>    : maximum number of PFMG iterations (default: 50)\n"); 
@@ -2593,7 +3127,8 @@ int main (int argc, char *argv[])
       printf("                          2 - R/B Gauss-Seidel (default)\n");
       printf("                          3 - R/B Gauss-Seidel (nonsymmetric)\n");
       printf("  -skip <s>             : skip levels in PFMG (0 or 1)\n");     
-      printf("  -sym <s>              : symmetric storage (1) or not (0)\n");
+      printf("  -sym <s>              : symmetric storage (1) or not (0)\n");  
+      printf("  -expl <e>           : use explicit scheme\n");
       printf("  -write <w>            : save the solution to files\n");
       printf("\n");
    }
@@ -2686,6 +3221,7 @@ int main (int argc, char *argv[])
    (app->skip)        = skip;
    (app->max_iter_x)  = max_iter_x;
    (app->tol_x)       = tol_x;
+   (app->explicit)    = explicit;
    (app->write)       = write;
 
    /* Set the variable types. */
@@ -2714,6 +3250,9 @@ int main (int argc, char *argv[])
     * matrix. */ 
    setUpGraph( app->comm_x, &(app->graph), app->grid_x, app->object_type, 
                app->stencil );
+   
+   /* Initialize the discretization scheme used. */
+   (app->scheme) = (int*) malloc( max_levels*sizeof(int) );
 
    /* Allocate memory for array of discretization matrices. */
    app->A = (HYPRE_SStructMatrix*) malloc( (app->max_levels)*
@@ -2752,7 +3291,8 @@ int main (int argc, char *argv[])
    warp_SetRelTol(core, tol);
 
    warp_SetCFactor(core, -1, cfactor);
-   /*warp_SetCFactor(core,  0, 10);*/
+   if( cfactor0 > -1 )
+      warp_SetCFactor(core,  0, cfactor0);
    
    warp_SetMaxIter(core, max_iter);
    if (fmg)
@@ -2762,11 +3302,11 @@ int main (int argc, char *argv[])
 
    warp_Drive(core);
 
-   warp_PrintStats(core);
-
    /* Stop timer. */
    myendtime = MPI_Wtime();
    mytime    = myendtime - mystarttime;
+
+   warp_PrintStats(core);
 
    /* Print some additional statistics */
    MPI_Comm_rank( comm, &myid );
@@ -2777,11 +3317,16 @@ int main (int argc, char *argv[])
    /* Determine maximum number of iterations in spatial solves
     * on each time level */
    MPI_Allreduce( &(app->nA), &nA_max, 1, MPI_INT, MPI_MAX, comm ); 
-   max_num_iterations_global = (int*) malloc( nA_max*sizeof(int) ); 
-   for( i = 0; i < nA_max; i++ )
+   max_num_iterations_global = (int*) malloc( nA_max*sizeof(int) );
+   explicit_scheme_global = (int*) malloc( nA_max*sizeof(int) );  
+   for( i = 0; i < nA_max; i++ ){
       MPI_Allreduce( &(app->max_num_iterations[i]), 
                      &max_num_iterations_global[i], 1, MPI_INT,
                      MPI_MAX, comm );
+      MPI_Allreduce( &(app->scheme[i]), 
+                     &explicit_scheme_global[i], 1, MPI_INT,
+                     MPI_MAX, comm );
+   }
 
    if( myid == 0 )
    {
@@ -2790,10 +3335,19 @@ int main (int argc, char *argv[])
               (app->px)*(app->nlx), (app->py)*(app->nly) );
       printf( "spatial stopping tolerance : %e\n", 
               app->tol_x );
+      printf( "explicit scheme            : %d\n",
+              app->explicit );
 
       for( i = 0; i < nA_max; i++ ){
          printf( "max iterations on level %d  : %d\n",
                  i, max_num_iterations_global[i] );
+      }
+      if( app->explicit ){
+         printf( "\n" );
+         for( i = 0; i < nA_max; i++ ){
+            printf( "explicit used on level %d   : %d\n",
+                    i, explicit_scheme_global[i] );
+         }
       }
       printf( "\n");
    }
