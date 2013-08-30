@@ -145,6 +145,7 @@ typedef warp_Int
                     warp_Vector   cu,
                     warp_Vector  *fu_ptr);
 
+
 /*--------------------------------------------------------------------------
  * User interface routines
  *--------------------------------------------------------------------------*/
@@ -194,6 +195,24 @@ warp_Destroy(warp_Core  core);
  **/
 warp_Int
 warp_PrintStats(warp_Core  core);
+
+/**
+ * Set loose stopping tolerance for spatial solves on grid level
+ * {\tt level} (level 0 is the finest grid).
+ **/
+warp_Int
+warp_SetLoosexTol(warp_Core  core,
+                  warp_Int   level,
+                  warp_Float loose_tol);
+
+/**
+ * Set tight stopping tolerance for spatial solveson grid level
+ * {\tt level} (level 0 is the finest grid).
+ **/
+warp_Int
+warp_SetTightxTol(warp_Core  core,
+                  warp_Int   level,
+                  warp_Float tight_tol);
 
 /**
  * Set max number of multigrid levels.

@@ -11,6 +11,8 @@
 
 #include "_warp.h"
 
+#define DEBUG 0
+
 warp_Int _warp_error_flag;
 
 /*--------------------------------------------------------------------------
@@ -1019,13 +1021,14 @@ _warp_CFRelax(warp_Core  core,
    warp_Int       nu, nrelax, interval, c_level;
    warp_Float     accuracy;
 
-   if (level == 0)
-   {
-      accuracy = 0.0;
+   if ( level == 0 )
+   {     
+      /*accuracy = _warp_CoreElt(core, accuracy[0].value);*/
+      accuracy = _warp_CoreElt(core, accuracy[0].old_value);
    }
    else
    {
-      accuracy = 1.0;
+      accuracy = _warp_CoreElt(core, accuracy[1].value);
    }
 
    nrelax  = nrels[level];
@@ -1108,11 +1111,15 @@ _warp_FRestrict(warp_Core    core,
 
    if (level == 0)
    {
-      accuracy = 0.0;
+      accuracy = _warp_CoreElt(core, accuracy[0].value);
+      if (accuracy == _warp_CoreElt(core, accuracy[0].tight))
+      {
+         _warp_CoreElt(core, accuracy[0].tight_used) = 1;
+      }
    }
    else
    {
-      accuracy = 1.0;
+      accuracy = _warp_CoreElt(core, accuracy[1].value);
    }
 
    _warp_UCommInit(core, level);
@@ -1195,7 +1202,7 @@ _warp_FRestrict(warp_Core    core,
             _warp_CommWait(core, &recv_handle);
          }
          _warp_CoreFcn(core, clone)(app, c_va[c_ii-1], &c_u);
-         _warp_Phi(core, c_level, c_i, 1.0, 1, c_u, &rfactor);
+         _warp_Phi(core, c_level, c_i, _warp_CoreElt(core, accuracy[1].value), 1, c_u, &rfactor);
          _warp_CoreFcn(core, sum)(app, -1.0, c_u, 1.0, c_wa[c_ii]);
          _warp_CoreFcn(core, free)(app, c_u);
       }
@@ -1256,7 +1263,7 @@ _warp_FInterp(warp_Core  core,
       }
       for (fi = flo; fi <= fhi; fi++)
       {
-         _warp_Step(core, level, fi, 1.0, u);
+         _warp_Step(core, level, fi, _warp_CoreElt(core, accuracy[1].value), u);
          _warp_USetVector(core, level, fi, u);
          e = va[fi-ilower];
          _warp_CoreFcn(core, sum)(app, 1.0, u, -1.0, e);
@@ -1449,11 +1456,22 @@ _warp_FWrite(warp_Core  core,
    warp_App       app      = _warp_CoreElt(core, app);
    _warp_Grid   **grids    = _warp_CoreElt(core, grids);
    warp_Int       ncpoints = _warp_GridElt(grids[level], ncpoints);
+   warp_Float     accuracy;
 
    warp_Vector   u;
    warp_Int      interval, flo, fhi, fi, ci;
 
    _warp_UCommInitF(core, level);
+
+   if (level == 0)
+   {    
+      /*accuracy = _warp_CoreElt(core, accuracy[0].value); */
+      accuracy = _warp_CoreElt(core, accuracy[0].old_value);
+   }
+   else
+   {
+      accuracy = _warp_CoreElt(core, accuracy[1].value);
+   }
 
    /* Start from the right-most interval */
    for (interval = ncpoints; interval > -1; interval--)
@@ -1467,7 +1485,7 @@ _warp_FWrite(warp_Core  core,
       }
       for (fi = flo; fi <= fhi; fi++)
       {
-         _warp_Step(core, level, fi, 0.0, u);
+         _warp_Step(core, level, fi, accuracy, u);
          _warp_USetVector(core, level, fi, u);
          _warp_UWriteVector(core, level, fi, u);
       }
@@ -1510,9 +1528,10 @@ warp_Init(MPI_Comm              comm_world,
           warp_PtFcnBufUnpack   bufunpack,
           warp_Core            *core_ptr)
 {
-   _warp_Core  *core;
-   warp_Int    *nrels;
-   warp_Int     level, max_levels = 30;
+   _warp_Core           *core;
+   warp_Int             *nrels;
+   warp_Int              level, max_levels = 30;
+   _warp_AccuracyHandle *accuracy;
 
    core = _warp_CTAlloc(_warp_Core, 1);
 
@@ -1557,6 +1576,25 @@ warp_Init(MPI_Comm              comm_world,
    _warp_CoreElt(core, rnorm)      = 0.0;
    _warp_CoreElt(core, fmg)        = 0;
 
+   /* Accuracy for spatial solves for using implicit schemes
+    *  - accuracy[0] refers to accuracy on level 0
+    *  - accuracy[1] refers to accuracy on all levels > 0 */
+   accuracy                        = _warp_TAlloc(_warp_AccuracyHandle, 2);
+   accuracy[0].matchF              = 0;
+   accuracy[0].value               = 1.0e-02;
+   accuracy[0].old_value           = 1.0e-02;
+   accuracy[0].loose               = 1.0e-02;
+   accuracy[0].tight               = 1.0e-02;
+   accuracy[0].tight_used          = 0;
+
+   accuracy[1].matchF              = 0;
+   accuracy[1].value               = 1.0e-02;
+   accuracy[1].old_value           = 1.0e-02;
+   accuracy[1].loose               = 1.0e-02;
+   accuracy[1].tight               = 1.0e-02;
+   accuracy[1].tight_used          = 0;
+   _warp_CoreElt(core, accuracy)   = accuracy;
+
    _warp_CoreElt(core, gupper)     = ntime;
 
    _warp_CoreElt(core, rfactors)   = NULL;
@@ -1584,7 +1622,8 @@ warp_Drive(warp_Core  core)
    warp_Int      max_iter = _warp_CoreElt(core, max_iter);
 
    warp_Int      nlevels, iter;
-   warp_Float    rnorm;
+   warp_Float    rnorm, rnorm0;
+   warp_Float    accuracy;
    warp_Int      ilower, iupper;
    warp_Float   *ta;
    warp_Int      level, fmglevel, down, done, i, refined;
@@ -1630,10 +1669,6 @@ warp_Drive(warp_Core  core)
    }
 
    iter = 0;
-   if ( myid == 0 )
-   {
-      printf("initial stopping tolerance = %e\n", tol);
-   }
    while (!done)
    {
       /* Down cycle */
@@ -1651,9 +1686,29 @@ warp_Drive(warp_Core  core)
             _warp_InitGuess(core, level+1);
 
             /* Adjust tolerance */
-            if (rtol && (level == 0) && (iter == 0))
+            if ((level == 0) && (iter == 0))
             {
-               tol *= rnorm;
+               if (rtol){
+                  tol *= rnorm;
+               }
+               rnorm0 = rnorm;
+            }
+
+            if (level == 0)
+            {
+               /* Adjust accuracy of spatial solves for level 0 */
+               _warp_SetAccuracy(rnorm, _warp_CoreElt(core, accuracy[0].loose), 
+                                 _warp_CoreElt(core, accuracy[0].tight),
+                                 _warp_CoreElt(core, accuracy[0].value), tol, &accuracy);
+               _warp_CoreElt(core, accuracy[0].old_value) = _warp_CoreElt(core, accuracy[0].value);
+               _warp_CoreElt(core, accuracy[0].value)     = accuracy;
+               _warp_CoreElt(core, accuracy[0].matchF)    = 1;
+#if DEBUG
+               if ( myid == 0 )
+               {
+                  printf("  **** Accuracy changed to %.2e ****\n", accuracy);
+               }
+#endif
             }
 
             level++;
@@ -1697,11 +1752,13 @@ warp_Drive(warp_Core  core)
             else
             {
                /* Note that this residual is based on an earlier iterate */
+#if DEBUG
                if ( myid == 0 )
                {
-                  printf("|| r_%d || = %e\n", iter, rnorm);
+                  printf("  || r_%d || = %e\n", iter, rnorm);
                }
-               if ((rnorm < tol) || (iter == max_iter-1))
+#endif
+               if (((rnorm < tol) && (_warp_CoreElt(core, accuracy[0].tight_used) == 1)) || (iter == max_iter-1))
                {
                   done = 1;
                }
@@ -1716,11 +1773,6 @@ warp_Drive(warp_Core  core)
             down = 1;
          }
       }
-   }
-
-   if ( myid == 0 )
-   {
-      printf("modified stopping tolerance = %e\n", tol);
    }
 
    /* F-relax and write solution to file */
@@ -1746,6 +1798,7 @@ warp_Destroy(warp_Core  core)
 
       _warp_TFree(_warp_CoreElt(core, nrels));
       _warp_TFree(_warp_CoreElt(core, cfactors));
+      _warp_TFree(_warp_CoreElt(core, accuracy));
       _warp_TFree(_warp_CoreElt(core, rfactors));
       for (level = 0; level < nlevels; level++)
       {
@@ -1802,6 +1855,63 @@ warp_PrintStats(warp_Core  core)
       printf("  iterations           = %d\n", niter);
       printf("  residual norm        = %e\n", rnorm);
       printf("\n");
+   }
+
+   return _warp_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
+warp_SetLoosexTol(warp_Core  core,
+                  warp_Int   level,
+                  warp_Float loose_tol)
+{
+   if (level < 0)
+   {
+      /* Set the loose tolerance on all levels. 
+       * Index 0 corresponds to level 0, index 1 to all levels > 0. */
+      _warp_CoreElt(core, accuracy[0].loose)     = loose_tol;
+      _warp_CoreElt(core, accuracy[1].loose)     = loose_tol;
+
+      /* Initialize the current and old value with loose_tol. */
+      _warp_CoreElt(core, accuracy[0].value)     = loose_tol;
+      _warp_CoreElt(core, accuracy[0].old_value) = loose_tol;
+      
+      _warp_CoreElt(core, accuracy[1].value)     = loose_tol;
+      _warp_CoreElt(core, accuracy[1].old_value) = loose_tol;
+   }
+   else
+   {  
+      /* Set the loose tolerance on level level and initialize
+       * the current and old value for that level with loose_tol. */
+      _warp_CoreElt(core, accuracy[level].loose)     = loose_tol;
+      _warp_CoreElt(core, accuracy[level].value)     = loose_tol;
+      _warp_CoreElt(core, accuracy[level].old_value) = loose_tol;
+   }
+
+   return _warp_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
+warp_SetTightxTol(warp_Core  core,
+                  warp_Int   level,
+                  warp_Float tight_tol)
+{
+   if (level < 0)
+   {
+      /* Set tight tolerance on all levels. */
+      _warp_CoreElt(core, accuracy[0].tight)     = tight_tol;
+      _warp_CoreElt(core, accuracy[1].tight)     = tight_tol;
+   }
+   else
+   {  
+      /* Set tight tolerance on level level. */
+      _warp_CoreElt(core, accuracy[level].tight) = tight_tol;
    }
 
    return _warp_error_flag;

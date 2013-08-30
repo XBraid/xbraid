@@ -64,6 +64,8 @@
 
 #include "vis.c"
 
+#define DEBUG 0
+
 #ifdef M_PI
    #define PI M_PI
 #else
@@ -127,8 +129,8 @@
  *                  relax = 2: R/B Gauss-Seidel (default)
  *                  relax = 3: R/B Gauss-Seidel (non-symmetric)
  *   skip        skip levels in spatial PFMG solver (0 or 1)
- *   max_iter_x  maximum number of spatial MG iterations
- *   tol_x       stopping tolerance for spatial MG
+ *   max_iter_x  expensive and cheap maximum number of spatial MG iterations
+ *   tol_x       loose and tight stopping tolerance for spatial MG
  *   explicit    use explicit discretization (1) or not (0)
  *   scheme      int array of integration scheme used: explicit or
  *               implicit 
@@ -165,8 +167,8 @@ typedef struct _warp_App_struct {
    int                    *max_num_iterations;
    int                     n_pre, n_post;
    int                     rap, relax, skip;
-   int                     max_iter_x;
-   double                  tol_x;
+   int                    *max_iter_x;
+   double                 *tol_x;
    int                    *scheme;
    int                     explicit;
    int                     write;
@@ -185,6 +187,29 @@ typedef struct _warp_Vector_struct
 
 int max( int a, int b ){
   return (a >= b ? a : b );
+}
+
+
+int GetDistribution_x( int    npoints,
+                       int    nprocs,
+                       int    proc,
+                       int   *ilower_ptr,
+                       int   *iupper_ptr ){
+   int  ilower, iupper;
+   int  quo, rem, p;
+
+   quo = npoints/nprocs;
+   rem = npoints%nprocs;
+
+   p = proc;
+   ilower = p*quo + (p < rem ? p : rem);
+   p = proc+1;
+   iupper = p*quo + (p < rem ? p : rem) - 1;
+
+   *ilower_ptr = ilower;
+   *iupper_ptr = iupper;
+
+   return 0;
 }
 
 /* --------------------------------------------------------------------
@@ -212,6 +237,7 @@ addBoundary( HYPRE_SStructVector  b,
              double               dx, 
              double               dy, 
              double               dt,
+             int                 *ilower,
              int                  nlx, 
              int                  nly,
              int                  px, 
@@ -236,8 +262,8 @@ addBoundary( HYPRE_SStructVector  b,
    /* a) boundaries y = 0 or y = PI */
    /* Processors at y = 0 */
    if (pj == 0){
-      bc_ilower[0] = pi*nlx;
-      bc_ilower[1] = pj*nly;
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1];
            
       bc_iupper[0] = bc_ilower[0] + nlx-1;
       bc_iupper[1] = bc_ilower[1];
@@ -253,8 +279,8 @@ addBoundary( HYPRE_SStructVector  b,
        
    /* Processors at y = PI */
    if (pj == py-1){
-      bc_ilower[0] = pi*nlx;
-      bc_ilower[1] = pj*nly + nly-1;
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1] + nly-1;
            
       bc_iupper[0] = bc_ilower[0] + nlx-1;
       bc_iupper[1] = bc_ilower[1];
@@ -271,8 +297,8 @@ addBoundary( HYPRE_SStructVector  b,
    /* b) boundaries x = 0 or x = PI */
    /* Processors at x = 0 */
    if (pi == 0){
-      bc_ilower[0] = pi*nlx;
-      bc_ilower[1] = pj*nly;
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1];
            
       bc_iupper[0] = bc_ilower[0];
       bc_iupper[1] = bc_ilower[1] + nly-1;
@@ -288,8 +314,8 @@ addBoundary( HYPRE_SStructVector  b,
        
    /* Processors at x = PI */
    if (pi == px-1){
-      bc_ilower[0] = pi*nlx + nlx-1;
-      bc_ilower[1] = pj*nly;
+      bc_ilower[0] = ilower[0] + nlx-1;
+      bc_ilower[1] = ilower[1];
            
       bc_iupper[0] = bc_ilower[0];
       bc_iupper[1] = bc_ilower[1] + nly-1;
@@ -323,6 +349,7 @@ addBoundaryToRHS( HYPRE_SStructVector  b,
                   double               dx, 
                   double               dy, 
                   double               dt,
+                  int                 *ilower,
                   int                  nlx, 
                   int                  nly,
                   int                  px, 
@@ -349,8 +376,8 @@ addBoundaryToRHS( HYPRE_SStructVector  b,
    /* a) boundaries y = 0 or y = PI */
    /* Processors at y = 0 */
    if (pj == 0){
-      bc_ilower[0] = pi*nlx;
-      bc_ilower[1] = pj*nly;
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1];
            
       bc_iupper[0] = bc_ilower[0] + nlx-1;
       bc_iupper[1] = bc_ilower[1];
@@ -366,8 +393,8 @@ addBoundaryToRHS( HYPRE_SStructVector  b,
        
    /* Processors at y = PI */
    if (pj == py-1){
-      bc_ilower[0] = pi*nlx;
-      bc_ilower[1] = pj*nly + nly-1;
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1] + nly-1;
            
       bc_iupper[0] = bc_ilower[0] + nlx-1;
       bc_iupper[1] = bc_ilower[1];
@@ -384,8 +411,8 @@ addBoundaryToRHS( HYPRE_SStructVector  b,
    /* b) boundaries x = 0 or x = PI */
    /* Processors at x = 0 */
    if (pi == 0){
-      bc_ilower[0] = pi*nlx;
-      bc_ilower[1] = pj*nly;
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1];
            
       bc_iupper[0] = bc_ilower[0];
       bc_iupper[1] = bc_ilower[1] + nly-1;
@@ -401,8 +428,8 @@ addBoundaryToRHS( HYPRE_SStructVector  b,
        
    /* Processors at x = PI */
    if (pi == px-1){
-      bc_ilower[0] = pi*nlx + nlx-1;
-      bc_ilower[1] = pj*nly;
+      bc_ilower[0] = ilower[0] + nlx-1;
+      bc_ilower[1] = ilower[1];
            
       bc_iupper[0] = bc_ilower[0];
       bc_iupper[1] = bc_ilower[1] + nly-1;
@@ -433,8 +460,8 @@ addBoundaryToRHS( HYPRE_SStructVector  b,
       /* Neighbors of boundary on same processor */
       if( (nly > 1) && (pj == 0) )
       {
-         bc_ilower[0] = pi*nlx;
-         bc_ilower[1] = pj*nly + 1;
+         bc_ilower[0] = ilower[0];
+         bc_ilower[1] = ilower[1] + 1;
            
          bc_iupper[0] = bc_ilower[0] + nlx-1;
          bc_iupper[1] = bc_ilower[1];
@@ -465,8 +492,8 @@ addBoundaryToRHS( HYPRE_SStructVector  b,
       /* Neighbors of boundary on neighboring processor */
       if( (nly == 1) && (pj == 1) )
       {
-         bc_ilower[0] = pi*nlx;
-         bc_ilower[1] = pj*nly;
+         bc_ilower[0] = ilower[0];
+         bc_ilower[1] = ilower[1];
            
          bc_iupper[0] = bc_ilower[0] + nlx-1;
          bc_iupper[1] = bc_ilower[1];
@@ -505,8 +532,8 @@ addBoundaryToRHS( HYPRE_SStructVector  b,
       /* Neighbors of boundary on same processor */
       if( (nly > 1) && (pj == py-1) )
       {
-         bc_ilower[0] = pi*nlx;
-         bc_ilower[1] = pj*nly + nly-1 - 1;
+         bc_ilower[0] = ilower[0];
+         bc_ilower[1] = ilower[1] + nly-1 - 1;
            
          bc_iupper[0] = bc_ilower[0] + nlx-1;
          bc_iupper[1] = bc_ilower[1];
@@ -537,8 +564,8 @@ addBoundaryToRHS( HYPRE_SStructVector  b,
       /* Neighbors of boundary on neighboring processor */
       if( (nly == 1) && (pj == py-2) )
       {
-         bc_ilower[0] = pi*nlx;
-         bc_ilower[1] = pj*nly + nly-1;
+         bc_ilower[0] = ilower[0];
+         bc_ilower[1] = ilower[1] + nly-1;
            
          bc_iupper[0] = bc_ilower[0] + nlx-1;
          bc_iupper[1] = bc_ilower[1];
@@ -577,8 +604,8 @@ addBoundaryToRHS( HYPRE_SStructVector  b,
       /* Neighbors of boundary on same processor */
       if( (nlx > 1) && (pi == 0) )
       {
-         bc_ilower[0] = pi*nlx + 1;
-         bc_ilower[1] = pj*nly;
+         bc_ilower[0] = ilower[0] + 1;
+         bc_ilower[1] = ilower[1];
            
          bc_iupper[0] = bc_ilower[0];
          bc_iupper[1] = bc_ilower[1] + nly-1;
@@ -609,8 +636,8 @@ addBoundaryToRHS( HYPRE_SStructVector  b,
       /* Neighbors of boundary on neighboring processor */
       if( (nlx == 1) && (pi == 1) )
       {
-         bc_ilower[0] = pi*nlx;
-         bc_ilower[1] = pj*nly;
+         bc_ilower[0] = ilower[0];
+         bc_ilower[1] = ilower[1];
           
          bc_iupper[0] = bc_ilower[0];
          bc_iupper[1] = bc_ilower[1] + nly-1;
@@ -649,8 +676,8 @@ addBoundaryToRHS( HYPRE_SStructVector  b,
       /* Neighbors of boundary on same processor */
       if( (nlx > 1) && (pi == px-1) )
       {
-         bc_ilower[0] = pi*nlx + nlx-1 - 1;
-         bc_ilower[1] = pj*nly;
+         bc_ilower[0] = ilower[0] + nlx-1 - 1;
+         bc_ilower[1] = ilower[1];
            
          bc_iupper[0] = bc_ilower[0];
          bc_iupper[1] = bc_ilower[1] + nly-1;
@@ -681,8 +708,8 @@ addBoundaryToRHS( HYPRE_SStructVector  b,
       /* Neighbors of boundary on neighboring processor */
       if( (nlx == 1) && (pi == px-2) )
       {
-         bc_ilower[0] = pi*nlx + nlx-1;
-         bc_ilower[1] = pj*nly;
+         bc_ilower[0] = ilower[0] + nlx-1;
+         bc_ilower[1] = ilower[1];
            
          bc_iupper[0] = bc_ilower[0];
          bc_iupper[1] = bc_ilower[1] + nly-1;
@@ -951,8 +978,8 @@ setUpImplicitMatrix( MPI_Comm             comm,
        
    /* Processors at y = 0 */
    if( pj == 0 ){
-      bc_ilower[0] = pi*nlx;
-      bc_ilower[1] = pj*nly;
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1];
            
       bc_iupper[0] = bc_ilower[0] + nlx-1;
       bc_iupper[1] = bc_ilower[1];
@@ -965,8 +992,8 @@ setUpImplicitMatrix( MPI_Comm             comm,
        
    /* Processors at y = PI */
    if( pj == py-1 ){
-      bc_ilower[0] = pi*nlx;
-      bc_ilower[1] = pj*nly + nly-1;
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1] + nly-1;
            
       bc_iupper[0] = bc_ilower[0] + nlx-1;
       bc_iupper[1] = bc_ilower[1];
@@ -988,8 +1015,8 @@ setUpImplicitMatrix( MPI_Comm             comm,
        
    /* Processors at x = 0 */
    if( pi == 0 ){
-      bc_ilower[0] = pi*nlx;
-      bc_ilower[1] = pj*nly;
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1];
            
       bc_iupper[0] = bc_ilower[0];
       bc_iupper[1] = bc_ilower[1] + nly-1;
@@ -1002,8 +1029,8 @@ setUpImplicitMatrix( MPI_Comm             comm,
        
    /* Processors at x = PI */
    if( pi == px-1 ){
-      bc_ilower[0] = pi*nlx + nlx-1;
-      bc_ilower[1] = pj*nly;
+      bc_ilower[0] = ilower[0] + nlx-1;
+      bc_ilower[1] = ilower[1];
            
       bc_iupper[0] = bc_ilower[0];
       bc_iupper[1] = bc_ilower[1] + nly-1;
@@ -1036,8 +1063,8 @@ setUpImplicitMatrix( MPI_Comm             comm,
    /* Neighbors of boundary on same processor. */
    if( (nly > 1) && (pj == 0) && (sym == 0) )
    {
-      bc_ilower[0] = pi*nlx;
-      bc_ilower[1] = pj*nly + 1;
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1] + 1;
            
       bc_iupper[0] = bc_ilower[0] + nlx-1;
       bc_iupper[1] = bc_ilower[1];
@@ -1062,8 +1089,8 @@ setUpImplicitMatrix( MPI_Comm             comm,
    /* Neighbors of boundary on neighboring processor. */
    if( (nly == 1) && (pj == 1) && (sym == 0) )
    {
-      bc_ilower[0] = pi*nlx;
-      bc_ilower[1] = pj*nly;
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1];
            
       bc_iupper[0] = bc_ilower[0] + nlx-1;
       bc_iupper[1] = bc_ilower[1];
@@ -1095,8 +1122,8 @@ setUpImplicitMatrix( MPI_Comm             comm,
    /* Neighbors of boundary on same processor */
    if( (nly > 1) && (pj == py-1) )
    {
-      bc_ilower[0] = pi*nlx;
-      bc_ilower[1] = pj*nly + nly-1 - 1;
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1] + nly-1 - 1;
            
       bc_iupper[0] = bc_ilower[0] + nlx-1;
       bc_iupper[1] = bc_ilower[1];
@@ -1124,8 +1151,8 @@ setUpImplicitMatrix( MPI_Comm             comm,
    /* Neighbors of boundary on neighboring processor */
    if( (nly == 1) && (pj == py-2) )
    {
-      bc_ilower[0] = pi*nlx;
-      bc_ilower[1] = pj*nly + nly-1;
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1] + nly-1;
            
       bc_iupper[0] = bc_ilower[0] + nlx-1;
       bc_iupper[1] = bc_ilower[1];
@@ -1159,8 +1186,8 @@ setUpImplicitMatrix( MPI_Comm             comm,
    /* Neighbors of boundary on same processor */
    if( (nlx > 1) && (pi == 0) && (sym == 0) )
    {
-      bc_ilower[0] = pi*nlx + 1;
-      bc_ilower[1] = pj*nly;
+      bc_ilower[0] = ilower[0] + 1;
+      bc_ilower[1] = ilower[1];
            
       bc_iupper[0] = bc_ilower[0];
       bc_iupper[1] = bc_ilower[1] + nly-1;
@@ -1185,8 +1212,8 @@ setUpImplicitMatrix( MPI_Comm             comm,
    /* Neighbors of boundary on neighboring processor */
    if( (nlx == 1) && (pi == 1) && (sym == 0) )
    {
-      bc_ilower[0] = pi*nlx;
-      bc_ilower[1] = pj*nly;
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1];
            
       bc_iupper[0] = bc_ilower[0];
       bc_iupper[1] = bc_ilower[1] + nly-1;
@@ -1218,8 +1245,8 @@ setUpImplicitMatrix( MPI_Comm             comm,
    /* Neighbors of boundary on same processor */
    if( (nlx > 1) && (pi == px-1) )
    {
-      bc_ilower[0] = pi*nlx + nlx-1 - 1;
-      bc_ilower[1] = pj*nly;
+      bc_ilower[0] = ilower[0] + nlx-1 - 1;
+      bc_ilower[1] = ilower[1];
            
       bc_iupper[0] = bc_ilower[0];
       bc_iupper[1] = bc_ilower[1] + nly-1;
@@ -1246,8 +1273,8 @@ setUpImplicitMatrix( MPI_Comm             comm,
    /* Neighbors of boundary on neighboring processor */
    if( (nlx == 1) && (pi == px-2) )
    {
-      bc_ilower[0] = pi*nlx + nlx-1;
-      bc_ilower[1] = pj*nly;
+      bc_ilower[0] = ilower[0] + nlx-1;
+      bc_ilower[1] = ilower[1];
            
       bc_iupper[0] = bc_ilower[0];
       bc_iupper[1] = bc_ilower[1] + nly-1;
@@ -1396,8 +1423,8 @@ setUpExplicitMatrix( MPI_Comm             comm,
        
    /* Processors at y = 0 */
    if( pj == 0 ){
-      bc_ilower[0] = pi*nlx;
-      bc_ilower[1] = pj*nly;
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1];
            
       bc_iupper[0] = bc_ilower[0] + nlx-1;
       bc_iupper[1] = bc_ilower[1];
@@ -1410,8 +1437,8 @@ setUpExplicitMatrix( MPI_Comm             comm,
        
    /* Processors at y = PI */
    if( pj == py-1 ){
-      bc_ilower[0] = pi*nlx;
-      bc_ilower[1] = pj*nly + nly-1;
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1] + nly-1;
            
       bc_iupper[0] = bc_ilower[0] + nlx-1;
       bc_iupper[1] = bc_ilower[1];
@@ -1433,8 +1460,8 @@ setUpExplicitMatrix( MPI_Comm             comm,
        
    /* Processors at x = 0 */
    if( pi == 0 ){
-      bc_ilower[0] = pi*nlx;
-      bc_ilower[1] = pj*nly;
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1];
            
       bc_iupper[0] = bc_ilower[0];
       bc_iupper[1] = bc_ilower[1] + nly-1;
@@ -1447,8 +1474,8 @@ setUpExplicitMatrix( MPI_Comm             comm,
        
    /* Processors at x = PI */
    if( pi == px-1 ){
-      bc_ilower[0] = pi*nlx + nlx-1;
-      bc_ilower[1] = pj*nly;
+      bc_ilower[0] = ilower[0] + nlx-1;
+      bc_ilower[1] = ilower[1];
            
       bc_iupper[0] = bc_ilower[0];
       bc_iupper[1] = bc_ilower[1] + nly-1;
@@ -1583,7 +1610,9 @@ my_Phi(warp_App     app,
    if( A_idx == -1.0 ){
       A_idx = i;
       app->nA++;
-  /* printf( "Create new matrix %d\n", A_idx ); */
+#if DEBUG
+      printf( "Create new matrix %d\n", A_idx );
+#endif
       /* No matrix for time step tstop-tstart exists. 
        * Add entry to matrix lookup table. */   
       
@@ -1615,7 +1644,7 @@ my_Phi(warp_App     app,
          /* Set up the PFMG solver using u->x as dummy vectors. */
          setUpStructSolver( app->comm_x, &(app->solver[A_idx]), &sA, &sb, 
                             &sx, app->A[A_idx], u->x, u->x, 
-                            app->max_iter_x, app->tol_x, app->rap,
+                            app->max_iter_x[0], app->tol_x[0], app->rap,
                             app->relax, app->n_pre, app->n_post, 
                             app->skip );
       }
@@ -1637,7 +1666,7 @@ my_Phi(warp_App     app,
       free( values );
 
       addBoundary( b, app->K, app->dx, app->dy, tstop-tstart,
-                   app->nlx, app->nly, app->px, app->py, 
+                   app->ilower_x, app->nlx, app->nly, app->px, app->py, 
                    app->pi, app->pj );
 
       /* --------------------------------------------------------------
@@ -1670,8 +1699,8 @@ my_Phi(warp_App     app,
                                        app->iupper_x, var, values );
       free( values );
       addBoundaryToRHS( b, app->K, app->dx, app->dy, tstop-tstart,
-                        app->nlx, app->nly, app->px, app->py, 
-                        app->pi, app->pj, gzero );
+                        app->ilower_x, app->nlx, app->nly, app->px, 
+                        app->py, app->pi, app->pj, gzero );
       /* add infos from RHS of PDE here */ 
 
       /* --------------------------------------------------------------
@@ -1681,19 +1710,79 @@ my_Phi(warp_App     app,
       HYPRE_SStructVectorGetObject( b, (void **) &sb );
       HYPRE_SStructVectorGetObject( u->x, (void **) &sx );
 
-      /* tolerance-based spatial solves */
-      if( accuracy == 0.0 ){       
-         HYPRE_StructPFMGSetMaxIter( app->solver[A_idx], 50 );
+#if 0
+      /* most accurate spatial solves */
+      if( accuracy == 0.0 ){   
+         /* tolerance-based accuracy */
+         HYPRE_StructPFMGSetTol( app->solver[A_idx], app->tol_x[0] );
+
+         /* make sure to change the maximum number of iterations */
+         HYPRE_StructPFMGSetMaxIter( app->solver[A_idx], 
+                                     app->max_iter_x[0] );
       }
 
-      /* fixed-iteration spatial solves */
-      if( accuracy == 1.0 ){     
-         HYPRE_StructPFMGSetMaxIter( app->solver[A_idx], app->max_iter_x );
+      /* somewhat accurate spatial solves */
+      if( accuracy == 0.5 ){    
+         /* tolerance-based accuracy */
+         HYPRE_StructPFMGSetTol( app->solver[A_idx], app->tol_x[1] );
+
+         /* fixed-iteration based accuracy */  
+         HYPRE_StructPFMGSetMaxIter( app->solver[A_idx], 
+                                     app->max_iter_x[1] );
+      }
+
+      /* inaccurate tolerance-based spatial solves */
+      if( (accuracy == 1.0) && (A_idx == 0) ){        
+         /* tolerance-based accuracy */
+         HYPRE_StructPFMGSetTol( app->solver[A_idx], app->tol_x[2] );
+
+         /* fixed-iteration based accuracy */
+         HYPRE_StructPFMGSetMaxIter( app->solver[A_idx], 
+                                     app->max_iter_x[2] );
+      }
+
+      /* coarse levels */
+      if( A_idx > 0 ){     
+         /* tolerance-based accuracy */
+         HYPRE_StructPFMGSetTol( app->solver[A_idx], 1.0e-02 );
+
+         /* fixed-iteration based accuracy 
+         HYPRE_StructPFMGSetMaxIter( app->solver[A_idx], 
+                                     3 );*/
+      }
+      else
+         HYPRE_StructPFMGSetTol( app->solver[A_idx], accuracy );
+#endif
+ 
+      HYPRE_StructPFMGSetTol( app->solver[A_idx], accuracy );
+
+      if( A_idx == 0 ){
+         /* Fine level: use expensive max iters. */
+         HYPRE_StructPFMGSetMaxIter( app->solver[A_idx], 
+                                     app->max_iter_x[0] );
+      }
+      else{
+         /* Coarse level: use cheap max iters. */
+         HYPRE_StructPFMGSetMaxIter( app->solver[A_idx], 
+                                     app->max_iter_x[1] );
       }
 
       HYPRE_StructPFMGSolve( app->solver[A_idx], sA, sb, sx );
       HYPRE_StructPFMGGetNumIterations( app->solver[A_idx], 
                                         &num_iterations );
+
+#if DEBUG
+      {
+         int myid;
+         MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+         if( myid == 0 )
+            if( A_idx == 0 )
+               printf( "tstart = %f: number of PFMG iterations: %d\n", 
+                       tstart, num_iterations );
+
+      }
+#endif
+
       app->max_num_iterations[A_idx] = max((app->max_num_iterations[A_idx]),
                                            num_iterations);
 
@@ -1749,7 +1838,7 @@ my_Init(warp_App     app,
       /* Random between 0 and 1 */
       for( m = 0; m < ((app->nlx)*(app->nly)); m++ )
          /* Random between 0 and 1 */
-         values[m] = rand()/RAND_MAX;
+         values[m] = ((double)rand())/RAND_MAX;
    }
    for( part = 0; part < app->nparts; part++ )
       for( var = 0; var < app->nvars; var++ )
@@ -2010,9 +2099,10 @@ my_Write(warp_App     app,
    if( app->vis ){ 
       MPI_Comm_rank(app->comm_x, &myid);
 
-      if( (t == app->tstart) || 
+      /*if( (t == app->tstart) || 
           (t == app->tstart + ((app->nt)/2)*(app->dt)) || 
-          (t == app->tstop) ){
+          (t == app->tstop) ){*/
+      if( t == app->tstop ){
          values = (double *) malloc( nlx*nly*sizeof(double) );
          HYPRE_SStructVectorGetBoxValues( u->x, part, app->ilower_x, 
                                           app->iupper_x, var, values );
@@ -2033,7 +2123,7 @@ my_Write(warp_App     app,
          free( values );
          HYPRE_SStructVectorAssemble( e );
 
-         if( t == app->tstart ){
+         /*if( t == app->tstart ){
             GLVis_PrintSStructGrid( app->grid_x, "drive-02_mesh", 
                                     myid, NULL, NULL );
             GLVis_PrintSStructVector( e, 0, "drive-02_err_t0", myid );
@@ -2043,11 +2133,13 @@ my_Write(warp_App     app,
          if( t == app->tstart + ((app->nt)/2)*(app->dt) ){
             GLVis_PrintSStructVector( e, 0, "drive-02_err_tm", myid );
             GLVis_PrintSStructVector( u->x, 0, "drive-02_sol_tm", myid );
-         }
+         }*/
 
          if( t == app->tstop ){
-            GLVis_PrintSStructVector( e, 0, "drive-02_err_tn", myid );
-            GLVis_PrintSStructVector( u->x, 0, "drive-02_sol_tn", myid );
+            GLVis_PrintSStructGrid( app->grid_x, "drive-02_mesh", 
+                                    myid, NULL, NULL );
+            GLVis_PrintSStructVector( e, 0, "drive-02_err_tstop", myid );
+            GLVis_PrintSStructVector( u->x, 0, "drive-02_sol_tstop", myid );
          }
 
          HYPRE_SStructVectorDestroy( e );
@@ -2137,7 +2229,7 @@ my_BufUnpack(warp_App     app,
  * -------------------------------------------------------------------- */
 int main (int argc, char *argv[])
 {
-   int i;
+   int i, level;
    int arg_index;
    int print_usage = 0;
 
@@ -2161,10 +2253,11 @@ int main (int argc, char *argv[])
    /* diffusion coefficient */
    double K; 
 
-   int nlx, nly;
+   int nx, ny, nlx, nly;
    double tstart, tstop;
    int nt;
-   double dx, dy, dt;
+   double dx, dy, dt, lambda;
+   int ilower_x[2], iupper_x[2];
 
    /* We have one part and one variable. */
    int nparts = 1;
@@ -2180,8 +2273,8 @@ int main (int argc, char *argv[])
    int pi, pj;
 
    int n_pre, n_post;
-   int rap, relax, skip, max_iter_x;
-   double tol_x;
+   int rap, relax, skip, max_iter_x[2];
+   double tol_x[2], tol_x_coarse;
 
    int nA_max, *max_num_iterations_global, *explicit_scheme_global;
 
@@ -2191,34 +2284,40 @@ int main (int argc, char *argv[])
    MPI_Init(&argc, &argv);
 
    /* Default parameters. */
-   comm        = MPI_COMM_WORLD;
-   max_levels  = 1;
-   nrelax      = 1;
-   nrelax0     = -1;
-   tol         = 1.0e-09;
-   cfactor     = 2;
-   cfactor0    = -1;
-   max_iter    = 100;
-   fmg         = 0;
-   K           = 1.0;
-   nlx         = 16;
-   nly         = 16;
-   tstart      = 0.0;
-   nt          = 32;
-   sym         = 0;
-   px          = 1;
-   py          = 1;
-   pt          = 1;  
-   n_pre       = 1;
-   n_post      = 1;
-   rap         = 1;
-   relax       = 3;
-   skip        = 1;
-   max_iter_x  = 50;
-   tol_x       = 1.0e-09;
-   explicit    = 0;
-   write       = 0;
-   vis         = 0;
+   comm                = MPI_COMM_WORLD;
+   max_levels          = 1;
+   nrelax              = 1;
+   nrelax0             = -1;
+   tol                 = 1.0e-09;
+   cfactor             = 2;
+   cfactor0            = -1;
+   max_iter            = 100;
+   fmg                 = 0;
+   K                   = 1.0;
+   nx                  = 16;
+   ny                  = 16;
+   nlx                 = 16;
+   nly                 = 16;
+   tstart              = 0.0;
+   nt                  = 32;
+   lambda              = 1.0;
+   sym                 = 0;
+   px                  = 1;
+   py                  = 1;
+   pt                  = 1;  
+   n_pre               = 1;
+   n_post              = 1;
+   rap                 = 1;
+   relax               = 3;
+   skip                = 1;
+   max_iter_x[0]       = 50;
+   max_iter_x[1]       = 50;
+   tol_x[0]            = 1.0e-09;
+   tol_x[1]            = 1.0e-09;
+   tol_x_coarse        = 1.0e-09;
+   explicit            = 0;
+   write               = 0;
+   vis                 = 0;
 
    MPI_Comm_rank( comm, &myid );
    MPI_Comm_size( comm, &num_procs );
@@ -2232,14 +2331,18 @@ int main (int argc, char *argv[])
          py = atoi(argv[arg_index++]);
          pt = atoi(argv[arg_index++]);
       }
-      else if( strcmp(argv[arg_index], "-nl") == 0 ){
+      else if( strcmp(argv[arg_index], "-nx") == 0 ){
          arg_index++;
-         nlx = atoi(argv[arg_index++]);
-	 nly = atoi(argv[arg_index++]);
+         nx = atoi(argv[arg_index++]);
+	 ny = atoi(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-nt") == 0 ){
           arg_index++;
           nt = atoi(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-lambda") == 0 ){
+          arg_index++;
+          lambda = atof(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-ml") == 0 ){
           arg_index++;
@@ -2296,11 +2399,17 @@ int main (int argc, char *argv[])
       }
       else if( strcmp(argv[arg_index], "-iter") == 0 ){
          arg_index++;
-         max_iter_x = atoi(argv[arg_index++]);
+         max_iter_x[0] = atoi(argv[arg_index++]);
+         max_iter_x[1] = atoi(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-tolx") == 0 ){
           arg_index++;
-          tol_x = atof(argv[arg_index++]);
+          tol_x[0] = atof(argv[arg_index++]);
+          tol_x[1] = atof(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-tolxc") == 0 ){
+          arg_index++;
+          tol_x_coarse = atof(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-expl") == 0 ){
          arg_index++;
@@ -2329,34 +2438,36 @@ int main (int argc, char *argv[])
       printf("\n");
       printf("Usage: %s [<options>]\n", argv[0]);
       printf("\n");
-      printf("  -pgrid  <px py pt>  : processors in each dimension (default: 1 1 1)\n");
-      printf("  -nl  <nlx nly>      : problem size per processor (default: 16 16)\n");
-      printf("  -nt  <n>            : number of time steps (default: 32)\n"); 
-      printf("  -ml  <max_levels>   : set max number of time levels (default: 1)\n");
-      printf("  -nu  <nrelax>       : set num F-C relaxations (default: 1)\n");
-      printf("  -nu0 <nrelax>       : set num F-C relaxations on level 0\n");
-      printf("  -tol <tol>          : set stopping tolerance (default: 1e-09)\n");
-      printf("  -cf  <cfactor>      : set coarsening factor (default: 2)\n");   
-      printf("  -cf0  <cfactor>     : set coarsening factor on level 0\n");
-      printf("  -mi  <max_iter>     : set max iterations (default: 100)\n");
-      printf("  -iter <max_iter_x>  : maximum number of PFMG iterations (default: 50)\n"); 
-      printf("  -tolx <tol_x>       : stopping tolerance for PFMG (default: 1e-09)\n"); 
-      printf("  -fmg                : use FMG cycling\n");
-      printf("  -v <n_pre> <n_post> : number of pre and post relaxations in PFMG\n");
-      printf("  -rap <r>            : coarse grid operator type in PFMG\n");
-      printf("                        0 - Galerkin (default)\n");
-      printf("                        1 - non-Galerkin ParFlow operators\n");
-      printf("                        2 - Galerkin, general operators\n");
-      printf("  -relax <r>          : relaxation type in PFMG\n");
-      printf("                        0 - Jacobi\n");
-      printf("                        1 - Weighted Jacobi\n");
-      printf("                        2 - R/B Gauss-Seidel (default)\n");
-      printf("                        3 - R/B Gauss-Seidel (nonsymmetric)\n");
-      printf("  -skip <s>           : skip levels in PFMG (0 or 1)\n");      
-      printf("  -sym <s>            : symmetric storage (1) or not (0)\n");  
-      printf("  -expl <e>           : use explicit scheme\n");
-      printf("  -write              : save the solution/error/error norms to files\n");
-      printf("  -vis                : save the error for GLVis visualization\n");
+      printf("  -pgrid  <px py pt>               : processors in each dimension (default: 1 1 1)\n");
+      printf("  -nx  <nlx nly>                   : spatial problem size in each space dimension (default: 16 16)\n");
+      printf("  -nt  <n>                         : number of time steps (default: 32)\n"); 
+      printf("  -lambda  <lambda>                : ratio dt/(dx^2) (default: 1.0)\n"); 
+      printf("  -ml  <max_levels>                : set max number of time levels (default: 1)\n");
+      printf("  -nu  <nrelax>                    : set num F-C relaxations (default: 1)\n");
+      printf("  -nu0 <nrelax>                    : set num F-C relaxations on level 0\n");
+      printf("  -tol <tol>                       : set stopping tolerance (default: 1e-09)\n");
+      printf("  -cf  <cfactor>                   : set coarsening factor (default: 2)\n");   
+      printf("  -cf0  <cfactor>                  : set aggressive coarsening factor\n");
+      printf("  -mi  <max_iter>                  : set max iterations (default: 100)\n");
+      printf("  -iter <max_iter max_iter_cheap>  : maximum number of PFMG iterations (default: 50 50)\n"); 
+      printf("  -tolx <loose_tol tight_tol>      : loose and tight stopping tolerance for PFMG (default: 1e-09 1e-09)\n"); 
+      printf("  -tolxc <tol_x>                   : stopping tolerance for PFMG on coarse grids (default: 1e-09)\n");
+      printf("  -fmg                             : use FMG cycling\n");
+      printf("  -v <n_pre> <n_post>              : number of pre and post relaxations in PFMG\n");
+      printf("  -rap <r>                         : coarse grid operator type in PFMG\n");
+      printf("                                     0 - Galerkin (default)\n");
+      printf("                                     1 - non-Galerkin ParFlow operators\n");
+      printf("                                     2 - Galerkin, general operators\n");
+      printf("  -relax <r>                       : relaxation type in PFMG\n");
+      printf("                                     0 - Jacobi\n");
+      printf("                                     1 - Weighted Jacobi\n");
+      printf("                                     2 - R/B Gauss-Seidel (default)\n");
+      printf("                                     3 - R/B Gauss-Seidel (nonsymmetric)\n");
+      printf("  -skip <s>                       : skip levels in PFMG (0 or 1)\n");      
+      printf("  -sym <s>                        : symmetric storage (1) or not (0)\n");  
+      printf("  -expl <e>                       : use explicit scheme\n");
+      printf("  -write                          : save the solution/error/error norms to files\n");
+      printf("  -vis                            : save the error for GLVis visualization\n");
       printf("\n");
    }
 
@@ -2389,26 +2500,40 @@ int main (int argc, char *argv[])
    MPI_Comm_split( comm, xcolor, myid, &comm_x );
    MPI_Comm_split( comm, tcolor, myid, &comm_t );
 
+#if DEBUG
    MPI_Comm_size( comm_t, &num_procs );
-/*   printf( "number of processors in time:  %d\n", num_procs );*/
+   printf( "number of processors in time:  %d\n", num_procs );
    MPI_Comm_size( comm_x, &num_procs );
-/*   printf( "number of processors in space: %d\n", num_procs );*/
-   
+   printf( "number of processors in space: %d\n", num_procs );
+#endif
+  
    /* Determine position in the processor grid. */
    MPI_Comm_rank( comm_x, &myid );
    pi = myid % px;
    pj = ( (myid - pi)/px ) % py;
 
+   /* Define the nodes owned by the current processor (each processor's
+    * piece of the global grid) */
+   GetDistribution_x( nx, px, pi, &ilower_x[0], &iupper_x[0] );
+   GetDistribution_x( ny, py, pj, &ilower_x[1], &iupper_x[1] );
+
+   /* Determine local problem size. */
+   nlx = iupper_x[0] - ilower_x[0] + 1;
+   nly = iupper_x[1] - ilower_x[1] + 1;
+
+#if DEBUG
+   printf( "%d = (%d, %d): nlx = %d, nly = %d\n", 
+           myid, pi, pj, nlx, nly ); 
+#endif
+
    /* Compute grid spacing. */
-   dx = PI / (px*nlx - 1);
-   dy = PI / (py*nly - 1);
+   dx = PI / (nx - 1);
+   dy = PI / (ny - 1);
 
    /* Set time-step size. */
-   dt = 1.0*(dx*dx);
+   dt = K*lambda*(dx*dx);
    /* Determine tstop. */
    tstop =  tstart + nt*dt;
-
-/*   printf("Time interval [%.4lf, %.4lf]\n", tstart, tstop);*/
 
    /* -----------------------------------------------------------------
     * Set up App structure.
@@ -2434,30 +2559,37 @@ int main (int argc, char *argv[])
    (app->py)          = py;
    (app->pi)          = pi;
    (app->pj)          = pj;
+   (app->ilower_x[0]) = ilower_x[0];
+   (app->ilower_x[1]) = ilower_x[1];
+   (app->iupper_x[0]) = iupper_x[0];
+   (app->iupper_x[1]) = iupper_x[1];
    (app->object_type) = object_type;
    (app->n_pre)       = n_pre;
    (app->n_post)      = n_post;
    (app->rap)         = rap;
    (app->relax)       = relax;
    (app->skip)        = skip;
-   (app->max_iter_x)  = max_iter_x;
-   (app->tol_x)       = tol_x;
    (app->explicit)    = explicit;
    (app->write)       = write;
    (app->vis)         = vis;
+
+   /* Set the maximum number of PFMG iterations for expensive (index 0)
+    * and cheap (index 1) solves. */
+   (app->max_iter_x)      = (int*) malloc( 2*sizeof(int) );
+   (app->max_iter_x[0])   = max_iter_x[0];
+   (app->max_iter_x[1])   = max_iter_x[1];
+
+   /* Set the loose (index 0) and tight (index 1) stopping tolerance
+    * for PFMG. */
+   (app->tol_x)           = (double*) malloc( 2*sizeof(double) );
+   (app->tol_x[0])        = tol_x[0];
+   (app->tol_x[1])        = tol_x[1];
 
    /* Set the variable types. */
    (app->vartypes)   = (HYPRE_SStructVariable*) malloc( nvars* 
                                          sizeof(HYPRE_SStructVariable) );
    for( var = 0; var < nvars; var++ )
       app->vartypes[var] = HYPRE_SSTRUCT_VARIABLE_CELL;
- 
-   /* Define the nodes owned by the current processor (each processor's
-    * piece of the global grid) */
-   app->ilower_x[0] = pi*nlx;
-   app->ilower_x[1] = pj*nly;
-   app->iupper_x[0] = app->ilower_x[0] + nlx-1;
-   app->iupper_x[1] = app->ilower_x[1] + nly-1;
 
    /* Set up a 2D grid. */
    setUp2Dgrid( app->comm_x, &(app->grid_x), app->dim_x, app->nparts, 
@@ -2502,6 +2634,11 @@ int main (int argc, char *argv[])
              my_Write, my_BufSize, my_BufPack, my_BufUnpack,
              &core);
 
+   warp_SetLoosexTol( core, 0, tol_x[0] );
+   warp_SetLoosexTol( core, 1, tol_x_coarse );
+
+   warp_SetTightxTol( core, 0, tol_x[1] );
+
    warp_SetMaxLevels( core, max_levels );
 
    warp_SetNRelax(core, -1, nrelax);
@@ -2510,11 +2647,18 @@ int main (int argc, char *argv[])
       warp_SetNRelax(core,  0, nrelax0);
    }
 
-   warp_SetRelTol(core, tol);
+   /*warp_SetRelTol(core, tol);*/
+   /*warp_SetAbsTol(core, tol*sqrt(px*nlx*py*nly*(nt+1)) );*/
+   warp_SetAbsTol(core, tol/sqrt(dx*dy*dt));
 
    warp_SetCFactor(core, -1, cfactor);
-   if( cfactor0 > -1 )
-      warp_SetCFactor(core,  0, cfactor0);
+   if( cfactor0 > -1 ){
+      /* Use cfactor0 on all levels until there are < cfactor0 points
+       * on each processor. */
+      level = (int) (log10((nt + 1) / pt) / log10(cfactor0));
+      for( i = 0; i < level; i++ )
+         warp_SetCFactor(core,  i, cfactor0);
+   }
    
    warp_SetMaxIter(core, max_iter);
    if (fmg)
@@ -2553,10 +2697,12 @@ int main (int argc, char *argv[])
    if( myid == 0 )
    {
       printf( "  runtime: %.5lfs\n\n", maxtime );
-      printf( "spatial problem size       : %d x %d\n", 
-              (app->px)*(app->nlx), (app->py)*(app->nly) );
-      printf( "spatial stopping tolerance : %e\n", 
-              app->tol_x );
+      printf( "spatial problem size       : %d x %d\n", nx, ny );
+      printf( "spatial stopping tolerance : %.2e (loose), %.2e (tight), %.2e (coarse levels)\n", 
+              app->tol_x[0], app->tol_x[1], tol_x_coarse );
+      printf( "max spatial iterations     : %d (expensive), %d (cheap)\n", 
+              app->max_iter_x[0], app->max_iter_x[1] );
+      printf( "\n" );
       printf( "explicit scheme            : %d\n",
               app->explicit );
 
@@ -2575,6 +2721,9 @@ int main (int argc, char *argv[])
    }
 
    /* Free memory */
+   free( max_num_iterations_global );
+   free( explicit_scheme_global );
+
    HYPRE_SStructGridDestroy( app->grid_x );
    HYPRE_SStructStencilDestroy( app->stencil );
    HYPRE_SStructGraphDestroy( app->graph );
@@ -2582,11 +2731,15 @@ int main (int argc, char *argv[])
    free( app->dt_A );
    for( i = 0; i < app->nA; i++ ){
       HYPRE_SStructMatrixDestroy( app->A[i] );
-      HYPRE_StructPFMGDestroy( app->solver[i] );
+      if( !explicit_scheme_global[i] )
+         HYPRE_StructPFMGDestroy( app->solver[i] );
    }
    free( app->A );
    free( app->solver );
    free( app->max_num_iterations );
+   free( app->scheme );
+   free( app->max_iter_x );
+   free( app->tol_x );
    free( app );
    warp_Destroy(core);
    MPI_Comm_free( &comm_x );

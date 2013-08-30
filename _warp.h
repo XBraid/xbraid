@@ -39,6 +39,16 @@ typedef struct
 
 typedef struct
 {
+   warp_Int   matchF;
+   warp_Float value;      /* accuracy value */
+   warp_Float old_value;  /* old accuracy value used in FRestrict */
+   warp_Float loose;      /* loose accuracy for spatial solves */
+   warp_Float tight;      /* tight accuracy for spatial solves */
+   warp_Int   tight_used; /* tight accuracy used (1) or not (0) */
+} _warp_AccuracyHandle;
+
+typedef struct
+{
    warp_Int     level;
    warp_Int     ilower, iupper;
    warp_Int     clower, cupper, cfactor, ncpoints;
@@ -63,44 +73,45 @@ typedef struct
 
 typedef struct _warp_Core_struct
 {
-   MPI_Comm             comm_world;
-   MPI_Comm             comm;      /* communicator for the time dimension */
-   warp_Float           tstart;    /* start time */
-   warp_Float           tstop;     /* stop time */
-   warp_Int             ntime;     /* initial number of time intervals */
-   warp_App             app;       /* application data for the user */
+   MPI_Comm              comm_world;
+   MPI_Comm              comm;      /* communicator for the time dimension */
+   warp_Float            tstart;    /* start time */
+   warp_Float            tstop;     /* stop time */
+   warp_Int              ntime;     /* initial number of time intervals */
+   warp_App              app;       /* application data for the user */
 
-   warp_PtFcnPhi        phi;       /* apply phi function */
-   warp_PtFcnInit       init;      /* return an initial solution vector */
-   warp_PtFcnClone      clone;     /* clone a vector */
-   warp_PtFcnFree       free;      /* free up a vector */
-   warp_PtFcnSum        sum;       /* vector sum */
-   warp_PtFcnDot        dot;       /* dot product */
-   warp_PtFcnWrite      write;     /* write the vector */
-   warp_PtFcnBufSize    bufsize;   /* return buffer size */
-   warp_PtFcnBufPack    bufpack;   /* pack a buffer */
-   warp_PtFcnBufUnpack  bufunpack; /* unpack a buffer */
-   warp_PtFcnCoarsen    coarsen;   /* (optional) return a coarsened vector */
-   warp_PtFcnRefine     refine;    /* (optional) return a refined vector */
+   warp_PtFcnPhi         phi;       /* apply phi function */
+   warp_PtFcnInit        init;      /* return an initial solution vector */
+   warp_PtFcnClone       clone;     /* clone a vector */
+   warp_PtFcnFree        free;      /* free up a vector */
+   warp_PtFcnSum         sum;       /* vector sum */
+   warp_PtFcnDot         dot;       /* dot product */
+   warp_PtFcnWrite       write;     /* write the vector */
+   warp_PtFcnBufSize     bufsize;   /* return buffer size */
+   warp_PtFcnBufPack     bufpack;   /* pack a buffer */
+   warp_PtFcnBufUnpack   bufunpack; /* unpack a buffer */
+   warp_PtFcnCoarsen     coarsen;   /* (optional) return a coarsened vector */
+   warp_PtFcnRefine      refine;    /* (optional) return a refined vector */
 
-   warp_Int             max_levels;
-   warp_Float           tol;       /* stopping tolerance */
-   warp_Int             rtol;      /* use relative tolerance */
-   warp_Int            *nrels;     /* number of pre-relaxations on each level */
-   warp_Int             nrdefault; /* default number of pre-relaxations */
-   warp_Int            *cfactors;  /* coarsening factors */
-   warp_Int             cfdefault; /* default coarsening factor */
-   warp_Int             max_iter;
-   warp_Int             niter;     /* number of iterations */
-   warp_Float           rnorm;     /* residual norm */
-   warp_Int             fmg;       /* use FMG cycle */
+   warp_Int              max_levels;
+   warp_Float            tol;       /* stopping tolerance */
+   warp_Int              rtol;      /* use relative tolerance */
+   warp_Int             *nrels;     /* number of pre-relaxations on each level */
+   warp_Int              nrdefault; /* default number of pre-relaxations */
+   warp_Int             *cfactors;  /* coarsening factors */
+   warp_Int              cfdefault; /* default coarsening factor */
+   warp_Int              max_iter;
+   warp_Int              niter;     /* number of iterations */
+   warp_Float            rnorm;     /* residual norm */
+   warp_Int              fmg;       /* use FMG cycle */
+   _warp_AccuracyHandle *accuracy;  /* accuracy of spatial solves on different levels */
 
-   warp_Int             gupper;    /* global upper index on the fine grid */
+   warp_Int              gupper;    /* global upper index on the fine grid */
 
-   warp_Int            *rfactors;  /* refinement factors for finest grid (if any) */
+   warp_Int             *rfactors;  /* refinement factors for finest grid (if any) */
 
-   warp_Int             nlevels;
-   _warp_Grid         **grids;
+   warp_Int              nlevels;
+   _warp_Grid          **grids;
 
 } _warp_Core;
 
@@ -160,6 +171,14 @@ _warp_ProjectInterval( warp_Int   ilower,
                        warp_Int   stride,
                        warp_Int  *pilower,
                        warp_Int  *piupper );
+
+warp_Int
+_warp_SetAccuracy( warp_Float  rnorm,
+                   warp_Float  loose_tol,
+                   warp_Float  tight_tol,
+                   warp_Float  oldAccuracy,
+                   warp_Float  tol,
+                   warp_Float *paccuracy );
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
