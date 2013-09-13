@@ -961,6 +961,11 @@ setUpImplicitMatrix( MPI_Comm             comm,
       free(values);
    }
 
+#if DEBUG
+   printf( "My box: [%d %d] x [%d %d]\n", 
+           ilower[0], iupper[0], ilower[1], iupper[1] );
+#endif
+
    /* 2. correct stencils at boundary nodes */     
    /* Allocate vectors for values on boundary planes */
    values  = (double *) malloc( nentries*( max(nlx,nly)+1 )*
@@ -2256,7 +2261,7 @@ int main (int argc, char *argv[])
    int nx, ny, nlx, nly;
    double tstart, tstop;
    int nt;
-   double dx, dy, dt, lambda;
+   double dx, dy, dt, c;
    int ilower_x[2], iupper_x[2];
 
    /* We have one part and one variable. */
@@ -2300,7 +2305,7 @@ int main (int argc, char *argv[])
    nly                 = 16;
    tstart              = 0.0;
    nt                  = 32;
-   lambda              = 1.0;
+   c                   = 1.0;
    sym                 = 0;
    px                  = 1;
    py                  = 1;
@@ -2340,9 +2345,9 @@ int main (int argc, char *argv[])
           arg_index++;
           nt = atoi(argv[arg_index++]);
       }
-      else if( strcmp(argv[arg_index], "-lambda") == 0 ){
+      else if( strcmp(argv[arg_index], "-c") == 0 ){
           arg_index++;
-          lambda = atof(argv[arg_index++]);
+          c = atof(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-ml") == 0 ){
           arg_index++;
@@ -2441,7 +2446,7 @@ int main (int argc, char *argv[])
       printf("  -pgrid  <px py pt>               : processors in each dimension (default: 1 1 1)\n");
       printf("  -nx  <nlx nly>                   : spatial problem size in each space dimension (default: 16 16)\n");
       printf("  -nt  <n>                         : number of time steps (default: 32)\n"); 
-      printf("  -lambda  <lambda>                : ratio dt/(dx^2) (default: 1.0)\n"); 
+      printf("  -c  <c>                          : ratio dt/(dx^2) (default: 1.0)\n"); 
       printf("  -ml  <max_levels>                : set max number of time levels (default: 1)\n");
       printf("  -nu  <nrelax>                    : set num F-C relaxations (default: 1)\n");
       printf("  -nu0 <nrelax>                    : set num F-C relaxations on level 0\n");
@@ -2531,7 +2536,7 @@ int main (int argc, char *argv[])
    dy = PI / (ny - 1);
 
    /* Set time-step size. */
-   dt = K*lambda*(dx*dx);
+   dt = K*c*(dx*dx);
    /* Determine tstop. */
    tstop =  tstart + nt*dt;
 

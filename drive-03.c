@@ -1442,6 +1442,12 @@ setUpImplicitMatrix( MPI_Comm             comm,
       free(values);
    }
 
+#if DEBUG
+   printf( "My box: [%d %d] x [%d %d] x [%d %d]\n", 
+           ilower[0], iupper[0], ilower[1], iupper[1],
+           ilower[2], iupper[2] );
+#endif
+
    /* 2. correct stencils at boundary nodes */     
    /* Allocate vectors for values on boundary planes */
    values  = (double *) malloc( nentries*(max3(nlx,nly,nlz)+1)*
@@ -2995,7 +3001,7 @@ int main (int argc, char *argv[])
    int nx, ny, nz, nlx, nly, nlz;
    double tstart, tstop;
    int nt;
-   double dx, dy, dz, dt, lambda;
+   double dx, dy, dz, dt, c;
    int ilower_x[3], iupper_x[3];
 
    /* We have one part and one variable. */
@@ -3040,7 +3046,7 @@ int main (int argc, char *argv[])
    nlz                 = 16;
    tstart              = 0.0;
    nt                  = 32;
-   lambda              = 1.0;
+   c                   = 1.0;
    sym                 = 0;
    px                  = 1;
    py                  = 1;
@@ -3082,9 +3088,9 @@ int main (int argc, char *argv[])
           arg_index++;
           nt = atoi(argv[arg_index++]);
       }
-      else if( strcmp(argv[arg_index], "-lambda") == 0 ){
+      else if( strcmp(argv[arg_index], "-c") == 0 ){
           arg_index++;
-          lambda = atof(argv[arg_index++]);
+          c = atof(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-ml") == 0 ){
           arg_index++;
@@ -3175,7 +3181,7 @@ int main (int argc, char *argv[])
       printf("  -pgrid  <px py pz pt>            : processors in each dimension (default: 1 1 1)\n");
       printf("  -nx  <nx ny nz>                  : spatial problem size in each space dimension (default: 16 16)\n");
       printf("  -nt  <n>                         : number of time steps (default: 32)\n");  
-      printf("  -lambda  <lambda>                : ratio dt/(dx^2) (default: 1.0)\n"); 
+      printf("  -c  <c>                          : ratio dt/(dx^2) (default: 1.0)\n"); 
       printf("  -ml  <max_levels>                : set max number of time levels (default: 1)\n");
       printf("  -nu  <nrelax>                    : set num F-C relaxations (default: 1)\n");
       printf("  -nu0 <nrelax>                    : set num F-C relaxations on level 0\n");
@@ -3258,8 +3264,10 @@ int main (int argc, char *argv[])
    nlz = iupper_x[2] - ilower_x[2] + 1;
 
 #if DEBUG
-   printf( "%d = (%d, %d, %d): nlx = %d, nly = %d, nlz = %d\n", 
-           myid, pi, pj, pk, nlx, nly, nlz ); 
+   printf( "%d = (%d, %d, %d): [%d %d] x [%d %d] x [%d % d], nlx = %d, nly = %d, nlz = %d\n", 
+           myid, pi, pj, pk, ilower_x[0], iupper_x[0], 
+           ilower_x[1], iupper_x[1], ilower_x[2], iupper_x[2], 
+           nlx, nly, nlz ); 
 #endif
 
    /* Compute grid spacing. */
@@ -3268,7 +3276,7 @@ int main (int argc, char *argv[])
    dz = PI / (nz - 1);
 
    /* Set time-step size. */
-   dt = K*lambda*(dx*dx);
+   dt = K*c*(dx*dx);
    /* Determine tstop. */
    tstop =  tstart + nt*dt;
 
@@ -3332,15 +3340,6 @@ int main (int argc, char *argv[])
                                          sizeof(HYPRE_SStructVariable) );
    for( var = 0; var < nvars; var++ )
       app->vartypes[var] = HYPRE_SSTRUCT_VARIABLE_CELL;
- 
-   /* Define the nodes owned by the current processor (each processor's
-    * piece of the global grid) */
-   app->ilower_x[0] = pi*nlx;
-   app->ilower_x[1] = pj*nly;
-   app->ilower_x[2] = pk*nlz;
-   app->iupper_x[0] = app->ilower_x[0] + nlx-1;
-   app->iupper_x[1] = app->ilower_x[1] + nly-1;
-   app->iupper_x[2] = app->ilower_x[2] + nlz-1;
 
    /* Set up a 2D grid. */
    setUp3Dgrid( app->comm_x, &(app->grid_x), app->dim_x, app->nparts, 
