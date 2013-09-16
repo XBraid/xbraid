@@ -2823,14 +2823,9 @@ my_Write(warp_App     app,
    double enorm = 0.0;
 
    int i, j, k, m;
-   int  pi  = (app->pi);
-   int  pj  = (app->pj);
-   int  pk  = (app->pk);
-   int  px  = (app->px);
-   int  py  = (app->py);
-   int  nlx = (app->nlx);
-   int  nly = (app->nly);
-   int  nlz = (app->nlz);
+   int nlx = (app->nlx);
+   int nly = (app->nly);
+   int nlz = (app->nlz);
 
    /* Write to files:
     *   - save computed solution and true discrete solution

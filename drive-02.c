@@ -245,7 +245,7 @@ addBoundary( HYPRE_SStructVector  b,
 	     int                  pi, 
              int                  pj )
 {
-   int i, j, m, idx;
+   int i, j;
    
    int bc_ilower[2];
    int bc_iupper[2];
@@ -1577,7 +1577,7 @@ my_Phi(warp_App     app,
        warp_Vector  u,
        int         *rfactor_ptr)
 {
-   int i, m, A_idx;
+   int i, A_idx;
    double *values;
 
    HYPRE_SStructVector b;
@@ -2037,11 +2037,8 @@ my_Write(warp_App     app,
    HYPRE_SStructVector e;
 
    int i, j, m;
-   int  pi  = (app->pi);
-   int  pj  = (app->pj);
-   int  px  = (app->px);
-   int  nlx = (app->nlx);
-   int  nly = (app->nly);
+   int nlx = (app->nlx);
+   int nly = (app->nly);
 
    /* Write to files:
     *   - save computed solution and true discrete solution
@@ -2119,9 +2116,12 @@ my_Write(warp_App     app,
          m = 0;
          for( j = 0; j < nly; j++ )
             for( i = 0; i < nlx; i++ )
-               values[m] = values[m++] - 
+            {
+               values[m] = values[m] - 
                            damping_nt*sin((app->ilower_x[0]+i)*(app->dx))
                                      *sin((app->ilower_x[1]+j)*(app->dy));
+               m++;
+            }
 
          HYPRE_SStructVectorSetBoxValues( e, part, app->ilower_x,
                                           app->iupper_x, var, values );
