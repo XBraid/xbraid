@@ -60,3 +60,13 @@ should not restrict ourselves to only these items.  Anything is on the table.
 - Feedback on the user-provided "refine" approach I am using for building the
   FMG hierarchy and finest mesh would be great.
 
+==========
+
+8/15/2013 Meeting
+
+- Think about the need for g_i.  In a purely nonlinear setting, may not need.
+
+- Consider putting functions in the app structure, so app is not entirely opaque
+  as it it now.
+
+
