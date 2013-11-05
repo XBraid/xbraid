@@ -10,13 +10,18 @@
 #EHEADER**********************************************************************
 
 CC = mpicc -g -Wall
+CXX = mpiCC -g -Wall
 LFLAGS = -lm
 
 # CC = insure -g
 # LFLAGS = -I/home/falgout/codes/mpich2-1.4.1-install/include -L/home/falgout/codes/mpich2-1.4.1-install/lib -Wl,-rpath,/home/falgout/codes/mpich2-1.4.1-install/lib -lmpich -lopa -lmpl -lrt -lpthread  -lstdc++ -lm
 
-HYPRE_DIR = ../warp-hypre/linear_solvers/hypre
+HYPRE_DIR = ../linear_solvers/hypre
 HYPRE_FLAGS = -I$(HYPRE_DIR)/include -L$(HYPRE_DIR)/lib -lHYPRE
+
+MFEM_DIR = ../mfem
+METIS_DIR = ../metis-4.0
+MFEM_FLAGS = -I$(MFEM_DIR) -L$(MFEM_DIR) -lmfem -L$(METIS_DIR) -lmetis
 
 ##################################################################
 # Targets
@@ -26,10 +31,10 @@ WARP_HEADERS = _warp.h warp.h
 
 WARP_FILES = util.c warp.c
 
-all: drive-01 drive-02 drive-03
+all: drive-01 drive-02 drive-03 drive-04
 
 clean: cleanout
-	rm -f *.o drive-01 drive-02 drive-03
+	rm -f *.o drive-01 drive-02 drive-03 drive-04
 cleanout:
 	rm -f drive*.out.*
 
@@ -48,3 +53,7 @@ drive-02: drive-02.c ${WARP_FILES}
 drive-03: drive-03.c ${WARP_FILES}
 	@echo  "Building" $@ "... "
 	${CC} -o $@ $@.c ${WARP_FILES} ${HYPRE_FLAGS} ${LFLAGS}
+
+drive-04: drive-04.cpp ${WARP_FILES}
+	@echo  "Building" $@ "... "
+	${CXX} -o $@ $@.cpp ${WARP_FILES} ${MFEM_FLAGS} ${HYPRE_FLAGS} ${LFLAGS}
