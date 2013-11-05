@@ -304,9 +304,9 @@ void GLVis_PrintSStructGrid(HYPRE_SStructGrid grid,
          for (b = 0; b < hypre_BoxArraySize(boxes); b++)
          {
             box = hypre_BoxArrayBox(boxes, b);
-            for (k = hypre_BoxIMinZ(box); k <= hypre_BoxIMaxZ(box); k++)
-               for (j = hypre_BoxIMinY(box); j <= hypre_BoxIMaxY(box); j++)
-                  for (i = hypre_BoxIMinX(box); i <= hypre_BoxIMaxX(box); i++)
+            for (k = hypre_BoxIMinD(box,2); k <= hypre_BoxIMaxD(box,2); k++)
+               for (j = hypre_BoxIMinD(box,1); j <= hypre_BoxIMaxD(box,1); j++)
+                  for (i = hypre_BoxIMinD(box,0); i <= hypre_BoxIMaxD(box,0); i++)
                   {
                      fprintf(file, "1 %d ", elemid);
                      for (v = 0; v < cellNV; v++, vert++)
@@ -334,9 +334,9 @@ void GLVis_PrintSStructGrid(HYPRE_SStructGrid grid,
          for (b = 0; b < hypre_BoxArraySize(boxes); b++)
          {
             box = hypre_BoxArrayBox(boxes, b);
-            for (k = hypre_BoxIMinZ(box); k <= hypre_BoxIMaxZ(box); k++)
-               for (j = hypre_BoxIMinY(box); j <= hypre_BoxIMaxY(box); j++)
-                  for (i = hypre_BoxIMinX(box); i <= hypre_BoxIMaxX(box); i++)
+            for (k = hypre_BoxIMinD(box,2); k <= hypre_BoxIMaxD(box,2); k++)
+               for (j = hypre_BoxIMinD(box,1); j <= hypre_BoxIMaxD(box,1); j++)
+                  for (i = hypre_BoxIMinD(box,0); i <= hypre_BoxIMaxD(box,0); i++)
                      if (dim == 2)
                      {
                         if (!given_trans)
@@ -495,18 +495,18 @@ void GLVis_PrintSStructVector(HYPRE_SStructVector sol,
          nj = hypre_BoxSizeD(box,1);
          nk = hypre_BoxSizeD(box,2);
 
-         ilower[0] = hypre_BoxIMinX(box) - var_off;
-         ilower[1] = hypre_BoxIMinY(box) - var_off;
-         iupper[0] = hypre_BoxIMaxX(box);
-         iupper[1] = hypre_BoxIMaxY(box);
+         ilower[0] = hypre_BoxIMinD(box,0) - var_off;
+         ilower[1] = hypre_BoxIMinD(box,1) - var_off;
+         iupper[0] = hypre_BoxIMaxD(box,0);
+         iupper[1] = hypre_BoxIMaxD(box,1);
 
          if (dim == 2)
             values = (double*) malloc((ni+var_off)*(nj+var_off)*sizeof(double));
          else
          {
             values = (double*) malloc((ni+var_off)*(nj+var_off)*(nk+var_off)*sizeof(double));
-            ilower[2] = hypre_BoxIMinZ(box) - var_off;
-            iupper[2] = hypre_BoxIMaxZ(box);
+            ilower[2] = hypre_BoxIMinD(box,2) - var_off;
+            iupper[2] = hypre_BoxIMaxD(box,2);
          }
 
          HYPRE_SStructVectorGetBoxValues(sol, p, ilower, iupper, var, values);
@@ -569,7 +569,7 @@ void GLVis_PrintStructGrid(HYPRE_StructGrid Grid,
    char meshfile[255];
 
    hypre_StructGrid *grid = (hypre_StructGrid *)Grid;
-   int dim = grid->dim;
+   int dim = grid->ndim;
    int cellNV = (dim == 2) ? 4 : 8;
    int elemid = 2*dim-1;
    int nvert, nelem;
@@ -617,9 +617,9 @@ void GLVis_PrintStructGrid(HYPRE_StructGrid Grid,
       for (b = 0; b < hypre_BoxArraySize(boxes); b++)
       {
          box = hypre_BoxArrayBox(boxes, b);
-         for (k = hypre_BoxIMinZ(box); k <= hypre_BoxIMaxZ(box); k++)
-            for (j = hypre_BoxIMinY(box); j <= hypre_BoxIMaxY(box); j++)
-               for (i = hypre_BoxIMinX(box); i <= hypre_BoxIMaxX(box); i++)
+         for (k = hypre_BoxIMinD(box,2); k <= hypre_BoxIMaxD(box,2); k++)
+            for (j = hypre_BoxIMinD(box,1); j <= hypre_BoxIMaxD(box,1); j++)
+               for (i = hypre_BoxIMinD(box,0); i <= hypre_BoxIMaxD(box,0); i++)
                {
                   fprintf(file, "1 %d ", elemid);
                   for (v = 0; v < cellNV; v++, vert++)
@@ -643,9 +643,9 @@ void GLVis_PrintStructGrid(HYPRE_StructGrid Grid,
       for (b = 0; b < hypre_BoxArraySize(boxes); b++)
       {
          box = hypre_BoxArrayBox(boxes, b);
-         for (k = hypre_BoxIMinZ(box); k <= hypre_BoxIMaxZ(box); k++)
-            for (j = hypre_BoxIMinY(box); j <= hypre_BoxIMaxY(box); j++)
-               for (i = hypre_BoxIMinX(box); i <= hypre_BoxIMaxX(box); i++)
+         for (k = hypre_BoxIMinD(box,2); k <= hypre_BoxIMaxD(box,2); k++)
+            for (j = hypre_BoxIMinD(box,1); j <= hypre_BoxIMaxD(box,1); j++)
+               for (i = hypre_BoxIMinD(box,0); i <= hypre_BoxIMaxD(box,0); i++)
                   if (dim == 2)
                   {
                      if (!given_trans)
@@ -743,7 +743,7 @@ void GLVis_PrintStructVector(HYPRE_StructVector sol,
    char solfile[255];
 
    hypre_StructGrid *grid = ((hypre_StructVector*)sol)->grid;
-   int dim = grid->dim;
+   int dim = grid->ndim;
 
    hypre_BoxArray *boxes;
    hypre_Box *box;
@@ -775,18 +775,18 @@ void GLVis_PrintStructVector(HYPRE_StructVector sol,
       nj = hypre_BoxSizeD(box,1);
       nk = hypre_BoxSizeD(box,2);
 
-      ilower[0] = hypre_BoxIMinX(box);
-      ilower[1] = hypre_BoxIMinY(box);
-      iupper[0] = hypre_BoxIMaxX(box);
-      iupper[1] = hypre_BoxIMaxY(box);
+      ilower[0] = hypre_BoxIMinD(box,0);
+      ilower[1] = hypre_BoxIMinD(box,1);
+      iupper[0] = hypre_BoxIMaxD(box,0);
+      iupper[1] = hypre_BoxIMaxD(box,1);
 
       if (dim == 2)
          values = (double*) malloc(ni*nj*sizeof(double));
       else
       {
          values = (double*) malloc(ni*nj*nk*sizeof(double));
-         ilower[2] = hypre_BoxIMinZ(box);
-         iupper[2] = hypre_BoxIMaxZ(box);
+         ilower[2] = hypre_BoxIMinD(box,2);
+         iupper[2] = hypre_BoxIMaxD(box,2);
       }
 
       HYPRE_StructVectorGetBoxValues(sol, ilower, iupper, values);
