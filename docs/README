@@ -1,0 +1,6 @@
+To make the documentation:
+$ doxygen doxy.conf
+$ cd latex
+$ make
+$ acrobat refman.pdf
+
