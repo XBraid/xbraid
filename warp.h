@@ -9,6 +9,13 @@
  *
  ***********************************************************************EHEADER*/
 
+/** \file warp.h
+ * \brief Define headers for user interface routines.
+ *
+ * This file contains routines used to allow the user to initialize, run
+ * and get and set warp. 
+ */
+
 #ifndef warp_HEADER
 #define warp_HEADER
 
@@ -157,26 +164,29 @@ struct _warp_Core_struct;
 typedef struct _warp_Core_struct *warp_Core;
 
 /**
- * Create a core object with the required initial data.
+ * Create a core object with the required initial data.\n
+ * Output:
+ * - * *core_ptr* will point to the newly created warp_Core structure 
  **/
 warp_Int
-warp_Init(MPI_Comm              comm_world,
-          MPI_Comm              comm,
-          warp_Float            tstart,
-          warp_Float            tstop,
-          warp_Int              ntime,
-          warp_App              app,
-          warp_PtFcnPhi         phi,
-          warp_PtFcnInit        init,
-          warp_PtFcnClone       clone,
-          warp_PtFcnFree        free,
-          warp_PtFcnSum         sum,
-          warp_PtFcnDot         dot,
-          warp_PtFcnWrite       write,
-          warp_PtFcnBufSize     bufsize,
-          warp_PtFcnBufPack     bufpack,
-          warp_PtFcnBufUnpack   bufunpack,
-          warp_Core            *core_ptr);
+warp_Init(MPI_Comm              comm_world,  /**< Global communicator for space and time */
+          MPI_Comm              comm,        /**< Communicator for temporal dimension*/
+          warp_Float            tstart,      /**< start time */
+          warp_Float            tstop,       /**< End time*/
+          warp_Int              ntime,       /**< Initial number of temporal grid values*/
+          warp_App              app,         /**< User defined structure to hold *state* information */
+          warp_PtFcnPhi         phi,         /**< User time stepping routine to advance state one time value*/
+          warp_PtFcnInit        init,        /**< Initialize a warp_Vector function on finest temporal grid*/
+          warp_PtFcnClone       clone,       /**< Clone a warp_Vector*/
+          warp_PtFcnFree        free,        /**< Free a temporal state warp_Vector*/
+          warp_PtFcnSum         sum,         /**< Compute vector sum of two temporal states*/
+          warp_PtFcnDot         dot,         /**< Compute dot product between two temporal states*/
+          warp_PtFcnWrite       write,       /**< *Writes* (file, screen..) upon completion. */
+          warp_PtFcnBufSize     bufsize,     /**< Computes size for MPI buffer for one */
+          warp_PtFcnBufPack     bufpack,     /**< Packs MPI buffer to contain one temporal state*/
+          warp_PtFcnBufUnpack   bufunpack,   /**< Unpacks MPI buffer containing one temporal state*/
+          warp_Core            *core_ptr     /**< Pointer to warp_Core (_warp_Core) struct*/   
+          );
 
 /**
  * Integrate in time.
@@ -198,7 +208,7 @@ warp_PrintStats(warp_Core  core);
 
 /**
  * Set loose stopping tolerance for spatial solves on grid level
- * {\tt level} (level 0 is the finest grid).
+ * *level* (level 0 is the finest grid).
  **/
 warp_Int
 warp_SetLoosexTol(warp_Core  core,
@@ -206,8 +216,8 @@ warp_SetLoosexTol(warp_Core  core,
                   warp_Float loose_tol);
 
 /**
- * Set tight stopping tolerance for spatial solveson grid level
- * {\tt level} (level 0 is the finest grid).
+ * Set tight stopping tolerance for spatial solves on grid level
+ * *level* (level 0 is the finest grid).
  **/
 warp_Int
 warp_SetTightxTol(warp_Core  core,
@@ -236,9 +246,9 @@ warp_SetRelTol(warp_Core   core,
                warp_Float  rtol);
 
 /**
- * Set the number of relaxation sweeps {\tt nrelax} on grid level {\tt level}
+ * Set the number of relaxation sweeps *nrelax* on grid level *level*
  * (level 0 is the finest grid).  The default is 1 on all levels.  To change the
- * default factor, use {\tt level} = -1.
+ * default factor, use *level* = -1.
  **/
 warp_Int
 warp_SetNRelax(warp_Core  core,
@@ -246,9 +256,9 @@ warp_SetNRelax(warp_Core  core,
                warp_Int   nrelax);
 
 /**
- * Set the coarsening factor {\tt cfactor} on grid level {\tt level} (level 0 is
+ * Set the coarsening factor *cfactor* on grid level *level* (level 0 is
  * the finest grid).  The default factor is 2 on all levels.  To change the
- * default factor, use {\tt level} = -1.
+ * default factor, use *level* = -1.
  **/
 warp_Int
 warp_SetCFactor(warp_Core  core,
