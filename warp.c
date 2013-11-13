@@ -138,7 +138,7 @@ warp_Drive(warp_Core  core)
    warp_Int      max_iter = _warp_CoreElt(core, max_iter);
 
    warp_Int      nlevels, iter;
-   warp_Float    rnorm, rnorm0;
+   warp_Float    rnorm;
    warp_Float    accuracy;
    warp_Int      ilower, iupper;
    warp_Float   *ta;
@@ -207,7 +207,6 @@ warp_Drive(warp_Core  core)
                if (rtol){
                   tol *= rnorm;
                }
-               rnorm0 = rnorm;
             }
 
             if (level == 0)

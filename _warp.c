@@ -843,7 +843,7 @@ _warp_CFRelax(warp_Core  core,
 
    warp_Vector    u;
    warp_Int       flo, fhi, fi, ci;
-   warp_Int       nu, nrelax, interval, c_level;
+   warp_Int       nu, nrelax, interval;
    warp_Float     accuracy;
 
    if ( level == 0 )
@@ -857,7 +857,6 @@ _warp_CFRelax(warp_Core  core,
    }
 
    nrelax  = nrels[level];
-   c_level = level+1;
 
    for (nu = 0; nu < nrelax; nu++)
    {
@@ -1063,7 +1062,7 @@ _warp_FInterp(warp_Core  core,
    warp_Vector   *va       = _warp_GridElt(grids[level], va);
    warp_Vector   *wa       = _warp_GridElt(grids[level], wa);
 
-   warp_Int       f_level, f_ilower, f_cfactor, f_index;
+   warp_Int       f_level, f_cfactor, f_index;
    warp_Vector    f_u, f_e;
 
    warp_Vector    u, e;
@@ -1071,7 +1070,6 @@ _warp_FInterp(warp_Core  core,
    warp_Int       interval;
 
    f_level   = level-1;
-   f_ilower  = _warp_GridElt(grids[f_level], ilower);
    f_cfactor = _warp_GridElt(grids[f_level], cfactor);
 
    _warp_UCommInitF(core, level);

@@ -2312,6 +2312,7 @@ setUpExplicitMatrix( MPI_Comm             comm,
    }
 
    free(values);    
+   free(bvalues);    
 
    /* Finalize the matrix assembly. */
    HYPRE_SStructMatrixAssemble( A );
