@@ -9,6 +9,12 @@
  *
  ***********************************************************************EHEADER*/
 
+/** \file _warp.h
+ * \brief Define headers for developer routines.
+ *
+ * This file contains the headers for developer routines.
+ */
+
 #ifndef _warp_HEADER
 #define _warp_HEADER
 
@@ -174,25 +180,250 @@ extern warp_Int _warp_error_flag;
  * Prototypes
  *--------------------------------------------------------------------------*/
 
-/* util.c */
+/**
+ * Determine processor distribution.  This must agree with GetProc().
+ */
 warp_Int
-_warp_ProjectInterval( warp_Int   ilower,
-                       warp_Int   iupper,
-                       warp_Int   index,
-                       warp_Int   stride,
-                       warp_Int  *pilower,
-                       warp_Int  *piupper );
+_warp_GetDistribution(warp_Core   core,
+                      warp_Int   *ilower_ptr,
+                      warp_Int   *iupper_ptr);
 
+/**
+ * Returns -1 if index is out of range
+ */
 warp_Int
-_warp_SetAccuracy( warp_Float  rnorm,
-                   warp_Float  loose_tol,
-                   warp_Float  tight_tol,
-                   warp_Float  oldAccuracy,
-                   warp_Float  tol,
-                   warp_Float *paccuracy );
+_warp_GetProc(warp_Core   core,
+              warp_Int    level,
+              warp_Int    index,
+              warp_Int   *proc_ptr);
 
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
+/**
+ * Blah..
+ */
+warp_Int
+_warp_CommRecvInit(warp_Core           core,
+                   warp_Int            level,
+                   warp_Int            index,
+                   warp_Vector        *vector_ptr,
+                   _warp_CommHandle  **handle_ptr);
+
+/**
+ * Blah..
+ */
+warp_Int
+_warp_CommSendInit(warp_Core           core,
+                   warp_Int            level,
+                   warp_Int            index,
+                   warp_Vector         vector,
+                   _warp_CommHandle  **handle_ptr);
+
+/**
+ * Blah..
+ */
+warp_Int
+_warp_CommWait(warp_Core          core,
+               _warp_CommHandle **handle_ptr);
+
+/**
+ * Working on all intervals
+ */
+warp_Int
+_warp_UCommInit(warp_Core  core,
+                warp_Int   level);
+
+/**
+ * Working only on F-pt intervals
+ */
+warp_Int
+_warp_UCommInitF(warp_Core  core,
+                 warp_Int   level);
+
+/**
+ * Finish up communication
+ */
+warp_Int
+_warp_UCommWait(warp_Core  core,
+                warp_Int   level);
+
+/**
+ * Blah..
+ */
+warp_Int
+_warp_UGetInterval(warp_Core   core,
+                   warp_Int    level,
+                   warp_Int    interval_index,
+                   warp_Int   *flo_ptr,
+                   warp_Int   *fhi_ptr,
+                   warp_Int   *ci_ptr);
+
+/**
+ * Returns a reference to the local u-vector on grid 'level' at point 'index'.
+ * If 'index' is not a C-point and within my index range, NULL is returned.
+ */
+warp_Int
+_warp_UGetVectorRef(warp_Core     core,
+                    warp_Int      level,
+                    warp_Int      index,
+                    warp_Vector  *u_ptr);
+
+/**
+ * Stores a reference to the u-vector on grid 'level' at point 'index'.
+ * If 'index' is not a C-point and within my index range, nothing is done.
+ */
+warp_Int
+_warp_USetVectorRef(warp_Core    core,
+                    warp_Int     level,
+                    warp_Int     index,
+                    warp_Vector  u);
+
+/**
+ * Returns the u-vector on grid 'level' at point 'index'.  If 'index' is my
+ * "receive index" (as set by UCommInit(), for example), the u-vector will be
+ * received from a neighbor processor.  If 'index' is within my index range and
+ * is also a C-point, the saved value of u will be used.  A NULL value is
+ * returned otherwise.
+ */
+warp_Int
+_warp_UGetVector(warp_Core     core,
+                 warp_Int      level,
+                 warp_Int      index,
+                 warp_Vector  *u_ptr);
+
+/**
+ * Sets the u-vector on grid 'level' at point 'index'.  If 'index' is my "send
+ * index", a send is initiated to a neighbor processor.  If 'index' is within my
+ * index range and is also a C-point, the value is saved locally.
+ */
+warp_Int
+_warp_USetVector(warp_Core    core,
+                 warp_Int     level,
+                 warp_Int     index,
+                 warp_Vector  u);
+
+/**
+ * Blah..
+ */
+warp_Int
+_warp_UWriteVector(warp_Core    core,
+                   warp_Int     level,
+                   warp_Int     index,
+                   warp_Vector  u);
+
+/**
+* Apply Phi
+ */
+warp_Int
+_warp_Phi(warp_Core     core,
+          warp_Int      level,
+          warp_Int      index,
+          warp_Float    accuracy,
+          warp_Int      gzero,
+          warp_Vector   u,
+          warp_Int     *rfactor);
+
+
+/**
+ * Integrate one time step
+ */
+warp_Int
+_warp_Step(warp_Core     core,
+           warp_Int      level,
+           warp_Int      index,
+           warp_Float    accuracy,
+           warp_Vector   u);
+
+/**
+ * Coarsen in space
+ */
+warp_Int
+_warp_Coarsen(warp_Core     core,
+              warp_Int      level,  /* coarse level */
+              warp_Int      index,  /* coarse index */
+              warp_Vector   fvector,
+              warp_Vector  *cvector);
+
+/**
+ * Refine in space
+ */
+warp_Int
+_warp_Refine(warp_Core     core,
+             warp_Int      level,  /* fine level */
+             warp_Int      index,  /* fine index */
+             warp_Vector   cvector,
+             warp_Vector  *fvector);
+
+/**
+ * Create a new grid object
+ */
+warp_Int
+_warp_GridInit(warp_Core     core,
+               warp_Int      level,
+               warp_Int      ilower,
+               warp_Int      iupper,
+               _warp_Grid  **grid_ptr);
+
+/**
+ * Blah..
+ */
+warp_Int
+_warp_GridDestroy(warp_Core    core,
+                  _warp_Grid  *grid);
+
+/**
+ * Set initial guess at C-points
+ */
+warp_Int
+_warp_InitGuess(warp_Core  core,
+                warp_Int   level);
+
+/**
+ * Do nu sweeps of F-then-C relaxation
+ */
+warp_Int
+_warp_CFRelax(warp_Core  core,
+              warp_Int   level);
+
+/**
+ * F-Relax on level and restrict to level+1
+ */
+warp_Int
+_warp_FRestrict(warp_Core    core,
+                warp_Int     level,
+                warp_Float  *rnorm_ptr);
+
+
+/**
+ * F-Relax on level and interpolate to level-1
+ */
+warp_Int
+_warp_FInterp(warp_Core  core,
+              warp_Int   level);
+
+/**
+ * Create a new fine grid based on user refinement factor information, then
+ * F-relax and interpolate to the new fine grid and create a new multigrid
+ * hierarchy.  In general, this will require load re-balancing as well.
+ *
+ * RDF: Todo
+ */
+warp_Int
+_warp_FRefine(warp_Core   core,
+              warp_Int   *refined_ptr);
+
+/**
+ * Write out the solution on grid level
+ */
+warp_Int
+_warp_FWrite(warp_Core  core,
+             warp_Int   level);
+
+/**
+ * Initialize (and re-initialize) hierarchy
+ */
+warp_Int
+_warp_InitHierarchy(warp_Core    core,
+                    _warp_Grid  *fine_grid);
+
 
 #ifdef __cplusplus
 }

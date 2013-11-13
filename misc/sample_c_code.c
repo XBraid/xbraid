@@ -10,7 +10,7 @@
  ***********************************************************************EHEADER*/
 
 
-/******************************************************************************
+/**
  *
  * This is an example of a C code illustrating the indentation used
  * for Warp.  This code does not illustrate issues related to
@@ -22,12 +22,12 @@
  *    - if statements
  *
  * We use the ellemtel style with tab and shift widths of 3.  See 
- * sample.emacs and sample.vimrc for settings you should use. 
+ * sample.emacs and sample.vimrc for settings you can use. 
  *
- * This example also shows a sample comment block for a function and it's 
- * parameters that will work well with doxygen. 
+ * This example also shows a sample comment block for a function and 
+ * parameters that works well with doxygen. 
  *
- *****************************************************************************/
+ */ 
 
 #include "headers.h"
 
@@ -49,7 +49,7 @@ Matvec( double  alpha,  /**< Describe parameters like this for doxygen*/
         Vector *y       /**< Vector for addition */    
         )
 {
-   double           *a  = MatrixData(A);        /* element values for matrix A */
+   double           *a  = MatrixData(A);  /* element values for matrix A */
    HYPRE_Int        *ia = MatrixIA(A);    /* pointer to start of each row */
    HYPRE_Int        *ja = MatrixJA(A);    /* column values for matrix elements */
    HYPRE_Int         n  = MatrixSize(A);  /* size of matrix */

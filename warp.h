@@ -166,7 +166,7 @@ typedef struct _warp_Core_struct *warp_Core;
 /**
  * Create a core object with the required initial data.\n
  * Output:
- * - * *core_ptr* will point to the newly created warp_Core structure 
+ * - *core_ptr* will point to the newly created warp_Core structure 
  **/
 warp_Int
 warp_Init(MPI_Comm              comm_world,  /**< Global communicator for space and time */

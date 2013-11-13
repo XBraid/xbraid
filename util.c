@@ -9,14 +9,22 @@
  *
  ***********************************************************************EHEADER*/
 
+/** \file util.c
+ * \brief Source code for utility routines. See util.h for more documentation.
+ *
+ */
+
 #include "_warp.h"
+
+#ifndef DEBUG
+#define DEBUG 0
+#endif
 
 /*--------------------------------------------------------------------------
  * Project an interval onto a strided index space that contains the index
  * 'index' and has stride 'stride'.  An empty projection is represented by
  * ilower > iupper.
  *--------------------------------------------------------------------------*/
-
 warp_Int
 _warp_ProjectInterval( warp_Int   ilower,
                        warp_Int   iupper,
@@ -51,7 +59,6 @@ _warp_ProjectInterval( warp_Int   ilower,
  * Determine the accuracy used for the spatial solves based on the ratio of
  * the current residual norm and the stopping tolerance. 
  *--------------------------------------------------------------------------*/
-
 warp_Int
 _warp_SetAccuracy( warp_Float  rnorm,
                    warp_Float  loose_tol,
