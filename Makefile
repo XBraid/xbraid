@@ -27,9 +27,9 @@ MFEM_FLAGS = -I$(MFEM_DIR) -L$(MFEM_DIR) -lmfem -L$(METIS_DIR) -lmetis
 # Targets
 ##################################################################
 
-WARP_HEADERS = _warp.h warp.h
+WARP_HEADERS = _warp.h warp.h util.h
 
-WARP_FILES = util.c warp.c
+WARP_FILES = util.c warp.c _warp.c
 
 all: drive-01 drive-02 drive-03 drive-04
 
