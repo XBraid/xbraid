@@ -1,0 +1,21 @@
+The Warp examples assume that hypre and MFEM are installed in ../hypre and
+../mfem, respectively.
+
+To specify the compilers, flags and options for your machine, edit
+makefile.inc.
+
+To make the library, libwarp.a,
+$ make
+
+To make the examples
+$ make all
+
+To turn on the debug flags (as opposed to the default optimizations)
+$ make debug=yes
+or
+$ make all debug=yes
+
+To run the examples
+$ cd examples
+$ mpirun -np 4 drive-*
+

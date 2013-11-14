@@ -9,11 +9,12 @@
 #
 #EHEADER**********************************************************************
 
-MPICC ?= mpicc
-CFLAGS = -g -Wall
+##################################################################
+# Import machine specific compilers, options, flags, etc.. 
+##################################################################
 
-# MPICC = insure -g
-# CFLAGS = -I/home/falgout/codes/mpich2-1.4.1-install/include
+include makefile.inc
+
 
 ##################################################################
 # Targets

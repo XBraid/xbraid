@@ -9,14 +9,16 @@
 #
 #EHEADER**********************************************************************
 
-MPICC ?= mpicc
-MPICXX ?= mpiCC
-CFLAGS = -g -Wall
-LFLAGS = -lm
+##################################################################
+# Import machine specific compilers, options, flags, etc.. 
+##################################################################
 
-# MPICC = insure -g
-# CFLAGS = -I/home/falgout/codes/mpich2-1.4.1-install/include
-# LFLAGS = -L/home/falgout/codes/mpich2-1.4.1-install/lib -Wl,-rpath,/home/falgout/codes/mpich2-1.4.1-install/lib -lmpich -lopa -lmpl -lrt -lpthread  -lstdc++ -lm
+include ../makefile.inc
+
+
+##################################################################
+# Build exmaples 
+##################################################################
 
 HYPRE_DIR = ../../linear_solvers/hypre
 HYPRE_FLAGS = -I$(HYPRE_DIR)/include
