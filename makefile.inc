@@ -11,17 +11,30 @@
 
 
 # Was DEBUG specified? 
-ifeq ($(debug),yes)
-   optlevel = DEBUG
-else
+ifeq ($(debug),no)
    optlevel = OPTIMIZE
+else
+   optlevel = DEBUG
 endif
 
 # Default compiler options for different platforms and known machines
 # Add an else statement for your machine, if the compile options need adjustment
+
+HOSTNAME := $(shell hostname)
+
 ifeq ($(shell uname -n),tux343)
 	MPICC = mpicc
 	MPICXX = mpiCC
+	LFLAGS = -lm
+	ifeq ($(optlevel),DEBUG)
+		CFLAGS = -g -Wall
+	else
+		CFLAGS = -O -Wall
+	endif
+else ifeq ($(findstring yorkville,$(HOSTNAME)),yorkville)
+  # for Anders' laptop
+	MPICC = openmpicc
+	MPICXX = openmpicxx
 	LFLAGS = -lm
 	ifeq ($(optlevel),DEBUG)
 		CFLAGS = -g -Wall
