@@ -1,6 +1,6 @@
 To make the documentation:
 $ doxygen user_manual.conf
-$ cd latex
+$ cd user_manual
 $ make
 $ acroread refman.pdf
 
@@ -19,12 +19,13 @@ Here is some background on doxygen
     - The markdown rules are at http://www.stack.nl/~dimitri/doxygen/manual/markdown.html
 
     - The tex document is setup as follows
-        docs/local_doxygen.sty     is the style file
-        docs/header.tex            is the title page
-        docs/Introduction.md       is extra material that goes at the front of the PDF
-        docs/user_manual.conf      only includes the user interface routines in warp.h
-        docs/reference_manual.conf includes everything, and the kitchen sink
-        docs/img                   contains the images
+        docs/local_doxygen.sty              Latex style file
+        docs/user_manual_header.tex         User manual title page and header info
+        docs/developer_manual_header.tex    Developer manual title page and header info
+        docs/Introduction.md                Extra material that goes at the front of the PDF
+        docs/user_manual.conf               Only includes the user interface routines in warp.h
+        docs/reference_manual.conf          Includes everything, and the kitchen sink
+        docs/img                            Contains the images
     
     - To regenerate generic doxygen latex files, type
       $ doxygen -w latex header.tex footer.tex doxygen.sty doxy.conf

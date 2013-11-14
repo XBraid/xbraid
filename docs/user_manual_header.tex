@@ -33,10 +33,10 @@
 \usepackage{geometry}
 \geometry{%
   letterpaper,%
-  top=2.5cm,%
-  bottom=2.5cm,%
-  left=2.5cm,%
-  right=2.5cm%
+  top=1in,%
+  bottom=1in,%
+  left=1in,%
+  right=1in%
 }
 \tolerance=750
 \hfuzz=15pt
@@ -45,7 +45,7 @@
 \setlength{\parindent}{0cm}
 \setlength{\parskip}{0.2cm}
 \makeatletter
-\renewcommand{\paragraph}{%
+\renewcommand{\paragraph}{% To remove paragraph numbers, set the 4 to 8
   \@startsection{paragraph}{4}{0ex}{-1.0ex}{1.0ex}{%
     \normalfont\normalsize\bfseries\SS@parafont%
   }%
