@@ -30,12 +30,21 @@ MFEM_LIB = -L$(MFEM_DIR) -lmfem -L$(METIS_DIR) -lmetis
 WARP_FLAGS = -I..
 WARP_LIB_FILE = ../libwarp.a
 
-C_EXAMPLES = drive-01 drive-02 drive-03
+C_NOHYPRE = drive-01
+C_EXAMPLES = drive-02 drive-03
 # Note: .cpp examples will be linked with mfem
 CXX_EXAMPLES = drive-04
 
 .SUFFIXES:
 .SUFFIXES: .c .cpp
+
+# put this rule first so it becomes the default
+all: $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES)
+
+# Rule for building drive-01
+drive-01: drive-01.c $(WARP_LIB_FILE)
+	@echo "Building" $@ "..."
+	$(MPICC) $(CFLAGS) $(WARP_FLAGS) $(@).c -o $@ $(WARP_LIB_FILE) $(LFLAGS)
 
 # Rule for compiling .c files
 %: %.c $(WARP_LIB_FILE)
@@ -49,10 +58,8 @@ CXX_EXAMPLES = drive-04
 	$(MPICXX) $(CFLAGS) $(WARP_FLAGS) $(HYPRE_FLAGS) $(MFEM_FLAGS)\
  $(@).cpp -o $@ $(MFEM_LIB) $(HYPRE_LIB) $(WARP_LIB_FILE) $(LFLAGS)
 
-all: $(C_EXAMPLES) $(CXX_EXAMPLES)
-
 clean: cleanout
-	rm -f *.o $(C_EXAMPLES) $(CXX_EXAMPLES)
+	rm -f *.o $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES)
 
 cleanout:
 	rm -f drive*.out.*
