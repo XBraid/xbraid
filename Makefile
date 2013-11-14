@@ -9,9 +9,9 @@
 #
 #EHEADER**********************************************************************
 
-CC = mpicc -g -Wall
-CXX = mpiCC -g -Wall
-LFLAGS = -lm
+CC ?= mpicc -g -Wall
+CXX ?= mpiCC -g -Wall
+LFLAGS ?= -lm
 
 # CC = insure -g
 # LFLAGS = -I/home/falgout/codes/mpich2-1.4.1-install/include -L/home/falgout/codes/mpich2-1.4.1-install/lib -Wl,-rpath,/home/falgout/codes/mpich2-1.4.1-install/lib -lmpich -lopa -lmpl -lrt -lpthread  -lstdc++ -lm
