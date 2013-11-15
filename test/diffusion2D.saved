@@ -1,0 +1,33 @@
+
+  start time = 0.000000e+00
+  stop time  = 1.122942e+01
+  time steps = 256
+
+  max number of levels = 15
+  number of levels     = 9
+  coarsening factor    = 2
+  num F-C relaxations  = 1
+  num rels on level 0  = 1
+  stopping tolerance   = 2.279727e-08
+  relative tolerance?  = 0
+  max iterations       = 100
+  iterations           = 10
+  residual norm        = 2.473369e-09
+
+  runtime: 0.68289s
+
+spatial problem size       : 16 x 16
+spatial stopping tolerance : 1.00e-09 (loose), 1.00e-09 (tight), 1.00e-09 (coarse levels)
+max spatial iterations     : 50 (expensive), 50 (cheap)
+
+explicit scheme            : 0
+max iterations on level 0  : 8
+max iterations on level 1  : 9
+max iterations on level 2  : 10
+max iterations on level 3  : 10
+max iterations on level 4  : 10
+max iterations on level 5  : 10
+max iterations on level 6  : 11
+max iterations on level 7  : 11
+max iterations on level 8  : 11
+
