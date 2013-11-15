@@ -12,11 +12,13 @@
 #EHEADER**********************************************************************
 
 
+################
 # scriptname holds the script name, with the .sh removed
 scriptname=`basename $0 .sh`
 example_dir="../examples"
 test_to_run="drive-02"
 
+################
 # Echo usage information
 case $1 in
    -h|-help)
@@ -36,7 +38,8 @@ EOF
       ;;
 esac
 
-# mpi command and mpi setup for this machine
+################
+# Determine mpi command and mpi setup for this machine
 HOST=`hostname`
 case $HOST in
    tux*) 
@@ -52,34 +55,62 @@ case $HOST in
 esac
 
 
+################
 # Setup
 output_dir=`pwd`/$scriptname.dir
 rm -fr $output_dir
 mkdir -p $output_dir
 
-# Run make in the example directory
+################
+# Run make in the example directory and return to the test directory
 cd $example_dir
 make clean
 make $test_to_run
+cd ../test
 
+
+################
+# Split $scriptname.saved into .saved.0, .saved.1, ..., where each
+# file is for a single test in $scriptname.saved.  Each single test is 
+# delimited by the line "# Begin Test .."  Doing this will let the 
+# user easily examine a failed test
+TestDelimiter='# Begin Test'
+csplit -n 1 --silent --prefix $output_dir/$scriptname.saved. $scriptname.saved "%$TestDelimiter%" "/$TestDelimiter.*/" {*}
+
+
+################
 # Run the regression tests and move all output to the output_dir
-# The diff command below is for comparing generated output to saved output
+
+# Note 1: The diff command below is for comparing generated output to saved output
 # In particular, we need to ignore the timing statements, i.e. -I"time",
 # between the stored output files and the generated files
-cd ../test
+
+# Note 2: The tests are dumped to $output_dir/std.out.0, $output_dir/std.out.1,
+# and so on.  Then each individual output file is diff-ed with the corresponding
+# file .saved.0, .saved.1, ...  The error is dumped to $output_dir/std.err.0,
+# $output_dir/std.err.1 and so on.
+
+# Test 0
+echo "Running Test 0"
+$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 1>> $output_dir/std.out.0  2>> $output_dir/std.err.0
+diff -U3 -bI"runtime" -bI"$TestDelimiter" $output_dir/$scriptname.saved.0 $output_dir/std.out.0 >> $output_dir/std.err.0
+
 # Test 1
 echo "Running Test 1"
-$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 1>> $output_dir/std.out 2>> $output_dir/std.err
-diff -U3 -bI"time"  $scriptname.saved $output_dir/std.out >> $output_dir/std.err
-# Test 2 ...
+$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1>> $output_dir/std.out.1  2>> $output_dir/std.err.1
+diff -U3 -bI"runtime" -bI"$TestDelimiter" $output_dir/$scriptname.saved.1 $output_dir/std.out.1 >> $output_dir/std.err.1
 
-# Echo to stderr all nonempty error files in $output_dir.  This
-# is critical, because test.sh assumes this.
-for errfile in $( find $output_dir ! -size 0 -name "*.err" )
+
+################
+# Echo to stderr all nonempty error files in $output_dir.  test.sh
+# collects these file names and puts them in the error report
+for errfile in $( find $output_dir ! -size 0 -name "*.err.*" )
 do
-   cat $errfile >&2
+   echo $errfile >&2
 done
 
+
+################
 # remove machinefile, if created
 if [ -n $MACHINES_FILE ] ; then
    rm $MACHINES_FILE
