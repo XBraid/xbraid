@@ -1,0 +1,2 @@
+sed -i '/.*8md.*/d' user_manual/refman.tex 2> /dev/null
+sed -i '/.*8md.*/d' developer_manual/refman.tex 2> /dev/null

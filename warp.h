@@ -278,6 +278,22 @@ warp_SetMaxIter(warp_Core  core,
 warp_Int
 warp_SetFMG(warp_Core  core);
 
+/**
+ * Set spatial coarsening routine with user-defined routine.
+ * Default is no spatial refinment or coarsening.
+ **/
+warp_Int
+warp_SetSpatialCoarsen(warp_Core  core, 
+                       warp_PtFcnCoarsen coarsen);
+
+/**
+ * Set spatial refinement routine with user-defined routine.
+ * Default is no spatial refinment or coarsening.
+ **/
+warp_Int
+warp_SetSpatialRefine(warp_Core  core,
+                      warp_PtFcnRefine refine);
+
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 

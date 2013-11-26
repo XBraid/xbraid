@@ -3,6 +3,7 @@
 To make the documentation:
 
       $ doxygen user_manual.conf
+      $ ./postprocess_latex
       $ cd user_manual
       $ make
       $ acroread refman.pdf
@@ -10,20 +11,41 @@ To make the documentation:
 or to make a more extensive reference manual for developers, 
 
       $ doxygen reference_manual.conf
+      $ ./postprocess_latex
       $ cd reference_manual
       $ make
       $ acroread refman.pdf
 
-Here is some background on doxygen
--  http://www.stack.nl/~dimitri/doxygen/manual/index.html
--  Developers should run doxygen from /usr/casc/hypre/warp/share/doxygen/bin/doxygen
+The version of doxygen must be higher than 1.8.0.  
+Developers can run doxygen from a precompiled binary, 
+which may or may not work for your machine, 
+
+      /usr/casc/hypre/warp/share/doxygen/bin/doxygen
+
+or build doxygen from
+
+      /usr/casc/hypre/warp/share/doxygen.tgz
+
+- Compiling doxygen requires a number of dependencies
+  like Bison, GraphViz and Flex.  Configure will tell 
+  you what you're missing
+- Unpack doxygen.tgz, then from the doxygen directory
+
+      ./configure --prefix some_dir_in_your_path
+      make
+      make install
+
+### Documentation Strategy
 -  The doxygen comments are to be placed in the header files.
-
--  A sample function declaration using the markdown approach
-   to typesetting with equations is warp_Init() in warp.h
--  A sample structure is  _warp_Core_struct in _warp.h
+-  A sample function declaration using the documenation approach
+   using markdown (including typesetting equations) is in warp.h
+   for the function warp_Init()
+-  A sample structure documentation is in _warp.h for _warp_Core_struct
 -  Descriptors for files can also be added, as at the top of warp.h
+-  The Doxygen manual is at 
+   http://www.stack.nl/~dimitri/doxygen/manual/index.html
 
+### Warp Doxygen details
 -  The latex manuals are built according to 
 
    -  docs/local_doxygen.sty           :: Latex style file
