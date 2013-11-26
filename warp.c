@@ -540,3 +540,29 @@ warp_SetFMG(warp_Core  core)
    return _warp_error_flag;
 }
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
+warp_SetSpatialCoarsen(warp_Core  core, 
+                       warp_PtFcnCoarsen coarsen)
+{
+   _warp_CoreElt(core, coarsen) = coarsen;
+
+   return _warp_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
+warp_SetSpatialRefine(warp_Core  core,
+                      warp_PtFcnRefine refine)
+{
+   _warp_CoreElt(core, refine) = refine;
+
+   return _warp_error_flag;
+}
+
+
+
