@@ -288,6 +288,15 @@ warp_Drive(warp_Core  core)
             down = 1;
          }
       }
+
+#if 0
+      /* write (visualize) intermediate warp iterations */
+      if (!done && level == 0 && down)
+      {
+         /* F-relax and write solution to file */
+         _warp_FWrite(core, 0);
+      }
+#endif
    }
 
    /* F-relax and write solution to file */

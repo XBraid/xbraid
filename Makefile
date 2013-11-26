@@ -31,7 +31,7 @@ WARP_OBJ = $(WARP_FILES:.c=.o)
 .SUFFIXES: .c .o
 
 # Rule for compiling .c files
-%.o: %.c
+%.o: %.c $(WARP_HEADERS)
 	$(MPICC) $(CFLAGS) -c $< -o $@
 
 libwarp.a: $(WARP_HEADERS) $(WARP_OBJ)
