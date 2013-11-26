@@ -2,9 +2,12 @@
 //
 // Compile with: make drive-04
 //
-// Sample run:   mpirun -np 2 drive-04 ../mfem/data/star.mesh
+// Sample runs:  mpirun -np 4 drive-04
+//               mpirun -np 4 drive-04 -pref 1 -px 2 -nt 100 -odesolver -2
+//               mpirun -np 4 drive-04 -mesh ../../mfem/data/beam-quad.mesh -sref 2 -nowarp
+//               mpirun -np 16 drive-04 -mesh ../../mfem/data/escher-p2.mesh -nowarp
 //
-// Description:  Unstructured 2D/3D parabolic problem in MFEM.
+// Description:  Unstructured 2D/3D ODE problems in MFEM.
 
 #include <fstream>
 #include "mfem.hpp"
@@ -497,25 +500,42 @@ class ScalarODE : public Diagonal_Implicit_Evolution_Operator
 // class ScalarODE : public TimeDependentOperator
 {
 private:
+   int option;
+
    inline double f(double u, double t) const
    {
-      // return 1.0;                         // u(t) = t+u(0)
-      // return 4*pow(t,3)-3*pow(t,2)+2*t-1; // u(t) = t^4-t^3+t^2-t+u(0)
-      return pow(u,2)+1;                  // u(t) = tan(t) for u(0) = 0
-      // return 2*t*u+t;                     // u(t) = (1/2+u(0))*e^(t^2)-1/2
-      // return -2000.*(u - cos(t));         // stiff
+      if (option == 0)
+         return 1.0; // u(t) = t+C
+      else if (option == 1)
+         return 4*pow(t,3)-3*pow(t,2)+2*t-1; // u(t) = t^4-t^3+t^2-t+C
+      else if (option == 2)
+         return u*u+1; // u(t) = tan(t+C)
+      else if (option == 3)
+         return 2*t*u+t; // u(t) = -1/2 + exp(t^2)*C
+      else if (option == 4)
+         return -2000.*(u - cos(t)); // stiff
+      else
+         return u*u+1; // option 2
    }
 
    inline double ik(const double &u, const double &t, const double &dt)
    {
-      // return 1.; // f = 1
-      return ((1-2*dt*u) - sqrt(1-4*dt*(u+dt)))/(2*dt*dt); // f = u^2+1
-      // return (2*t*u+t)/(1-2*t*dt); // f = 2*t*u+t
-      // return -2000*(u - cos(t))/(1. + 2000.*dt); // stiff
+      if (option == 0 || option == 1)
+         return f(0, t); // f(.,.) is independent of u
+      else if (option == 2)
+         return 4*pow(t,3)-3*pow(t,2)+2*t-1; // f = 4t^3-3t^2+2t-1
+      else if (option == 2)
+         return ((1-2*dt*u) - sqrt(1-4*dt*(u+dt)))/(2*dt*dt); // f = u^2+1
+      else if (option == 3)
+         return (2*t*u+t)/(1-2*t*dt); // f = 2*t*u+t
+      else if (option == 4)
+         return -2000*(u - cos(t))/(1. + 2000.*dt); // stiff
+      else
+         return ((1-2*dt*u) - sqrt(1-4*dt*(u+dt)))/(2*dt*dt); // option 2
    }
 
 public:
-   ScalarODE(int _size) { size = _size; }
+   ScalarODE(int _size, int _option=2) { size = _size; option=_option; }
 
    virtual void Mult(const Vector &x, Vector &y) const
    {
@@ -1136,6 +1156,9 @@ int main(int argc, char *argv[])
    // double cfl         = 1.0;
    int    ode_solver  = -1;
 
+   int heat_equation = 1;
+   int scalar_ode_option = 2;
+
    // WARP default parameters:
    int    max_levels  = 10;
    int    nrelax      = 1;
@@ -1183,37 +1206,58 @@ int main(int argc, char *argv[])
       {
          ntime = atoi(argv[++arg_index]);
       }
+      else if (strcmp(argv[arg_index], "-ode") == 0)
+      {
+         arg_index++;
+         if (strcmp(argv[arg_index], "heat") == 0)
+            heat_equation = 1;
+         else if (strcmp(argv[arg_index], "scalar") == 0)
+         {
+            heat_equation = 0;
+            arg_index++;
+            if (arg_index >= argc)
+            {
+               if (myid == 0)
+                  cerr << "Missing option id after -ode scalar" << endl;
+            }
+            else
+               scalar_ode_option = atoi(argv[arg_index]);
+         }
+         else
+            if (myid == 0)
+               cerr << "Unknown -ode parameter: " << argv[arg_index] << endl;
+      }
       else if (strcmp(argv[arg_index], "-odesolver") == 0)
       {
          ode_solver = atoi(argv[++arg_index]);
       }
       else if (strcmp(argv[arg_index], "-ml") == 0)
       {
-          max_levels = atoi(argv[++arg_index]);
+         max_levels = atoi(argv[++arg_index]);
       }
       else if (strcmp(argv[arg_index], "-nu") == 0)
       {
-          nrelax = atoi(argv[++arg_index]);
+         nrelax = atoi(argv[++arg_index]);
       }
       else if (strcmp(argv[arg_index], "-nu0") == 0)
       {
-          nrelax0 = atoi(argv[++arg_index]);
+         nrelax0 = atoi(argv[++arg_index]);
       }
       else if (strcmp(argv[arg_index], "-tol") == 0)
       {
-          tol = atof(argv[++arg_index]);
+         tol = atof(argv[++arg_index]);
       }
       else if (strcmp(argv[arg_index], "-cf") == 0)
       {
-          cfactor = atoi(argv[++arg_index]);
+         cfactor = atoi(argv[++arg_index]);
       }
       else if (strcmp(argv[arg_index], "-cf0") == 0)
       {
-          cfactor0 = atoi(argv[++arg_index]);
+         cfactor0 = atoi(argv[++arg_index]);
       }
       else if (strcmp(argv[arg_index], "-mi") == 0)
       {
-          max_iter = atoi(argv[++arg_index]);
+         max_iter = atoi(argv[++arg_index]);
       }
       else if (strcmp(argv[arg_index], "-fmg") == 0)
       {
@@ -1255,6 +1299,9 @@ int main(int argc, char *argv[])
          "  -tstart <tstart>  : start time (default: 0.0)\n"
          "  -tstop  <tstop>   : stop time (default: 1.0)\n"
          "  -nt  <nt>         : number of time steps (default: 32)\n"
+         "  -ode <name>       : ODE to solve, the options are:\n"
+         "                         heat - Heat equation (default)\n"
+         "                         scalar <id> - predefined scalar ODE\n"
          "  -odesolver <id>   : ODE solver id\n"
          "                      explicit methods:\n"
          "                         1 - Forward Euler\n"
@@ -1375,12 +1422,11 @@ int main(int argc, char *argv[])
    delete m;
 
    // Define the righ-hand side of the ODE and call MFEM or WARP to solve it.
-   int heat_equation = 1;
    TimeDependentOperator *ode;
    if (heat_equation)
       ode = new LinearSystemODE(A, M, b, &source, &nbc);
    else
-      ode = new ScalarODE(A->Size());
+      ode = new ScalarODE(A->Size(), scalar_ode_option);
 
    ODESolver *solver;
 
