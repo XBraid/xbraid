@@ -41,6 +41,16 @@ else ifeq ($(findstring yorkville,$(HOSTNAME)),yorkville)
 	else
 		CFLAGS = -O -Wall
 	endif
+else ifeq ($(findstring sierra,$(HOSTNAME)),sierra)
+  # for Sierra
+	MPICC = mpiicc
+	MPICXX = mpiicpc
+	LFLAGS = -lm
+	ifeq ($(optlevel),DEBUG)
+		CFLAGS = -g -Wall
+	else
+		CFLAGS = -O -Wall
+	endif
 else ifeq ($(shell uname -s),Linux)
 	MPICC = mpicc
 	MPICXX = mpiCC
