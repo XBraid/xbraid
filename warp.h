@@ -138,7 +138,10 @@ typedef warp_Int
 typedef warp_Int
 (*warp_PtFcnCoarsen)(warp_App      app,
                      warp_Float    tstart,
-                     warp_Float    tstop,
+                     warp_Float    f_tminus,
+                     warp_Float    f_tplus,
+                     warp_Float    c_tminus,
+                     warp_Float    c_tplus,
                      warp_Vector   fu,
                      warp_Vector  *cu_ptr);
 
@@ -148,7 +151,10 @@ typedef warp_Int
 typedef warp_Int
 (*warp_PtFcnRefine)(warp_App      app,
                     warp_Float    tstart,
-                    warp_Float    tstop,
+                    warp_Float    f_tminus,
+                    warp_Float    f_tplus,
+                    warp_Float    c_tminus,
+                    warp_Float    c_tplus,
                     warp_Vector   cu,
                     warp_Vector  *fu_ptr);
 

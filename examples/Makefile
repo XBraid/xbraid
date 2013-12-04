@@ -33,7 +33,7 @@ WARP_FLAGS = -I..
 WARP_LIB_FILE = ../libwarp.a
 
 C_NOHYPRE = drive-01
-C_EXAMPLES = drive-02 drive-03
+C_EXAMPLES = drive-02 drive-03 drive-05
 # Note: .cpp examples will be linked with mfem
 CXX_EXAMPLES = drive-04
 

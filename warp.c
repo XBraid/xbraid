@@ -191,6 +191,10 @@ warp_Drive(warp_Core  core)
 
       if (down)
       {
+
+#if DEBUG
+         printf("\nDown, Iteration %d, Level %d\n", iter, level); 
+#endif
          if (level < (nlevels-1))
          {
             /* CF-relaxation */
@@ -240,6 +244,11 @@ warp_Drive(warp_Core  core)
 
       if (!down)
       {
+
+#if DEBUG
+         printf("\nUp, Iteration %d, Level %d\n", iter, level); 
+#endif
+
          if (level > 0)
          {
             if (level >= fmglevel)

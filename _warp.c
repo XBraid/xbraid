@@ -650,30 +650,33 @@ _warp_Step(warp_Core     core,
 
 warp_Int
 _warp_Coarsen(warp_Core     core,
-              warp_Int      level,  /* coarse level */
-              warp_Int      index,  /* coarse index */
+              warp_Int      level,    /* coarse level */
+              warp_Int      f_index,  /* fine index */
+              warp_Int      c_index,  /* coarse index */
               warp_Vector   fvector,
               warp_Vector  *cvector)
 {
-   warp_App      app    = _warp_CoreElt(core, app);
-   _warp_Grid  **grids  = _warp_CoreElt(core, grids);
-   warp_Int      ilower = _warp_GridElt(grids[level], ilower);
-   warp_Float   *ta     = _warp_GridElt(grids[level], ta);
+   warp_App      app      = _warp_CoreElt(core, app);
+   _warp_Grid  **grids    = _warp_CoreElt(core, grids);
+   warp_Int      c_ilower = _warp_GridElt(grids[level], ilower);
+   warp_Int      f_ilower = _warp_GridElt(grids[level-1], ilower);
+   warp_Float   *c_ta     = _warp_GridElt(grids[level], ta);
+   warp_Float   *f_ta     = _warp_GridElt(grids[level-1], ta);
 
-   warp_Int      ii;
-
+   warp_Int      c_ii = c_index-c_ilower;
+   warp_Int      f_ii = f_index-f_ilower;
+   
    if ( _warp_CoreElt(core, coarsen) == NULL )
    {
-      /* No spatial coarsening, just clone the fine vector */
+      /* No spatial coarsening needed, just clone the fine vector.*/
       _warp_CoreFcn(core, clone)(app, fvector, cvector);
    }
    else
    {
       /* Call the user's coarsening routine */
-      ii = index-ilower;
-      _warp_CoreFcn(core, coarsen)(app, ta[ii], ta[ii+1], fvector, cvector);
+      _warp_CoreFcn(core, coarsen)(app, f_ta[f_ii], f_ta[f_ii-1], f_ta[f_ii+1], 
+                                   c_ta[c_ii-1], c_ta[c_ii+1], fvector, cvector);
    }
-
    return _warp_error_flag;
 }
 
@@ -683,28 +686,32 @@ _warp_Coarsen(warp_Core     core,
 
 warp_Int
 _warp_Refine(warp_Core     core,
-             warp_Int      level,  /* fine level */
-             warp_Int      index,  /* fine index */
+             warp_Int      level,    /* fine level */
+             warp_Int      f_index,  /* fine index */
+             warp_Int      c_index,  /* coarse index */
              warp_Vector   cvector,
              warp_Vector  *fvector)
 {
-   warp_App      app    = _warp_CoreElt(core, app);
-   _warp_Grid  **grids  = _warp_CoreElt(core, grids);
-   warp_Int      ilower = _warp_GridElt(grids[level], ilower);
-   warp_Float   *ta     = _warp_GridElt(grids[level], ta);
+   warp_App      app      = _warp_CoreElt(core, app);
+   _warp_Grid  **grids    = _warp_CoreElt(core, grids);
+   warp_Int      f_ilower = _warp_GridElt(grids[level], ilower);
+   warp_Int      c_ilower = _warp_GridElt(grids[level+1], ilower);
+   warp_Float   *f_ta     = _warp_GridElt(grids[level], ta);
+   warp_Float   *c_ta     = _warp_GridElt(grids[level+1], ta);
 
-   warp_Int      ii;
+   warp_Int      c_ii = c_index-c_ilower;
+   warp_Int      f_ii = f_index-f_ilower;
 
-   if ( _warp_CoreElt(core, refine) == NULL )
+   if ( _warp_CoreElt(core, coarsen) == NULL )
    {
-      /* No spatial refinement, just clone the fine vector */
+      /* No spatial refinement needed, just clone the fine vector.*/
       _warp_CoreFcn(core, clone)(app, cvector, fvector);
    }
    else
    {
       /* Call the user's refinement routine */
-      ii = index-ilower;
-      _warp_CoreFcn(core, refine)(app, ta[ii], ta[ii+1], cvector, fvector);
+      _warp_CoreFcn(core, refine)(app, f_ta[f_ii], f_ta[f_ii-1], f_ta[f_ii+1], 
+                                  c_ta[c_ii-1], c_ta[c_ii+1], cvector, fvector);
    }
 
    return _warp_error_flag;
@@ -730,7 +737,9 @@ _warp_GridInit(warp_Core     core,
    _warp_GridElt(grid, ilower) = ilower;
    _warp_GridElt(grid, iupper) = iupper;
    
-   ta = _warp_CTAlloc(warp_Float,  iupper-ilower+2);
+   /* Store each processor's time slice, plus one time value to the left 
+    * and to the right */
+   ta = _warp_CTAlloc(warp_Float,  iupper-ilower+3);
    _warp_GridElt(grid, ta_alloc) = ta;
    _warp_GridElt(grid, ta)       = ta+1;  /* shift */
    
@@ -986,14 +995,14 @@ _warp_FRestrict(warp_Core    core,
 
          /* Restrict u and residual */
          _warp_MapFineToCoarse(ci, cfactor, c_index);
-         _warp_Coarsen(core, c_level, c_index, u, &c_va[c_index-c_ilower]);
-         _warp_Coarsen(core, c_level, c_index, r, &c_wa[c_index-c_ilower]);
+         _warp_Coarsen(core, c_level, ci, c_index, u, &c_va[c_index-c_ilower]);
+         _warp_Coarsen(core, c_level, ci, c_index, r, &c_wa[c_index-c_ilower]);
       }
       else if (ci == 0)
       {
          /* Restrict initial condition to coarse grid */
          _warp_UGetVectorRef(core, level, 0, &u);
-         _warp_Coarsen(core, c_level, 0, u, &c_va[0]);
+         _warp_Coarsen(core, c_level, 0, 0, u, &c_va[0]);
       }
 
       if ((flo <= fhi) || (ci > 0))
@@ -1091,7 +1100,7 @@ _warp_FInterp(warp_Core  core,
          e = va[fi-ilower];
          _warp_CoreFcn(core, sum)(app, 1.0, u, -1.0, e);
          _warp_MapCoarseToFine(fi, f_cfactor, f_index);
-         _warp_Refine(core, f_level, f_index, e, &f_e);
+         _warp_Refine(core, f_level, f_index, fi, e, &f_e);
          _warp_UGetVectorRef(core, f_level, f_index, &f_u);
          _warp_CoreFcn(core, sum)(app, 1.0, f_e, 1.0, f_u);
          _warp_USetVectorRef(core, f_level, f_index, f_u);
@@ -1109,7 +1118,7 @@ _warp_FInterp(warp_Core  core,
          e = va[ci-ilower];
          _warp_CoreFcn(core, sum)(app, 1.0, u, -1.0, e);
          _warp_MapCoarseToFine(ci, f_cfactor, f_index);
-         _warp_Refine(core, f_level, f_index, e, &f_e);
+         _warp_Refine(core, f_level, f_index, ci, e, &f_e);
          _warp_UGetVectorRef(core, f_level, f_index, &f_u);
          _warp_CoreFcn(core, sum)(app, 1.0, f_e, 1.0, f_u);
          _warp_USetVectorRef(core, f_level, f_index, f_u);
@@ -1252,7 +1261,7 @@ _warp_FRefine(warp_Core   core,
       for (i = ilower; i <= iupper; i++)
       {
          _warp_MapCoarseToFine(i, f_cfactor, f_index);
-         _warp_Refine(core, 0, f_index, ua[i-ilower], &f_u);
+         _warp_Refine(core, 0, f_index, i, ua[i-ilower], &f_u);
          _warp_USetVectorRef(core, 0, f_index, f_u);
          _warp_CoreFcn(core, free)(app, ua[i-ilower]);
       }
@@ -1360,9 +1369,9 @@ _warp_InitHierarchy(warp_Core    core,
    warp_Float   *f_ta;
    warp_Int      i, f_i, f_ilower, clo, chi, gclower, gcupper;
 
-   MPI_Request   request;
+   MPI_Request   request1, request2;
    MPI_Status    status;
-   warp_Int      rproc, sproc;
+   warp_Int      left_proc, right_proc;
 
    grids[0] = fine_grid;
 
@@ -1478,7 +1487,7 @@ _warp_InitHierarchy(warp_Core    core,
    nlevels = level+1;
    _warp_CoreElt(core, nlevels) = nlevels;
 
-   /* Communicate ta[-1] information */
+   /* Communicate ta[-1] and ta[iupper+1] information */
    for (level = 0; level < nlevels; level++)
    {
       grid = grids[level];
@@ -1488,24 +1497,55 @@ _warp_InitHierarchy(warp_Core    core,
 
       if (ilower <= iupper)
       {
-         /* Post receive */
-         _warp_GetProc(core, level, ilower-1, &rproc);
-         if (rproc > -1)
+         _warp_GetProc(core, level, ilower-1, &left_proc);
+         _warp_GetProc(core, level, iupper+1, &right_proc);
+         
+         /* Post receive to set ta[-1] on each processor*/
+         if (left_proc > -1)
          {
             MPI_Irecv(&ta[-1], sizeof(warp_Float), MPI_BYTE,
-                      rproc, 0, comm, &request);
+                      left_proc, 0, comm, &request1);
          }
-         /* Post send */
-         _warp_GetProc(core, level, iupper+1, &sproc);
-         if (sproc > -1)
+         else
+         {
+             /* Place a repeat value to indicate the start of the time-line for this level */
+             ta[-1] = ta[0]; 
+         }
+         /* Post receive to set ta[iupper-ilower+1] on each processor */
+         if ( _warp_CoreElt(core, coarsen) != NULL )
+         {
+             if (right_proc > -1)
+             {
+                MPI_Irecv(&ta[iupper-ilower+1], sizeof(warp_Float), MPI_BYTE,
+                          right_proc, 0, comm, &request2);
+             }
+             else
+             {
+                 /* Place a repeat value to indicate the end the time-line for this level */
+                 ta[iupper-ilower+1] = ta[iupper-ilower];
+             }
+         }
+
+         /* Post send that sets ta[-1] on each processor */
+         if (right_proc > -1)
          {
             MPI_Send(&ta[iupper-ilower], sizeof(warp_Float), MPI_BYTE,
-                     sproc, 0, comm);
+                     right_proc, 0, comm);
          }
-         /* Finish receive */
-         if (rproc > -1)
+         /* Post send that sets ta[iupper-ilower+1] on each processor */
+         if ( (left_proc > -1) && ( _warp_CoreElt(core, coarsen) != NULL ) )
          {
-            MPI_Wait(&request, &status);
+            MPI_Send(&ta[0], sizeof(warp_Float), MPI_BYTE, left_proc, 0, comm);
+         }
+
+         /* Finish receive */
+         if (left_proc > -1)
+         {
+            MPI_Wait(&request1, &status);
+         }
+         if ( (right_proc > -1) && ( _warp_CoreElt(core, coarsen) != NULL ) )
+         {
+            MPI_Wait(&request2, &status);
          }
       }
    }

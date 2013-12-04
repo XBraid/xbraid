@@ -18,3 +18,22 @@ spatial problem size       : 16 x 16
   iterations           = 8
 spatial problem size       : 16 x 16
 
+# Begin Test 1
+
+  time steps = 128
+  number of levels     = 8
+  coarsening factor    = 2
+  num F-C relaxations  = 1
+  num rels on level 0  = 1
+  iterations           = 26
+spatial problem size       : 33 x 33
+  0   |  expl        9.82e-02    9.82e-02    1.45e-03    3.00e-01
+  1   |  expl        1.96e-01    1.96e-01    2.89e-03    1.50e-01
+  2   |  expl        1.96e-01    1.96e-01    5.78e-03    3.00e-01
+  3   |  expl        3.93e-01    3.93e-01    1.16e-02    1.50e-01
+  4   |  expl        3.93e-01    3.93e-01    2.31e-02    3.00e-01
+  5   |  expl        7.85e-01    7.85e-01    4.63e-02    1.50e-01
+  6   |  expl        7.85e-01    7.85e-01    9.25e-02    3.00e-01
+  7   |  expl        1.57e+00    1.57e+00    1.85e-01    1.50e-01
+
+

@@ -337,8 +337,9 @@ _warp_Step(warp_Core     core,
  */
 warp_Int
 _warp_Coarsen(warp_Core     core,
-              warp_Int      level,  /* coarse level */
-              warp_Int      index,  /* coarse index */
+              warp_Int      level,    /* coarse level */
+              warp_Int      f_index,  /* fine index */
+              warp_Int      c_index,  /* coarse index */
               warp_Vector   fvector,
               warp_Vector  *cvector);
 
@@ -347,8 +348,9 @@ _warp_Coarsen(warp_Core     core,
  */
 warp_Int
 _warp_Refine(warp_Core     core,
-             warp_Int      level,  /* fine level */
-             warp_Int      index,  /* fine index */
+             warp_Int      level,    /* fine level */
+             warp_Int      f_index,  /* fine index */
+             warp_Int      c_index,  /* coarse index */
              warp_Vector   cvector,
              warp_Vector  *fvector);
 

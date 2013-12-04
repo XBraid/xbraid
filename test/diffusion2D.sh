@@ -71,7 +71,7 @@ csplit -n 1 --silent --prefix $output_dir/$scriptname.saved. $scriptname.saved "
 # The tests are dumped to $output_dir/std.out.0, $output_dir/std.out.1, ...
 # Each std.out.num file is diff-ed with the corresponding .saved.num file with 
 # the result dumped to std.err.num. 
-lines_to_check="^  time steps|^  number of levels|^  coarsening factor|^  num F-C relaxations|^  num rels on level 0|^  iterations|^spatial problem size"
+lines_to_check="^  time steps|^  number of levels|^  coarsening factor|^  num F-C relaxations|^  num rels on level 0|^  iterations|^spatial problem size|  expl"
 
 # Test 0
 echo "Running Test 0"
@@ -86,6 +86,13 @@ $RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1>> $out
 egrep "$lines_to_check" $output_dir/std.out.1 > temp.out
 mv temp.out $output_dir/std.out.1
 diff -U3 -B -bI"$TestDelimiter" $output_dir/$scriptname.saved.1 $output_dir/std.out.1 >> $output_dir/std.err.1
+#
+# Test 2
+echo "Running Test 2"
+$RunString -np 8 $example_dir/drive-05  -pgrid 1 1 8 -ml 15 -nt 128 -nx 33 33 -mi 100 -expl -scoarsen >> $output_dir/std.out.2  2>> $output_dir/std.err.2
+egrep "$lines_to_check" $output_dir/std.out.2 > temp.out
+mv temp.out $output_dir/std.out.2
+diff -U3 -B -bI"$TestDelimiter" $output_dir/$scriptname.saved.2 $output_dir/std.out.2 >> $output_dir/std.err.2
 #
 # Test ...
 
