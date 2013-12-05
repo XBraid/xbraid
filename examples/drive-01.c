@@ -58,18 +58,14 @@ my_Phi(warp_App     app,
        double       tstart,
        double       tstop,
        double       accuracy,
-       int          gzero,
        warp_Vector  u,
        int         *rfactor_ptr)
 {
    /* On the finest grid, each value is half the previous value */
    (u->value) = pow(0.5, tstop-tstart)*(u->value);
 
-   if (!gzero)
-   {
-      /* Zero rhs for now */
-      (u->value) += 0.0;
-   }
+   /* Zero rhs for now */
+   (u->value) += 0.0;
 
    /* no refinement */
    *rfactor_ptr = 1;

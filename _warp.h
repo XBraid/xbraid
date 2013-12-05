@@ -317,7 +317,6 @@ _warp_Phi(warp_Core     core,
           warp_Int      level,
           warp_Int      index,
           warp_Float    accuracy,
-          warp_Int      gzero,
           warp_Vector   u,
           warp_Int     *rfactor);
 

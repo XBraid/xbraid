@@ -591,7 +591,6 @@ _warp_Phi(warp_Core     core,
           warp_Int      level,
           warp_Int      index,
           warp_Float    accuracy,
-          warp_Int      gzero,
           warp_Vector   u,
           warp_Int     *rfactor)
 {
@@ -603,7 +602,7 @@ _warp_Phi(warp_Core     core,
    warp_Int      ii;
 
    ii = index-ilower;
-   _warp_CoreFcn(core, phi)(app, ta[ii-1], ta[ii], accuracy, gzero, u, rfactor);
+   _warp_CoreFcn(core, phi)(app, ta[ii-1], ta[ii], accuracy,  u, rfactor);
 
    return _warp_error_flag;
 }
@@ -631,12 +630,12 @@ _warp_Step(warp_Core     core,
    ii = index-ilower;
    if (level == 0)
    {
-      _warp_Phi(core, level, index, accuracy, 0, u, &rfactor);
+      _warp_Phi(core, level, index, accuracy, u, &rfactor);
       rfactors[ii] = rfactor;
    }
    else
    {
-      _warp_Phi(core, level, index, accuracy, 1, u, &rfactor);
+      _warp_Phi(core, level, index, accuracy, u, &rfactor);
       _warp_CoreFcn(core, sum)(app, 1.0, va[ii], 1.0, u);
       _warp_CoreFcn(core, sum)(app, 1.0, wa[ii], 1.0, u);
    }
@@ -1035,7 +1034,7 @@ _warp_FRestrict(warp_Core    core,
             _warp_CommWait(core, &recv_handle);
          }
          _warp_CoreFcn(core, clone)(app, c_va[c_ii-1], &c_u);
-         _warp_Phi(core, c_level, c_i, _warp_CoreElt(core, accuracy[1].value), 1, c_u, &rfactor);
+         _warp_Phi(core, c_level, c_i, _warp_CoreElt(core, accuracy[1].value), c_u, &rfactor);
          _warp_CoreFcn(core, sum)(app, -1.0, c_u, 1.0, c_wa[c_ii]);
          _warp_CoreFcn(core, free)(app, c_u);
       }

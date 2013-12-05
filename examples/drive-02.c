@@ -12,14 +12,12 @@
 
                                   u_t - K * div u = 0
 
-                 in the unit square subject to 
-                    zero Dirichlet boundary conditions,u_b = 0, and 
-                    initial condition U0 at time t = 0.
-	         The domain is split into an p_x x p_y processor grid.
-		 Each processor has a n_x x n_y grid, with nodes
-                 connected by a 5-point stencil. More precisely, we use
-                 central FD in space and backward Euler in time,
-                 definining the stencil
+                 in the unit square subject to zero Dirichlet boundary
+                 conditions,u_b = 0, and initial condition U0 at time t = 0.
+                 The domain is split into an p_x x p_y processor grid.  Each
+                 processor has a n_x x n_y grid, with nodes connected by a
+                 5-point stencil. More precisely, we use central FD in space
+                 and backward Euler in time, definining the stencil
 
                                     -K*dt/(dy^2)
                    -K*dt/(dx^2)  1+2*K*(dt/(dx^2)+dt/(dy^2)) -K*dt/(dx^2)
@@ -354,9 +352,8 @@ addBoundaryToRHS( HYPRE_SStructVector  b,
                   int                  nly,
                   int                  px, 
                   int                  py, 
-		  int                  pi, 
-                  int                  pj, 
-                  int                  zeroDirichlet )
+                  int                  pi, 
+                  int                  pj) 
 {
    int i, j, m;
    
@@ -444,300 +441,298 @@ addBoundaryToRHS( HYPRE_SStructVector  b,
    }
 
    
-   /* For zero Dirichlet boundary conditions, no further changes
-    * are necessary. Otherwise, we have to modify the right-hand
-    * side vector to adjust for removing connections between
-    * the interior and boundary nodes in the discretization
-    * matrix. */
-   if( zeroDirichlet == 0 ){ 
-      /* Neighbors of boundary nodes of boundary y = 0 
-       * Neighbors are either
-       *   i) on same processor as boundary nodes (pj = 0)
-       * or
-       *   ii) on neighboring processor (pj = 1) 
-       * Case ii) only applies if nly = 1 */
-       
-      /* Neighbors of boundary on same processor */
-      if( (nly > 1) && (pj == 0) )
-      {
-         bc_ilower[0] = ilower[0];
-         bc_ilower[1] = ilower[1] + 1;
-           
-         bc_iupper[0] = bc_ilower[0] + nlx-1;
-         bc_iupper[1] = bc_ilower[1];
-           
-         istart = 0; iend = nlx;
-           
-         /* Adjust box to not include boundary nodes */
-	 if( pi == 0 ){
-	    bc_ilower[0] += 1;
-	    istart += 1;
-	 }
-
-	 if( pi == px-1 ){
-	    bc_iupper[0] -= 1;
-	    iend -= 1;
-	 }
+   /* 
+    * Now, account for the boundary conditions contributions to the
+    * domain interior from A_ib u_b
+    */ 
+      
+   /* Neighbors of boundary nodes of boundary y = 0 
+    * Neighbors are either
+    *   i) on same processor as boundary nodes (pj = 0)
+    * or
+    *   ii) on neighboring processor (pj = 1) 
+    * Case ii) only applies if nly = 1 */
+    
+   /* Neighbors of boundary on same processor */
+   if( (nly > 1) && (pj == 0) )
+   {
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1] + 1;
         
-         /* Adjust for removing connections between the boundary
-          * and interior nodes in the discretization matrix. */
-         for( m = 0, i = istart; i < iend; i++, m++ )
-            bvalues[m] = K*(dt/(dy*dy))*
-                           B0( (bc_ilower[0]+i-istart)*dx,
-                               (bc_ilower[1]-1)*dy );
-
-         HYPRE_SStructVectorAddToBoxValues(b, part, bc_ilower,
-                                           bc_iupper, var, bvalues);
-      }
-      /* Neighbors of boundary on neighboring processor */
-      if( (nly == 1) && (pj == 1) )
-      {
-         bc_ilower[0] = ilower[0];
-         bc_ilower[1] = ilower[1];
-           
-         bc_iupper[0] = bc_ilower[0] + nlx-1;
-         bc_iupper[1] = bc_ilower[1];
-           
-         istart = 0; iend = nlx;
-           
-         /* Adjust box to not include boundary nodes */
-	 if( pi == 0 ){
-	    bc_ilower[0] += 1;
-	    istart += 1;
-	 }
-
-	 if( pi == px-1 ){
-	    bc_iupper[0] -= 1;
-	    iend -= 1;
-	 }
-
-         /* Adjust for removing connections between the boundary
-          * and interior nodes in the discretization matrix. */
-         for( m = 0, i = istart; i < iend; i++, m++ )
-             bvalues[m] = K*(dt/(dy*dy))*
-                           B0( (bc_ilower[0]+i-istart)*dx,
-                               (bc_ilower[1]-1)*dy );
-
-         HYPRE_SStructVectorAddToBoxValues(b, part, bc_ilower,
-                                           bc_iupper, var, bvalues);
-      }
-
-      /* Neighbors of boundary nodes of boundary y = PI
-       * Neighbors are either
-       *   i) on same processor as boundary nodes (pj = py-1)
-       * or
-       *   ii) on neighboring processor (pj = py-2) 
-       * Case ii) only applies if nly = 1 */
-       
-      /* Neighbors of boundary on same processor */
-      if( (nly > 1) && (pj == py-1) )
-      {
-         bc_ilower[0] = ilower[0];
-         bc_ilower[1] = ilower[1] + nly-1 - 1;
-           
-         bc_iupper[0] = bc_ilower[0] + nlx-1;
-         bc_iupper[1] = bc_ilower[1];
-           
-         istart = 0; iend = nlx;
-           
-         /* Adjust box to not include boundary nodes */
-         if( pi == 0 ){
-   	    bc_ilower[0] += 1;
-	    istart += 1;
-	 }
-
-	 if( pi == px-1 ){
-	    bc_iupper[0] -= 1;
-	    iend -= 1;
-	 }
+      bc_iupper[0] = bc_ilower[0] + nlx-1;
+      bc_iupper[1] = bc_ilower[1];
         
-         /* Adjust for removing connections between the boundary
-          * and interior nodes in the discretization matrix. */ 
-         for( m = 0, i = istart; i < iend; i++, m++ )
-            bvalues[m] = K*(dt/(dy*dy))*
-                           B0( (bc_ilower[0]+i-istart)*dx,
-                               (bc_ilower[1]+1)*dy );
-
-         HYPRE_SStructVectorAddToBoxValues(b, part, bc_ilower,
-                                           bc_iupper, var, bvalues);
-      }
-      /* Neighbors of boundary on neighboring processor */
-      if( (nly == 1) && (pj == py-2) )
-      {
-         bc_ilower[0] = ilower[0];
-         bc_ilower[1] = ilower[1] + nly-1;
-           
-         bc_iupper[0] = bc_ilower[0] + nlx-1;
-         bc_iupper[1] = bc_ilower[1];
-           
-         istart = 0; iend = nlx;
-           
-         /* Adjust box to not include boundary nodes */
-         if( pi == 0 ){
-	    bc_ilower[0] += 1;
-	    istart += 1;
-	 }
-
-	 if( pi == px-1 ){
-	    bc_iupper[0] -= 1;
-	    iend -= 1;
-	 }
-           
-         /* Adjust for removing connections between the boundary
-          * and interior nodes in the discretization matrix. */
-         for( m = 0, i = istart; i < iend; i++, m++ )
-            bvalues[m] = K*(dt/(dy*dy))*
-                           B0( (bc_ilower[0]+i-istart)*dx,
-                               (bc_ilower[1]+1)*dy );
-
-         HYPRE_SStructVectorAddToBoxValues(b, part, bc_ilower,
-                                           bc_iupper, var, bvalues);
-      }
-
-      /* Neighbors of boundary nodes of boundary x = 0 
-       * Neighbors are either
-       *   i) on same processor as boundary nodes (pi = 0)
-       * or
-       *   ii) on neighboring processor (pi = 1) 
-       * Case ii) only applies if nlx = 1 */
-       
-      /* Neighbors of boundary on same processor */
-      if( (nlx > 1) && (pi == 0) )
-      {
-         bc_ilower[0] = ilower[0] + 1;
-         bc_ilower[1] = ilower[1];
-           
-         bc_iupper[0] = bc_ilower[0];
-         bc_iupper[1] = bc_ilower[1] + nly-1;
-           
-         jstart = 0; jend = nly;
-           
-         /* Adjust box to not include boundary nodes */
-         if( pj == 0 ){
-	    bc_ilower[1] += 1;
-	    jstart += 1;
-	 }
-
-	 if( pj == py-1 ){
-	    bc_iupper[1] -= 1;
-	    jend -= 1;
-	 }          
-
-         /* Adjust for removing connections between the boundary
-          * and interior nodes in the discretization matrix. */
-         for( m = 0, j = jstart; j < jend; j++, m++ )
-            bvalues[m] = K*(dt/(dx*dx))*
-                           B0( (bc_ilower[0]-1)*dx,
-                               (bc_ilower[1]+j-jstart)*dy );
-
-         HYPRE_SStructVectorAddToBoxValues(b, part, bc_ilower,
-                                           bc_iupper, var, bvalues);
-      }
-      /* Neighbors of boundary on neighboring processor */
-      if( (nlx == 1) && (pi == 1) )
-      {
-         bc_ilower[0] = ilower[0];
-         bc_ilower[1] = ilower[1];
-          
-         bc_iupper[0] = bc_ilower[0];
-         bc_iupper[1] = bc_ilower[1] + nly-1;
-           
-         jstart = 0; jend = nly;
-           
-         /* Adjust box to not include boundary nodes */
-         if( pj == 0 ){
-	    bc_ilower[1] += 1;
-	    jstart += 1;
-	 }
-
-	 if( pj == py-1 ){
-	    bc_iupper[1] -= 1;
-	    jend -= 1;
-	 }       
-
-         /* Adjust for removing connections between the boundary
-          * and interior nodes in the discretization matrix. */
-         for( m = 0, j = jstart; j < jend; j++, m++ )
-            bvalues[m] = K*(dt/(dx*dx))*
-                           B0( (bc_ilower[0]-1)*dx,
-                               (bc_ilower[1]+j-jstart)*dy );
-
-         HYPRE_SStructVectorAddToBoxValues(b, part, bc_ilower,
-                                           bc_iupper, var, bvalues);
-      }
-
-      /* Neighbors of boundary nodes of boundary x = PI
-       * Neighbors are either
-       *   i) on same processor as boundary nodes (pi = px-1)
-       * or
-       *   ii) on neighboring processor (pi = px-2) 
-       * Case ii) only applies if nlx = 1 */
-       
-      /* Neighbors of boundary on same processor */
-      if( (nlx > 1) && (pi == px-1) )
-      {
-         bc_ilower[0] = ilower[0] + nlx-1 - 1;
-         bc_ilower[1] = ilower[1];
-           
-         bc_iupper[0] = bc_ilower[0];
-         bc_iupper[1] = bc_ilower[1] + nly-1;
-
-         jstart = 0; jend = nly;
-           
-         /* Adjust box to not include boundary nodes */
-         if( pj == 0 ){
-	    bc_ilower[1] += 1;
-	    jstart += 1;
-	 }
-
-	 if( pj == py-1 ){
-	    bc_iupper[1] -= 1;
-	    jend -= 1;
-	 }
-
-         /* Adjust for removing connections between the boundary
-          * and interior nodes in the discretization matrix. */
-         for( m = 0, j = jstart; j < jend; j++, m++ )
-            bvalues[m] = K*(dt/(dx*dx))*
-                           B0( (bc_ilower[0]+1)*dx,
-                               (bc_ilower[1]+j-jstart)*dy );
-
-         HYPRE_SStructVectorAddToBoxValues(b, part, bc_ilower,
-                                           bc_iupper, var, bvalues);
-      }
-      /* Neighbors of boundary on neighboring processor */
-      if( (nlx == 1) && (pi == px-2) )
-      {
-         bc_ilower[0] = ilower[0] + nlx-1;
-         bc_ilower[1] = ilower[1];
-           
-         bc_iupper[0] = bc_ilower[0];
-         bc_iupper[1] = bc_ilower[1] + nly-1;
-
-         jstart = 0; jend = nly;
-           
-         /* Adjust box to not include boundary nodes */
-         if( pj == 0 ){
-            bc_ilower[1] += 1;
-	    jstart += 1;
-	 }
-
-	 if( pj == py-1 ){
-	    bc_iupper[1] -= 1;
-	    jend -= 1;
-	 }
+      istart = 0; iend = nlx;
         
-         /* Adjust for removing connections between the boundary
-          * and interior nodes in the discretization matrix. */
-         for( m = 0, j = jstart; j < jend; j++, m++ )
-            bvalues[m] = K*(dt/(dx*dx))*
-                           B0( (bc_ilower[0]+1)*dx,
-                               (bc_ilower[1]+j-jstart)*dy );
-
-         HYPRE_SStructVectorAddToBoxValues(b, part, bc_ilower,
-                                           bc_iupper, var, bvalues);
+      /* Adjust box to not include boundary nodes */
+      if( pi == 0 ){
+         bc_ilower[0] += 1;
+         istart += 1;
       }
-   } /* end if zeroDirichlet == 0 */
+
+      if( pi == px-1 ){
+         bc_iupper[0] -= 1;
+         iend -= 1;
+      }
+     
+      /* Adjust for removing connections between the boundary
+       * and interior nodes in the discretization matrix. */
+      for( m = 0, i = istart; i < iend; i++, m++ )
+         bvalues[m] = K*(dt/(dy*dy))*
+                        B0( (bc_ilower[0]+i-istart)*dx,
+                            (bc_ilower[1]-1)*dy );
+
+      HYPRE_SStructVectorAddToBoxValues(b, part, bc_ilower,
+                                        bc_iupper, var, bvalues);
+   }
+   /* Neighbors of boundary on neighboring processor */
+   if( (nly == 1) && (pj == 1) )
+   {
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1];
+        
+      bc_iupper[0] = bc_ilower[0] + nlx-1;
+      bc_iupper[1] = bc_ilower[1];
+        
+      istart = 0; iend = nlx;
+        
+      /* Adjust box to not include boundary nodes */
+      if( pi == 0 ){
+         bc_ilower[0] += 1;
+         istart += 1;
+      }
+      
+      if( pi == px-1 ){
+         bc_iupper[0] -= 1;
+         iend -= 1;
+      }
+      
+      /* Adjust for removing connections between the boundary
+       * and interior nodes in the discretization matrix. */
+      for( m = 0, i = istart; i < iend; i++, m++ )
+          bvalues[m] = K*(dt/(dy*dy))*
+                        B0( (bc_ilower[0]+i-istart)*dx,
+                            (bc_ilower[1]-1)*dy );
+
+      HYPRE_SStructVectorAddToBoxValues(b, part, bc_ilower,
+                                        bc_iupper, var, bvalues);
+   }
+
+   /* Neighbors of boundary nodes of boundary y = PI
+    * Neighbors are either
+    *   i) on same processor as boundary nodes (pj = py-1)
+    * or
+    *   ii) on neighboring processor (pj = py-2) 
+    * Case ii) only applies if nly = 1 */
+    
+   /* Neighbors of boundary on same processor */
+   if( (nly > 1) && (pj == py-1) )
+   {
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1] + nly-1 - 1;
+        
+      bc_iupper[0] = bc_ilower[0] + nlx-1;
+      bc_iupper[1] = bc_ilower[1];
+        
+      istart = 0; iend = nlx;
+        
+      /* Adjust box to not include boundary nodes */
+      if( pi == 0 ){
+         bc_ilower[0] += 1;
+         istart += 1;
+      }
+
+      if( pi == px-1 ){
+         bc_iupper[0] -= 1;
+         iend -= 1;
+      }
+     
+      /* Adjust for removing connections between the boundary
+       * and interior nodes in the discretization matrix. */ 
+      for( m = 0, i = istart; i < iend; i++, m++ )
+         bvalues[m] = K*(dt/(dy*dy))*
+                        B0( (bc_ilower[0]+i-istart)*dx,
+                            (bc_ilower[1]+1)*dy );
+
+      HYPRE_SStructVectorAddToBoxValues(b, part, bc_ilower,
+                                        bc_iupper, var, bvalues);
+   }
+   /* Neighbors of boundary on neighboring processor */
+   if( (nly == 1) && (pj == py-2) )
+   {
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1] + nly-1;
+        
+      bc_iupper[0] = bc_ilower[0] + nlx-1;
+      bc_iupper[1] = bc_ilower[1];
+        
+      istart = 0; iend = nlx;
+        
+      /* Adjust box to not include boundary nodes */
+      if( pi == 0 ){
+         bc_ilower[0] += 1;
+         istart += 1;
+      }
+
+      if( pi == px-1 ){
+         bc_iupper[0] -= 1;
+         iend -= 1;
+      }
+        
+      /* Adjust for removing connections between the boundary
+       * and interior nodes in the discretization matrix. */
+      for( m = 0, i = istart; i < iend; i++, m++ )
+         bvalues[m] = K*(dt/(dy*dy))*
+                        B0( (bc_ilower[0]+i-istart)*dx,
+                            (bc_ilower[1]+1)*dy );
+
+      HYPRE_SStructVectorAddToBoxValues(b, part, bc_ilower,
+                                        bc_iupper, var, bvalues);
+   }
+
+   /* Neighbors of boundary nodes of boundary x = 0 
+    * Neighbors are either
+    *   i) on same processor as boundary nodes (pi = 0)
+    * or
+    *   ii) on neighboring processor (pi = 1) 
+    * Case ii) only applies if nlx = 1 */
+    
+   /* Neighbors of boundary on same processor */
+   if( (nlx > 1) && (pi == 0) )
+   {
+      bc_ilower[0] = ilower[0] + 1;
+      bc_ilower[1] = ilower[1];
+        
+      bc_iupper[0] = bc_ilower[0];
+      bc_iupper[1] = bc_ilower[1] + nly-1;
+        
+      jstart = 0; jend = nly;
+        
+      /* Adjust box to not include boundary nodes */
+      if( pj == 0 ){
+         bc_ilower[1] += 1;
+         jstart += 1;
+      }
+
+      if( pj == py-1 ){
+         bc_iupper[1] -= 1;
+         jend -= 1;
+      }          
+
+      /* Adjust for removing connections between the boundary
+       * and interior nodes in the discretization matrix. */
+      for( m = 0, j = jstart; j < jend; j++, m++ )
+         bvalues[m] = K*(dt/(dx*dx))*
+                        B0( (bc_ilower[0]-1)*dx,
+                            (bc_ilower[1]+j-jstart)*dy );
+
+      HYPRE_SStructVectorAddToBoxValues(b, part, bc_ilower,
+                                        bc_iupper, var, bvalues);
+   }
+   /* Neighbors of boundary on neighboring processor */
+   if( (nlx == 1) && (pi == 1) )
+   {
+      bc_ilower[0] = ilower[0];
+      bc_ilower[1] = ilower[1];
+       
+      bc_iupper[0] = bc_ilower[0];
+      bc_iupper[1] = bc_ilower[1] + nly-1;
+        
+      jstart = 0; jend = nly;
+        
+      /* Adjust box to not include boundary nodes */
+      if( pj == 0 ){
+         bc_ilower[1] += 1;
+         jstart += 1;
+      }
+
+      if( pj == py-1 ){
+         bc_iupper[1] -= 1;
+         jend -= 1;
+      }       
+
+      /* Adjust for removing connections between the boundary
+       * and interior nodes in the discretization matrix. */
+      for( m = 0, j = jstart; j < jend; j++, m++ )
+         bvalues[m] = K*(dt/(dx*dx))*
+                        B0( (bc_ilower[0]-1)*dx,
+                            (bc_ilower[1]+j-jstart)*dy );
+
+      HYPRE_SStructVectorAddToBoxValues(b, part, bc_ilower,
+                                        bc_iupper, var, bvalues);
+   }
+
+   /* Neighbors of boundary nodes of boundary x = PI
+    * Neighbors are either
+    *   i) on same processor as boundary nodes (pi = px-1)
+    * or
+    *   ii) on neighboring processor (pi = px-2) 
+    * Case ii) only applies if nlx = 1 */
+    
+   /* Neighbors of boundary on same processor */
+   if( (nlx > 1) && (pi == px-1) )
+   {
+      bc_ilower[0] = ilower[0] + nlx-1 - 1;
+      bc_ilower[1] = ilower[1];
+        
+      bc_iupper[0] = bc_ilower[0];
+      bc_iupper[1] = bc_ilower[1] + nly-1;
+
+      jstart = 0; jend = nly;
+        
+      /* Adjust box to not include boundary nodes */
+      if( pj == 0 ){
+         bc_ilower[1] += 1;
+         jstart += 1;
+      }
+
+      if( pj == py-1 ){
+         bc_iupper[1] -= 1;
+         jend -= 1;
+      }
+
+      /* Adjust for removing connections between the boundary
+       * and interior nodes in the discretization matrix. */
+      for( m = 0, j = jstart; j < jend; j++, m++ )
+         bvalues[m] = K*(dt/(dx*dx))*
+                        B0( (bc_ilower[0]+1)*dx,
+                            (bc_ilower[1]+j-jstart)*dy );
+
+      HYPRE_SStructVectorAddToBoxValues(b, part, bc_ilower,
+                                        bc_iupper, var, bvalues);
+   }
+   /* Neighbors of boundary on neighboring processor */
+   if( (nlx == 1) && (pi == px-2) )
+   {
+      bc_ilower[0] = ilower[0] + nlx-1;
+      bc_ilower[1] = ilower[1];
+        
+      bc_iupper[0] = bc_ilower[0];
+      bc_iupper[1] = bc_ilower[1] + nly-1;
+
+      jstart = 0; jend = nly;
+        
+      /* Adjust box to not include boundary nodes */
+      if( pj == 0 ){
+         bc_ilower[1] += 1;
+         jstart += 1;
+      }
+
+      if( pj == py-1 ){
+         bc_iupper[1] -= 1;
+         jend -= 1;
+      }
+     
+      /* Adjust for removing connections between the boundary
+       * and interior nodes in the discretization matrix. */
+      for( m = 0, j = jstart; j < jend; j++, m++ )
+         bvalues[m] = K*(dt/(dx*dx))*
+                        B0( (bc_ilower[0]+1)*dx,
+                            (bc_ilower[1]+j-jstart)*dy );
+
+      HYPRE_SStructVectorAddToBoxValues(b, part, bc_ilower,
+                                        bc_iupper, var, bvalues);
+   }
    free(bvalues);
 
    /* Finalize the vector assembly. */
@@ -1561,8 +1556,7 @@ setUpStructSolver( MPI_Comm             comm,
 /* --------------------------------------------------------------------
  * Time integrator routine.
  * This routine performs the update
- *   u_i = Phi_i(u_{i-1})        (if gzero = 0)
- *   u_i = Phi_i(u_{i-1}) + g_i  (if gzero = 1)
+ *   u_i = Phi_i(u_{i-1}) + g_i 
  * Note that the first case corresponds to assuming zero Dirichlet BCs
  * and a zero RHS of the PDE.
  * When Phi is called, u is u_{i-1}. At the end of the routine, u is 
@@ -1573,7 +1567,6 @@ my_Phi(warp_App     app,
        double       tstart,
        double       tstop,
        double       accuracy,
-       warp_Int     gzero,
        warp_Vector  u,
        int         *rfactor_ptr)
 {
@@ -1705,7 +1698,7 @@ my_Phi(warp_App     app,
       free( values );
       addBoundaryToRHS( b, app->K, app->dx, app->dy, tstop-tstart,
                         app->ilower_x, app->nlx, app->nly, app->px, 
-                        app->py, app->pi, app->pj, gzero );
+                        app->py, app->pi, app->pj );
       /* add infos from RHS of PDE here */ 
 
       /* --------------------------------------------------------------
