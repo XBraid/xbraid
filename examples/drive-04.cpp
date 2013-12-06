@@ -843,7 +843,6 @@ public:
                   double       tstart,
                   double       tstop,
                   double       accuracy,
-                  int          gzero,
                   warp_Vector  _u,
                   int         *rfactor_ptr)
    {
@@ -854,11 +853,6 @@ public:
       double dt = tstop-tstart;
 
       app->solver->Step(*u, t, dt);
-
-      if (!gzero)
-      {
-         // this appears not to be necessary
-      }
 
       // no refinement
       *rfactor_ptr = 1;
