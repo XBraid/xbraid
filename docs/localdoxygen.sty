@@ -1,6 +1,6 @@
 % stylesheet for doxygen 1.8.5
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{doxygen}
+\ProvidesPackage{localdoxygen}
 
 % Packages used by this style file
 \RequirePackage{alltt}
@@ -111,16 +111,30 @@
 
 % Used by numbered lists (using '-#' or <ol> ... </ol>)
 \newenvironment{DoxyEnumerate}{%
-  \enumerate%
+   \begin{enumerate}%
+   \setlength{\itemsep}{5pt}%
+   \setlength{\parsep}{0pt}%
+   \setlength{\topsep}{0pt}%
+   \setlength{\partopsep}{0pt}%
+   \setlength{\labelwidth}{1em}%
+   \setlength{\labelsep}{0.5em}%
+   \setlength{\parskip}{0pt} %
 }{%
-  \endenumerate%
+  \end{enumerate}%
 }
 
 % Used by bullet lists (using '-', @li, @arg, or <ul> ... </ul>)
 \newenvironment{DoxyItemize}{%
-  \itemize%
+   \begin{itemize}%
+   \setlength{\itemsep}{5pt}%
+   \setlength{\parsep}{0pt}%
+   \setlength{\topsep}{0pt}%
+   \setlength{\partopsep}{0pt}%
+   \setlength{\labelwidth}{1em}%
+   \setlength{\labelsep}{0.5em}%
+   \setlength{\parskip}{0pt} %
 }{%
-  \enditemize%
+  \end{itemize}%
 }
 
 % Used by description lists (using <dl> ... </dl>)

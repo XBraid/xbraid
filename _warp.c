@@ -956,7 +956,12 @@ _warp_FRestrict(warp_Core    core,
 
    _warp_UCommInit(core, level);
 
-   /* Start from the right-most interval */
+   /* Start from the right-most interval.
+    * 
+    * Carry out an F-relax and then a C-relax.  These relaxations are needed to
+    * compute the residual, which is needed for the coarse-grid right-hand-side
+    * and for convergence checking on the finest grid. This loop updates va and
+    * wa */
    for (interval = ncpoints; interval > -1; interval--)
    {
       _warp_UGetInterval(core, level, interval, &flo, &fhi, &ci);
@@ -980,7 +985,7 @@ _warp_FRestrict(warp_Core    core,
       /* Compute residual and restrict */
       if (ci > 0)
       {
-         /* Compute residual */
+         /* Compute residual (requires an additional C-relax) */
          _warp_Step(core, level, ci, accuracy, r);
          _warp_UGetVectorRef(core, level, ci, &u);
          _warp_CoreFcn(core, sum)(app, -1.0, u, 1.0, r);
@@ -992,14 +997,15 @@ _warp_FRestrict(warp_Core    core,
             rnorm += rdot;
          }
 
-         /* Restrict u and residual */
+         /* Restrict u and residual, coarsening in space if needed */
          _warp_MapFineToCoarse(ci, cfactor, c_index);
          _warp_Coarsen(core, c_level, ci, c_index, u, &c_va[c_index-c_ilower]);
          _warp_Coarsen(core, c_level, ci, c_index, r, &c_wa[c_index-c_ilower]);
       }
       else if (ci == 0)
       {
-         /* Restrict initial condition to coarse grid */
+         /* Restrict initial condition to coarse grid, coarsening in space if
+          * needed */
          _warp_UGetVectorRef(core, level, 0, &u);
          _warp_Coarsen(core, c_level, 0, 0, u, &c_va[0]);
       }
@@ -1082,12 +1088,17 @@ _warp_FInterp(warp_Core  core,
 
    _warp_UCommInitF(core, level);
 
-   /* Start from the right-most interval */
+   /* Start from the right-most interval 
+   *
+   *  First, generate the coarse-grid F-points through F-relaxation and
+   *  interpolate them to the fine grid, where they are C-points.  Second,
+   *  interpolate the coarse-grid C-points to the fine-grid.  The user-defined
+   *  spatial refinement (if set) is also called.  */
    for (interval = ncpoints; interval > -1; interval--)
    {
       _warp_UGetInterval(core, level, interval, &flo, &fhi, &ci);
 
-      /* Relax and interpolate F-points */
+      /* Relax and interpolate F-points, refining in space if needed */
       if (flo <= fhi)
       {
          _warp_UGetVector(core, level, flo-1, &u);
@@ -1110,7 +1121,7 @@ _warp_FInterp(warp_Core  core,
          _warp_CoreFcn(core, free)(app, u);
       }
 
-      /* Interpolate C-points */
+      /* Interpolate C-points, refining in space if needed */
       if (ci > 0)
       {
          _warp_UGetVectorRef(core, level, ci, &u);

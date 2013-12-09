@@ -385,20 +385,35 @@ _warp_CFRelax(warp_Core  core,
               warp_Int   level);
 
 /**
- * F-Relax on level and restrict to level+1
+ * F-Relax on *level* and then restrict to *level+1*\n
+ * Output:
+ * - The restricted vectors *va* and *wa* will be created, representing 
+ *    *level+1* versions of the unknown and rhs vectors.
+ *    
+ *    If set, the user-defined coarsening routine is called.
+ *
+ * - If *level==0*, then *rnorm_ptr* will contain the
+ *   residual norm.
  */
 warp_Int
-_warp_FRestrict(warp_Core    core,
-                warp_Int     level,
-                warp_Float  *rnorm_ptr);
+_warp_FRestrict(warp_Core    core,       /**< warp_Core (_warp_Core) struct */   
+                warp_Int     level,      /**< restrict from level to level+1 */
+                warp_Float  *rnorm_ptr   /**< pointer to residual norm (if level 0) */
+                );
 
 
 /**
- * F-Relax on level and interpolate to level-1
+ * F-Relax on *level* and interpolate to *level-1*\n
+ * Output:
+ * - The unknown vector *u* on *level* is created by interpolating
+ *   from *level+1*.
+ *    
+ *   If set, the user-defined refinement routine is called.
  */
 warp_Int
-_warp_FInterp(warp_Core  core,
-              warp_Int   level);
+_warp_FInterp(warp_Core  core,           /**< warp_Core (_warp_Core) struct */  
+              warp_Int   level           /**< interp from level to level+1 */
+              );
 
 /**
  * Create a new fine grid based on user refinement factor information, then
