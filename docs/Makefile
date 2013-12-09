@@ -2,7 +2,7 @@
 DOX=doxygen
 DOXVERSION := $(shell expr `doxygen --version | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 10800)
 
-user_manual: user_manual.conf postprocess_latex
+user_manual: user_manual.conf 
 ifeq "$(DOXVERSION)" "1"
 	$(DOX) user_manual.conf
 	# sed command cleans up latex file some
@@ -12,7 +12,7 @@ else
 	@echo "Doxygen version too old"
 endif	
 
-developer_manual: developer_manual.conf postprocess_latex
+developer_manual: developer_manual.conf 
 ifeq "$(DOXVERSION)" "1"
 	$(DOX) developer_manual.conf
 	# sed command cleans up latex file some
