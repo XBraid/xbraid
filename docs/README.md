@@ -1,22 +1,20 @@
 ## Using Doxygen
 
-To make the documentation:
+To build the documentation, doxygen must be version 1.8 or greater.
+Warp documentation uses a 
+[markdown](http://www.stack.nl/~dimitri/doxygen/manual/markdown.html) syntax
+both in source file comments and in \*.md files.  
 
-      $ doxygen user_manual.conf
-      $ ./postprocess_latex
-      $ cd user_manual
-      $ make
-      $ acroread refman.pdf
+To make the documentation,
+
+      $ make user_manual 
+      $ acroread user_manual.pdf
 
 or to make a more extensive reference manual for developers, 
 
-      $ doxygen reference_manual.conf
-      $ ./postprocess_latex
-      $ cd reference_manual
-      $ make
-      $ acroread refman.pdf
+      $ make developer_manual 
+      $ acroread developer_manual.pdf
 
-The version of doxygen must be higher than 1.8.0.  
 Developers can run doxygen from a precompiled binary, 
 which may or may not work for your machine, 
 
