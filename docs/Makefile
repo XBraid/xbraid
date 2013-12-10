@@ -4,8 +4,8 @@ DOXVERSION := $(shell expr `doxygen --version | sed -e 's/\.\([0-9][0-9]\)/\1/g'
 
 clean_latex:
 	# sed command cleans up latex file some
-	cd user_manual;      sed '/.*8md.*/d' refman.tex > refman.temp.tex; mv refman.temp.tex refman.tex
-	cd developer_manual; sed '/.*8md.*/d' refman.tex > refman.temp.tex; mv refman.temp.tex refman.tex
+	if test -d user_manual; then cd user_manual; sed '/.*8md.*/d' refman.tex > refman.temp.tex; mv refman.temp.tex refman.tex; fi
+	if test -d developer_manual; then cd developer_manual; sed '/.*8md.*/d' refman.tex > refman.temp.tex; mv refman.temp.tex refman.tex; fi
 
 user_manual: user_manual.conf 
 ifeq "$(DOXVERSION)" "1"
