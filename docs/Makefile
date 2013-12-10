@@ -2,11 +2,15 @@
 DOX=doxygen
 DOXVERSION := $(shell expr `doxygen --version | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 10800)
 
+clean_latex:
+	# sed command cleans up latex file some
+	cd user_manual;      sed '/.*8md.*/d' refman.tex > refman.temp.tex; mv refman.temp.tex refman.tex
+	cd developer_manual; sed '/.*8md.*/d' refman.tex > refman.temp.tex; mv refman.temp.tex refman.tex
+
 user_manual: user_manual.conf 
 ifeq "$(DOXVERSION)" "1"
 	$(DOX) user_manual.conf
-	# sed command cleans up latex file some
-	sed -i '/.*8md.*/d' user_manual/refman.tex 2> /dev/null	
+	make clean_latex
 	cd user_manual; make; cp refman.pdf ../user_manual.pdf
 else
 	@echo "Doxygen version too old"
@@ -15,8 +19,7 @@ endif
 developer_manual: developer_manual.conf 
 ifeq "$(DOXVERSION)" "1"
 	$(DOX) developer_manual.conf
-	# sed command cleans up latex file some
-	sed -i '/.*8md.*/d' developer_manual/refman.tex 2> /dev/null
+	make clean_latex 
 	cd developer_manual; make; cp refman.pdf ../developer_manual.pdf
 else
 	@echo "Doxygen version too old"
