@@ -788,6 +788,8 @@ void SolveODE(TimeDependentOperator *ode, HypreParVector *X0,
 
    if (x && exsol)
    {
+      *x = *X0;
+
       exsol->SetTime(t);
 
       double err = x->ComputeL2Error(*exsol);
@@ -929,11 +931,12 @@ public:
    {
       WarpApp *app = (WarpApp*) _app;
       HypreParVector *u = (HypreParVector*) _u;
-      (*app->x) = *u;
 
       // if (t == app->tstart || t == app->tstop)
       if (t == app->tstop)
       {
+         (*app->x) = *u; // Distribute
+
          // Opening multiple 'parallel' connections to GLVis simultaneously
          // (from different time intervals in this case) may cause incorrect
          // behavior.
