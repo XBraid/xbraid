@@ -1,3 +1,9 @@
+##################################################################
+# Import machine specific compilers, options, flags, etc.. 
+##################################################################
+
+include ../../makefile.inc
+
 .SUFFIXES:
 .SUFFIXES: .c .o 
 
