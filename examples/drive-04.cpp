@@ -585,9 +585,10 @@ public:
       : A(_A), M(_M), b_form(_b_form), b_coeff(_b_coeff), b_vcoeff(_b_vcoeff)
    {
       size = A->Size();
-      X = new HypreParVector(A->GetComm(), A->GetGlobalNumCols(), NULL,
+      double tmp; // workaround to avoid memory leak
+      X = new HypreParVector(A->GetComm(), A->GetGlobalNumCols(), &tmp,
                              A->GetColStarts());
-      Y = new HypreParVector(A->GetComm(), A->GetGlobalNumCols(), NULL,
+      Y = new HypreParVector(A->GetComm(), A->GetGlobalNumCols(), &tmp,
                              A->GetColStarts());
 
       if (!M)
@@ -691,6 +692,7 @@ public:
          B_amg = new HypreBoomerAMG(*B);
          B_amg->SetPrintLevel(-1);
 
+         delete B_pcg;
          B_pcg = new HyprePCG(*B);
          B_pcg->SetTol(1e-12);
          B_pcg->SetMaxIter(200);
@@ -743,8 +745,8 @@ void SolveODE(TimeDependentOperator *ode, HypreParVector *X0,
    {
       char vishost[] = "localhost";
       int  visport   = 19916;
-      sol_sock = new socketstream(vishost, visport);
       pmesh = x->ParFESpace()->GetParMesh();
+      sol_sock = new socketstream(vishost, visport);
 
       *x = *X0;
       *sol_sock << "parallel " << pmesh->GetNRanks()
@@ -764,6 +766,16 @@ void SolveODE(TimeDependentOperator *ode, HypreParVector *X0,
       solver->Step(*X0, t, dt);
       if (x && all_good)
       {
+         good = sol_sock->good();
+         MPI_Allreduce(&good, &all_good, 1, MPI_INT, MPI_LAND,
+                       pmesh->GetComm());
+         if (!all_good)
+         {
+            if (pmesh->GetMyRank() == 0)
+               cout << "\nVisualization closed." << endl;
+            continue;
+         }
+
          *x = *X0;
          *sol_sock << "parallel " << pmesh->GetNRanks()
                    << " " << pmesh->GetMyRank() << "\n";
@@ -771,17 +783,13 @@ void SolveODE(TimeDependentOperator *ode, HypreParVector *X0,
          pmesh->Print(*sol_sock);
          x->Save(*sol_sock);
          *sol_sock << flush;
-
-         good = sol_sock->good();
-         MPI_Allreduce(&good, &all_good, 1, MPI_INT, MPI_LAND,
-                       pmesh->GetComm());
-         if (!all_good && pmesh->GetMyRank() == 0)
-            cout << "\nVisualization closed." << endl;
       }
    }
 
    if (x && exsol)
    {
+      *x = *X0;
+
       exsol->SetTime(t);
 
       double err = x->ComputeL2Error(*exsol);
@@ -923,14 +931,17 @@ public:
    {
       WarpApp *app = (WarpApp*) _app;
       HypreParVector *u = (HypreParVector*) _u;
-      (*app->x) = *u;
 
       // if (t == app->tstart || t == app->tstop)
       if (t == app->tstop)
       {
+         (*app->x) = *u; // Distribute
+
          // Opening multiple 'parallel' connections to GLVis simultaneously
          // (from different time intervals in this case) may cause incorrect
          // behavior.
+
+         ParMesh *pmesh = app->pmesh;
 
          char vishost[] = "localhost";
          int  visport   = 19916;
@@ -940,27 +951,38 @@ public:
             app->sol_sock = new socketstream(vishost, visport);
             init_sock = 1;
          }
-         else
-         {
-            int good = app->sol_sock->good(), all_good;
-            MPI_Allreduce(&good, &all_good, 1, MPI_INT, MPI_LAND,
-                          app->pmesh->GetComm());
-            if (!all_good)
-               return 0;
-         }
 
-         ParMesh *pmesh = app->pmesh;
          socketstream &sol_sock = *app->sol_sock;
 
-         sol_sock << "parallel " << pmesh->GetNRanks()
-                  << " " << pmesh->GetMyRank() << "\n";
-         sol_sock << "solution\n";
-         sol_sock.precision(8);
-         pmesh->Print(sol_sock);
-         app->x->Save(sol_sock);
+         int good, all_good;
+         good = sol_sock.good();
+         MPI_Allreduce(&good, &all_good, 1, MPI_INT, MPI_LAND,
+                       pmesh->GetComm());
 
-         int comm_t_rank;
-         MPI_Comm_rank(app->comm_t, &comm_t_rank);
+         if (all_good)
+         {
+            sol_sock << "parallel " << pmesh->GetNRanks()
+                     << " " << pmesh->GetMyRank() << "\n";
+            sol_sock << "solution\n";
+            sol_sock.precision(8);
+            pmesh->Print(sol_sock);
+            app->x->Save(sol_sock);
+
+            if (init_sock)
+            {
+               int comm_t_rank;
+               MPI_Comm_rank(app->comm_t, &comm_t_rank);
+
+               // sol_sock << "valuerange 0 1\n";
+               // sol_sock << "autoscale off\n";
+               sol_sock << "keys cmAaa\n";
+               sol_sock << "window_title 'comm_t rank: " << comm_t_rank
+                        << ", t = " << t << "'\n";
+            }
+            sol_sock << flush;
+            if (pmesh->GetMyRank() == 0)
+               cout << "Solution updated." << flush;
+         }
 
          if (app->exact_sol)
          {
@@ -969,21 +991,10 @@ public:
             double err = app->x->ComputeL2Error(*app->exact_sol);
 
             if (pmesh->GetMyRank() == 0)
-               cout << "Solution updated. L2 norm of the error = " << err
-                    << endl;
+               cout << " L2 norm of the error = " << err << endl;
          }
          else if (pmesh->GetMyRank() == 0)
-            cout << "Solution updated." << endl;
-
-         if (init_sock)
-         {
-            // sol_sock << "valuerange 0 1\n";
-            // sol_sock << "autoscale off\n";
-            sol_sock << "keys cmAaa\n";
-            sol_sock << "window_title 'comm_t rank: " << comm_t_rank
-                     << ", t = " << t << "'\n";
-         }
-         sol_sock << flush;
+            cout << endl;
       }
 
       return 0;
@@ -1406,8 +1417,10 @@ int main(int argc, char *argv[])
    // b->AddBoundaryIntegrator(new BoundaryLFIntegrator(one));
    b->AddBoundaryIntegrator(new BoundaryNormalLFIntegrator(nbc));
 
-   a->Assemble(); a->Finalize();
-   m->Assemble(); m->Finalize();
+   // Local assembly. Use precomputed sparsity to ensure that 'a' and 'm' have
+   // the same sparsity patterns.
+   a->UsePrecomputedSparsity(); a->Assemble(); a->Finalize();
+   m->UsePrecomputedSparsity(); m->Assemble(); m->Finalize();
 
    HypreParMatrix *A = a->ParallelAssemble();
    HypreParMatrix *M = m->ParallelAssemble();
