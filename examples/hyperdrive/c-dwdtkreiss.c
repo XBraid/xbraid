@@ -14,7 +14,7 @@ dwdtkreiss1( int n, double *w, double *dwdt, double h, int nb, int wb, double_ar
 /* bope(i,k) = bop(i,k) for i>=2 */
 #define bop(i,j) compute_index_2d(bop_, i, j)
 #define bope(i,j) compute_index_2d(bope_, i, j)
-   double ih, i2h, du, dp, du1, dp1;
+   double ih, i2h, du, du1;
       
    i2h = 1.0/(2*h);
    ih = 1.0/(h);

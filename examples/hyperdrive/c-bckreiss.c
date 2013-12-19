@@ -4,7 +4,6 @@
 void
 bckreiss1( int n, double *w, double bdataL, double bdataR, double betapcoeff, double h, int_array_1d *bcnr_ )
 {
-   int k;
 #define bcnr(i) compute_index_1d(bcnr_, i)   
 
 /*! bcnr(1) = 1: Dirichlet in u, extrapolate v */

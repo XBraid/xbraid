@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "c_array.h"
 #include "kreiss_data.h"
@@ -28,7 +29,7 @@ twforce1( int n, double *f, double t, double h, double amp, double ph, double om
 
 int main(int argc, char ** argv)
 {
-   int step, nsteps, i, pnr, taylorbc;
+   int step, nsteps, pnr, taylorbc;
    const int bdatareset=1000;
    
    double h, cfl, bdataL, bdataR;
