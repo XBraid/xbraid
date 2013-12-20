@@ -75,6 +75,33 @@
    #define PI 3.14159265358979
 #endif
 
+/* 
+ * This will store the spatial discretization information for moving from 
+ * one level with fdt to a coarser level with cdt 
+ *
+ * fdt                  fine grid time step size         
+ * cdt                  coarse grid time step size       
+ * dx                   coarse grid dx
+ * dy                   coarse grid dy
+ * nlx                  coarse grid nlx
+ * nly                  coarse grid nly
+ * ilower               coarse grid ilower
+ * iupper               coarse grid iupper
+ * grid_x               SStructGrid for coarse grid
+ * graph                SStructGraph for coarse grid
+ * fspatial_disc_idx    integer index into app->spatial_disc_table for the 
+ *                      fine spatial mesh used to generate this mesh
+ * */
+typedef struct _spatial_discretization
+{
+   double fdt, cdt, dx, dy; 
+   int ncoarsen, nlx, nly, fspatial_disc_idx;
+   int ilower_x[2], iupper_x[2];
+   HYPRE_SStructGrid       grid_x;
+   HYPRE_SStructGraph      graph;
+} spatial_discretization;
+
+
 /* --------------------------------------------------------------------
  * Structs for my integration routines
  * -------------------------------------------------------------------- */
@@ -133,7 +160,7 @@
  *   tol_x           loose and tight stopping tolerance for spatial MG
  *   explicit        use explicit discretization (1) or not (0)
  *   scoarsen        use spatial refinement and coarsening
- *   coarsening_table Lookup table recording dx, dy when coarsening spatially
+ *   spatial_disc_table    Lookup table recording dx, dy when coarsening spatially
  *   last_tsize      output related flag that lets my_Phi know when the 
  *                   time step size has changed
  *   scheme          int array of integration scheme used: explicit or
@@ -174,7 +201,7 @@ typedef struct _warp_App_struct {
    double                 *scoarsen_table;
    int                     explicit;
    int                     scoarsen;
-   double                 *coarsening_table;
+   spatial_discretization *spatial_disc_table;
    double                  last_tsize;
    int                     write;
    int                     vis;
@@ -185,13 +212,9 @@ typedef struct _warp_App_struct {
  */
 typedef struct _warp_Vector_struct
 {
-   int                     ilower_x[2], iupper_x[2];
-   double                  dx, dy;
-   int                     nlx, nly;
+   int                   spatial_disc_idx;
    HYPRE_SStructVector   x;
 } my_Vector;
-
-
 
 int max( int a, int b ){
   return (a >= b ? a : b );
@@ -1582,6 +1605,16 @@ my_Phi(warp_App     app,
    int i, A_idx;
    double *values;
    double cfl_value;
+   int ilower_x[2], iupper_x[2];
+   double dx      = (app->spatial_disc_table[u->spatial_disc_idx]).dx;
+   double dy      = (app->spatial_disc_table[u->spatial_disc_idx]).dy;
+   int    nlx     = (app->spatial_disc_table[u->spatial_disc_idx]).nlx;
+   int    nly     = (app->spatial_disc_table[u->spatial_disc_idx]).nly;
+
+   ilower_x[0]    = (app->spatial_disc_table[u->spatial_disc_idx]).ilower_x[0];
+   ilower_x[1]    = (app->spatial_disc_table[u->spatial_disc_idx]).ilower_x[1];
+   iupper_x[0]    = (app->spatial_disc_table[u->spatial_disc_idx]).iupper_x[0];
+   iupper_x[1]    = (app->spatial_disc_table[u->spatial_disc_idx]).iupper_x[1];
 
    HYPRE_SStructVector b;
    HYPRE_StructMatrix  sA;
@@ -1613,7 +1646,7 @@ my_Phi(warp_App     app,
    }
 
    /* Check CFL condition */
-   cfl_value = (app->K)*( (tstop-tstart)/((u->dx)*(u->dx)) + (tstop-tstart)/((u->dy)*(u->dy)) );
+   cfl_value = (app->K)*( (tstop-tstart)/((dx)*(dx)) + (tstop-tstart)/((dy)*(dy)) );
    if( cfl_value < 0.5 )
    {
       cfl = 1;
@@ -1622,8 +1655,8 @@ my_Phi(warp_App     app,
    /* Store information on CFL and spatial coarsening for user output */
    if( A_idx == -1.0)
    {
-      (app->scoarsen_table)[ (5*i) + 1] = u->dx;
-      (app->scoarsen_table)[ (5*i) + 2] = u->dy;
+      (app->scoarsen_table)[ (5*i) + 1] = dx;
+      (app->scoarsen_table)[ (5*i) + 2] = dy;
       (app->scoarsen_table)[ (5*i) + 3] = (tstop-tstart);
       (app->scoarsen_table)[ (5*i) + 4] = cfl_value;
    }
@@ -1645,19 +1678,21 @@ my_Phi(warp_App     app,
        * scheme. */
       if( app->explicit && cfl ){
          /* Set up the explicit discretization matrix. */
-         setUpExplicitMatrix( app->comm_x, &(app->A[A_idx]), app->graph, 
-                              app->sym, app->object_type, app->K, u->dx, 
-                              u->dy, app->dt_A[A_idx], u->ilower_x, 
-                              u->iupper_x, u->nlx, u->nly, app->px,
+         setUpExplicitMatrix( app->comm_x, &(app->A[A_idx]), 
+                              (app->spatial_disc_table[u->spatial_disc_idx]).graph, 
+                              app->sym, app->object_type, app->K, dx, 
+                              dy, app->dt_A[A_idx], ilower_x, 
+                              iupper_x, nlx, nly, app->px,
                               app->py, app->pi, app->pj );
          (app->scoarsen_table)[ (5*i) ]    = 1;
       }
       else{
          /* Set up the implicit discretization matrix. */
-         setUpImplicitMatrix( app->comm_x, &(app->A[A_idx]), app->graph, 
-                              app->sym, app->object_type, app->K, u->dx, 
-                              u->dy, app->dt_A[A_idx], u->ilower_x, 
-                              u->iupper_x, u->nlx, u->nly, app->px,
+         setUpImplicitMatrix( app->comm_x, &(app->A[A_idx]), 
+                              (app->spatial_disc_table[u->spatial_disc_idx]).graph, 
+                              app->sym, app->object_type, app->K, dx, 
+                              dy, app->dt_A[A_idx], ilower_x, 
+                              iupper_x, nlx, nly, app->px,
                               app->py, app->pi, app->pj );
 
       
@@ -1675,19 +1710,19 @@ my_Phi(warp_App     app,
       /* Set up a vector for the MatVec result and modify the solution
        * from the previous time step to incorporate the boundary 
        * conditions. */    
-      values = (double *) malloc( (u->nlx)*(u->nly)*sizeof(double) );
+      values = (double *) malloc( (nlx)*(nly)*sizeof(double) );
       HYPRE_SStructVectorGather( u->x );
-      HYPRE_SStructVectorGetBoxValues( u->x, part, u->ilower_x,
-                                       u->iupper_x, var, values );
-      HYPRE_SStructVectorCreate( app->comm_x, app->grid_x, &b );
+      HYPRE_SStructVectorGetBoxValues( u->x, part, ilower_x,
+                                       iupper_x, var, values );
+      HYPRE_SStructVectorCreate( app->comm_x, (app->spatial_disc_table[u->spatial_disc_idx]).grid_x, &b );
       HYPRE_SStructVectorSetObjectType( b, app->object_type );
       HYPRE_SStructVectorInitialize( b );
-      HYPRE_SStructVectorSetBoxValues( b, part, u->ilower_x,
-                                       u->iupper_x, var, values );
+      HYPRE_SStructVectorSetBoxValues( b, part, ilower_x,
+                                       iupper_x, var, values );
       free( values );
 
-      addBoundary( b, app->K, u->dx, u->dy, tstop-tstart,
-                   u->ilower_x, u->nlx, u->nly, app->px, app->py, 
+      addBoundary( b, app->K, dx, dy, tstop-tstart,
+                   ilower_x, nlx, nly, app->px, app->py, 
                    app->pi, app->pj );
 
       /* --------------------------------------------------------------
@@ -1709,18 +1744,18 @@ my_Phi(warp_App     app,
        * right-hand side of the PDE (here, we assume a zero RHS of the
        * PDE).
        * -------------------------------------------------------------- */
-      values = (double *) malloc( (u->nlx)*(u->nly)*sizeof(double) );
+      values = (double *) malloc( (nlx)*(nly)*sizeof(double) );
       HYPRE_SStructVectorGather( u->x );
-      HYPRE_SStructVectorGetBoxValues( u->x, part, u->ilower_x,
-                                       u->iupper_x, var, values );
-      HYPRE_SStructVectorCreate( app->comm_x, app->grid_x, &b );
+      HYPRE_SStructVectorGetBoxValues( u->x, part, ilower_x,
+                                       iupper_x, var, values );
+      HYPRE_SStructVectorCreate( app->comm_x, (app->spatial_disc_table[u->spatial_disc_idx]).grid_x, &b );
       HYPRE_SStructVectorSetObjectType( b, app->object_type );
       HYPRE_SStructVectorInitialize( b );
-      HYPRE_SStructVectorSetBoxValues( b, part, u->ilower_x,
-                                       u->iupper_x, var, values );
+      HYPRE_SStructVectorSetBoxValues( b, part, ilower_x,
+                                       iupper_x, var, values );
       free( values );
-      addBoundaryToRHS( b, app->K, u->dx, u->dy, tstop-tstart,
-                        u->ilower_x, u->nlx, u->nly, app->px, 
+      addBoundaryToRHS( b, app->K, dx, dy, tstop-tstart,
+                        ilower_x, nlx, nly, app->px, 
                         app->py, app->pi, app->pj );
       /* add infos from RHS of PDE here */ 
 
@@ -1837,7 +1872,7 @@ my_Init(warp_App     app,
    u = (my_Vector *) malloc( sizeof(my_Vector) );
 
    /* Create an empty vector object. */
-   HYPRE_SStructVectorCreate( app->comm_x, app->grid_x, &(u->x) );
+   HYPRE_SStructVectorCreate( app->comm_x, (app->spatial_disc_table[0]).grid_x, &(u->x) );
    
    /* Set the object type (by default HYPRE_SSTRUCT). */
    HYPRE_SStructVectorSetObjectType( u->x, app->object_type );
@@ -1870,13 +1905,8 @@ my_Init(warp_App     app,
    HYPRE_SStructVectorAssemble( u->x );
    free(values);
    
-   /* Store spatial discretization information */
-   u->nlx = app->nlx;
-   u->nly = app->nly;
-   u->dx = app->dx;
-   u->dy = app->dy;
-   u->ilower_x[0] = app->ilower_x[0]; u->ilower_x[1] = app->ilower_x[1];
-   u->iupper_x[0] = app->iupper_x[0]; u->iupper_x[1] = app->iupper_x[1];
+   /* Store the coarsening rule (here on level 0, it's just 0) */
+   u->spatial_disc_idx = 0; 
 
    *u_ptr = u;
 
@@ -1897,33 +1927,38 @@ my_Clone(warp_App     app,
    int        var = 0;
    my_Vector *v;
    double    *values;
+   
+   int ilower_x[2], iupper_x[2];
+   int    nlx     = (app->spatial_disc_table[u->spatial_disc_idx]).nlx;
+   int    nly     = (app->spatial_disc_table[u->spatial_disc_idx]).nly;
+
+   ilower_x[0]    = (app->spatial_disc_table[u->spatial_disc_idx]).ilower_x[0];
+   ilower_x[1]    = (app->spatial_disc_table[u->spatial_disc_idx]).ilower_x[1];
+   iupper_x[0]    = (app->spatial_disc_table[u->spatial_disc_idx]).iupper_x[0];
+   iupper_x[1]    = (app->spatial_disc_table[u->spatial_disc_idx]).iupper_x[1];
+
 
    v = (my_Vector *) malloc(sizeof(my_Vector));
 
    /* Create an empty vector object. */
-   HYPRE_SStructVectorCreate( app->comm_x, app->grid_x, &(v->x) );
+   HYPRE_SStructVectorCreate( app->comm_x, (app->spatial_disc_table[u->spatial_disc_idx]).grid_x, &(v->x) );
    
    /* Set the object type (by default HYPRE_SSTRUCT) and initialize. */
    HYPRE_SStructVectorSetObjectType( v->x, app->object_type );
    HYPRE_SStructVectorInitialize( v->x );
 
    /* Set the values. */
-   values = (double *) malloc( (u->nlx)*(u->nly)*sizeof(double) );
+   values = (double *) malloc( (nlx)*(nly)*sizeof(double) );
    HYPRE_SStructVectorGather( u->x );
-   HYPRE_SStructVectorGetBoxValues( u->x, part, u->ilower_x,
-                                    u->iupper_x, var, values );
-   HYPRE_SStructVectorSetBoxValues( v->x, part, u->ilower_x,
-                                    u->iupper_x, var, values );
+   HYPRE_SStructVectorGetBoxValues( u->x, part, ilower_x,
+                                    iupper_x, var, values );
+   HYPRE_SStructVectorSetBoxValues( v->x, part, ilower_x,
+                                    iupper_x, var, values );
    free( values );
    HYPRE_SStructVectorAssemble( v->x );
 
-   /* Store spatial discretization information */
-   v->nlx = u->nlx;
-   v->nly = u->nly;
-   v->dx = u->dx;
-   v->dy = u->dy;
-   v->ilower_x[0] = u->ilower_x[0]; v->ilower_x[1] = u->ilower_x[1];
-   v->iupper_x[0] = u->iupper_x[0]; v->iupper_x[1] = u->iupper_x[1];
+   /* Store the spatial_disc_idx used to generate u */
+   v->spatial_disc_idx = u->spatial_disc_idx; 
 
    *v_ptr = v;
 
@@ -1979,70 +2014,122 @@ int my_ComputeNumCoarsenings(double dt,
 }
 
 /* --------------------------------------------------------------------
- * Store a spatial coarsening rule (here that's just the integer ncoarsen)
- * based on cdt and fdt.  The rules are stored in a max_levels x 3 array in app
- * This array app->coarsening_table is stored in row-major form with cdt, fdt and
- * ncoarsen forming the three columns in that order
+ * get the coarse spatial discretization (stored in app->spatial_disc_table)
+ * A new spatial discretization is generated, if required by the CFL.
+ * Return value is 
+ *    spatial_disc_idx
  * -------------------------------------------------------------------- */
-int store_spatial_coarsening_rule( warp_App app, 
-                                   double cdt, 
-                                   double fdt, 
-                                   int ncoarsen)
+void get_coarse_spatial_disc( warp_App app, 
+                              double cdt, 
+                              double fdt, 
+                              double fdx,
+                              double fdy,
+                              int fnlx,
+                              int fnly,
+                              int fspatial_disc_idx,
+                              int* filower_x,
+                              int* fiupper_x,
+                              int* spatial_disc_idx)
 {
+   int i, ncoarsen, cnlx, cnly;
+   int cilower_x[2], ciupper_x[2];
    int max_levels = app->max_levels;
-   int i;
+   double coarsen_factor, cdx, cdy;
+
+   /* Search for this cdt, fdt combo and see if a spatial 
+    * discretization already exists for it */
    for(i = 0; i < max_levels; i++)
    {
-      if( fabs((app->coarsening_table)[i*3] - cdt)/cdt < 1e-10 )
+      if( fabs((app->spatial_disc_table[i]).cdt - cdt)/cdt < 1e-10 )
       {
          /* A rule for this cdt has already been stored */
-         if( fabs((app->coarsening_table)[i*3+1] - fdt)/fdt < 1e-10 )
+         if( fabs((app->spatial_disc_table[i]).fdt - fdt)/fdt < 1e-10 )
          {
-            /* We've found a match, both cdt and fdt match 
-             * Overwrite this rule, in case the rule is changing*/
-            (app->coarsening_table)[i*3+2] = (double) ncoarsen;
-            return 0;
+            /* We've found a match, both cdt and fdt match * 
+             * This is a return value detailing which rule this is*/
+            (*spatial_disc_idx) = i;
+            return;
          }
       }
    }
     
-   /* A rule was never found, so store this one in the next open spot */
+   /* 
+    * A spatial discretization was not found, so generate a new one, 
+    * and store in the next open spot 
+    */
+   
+   /* Determine New sizes */
+   ncoarsen = my_ComputeNumCoarsenings(cdt, fdx, fdy, app->K, fnlx, fnly); 
+   coarsen_factor = pow(2.0, ncoarsen);
+   cdx = coarsen_factor * fdx;
+   cdy = coarsen_factor * fdy;
+   cnlx = (fnlx-1) / ((int) coarsen_factor)  + 1; 
+   cnly = (fnly-1) / ((int) coarsen_factor)  + 1;
+   cilower_x[0] = 0;       /* Assumes no spatial parallelism  */
+   cilower_x[1] = 0;       /*        ...  */
+   ciupper_x[0] = cnlx-1;  /*        ...  */
+   ciupper_x[1] = cnly-1;  /*        ...  */
+
+
    for(i = 0; i < max_levels; i++)
    {
-      if( (app->coarsening_table)[i*3] == -1 )
+      if( (app->spatial_disc_table[i]).cdt == -1.0 )
       {
-         (app->coarsening_table)[i*3] = cdt;
-         (app->coarsening_table)[i*3+1] = fdt;
-         (app->coarsening_table)[i*3+2] = (double) ncoarsen;
-         return 0;
+         (app->spatial_disc_table[i]).cdt = cdt;
+         (app->spatial_disc_table[i]).fdt = fdt;
+         (app->spatial_disc_table[i]).ncoarsen = ncoarsen;
+         (app->spatial_disc_table[i]).dx = cdx;
+         (app->spatial_disc_table[i]).dy = cdy;
+         (app->spatial_disc_table[i]).nlx = cnlx;
+         (app->spatial_disc_table[i]).nly = cnly;
+         (app->spatial_disc_table[i]).ilower_x[0] = cilower_x[0];
+         (app->spatial_disc_table[i]).ilower_x[1] = cilower_x[1];
+         (app->spatial_disc_table[i]).iupper_x[0] = ciupper_x[0];
+         (app->spatial_disc_table[i]).iupper_x[1] = ciupper_x[1];
+         (app->spatial_disc_table[i]).fspatial_disc_idx = fspatial_disc_idx; 
+         
+         /* We also have to set up a new 2D grid and graph  */
+         setUp2Dgrid( app->comm_x, &((app->spatial_disc_table[i]).grid_x), app->dim_x,  
+                      cilower_x, ciupper_x, app->vartypes );
+         setUpGraph( app->comm_x, &((app->spatial_disc_table[i]).graph), 
+                    (app->spatial_disc_table[i]).grid_x, app->object_type, 
+                     app->stencil );
+
+         /* This is a return value detailing which rule this is*/
+         (*spatial_disc_idx) = i;
+
+         return;
       }
    }
-   return -1;
+   
+   /* No match found, return error value */
+   (*spatial_disc_idx) = -1;
 }
 
 /* --------------------------------------------------------------------
- * Retrieve a spatial coarsening rule (per the guidelines in
- * store_spatial_coarsening_rule). 
+ * Retrieve a spatial discretization 
  * -------------------------------------------------------------------- */
-int retrieve_spatial_coarsening_rule( warp_App app, 
+void retrieve_spatial_discretization( warp_App app, 
                                       double cdt, 
-                                      double fdt) 
+                                      double fdt,
+                                      int *spatial_disc_idx)
 {
    int max_levels = app->max_levels;
    int i;
    for(i = 0; i < max_levels; i++)
    {
-      if( fabs((app->coarsening_table)[i*3] - cdt)/cdt < 1e-10 )
+      if( fabs((app->spatial_disc_table[i]).cdt - cdt)/cdt < 1e-10 )
       {
          /* A rule for this cdt has already been stored */
-         if( fabs((app->coarsening_table)[i*3+1] - fdt)/fdt < 1e-10 )
+         if( fabs((app->spatial_disc_table[i]).fdt - fdt)/fdt < 1e-10 )
          {
             /* We've found a match, both cdt and fdt match */
-            return (int) (app->coarsening_table)[i*3+2];
+            (*spatial_disc_idx) = i;
+            return;
          }
       }
    }
-   return -1;
+   (*spatial_disc_idx) = -1;
 }
 
 
@@ -2065,12 +2152,15 @@ my_Refine(warp_App       app,
    double     *cvalues, *fvalues;
    int        counter, i, j, k;
    int        filower_x[2], fiupper_x[2];
-   double     fdx, fdy, refine_factor;
-   int        fnlx, fnly, nrefine;
+   double     refine_factor;
+   int        fnlx, fnly, ncoarsen, spatial_disc_idx, fspatial_disc_idx;
    int        fnlx_temp, fnly_temp, cnlx_temp, cnly_temp;
    double     cdt = c_tplus - tstart;
    double     fdt = f_tplus - tstart;
-
+   
+   int cilower_x[2], ciupper_x[2];
+   int    cnlx, cnly;
+   
    /* If fdt or cdt is 0.0,  then this is a final time interval.  We then use a
     * simple rule to use the length of the previous time interval to represent
     * an appropriate dt. */
@@ -2083,22 +2173,20 @@ my_Refine(warp_App       app,
       cdt = tstart - c_tminus;
    }
 
-   fu = (my_Vector *) malloc(sizeof(my_Vector));
+   /* Determine New sizes, negate ncoarsen because we are refining, i.e., multiplying dx 
+    * and dy by 2^(-ncoarsen) */
+   retrieve_spatial_discretization(app, cdt, fdt, &spatial_disc_idx );
+   ncoarsen       = -(app->spatial_disc_table[spatial_disc_idx]).ncoarsen;
+   cnlx           = (app->spatial_disc_table[spatial_disc_idx]).nlx;
+   cnly           = (app->spatial_disc_table[spatial_disc_idx]).nly;
+   cilower_x[0]   = (app->spatial_disc_table[spatial_disc_idx]).ilower_x[0];
+   cilower_x[1]   = (app->spatial_disc_table[spatial_disc_idx]).ilower_x[1];
+   ciupper_x[0]   = (app->spatial_disc_table[spatial_disc_idx]).iupper_x[0];
+   ciupper_x[1]   = (app->spatial_disc_table[spatial_disc_idx]).iupper_x[1];
 
-   /* Create an empty vector object. */
-   HYPRE_SStructVectorCreate( app->comm_x, app->grid_x, &(fu->x) );
-   
-   /* Set the object type (by default HYPRE_SSTRUCT) and initialize. */
-   HYPRE_SStructVectorSetObjectType( fu->x, app->object_type );
-   HYPRE_SStructVectorInitialize( fu->x );
-
-   /* Determine New sizes */
-   nrefine = -retrieve_spatial_coarsening_rule(app, cdt, fdt);
-   refine_factor = pow(2.0, nrefine);
-   fdx = refine_factor * cu->dx;
-   fdy = refine_factor * cu->dy;
-   fnlx = (int) ((cu->nlx-1) / refine_factor) + 1; 
-   fnly = (int) ((cu->nly-1) / refine_factor) + 1; 
+   refine_factor = pow(2.0, ncoarsen);
+   fnlx = (int) ((cnlx-1) / refine_factor) + 1; 
+   fnly = (int) ((cnly-1) / refine_factor) + 1; 
    filower_x[0] = 0;          /* Assume no spatial parallelism */
    filower_x[1] = 0;          /*       ...  */
    fiupper_x[0] = fnlx-1;     /*       ...  */
@@ -2106,20 +2194,20 @@ my_Refine(warp_App       app,
     
    /* Grab values from vector cu*/
    HYPRE_SStructVectorGather( cu->x );
-   cvalues = (double *) malloc( (cu->nlx)*(cu->nly)*sizeof(double) );
-   HYPRE_SStructVectorGetBoxValues( cu->x, 0, cu->ilower_x,
-                                    cu->iupper_x, 0, cvalues );
+   cvalues = (double *) malloc( (cnlx)*(cnly)*sizeof(double) );
+   HYPRE_SStructVectorGetBoxValues( cu->x, 0, cilower_x,
+                                    ciupper_x, 0, cvalues );
    
-   if (nrefine < 0)
+   if (ncoarsen < 0)
    {   
        /* The refinement algorithm just refines by a factor of two, so we 
-        * loop over it nrefine number of times */
-       cnlx_temp = cu->nlx;
-       cnly_temp = cu->nly;
+        * loop over it ncoarsen number of times */
+       cnlx_temp = cnlx;
+       cnly_temp = cnly;
        fnlx_temp = 2*(cnlx_temp-1) + 1;
        fnly_temp = 2*(cnly_temp-1) + 1;
        
-       for(k = 0; k > nrefine; k--)
+       for(k = 0; k > ncoarsen; k--)
        {
           /* Set the fine values using simple bilinear interpolation */
           fvalues = (double *) malloc( (fnlx_temp)*(fnly_temp)*sizeof(double) );
@@ -2162,7 +2250,7 @@ my_Refine(warp_App       app,
           cnly_temp = fnly_temp;
           fnlx_temp = 2*(cnlx_temp-1) + 1;
           fnly_temp = 2*(cnly_temp-1) + 1;
-          if( k-1 > nrefine )
+          if( k-1 > ncoarsen )
           {
              free(cvalues); 
              cvalues = fvalues;
@@ -2180,6 +2268,17 @@ my_Refine(warp_App       app,
       }
    }
    
+   
+   /* Create an empty vector object. */
+   fspatial_disc_idx = (app->spatial_disc_table[spatial_disc_idx]).fspatial_disc_idx;
+   fu = (my_Vector *) malloc(sizeof(my_Vector));
+   HYPRE_SStructVectorCreate( app->comm_x, (app->spatial_disc_table[fspatial_disc_idx]).grid_x, &(fu->x) );
+   
+   /* Set the object type (by default HYPRE_SSTRUCT) and initialize. */
+   HYPRE_SStructVectorSetObjectType( fu->x, app->object_type );
+   HYPRE_SStructVectorInitialize( fu->x );
+
+
    /* Finalize fu vector */
    HYPRE_SStructVectorSetBoxValues( fu->x, 0, filower_x,
                                     fiupper_x, 0, fvalues );
@@ -2187,13 +2286,9 @@ my_Refine(warp_App       app,
    free( fvalues );
    HYPRE_SStructVectorAssemble( fu->x );
 
-   /* Store spatial discretization information */
-   fu->nlx = fnlx;
-   fu->nly = fnly;
-   fu->dx = fdx;
-   fu->dy = fdy;
-   fu->ilower_x[0] = filower_x[0]; fu->ilower_x[1] = filower_x[1];
-   fu->iupper_x[0] = fiupper_x[0]; fu->iupper_x[1] = fiupper_x[1];
+
+   /* Store the spatial_disc_idx used to generate fu */
+   fu->spatial_disc_idx = fspatial_disc_idx; 
 
    *fu_ptr = fu;
     
@@ -2217,14 +2312,26 @@ my_Coarsen(warp_App      app,
 {
    my_Vector *cu;
    double     *cvalues, *fvalues;
-   int        counter, frow, fcol, findex, i, j;
+   int        counter, frow, fcol, findex, i, j, spatial_disc_idx;
+   int        filower_x[2], fiupper_x[2];
+   int        fspatial_disc_idx = fu->spatial_disc_idx;
+   int        fnlx = (app->spatial_disc_table[fspatial_disc_idx]).nlx;
+   int        fnly = (app->spatial_disc_table[fspatial_disc_idx]).nly;
+   double     fdy = (app->spatial_disc_table[fspatial_disc_idx]).dy;
+   double     fdx = (app->spatial_disc_table[fspatial_disc_idx]).dx;
+
    int        cilower_x[2], ciupper_x[2];
-   double     cdx, cdy, coarsen_factor;
+   double     coarsen_factor;
    int        cnlx, cnly, ncoarsen;
    double     cdt = c_tplus - tstart;
    double     fdt = f_tplus - tstart;
 
    cu = (my_Vector *) malloc(sizeof(my_Vector));
+   
+   filower_x[0]    = (app->spatial_disc_table[fspatial_disc_idx]).ilower_x[0];
+   filower_x[1]    = (app->spatial_disc_table[fspatial_disc_idx]).ilower_x[1];
+   fiupper_x[0]    = (app->spatial_disc_table[fspatial_disc_idx]).iupper_x[0];
+   fiupper_x[1]    = (app->spatial_disc_table[fspatial_disc_idx]).iupper_x[1];
    
    /* If fdt or cdt is 0.0,  then this is a final time interval.  We then use a
     * simple rule to use the length of the previous time interval to represent
@@ -2238,35 +2345,31 @@ my_Coarsen(warp_App      app,
       cdt = tstart - c_tminus;
    }
 
+   /* Generate the next spatial discretization, which is stored in app->spatial_disc_table[i]
+    * This could be the same as the fine spatial discretization */ 
+   get_coarse_spatial_disc( app, cdt, fdt, fdx, fdy, fnlx, fnly, 
+                            fspatial_disc_idx, filower_x, fiupper_x, &spatial_disc_idx);
+   ncoarsen = (app->spatial_disc_table[spatial_disc_idx]).ncoarsen;
+   cnlx     = (app->spatial_disc_table[spatial_disc_idx]).nlx;
+   cnly     = (app->spatial_disc_table[spatial_disc_idx]).nly;
+   cilower_x[0] = (app->spatial_disc_table[spatial_disc_idx]).ilower_x[0];
+   cilower_x[1] = (app->spatial_disc_table[spatial_disc_idx]).ilower_x[1];
+   ciupper_x[0] = (app->spatial_disc_table[spatial_disc_idx]).iupper_x[0];
+   ciupper_x[1] = (app->spatial_disc_table[spatial_disc_idx]).iupper_x[1];
+   coarsen_factor = pow(2.0, ncoarsen);
+
    /* Create an empty vector object. */
-   HYPRE_SStructVectorCreate( app->comm_x, app->grid_x, &(cu->x) );
+   HYPRE_SStructVectorCreate( app->comm_x, (app->spatial_disc_table[spatial_disc_idx]).grid_x, &(cu->x) );
    
    /* Set the object type (by default HYPRE_SSTRUCT) and initialize. */
    HYPRE_SStructVectorSetObjectType( cu->x, app->object_type );
    HYPRE_SStructVectorInitialize( cu->x );
 
-   /* Determine New sizes */
-   ncoarsen = my_ComputeNumCoarsenings(cdt, fu->dx, fu->dy, app->K, fu->nlx, fu->nly);
-   coarsen_factor = pow(2.0, ncoarsen);
-   cdx = coarsen_factor * fu->dx;
-   cdy = coarsen_factor * fu->dy;
-   cnlx = (fu->nlx-1) / ((int) coarsen_factor)  + 1; 
-   cnly = (fu->nly-1) / ((int) coarsen_factor)  + 1;
-   cilower_x[0] = 0;       /* Assumes no spatial parallelism  */
-   cilower_x[1] = 0;       /*        ...  */
-   ciupper_x[0] = cnlx-1;  /*        ...  */
-   ciupper_x[1] = cnly-1;  /*        ...  */
-
-   /* Store this rule for moving between the coarse and fine mesh, relative
-    * to these time intervals */
-   store_spatial_coarsening_rule( app, cdt, fdt, ncoarsen);
-
    /* Set the coarse values, assuming a regular grid and injection  */
    cvalues = (double *) malloc( (cnlx)*(cnly)*sizeof(double) );
    HYPRE_SStructVectorGather( fu->x );
-   fvalues = (double *) malloc( (fu->nlx)*(fu->nly)*sizeof(double) );
-   HYPRE_SStructVectorGetBoxValues( fu->x, 0, fu->ilower_x,
-                                    fu->iupper_x, 0, fvalues );
+   fvalues = (double *) malloc( fnlx*fnly*sizeof(double) );
+   HYPRE_SStructVectorGetBoxValues( fu->x, 0, filower_x, fiupper_x, 0, fvalues );
    counter = 0;
    for(i = 0; i < cnlx; i++)
    {
@@ -2274,7 +2377,7 @@ my_Coarsen(warp_App      app,
       for(j = 0; j < cnly; j++)
       {
          fcol = coarsen_factor*j;
-         findex = frow*fu->nlx + fcol;
+         findex = frow*fnlx + fcol;
          cvalues[counter] = fvalues[findex];
          counter += 1;
       }
@@ -2286,13 +2389,8 @@ my_Coarsen(warp_App      app,
    free( fvalues );
    free( cvalues );
 
-   /* Store spatial discretization information */
-   cu->nlx = cnlx;
-   cu->nly = cnly;
-   cu->dx = cdx;
-   cu->dy = cdy;
-   cu->ilower_x[0] = cilower_x[0]; cu->ilower_x[1] = cilower_x[1];
-   cu->iupper_x[0] = ciupper_x[0]; cu->iupper_x[1] = ciupper_x[1];
+   /* Store spatial_disc_idx */
+   cu->spatial_disc_idx = spatial_disc_idx;
 
    *cu_ptr = cu;
 
@@ -2331,24 +2429,33 @@ my_Sum(warp_App    app,
    int part = 0;
    int var = 0;
    
-   values_x = (double *) malloc( (x->nlx)*(x->nly)*sizeof(double) );
-   values_y = (double *) malloc( (y->nlx)*(y->nly)*sizeof(double) );
+   int ilower_x[2], iupper_x[2];
+   int    nlx     = (app->spatial_disc_table[x->spatial_disc_idx]).nlx;
+   int    nly     = (app->spatial_disc_table[x->spatial_disc_idx]).nly;
+
+   ilower_x[0]    = (app->spatial_disc_table[x->spatial_disc_idx]).ilower_x[0];
+   ilower_x[1]    = (app->spatial_disc_table[x->spatial_disc_idx]).ilower_x[1];
+   iupper_x[0]    = (app->spatial_disc_table[x->spatial_disc_idx]).iupper_x[0];
+   iupper_x[1]    = (app->spatial_disc_table[x->spatial_disc_idx]).iupper_x[1];
+
+   values_x = (double *) malloc( nlx*nly*sizeof(double) );
+   values_y = (double *) malloc( nlx*nly*sizeof(double) );
 
    HYPRE_SStructVectorGather( x->x );
-   HYPRE_SStructVectorGetBoxValues( x->x, part, x->ilower_x,
-                                    x->iupper_x, var, values_x );
+   HYPRE_SStructVectorGetBoxValues( x->x, part, ilower_x,
+                                    iupper_x, var, values_x );
 
    HYPRE_SStructVectorGather( y->x );
-   HYPRE_SStructVectorGetBoxValues( y->x, part, y->ilower_x,
-                                    y->iupper_x, var, values_y );
+   HYPRE_SStructVectorGetBoxValues( y->x, part, ilower_x,
+                                    iupper_x, var, values_y );
 
-   for( i = 0; i < (y->nlx)*(y->nly); i++ )
+   for( i = 0; i < nlx*nly; i++ )
    {
       values_y[i] = alpha*values_x[i] + beta*values_y[i];
    }
 
-   HYPRE_SStructVectorSetBoxValues( y->x, part, y->ilower_x,
-                                    y->iupper_x, var, values_y );
+   HYPRE_SStructVectorSetBoxValues( y->x, part, ilower_x,
+                                    iupper_x, var, values_y );
 
    free( values_x );
    free( values_y );
@@ -2407,8 +2514,18 @@ my_Write(warp_App     app,
    HYPRE_SStructVector e;
 
    int i, j, m;
-   int nlx = (u->nlx);
-   int nly = (u->nly);
+   
+   int ilower_x[2], iupper_x[2];
+   int    nlx     = (app->spatial_disc_table[u->spatial_disc_idx]).nlx;
+   int    nly     = (app->spatial_disc_table[u->spatial_disc_idx]).nly;
+   double dx      = (app->spatial_disc_table[u->spatial_disc_idx]).dx;
+   double dy      = (app->spatial_disc_table[u->spatial_disc_idx]).dy;
+
+   ilower_x[0]    = (app->spatial_disc_table[u->spatial_disc_idx]).ilower_x[0];
+   ilower_x[1]    = (app->spatial_disc_table[u->spatial_disc_idx]).ilower_x[1];
+   iupper_x[0]    = (app->spatial_disc_table[u->spatial_disc_idx]).iupper_x[0];
+   iupper_x[1]    = (app->spatial_disc_table[u->spatial_disc_idx]).iupper_x[1];
+
 
    /* Write to files:
     *   - save computed solution and true discrete solution
@@ -2421,15 +2538,15 @@ my_Write(warp_App     app,
       if( app->explicit )
          /* forward (explicit) Euler */
          damping = 1 + ((2*(app->K)*(app->dt))/
-                        ((u->dx)*(u->dx)))*(cos(u->dx)-1) 
+                        (dx*dx))*(cos(dx)-1) 
                   + ((2*(app->K)*(app->dt))/
-                        ((u->dy)*(u->dy)))*(cos(u->dy)-1);
+                        (dy*dy))*(cos(dy)-1);
       else
          /* backward (implicit) Euler */
          damping = 1.0 / ( 1 + ((2*(app->K)*(app->dt))/
-                                ((u->dx)*(u->dx)))*(1-cos(u->dx)) 
+                                (dx*dx))*(1-cos(dx)) 
                              + ((2*(app->K)*(app->dt))/
-                                ((u->dy)*(u->dy)))*(1-cos(u->dy)));
+                                (dy*dy))*(1-cos(dy)));
 
       
 
@@ -2445,20 +2562,20 @@ my_Write(warp_App     app,
       file = fopen(filename, "w");
 
       values = (double *) malloc( nlx*nly*sizeof(double) );
-      HYPRE_SStructVectorGetBoxValues( u->x, part, u->ilower_x, 
-                                       u->iupper_x, var, values );
+      HYPRE_SStructVectorGetBoxValues( u->x, part, ilower_x, 
+                                       iupper_x, var, values );
       m = 0;
       for( j = 0; j < nly; j++ )
          for( i = 0; i < nlx; i++ ){
             enorm += pow(values[m++] - 
-                         damping_nt*sin((u->ilower_x[0]+i)*(u->dx))
-                                   *sin((u->ilower_x[1]+j)*(u->dy)),2);
+                         damping_nt*sin((ilower_x[0]+i)*dx)
+                                   *sin((ilower_x[1]+j)*dy),2);
 
             /*fprintf(file, "%06d %.14e --- discrete solution %.14e\n", 
                     pj*px*nlx*nly+pi*nlx+j*px*nlx+i,
                     values[m++], 
-                    damping_nt*sin((u->ilower_x[0]+i)*(u->dx))
-                              *sin((u->ilower_x[1]+j)*(u->dy)));*/
+                    damping_nt*sin((ilower_x[0]+i)*dx)
+                              *sin((ilower_x[1]+j)*dy));*/
          }
       fprintf(file, "%.14e\n", sqrt(enorm));
 
@@ -2476,8 +2593,8 @@ my_Write(warp_App     app,
           (t == app->tstop) ){*/
       if( t == app->tstop ){
          values = (double *) malloc( nlx*nly*sizeof(double) );
-         HYPRE_SStructVectorGetBoxValues( u->x, part, u->ilower_x, 
-                                          u->iupper_x, var, values );
+         HYPRE_SStructVectorGetBoxValues( u->x, part, ilower_x, 
+                                          iupper_x, var, values );
 
          HYPRE_SStructVectorCreate( app->comm_x, app->grid_x, &e );
          HYPRE_SStructVectorSetObjectType( e, app->object_type );
@@ -2488,13 +2605,13 @@ my_Write(warp_App     app,
             for( i = 0; i < nlx; i++ )
             {
                values[m] = values[m] - 
-                           damping_nt*sin((u->ilower_x[0]+i)*(u->dx))
-                                     *sin((u->ilower_x[1]+j)*(u->dy));
+                           damping_nt*sin((ilower_x[0]+i)*dx)
+                                     *sin((ilower_x[1]+j)*dy);
                m++;
             }
 
-         HYPRE_SStructVectorSetBoxValues( e, part, u->ilower_x,
-                                          u->iupper_x, var, values );
+         HYPRE_SStructVectorSetBoxValues( e, part, ilower_x,
+                                          iupper_x, var, values );
          free( values );
          HYPRE_SStructVectorAssemble( e );
 
@@ -2534,9 +2651,8 @@ int
 my_BufSize(warp_App  app,
            int      *size_ptr)
 {
-    /* A vector needs to contain 2 extra doubles and 6 ints to denote the
-     * spatial discretization.  We just send everything as double to make life easier */
-    *size_ptr = (8 + (app->nlx)*(app->nly))*sizeof(double);
+    /* A vector needs to contain 1 extra doubles for the coarsening rule */ 
+    *size_ptr = (1 + (app->nlx)*(app->nly))*sizeof(double);
    return 0;
 }
 
@@ -2550,25 +2666,25 @@ my_BufPack(warp_App     app,
            void        *buffer)
 {
    double *dbuffer = buffer;
+   int ilower_x[2], iupper_x[2];
+   
+   /* Retrieve ilower and iupper */
+   ilower_x[0]    = (app->spatial_disc_table[u->spatial_disc_idx]).ilower_x[0];
+   ilower_x[1]    = (app->spatial_disc_table[u->spatial_disc_idx]).ilower_x[1];
+   iupper_x[0]    = (app->spatial_disc_table[u->spatial_disc_idx]).iupper_x[0];
+   iupper_x[1]    = (app->spatial_disc_table[u->spatial_disc_idx]).iupper_x[1];
 
    /* We have one variable and one part. */
    int        part = 0;
    int        var  = 0;
    
-   /* Pack the spatial discretization parameters */
-   dbuffer[0] = (double) u->ilower_x[0];
-   dbuffer[1] = (double) u->ilower_x[1];
-   dbuffer[2] = (double) u->iupper_x[0];
-   dbuffer[3] = (double) u->iupper_x[1];
-   dbuffer[4] = u->dx;
-   dbuffer[5] = u->dy;
-   dbuffer[6] = (double) u->nlx;
-   dbuffer[7] = (double) u->nly;
+   /* Pack the spatial coarsening rule */ 
+   dbuffer[0] = (double) u->spatial_disc_idx; 
 
    /* Pack the vector */
    HYPRE_SStructVectorGather( u->x );
-   HYPRE_SStructVectorGetBoxValues( u->x, part, u->ilower_x,
-                                    u->iupper_x, var, &(dbuffer[8]) );
+   HYPRE_SStructVectorGetBoxValues( u->x, part, ilower_x,
+                                    iupper_x, var, &(dbuffer[1]) );
 
    return 0;
 }
@@ -2582,6 +2698,7 @@ my_BufUnpack(warp_App     app,
              void        *buffer,
              warp_Vector *u_ptr)
 {
+   int ilower_x[2], iupper_x[2];
    double    *dbuffer = buffer;
    my_Vector *u;
 
@@ -2591,22 +2708,21 @@ my_BufUnpack(warp_App     app,
 
    u = (my_Vector *) malloc( sizeof(my_Vector) );
 
-   /* Unpack the spatial discretization parameters */
-   u->ilower_x[0] = (int) dbuffer[0];
-   u->ilower_x[1] = (int) dbuffer[1];
-   u->iupper_x[0] = (int) dbuffer[2];
-   u->iupper_x[1] = (int) dbuffer[3];
-   u->dx          = dbuffer[4];
-   u->dy          = dbuffer[5];
-   u->nlx         = (int) dbuffer[6];
-   u->nly         = (int) dbuffer[7];
+   /* Unpack the spatial coarsening rule */
+   u->spatial_disc_idx = (int) dbuffer[0];
+
+   /* Retrieve ilower and iupper */
+   ilower_x[0]    = (app->spatial_disc_table[u->spatial_disc_idx]).ilower_x[0];
+   ilower_x[1]    = (app->spatial_disc_table[u->spatial_disc_idx]).ilower_x[1];
+   iupper_x[0]    = (app->spatial_disc_table[u->spatial_disc_idx]).iupper_x[0];
+   iupper_x[1]    = (app->spatial_disc_table[u->spatial_disc_idx]).iupper_x[1];
 
    /* 
     * Unpack the vector 
     */
 
    /* Create an empty vector object. */
-   HYPRE_SStructVectorCreate( app->comm_x, app->grid_x, &(u->x) );
+   HYPRE_SStructVectorCreate( app->comm_x, (app->spatial_disc_table[u->spatial_disc_idx]).grid_x, &(u->x) );
    
    /* Set the object type (by default HYPRE_SSTRUCT). */
    HYPRE_SStructVectorSetObjectType( u->x, app->object_type );
@@ -2615,8 +2731,8 @@ my_BufUnpack(warp_App     app,
    HYPRE_SStructVectorInitialize( u->x );
 
    /* Set the values. */
-   HYPRE_SStructVectorSetBoxValues( u->x, part, u->ilower_x,
-                                    u->iupper_x, var, &(dbuffer[8]) );
+   HYPRE_SStructVectorSetBoxValues( u->x, part, ilower_x,
+                                    iupper_x, var, &(dbuffer[1]) );
 
    HYPRE_SStructVectorAssemble( u->x );
 
@@ -3067,10 +3183,28 @@ int main (int argc, char *argv[])
 
    /* Setup the lookup table that records how grids are coarsened (refined)
     * spatially */
-   (app->coarsening_table) = (double*) malloc( max_levels*3*sizeof(double) );
-   for( i = 0; i < max_levels*3; i++)
-      app->coarsening_table[i] = -1.0;
+   (app->spatial_disc_table) = (spatial_discretization*) malloc( max_levels*sizeof(spatial_discretization) );
+   for( i = 1; i < app->max_levels; i++ )
+   {
+      app->spatial_disc_table[i].fdt = -1.0;
+      app->spatial_disc_table[i].cdt = -1.0;
+   }
+   (app->spatial_disc_table[0]).grid_x = (app->grid_x);
+   (app->spatial_disc_table[0]).graph = (app->graph);
+   (app->spatial_disc_table[0]).fdt = (app->dt);
+   (app->spatial_disc_table[0]).cdt = (app->dt);
+   (app->spatial_disc_table[0]).ncoarsen = 0;
+   (app->spatial_disc_table[0]).dx = (app->dx);
+   (app->spatial_disc_table[0]).dy = (app->dy);
+   (app->spatial_disc_table[0]).nlx = (app->nlx);
+   (app->spatial_disc_table[0]).nly = (app->nly);
+   (app->spatial_disc_table[0]).ilower_x[0] = (app->ilower_x[0]);
+   (app->spatial_disc_table[0]).ilower_x[1] = (app->ilower_x[1]);
+   (app->spatial_disc_table[0]).iupper_x[0] = (app->iupper_x[0]);
+   (app->spatial_disc_table[0]).iupper_x[1] = (app->iupper_x[1]);
+   (app->spatial_disc_table[0]).fspatial_disc_idx = 0;
 
+   
    /* Start timer. */
    mystarttime = MPI_Wtime();
 
@@ -3211,7 +3345,21 @@ int main (int argc, char *argv[])
    free( app->max_num_iterations );
    free( app->scoarsen_table );
    free( app->max_iter_x );
-   free( app->coarsening_table );
+   
+   /* Destroy all coarse grid_x and graphs
+    * The app->grid_x and app->graph are destroyed above, and are 
+    * the i=0 entries below
+    */
+   for( i = 1; i < app->max_levels; i++ )
+   {
+      if( (app->spatial_disc_table[i]).fdt != -1.0)
+      {
+         HYPRE_SStructGridDestroy( (app->spatial_disc_table[i]).grid_x );
+         HYPRE_SStructGraphDestroy( (app->spatial_disc_table[i]).graph );
+      }
+   }
+   free( app->spatial_disc_table );
+   
    free( app->tol_x );
    free( app );
    warp_Destroy(core);
@@ -3223,4 +3371,5 @@ int main (int argc, char *argv[])
 
    return 0;
 }
+
 
