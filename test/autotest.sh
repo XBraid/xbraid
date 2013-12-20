@@ -23,7 +23,7 @@ remote_subdir="AUTOTEST-`date +%Y.%m.%d-%a`"
 # Email Setup
 summary_file="WARP_SUMMARY.html"
 summary_subject="Warp Autotest Summary `date +%Y-%m-%d`"
-email_list="schroder2@llnl.gov, rfalgout@llnl.gov"
+email_list="tzanio@llnl.gov, schroder2@llnl.gov, rfalgout@llnl.gov"
 #email_list="rfalgout@llnl.gov, tzanio@llnl.gov, umyang@llnl.gov, schroder2@llnl.gov"
 warp_logo=" __    __                 
 / / /\ \ \__ _ _ __ _ __  
