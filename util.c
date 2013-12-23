@@ -60,18 +60,18 @@ _warp_ProjectInterval( warp_Int   ilower,
  * the current residual norm and the stopping tolerance. 
  *--------------------------------------------------------------------------*/
 warp_Int
-_warp_SetAccuracy( warp_Float  rnorm,
-                   warp_Float  loose_tol,
-                   warp_Float  tight_tol,
-                   warp_Float  oldAccuracy,
-                   warp_Float  tol,
-                   warp_Float *paccuracy )
+_warp_SetAccuracy( warp_Real   rnorm,
+                   warp_Real   loose_tol,
+                   warp_Real   tight_tol,
+                   warp_Real   oldAccuracy,
+                   warp_Real   tol,
+                   warp_Real  *paccuracy )
 {
-   warp_Float accuracy, ttol, stol;
+   warp_Real accuracy, ttol, stol;
 
-   warp_Float loose_stol = -log10(loose_tol);
-   warp_Float tight_stol = -log10(tight_tol);
-   warp_Float tight_ttol = (8.0 / 9)*(-log10(tol));
+   warp_Real loose_stol = -log10(loose_tol);
+   warp_Real tight_stol = -log10(tight_tol);
+   warp_Real tight_ttol = (8.0 / 9)*(-log10(tol));
 
    /*ttol = -log10(rnorm / rnorm0);*/
    ttol = -log10(rnorm);

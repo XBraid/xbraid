@@ -575,7 +575,7 @@ _warp_UWriteVector(warp_Core    core,
    warp_App      app = _warp_CoreElt(core, app);
    _warp_Grid  **grids  = _warp_CoreElt(core, grids);
    warp_Int      ilower = _warp_GridElt(grids[level], ilower);
-   warp_Float   *ta     = _warp_GridElt(grids[level], ta);
+   warp_Real    *ta     = _warp_GridElt(grids[level], ta);
 
    _warp_CoreFcn(core, write)(app, ta[index-ilower], u);
 
@@ -590,14 +590,14 @@ warp_Int
 _warp_Phi(warp_Core     core,
           warp_Int      level,
           warp_Int      index,
-          warp_Float    accuracy,
+          warp_Real     accuracy,
           warp_Vector   u,
           warp_Int     *rfactor)
 {
    warp_App      app    = _warp_CoreElt(core, app);
    _warp_Grid  **grids  = _warp_CoreElt(core, grids);
    warp_Int      ilower = _warp_GridElt(grids[level], ilower);
-   warp_Float   *ta     = _warp_GridElt(grids[level], ta);
+   warp_Real    *ta     = _warp_GridElt(grids[level], ta);
 
    warp_Int      ii;
 
@@ -615,7 +615,7 @@ warp_Int
 _warp_Step(warp_Core     core,
            warp_Int      level,
            warp_Int      index,
-           warp_Float    accuracy,
+           warp_Real     accuracy,
            warp_Vector   u)
 {
    warp_App       app      = _warp_CoreElt(core, app);
@@ -659,8 +659,8 @@ _warp_Coarsen(warp_Core     core,
    _warp_Grid  **grids    = _warp_CoreElt(core, grids);
    warp_Int      c_ilower = _warp_GridElt(grids[level], ilower);
    warp_Int      f_ilower = _warp_GridElt(grids[level-1], ilower);
-   warp_Float   *c_ta     = _warp_GridElt(grids[level], ta);
-   warp_Float   *f_ta     = _warp_GridElt(grids[level-1], ta);
+   warp_Real    *c_ta     = _warp_GridElt(grids[level], ta);
+   warp_Real    *f_ta     = _warp_GridElt(grids[level-1], ta);
 
    warp_Int      c_ii = c_index-c_ilower;
    warp_Int      f_ii = f_index-f_ilower;
@@ -695,8 +695,8 @@ _warp_Refine(warp_Core     core,
    _warp_Grid  **grids    = _warp_CoreElt(core, grids);
    warp_Int      f_ilower = _warp_GridElt(grids[level], ilower);
    warp_Int      c_ilower = _warp_GridElt(grids[level+1], ilower);
-   warp_Float   *f_ta     = _warp_GridElt(grids[level], ta);
-   warp_Float   *c_ta     = _warp_GridElt(grids[level+1], ta);
+   warp_Real    *f_ta     = _warp_GridElt(grids[level], ta);
+   warp_Real    *c_ta     = _warp_GridElt(grids[level+1], ta);
 
    warp_Int      c_ii = c_index-c_ilower;
    warp_Int      f_ii = f_index-f_ilower;
@@ -728,7 +728,7 @@ _warp_GridInit(warp_Core     core,
                _warp_Grid  **grid_ptr)
 {
    _warp_Grid   *grid;
-   warp_Float   *ta;
+   warp_Real    *ta;
 
    grid = _warp_CTAlloc(_warp_Grid, 1);
    
@@ -738,7 +738,7 @@ _warp_GridInit(warp_Core     core,
    
    /* Store each processor's time slice, plus one time value to the left 
     * and to the right */
-   ta = _warp_CTAlloc(warp_Float,  iupper-ilower+3);
+   ta = _warp_CTAlloc(warp_Real,  iupper-ilower+3);
    _warp_GridElt(grid, ta_alloc) = ta;
    _warp_GridElt(grid, ta)       = ta+1;  /* shift */
    
@@ -760,7 +760,7 @@ _warp_GridDestroy(warp_Core    core,
       warp_Int      ncpoints = _warp_GridElt(grid, ncpoints);
       warp_Vector  *ua       = _warp_GridElt(grid, ua);
       warp_Vector  *ua_alloc = _warp_GridElt(grid, ua_alloc);
-      warp_Float   *ta_alloc = _warp_GridElt(grid, ta_alloc);
+      warp_Real    *ta_alloc = _warp_GridElt(grid, ta_alloc);
       warp_Vector  *va_alloc = _warp_GridElt(grid, va_alloc);
       warp_Vector  *wa_alloc = _warp_GridElt(grid, wa_alloc);
 
@@ -810,7 +810,7 @@ _warp_InitGuess(warp_Core  core,
    warp_Int      clower  = _warp_GridElt(grids[level], clower);
    warp_Int      cupper  = _warp_GridElt(grids[level], cupper);
    warp_Int      cfactor = _warp_GridElt(grids[level], cfactor);
-   warp_Float   *ta      = _warp_GridElt(grids[level], ta);
+   warp_Real    *ta      = _warp_GridElt(grids[level], ta);
    warp_Vector  *va      = _warp_GridElt(grids[level], va);
 
    warp_Vector    u;
@@ -852,7 +852,7 @@ _warp_CFRelax(warp_Core  core,
    warp_Vector    u;
    warp_Int       flo, fhi, fi, ci;
    warp_Int       nu, nrelax, interval;
-   warp_Float     accuracy;
+   warp_Real      accuracy;
 
    if ( level == 0 )
    {     
@@ -914,9 +914,9 @@ _warp_CFRelax(warp_Core  core,
  *--------------------------------------------------------------------------*/
 
 warp_Int
-_warp_FRestrict(warp_Core    core,
-                warp_Int     level,
-                warp_Float  *rnorm_ptr)
+_warp_FRestrict(warp_Core   core,
+                warp_Int    level,
+                warp_Real  *rnorm_ptr)
 {
    MPI_Comm            comm        = _warp_CoreElt(core, comm);
    warp_App            app         = _warp_CoreElt(core, app);
@@ -931,7 +931,7 @@ _warp_FRestrict(warp_Core    core,
 
    warp_Vector         u, r;
    warp_Int            interval, flo, fhi, fi, ci, rfactor;
-   warp_Float          rnorm, grnorm, rdot, accuracy;
+   warp_Real           rnorm, grnorm, rdot, accuracy;
 
    c_level  = level+1;
    c_ilower = _warp_GridElt(grids[c_level], ilower);
@@ -1255,7 +1255,7 @@ _warp_FRefine(warp_Core   core,
          for (j = 0; j < f_cfactor; j++)
          {
             ta[i-ilower] = f_ta[f_i-f_ilower];
-            f_ta[f_i-f_ilower] = tstart + (((warp_Float)i)/ntime)*(tstop-tstart);
+            f_ta[f_i-f_ilower] = tstart + (((warp_Real)i)/ntime)*(tstop-tstart);
          }
       }
 
@@ -1298,7 +1298,7 @@ _warp_FWrite(warp_Core  core,
    warp_App       app      = _warp_CoreElt(core, app);
    _warp_Grid   **grids    = _warp_CoreElt(core, grids);
    warp_Int       ncpoints = _warp_GridElt(grids[level], ncpoints);
-   warp_Float     accuracy;
+   warp_Real      accuracy;
 
    warp_Vector   u;
    warp_Int      interval, flo, fhi, fi, ci;
@@ -1358,7 +1358,7 @@ _warp_InitHierarchy(warp_Core    core,
 {
    MPI_Comm      comm       = _warp_CoreElt(core, comm);
    warp_Int      max_levels = _warp_CoreElt(core, max_levels);
-   warp_Float    tol        = _warp_CoreElt(core, tol);
+   warp_Real     tol        = _warp_CoreElt(core, tol);
    warp_Int     *nrels      = _warp_CoreElt(core, nrels);
    warp_Int      nrdefault  = _warp_CoreElt(core, nrdefault);
    warp_Int     *cfactors   = _warp_CoreElt(core, cfactors);
@@ -1371,12 +1371,12 @@ _warp_InitHierarchy(warp_Core    core,
    warp_Int      ilower, iupper;
    warp_Int      clower, cupper, cfactor, ncpoints;
    warp_Vector  *ua;
-   warp_Float   *ta;
+   warp_Real    *ta;
    warp_Vector  *va;
    warp_Vector  *wa;
 
    _warp_Grid   *grid;
-   warp_Float   *f_ta;
+   warp_Real    *f_ta;
    warp_Int      i, f_i, f_ilower, clo, chi, gclower, gcupper;
 
    MPI_Request   request1, request2;
@@ -1513,7 +1513,7 @@ _warp_InitHierarchy(warp_Core    core,
          /* Post receive to set ta[-1] on each processor*/
          if (left_proc > -1)
          {
-            MPI_Irecv(&ta[-1], sizeof(warp_Float), MPI_BYTE,
+            MPI_Irecv(&ta[-1], sizeof(warp_Real), MPI_BYTE,
                       left_proc, 0, comm, &request1);
          }
          else
@@ -1526,7 +1526,7 @@ _warp_InitHierarchy(warp_Core    core,
          {
              if (right_proc > -1)
              {
-                MPI_Irecv(&ta[iupper-ilower+1], sizeof(warp_Float), MPI_BYTE,
+                MPI_Irecv(&ta[iupper-ilower+1], sizeof(warp_Real), MPI_BYTE,
                           right_proc, 0, comm, &request2);
              }
              else
@@ -1539,13 +1539,13 @@ _warp_InitHierarchy(warp_Core    core,
          /* Post send that sets ta[-1] on each processor */
          if (right_proc > -1)
          {
-            MPI_Send(&ta[iupper-ilower], sizeof(warp_Float), MPI_BYTE,
+            MPI_Send(&ta[iupper-ilower], sizeof(warp_Real), MPI_BYTE,
                      right_proc, 0, comm);
          }
          /* Post send that sets ta[iupper-ilower+1] on each processor */
          if ( (left_proc > -1) && ( _warp_CoreElt(core, coarsen) != NULL ) )
          {
-            MPI_Send(&ta[0], sizeof(warp_Float), MPI_BYTE, left_proc, 0, comm);
+            MPI_Send(&ta[0], sizeof(warp_Real), MPI_BYTE, left_proc, 0, comm);
          }
 
          /* Finish receive */

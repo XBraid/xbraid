@@ -2004,7 +2004,7 @@ my_Dot(warp_App     app,
  * -------------------------------------------------------------------- */
 int
 my_Write(warp_App     app,
-         warp_Float   t,
+         warp_Real    t,
          warp_Vector  u)
 {
    MPI_Comm   comm   = MPI_COMM_WORLD;

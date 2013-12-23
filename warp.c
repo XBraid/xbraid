@@ -27,8 +27,8 @@
 warp_Int
 warp_Init(MPI_Comm              comm_world,
           MPI_Comm              comm,
-          warp_Float            tstart,
-          warp_Float            tstop,
+          warp_Real             tstart,
+          warp_Real             tstop,
           warp_Int              ntime,
           warp_App              app,
           warp_PtFcnPhi         phi,
@@ -129,19 +129,19 @@ warp_Init(MPI_Comm              comm_world,
 warp_Int
 warp_Drive(warp_Core  core)
 {
-   warp_Float    tstart   = _warp_CoreElt(core, tstart);
-   warp_Float    tstop    = _warp_CoreElt(core, tstop);
+   warp_Real     tstart   = _warp_CoreElt(core, tstart);
+   warp_Real     tstop    = _warp_CoreElt(core, tstop);
    warp_Int      ntime    = _warp_CoreElt(core, ntime);
-   warp_Float    tol      = _warp_CoreElt(core, tol);
+   warp_Real     tol      = _warp_CoreElt(core, tol);
    warp_Int      rtol     = _warp_CoreElt(core, rtol);
    warp_Int      fmg      = _warp_CoreElt(core, fmg);
    warp_Int      max_iter = _warp_CoreElt(core, max_iter);
 
    warp_Int      nlevels, iter;
-   warp_Float    rnorm;
-   warp_Float    accuracy;
+   warp_Real     rnorm;
+   warp_Real     accuracy;
    warp_Int      ilower, iupper;
-   warp_Float   *ta;
+   warp_Real    *ta;
    warp_Int      level, fmglevel, down, done, i, refined;
    _warp_Grid   *grid;
 
@@ -160,7 +160,7 @@ warp_Drive(warp_Core  core)
    ta = _warp_GridElt(grid, ta);
    for (i = ilower; i <= iupper; i++)
    {
-      ta[i-ilower] = tstart + (((warp_Float)i)/ntime)*(tstop-tstart);
+      ta[i-ilower] = tstart + (((warp_Real)i)/ntime)*(tstop-tstart);
    }
 
    /* Create a grid hierarchy */
@@ -352,19 +352,19 @@ warp_Int
 warp_PrintStats(warp_Core  core)
 {
    MPI_Comm     comm_world = _warp_CoreElt(core, comm_world);
-   warp_Float   tstart     = _warp_CoreElt(core, tstart);
-   warp_Float   tstop      = _warp_CoreElt(core, tstop);
+   warp_Real    tstart     = _warp_CoreElt(core, tstart);
+   warp_Real    tstop      = _warp_CoreElt(core, tstop);
    warp_Int     ntime      = _warp_CoreElt(core, ntime);
    warp_Int     max_levels = _warp_CoreElt(core, max_levels);
    warp_Int    *nrels      = _warp_CoreElt(core, nrels);
    warp_Int     nrdefault  = _warp_CoreElt(core, nrdefault);
-   warp_Float   tol        = _warp_CoreElt(core, tol);
+   warp_Real    tol        = _warp_CoreElt(core, tol);
    warp_Int     rtol       = _warp_CoreElt(core, rtol);
    /*warp_Int    *cfactors   = _warp_CoreElt(core, cfactors);*/
    warp_Int     cfdefault  = _warp_CoreElt(core, cfdefault);
    warp_Int     max_iter   = _warp_CoreElt(core, max_iter);
    warp_Int     niter      = _warp_CoreElt(core, niter);
-   warp_Float   rnorm      = _warp_CoreElt(core, rnorm);
+   warp_Real    rnorm      = _warp_CoreElt(core, rnorm);
    warp_Int     nlevels    = _warp_CoreElt(core, nlevels);
 
    warp_Int     myid;
@@ -399,7 +399,7 @@ warp_PrintStats(warp_Core  core)
 warp_Int
 warp_SetLoosexTol(warp_Core  core,
                   warp_Int   level,
-                  warp_Float loose_tol)
+                  warp_Real  loose_tol)
 {
    if (level < 0)
    {
@@ -433,7 +433,7 @@ warp_SetLoosexTol(warp_Core  core,
 warp_Int
 warp_SetTightxTol(warp_Core  core,
                   warp_Int   level,
-                  warp_Float tight_tol)
+                  warp_Real  tight_tol)
 {
    if (level < 0)
    {
@@ -466,8 +466,8 @@ warp_SetMaxLevels(warp_Core  core,
  *--------------------------------------------------------------------------*/
 
 warp_Int
-warp_SetAbsTol(warp_Core   core,
-               warp_Float  tol)
+warp_SetAbsTol(warp_Core  core,
+               warp_Real  tol)
 {
    _warp_CoreElt(core, tol) = tol;
 
@@ -478,8 +478,8 @@ warp_SetAbsTol(warp_Core   core,
  *--------------------------------------------------------------------------*/
 
 warp_Int
-warp_SetRelTol(warp_Core   core,
-               warp_Float  tol)
+warp_SetRelTol(warp_Core  core,
+               warp_Real  tol)
 {
    _warp_CoreElt(core, tol)  = tol;
    _warp_CoreElt(core, rtol) = 1;

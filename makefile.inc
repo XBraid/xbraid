@@ -22,14 +22,14 @@ endif
 
 HOSTNAME := $(shell hostname)
 
-ifeq ($(shell uname -n),tux343)
+ifeq ($(findstring tux343,$(HOSTNAME)),tux343)
 	MPICC = mpicc
 	MPICXX = mpiCC
 	LFLAGS = -lm
 	ifeq ($(optlevel),DEBUG)
-		CFLAGS = -g -Wall
+		CFLAGS = -g -Wall -lm
 	else
-		CFLAGS = -O -Wall
+		CFLAGS = -O -Wall -lm
 	endif
 else ifeq ($(findstring yorkville,$(HOSTNAME)),yorkville)
   # for Anders' laptop

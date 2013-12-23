@@ -46,10 +46,10 @@ typedef struct
 typedef struct
 {
    warp_Int   matchF;
-   warp_Float value;      /* accuracy value */
-   warp_Float old_value;  /* old accuracy value used in FRestrict */
-   warp_Float loose;      /* loose accuracy for spatial solves */
-   warp_Float tight;      /* tight accuracy for spatial solves */
+   warp_Real  value;      /* accuracy value */
+   warp_Real  old_value;  /* old accuracy value used in FRestrict */
+   warp_Real  loose;      /* loose accuracy for spatial solves */
+   warp_Real  tight;      /* tight accuracy for spatial solves */
    warp_Int   tight_used; /* tight accuracy used (1) or not (0) */
 } _warp_AccuracyHandle;
 
@@ -60,7 +60,7 @@ typedef struct
    warp_Int     clower, cupper, cfactor, ncpoints;
 
    warp_Vector *ua;  /* unknown vectors            (C-points only)*/
-   warp_Float  *ta;  /* time values                (all points) */
+   warp_Real   *ta;  /* time values                (all points) */
    warp_Vector *va;  /* restricted unknown vectors (all points, NULL on level 0) */
    warp_Vector *wa;  /* rhs vectors f-v            (all points, NULL on level 0) */
 
@@ -71,7 +71,7 @@ typedef struct
 
    /* pointers to the original memory allocation for ua, ta, va, and wa */
    warp_Vector *ua_alloc;
-   warp_Float  *ta_alloc;
+   warp_Real   *ta_alloc;
    warp_Vector *va_alloc;
    warp_Vector *wa_alloc;
 
@@ -92,8 +92,8 @@ typedef struct _warp_Core_struct
 {
    MPI_Comm              comm_world;
    MPI_Comm              comm;      /**< communicator for the time dimension */
-   warp_Float            tstart;    /**< start time */
-   warp_Float            tstop;     /**< stop time */
+   warp_Real             tstart;    /**< start time */
+   warp_Real             tstop;     /**< stop time */
    warp_Int              ntime;     /**< initial number of time intervals */
    warp_App              app;       /**< application data for the user */
    
@@ -111,7 +111,7 @@ typedef struct _warp_Core_struct
    warp_PtFcnRefine      refine;    /**< (optional) return a refined vector */
 
    warp_Int              max_levels;/**< maximum number of temporal grid levels */
-   warp_Float            tol;       /**< stopping tolerance */
+   warp_Real             tol;       /**< stopping tolerance */
    warp_Int              rtol;      /**< use relative tolerance */
    warp_Int             *nrels;     /**< number of pre-relaxations on each level */
    warp_Int              nrdefault; /**< default number of pre-relaxations */
@@ -119,7 +119,7 @@ typedef struct _warp_Core_struct
    warp_Int              cfdefault; /**< default coarsening factor */
    warp_Int              max_iter;  /**< maximum number of multigrid in time iterations */
    warp_Int              niter;     /**< number of iterations */
-   warp_Float            rnorm;     /**< residual norm */
+   warp_Real             rnorm;     /**< residual norm */
    warp_Int              fmg;       /**< use FMG cycle */
    _warp_AccuracyHandle *accuracy;  /**< accuracy of spatial solves on different levels */
 
@@ -316,7 +316,7 @@ warp_Int
 _warp_Phi(warp_Core     core,
           warp_Int      level,
           warp_Int      index,
-          warp_Float    accuracy,
+          warp_Real     accuracy,
           warp_Vector   u,
           warp_Int     *rfactor);
 
@@ -328,7 +328,7 @@ warp_Int
 _warp_Step(warp_Core     core,
            warp_Int      level,
            warp_Int      index,
-           warp_Float    accuracy,
+           warp_Real     accuracy,
            warp_Vector   u);
 
 /**
@@ -396,9 +396,9 @@ _warp_CFRelax(warp_Core  core,
  *   residual norm.
  */
 warp_Int
-_warp_FRestrict(warp_Core    core,       /**< warp_Core (_warp_Core) struct */   
-                warp_Int     level,      /**< restrict from level to level+1 */
-                warp_Float  *rnorm_ptr   /**< pointer to residual norm (if level 0) */
+_warp_FRestrict(warp_Core   core,       /**< warp_Core (_warp_Core) struct */   
+                warp_Int    level,      /**< restrict from level to level+1 */
+                warp_Real  *rnorm_ptr   /**< pointer to residual norm (if level 0) */
                 );
 
 

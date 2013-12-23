@@ -31,12 +31,12 @@ _warp_ProjectInterval( warp_Int   ilower,
                        warp_Int  *piupper );
 
 warp_Int
-_warp_SetAccuracy( warp_Float  rnorm,
-                   warp_Float  loose_tol,
-                   warp_Float  tight_tol,
-                   warp_Float  oldAccuracy,
-                   warp_Float  tol,
-                   warp_Float *paccuracy );
+_warp_SetAccuracy( warp_Real   rnorm,
+                   warp_Real   loose_tol,
+                   warp_Real   tight_tol,
+                   warp_Real   oldAccuracy,
+                   warp_Real   tol,
+                   warp_Real  *paccuracy );
 
 
 #endif

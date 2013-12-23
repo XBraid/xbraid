@@ -29,7 +29,7 @@ extern "C" {
  *--------------------------------------------------------------------------*/
 
 typedef int    warp_Int;
-typedef double warp_Float;
+typedef double warp_Real;
 
 /*--------------------------------------------------------------------------
  * User-written routines
@@ -52,9 +52,9 @@ typedef struct _warp_Vector_struct *warp_Vector;
  **/
 typedef warp_Int
 (*warp_PtFcnPhi)(warp_App      app,
-                 warp_Float    tstart,
-                 warp_Float    tstop,
-                 warp_Float    accuracy,
+                 warp_Real     tstart,
+                 warp_Real     tstop,
+                 warp_Real     accuracy,
                  warp_Vector   u,
                  warp_Int     *rfactor_ptr);
 
@@ -63,7 +63,7 @@ typedef warp_Int
  **/
 typedef warp_Int
 (*warp_PtFcnInit)(warp_App      app,
-                  warp_Float    t,
+                  warp_Real     t,
                   warp_Vector  *u_ptr);
 
 /**
@@ -86,9 +86,9 @@ typedef warp_Int
  **/
 typedef warp_Int
 (*warp_PtFcnSum)(warp_App     app,
-                 warp_Float   alpha,
+                 warp_Real    alpha,
                  warp_Vector  x,
-                 warp_Float   beta,
+                 warp_Real    beta,
                  warp_Vector  y);
 
 /**
@@ -98,14 +98,14 @@ typedef warp_Int
 (*warp_PtFcnDot)(warp_App      app,
                  warp_Vector   u,
                  warp_Vector   v,
-                 warp_Float   *dot_ptr);
+                 warp_Real    *dot_ptr);
 
 /**
  * Blah...
  **/
 typedef warp_Int
 (*warp_PtFcnWrite)(warp_App      app,
-                   warp_Float    t,
+                   warp_Real     t,
                    warp_Vector   u);
 
 /**
@@ -136,11 +136,11 @@ typedef warp_Int
  **/
 typedef warp_Int
 (*warp_PtFcnCoarsen)(warp_App      app,
-                     warp_Float    tstart,
-                     warp_Float    f_tminus,
-                     warp_Float    f_tplus,
-                     warp_Float    c_tminus,
-                     warp_Float    c_tplus,
+                     warp_Real     tstart,
+                     warp_Real     f_tminus,
+                     warp_Real     f_tplus,
+                     warp_Real     c_tminus,
+                     warp_Real     c_tplus,
                      warp_Vector   fu,
                      warp_Vector  *cu_ptr);
 
@@ -149,11 +149,11 @@ typedef warp_Int
  **/
 typedef warp_Int
 (*warp_PtFcnRefine)(warp_App      app,
-                    warp_Float    tstart,
-                    warp_Float    f_tminus,
-                    warp_Float    f_tplus,
-                    warp_Float    c_tminus,
-                    warp_Float    c_tplus,
+                    warp_Real     tstart,
+                    warp_Real     f_tminus,
+                    warp_Real     f_tplus,
+                    warp_Real     c_tminus,
+                    warp_Real     c_tplus,
                     warp_Vector   cu,
                     warp_Vector  *fu_ptr);
 
@@ -176,8 +176,8 @@ typedef struct _warp_Core_struct *warp_Core;
 warp_Int
 warp_Init(MPI_Comm              comm_world,  /**< Global communicator for space and time */
           MPI_Comm              comm,        /**< Communicator for temporal dimension*/
-          warp_Float            tstart,      /**< start time */
-          warp_Float            tstop,       /**< End time*/
+          warp_Real             tstart,      /**< start time */
+          warp_Real             tstop,       /**< End time*/
           warp_Int              ntime,       /**< Initial number of temporal grid values*/
           warp_App              app,         /**< User defined structure to hold *state* information */
           warp_PtFcnPhi         phi,         /**< User time stepping routine to advance state one time value*/
@@ -218,7 +218,7 @@ warp_PrintStats(warp_Core  core);
 warp_Int
 warp_SetLoosexTol(warp_Core  core,
                   warp_Int   level,
-                  warp_Float loose_tol);
+                  warp_Real  loose_tol);
 
 /**
  * Set tight stopping tolerance for spatial solves on grid level
@@ -227,7 +227,7 @@ warp_SetLoosexTol(warp_Core  core,
 warp_Int
 warp_SetTightxTol(warp_Core  core,
                   warp_Int   level,
-                  warp_Float tight_tol);
+                  warp_Real  tight_tol);
 
 /**
  * Set max number of multigrid levels.
@@ -240,15 +240,15 @@ warp_SetMaxLevels(warp_Core  core,
  * Set absolute stopping tolerance.
  **/
 warp_Int
-warp_SetAbsTol(warp_Core   core,
-               warp_Float  atol);
+warp_SetAbsTol(warp_Core  core,
+               warp_Real  atol);
 
 /**
  * Set absolute stopping tolerance.
  **/
 warp_Int
-warp_SetRelTol(warp_Core   core,
-               warp_Float  rtol);
+warp_SetRelTol(warp_Core  core,
+               warp_Real  rtol);
 
 /**
  * Set the number of relaxation sweeps *nrelax* on grid level *level*
