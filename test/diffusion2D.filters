@@ -1,2 +1,0 @@
-Each line is a regular expression that if found in the test output causes that output line to be ingored.
-*something-to-ignore*
