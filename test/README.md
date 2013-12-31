@@ -119,8 +119,8 @@ Files used:
 
 Output:
 -  `machine-tux.dir`
--  `machine-tux.err`
--  `machine-tux.out`
+-  `machine-tux.err` (only generated if `autotest.sh` is used to run `machine-tux.sh`)
+-  `machine-tux.out` (only generated if `autotest.sh` is used to run `machine-tux.sh`)
 
 
 At this level, we execute 
@@ -128,17 +128,18 @@ At this level, we execute
       ./machine-tux.sh
 
 The autotest framework (`autotest.sh`) calls machine scripts in this way.  Each
-machine script should be short and call low level scripts like
-`diffusion2D.sh`.  The output must then be moved to `machine-tux.dir`: 
+machine script should be short and call lower-level scripts like
+`diffusion2D.sh`.  The output from lower-level scripts must be moved to
+`machine-tux.dir` like this: 
 
       $ ./test.sh diffusion2D.sh 
       $ mv -f diffusion2D.dir machine-tux.dir
       $ mv -f diffusion2D.out machine-tux.dir
       $ mv -f diffusion2D.err machine-tux.dir
 
-Any nonzero error files from `diffusion2D.sh` will be listed in `machine-tux.err`,
-with the detailed output from `diffusion2D.sh` stored in `machine-tux.dir`.  If 
-`machine-tux.err` is zero then the test has passed.
+All error files from `diffusion2D.sh` will be placed in `machine-tux.dir`, so
+if `machine-tux.dir` has all zero `*.err` files, then the `machine-tux` test
+has passed.
 
 To begin testing on a new machine, like vulcan, add a new machine script
 similar to `machine-tux.sh` and change `autotest.sh` to recognize and run the new
