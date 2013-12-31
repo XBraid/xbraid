@@ -17,6 +17,13 @@ else
    optlevel = DEBUG
 endif
 
+# Was VALGRIND specified? 
+ifeq ($(valgrind),yes)
+   lvalgrind = YES
+else
+   lvalgrind = NO
+endif
+
 # Default compiler options for different platforms and known machines
 # Add an else statement for your machine, if the compile options need adjustment
 
@@ -31,6 +38,9 @@ ifeq ($(findstring tux343,$(HOSTNAME)),tux343)
 	else
 		CFLAGS = -O -Wall -lm
 	endif
+	ifeq ($(lvalgrind),YES)
+		LFLAGS += /usr/lib64/valgrind/libmpiwrap-amd64-linux.so 
+   endif
 else ifeq ($(findstring yorkville,$(HOSTNAME)),yorkville)
   # for Anders' laptop
 	MPICC = openmpicc
