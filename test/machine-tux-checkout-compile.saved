@@ -1,0 +1,7 @@
+# Begin Test 0, check that the git pull returned 0
+Git return status is 0
+
+# Begin Test 1, this is blank because make error messages should be found
+
+# Begin Test 2, this is blank because make error messages should be found
+

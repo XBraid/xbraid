@@ -41,6 +41,7 @@ mkdir -p $output_dir
 
 # Run the following regression tests 
 TESTS=( "diffusion2D.sh " \
+        "machine-tux-checkout-compile.sh " \
         "memcheck-tux-jacob.sh ")
 
 # Run regression tests
