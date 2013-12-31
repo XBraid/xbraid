@@ -10,6 +10,8 @@
 #
 #EHEADER**********************************************************************
 
+# scriptname holds the script name, with the .sh removed
+scriptname=`basename $0 .sh`
 
 # Echo usage information
 case $1 in
@@ -20,11 +22,11 @@ case $1 in
 
    where: -h|-help   prints this usage information and exits
 
-   This script runs basic tests of warp for a constant coefficient 2D heat equation. 
-   The output is written to diffusion2D.out, diffusion2D.err and diffusion2D.dir.
-   This test passes if diffusion2D.err is empty.
+   This script runs basic tests of warp for a constant coefficient 2D heat 
+   equation. The output is written to $scriptname.out, $scriptname.err and 
+   $scriptname.dir. This test passes if $scriptname.err is empty.
 
-   Example usage: test.sh $0 
+   Example usage: ./test.sh $0 
 
 EOF
       exit
@@ -50,13 +52,13 @@ esac
 # Setup
 example_dir="../examples"
 test_dir=`pwd`
-scriptname=`basename $0 .sh`  # scriptname holds the script name, with the .sh removed
 output_dir=`pwd`/$scriptname.dir
 rm -fr $output_dir
 mkdir -p $output_dir
 
 
 # compile the regression test drivers 
+echo "Compiling regression test drivers"
 cd $example_dir
 make clean
 make 
@@ -72,8 +74,12 @@ TESTS=( "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 " \
 #   $output_dir/unfiltered.std.out.0, 
 #   $output_dir/std.out.0, 
 #   $output_dir/std.err.0,
+#    
 #   $output_dir/unfiltered.std.out.1,
+#   $output_dir/std.out.1, 
+#   $output_dir/std.err.1,
 #   ...
+#
 # The unfiltered output is the direct output of the script, whereas std.out.*
 # is filtered by a grep for the lines that are to be checked.  
 #
@@ -91,13 +97,13 @@ csplit -n 1 --silent --prefix $output_dir/$scriptname.saved. $scriptname.saved "
 counter=0
 for test in "${TESTS[@]}"
 do
-  echo "Running Test $counter"
-  $test 1>> $output_dir/unfiltered.std.out.$counter  2>> $output_dir/std.err.$counter
-  cd $output_dir
-  egrep -o "$lines_to_check" unfiltered.std.out.$counter > std.out.$counter
-  diff -U3 -B -bI"$TestDelimiter" $scriptname.saved.$counter std.out.$counter >> std.err.$counter
-  cd $test_dir
-  counter=$(( $counter + 1 ))
+   echo "Running Test $counter"
+   eval "$test" 1>> $output_dir/unfiltered.std.out.$counter  2>> $output_dir/std.err.$counter
+   cd $output_dir
+   egrep -o "$lines_to_check" unfiltered.std.out.$counter > std.out.$counter
+   diff -U3 -B -bI"$TestDelimiter" $scriptname.saved.$counter std.out.$counter >> std.err.$counter
+   cd $test_dir
+   counter=$(( $counter + 1 ))
 done 
 
 

@@ -39,14 +39,19 @@ output_dir=`pwd`/$testname.dir
 rm -fr $output_dir
 mkdir -p $output_dir
 
-# Test 1
-./test.sh diffusion2D.sh 
-mv -f diffusion2D.dir $output_dir
-mv -f diffusion2D.out $output_dir
-mv -f diffusion2D.err $output_dir
+# Run the following regression tests 
+TESTS=( "diffusion2D.sh " \
+        "memcheck-tux-jacob.sh ")
 
-# Test 2
-# ...
+# Run regression tests
+for test in "${TESTS[@]}"
+do
+   thistest=`basename $test .sh`
+   eval "./test.sh $test"
+   mv -f $thistest.dir $output_dir
+   mv -f $thistest.out $output_dir
+   mv -f $thistest.err $output_dir
+done 
 
 # Echo to stderr all nonempty error files in $output_dir
 for errfile in $( find $output_dir ! -size 0 -name "*.err" )
