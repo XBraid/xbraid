@@ -1,8 +1,10 @@
 ## Regression Testing
 
--  There are three levels in the testing framework.  At each level, the output
-   from a `testscript.sh` is dumped into a directory `testscript.dir` with the
-   standard out and error stored in `testscript.out` and `testscript.err`.
+### Overview
+
+-  There are three levels in the testing framework.  At each level, the fine-grain output
+   from a `testscript.sh` is dumped into a directory `testscript.dir`, with the 
+   standard out and error stored in `testscript.out` and `testscript.err`.  The test
    `testscript.sh` passes if `testscript.err` is empty (nothing is written to standard
    error).
 
@@ -10,7 +12,8 @@
    
          $ ./test.sh diffusion2D.sh
 
-   Then, see if `diffusion2D.err` is of size 0.
+   Then, see if `diffusion2D.err` is of size 0.  If it is not, look at it's contents
+   to see which test failed.
 
 -  To add a new regression test:
    Create a new low level script like `diffusion2D.sh` and then call it from a machine
@@ -25,7 +28,6 @@ Files used:
 -  `test.sh`
 -  `diffusion2D.sh`
 -  `diffusion2D.saved`
--  `diffusion2D.filters`
 
 Output:
 -  `diffusion2D.dir`
@@ -40,40 +42,74 @@ or just
    
       $ ./diffusion2D.sh
 
-The script `diffusion2D.sh` must create `diffusion2D.dir` and place all fine-grain
-test output in this directory.  `test.sh` captures the standard out and error in
-`diffusion2D.out` and `diffusion2D.err`.  If you expect any known error messages in
-`diffusion2D.err`, you can filter these with regular expressions in
-`diffusion2D.filters` (`test.sh` processes the filters file). `diffusion2D.sh` 
-passes if `diffusion2D.err` is empty (nothing is written to standard error).
+The script `diffusion2D.sh` must create `diffusion2D.dir` and place all
+fine-grain test output in this directory.  `test.sh` captures the standard out
+and error in `diffusion2D.out` and `diffusion2D.err`.  The test `diffusion2D.sh` passes
+if `diffusion2D.err` is empty (nothing is written to standard error).
 
-The strategy for low level scripts like diffusion2D.sh is to run commands like
+The strategy for low level scripts like `diffusion2D.sh` is to run a sequence of 
+test drivers such as
+      
+      $ mpirun -np 1 ../examples/drive-02 -pgrid 1 1 1 -nt 256
+      $ mpirun -np 4 ../examples/drive-02 -pgrid 1 1 4 -nt 256
 
-      $ mpirun -np 4 ../examples/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 
-   
-and then compare the output to saved output in `diffusion2D.saved`.  The file
-`diffusion2D.saved` contains the concatenated output from all the tests that
-`diffusion2D.sh` will run, i.e., the file looks like
+The output from the first mpirun test must then be written to files named
+
+      diffusion2D.dir/unfiltered.std.out.0
+      diffusion2D.dir/std.out.0
+      diffusion2D.dir/std.err.0
+
+and the second mpirun test similarly writes the files
+
+      diffusion2D.dir/unfiltered.std.out.1
+      diffusion2D.dir/std.out.1
+      diffusion2D.dir/std.err.1
+
+Subsequent tests are written to higher numbered files.  The 
+`unfiltered.std.out.num` file contains all of the standard out for the 
+test, while `std.out.num` contains filtered output (usually from a `grep`
+command) and could contain the output lines such as iteration numbers
+and number of levels.  The file `std.err.num` contains the standard error 
+output.
+
+To see if a test ran correctly, `std.out.num` is compared to saved output in
+`diffusion2D.saved`.  The file `diffusion2D.saved` contains the concatenated
+output from all the tests that `diffusion2D.sh` will run.  For the above
+example, this file could look like 
 
       # Begin Test 1
-      ... actual test 1 output ...
+      number of levels     = 6
+      iterations           = 16
       # Begin Test 2
-      ... actual test 2 output ...
-      # Begin Test 3
-      ... 
+      number of levels     = 4
+      iterations           = 8
 
-The directory `diffusion2D.dir` will contain files like
+This saved output is split into an individual file for each test (using `#
+Begin Test` as a delimiter) and these new files are placed in
+`diffusion2D.dir`.  So, after running these two regression tests,
+`diffusion2D.dir` will contain
 
       diffusion2D.saved.0
       diffusion2D.saved.1
-      std.err.0
-      std.err.1
+      unfiltered.std.out.0
       std.out.0
+      std.err.0
+      unfiltered.std.out.1
       std.out.1
+      std.err.1
 
-where `diffusion2D.saved.num` is just the expected output for test num and is a
-slice from `diffusion2D.saved`.  `std.out.num` is the output from the first test,
-and `std.err.num` is the diff between `std.out.num` and `diffusion2D.saved.num`.
+An individual test has passed if `std.err.num` is empty.  The file
+`std.err.num` contains a diff between `diffusion2D.save.num` and `std.out.num`
+(ignoring whitespace and the delimiter `# Begin Test`).
+
+Last in the directy where you ran `./test.sh diffusion2d.sh`, the files 
+      
+      diffusion2D.err
+      diffusion2D.out
+
+will be created.  If all the tests passed then `diffusion2D.err` will be empty.
+Otherwise, it will contain the filenames of the `std.err.num` files that are 
+non-empty, representing failed tests. 
 
 
 ### Level 2 Scripts
@@ -86,10 +122,14 @@ Output:
 -  `machine-tux.err`
 -  `machine-tux.out`
 
-The autotest framework (`autotest.sh`) calls machine scripts, like
-`machine-tux.sh`.  Each machine script should be short and call low level
-scripts like `diffusion2D.sh`.  The output must then be moved to
-`machine-tux.dir`: 
+
+At this level, we execute 
+   
+      ./machine-tux.sh
+
+The autotest framework (`autotest.sh`) calls machine scripts in this way.  Each
+machine script should be short and call low level scripts like
+`diffusion2D.sh`.  The output must then be moved to `machine-tux.dir`: 
 
       $ ./test.sh diffusion2D.sh 
       $ mv -f diffusion2D.dir machine-tux.dir
