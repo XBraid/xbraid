@@ -25,7 +25,7 @@ spatial problem size       : 16 x 16
   coarsening factor    = 2
   num F-C relaxations  = 1
   num rels on level 0  = 1
-  iterations           = 26
+  iterations           = 24
 spatial problem size       : 33 x 33
   0   |  expl        9.82e-02    9.82e-02    1.45e-03    3.00e-01
   1   |  expl        1.96e-01    1.96e-01    2.89e-03    1.50e-01

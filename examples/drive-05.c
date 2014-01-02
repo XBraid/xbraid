@@ -2158,8 +2158,8 @@ my_Refine(warp_App       app,
    double     cdt = c_tplus - tstart;
    double     fdt = f_tplus - tstart;
    
-   int cilower_x[2], ciupper_x[2];
-   int    cnlx, cnly;
+   int        cilower_x[2], ciupper_x[2];
+   int        cnlx, cnly;
    
    /* If fdt or cdt is 0.0,  then this is a final time interval.  We then use a
     * simple rule to use the length of the previous time interval to represent
@@ -2237,10 +2237,10 @@ my_Refine(warp_App       app,
                 else if( (i%2 == 1) && (j%2 == 1) )
                 {
                    /* Interpolate: this is an F-point in the center of a grid cell */
-                   fvalues[counter] = 0.25*cvalues[ (i/2)*cnlx_temp + j/2 ]    + 
-                                      0.25*cvalues[ (i/2)*cnlx_temp + j/2 +1 ] +
-                                      0.25*cvalues[ (i/2)*cnlx_temp + j/2 ]    + 
-                                      0.25*cvalues[ ((i/2)+1)*cnlx_temp + j/2 ];
+                   fvalues[counter] = 0.25*cvalues[ (i/2)*cnlx_temp + j/2        ] + 
+                                      0.25*cvalues[ (i/2)*cnlx_temp + j/2 +1     ] +
+                                      0.25*cvalues[ ((i/2)+1)*cnlx_temp + j/2    ] + 
+                                      0.25*cvalues[ ((i/2)+1)*cnlx_temp + j/2 + 1];
                 }
                 counter += 1;
              }
