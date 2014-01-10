@@ -4,9 +4,9 @@
 
    Interface:    SStructured interface (SStruct)
 
-   Compile with: make diff3d.c
+   Compile with: make drive-03
 
-   Sample run:   srun -n 16 diff3d -pgrid 4 4 4 -nl 32 32 32 -nt 16
+   Sample run:   mpirun -n 16 drive-03 -pgrid 2 2 2 2 -nl 32 32 32 -nt 16 -ml 15
 
    Description:  This code solves the diffusion problem 
 

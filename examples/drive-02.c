@@ -4,9 +4,9 @@
 
    Interface:    SStructured interface (SStruct)
 
-   Compile with: make drive-02.c
+   Compile with: make drive-02
 
-   Sample run:   srun -n 16 diff2d -pgrid 4 4 -nl 32 32 -nt 16
+   Sample run:   mpirun -n 16 drive-02 -pgrid 2 2 4 -nl 32 32 -nt 16 -ml 15
 
    Description:  This code solves the diffusion problem 
 
