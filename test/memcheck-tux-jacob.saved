@@ -28,38 +28,3 @@ spatial problem size       : 17 x 17
   iterations           = 5
 spatial problem size       : 17 x 17
 
-# Begin Test 3, there are some known valgrind messages related to purposely uninitialized send buffers
-
- _warp_CommSendInit 
- _warp_FRestrict 
- warp_Drive 
- _warp_CommSendInit 
- _warp_FRestrict 
- warp_Drive 
- _warp_CommSendInit 
- _warp_FRestrict 
- warp_Drive 
- _warp_CommSendInit 
- _warp_FRestrict 
- warp_Drive 
- _warp_CommSendInit 
- _warp_FRestrict 
- warp_Drive 
- _warp_CommSendInit 
- _warp_FRestrict 
- warp_Drive 
-  time steps = 32
-  number of levels     = 6
-  coarsening factor    = 2
-  num F-C relaxations  = 1
-  num rels on level 0  = 1
-  iterations           = 16
-spatial problem size       : 17 x 17
-  expl        1.96e-01    1.96e-01    5.78e-03    3.00e-01
-  expl        3.93e-01    3.93e-01    1.16e-02    1.50e-01
-  expl        3.93e-01    3.93e-01    2.31e-02    3.00e-01
-  expl        7.85e-01    7.85e-01    4.63e-02    1.50e-01
-  expl        7.85e-01    7.85e-01    9.25e-02    3.00e-01
-  expl        1.57e+00    1.57e+00    1.85e-01    1.50e-01
-
- 
