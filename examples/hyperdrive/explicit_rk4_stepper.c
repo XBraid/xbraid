@@ -1,7 +1,7 @@
 #include "kreiss_data.h"
 
-void
-explicit_rk4_stepper(kreiss_solver *kd_, double t, double tend, double accuracy, kreiss_grid_fcn *gf_, 
+int
+explicit_rk4_stepper(kreiss_solver *kd_, double t, double tend, double accuracy, grid_fcn *gf_, 
                      int *rfact_)
 {
 /* this is a 'my_Phi()' routine, where kd_ is of type 'my_App' and gf_ is of type 'my_Vector' */
@@ -96,4 +96,5 @@ explicit_rk4_stepper(kreiss_solver *kd_, double t, double tend, double accuracy,
          }
 
       }/* end stage */
+      return 0;
 }

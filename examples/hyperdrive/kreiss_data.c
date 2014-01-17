@@ -2,23 +2,55 @@
 #include <math.h>
 #include "kreiss_data.h"
 
-void
-init_kreiss_grid_fcn(kreiss_solver *kd_, double t, kreiss_grid_fcn *gf_)
+int
+init_grid_fcn(kreiss_solver *kd_, double t, grid_fcn **u_handle)
 {
+   grid_fcn * u_;
+   int i, offset;
+   const double eps=1e-12;
+   
+/* allocate memory */
+   u_ = (grid_fcn *) malloc(sizeof(grid_fcn));
+   
 /* should make sure the kd_ and gf_ are not NULL */
-   gf_->n     = kd_->n;
-   gf_->sol   = malloc((kd_->n+2)*sizeof(double));
-   gf_->vsol_ = create_double_array_1d(3);
+   if (kd_ == NULL)
+   {
+      printf("ERROR init_grid_fcn: kd_ == NULL\n");
+      return 1;
+   }
+      
+   u_->n     = kd_->n;
+   u_->sol   = malloc((kd_->n+2)*sizeof(double));
+   u_->vsol_ = create_double_array_1d(3);
 
 /* initial conditions */
-   exact1( kd_->n, gf_->sol, kd_->h, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr );
-   bdata(gf_->vsol_, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr);
+   if (fabs(t - kd_->tstart) < eps)
+   {
+      exact1( kd_->n, u_->sol, kd_->h, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr );
+      bdata(u_->vsol_, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr);
+   }
+   else /* set the grid function to zero, but could assign random values instead */
+   {
+      for (i=0; i< kd_->n+2; i++)
+         u_->sol[i] = 0;
 
+/* then the 3 values in the bndry ode */
+#define uvsol(i) compute_index_1d(u_->vsol_, i)
+      offset = kd_->n+1;
+      for (i=1; i<=3; i++)
+         uvsol(i) = 0;
+#undef uvsol
+   }
+   
+/* make the grid function useful outside this routine */   
+   *u_handle = u_;
+   
+   return 0;
 }
 
 void
 init_kreiss_solver(double h, double amp, double ph, double om, int pnr, int taylorbc, 
-                   double L, double cfl, kreiss_solver *kd_)
+                   double L, double cfl, int nstepsset, int nsteps, double tfinal, kreiss_solver *kd_)
 {
    double mxeg;
    int n;
@@ -95,5 +127,263 @@ init_kreiss_solver(double h, double amp, double ph, double om, int pnr, int tayl
    kd_->current = malloc((n+2)*sizeof(double));
    kd_->rhs = malloc((n+2)*sizeof(double));
    kd_->force = malloc((n+2)*sizeof(double));
+
+/* ! compute final time or number of time steps */
+   kd_->tstart = 0;
+   
+   if( nstepsset )
+   {
+      kd_->tstop = nsteps*kd_->dt;
+   }
+   else
+   {
+      nsteps = tfinal/kd_->dt;
+      kd_->dt = tfinal/nsteps;
+      kd_->tstop = tfinal;
+   }
+   kd_->nsteps = nsteps;
+   
+/* always save solution for now...*/
+   kd_->write=1;
+   
+}
+
+/* --------------------------------------------------------------------
+ * Create a a copy of a vector object.
+ * -------------------------------------------------------------------- */
+int
+copy_grid_fcn(kreiss_solver    *kd_,
+              grid_fcn  *u_,
+              grid_fcn **v_handle)
+{
+/* create new grid_fcn, copy all fields from u_ */
+   grid_fcn *v_;
+   int i;
+   
+/* allocate memory */
+   v_ = (grid_fcn *) malloc(sizeof(grid_fcn));
+
+   v_->n = u_->n;
+   v_->sol   = malloc((v_->n+2)*sizeof(double));
+   v_->vsol_ = create_double_array_1d(3);
+
+/* copy the array data */
+   for (i=0; i<v_->n+2; i++)
+      v_->sol[i] = u_->sol[i];
+
+#define vvsol(i) compute_index_1d(v_->vsol_, i)
+#define uvsol(i) compute_index_1d(u_->vsol_, i)   
+   for (i=1; i<=3; i++)
+      vvsol(i) = uvsol(i);
+#undef vvsol
+#undef uvsol
+
+/* assign the handle to make it useful outside this routine (call by value stuff...)*/
+   *v_handle = v_;
+
+   return 0;
+}
+
+/* --------------------------------------------------------------------
+ * Destroy vector object.
+ * -------------------------------------------------------------------- */
+int
+free_grid_fcn(kreiss_solver    *kd_,
+              grid_fcn  *u_)
+{
+/* de-allocate everything inside u_ */
+   if (u_->sol) free(u_->sol);
+   delete_double_array_1d( u_->vsol_);
+/* de-allocate u_ itself */
+   free( u_ );
+
+   return 0;
+}
+
+/* --------------------------------------------------------------------
+ * Compute vector sum y = alpha*x + beta*y.
+ * NOTE: over-writes values of y
+ * -------------------------------------------------------------------- */
+int
+sum_grid_fcn(kreiss_solver *kd_,
+             double      alpha,
+             grid_fcn *x_,
+             double      beta,
+             grid_fcn *y_)
+{
+   int i;
+/* make sure the grid functions have the same number of grid points */
+   if (x_->n != y_->n)
+   {
+      printf("ERROR: incompatible sizes in sum_grid_fcn: x_->n=%i but y_->n=%i\n", x_->n, y_->n);
+      return 1;
+   }
+   for (i=0; i<x_->n+2; i++) /* not sure it makes sense to sum the ghost point values... */
+      y_->sol[i] = alpha*x_->sol[i] + beta*y_->sol[i];
+
+#define xvsol(i) compute_index_1d(x_->vsol_, i)
+#define yvsol(i) compute_index_1d(y_->vsol_, i)   
+   for (i=1; i<=3; i++)
+      yvsol(i) = alpha*xvsol(i) + beta*yvsol(i);
+   
+#undef xvsol
+#undef yvsol
+   
+   return 0;
+}
+
+/* --------------------------------------------------------------------
+ * Compute dot product of 2 grid functions
+ * -------------------------------------------------------------------- */
+int
+dot_grid_fcn(kreiss_solver *kd_,
+             grid_fcn *u_,
+             grid_fcn *v_,
+             double      *dot_ptr)
+{
+   double dot=0;
+   int i;
+
+/* make sure the grid functions have the same number of grid points */
+   if (u_->n != v_->n)
+   {
+      printf("ERROR: incompatible sizes in dot_grid_fcn: u_->n=%i but v_->n=%i\n", u_->n, v_->n);
+      return 1;
+   }
+/* I am NOT including the ghost point values... */
+   for (i=1; i<=u_->n; i++) 
+      dot += u_->sol[i] * v_->sol[i];
+
+#define uvsol(i) compute_index_1d(u_->vsol_, i)
+#define vvsol(i) compute_index_1d(v_->vsol_, i)   
+/* it is not clear if the boundary variable should have the same weights as the interior solution??? */
+   for (i=1; i<=3; i++)
+      dot += uvsol(i)*vvsol(i);
+#undef uvsol
+#undef xvsol
+
+/* make the result useful outside this routine */
+   *dot_ptr = dot;
+
+   return 0;
+}
+
+
+/* --------------------------------------------------------------------
+ * Save a grid function to file.
+ * -------------------------------------------------------------------- */
+
+
+int 
+save_grid_fcn(kreiss_solver *kd_,
+              warp_Real t,
+              grid_fcn *u_)
+{
+   MPI_Comm   comm   = MPI_COMM_WORLD;
+   double     tstart = (kd_->tstart);
+   double     tstop  = (kd_->tstop);
+   int        ntime  = (kd_->nsteps);
+   int        index, myid;
+   /* char       filename[255]; */
+   /* FILE      *file; */
+
+   /* Write to files:
+    *   - save computed solution and exact solution
+    *   - save error norm at each time point
+    *   */
+   if( kd_->write ){
+      index = ((t-tstart) / ((tstop-tstart)/ntime) + 0.1);
+
+      MPI_Comm_rank(comm, &myid);
+
+      printf("Inside save_grid_fcn, myRank=%i, t=%e\n", myid, t);
+      
+
+/* ! evaluate solution error (stage=1 evaluates the plain bndry data at time t)*/
+/*       twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, t, kd_->dt, kd_->amp, kd_->ph, kd_->om, kd_->pnr); */
+      
+/*       exact1( kd_->n, kd_->current, kd_->h, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr ); */
+/*       evalerr1( kd_->n, gf_->sol, kd_->current, &l2, &li, kd_->h ); */
+      
+/*       sprintf(filename, "%s.%07d.%05d", "hyperdrive-01.out", index, myid); */
+
+/* /\* ! save errors on file... *\/ */
+/*       fprintf(kd->file,"%e %e %e %e\n", t, li, l2, fabs(bdataL - vsol(1)) );  */
+
+/*       fflush(kd_->file); */
+
+   }
+   return 0;
+}
+
+/* --------------------------------------------------------------------
+ * Return buffer size for vector object buffer. Vector objects contains
+ * values at every grid point plus boundary ODE data
+ * -------------------------------------------------------------------- */
+int
+gridfcn_BufSize(kreiss_solver *kd_,
+                int *size_ptr)
+{
+/* a grid function currently hold sol[n+2] and vsol(3) values */
+   *size_ptr = kd_->n+2+3;
+   
+   return 0;
+}
+
+/* --------------------------------------------------------------------
+ * Pack a vector object in a buffer.
+ * -------------------------------------------------------------------- */
+int
+gridfcn_BufPack(kreiss_solver *kd_,
+                grid_fcn *u_,
+                void *buffer)
+{
+   double *dbuff = buffer;
+   int i, offset;
+/* first n+2 values from sol */
+   for (i=0; i<kd_->n+2; i++)
+      dbuff[i] = u_->sol[i];
+   
+/* then the 3 values in the bndry ode */
+#define uvsol(i) compute_index_1d(u_->vsol_, i)
+   offset = kd_->n+1;
+   for (i=1; i<=3; i++)
+      dbuff[offset+i] = uvsol(i);
+#undef uvsol
+
+   return 0;
+}
+
+/* --------------------------------------------------------------------
+ * Allocate a grid function object and copy values from a buffer.
+ * -------------------------------------------------------------------- */
+int
+gridfcn_BufUnpack(kreiss_solver *kd_,
+             void *buffer,
+             warp_Vector *u_handle)
+{
+   int i, offset;
+   grid_fcn *u_;
+   double *dbuff=buffer;
+   
+   u_ = (grid_fcn *) malloc(sizeof(grid_fcn));
+   u_->n     = kd_->n;
+   u_->sol   = malloc((kd_->n+2)*sizeof(double));
+   u_->vsol_ = create_double_array_1d(3);
+
+/* copy values from buffer */
+   for (i=0; i< kd_->n+2; i++)
+      u_->sol[i] = dbuff[i];
+
+/* then the 3 values in the bndry ode */
+#define uvsol(i) compute_index_1d(u_->vsol_, i)
+   offset = kd_->n+1;
+   for (i=1; i<=3; i++)
+      uvsol(i) = dbuff[offset+i];
+#undef uvsol
+   
+/* make the new grid function useful outside this routine */
+   *u_handle = u_;
+   return 0;
    
 }

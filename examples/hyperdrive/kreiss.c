@@ -6,8 +6,6 @@
 #include "c_array.h"
 #include "kreiss_data.h"
 
-#include "warp.h"
-
 /* fcn prototypes */
 void 
 bdata(double_array_1d *vsol_, double amp, double ph, double om, double t, int pnr);
@@ -31,101 +29,22 @@ twforce1( int n, double *f, double t, double h, double amp, double ph, double om
 
 int main(int argc, char ** argv)
 {
-   int nsteps, pnr, taylorbc;
-   /* const int bdatareset=1000; */
+   int step, nsteps, pnr, taylorbc;
+   const int bdatareset=1000;
    
    double h, cfl, bdataL, bdataR;
-   double L, l2, li, tfinal;
+   double L, t, l2, li, tfinal;
    double amp, ph, om;
+   double dummy=0;
+   int rfact_dummy=0;
    
    int nstepsset, tfinalset, arg_index, print_usage=0, myid=0;
 
    FILE *eun;
    
    kreiss_solver *kd_ = NULL;
-   /* grid_fcn *gf_ = NULL; */
-
-/* from drive-05.c */
-   int i, level;
-
-   warp_Core  core;
-/* my_App is called kreiss_solver, app = kd_ */
-/*   my_App    *app; */
-   int        max_levels;
-   int        nrelax, nrelax0;
-   double     tol;
-   int        cfactor, cfactor0;
-   int        max_iter;
-   int        fmg;
-   int        scoarsen;
-
-   MPI_Comm    comm, comm_t; /* no spatial MPI decomposition */
-   int         num_procs;
-   /* int         xcolor, tcolor; */
-   double      mystarttime, myendtime, mytime;
-
-   /* We consider a 2D problem. */
-   /* int ndim = 2; */
-
-   /* /\* diffusion coefficient *\/ */
-   /* double K;  */
-
-   int nx, ny, nlx, nly;
-   /* int nt;  nt = nsteps  */
-   double c;
-
-   int pt; /* AP: what is this? */
-
-   int n_pre, n_post;
-   int rap, relax, skip, max_iter_x[2];
-   double tol_x[2], tol_x_coarse;
-
-   int write, explicit, vis;
-
-   /* Initialize MPI */
-   MPI_Init(&argc, &argv);
+   grid_fcn *gf_ = NULL;
       
-   /* Default parameters. */
-   comm                = MPI_COMM_WORLD;
-   comm_t              = comm;
-   max_levels          = 1;
-   nrelax              = 1;
-   nrelax0             = -1;
-   tol                 = 1.0e-09;
-   cfactor             = 2;
-   cfactor0            = -1;
-   max_iter            = 100;
-   fmg                 = 0;
-   scoarsen            = 0;
-   /* K                   = 1.0; */
-   nx                  = 17;
-   ny                  = 17;
-   nlx                 = 17;
-   nly                 = 17;
-   /* nt                  = 32; */
-   c                   = 0.15;
-   /* sym                 = 0; */
-   /* px                  = 1; */
-   /* py                  = 1; */
-   pt                  = 1;
-   n_pre               = 1;
-   n_post              = 1;
-   rap                 = 1;
-   relax               = 3;
-   skip                = 1;
-   max_iter_x[0]       = 50;
-   max_iter_x[1]       = 50;
-   tol_x[0]            = 1.0e-09;
-   tol_x[1]            = 1.0e-09;
-   tol_x_coarse        = 1.0e-09;
-   explicit            = 0;
-   write               = 0;
-   vis                 = 0;
-
-   MPI_Comm_rank( comm, &myid );
-   MPI_Comm_size( comm, &num_procs );
-
-/* from kreiss.c */
 /* Default problem parameters */
 /*!**  Domain length*/
    L = 1.0;
@@ -222,15 +141,15 @@ int main(int argc, char ** argv)
 /* open file for saving solution error data */
    eun = fopen("err.dat","w");
 
-/* setup solver meta-data */
+#define bcnr(i) compute_index_1d(kd_->bcnr_, i)    
+#define vsol(i) compute_index_1d(gf_->vsol_, i)   
+
+/* solver meta-data */
    kd_ = malloc(sizeof(kreiss_solver));
    init_kreiss_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, kd_);
    
 /* create solution vector */
-   /* init_grid_fcn(kd_, 0.0, &gf_); */
-
-#define bcnr(i) compute_index_1d(kd_->bcnr_, i)    
-#define vsol(i) compute_index_1d(gf_->vsol_, i)   
+   init_grid_fcn(kd_, 0.0, &gf_);
 
    printf("------------------------------\n");
    printf("Problem number (pnr): %i\n", kd_->pnr);
@@ -240,87 +159,57 @@ int main(int argc, char ** argv)
    printf("Time step is %e\n",kd_->dt);
    printf("Grid spacing is %e with %i grid points\n", kd_->h, kd_->n);
 
-/* Start timer. */
-   mystarttime = MPI_Wtime();
+   t = 0.0;
 
-/* nt = nsteps : number of time steps */
-   warp_Init(comm, comm_t, kd_->tstart, kd_->tstop, kd_->nsteps, kd_,
-             explicit_rk4_stepper, init_grid_fcn, copy_grid_fcn, free_grid_fcn, sum_grid_fcn, dot_grid_fcn, 
-             save_grid_fcn, gridfcn_BufSize, gridfcn_BufPack, gridfcn_BufUnpack,
-             &core);
-
-   warp_SetLoosexTol( core, 0, tol_x[0] );
-   warp_SetLoosexTol( core, 1, tol_x_coarse );
-
-   warp_SetTightxTol( core, 0, tol_x[1] );
-
-   warp_SetMaxLevels( core, max_levels );
-
-   warp_SetNRelax(core, -1, nrelax);
-   if (nrelax0 > -1)
+/* ! time stepping... */
+   for (step=1; step<=kd_->nsteps; step++)
    {
-      warp_SetNRelax(core,  0, nrelax0);
-   }
 
-   warp_SetRelTol(core, tol);
-   /*warp_SetAbsTol(core, tol*sqrt(px*nlx*py*nly*(nt+1)) );*/
-   /* warp_SetAbsTol(core, tol/sqrt(dx*dy*dt)); */
+/* ! reset initial conditions for the boudary data ode */
+      if (step%bdatareset == 0)
+      {
+         printf("Resetting bdata initial cond. step = %i\n", step);
+         bdata(gf_->vsol_, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr);
+      }
 
-   warp_SetCFactor(core, -1, cfactor);
-   if( cfactor0 > -1 ){
-      /* Use cfactor0 on all levels until there are < cfactor0 points
-       * on each processor. */
-      level = (int) (log10((nsteps + 1) / pt) / log10(cfactor0));
-      for( i = 0; i < level; i++ )
-         warp_SetCFactor(core,  i, cfactor0);
-   }
-   
-   warp_SetMaxIter(core, max_iter);
-   if (fmg)
-   {
-      warp_SetFMG(core);
-   }
-   
-   /* if (scoarsen) */
-   /* { */
-   /*    app->scoarsen=1; */
-   /*    warp_SetSpatialCoarsen(core, my_Coarsen); */
-   /*    warp_SetSpatialRefine(core, my_Refine); */
-   /* } */
+/* ! evaluate solution error (stage=1 evaluates the plain bndry data at time t)*/
+      twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, t, kd_->dt, kd_->amp, kd_->ph, kd_->om, kd_->pnr);
+      
+      exact1( kd_->n, kd_->current, kd_->h, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr );
+      evalerr1( kd_->n, gf_->sol, kd_->current, &l2, &li, kd_->h );
+      
+/* ! save errors on file... */
+      fprintf(eun,"%e %e %e %e\n", t, li, l2, fabs(bdataL - vsol(1)) ); 
 
-   warp_Drive(core);
+/* ! time-stepper from t_n to t_{n+1} starts here */
+      explicit_rk4_stepper(kd_, t, t+kd_->dt, dummy, gf_, &rfact_dummy); /* this is my_Phi() */
 
-   /* Stop timer. */
-   myendtime = MPI_Wtime();
-   mytime    = myendtime - mystarttime;
+      t = t + kd_->dt;
+/* ! time-stepper from t_n to t_{n+1} ends here */
+   }   
 
-   warp_PrintStats(core);
-
-/* my stuff... */
    printf("------------------------------\n");
-   printf("Time-stepping completed. Solved to time t: %e\n", kd_->tstop);
+   printf("Time-stepping completed. Solved to time t: %e\n", t);
 
 /* ! evaluate solution error, stick exact solution in kd_ workspace array */
-   exact1( kd_->n, kd_->current, kd_->h, kd_->amp, kd_->ph, kd_->om, kd_->tstop, kd_->pnr );
+   exact1( kd_->n, kd_->current, kd_->h, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr );
 /* get exact bndry data (bdataL) */
-   twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, kd_->tstop, kd_->dt, kd_->amp, kd_->ph, kd_->om, kd_->pnr);
+   twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, t, kd_->dt, kd_->amp, kd_->ph, kd_->om, kd_->pnr);
 
-/* where is the solution? How can I get it out of warp? */
-/*    evalerr1( kd_->n, gf_->sol, kd_->current, &l2, &li, kd_->h ); */
-/* /\* ! save errors on file... *\/ */
-/*    fprintf(eun,"%e %e %e %e\n", t, li, l2, fabs(bdataL-vsol(1))); */
+   evalerr1( kd_->n, gf_->sol, kd_->current, &l2, &li, kd_->h );
+/* ! save errors on file... */
+   fprintf(eun,"%e %e %e %e\n", t, li, l2, fabs(bdataL-vsol(1)));
 
 /*! close error file*/
-   /* fclose(eun); */
+   fclose(eun);
    
 
    printf("------------------------------\n");
    
-   /* printf("Solution error in maximum norm, bndry error\n"); */
+   printf("Solution error in maximum norm, bndry error\n");
    
-   /* printf("time: %e, sol-err: %e, bndry-err: %e\n", t, li, fabs(bdataL-vsol(1))); */
-   /* printf("------------------------------\n"); */
-
+   printf("time: %e, sol-err: %e, bndry-err: %e\n", t, li, fabs(bdataL-vsol(1)));
+   printf("------------------------------\n");
 /*   printf("Saving ...\n");*/
     /* open(21,file='sol.bin',form='unformatted') */
     /* fprintf(21) n, h, dt, t, (sol(i),i=1,n), (current(i),i=1,n) */
