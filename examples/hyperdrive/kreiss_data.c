@@ -145,7 +145,9 @@ init_kreiss_solver(double h, double amp, double ph, double om, int pnr, int tayl
    
 /* always save solution for now...*/
    kd_->write=1;
-   
+/* initialize solution pointer and time */
+   kd_->sol_copy = NULL;
+   kd_->t_copy   = -1;
 }
 
 /* --------------------------------------------------------------------
@@ -280,38 +282,29 @@ save_grid_fcn(kreiss_solver *kd_,
               grid_fcn *u_)
 {
    MPI_Comm   comm   = MPI_COMM_WORLD;
-   double     tstart = (kd_->tstart);
-   double     tstop  = (kd_->tstop);
-   int        ntime  = (kd_->nsteps);
-   int        index, myid;
+   int        myid;
    /* char       filename[255]; */
    /* FILE      *file; */
 
-   /* Write to files:
-    *   - save computed solution and exact solution
-    *   - save error norm at each time point
-    *   */
-   if( kd_->write ){
-      index = ((t-tstart) / ((tstop-tstart)/ntime) + 0.1);
-
-      MPI_Comm_rank(comm, &myid);
-
-      printf("Inside save_grid_fcn, myRank=%i, t=%e\n", myid, t);
+   /* copy the final solution to the solver structure */
+   if( kd_->write )
+   {
+     MPI_Comm_rank(comm, &myid);
+   
+     printf("Inside save_grid_fcn, myRank=%i, t=%e\n", myid, t);
+     if (fabs(t-kd_->tstop)<1e-12)
+     {
+       printf("...copying the final solution at t=%e\n", t);
       
-
-/* ! evaluate solution error (stage=1 evaluates the plain bndry data at time t)*/
-/*       twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, t, kd_->dt, kd_->amp, kd_->ph, kd_->om, kd_->pnr); */
+/* is there a previously saved solution that needs to be de-allocated? */
+       if (kd_->sol_copy != NULL)
+         free_grid_fcn(kd_, kd_->sol_copy);
+       kd_->sol_copy = NULL;
       
-/*       exact1( kd_->n, kd_->current, kd_->h, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr ); */
-/*       evalerr1( kd_->n, gf_->sol, kd_->current, &l2, &li, kd_->h ); */
-      
-/*       sprintf(filename, "%s.%07d.%05d", "hyperdrive-01.out", index, myid); */
-
-/* /\* ! save errors on file... *\/ */
-/*       fprintf(kd->file,"%e %e %e %e\n", t, li, l2, fabs(bdataL - vsol(1)) );  */
-
-/*       fflush(kd_->file); */
-
+       copy_grid_fcn(kd_, u_, &(kd_->sol_copy));
+       kd_->t_copy = t;
+     }
+     
    }
    return 0;
 }

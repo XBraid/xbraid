@@ -33,6 +33,10 @@ typedef struct _warp_App_struct
    double_array_1d *vcur_, *veval_, *dvdt_; /* boundary ode workspace variables */
    double *eval, *current, *rhs, *force;   /* grid function workspace variables */
 
+/* warp specific stuff */
+   grid_fcn *sol_copy; /* assigned by the callcack routine save_grid_fcn() */
+   double t_copy;
+   
    int write; /* flag to tell warp if it should save grid functions to file */
    double tstart, tstop;
    int nsteps;

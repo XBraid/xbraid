@@ -43,7 +43,7 @@ int main(int argc, char ** argv)
    FILE *eun;
    
    kreiss_solver *kd_ = NULL;
-   /* grid_fcn *gf_ = NULL; */
+   grid_fcn *gf_ = NULL;
 
 /* from drive-05.c */
    int i, level;
@@ -70,7 +70,7 @@ int main(int argc, char ** argv)
    /* /\* diffusion coefficient *\/ */
    /* double K;  */
 
-   int nx, ny, nlx, nly;
+   /* int nx, ny, nlx, nly; */
    /* int nt;  nt = nsteps  */
    double c;
 
@@ -96,12 +96,8 @@ int main(int argc, char ** argv)
    cfactor0            = -1;
    max_iter            = 100;
    fmg                 = 0;
-   scoarsen            = 0;
+   scoarsen            = 1;
    /* K                   = 1.0; */
-   nx                  = 17;
-   ny                  = 17;
-   nlx                 = 17;
-   nly                 = 17;
    /* nt                  = 32; */
    c                   = 0.15;
    /* sym                 = 0; */
@@ -230,7 +226,6 @@ int main(int argc, char ** argv)
    /* init_grid_fcn(kd_, 0.0, &gf_); */
 
 #define bcnr(i) compute_index_1d(kd_->bcnr_, i)    
-#define vsol(i) compute_index_1d(gf_->vsol_, i)   
 
    printf("------------------------------\n");
    printf("Problem number (pnr): %i\n", kd_->pnr);
@@ -266,6 +261,7 @@ int main(int argc, char ** argv)
    /*warp_SetAbsTol(core, tol*sqrt(px*nlx*py*nly*(nt+1)) );*/
    /* warp_SetAbsTol(core, tol/sqrt(dx*dy*dt)); */
 
+/* AP: this is probably related to grid coarsening */
    warp_SetCFactor(core, -1, cfactor);
    if( cfactor0 > -1 ){
       /* Use cfactor0 on all levels until there are < cfactor0 points
@@ -281,12 +277,9 @@ int main(int argc, char ** argv)
       warp_SetFMG(core);
    }
    
-   /* if (scoarsen) */
-   /* { */
-   /*    app->scoarsen=1; */
-   /*    warp_SetSpatialCoarsen(core, my_Coarsen); */
-   /*    warp_SetSpatialRefine(core, my_Refine); */
-   /* } */
+/* this is where the coarsen and refine routines are defined */
+   /* warp_SetSpatialCoarsen(core, my_Coarsen); */
+   /* warp_SetSpatialRefine(core, my_Refine); */
 
    warp_Drive(core);
 
@@ -305,21 +298,20 @@ int main(int argc, char ** argv)
 /* get exact bndry data (bdataL) */
    twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, kd_->tstop, kd_->dt, kd_->amp, kd_->ph, kd_->om, kd_->pnr);
 
-/* where is the solution? How can I get it out of warp? */
-/*    evalerr1( kd_->n, gf_->sol, kd_->current, &l2, &li, kd_->h ); */
-/* /\* ! save errors on file... *\/ */
-/*    fprintf(eun,"%e %e %e %e\n", t, li, l2, fabs(bdataL-vsol(1))); */
+   if (kd_->sol_copy)
+   {
+      
+/*  get a pointer to the final solution from the kreiss_solver structure */
+      gf_ = kd_->sol_copy;
+      evalerr1( kd_->n, gf_->sol, kd_->current, &l2, &li, kd_->h );
 
-/*! close error file*/
-   /* fclose(eun); */
+      printf("------------------------------\n");
    
-
-   printf("------------------------------\n");
+      printf("Solution error in maximum norm, bndry error\n");
    
-   /* printf("Solution error in maximum norm, bndry error\n"); */
-   
-   /* printf("time: %e, sol-err: %e, bndry-err: %e\n", t, li, fabs(bdataL-vsol(1))); */
-   /* printf("------------------------------\n"); */
+#define vsol(i) compute_index_1d(gf_->vsol_, i)   
+      printf("time: %e, sol-err: %e, bndry-err: %e\n", kd_->tstop, li, fabs(bdataL-vsol(1)));
+      printf("------------------------------\n");
 
 /*   printf("Saving ...\n");*/
     /* open(21,file='sol.bin',form='unformatted') */
@@ -327,6 +319,8 @@ int main(int argc, char ** argv)
     /* close(21) */
 /*   printf("done.\n");*/
 /*   printf("------------------------------\n");*/
+   }
+   
 }
 
 
