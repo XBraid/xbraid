@@ -3387,6 +3387,8 @@ int main (int argc, char *argv[])
 
    warp_SetMaxLevels( core, max_levels );
 
+   warp_SetPrintLevel( core, 1);
+
    warp_SetNRelax(core, -1, nrelax);
    if (nrelax0 > -1)
    {
@@ -3435,8 +3437,6 @@ int main (int argc, char *argv[])
    /* Stop timer. */
    myendtime = MPI_Wtime();
    mytime    = myendtime - mystarttime;
-
-   warp_PrintStats(core);
 
    /* Print some additional statistics */
    MPI_Comm_rank( comm, &myid );

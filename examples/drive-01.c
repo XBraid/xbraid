@@ -314,6 +314,7 @@ int main (int argc, char *argv[])
              my_BufSize, my_BufPack, my_BufUnpack,
              &core);
 
+   warp_SetPrintLevel( core, 1);
    warp_SetMaxLevels(core, max_levels);
    warp_SetNRelax(core, -1, nrelax);
    if (nrelax0 > -1)
@@ -330,8 +331,6 @@ int main (int argc, char *argv[])
    }
 
    warp_Drive(core);
-
-   warp_PrintStats(core);
 
    warp_Destroy(core);
 

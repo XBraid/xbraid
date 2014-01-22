@@ -1073,12 +1073,12 @@ public:
    }
 
    void SetMaxIter(int max_iter) { warp_SetMaxIter(core, max_iter); }
+   
+   void SetPrintLevel(int print_level) { warp_SetPrintLevel(core, print_level); }
 
    void SetFMG() { warp_SetFMG(core); }
 
    void Drive() { warp_Drive(core); }
-
-   void PrintStats() { warp_PrintStats(core); }
 
    ~WarpCore() { warp_Destroy(core); }
 };
@@ -1482,6 +1482,7 @@ int main(int argc, char *argv[])
       if (heat_equation)
          app.SetExactSolution(&exact_sol);
 
+      core.SetPrintLevel(1);
       core.SetMaxLevels(max_levels);
       core.SetNRelax(-1, nrelax);
       if (nrelax0 > -1)
@@ -1494,7 +1495,6 @@ int main(int argc, char *argv[])
          core.SetFMG();
 
       core.Drive();
-      core.PrintStats();
    }
 
    // Free memory.

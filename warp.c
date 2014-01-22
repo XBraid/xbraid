@@ -46,6 +46,7 @@ warp_Init(MPI_Comm              comm_world,
    _warp_Core           *core;
    warp_Int             *nrels;
    warp_Int              level, max_levels = 30;
+   warp_Int              print_level = 1;
    _warp_AccuracyHandle *accuracy;
 
    core = _warp_CTAlloc(_warp_Core, 1);
@@ -70,6 +71,7 @@ warp_Init(MPI_Comm              comm_world,
    _warp_CoreElt(core, coarsen)    = NULL;
    _warp_CoreElt(core, refine)     = NULL;
 
+   _warp_CoreElt(core, print_level) = print_level;
    _warp_CoreElt(core, max_levels) = max_levels;
    _warp_CoreElt(core, tol)        = 1.0e-09;
    _warp_CoreElt(core, rtol)       = 0;
@@ -129,13 +131,14 @@ warp_Init(MPI_Comm              comm_world,
 warp_Int
 warp_Drive(warp_Core  core)
 {
-   warp_Real     tstart   = _warp_CoreElt(core, tstart);
-   warp_Real     tstop    = _warp_CoreElt(core, tstop);
-   warp_Int      ntime    = _warp_CoreElt(core, ntime);
-   warp_Real     tol      = _warp_CoreElt(core, tol);
-   warp_Int      rtol     = _warp_CoreElt(core, rtol);
-   warp_Int      fmg      = _warp_CoreElt(core, fmg);
-   warp_Int      max_iter = _warp_CoreElt(core, max_iter);
+   warp_Real     tstart      = _warp_CoreElt(core, tstart);
+   warp_Real     tstop       = _warp_CoreElt(core, tstop);
+   warp_Int      ntime       = _warp_CoreElt(core, ntime);
+   warp_Real     tol         = _warp_CoreElt(core, tol);
+   warp_Int      rtol        = _warp_CoreElt(core, rtol);
+   warp_Int      fmg         = _warp_CoreElt(core, fmg);
+   warp_Int      max_iter    = _warp_CoreElt(core, max_iter);
+   warp_Int      print_level = _warp_CoreElt(core, print_level);
 
    warp_Int      nlevels, iter;
    warp_Real     rnorm;
@@ -192,9 +195,11 @@ warp_Drive(warp_Core  core)
       if (down)
       {
 
-#if DEBUG
-         printf("\nDown, Iteration %d, Level %d\n", iter, level); 
-#endif
+         if( (print_level >= 2) && (myid == 0) )
+         {
+            printf("\nDown, Iteration %d, Level %d\n", iter, level); 
+         }
+
          if (level < (nlevels-1))
          {
             /* CF-relaxation */
@@ -222,12 +227,11 @@ warp_Drive(warp_Core  core)
                _warp_CoreElt(core, accuracy[0].old_value) = _warp_CoreElt(core, accuracy[0].value);
                _warp_CoreElt(core, accuracy[0].value)     = accuracy;
                _warp_CoreElt(core, accuracy[0].matchF)    = 1;
-#if DEBUG
-               if ( myid == 0 )
+               
+               if( (print_level >= 2) && (myid == 0) )
                {
                   printf("  **** Accuracy changed to %.2e ****\n", accuracy);
                }
-#endif
             }
 
             level++;
@@ -245,9 +249,10 @@ warp_Drive(warp_Core  core)
       if (!down)
       {
 
-#if DEBUG
-         printf("\nUp, Iteration %d, Level %d\n", iter, level); 
-#endif
+         if( (print_level >= 2) && (myid == 0) )
+         {
+            printf("\nUp, Iteration %d, Level %d\n", iter, level); 
+         }
 
          if (level > 0)
          {
@@ -276,12 +281,11 @@ warp_Drive(warp_Core  core)
             else
             {
                /* Note that this residual is based on an earlier iterate */
-#if DEBUG
-               if ( myid == 0 )
+               if( (print_level >= 1) && (myid == 0) )
                {
                   printf("  || r_%d || = %e\n", iter, rnorm);
                }
-#endif
+
                if (((rnorm < tol) && (_warp_CoreElt(core, accuracy[0].tight_used) == 1)) || (iter == max_iter-1))
                {
                   done = 1;
@@ -313,6 +317,12 @@ warp_Drive(warp_Core  core)
 
    _warp_CoreElt(core, niter) = iter;
    _warp_CoreElt(core, rnorm) = rnorm;
+
+   /* Print statistics for this run */
+   if( (print_level >= 1) && (myid == 0) )
+   {
+      warp_PrintStats(core);
+   }
 
    return _warp_error_flag;
 }
@@ -461,6 +471,19 @@ warp_SetMaxLevels(warp_Core  core,
 
    return _warp_error_flag;
 }
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
+warp_SetPrintLevel(warp_Core  core,
+                   warp_Int   print_level)
+{
+   _warp_CoreElt(core, print_level) = print_level;
+
+   return _warp_error_flag;
+}
+
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/

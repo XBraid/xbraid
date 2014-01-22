@@ -299,6 +299,19 @@ warp_Int
 warp_SetSpatialRefine(warp_Core  core,
                       warp_PtFcnRefine refine);
 
+/**
+ * Set print level for warp.
+ * Level 0 is not output.
+ * Level 1 is typical information like a residual history, 
+ * number of levels in the Warp hierarchy, and so on.
+ * Level 2 is debug level output.
+ * Default is level 1.
+ **/
+warp_Int
+warp_SetPrintLevel(warp_Core  core,
+                   warp_Int   print_level);
+
+
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 
