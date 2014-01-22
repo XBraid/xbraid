@@ -2297,11 +2297,12 @@ my_Refine(warp_App       app,
 
 /* --------------------------------------------------------------------
  * Create a coarsened copy of a vector object.
+ * Only uses injection
  * Assume a regular grid of size 2^k + 1 in each dimension
  * Assuming no spatial parallelism
  * -------------------------------------------------------------------- */
 int
-my_Coarsen(warp_App      app,           
+my_CoarsenInjection(warp_App      app,           
            double        tstart,
            double        f_tminus,
            double        f_tplus,
@@ -2382,6 +2383,169 @@ my_Coarsen(warp_App      app,
          counter += 1;
       }
    }
+   
+   HYPRE_SStructVectorSetBoxValues( cu->x, 0, cilower_x,
+                                    ciupper_x, 0, cvalues );
+   HYPRE_SStructVectorAssemble( cu->x );
+   free( fvalues );
+   free( cvalues );
+
+   /* Store spatial_disc_idx */
+   cu->spatial_disc_idx = spatial_disc_idx;
+
+   *cu_ptr = cu;
+
+   return 0;
+}
+
+
+
+/* --------------------------------------------------------------------
+ * Create a coarsened copy of a vector object.
+ * Uses the transpose of bilinear interpolation scaled by 1/4
+ * Assume a regular grid of size 2^k + 1 in each dimension
+ * Assuming no spatial parallelism
+ * -------------------------------------------------------------------- */
+int
+my_CoarsenBilinear(warp_App      app,           
+           double        tstart,
+           double        f_tminus,
+           double        f_tplus,
+           double        c_tminus,
+           double        c_tplus,
+           warp_Vector   fu,
+           warp_Vector  *cu_ptr)
+{
+   my_Vector *cu;
+   double     *cvalues, *fvalues;
+   int        counter, i, j, k, spatial_disc_idx;
+   int        filower_x[2], fiupper_x[2];
+   int        fspatial_disc_idx = fu->spatial_disc_idx;
+   int        fnlx = (app->spatial_disc_table[fspatial_disc_idx]).nlx;
+   int        fnly = (app->spatial_disc_table[fspatial_disc_idx]).nly;
+   double     fdy = (app->spatial_disc_table[fspatial_disc_idx]).dy;
+   double     fdx = (app->spatial_disc_table[fspatial_disc_idx]).dx;
+   int        cnlx_temp, cnly_temp, fnlx_temp, fnly_temp; 
+
+   int        cilower_x[2], ciupper_x[2];
+   int        ncoarsen;
+   double     cdt = c_tplus - tstart;
+   double     fdt = f_tplus - tstart;
+
+   cu = (my_Vector *) malloc(sizeof(my_Vector));
+   
+   filower_x[0]    = (app->spatial_disc_table[fspatial_disc_idx]).ilower_x[0];
+   filower_x[1]    = (app->spatial_disc_table[fspatial_disc_idx]).ilower_x[1];
+   fiupper_x[0]    = (app->spatial_disc_table[fspatial_disc_idx]).iupper_x[0];
+   fiupper_x[1]    = (app->spatial_disc_table[fspatial_disc_idx]).iupper_x[1];
+   
+   /* If fdt or cdt is 0.0,  then this is a final time interval.  We then use a
+    * simple rule to use the length of the previous time interval to represent
+    * an appropriate dt. */
+   if (fdt == 0.0)
+   {
+      fdt = tstart - f_tminus;
+   }
+   if (cdt == 0.0)
+   {
+      cdt = tstart - c_tminus;
+   }
+
+   /* Generate the next spatial discretization, which is stored in app->spatial_disc_table[i]
+    * This could be the same as the fine spatial discretization */ 
+   get_coarse_spatial_disc( app, cdt, fdt, fdx, fdy, fnlx, fnly, 
+                            fspatial_disc_idx, filower_x, fiupper_x, &spatial_disc_idx);
+   ncoarsen = (app->spatial_disc_table[spatial_disc_idx]).ncoarsen;
+   cilower_x[0] = (app->spatial_disc_table[spatial_disc_idx]).ilower_x[0];
+   cilower_x[1] = (app->spatial_disc_table[spatial_disc_idx]).ilower_x[1];
+   ciupper_x[0] = (app->spatial_disc_table[spatial_disc_idx]).iupper_x[0];
+   ciupper_x[1] = (app->spatial_disc_table[spatial_disc_idx]).iupper_x[1];
+
+   /* Create an empty vector object. */
+   HYPRE_SStructVectorCreate( app->comm_x, (app->spatial_disc_table[spatial_disc_idx]).grid_x, &(cu->x) );
+   
+   /* Set the object type (by default HYPRE_SSTRUCT) and initialize. */
+   HYPRE_SStructVectorSetObjectType( cu->x, app->object_type );
+   HYPRE_SStructVectorInitialize( cu->x );
+
+   /* Set the coarse values, assuming a regular grid and injection  */
+   fvalues = (double *) malloc( fnlx*fnly*sizeof(double) );
+   HYPRE_SStructVectorGetBoxValues( fu->x, 0, filower_x, fiupper_x, 0, fvalues );
+   if (ncoarsen > 0)
+   {  
+      /* The coarsening algorithm just coarsens by a factor of two, so we 
+       * loop over it ncoarsen number of times */
+      cnlx_temp = (fnlx-1)/2+1;
+      cnly_temp = (fnly-1)/2+1;
+      fnlx_temp = fnlx; 
+      fnly_temp = fnly; 
+      
+      for(k = 0; k < ncoarsen; k++)
+      {
+         /* Initialize cvalues */
+         cvalues = (double *) malloc( (cnlx_temp)*(cnly_temp)*sizeof(double) );
+         for(i=0; i < cnlx_temp*cnly_temp; i++)
+         {
+            cvalues[i] = 0.0;
+         }
+
+         /* Set the coarse values using transpose of simple bilinear interpolation */
+         counter = 0;
+         for(i = 0; i < fnlx_temp; i++)
+         {
+            for(j = 0; j < fnly_temp; j++)
+            {
+               if( (i%2 == 0) && (j%2 == 0) )
+               {
+                  /* Injection: this is the F-point analogue to a C-point */
+                  cvalues[ (i/2)*cnlx_temp + j/2 ] += 0.25*fvalues[counter];
+               }
+               else if( (i%2 == 0) && (j%2 == 1) )
+               {
+                  /* Interpolate: this is an F-point horizontally between two C-points */
+                  cvalues[ (i/2)*cnlx_temp + j/2 ]    += 0.125*fvalues[counter];
+                  cvalues[ (i/2)*cnlx_temp + j/2 +1 ] += 0.125*fvalues[counter];                   
+               }
+               else if( (i%2 == 1) && (j%2 == 0) )
+               {
+                  /* Interpolate: this is an F-point vertically between two C-points */
+                  cvalues[ (i/2)*cnlx_temp + j/2 ]     += 0.125*fvalues[counter];
+                  cvalues[ ((i/2)+1)*cnlx_temp + j/2 ] += 0.125*fvalues[counter];
+               }
+               else if( (i%2 == 1) && (j%2 == 1) )
+               {
+                  /* Interpolate: this is an F-point in the center of a grid cell */
+                  cvalues[ (i/2)*cnlx_temp + j/2        ] += 0.0625*fvalues[counter];
+                  cvalues[ (i/2)*cnlx_temp + j/2 +1     ] += 0.0625*fvalues[counter];
+                  cvalues[ ((i/2)+1)*cnlx_temp + j/2    ] += 0.0625*fvalues[counter];
+                  cvalues[ ((i/2)+1)*cnlx_temp + j/2 + 1] += 0.0625*fvalues[counter];
+               }
+               counter += 1;
+            }
+         }
+         
+         fnlx_temp = cnlx_temp;
+         fnly_temp = cnly_temp;
+         cnlx_temp = (fnlx_temp-1)/2+1;
+         cnly_temp = (fnly_temp-1)/2+1;
+         if( k+1 < ncoarsen )
+         {
+            free(fvalues); 
+            fvalues = cvalues;
+         }
+      }
+
+   }
+   else
+   {
+      /* No refinement, just copy the vector */
+      cvalues = (double *) malloc( (fnlx)*(fnly)*sizeof(double) );
+      for(i = 0; i < fnlx*fnly; i++)
+      {
+          cvalues[i] = fvalues[i];
+      }
+   }
+
    
    HYPRE_SStructVectorSetBoxValues( cu->x, 0, cilower_x,
                                     ciupper_x, 0, cvalues );
@@ -2899,7 +3063,7 @@ int main (int argc, char *argv[])
       }
       else if ( strcmp(argv[arg_index], "-scoarsen") == 0 ){
          arg_index++;
-         scoarsen = 1;
+         scoarsen = atoi(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-v") == 0 ){
          arg_index++;
@@ -2979,6 +3143,9 @@ int main (int argc, char *argv[])
       printf("  -tolxc <tol_x>                   : stopping tolerance for PFMG on coarse grids (default: 1e-09)\n");
       printf("  -fmg                             : use FMG cycling\n");
       printf("  -scoarsen                        : use spatial coarsening when needed to satisfy CFL\n");
+      printf("                                     0 - No spatial coarsening (default) \n");
+      printf("                                     1 - Use injection for spatial restriction \n");
+      printf("                                     2 - Use transpose of bilinear interpolation for spatial restriction\n");
       printf("  -v <n_pre> <n_post>              : number of pre and post relaxations in PFMG\n");
       printf("  -rap <r>                         : coarse grid operator type in PFMG\n");
       printf("                                     0 - Galerkin (default)\n");
@@ -3248,7 +3415,18 @@ int main (int argc, char *argv[])
    if (scoarsen)
    {
       app->scoarsen=1;
-      warp_SetSpatialCoarsen(core, my_Coarsen);
+      if (scoarsen == 1)
+      {
+         warp_SetSpatialCoarsen(core, my_CoarsenInjection);
+      }
+      else if (scoarsen == 2)
+      {
+         warp_SetSpatialCoarsen(core, my_CoarsenBilinear);
+      }
+      else
+      {
+         printf("Invalid scoarsen choice.  Ignoring this parameter\n");
+      }
       warp_SetSpatialRefine(core, my_Refine);
    }
 
