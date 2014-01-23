@@ -20,6 +20,17 @@ spatial problem size       : 17 x 17
 
 # Begin Test 2, check iterations to make sure test ran to completion
 
+  time steps = 64
+  number of levels     = 4
+  coarsening factor    = 4
+  num F-C relaxations  = 1
+  num rels on level 0  = 1
+  iterations           = 7
+spatial problem size       : 17 x 17
+
+
+# Begin Test 3, check iterations to make sure test ran to completion
+
   time steps = 32
   number of levels     = 3
   coarsening factor    = 4

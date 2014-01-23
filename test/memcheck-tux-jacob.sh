@@ -69,6 +69,7 @@ cd $test_dir
 valgrind_opts="--log-fd=1 --leak-check=full"
 TESTS=( "MPIWRAP_DEBUG=quiet $RunString -np 1 valgrind $valgrind_opts $example_dir/drive-05 -pgrid 1 1 1 -nt 64 -ml 15 " \
         "MPIWRAP_DEBUG=quiet $RunString -np 2 valgrind $valgrind_opts $example_dir/drive-05 -pgrid 1 1 2 -nt 64 -cf 4 -ml 15 -fmg " \
+        "MPIWRAP_DEBUG=quiet $RunString -np 2 valgrind $valgrind_opts $example_dir/drive-05 -pgrid 1 1 2 -nt 64 -cf 4 -ml 15 -fmg -write_level 1" \
         "MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $example_dir/drive-05 -pgrid 1 1 4 -nt 32 -cf 4 -ml 15 -fmg " )
 
 # The below commands will then dump each of the tests to the output files 

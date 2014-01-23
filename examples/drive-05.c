@@ -165,8 +165,8 @@ typedef struct _spatial_discretization
  *                   time step size has changed
  *   scheme          int array of integration scheme used: explicit or
  *                   implicit 
- *   write           save the solution/error/error norm to files
- *   vis             save the error for GLVis visualization
+ *   output_files    save the solution/error/error norm to files
+ *   output_vis      save the error for GLVis visualization
  */
 typedef struct _warp_App_struct {
    MPI_Comm                comm_t;
@@ -203,8 +203,8 @@ typedef struct _warp_App_struct {
    int                     scoarsen;
    spatial_discretization *spatial_disc_table;
    double                  last_tsize;
-   int                     write;
-   int                     vis;
+   int                     output_files;
+   int                     output_vis;
 } my_App;
 
 /* struct my_Vector contains local information specific to one time point
@@ -2660,7 +2660,10 @@ my_Write(warp_App     app,
    double     tstart = (app->tstart);
    double     tstop  = (app->tstop);
    int        ntime  = (app->nt);
+   double     rnorm;
+   int        iter, level, done;
    int        index, myid;
+   static int previous_level = -5;
    char       filename[255];
    FILE      *file;
 
@@ -2674,6 +2677,7 @@ my_Write(warp_App     app,
 
    /* error norm */
    double enorm = 0.0;
+
 
    /* error vector */
    HYPRE_SStructVector e;
@@ -2692,15 +2696,16 @@ my_Write(warp_App     app,
    iupper_x[1]    = (app->spatial_disc_table[u->spatial_disc_idx]).iupper_x[1];
 
    /* Retrieve Warp State Information from Status Object */
-   /*double rnorm;
-   int iter, level, done;
-   
+   MPI_Comm_rank(comm, &myid);
    warp_GetStatusResidual(status, &rnorm);
    warp_GetStatusIter(status, &iter);
    warp_GetStatusLevel(status, &level);
    warp_GetStatusDone(status, &done);
-   printf("iter= %d, level= %d, t= %1.2e, done= %d, ||r|| = %1.2e\n", iter, level, t, done, rnorm);*/
-
+   if( (myid == 0) && (level != previous_level) )
+   {
+      previous_level = level;
+      printf("  my_Write() called, iter= %d, level= %d\n", iter, level);
+   }
 
    /* Write to files:
     *   - save computed solution and true discrete solution
@@ -2709,7 +2714,7 @@ my_Write(warp_App     app,
     *   - save error norm at each time point
     *     if we want to visualize with GLVis, we also save the error
     *     at the initial time, middle time, and end time */
-   if( app->write ){
+   if( app->output_files && (level == 0) ){
       if( app->explicit )
          /* forward (explicit) Euler */
          damping = 1 + ((2*(app->K)*(app->dt))/
@@ -2733,7 +2738,7 @@ my_Write(warp_App     app,
 
       MPI_Comm_rank(comm, &myid);
 
-      sprintf(filename, "%s.%07d.%05d", "drive-05.out", index, myid);
+      sprintf(filename, "%s.iter%03d.time%07d.proc%05d", "drive-05.out", iter, index, myid);
       file = fopen(filename, "w");
 
       values = (double *) malloc( nlx*nly*sizeof(double) );
@@ -2760,12 +2765,9 @@ my_Write(warp_App     app,
    }
 
    /* Save the error and solution for GLVis visualization */
-   if( app->vis ){ 
+   if( app->output_vis && (level == 0) ){ 
       MPI_Comm_rank(app->comm_x, &myid);
 
-      /*if( (t == app->tstart) || 
-          (t == app->tstart + ((app->nt)/2)*(app->dt)) || 
-          (t == app->tstop) ){*/
       if( t == app->tstop ){
          values = (double *) malloc( nlx*nly*sizeof(double) );
          HYPRE_SStructVectorGetBoxValues( u->x, part, ilower_x, 
@@ -2790,24 +2792,13 @@ my_Write(warp_App     app,
          free( values );
          HYPRE_SStructVectorAssemble( e );
 
-         /*if( t == app->tstart ){
-            GLVis_PrintSStructGrid( app->grid_x, "drive-05_mesh", 
-                                    myid, NULL, NULL );
-            GLVis_PrintSStructVector( e, 0, "drive-05_err_t0", myid );
-            GLVis_PrintSStructVector( u->x, 0, "drive-05_sol_t0", myid );
-         }
-
-         if( t == app->tstart + ((app->nt)/2)*(app->dt) ){
-            GLVis_PrintSStructVector( e, 0, "drive-05_err_tm", myid );
-            GLVis_PrintSStructVector( u->x, 0, "drive-05_sol_tm", myid );
-         }*/
-
-         if( t == app->tstop ){
-            GLVis_PrintSStructGrid( app->grid_x, "drive-05_mesh", 
-                                    myid, NULL, NULL );
-            GLVis_PrintSStructVector( e, 0, "drive-05_err_tstop", myid );
-            GLVis_PrintSStructVector( u->x, 0, "drive-05_sol_tstop", myid );
-         }
+         sprintf(filename, "%s.iter%03d", "drive-05_mesh", iter);
+         GLVis_PrintSStructGrid( app->grid_x, filename, 
+                                 myid, NULL, NULL );
+         sprintf(filename, "%s.iter%03d", "drive-05_err_tstop", iter);
+         GLVis_PrintSStructVector( e, 0, filename, myid );
+         sprintf(filename, "%s.iter%03d", "drive-05_sol_tstop", iter);
+         GLVis_PrintSStructVector( u->x, 0, filename, myid );
 
          HYPRE_SStructVectorDestroy( e );
       }
@@ -2973,7 +2964,7 @@ int main (int argc, char *argv[])
    int nA_max, *max_num_iterations_global;
    double *scoarsen_table_global;
 
-   int write, explicit, vis;
+   int output_files, explicit, output_vis, print_level, write_level;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -3012,8 +3003,10 @@ int main (int argc, char *argv[])
    tol_x[1]            = 1.0e-09;
    tol_x_coarse        = 1.0e-09;
    explicit            = 0;
-   write               = 0;
-   vis                 = 0;
+   output_files        = 0;
+   output_vis          = 0;
+   print_level         = 1;
+   write_level         = 0;
 
    MPI_Comm_rank( comm, &myid );
    MPI_Comm_size( comm, &num_procs );
@@ -3115,13 +3108,21 @@ int main (int argc, char *argv[])
          arg_index++;
          explicit = 1;
       }
-      else if( strcmp(argv[arg_index], "-write") == 0 ){
+      else if( strcmp(argv[arg_index], "-print_level") == 0 ){
          arg_index++;
-         write = 1;
+         print_level = atoi(argv[arg_index++]);
       }
-      else if( strcmp(argv[arg_index], "-vis") == 0 ){
+      else if( strcmp(argv[arg_index], "-write_level") == 0 ){
          arg_index++;
-         vis = 1;
+         write_level = atoi(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-output_files") == 0 ){
+         arg_index++;
+         output_files = 1;
+      }
+      else if( strcmp(argv[arg_index], "-output_vis") == 0 ){
+         arg_index++;
+         output_vis = 1;
       }
       else if( strcmp(argv[arg_index], "-help") == 0 )
       {
@@ -3170,8 +3171,17 @@ int main (int argc, char *argv[])
       printf("  -skip <s>                       : skip levels in PFMG (0 or 1)\n");      
       printf("  -sym <s>                        : symmetric storage (1) or not (0)\n");  
       printf("  -expl <e>                       : use explicit scheme\n");
-      printf("  -write                          : save the solution/error/error norms to files\n");
-      printf("  -vis                            : save the error for GLVis visualization\n");
+      printf("  -print_level <l>                : sets the print_level (default: 1) \n");
+      printf("                                    0 - no output to standard out \n");
+      printf("                                    1 - Basic convergence information and hierarchy statistics\n");
+      printf("                                    2 - Debug level output \n");
+      printf("  -write_level <l>                : sets the write_level (default: 0) \n");
+      printf("                                    0 - call write only after completion \n");
+      printf("                                    1 - call write every iteration and level\n");
+      printf("  -output_files                   : save the solution/error/error norms to files\n");
+      printf("                                    frequency of file writes is set by write_level\n");
+      printf("  -output_vis                     : save the error for GLVis visualization\n");
+      printf("                                    frequency of file writes is set by write_level\n");
       printf("\n");
    }
 
@@ -3299,8 +3309,8 @@ int main (int argc, char *argv[])
    (app->skip)            = skip;
    (app->explicit)        = explicit;
    (app->last_tsize)      = -1.0;
-   (app->write)           = write;
-   (app->vis)             = vis;
+   (app->output_files)    = output_files;
+   (app->output_vis)      = output_vis;
 
    /* Set the maximum number of PFMG iterations for expensive (index 0)
     * and cheap (index 1) solves. */
@@ -3398,8 +3408,8 @@ int main (int argc, char *argv[])
 
    warp_SetMaxLevels( core, max_levels );
 
-   warp_SetPrintLevel( core, 1);
-   warp_SetWriteLevel( core, 0);
+   warp_SetPrintLevel( core, print_level);
+   warp_SetWriteLevel( core, write_level);
 
    warp_SetNRelax(core, -1, nrelax);
    if (nrelax0 > -1)

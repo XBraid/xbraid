@@ -18,8 +18,9 @@ spatial problem size       : 16 x 16
   iterations           = 8
 spatial problem size       : 16 x 16
 
-# Begin Test 1
+# Begin Test 2
 
+  my_Write() called, iter= 24, level= 0
   time steps = 128
   number of levels     = 8
   coarsening factor    = 2
@@ -35,5 +36,79 @@ spatial problem size       : 33 x 33
   5   |  expl        7.85e-01    7.85e-01    4.63e-02    1.50e-01
   6   |  expl        7.85e-01    7.85e-01    9.25e-02    3.00e-01
   7   |  expl        1.57e+00    1.57e+00    1.85e-01    1.50e-01
+
+# Begin Test 3
+
+  my_Write() called, iter= 7, level= 0
+  time steps = 32
+  number of levels     = 6
+  coarsening factor    = 2
+  num F-C relaxations  = 1
+  num rels on level 0  = 1
+  iterations           = 7
+spatial problem size       : 17 x 17
+
+# Begin Test 4
+
+  my_Write() called, iter= 0, level= 0
+  my_Write() called, iter= 0, level= 1
+  my_Write() called, iter= 0, level= 2
+  my_Write() called, iter= 0, level= 3
+  my_Write() called, iter= 0, level= 4
+  my_Write() called, iter= 1, level= 0
+  my_Write() called, iter= 1, level= 1
+  my_Write() called, iter= 1, level= 2
+  my_Write() called, iter= 1, level= 3
+  my_Write() called, iter= 1, level= 4
+  my_Write() called, iter= 2, level= 0
+  my_Write() called, iter= 2, level= 1
+  my_Write() called, iter= 2, level= 2
+  my_Write() called, iter= 2, level= 3
+  my_Write() called, iter= 2, level= 4
+  my_Write() called, iter= 3, level= 0
+  my_Write() called, iter= 3, level= 1
+  my_Write() called, iter= 3, level= 2
+  my_Write() called, iter= 3, level= 3
+  my_Write() called, iter= 3, level= 4
+  my_Write() called, iter= 4, level= 0
+  my_Write() called, iter= 4, level= 1
+  my_Write() called, iter= 4, level= 2
+  my_Write() called, iter= 4, level= 3
+  my_Write() called, iter= 4, level= 4
+  my_Write() called, iter= 5, level= 0
+  my_Write() called, iter= 5, level= 1
+  my_Write() called, iter= 5, level= 2
+  my_Write() called, iter= 5, level= 3
+  my_Write() called, iter= 5, level= 4
+  my_Write() called, iter= 6, level= 0
+  my_Write() called, iter= 6, level= 1
+  my_Write() called, iter= 6, level= 2
+  my_Write() called, iter= 6, level= 3
+  my_Write() called, iter= 6, level= 4
+  my_Write() called, iter= 7, level= 0
+  time steps = 32
+  number of levels     = 6
+  coarsening factor    = 2
+  num F-C relaxations  = 1
+  num rels on level 0  = 1
+  iterations           = 7
+spatial problem size       : 17 x 17
+
+# Begin Test 5
+
+  my_Write() called, iter= 7, level= 0
+spatial problem size       : 17 x 17
+
+# Begin Test 6
+ 
+  my_Write() called, iter= 7, level= 0
+  time steps = 32
+  number of levels     = 6
+  coarsening factor    = 2
+  num F-C relaxations  = 1
+  num rels on level 0  = 1
+  iterations           = 7
+spatial problem size       : 17 x 17
+
 
 
