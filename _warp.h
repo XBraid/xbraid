@@ -32,6 +32,20 @@ extern "C" {
  * Main data structures and accessor macros
  *--------------------------------------------------------------------------*/
 
+/**
+ * Points to the status structure which defines the status of Warp 
+ * at a given instant on a some level during a run.  The user accesses
+ * it through warp_Get**Status() functions.
+ **/
+typedef struct _warp_Status_struct
+{
+   warp_Int     iter;         /* warp iteration number */
+   warp_Int     level;        /* current level in warp */
+   warp_Real    rnorm;        /* residual norm */
+   warp_Int     done;         /* boolean describing whether warp has finished */
+   
+} _warp_Status;
+
 typedef struct
 {
    warp_Int     request_type; /* recv type = 1 */
@@ -110,6 +124,7 @@ typedef struct _warp_Core_struct
    warp_PtFcnCoarsen     coarsen;      /**< (optional) return a coarsened vector */
    warp_PtFcnRefine      refine;       /**< (optional) return a refined vector */
 
+   warp_Int              write_level;  /**< determines how often to call the user's write routine */ 
    warp_Int              print_level;  /**< determines amount of output printed to screem (0,1,2) */ 
    warp_Int              max_levels;   /**< maximum number of temporal grid levels */
    warp_Real             tol;          /**< stopping tolerance */
@@ -139,8 +154,9 @@ typedef struct _warp_Core_struct
 
 #define _warp_GridElt(grid, elt)  ((grid) -> elt)
 
-#define _warp_CoreElt(core, elt)  (  (core) -> elt )
-#define _warp_CoreFcn(core, fcn)  (*((core) -> fcn))
+#define _warp_StatusElt(status, elt) ( (status) -> elt )
+#define _warp_CoreElt(core, elt)     (  (core)  -> elt )
+#define _warp_CoreFcn(core, fcn)     (*((core)  -> fcn))
 
 /*--------------------------------------------------------------------------
  * Memory allocation macros
@@ -308,6 +324,7 @@ warp_Int
 _warp_UWriteVector(warp_Core    core,
                    warp_Int     level,
                    warp_Int     index,
+                   warp_Status  status,
                    warp_Vector  u);
 
 /**
@@ -399,6 +416,8 @@ _warp_CFRelax(warp_Core  core,
 warp_Int
 _warp_FRestrict(warp_Core   core,       /**< warp_Core (_warp_Core) struct */   
                 warp_Int    level,      /**< restrict from level to level+1 */
+                warp_Real   old_rnorm,  /**< rnorm from previous iterate (for user info) */
+                warp_Int    iter,       /**< current iteration number (for user info) */
                 warp_Real  *rnorm_ptr   /**< pointer to residual norm (if level 0) */
                 );
 
@@ -431,8 +450,11 @@ _warp_FRefine(warp_Core   core,
  * Write out the solution on grid level
  */
 warp_Int
-_warp_FWrite(warp_Core  core,
-             warp_Int   level);
+_warp_FWrite(warp_Core     core,
+             warp_Real     rnorm,
+             warp_Int      iter,
+             warp_Int      level,
+             warp_Int      done);
 
 /**
  * Initialize (and re-initialize) hierarchy
@@ -440,6 +462,22 @@ _warp_FWrite(warp_Core  core,
 warp_Int
 _warp_InitHierarchy(warp_Core    core,
                     _warp_Grid  *fine_grid);
+
+/**
+ * Initialize a warp_Status structure
+ **/
+warp_Int
+_warp_InitStatus(warp_Real        rnorm,
+                 warp_Int         iter,
+                 warp_Int         level,
+                 warp_Int         done,
+                 warp_Status     *status_ptr);
+
+/**
+ * Destroy a warp_Status structure
+ **/
+warp_Int
+_warp_DestroyStatus(warp_Status  status);
 
 
 #ifdef __cplusplus

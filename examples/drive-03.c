@@ -2795,6 +2795,7 @@ my_Dot(warp_App     app,
 int
 my_Write(warp_App     app,
          warp_Real    t,
+         warp_Status  status,
          warp_Vector  u)
 {
    MPI_Comm   comm   = MPI_COMM_WORLD;
@@ -2820,6 +2821,16 @@ my_Write(warp_App     app,
    int nlx = (app->nlx);
    int nly = (app->nly);
    int nlz = (app->nlz);
+   
+   /* Retrieve Warp State Information from Status Object */
+   /*double rnorm;
+   int iter, level, done;
+   
+   warp_GetStatusResidual(status, &rnorm);
+   warp_GetStatusIter(status, &iter);
+   warp_GetStatusLevel(status, &level);
+   warp_GetStatusDone(status, &done);
+   printf("iter= %d, level= %d, t= %1.2e, done= %d, ||r|| = %1.2e\n", iter, level, t, done, rnorm);*/
 
    /* Write to files:
     *   - save computed solution and true discrete solution

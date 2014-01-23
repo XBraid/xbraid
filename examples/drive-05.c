@@ -2653,6 +2653,7 @@ my_Dot(warp_App     app,
 int
 my_Write(warp_App     app,
          warp_Real    t,
+         warp_Status  status,
          warp_Vector  u)
 {
    MPI_Comm   comm   = MPI_COMM_WORLD;
@@ -2689,6 +2690,16 @@ my_Write(warp_App     app,
    ilower_x[1]    = (app->spatial_disc_table[u->spatial_disc_idx]).ilower_x[1];
    iupper_x[0]    = (app->spatial_disc_table[u->spatial_disc_idx]).iupper_x[0];
    iupper_x[1]    = (app->spatial_disc_table[u->spatial_disc_idx]).iupper_x[1];
+
+   /* Retrieve Warp State Information from Status Object */
+   /*double rnorm;
+   int iter, level, done;
+   
+   warp_GetStatusResidual(status, &rnorm);
+   warp_GetStatusIter(status, &iter);
+   warp_GetStatusLevel(status, &level);
+   warp_GetStatusDone(status, &done);
+   printf("iter= %d, level= %d, t= %1.2e, done= %d, ||r|| = %1.2e\n", iter, level, t, done, rnorm);*/
 
 
    /* Write to files:
@@ -3388,6 +3399,7 @@ int main (int argc, char *argv[])
    warp_SetMaxLevels( core, max_levels );
 
    warp_SetPrintLevel( core, 1);
+   warp_SetWriteLevel( core, 0);
 
    warp_SetNRelax(core, -1, nrelax);
    if (nrelax0 > -1)

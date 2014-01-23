@@ -45,9 +45,19 @@ warp_Init(MPI_Comm              comm_world,
 {
    _warp_Core           *core;
    warp_Int             *nrels;
-   warp_Int              level, max_levels = 30;
-   warp_Int              print_level = 1;
+   warp_Int              level;
    _warp_AccuracyHandle *accuracy;
+
+   /* Warp default values */
+   warp_Int              cfdefault = 2;         /* Default coarsening factor */
+   warp_Int              nrdefault = 1;         /* Default number of FC sweeps on each level */
+   warp_Int              fmg = 0;               /* Default fmg (0 is off) */
+   warp_Int              max_iter = 100;        /* Default max_iter */
+   warp_Int              max_levels = 30;       /* Default max_levels */
+   warp_Int              print_level = 1;       /* Default print level */
+   warp_Int              write_level = 0;       /* Default write level */
+   warp_Real             tol = 1.0e-09;         /* Default absolute tolerance */
+   warp_Real             rtol = 1.0e-09;        /* Default relative tolerance */
 
    core = _warp_CTAlloc(_warp_Core, 1);
 
@@ -71,10 +81,11 @@ warp_Init(MPI_Comm              comm_world,
    _warp_CoreElt(core, coarsen)    = NULL;
    _warp_CoreElt(core, refine)     = NULL;
 
+   _warp_CoreElt(core, write_level) = write_level;
    _warp_CoreElt(core, print_level) = print_level;
    _warp_CoreElt(core, max_levels) = max_levels;
-   _warp_CoreElt(core, tol)        = 1.0e-09;
-   _warp_CoreElt(core, rtol)       = 0;
+   _warp_CoreElt(core, tol)        = tol;
+   _warp_CoreElt(core, rtol)       = rtol;
 
    nrels = _warp_TAlloc(warp_Int, max_levels);
    for (level = 0; level < max_levels; level++)
@@ -82,16 +93,15 @@ warp_Init(MPI_Comm              comm_world,
       nrels[level] = -1;
    }
    _warp_CoreElt(core, nrels)      = nrels;
-   _warp_CoreElt(core, nrdefault)  = 1;
+   _warp_CoreElt(core, nrdefault)  = nrdefault;
 
    _warp_CoreElt(core, cfactors)   = _warp_CTAlloc(warp_Int, max_levels);
-   _warp_CoreElt(core, cfdefault)  = 2;
+   _warp_CoreElt(core, cfdefault)  = cfdefault;
 
-   _warp_CoreElt(core, max_iter)   = 100;
-   _warp_CoreElt(core, max_iter)   = 100;
+   _warp_CoreElt(core, max_iter)   = max_iter;
    _warp_CoreElt(core, niter)      = 0;
    _warp_CoreElt(core, rnorm)      = 0.0;
-   _warp_CoreElt(core, fmg)        = 0;
+   _warp_CoreElt(core, fmg)        = fmg;
 
    /* Accuracy for spatial solves for using implicit schemes
     *  - accuracy[0] refers to accuracy on level 0
@@ -153,7 +163,7 @@ warp_Drive(warp_Core  core)
    MPI_Comm_rank(comm_world, &myid);
 
    level = 0;
-   rnorm = 0.0;
+   rnorm = -1.0;
 
    /* Create fine grid */
    _warp_GetDistribution(core, &ilower, &iupper);
@@ -195,18 +205,13 @@ warp_Drive(warp_Core  core)
       if (down)
       {
 
-         if( (print_level >= 2) && (myid == 0) )
-         {
-            printf("\nDown, Iteration %d, Level %d\n", iter, level); 
-         }
-
          if (level < (nlevels-1))
          {
             /* CF-relaxation */
             _warp_CFRelax(core, level);
 
             /* F-relax then restrict */
-            _warp_FRestrict(core, level, &rnorm);
+            _warp_FRestrict(core, level, rnorm, iter, &rnorm);
             /* Set initial guess on next coarser level */
             _warp_InitGuess(core, level+1);
 
@@ -249,11 +254,6 @@ warp_Drive(warp_Core  core)
       if (!down)
       {
 
-         if( (print_level >= 2) && (myid == 0) )
-         {
-            printf("\nUp, Iteration %d, Level %d\n", iter, level); 
-         }
-
          if (level > 0)
          {
             if (level >= fmglevel)
@@ -283,7 +283,7 @@ warp_Drive(warp_Core  core)
                /* Note that this residual is based on an earlier iterate */
                if( (print_level >= 1) && (myid == 0) )
                {
-                  printf("  || r_%d || = %e\n", iter, rnorm);
+                  printf("  Warp || r_%d || = %e\n", iter, rnorm);
                }
 
                if (((rnorm < tol) && (_warp_CoreElt(core, accuracy[0].tight_used) == 1)) || (iter == max_iter-1))
@@ -302,18 +302,10 @@ warp_Drive(warp_Core  core)
          }
       }
 
-#if 0
-      /* write (visualize) intermediate warp iterations */
-      if (!done && level == 0 && down)
-      {
-         /* F-relax and write solution to file */
-         _warp_FWrite(core, 0);
-      }
-#endif
    }
 
    /* F-relax and write solution to file */
-   _warp_FWrite(core, 0);
+   _warp_FWrite(core, rnorm, iter, 0, 1);
 
    _warp_CoreElt(core, niter) = iter;
    _warp_CoreElt(core, rnorm) = rnorm;
@@ -484,6 +476,18 @@ warp_SetPrintLevel(warp_Core  core,
    return _warp_error_flag;
 }
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
+warp_SetWriteLevel(warp_Core  core,
+                   warp_Int   write_level)
+{
+   _warp_CoreElt(core, write_level) = write_level;
+
+   return _warp_error_flag;
+}
+
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
@@ -605,5 +609,49 @@ warp_SetSpatialRefine(warp_Core  core,
    return _warp_error_flag;
 }
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
+warp_GetStatusResidual(warp_Status  status,
+                       warp_Real   *rnorm_ptr)
+{
+   *rnorm_ptr = _warp_StatusElt(status, rnorm);
+   return _warp_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
+warp_GetStatusIter(warp_Status  status,
+                   warp_Int    *iter_ptr)
+{
+   *iter_ptr = _warp_StatusElt(status, iter);
+   return _warp_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
+warp_GetStatusLevel(warp_Status  status,
+                    warp_Int    *level_ptr)
+{
+   *level_ptr = _warp_StatusElt(status, level);
+   return _warp_error_flag;
+}
+
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
+warp_GetStatusDone(warp_Status  status,
+                   warp_Int    *done_ptr)
+{
+   *done_ptr = _warp_StatusElt(status, done);
+   return _warp_error_flag;
+}
 
 

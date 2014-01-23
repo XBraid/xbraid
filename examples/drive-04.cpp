@@ -801,6 +801,28 @@ void SolveODE(TimeDependentOperator *ode, HypreParVector *X0,
    delete sol_sock;
 }
 
+// Wrapper for WARP's status object
+class WarpStatus
+{
+   private:
+      warp_Status status;
+   
+   public:
+      WarpStatus(warp_Status _status)
+      {
+         status = _status;
+      }
+
+      void GetDone(warp_Int *done_ptr) { warp_GetStatusDone(status, done_ptr); }
+      void GetLevel(warp_Int *level_ptr) { warp_GetStatusLevel(status, level_ptr); }
+      void GetIter(warp_Int *iter_ptr) { warp_GetStatusIter(status, iter_ptr); }
+      void GetResidual(warp_Real *rnorm_ptr) { warp_GetStatusResidual(status, rnorm_ptr); }
+      
+      // The warp_Status structure is deallocated inside of Warp
+      // This class is just to make code consistently look object oriented
+      ~WarpStatus() { }
+};
+
 
 // Wrapper for WARP's App object
 class WarpApp
@@ -927,13 +949,23 @@ public:
 
    static int Write(warp_App     _app,
                     double       t,
+                    warp_Status  _status,
                     warp_Vector  _u)
    {
       WarpApp *app = (WarpApp*) _app;
+      WarpStatus status = WarpStatus(_status);
       HypreParVector *u = (HypreParVector*) _u;
+      
+      // Extract information from status
+      int done, level, iter;
+      double rnorm;
+      status.GetDone(&done);
+      status.GetLevel(&level);
+      status.GetIter(&iter);
+      status.GetResidual(&rnorm); 
 
       // if (t == app->tstart || t == app->tstop)
-      if (t == app->tstop)
+      if ( (t == app->tstop) && (level == 0) )
       {
          (*app->x) = *u; // Distribute
 
@@ -1030,7 +1062,6 @@ public:
    }
 };
 
-
 // Wrapper for WARP's core object
 class WarpCore
 {
@@ -1075,6 +1106,8 @@ public:
    void SetMaxIter(int max_iter) { warp_SetMaxIter(core, max_iter); }
    
    void SetPrintLevel(int print_level) { warp_SetPrintLevel(core, print_level); }
+   
+   void SetWriteLevel(int write_level) { warp_SetWriteLevel(core, write_level); }
 
    void SetFMG() { warp_SetFMG(core); }
 
@@ -1173,6 +1206,7 @@ int main(int argc, char *argv[])
    int    cfactor0    = -1;
    int    max_iter    = 100;
    int    fmg         = 0;
+   int    write_level = 0;
 
    /* Parse command line */
    int print_usage = 0;
@@ -1268,6 +1302,10 @@ int main(int argc, char *argv[])
       {
          fmg = 1;
       }
+      else if (strcmp(argv[arg_index], "-write") == 0)
+      {
+         write_level = 1;
+      }
       else if (strcmp(argv[arg_index], "-help") == 0)
       {
          print_usage = 1;
@@ -1328,6 +1366,7 @@ int main(int argc, char *argv[])
          "  -cf0 <cfactor0>   : set aggressive coarsening (default: off)\n"
          "  -mi  <max_iter>   : set max iterations (default: 100)\n"
          "  -fmg              : use FMG cycling\n"
+         "  -write            : set write_level (default: 0) \n"
          "\n";
    }
 
@@ -1482,6 +1521,7 @@ int main(int argc, char *argv[])
       if (heat_equation)
          app.SetExactSolution(&exact_sol);
 
+      core.SetWriteLevel(write_level);
       core.SetPrintLevel(1);
       core.SetMaxLevels(max_levels);
       core.SetNRelax(-1, nrelax);

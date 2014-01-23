@@ -148,6 +148,7 @@ my_Dot(warp_App     app,
 int
 my_Write(warp_App     app,
          double       t,
+         warp_Status  status,
          warp_Vector  u)
 {
    MPI_Comm   comm   = (app->comm);

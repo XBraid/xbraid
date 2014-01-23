@@ -47,6 +47,13 @@ struct _warp_Vector_struct;
  **/
 typedef struct _warp_Vector_struct *warp_Vector;
 
+struct _warp_Status_struct;
+/**
+ * Points to the status structure defined in _warp.h 
+ **/
+typedef struct _warp_Status_struct *warp_Status;
+
+
 /**
  * Blah...
  **/
@@ -106,6 +113,7 @@ typedef warp_Int
 typedef warp_Int
 (*warp_PtFcnWrite)(warp_App      app,
                    warp_Real     t,
+                   warp_Status   status,
                    warp_Vector   u);
 
 /**
@@ -164,9 +172,10 @@ typedef warp_Int
 
 struct _warp_Core_struct;
 /**
- * Blah...
+ * Points to the core structure defined in _warp.h 
  **/
 typedef struct _warp_Core_struct *warp_Core;
+
 
 /**
  * Create a core object with the required initial data.\n
@@ -310,6 +319,45 @@ warp_SetSpatialRefine(warp_Core  core,
 warp_Int
 warp_SetPrintLevel(warp_Core  core,
                    warp_Int   print_level);
+/**
+ * Set write print level for warp.
+ * Level 0 only calls the user's write routine after Warp is finished
+ * Level 1 calls the user's write routine every iteration in _warp_FRestrict(),
+ *   which is during the down-cycle part of a Warp iteration 
+ * Default is level 0.
+ **/
+warp_Int
+warp_SetWriteLevel(warp_Core  core,
+                   warp_Int   write_level);
+
+/**
+ * Return the residual for the current status object
+ **/
+warp_Int
+warp_GetStatusResidual(warp_Status  status,
+                       warp_Real   *rnorm_ptr);
+
+/**
+ * Return the iteration for the current status object
+ **/
+warp_Int
+warp_GetStatusIter(warp_Status  status,
+                   warp_Int    *iter_ptr);
+
+/**
+ * Return the warp level for the current status object
+ **/
+warp_Int
+warp_GetStatusLevel(warp_Status  status,
+                    warp_Int    *level_ptr);
+
+/**
+ * Return whether warp is done for the current status object
+ **/
+warp_Int
+warp_GetStatusDone(warp_Status  status,
+                   warp_Int    *done_ptr);
+
 
 
 /*--------------------------------------------------------------------------
