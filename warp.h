@@ -309,21 +309,27 @@ warp_SetSpatialRefine(warp_Core  core,
                       warp_PtFcnRefine refine);
 
 /**
- * Set print level for warp.
- * Level 0 is not output.
- * Level 1 is typical information like a residual history, 
- * number of levels in the Warp hierarchy, and so on.
- * Level 2 is debug level output.
+ * Set print level for warp.  This controls how much information is 
+ * printed to standard out.
+ * 
+ * Level 0: no output
+ * Level 1: print typical information like a residual history, 
+ *    number of levels in the Warp hierarchy, and so on.
+ * Level 2: level 1 output, plus debug level output.
+ * 
  * Default is level 1.
  **/
 warp_Int
 warp_SetPrintLevel(warp_Core  core,
                    warp_Int   print_level);
 /**
- * Set write print level for warp.
- * Level 0 only calls the user's write routine after Warp is finished
- * Level 1 calls the user's write routine every iteration in _warp_FRestrict(),
+ * Set write level for warp.  This controls how often the user's
+ * write routine is called.
+ * 
+ * Level 0:  Only call the user's write routine after Warp is finished
+ * Level 1:  Call the user's write routine every iteration in _warp_FRestrict(),
  *   which is during the down-cycle part of a Warp iteration 
+ * 
  * Default is level 0.
  **/
 warp_Int
