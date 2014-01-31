@@ -69,8 +69,8 @@ cd $test_dir
 TESTS=( "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 " \
         "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -fmg " \
         "$RunString -np 8 $example_dir/drive-05 -pgrid 1 1 8 -ml 15 -nt 128 -nx 33 33 -mi 100 -expl -scoarsen 1 "\
-        "$RunString -np 2 $example_dir/drive-05 -pgrid 1 1 2 -nt 32 -ml 15 -write_level 0 " \
         "$RunString -np 2 $example_dir/drive-05 -pgrid 1 1 2 -nt 32 -ml 15 -write_level 1 " \
+        "$RunString -np 2 $example_dir/drive-05 -pgrid 1 1 2 -nt 32 -ml 15 -write_level 2 " \
         "$RunString -np 2 $example_dir/drive-05 -pgrid 1 1 2 -nt 32 -ml 15 -print_level 0 " \
         "$RunString -np 2 $example_dir/drive-05 -pgrid 1 1 2 -nt 32 -ml 15 -print_level 1 " )
 

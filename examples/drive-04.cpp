@@ -1206,7 +1206,7 @@ int main(int argc, char *argv[])
    int    cfactor0    = -1;
    int    max_iter    = 100;
    int    fmg         = 0;
-   int    write_level = 0;
+   int    write_level = 1;
 
    /* Parse command line */
    int print_usage = 0;
@@ -1304,7 +1304,7 @@ int main(int argc, char *argv[])
       }
       else if (strcmp(argv[arg_index], "-write") == 0)
       {
-         write_level = 1;
+         write_level = atoi(argv[++arg_index]);
       }
       else if (strcmp(argv[arg_index], "-help") == 0)
       {
@@ -1366,7 +1366,7 @@ int main(int argc, char *argv[])
          "  -cf0 <cfactor0>   : set aggressive coarsening (default: off)\n"
          "  -mi  <max_iter>   : set max iterations (default: 100)\n"
          "  -fmg              : use FMG cycling\n"
-         "  -write            : set write_level (default: 0) \n"
+         "  -write            : set write_level (default: 1) \n"
          "\n";
    }
 

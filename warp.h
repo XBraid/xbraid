@@ -326,11 +326,12 @@ warp_SetPrintLevel(warp_Core  core,
  * Set write level for warp.  This controls how often the user's
  * write routine is called.
  * 
- * Level 0:  Only call the user's write routine after Warp is finished
- * Level 1:  Call the user's write routine every iteration in _warp_FRestrict(),
+ * Level 0:  Never call the user's write routine
+ * Level 1:  Only call the user's write routine after Warp is finished
+ * Level 2:  Call the user's write routine every iteration in _warp_FRestrict(),
  *   which is during the down-cycle part of a Warp iteration 
  * 
- * Default is level 0.
+ * Default is level 1.
  **/
 warp_Int
 warp_SetWriteLevel(warp_Core  core,

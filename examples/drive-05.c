@@ -3006,7 +3006,7 @@ int main (int argc, char *argv[])
    output_files        = 0;
    output_vis          = 0;
    print_level         = 1;
-   write_level         = 0;
+   write_level         = 1;
 
    MPI_Comm_rank( comm, &myid );
    MPI_Comm_size( comm, &num_procs );
@@ -3175,9 +3175,10 @@ int main (int argc, char *argv[])
       printf("                                    0 - no output to standard out \n");
       printf("                                    1 - Basic convergence information and hierarchy statistics\n");
       printf("                                    2 - Debug level output \n");
-      printf("  -write_level <l>                : sets the write_level (default: 0) \n");
-      printf("                                    0 - call write only after completion \n");
-      printf("                                    1 - call write every iteration and level\n");
+      printf("  -write_level <l>                : sets the write_level (default: 1) \n");
+      printf("                                    0 - never call write \n");
+      printf("                                    1 - call write only after completion \n");
+      printf("                                    2 - call write every iteration and level\n");
       printf("  -output_files                   : save the solution/error/error norms to files\n");
       printf("                                    frequency of file writes is set by write_level\n");
       printf("  -output_vis                     : save the error for GLVis visualization\n");
