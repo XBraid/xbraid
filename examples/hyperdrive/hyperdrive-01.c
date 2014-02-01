@@ -57,7 +57,6 @@ int main(int argc, char ** argv)
    int        cfactor, cfactor0;
    int        max_iter;
    int        fmg;
-   int        scoarsen;
 
    MPI_Comm    comm, comm_t; /* no spatial MPI decomposition */
    int         num_procs;
@@ -77,10 +76,11 @@ int main(int argc, char ** argv)
    int pt; /* AP: what is this? */
 
    int n_pre, n_post;
-   int rap, relax, skip, max_iter_x[2];
+   int rap, relax, skip;
+   
    double tol_x[2], tol_x_coarse;
 
-   int write, explicit, vis;
+   int write, vis;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -88,15 +88,14 @@ int main(int argc, char ** argv)
    /* Default parameters. */
    comm                = MPI_COMM_WORLD;
    comm_t              = comm;
-   max_levels          = 1;
+   max_levels          = 2; /* AP changed from 1 */
    nrelax              = 1;
    nrelax0             = -1;
    tol                 = 1.0e-09;
    cfactor             = 2;
    cfactor0            = -1;
-   max_iter            = 100;
+   max_iter            = 3;
    fmg                 = 0;
-   scoarsen            = 1;
    /* K                   = 1.0; */
    /* nt                  = 32; */
    c                   = 0.15;
@@ -109,12 +108,9 @@ int main(int argc, char ** argv)
    rap                 = 1;
    relax               = 3;
    skip                = 1;
-   max_iter_x[0]       = 50;
-   max_iter_x[1]       = 50;
    tol_x[0]            = 1.0e-09;
    tol_x[1]            = 1.0e-09;
    tol_x_coarse        = 1.0e-09;
-   explicit            = 0;
    write               = 0;
    vis                 = 0;
 
@@ -233,7 +229,8 @@ int main(int argc, char ** argv)
    printf("Treatment of time-dependent bndry data: %i\n", kd_->taylorbc);
    printf("Solving to time %e using %i steps\n",kd_->tstop, kd_->nsteps);
    printf("Time step is %e\n",kd_->dt);
-   printf("Grid spacing is %e with %i grid points\n", kd_->h, kd_->n);
+   printf("Finest grid has spacing h=%e with n=%i grid points\n", kd_->h_fine, kd_->n_fine);
+   printf("------------------------------\n");
 
 /* Start timer. */
    mystarttime = MPI_Wtime();
@@ -249,6 +246,7 @@ int main(int argc, char ** argv)
 
    warp_SetTightxTol( core, 0, tol_x[1] );
 
+/* set max number of MG levels */
    warp_SetMaxLevels( core, max_levels );
 
    warp_SetNRelax(core, -1, nrelax);
@@ -261,7 +259,7 @@ int main(int argc, char ** argv)
    /*warp_SetAbsTol(core, tol*sqrt(px*nlx*py*nly*(nt+1)) );*/
    /* warp_SetAbsTol(core, tol/sqrt(dx*dy*dt)); */
 
-/* AP: this is probably related to grid coarsening */
+/* AP: this is probably related to grid coarsening in time */
    warp_SetCFactor(core, -1, cfactor);
    if( cfactor0 > -1 ){
       /* Use cfactor0 on all levels until there are < cfactor0 points
@@ -278,8 +276,12 @@ int main(int argc, char ** argv)
    }
    
 /* this is where the coarsen and refine routines are defined */
-   /* warp_SetSpatialCoarsen(core, my_Coarsen); */
-   /* warp_SetSpatialRefine(core, my_Refine); */
+   warp_SetSpatialCoarsen(core, gridfcn_Coarsen);
+   warp_SetSpatialRefine(core, gridfcn_Refine);
+
+/* control how often my write routine is called. How is this supposed to work??? */
+   warp_SetWriteLevel(core, 1);
+   
 
    warp_Drive(core);
 
@@ -294,7 +296,7 @@ int main(int argc, char ** argv)
    printf("Time-stepping completed. Solved to time t: %e\n", kd_->tstop);
 
 /* ! evaluate solution error, stick exact solution in kd_ workspace array */
-   exact1( kd_->n, kd_->current, kd_->h, kd_->amp, kd_->ph, kd_->om, kd_->tstop, kd_->pnr );
+   exact1( kd_->n_fine, kd_->current, kd_->h_fine, kd_->amp, kd_->ph, kd_->om, kd_->tstop, kd_->pnr );
 /* get exact bndry data (bdataL) */
    twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, kd_->tstop, kd_->dt, kd_->amp, kd_->ph, kd_->om, kd_->pnr);
 
@@ -303,7 +305,7 @@ int main(int argc, char ** argv)
       
 /*  get a pointer to the final solution from the kreiss_solver structure */
       gf_ = kd_->sol_copy;
-      evalerr1( kd_->n, gf_->sol, kd_->current, &l2, &li, kd_->h );
+      evalerr1( gf_->n, gf_->sol, kd_->current, &l2, &li, gf_->h );
 
       printf("------------------------------\n");
    

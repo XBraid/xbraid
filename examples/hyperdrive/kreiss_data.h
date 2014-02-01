@@ -8,13 +8,14 @@ typedef struct _warp_Vector_struct
 {
    double *sol;
    int n;
+   double h;     /* grid size */
    double_array_1d *vsol_;
 } grid_fcn;
 
 typedef struct _warp_App_struct
 {
-   int n;        /* number of grid points */
-   double h;     /* grid size */
+   int n_fine;    /* number of grid points in the finest grid */
+   double h_fine; /* finest grid size */
    double amp;   /* testing parameter (amplitude) */
    double ph;    /* testing parameter (phase) */
    double om;    /* testing parameter (omega) */
@@ -75,6 +76,7 @@ dot_grid_fcn(kreiss_solver *kd_,
 int
 save_grid_fcn(kreiss_solver *kd_,
               double t,
+              warp_Status   status,
               grid_fcn *u_);
 int
 gridfcn_BufSize(kreiss_solver *kd_,
@@ -87,6 +89,24 @@ int
 gridfcn_BufUnpack(kreiss_solver *kd_,
                   void *buffer,
                   warp_Vector *u_handle);
+int
+gridfcn_Refine(kreiss_solver * kd_,
+               double     tstart,
+               double     f_tminus,
+               double     f_tplus,
+               double     c_tminus,
+               double     c_tplus,
+               grid_fcn *cu_,
+               grid_fcn **fu_handle);
+int
+gridfcn_Coarsen(kreiss_solver *kd_,
+                double tstart,
+                double f_tminus,
+                double f_tplus,
+                double c_tminus,
+                double c_tplus,
+                grid_fcn *fu_,
+                grid_fcn **cu_handle);
 
 void
 exact1( int n, double *w, double h, double amp, double ph, double om, double t, int pnr);

@@ -2,12 +2,14 @@
 #include <math.h>
 #include "kreiss_data.h"
 
+#define MY_EPS 1e-12
+
+/**< Initialize a warp_Vector function on finest temporal grid*/
 int
 init_grid_fcn(kreiss_solver *kd_, double t, grid_fcn **u_handle)
 {
    grid_fcn * u_;
-   int i, offset;
-   const double eps=1e-12;
+   int i;
    
 /* allocate memory */
    u_ = (grid_fcn *) malloc(sizeof(grid_fcn));
@@ -19,24 +21,24 @@ init_grid_fcn(kreiss_solver *kd_, double t, grid_fcn **u_handle)
       return 1;
    }
       
-   u_->n     = kd_->n;
-   u_->sol   = malloc((kd_->n+2)*sizeof(double));
+   u_->n     = kd_->n_fine;
+   u_->h     = kd_->h_fine;
+   u_->sol   = malloc((u_->n+2)*sizeof(double));
    u_->vsol_ = create_double_array_1d(3);
 
 /* initial conditions */
-   if (fabs(t - kd_->tstart) < eps)
+   if (fabs(t - kd_->tstart) < MY_EPS)
    {
-      exact1( kd_->n, u_->sol, kd_->h, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr );
+      exact1( u_->n, u_->sol, u_->h, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr );
       bdata(u_->vsol_, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr);
    }
    else /* set the grid function to zero, but could assign random values instead */
    {
-      for (i=0; i< kd_->n+2; i++)
+      for (i=0; i< u_->n+2; i++)
          u_->sol[i] = 0;
 
 /* then the 3 values in the bndry ode */
 #define uvsol(i) compute_index_1d(u_->vsol_, i)
-      offset = kd_->n+1;
       for (i=1; i<=3; i++)
          uvsol(i) = 0;
 #undef uvsol
@@ -65,8 +67,8 @@ init_kreiss_solver(double h, double amp, double ph, double om, int pnr, int tayl
       printf("NOTE: dx changed to %e\n", h);
    }
 
-   kd_->n = n;
-   kd_->h = h;
+   kd_->n_fine = n;
+   kd_->h_fine = h;
    kd_->amp = amp;
    kd_->ph = ph;
    kd_->om = om;
@@ -154,8 +156,8 @@ init_kreiss_solver(double h, double amp, double ph, double om, int pnr, int tayl
  * Create a a copy of a vector object.
  * -------------------------------------------------------------------- */
 int
-copy_grid_fcn(kreiss_solver    *kd_,
-              grid_fcn  *u_,
+copy_grid_fcn(kreiss_solver *kd_,
+              grid_fcn *u_,
               grid_fcn **v_handle)
 {
 /* create new grid_fcn, copy all fields from u_ */
@@ -166,6 +168,7 @@ copy_grid_fcn(kreiss_solver    *kd_,
    v_ = (grid_fcn *) malloc(sizeof(grid_fcn));
 
    v_->n = u_->n;
+   v_->h = u_->h;
    v_->sol   = malloc((v_->n+2)*sizeof(double));
    v_->vsol_ = create_double_array_1d(3);
 
@@ -208,9 +211,9 @@ free_grid_fcn(kreiss_solver    *kd_,
  * -------------------------------------------------------------------- */
 int
 sum_grid_fcn(kreiss_solver *kd_,
-             double      alpha,
+             double alpha,
              grid_fcn *x_,
-             double      beta,
+             double beta,
              grid_fcn *y_)
 {
    int i;
@@ -220,11 +223,13 @@ sum_grid_fcn(kreiss_solver *kd_,
       printf("ERROR: incompatible sizes in sum_grid_fcn: x_->n=%i but y_->n=%i\n", x_->n, y_->n);
       return 1;
    }
-   for (i=0; i<x_->n+2; i++) /* not sure it makes sense to sum the ghost point values... */
+/* not sure it makes sense to sum the ghost point values, but that is the prescription */
+   for (i=0; i<x_->n+2; i++) 
       y_->sol[i] = alpha*x_->sol[i] + beta*y_->sol[i];
 
 #define xvsol(i) compute_index_1d(x_->vsol_, i)
 #define yvsol(i) compute_index_1d(y_->vsol_, i)   
+/* sum up the boundary ode variables too */
    for (i=1; i<=3; i++)
       yvsol(i) = alpha*xvsol(i) + beta*yvsol(i);
    
@@ -241,7 +246,7 @@ int
 dot_grid_fcn(kreiss_solver *kd_,
              grid_fcn *u_,
              grid_fcn *v_,
-             double      *dot_ptr)
+             double *dot_ptr)
 {
    double dot=0;
    int i;
@@ -274,24 +279,25 @@ dot_grid_fcn(kreiss_solver *kd_,
 /* --------------------------------------------------------------------
  * Save a grid function to file.
  * -------------------------------------------------------------------- */
-
-
 int 
 save_grid_fcn(kreiss_solver *kd_,
               warp_Real t,
+              warp_Status   status,
               grid_fcn *u_)
 {
    MPI_Comm   comm   = MPI_COMM_WORLD;
-   int        myid;
+   int        myid, doneflag=-1;
    /* char       filename[255]; */
    /* FILE      *file; */
 
+   warp_GetStatusDone(status, &doneflag);
+   
    /* copy the final solution to the solver structure */
    if( kd_->write )
    {
      MPI_Comm_rank(comm, &myid);
    
-     printf("Inside save_grid_fcn, myRank=%i, t=%e\n", myid, t);
+     printf("Inside save_grid_fcn, myRank=%i, t=%e, done-flag=%i\n", myid, t, doneflag);
      if (fabs(t-kd_->tstop)<1e-12)
      {
        printf("...copying the final solution at t=%e\n", t);
@@ -317,9 +323,12 @@ int
 gridfcn_BufSize(kreiss_solver *kd_,
                 int *size_ptr)
 {
-/* a grid function currently hold sol[n+2] and vsol(3) values */
-   *size_ptr = kd_->n+2+3;
-   
+/* allocate enough storage for the finest grid function */
+/* a grid function currently holds sol[n+2] and vsol(3) values */
+
+/* Add space for one double and one int (sized as a double) to hold the grid size and number of grid points? */   
+   *size_ptr = (kd_->n_fine+2+3+1+1)*sizeof(double);
+
    return 0;
 }
 
@@ -331,17 +340,24 @@ gridfcn_BufPack(kreiss_solver *kd_,
                 grid_fcn *u_,
                 void *buffer)
 {
+/* not all elements are doubles, but for simplicity we give all elements the size of a double */
    double *dbuff = buffer;
+   int *ibuff = buffer;
    int i, offset;
+/* first the size (n) */
+   ibuff[0] = u_->n;
+/* then the grid size */
+   dbuff[1] = u_->h;
 /* first n+2 values from sol */
-   for (i=0; i<kd_->n+2; i++)
-      dbuff[i] = u_->sol[i];
+   offset = 2;
+   for (i=0; i<u_->n+2; i++)
+      dbuff[i+offset] = u_->sol[i];
    
 /* then the 3 values in the bndry ode */
 #define uvsol(i) compute_index_1d(u_->vsol_, i)
-   offset = kd_->n+1;
-   for (i=1; i<=3; i++)
-      dbuff[offset+i] = uvsol(i);
+   offset = u_->n+4;
+   for (i=0; i<3; i++)
+      dbuff[offset+i] = uvsol(i+1); /* uvsol(i) is base 1 */ 
 #undef uvsol
 
    return 0;
@@ -355,28 +371,227 @@ gridfcn_BufUnpack(kreiss_solver *kd_,
              void *buffer,
              warp_Vector *u_handle)
 {
-   int i, offset;
+   int i, offset, n;
+   double h;
    grid_fcn *u_;
    double *dbuff=buffer;
+   double *ibuff=buffer;
    
+/* start by reading the number of grid points */
+   n = ibuff[0];
+/* then the grid size */
+   h = dbuff[1];
+   
+/* now allocate space for the grid function */
    u_ = (grid_fcn *) malloc(sizeof(grid_fcn));
-   u_->n     = kd_->n;
-   u_->sol   = malloc((kd_->n+2)*sizeof(double));
+   u_->n     = n;
+   u_->h     = h;
+   
+   u_->sol   = malloc((u_->n+2)*sizeof(double));
    u_->vsol_ = create_double_array_1d(3);
 
 /* copy values from buffer */
-   for (i=0; i< kd_->n+2; i++)
-      u_->sol[i] = dbuff[i];
+   offset = 2;
+   for (i=0; i< u_->n+2; i++)
+      u_->sol[i] = dbuff[i+offset];
 
 /* then the 3 values in the bndry ode */
 #define uvsol(i) compute_index_1d(u_->vsol_, i)
-   offset = kd_->n+1;
-   for (i=1; i<=3; i++)
-      uvsol(i) = dbuff[offset+i];
+   offset = u_->n+4;
+   for (i=0; i<3; i++)
+      uvsol(i+1) = dbuff[offset+i];
 #undef uvsol
    
 /* make the new grid function useful outside this routine */
    *u_handle = u_;
    return 0;
-   
 }
+
+#define MAX(a,b) (a<b? b:a)
+int
+gridfcn_Coarsen(kreiss_solver *kd_,
+                double tstart,
+                double f_tminus,
+                double f_tplus,
+                double c_tminus,
+                double c_tplus,
+                grid_fcn *gf_, /* pointer to the fine grid function */
+                grid_fcn **cu_handle) /* handle to the coarse grid function */
+{
+   grid_fcn * u_;
+   int i, nf, nc;
+   double dt_f, dt_c, bdataL, bdataR=0;
+
+   dt_f = MAX(f_tplus - tstart, tstart - f_tminus);
+   dt_c = MAX(c_tplus - tstart, tstart - c_tminus);
+   
+   printf("Coarsen: tstart=%e, dt_f = %e, dt_c=%e, grid pts (fine)=%i\n", 
+          tstart, dt_f, dt_c, gf_->n);
+   
+/* are the time steps the same??? */
+   if (fabs(dt_f-dt_c)<MY_EPS)
+   {
+/* just clone the grid_fcn */
+      printf("Same coarse and fine time steps=%e. Copying fine to coarse grid function\n", dt_f);
+      copy_grid_fcn(kd_, gf_, cu_handle);
+   }
+   
+/* can we deal with the requested coarsening? */
+   if (fabs(dt_c/dt_f - 2.0) > MY_EPS)
+   {
+      printf("The requested coarsening factor dt_c/dt_f=%e is not implemented\n", dt_c/dt_f);
+      return 1;
+   }
+
+/* from here on the coarsening factor equals 2 */
+   
+/* allocate memory for the coarse grid function */
+   u_ = (grid_fcn *) malloc(sizeof(grid_fcn));
+   
+/* should make sure the kd_ and gf_ are not NULL */
+   nf = gf_->n;
+   nc = u_->n = (nf-1)/2 + 1;
+   u_->h     = gf_->h * 2.0;
+   u_->sol   = malloc((u_->n+2)*sizeof(double));
+   u_->vsol_ = create_double_array_1d(3);
+
+
+/* assign the coarse grid function */
+/* u_ has nc interior points */
+/* gf_ has nf interior grid points */
+
+/* inject fine the grid solution into coarse grid */
+   for (i=1; i<=nc; i++)
+   {
+      u_->sol[i] = gf_->sol[2*i-1];
+   }
+/* enforce boundary conditions */
+
+#define fvsol(i) compute_index_1d(gf_->vsol_, i)
+   if (kd_->taylorbc == 3)
+   {
+/* boundary data from the ODE system */
+      bdataL = fvsol(1);
+   }
+   else
+   {
+/* evaluate exact boundary data */
+/* set stage==1 to evaluate boundary data at time t, ignoring dt=0.0 */
+      twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, tstart, 0.0, kd_->amp, kd_->ph, kd_->om, kd_->pnr);
+   }
+
+/* enforce bc for the coarse 'u_' grid function */
+   bckreiss1( u_->n, u_->sol, bdataL, bdataR, kd_->betapcoeff, u_->h, kd_->bcnr_ );
+   
+/* copy the 3 values in the bndry ode */
+#define uvsol(i) compute_index_1d(u_->vsol_, i)
+   for (i=1; i<=3; i++)
+      uvsol(i) = fvsol(i);
+#undef uvsol
+#undef fvsol
+   
+/* make the grid function useful outside this routine */   
+   *cu_handle = u_;
+
+   return 0;   
+}
+
+int
+gridfcn_Refine(kreiss_solver * kd_,
+               double tstart,
+               double f_tminus,
+               double f_tplus,
+               double c_tminus,
+               double c_tplus,
+               grid_fcn *gf_, /* pointer to the coarse grid function */
+               grid_fcn **fu_handle) /* handle to the fine grid function */
+{
+   grid_fcn *u_;
+   int i, nc, nf;
+   double bdataL, bdataR=0;
+   
+   double dt_f, dt_c;
+   dt_f = MAX(f_tplus - tstart, tstart - f_tminus);
+   dt_c = MAX(c_tplus - tstart, tstart - c_tminus);
+   
+   printf("Refine: tstart=%e, dt_f = %e, dt_c=%e, grid pts (coarse)=%i\n", 
+          tstart, dt_f, dt_c, gf_->n);
+
+/* are the time steps the same??? */
+   if (fabs(dt_f-dt_c)<MY_EPS)
+   {
+/* just clone the vector */
+      printf("Same coarse and fine time steps=%e. Copying coarse to fine grid function\n", dt_f);
+      copy_grid_fcn(kd_, gf_, fu_handle);
+   }
+   
+/* can we deal with the requested refinement? */
+   if (fabs(dt_c/dt_f - 2.0) > MY_EPS)
+   {
+      printf("The requested refinement factor dt_c/dt_f=%e is not implemented\n", dt_c/dt_f);
+      return 1;
+   }
+
+/* from here on the refinement factor equals 2 */
+   
+/* allocate memory for the fine grid function */
+   u_ = (grid_fcn *) malloc(sizeof(grid_fcn));
+   
+/* should make sure the kd_ and gf_ are not NULL */
+   nc = gf_->n;
+   nf = u_->n = (nc-1)*2 + 1;
+   u_->h      = gf_->h * 0.5;
+   u_->sol    = malloc((u_->n+2)*sizeof(double));
+   u_->vsol_  = create_double_array_1d(3);
+
+
+/* assign the fine grid function */
+
+/* gf_ has nc interior grid points */
+/* u_ has nf interior points */
+
+/* inject the coinciding coarse grid solution into the fine grid */
+   for (i=1; i<=nc; i++)
+   {
+      u_->sol[2*i-1] = gf_->sol[i];
+   }
+/* for now, do linear interpolation to define the intermediate fine grid points */
+   for (i=2; i<=nf-1; i+=2)
+   {
+      u_->sol[i] = 0.5*(u_->sol[i-1] + u_->sol[i+1]);
+   }
+   
+/* enforce boundary conditions */
+
+#define fvsol(i) compute_index_1d(gf_->vsol_, i)
+   if (kd_->taylorbc == 3)
+   {
+/* boundary data from the ODE system */
+      bdataL = fvsol(1);
+   }
+   else
+   {
+/* evaluate exact boundary data */
+/* set stage==1 to evaluate boundary data at time t, ignoring dt=0.0 */
+      twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, tstart, 0.0, kd_->amp, kd_->ph, kd_->om, kd_->pnr);
+   }
+
+/* enforce bc for the coarse 'u_' grid function */
+   bckreiss1( u_->n, u_->sol, bdataL, bdataR, kd_->betapcoeff, u_->h, kd_->bcnr_ );
+
+/* copy the 3 values in the bndry ode */
+#define uvsol(i) compute_index_1d(u_->vsol_, i)
+#define cvsol(i) compute_index_1d(gf_->vsol_, i)
+   for (i=1; i<=3; i++)
+      uvsol(i) = cvsol(i);
+#undef uvsol
+#undef cvsol
+   
+/* make the fine grid function useful outside this routine */   
+   *fu_handle = u_;
+
+
+   return 0;
+}
+
+
