@@ -24,7 +24,9 @@ explicit_rk4_stepper(kreiss_solver *kd_, double t, double tend, double accuracy,
 /* get the time-step from tend and t */
    dt = tend - t;
    
+#ifdef HD_DEBUG
    printf("Explict RK4 stepper: t=%e, dt=%e, h=%e, n=%i\n", t, dt, gf_->h, gf_->n);
+#endif
 
 /* ! boundary values */
    for (i=1; i<=3; i++)

@@ -2,8 +2,6 @@
 #include <math.h>
 #include "kreiss_data.h"
 
-#define MY_EPS 1e-12
-
 /**< Initialize a warp_Vector function on finest temporal grid*/
 int
 init_grid_fcn(kreiss_solver *kd_, double t, grid_fcn **u_handle)
@@ -29,11 +27,17 @@ init_grid_fcn(kreiss_solver *kd_, double t, grid_fcn **u_handle)
 /* initial conditions */
    if (fabs(t - kd_->tstart) < MY_EPS)
    {
+#ifdef HD_DEBUG
+      printf("Init: assigning initial data at t=tstart=%e\n", t);
+#endif
       exact1( u_->n, u_->sol, u_->h, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr );
       bdata(u_->vsol_, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr);
    }
    else /* set the grid function to zero, but could assign random values instead */
    {
+#ifdef HD_DEBUG
+      printf("Init: assigning zero grid function at t=%e\n", t);
+#endif
       for (i=0; i< u_->n+2; i++)
          u_->sol[i] = 0;
 
@@ -297,10 +301,14 @@ save_grid_fcn(kreiss_solver *kd_,
    {
      MPI_Comm_rank(comm, &myid);
    
+#ifdef HD_DEBUG
      printf("Inside save_grid_fcn, myRank=%i, t=%e, done-flag=%i\n", myid, t, doneflag);
+#endif   
      if (fabs(t-kd_->tstop)<1e-12)
      {
+#ifdef HD_DEBUG
        printf("...copying the final solution at t=%e\n", t);
+#endif
       
 /* is there a previously saved solution that needs to be de-allocated? */
        if (kd_->sol_copy != NULL)
@@ -420,13 +428,15 @@ gridfcn_Coarsen(kreiss_solver *kd_,
 {
    grid_fcn * u_;
    int i, nf, nc;
-   double dt_f, dt_c, bdataL, bdataR=0;
+   double dt_f, dt_c;
 
    dt_f = MAX(f_tplus - tstart, tstart - f_tminus);
    dt_c = MAX(c_tplus - tstart, tstart - c_tminus);
    
+#ifdef HD_DEBUG
    printf("Coarsen: tstart=%e, dt_f = %e, dt_c=%e, grid pts (fine)=%i\n", 
           tstart, dt_f, dt_c, gf_->n);
+#endif
    
 /* are the time steps the same??? */
    if (fabs(dt_f-dt_c)<MY_EPS)
@@ -468,21 +478,26 @@ gridfcn_Coarsen(kreiss_solver *kd_,
 /* enforce boundary conditions */
 
 #define fvsol(i) compute_index_1d(gf_->vsol_, i)
-   if (kd_->taylorbc == 3)
-   {
-/* boundary data from the ODE system */
-      bdataL = fvsol(1);
-   }
-   else
-   {
-/* evaluate exact boundary data */
-/* set stage==1 to evaluate boundary data at time t, ignoring dt=0.0 */
-      twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, tstart, 0.0, kd_->amp, kd_->ph, kd_->om, kd_->pnr);
-   }
+/*    if (kd_->taylorbc == 3) */
+/*    { */
+/* /\* boundary data from the ODE system *\/ */
+/*       bdataL = fvsol(1); */
+/*    } */
+/*    else */
+/*    { */
+/* /\* evaluate exact boundary data *\/ */
+/* /\* set stage==1 to evaluate boundary data at time t, ignoring dt=0.0 *\/ */
+/*       twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, tstart, 0.0, kd_->amp, kd_->ph, kd_->om, kd_->pnr); */
+/*    } */
 
-/* enforce bc for the coarse 'u_' grid function */
-   bckreiss1( u_->n, u_->sol, bdataL, bdataR, kd_->betapcoeff, u_->h, kd_->bcnr_ );
-   
+/* /\* enforce bc for the coarse 'u_' grid function *\/ */
+/*    bckreiss1( u_->n, u_->sol, bdataL, bdataR, kd_->betapcoeff, u_->h, kd_->bcnr_ ); */
+
+/* set 0 ghost point values */
+   u_->sol[0] = 0;
+   u_->sol[nc+1] = 0;
+
+/* should check u_->sol, esp ghost point values */
 /* copy the 3 values in the bndry ode */
 #define uvsol(i) compute_index_1d(u_->vsol_, i)
    for (i=1; i<=3; i++)
@@ -507,15 +522,16 @@ gridfcn_Refine(kreiss_solver * kd_,
                grid_fcn **fu_handle) /* handle to the fine grid function */
 {
    grid_fcn *u_;
-   int i, nc, nf;
-   double bdataL, bdataR=0;
+   int i, nc, nf, ifine, ig;
    
    double dt_f, dt_c;
    dt_f = MAX(f_tplus - tstart, tstart - f_tminus);
    dt_c = MAX(c_tplus - tstart, tstart - c_tminus);
    
+#ifdef HD_DEBUG
    printf("Refine: tstart=%e, dt_f = %e, dt_c=%e, grid pts (coarse)=%i\n", 
           tstart, dt_f, dt_c, gf_->n);
+#endif
 
 /* are the time steps the same??? */
    if (fabs(dt_f-dt_c)<MY_EPS)
@@ -556,28 +572,47 @@ gridfcn_Refine(kreiss_solver * kd_,
       u_->sol[2*i-1] = gf_->sol[i];
    }
 /* for now, do linear interpolation to define the intermediate fine grid points */
-   for (i=2; i<=nf-1; i+=2)
+   /* for (i=2; i<=nf-1; i+=2) */
+   /* { */
+   /*    u_->sol[i] = 0.5*(u_->sol[i-1] + u_->sol[i+1]); */
+   /* } */
+   for (ig=2; ig<=nc-2; ig++)
    {
-      u_->sol[i] = 0.5*(u_->sol[i-1] + u_->sol[i+1]);
+      ifine = 2*ig; /* this is the index on the fine mesh between ig and ig+1 */
+      u_->sol[ifine] = ( -gf_->sol[ig-1] - gf_->sol[ig+2] + 9.*gf_->sol[ig] + 9.*gf_->sol[ig+1] )/16.0;
    }
+
+/*! left bndry */
+   ig = 1;
+   ifine = 2*ig; /* ! this is the index on the fine mesh between the coarse points ig and ig+1*/
+   u_->sol[ifine] = ( 5.*gf_->sol[ig] + 15.*gf_->sol[ig+1] - 5.*gf_->sol[ig+2] + gf_->sol[ig+3] )/16.0;
+   
+/* ! right bndry */
+   ig = nc;
+   ifine = nf-1; /* ! this is the index on the fine mesh between the coarse points nxG and nxG-1*/
+   u_->sol[ifine] = ( 5.*gf_->sol[ig] + 15.*gf_->sol[ig-1] - 5.*gf_->sol[ig-2] + gf_->sol[ig-3] )/16.0;
    
 /* enforce boundary conditions */
 
 #define fvsol(i) compute_index_1d(gf_->vsol_, i)
-   if (kd_->taylorbc == 3)
-   {
-/* boundary data from the ODE system */
-      bdataL = fvsol(1);
-   }
-   else
-   {
-/* evaluate exact boundary data */
-/* set stage==1 to evaluate boundary data at time t, ignoring dt=0.0 */
-      twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, tstart, 0.0, kd_->amp, kd_->ph, kd_->om, kd_->pnr);
-   }
+/*    if (kd_->taylorbc == 3) */
+/*    { */
+/* /\* boundary data from the ODE system *\/ */
+/*       bdataL = fvsol(1); */
+/*    } */
+/*    else */
+/*    { */
+/* /\* evaluate exact boundary data *\/ */
+/* /\* set stage==1 to evaluate boundary data at time t, ignoring dt=0.0 *\/ */
+/*       twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, tstart, 0.0, kd_->amp, kd_->ph, kd_->om, kd_->pnr); */
+/*    } */
 
-/* enforce bc for the coarse 'u_' grid function */
-   bckreiss1( u_->n, u_->sol, bdataL, bdataR, kd_->betapcoeff, u_->h, kd_->bcnr_ );
+/* /\* enforce bc for the coarse 'u_' grid function *\/ */
+/*    bckreiss1( u_->n, u_->sol, bdataL, bdataR, kd_->betapcoeff, u_->h, kd_->bcnr_ ); */
+
+/* set 0 ghost point values */
+   u_->sol[0] = 0;
+   u_->sol[nf+1] = 0;
 
 /* copy the 3 values in the bndry ode */
 #define uvsol(i) compute_index_1d(u_->vsol_, i)
@@ -589,7 +624,6 @@ gridfcn_Refine(kreiss_solver * kd_,
    
 /* make the fine grid function useful outside this routine */   
    *fu_handle = u_;
-
 
    return 0;
 }

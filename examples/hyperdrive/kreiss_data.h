@@ -4,6 +4,11 @@
 #include "c_array.h"
 #include "warp.h"
 
+#define MY_EPS 1e-12
+
+/* define HD_DEBUG to get printouts from various user defined functions*/
+#define HD_DEBUG
+
 typedef struct _warp_Vector_struct
 {
    double *sol;
@@ -35,7 +40,7 @@ typedef struct _warp_App_struct
    double *eval, *current, *rhs, *force;   /* grid function workspace variables */
 
 /* warp specific stuff */
-   grid_fcn *sol_copy; /* assigned by the callcack routine save_grid_fcn() */
+   grid_fcn *sol_copy; /* assigned by the call-back routine save_grid_fcn() */
    double t_copy;
    
    int write; /* flag to tell warp if it should save grid functions to file */

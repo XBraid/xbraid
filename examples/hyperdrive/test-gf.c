@@ -36,33 +36,32 @@ int main(int argc, char ** argv)
    
    double h, cfl, bdataL, bdataR;
    double L, l2, li, tfinal;
+   double t0, dtf, dtc;
+   
    double amp, ph, om;
    
    int nstepsset, tfinalset, arg_index, print_usage=0, myid=0;
 
-   FILE *eun;
    
    kreiss_solver *kd_ = NULL;
-   grid_fcn *gf_ = NULL;
+   grid_fcn *gf_ = NULL, *coarse_gf_ = NULL, *fine_gf_ = NULL;
 
 /* from drive-05.c */
-   int i, level;
+   int i;
 
-   warp_Core  core;
+/*   warp_Core  core;*/
 /* my_App is called kreiss_solver, app = kd_ */
 /*   my_App    *app; */
    int        max_levels;
-   int        scoarsen=1;
    int        nrelax, nrelax0;
    double     tol;
    int        cfactor, cfactor0;
    int        max_iter;
    int        fmg;
 
-   MPI_Comm    comm, comm_t; /* no spatial MPI decomposition */
-   int         num_procs;
+   /* MPI_Comm    comm, comm_t; /\* no spatial MPI decomposition *\/ */
+   /* int         num_procs; */
    /* int         xcolor, tcolor; */
-   double      mystarttime, myendtime, mytime;
 
    /* We consider a 2D problem. */
    /* int ndim = 2; */
@@ -84,11 +83,11 @@ int main(int argc, char ** argv)
    int write, vis;
 
    /* Initialize MPI */
-   MPI_Init(&argc, &argv);
+   /* MPI_Init(&argc, &argv); */
       
    /* Default parameters. */
-   comm                = MPI_COMM_WORLD;
-   comm_t              = comm;
+   /* comm                = MPI_COMM_WORLD; */
+   /* comm_t              = comm; */
    max_levels          = 2; /* AP changed from 1 */
    nrelax              = 1;
    nrelax0             = -1;
@@ -115,8 +114,8 @@ int main(int argc, char ** argv)
    write               = 0;
    vis                 = 0;
 
-   MPI_Comm_rank( comm, &myid );
-   MPI_Comm_size( comm, &num_procs );
+   /* MPI_Comm_rank( comm, &myid ); */
+   /* MPI_Comm_size( comm, &num_procs ); */
 
 /* from kreiss.c */
 /* Default problem parameters */
@@ -212,19 +211,14 @@ int main(int argc, char ** argv)
       exit(-1);
    }
       
-/* open file for saving solution error data */
-   eun = fopen("err.dat","w");
-
 /* setup solver meta-data */
    kd_ = malloc(sizeof(kreiss_solver));
    init_kreiss_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, kd_);
    
-/* create solution vector */
-   /* init_grid_fcn(kd_, 0.0, &gf_); */
-
 #define bcnr(i) compute_index_1d(kd_->bcnr_, i)    
 
    printf("------------------------------\n");
+   printf("Testing init, coarsen and refine routines...\n");
    printf("Problem number (pnr): %i\n", kd_->pnr);
    printf("Boundary treatment: bcnr(left, right): %i, %i\n", bcnr(1), bcnr(2));
    printf("Treatment of time-dependent bndry data: %i\n", kd_->taylorbc);
@@ -233,91 +227,38 @@ int main(int argc, char ** argv)
    printf("Finest grid has spacing h=%e with n=%i grid points\n", kd_->h_fine, kd_->n_fine);
    printf("------------------------------\n");
 
-/* Start timer. */
-   mystarttime = MPI_Wtime();
+/* Plan: */
+/* 1) call init_grid_fcn() for time t=0 to define a grid function on the finest grid */
+   t0 = kd_->tstart;
+   init_grid_fcn(kd_, t0, &gf_);
 
-/* nt = nsteps : number of time steps */
-   warp_Init(comm, comm_t, kd_->tstart, kd_->tstop, kd_->nsteps, kd_,
-             explicit_rk4_stepper, init_grid_fcn, copy_grid_fcn, free_grid_fcn, sum_grid_fcn, dot_grid_fcn, 
-             save_grid_fcn, gridfcn_BufSize, gridfcn_BufPack, gridfcn_BufUnpack,
-             &core);
-
-   warp_SetLoosexTol( core, 0, tol_x[0] );
-   warp_SetLoosexTol( core, 1, tol_x_coarse );
-
-   warp_SetTightxTol( core, 0, tol_x[1] );
-
-/* set max number of MG levels */
-   warp_SetMaxLevels( core, max_levels );
-
-   warp_SetNRelax(core, -1, nrelax);
-   if (nrelax0 > -1)
-   {
-      warp_SetNRelax(core,  0, nrelax0);
-   }
-
-   warp_SetRelTol(core, tol);
-   /*warp_SetAbsTol(core, tol*sqrt(px*nlx*py*nly*(nt+1)) );*/
-   /* warp_SetAbsTol(core, tol/sqrt(dx*dy*dt)); */
-
-/* AP: this is probably related to grid coarsening in time */
-   warp_SetCFactor(core, -1, cfactor);
-   if( cfactor0 > -1 ){
-      /* Use cfactor0 on all levels until there are < cfactor0 points
-       * on each processor. */
-      level = (int) (log10((nsteps + 1) / pt) / log10(cfactor0));
-      for( i = 0; i < level; i++ )
-         warp_SetCFactor(core,  i, cfactor0);
-   }
+/* 2) call gridfcn_Coarsen() to coarsen to define a coarse version of that grid function */
+   dtf = kd_->dt;
+   dtc = 2*dtf;
+   gridfcn_Coarsen(kd_, t0, t0, t0+dtf, t0, t0+dtc, gf_, &coarse_gf_);
    
-   warp_SetMaxIter(core, max_iter);
-   if (fmg)
-   {
-      warp_SetFMG(core);
-   }
-   
-/* this is where the coarsen and refine routines are defined */
-   if (scoarsen)
-   {
-      warp_SetSpatialCoarsen(core, gridfcn_Coarsen);
-      warp_SetSpatialRefine(core, gridfcn_Refine);
-   }
-   
-/* control how often my write routine is called. How is this supposed to work??? */
-   warp_SetWriteLevel(core, 1);
-   
+/* 3) call gridfcn_Refine() to refine the coarsened grid function and compare to the original function */
+   gridfcn_Refine(kd_, t0, t0, t0+dtf, t0, t0+dtc, coarse_gf_, &fine_gf_);
 
-   warp_Drive(core);
-
-   /* Stop timer. */
-   myendtime = MPI_Wtime();
-   mytime    = myendtime - mystarttime;
-
-   warp_PrintStats(core);
-
-/* my stuff... */
    printf("------------------------------\n");
-   printf("Time-stepping completed. Solved to time t: %e\n", kd_->tstop);
+/* evaluate interpolation error */
+#define SQR(x) ((x)*(x))
+   li=0;
+   l2=0;
+   for (i=1; i<=gf_->n; i++)
+   {
+      l2 += SQR(gf_->sol[i] - fine_gf_->sol[i]);
+      if (fabs(gf_->sol[i] - fine_gf_->sol[i]) > li)
+         li = fabs(gf_->sol[i] - fine_gf_->sol[i]);
+   }
+   l2 = sqrt(l2/gf_->n);
+   
+   printf("Difference (I - PR)u: l2 = %e, linf = %e\n", l2, li);
 
 /* ! evaluate solution error, stick exact solution in kd_ workspace array */
    exact1( kd_->n_fine, kd_->current, kd_->h_fine, kd_->amp, kd_->ph, kd_->om, kd_->tstop, kd_->pnr );
 /* get exact bndry data (bdataL) */
    twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, kd_->tstop, kd_->dt, kd_->amp, kd_->ph, kd_->om, kd_->pnr);
-
-   if (kd_->sol_copy)
-   {
-      
-/*  get a pointer to the final solution from the kreiss_solver structure */
-      gf_ = kd_->sol_copy;
-      evalerr1( gf_->n, gf_->sol, kd_->current, &l2, &li, gf_->h );
-
-      printf("------------------------------\n");
-   
-      printf("Solution error in maximum norm, bndry error\n");
-   
-#define vsol(i) compute_index_1d(gf_->vsol_, i)   
-      printf("time: %e, sol-err: %e, bndry-err: %e\n", kd_->tstop, li, fabs(bdataL-vsol(1)));
-      printf("------------------------------\n");
 
 /*   printf("Saving ...\n");*/
     /* open(21,file='sol.bin',form='unformatted') */
@@ -325,7 +266,6 @@ int main(int argc, char ** argv)
     /* close(21) */
 /*   printf("done.\n");*/
 /*   printf("------------------------------\n");*/
-   }
    
 }
 
