@@ -287,7 +287,9 @@ warp_Drive(warp_Core  core)
                   printf("  Warp || r_%d || = %e\n", iter, rnorm);
                }
 
-               if (((rnorm < tol) && (_warp_CoreElt(core, accuracy[0].tight_used) == 1)) || (iter == max_iter-1))
+               if ( ((rnorm < tol) && (_warp_CoreElt(core, accuracy[0].tight_used) == 1)) || 
+                    (rnorm == 0.0) ||
+                    (iter == max_iter-1) )
                {
                   done = 1;
                }

@@ -30,6 +30,7 @@ endif
 HOSTNAME := $(shell hostname)
 
 ifeq ($(findstring tux343,$(HOSTNAME)),tux343)
+	CC = mpicc
 	MPICC = mpicc
 	MPICXX = mpiCC
 	LFLAGS = -lm
