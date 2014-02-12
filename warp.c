@@ -710,7 +710,7 @@ warp_TestInitWrite( warp_App              app,
    _warp_ParFprintfFlush(stdout, header, message, myid_x);
    sprintf(message, "u = init(t=%1.2e)\n", t);
    _warp_ParFprintfFlush(stdout, header, message, myid_x);
-   init(app, 0., &u);
+   init(app, t, &u);
 
    sprintf(message, "write(u) \n");
    _warp_ParFprintfFlush(stdout, header, message, myid_x);
@@ -760,7 +760,7 @@ warp_TestClone( warp_App              app,
    _warp_ParFprintfFlush(stdout, header, message, myid_x);
    sprintf(message, "u = init(t=%1.2e)\n", t);
    _warp_ParFprintfFlush(stdout, header, message, myid_x);
-   init(app, 0., &u);
+   init(app, t, &u);
 
    sprintf(message, "v = clone(u)\n");
    _warp_ParFprintfFlush(stdout, header, message, myid_x);
@@ -825,7 +825,7 @@ warp_TestSum( warp_App              app,
    _warp_ParFprintfFlush(stdout, header, message, myid_x);
    sprintf(message, "u = init(t=%1.2e)\n", t);
    _warp_ParFprintfFlush(stdout, header, message, myid_x);
-   init(app, 0., &u);
+   init(app, t, &u);
 
    sprintf(message, "v = clone(u)\n");
    _warp_ParFprintfFlush(stdout, header, message, myid_x);
@@ -910,7 +910,7 @@ warp_TestDot( warp_App              app,
    _warp_ParFprintfFlush(stdout, header, message, myid_x);
    sprintf(message, "u = init(t=%1.2e)\n", t);
    _warp_ParFprintfFlush(stdout, header, message, myid_x);
-   init(app, 0., &u);
+   init(app, t, &u);
 
    sprintf(message, "v = clone(u)\n");
    _warp_ParFprintfFlush(stdout, header, message, myid_x);
@@ -1050,6 +1050,92 @@ warp_TestDot( warp_App              app,
    _warp_ParFprintfFlush(stdout, header, message, myid_x);
    free(app, w);
 
+   sprintf(message, "Finished\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+
+   return 0;
+}
+
+warp_Int
+warp_TestBuf( warp_App              app,
+              MPI_Comm              comm_x,
+              warp_Real             t,
+              warp_PtFcnInit        init,
+              warp_PtFcnFree        free,
+              warp_PtFcnSum         sum,  
+              warp_PtFcnDot         dot,
+              warp_PtFcnBufSize     bufsize,
+              warp_PtFcnBufPack     bufpack,
+              warp_PtFcnBufUnpack   bufunpack,
+              warp_Int             *correct)
+{   
+   warp_Vector  u ;
+   warp_Vector  v ;
+   warp_Real    result1;
+   warp_Int     myid_x, size;
+   void        *buffer;
+   char         header[255];
+   char         message[255];
+   double       wiggle = 1e-12;
+   
+   MPI_Comm_rank( comm_x, &myid_x );
+
+   /* Initialize the correct flag */
+   *correct = 1;
+
+   /* Print intro */
+   sprintf(header, "\nStarting warp_TestBuf\n\n");
+   _warp_ParFprintfFlush(stdout, "", header, myid_x);
+   
+   /* Test 1 */
+   sprintf(header,  "   warp_TestBuf:   ");
+   sprintf(message, "Starting Test 1\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sprintf(message, "u = init(t=%1.2e)\n", t);
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   init(app, t, &u);
+
+   sprintf(message, "s = bufsize()\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   bufsize(app, &size);
+   
+   sprintf(message, "buffer = malloc(size)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   buffer = malloc(size);
+
+   sprintf(message, "buffer = bufpack(u)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   bufpack(app, u, buffer);
+
+   sprintf(message, "v = bufunpack(buffer)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   bufunpack(app, buffer, &v);
+
+   sprintf(message, "v <-- u - v \n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sum(app, 1.0, u, -1.0, v); 
+
+   sprintf(message, "dot(v,v) \n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   dot(app, v, v, &result1);
+   if( fabs(result1) > wiggle)
+   {
+      *correct = 0;
+   }
+   sprintf(message, "check output:     dot(v,v) = %1.2e  \n", result1);
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sprintf(message, "expected output:  dot(v,v) = 0.0 \n\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   
+   /* Free variables */
+   sprintf(message, "free(u)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   free(app, u);
+
+   sprintf(message, "free(v)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   free(app, v);
+   
    sprintf(message, "Finished\n");
    _warp_ParFprintfFlush(stdout, header, message, myid_x);
 
