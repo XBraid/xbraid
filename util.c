@@ -91,4 +91,22 @@ _warp_SetAccuracy( warp_Real   rnorm,
    return _warp_error_flag;
 }
 
+warp_Int
+_warp_ParFprintfFlush(FILE * file, 
+                      char * string1, 
+                      char * string2,
+                      warp_Int myid )
+{
+   char           message[255];
+
+   if (myid == 0)
+   {
+      // Print string1 + string2 to file and then flush
+      sprintf(message, "%s%s", string1, string2);
+      fprintf(file, message);
+      fflush(file);
+   }
+
+   return _warp_error_flag;
+}
 

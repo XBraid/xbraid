@@ -38,5 +38,20 @@ _warp_SetAccuracy( warp_Real   rnorm,
                    warp_Real   tol,
                    warp_Real  *paccuracy );
 
+/**
+ * This is a function that allows for "sane" printing
+ * of information in parallel.  Currently, only 
+ * myid = 0 prints, but this can be updated as needs change.
+ *
+ * Concatenate string1 and string2, print to file,
+ * and then flush the file stream.  string1 + string2
+ * must be less than 255 characters.
+ **/
+warp_Int
+_warp_ParFprintfFlush(FILE * file, 
+                      char * string1, 
+                      char * string2,
+                      warp_Int myid );
 
 #endif
+

@@ -331,6 +331,17 @@ warp_SetWriteLevel(warp_Core  core,
                    warp_Int   write_level);
 
 /**
+ * Split MPI commworld into comm_x and comm_t, the 
+ * spatial and temporal communicators
+ **/
+warp_Int
+warp_SplitCommworld(warp_Core core,    /**< Warp Core*/
+                    warp_Int  px,      /**< Number of processors parallelizing space for a single time step*/
+                    MPI_Comm  comm_x,  /**< Spatial communicator (written as output) */
+                    MPI_Comm  comm_t   /**< Temporal communicator (written as output) */
+                    );
+
+/**
  * Return the residual for the current status object
  **/
 warp_Int
@@ -361,7 +372,50 @@ warp_GetStatusDone(warp_Status  status,
 
 
 /*--------------------------------------------------------------------------
+ * Routines for user to test interface routines
  *--------------------------------------------------------------------------*/
+
+
+warp_Int
+warp_TestInitWrite( warp_App              app,     /**< User defined App structure */
+                    MPI_Comm              comm_x,  /**< Spatial communicator (written as output) */
+                    warp_Real             t,       /**< Time value to test init with */
+                    warp_PtFcnInit        init,    /**< Initialize a warp_Vector function on finest temporal grid*/
+                    warp_PtFcnWrite       write,   /**< Write temporal state warp_Vector to screen, file, port, etc... */
+                    warp_PtFcnFree        free);   /**< Free a temporal state warp_Vector*/
+
+warp_Int
+warp_TestClone( warp_App              app,         /**< User defined App structure */
+                MPI_Comm              comm_x,      /**< Spatial communicator (written as output) */
+                warp_Real             t,           /**< Time value to test clone with  */
+                warp_PtFcnInit        init,        /**< Initialize a warp_Vector function on finest temporal grid*/
+                warp_PtFcnWrite       write,       /**< Write temporal state warp_Vector to screen, file, port, etc... */
+                warp_PtFcnFree        free,        /**< Free a temporal state warp_Vector*/
+                warp_PtFcnClone       clone);      /**< Clone a temporal state warp_Vector */
+
+
+
+warp_Int
+warp_TestSum( warp_App              app,         /**< User defined App structure */
+              MPI_Comm              comm_x,      /**< Spatial communicator (written as output) */
+              warp_Real             t,           /**< Time value to test Sum with  (used to initialize the vectors*/
+              warp_PtFcnInit        init,        /**< Initialize a warp_Vector function on finest temporal grid*/
+              warp_PtFcnWrite       write,       /**< Write temporal state warp_Vector to screen, file, port, etc... */
+              warp_PtFcnFree        free,        /**< Free a temporal state warp_Vector*/
+              warp_PtFcnClone       clone,       /**< Clone a temporal state warp_Vector */
+              warp_PtFcnSum         sum);        /**< Compute vector sum of two temporal states*/
+
+warp_Int
+warp_TestDot( warp_App              app,         /**< User defined App structure */
+              MPI_Comm              comm_x,      /**< Spatial communicator (written as output) */
+              warp_Real             t,           /**< Time value to test Dot with  (used to initialize the vectors*/
+              warp_PtFcnInit        init,        /**< Initialize a warp_Vector function on finest temporal grid*/
+              warp_PtFcnFree        free,        /**< Free a temporal state warp_Vector*/
+              warp_PtFcnClone       clone,       /**< Clone a temporal state warp_Vector */
+              warp_PtFcnSum         sum,         /**< Compute vector sum of two temporal states*/
+              warp_PtFcnDot         dot,         /**< Compute dot product of two temporal states*/
+              warp_Int             *correct);    /**< Boolean describing whether all the tests passed*/  
+
 
 #ifdef __cplusplus
 }

@@ -488,6 +488,30 @@ warp_SetWriteLevel(warp_Core  core,
    return _warp_error_flag;
 }
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
+warp_SplitCommworld(warp_Core core,
+                    warp_Int  px,
+                    MPI_Comm  comm_x,
+                    MPI_Comm  comm_t)
+{
+   MPI_Comm comm_world =_warp_CoreElt(core, comm_world);
+   warp_Int myid, xcolor, tcolor;
+
+   /* Create communicators for the time and space dimensions */
+   /* The communicators are based on colors and keys (= myid) */
+   MPI_Comm_rank( comm_world, &myid );
+   xcolor = myid / px;
+   tcolor = myid % px;
+
+   MPI_Comm_split( comm_world, xcolor, myid, &comm_x );
+   MPI_Comm_split( comm_world, tcolor, myid, &comm_t );
+
+   return _warp_error_flag;
+}
+
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
@@ -652,6 +676,384 @@ warp_GetStatusDone(warp_Status  status,
 {
    *done_ptr = _warp_StatusElt(status, done);
    return _warp_error_flag;
+}
+
+
+/*--------------------------------------------------------------------------
+ * Run some simple tests on the init, write and free routines 
+ *--------------------------------------------------------------------------*/
+warp_Int
+warp_TestInitWrite( warp_App              app, 
+                    MPI_Comm              comm_x,
+                    warp_Real             t,
+                    warp_PtFcnInit        init, 
+                    warp_PtFcnWrite       write,
+                    warp_PtFcnFree        free)
+{
+   
+   warp_Vector    u ;
+   warp_Status    status;
+   warp_Int       myid_x;
+   char           header[255];
+   char           message[255];
+   
+   _warp_InitStatus( 0.0, 0, 0, 0, &status);
+   MPI_Comm_rank( comm_x, &myid_x );
+
+   /* Print intro */
+   sprintf(header, "\nStarting warp_TestInitWrite\n\n");
+   _warp_ParFprintfFlush(stdout, "", header, myid_x);
+
+   /* Test */
+   sprintf(header,  "   warp_TestInitWrite:   ");
+   sprintf(message, "Starting Test 1\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sprintf(message, "u = init(t=%1.2e)\n", t);
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   init(app, 0., &u);
+
+   sprintf(message, "write(u) \n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   write(app, 0.0, status, u);
+
+   sprintf(message, "check output: wrote u for initial condition at t=%1.2e. \n\n",t);
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+
+   /* Free variables */
+   sprintf(message, "free(u) \n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   free(app, u);
+   
+   sprintf(message, "Finished\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+
+   return 0;
+}
+
+warp_Int
+warp_TestClone( warp_App              app,  
+                MPI_Comm              comm_x,
+                warp_Real             t,
+                warp_PtFcnInit        init, 
+                warp_PtFcnWrite       write,
+                warp_PtFcnFree        free,
+                warp_PtFcnClone       clone)
+{
+   
+   warp_Vector  u;
+   warp_Vector  v;
+   warp_Status  status;
+   warp_Int     myid_x;
+   char         header[255];
+   char         message[255];
+   
+   _warp_InitStatus( 0.0, 0, 0, 0, &status);
+   MPI_Comm_rank( comm_x, &myid_x );
+
+   /* Print intro */
+   sprintf(header, "\nStarting warp_TestClone\n\n");
+   _warp_ParFprintfFlush(stdout, "", header, myid_x);
+
+   /* Test 1 */
+   sprintf(header,  "   warp_TestClone:   ");
+   sprintf(message, "Starting Test 1\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sprintf(message, "u = init(t=%1.2e)\n", t);
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   init(app, 0., &u);
+
+   sprintf(message, "v = clone(u)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   clone(app, u, &v);
+   
+   sprintf(message, "write(u)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   write(app, 0.0, status, u);
+
+   sprintf(message, "write(v)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   write(app, 0.0, status, v);
+   
+   sprintf(message, "check output:  wrote u and v for initial condition at t=%1.2e.\n\n", t);
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   
+   /* Free variables */
+   sprintf(message, "free(u)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   free(app, u);
+
+   sprintf(message, "free(v)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   free(app, v);
+
+   sprintf(message, "Finished\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   
+   return 0;
+}
+
+
+
+warp_Int
+warp_TestSum( warp_App              app, 
+              MPI_Comm              comm_x,
+              warp_Real             t,
+              warp_PtFcnInit        init, 
+              warp_PtFcnWrite       write,
+              warp_PtFcnFree        free, 
+              warp_PtFcnClone       clone,
+              warp_PtFcnSum         sum )  
+{
+   
+   warp_Vector  u;
+   warp_Vector  v;
+   warp_Status  status;
+   warp_Int     myid_x;
+   char         header[255];
+   char         message[255];
+   
+   _warp_InitStatus( 0.0, 0, 0, 0, &status);
+   MPI_Comm_rank( comm_x, &myid_x );
+
+   /* Print intro */
+   sprintf(header, "\nStarting warp_TestSum\n\n");
+   _warp_ParFprintfFlush(stdout, "", header, myid_x);
+   
+   /* Test 1 */
+   sprintf(header,  "   warp_TestSum:   ");
+   sprintf(message, "Starting Test 1\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sprintf(message, "u = init(t=%1.2e)\n", t);
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   init(app, 0., &u);
+
+   sprintf(message, "v = clone(u)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   clone(app, u, &v);
+
+   sprintf(message, "v <-- u - v\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sum(app, 1.0, u, -1.0, v); 
+
+   sprintf(message, "write(v)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   write(app, 0.0, status, v);
+   
+   sprintf(message, "check output:  v should equal the zero vector\n\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   
+   /* Test 2 */
+   sprintf(message, "Starting Test 2\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sprintf(message, "v <-- 2*u + v\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sum(app, 2.0, u, 1.0, v); 
+
+   sprintf(message, "write(v)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   write(app, 0.0, status, v);
+   
+   sprintf(message, "write(u)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   write(app, 0.0, status, u);
+   
+   sprintf(message, "check output:  v should equal 2*u \n\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+
+   /* Free variables */
+   sprintf(message, "free(u)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   free(app, u);
+
+   sprintf(message, "free(v)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   free(app, v);
+
+   sprintf(message, "Finished\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+
+   return 0;
+}
+
+warp_Int
+warp_TestDot( warp_App              app, 
+              MPI_Comm              comm_x,
+              warp_Real             t,
+              warp_PtFcnInit        init, 
+              warp_PtFcnFree        free, 
+              warp_PtFcnClone       clone,
+              warp_PtFcnSum         sum,  
+              warp_PtFcnDot         dot,
+              warp_Int             *correct)  
+{   
+   warp_Vector  u ;
+   warp_Vector  v ;
+   warp_Vector  w ;
+   warp_Real    result1, result2, result3;
+   warp_Int     myid_x;
+   char         header[255];
+   char         message[255];
+   double       wiggle = 1e-12;
+   
+   MPI_Comm_rank( comm_x, &myid_x );
+
+   /* Initialize the correct flag */
+   *correct = 1;
+
+   /* Print intro */
+   sprintf(header, "\nStarting warp_TestDot\n\n");
+   _warp_ParFprintfFlush(stdout, "", header, myid_x);
+   
+   /* Test 1 */
+   sprintf(header,  "   warp_TestDot:   ");
+   sprintf(message, "Starting Test 1\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sprintf(message, "u = init(t=%1.2e)\n", t);
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   init(app, 0., &u);
+
+   sprintf(message, "v = clone(u)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   clone(app, u, &v);
+
+   sprintf(message, "v <-- u - v \n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sum(app, 1.0, u, -1.0, v); 
+
+   sprintf(message, "dot(v,v) \n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   dot(app, v, v, &result1);
+   if( fabs(result1) > wiggle)
+   {
+      *correct = 0;
+   }
+   sprintf(message, "check output:     dot(v,v) = %1.2e  \n", result1);
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sprintf(message, "expected output:  dot(v,v) = 0.0 \n\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   
+
+   /* Test 2 */
+   sprintf(message, "Starting Test 2\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sprintf(message, "w = clone(u)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   clone(app, u, &w);
+
+   sprintf(message, "w <-- u + w \n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sum(app, 1.0, u, 1.0, w); 
+
+   sprintf(message, "dot(u,u)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   dot(app, u, u, &result1);
+   
+   sprintf(message, "dot(w,w)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   dot(app, w, w, &result2);
+   if( fabs(result2/result1 - 4.0) > wiggle)
+   {
+      *correct = 0;
+   }
+   sprintf(message, "check output:     dot(w,w) / dot(u,u) = %1.2e  \n", result2/result1);
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sprintf(message, "expected output:  dot(w,w) / dot(u,u) = 4.0 \n\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+
+   /* Test 3 */
+   sprintf(message, "Starting Test 3\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sprintf(message, "free(w)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   free(app, w);
+
+   sprintf(message, "w = clone(u)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   clone(app, u, &w);
+
+   sprintf(message, "w <-- 0.0*u + 0.5*w \n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sum(app, 0.0, u, 0.5, w); 
+
+   sprintf(message, "dot(u,u)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   dot(app, u, u, &result1);
+   
+   sprintf(message, "dot(w,w)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   dot(app, w, w, &result2);
+   /* Check Result */
+   if( fabs(result2/result1 - 0.25) > wiggle)
+   {
+      *correct = 0;
+   }
+   sprintf(message, "check output:     dot(w,w) / dot(u,u) = %1.2e  \n", result2/result1);
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sprintf(message, "expected output:  dot(w,w) / dot(u,u) = 0.25 \n\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+
+   /* Test 4 */
+   sprintf(message, "Starting Test 4\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sprintf(message, "free(w)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   free(app, w);
+   
+   sprintf(message, "w = clone(u)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   clone(app, u, &w);
+   
+   sprintf(message, "w <-- u + 0.5*w \n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sum(app, 1.0, u, 0.5, w); 
+
+   sprintf(message, "dot(u,u)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   dot(app, u, u, &result1);
+   
+   sprintf(message, "dot(w,u)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   dot(app, w, u, &result2);
+
+   sprintf(message, "check output:     dot(w,w) + dot(u,u) = %1.2e  \n", result2+result1);
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   
+   sprintf(message, "w <-- u + w \n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sum(app, 1.0, u, 1.0, w);   
+   
+   sprintf(message, "dot(w,u)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   dot(app, w, u, &result3);
+
+   /* Check Result */
+   if( fabs(result2 + result1 - result3)/fabs(result3) > wiggle)
+   {
+      *correct = 0;
+   }
+   sprintf(message, "check output:     dot(w,u) = %1.2e  \n", result3);
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   sprintf(message, "expected output:  dot(w,u) equals previous dot(w,w) + dot(u,u) \n\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+ 
+
+   /* Free variables */
+   sprintf(message, "free(u)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   free(app, u);
+
+   sprintf(message, "free(v)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   free(app, v);
+   
+   sprintf(message, "free(w)\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+   free(app, w);
+
+   sprintf(message, "Finished\n");
+   _warp_ParFprintfFlush(stdout, header, message, myid_x);
+
+   return 0;
 }
 
 
