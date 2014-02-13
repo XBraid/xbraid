@@ -427,8 +427,36 @@ warp_TestBuf( warp_App              app,         /**< User defined App structure
               warp_PtFcnBufSize     bufsize,     /**< Computes size for MPI buffer for one */
               warp_PtFcnBufPack     bufpack,     /**< Packs MPI buffer to contain one temporal state*/
               warp_PtFcnBufUnpack   bufunpack,   /**< Unpacks MPI buffer containing one temporal state*/
-              warp_Int             *correct);    /**< Boolean describing whether all the tests passed*/  
+              warp_Int             *correct);    /**< Boolean describing whether all the tests passed*/
 
+warp_Int
+warp_TestCoarsenRefine( warp_App          app,         /**< User defined App structure */
+                        MPI_Comm          comm_x,      /**< Spatial communicator */
+                        warp_Real         t,           /**< Time value to initialize vector */
+                        warp_Real         f_tminus,    /**< Fine time value before t, used by coarsen and 
+                                                            refine to determine appropriate coarsening and 
+                                                            refinement algorithm */
+                        warp_Real         f_tplus,     /**< Fine time value after t, used by coarsen and 
+                                                            refine to determine appropriate coarsening and 
+                                                            refinement algorithm, e.g. (f_tplus -t) equals 
+                                                            the fine delta t*/
+                        warp_Real         c_tminus,    /**< Coarse time value before t, used by coarsen 
+                                                            and refine to determine appropriate coarsening 
+                                                            and refinement algorithm */
+                        warp_Real         c_tplus,     /**< Coarse time value after t, used by coarsen and 
+                                                            refine to determine appropriate coarsening and 
+                                                            refinement algorithm, e.g. (c_tplus -t) equals 
+                                                            the coarse delta t */
+                        warp_PtFcnInit    init,        /**< Initialize a warp_Vector function on finest temporal grid*/
+                        warp_PtFcnWrite   write,       /**< Write temporal state warp_Vector to screen, file, port, etc... */
+                        warp_PtFcnFree    free,        /**< Free a temporal state warp_Vector*/
+                        warp_PtFcnClone   clone,       /**< Clone a temporal state warp_Vector */
+                        warp_PtFcnSum     sum,         /**< Compute vector sum of two temporal states*/
+                        warp_PtFcnDot     dot,         /**< Compute dot product of two temporal states*/
+                        warp_PtFcnCoarsen coarsen,     /**< Spatially coarsen a vector */
+                        warp_PtFcnRefine  refine,      /**< Spatially refine a vector */
+                        warp_Int         *correct);    /**< Boolean describing whether all the tests passed*/
+ 
              
 
 
