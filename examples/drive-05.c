@@ -3149,7 +3149,8 @@ int main (int argc, char *argv[])
       printf("\n");
       printf("Usage: %s [<options>]\n", argv[0]);
       printf("\n");
-      printf("  -run_wrapper_tests: Only run the Warp wrapper tests\n");
+      printf("  -run_wrapper_tests               : Only run the Warp wrapper tests\n");
+      printf("                                     (do not combine with temporal parallelism)\n");
       printf("  -pgrid  <px py pt>               : processors in each dimension (default: 1 1 1)\n");
       printf("  -nx  <nlx nly>                   : 2D spatial problem size of form 2^k+1, 2^k+1 (default: 17 17)\n");
       printf("  -nt  <n>                         : number of time steps (default: 32)\n"); 
@@ -3441,14 +3442,6 @@ int main (int argc, char *argv[])
      warp_TestCoarsenRefine(app, comm_x, 0.0, f_tminus, f_tplus, c_tminus, c_tplus, my_Init,
                             my_Write, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenBilinear, 
                             my_Refine, &correct);
-     c_tminus = 0.0;
-     c_tplus = 4*dt;
-     warp_TestCoarsenRefine(app, comm_x, 0.0, f_tminus, f_tplus, c_tminus, c_tplus, my_Init,
-                            my_Write, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenInjection, 
-                            my_Refine, &correct);
-     warp_TestCoarsenRefine(app, comm_x, 0.0, f_tminus, f_tplus, c_tminus, c_tplus, my_Init,
-                            my_Write, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenBilinear, 
-                            my_Refine, &correct); 
 
    }
    else

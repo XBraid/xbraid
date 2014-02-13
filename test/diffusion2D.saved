@@ -110,5 +110,272 @@ spatial problem size       : 17 x 17
   iterations           = 7
 spatial problem size       : 17 x 17
 
+# Begin Test 7
 
-
+Starting warp_TestInitWrite
+   warp_TestInitWrite:   Starting Test 1
+   warp_TestInitWrite:   u = init(t=0.00e+00)
+   warp_TestInitWrite:   write(u) 
+  my_Write() called, iter= 0, level= 0
+   warp_TestInitWrite:   check output: wrote u for initial condition at t=0.00e+00. 
+   warp_TestInitWrite:   free(u) 
+   warp_TestInitWrite:   Finished
+Starting warp_TestInitWrite
+   warp_TestInitWrite:   Starting Test 1
+   warp_TestInitWrite:   u = init(t=5.78e-03)
+   warp_TestInitWrite:   write(u) 
+   warp_TestInitWrite:   check output: wrote u for initial condition at t=5.78e-03. 
+   warp_TestInitWrite:   free(u) 
+   warp_TestInitWrite:   Finished
+Starting warp_TestClone
+   warp_TestClone:   Starting Test 1
+   warp_TestClone:   u = init(t=0.00e+00)
+   warp_TestClone:   v = clone(u)
+   warp_TestClone:   write(u)
+   warp_TestClone:   write(v)
+   warp_TestClone:   check output:  wrote u and v for initial condition at t=0.00e+00.
+   warp_TestClone:   free(u)
+   warp_TestClone:   free(v)
+   warp_TestClone:   Finished
+Starting warp_TestClone
+   warp_TestClone:   Starting Test 1
+   warp_TestClone:   u = init(t=5.78e-03)
+   warp_TestClone:   v = clone(u)
+   warp_TestClone:   write(u)
+   warp_TestClone:   write(v)
+   warp_TestClone:   check output:  wrote u and v for initial condition at t=5.78e-03.
+   warp_TestClone:   free(u)
+   warp_TestClone:   free(v)
+   warp_TestClone:   Finished
+Starting warp_TestSum
+   warp_TestSum:   Starting Test 1
+   warp_TestSum:   u = init(t=0.00e+00)
+   warp_TestSum:   v = clone(u)
+   warp_TestSum:   v = u - v
+   warp_TestSum:   write(v)
+   warp_TestSum:   check output:  v should equal the zero vector
+   warp_TestSum:   Starting Test 2
+   warp_TestSum:   v = 2*u + v
+   warp_TestSum:   write(v)
+   warp_TestSum:   write(u)
+   warp_TestSum:   check output:  v should equal 2*u 
+   warp_TestSum:   free(u)
+   warp_TestSum:   free(v)
+   warp_TestSum:   Finished
+Starting warp_TestSum
+   warp_TestSum:   Starting Test 1
+   warp_TestSum:   u = init(t=5.78e-03)
+   warp_TestSum:   v = clone(u)
+   warp_TestSum:   v = u - v
+   warp_TestSum:   write(v)
+   warp_TestSum:   check output:  v should equal the zero vector
+   warp_TestSum:   Starting Test 2
+   warp_TestSum:   v = 2*u + v
+   warp_TestSum:   write(v)
+   warp_TestSum:   write(u)
+   warp_TestSum:   check output:  v should equal 2*u 
+   warp_TestSum:   free(u)
+   warp_TestSum:   free(v)
+   warp_TestSum:   Finished
+Starting warp_TestDot
+   warp_TestDot:   Starting Test 1
+   warp_TestDot:   u = init(t=0.00e+00)
+   warp_TestDot:   dot(u,u) 
+   warp_TestDot:   v = clone(u)
+   warp_TestDot:   v = u - v 
+   warp_TestDot:   dot(v,v) 
+   warp_TestDot:   Test 1 Passed
+   warp_TestDot:   actual output:    dot(v,v) = 0.00e+00  
+   warp_TestDot:   expected output:  dot(v,v) = 0.0 
+   warp_TestDot:   Starting Test 2
+   warp_TestDot:   w = clone(u)
+   warp_TestDot:   w = u + w 
+   warp_TestDot:   dot(u,u)
+   warp_TestDot:   dot(w,w)
+   warp_TestDot:   Test 2 Passed
+   warp_TestDot:   actual output:    dot(w,w) / dot(u,u) = 2.56e+02 / 6.40e+01 = 4.00e+00 
+   warp_TestDot:   expected output:  dot(w,w) / dot(u,u) = 4.0 
+   warp_TestDot:   Starting Test 3
+   warp_TestDot:   free(w)
+   warp_TestDot:   w = clone(u)
+   warp_TestDot:   w = 0.0*u + 0.5*w 
+   warp_TestDot:   dot(u,u)
+   warp_TestDot:   dot(w,w)
+   warp_TestDot:   Test 3 Passed
+   warp_TestDot:   actual output:    dot(w,w) / dot(u,u) = 1.60e+01 / 6.40e+01 = 2.50e-01 
+   warp_TestDot:   expected output:  dot(w,w) / dot(u,u) = 0.25 
+   warp_TestDot:   Starting Test 4
+   warp_TestDot:   free(w)
+   warp_TestDot:   w = clone(u)
+   warp_TestDot:   w = u + 0.5*w 
+   warp_TestDot:   dot(u,u)
+   warp_TestDot:   dot(w,u)
+   warp_TestDot:   actual output:    dot(w,u) + dot(u,u) = 9.60e+01 + 6.40e+01 = 1.60e+02
+   warp_TestDot:   v = u + w 
+   warp_TestDot:   dot(v,u)
+   warp_TestDot:   Test 4 Passed
+   warp_TestDot:   actual output:    dot(v,u) = 1.60e+02  
+   warp_TestDot:   expected output:  dot(v,u) equals dot(w,u) + dot(u,u) 
+   warp_TestDot:   free(u)
+   warp_TestDot:   free(v)
+   warp_TestDot:   free(w)
+   warp_TestDot:   Finished, all tests passed successfully
+Starting warp_TestDot
+   warp_TestDot:   Starting Test 1
+   warp_TestDot:   u = init(t=5.78e-03)
+   warp_TestDot:   dot(u,u) 
+   warp_TestDot:   v = clone(u)
+   warp_TestDot:   v = u - v 
+   warp_TestDot:   dot(v,v) 
+   warp_TestDot:   Test 1 Passed
+   warp_TestDot:   actual output:    dot(v,v) = 0.00e+00  
+   warp_TestDot:   expected output:  dot(v,v) = 0.0 
+   warp_TestDot:   Starting Test 2
+   warp_TestDot:   w = clone(u)
+   warp_TestDot:   w = u + w 
+   warp_TestDot:   dot(u,u)
+   warp_TestDot:   dot(w,w)
+   warp_TestDot:   Test 2 Passed
+   warp_TestDot:   actual output:    dot(w,w) / dot(u,u) = 3.91e+02 / 9.77e+01 = 4.00e+00 
+   warp_TestDot:   expected output:  dot(w,w) / dot(u,u) = 4.0 
+   warp_TestDot:   Starting Test 3
+   warp_TestDot:   free(w)
+   warp_TestDot:   w = clone(u)
+   warp_TestDot:   w = 0.0*u + 0.5*w 
+   warp_TestDot:   dot(u,u)
+   warp_TestDot:   dot(w,w)
+   warp_TestDot:   Test 3 Passed
+   warp_TestDot:   actual output:    dot(w,w) / dot(u,u) = 2.44e+01 / 9.77e+01 = 2.50e-01 
+   warp_TestDot:   expected output:  dot(w,w) / dot(u,u) = 0.25 
+   warp_TestDot:   Starting Test 4
+   warp_TestDot:   free(w)
+   warp_TestDot:   w = clone(u)
+   warp_TestDot:   w = u + 0.5*w 
+   warp_TestDot:   dot(u,u)
+   warp_TestDot:   dot(w,u)
+   warp_TestDot:   actual output:    dot(w,u) + dot(u,u) = 1.47e+02 + 9.77e+01 = 2.44e+02
+   warp_TestDot:   v = u + w 
+   warp_TestDot:   dot(v,u)
+   warp_TestDot:   Test 4 Passed
+   warp_TestDot:   actual output:    dot(v,u) = 2.44e+02  
+   warp_TestDot:   expected output:  dot(v,u) equals dot(w,u) + dot(u,u) 
+   warp_TestDot:   free(u)
+   warp_TestDot:   free(v)
+   warp_TestDot:   free(w)
+   warp_TestDot:   Finished, all tests passed successfully
+Starting warp_TestBuf
+   warp_TestBuf:   Starting Test 1
+   warp_TestBuf:   u = init(t=0.00e+00)
+   warp_TestBuf:   dot(u,u) 
+   warp_TestBuf:   size = bufsize()
+   warp_TestBuf:   buffer = malloc(size)
+   warp_TestBuf:   buffer = bufpack(u, buffer))
+   warp_TestBuf:   v = bufunpack(buffer)
+   warp_TestBuf:   v = u - v 
+   warp_TestBuf:   dot(v,v) 
+   warp_TestBuf:   Test 1 Passed
+   warp_TestBuf:   actual output:    dot(v,v) = 0.00e+00  
+   warp_TestBuf:   expected output:  dot(v,v) = 0.0 
+   warp_TestBuf:   free(u)
+   warp_TestBuf:   free(v)
+   warp_TestBuf:   Finished, all tests passed successfully
+Starting warp_TestBuf
+   warp_TestBuf:   Starting Test 1
+   warp_TestBuf:   u = init(t=5.78e-03)
+   warp_TestBuf:   dot(u,u) 
+   warp_TestBuf:   size = bufsize()
+   warp_TestBuf:   buffer = malloc(size)
+   warp_TestBuf:   buffer = bufpack(u, buffer))
+   warp_TestBuf:   v = bufunpack(buffer)
+   warp_TestBuf:   v = u - v 
+   warp_TestBuf:   dot(v,v) 
+   warp_TestBuf:   Test 1 Passed
+   warp_TestBuf:   actual output:    dot(v,v) = 0.00e+00  
+   warp_TestBuf:   expected output:  dot(v,v) = 0.0 
+   warp_TestBuf:   free(u)
+   warp_TestBuf:   free(v)
+   warp_TestBuf:   Finished, all tests passed successfully
+Starting warp_TestCoarsenRefine
+   warp_TestCoarsenRefine:   Starting Test 1
+   warp_TestCoarsenRefine:   u = init(t=0.00e+00)
+   warp_TestCoarsenRefine:   dot(u,u) 
+   warp_TestCoarsenRefine:   uc = coarsen(u)
+   warp_TestCoarsenRefine:   write(uc) 
+  my_Write() called, iter= 0, level= 1
+   warp_TestCoarsenRefine:   write(u) 
+  my_Write() called, iter= 0, level= 0
+   warp_TestCoarsenRefine:   actual output:   wrote u and spatially coarsened u 
+   warp_TestCoarsenRefine:   Starting Test 2
+   warp_TestCoarsenRefine:   v = clone(u)
+   warp_TestCoarsenRefine:   vc = coarsen(v)
+   warp_TestCoarsenRefine:   wc = clone(vc)
+   warp_TestCoarsenRefine:   wc = uc - wc 
+   warp_TestCoarsenRefine:   dot(wc,wc)
+   warp_TestCoarsenRefine:   Test 2 Passed
+   warp_TestCoarsenRefine:   actual output:    dot(wc,wc) = 0.00e+00 
+   warp_TestCoarsenRefine:   expected output:  dot(wc,wc) = 0.0 
+   warp_TestCoarsenRefine:   Starting Test 3
+   warp_TestCoarsenRefine:   w = clone(u)
+   warp_TestCoarsenRefine:   free(u)
+   warp_TestCoarsenRefine:   free(v)
+   warp_TestCoarsenRefine:   v = refine(vc)
+   warp_TestCoarsenRefine:   u = refine(uc)
+   warp_TestCoarsenRefine:   v = u - v 
+   warp_TestCoarsenRefine:   dot(v,v)
+   warp_TestCoarsenRefine:   Test 3 Passed
+   warp_TestCoarsenRefine:   actual output:    dot(v,v) = 0.00e+00 
+   warp_TestCoarsenRefine:   expected output:  dot(v,v) = 0.0 
+   warp_TestCoarsenRefine:   Starting Test 4
+   warp_TestCoarsenRefine:   w = w - u 
+   warp_TestCoarsenRefine:   dot(w,w)
+   warp_TestCoarsenRefine:   actual output:    dot(w,w) = 3.50e-02 
+   warp_TestCoarsenRefine:   expected output:  For simple interpolation formulas
+   warp_TestCoarsenRefine:   free(u)
+   warp_TestCoarsenRefine:   free(v)
+   warp_TestCoarsenRefine:   free(w)
+   warp_TestCoarsenRefine:   free(uc)
+   warp_TestCoarsenRefine:   free(vc)
+   warp_TestCoarsenRefine:   free(wc)
+   warp_TestCoarsenRefine:   Finished, all tests passed successfully
+Starting warp_TestCoarsenRefine
+   warp_TestCoarsenRefine:   Starting Test 1
+   warp_TestCoarsenRefine:   u = init(t=0.00e+00)
+   warp_TestCoarsenRefine:   dot(u,u) 
+   warp_TestCoarsenRefine:   uc = coarsen(u)
+   warp_TestCoarsenRefine:   write(uc) 
+  my_Write() called, iter= 0, level= 1
+   warp_TestCoarsenRefine:   write(u) 
+  my_Write() called, iter= 0, level= 0
+   warp_TestCoarsenRefine:   actual output:   wrote u and spatially coarsened u 
+   warp_TestCoarsenRefine:   Starting Test 2
+   warp_TestCoarsenRefine:   v = clone(u)
+   warp_TestCoarsenRefine:   vc = coarsen(v)
+   warp_TestCoarsenRefine:   wc = clone(vc)
+   warp_TestCoarsenRefine:   wc = uc - wc 
+   warp_TestCoarsenRefine:   dot(wc,wc)
+   warp_TestCoarsenRefine:   Test 2 Passed
+   warp_TestCoarsenRefine:   actual output:    dot(wc,wc) = 0.00e+00 
+   warp_TestCoarsenRefine:   expected output:  dot(wc,wc) = 0.0 
+   warp_TestCoarsenRefine:   Starting Test 3
+   warp_TestCoarsenRefine:   w = clone(u)
+   warp_TestCoarsenRefine:   free(u)
+   warp_TestCoarsenRefine:   free(v)
+   warp_TestCoarsenRefine:   v = refine(vc)
+   warp_TestCoarsenRefine:   u = refine(uc)
+   warp_TestCoarsenRefine:   v = u - v 
+   warp_TestCoarsenRefine:   dot(v,v)
+   warp_TestCoarsenRefine:   Test 3 Passed
+   warp_TestCoarsenRefine:   actual output:    dot(v,v) = 0.00e+00 
+   warp_TestCoarsenRefine:   expected output:  dot(v,v) = 0.0 
+   warp_TestCoarsenRefine:   Starting Test 4
+   warp_TestCoarsenRefine:   w = w - u 
+   warp_TestCoarsenRefine:   dot(w,w)
+   warp_TestCoarsenRefine:   actual output:    dot(w,w) = 1.81e-01 
+   warp_TestCoarsenRefine:   expected output:  For simple interpolation formulas
+   warp_TestCoarsenRefine:   free(u)
+   warp_TestCoarsenRefine:   free(v)
+   warp_TestCoarsenRefine:   free(w)
+   warp_TestCoarsenRefine:   free(uc)
+   warp_TestCoarsenRefine:   free(vc)
+   warp_TestCoarsenRefine:   free(wc)
+   warp_TestCoarsenRefine:   Finished, all tests passed successfully

@@ -382,8 +382,8 @@ warp_TestInitWrite( warp_App              app,     /**< User defined App structu
                     warp_Real             t,       /**< Time value to test init with */
                     warp_PtFcnInit        init,    /**< Initialize a warp_Vector function on finest temporal grid*/
                     warp_PtFcnWrite       write,   /**< Write temporal state warp_Vector to screen, file, port, etc... */
-                    warp_PtFcnFree        free);   /**< Free a temporal state warp_Vector*/
-
+                    warp_PtFcnFree        free     /**< Free a temporal state warp_Vector*/
+                    );
 warp_Int
 warp_TestClone( warp_App              app,         /**< User defined App structure */
                 MPI_Comm              comm_x,      /**< Spatial communicator */
@@ -391,7 +391,8 @@ warp_TestClone( warp_App              app,         /**< User defined App structu
                 warp_PtFcnInit        init,        /**< Initialize a warp_Vector function on finest temporal grid*/
                 warp_PtFcnWrite       write,       /**< Write temporal state warp_Vector to screen, file, port, etc... */
                 warp_PtFcnFree        free,        /**< Free a temporal state warp_Vector*/
-                warp_PtFcnClone       clone);      /**< Clone a temporal state warp_Vector */
+                warp_PtFcnClone       clone        /**< Clone a temporal state warp_Vector */
+                );
 
 
 
@@ -403,7 +404,8 @@ warp_TestSum( warp_App              app,         /**< User defined App structure
               warp_PtFcnWrite       write,       /**< Write temporal state warp_Vector to screen, file, port, etc... */
               warp_PtFcnFree        free,        /**< Free a temporal state warp_Vector*/
               warp_PtFcnClone       clone,       /**< Clone a temporal state warp_Vector */
-              warp_PtFcnSum         sum);        /**< Compute vector sum of two temporal states*/
+              warp_PtFcnSum         sum          /**< Compute vector sum of two temporal states*/
+              );
 
 warp_Int
 warp_TestDot( warp_App              app,         /**< User defined App structure */
@@ -414,7 +416,8 @@ warp_TestDot( warp_App              app,         /**< User defined App structure
               warp_PtFcnClone       clone,       /**< Clone a temporal state warp_Vector */
               warp_PtFcnSum         sum,         /**< Compute vector sum of two temporal states*/
               warp_PtFcnDot         dot,         /**< Compute dot product of two temporal states*/
-              warp_Int             *correct);    /**< Boolean describing whether all the tests passed*/
+              warp_Int             *correct      /**< Boolean describing whether all the tests passed*/
+              );
               
 warp_Int
 warp_TestBuf( warp_App              app,         /**< User defined App structure */
@@ -427,7 +430,8 @@ warp_TestBuf( warp_App              app,         /**< User defined App structure
               warp_PtFcnBufSize     bufsize,     /**< Computes size for MPI buffer for one */
               warp_PtFcnBufPack     bufpack,     /**< Packs MPI buffer to contain one temporal state*/
               warp_PtFcnBufUnpack   bufunpack,   /**< Unpacks MPI buffer containing one temporal state*/
-              warp_Int             *correct);    /**< Boolean describing whether all the tests passed*/
+              warp_Int             *correct      /**< Boolean describing whether all the tests passed*/
+              );
 
 warp_Int
 warp_TestCoarsenRefine( warp_App          app,         /**< User defined App structure */
@@ -455,7 +459,8 @@ warp_TestCoarsenRefine( warp_App          app,         /**< User defined App str
                         warp_PtFcnDot     dot,         /**< Compute dot product of two temporal states*/
                         warp_PtFcnCoarsen coarsen,     /**< Spatially coarsen a vector */
                         warp_PtFcnRefine  refine,      /**< Spatially refine a vector */
-                        warp_Int         *correct);    /**< Boolean describing whether all the tests passed*/
+                        warp_Int         *correct      /**< Boolean describing whether all the tests passed*/
+                        );
  
              
 
