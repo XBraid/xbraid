@@ -1,7 +1,7 @@
-#include "kreiss_data.h"
+#include "advect_data.h"
 
 int
-explicit_rk4_stepper(kreiss_solver *kd_, double t, double tend, double accuracy, grid_fcn *gf_, 
+explicit_rk4_stepper(advection_setup *kd_, double t, double tend, double accuracy, grid_fcn *gf_, 
                      int *rfact_)
 {
 /* this is a 'my_Phi()' routine, where kd_ is of type 'my_App' and gf_ is of type 'my_Vector' */
@@ -65,10 +65,10 @@ explicit_rk4_stepper(kreiss_solver *kd_, double t, double tend, double accuracy,
       }
 
 /* enforce bc for the 'eval' grid function */
-      bckreiss1( gf_->n, kd_->eval, bdataL, bdataR, kd_->betapcoeff, gf_->h, kd_->bcnr_ );
+      assign_gp( gf_->n, kd_->eval, bdataL, bdataR, kd_->betapcoeff, gf_->h, kd_->bcnr_ );
 
 /* evaluate dwdt */
-      dwdtkreiss1( gf_->n, kd_->eval, kd_->rhs, gf_->h, kd_->nb, kd_->wb, kd_->bop_, kd_->bope_, kd_->gh );
+      dwdt( gf_->n, kd_->eval, kd_->rhs, gf_->h, kd_->nb, kd_->wb, kd_->bop_, kd_->bope_, kd_->gh );
          
       twforce1( gf_->n, kd_->force, tstage, gf_->h, kd_->amp, kd_->ph, kd_->om, kd_->pnr, kd_->L );
 

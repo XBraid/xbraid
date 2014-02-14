@@ -1,10 +1,10 @@
 #include <stdlib.h>
 #include <math.h>
-#include "kreiss_data.h"
+#include "advect_data.h"
 
 /**< Initialize a warp_Vector function on finest temporal grid*/
 int
-init_grid_fcn(kreiss_solver *kd_, double t, grid_fcn **u_handle)
+init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle)
 {
    grid_fcn * u_;
    int i;
@@ -55,8 +55,9 @@ init_grid_fcn(kreiss_solver *kd_, double t, grid_fcn **u_handle)
 }
 
 void
-init_kreiss_solver(double h, double amp, double ph, double om, int pnr, int taylorbc, 
-                   double L, double cfl, int nstepsset, int nsteps, double tfinal, kreiss_solver *kd_)
+init_advection_solver(double h, double amp, double ph, double om, int pnr, int taylorbc, 
+                      double L, double cfl, int nstepsset, int nsteps, double tfinal, 
+                      advection_setup *kd_)
 {
    double mxeg;
    int n;
@@ -160,7 +161,7 @@ init_kreiss_solver(double h, double amp, double ph, double om, int pnr, int tayl
  * Create a a copy of a vector object.
  * -------------------------------------------------------------------- */
 int
-copy_grid_fcn(kreiss_solver *kd_,
+copy_grid_fcn(advection_setup *kd_,
               grid_fcn *u_,
               grid_fcn **v_handle)
 {
@@ -197,7 +198,7 @@ copy_grid_fcn(kreiss_solver *kd_,
  * Destroy vector object.
  * -------------------------------------------------------------------- */
 int
-free_grid_fcn(kreiss_solver    *kd_,
+free_grid_fcn(advection_setup    *kd_,
               grid_fcn  *u_)
 {
 /* de-allocate everything inside u_ */
@@ -214,7 +215,7 @@ free_grid_fcn(kreiss_solver    *kd_,
  * NOTE: over-writes values of y
  * -------------------------------------------------------------------- */
 int
-sum_grid_fcn(kreiss_solver *kd_,
+sum_grid_fcn(advection_setup *kd_,
              double alpha,
              grid_fcn *x_,
              double beta,
@@ -247,7 +248,7 @@ sum_grid_fcn(kreiss_solver *kd_,
  * Compute dot product of 2 grid functions
  * -------------------------------------------------------------------- */
 int
-dot_grid_fcn(kreiss_solver *kd_,
+dot_grid_fcn(advection_setup *kd_,
              grid_fcn *u_,
              grid_fcn *v_,
              double *dot_ptr)
@@ -265,11 +266,12 @@ dot_grid_fcn(kreiss_solver *kd_,
    for (i=1; i<=u_->n; i++) 
       dot += u_->sol[i] * v_->sol[i];
 
+/* I am not including the boundary ODE variables either */
 #define uvsol(i) compute_index_1d(u_->vsol_, i)
 #define vvsol(i) compute_index_1d(v_->vsol_, i)   
 /* it is not clear if the boundary variable should have the same weights as the interior solution??? */
-   for (i=1; i<=3; i++)
-      dot += uvsol(i)*vvsol(i);
+   /* for (i=1; i<=3; i++) */
+   /*    dot += uvsol(i)*vvsol(i); */
 #undef uvsol
 #undef xvsol
 
@@ -284,17 +286,18 @@ dot_grid_fcn(kreiss_solver *kd_,
  * Save a grid function to file.
  * -------------------------------------------------------------------- */
 int 
-save_grid_fcn(kreiss_solver *kd_,
+save_grid_fcn(advection_setup *kd_,
               warp_Real t,
               warp_Status   status,
               grid_fcn *u_)
 {
    MPI_Comm   comm   = MPI_COMM_WORLD;
-   int        myid, doneflag=-1;
+   int        myid;
+/*   int doneflag=-1; */
    /* char       filename[255]; */
    /* FILE      *file; */
 
-   warp_GetStatusDone(status, &doneflag);
+//   warp_GetStatusDone(status, &doneflag);
    
    /* copy the final solution to the solver structure */
    if( kd_->write )
@@ -302,7 +305,7 @@ save_grid_fcn(kreiss_solver *kd_,
      MPI_Comm_rank(comm, &myid);
    
 #ifdef HD_DEBUG
-     printf("Inside save_grid_fcn, myRank=%i, t=%e, done-flag=%i\n", myid, t, doneflag);
+     printf("Inside save_grid_fcn, myRank=%i, t=%e\n", myid, t);
 #endif   
      if (fabs(t-kd_->tstop)<1e-12)
      {
@@ -328,7 +331,7 @@ save_grid_fcn(kreiss_solver *kd_,
  * values at every grid point plus boundary ODE data
  * -------------------------------------------------------------------- */
 int
-gridfcn_BufSize(kreiss_solver *kd_,
+gridfcn_BufSize(advection_setup *kd_,
                 int *size_ptr)
 {
 /* allocate enough storage for the finest grid function */
@@ -344,7 +347,7 @@ gridfcn_BufSize(kreiss_solver *kd_,
  * Pack a vector object in a buffer.
  * -------------------------------------------------------------------- */
 int
-gridfcn_BufPack(kreiss_solver *kd_,
+gridfcn_BufPack(advection_setup *kd_,
                 grid_fcn *u_,
                 void *buffer)
 {
@@ -375,7 +378,7 @@ gridfcn_BufPack(kreiss_solver *kd_,
  * Allocate a grid function object and copy values from a buffer.
  * -------------------------------------------------------------------- */
 int
-gridfcn_BufUnpack(kreiss_solver *kd_,
+gridfcn_BufUnpack(advection_setup *kd_,
              void *buffer,
              warp_Vector *u_handle)
 {
@@ -417,7 +420,7 @@ gridfcn_BufUnpack(kreiss_solver *kd_,
 
 #define MAX(a,b) (a<b? b:a)
 int
-gridfcn_Coarsen(kreiss_solver *kd_,
+gridfcn_Coarsen(advection_setup *kd_,
                 double tstart,
                 double f_tminus,
                 double f_tplus,
@@ -491,7 +494,7 @@ gridfcn_Coarsen(kreiss_solver *kd_,
 /*    } */
 
 /* /\* enforce bc for the coarse 'u_' grid function *\/ */
-/*    bckreiss1( u_->n, u_->sol, bdataL, bdataR, kd_->betapcoeff, u_->h, kd_->bcnr_ ); */
+/*    assign_gp( u_->n, u_->sol, bdataL, bdataR, kd_->betapcoeff, u_->h, kd_->bcnr_ ); */
 
 /* set 0 ghost point values */
    u_->sol[0] = 0;
@@ -512,7 +515,7 @@ gridfcn_Coarsen(kreiss_solver *kd_,
 }
 
 int
-gridfcn_Refine(kreiss_solver * kd_,
+gridfcn_Refine(advection_setup * kd_,
                double tstart,
                double f_tminus,
                double f_tplus,
@@ -608,7 +611,7 @@ gridfcn_Refine(kreiss_solver * kd_,
 /*    } */
 
 /* /\* enforce bc for the coarse 'u_' grid function *\/ */
-/*    bckreiss1( u_->n, u_->sol, bdataL, bdataR, kd_->betapcoeff, u_->h, kd_->bcnr_ ); */
+/*    assign_gp( u_->n, u_->sol, bdataL, bdataR, kd_->betapcoeff, u_->h, kd_->bcnr_ ); */
 
 /* set 0 ghost point values */
    u_->sol[0] = 0;

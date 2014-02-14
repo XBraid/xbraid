@@ -1,8 +1,7 @@
 #include "c_array.h"
 
-/*    subroutine dwdtkreiss1( n, w, dwdt, h, nb, wb, bop, bope, gh)*/
 void
-dwdtkreiss1( int n, double *w, double *dwdt, double h, int nb, int wb, double_array_2d *bop_, 
+dwdt( int n, double *w, double *dwdt, double h, int nb, int wb, double_array_2d *bop_, 
              double_array_2d *bope_, double gh)
 {
    const double d6a= 0.75, d6b=-0.15, d6c=1.0/60;

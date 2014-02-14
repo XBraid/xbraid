@@ -4,30 +4,9 @@
 #include <string.h>
 
 #include "c_array.h"
-#include "kreiss_data.h"
+#include "advect_data.h"
 
 #include "warp.h"
-
-/* fcn prototypes */
-void 
-bdata(double_array_1d *vsol_, double amp, double ph, double om, double t, int pnr);
-void
-dvdtbndry(double_array_1d *vsol_, double_array_1d *dvdt_, double amp, double ph, double om, double t, int pnr);
-void
-twbndry1( double x0, double *bdata0, double x1, double *bdata1, int s, double t, double dt, 
-          double amp, double ph, double om, int pnr );
-void
-exact1( int n, double *w, double h, double amp, double ph, double om, double t, int pnr);
-void
-evalerr1( int n, double *w, double *we, double *l2, double*li, double h );
-void
-bckreiss1( int n, double *w, double bdataL, double bdataR, double betapcoeff, double h, int_array_1d *bcnr_ );
-void
-dwdtkreiss1( int n, double *w, double *dwdt, double h, int nb, int wb, double_array_2d *bop_, 
-             double_array_2d *bope_, double gh);
-void
-twforce1( int n, double *f, double t, double h, double amp, double ph, double om, int pnr, double Lx );
-/* end propotypes */
 
 int main(int argc, char ** argv)
 {
@@ -43,14 +22,14 @@ int main(int argc, char ** argv)
    int nstepsset, tfinalset, arg_index, print_usage=0, myid=0;
 
    
-   kreiss_solver *kd_ = NULL;
+   advection_setup *kd_ = NULL;
    grid_fcn *gf_ = NULL, *coarse_gf_ = NULL, *fine_gf_ = NULL;
 
 /* from drive-05.c */
    int i;
 
 /*   warp_Core  core;*/
-/* my_App is called kreiss_solver, app = kd_ */
+/* my_App is called advection_setup, app = kd_ */
 /*   my_App    *app; */
    int        max_levels;
    int        nrelax, nrelax0;
@@ -117,7 +96,6 @@ int main(int argc, char ** argv)
    /* MPI_Comm_rank( comm, &myid ); */
    /* MPI_Comm_size( comm, &num_procs ); */
 
-/* from kreiss.c */
 /* Default problem parameters */
 /*!**  Domain length*/
    L = 1.0;
@@ -191,7 +169,7 @@ int main(int argc, char ** argv)
 
    if((print_usage) && (myid == 0)){
       printf("\n");
-      printf("Solve Kreiss equation with a SBP finite difference method and 4th order explicit RK:\n");
+      printf("Solve the 1-D advection equation with a SBP finite difference method and 4th order explicit RK:\n");
       printf(" du/dt + du/dx = f(x,t), 0<x<1, t>0,\n u(0,t)=g(t),\n u(x,0)=h(x).\n");
       printf("\nUsage: %s [<options>]\n", argv[0]);
       printf("\n");
@@ -212,8 +190,8 @@ int main(int argc, char ** argv)
    }
       
 /* setup solver meta-data */
-   kd_ = malloc(sizeof(kreiss_solver));
-   init_kreiss_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, kd_);
+   kd_ = malloc(sizeof(advection_setup));
+   init_advection_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, kd_);
    
 #define bcnr(i) compute_index_1d(kd_->bcnr_, i)    
 

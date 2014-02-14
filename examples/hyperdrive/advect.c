@@ -4,28 +4,7 @@
 #include <string.h>
 
 #include "c_array.h"
-#include "kreiss_data.h"
-
-/* fcn prototypes */
-void 
-bdata(double_array_1d *vsol_, double amp, double ph, double om, double t, int pnr);
-void
-dvdtbndry(double_array_1d *vsol_, double_array_1d *dvdt_, double amp, double ph, double om, double t, int pnr);
-void
-twbndry1( double x0, double *bdata0, double x1, double *bdata1, int s, double t, double dt, 
-          double amp, double ph, double om, int pnr );
-void
-exact1( int n, double *w, double h, double amp, double ph, double om, double t, int pnr);
-void
-evalerr1( int n, double *w, double *we, double *l2, double*li, double h );
-void
-bckreiss1( int n, double *w, double bdataL, double bdataR, double betapcoeff, double h, int_array_1d *bcnr_ );
-void
-dwdtkreiss1( int n, double *w, double *dwdt, double h, int nb, int wb, double_array_2d *bop_, 
-             double_array_2d *bope_, double gh);
-void
-twforce1( int n, double *f, double t, double h, double amp, double ph, double om, int pnr, double Lx );
-/* end propotypes */
+#include "advect_data.h"
 
 int main(int argc, char ** argv)
 {
@@ -42,7 +21,7 @@ int main(int argc, char ** argv)
 
    FILE *eun;
    
-   kreiss_solver *kd_ = NULL;
+   advection_setup *kd_ = NULL;
    grid_fcn *gf_ = NULL;
       
 /* Default problem parameters */
@@ -118,7 +97,7 @@ int main(int argc, char ** argv)
 
    if((print_usage) && (myid == 0)){
       printf("\n");
-      printf("Solve Kreiss equation with a SBP finite difference method and 4th order explicit RK:\n");
+      printf("Solve the 1-D advection equation with a SBP finite difference method and 4th order explicit RK:\n");
       printf(" du/dt + du/dx = f(x,t), 0<x<1, t>0,\n u(0,t)=g(t),\n u(x,0)=h(x).\n");
       printf("\nUsage: %s [<options>]\n", argv[0]);
       printf("\n");
@@ -145,8 +124,8 @@ int main(int argc, char ** argv)
 #define vsol(i) compute_index_1d(gf_->vsol_, i)   
 
 /* solver meta-data */
-   kd_ = malloc(sizeof(kreiss_solver));
-   init_kreiss_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, kd_);
+   kd_ = malloc(sizeof(advection_setup));
+   init_advection_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, kd_);
    
 /* create solution vector */
    init_grid_fcn(kd_, 0.0, &gf_);
@@ -157,7 +136,7 @@ int main(int argc, char ** argv)
    printf("Treatment of time-dependent bndry data: %i\n", kd_->taylorbc);
    printf("Solving to time %e using %i steps\n",kd_->tstop, kd_->nsteps);
    printf("Time step is %e\n",kd_->dt);
-   printf("Grid spacing is %e with %i grid points\n", kd_->h, kd_->n);
+   printf("Grid spacing is %e with %i grid points\n", kd_->h_fine, kd_->n_fine);
 
    t = 0.0;
 
@@ -175,8 +154,8 @@ int main(int argc, char ** argv)
 /* ! evaluate solution error (stage=1 evaluates the plain bndry data at time t)*/
       twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, t, kd_->dt, kd_->amp, kd_->ph, kd_->om, kd_->pnr);
       
-      exact1( kd_->n, kd_->current, kd_->h, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr );
-      evalerr1( kd_->n, gf_->sol, kd_->current, &l2, &li, kd_->h );
+      exact1( kd_->n_fine, kd_->current, kd_->h_fine, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr );
+      evalerr1( kd_->n_fine, gf_->sol, kd_->current, &l2, &li, kd_->h_fine );
       
 /* ! save errors on file... */
       fprintf(eun,"%e %e %e %e\n", t, li, l2, fabs(bdataL - vsol(1)) ); 
@@ -192,11 +171,11 @@ int main(int argc, char ** argv)
    printf("Time-stepping completed. Solved to time t: %e\n", t);
 
 /* ! evaluate solution error, stick exact solution in kd_ workspace array */
-   exact1( kd_->n, kd_->current, kd_->h, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr );
+   exact1( kd_->n_fine, kd_->current, kd_->h_fine, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr );
 /* get exact bndry data (bdataL) */
    twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, t, kd_->dt, kd_->amp, kd_->ph, kd_->om, kd_->pnr);
 
-   evalerr1( kd_->n, gf_->sol, kd_->current, &l2, &li, kd_->h );
+   evalerr1( kd_->n_fine, gf_->sol, kd_->current, &l2, &li, kd_->h_fine );
 /* ! save errors on file... */
    fprintf(eun,"%e %e %e %e\n", t, li, l2, fabs(bdataL-vsol(1)));
 
