@@ -3413,34 +3413,34 @@ int main (int argc, char *argv[])
       MPI_Comm_rank( comm_x, &myid );
 
      /* Test init(), write(), free() */
-     warp_TestInitWrite( app, comm_x, 0.0, my_Init, my_Write, my_Free);
-     warp_TestInitWrite( app, comm_x, dt, my_Init, my_Write, my_Free);
+     warp_TestInitWrite( app, comm_x, stdout, 0.0, my_Init, my_Write, my_Free);
+     warp_TestInitWrite( app, comm_x, stdout, dt, my_Init, my_Write, my_Free);
 
      /* Test clone() */
-     warp_TestClone( app, comm_x, 0.0, my_Init, my_Write, my_Free, my_Clone);
-     warp_TestClone( app, comm_x, dt, my_Init, my_Write, my_Free, my_Clone);
+     warp_TestClone( app, comm_x, stdout, 0.0, my_Init, my_Write, my_Free, my_Clone);
+     warp_TestClone( app, comm_x, stdout, dt, my_Init, my_Write, my_Free, my_Clone);
 
      /* Test sum() */
-     warp_TestSum( app, comm_x, 0.0, my_Init, my_Write, my_Free, my_Clone, my_Sum);
-     warp_TestSum( app, comm_x, dt, my_Init, my_Write, my_Free, my_Clone, my_Sum);
+     warp_TestSum( app, comm_x, stdout, 0.0, my_Init, my_Write, my_Free, my_Clone, my_Sum);
+     warp_TestSum( app, comm_x, stdout, dt, my_Init, my_Write, my_Free, my_Clone, my_Sum);
 
      /* Test dot() */
-     warp_TestDot( app, comm_x, 0.0, my_Init, my_Free, my_Clone, my_Sum, my_Dot, &correct);
-     warp_TestDot( app, comm_x, dt, my_Init, my_Free, my_Clone, my_Sum, my_Dot, &correct);
+     warp_TestDot( app, comm_x, stdout, 0.0, my_Init, my_Free, my_Clone, my_Sum, my_Dot, &correct);
+     warp_TestDot( app, comm_x, stdout, dt, my_Init, my_Free, my_Clone, my_Sum, my_Dot, &correct);
 
      /* Test bufsize(), bufpack(), bufunpack() */
-     warp_TestBuf( app, comm_x, 0.0, my_Init, my_Free, my_Sum, my_Dot, my_BufSize, my_BufPack, my_BufUnpack, &correct);
-     warp_TestBuf( app, comm_x, dt, my_Init, my_Free, my_Sum, my_Dot, my_BufSize, my_BufPack, my_BufUnpack, &correct);
+     warp_TestBuf( app, comm_x, stdout, 0.0, my_Init, my_Free, my_Sum, my_Dot, my_BufSize, my_BufPack, my_BufUnpack, &correct);
+     warp_TestBuf( app, comm_x, stdout, dt, my_Init, my_Free, my_Sum, my_Dot, my_BufSize, my_BufPack, my_BufUnpack, &correct);
       
      /* Test coarsen and refine */
      f_tminus = 0.0;
      f_tplus = dt;
      c_tminus = 0.0;
      c_tplus = 2*dt;
-     warp_TestCoarsenRefine(app, comm_x, 0.0, f_tminus, f_tplus, c_tminus, c_tplus, my_Init,
+     warp_TestCoarsenRefine(app, comm_x, stdout, 0.0, f_tminus, f_tplus, c_tminus, c_tplus, my_Init,
                             my_Write, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenInjection, 
                             my_Refine, &correct);
-     warp_TestCoarsenRefine(app, comm_x, 0.0, f_tminus, f_tplus, c_tminus, c_tplus, my_Init,
+     warp_TestCoarsenRefine(app, comm_x, stdout, 0.0, f_tminus, f_tplus, c_tminus, c_tplus, my_Init,
                             my_Write, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenBilinear, 
                             my_Refine, &correct);
 
