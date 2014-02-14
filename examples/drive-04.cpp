@@ -13,6 +13,7 @@
 #include "mfem.hpp"
 #include "_warp.h"
 #include "warp.h"
+#include "warp_test.h"
 
 // Additional "HYPRE" functions
 namespace hypre
@@ -1062,6 +1063,99 @@ public:
    }
 };
 
+// Wrapper for WARP's testing routines
+class WarpTest
+{
+private:
+
+public:
+   
+   // Empty constructor
+   WarpTest( ){ }
+   
+   // Test Function for Init and Write function
+   void TestInitWrite( WarpApp              *app,
+                       MPI_Comm              comm_x,
+                       double                t,
+                       warp_PtFcnInit        init,
+                       warp_PtFcnWrite       write,
+                       warp_PtFcnFree        free)
+   { warp_TestInitWrite((warp_App) app, comm_x, t, init, write, free); }
+
+   // Test Function for Clone 
+   void TestClone( WarpApp              *app,
+                   MPI_Comm              comm_x,
+                   double                t,
+                   warp_PtFcnInit        init,
+                   warp_PtFcnWrite       write,
+                   warp_PtFcnFree        free,
+                   warp_PtFcnClone       clone)
+   { warp_TestClone((warp_App) app, comm_x, t, init, write, free, clone); }
+   
+   // Test Function for Sum 
+   void TestSum( WarpApp              *app,
+                 MPI_Comm              comm_x,
+                 double                t,
+                 warp_PtFcnInit        init,
+                 warp_PtFcnWrite       write,
+                 warp_PtFcnFree        free,
+                 warp_PtFcnClone       clone,
+                 warp_PtFcnSum         sum)
+   { warp_TestSum((warp_App) app, comm_x, t, init, write, free, clone, sum); }
+   
+   // Test Function for Dot 
+   void TestDot( WarpApp              *app,
+                 MPI_Comm              comm_x,
+                 double                t,
+                 warp_PtFcnInit        init,
+                 warp_PtFcnFree        free,
+                 warp_PtFcnClone       clone,
+                 warp_PtFcnSum         sum,
+                 warp_PtFcnDot         dot,
+                 int                  *correct)
+   { warp_TestDot((warp_App) app, comm_x, t, init, free, clone, sum, dot, correct); }
+
+   // Test Functions BufSize, BufPack, BufUnpack
+   void TestBuf( WarpApp              *app,
+                 MPI_Comm              comm_x,
+                 double                t,
+                 warp_PtFcnInit        init,
+                 warp_PtFcnFree        free,
+                 warp_PtFcnSum         sum,  
+                 warp_PtFcnDot         dot,
+                 warp_PtFcnBufSize     bufsize,
+                 warp_PtFcnBufPack     bufpack,
+                 warp_PtFcnBufUnpack   bufunpack,
+                 int                  *correct)
+   { warp_TestBuf((warp_App) app, comm_x, t, init, free, sum, dot, bufsize, bufpack, bufunpack, correct); }
+
+   // Test Functions Coarsen and Refine
+   void TestCoarsenRefine(WarpApp          *app,
+                          MPI_Comm          comm_x,
+                          double            t,
+                          double            f_tminus,
+                          double            f_tplus,
+                          double            c_tminus,
+                          double            c_tplus,
+                          warp_PtFcnInit    init,
+                          warp_PtFcnWrite   write,
+                          warp_PtFcnFree    free,
+                          warp_PtFcnClone   clone,
+                          warp_PtFcnSum     sum,
+                          warp_PtFcnDot     dot,
+                          warp_PtFcnCoarsen coarsen,
+                          warp_PtFcnRefine  refine,
+                          warp_Int         *correct)
+   { warp_TestCoarsenRefine( (warp_App) app, comm_x, t, f_tminus, f_tplus, c_tminus, c_tplus, init,
+                            write, free, clone, sum, dot, coarsen, refine, correct); }
+
+
+   ~WarpTest() { }
+
+};
+
+
+
 // Wrapper for WARP's core object
 class WarpCore
 {
@@ -1182,6 +1276,10 @@ int main(int argc, char *argv[])
    MPI_Comm_size(comm, &num_procs);
    MPI_Comm_rank(comm, &myid);
 
+   // Variables used by WarpTest
+   int correct;
+   double dt;
+
    // Default parameters:
    const char *meshfile = "../../mfem/data/star.mesh";
    int    sref        = 1;
@@ -1207,6 +1305,7 @@ int main(int argc, char *argv[])
    int    max_iter    = 100;
    int    fmg         = 0;
    int    write_level = 0;
+   bool   run_wrapper_tests = false;
 
    /* Parse command line */
    int print_usage = 0;
@@ -1302,6 +1401,10 @@ int main(int argc, char *argv[])
       {
          fmg = 1;
       }
+      else if (strcmp(argv[arg_index], "-run_wrapper_tests") == 0)
+      {
+         run_wrapper_tests = true;
+      }
       else if (strcmp(argv[arg_index], "-write") == 0)
       {
          write_level = 1;
@@ -1335,6 +1438,8 @@ int main(int argc, char *argv[])
          "Usage: " << argv[0] << " [<options>]\n"
          "\n"
          "  -mesh <file>      : spatial mesh (default: " << meshfile << ")\n"
+         "  -run_wrapper_tests: Only run the Warp wrapper tests\n"
+         "                      (do not combine with temporal parallelism)\n"
          "  -sref <num>       : levels of serial refinements (default: 1)\n"
          "  -pref <num>       : levels of parallel refinements (default: 1)\n"
          "  -nowarp           : sequential time integration (default: off)\n"
@@ -1516,25 +1621,95 @@ int main(int argc, char *argv[])
    else
    {
       WarpApp app(comm_t, ode, X0, &x0, solver, tstart, tstop, ntime);
-      WarpCore core(comm, &app);
 
-      if (heat_equation)
-         app.SetExactSolution(&exact_sol);
+      if(run_wrapper_tests)
+      {
+         // Simple tests for the wrappers 
+         WarpTest test;
+         dt = (app.tstop - app.tstart)/ (double) app.ntime;
 
-      core.SetWriteLevel(write_level);
-      core.SetPrintLevel(1);
-      core.SetMaxLevels(max_levels);
-      core.SetNRelax(-1, nrelax);
-      if (nrelax0 > -1)
-         core.SetNRelax(0, nrelax0);
-      core.SetAbsTol(tol);
-      core.SetCFactor(-1, cfactor);
-      core.SetAggCFactor(cfactor0);
-      core.SetMaxIter(max_iter);
-      if (fmg)
-         core.SetFMG();
+         // Test init(), write(), free()
+         test.TestInitWrite( &app, comm_x, 0.0, WarpApp::Init, 
+                             WarpApp::Write, WarpApp::Free);
+         cout << endl << "Press Enter to continue " << endl;
+         cin.get();
+         test.TestInitWrite( &app, comm_x, dt, WarpApp::Init, 
+                             WarpApp::Write, WarpApp::Free);
+         cout << endl << "Press Enter to continue " << endl;
+         cin.get();
 
-      core.Drive();
+         // Test clone()
+         test.TestClone( &app, comm_x, 0.0, WarpApp::Init, 
+                         WarpApp::Write, WarpApp::Free, 
+                         WarpApp::Clone);
+         cout << endl << "Press Enter to continue " << endl;
+         cin.get();
+         test.TestClone( &app, comm_x, dt, WarpApp::Init, 
+                         WarpApp::Write, WarpApp::Free, 
+                         WarpApp::Clone);
+         cout << endl << "Press Enter to continue " << endl;
+         cin.get();
+
+         // Test sum() 
+         test.TestSum( &app, comm_x, 0.0, WarpApp::Init, 
+                       WarpApp::Write, WarpApp::Free, 
+                       WarpApp::Clone, WarpApp::Sum);
+         cout << endl << "Press Enter to continue " << endl;
+         cin.get();
+         test.TestSum( &app, comm_x, dt, WarpApp::Init, 
+                       WarpApp::Write, WarpApp::Free, 
+                       WarpApp::Clone, WarpApp::Sum);
+         cout << endl << "Press Enter to continue " << endl;
+         cin.get();
+
+         // Test dot()
+         test.TestDot( &app, comm_x, 0.0, WarpApp::Init, WarpApp::Free, 
+                       WarpApp::Clone, WarpApp::Sum, WarpApp::Dot, 
+                       &correct);
+         cout << endl << "Press Enter to continue " << endl;
+         cin.get();
+         test.TestDot( &app, comm_x, dt, WarpApp::Init, WarpApp::Free,
+                       WarpApp::Clone, WarpApp::Sum, WarpApp::Dot, 
+                       &correct);
+         cout << endl << "Press Enter to continue " << endl;
+         cin.get();
+
+         // Test bufsize(), bufpack(), bufunpack()
+         test.TestBuf( &app, comm_x, 0.0, WarpApp::Init, WarpApp::Free, 
+                       WarpApp::Sum, WarpApp::Dot, WarpApp::BufSize, 
+                       WarpApp::BufPack, WarpApp::BufUnpack, &correct);
+         cout << endl << "Press Enter to continue " << endl;
+         cin.get();
+         test.TestBuf( &app, comm_x, dt, WarpApp::Init, WarpApp::Free,
+                        WarpApp::Sum, WarpApp::Dot, WarpApp::BufSize, 
+                        WarpApp::BufPack, WarpApp::BufUnpack, &correct);
+         cout << endl << "Press Enter to continue " << endl;
+         cin.get();
+      
+      }
+      else
+      {
+         // Run a warp simulation
+         WarpCore core(comm, &app);
+
+         if (heat_equation)
+            app.SetExactSolution(&exact_sol);
+
+         core.SetWriteLevel(write_level);
+         core.SetPrintLevel(1);
+         core.SetMaxLevels(max_levels);
+         core.SetNRelax(-1, nrelax);
+         if (nrelax0 > -1)
+            core.SetNRelax(0, nrelax0);
+         core.SetAbsTol(tol);
+         core.SetCFactor(-1, cfactor);
+         core.SetAggCFactor(cfactor0);
+         core.SetMaxIter(max_iter);
+         if (fmg)
+            core.SetFMG();
+
+         core.Drive();
+      }
    }
 
    // Free memory.

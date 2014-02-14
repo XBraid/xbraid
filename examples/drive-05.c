@@ -64,6 +64,7 @@
 #include "_hypre_sstruct_mv.h"
 
 #include "warp.h"
+#include "warp_test.h"
 
 #include "vis.c"
 
