@@ -499,22 +499,21 @@ warp_SetWriteLevel(warp_Core  core,
  *--------------------------------------------------------------------------*/
 
 warp_Int
-warp_SplitCommworld(warp_Core core,
-                    warp_Int  px,
-                    MPI_Comm  comm_x,
-                    MPI_Comm  comm_t)
+warp_SplitCommworld(const MPI_Comm  *comm_world,
+                          warp_Int  px,
+                          MPI_Comm  *comm_x,
+                          MPI_Comm  *comm_t)
 {
-   MPI_Comm comm_world =_warp_CoreElt(core, comm_world);
    warp_Int myid, xcolor, tcolor;
 
    /* Create communicators for the time and space dimensions */
    /* The communicators are based on colors and keys (= myid) */
-   MPI_Comm_rank( comm_world, &myid );
+   MPI_Comm_rank( *comm_world, &myid );
    xcolor = myid / px;
    tcolor = myid % px;
 
-   MPI_Comm_split( comm_world, xcolor, myid, &comm_x );
-   MPI_Comm_split( comm_world, tcolor, myid, &comm_t );
+   MPI_Comm_split( *comm_world, xcolor, myid, comm_x );
+   MPI_Comm_split( *comm_world, tcolor, myid, comm_t );
 
    return _warp_error_flag;
 }

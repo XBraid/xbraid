@@ -1063,16 +1063,26 @@ public:
    }
 };
 
-// Wrapper for WARP's testing routines
-class WarpTest
+// Wrapper for WARP utilities that help the user, 
+// includes all the warp_Test* routines for testing the
+// user-written wrappers.
+class WarpUtil
 {
 private:
 
 public:
    
    // Empty constructor
-   WarpTest( ){ }
+   WarpUtil( ){ }
    
+   // Split comm_world into comm_x and comm_t, the spatial 
+   // and temporal communicators
+   void SplitCommworld(const MPI_Comm  *comm_world,
+                             warp_Int  px,
+                             MPI_Comm  *comm_x,
+                             MPI_Comm  *comm_t)
+   { warp_SplitCommworld(comm_world, px, comm_x, comm_t); }
+
    // Test Function for Init and Write function
    void TestInitWrite( WarpApp              *app,
                        MPI_Comm              comm_x,
@@ -1178,7 +1188,7 @@ public:
                    init, free, clone, sum, dot, bufsize, bufpack, bufunpack,
                    coarsen, refine, correct); }
 
-   ~WarpTest() { }
+   ~WarpUtil() { }
 
 };
 
@@ -1304,7 +1314,8 @@ int main(int argc, char *argv[])
    MPI_Comm_size(comm, &num_procs);
    MPI_Comm_rank(comm, &myid);
 
-   // Variables used by WarpTest
+   // Variables used by WarpUtil
+   WarpUtil util;
    int correct;
    double dt;
 
@@ -1520,11 +1531,8 @@ int main(int argc, char *argv[])
    if (!use_warp)
       num_procs_x = num_procs;
 
-   int xcolor = myid / num_procs_x;
-   int tcolor = myid % num_procs_x;
-   MPI_Comm_split(comm, xcolor, myid, &comm_x);
-   MPI_Comm_split(comm, tcolor, myid, &comm_t);
-
+   // Split comm into spatial and temporal communicators
+   util.SplitCommworld(&comm, num_procs_x, &comm_x, &comm_t);
    MPI_Comm_rank(comm_x, &myid_x);
    MPI_Comm_rank(comm_t, &myid_t);
 
@@ -1660,9 +1668,8 @@ int main(int argc, char *argv[])
 
       if (wrapper_tests)
       {
-         WarpTest test;
          dt = (app.tstop - app.tstart)/ (double) app.ntime;
-         test.TestAll(&app, comm_x, stdout, 0.0, 0.0, dt, 0.0, 2*dt,
+         util.TestAll(&app, comm_x, stdout, 0.0, 0.0, dt, 0.0, 2*dt,
                       WarpApp::Init, WarpApp::Free, WarpApp::Clone, 
                       WarpApp::Sum, WarpApp::Dot, WarpApp::BufSize,
                       WarpApp::BufPack, WarpApp::BufUnpack, NULL, NULL, 
@@ -1671,62 +1678,61 @@ int main(int argc, char *argv[])
       else if(all_wrapper_tests)
       {
          // Simple tests for the wrappers 
-         WarpTest test;
          dt = (app.tstop - app.tstart)/ (double) app.ntime;
 
          // Test init(), write(), free()
-         test.TestInitWrite( &app, comm_x, stdout, 0.0, WarpApp::Init, 
+         util.TestInitWrite( &app, comm_x, stdout, 0.0, WarpApp::Init, 
                              WarpApp::Write, WarpApp::Free);
          cout << endl << "Press Enter to continue " << endl;
          cin.get();
-         test.TestInitWrite( &app, comm_x, stdout, dt, WarpApp::Init, 
+         util.TestInitWrite( &app, comm_x, stdout, dt, WarpApp::Init, 
                              WarpApp::Write, WarpApp::Free);
          cout << endl << "Press Enter to continue " << endl;
          cin.get();
 
          // Test clone()
-         test.TestClone( &app, comm_x, stdout, 0.0, WarpApp::Init, 
+         util.TestClone( &app, comm_x, stdout, 0.0, WarpApp::Init, 
                          WarpApp::Write, WarpApp::Free, 
                          WarpApp::Clone);
          cout << endl << "Press Enter to continue " << endl;
          cin.get();
-         test.TestClone( &app, comm_x, stdout, dt, WarpApp::Init, 
+         util.TestClone( &app, comm_x, stdout, dt, WarpApp::Init, 
                          WarpApp::Write, WarpApp::Free, 
                          WarpApp::Clone);
          cout << endl << "Press Enter to continue " << endl;
          cin.get();
 
          // Test sum() 
-         test.TestSum( &app, comm_x, stdout, 0.0, WarpApp::Init, 
+         util.TestSum( &app, comm_x, stdout, 0.0, WarpApp::Init, 
                        WarpApp::Write, WarpApp::Free, 
                        WarpApp::Clone, WarpApp::Sum);
          cout << endl << "Press Enter to continue " << endl;
          cin.get();
-         test.TestSum( &app, comm_x, stdout, dt, WarpApp::Init, 
+         util.TestSum( &app, comm_x, stdout, dt, WarpApp::Init, 
                        WarpApp::Write, WarpApp::Free, 
                        WarpApp::Clone, WarpApp::Sum);
          cout << endl << "Press Enter to continue " << endl;
          cin.get();
 
          // Test dot()
-         test.TestDot( &app, comm_x, stdout, 0.0, WarpApp::Init, WarpApp::Free, 
+         util.TestDot( &app, comm_x, stdout, 0.0, WarpApp::Init, WarpApp::Free, 
                        WarpApp::Clone, WarpApp::Sum, WarpApp::Dot, 
                        &correct);
          cout << endl << "Press Enter to continue " << endl;
          cin.get();
-         test.TestDot( &app, comm_x, stdout, dt, WarpApp::Init, WarpApp::Free,
+         util.TestDot( &app, comm_x, stdout, dt, WarpApp::Init, WarpApp::Free,
                        WarpApp::Clone, WarpApp::Sum, WarpApp::Dot, 
                        &correct);
          cout << endl << "Press Enter to continue " << endl;
          cin.get();
 
          // Test bufsize(), bufpack(), bufunpack()
-         test.TestBuf( &app, comm_x, stdout, 0.0, WarpApp::Init, WarpApp::Free, 
+         util.TestBuf( &app, comm_x, stdout, 0.0, WarpApp::Init, WarpApp::Free, 
                        WarpApp::Sum, WarpApp::Dot, WarpApp::BufSize, 
                        WarpApp::BufPack, WarpApp::BufUnpack, &correct);
          cout << endl << "Press Enter to continue " << endl;
          cin.get();
-         test.TestBuf( &app, comm_x, stdout, dt, WarpApp::Init, WarpApp::Free,
+         util.TestBuf( &app, comm_x, stdout, dt, WarpApp::Init, WarpApp::Free,
                         WarpApp::Sum, WarpApp::Dot, WarpApp::BufSize, 
                         WarpApp::BufPack, WarpApp::BufUnpack, &correct);
          cout << endl << "Press Enter to continue " << endl;
