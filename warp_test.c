@@ -233,8 +233,9 @@ warp_TestDot( warp_App              app,
    MPI_Comm_rank( comm_x, &myid_x );
    sprintf(header,  "   warp_TestDot:   ");
 
-   /* Initialize the correct flag */
+   /* Initialize the flags */
    *correct = 1;
+   warp_Int zero_flag = 0;
 
    /* Print intro */
    sprintf(message, "\nStarting warp_TestDot\n\n");
@@ -252,6 +253,7 @@ warp_TestDot( warp_App              app,
    dot(app, u, u, &result1);
    if( fabs(result1) == 0.0)
    {
+      zero_flag = 1;
       sprintf(message, "Warning:  dot(u,u) = 0.0\n"); 
       _warp_ParFprintfFlush(fp, header, message, myid_x);
    }
@@ -309,7 +311,14 @@ warp_TestDot( warp_App              app,
    if( (fabs(result2/result1 - 4.0) > wiggle) || isnan(result2/result1) )
    {
       *correct = 0;
-      _warp_ParFprintfFlush(fp, header, "Test 2 Failed\n", myid_x);
+      if(zero_flag)
+      {
+         _warp_ParFprintfFlush(fp, header, "Test 2 Failed, Likely due to u = 0\n", myid_x);
+      }
+      else
+      {
+         _warp_ParFprintfFlush(fp, header, "Test 2 Failed\n", myid_x);
+      }
    }
    else
    {
@@ -348,7 +357,14 @@ warp_TestDot( warp_App              app,
 
    {
       *correct = 0;
-      _warp_ParFprintfFlush(fp, header, "Test 3 Failed\n", myid_x);
+      if(zero_flag)
+      {
+         _warp_ParFprintfFlush(fp, header, "Test 3 Failed, Likely due to u = 0\n", myid_x);
+      }
+      else
+      {
+         _warp_ParFprintfFlush(fp, header, "Test 3 Failed\n", myid_x);
+      }
    }
    else
    {
@@ -427,8 +443,17 @@ warp_TestDot( warp_App              app,
 
    if(*correct == 1) 
       _warp_ParFprintfFlush(fp, header, "Finished, all tests passed successfully\n", myid_x);
-   else      
-      _warp_ParFprintfFlush(fp, header, "Finished, some tests failed\n", myid_x);
+   else
+   {
+      if(zero_flag)
+      {
+         _warp_ParFprintfFlush(fp, header, "Finished, some tests failed, possibly due to u = 0\n", myid_x);
+      }
+      else
+      {
+         _warp_ParFprintfFlush(fp, header, "Finished, some tests failed\n", myid_x);
+      }
+   }
 
    return 0;
 }
