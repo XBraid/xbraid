@@ -55,7 +55,7 @@ warp_Init(MPI_Comm              comm_world,
    warp_Int              max_iter = 100;        /* Default max_iter */
    warp_Int              max_levels = 30;       /* Default max_levels */
    warp_Int              print_level = 1;       /* Default print level */
-   warp_Int              write_level = 0;       /* Default write level */
+   warp_Int              write_level = 1;       /* Default write level */
    warp_Real             tol = 1.0e-09;         /* Default absolute tolerance */
    warp_Real             rtol = 1.0e-09;        /* Default relative tolerance */
 
@@ -149,6 +149,7 @@ warp_Drive(warp_Core  core)
    warp_Int      fmg         = _warp_CoreElt(core, fmg);
    warp_Int      max_iter    = _warp_CoreElt(core, max_iter);
    warp_Int      print_level = _warp_CoreElt(core, print_level);
+   warp_Int      write_level = _warp_CoreElt(core, write_level);
 
    warp_Int      nlevels, iter;
    warp_Real     rnorm;
@@ -286,7 +287,9 @@ warp_Drive(warp_Core  core)
                   printf("  Warp || r_%d || = %e\n", iter, rnorm);
                }
 
-               if (((rnorm < tol) && (_warp_CoreElt(core, accuracy[0].tight_used) == 1)) || (iter == max_iter-1))
+               if ( ((rnorm < tol) && (_warp_CoreElt(core, accuracy[0].tight_used) == 1)) || 
+                    (rnorm == 0.0) ||
+                    (iter == max_iter-1) )
                {
                   done = 1;
                }
@@ -305,7 +308,11 @@ warp_Drive(warp_Core  core)
    }
 
    /* F-relax and write solution to file */
-   _warp_FWrite(core, rnorm, iter, 0, 1);
+
+   if( write_level >= 1)
+   {
+      _warp_FWrite(core, rnorm, iter, 0, 1);
+   }
 
    _warp_CoreElt(core, niter) = iter;
    _warp_CoreElt(core, rnorm) = rnorm;

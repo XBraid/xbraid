@@ -992,14 +992,14 @@ _warp_FRestrict(warp_Core   core,
          
          /* Allow user to process current vector, note that r here is
           * temporarily holding the state vector */
-         if( write_level >= 1)
+         if( write_level >= 2)
          {
             _warp_UWriteVector(core, level, fi, status, r);
          }
       }
 
       /* Allow user to process current C-point */
-      if( (write_level >= 1) && (ci > -1) )
+      if( (write_level >= 2) && (ci > -1) )
       {
          _warp_UGetVectorRef(core, level, ci, &u);
          _warp_UWriteVector(core, level, ci, status, u);

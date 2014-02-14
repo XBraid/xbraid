@@ -1,8 +1,7 @@
 #include "c_array.h"
 
-/*    subroutine bckreiss1( n, w, bdataL, bdataR, nb, wb, bop, gh, betapcoeff, h, bcnr )*/
 void
-bckreiss1( int n, double *w, double bdataL, double bdataR, double betapcoeff, double h, int_array_1d *bcnr_ )
+assign_gp( int n, double *w, double bdataL, double bdataR, double betapcoeff, double h, int_array_1d *bcnr_ )
 {
 #define bcnr(i) compute_index_1d(bcnr_, i)   
 
@@ -17,7 +16,7 @@ bckreiss1( int n, double *w, double bdataL, double bdataR, double betapcoeff, do
    }
    else
    {
-      printf("ERROR: bckreiss, unknown bcnr(1)= %i\n", bcnr(1));
+      printf("ERROR: assign_gp, unknown bcnr(1)= %i\n", bcnr(1));
    }
 
 /*!** Right side */
@@ -28,7 +27,7 @@ bckreiss1( int n, double *w, double bdataL, double bdataR, double betapcoeff, do
    }
    else
    {
-      printf("ERROR: bckreiss, unknown bcnr(2)= %i\n", bcnr(2));
+      printf("ERROR: assign_gp, unknown bcnr(2)= %i\n", bcnr(2));
    }
 }
 
