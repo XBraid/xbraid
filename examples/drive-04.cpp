@@ -1149,10 +1149,8 @@ public:
                           MPI_Comm          comm_x,
                           FILE             *fp,
                           double            t,
-                          double            f_tminus,
-                          double            f_tplus,
-                          double            c_tminus,
-                          double            c_tplus,
+                          double            fdt,
+                          double            cdt,
                           warp_PtFcnInit    init,
                           warp_PtFcnWrite   write,
                           warp_PtFcnFree    free,
@@ -1162,17 +1160,15 @@ public:
                           warp_PtFcnCoarsen coarsen,
                           warp_PtFcnRefine  refine,
                           warp_Int         *correct)
-   { warp_TestCoarsenRefine( (warp_App) app, comm_x, fp, t, f_tminus, f_tplus, c_tminus, c_tplus, init,
+   { warp_TestCoarsenRefine( (warp_App) app, comm_x, fp, t, fdt, cdt, init,
                             write, free, clone, sum, dot, coarsen, refine, correct); }
 
    void TestAll(WarpApp             *app,
                 MPI_Comm             comm_x,
                 FILE                *fp,
                 double               t,
-                double               f_tminus,
-                double               f_tplus,
-                double               c_tminus,
-                double               c_tplus,
+                double               fdt,
+                double               cdt,
                 warp_PtFcnInit       init,
                 warp_PtFcnFree       free,
                 warp_PtFcnClone      clone,
@@ -1184,7 +1180,7 @@ public:
                 warp_PtFcnCoarsen    coarsen,
                 warp_PtFcnRefine     refine,
                 warp_Int            *correct)
-   { warp_TestAll( (warp_App) app, comm_x, fp, t, f_tminus, f_tplus, c_tminus, c_tplus,
+   { warp_TestAll( (warp_App) app, comm_x, fp, t, fdt, cdt,
                    init, free, clone, sum, dot, bufsize, bufpack, bufunpack,
                    coarsen, refine, correct); }
 
@@ -1669,7 +1665,7 @@ int main(int argc, char *argv[])
       if (wrapper_tests)
       {
          dt = (app.tstop - app.tstart)/ (double) app.ntime;
-         util.TestAll(&app, comm_x, stdout, 0.0, 0.0, dt, 0.0, 2*dt,
+         util.TestAll(&app, comm_x, stdout, 0.0, dt, 2*dt,
                       WarpApp::Init, WarpApp::Free, WarpApp::Clone, 
                       WarpApp::Sum, WarpApp::Dot, WarpApp::BufSize,
                       WarpApp::BufPack, WarpApp::BufUnpack, NULL, NULL, 
@@ -1683,61 +1679,40 @@ int main(int argc, char *argv[])
          // Test init(), write(), free()
          util.TestInitWrite( &app, comm_x, stdout, 0.0, WarpApp::Init, 
                              WarpApp::Write, WarpApp::Free);
-         cout << endl << "Press Enter to continue " << endl;
-         cin.get();
          util.TestInitWrite( &app, comm_x, stdout, dt, WarpApp::Init, 
                              WarpApp::Write, WarpApp::Free);
-         cout << endl << "Press Enter to continue " << endl;
-         cin.get();
 
          // Test clone()
          util.TestClone( &app, comm_x, stdout, 0.0, WarpApp::Init, 
                          WarpApp::Write, WarpApp::Free, 
                          WarpApp::Clone);
-         cout << endl << "Press Enter to continue " << endl;
-         cin.get();
          util.TestClone( &app, comm_x, stdout, dt, WarpApp::Init, 
                          WarpApp::Write, WarpApp::Free, 
                          WarpApp::Clone);
-         cout << endl << "Press Enter to continue " << endl;
-         cin.get();
 
          // Test sum() 
          util.TestSum( &app, comm_x, stdout, 0.0, WarpApp::Init, 
                        WarpApp::Write, WarpApp::Free, 
                        WarpApp::Clone, WarpApp::Sum);
-         cout << endl << "Press Enter to continue " << endl;
-         cin.get();
          util.TestSum( &app, comm_x, stdout, dt, WarpApp::Init, 
                        WarpApp::Write, WarpApp::Free, 
                        WarpApp::Clone, WarpApp::Sum);
-         cout << endl << "Press Enter to continue " << endl;
-         cin.get();
 
          // Test dot()
          util.TestDot( &app, comm_x, stdout, 0.0, WarpApp::Init, WarpApp::Free, 
                        WarpApp::Clone, WarpApp::Sum, WarpApp::Dot, 
                        &correct);
-         cout << endl << "Press Enter to continue " << endl;
-         cin.get();
          util.TestDot( &app, comm_x, stdout, dt, WarpApp::Init, WarpApp::Free,
                        WarpApp::Clone, WarpApp::Sum, WarpApp::Dot, 
                        &correct);
-         cout << endl << "Press Enter to continue " << endl;
-         cin.get();
 
          // Test bufsize(), bufpack(), bufunpack()
          util.TestBuf( &app, comm_x, stdout, 0.0, WarpApp::Init, WarpApp::Free, 
                        WarpApp::Sum, WarpApp::Dot, WarpApp::BufSize, 
                        WarpApp::BufPack, WarpApp::BufUnpack, &correct);
-         cout << endl << "Press Enter to continue " << endl;
-         cin.get();
          util.TestBuf( &app, comm_x, stdout, dt, WarpApp::Init, WarpApp::Free,
                         WarpApp::Sum, WarpApp::Dot, WarpApp::BufSize, 
                         WarpApp::BufPack, WarpApp::BufUnpack, &correct);
-         cout << endl << "Press Enter to continue " << endl;
-         cin.get();
-      
       }
       else
       {

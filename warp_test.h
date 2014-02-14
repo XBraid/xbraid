@@ -100,20 +100,8 @@ warp_TestCoarsenRefine( warp_App          app,         /**< User defined App str
                         MPI_Comm          comm_x,      /**< Spatial communicator */
                         FILE             *fp,          /**< File pointer (could be stdout or stderr) for log messages*/
                         warp_Real         t,           /**< Time value to initialize vector */
-                        warp_Real         f_tminus,    /**< Fine time value before t, used by coarsen and 
-                                                            refine to determine appropriate coarsening and 
-                                                            refinement algorithm */
-                        warp_Real         f_tplus,     /**< Fine time value after t, used by coarsen and 
-                                                            refine to determine appropriate coarsening and 
-                                                            refinement algorithm, e.g. (f_tplus -t) equals 
-                                                            the fine delta t*/
-                        warp_Real         c_tminus,    /**< Coarse time value before t, used by coarsen 
-                                                            and refine to determine appropriate coarsening 
-                                                            and refinement algorithm */
-                        warp_Real         c_tplus,     /**< Coarse time value after t, used by coarsen and 
-                                                            refine to determine appropriate coarsening and 
-                                                            refinement algorithm, e.g. (c_tplus -t) equals 
-                                                            the coarse delta t */
+                        warp_Real         fdt,         /**< Fine time step value that you spatially coarsen from */
+                        warp_Real         cdt,         /**< Coarse time step value that you coarsen to */
                         warp_PtFcnInit    init,        /**< Initialize a warp_Vector function on finest temporal grid*/
                         warp_PtFcnWrite   write,       /**< Write temporal state warp_Vector (can be NULL for no writing)*/
                         warp_PtFcnFree    free,        /**< Free a temporal state warp_Vector*/
@@ -129,14 +117,8 @@ warp_TestAll( warp_App             app,         /**< User defined App structure 
               MPI_Comm             comm_x,      /**< Spatial communicator */
               FILE                *fp,          /**< File pointer (could be stdout or stderr) for log messages*/
               warp_Real            t,           /**< Time value to initialize vector */
-              warp_Real            f_tminus,    /**< Fine time value before t.  If t==0, this may also
-                                                     be 0.0 */ 
-              warp_Real            f_tplus,     /**< Fine time value after t.  If t==0, this may also
-                                                     be 0.0.  Also, f_tplus -t equals the fine delta t*/
-              warp_Real            c_tminus,    /**< Coarse time value before t. If t==0, this may also
-                                                     be 0.0 */ 
-              warp_Real            c_tplus,     /**< Coarse time value after t. If t==0, this may also
-                                                     be 0.0 */
+              warp_Real            fdt,         /**< Fine time step value that you spatially coarsen from */
+              warp_Real            cdt,         /**< Coarse time step value that you coarsen to */
               warp_PtFcnInit       init,        /**< Initialize a warp_Vector function on finest temporal grid*/
               warp_PtFcnFree       free,        /**< Free a temporal state warp_Vector*/
               warp_PtFcnClone      clone,       /**< Clone a temporal state warp_Vector */

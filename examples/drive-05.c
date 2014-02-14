@@ -2919,7 +2919,6 @@ int main (int argc, char *argv[])
    int print_usage = 0;
 
    int correct;
-   double f_tminus, f_tplus, c_tminus, c_tplus;
 
    warp_Core  core;
    my_App    *app;
@@ -3428,14 +3427,10 @@ int main (int argc, char *argv[])
      warp_TestBuf( app, comm_x, stdout, dt, my_Init, my_Free, my_Sum, my_Dot, my_BufSize, my_BufPack, my_BufUnpack, &correct);
       
      /* Test coarsen and refine */
-     f_tminus = 0.0;
-     f_tplus = dt;
-     c_tminus = 0.0;
-     c_tplus = 2*dt;
-     warp_TestCoarsenRefine(app, comm_x, stdout, 0.0, f_tminus, f_tplus, c_tminus, c_tplus, my_Init,
+     warp_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
                             my_Write, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenInjection, 
                             my_Refine, &correct);
-     warp_TestCoarsenRefine(app, comm_x, stdout, 0.0, f_tminus, f_tplus, c_tminus, c_tplus, my_Init,
+     warp_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
                             my_Write, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenBilinear, 
                             my_Refine, &correct);
 

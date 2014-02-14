@@ -572,10 +572,8 @@ warp_TestCoarsenRefine( warp_App          app,
                         MPI_Comm          comm_x,
                         FILE             *fp, 
                         warp_Real         t,
-                        warp_Real         f_tminus,
-                        warp_Real         f_tplus,
-                        warp_Real         c_tminus,
-                        warp_Real         c_tplus,
+                        warp_Real         fdt,
+                        warp_Real         cdt,
                         warp_PtFcnInit    init,
                         warp_PtFcnWrite   write,
                         warp_PtFcnFree    free,
@@ -627,7 +625,7 @@ warp_TestCoarsenRefine( warp_App          app,
 
    sprintf(message, "uc = coarsen(u)\n");
    _warp_ParFprintfFlush(fp, header, message, myid_x);
-   coarsen(app, t, f_tminus, f_tplus, c_tminus, c_tplus, u, &uc); 
+   coarsen(app, t, t-fdt, t+fdt, t-cdt, t+cdt, u, &uc); 
 
    if(write != NULL)
    {
@@ -657,7 +655,7 @@ warp_TestCoarsenRefine( warp_App          app,
 
    sprintf(message, "vc = coarsen(v)\n");
    _warp_ParFprintfFlush(fp, header, message, myid_x);
-   coarsen(app, t, f_tminus, f_tplus, c_tminus, c_tplus, v, &vc); 
+   coarsen(app, t, t-fdt, t+fdt, t-cdt, t+cdt, v, &vc); 
    
    sprintf(message, "wc = clone(vc)\n");
    _warp_ParFprintfFlush(fp, header, message, myid_x);
@@ -704,11 +702,11 @@ warp_TestCoarsenRefine( warp_App          app,
 
    sprintf(message, "v = refine(vc)\n");
    _warp_ParFprintfFlush(fp, header, message, myid_x);
-   refine(app, t, f_tminus, f_tplus, c_tminus, c_tplus, vc, &v); 
+   refine(app, t, t-fdt, t+fdt, t-cdt, t+cdt, vc, &v); 
 
    sprintf(message, "u = refine(uc)\n");
    _warp_ParFprintfFlush(fp, header, message, myid_x);
-   refine(app, t, f_tminus, f_tplus, c_tminus, c_tplus, uc, &u); 
+   refine(app, t, t-fdt, t+fdt, t-cdt, t+cdt, uc, &u); 
 
    sprintf(message, "v = u - v \n");
    _warp_ParFprintfFlush(fp, header, message, myid_x);
@@ -791,10 +789,8 @@ warp_TestAll( warp_App             app,
               MPI_Comm             comm_x,
               FILE                *fp, 
               warp_Real            t,
-              warp_Real            f_tminus,
-              warp_Real            f_tplus,
-              warp_Real            c_tminus,
-              warp_Real            c_tplus,
+              warp_Real            fdt,
+              warp_Real            cdt,
               warp_PtFcnInit       init,
               warp_PtFcnFree       free,
               warp_PtFcnClone      clone,
@@ -825,15 +821,15 @@ warp_TestAll( warp_App             app,
 
    /* Test init(), free() */
    warp_TestInitWrite( app, comm_x, fp, t, init, NULL, free);
-   warp_TestInitWrite( app, comm_x, fp, f_tplus, init, NULL, free);
+   warp_TestInitWrite( app, comm_x, fp, fdt, init, NULL, free);
 
    /* Test clone() */
    warp_TestClone( app, comm_x, fp, t, init, NULL, free, clone);
-   warp_TestClone( app, comm_x, fp, f_tplus, init, NULL, free, clone);
+   warp_TestClone( app, comm_x, fp, fdt, init, NULL, free, clone);
 
    /* Test sum() */
    warp_TestSum( app, comm_x, fp, t, init, NULL, free, clone, sum);
-   warp_TestSum( app, comm_x, fp, f_tplus, init, NULL, free, clone, sum);
+   warp_TestSum( app, comm_x, fp, fdt, init, NULL, free, clone, sum);
 
    /* Test dot() */
    warp_TestDot( app, comm_x, fp, t, init, free, clone, sum, dot, &flag);
@@ -843,7 +839,7 @@ warp_TestAll( warp_App             app,
       flag = 1;
       *correct = 0;
    }
-   warp_TestDot( app, comm_x, fp, f_tplus, init, free, clone, sum, dot, &flag);
+   warp_TestDot( app, comm_x, fp, fdt, init, free, clone, sum, dot, &flag);
    if(flag == 0)
    {
       _warp_ParFprintfFlush(fp, header, "TestDot 2 Failed\n", myid_x);
@@ -859,7 +855,7 @@ warp_TestAll( warp_App             app,
       flag = 1;
       *correct = 0;
    }
-   warp_TestBuf( app, comm_x, fp, f_tplus, init, free, sum, dot, bufsize, bufpack, bufunpack, &flag);
+   warp_TestBuf( app, comm_x, fp, fdt, init, free, sum, dot, bufsize, bufpack, bufunpack, &flag);
    if(flag == 0)
    {
       _warp_ParFprintfFlush(fp, header, "TestBuf 2 Failed\n", myid_x);
@@ -870,7 +866,7 @@ warp_TestAll( warp_App             app,
    /* Test coarsen and refine */
    if( (coarsen != NULL) && (refine != NULL) )
    {
-      warp_TestCoarsenRefine(app, comm_x, fp, t, f_tminus, f_tplus, c_tminus, c_tplus, init,
+      warp_TestCoarsenRefine(app, comm_x, fp, t, fdt, cdt, init,
                           NULL, free, clone, sum, dot, coarsen, refine, &flag);
       if(flag == 0)
       {
