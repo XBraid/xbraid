@@ -1308,8 +1308,8 @@ int main(int argc, char *argv[])
 
    // Variables used by WarpUtil
    WarpUtil util;
-   int correct;
-   double dt;
+   int correct = 1;
+   double test_t;
 
    // Default parameters:
    const char *meshfile = "../../mfem/data/star.mesh";
@@ -1337,7 +1337,7 @@ int main(int argc, char *argv[])
    int    fmg         = 0;
    int    write_level = 1;
    bool   wrapper_tests = false;
-   bool   all_wrapper_tests = false;
+   bool   one_wrapper_test = false;
 
    /* Parse command line */
    int print_usage = 0;
@@ -1437,9 +1437,9 @@ int main(int argc, char *argv[])
       {
          wrapper_tests = true;
       }
-      else if (strcmp(argv[arg_index], "-all_wrapper_tests") == 0)
+      else if (strcmp(argv[arg_index], "-one_wrapper_test") == 0)
       {
-         all_wrapper_tests = true;
+         one_wrapper_test = true;
       }
       else if (strcmp(argv[arg_index], "-write") == 0)
       {
@@ -1476,8 +1476,8 @@ int main(int argc, char *argv[])
          "  -mesh <file>      : spatial mesh (default: " << meshfile << ")\n"
          "  -wrapper_tests:   : quick run of the Warp wrapper tests\n"
          "                      (do not combine with temporal parallelism)\n"
-         "  -all_wrapper_tests: run each wrapper test individually, calling\n"
-         "                      the write routine to output vectors.\n"
+         "  -one_wrapper_test : run only one wrapper test. can comment out/in\n"
+         "                      the wrapper test that you want to focus on.\n"
          "                      (do not combine with temporal parallelism)\n"
          "  -sref <num>       : levels of serial refinements (default: 1)\n"
          "  -pref <num>       : levels of parallel refinements (default: 1)\n"
@@ -1660,8 +1660,8 @@ int main(int argc, char *argv[])
 
       if (wrapper_tests)
       {
-         dt = (app.tstop - app.tstart)/ (double) app.ntime;
-         correct = util.TestAll(&app, comm_x, stdout, 0.0, dt, 2*dt,
+         test_t = (app.tstop - app.tstart)/ (double) app.ntime;
+         correct = util.TestAll(&app, comm_x, stdout, 0.0, test_t, 2*test_t,
                       WarpApp::Init, WarpApp::Free, WarpApp::Clone, 
                       WarpApp::Sum, WarpApp::Dot, WarpApp::BufSize,
                       WarpApp::BufPack, WarpApp::BufUnpack, NULL, NULL);
@@ -1671,46 +1671,39 @@ int main(int argc, char *argv[])
            cout << "Drive-04 Failed: at least one of the tests failed\n";
          }
       }
-      else if(all_wrapper_tests)
+      else if(one_wrapper_test)
       {
          // Simple tests for the wrappers 
-         dt = (app.tstop - app.tstart)/ (double) app.ntime;
+         // Comment in/out the wrapper test that you want to focus on
+         
+         // Change the time value passed into the test routines to test
+         // various scenarios
+         //test_t = (app.tstop - app.tstart)/ (double) app.ntime;
+         //test_t = app.tstart;
+         test_t = app.tstop;
 
          // Test init(), write(), free()
-         util.TestInitWrite( &app, comm_x, stdout, 0.0, WarpApp::Init, 
-                             WarpApp::Write, WarpApp::Free);
-         util.TestInitWrite( &app, comm_x, stdout, dt, WarpApp::Init, 
+         util.TestInitWrite( &app, comm_x, stdout, test_t, WarpApp::Init, 
                              WarpApp::Write, WarpApp::Free);
 
          // Test clone()
-         util.TestClone( &app, comm_x, stdout, 0.0, WarpApp::Init, 
-                         WarpApp::Write, WarpApp::Free, 
-                         WarpApp::Clone);
-         util.TestClone( &app, comm_x, stdout, dt, WarpApp::Init, 
-                         WarpApp::Write, WarpApp::Free, 
-                         WarpApp::Clone);
+         //util.TestClone( &app, comm_x, stdout, test_t, WarpApp::Init, 
+         //                WarpApp::Write, WarpApp::Free, 
+         //                WarpApp::Clone);
 
          // Test sum() 
-         util.TestSum( &app, comm_x, stdout, 0.0, WarpApp::Init, 
-                       WarpApp::Write, WarpApp::Free, 
-                       WarpApp::Clone, WarpApp::Sum);
-         util.TestSum( &app, comm_x, stdout, dt, WarpApp::Init, 
-                       WarpApp::Write, WarpApp::Free, 
-                       WarpApp::Clone, WarpApp::Sum);
+         //util.TestSum( &app, comm_x, stdout, test_t, WarpApp::Init, 
+         //              WarpApp::Write, WarpApp::Free, 
+         //              WarpApp::Clone, WarpApp::Sum);
 
          // Test dot()
-         correct = util.TestDot( &app, comm_x, stdout, 0.0, WarpApp::Init, WarpApp::Free, 
-                       WarpApp::Clone, WarpApp::Sum, WarpApp::Dot);
-         correct = util.TestDot( &app, comm_x, stdout, dt, WarpApp::Init, WarpApp::Free,
-                       WarpApp::Clone, WarpApp::Sum, WarpApp::Dot); 
+         //correct = util.TestDot( &app, comm_x, stdout, test_t, WarpApp::Init, WarpApp::Free, 
+         //              WarpApp::Clone, WarpApp::Sum, WarpApp::Dot);
 
          // Test bufsize(), bufpack(), bufunpack()
-         correct = util.TestBuf( &app, comm_x, stdout, 0.0, WarpApp::Init, WarpApp::Free, 
-                       WarpApp::Sum, WarpApp::Dot, WarpApp::BufSize, 
-                       WarpApp::BufPack, WarpApp::BufUnpack);
-         correct = util.TestBuf( &app, comm_x, stdout, dt, WarpApp::Init, WarpApp::Free,
-                        WarpApp::Sum, WarpApp::Dot, WarpApp::BufSize, 
-                        WarpApp::BufPack, WarpApp::BufUnpack);
+         //correct = util.TestBuf( &app, comm_x, stdout, test_t, WarpApp::Init, WarpApp::Free, 
+         //              WarpApp::Sum, WarpApp::Dot, WarpApp::BufSize, 
+         //              WarpApp::BufPack, WarpApp::BufUnpack);
 
          if(correct == 0)
          {
