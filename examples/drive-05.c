@@ -2432,6 +2432,7 @@ my_CoarsenBilinear(warp_App      app,
    int        ncoarsen;
    double     cdt = c_tplus - tstart;
    double     fdt = f_tplus - tstart;
+   double     scale = (1./2.6666);
 
    cu = (my_Vector *) malloc(sizeof(my_Vector));
    
@@ -2499,27 +2500,27 @@ my_CoarsenBilinear(warp_App      app,
                if( (i%2 == 0) && (j%2 == 0) )
                {
                   /* Injection: this is the F-point analogue to a C-point */
-                  cvalues[ (i/2)*cnlx_temp + j/2 ] += 0.25*fvalues[counter];
+                  cvalues[ (i/2)*cnlx_temp + j/2 ] += scale*fvalues[counter];
                }
                else if( (i%2 == 0) && (j%2 == 1) )
                {
                   /* Interpolate: this is an F-point horizontally between two C-points */
-                  cvalues[ (i/2)*cnlx_temp + j/2 ]    += 0.125*fvalues[counter];
-                  cvalues[ (i/2)*cnlx_temp + j/2 +1 ] += 0.125*fvalues[counter];                   
+                  cvalues[ (i/2)*cnlx_temp + j/2 ]    += scale*0.5*fvalues[counter];
+                  cvalues[ (i/2)*cnlx_temp + j/2 +1 ] += scale*0.5*fvalues[counter];                   
                }
                else if( (i%2 == 1) && (j%2 == 0) )
                {
                   /* Interpolate: this is an F-point vertically between two C-points */
-                  cvalues[ (i/2)*cnlx_temp + j/2 ]     += 0.125*fvalues[counter];
-                  cvalues[ ((i/2)+1)*cnlx_temp + j/2 ] += 0.125*fvalues[counter];
+                  cvalues[ (i/2)*cnlx_temp + j/2 ]     += scale*0.5*fvalues[counter];
+                  cvalues[ ((i/2)+1)*cnlx_temp + j/2 ] += scale*0.5*fvalues[counter];
                }
                else if( (i%2 == 1) && (j%2 == 1) )
                {
                   /* Interpolate: this is an F-point in the center of a grid cell */
-                  cvalues[ (i/2)*cnlx_temp + j/2        ] += 0.0625*fvalues[counter];
-                  cvalues[ (i/2)*cnlx_temp + j/2 +1     ] += 0.0625*fvalues[counter];
-                  cvalues[ ((i/2)+1)*cnlx_temp + j/2    ] += 0.0625*fvalues[counter];
-                  cvalues[ ((i/2)+1)*cnlx_temp + j/2 + 1] += 0.0625*fvalues[counter];
+                  cvalues[ (i/2)*cnlx_temp + j/2        ] += scale*0.25*fvalues[counter];
+                  cvalues[ (i/2)*cnlx_temp + j/2 +1     ] += scale*0.25*fvalues[counter];
+                  cvalues[ ((i/2)+1)*cnlx_temp + j/2    ] += scale*0.25*fvalues[counter];
+                  cvalues[ ((i/2)+1)*cnlx_temp + j/2 + 1] += scale*0.25*fvalues[counter];
                }
                counter += 1;
             }
