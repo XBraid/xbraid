@@ -1117,7 +1117,7 @@ public:
    { warp_TestSum((warp_App) app, comm_x, fp, t, init, write, free, clone, sum); }
    
    // Test Function for Dot 
-   void TestDot( WarpApp              *app,
+   int TestDot( WarpApp              *app,
                  MPI_Comm              comm_x,
                  FILE                 *fp,
                  double                t,
@@ -1125,12 +1125,11 @@ public:
                  warp_PtFcnFree        free,
                  warp_PtFcnClone       clone,
                  warp_PtFcnSum         sum,
-                 warp_PtFcnDot         dot,
-                 int                  *correct)
-   { warp_TestDot((warp_App) app, comm_x, fp, t, init, free, clone, sum, dot, correct); }
+                 warp_PtFcnDot         dot)
+   { return warp_TestDot((warp_App) app, comm_x, fp, t, init, free, clone, sum, dot); }
 
    // Test Functions BufSize, BufPack, BufUnpack
-   void TestBuf( WarpApp              *app,
+   int TestBuf( WarpApp              *app,
                  MPI_Comm              comm_x,
                  FILE                 *fp,
                  double                t,
@@ -1140,12 +1139,11 @@ public:
                  warp_PtFcnDot         dot,
                  warp_PtFcnBufSize     bufsize,
                  warp_PtFcnBufPack     bufpack,
-                 warp_PtFcnBufUnpack   bufunpack,
-                 int                  *correct)
-   { warp_TestBuf((warp_App) app, comm_x, fp, t, init, free, sum, dot, bufsize, bufpack, bufunpack, correct); }
+                 warp_PtFcnBufUnpack   bufunpack)
+   { return warp_TestBuf((warp_App) app, comm_x, fp, t, init, free, sum, dot, bufsize, bufpack, bufunpack); }
 
    // Test Functions Coarsen and Refine
-   void TestCoarsenRefine(WarpApp          *app,
+   int TestCoarsenRefine(WarpApp          *app,
                           MPI_Comm          comm_x,
                           FILE             *fp,
                           double            t,
@@ -1158,12 +1156,11 @@ public:
                           warp_PtFcnSum     sum,
                           warp_PtFcnDot     dot,
                           warp_PtFcnCoarsen coarsen,
-                          warp_PtFcnRefine  refine,
-                          warp_Int         *correct)
-   { warp_TestCoarsenRefine( (warp_App) app, comm_x, fp, t, fdt, cdt, init,
-                            write, free, clone, sum, dot, coarsen, refine, correct); }
+                          warp_PtFcnRefine  refine)
+   { return warp_TestCoarsenRefine( (warp_App) app, comm_x, fp, t, fdt, cdt, init,
+                            write, free, clone, sum, dot, coarsen, refine); }
 
-   void TestAll(WarpApp             *app,
+   int TestAll(WarpApp             *app,
                 MPI_Comm             comm_x,
                 FILE                *fp,
                 double               t,
@@ -1178,11 +1175,10 @@ public:
                 warp_PtFcnBufPack    bufpack,  
                 warp_PtFcnBufUnpack  bufunpack,
                 warp_PtFcnCoarsen    coarsen,
-                warp_PtFcnRefine     refine,
-                warp_Int            *correct)
-   { warp_TestAll( (warp_App) app, comm_x, fp, t, fdt, cdt,
-                   init, free, clone, sum, dot, bufsize, bufpack, bufunpack,
-                   coarsen, refine, correct); }
+                warp_PtFcnRefine     refine)
+   { return warp_TestAll( (warp_App) app, comm_x, fp, t, fdt, cdt,
+                   init, free, clone, sum, dot, bufsize, bufpack, 
+                   bufunpack, coarsen, refine); }
 
    ~WarpUtil() { }
 
@@ -1665,11 +1661,15 @@ int main(int argc, char *argv[])
       if (wrapper_tests)
       {
          dt = (app.tstop - app.tstart)/ (double) app.ntime;
-         util.TestAll(&app, comm_x, stdout, 0.0, dt, 2*dt,
+         correct = util.TestAll(&app, comm_x, stdout, 0.0, dt, 2*dt,
                       WarpApp::Init, WarpApp::Free, WarpApp::Clone, 
                       WarpApp::Sum, WarpApp::Dot, WarpApp::BufSize,
-                      WarpApp::BufPack, WarpApp::BufUnpack, NULL, NULL, 
-                      &correct);
+                      WarpApp::BufPack, WarpApp::BufUnpack, NULL, NULL);
+         
+         if(correct == 0)
+         {
+           cout << "Drive-04 Failed: at least one of the tests failed\n";
+         }
       }
       else if(all_wrapper_tests)
       {
@@ -1699,20 +1699,23 @@ int main(int argc, char *argv[])
                        WarpApp::Clone, WarpApp::Sum);
 
          // Test dot()
-         util.TestDot( &app, comm_x, stdout, 0.0, WarpApp::Init, WarpApp::Free, 
-                       WarpApp::Clone, WarpApp::Sum, WarpApp::Dot, 
-                       &correct);
-         util.TestDot( &app, comm_x, stdout, dt, WarpApp::Init, WarpApp::Free,
-                       WarpApp::Clone, WarpApp::Sum, WarpApp::Dot, 
-                       &correct);
+         correct = util.TestDot( &app, comm_x, stdout, 0.0, WarpApp::Init, WarpApp::Free, 
+                       WarpApp::Clone, WarpApp::Sum, WarpApp::Dot);
+         correct = util.TestDot( &app, comm_x, stdout, dt, WarpApp::Init, WarpApp::Free,
+                       WarpApp::Clone, WarpApp::Sum, WarpApp::Dot); 
 
          // Test bufsize(), bufpack(), bufunpack()
-         util.TestBuf( &app, comm_x, stdout, 0.0, WarpApp::Init, WarpApp::Free, 
+         correct = util.TestBuf( &app, comm_x, stdout, 0.0, WarpApp::Init, WarpApp::Free, 
                        WarpApp::Sum, WarpApp::Dot, WarpApp::BufSize, 
-                       WarpApp::BufPack, WarpApp::BufUnpack, &correct);
-         util.TestBuf( &app, comm_x, stdout, dt, WarpApp::Init, WarpApp::Free,
+                       WarpApp::BufPack, WarpApp::BufUnpack);
+         correct = util.TestBuf( &app, comm_x, stdout, dt, WarpApp::Init, WarpApp::Free,
                         WarpApp::Sum, WarpApp::Dot, WarpApp::BufSize, 
-                        WarpApp::BufPack, WarpApp::BufUnpack, &correct);
+                        WarpApp::BufPack, WarpApp::BufUnpack);
+
+         if(correct == 0)
+         {
+           cout << "Drive-04 Failed: at least one of the tests failed\n";
+         }
       }
       else
       {

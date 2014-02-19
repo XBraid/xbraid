@@ -220,12 +220,11 @@ warp_TestDot( warp_App              app,
               warp_PtFcnFree        free, 
               warp_PtFcnClone       clone,
               warp_PtFcnSum         sum,  
-              warp_PtFcnDot         dot,
-              warp_Int             *correct)  
+              warp_PtFcnDot         dot)
 {   
    warp_Vector  u, v, w;
    warp_Real    result1, result2, result3;
-   warp_Int     myid_x;
+   warp_Int     myid_x, correct;
    char         header[255];
    char         message[255];
    double       wiggle = 1e-12;
@@ -234,7 +233,7 @@ warp_TestDot( warp_App              app,
    sprintf(header,  "   warp_TestDot:   ");
 
    /* Initialize the flags */
-   *correct = 1;
+   correct = 1;
    warp_Int zero_flag = 0;
 
    /* Print intro */
@@ -261,7 +260,7 @@ warp_TestDot( warp_App              app,
    {
       sprintf(message, "Warning:  dot(u,u) = nan\n"); 
       _warp_ParFprintfFlush(fp, header, message, myid_x);
-      *correct = 0;
+      correct = 0;
    }
 
    sprintf(message, "v = clone(u)\n");
@@ -277,7 +276,7 @@ warp_TestDot( warp_App              app,
    dot(app, v, v, &result1);
    if( (fabs(result1) > wiggle) || isnan(result1) )
    {
-      *correct = 0;
+      correct = 0;
       _warp_ParFprintfFlush(fp, header, "Test 1 Failed\n", myid_x);
    }
    else
@@ -310,7 +309,7 @@ warp_TestDot( warp_App              app,
    dot(app, w, w, &result2);
    if( (fabs(result2/result1 - 4.0) > wiggle) || isnan(result2/result1) )
    {
-      *correct = 0;
+      correct = 0;
       if(zero_flag)
       {
          _warp_ParFprintfFlush(fp, header, "Test 2 Failed, Likely due to u = 0\n", myid_x);
@@ -356,7 +355,7 @@ warp_TestDot( warp_App              app,
    if( (fabs(result2/result1 - 0.25) > wiggle) || isnan(result2/result1) )
 
    {
-      *correct = 0;
+      correct = 0;
       if(zero_flag)
       {
          _warp_ParFprintfFlush(fp, header, "Test 3 Failed, Likely due to u = 0\n", myid_x);
@@ -415,7 +414,7 @@ warp_TestDot( warp_App              app,
    if( (fabs(result2 + result1 - result3)/fabs(result3) > wiggle) || 
        isnan(result2) || isnan(result1) || isnan(result3) )
    {
-      *correct = 0;
+      correct = 0;
       _warp_ParFprintfFlush(fp, header, "Test 4 Failed\n", myid_x);
    }
    else
@@ -441,7 +440,7 @@ warp_TestDot( warp_App              app,
    _warp_ParFprintfFlush(fp, header, message, myid_x);
    free(app, w);
 
-   if(*correct == 1) 
+   if(correct == 1) 
       _warp_ParFprintfFlush(fp, header, "Finished, all tests passed successfully\n", myid_x);
    else
    {
@@ -455,7 +454,7 @@ warp_TestDot( warp_App              app,
       }
    }
 
-   return 0;
+   return correct;
 }
 
 warp_Int
@@ -469,12 +468,11 @@ warp_TestBuf( warp_App              app,
               warp_PtFcnDot         dot,
               warp_PtFcnBufSize     bufsize,
               warp_PtFcnBufPack     bufpack,
-              warp_PtFcnBufUnpack   bufunpack,
-              warp_Int             *correct)
+              warp_PtFcnBufUnpack   bufunpack)
 {   
    warp_Vector  u, v;
    warp_Real    result1;
-   warp_Int     myid_x, size;
+   warp_Int     myid_x, size, correct;
    void        *buffer;
    char         header[255];
    char         message[255];
@@ -484,7 +482,7 @@ warp_TestBuf( warp_App              app,
    sprintf(header,  "   warp_TestBuf:   ");
 
    /* Initialize the correct flag */
-   *correct = 1;
+   correct = 1;
 
    /* Print intro */
    sprintf(message, "\nStarting warp_TestBuf\n\n");
@@ -509,7 +507,7 @@ warp_TestBuf( warp_App              app,
    {
       sprintf(message, "Warning:  dot(u,u) = nan\n"); 
       _warp_ParFprintfFlush(fp, header, message, myid_x);
-      *correct = 0;
+      correct = 0;
    }
 
    sprintf(message, "size = bufsize()\n");
@@ -538,7 +536,7 @@ warp_TestBuf( warp_App              app,
    if( (fabs(result1) > wiggle) || isnan(result1) )
 
    {
-      *correct = 0;
+      correct = 0;
       _warp_ParFprintfFlush(fp, header, "Test 1 Failed\n", myid_x);
    }
    else
@@ -559,12 +557,12 @@ warp_TestBuf( warp_App              app,
    _warp_ParFprintfFlush(fp, header, message, myid_x);
    free(app, v);
    
-   if(*correct == 1) 
+   if(correct == 1) 
       _warp_ParFprintfFlush(fp, header, "Finished, all tests passed successfully\n", myid_x);
    else      
       _warp_ParFprintfFlush(fp, header, "Finished, some tests failed\n", myid_x);
 
-   return 0;
+   return correct;
 }
 
 warp_Int
@@ -581,12 +579,11 @@ warp_TestCoarsenRefine( warp_App          app,
                         warp_PtFcnSum     sum,
                         warp_PtFcnDot     dot,
                         warp_PtFcnCoarsen coarsen,
-                        warp_PtFcnRefine  refine,
-                        warp_Int         *correct)
+                        warp_PtFcnRefine  refine)
  {   
    warp_Vector  u, v, w, uc, vc, wc;
    warp_Real    result1;
-   warp_Int     myid_x, level;
+   warp_Int     myid_x, level, correct;
    char         header[255];
    char         message[255];
    warp_Status  status;
@@ -595,7 +592,7 @@ warp_TestCoarsenRefine( warp_App          app,
    sprintf(header,  "   warp_TestCoarsenRefine:   ");
 
    /* Initialize the correct flag */
-   *correct = 1;
+   correct = 1;
 
    /* Print intro */
    sprintf(message, "\nStarting warp_TestCoarsenRefine\n\n");
@@ -620,7 +617,7 @@ warp_TestCoarsenRefine( warp_App          app,
    {
       sprintf(message, "Warning:  dot(u,u) = nan\n"); 
       _warp_ParFprintfFlush(fp, header, message, myid_x);
-      *correct = 0;
+      correct = 0;
    }
 
    sprintf(message, "uc = coarsen(u)\n");
@@ -672,7 +669,7 @@ warp_TestCoarsenRefine( warp_App          app,
    /* We expect exact equality between uc and vc */
    if( (fabs(result1) != 0.0) || isnan(result1) )
    {
-      *correct = 0;
+      correct = 0;
       _warp_ParFprintfFlush(fp, header, "Test 2 Failed\n", myid_x);
    }
    else
@@ -719,7 +716,7 @@ warp_TestCoarsenRefine( warp_App          app,
    /* We expect exact equality between u and v */
    if( (fabs(result1) != 0.0) || isnan(result1) )
    {
-      *correct = 0;
+      correct = 0;
       _warp_ParFprintfFlush(fp, header, "Test 3 Failed\n", myid_x);
    }
    else
@@ -776,12 +773,12 @@ warp_TestCoarsenRefine( warp_App          app,
    free(app, wc);
 
 
-   if(*correct == 1) 
+   if(correct == 1) 
       _warp_ParFprintfFlush(fp, header, "Finished, all tests passed successfully\n", myid_x);
    else      
       _warp_ParFprintfFlush(fp, header, "Finished, some tests failed\n", myid_x);
    
-   return 0;
+   return correct;
 }
 
 warp_Int
@@ -800,10 +797,9 @@ warp_TestAll( warp_App             app,
               warp_PtFcnBufPack    bufpack,
               warp_PtFcnBufUnpack  bufunpack,
               warp_PtFcnCoarsen    coarsen,
-              warp_PtFcnRefine     refine,
-              warp_Int            *correct)
+              warp_PtFcnRefine     refine)
 {
-   warp_Int    myid_x, flag = 0;
+   warp_Int    myid_x, flag = 0, correct = 1;
    char        header[255];
    char        message[255];
    
@@ -811,7 +807,6 @@ warp_TestAll( warp_App             app,
    _warp_ParFprintfFlush(fp, "", message, myid_x);
    
    sprintf(header,  "-> warp_TestAll:   ");
-   *correct = 1;
    MPI_Comm_rank( comm_x, &myid_x );
 
    /** 
@@ -832,51 +827,46 @@ warp_TestAll( warp_App             app,
    warp_TestSum( app, comm_x, fp, fdt, init, NULL, free, clone, sum);
 
    /* Test dot() */
-   warp_TestDot( app, comm_x, fp, t, init, free, clone, sum, dot, &flag);
+   flag = warp_TestDot( app, comm_x, fp, t, init, free, clone, sum, dot);
    if(flag == 0)
    {
       _warp_ParFprintfFlush(fp, header, "TestDot 1 Failed\n", myid_x);
-      flag = 1;
-      *correct = 0;
+      correct = 0;
    }
-   warp_TestDot( app, comm_x, fp, fdt, init, free, clone, sum, dot, &flag);
+   flag = warp_TestDot( app, comm_x, fp, fdt, init, free, clone, sum, dot);
    if(flag == 0)
    {
       _warp_ParFprintfFlush(fp, header, "TestDot 2 Failed\n", myid_x);
-      flag = 1;
-      *correct = 0;
+      correct = 0;
    }
 
    /* Test bufsize(), bufpack(), bufunpack() */
-   warp_TestBuf( app, comm_x, fp, t, init, free, sum, dot, bufsize, bufpack, bufunpack, &flag);
+   flag = warp_TestBuf( app, comm_x, fp, t, init, free, sum, dot, bufsize, bufpack, bufunpack);
    if(flag == 0)
    {
       _warp_ParFprintfFlush(fp, header, "TestBuf 1 Failed\n", myid_x);
-      flag = 1;
-      *correct = 0;
+      correct = 0;
    }
-   warp_TestBuf( app, comm_x, fp, fdt, init, free, sum, dot, bufsize, bufpack, bufunpack, &flag);
+   flag = warp_TestBuf( app, comm_x, fp, fdt, init, free, sum, dot, bufsize, bufpack, bufunpack);
    if(flag == 0)
    {
       _warp_ParFprintfFlush(fp, header, "TestBuf 2 Failed\n", myid_x);
-      flag = 1;
-      *correct = 0;
+      correct = 0;
    }
  
    /* Test coarsen and refine */
    if( (coarsen != NULL) && (refine != NULL) )
    {
-      warp_TestCoarsenRefine(app, comm_x, fp, t, fdt, cdt, init,
-                          NULL, free, clone, sum, dot, coarsen, refine, &flag);
+      flag = warp_TestCoarsenRefine(app, comm_x, fp, t, fdt, cdt, init,
+                          NULL, free, clone, sum, dot, coarsen, refine);
       if(flag == 0)
       {
          _warp_ParFprintfFlush(fp, header, "TestCoarsenRefine 1 Failed\n", myid_x);
-         flag = 1;
-         *correct = 0;
+         correct = 0;
       }
    }
 
-   if(*correct == 1)
+   if(correct == 1)
    {
       _warp_ParFprintfFlush(fp, "", "\n\n", myid_x);
       _warp_ParFprintfFlush(fp, header, "Finished, all tests passed successfully\n\n", myid_x);
@@ -887,5 +877,5 @@ warp_TestAll( warp_App             app,
       _warp_ParFprintfFlush(fp, header, "Finished, some tests failed\n\n", myid_x);
    }
    
-   return 0;
+   return correct;
 }

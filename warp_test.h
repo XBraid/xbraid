@@ -67,6 +67,11 @@ warp_TestSum( warp_App              app,         /**< User defined App structure
               warp_PtFcnSum         sum          /**< Compute vector sum of two temporal states*/
               );
 
+/**
+ * Returns 0 if the tests fail
+ * Returns 1 if the tests pass
+ * Check the log messages to see details of which tests failed.
+ **/
 warp_Int
 warp_TestDot( warp_App              app,         /**< User defined App structure */
               MPI_Comm              comm_x,      /**< Spatial communicator */
@@ -76,10 +81,14 @@ warp_TestDot( warp_App              app,         /**< User defined App structure
               warp_PtFcnFree        free,        /**< Free a temporal state warp_Vector*/
               warp_PtFcnClone       clone,       /**< Clone a temporal state warp_Vector */
               warp_PtFcnSum         sum,         /**< Compute vector sum of two temporal states*/
-              warp_PtFcnDot         dot,         /**< Compute dot product of two temporal states*/
-              warp_Int             *correct      /**< Boolean describing whether all the tests passed*/
+              warp_PtFcnDot         dot          /**< Compute dot product of two temporal states*/
               );
               
+/**
+ * Returns 0 if the tests fail
+ * Returns 1 if the tests pass
+ * Check the log messages to see details of which tests failed.
+ **/
 warp_Int
 warp_TestBuf( warp_App              app,         /**< User defined App structure */
               MPI_Comm              comm_x,      /**< Spatial communicator */
@@ -91,10 +100,14 @@ warp_TestBuf( warp_App              app,         /**< User defined App structure
               warp_PtFcnDot         dot,         /**< Compute dot product of two temporal states*/
               warp_PtFcnBufSize     bufsize,     /**< Computes size for MPI buffer for one */
               warp_PtFcnBufPack     bufpack,     /**< Packs MPI buffer to contain one temporal state*/
-              warp_PtFcnBufUnpack   bufunpack,   /**< Unpacks MPI buffer containing one temporal state*/
-              warp_Int             *correct      /**< Boolean describing whether all the tests passed*/
+              warp_PtFcnBufUnpack   bufunpack    /**< Unpacks MPI buffer containing one temporal state*/
               );
 
+/**
+ * Returns 0 if the tests fail
+ * Returns 1 if the tests pass
+ * Check the log messages to see details of which tests failed.
+ **/
 warp_Int
 warp_TestCoarsenRefine( warp_App          app,         /**< User defined App structure */
                         MPI_Comm          comm_x,      /**< Spatial communicator */
@@ -109,9 +122,13 @@ warp_TestCoarsenRefine( warp_App          app,         /**< User defined App str
                         warp_PtFcnSum     sum,         /**< Compute vector sum of two temporal states*/
                         warp_PtFcnDot     dot,         /**< Compute dot product of two temporal states*/
                         warp_PtFcnCoarsen coarsen,     /**< Spatially coarsen a vector */
-                        warp_PtFcnRefine  refine,      /**< Spatially refine a vector */
-                        warp_Int         *correct      /**< Boolean describing whether all the tests passed*/
+                        warp_PtFcnRefine  refine       /**< Spatially refine a vector */
                         );
+/**
+ * Returns 0 if the tests fail
+ * Returns 1 if the tests pass
+ * Check the log messages to see details of which tests failed.
+ **/
 warp_Int
 warp_TestAll( warp_App             app,         /**< User defined App structure */
               MPI_Comm             comm_x,      /**< Spatial communicator */
@@ -128,8 +145,7 @@ warp_TestAll( warp_App             app,         /**< User defined App structure 
               warp_PtFcnBufPack    bufpack,     /**< Packs MPI buffer to contain one temporal state*/
               warp_PtFcnBufUnpack  bufunpack,   /**< Unpacks MPI buffer containing one temporal state*/
               warp_PtFcnCoarsen    coarsen,     /**< Spatially coarsen a vector. If null, test is skipped.*/
-              warp_PtFcnRefine     refine,      /**< Spatially refine a vector. If null, test is skipped.*/
-              warp_Int            *correct      /**< Boolean describing whether all the tests passed*/
+              warp_PtFcnRefine     refine       /**< Spatially refine a vector. If null, test is skipped.*/
               );
 
 
