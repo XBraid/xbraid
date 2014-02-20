@@ -30,7 +30,7 @@ init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle)
 #ifdef HD_DEBUG
       printf("Init: assigning initial data at t=tstart=%e\n", t);
 #endif
-      exact1( u_->n, u_->sol, u_->h, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr );
+      exact1( u_->sol, t, kd_ );
       bdata(u_->vsol_, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr);
    }
    else /* set the grid function to zero, but could assign random values instead */
@@ -57,7 +57,7 @@ init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle)
 void
 init_advection_solver(double h, double amp, double ph, double om, int pnr, int taylorbc, 
                       double L, double cfl, int nstepsset, int nsteps, double tfinal, 
-                      advection_setup *kd_)
+                      double wave_speed, double viscosity, advection_setup *kd_)
 {
    double mxeg;
    int n;
@@ -80,9 +80,19 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
    kd_->pnr = pnr;
    kd_->taylorbc = taylorbc;
    kd_->L = L;
+   if (wave_speed < 0.0)
+   {
+      wave_speed *= -1;
+      printf("NOTE: wave_speed changed to %e\n", wave_speed);
+   }
+   
+   kd_->c_coeff  = wave_speed;
+   kd_->nu_coeff = viscosity;
+   
 /* ! compute time step */
-   mxeg = 1.0;
-   kd_->dt = cfl*h/mxeg;
+   mxeg = kd_->c_coeff;
+   
+   kd_->dt_fine = cfl*h/mxeg;
    
 /* difference operators are currently hard-wired for 6/3 order SBP */
    kd_->nb = 6;
@@ -96,6 +106,15 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
    kd_->betapcoeff = 0.03;
 /* ! bope and gh contain weights for the modified SBP-operator \tilde{D} */
    sbpghost(kd_->nb, kd_->wb, kd_->bope_, &(kd_->gh), kd_->betapcoeff);
+
+/* compute coefficients for diffusion term */
+   kd_->nb2 = 4;
+   kd_->wb2 = 6;
+   kd_->bop2_ = create_double_array_2d(kd_->nb2,  kd_->wb2);
+   kd_->iop2_ = create_double_array_1d(5);   
+
+   diffusion_coeff_4( kd_->iop2_, kd_->bop2_, &(kd_->gh2), kd_->bder );
+
 /*!** Boundary conditions on the two boundaries */
    kd_->bcnr_ = create_int_array_1d(2);
 /*   code means: 1- Dirichlet in u, extrapolate v */
@@ -106,11 +125,6 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
       bcnr(1) = 1;
       bcnr(2) = 2;
    }
-
-/* bndry ode workspace variables */
-   kd_->vcur_  = create_double_array_1d(3);
-   kd_->veval_ = create_double_array_1d(3);
-   kd_->dvdt_  = create_double_array_1d(3);
 
 /*!** RK coefficients */
    kd_->alpha_ = create_double_array_1d(4);
@@ -129,24 +143,18 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
    beta(3) = 1.0/3.0;
    beta(4) = 1.0/6.0;
 
-/* grid function workspace variables */
-   kd_->eval = malloc((n+2)*sizeof(double));
-   kd_->current = malloc((n+2)*sizeof(double));
-   kd_->rhs = malloc((n+2)*sizeof(double));
-   kd_->force = malloc((n+2)*sizeof(double));
-
 /* ! compute final time or number of time steps */
    kd_->tstart = 0;
    
    if( nstepsset )
    {
-      kd_->tstop = nsteps*kd_->dt;
+      kd_->tstop = nsteps*kd_->dt_fine;
    }
    else
    {
-      nsteps = tfinal/kd_->dt;
-      kd_->dt = tfinal/nsteps;
-      kd_->tstop = tfinal;
+      nsteps       = tfinal/kd_->dt_fine;
+      kd_->dt_fine = tfinal/nsteps;
+      kd_->tstop   = tfinal;
    }
    kd_->nsteps = nsteps;
    

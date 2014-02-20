@@ -16,13 +16,14 @@ int main(int argc, char ** argv)
    double h, cfl, bdataL, bdataR;
    double L, l2, li, tfinal;
    double amp, ph, om;
+   double wave_speed, viscosity;
    
    int nstepsset, tfinalset, arg_index, print_usage=0, myid=0;
 
    FILE *eun;
    
    advection_setup *kd_ = NULL;
-   grid_fcn *gf_ = NULL;
+   grid_fcn *gf_ = NULL, *exact_=NULL;
 
 /* from drive-05.c */
    int i, level;
@@ -98,8 +99,9 @@ int main(int argc, char ** argv)
    MPI_Comm_size( comm, &num_procs );
 
 /* Default problem parameters */
-/*!**  Domain length*/
-   L = 1.0;
+   L = 1.0; /* Domain length*/
+   wave_speed = 1.0; /* wave speed */
+   viscosity = 0.0;  /* viscosity */
    
 /*!**  Twilight testing parameters*/
    amp  = 0.8;
@@ -109,12 +111,10 @@ int main(int argc, char ** argv)
 /*!** exact solution
 ! pnr == 1:
 !!$          x = (i-1)*h
-!!$          w(1,i) = sin(pi*x*x+ph)*cos(t)
-!!$          w(2,i) = amp*cos(pi*x)**2*sin(t+ph)
+!!$          w(i) = sin(pi*x*x+ph)*cos(t)
 ! pnr ==2:
 !!$          x = (i-1)*h
-!!$          w(1,i) = sin(om*(x-t)+ph)
-!!$          w(2,i) = cos(om*(x+t))
+!!$          w(i) = sin(om*(x-t)+ph)
 */
 /* BC: pnr = 1 or 2, Dirichlet in u on the left, extrapolate u on the right */
    pnr = 2;
@@ -195,7 +195,8 @@ int main(int argc, char ** argv)
 
 /* setup solver meta-data */
    kd_ = malloc(sizeof(advection_setup));
-   init_advection_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, kd_);
+   init_advection_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, 
+                         wave_speed, viscosity, kd_);
    
 /* create solution vector */
    /* init_grid_fcn(kd_, 0.0, &gf_); */
@@ -207,7 +208,7 @@ int main(int argc, char ** argv)
    printf("Boundary treatment: bcnr(left, right): %i, %i\n", bcnr(1), bcnr(2));
    printf("Treatment of time-dependent bndry data: %i\n", kd_->taylorbc);
    printf("Solving to time %e using %i steps\n",kd_->tstop, kd_->nsteps);
-   printf("Time step is %e\n",kd_->dt);
+   printf("Time step on finest grid is %e\n",kd_->dt_fine);
    printf("Finest grid has spacing h=%e with n=%i grid points\n", kd_->h_fine, kd_->n_fine);
    printf("------------------------------\n");
 
@@ -278,17 +279,19 @@ int main(int argc, char ** argv)
    printf("------------------------------\n");
    printf("Time-stepping completed. Solved to time t: %e\n", kd_->tstop);
 
-/* ! evaluate solution error, stick exact solution in kd_ workspace array */
-   exact1( kd_->n_fine, kd_->current, kd_->h_fine, kd_->amp, kd_->ph, kd_->om, kd_->tstop, kd_->pnr );
-/* get exact bndry data (bdataL) */
-   twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, kd_->tstop, kd_->dt, kd_->amp, kd_->ph, kd_->om, kd_->pnr);
+/* tmp storage */
+   copy_grid_fcn( kd_, gf_, &exact_ );
+/* ! evaluate solution error */
+   exact1( exact_->sol, kd_->tstop, kd_ );
+/* get exact bndry data (bdataL). Note: dt not used when s=1 */
+   twbndry1( &bdataL, &bdataR, 1, kd_->tstop, 0.0, kd_ );
 
    if (kd_->sol_copy)
    {
       
 /*  get a pointer to the final solution from the advection_setup structure */
       gf_ = kd_->sol_copy;
-      evalerr1( gf_->n, gf_->sol, kd_->current, &l2, &li, gf_->h );
+      evalerr1( gf_->n, gf_->sol, exact_->sol, &l2, &li, gf_->h );
 
       printf("------------------------------\n");
    
@@ -305,6 +308,9 @@ int main(int argc, char ** argv)
 /*   printf("done.\n");*/
 /*   printf("------------------------------\n");*/
    }
+
+/* free tmp storage */
+   free_grid_fcn( kd_, exact_ );
    
 }
 

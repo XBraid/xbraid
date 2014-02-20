@@ -15,7 +15,7 @@ OBJ5 = advect.o c_array.o bop6g.o sbpghost.o c-exact.o c-bdata.o c-twbndry.o c-e
        dwdt.o c-twforce.o advect_data.o explicit_rk4_stepper.o
 
 OBJT = test-gf.o c_array.o bop6g.o sbpghost.o c-exact.o c-bdata.o c-twbndry.o c-evalerr.o assign_gp.o \
-       dwdt.o c-twforce.o advect_data.o
+       dwdx.o c-twforce.o advect_data.o
 
 OBJ1 = hyperdrive-01.o c_array.o bop6g.o sbpghost.o c-exact.o c-bdata.o c-twbndry.o c-evalerr.o assign_gp.o \
        dwdt.o c-twforce.o advect_data.o explicit_rk4_stepper.o

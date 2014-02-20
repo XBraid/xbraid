@@ -14,6 +14,8 @@ int main(int argc, char ** argv)
    double h, cfl, bdataL, bdataR;
    double L, t, l2, li, tfinal;
    double amp, ph, om;
+   double wave_speed, viscosity;
+   
    double dummy=0;
    int rfact_dummy=0;
    
@@ -22,11 +24,13 @@ int main(int argc, char ** argv)
    FILE *eun;
    
    advection_setup *kd_ = NULL;
-   grid_fcn *gf_ = NULL;
+   grid_fcn *gf_ = NULL, *exact_ = NULL;
       
 /* Default problem parameters */
-/*!**  Domain length*/
-   L = 1.0;
+
+   L = 1.0; /* Domain length*/
+   wave_speed = 1.0; /* wave speed */
+   viscosity = 0.0;  /* viscosity */
    
 /*!**  Twilight testing parameters*/
    amp  = 0.8;
@@ -36,12 +40,10 @@ int main(int argc, char ** argv)
 /*!** exact solution
 ! pnr == 1:
 !!$          x = (i-1)*h
-!!$          w(1,i) = sin(pi*x*x+ph)*cos(t)
-!!$          w(2,i) = amp*cos(pi*x)**2*sin(t+ph)
+!!$          w(i) = sin(pi*x*x+ph)*cos(t)
 ! pnr ==2:
 !!$          x = (i-1)*h
-!!$          w(1,i) = sin(om*(x-t)+ph)
-!!$          w(2,i) = cos(om*(x+t))
+!!$          w(i) = sin(om*(x-t)+ph)
 */
 /* BC: pnr = 1 or 2, Dirichlet in u on the left, extrapolate u on the right */
    pnr = 2;
@@ -125,7 +127,8 @@ int main(int argc, char ** argv)
 
 /* solver meta-data */
    kd_ = malloc(sizeof(advection_setup));
-   init_advection_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, kd_);
+   init_advection_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, 
+                         wave_speed, viscosity, kd_);
    
 /* create solution vector */
    init_grid_fcn(kd_, 0.0, &gf_);
@@ -135,8 +138,9 @@ int main(int argc, char ** argv)
    printf("Boundary treatment: bcnr(left, right): %i, %i\n", bcnr(1), bcnr(2));
    printf("Treatment of time-dependent bndry data: %i\n", kd_->taylorbc);
    printf("Solving to time %e using %i steps\n",kd_->tstop, kd_->nsteps);
-   printf("Time step is %e\n",kd_->dt);
+   printf("Time step on fine grid is %e\n",kd_->dt_fine);
    printf("Grid spacing is %e with %i grid points\n", kd_->h_fine, kd_->n_fine);
+   printf("Wave speed: %e, viscosity: %e\n", wave_speed, viscosity);
 
    t = 0.0;
 
@@ -152,18 +156,22 @@ int main(int argc, char ** argv)
       }
 
 /* ! evaluate solution error (stage=1 evaluates the plain bndry data at time t)*/
-      twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, t, kd_->dt, kd_->amp, kd_->ph, kd_->om, kd_->pnr);
+/* when s=1, dt is not used */
+      twbndry1( &bdataL, &bdataR, 1, t, 0.0, kd_ );
       
-      exact1( kd_->n_fine, kd_->current, kd_->h_fine, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr );
-      evalerr1( kd_->n_fine, gf_->sol, kd_->current, &l2, &li, kd_->h_fine );
+/* tmp storage */
+      copy_grid_fcn( kd_, gf_, &exact_ );
+
+      exact1( exact_->sol, t, kd_ );
+      evalerr1( kd_->n_fine, gf_->sol, exact_->sol, &l2, &li, kd_->h_fine );
       
 /* ! save errors on file... */
       fprintf(eun,"%e %e %e %e\n", t, li, l2, fabs(bdataL - vsol(1)) ); 
 
 /* ! time-stepper from t_n to t_{n+1} starts here */
-      explicit_rk4_stepper(kd_, t, t+kd_->dt, dummy, gf_, &rfact_dummy); /* this is my_Phi() */
+      explicit_rk4_stepper(kd_, t, t+kd_->dt_fine, dummy, gf_, &rfact_dummy); /* this is my_Phi() */
 
-      t = t + kd_->dt;
+      t = t + kd_->dt_fine;
 /* ! time-stepper from t_n to t_{n+1} ends here */
    }   
 
@@ -171,30 +179,27 @@ int main(int argc, char ** argv)
    printf("Time-stepping completed. Solved to time t: %e\n", t);
 
 /* ! evaluate solution error, stick exact solution in kd_ workspace array */
-   exact1( kd_->n_fine, kd_->current, kd_->h_fine, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr );
-/* get exact bndry data (bdataL) */
-   twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, t, kd_->dt, kd_->amp, kd_->ph, kd_->om, kd_->pnr);
+   exact1( exact_->sol, t, kd_ );
+/* get exact bndry data (bdataL) Note: when s=1, dt is not used */
+   twbndry1( &bdataL, &bdataR, 1, t, 0.0, kd_ );
 
-   evalerr1( kd_->n_fine, gf_->sol, kd_->current, &l2, &li, kd_->h_fine );
+   evalerr1( kd_->n_fine, gf_->sol, exact_->sol, &l2, &li, kd_->h_fine );
 /* ! save errors on file... */
    fprintf(eun,"%e %e %e %e\n", t, li, l2, fabs(bdataL-vsol(1)));
 
 /*! close error file*/
    fclose(eun);
    
-
    printf("------------------------------\n");
    
    printf("Solution error in maximum norm, bndry error\n");
    
    printf("time: %e, sol-err: %e, bndry-err: %e\n", t, li, fabs(bdataL-vsol(1)));
    printf("------------------------------\n");
-/*   printf("Saving ...\n");*/
-    /* open(21,file='sol.bin',form='unformatted') */
-    /* fprintf(21) n, h, dt, t, (sol(i),i=1,n), (current(i),i=1,n) */
-    /* close(21) */
-/*   printf("done.\n");*/
-/*   printf("------------------------------\n");*/
+
+/* free tmp storage */
+   free_grid_fcn(kd_, exact_);
+
 }
 
 

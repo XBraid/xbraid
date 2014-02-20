@@ -19,25 +19,31 @@ typedef struct _warp_Vector_struct
 
 typedef struct _warp_App_struct
 {
-   int n_fine;    /* number of grid points in the finest grid */
-   double h_fine; /* finest grid size */
-   double amp;   /* testing parameter (amplitude) */
-   double ph;    /* testing parameter (phase) */
-   double om;    /* testing parameter (omega) */
-   int pnr;      /* problem number (1 or 2) */
-   int taylorbc; /* treatment of bndry data at intermediate RK stages */
-   int nb; /* first dimension of bop and bope arrays */
-   int wb; /* second dimension of bop and bope arrays */
+   int n_fine;     /* number of grid points in the finest grid */
+   double h_fine;  /* finest grid size */
+   double dt_fine; /* time step satisfying cfl constraint on finest grid */
+   double amp;     /* testing parameter (amplitude) */
+   double ph;      /* testing parameter (phase) */
+   double om;      /* testing parameter (omega) */
+   int pnr;        /* problem number (1 or 2) */
+   int taylorbc;   /* treatment of bndry data at intermediate RK stages */
+   int nb;         /* first dimension of bop and bope arrays */
+   int wb;         /* second dimension of bop and bope arrays */
    double_array_2d *bop_;  /* regular SBP coefficients */
    double_array_2d *bope_; /* extended SBP coefficients */
    double gh;              /* ghost point coefficient */
+   int nb2;         /* first dimension of bop2 array */
+   int wb2;         /* second dimension of bop2 array */
+   double_array_2d *bop2_;  /* SBP coefficients for 2nd derivative */
+   double_array_1d *iop2_;  /* interior coefficients for 2nd derivative */
+   double gh2;              /* ghost point coefficient for 2nd derivative */
+   double bder[5];          /* coefficients for boundary derivative */
    double L;               /* length of 1-d domain */
-   double dt;              /* time step satisfying cfl constraint */
+   double c_coeff;         /* wave speed */
+   double nu_coeff;        /* viscosity */
    double betapcoeff;      /* coefficient for Dirichlet data with ghost point */
    int_array_1d *bcnr_;    /* boundary coefficient number */
    double_array_1d *alpha_, *beta_; /* RK-4 coefficients */
-   double_array_1d *vcur_, *veval_, *dvdt_; /* boundary ode workspace variables */
-   double *eval, *current, *rhs, *force;   /* grid function workspace variables */
 
 /* warp specific stuff */
    grid_fcn *sol_copy; /* assigned by the call-back routine save_grid_fcn() */
@@ -55,7 +61,8 @@ init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle);
 
 void
 init_advection_solver(double h, double amp, double ph, double om, int pnr, int taylorbc, 
-                      double L, double cfl, int nstepsset, int nsteps, double tfinal, advection_setup *kd_);
+                      double L, double cfl, int nstepsset, int nsteps, double tfinal, 
+                      double wave_speed, double viscosity, advection_setup *kd_);
 
 int
 explicit_rk4_stepper(advection_setup *kd_, double t, double tend, double accuracy, grid_fcn *gf_, 
@@ -114,21 +121,30 @@ gridfcn_Coarsen(advection_setup *kd_,
                 grid_fcn **cu_handle);
 
 void
-exact1( int n, double *w, double h, double amp, double ph, double om, double t, int pnr);
+exact1( double *w, double t, advection_setup *kd_);
+void
+exact_x( double *w, double t, advection_setup *kd_);
+void
+exact_xx( double *w, double t, advection_setup *kd_);
+
 void 
 bdata(double_array_1d *vsol_, double amp, double ph, double om, double t, int pnr);
 void 
 bop6g(double t, double_array_2d *q06_ );
 void 
+diffusion_coeff_4( double_array_1d *iop2_, double_array_2d *bop2_, double *gh2, double bder[5] );
+void 
 sbpghost( int nb, int wb, double_array_2d * bop_, double *gh, double betapcoeff);
 void
-twbndry1( double x0, double *bdata0, double x1, double *bdata1, int s, double t, double dt, 
-          double amp, double ph, double om, int pnr );
+twbndry1( double *bdataL, double *bdataR, int stage, double t, double dt, advection_setup *kd_ );
 void
 assign_gp( int n, double *w, double bdataL, double bdataR, double betapcoeff, double h, int_array_1d *bcnr_ );
 void
-dwdt( int n, double *w, double *dwdt, double h, int nb, int wb, double_array_2d *bop_, 
-             double_array_2d *bope_, double gh);
+dwdt( int n, double *w, double *dwdt, double h, advection_setup *kd_ );
+void
+dwdx( int n, double *w, double *dwdt, double h, advection_setup *kd_ );
+void
+d2wdx2( int n, double *w, double *wxx, double h, advection_setup *kd_ );
 void
 twforce1( int n, double *f, double t, double h, double amp, double ph, double om, int pnr, double Lx );
 void

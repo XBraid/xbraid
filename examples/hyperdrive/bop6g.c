@@ -76,5 +76,72 @@ void bop6g(double t, double_array_2d *q06_ )
    q06(6,7) = 32400.0/43801.0;
    q06(6,8) = -6480.0/43801.0;
    q06(6,9) = 720.0/43801.0;
+#undef q06
+}
+
+/*c-----------------------------------------------------------------------*/
+void diffusion_coeff_4( double_array_1d *iop2_, double_array_2d *bop2_, double *gh2, double bder[5] )
+{
+/* iop2(5) */
+/* bop2(4,6) */
+/* bder[0...4] */
+#define iop2(i) compute_index_1d(iop2_, i)
+#define bop2(i,j) compute_index_2d(bop2_, i, j)
+
+/* SBP operator of order 2/4. 5pt stencil. */
+
+/* *** Norm  */
+/*       h(1) = 17d0/48 */
+/*       h(2) = 59d0/48 */
+/*       h(3) = 43d0/48 */
+/*       h(4) = 49d0/48 */
+
+/* interior operator */
+   iop2(1) = -1.0/12;
+   iop2(2) =  4.0/3;
+   iop2(3) = -5.0/2;
+   iop2(4) =  4.0/3;
+   iop2(5) = -1.0/12;
+
+/* Second derivative boundary modified stencil, 2nd order truncation error */
+
+/* ghost point coefficient */
+   *gh2 = 12.0/17.0;
+
+/* interior stencil */
+   bop2(1,1) = -14.0/17.0;
+   bop2(1,2) = -13.0/17.0;
+   bop2(1,3) = 20.0/17.0;
+   bop2(1,4) = -5.0/17.0;
+   bop2(1,5) = 0;
+   bop2(1,6) = 0;
+
+   bop2(2,1) = 1.0;
+   bop2(2,2) = -2.0;
+   bop2(2,3) = 1.0;
+   bop2(2,4) = 0;
+   bop2(2,5) = 0;
+   bop2(2,6) = 0;
+
+   bop2(3,1) = -4.0/43.0;
+   bop2(3,2) = 59.0/43.0;
+   bop2(3,3) = -110.0/43.0;
+   bop2(3,4) = 59.0/43.0;
+   bop2(3,5) = -4.0/43.0;
+   bop2(3,6) = 0;
+
+   bop2(4,1) = -1.0/49.0;
+   bop2(4,2) = 0;
+   bop2(4,3) = 59.0/49.0;
+   bop2(4,4) = -118.0/49.0;
+   bop2(4,5) = 64.0/49.0;
+   bop2(4,6) = -4.0/49.0;
+
+/* boundary derivative, 4th order, uses ghost point */
+   bder[0] = -1.0/4;
+   bder[1] = -5.0/6;
+   bder[2] =  3.0/2;
+   bder[3] = -1.0/2;
+   bder[4] =  1.0/12;
 }
 

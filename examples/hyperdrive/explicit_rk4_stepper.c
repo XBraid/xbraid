@@ -6,16 +6,16 @@ explicit_rk4_stepper(advection_setup *kd_, double t, double tend, double accurac
 {
 /* this is a 'my_Phi()' routine, where kd_ is of type 'my_App' and gf_ is of type 'my_Vector' */
 /* take 1 time step with RK-4 */
-/* currently ignore tend. Just use the time step in kd_->dt */
 /* currently not using accuracy or rfact_ */
    
    int i, stage;
    double tstage, tbc, bdataL, bdataR, dt;   
+   grid_fcn *eval_, *current_, *dwdt_, *force_;
 
 #define vsol(i) compute_index_1d(gf_->vsol_, i)   
-#define vcur(i) compute_index_1d(kd_->vcur_, i)   
-#define veval(i) compute_index_1d(kd_->veval_, i)   
-#define dvdt(i) compute_index_1d(kd_->dvdt_, i)
+#define vcur(i) compute_index_1d(current_->vsol_, i)   
+#define veval(i) compute_index_1d(eval_->vsol_, i)   
+#define dvdt(i) compute_index_1d(dwdt_->vsol_, i)
 
 #define alpha(i) compute_index_1d(kd_->alpha_, i)   
 #define beta(i) compute_index_1d(kd_->beta_, i)   
@@ -28,19 +28,11 @@ explicit_rk4_stepper(advection_setup *kd_, double t, double tend, double accurac
    printf("Explict RK4 stepper: t=%e, dt=%e, h=%e, n=%i\n", t, dt, gf_->h, gf_->n);
 #endif
 
-/* ! boundary values */
-   for (i=1; i<=3; i++)
-   {
-      veval(i) = vsol(i);
-      vcur(i)  = vsol(i);
-   }
-      
-/* ! grid functions */
-   for (i=0; i<=gf_->n+1; i++)
-   {
-      kd_->eval[i] = gf_->sol[i];
-      kd_->current[i] = gf_->sol[i];
-   }
+/* allocate & initialize eval, current, dwdt, and force grid functions by copying from input gf_ */
+   copy_grid_fcn( kd_, gf_, &eval_ );
+   copy_grid_fcn( kd_, gf_, &current_ );
+   copy_grid_fcn( kd_, gf_, &dwdt_ );
+   copy_grid_fcn( kd_, gf_, &force_ );
       
 /* ! 4 stages of RK-4 */
    for (stage=1; stage<=4; stage++)
@@ -50,13 +42,13 @@ explicit_rk4_stepper(advection_setup *kd_, double t, double tend, double accurac
       if (kd_->taylorbc == 1)
       {
          tbc = t;
-         twbndry1( 0.0, &bdataL, kd_->L, &bdataR, stage, tbc, dt, kd_->amp, kd_->ph, kd_->om, kd_->pnr);
+         twbndry1( &bdataL, &bdataR, stage, tbc, dt, kd_ );
       }
       else if (kd_->taylorbc == 0)
       {
 /* evaluate exact boundary data for the stage */
 /* set stage==1 to evaluate boundary data at t=tstage */
-         twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, tstage, dt, kd_->amp, kd_->ph, kd_->om, kd_->pnr);
+         twbndry1( &bdataL, &bdataR, 1, tstage, dt, kd_ );
       }
       else if (kd_->taylorbc == 3)
       {
@@ -65,22 +57,23 @@ explicit_rk4_stepper(advection_setup *kd_, double t, double tend, double accurac
       }
 
 /* enforce bc for the 'eval' grid function */
-      assign_gp( gf_->n, kd_->eval, bdataL, bdataR, kd_->betapcoeff, gf_->h, kd_->bcnr_ );
+      assign_gp( gf_->n, eval_->sol, bdataL, bdataR, kd_->betapcoeff, gf_->h, kd_->bcnr_ );
 
 /* evaluate dwdt */
-      dwdt( gf_->n, kd_->eval, kd_->rhs, gf_->h, kd_->nb, kd_->wb, kd_->bop_, kd_->bope_, kd_->gh );
-         
-      twforce1( gf_->n, kd_->force, tstage, gf_->h, kd_->amp, kd_->ph, kd_->om, kd_->pnr, kd_->L );
+      dwdt( gf_->n, eval_->sol, dwdt_->sol, gf_->h, kd_ );
+
+/* should fold the force into dwdt() */         
+      twforce1( gf_->n, force_->sol, tstage, gf_->h, kd_->amp, kd_->ph, kd_->om, kd_->pnr, kd_->L );
 
 /* evaluate boundary ODE */
-      dvdtbndry(kd_->veval_, kd_->dvdt_, kd_->amp, kd_->ph, kd_->om, tstage, kd_->pnr);
+      dvdtbndry(eval_->vsol_, dwdt_->vsol_, kd_->amp, kd_->ph, kd_->om, tstage, kd_->pnr);
 
       if (stage < 4)
       {
 /* compute next stage grid function 'eval'*/
          for (i=1; i<=gf_->n; i++)
          {
-            kd_->eval[i] = kd_->current[i] + dt*alpha(stage+1)*(kd_->rhs[i] + kd_->force[i]);
+            eval_->sol[i] = current_->sol[i] + dt*alpha(stage+1)*(dwdt_->sol[i] + force_->sol[i]);
          }
 /* compute next stage boundary data */
          for (i=1; i<=3; i++)
@@ -92,7 +85,7 @@ explicit_rk4_stepper(advection_setup *kd_, double t, double tend, double accurac
 /* accumulate stage contributions to the solution at next time step */
       for (i=1; i<=gf_->n; i++)
       {
-         gf_->sol[i] = gf_->sol[i] + dt*beta(stage)*( kd_->rhs[i] + kd_->force[i] );
+         gf_->sol[i] = gf_->sol[i] + dt*beta(stage)*( dwdt_->sol[i] + force_->sol[i] );
       }
          
 /* accumulate bndry data */
@@ -102,5 +95,12 @@ explicit_rk4_stepper(advection_setup *kd_, double t, double tend, double accurac
       }
 
    }/* end stage */
+
+/* free tmp storage */
+   free_grid_fcn(kd_, current_);
+   free_grid_fcn(kd_, eval_);
+   free_grid_fcn(kd_, dwdt_);
+   free_grid_fcn(kd_, force_);
+   
    return 0;
 }
