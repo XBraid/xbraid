@@ -2432,7 +2432,7 @@ my_CoarsenBilinear(warp_App      app,
    int        ncoarsen;
    double     cdt = c_tplus - tstart;
    double     fdt = f_tplus - tstart;
-   double     scale = (1./2.6666);
+   double     scale = 0.25;
 
    cu = (my_Vector *) malloc(sizeof(my_Vector));
    
