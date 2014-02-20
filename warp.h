@@ -338,6 +338,17 @@ warp_SetWriteLevel(warp_Core  core,
                    warp_Int   write_level);
 
 /**
+ * Split MPI commworld into comm_x and comm_t, the 
+ * spatial and temporal communicators
+ **/
+warp_Int
+warp_SplitCommworld(const MPI_Comm  *comm_world,  /**< Global communicator to split */
+                          warp_Int  px,           /**< Number of processors parallelizing space for a single time step*/
+                          MPI_Comm  *comm_x,      /**< Spatial communicator (written as output) */
+                          MPI_Comm  *comm_t       /**< Temporal communicator (written as output) */
+                          );
+
+/**
  * Return the residual for the current status object
  **/
 warp_Int
@@ -365,10 +376,6 @@ warp_Int
 warp_GetStatusDone(warp_Status  status,
                    warp_Int    *done_ptr);
 
-
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
 
 #ifdef __cplusplus
 }

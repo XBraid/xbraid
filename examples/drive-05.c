@@ -64,6 +64,7 @@
 #include "_hypre_sstruct_mv.h"
 
 #include "warp.h"
+#include "warp_test.h"
 
 #include "vis.c"
 
@@ -2431,6 +2432,7 @@ my_CoarsenBilinear(warp_App      app,
    int        ncoarsen;
    double     cdt = c_tplus - tstart;
    double     fdt = f_tplus - tstart;
+   double     scale = 0.25;
 
    cu = (my_Vector *) malloc(sizeof(my_Vector));
    
@@ -2498,27 +2500,27 @@ my_CoarsenBilinear(warp_App      app,
                if( (i%2 == 0) && (j%2 == 0) )
                {
                   /* Injection: this is the F-point analogue to a C-point */
-                  cvalues[ (i/2)*cnlx_temp + j/2 ] += 0.25*fvalues[counter];
+                  cvalues[ (i/2)*cnlx_temp + j/2 ] += scale*fvalues[counter];
                }
                else if( (i%2 == 0) && (j%2 == 1) )
                {
                   /* Interpolate: this is an F-point horizontally between two C-points */
-                  cvalues[ (i/2)*cnlx_temp + j/2 ]    += 0.125*fvalues[counter];
-                  cvalues[ (i/2)*cnlx_temp + j/2 +1 ] += 0.125*fvalues[counter];                   
+                  cvalues[ (i/2)*cnlx_temp + j/2 ]    += scale*0.5*fvalues[counter];
+                  cvalues[ (i/2)*cnlx_temp + j/2 +1 ] += scale*0.5*fvalues[counter];                   
                }
                else if( (i%2 == 1) && (j%2 == 0) )
                {
                   /* Interpolate: this is an F-point vertically between two C-points */
-                  cvalues[ (i/2)*cnlx_temp + j/2 ]     += 0.125*fvalues[counter];
-                  cvalues[ ((i/2)+1)*cnlx_temp + j/2 ] += 0.125*fvalues[counter];
+                  cvalues[ (i/2)*cnlx_temp + j/2 ]     += scale*0.5*fvalues[counter];
+                  cvalues[ ((i/2)+1)*cnlx_temp + j/2 ] += scale*0.5*fvalues[counter];
                }
                else if( (i%2 == 1) && (j%2 == 1) )
                {
                   /* Interpolate: this is an F-point in the center of a grid cell */
-                  cvalues[ (i/2)*cnlx_temp + j/2        ] += 0.0625*fvalues[counter];
-                  cvalues[ (i/2)*cnlx_temp + j/2 +1     ] += 0.0625*fvalues[counter];
-                  cvalues[ ((i/2)+1)*cnlx_temp + j/2    ] += 0.0625*fvalues[counter];
-                  cvalues[ ((i/2)+1)*cnlx_temp + j/2 + 1] += 0.0625*fvalues[counter];
+                  cvalues[ (i/2)*cnlx_temp + j/2        ] += scale*0.25*fvalues[counter];
+                  cvalues[ (i/2)*cnlx_temp + j/2 +1     ] += scale*0.25*fvalues[counter];
+                  cvalues[ ((i/2)+1)*cnlx_temp + j/2    ] += scale*0.25*fvalues[counter];
+                  cvalues[ ((i/2)+1)*cnlx_temp + j/2 + 1] += scale*0.25*fvalues[counter];
                }
                counter += 1;
             }
@@ -2917,6 +2919,8 @@ int main (int argc, char *argv[])
    int arg_index;
    int print_usage = 0;
 
+   int correct;
+
    warp_Core  core;
    my_App    *app;
    int        max_levels;
@@ -2929,7 +2933,6 @@ int main (int argc, char *argv[])
 
    MPI_Comm    comm, comm_x, comm_t;
    int         myid, num_procs;
-   int         xcolor, tcolor;
    double      mystarttime, myendtime, mytime, maxtime;
 
    /* We consider a 2D problem. */
@@ -2961,17 +2964,19 @@ int main (int argc, char *argv[])
    int rap, relax, skip, max_iter_x[2];
    double tol_x[2], tol_x_coarse;
 
-   int nA_max, *max_num_iterations_global;
-   double *scoarsen_table_global;
+   int nA_max;
+   int *max_num_iterations_global = NULL;
+   double *scoarsen_table_global = NULL;
 
    int output_files, explicit, output_vis, print_level, write_level;
+   int run_wrapper_tests;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
 
    /* Default parameters. */
    comm                = MPI_COMM_WORLD;
-   max_levels          = 1;
+   max_levels          = 2;  /* Must be two, in order for coarsen and refine wrapper tests to run */
    nrelax              = 1;
    nrelax0             = -1;
    tol                 = 1.0e-09;
@@ -3007,6 +3012,7 @@ int main (int argc, char *argv[])
    output_vis          = 0;
    print_level         = 1;
    write_level         = 1;
+   run_wrapper_tests   = 0;
 
    MPI_Comm_rank( comm, &myid );
    MPI_Comm_size( comm, &num_procs );
@@ -3116,6 +3122,10 @@ int main (int argc, char *argv[])
          arg_index++;
          write_level = atoi(argv[arg_index++]);
       }
+      else if( strcmp(argv[arg_index], "-run_wrapper_tests") == 0 ){
+         arg_index++;
+         run_wrapper_tests = 1;
+      }
       else if( strcmp(argv[arg_index], "-output_files") == 0 ){
          arg_index++;
          output_files = 1;
@@ -3139,6 +3149,8 @@ int main (int argc, char *argv[])
       printf("\n");
       printf("Usage: %s [<options>]\n", argv[0]);
       printf("\n");
+      printf("  -run_wrapper_tests               : Only run the Warp wrapper tests\n");
+      printf("                                     (do not combine with temporal parallelism)\n");
       printf("  -pgrid  <px py pt>               : processors in each dimension (default: 1 1 1)\n");
       printf("  -nx  <nlx nly>                   : 2D spatial problem size of form 2^k+1, 2^k+1 (default: 17 17)\n");
       printf("  -nt  <n>                         : number of time steps (default: 32)\n"); 
@@ -3234,12 +3246,7 @@ int main (int argc, char *argv[])
    }
 
    /* Create communicators for the time and space dimensions */
-   /* The communicators are based on colors and keys (= myid) */
-   xcolor = myid / ( px*py );
-   tcolor = myid % ( px*py );
-
-   MPI_Comm_split( comm, xcolor, myid, &comm_x );
-   MPI_Comm_split( comm, tcolor, myid, &comm_t );
+   warp_SplitCommworld(&comm, px*py, &comm_x, &comm_t);
 
 #if DEBUG
    MPI_Comm_size( comm_t, &num_procs );
@@ -3394,138 +3401,190 @@ int main (int argc, char *argv[])
    (app->spatial_disc_table[0]).fspatial_disc_idx = 0;
 
    
-   /* Start timer. */
-   mystarttime = MPI_Wtime();
-
-   warp_Init(comm, comm_t, tstart, tstop, nt, app,
-             my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_Dot, 
-             my_Write, my_BufSize, my_BufPack, my_BufUnpack,
-             &core);
-
-   warp_SetLoosexTol( core, 0, tol_x[0] );
-   warp_SetLoosexTol( core, 1, tol_x_coarse );
-
-   warp_SetTightxTol( core, 0, tol_x[1] );
-
-   warp_SetMaxLevels( core, max_levels );
-
-   warp_SetPrintLevel( core, print_level);
-   warp_SetWriteLevel( core, write_level);
-
-   warp_SetNRelax(core, -1, nrelax);
-   if (nrelax0 > -1)
-   {
-      warp_SetNRelax(core,  0, nrelax0);
-   }
-
-   /*warp_SetRelTol(core, tol);*/
-   /*warp_SetAbsTol(core, tol*sqrt(px*nlx*py*nly*(nt+1)) );*/
-   warp_SetAbsTol(core, tol/sqrt(dx*dy*dt));
-
-   warp_SetCFactor(core, -1, cfactor);
-   if( cfactor0 > -1 ){
-      /* Use cfactor0 on all levels until there are < cfactor0 points
-       * on each processor. */
-      level = (int) (log10((nt + 1) / pt) / log10(cfactor0));
-      for( i = 0; i < level; i++ )
-         warp_SetCFactor(core,  i, cfactor0);
-   }
    
-   warp_SetMaxIter(core, max_iter);
-   if (fmg)
+   if( run_wrapper_tests)
    {
-      warp_SetFMG(core);
-   }
-   
-   if (scoarsen)
-   {
-      app->scoarsen=1;
-      if (scoarsen == 1)
+      /* Run only the warp wrapper tests */
+      MPI_Comm_rank( comm_x, &myid );
+
+      /* Test init(), write(), free() */
+      warp_TestInitWrite( app, comm_x, stdout, 0.0, my_Init, my_Write, my_Free);
+      warp_TestInitWrite( app, comm_x, stdout, dt, my_Init, my_Write, my_Free);
+
+      /* Test clone() */
+      warp_TestClone( app, comm_x, stdout, 0.0, my_Init, my_Write, my_Free, my_Clone);
+      warp_TestClone( app, comm_x, stdout, dt, my_Init, my_Write, my_Free, my_Clone);
+
+      /* Test sum() */
+      warp_TestSum( app, comm_x, stdout, 0.0, my_Init, my_Write, my_Free, my_Clone, my_Sum);
+      warp_TestSum( app, comm_x, stdout, dt, my_Init, my_Write, my_Free, my_Clone, my_Sum);
+
+      /* Test dot() */
+      correct = warp_TestDot( app, comm_x, stdout, 0.0, my_Init, my_Free, my_Clone, my_Sum, my_Dot);
+      correct = warp_TestDot( app, comm_x, stdout, dt, my_Init, my_Free, my_Clone, my_Sum, my_Dot);
+
+      /* Test bufsize(), bufpack(), bufunpack() */
+      correct = warp_TestBuf( app, comm_x, stdout, 0.0, my_Init, my_Free, my_Sum, my_Dot, my_BufSize, my_BufPack, my_BufUnpack);
+      correct = warp_TestBuf( app, comm_x, stdout, dt, my_Init, my_Free, my_Sum, my_Dot, my_BufSize, my_BufPack, my_BufUnpack);
+       
+      /* Test coarsen and refine */
+      correct = warp_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
+                             my_Write, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenInjection, 
+                             my_Refine);
+      correct = warp_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
+                            my_Write, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenBilinear, 
+                            my_Refine);
+      if(correct == 0)
       {
-         warp_SetSpatialCoarsen(core, my_CoarsenInjection);
-      }
-      else if (scoarsen == 2)
-      {
-         warp_SetSpatialCoarsen(core, my_CoarsenBilinear);
+        printf("Failed: at least one of the tests failed\n");
       }
       else
       {
-         printf("Invalid scoarsen choice.  Ignoring this parameter\n");
+        printf("Passed: all tests passed\n");
       }
-      warp_SetSpatialRefine(core, my_Refine);
+
    }
-
-   warp_Drive(core);
-
-   /* Stop timer. */
-   myendtime = MPI_Wtime();
-   mytime    = myendtime - mystarttime;
-
-   /* Print some additional statistics */
-   MPI_Comm_rank( comm, &myid );
-
-   /* Compute maximum time */
-   MPI_Reduce( &mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, 0, comm );
-
-   /* Determine some solver information about topics like spatial coarsening
-    * and the maximum number of iterations in spatial solves on each time level
-    * (if implicit used) */
-   MPI_Allreduce( &(app->nA), &nA_max, 1, MPI_INT, MPI_MAX, comm ); 
-   max_num_iterations_global = (int*) malloc( nA_max*sizeof(int) );
-   scoarsen_table_global = (double*) malloc( 5*nA_max*sizeof(double) ); 
-   for( i = 0; i < nA_max; i++ ){
-      /* Grab max num interations information */
-      MPI_Allreduce( &(app->max_num_iterations[i]), 
-                     &max_num_iterations_global[i], 1, MPI_INT, MPI_MAX, comm );
-
-      /* Grab spatial coarsening information */
-      MPI_Allreduce( &(app->scoarsen_table)[i*5],
-            &scoarsen_table_global[i*5], 1, MPI_DOUBLE, MPI_MAX, comm ); 
-      MPI_Allreduce( &(app->scoarsen_table)[i*5+1],
-            &scoarsen_table_global[i*5+1], 1, MPI_DOUBLE, MPI_MAX, comm ); 
-      MPI_Allreduce( &(app->scoarsen_table)[i*5+2],
-            &scoarsen_table_global[i*5+2], 1, MPI_DOUBLE, MPI_MAX, comm ); 
-      MPI_Allreduce( &(app->scoarsen_table)[i*5+3],
-            &scoarsen_table_global[i*5+3], 1, MPI_DOUBLE, MPI_MAX, comm ); 
-      MPI_Allreduce( &(app->scoarsen_table)[i*5+4],
-            &scoarsen_table_global[i*5+4], 1, MPI_DOUBLE, MPI_MAX, comm ); 
-   
-   }
-
-   if( myid == 0 )
+   else
    {
-      printf( "  runtime: %.5lfs\n\n", maxtime );
-      printf( "spatial problem size       : %d x %d\n", nx, ny );
-      printf( "spatial stopping tolerance : %.2e (loose), %.2e (tight), %.2e (coarse levels)\n", 
-              app->tol_x[0], app->tol_x[1], tol_x_coarse );
-      printf( "max spatial iterations     : %d (expensive), %d (cheap)\n", 
-              app->max_iter_x[0], app->max_iter_x[1] );
-      printf( "\n" );
-      /*printf(" Scheme is either explicit or implicit.  If implicit then\n the table entry is 'impl, %%d' where the integer represents\n the maximum number of AMG iterations used by the implicit\n solver on that level.  'expl' stands for explicit. \n\n"); */
-      printf("level   scheme         dx          dy          dt          cfl\n"); 
-      printf("-----------------------------------------------------------------\n"); 
-      for( i = 0; i < nA_max; i++)
+      /* Run a Warp simulation */
+      /* Start timer. */
+      mystarttime = MPI_Wtime();
+
+      warp_Init(comm, comm_t, tstart, tstop, nt, app,
+                my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_Dot, 
+                my_Write, my_BufSize, my_BufPack, my_BufUnpack,
+                &core);
+
+      warp_SetLoosexTol( core, 0, tol_x[0] );
+      warp_SetLoosexTol( core, 1, tol_x_coarse );
+
+      warp_SetTightxTol( core, 0, tol_x[1] );
+
+      warp_SetMaxLevels( core, max_levels );
+
+      warp_SetPrintLevel( core, print_level);
+      warp_SetWriteLevel( core, write_level);
+
+      warp_SetNRelax(core, -1, nrelax);
+      if (nrelax0 > -1)
       {
-         if( scoarsen_table_global[i*5] == 1)
+         warp_SetNRelax(core,  0, nrelax0);
+      }
+
+      /*warp_SetRelTol(core, tol);*/
+      /*warp_SetAbsTol(core, tol*sqrt(px*nlx*py*nly*(nt+1)) );*/
+      warp_SetAbsTol(core, tol/sqrt(dx*dy*dt));
+
+      warp_SetCFactor(core, -1, cfactor);
+      if( cfactor0 > -1 ){
+         /* Use cfactor0 on all levels until there are < cfactor0 points
+          * on each processor. */
+         level = (int) (log10((nt + 1) / pt) / log10(cfactor0));
+         for( i = 0; i < level; i++ )
+            warp_SetCFactor(core,  i, cfactor0);
+      }
+      
+      warp_SetMaxIter(core, max_iter);
+      if (fmg)
+      {
+         warp_SetFMG(core);
+      }
+      
+      if (scoarsen)
+      {
+         app->scoarsen=1;
+         if (scoarsen == 1)
          {
-            printf(" %2d   |  expl        %1.2e    %1.2e    %1.2e    %1.2e\n", i,
-               scoarsen_table_global[i*5+1], scoarsen_table_global[i*5+2],
-               scoarsen_table_global[i*5+3], scoarsen_table_global[i*5+4]);
+            warp_SetSpatialCoarsen(core, my_CoarsenInjection);
+         }
+         else if (scoarsen == 2)
+         {
+            warp_SetSpatialCoarsen(core, my_CoarsenBilinear);
          }
          else
          {
-            printf(" %2d   |  impl, %2d   %1.2e    %1.2e    %1.2e    %1.2e\n", 
-               i, max_num_iterations_global[i],
-               scoarsen_table_global[i*5+1], scoarsen_table_global[i*5+2],
-               scoarsen_table_global[i*5+3], scoarsen_table_global[i*5+4]);
+            printf("Invalid scoarsen choice.  Ignoring this parameter\n");
          }
+         warp_SetSpatialRefine(core, my_Refine);
       }
 
-      printf( "\n" );
-   }
+      warp_Drive(core);
 
+      /* Stop timer. */
+      myendtime = MPI_Wtime();
+      mytime    = myendtime - mystarttime;
+
+      /* Print some additional statistics */
+      MPI_Comm_rank( comm, &myid );
+
+      /* Compute maximum time */
+      MPI_Reduce( &mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, 0, comm );
+
+      /* Determine some solver information about topics like spatial coarsening
+       * and the maximum number of iterations in spatial solves on each time level
+       * (if implicit used) */
+      MPI_Allreduce( &(app->nA), &nA_max, 1, MPI_INT, MPI_MAX, comm ); 
+      max_num_iterations_global = (int*) malloc( nA_max*sizeof(int) );
+      scoarsen_table_global = (double*) malloc( 5*nA_max*sizeof(double) ); 
+      for( i = 0; i < nA_max; i++ ){
+         /* Grab max num interations information */
+         MPI_Allreduce( &(app->max_num_iterations[i]), 
+                        &max_num_iterations_global[i], 1, MPI_INT, MPI_MAX, comm );
+
+         /* Grab spatial coarsening information */
+         MPI_Allreduce( &(app->scoarsen_table)[i*5],
+               &scoarsen_table_global[i*5], 1, MPI_DOUBLE, MPI_MAX, comm ); 
+         MPI_Allreduce( &(app->scoarsen_table)[i*5+1],
+               &scoarsen_table_global[i*5+1], 1, MPI_DOUBLE, MPI_MAX, comm ); 
+         MPI_Allreduce( &(app->scoarsen_table)[i*5+2],
+               &scoarsen_table_global[i*5+2], 1, MPI_DOUBLE, MPI_MAX, comm ); 
+         MPI_Allreduce( &(app->scoarsen_table)[i*5+3],
+               &scoarsen_table_global[i*5+3], 1, MPI_DOUBLE, MPI_MAX, comm ); 
+         MPI_Allreduce( &(app->scoarsen_table)[i*5+4],
+               &scoarsen_table_global[i*5+4], 1, MPI_DOUBLE, MPI_MAX, comm ); 
+      
+      }
+
+      if( myid == 0 )
+      {
+         printf( "  runtime: %.5lfs\n\n", maxtime );
+         printf( "spatial problem size       : %d x %d\n", nx, ny );
+         printf( "spatial stopping tolerance : %.2e (loose), %.2e (tight), %.2e (coarse levels)\n", 
+                 app->tol_x[0], app->tol_x[1], tol_x_coarse );
+         printf( "max spatial iterations     : %d (expensive), %d (cheap)\n", 
+                 app->max_iter_x[0], app->max_iter_x[1] );
+         printf( "\n" );
+         /*printf(" Scheme is either explicit or implicit.  If implicit then\n the table entry is 'impl, %%d' where the integer represents\n the maximum number of AMG iterations used by the implicit\n solver on that level.  'expl' stands for explicit. \n\n"); */
+         printf("level   scheme         dx          dy          dt          cfl\n"); 
+         printf("-----------------------------------------------------------------\n"); 
+         for( i = 0; i < nA_max; i++)
+         {
+            if( scoarsen_table_global[i*5] == 1)
+            {
+               printf(" %2d   |  expl        %1.2e    %1.2e    %1.2e    %1.2e\n", i,
+                  scoarsen_table_global[i*5+1], scoarsen_table_global[i*5+2],
+                  scoarsen_table_global[i*5+3], scoarsen_table_global[i*5+4]);
+            }
+            else
+            {
+               printf(" %2d   |  impl, %2d   %1.2e    %1.2e    %1.2e    %1.2e\n", 
+                  i, max_num_iterations_global[i],
+                  scoarsen_table_global[i*5+1], scoarsen_table_global[i*5+2],
+                  scoarsen_table_global[i*5+3], scoarsen_table_global[i*5+4]);
+            }
+         }
+
+         printf( "\n" );
+      }
+
+      warp_Destroy(core);
+   }
+   
    /* Free memory */
-   free( max_num_iterations_global );
+   if( max_num_iterations_global != NULL)
+   {
+      free( max_num_iterations_global );
+   }
    HYPRE_SStructGridDestroy( app->grid_x );
    HYPRE_SStructStencilDestroy( app->stencil );
    HYPRE_SStructGraphDestroy( app->graph );
@@ -3534,10 +3593,13 @@ int main (int argc, char *argv[])
    for( i = 0; i < app->nA; i++ )
    {
       HYPRE_SStructMatrixDestroy( app->A[i] );
-      if( scoarsen_table_global[i*5] == 0 )
+      if( scoarsen_table_global != NULL)
       {
-         /* If an implicit solver was used */
-         HYPRE_StructPFMGDestroy( app->solver[i] );
+         if( scoarsen_table_global[i*5] == 0 )
+         {
+            /* If an implicit solver was used */
+            HYPRE_StructPFMGDestroy( app->solver[i] );
+         }
       }
    }
    free( scoarsen_table_global );
@@ -3563,7 +3625,6 @@ int main (int argc, char *argv[])
    
    free( app->tol_x );
    free( app );
-   warp_Destroy(core);
    MPI_Comm_free( &comm_x );
    MPI_Comm_free( &comm_t );
 

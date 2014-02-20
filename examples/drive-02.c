@@ -2253,7 +2253,6 @@ int main (int argc, char *argv[])
 
    MPI_Comm    comm, comm_x, comm_t;
    int         myid, num_procs;
-   int         xcolor, tcolor;
    double      mystarttime, myendtime, mytime, maxtime;
 
    /* We consider a 2D problem. */
@@ -2502,12 +2501,7 @@ int main (int argc, char *argv[])
    }
 
    /* Create communicators for the time and space dimensions */
-   /* The communicators are based on colors and keys (= myid) */
-   xcolor = myid / ( px*py );
-   tcolor = myid % ( px*py );
-
-   MPI_Comm_split( comm, xcolor, myid, &comm_x );
-   MPI_Comm_split( comm, tcolor, myid, &comm_t );
+   warp_SplitCommworld(&comm, px*py, &comm_x, &comm_t);
 
 #if DEBUG
    MPI_Comm_size( comm_t, &num_procs );

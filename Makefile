@@ -20,9 +20,9 @@ include makefile.inc
 # Targets
 ##################################################################
 
-WARP_HEADERS = _warp.h warp.h util.h
+WARP_HEADERS = _warp.h warp.h util.h warp_test.h
 
-WARP_FILES = util.c warp.c _warp.c
+WARP_FILES = util.c warp.c _warp.c warp_test.c
 
 WARP_OBJ = $(WARP_FILES:.c=.o)
 
