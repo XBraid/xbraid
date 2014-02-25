@@ -2,6 +2,7 @@
 #include <math.h>
 #include "advect_data.h"
 
+#define SQR(x) ((x)*(x))
 /**< Initialize a warp_Vector function on finest temporal grid*/
 int
 init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle)
@@ -30,8 +31,8 @@ init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle)
 #ifdef HD_DEBUG
       printf("Init: assigning initial data at t=tstart=%e\n", t);
 #endif
-      exact1( u_->sol, t, kd_ );
-      bdata(u_->vsol_, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr);
+      exact1( u_, t, kd_ );
+      bdata( u_, t, kd_);
    }
    else /* set the grid function to zero, but could assign random values instead */
    {
@@ -57,9 +58,10 @@ init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle)
 void
 init_advection_solver(double h, double amp, double ph, double om, int pnr, int taylorbc, 
                       double L, double cfl, int nstepsset, int nsteps, double tfinal, 
-                      double wave_speed, double viscosity, advection_setup *kd_)
+                      double wave_speed, double viscosity, int bcLeft, int bcRight,
+                      advection_setup *kd_)
 {
-   double mxeg;
+   double mxeg, p1, beta, pi=M_PI;
    int n;
 /* # ghost points */
    const int o = 1;
@@ -76,8 +78,14 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
    kd_->h_fine = h;
    kd_->amp = amp;
    kd_->ph = ph;
-   kd_->om = om;
    kd_->pnr = pnr;
+/* if periodic bc, adjust om such that om*L = 2*pi */
+   if (bcLeft==Periodic || bcRight== Periodic)
+   {
+      om = 2*pi/L;
+      printf("NOTE: Periodic bc, om changed to %e\n", om);      
+   }
+   kd_->om = om;
    kd_->taylorbc = taylorbc;
    kd_->L = L;
    if (wave_speed < 0.0)
@@ -91,6 +99,12 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
    
 /* ! compute time step */
    mxeg = kd_->c_coeff;
+   /* mxeg = sqrt( SQR(kd_->c_coeff) + 16.0*SQR(kd_->nu_coeff / h) ); */
+   
+   if (4.0*(kd_->nu_coeff) / h > 1.0)
+   {
+      printf("WARNING: viscos term likely to casuse instability because nu/h = %e > 0.25\n", kd_->nu_coeff/h);
+   }
    
    kd_->dt_fine = cfl*h/mxeg;
    
@@ -104,27 +118,34 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
    bop6g( 0.7037, kd_->bope_ );
 /* !** Extra part of SBP operator, for ghost point SBP. */
    kd_->betapcoeff = 0.03;
+
+   p1   = 13649.0/43200.0; /* this is the weight in the 6th order scalar product for point 1 (on the bndry)*/
+   beta = kd_->betapcoeff/p1;
+   
 /* ! bope and gh contain weights for the modified SBP-operator \tilde{D} */
-   sbpghost(kd_->nb, kd_->wb, kd_->bope_, &(kd_->gh), kd_->betapcoeff);
+#define bope(i,j) compute_index_2d(kd_->bope_, i, j)
+   kd_->gh   =             beta*( 1);
+   bope(1,1) = bope(1,1) + beta*(-4);
+   bope(1,2) = bope(1,2) + beta*( 6);
+   bope(1,3) = bope(1,3) + beta*(-4);
+   bope(1,4) = bope(1,4) + beta*( 1);
+#undef bope
 
 /* compute coefficients for diffusion term */
-   kd_->nb2 = 4;
-   kd_->wb2 = 6;
+   kd_->nb2 = 6;
+   kd_->wb2 = 9;
    kd_->bop2_ = create_double_array_2d(kd_->nb2,  kd_->wb2);
-   kd_->iop2_ = create_double_array_1d(5);   
+   kd_->iop2_ = create_double_array_1d(7);   
 
-   diffusion_coeff_4( kd_->iop2_, kd_->bop2_, &(kd_->gh2), kd_->bder );
+   diffusion_coeff_6( kd_->iop2_, kd_->bop2_, &(kd_->gh2), kd_->bder );
 
 /*!** Boundary conditions on the two boundaries */
    kd_->bcnr_ = create_int_array_1d(2);
 /*   code means: 1- Dirichlet in u, extrapolate v */
 /*               2- Dirichlet in v, extrapolate u*/
 #define bcnr(i) compute_index_1d(kd_->bcnr_, i)   
-   if( kd_->pnr == 1 || kd_->pnr == 2 )
-   {
-      bcnr(1) = 1;
-      bcnr(2) = 2;
-   }
+   bcnr(1) = bcLeft;
+   bcnr(2) = bcRight;
 
 /*!** RK coefficients */
    kd_->alpha_ = create_double_array_1d(4);
@@ -163,6 +184,7 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
 /* initialize solution pointer and time */
    kd_->sol_copy = NULL;
    kd_->t_copy   = -1;
+#undef bcnr
 }
 
 /* --------------------------------------------------------------------
@@ -440,6 +462,7 @@ gridfcn_Coarsen(advection_setup *kd_,
    grid_fcn * u_;
    int i, nf, nc;
    double dt_f, dt_c;
+#define bcnr(i) compute_index_1d(kd_->bcnr_, i)   
 
    dt_f = MAX(f_tplus - tstart, tstart - f_tminus);
    dt_c = MAX(c_tplus - tstart, tstart - c_tminus);
@@ -476,12 +499,11 @@ gridfcn_Coarsen(advection_setup *kd_,
    u_->sol   = malloc((u_->n+2)*sizeof(double));
    u_->vsol_ = create_double_array_1d(3);
 
-
 /* assign the coarse grid function */
 /* u_ has nc interior points */
 /* gf_ has nf interior grid points */
 
-/* inject fine the grid solution into coarse grid */
+/* inject the fine grid solution into coarse grid */
    for (i=1; i<=nc; i++)
    {
       u_->sol[i] = gf_->sol[2*i-1];
@@ -489,25 +511,19 @@ gridfcn_Coarsen(advection_setup *kd_,
 /* enforce boundary conditions */
 
 #define fvsol(i) compute_index_1d(gf_->vsol_, i)
-/*    if (kd_->taylorbc == 3) */
-/*    { */
-/* /\* boundary data from the ODE system *\/ */
-/*       bdataL = fvsol(1); */
-/*    } */
-/*    else */
-/*    { */
-/* /\* evaluate exact boundary data *\/ */
-/* /\* set stage==1 to evaluate boundary data at time t, ignoring dt=0.0 *\/ */
-/*       twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, tstart, 0.0, kd_->amp, kd_->ph, kd_->om, kd_->pnr); */
-/*    } */
 
-/* /\* enforce bc for the coarse 'u_' grid function *\/ */
-/*    assign_gp( u_->n, u_->sol, bdataL, bdataR, kd_->betapcoeff, u_->h, kd_->bcnr_ ); */
-
+   if (bcnr(1) == Periodic)
+   {
+      u_->sol[0] = u_->sol[nc-1];
+      u_->sol[nc+1] = u_->sol[2];
+   }
+   else
+   {
 /* set 0 ghost point values */
-   u_->sol[0] = 0;
-   u_->sol[nc+1] = 0;
-
+      u_->sol[0] = 0;
+      u_->sol[nc+1] = 0;
+   }
+   
 /* should check u_->sol, esp ghost point values */
 /* copy the 3 values in the bndry ode */
 #define uvsol(i) compute_index_1d(u_->vsol_, i)
@@ -519,6 +535,7 @@ gridfcn_Coarsen(advection_setup *kd_,
 /* make the grid function useful outside this routine */   
    *cu_handle = u_;
 
+#undef bcnr
    return 0;   
 }
 
@@ -533,9 +550,10 @@ gridfcn_Refine(advection_setup * kd_,
                grid_fcn **fu_handle) /* handle to the fine grid function */
 {
    grid_fcn *u_;
-   int i, nc, nf, ifine, ig;
-   
+   int i, nc, nf, ifine, ig;   
    double dt_f, dt_c;
+#define bcnr(i) compute_index_1d(kd_->bcnr_, i)   
+
    dt_f = MAX(f_tplus - tstart, tstart - f_tminus);
    dt_c = MAX(c_tplus - tstart, tstart - c_tminus);
    
@@ -571,7 +589,6 @@ gridfcn_Refine(advection_setup * kd_,
    u_->sol    = malloc((u_->n+2)*sizeof(double));
    u_->vsol_  = create_double_array_1d(3);
 
-
 /* assign the fine grid function */
 
 /* gf_ has nc interior grid points */
@@ -587,44 +604,51 @@ gridfcn_Refine(advection_setup * kd_,
    /* { */
    /*    u_->sol[i] = 0.5*(u_->sol[i-1] + u_->sol[i+1]); */
    /* } */
-   for (ig=2; ig<=nc-2; ig++)
+
+   if (bcnr(1) == Periodic)
    {
-      ifine = 2*ig; /* this is the index on the fine mesh between ig and ig+1 */
-      u_->sol[ifine] = ( -gf_->sol[ig-1] - gf_->sol[ig+2] + 9.*gf_->sol[ig] + 9.*gf_->sol[ig+1] )/16.0;
+      gf_->sol[0] = gf_->sol[nc-1];
+      gf_->sol[nc+1] = gf_->sol[2];
+
+/* fourth order interpolation */
+      for (ig=1; ig<=nc-1; ig++)
+      {
+         ifine = 2*ig; /* this is the index on the fine mesh between ig and ig+1 */
+         u_->sol[ifine] = ( -gf_->sol[ig-1] - gf_->sol[ig+2] + 9.*gf_->sol[ig] + 9.*gf_->sol[ig+1] )/16.0;
+      }
+
+/* periodic fine grid function */
+      u_->sol[0] = u_->sol[nf-1];
+      u_->sol[nf+1] = u_->sol[2];
    }
+   else
+   {
+/* fourth order interpolation */
+      for (ig=2; ig<=nc-2; ig++)
+      {
+         ifine = 2*ig; /* this is the index on the fine mesh between ig and ig+1 */
+         u_->sol[ifine] = ( -gf_->sol[ig-1] - gf_->sol[ig+2] + 9.*gf_->sol[ig] + 9.*gf_->sol[ig+1] )/16.0;
+      }
 
 /*! left bndry */
-   ig = 1;
-   ifine = 2*ig; /* ! this is the index on the fine mesh between the coarse points ig and ig+1*/
-   u_->sol[ifine] = ( 5.*gf_->sol[ig] + 15.*gf_->sol[ig+1] - 5.*gf_->sol[ig+2] + gf_->sol[ig+3] )/16.0;
+      ig = 1;
+      ifine = 2*ig; /* ! this is the index on the fine mesh between the coarse points ig and ig+1*/
+      u_->sol[ifine] = ( 5.*gf_->sol[ig] + 15.*gf_->sol[ig+1] - 5.*gf_->sol[ig+2] + gf_->sol[ig+3] )/16.0;
    
 /* ! right bndry */
-   ig = nc;
-   ifine = nf-1; /* ! this is the index on the fine mesh between the coarse points nxG and nxG-1*/
-   u_->sol[ifine] = ( 5.*gf_->sol[ig] + 15.*gf_->sol[ig-1] - 5.*gf_->sol[ig-2] + gf_->sol[ig-3] )/16.0;
+      ig = nc;
+      ifine = nf-1; /* ! this is the index on the fine mesh between the coarse points nxG and nxG-1*/
+      u_->sol[ifine] = ( 5.*gf_->sol[ig] + 15.*gf_->sol[ig-1] - 5.*gf_->sol[ig-2] + gf_->sol[ig-3] )/16.0;
    
 /* enforce boundary conditions */
 
 #define fvsol(i) compute_index_1d(gf_->vsol_, i)
-/*    if (kd_->taylorbc == 3) */
-/*    { */
-/* /\* boundary data from the ODE system *\/ */
-/*       bdataL = fvsol(1); */
-/*    } */
-/*    else */
-/*    { */
-/* /\* evaluate exact boundary data *\/ */
-/* /\* set stage==1 to evaluate boundary data at time t, ignoring dt=0.0 *\/ */
-/*       twbndry1( 0.0, &bdataL, kd_->L, &bdataR, 1, tstart, 0.0, kd_->amp, kd_->ph, kd_->om, kd_->pnr); */
-/*    } */
-
-/* /\* enforce bc for the coarse 'u_' grid function *\/ */
-/*    assign_gp( u_->n, u_->sol, bdataL, bdataR, kd_->betapcoeff, u_->h, kd_->bcnr_ ); */
 
 /* set 0 ghost point values */
-   u_->sol[0] = 0;
-   u_->sol[nf+1] = 0;
-
+      u_->sol[0] = 0;
+      u_->sol[nf+1] = 0;
+   } /* end non-periodic case */
+   
 /* copy the 3 values in the bndry ode */
 #define uvsol(i) compute_index_1d(u_->vsol_, i)
 #define cvsol(i) compute_index_1d(gf_->vsol_, i)
@@ -637,6 +661,7 @@ gridfcn_Refine(advection_setup * kd_,
    *fu_handle = u_;
 
    return 0;
+#undef bcnr
 }
 
 

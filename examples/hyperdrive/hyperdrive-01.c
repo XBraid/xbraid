@@ -11,7 +11,8 @@
 int main(int argc, char ** argv)
 {
    int nsteps, pnr, taylorbc;
-   /* const int bdatareset=1000; */
+   /* enum bcType bcLeft=Dirichlet, bcRight=Extrapolation; */
+   enum bcType bcLeft=Periodic, bcRight=Periodic;
    
    double h, cfl, bdataL, bdataR;
    double L, l2, li, tfinal;
@@ -69,13 +70,13 @@ int main(int argc, char ** argv)
    /* Default parameters. */
    comm                = MPI_COMM_WORLD;
    comm_t              = comm;
-   max_levels          = 1; /* This is where you specify the number of levels in MG */
+   max_levels          = 2; /* This is where you specify the number of levels in MG */
    nrelax              = 1;
    nrelax0             = -1;
    tol                 = 1.0e-09;
    cfactor             = 2;
    cfactor0            = -1;
-   max_iter            = 30;
+   max_iter            = 50;
    fmg                 = 0;
    /* K                   = 1.0; */
    /* nt                  = 32; */
@@ -143,6 +144,10 @@ int main(int argc, char ** argv)
          arg_index++;
          cfl = atof(argv[arg_index++]);
       }
+      else if( strcmp(argv[arg_index], "-nu") == 0 ){
+         arg_index++;
+         viscosity = atof(argv[arg_index++]);
+      }
       else if( strcmp(argv[arg_index], "-nsteps") == 0 ){
           arg_index++;
           nsteps = atoi(argv[arg_index++]);
@@ -176,6 +181,7 @@ int main(int argc, char ** argv)
       printf("\n");
       printf("  -dx  <float>    : grid size (default 0.01)\n");
       printf("  -cfl <float>    : cfl-number (default 1.0)\n");
+      printf("  -nu  <float>    : viscosity (>=0, default 0.0)\n");
       printf("  -nsteps <int>   : number of time steps (positive) (default tfinal/dt)\n");
       printf("  -tfinal <float> : end time (default 1.0)\n");
       printf("  -tbc <int>      : treatment of bndry forcing at intermediate stages (0,1, or 3) (default 1)\n");
@@ -196,14 +202,12 @@ int main(int argc, char ** argv)
 /* setup solver meta-data */
    kd_ = malloc(sizeof(advection_setup));
    init_advection_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, 
-                         wave_speed, viscosity, kd_);
+                         wave_speed, viscosity, bcLeft, bcRight, kd_);
    
-/* create solution vector */
-   /* init_grid_fcn(kd_, 0.0, &gf_); */
-
 #define bcnr(i) compute_index_1d(kd_->bcnr_, i)    
 
    printf("------------------------------\n");
+   printf("Viscosity (nu): %e\n", kd_->nu_coeff);
    printf("Problem number (pnr): %i\n", kd_->pnr);
    printf("Boundary treatment: bcnr(left, right): %i, %i\n", bcnr(1), bcnr(2));
    printf("Treatment of time-dependent bndry data: %i\n", kd_->taylorbc);
@@ -280,9 +284,10 @@ int main(int argc, char ** argv)
    printf("Time-stepping completed. Solved to time t: %e\n", kd_->tstop);
 
 /* tmp storage */
-   copy_grid_fcn( kd_, gf_, &exact_ );
+   init_grid_fcn(kd_, 0.0, &exact_);
+
 /* ! evaluate solution error */
-   exact1( exact_->sol, kd_->tstop, kd_ );
+   exact1( exact_, kd_->tstop, kd_ );
 /* get exact bndry data (bdataL). Note: dt not used when s=1 */
    twbndry1( &bdataL, &bdataR, 1, kd_->tstop, 0.0, kd_ );
 
@@ -291,7 +296,7 @@ int main(int argc, char ** argv)
       
 /*  get a pointer to the final solution from the advection_setup structure */
       gf_ = kd_->sol_copy;
-      evalerr1( gf_->n, gf_->sol, exact_->sol, &l2, &li, gf_->h );
+      evalerr1( gf_, exact_, &l2, &li );
 
       printf("------------------------------\n");
    
@@ -299,6 +304,8 @@ int main(int argc, char ** argv)
    
 #define vsol(i) compute_index_1d(gf_->vsol_, i)   
       printf("time: %e, sol-err: %e, bndry-err: %e\n", kd_->tstop, li, fabs(bdataL-vsol(1)));
+      printf("4*nu/h_fine=%e\n", 4.0*kd_->nu_coeff/kd_->h_fine);
+      
       printf("------------------------------\n");
 
 /*   printf("Saving ...\n");*/

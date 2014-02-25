@@ -9,6 +9,8 @@
 /* define HD_DEBUG to get printouts from various user defined functions*/
 /* #define HD_DEBUG */
 
+enum bcType {Periodic, Dirichlet, Extrapolation};
+
 typedef struct _warp_Vector_struct
 {
    double *sol;
@@ -37,7 +39,7 @@ typedef struct _warp_App_struct
    double_array_2d *bop2_;  /* SBP coefficients for 2nd derivative */
    double_array_1d *iop2_;  /* interior coefficients for 2nd derivative */
    double gh2;              /* ghost point coefficient for 2nd derivative */
-   double bder[5];          /* coefficients for boundary derivative */
+   double bder[7];          /* coefficients for 6th order boundary derivative */
    double L;               /* length of 1-d domain */
    double c_coeff;         /* wave speed */
    double nu_coeff;        /* viscosity */
@@ -62,8 +64,8 @@ init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle);
 void
 init_advection_solver(double h, double amp, double ph, double om, int pnr, int taylorbc, 
                       double L, double cfl, int nstepsset, int nsteps, double tfinal, 
-                      double wave_speed, double viscosity, advection_setup *kd_);
-
+                      double wave_speed, double viscosity, int bcLeft, int bcRight,
+                      advection_setup *kd_);
 int
 explicit_rk4_stepper(advection_setup *kd_, double t, double tend, double accuracy, grid_fcn *gf_, 
                      int *rfact_);
@@ -121,36 +123,35 @@ gridfcn_Coarsen(advection_setup *kd_,
                 grid_fcn **cu_handle);
 
 void
-exact1( double *w, double t, advection_setup *kd_);
+exact1( grid_fcn *w, double t, advection_setup *kd_);
 void
-exact_x( double *w, double t, advection_setup *kd_);
+exact_t( grid_fcn *w, double t, advection_setup *kd_);
 void
-exact_xx( double *w, double t, advection_setup *kd_);
-
+exact_x( grid_fcn *w, double t, advection_setup *kd_);
+void
+exact_xx( grid_fcn *w, double t, advection_setup *kd_);
 void 
-bdata(double_array_1d *vsol_, double amp, double ph, double om, double t, int pnr);
+bdata( grid_fcn *w, double t, advection_setup *kd_);
 void 
 bop6g(double t, double_array_2d *q06_ );
 void 
 diffusion_coeff_4( double_array_1d *iop2_, double_array_2d *bop2_, double *gh2, double bder[5] );
 void 
-sbpghost( int nb, int wb, double_array_2d * bop_, double *gh, double betapcoeff);
+diffusion_coeff_6( double_array_1d *iop2_, double_array_2d *bop2_, double *gh2, double bder[7] );
 void
 twbndry1( double *bdataL, double *bdataR, int stage, double t, double dt, advection_setup *kd_ );
 void
-assign_gp( int n, double *w, double bdataL, double bdataR, double betapcoeff, double h, int_array_1d *bcnr_ );
+assign_gp( grid_fcn *w, double bdataL, double bdataR, advection_setup *kd_ );
 void
-dwdt( int n, double *w, double *dwdt, double h, advection_setup *kd_ );
+dwdt( grid_fcn *w, grid_fcn *dwdt, double t, double bdata[2], advection_setup *kd_ );
 void
-dwdx( int n, double *w, double *dwdt, double h, advection_setup *kd_ );
+dwdx( grid_fcn *w, grid_fcn *dwdt, advection_setup *kd_ );
 void
-d2wdx2( int n, double *w, double *wxx, double h, advection_setup *kd_ );
+d2wdx2( grid_fcn *w, grid_fcn *wxx, advection_setup *kd_ );
 void
-twforce1( int n, double *f, double t, double h, double amp, double ph, double om, int pnr, double Lx );
+dvdtbndry(grid_fcn *w, grid_fcn *dwdt, double t, advection_setup *kd_);
 void
-dvdtbndry(double_array_1d *vsol_, double_array_1d *dvdt_, double amp, double ph, double om, double t, int pnr);
-void
-evalerr1( int n, double *w, double *we, double *l2, double*li, double h );
+evalerr1( grid_fcn *w, grid_fcn *we, double *l2, double*li );
 
 /* end propotypes */
    

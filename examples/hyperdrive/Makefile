@@ -11,14 +11,14 @@ include ../../makefile.inc
 WARP_FLAGS = -I../..
 WARP_LIB = ../../libwarp.a
 
-OBJ5 = advect.o c_array.o bop6g.o sbpghost.o c-exact.o c-bdata.o c-twbndry.o c-evalerr.o assign_gp.o \
-       dwdt.o c-twforce.o advect_data.o explicit_rk4_stepper.o
+OBJ5 = advect.o c_array.o bop6g.o c-exact.o c-bdata.o c-twbndry.o c-evalerr.o assign_gp.o \
+       dwdx.o dwdt.o advect_data.o explicit_rk4_stepper.o
 
-OBJT = test-gf.o c_array.o bop6g.o sbpghost.o c-exact.o c-bdata.o c-twbndry.o c-evalerr.o assign_gp.o \
-       dwdx.o c-twforce.o advect_data.o
+OBJT = test-gf.o c_array.o bop6g.o c-exact.o c-bdata.o c-twbndry.o c-evalerr.o assign_gp.o \
+       dwdx.o dwdt.o advect_data.o
 
-OBJ1 = hyperdrive-01.o c_array.o bop6g.o sbpghost.o c-exact.o c-bdata.o c-twbndry.o c-evalerr.o assign_gp.o \
-       dwdt.o c-twforce.o advect_data.o explicit_rk4_stepper.o
+OBJ1 = hyperdrive-01.o c_array.o bop6g.o c-exact.o c-bdata.o c-twbndry.o c-evalerr.o assign_gp.o \
+       dwdx.o dwdt.o c-twforce.o advect_data.o explicit_rk4_stepper.o
 
 .c.o:
 	$(CC) -c $(CFLAGS) $(WARP_FLAGS) $<

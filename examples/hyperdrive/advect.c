@@ -9,6 +9,9 @@
 int main(int argc, char ** argv)
 {
    int step, nsteps, pnr, taylorbc;
+   /* enum bcType bcLeft=Dirichlet, bcRight=Extrapolation; */
+   enum bcType bcLeft=Periodic, bcRight=Periodic;
+   
    const int bdatareset=1000;
    
    double h, cfl, bdataL, bdataR;
@@ -31,7 +34,7 @@ int main(int argc, char ** argv)
    L = 1.0; /* Domain length*/
    wave_speed = 1.0; /* wave speed */
    viscosity = 0.0;  /* viscosity */
-   
+
 /*!**  Twilight testing parameters*/
    amp  = 0.8;
    ph   = 0.17;
@@ -72,6 +75,10 @@ int main(int argc, char ** argv)
          arg_index++;
          cfl = atof(argv[arg_index++]);
       }
+      else if( strcmp(argv[arg_index], "-nu") == 0 ){
+         arg_index++;
+         viscosity = atof(argv[arg_index++]);
+      }
       else if( strcmp(argv[arg_index], "-nsteps") == 0 ){
           arg_index++;
           nsteps = atoi(argv[arg_index++]);
@@ -105,6 +112,7 @@ int main(int argc, char ** argv)
       printf("\n");
       printf("  -dx  <float>    : grid size (default 0.01)\n");
       printf("  -cfl <float>    : cfl-number (default 1.0)\n");
+      printf("  -nu  <float>    : viscosity (>=0, default 0.0)\n");
       printf("  -nsteps <int>   : number of time steps (positive) (default tfinal/dt)\n");
       printf("  -tfinal <float> : end time (default 1.0)\n");
       printf("  -tbc <int>      : treatment of bndry forcing at intermediate stages (0,1, or 3) (default 1)\n");
@@ -128,19 +136,22 @@ int main(int argc, char ** argv)
 /* solver meta-data */
    kd_ = malloc(sizeof(advection_setup));
    init_advection_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, 
-                         wave_speed, viscosity, kd_);
+                         wave_speed, viscosity, bcLeft, bcRight, kd_);
    
 /* create solution vector */
    init_grid_fcn(kd_, 0.0, &gf_);
 
+/* tmp storage */
+   copy_grid_fcn( kd_, gf_, &exact_ );
+
    printf("------------------------------\n");
+   printf("Viscosity (nu): %e\n", kd_->nu_coeff);
    printf("Problem number (pnr): %i\n", kd_->pnr);
    printf("Boundary treatment: bcnr(left, right): %i, %i\n", bcnr(1), bcnr(2));
    printf("Treatment of time-dependent bndry data: %i\n", kd_->taylorbc);
    printf("Solving to time %e using %i steps\n",kd_->tstop, kd_->nsteps);
    printf("Time step on fine grid is %e\n",kd_->dt_fine);
    printf("Grid spacing is %e with %i grid points\n", kd_->h_fine, kd_->n_fine);
-   printf("Wave speed: %e, viscosity: %e\n", wave_speed, viscosity);
 
    t = 0.0;
 
@@ -148,22 +159,19 @@ int main(int argc, char ** argv)
    for (step=1; step<=kd_->nsteps; step++)
    {
 
-/* ! reset initial conditions for the boudary data ode */
+/* ! reset initial conditions for the boundary data ode */
       if (step%bdatareset == 0)
       {
          printf("Resetting bdata initial cond. step = %i\n", step);
-         bdata(gf_->vsol_, kd_->amp, kd_->ph, kd_->om, t, kd_->pnr);
+         bdata(gf_, t, kd_);
       }
 
 /* ! evaluate solution error (stage=1 evaluates the plain bndry data at time t)*/
-/* when s=1, dt is not used */
+/* when stage=1, dt is not used */
       twbndry1( &bdataL, &bdataR, 1, t, 0.0, kd_ );
       
-/* tmp storage */
-      copy_grid_fcn( kd_, gf_, &exact_ );
-
-      exact1( exact_->sol, t, kd_ );
-      evalerr1( kd_->n_fine, gf_->sol, exact_->sol, &l2, &li, kd_->h_fine );
+      exact1( exact_, t, kd_ );
+      evalerr1( gf_, exact_, &l2, &li );
       
 /* ! save errors on file... */
       fprintf(eun,"%e %e %e %e\n", t, li, l2, fabs(bdataL - vsol(1)) ); 
@@ -179,11 +187,11 @@ int main(int argc, char ** argv)
    printf("Time-stepping completed. Solved to time t: %e\n", t);
 
 /* ! evaluate solution error, stick exact solution in kd_ workspace array */
-   exact1( exact_->sol, t, kd_ );
+   exact1( exact_, t, kd_ );
 /* get exact bndry data (bdataL) Note: when s=1, dt is not used */
    twbndry1( &bdataL, &bdataR, 1, t, 0.0, kd_ );
 
-   evalerr1( kd_->n_fine, gf_->sol, exact_->sol, &l2, &li, kd_->h_fine );
+   evalerr1( gf_, exact_, &l2, &li );
 /* ! save errors on file... */
    fprintf(eun,"%e %e %e %e\n", t, li, l2, fabs(bdataL-vsol(1)));
 

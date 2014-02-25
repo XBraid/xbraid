@@ -1,18 +1,20 @@
 #include <math.h>
+#include "advect_data.h"
 
-/*    subroutine evalerr1( n, w, we, l2, li, h )*/
 void
-evalerr1( int n, double *w, double *we, double *l2, double*li, double h )
+evalerr1( grid_fcn *w, grid_fcn *we, double *l2, double *li )
 {
    int i;
    double locerr;
+   int n = w->n;
+   double h = w->h;
    
    *l2 = 0;
    *li = 0;
    
    for (i=1; i<=n; i++)
    {
-      locerr = fabs(w[i]-we[i]);
+      locerr = fabs(w->sol[i]-we->sol[i]);
       *l2 += h*locerr*locerr;
       if( locerr > *li )
       {

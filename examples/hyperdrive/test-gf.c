@@ -11,10 +11,11 @@
 int main(int argc, char ** argv)
 {
    int nsteps, pnr, taylorbc;
-   /* const int bdatareset=1000; */
+   /* enum bcType bcLeft=Dirichlet, bcRight=Extrapolation; */
+   enum bcType bcLeft=Periodic, bcRight=Periodic;
    
-   double h, cfl, bdataL, bdataR;
-   double L, l2, li, lib, tfinal;
+   double h, cfl, bdata[2];
+   double L, l2, li, lib, tfinal, linf;
    double t0, dtf, dtc;
    
    double amp, ph, om;
@@ -26,9 +27,8 @@ int main(int argc, char ** argv)
    
    advection_setup *kd_ = NULL;
    grid_fcn *gf_ = NULL, *coarse_gf_ = NULL, *fine_gf_ = NULL, *wx_gf_ = NULL, *wxx_ = NULL;
-   grid_fcn *exact_=NULL;
+   grid_fcn *exact_=NULL, *wt_gf_=NULL;
    
-
 /* from drive-05.c */
    int i;
 
@@ -104,7 +104,7 @@ int main(int argc, char ** argv)
    L = 1.0; /*  Domain length*/
    wave_speed = 1.0;
    viscosity = 0.0;
-   
+
 /*!**  Twilight testing parameters*/
    amp  = 0.8;
    ph   = 0.17;
@@ -147,6 +147,10 @@ int main(int argc, char ** argv)
          arg_index++;
          cfl = atof(argv[arg_index++]);
       }
+      else if( strcmp(argv[arg_index], "-nu") == 0 ){
+         arg_index++;
+         viscosity = atof(argv[arg_index++]);
+      }
       else if( strcmp(argv[arg_index], "-nsteps") == 0 ){
           arg_index++;
           nsteps = atoi(argv[arg_index++]);
@@ -180,6 +184,7 @@ int main(int argc, char ** argv)
       printf("\n");
       printf("  -dx  <float>    : grid size (default 0.01)\n");
       printf("  -cfl <float>    : cfl-number (default 1.0)\n");
+      printf("  -nu  <float>    : viscosity (>=0, default 0.0)\n");
       printf("  -nsteps <int>   : number of time steps (positive) (default tfinal/dt)\n");
       printf("  -tfinal <float> : end time (default 1.0)\n");
       printf("  -tbc <int>      : treatment of bndry forcing at intermediate stages (0,1, or 3) (default 1)\n");
@@ -197,12 +202,16 @@ int main(int argc, char ** argv)
 /* setup solver meta-data */
    kd_ = malloc(sizeof(advection_setup));
    init_advection_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, 
-                         wave_speed, viscosity, kd_);
+                         wave_speed, viscosity, bcLeft, bcRight, kd_);
    
+/* for testing */
+   kd_->tstart = 1.0;
+
 #define bcnr(i) compute_index_1d(kd_->bcnr_, i)    
 
    printf("------------------------------\n");
-   printf("Testing init, coarsen and refine routines...\n");
+   printf("Testing init, coarsen and refine routines at t=%e\n", kd_->tstart);
+   printf("Viscosity (nu): %e\n", kd_->nu_coeff);
    printf("Problem number (pnr): %i\n", kd_->pnr);
    printf("Boundary treatment: bcnr(left, right): %i, %i\n", bcnr(1), bcnr(2));
    printf("Treatment of time-dependent bndry data: %i\n", kd_->taylorbc);
@@ -210,35 +219,40 @@ int main(int argc, char ** argv)
    printf("Time step on fine grid is %e\n",kd_->dt_fine);
    printf("Finest grid has spacing h=%e with n=%i grid points\n", kd_->h_fine, kd_->n_fine);
    printf("------------------------------\n");
+
 #define SQR(x) ((x)*(x))
 
 /* Test truncation error of spatial operator */
 /* 1) call init_grid_fcn() for time t=0 to define a grid function on the finest grid */
+
    t0 = kd_->tstart;
    init_grid_fcn(kd_, t0, &gf_);
 /* make grid function, t=1 gives dw/dt=0 */
    init_grid_fcn(kd_, 1.0, &wx_gf_);
+   init_grid_fcn(kd_, 1.0, &wt_gf_);
    init_grid_fcn(kd_, 1.0, &wxx_);
 
 /* evaluate dw/dx */
-   dwdx( gf_->n, gf_->sol, wx_gf_->sol, gf_->h, kd_ );
+   dwdx( gf_, wx_gf_, kd_ );
 
 /* tmp storage */
    copy_grid_fcn( kd_, gf_, &exact_ );
 
-/* ! evaluate solution error, save exact solution in kd_ workspace array */
-   exact_x( exact_->sol, t0, kd_ );
+/* calculate exact dudx, save in exact_ grid function */
+   exact_x( exact_, t0, kd_ );
 
 /* evaluate error in dw/dx */
-   li=0;  /* interior */
-   lib=0; /* near bndry */
-   
+   evalerr1(wx_gf_, exact_, &l2, &linf);
+
+/* interior points only */
+   li = 0.0;
    for (i=1+kd_->nb; i<=gf_->n-kd_->nb; i++)
    {
       if (fabs(wx_gf_->sol[i] - exact_->sol[i]) > li)
          li = fabs(wx_gf_->sol[i] - exact_->sol[i]);
    }
-
+   
+   lib=0; /* near bndry */
 /* left bndry */
    for (i=1; i<=kd_->nb; i++)
    {
@@ -251,22 +265,25 @@ int main(int argc, char ** argv)
       if (fabs(wx_gf_->sol[i] - exact_->sol[i]) > lib)
          lib = fabs(wx_gf_->sol[i] - exact_->sol[i]);
    }
-   printf("Difference (Dw - dw/dx): interior = %e, bndry = %e\n", li, lib);
+   printf("Difference (Dw - dw/dx): all-i = %e, all-2 = %e, interior-i = %e, bndry-i = %e\n", linf, l2, li, lib);
 
-/* evaluate d2w/dx2 */
-   d2wdx2( gf_->n, gf_->sol, wxx_->sol, gf_->h, kd_ );
-/* ! evaluate solution error, save exact solution in kd_ workspace array */
-   exact_xx( exact_->sol, t0, kd_ );
-   
-/* save Gw and d2w/dx2 */
-   fp = fopen("wxx.dat","w");
+/* save Dw and dw/dx */
+   fp = fopen("wx.dat","w");
    for (i=1; i<=gf_->n; i++)
    {
-      fprintf(fp, "%e  %e\n", exact_->sol[i], wxx_->sol[i]);
+      fprintf(fp, "%e  %e\n", exact_->sol[i], wx_gf_->sol[i]);
    }
    fclose(fp);
 
+/* evaluate d2w/dx2 */
+   d2wdx2( gf_, wxx_, kd_ );
+/* ! evaluate solution error, save exact solution in kd_ workspace array */
+   exact_xx( exact_, t0, kd_ );
+   
 /* evaluate error in dw/dx */
+   evalerr1(wxx_, exact_, &l2, &linf);
+
+/* interior points only */
    li=0;  /* interior */
    lib=0; /* near bndry */
    
@@ -288,7 +305,44 @@ int main(int argc, char ** argv)
       if (fabs(wxx_->sol[i] - exact_->sol[i]) > lib)
          lib = fabs(wxx_->sol[i] - exact_->sol[i]);
    }
-   printf("Difference (Gw - d2w/dx2): interior = %e, bndry = %e\n", li, lib);
+   printf("Difference (Gw - d2w/dx2): all-i = %e, all-2 = %e, interior-i = %e, bndry-i = %e\n", linf, l2, li, lib);
+
+/* calculate exact dudt, save in exact_ grid function */
+   exact_t( exact_, t0, kd_ );
+
+/* get boundary data */
+   twbndry1( &(bdata[0]), &(bdata[1]), 1, t0, 0.0, kd_ );
+
+/* evaluate dwdt, tstage is for evaluating forcing */
+   dwdt( gf_, wt_gf_, t0, bdata, kd_ );
+
+/* evaluate error in dw/dx */
+   evalerr1(wt_gf_, exact_, &l2, &linf);
+
+/* interior points only */
+   li=0;  /* interior */
+   lib=0; /* near bndry */
+   
+   for (i=1+kd_->nb2; i<=gf_->n - kd_->nb2; i++)
+   {
+      if (fabs(wt_gf_->sol[i] - exact_->sol[i]) > li)
+         li = fabs(wt_gf_->sol[i] - exact_->sol[i]);
+   }
+
+/* left bndry */
+   for (i=1; i<=kd_->nb; i++)
+   {
+      if (fabs(wt_gf_->sol[i] - exact_->sol[i]) > lib)
+         lib = fabs(wt_gf_->sol[i] - exact_->sol[i]);
+   }
+/* right bndry */
+   for (i=gf_->n - kd_->nb + 1; i<=gf_->n; i++)
+   {
+      if (fabs(wt_gf_->sol[i] - exact_->sol[i]) > lib)
+         lib = fabs(wt_gf_->sol[i] - exact_->sol[i]);
+   }
+
+   printf("Difference (Tw - dw/dt): all-i = %e, all-2 = %e, interior-i = %e, bndry-i = %e\n", linf, l2, li, lib);
 
 /* Test init-coarsen-restrict */
 
@@ -319,7 +373,7 @@ int main(int argc, char ** argv)
    printf("Difference (I - PR)u: l2 = %e, linf = %e\n", l2, li);
 
 /* get exact bndry data (bdataL). Note: when s=1, dt is not used */
-   twbndry1( &bdataL, &bdataR, 1, kd_->tstop, 0.0, kd_);
+   twbndry1( &(bdata[0]), &(bdata[1]), 1, kd_->tstop, 0.0, kd_);
 
 /*   printf("Saving ...\n");*/
     /* open(21,file='sol.bin',form='unformatted') */

@@ -1,9 +1,12 @@
 #include "c_array.h"
+#include "advect_data.h"
 
 void
-assign_gp( int n, double *w, double bdataL, double bdataR, double betapcoeff, double h, int_array_1d *bcnr_ )
+assign_gp( grid_fcn *w, double bdataL, double bdataR, advection_setup *kd_ )
 {
-#define bcnr(i) compute_index_1d(bcnr_, i)   
+   int n = w->n;
+   
+#define bcnr(i) compute_index_1d(kd_->bcnr_, i)   
 
 /*! bcnr(1) = 1: Dirichlet in u, extrapolate v */
 /*! bcnr(2) = 2: Dirichlet in v, extrapolate u */
@@ -12,9 +15,9 @@ assign_gp( int n, double *w, double bdataL, double bdataR, double betapcoeff, do
    if( bcnr(1) == 1 )
    {
 /*!** Dirichlet in u */
-      w[0] = (w[1]-bdataL)/(0.5*betapcoeff) + 4*w[1]-6*w[2]+4*w[3]-w[4];
+      w->sol[0] = (w->sol[1]-bdataL)/(0.5*kd_->betapcoeff) + 4*w->sol[1]-6*w->sol[2]+4*w->sol[3]-w->sol[4];
    }
-   else
+   else if (bcnr(1) != 0)
    {
       printf("ERROR: assign_gp, unknown bcnr(1)= %i\n", bcnr(1));
    }
@@ -23,9 +26,9 @@ assign_gp( int n, double *w, double bdataL, double bdataR, double betapcoeff, do
    if( bcnr(2) == 2 )
    {
 /*! extrapolate u */
-      w[n+1] = 4*w[n]-6*w[n-1]+4*w[n-2]-w[n-3];
+      w->sol[n+1] = 4*w->sol[n]-6*w->sol[n-1]+4*w->sol[n-2]-w->sol[n-3];
    }
-   else
+   else if (bcnr(2) != 0)
    {
       printf("ERROR: assign_gp, unknown bcnr(2)= %i\n", bcnr(2));
    }
