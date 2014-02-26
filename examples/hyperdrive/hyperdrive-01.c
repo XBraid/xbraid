@@ -14,7 +14,7 @@ int main(int argc, char ** argv)
    /* enum bcType bcLeft=Dirichlet, bcRight=Extrapolation; */
    enum bcType bcLeft=Periodic, bcRight=Periodic;
    
-   double h, cfl, bdataL, bdataR;
+   double h, cfl;
    double L, l2, li, tfinal;
    double amp, ph, om;
    double wave_speed, viscosity;
@@ -288,8 +288,8 @@ int main(int argc, char ** argv)
 
 /* ! evaluate solution error */
    exact1( exact_, kd_->tstop, kd_ );
-/* get exact bndry data (bdataL). Note: dt not used when s=1 */
-   twbndry1( &bdataL, &bdataR, 1, kd_->tstop, 0.0, kd_ );
+/* get exact bndry data */
+   bdata( exact_, kd_->tstop, kd_);
 
    if (kd_->sol_copy)
    {
@@ -303,7 +303,8 @@ int main(int argc, char ** argv)
       printf("Solution error in maximum norm, bndry error\n");
    
 #define vsol(i) compute_index_1d(gf_->vsol_, i)   
-      printf("time: %e, sol-err: %e, bndry-err: %e\n", kd_->tstop, li, fabs(bdataL-vsol(1)));
+#define ex_vsol(i) compute_index_1d(exact_->vsol_, i)   
+      printf("time: %e, sol-err: %e, bndry-err: %e\n", kd_->tstop, li, fabs(ex_vsol(1)-vsol(1)));
       printf("4*nu/h_fine=%e\n", 4.0*kd_->nu_coeff/kd_->h_fine);
       
       printf("------------------------------\n");

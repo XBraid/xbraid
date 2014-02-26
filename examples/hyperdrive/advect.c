@@ -14,7 +14,7 @@ int main(int argc, char ** argv)
    
    const int bdatareset=1000;
    
-   double h, cfl, bdataL, bdataR;
+   double h, cfl;
    double L, t, l2, li, tfinal;
    double amp, ph, om;
    double wave_speed, viscosity;
@@ -130,8 +130,9 @@ int main(int argc, char ** argv)
 /* open file for saving solution error data */
    eun = fopen("err.dat","w");
 
-#define bcnr(i) compute_index_1d(kd_->bcnr_, i)    
-#define vsol(i) compute_index_1d(gf_->vsol_, i)   
+#define bcnr(i)    compute_index_1d(kd_->bcnr_, i)    
+#define vsol(i)    compute_index_1d(gf_->vsol_, i)   
+#define ex_vsol(i) compute_index_1d(exact_->vsol_, i)   
 
 /* solver meta-data */
    kd_ = malloc(sizeof(advection_setup));
@@ -168,13 +169,13 @@ int main(int argc, char ** argv)
 
 /* ! evaluate solution error (stage=1 evaluates the plain bndry data at time t)*/
 /* when stage=1, dt is not used */
-      twbndry1( &bdataL, &bdataR, 1, t, 0.0, kd_ );
-      
+      bdata( exact_, t, kd_);
       exact1( exact_, t, kd_ );
+
       evalerr1( gf_, exact_, &l2, &li );
       
 /* ! save errors on file... */
-      fprintf(eun,"%e %e %e %e\n", t, li, l2, fabs(bdataL - vsol(1)) ); 
+      fprintf(eun,"%e %e %e %e\n", t, li, l2, fabs(ex_vsol(1) - vsol(1)) ); 
 
 /* ! time-stepper from t_n to t_{n+1} starts here */
       explicit_rk4_stepper(kd_, t, t+kd_->dt_fine, dummy, gf_, &rfact_dummy); /* this is my_Phi() */
@@ -188,12 +189,12 @@ int main(int argc, char ** argv)
 
 /* ! evaluate solution error, stick exact solution in kd_ workspace array */
    exact1( exact_, t, kd_ );
-/* get exact bndry data (bdataL) Note: when s=1, dt is not used */
-   twbndry1( &bdataL, &bdataR, 1, t, 0.0, kd_ );
+/* get exact bndry data */
+   bdata( exact_, t, kd_);
 
    evalerr1( gf_, exact_, &l2, &li );
 /* ! save errors on file... */
-   fprintf(eun,"%e %e %e %e\n", t, li, l2, fabs(bdataL-vsol(1)));
+   fprintf(eun,"%e %e %e %e\n", t, li, l2, fabs(ex_vsol(1)-vsol(1)));
 
 /*! close error file*/
    fclose(eun);
@@ -202,7 +203,7 @@ int main(int argc, char ** argv)
    
    printf("Solution error in maximum norm, bndry error\n");
    
-   printf("time: %e, sol-err: %e, bndry-err: %e\n", t, li, fabs(bdataL-vsol(1)));
+   printf("time: %e, sol-err: %e, bndry-err: %e\n", t, li, fabs(ex_vsol(1)-vsol(1)));
    printf("------------------------------\n");
 
 /* free tmp storage */
