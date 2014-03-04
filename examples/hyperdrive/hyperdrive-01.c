@@ -21,7 +21,7 @@ int main(int argc, char ** argv)
    
    int nstepsset, tfinalset, arg_index, print_usage=0, myid=0;
 
-   FILE *eun;
+   FILE *eun, *fp;
    
    advection_setup *kd_ = NULL;
    grid_fcn *gf_ = NULL, *exact_=NULL;
@@ -33,7 +33,7 @@ int main(int argc, char ** argv)
 /* my_App is called advection_setup, app = kd_ */
 /*   my_App    *app; */
    int        max_levels;
-   int        scoarsen=1;
+   int        scoarsen;
    int        nrelax, nrelax0;
    double     tol;
    int        cfactor, cfactor0;
@@ -58,7 +58,7 @@ int main(int argc, char ** argv)
    int pt; /* AP: what is this? */
 
    int n_pre, n_post;
-   int rap, relax, skip;
+   int rap, skip;
    
    double tol_x[2], tol_x_coarse;
 
@@ -71,9 +71,10 @@ int main(int argc, char ** argv)
    comm                = MPI_COMM_WORLD;
    comm_t              = comm;
    max_levels          = 2; /* This is where you specify the number of levels in MG */
+   scoarsen            = 1; /* coarsen in space? */
    nrelax              = 1;
    nrelax0             = -1;
-   tol                 = 1.0e-09;
+   tol                 = 1.0e-09; /* absolute residual stopping criterion */
    cfactor             = 2;
    cfactor0            = -1;
    max_iter            = 50;
@@ -88,7 +89,7 @@ int main(int argc, char ** argv)
    n_pre               = 1;
    n_post              = 1;
    rap                 = 1;
-   relax               = 3;
+   /* relax               = 3; */
    skip                = 1;
    tol_x[0]            = 1.0e-09;
    tol_x[1]            = 1.0e-09;
@@ -268,7 +269,7 @@ int main(int argc, char ** argv)
    }
    
 /* control how often my write routine is called. How is this supposed to work??? */
-   warp_SetWriteLevel(core, 1);
+   warp_SetWriteLevel(core, 2);
    
 
    warp_Drive(core);
@@ -305,16 +306,21 @@ int main(int argc, char ** argv)
 #define vsol(i) compute_index_1d(gf_->vsol_, i)   
 #define ex_vsol(i) compute_index_1d(exact_->vsol_, i)   
       printf("time: %e, sol-err: %e, bndry-err: %e\n", kd_->tstop, li, fabs(ex_vsol(1)-vsol(1)));
-      printf("4*nu/h_fine=%e\n", 4.0*kd_->nu_coeff/kd_->h_fine);
+      printf("nu/h_fine=%e\n", kd_->nu_coeff/kd_->h_fine);
       
       printf("------------------------------\n");
 
-/*   printf("Saving ...\n");*/
-    /* open(21,file='sol.bin',form='unformatted') */
-    /* fprintf(21) n, h, dt, t, (sol(i),i=1,n), (current(i),i=1,n) */
-    /* close(21) */
-/*   printf("done.\n");*/
-/*   printf("------------------------------\n");*/
+      printf("Saving ...\n");
+
+      fp=fopen("sol.dat","w");
+      for ( i=1; i<=gf_->n; i++)
+      {
+         fprintf(fp, "%e %e %e\n", (i-1)*gf_->h, gf_->sol[i], gf_->sol[i]-exact_->sol[i]);
+      }
+      fclose(fp);
+      
+      printf("done.\n");
+      printf("------------------------------\n");
    }
 
 /* free tmp storage */

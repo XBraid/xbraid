@@ -98,14 +98,21 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
    kd_->nu_coeff = viscosity;
    
 /* ! compute time step */
-   mxeg = kd_->c_coeff;
-   /* mxeg = sqrt( SQR(kd_->c_coeff) + 16.0*SQR(kd_->nu_coeff / h) ); */
-   
-   if (4.0*(kd_->nu_coeff) / h > 1.0)
+   if (kd_->c_coeff <= 4.0*kd_->nu_coeff / h)
    {
-      printf("WARNING: viscos term likely to casuse instability because nu/h = %e > 0.25\n", kd_->nu_coeff/h);
+      mxeg = 4.0*kd_->nu_coeff / h ;
+      printf("Viscous time step calc with nu/(c*h) = %e\n", kd_->nu_coeff/h/kd_->c_coeff);
    }
-   
+   else
+   {
+      mxeg = kd_->c_coeff;
+      printf("Inviscid time step calc with nu/(c*h) = %e\n", kd_->nu_coeff/h/kd_->c_coeff);
+      /* if (4.0*(kd_->nu_coeff) / h > 1.0) */
+      /* { */
+      /*    printf("WARNING: viscos term likely to casuse instability because nu/h = %e > 0.25\n", kd_->nu_coeff/h); */
+      /* } */
+   }
+      
    kd_->dt_fine = cfl*h/mxeg;
    
 /* difference operators are currently hard-wired for 6/3 order SBP */
@@ -313,7 +320,7 @@ dot_grid_fcn(advection_setup *kd_,
 
 
 /* --------------------------------------------------------------------
- * Save a grid function to file.
+ * Save a copy of a grid function.
  * -------------------------------------------------------------------- */
 int 
 save_grid_fcn(advection_setup *kd_,
@@ -322,26 +329,28 @@ save_grid_fcn(advection_setup *kd_,
               grid_fcn *u_)
 {
    MPI_Comm   comm   = MPI_COMM_WORLD;
-   int        myid;
-/*   int doneflag=-1; */
+   int        myid, level=-1;
+   int doneflag=-1;
    /* char       filename[255]; */
    /* FILE      *file; */
 
-//   warp_GetStatusDone(status, &doneflag);
+   warp_GetStatusDone(status, &doneflag);
+   warp_GetStatusLevel(status, &level);
    
    /* copy the final solution to the solver structure */
    if( kd_->write )
    {
      MPI_Comm_rank(comm, &myid);
    
-#ifdef HD_DEBUG
-     printf("Inside save_grid_fcn, myRank=%i, t=%e\n", myid, t);
-#endif   
+     /* printf("Inside save_grid_fcn, myRank=%i, t=%e\n", myid, t); */
+
      if (fabs(t-kd_->tstop)<1e-12)
      {
 #ifdef HD_DEBUG
        printf("...copying the final solution at t=%e\n", t);
 #endif
+
+       printf("Inside save_grid_fcn, final time t=%e, done=%i, level=%i\n", t, doneflag, level);
       
 /* is there a previously saved solution that needs to be de-allocated? */
        if (kd_->sol_copy != NULL)
