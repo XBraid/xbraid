@@ -92,6 +92,26 @@ _warp_SetAccuracy( warp_Real   rnorm,
 }
 
 warp_Int
+_warp_printf( const char *format, ...)
+{
+   va_list   ap;
+
+   va_start(ap, format);
+   if (_warp_printfile != NULL)
+   {
+      vfprintf(_warp_printfile, format, ap);
+      fflush(_warp_printfile);
+   }
+   else
+   {
+      vfprintf(stdout, format, ap);
+   }
+   va_end(ap);
+
+   return _warp_error_flag;
+}
+
+warp_Int
 _warp_ParFprintfFlush(FILE * file, 
                       char * string1, 
                       char * string2,

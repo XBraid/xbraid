@@ -236,7 +236,7 @@ warp_Drive(warp_Core  core)
                
                if( (print_level >= 2) && (myid == 0) )
                {
-                  printf("  **** Accuracy changed to %.2e ****\n", accuracy);
+                  _warp_printf("  **** Accuracy changed to %.2e ****\n", accuracy);
                }
             }
 
@@ -284,7 +284,7 @@ warp_Drive(warp_Core  core)
                /* Note that this residual is based on an earlier iterate */
                if( (print_level >= 1) && (myid == 0) )
                {
-                  printf("  Warp || r_%d || = %e\n", iter, rnorm);
+                  _warp_printf("  Warp || r_%d || = %e\n", iter, rnorm);
                }
 
                if ( ((rnorm < tol) && (_warp_CoreElt(core, accuracy[0].tight_used) == 1)) || 
@@ -351,6 +351,11 @@ warp_Destroy(warp_Core  core)
       _warp_TFree(core);
    }
 
+   if (_warp_printfile != NULL)
+   {
+      fclose(_warp_printfile);
+   }
+
    return _warp_error_flag;
 }
 
@@ -381,22 +386,22 @@ warp_PrintStats(warp_Core  core)
    MPI_Comm_rank(comm_world, &myid);
    if ( myid == 0 )
    {
-      printf("\n");
-      printf("  start time = %e\n", tstart);
-      printf("  stop time  = %e\n", tstop);
-      printf("  time steps = %d\n", ntime);
-      printf("\n");
-      printf("  max number of levels = %d\n", max_levels);
-      printf("  number of levels     = %d\n", nlevels);
-      printf("  coarsening factor    = %d\n", cfdefault);
-      printf("  num F-C relaxations  = %d\n", nrdefault);
-      printf("  num rels on level 0  = %d\n", nrels[0]);
-      printf("  stopping tolerance   = %e\n", tol);
-      printf("  relative tolerance?  = %d\n", rtol);
-      printf("  max iterations       = %d\n", max_iter);
-      printf("  iterations           = %d\n", niter);
-      printf("  residual norm        = %e\n", rnorm);
-      printf("\n");
+      _warp_printf("\n");
+      _warp_printf("  start time = %e\n", tstart);
+      _warp_printf("  stop time  = %e\n", tstop);
+      _warp_printf("  time steps = %d\n", ntime);
+      _warp_printf("\n");
+      _warp_printf("  max number of levels = %d\n", max_levels);
+      _warp_printf("  number of levels     = %d\n", nlevels);
+      _warp_printf("  coarsening factor    = %d\n", cfdefault);
+      _warp_printf("  num F-C relaxations  = %d\n", nrdefault);
+      _warp_printf("  num rels on level 0  = %d\n", nrels[0]);
+      _warp_printf("  stopping tolerance   = %e\n", tol);
+      _warp_printf("  relative tolerance?  = %d\n", rtol);
+      _warp_printf("  max iterations       = %d\n", max_iter);
+      _warp_printf("  iterations           = %d\n", niter);
+      _warp_printf("  residual norm        = %e\n", rnorm);
+      _warp_printf("\n");
    }
 
    return _warp_error_flag;
@@ -479,6 +484,22 @@ warp_SetPrintLevel(warp_Core  core,
                    warp_Int   print_level)
 {
    _warp_CoreElt(core, print_level) = print_level;
+
+   return _warp_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
+warp_SetPrintFile(warp_Core   core,
+                  const char *printfile_name)
+{
+   if ((_warp_printfile = fopen(printfile_name, "w")) == NULL)
+   {
+      printf("Error: can't open output file %s\n", printfile_name);
+      exit(1);
+   }
 
    return _warp_error_flag;
 }

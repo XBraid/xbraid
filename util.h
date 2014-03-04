@@ -38,6 +38,9 @@ _warp_SetAccuracy( warp_Real   rnorm,
                    warp_Real   tol,
                    warp_Real  *paccuracy );
 
+warp_Int
+_warp_printf( const char *format, ...);
+
 /**
  * This is a function that allows for "sane" printing
  * of information in parallel.  Currently, only 

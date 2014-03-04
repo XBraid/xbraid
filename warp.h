@@ -322,6 +322,14 @@ warp_SetSpatialRefine(warp_Core  core,
 warp_Int
 warp_SetPrintLevel(warp_Core  core,
                    warp_Int   print_level);
+
+/**
+ * Set output file for print level messages.  Default is stdout.
+ **/
+warp_Int
+warp_SetPrintFile(warp_Core   core,
+                  const char *printfile_name);
+
 /**
  * Set write level for warp.  This controls how often the user's
  * write routine is called.

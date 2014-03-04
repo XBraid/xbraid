@@ -21,7 +21,8 @@
 #define DEBUG 0
 #endif
 
-warp_Int _warp_error_flag;
+warp_Int _warp_error_flag = 0;
+FILE    *_warp_printfile  = NULL;
 
 /*--------------------------------------------------------------------------
  * Determine processor distribution.  This must agree with GetProc().

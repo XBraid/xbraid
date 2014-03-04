@@ -19,6 +19,7 @@
 #define _warp_HEADER
 
 #include <stdlib.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <math.h>
 
@@ -179,6 +180,12 @@ typedef struct _warp_Core_struct
  *--------------------------------------------------------------------------*/
 
 extern warp_Int _warp_error_flag;
+
+/*--------------------------------------------------------------------------
+ * Print file for redirecting stdout when needed
+ *--------------------------------------------------------------------------*/
+
+extern FILE *_warp_printfile;
 
 /*--------------------------------------------------------------------------
  * Coarsening macros
