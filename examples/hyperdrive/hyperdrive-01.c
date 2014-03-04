@@ -268,9 +268,9 @@ int main(int argc, char ** argv)
       warp_SetSpatialRefine(core, gridfcn_Refine);
    }
    
-/* control how often my write routine is called. How is this supposed to work??? */
+   /* control how often my save_grid_fcn routine is called. */
+/* 0 is never, 1 is at convergence for the finest level, 2 is after every iteration on every level (?) */
    warp_SetWriteLevel(core, 2);
-   
 
    warp_Drive(core);
 
