@@ -918,7 +918,6 @@ _warp_CFRelax(warp_Core  core,
 warp_Int
 _warp_FRestrict(warp_Core   core,
                 warp_Int    level,
-                warp_Real   old_rnorm,
                 warp_Int    iter,
                 warp_Real  *rnorm_ptr)
 {
@@ -930,6 +929,7 @@ _warp_FRestrict(warp_Core   core,
    warp_Int            ncpoints    = _warp_GridElt(grids[level], ncpoints);
    _warp_CommHandle   *recv_handle = NULL;
    _warp_CommHandle   *send_handle = NULL;
+   warp_Real           old_rnorm   = *rnorm_ptr;
 
    warp_Int            c_level, c_ilower, c_iupper, c_index, c_i, c_ii;
    warp_Vector         c_u, *c_va, *c_wa;
@@ -937,6 +937,7 @@ _warp_FRestrict(warp_Core   core,
    warp_Vector         u, r;
    warp_Int            interval, flo, fhi, fi, ci, rfactor;
    warp_Real           rnorm, grnorm, rdot, accuracy;
+   warp_Status         status;
 
    c_level  = level+1;
    c_ilower = _warp_GridElt(grids[c_level], ilower);
@@ -946,10 +947,8 @@ _warp_FRestrict(warp_Core   core,
 
    rnorm = 0.0;
 
-   warp_Status    status;
-
    /* Create status structure to give user info about the current state of Warp */
-   _warp_InitStatus( old_rnorm, iter, level, 0, &status);
+   _warp_InitStatus(old_rnorm, iter, level, 0, &status);
 
    if (level == 0)
    {
@@ -993,14 +992,14 @@ _warp_FRestrict(warp_Core   core,
          
          /* Allow user to process current vector, note that r here is
           * temporarily holding the state vector */
-         if( write_level >= 2)
+         if( (write_level >= 2) && (level == 0) )
          {
             _warp_UWriteVector(core, level, fi, status, r);
          }
       }
 
       /* Allow user to process current C-point */
-      if( (write_level >= 2) && (ci > -1) )
+      if( (write_level >= 2) && (level == 0) && (ci > -1) )
       {
          _warp_UGetVectorRef(core, level, ci, &u);
          _warp_UWriteVector(core, level, ci, status, u);
@@ -1092,16 +1091,19 @@ _warp_FRestrict(warp_Core   core,
 
 warp_Int
 _warp_FInterp(warp_Core  core,
-              warp_Int   level)
+              warp_Int   level,
+              warp_Int   iter,
+              warp_Real  rnorm)
 {
-   warp_App       app      = _warp_CoreElt(core, app);
-   _warp_Grid   **grids    = _warp_CoreElt(core, grids);
-   warp_Int       ilower   = _warp_GridElt(grids[level], ilower);
-   warp_Int       iupper   = _warp_GridElt(grids[level], iupper);
-   warp_Int       ncpoints = _warp_GridElt(grids[level], ncpoints);
-   warp_Vector   *ua       = _warp_GridElt(grids[level], ua);
-   warp_Vector   *va       = _warp_GridElt(grids[level], va);
-   warp_Vector   *wa       = _warp_GridElt(grids[level], wa);
+   warp_App       app         = _warp_CoreElt(core, app);
+   _warp_Grid   **grids       = _warp_CoreElt(core, grids);
+   warp_Int       write_level = _warp_CoreElt(core, write_level);
+   warp_Int       ilower      = _warp_GridElt(grids[level], ilower);
+   warp_Int       iupper      = _warp_GridElt(grids[level], iupper);
+   warp_Int       ncpoints    = _warp_GridElt(grids[level], ncpoints);
+   warp_Vector   *ua          = _warp_GridElt(grids[level], ua);
+   warp_Vector   *va          = _warp_GridElt(grids[level], va);
+   warp_Vector   *wa          = _warp_GridElt(grids[level], wa);
 
    warp_Int       f_level, f_cfactor, f_index;
    warp_Vector    f_u, f_e;
@@ -1109,9 +1111,13 @@ _warp_FInterp(warp_Core  core,
    warp_Vector    u, e;
    warp_Int       flo, fhi, fi, ci, ii;
    warp_Int       interval;
+   warp_Status    status;
 
    f_level   = level-1;
    f_cfactor = _warp_GridElt(grids[f_level], cfactor);
+
+   /* Create status structure to give user info about the current state of Warp */
+   _warp_InitStatus(rnorm, iter, level, 0, &status);
 
    _warp_UCommInitF(core, level);
 
@@ -1134,6 +1140,11 @@ _warp_FInterp(warp_Core  core,
       {
          _warp_Step(core, level, fi, _warp_CoreElt(core, accuracy[1].value), u);
          _warp_USetVector(core, level, fi, u);
+         /* Allow user to process current vector */
+         if( (write_level >= 2) )
+         {
+            _warp_UWriteVector(core, level, fi, status, u);
+         }
          e = va[fi-ilower];
          _warp_CoreFcn(core, sum)(app, 1.0, u, -1.0, e);
          _warp_MapCoarseToFine(fi, f_cfactor, f_index);
@@ -1152,6 +1163,11 @@ _warp_FInterp(warp_Core  core,
       if (ci > 0)
       {
          _warp_UGetVectorRef(core, level, ci, &u);
+         /* Allow user to process current C-point */
+         if( (write_level >= 2) )
+         {
+            _warp_UWriteVector(core, level, ci, status, u);
+         }
          e = va[ci-ilower];
          _warp_CoreFcn(core, sum)(app, 1.0, u, -1.0, e);
          _warp_MapCoarseToFine(ci, f_cfactor, f_index);
@@ -1184,6 +1200,9 @@ _warp_FInterp(warp_Core  core,
          wa[ii] = NULL;
       }
    }
+
+   /* Destroy status structure */
+   _warp_DestroyStatus(status);
 
    return _warp_error_flag;
 }

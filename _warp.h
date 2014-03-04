@@ -147,6 +147,9 @@ typedef struct _warp_Core_struct
    warp_Int              nlevels;      /**< number of temporal grid levels */
    _warp_Grid          **grids;        /**< pointer to temporal grid structures for each level*/
 
+   warp_Real             localtime;    /**< local wall time for warp_Drive() */
+   warp_Real             globaltime;   /**< global wall time for warp_Drive() */
+
 } _warp_Core;
 
 /* Accessor macros */
@@ -423,11 +426,9 @@ _warp_CFRelax(warp_Core  core,
 warp_Int
 _warp_FRestrict(warp_Core   core,       /**< warp_Core (_warp_Core) struct */   
                 warp_Int    level,      /**< restrict from level to level+1 */
-                warp_Real   old_rnorm,  /**< rnorm from previous iterate (for user info) */
                 warp_Int    iter,       /**< current iteration number (for user info) */
                 warp_Real  *rnorm_ptr   /**< pointer to residual norm (if level 0) */
                 );
-
 
 /**
  * F-Relax on *level* and interpolate to *level-1*\n
@@ -439,7 +440,9 @@ _warp_FRestrict(warp_Core   core,       /**< warp_Core (_warp_Core) struct */
  */
 warp_Int
 _warp_FInterp(warp_Core  core,           /**< warp_Core (_warp_Core) struct */  
-              warp_Int   level           /**< interp from level to level+1 */
+              warp_Int   level,          /**< interp from level to level+1 */
+              warp_Int   iter,           /**< current iteration number (for user info) */
+              warp_Real  rnorm           /**< residual norm (if level 0) */
               );
 
 /**

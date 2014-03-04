@@ -158,9 +158,14 @@ warp_Drive(warp_Core  core)
    warp_Real    *ta;
    warp_Int      level, fmglevel, down, done, i, refined;
    _warp_Grid   *grid;
+   warp_Real     localtime, globaltime;
 
    MPI_Comm     comm_world = _warp_CoreElt(core, comm_world);
    warp_Int     myid;
+
+   /* Start timer */
+   localtime = MPI_Wtime();
+
    MPI_Comm_rank(comm_world, &myid);
 
    level = 0;
@@ -205,14 +210,13 @@ warp_Drive(warp_Core  core)
 
       if (down)
       {
-
          if (level < (nlevels-1))
          {
             /* CF-relaxation */
             _warp_CFRelax(core, level);
 
             /* F-relax then restrict */
-            _warp_FRestrict(core, level, rnorm, iter, &rnorm);
+            _warp_FRestrict(core, level, iter, &rnorm);
             /* Set initial guess on next coarser level */
             _warp_InitGuess(core, level+1);
 
@@ -245,7 +249,6 @@ warp_Drive(warp_Core  core)
          else
          {
             /* Coarsest grid - solve on the up-cycle */
-
             down = 0;
          }
       }
@@ -254,13 +257,12 @@ warp_Drive(warp_Core  core)
 
       if (!down)
       {
-
          if (level > 0)
          {
             if (level >= fmglevel)
             {
                /* F-relax then interpolate */
-               _warp_FInterp(core, level);
+               _warp_FInterp(core, level, iter+1, rnorm);
                
                level--;
             }
@@ -316,6 +318,12 @@ warp_Drive(warp_Core  core)
 
    _warp_CoreElt(core, niter) = iter;
    _warp_CoreElt(core, rnorm) = rnorm;
+
+   /* Stop timer */
+   localtime = MPI_Wtime() - localtime;
+   MPI_Allreduce(&localtime, &globaltime, 1, MPI_DOUBLE, MPI_MAX, comm_world);
+   _warp_CoreElt(core, localtime)  = localtime;
+   _warp_CoreElt(core, globaltime) = globaltime;
 
    /* Print statistics for this run */
    if( (print_level >= 1) && (myid == 0) )
@@ -380,6 +388,7 @@ warp_PrintStats(warp_Core  core)
    warp_Int     niter      = _warp_CoreElt(core, niter);
    warp_Real    rnorm      = _warp_CoreElt(core, rnorm);
    warp_Int     nlevels    = _warp_CoreElt(core, nlevels);
+   warp_Real    globaltime = _warp_CoreElt(core, globaltime);
 
    warp_Int     myid;
 
@@ -401,6 +410,8 @@ warp_PrintStats(warp_Core  core)
       _warp_printf("  max iterations       = %d\n", max_iter);
       _warp_printf("  iterations           = %d\n", niter);
       _warp_printf("  residual norm        = %e\n", rnorm);
+      _warp_printf("\n");
+      _warp_printf("  wall time            = %f\n", globaltime);
       _warp_printf("\n");
    }
 
