@@ -98,14 +98,21 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
    kd_->nu_coeff = viscosity;
    
 /* ! compute time step */
-   mxeg = kd_->c_coeff;
-   /* mxeg = sqrt( SQR(kd_->c_coeff) + 16.0*SQR(kd_->nu_coeff / h) ); */
-   
-   if (4.0*(kd_->nu_coeff) / h > 1.0)
+   if (kd_->c_coeff <= 4.0*kd_->nu_coeff / h)
    {
-      printf("WARNING: viscos term likely to casuse instability because nu/h = %e > 0.25\n", kd_->nu_coeff/h);
+      mxeg = 4.0*kd_->nu_coeff / h ;
+      printf("Viscous time step calc with nu/(c*h) = %e\n", kd_->nu_coeff/h/kd_->c_coeff);
    }
-   
+   else
+   {
+      mxeg = kd_->c_coeff;
+      printf("Inviscid time step calc with nu/(c*h) = %e\n", kd_->nu_coeff/h/kd_->c_coeff);
+      /* if (4.0*(kd_->nu_coeff) / h > 1.0) */
+      /* { */
+      /*    printf("WARNING: viscos term likely to casuse instability because nu/h = %e > 0.25\n", kd_->nu_coeff/h); */
+      /* } */
+   }
+      
    kd_->dt_fine = cfl*h/mxeg;
    
 /* difference operators are currently hard-wired for 6/3 order SBP */
@@ -311,50 +318,6 @@ dot_grid_fcn(advection_setup *kd_,
    return 0;
 }
 
-
-/* --------------------------------------------------------------------
- * Save a grid function to file.
- * -------------------------------------------------------------------- */
-int 
-save_grid_fcn(advection_setup *kd_,
-              warp_Real t,
-              warp_Status   status,
-              grid_fcn *u_)
-{
-   MPI_Comm   comm   = MPI_COMM_WORLD;
-   int        myid;
-/*   int doneflag=-1; */
-   /* char       filename[255]; */
-   /* FILE      *file; */
-
-//   warp_GetStatusDone(status, &doneflag);
-   
-   /* copy the final solution to the solver structure */
-   if( kd_->write )
-   {
-     MPI_Comm_rank(comm, &myid);
-   
-#ifdef HD_DEBUG
-     printf("Inside save_grid_fcn, myRank=%i, t=%e\n", myid, t);
-#endif   
-     if (fabs(t-kd_->tstop)<1e-12)
-     {
-#ifdef HD_DEBUG
-       printf("...copying the final solution at t=%e\n", t);
-#endif
-      
-/* is there a previously saved solution that needs to be de-allocated? */
-       if (kd_->sol_copy != NULL)
-         free_grid_fcn(kd_, kd_->sol_copy);
-       kd_->sol_copy = NULL;
-      
-       copy_grid_fcn(kd_, u_, &(kd_->sol_copy));
-       kd_->t_copy = t;
-     }
-     
-   }
-   return 0;
-}
 
 /* --------------------------------------------------------------------
  * Return buffer size for vector object buffer. Vector objects contains
