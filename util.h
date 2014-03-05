@@ -52,9 +52,9 @@ _warp_printf( const char *format, ...);
  **/
 warp_Int
 _warp_ParFprintfFlush(FILE * file, 
-                      char * string1, 
-                      char * string2,
-                      warp_Int myid );
+                      warp_Int myid,
+                      char * message, 
+                      ...);
 
 #endif
 

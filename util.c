@@ -113,17 +113,21 @@ _warp_printf( const char *format, ...)
 
 warp_Int
 _warp_ParFprintfFlush(FILE * file, 
-                      char * string1, 
-                      char * string2,
-                      warp_Int myid )
+                      warp_Int myid,
+                      char * message, 
+                      ...)
 {
-   char           message[255];
 
    if (myid == 0)
    {
-      // Print string1 + string2 to file and then flush
-      sprintf(message, "%s%s", string1, string2);
-      fprintf(file, message);
+      // Print message to file
+      va_list   ap;
+      
+      va_start(ap, message);
+      vfprintf(file, message, ap);
+      fflush(file);
+
+      va_end(ap);
       fflush(file);
    }
 
