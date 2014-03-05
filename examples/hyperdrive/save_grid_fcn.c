@@ -12,8 +12,9 @@ save_grid_fcn(advection_setup *kd_,
               grid_fcn *u_)
 {
    MPI_Comm   comm   = MPI_COMM_WORLD;
-   int        myid, level=-1;
-   int doneflag=-1;
+   int        myid, level=-1, done_iterating=-1, iteration=-1;
+   double residual;
+   
    /* char       filename[255]; */
    /* FILE      *file; */
 
@@ -26,22 +27,33 @@ save_grid_fcn(advection_setup *kd_,
 
      if (fabs(t-kd_->tstop)<1e-12)
      {
-#ifdef HD_DEBUG
-       printf("...copying the final solution at t=%e\n", t);
-#endif
-
-       warp_GetStatusDone(status, &doneflag);
+/* get more details about about the current level, iteration, etc */
+       warp_GetStatusIter(status, &iteration);
+       warp_GetStatusResidual(status, &residual);
+       warp_GetStatusDone(status, &done_iterating);
        warp_GetStatusLevel(status, &level);
 
-       printf("Inside save_grid_fcn, final time t=%e, done=%i, level=%i\n", t, doneflag, level);
+/* done_iterating is only well-defined on the finest level */
+       done_iterating = (residual < kd_->warpResidualLevel || iteration >= kd_->warpMaxIter);
+
+       printf("Inside save_grid_fcn, final time t=%e, iter=%i, residual=%e, done iterating=%i, level=%i\n", 
+              t, iteration, residual, done_iterating, level);
+
+/* only save the final solution at the matching level */
+       if (level == kd_->copy_level && done_iterating)
+       {
+          printf("save_grid_fcn: copying grid function, iter=%i, done iterating=%i, level=%i\n", 
+                 iteration, done_iterating, level);
       
 /* is there a previously saved solution that needs to be de-allocated? */
-       if (kd_->sol_copy != NULL)
-         free_grid_fcn(kd_, kd_->sol_copy);
-       kd_->sol_copy = NULL;
+          if (kd_->sol_copy != NULL)
+             free_grid_fcn(kd_, kd_->sol_copy);
+          kd_->sol_copy = NULL;
       
-       copy_grid_fcn(kd_, u_, &(kd_->sol_copy));
-       kd_->t_copy = t;
+          copy_grid_fcn(kd_, u_, &(kd_->sol_copy));
+          kd_->t_copy = t;
+       }
+       
      }
      
    }

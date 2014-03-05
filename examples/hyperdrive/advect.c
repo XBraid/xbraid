@@ -137,7 +137,7 @@ int main(int argc, char ** argv)
 /* solver meta-data */
    kd_ = malloc(sizeof(advection_setup));
    init_advection_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, 
-                         wave_speed, viscosity, bcLeft, bcRight, kd_);
+                         wave_speed, viscosity, bcLeft, bcRight, 0, 0.0, kd_); /* stopping criteria not used */
    
 /* create solution vector */
    init_grid_fcn(kd_, 0.0, &gf_);

@@ -203,7 +203,7 @@ int main(int argc, char ** argv)
 /* setup solver meta-data */
    kd_ = malloc(sizeof(advection_setup));
    init_advection_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, 
-                         wave_speed, viscosity, bcLeft, bcRight, kd_);
+                         wave_speed, viscosity, bcLeft, bcRight, max_iter, tol, kd_);
    
 #define bcnr(i) compute_index_1d(kd_->bcnr_, i)    
 
@@ -269,7 +269,7 @@ int main(int argc, char ** argv)
    }
    
    /* control how often my save_grid_fcn routine is called. */
-/* 0 is never, 1 is at convergence for the finest level, 2 is after every iteration on every level (?) */
+/* 0 is never, 1 is at convergence for the finest level, 2 is after every iteration on every level */
    warp_SetWriteLevel(core, 2);
 
    warp_Drive(core);
@@ -284,19 +284,19 @@ int main(int argc, char ** argv)
    printf("------------------------------\n");
    printf("Time-stepping completed. Solved to time t: %e\n", kd_->tstop);
 
-/* tmp storage */
-   init_grid_fcn(kd_, 0.0, &exact_);
-
-/* ! evaluate solution error */
-   exact1( exact_, kd_->tstop, kd_ );
-/* get exact bndry data */
-   bdata( exact_, kd_->tstop, kd_);
-
    if (kd_->sol_copy)
    {
-      
 /*  get a pointer to the final solution from the advection_setup structure */
       gf_ = kd_->sol_copy;
+
+/* allocate storage for exact solution of the same size as gf_ */
+      copy_grid_fcn(kd_, gf_, &exact_);
+
+/* ! evaluate solution error */
+      exact1( exact_, kd_->tstop, kd_ );
+/* get exact bndry data */
+      bdata( exact_, kd_->tstop, kd_);
+
       evalerr1( gf_, exact_, &l2, &li );
 
       printf("------------------------------\n");

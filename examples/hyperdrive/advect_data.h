@@ -48,6 +48,9 @@ typedef struct _warp_App_struct
    double_array_1d *alpha_, *beta_; /* RK-4 coefficients */
 
 /* warp specific stuff */
+   int warpMaxIter;
+   double warpResidualLevel;
+   int copy_level; /* copy the solution at this level */
    grid_fcn *sol_copy; /* assigned by the call-back routine save_grid_fcn() */
    double t_copy;
    
@@ -64,8 +67,8 @@ init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle);
 void
 init_advection_solver(double h, double amp, double ph, double om, int pnr, int taylorbc, 
                       double L, double cfl, int nstepsset, int nsteps, double tfinal, 
-                      double wave_speed, double viscosity, int bcLeft, int bcRight,
-                      advection_setup *kd_);
+                      double wave_speed, double viscosity, int bcLeft, int bcRight, int warpMaxIter, 
+                      double warpResidualLevel, advection_setup *kd_);
 int
 explicit_rk4_stepper(advection_setup *kd_, double t, double tend, double accuracy, grid_fcn *gf_, 
                      int *rfact_);

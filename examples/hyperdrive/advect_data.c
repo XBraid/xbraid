@@ -58,8 +58,8 @@ init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle)
 void
 init_advection_solver(double h, double amp, double ph, double om, int pnr, int taylorbc, 
                       double L, double cfl, int nstepsset, int nsteps, double tfinal, 
-                      double wave_speed, double viscosity, int bcLeft, int bcRight,
-                      advection_setup *kd_)
+                      double wave_speed, double viscosity, int bcLeft, int bcRight, int warpMaxIter, 
+                      double warpResidualLevel, advection_setup *kd_)
 {
    double mxeg, p1, beta, pi=M_PI;
    int n;
@@ -188,6 +188,12 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
    
 /* always save solution for now...*/
    kd_->write=1;
+/* save final solution at this level */
+   kd_->copy_level=1; /* level=0 is the finest, level=1 is coarser, and so on */
+/* keep track of warp convergence criteria */
+   kd_->warpMaxIter = warpMaxIter;
+   kd_->warpResidualLevel = warpResidualLevel;
+   
 /* initialize solution pointer and time */
    kd_->sol_copy = NULL;
    kd_->t_copy   = -1;
