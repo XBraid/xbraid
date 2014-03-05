@@ -378,19 +378,19 @@ warp_PrintStats(warp_Core  core)
    warp_Real    tstop      = _warp_CoreElt(core, tstop);
    warp_Int     ntime      = _warp_CoreElt(core, ntime);
    warp_Int     max_levels = _warp_CoreElt(core, max_levels);
-   warp_Int    *nrels      = _warp_CoreElt(core, nrels);
-   warp_Int     nrdefault  = _warp_CoreElt(core, nrdefault);
    warp_Real    tol        = _warp_CoreElt(core, tol);
    warp_Int     rtol       = _warp_CoreElt(core, rtol);
+   warp_Int    *nrels      = _warp_CoreElt(core, nrels);
    /*warp_Int    *cfactors   = _warp_CoreElt(core, cfactors);*/
-   warp_Int     cfdefault  = _warp_CoreElt(core, cfdefault);
    warp_Int     max_iter   = _warp_CoreElt(core, max_iter);
    warp_Int     niter      = _warp_CoreElt(core, niter);
    warp_Real    rnorm      = _warp_CoreElt(core, rnorm);
    warp_Int     nlevels    = _warp_CoreElt(core, nlevels);
+   _warp_Grid **grids      = _warp_CoreElt(core, grids);
+
    warp_Real    globaltime = _warp_CoreElt(core, globaltime);
 
-   warp_Int     myid;
+   warp_Int     myid, level;
 
    MPI_Comm_rank(comm_world, &myid);
    if ( myid == 0 )
@@ -402,16 +402,20 @@ warp_PrintStats(warp_Core  core)
       _warp_printf("\n");
       _warp_printf("  max number of levels = %d\n", max_levels);
       _warp_printf("  number of levels     = %d\n", nlevels);
-      _warp_printf("  coarsening factor    = %d\n", cfdefault);
-      _warp_printf("  num F-C relaxations  = %d\n", nrdefault);
-      _warp_printf("  num rels on level 0  = %d\n", nrels[0]);
       _warp_printf("  stopping tolerance   = %e\n", tol);
       _warp_printf("  relative tolerance?  = %d\n", rtol);
       _warp_printf("  max iterations       = %d\n", max_iter);
       _warp_printf("  iterations           = %d\n", niter);
       _warp_printf("  residual norm        = %e\n", rnorm);
       _warp_printf("\n");
-      _warp_printf("  wall time            = %f\n", globaltime);
+      _warp_printf("  level   cfactor   nrelax\n", globaltime);
+      for (level = 0; level < nlevels; level++)
+      {
+         _warp_printf("  % 5d   % 7d   % 6d\n",
+                      level, _warp_GridElt(grids[level], cfactor), nrels[level]);
+      }
+      _warp_printf("\n");
+      _warp_printf("  wall time = %f\n", globaltime);
       _warp_printf("\n");
    }
 
