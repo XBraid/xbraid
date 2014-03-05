@@ -75,7 +75,10 @@ counter=0
 for test in "${TESTS[@]}"
 do
    echo "Running Test $counter"
-   eval "$test" 1>> $output_dir/unfiltered.std.out.$counter  2>> $output_dir/std.err.$counter
+   #eval "$test" 1>> $output_dir/unfiltered.std.out.$counter  2>> $output_dir/std.err.$counter
+   # git can send non errors to standard error (at least on fedora...annoying)  
+   # So redirect everything to std.out and rely on grepping std.out to find errors.
+   eval "$test" &>> $output_dir/unfiltered.std.out.$counter
    cd $output_dir
    egrep -o "$lines_to_check" unfiltered.std.out.$counter > std.out.$counter
    diff -U3 -B -bI"$TestDelimiter" $scriptname.saved.$counter std.out.$counter >> std.err.$counter

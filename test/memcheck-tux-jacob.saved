@@ -2,40 +2,34 @@
 
   time steps = 64
   number of levels     = 7
-  coarsening factor    = 2
-  num F-C relaxations  = 1
-  num rels on level 0  = 1
   iterations           = 8
 spatial problem size       : 17 x 17
 
-# Begin Test 1, check iterations to make sure test ran to completion
+# Begin Test 1, check iterations to make sure test ran to completion, and note the two warp lines for a phantom "memory leak" detected by valgrind.
 
   time steps = 64
   number of levels     = 4
-  coarsening factor    = 4
-  num F-C relaxations  = 1
-  num rels on level 0  = 1
   iterations           = 7
 spatial problem size       : 17 x 17
+ _warp_FRestrict 
+ warp_Drive 
 
-# Begin Test 2, check iterations to make sure test ran to completion
+# Begin Test 2, check iterations to make sure test ran to completion, and note the two warp lines for a phantom "memory leak" detected by valgrind.
 
   time steps = 64
   number of levels     = 4
-  coarsening factor    = 4
-  num F-C relaxations  = 1
-  num rels on level 0  = 1
   iterations           = 7
 spatial problem size       : 17 x 17
+ _warp_FRestrict 
+ warp_Drive 
 
-
-# Begin Test 3, check iterations to make sure test ran to completion
+# Begin Test 3, check iterations to make sure test ran to completion, and note the two warp lines for a phantom "memory leak" detected by valgrind.
 
   time steps = 32
   number of levels     = 3
-  coarsening factor    = 4
-  num F-C relaxations  = 1
-  num rels on level 0  = 1
   iterations           = 5
 spatial problem size       : 17 x 17
+ _warp_CommSendInit
+ _warp_FRestrict 
+ warp_Drive 
 

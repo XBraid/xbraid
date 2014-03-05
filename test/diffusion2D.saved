@@ -2,9 +2,6 @@
 
   time steps = 256
   number of levels     = 9
-  coarsening factor    = 2
-  num F-C relaxations  = 1
-  num rels on level 0  = 1
   iterations           = 10
 spatial problem size       : 16 x 16
 
@@ -12,9 +9,6 @@ spatial problem size       : 16 x 16
 
   time steps = 256
   number of levels     = 9
-  coarsening factor    = 2
-  num F-C relaxations  = 1
-  num rels on level 0  = 1
   iterations           = 8
 spatial problem size       : 16 x 16
 
@@ -23,9 +17,6 @@ spatial problem size       : 16 x 16
   my_Write() called, iter= 24, level= 0
   time steps = 128
   number of levels     = 8
-  coarsening factor    = 2
-  num F-C relaxations  = 1
-  num rels on level 0  = 1
   iterations           = 24
 spatial problem size       : 33 x 33
   0   |  expl        9.82e-02    9.82e-02    1.45e-03    3.00e-01
@@ -42,55 +33,49 @@ spatial problem size       : 33 x 33
   my_Write() called, iter= 7, level= 0
   time steps = 32
   number of levels     = 6
-  coarsening factor    = 2
-  num F-C relaxations  = 1
-  num rels on level 0  = 1
   iterations           = 7
 spatial problem size       : 17 x 17
 
 # Begin Test 4
 
   my_Write() called, iter= 0, level= 0
-  my_Write() called, iter= 0, level= 1
-  my_Write() called, iter= 0, level= 2
-  my_Write() called, iter= 0, level= 3
-  my_Write() called, iter= 0, level= 4
-  my_Write() called, iter= 1, level= 0
-  my_Write() called, iter= 1, level= 1
-  my_Write() called, iter= 1, level= 2
-  my_Write() called, iter= 1, level= 3
   my_Write() called, iter= 1, level= 4
-  my_Write() called, iter= 2, level= 0
-  my_Write() called, iter= 2, level= 1
-  my_Write() called, iter= 2, level= 2
-  my_Write() called, iter= 2, level= 3
+  my_Write() called, iter= 1, level= 3
+  my_Write() called, iter= 1, level= 2
+  my_Write() called, iter= 1, level= 1
+  my_Write() called, iter= 1, level= 0
   my_Write() called, iter= 2, level= 4
-  my_Write() called, iter= 3, level= 0
-  my_Write() called, iter= 3, level= 1
-  my_Write() called, iter= 3, level= 2
-  my_Write() called, iter= 3, level= 3
+  my_Write() called, iter= 2, level= 3
+  my_Write() called, iter= 2, level= 2
+  my_Write() called, iter= 2, level= 1
+  my_Write() called, iter= 2, level= 0
   my_Write() called, iter= 3, level= 4
-  my_Write() called, iter= 4, level= 0
-  my_Write() called, iter= 4, level= 1
-  my_Write() called, iter= 4, level= 2
-  my_Write() called, iter= 4, level= 3
+  my_Write() called, iter= 3, level= 3
+  my_Write() called, iter= 3, level= 2
+  my_Write() called, iter= 3, level= 1
+  my_Write() called, iter= 3, level= 0
   my_Write() called, iter= 4, level= 4
-  my_Write() called, iter= 5, level= 0
-  my_Write() called, iter= 5, level= 1
-  my_Write() called, iter= 5, level= 2
-  my_Write() called, iter= 5, level= 3
+  my_Write() called, iter= 4, level= 3
+  my_Write() called, iter= 4, level= 2
+  my_Write() called, iter= 4, level= 1
+  my_Write() called, iter= 4, level= 0
   my_Write() called, iter= 5, level= 4
-  my_Write() called, iter= 6, level= 0
-  my_Write() called, iter= 6, level= 1
-  my_Write() called, iter= 6, level= 2
-  my_Write() called, iter= 6, level= 3
+  my_Write() called, iter= 5, level= 3
+  my_Write() called, iter= 5, level= 2
+  my_Write() called, iter= 5, level= 1
+  my_Write() called, iter= 5, level= 0
   my_Write() called, iter= 6, level= 4
+  my_Write() called, iter= 6, level= 3
+  my_Write() called, iter= 6, level= 2
+  my_Write() called, iter= 6, level= 1
+  my_Write() called, iter= 6, level= 0
+  my_Write() called, iter= 7, level= 4
+  my_Write() called, iter= 7, level= 3
+  my_Write() called, iter= 7, level= 2
+  my_Write() called, iter= 7, level= 1
   my_Write() called, iter= 7, level= 0
   time steps = 32
   number of levels     = 6
-  coarsening factor    = 2
-  num F-C relaxations  = 1
-  num rels on level 0  = 1
   iterations           = 7
 spatial problem size       : 17 x 17
 
@@ -104,9 +89,6 @@ spatial problem size       : 17 x 17
   my_Write() called, iter= 7, level= 0
   time steps = 32
   number of levels     = 6
-  coarsening factor    = 2
-  num F-C relaxations  = 1
-  num rels on level 0  = 1
   iterations           = 7
 spatial problem size       : 17 x 17
 
@@ -236,7 +218,7 @@ Starting warp_TestDot
    warp_TestDot:   dot(u,u)
    warp_TestDot:   dot(w,w)
    warp_TestDot:   Test 2 Passed
-   warp_TestDot:   actual output:    dot(w,w) / dot(u,u) = 3.91e+02 / 9.77e+01 = 4.00e+00 
+   warp_TestDot:   actual output:    dot(w,w) / dot(u,u) = 3.90e+02 / 9.75e+01 = 4.00e+00    
    warp_TestDot:   expected output:  dot(w,w) / dot(u,u) = 4.0 
    warp_TestDot:   Starting Test 3
    warp_TestDot:   free(w)
@@ -245,7 +227,7 @@ Starting warp_TestDot
    warp_TestDot:   dot(u,u)
    warp_TestDot:   dot(w,w)
    warp_TestDot:   Test 3 Passed
-   warp_TestDot:   actual output:    dot(w,w) / dot(u,u) = 2.44e+01 / 9.77e+01 = 2.50e-01 
+   warp_TestDot:   actual output:    dot(w,w) / dot(u,u) = 2.44e+01 / 9.75e+01 = 2.50e-01    
    warp_TestDot:   expected output:  dot(w,w) / dot(u,u) = 0.25 
    warp_TestDot:   Starting Test 4
    warp_TestDot:   free(w)
@@ -253,7 +235,7 @@ Starting warp_TestDot
    warp_TestDot:   w = u + 0.5*w 
    warp_TestDot:   dot(u,u)
    warp_TestDot:   dot(w,u)
-   warp_TestDot:   actual output:    dot(w,u) + dot(u,u) = 1.47e+02 + 9.77e+01 = 2.44e+02
+   warp_TestDot:   actual output:    dot(w,u) + dot(u,u) = 1.46e+02 + 9.75e+01 = 2.44e+02   
    warp_TestDot:   v = u + w 
    warp_TestDot:   dot(v,u)
    warp_TestDot:   Test 4 Passed

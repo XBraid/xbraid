@@ -409,11 +409,13 @@ warp_PrintStats(warp_Core  core)
       _warp_printf("  residual norm        = %e\n", rnorm);
       _warp_printf("\n");
       _warp_printf("  level   cfactor   nrelax\n", globaltime);
-      for (level = 0; level < nlevels; level++)
+      for (level = 0; level < nlevels-1; level++)
       {
          _warp_printf("  % 5d   % 7d   % 6d\n",
                       level, _warp_GridElt(grids[level], cfactor), nrels[level]);
       }
+      /* Print out blank information on coarsest grid */
+      _warp_printf("  % 5d   % 7c   % 6c\n", level, ' ', ' ');
       _warp_printf("\n");
       _warp_printf("  wall time = %f\n", globaltime);
       _warp_printf("\n");
