@@ -101,14 +101,14 @@ Starting warp_TestInitWrite
   my_Write() called, iter= 0, level= 0
    warp_TestInitWrite:   check output: wrote u for initial condition at t=0.00e+00. 
    warp_TestInitWrite:   free(u) 
-   warp_TestInitWrite:   Finished
+Finished warp_TestInitWrite
 Starting warp_TestInitWrite
    warp_TestInitWrite:   Starting Test 1
    warp_TestInitWrite:   u = init(t=5.78e-03)
    warp_TestInitWrite:   write(u) 
    warp_TestInitWrite:   check output: wrote u for initial condition at t=5.78e-03. 
    warp_TestInitWrite:   free(u) 
-   warp_TestInitWrite:   Finished
+Finished warp_TestInitWrite
 Starting warp_TestClone
    warp_TestClone:   Starting Test 1
    warp_TestClone:   u = init(t=0.00e+00)
@@ -118,7 +118,7 @@ Starting warp_TestClone
    warp_TestClone:   check output:  wrote u and v for initial condition at t=0.00e+00.
    warp_TestClone:   free(u)
    warp_TestClone:   free(v)
-   warp_TestClone:   Finished
+Finished warp_TestClone
 Starting warp_TestClone
    warp_TestClone:   Starting Test 1
    warp_TestClone:   u = init(t=5.78e-03)
@@ -128,7 +128,7 @@ Starting warp_TestClone
    warp_TestClone:   check output:  wrote u and v for initial condition at t=5.78e-03.
    warp_TestClone:   free(u)
    warp_TestClone:   free(v)
-   warp_TestClone:   Finished
+Finished warp_TestClone
 Starting warp_TestSum
    warp_TestSum:   Starting Test 1
    warp_TestSum:   u = init(t=0.00e+00)
@@ -143,7 +143,7 @@ Starting warp_TestSum
    warp_TestSum:   check output:  v should equal 2*u 
    warp_TestSum:   free(u)
    warp_TestSum:   free(v)
-   warp_TestSum:   Finished
+Finished warp_TestSum
 Starting warp_TestSum
    warp_TestSum:   Starting Test 1
    warp_TestSum:   u = init(t=5.78e-03)
@@ -158,7 +158,7 @@ Starting warp_TestSum
    warp_TestSum:   check output:  v should equal 2*u 
    warp_TestSum:   free(u)
    warp_TestSum:   free(v)
-   warp_TestSum:   Finished
+Finished warp_TestSum
 Starting warp_TestDot
    warp_TestDot:   Starting Test 1
    warp_TestDot:   u = init(t=0.00e+00)
@@ -197,11 +197,11 @@ Starting warp_TestDot
    warp_TestDot:   dot(v,u)
    warp_TestDot:   Test 4 Passed
    warp_TestDot:   actual output:    dot(v,u) = 1.60e+02  
-   warp_TestDot:   expected output:  dot(v,u) equals dot(w,u) + dot(u,u) 
+   warp_TestDot:   expected output:  dot(v,u) = dot(w,u) + dot(u,u) 
    warp_TestDot:   free(u)
    warp_TestDot:   free(v)
    warp_TestDot:   free(w)
-   warp_TestDot:   Finished, all tests passed successfully
+Finished warp_TestDot: all tests passed successfully
 Starting warp_TestDot
    warp_TestDot:   Starting Test 1
    warp_TestDot:   u = init(t=5.78e-03)
@@ -218,7 +218,7 @@ Starting warp_TestDot
    warp_TestDot:   dot(u,u)
    warp_TestDot:   dot(w,w)
    warp_TestDot:   Test 2 Passed
-   warp_TestDot:   actual output:    dot(w,w) / dot(u,u) = 3.90e+02 / 9.75e+01 = 4.00e+00    
+   warp_TestDot:   actual output:    dot(w,w) / dot(u,u) = 3.90e+02 / 9.75e+01 = 4.00e+00 
    warp_TestDot:   expected output:  dot(w,w) / dot(u,u) = 4.0 
    warp_TestDot:   Starting Test 3
    warp_TestDot:   free(w)
@@ -227,7 +227,7 @@ Starting warp_TestDot
    warp_TestDot:   dot(u,u)
    warp_TestDot:   dot(w,w)
    warp_TestDot:   Test 3 Passed
-   warp_TestDot:   actual output:    dot(w,w) / dot(u,u) = 2.44e+01 / 9.75e+01 = 2.50e-01    
+   warp_TestDot:   actual output:    dot(w,w) / dot(u,u) = 2.44e+01 / 9.75e+01 = 2.50e-01 
    warp_TestDot:   expected output:  dot(w,w) / dot(u,u) = 0.25 
    warp_TestDot:   Starting Test 4
    warp_TestDot:   free(w)
@@ -235,16 +235,16 @@ Starting warp_TestDot
    warp_TestDot:   w = u + 0.5*w 
    warp_TestDot:   dot(u,u)
    warp_TestDot:   dot(w,u)
-   warp_TestDot:   actual output:    dot(w,u) + dot(u,u) = 1.46e+02 + 9.75e+01 = 2.44e+02   
+   warp_TestDot:   actual output:    dot(w,u) + dot(u,u) = 1.46e+02 + 9.75e+01 = 2.44e+02
    warp_TestDot:   v = u + w 
    warp_TestDot:   dot(v,u)
    warp_TestDot:   Test 4 Passed
    warp_TestDot:   actual output:    dot(v,u) = 2.44e+02  
-   warp_TestDot:   expected output:  dot(v,u) equals dot(w,u) + dot(u,u) 
+   warp_TestDot:   expected output:  dot(v,u) = dot(w,u) + dot(u,u) 
    warp_TestDot:   free(u)
    warp_TestDot:   free(v)
    warp_TestDot:   free(w)
-   warp_TestDot:   Finished, all tests passed successfully
+Finished warp_TestDot: all tests passed successfully
 Starting warp_TestBuf
    warp_TestBuf:   Starting Test 1
    warp_TestBuf:   u = init(t=0.00e+00)
@@ -260,7 +260,7 @@ Starting warp_TestBuf
    warp_TestBuf:   expected output:  dot(v,v) = 0.0 
    warp_TestBuf:   free(u)
    warp_TestBuf:   free(v)
-   warp_TestBuf:   Finished, all tests passed successfully
+Finished warp_TestBuf: all tests passed successfully
 Starting warp_TestBuf
    warp_TestBuf:   Starting Test 1
    warp_TestBuf:   u = init(t=5.78e-03)
@@ -276,7 +276,7 @@ Starting warp_TestBuf
    warp_TestBuf:   expected output:  dot(v,v) = 0.0 
    warp_TestBuf:   free(u)
    warp_TestBuf:   free(v)
-   warp_TestBuf:   Finished, all tests passed successfully
+Finished warp_TestBuf: all tests passed successfully
 Starting warp_TestCoarsenRefine
    warp_TestCoarsenRefine:   Starting Test 1
    warp_TestCoarsenRefine:   u = init(t=0.00e+00)
@@ -318,7 +318,7 @@ Starting warp_TestCoarsenRefine
    warp_TestCoarsenRefine:   free(uc)
    warp_TestCoarsenRefine:   free(vc)
    warp_TestCoarsenRefine:   free(wc)
-   warp_TestCoarsenRefine:   Finished, all tests passed successfully
+Finished warp_TestCoarsenRefine: all tests passed successfully
 Starting warp_TestCoarsenRefine
    warp_TestCoarsenRefine:   Starting Test 1
    warp_TestCoarsenRefine:   u = init(t=0.00e+00)
@@ -360,4 +360,4 @@ Starting warp_TestCoarsenRefine
    warp_TestCoarsenRefine:   free(uc)
    warp_TestCoarsenRefine:   free(vc)
    warp_TestCoarsenRefine:   free(wc)
-   warp_TestCoarsenRefine:   Finished, all tests passed successfully
+Finished warp_TestCoarsenRefine: all tests passed successfully
