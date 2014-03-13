@@ -512,10 +512,18 @@ warp_Int
 warp_SetPrintFile(warp_Core   core,
                   const char *printfile_name)
 {
-   if ((_warp_printfile = fopen(printfile_name, "w")) == NULL)
+   MPI_Comm     comm_world = _warp_CoreElt(core, comm_world);
+   warp_Int     myid;
+   
+   MPI_Comm_rank(comm_world, &myid);
+   
+   if(myid == 0)
    {
-      printf("Error: can't open output file %s\n", printfile_name);
-      exit(1);
+      if ((_warp_printfile = fopen(printfile_name, "w")) == NULL)
+      {
+         printf("Error: can't open output file %s\n", printfile_name);
+         exit(1);
+      }
    }
 
    return _warp_error_flag;
