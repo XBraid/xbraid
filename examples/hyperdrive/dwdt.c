@@ -11,6 +11,12 @@ dwdt( grid_fcn *w, grid_fcn *dwdt, double t, double bdata[2], advection_setup *k
    double x;
    double pi = M_PI;
    grid_fcn *wxx = NULL;
+/* artificial damping coefficient */
+   double ad = 0.0;
+   
+/* add artificial damping if this is a coarse grid */
+   if (h > 1.5*kd_->h_fine)
+      ad += kd_->ad_coeff;
 
 /* new stuff */
    assign_gp( w, bdata[0], bdata[1], kd_ );
@@ -27,7 +33,8 @@ dwdt( grid_fcn *w, grid_fcn *dwdt, double t, double bdata[2], advection_setup *k
 
    for (i=1; i<=n; i++)
    {
-      dwdt->sol[i] = - dwdt->sol[i] + kd_->nu_coeff*wxx->sol[i];
+      dwdt->sol[i] = - dwdt->sol[i] + (kd_->nu_coeff + ad*h)*wxx->sol[i];
+         /* + ad/h*(w->sol[i-1] - 2.0*w->sol[i] + w->sol[i+1]); */
    }
 
 /* add in forcing */

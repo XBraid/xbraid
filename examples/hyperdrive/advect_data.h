@@ -44,6 +44,8 @@ typedef struct _warp_App_struct
    double c_coeff;         /* wave speed */
    double nu_coeff;        /* viscosity */
    double betapcoeff;      /* coefficient for Dirichlet data with ghost point */
+   double restr_coeff;     /* coeff for undivided 2nf difference in restriction operator */
+   double ad_coeff;        /* coeff for artificial damping on coarse grids */
    int_array_1d *bcnr_;    /* boundary coefficient number */
    double_array_1d *alpha_, *beta_; /* RK-4 coefficients */
 
@@ -68,7 +70,7 @@ void
 init_advection_solver(double h, double amp, double ph, double om, int pnr, int taylorbc, 
                       double L, double cfl, int nstepsset, int nsteps, double tfinal, 
                       double wave_speed, double viscosity, int bcLeft, int bcRight, int warpMaxIter, 
-                      double warpResidualLevel, advection_setup *kd_);
+                      double warpResidualLevel, double restr_coeff, double ad_coeff, advection_setup *kd_);
 int
 explicit_rk4_stepper(advection_setup *kd_, double t, double tend, double accuracy, grid_fcn *gf_, 
                      int *rfact_);
@@ -154,7 +156,9 @@ d2wdx2( grid_fcn *w, grid_fcn *wxx, advection_setup *kd_ );
 void
 dvdtbndry(grid_fcn *w, grid_fcn *dwdt, double t, advection_setup *kd_);
 void
-evalerr1( grid_fcn *w, grid_fcn *we, double *l2, double*li );
+evaldiff( grid_fcn *w, grid_fcn *we, double *l2, double*li );
+void
+evalnorm( grid_fcn *w, double *l2, double *li );
 
 /* end propotypes */
    

@@ -17,7 +17,7 @@ int main(int argc, char ** argv)
    double h, cfl;
    double L, l2, li, tfinal;
    double amp, ph, om;
-   double wave_speed, viscosity;
+   double wave_speed, viscosity, restr_coeff=0.0, ad_coeff=0.0;
    
    int nstepsset, tfinalset, arg_index, print_usage=0, myid=0;
 
@@ -108,7 +108,7 @@ int main(int argc, char ** argv)
 /*!**  Twilight testing parameters*/
    amp  = 0.8;
    ph   = 0.17;
-   om = 5.0;
+   om   = 2.0*M_PI;
    
 /*!** exact solution
 ! pnr == 1:
@@ -135,49 +135,63 @@ int main(int argc, char ** argv)
    taylorbc = 1;
 
    /* Parse command line */
-   arg_index = 0;
-   while( arg_index < argc ){
-      if( strcmp(argv[arg_index], "-dx") == 0 ){
-         arg_index++;
-         h = atof(argv[arg_index++]);
-      }
-      else if( strcmp(argv[arg_index], "-cfl") == 0 ){
-         arg_index++;
-         cfl = atof(argv[arg_index++]);
-      }
-      else if( strcmp(argv[arg_index], "-nu") == 0 ){
-         arg_index++;
-         viscosity = atof(argv[arg_index++]);
-      }
-      else if( strcmp(argv[arg_index], "-nsteps") == 0 ){
-          arg_index++;
-          nsteps = atoi(argv[arg_index++]);
-          nstepsset = 1;
-      }
-      else if( strcmp(argv[arg_index], "-tfinal") == 0 ){
-          arg_index++;
-          tfinal = atof(argv[arg_index++]);
-      }
-      else if( strcmp(argv[arg_index], "-tbc") == 0 ){
-          arg_index++;
-          taylorbc = atoi(argv[arg_index++]);
-      }
-      else if( strcmp(argv[arg_index], "-help") == 0 || strcmp(argv[arg_index], "--help") == 0 || 
-               strcmp(argv[arg_index], "-h") == 0)
-      {
-         print_usage = 1;
-         break;
-      }
-      else
-      {
-         arg_index++;
+   if (argc>1)
+   {
+      arg_index = 1;
+      while( arg_index < argc ){
+         if( strcmp(argv[arg_index], "-dx") == 0 ){
+            arg_index++;
+            h = atof(argv[arg_index++]);
+         }
+         else if( strcmp(argv[arg_index], "-cfl") == 0 ){
+            arg_index++;
+            cfl = atof(argv[arg_index++]);
+         }
+         else if( strcmp(argv[arg_index], "-nu") == 0 ){
+            arg_index++;
+            viscosity = atof(argv[arg_index++]);
+         }
+         else if( strcmp(argv[arg_index], "-nsteps") == 0 ){
+            arg_index++;
+            nsteps = atoi(argv[arg_index++]);
+            nstepsset = 1;
+         }
+         else if( strcmp(argv[arg_index], "-tfinal") == 0 ){
+            arg_index++;
+            tfinal = atof(argv[arg_index++]);
+         }
+         else if( strcmp(argv[arg_index], "-ad") == 0 ){
+            arg_index++;
+            ad_coeff = atof(argv[arg_index++]);
+         }
+         else if( strcmp(argv[arg_index], "-rc") == 0 ){
+            arg_index++;
+            restr_coeff = atof(argv[arg_index++]);
+         }
+         else if( strcmp(argv[arg_index], "-tbc") == 0 ){
+            arg_index++;
+            taylorbc = atoi(argv[arg_index++]);
+         }
+         else if( strcmp(argv[arg_index], "-help") == 0 || strcmp(argv[arg_index], "--help") == 0 || 
+                  strcmp(argv[arg_index], "-h") == 0)
+         {
+            print_usage = 1;
+            break;
+         }
+         else
+         {
+            printf("unknown argument: %s\n", argv[arg_index]);
+            print_usage = 1;
+            break;
+            /* arg_index++; */
+         }
       }
    }
-
+   
    if((print_usage) && (myid == 0)){
       printf("\n");
-      printf("Solve the 1-D advection equation with a SBP finite difference method and 4th order explicit RK:\n");
-      printf(" du/dt + du/dx = f(x,t), 0<x<1, t>0,\n u(0,t)=g(t),\n u(x,0)=h(x).\n");
+      printf("Solve the 1-D advection-diffusion equation with a SBP finite difference method and 4th order explicit RK:\n");
+      printf(" du/dt + du/dx = nu d^2u/dx^2 + f(x,t), 0<x<1, t>0,\n u(0,t)=g(t),\n u(x,0)=h(x).\n");
       printf("\nUsage: %s [<options>]\n", argv[0]);
       printf("\n");
       printf("  -dx  <float>    : grid size (default 0.01)\n");
@@ -185,6 +199,8 @@ int main(int argc, char ** argv)
       printf("  -nu  <float>    : viscosity (>=0, default 0.0)\n");
       printf("  -nsteps <int>   : number of time steps (positive) (default tfinal/dt)\n");
       printf("  -tfinal <float> : end time (default 1.0)\n");
+      printf("  -ad <float>     : artificial dissipation coefficient for coarse grids (default 0.0)\n");
+      printf("  -rc <float>     : dissipation coefficient in restriction operator (default 0.0)\n");
       printf("  -tbc <int>      : treatment of bndry forcing at intermediate stages (0,1, or 3) (default 1)\n");
       printf("\n");
 /* MPI_Finalize(); */
@@ -203,7 +219,7 @@ int main(int argc, char ** argv)
 /* setup solver meta-data */
    kd_ = malloc(sizeof(advection_setup));
    init_advection_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, 
-                         wave_speed, viscosity, bcLeft, bcRight, max_iter, tol, kd_);
+                         wave_speed, viscosity, bcLeft, bcRight, max_iter, tol, restr_coeff, ad_coeff, kd_);
    
 #define bcnr(i) compute_index_1d(kd_->bcnr_, i)    
 
@@ -215,6 +231,8 @@ int main(int argc, char ** argv)
    printf("Solving to time %e using %i steps\n",kd_->tstop, kd_->nsteps);
    printf("Time step on finest grid is %e\n",kd_->dt_fine);
    printf("Finest grid has spacing h=%e with n=%i grid points\n", kd_->h_fine, kd_->n_fine);
+   printf("Artificial damping coefficient for coarse grids %e\n", kd_->ad_coeff);
+   printf("Restriction coefficient for 2nd undivided difference %e\n", kd_->restr_coeff);
    printf("------------------------------\n");
 
 /* Start timer. */
@@ -297,7 +315,7 @@ int main(int argc, char ** argv)
 /* get exact bndry data */
       bdata( exact_, kd_->tstop, kd_);
 
-      evalerr1( gf_, exact_, &l2, &li );
+      evaldiff( gf_, exact_, &l2, &li );
 
       printf("------------------------------\n");
    

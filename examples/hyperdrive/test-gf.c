@@ -19,7 +19,7 @@ int main(int argc, char ** argv)
    double t0, dtf, dtc;
    
    double amp, ph, om;
-   double wave_speed, viscosity;
+   double wave_speed, viscosity, restr_coeff=0.0, ad_coeff=0.0;
    
    int nstepsset, tfinalset, arg_index, print_usage=0, myid=0;
 
@@ -108,7 +108,7 @@ int main(int argc, char ** argv)
 /*!**  Twilight testing parameters*/
    amp  = 0.8;
    ph   = 0.17;
-   om = 5.0;
+   om = 2.0*M_PI;
    
 /*!** exact solution
 ! pnr == 1:
@@ -160,6 +160,14 @@ int main(int argc, char ** argv)
           arg_index++;
           tfinal = atof(argv[arg_index++]);
       }
+      else if( strcmp(argv[arg_index], "-ad") == 0 ){
+         arg_index++;
+         ad_coeff = atof(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-rc") == 0 ){
+         arg_index++;
+         restr_coeff = atof(argv[arg_index++]);
+      }
       else if( strcmp(argv[arg_index], "-tbc") == 0 ){
           arg_index++;
           taylorbc = atoi(argv[arg_index++]);
@@ -187,6 +195,8 @@ int main(int argc, char ** argv)
       printf("  -nu  <float>    : viscosity (>=0, default 0.0)\n");
       printf("  -nsteps <int>   : number of time steps (positive) (default tfinal/dt)\n");
       printf("  -tfinal <float> : end time (default 1.0)\n");
+      printf("  -ad  <float>     : artificial dissipation coefficient for coarse grids (default 0.0)\n");
+      printf("  -rc  <float>     : dissipation coefficient in restriction operator (default 0.0)\n");
       printf("  -tbc <int>      : treatment of bndry forcing at intermediate stages (0,1, or 3) (default 1)\n");
       printf("\n");
 /* MPI_Finalize(); */
@@ -201,8 +211,9 @@ int main(int argc, char ** argv)
       
 /* setup solver meta-data */
    kd_ = malloc(sizeof(advection_setup));
+/* stopping criteria not used by this program*/
    init_advection_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, 
-                         wave_speed, viscosity, bcLeft, bcRight, 0, 0.0, kd_); /* stopping criteria not used */
+                         wave_speed, viscosity, bcLeft, bcRight, 0, 0.0, restr_coeff, ad_coeff, kd_); 
    
 /* for testing */
    kd_->tstart = 1.0;
@@ -218,6 +229,8 @@ int main(int argc, char ** argv)
    printf("Solving to time %e using %i steps\n",kd_->tstop, kd_->nsteps);
    printf("Time step on fine grid is %e\n",kd_->dt_fine);
    printf("Finest grid has spacing h=%e with n=%i grid points\n", kd_->h_fine, kd_->n_fine);
+   printf("Artificial damping coefficient for coarse grids %e\n", kd_->ad_coeff);
+   printf("Restriction coefficient for 2nd undivided difference %e\n", kd_->restr_coeff);
    printf("------------------------------\n");
 
 #define SQR(x) ((x)*(x))
@@ -242,7 +255,7 @@ int main(int argc, char ** argv)
    exact_x( exact_, t0, kd_ );
 
 /* evaluate error in dw/dx */
-   evalerr1(wx_gf_, exact_, &l2, &linf);
+   evaldiff(wx_gf_, exact_, &l2, &linf);
 
 /* interior points only */
    li = 0.0;
@@ -281,7 +294,7 @@ int main(int argc, char ** argv)
    exact_xx( exact_, t0, kd_ );
    
 /* evaluate error in dw/dx */
-   evalerr1(wxx_, exact_, &l2, &linf);
+   evaldiff(wxx_, exact_, &l2, &linf);
 
 /* interior points only */
    li=0;  /* interior */
@@ -317,7 +330,7 @@ int main(int argc, char ** argv)
    dwdt( gf_, wt_gf_, t0, bdata, kd_ );
 
 /* evaluate error in dw/dx */
-   evalerr1(wt_gf_, exact_, &l2, &linf);
+   evaldiff(wt_gf_, exact_, &l2, &linf);
 
 /* interior points only */
    li=0;  /* interior */

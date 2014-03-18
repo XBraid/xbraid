@@ -17,7 +17,7 @@ int main(int argc, char ** argv)
    double h, cfl;
    double L, t, l2, li, tfinal;
    double amp, ph, om;
-   double wave_speed, viscosity;
+   double wave_speed, viscosity, restr_coeff=0.0, ad_coeff=0.0;
    
    double dummy=0;
    int rfact_dummy=0;
@@ -38,7 +38,7 @@ int main(int argc, char ** argv)
 /*!**  Twilight testing parameters*/
    amp  = 0.8;
    ph   = 0.17;
-   om = 5.0;
+   om   = 2.0*M_PI;
    
 /*!** exact solution
 ! pnr == 1:
@@ -88,6 +88,10 @@ int main(int argc, char ** argv)
           arg_index++;
           tfinal = atof(argv[arg_index++]);
       }
+      else if( strcmp(argv[arg_index], "-rc") == 0 ){
+         arg_index++;
+         restr_coeff = atof(argv[arg_index++]);
+      }
       else if( strcmp(argv[arg_index], "-tbc") == 0 ){
           arg_index++;
           taylorbc = atoi(argv[arg_index++]);
@@ -106,8 +110,8 @@ int main(int argc, char ** argv)
 
    if((print_usage) && (myid == 0)){
       printf("\n");
-      printf("Solve the 1-D advection equation with a SBP finite difference method and 4th order explicit RK:\n");
-      printf(" du/dt + du/dx = f(x,t), 0<x<1, t>0,\n u(0,t)=g(t),\n u(x,0)=h(x).\n");
+      printf("Solve the 1-D advection-diffusion equation with a SBP finite difference method and 4th order explicit RK:\n");
+      printf(" du/dt + du/dx = nu d^2u/dx^2 + f(x,t), 0<x<1, t>0,\n u(0,t)=g(t),\n u(x,0)=h(x).\n");
       printf("\nUsage: %s [<options>]\n", argv[0]);
       printf("\n");
       printf("  -dx  <float>    : grid size (default 0.01)\n");
@@ -115,6 +119,7 @@ int main(int argc, char ** argv)
       printf("  -nu  <float>    : viscosity (>=0, default 0.0)\n");
       printf("  -nsteps <int>   : number of time steps (positive) (default tfinal/dt)\n");
       printf("  -tfinal <float> : end time (default 1.0)\n");
+      printf("  -rc <float>     : dissipation coefficient in restriction operator (default 0.25)\n");
       printf("  -tbc <int>      : treatment of bndry forcing at intermediate stages (0,1, or 3) (default 1)\n");
       printf("\n");
 /* MPI_Finalize(); */
@@ -136,8 +141,9 @@ int main(int argc, char ** argv)
 
 /* solver meta-data */
    kd_ = malloc(sizeof(advection_setup));
+/* Note: stopping criteria not used by this solver */
    init_advection_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, 
-                         wave_speed, viscosity, bcLeft, bcRight, 0, 0.0, kd_); /* stopping criteria not used */
+                         wave_speed, viscosity, bcLeft, bcRight, 0, 0.0, restr_coeff, ad_coeff, kd_); 
    
 /* create solution vector */
    init_grid_fcn(kd_, 0.0, &gf_);
@@ -153,6 +159,8 @@ int main(int argc, char ** argv)
    printf("Solving to time %e using %i steps\n",kd_->tstop, kd_->nsteps);
    printf("Time step on fine grid is %e\n",kd_->dt_fine);
    printf("Grid spacing is %e with %i grid points\n", kd_->h_fine, kd_->n_fine);
+   printf("Artificial damping coefficient for coarse grids %e\n", kd_->ad_coeff);
+   printf("------------------------------\n");
 
    t = 0.0;
 
@@ -172,7 +180,7 @@ int main(int argc, char ** argv)
       bdata( exact_, t, kd_);
       exact1( exact_, t, kd_ );
 
-      evalerr1( gf_, exact_, &l2, &li );
+      evaldiff( gf_, exact_, &l2, &li );
       
 /* ! save errors on file... */
       fprintf(eun,"%e %e %e %e\n", t, li, l2, fabs(ex_vsol(1) - vsol(1)) ); 
@@ -192,7 +200,7 @@ int main(int argc, char ** argv)
 /* get exact bndry data */
    bdata( exact_, t, kd_);
 
-   evalerr1( gf_, exact_, &l2, &li );
+   evaldiff( gf_, exact_, &l2, &li );
 /* ! save errors on file... */
    fprintf(eun,"%e %e %e %e\n", t, li, l2, fabs(ex_vsol(1)-vsol(1)));
 
