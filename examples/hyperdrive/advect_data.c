@@ -59,9 +59,9 @@ void
 init_advection_solver(double h, double amp, double ph, double om, int pnr, int taylorbc, 
                       double L, double cfl, int nstepsset, int nsteps, double tfinal, 
                       double wave_speed, double viscosity, int bcLeft, int bcRight, int warpMaxIter, 
-                      double warpResidualLevel, advection_setup *kd_)
+                      double warpResidualLevel, double restr_coeff, double ad_coeff, advection_setup *kd_)
 {
-   double mxeg, p1, beta, pi=M_PI;
+   double mxeg, p1, beta, pi=M_PI, omL2pi;
    int n;
 /* # ghost points */
    const int o = 1;
@@ -82,8 +82,9 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
 /* if periodic bc, adjust om such that om*L = 2*pi */
    if (bcLeft==Periodic || bcRight== Periodic)
    {
-      om = 2*pi/L;
-      printf("NOTE: Periodic bc, om changed to %e\n", om);      
+      omL2pi = om*L/2.0/pi;
+//      om = 2*pi/L;
+      printf("NOTE: Periodic bc, om*L/(2*pi)=%e, must be integer\n", omL2pi);      
    }
    kd_->om = om;
    kd_->taylorbc = taylorbc;
@@ -96,6 +97,12 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
    
    kd_->c_coeff  = wave_speed;
    kd_->nu_coeff = viscosity;
+   
+/* restriction stuff */
+   kd_->restr_coeff = restr_coeff;
+
+/* artificial dissipation coefficient */
+   kd_->ad_coeff = ad_coeff;
    
 /* ! compute time step */
    if (kd_->c_coeff <= 4.0*kd_->nu_coeff / h)
@@ -429,7 +436,7 @@ gridfcn_Coarsen(advection_setup *kd_,
                 grid_fcn **cu_handle) /* handle to the coarse grid function */
 {
    grid_fcn * u_;
-   int i, nf, nc;
+   int i, nf, nc, ifine;
    double dt_f, dt_c;
 #define bcnr(i) compute_index_1d(kd_->bcnr_, i)   
 
@@ -472,12 +479,23 @@ gridfcn_Coarsen(advection_setup *kd_,
 /* u_ has nc interior points */
 /* gf_ has nf interior grid points */
 
+/* impose bc on fine grid function */
+   if (bcnr(1) == Periodic)
+   {
+      gf_->sol[0]    = gf_->sol[nf-1];
+      gf_->sol[nf+1] = gf_->sol[2];
+   }
+
 /* inject the fine grid solution into coarse grid */
    for (i=1; i<=nc; i++)
    {
-      u_->sol[i] = gf_->sol[2*i-1];
+      ifine = 2*i-1;
+/* add 2nd undivided difference term here... */
+      u_->sol[i] = gf_->sol[2*i-1] + kd_->restr_coeff*(gf_->sol[ifine-1] - 2.0*gf_->sol[ifine] + gf_->sol[ifine+1]);
    }
+
 /* enforce boundary conditions */
+/* is this really necessary? */
 
 #define fvsol(i) compute_index_1d(gf_->vsol_, i)
 
