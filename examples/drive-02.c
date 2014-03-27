@@ -6,7 +6,7 @@
 
    Compile with: make drive-02
 
-   Sample run:   mpirun -n 16 drive-02 -pgrid 2 2 4 -nl 32 32 -nt 16 -ml 15
+   Sample run:   mpirun -n 16 drive-02 -pgrid 2 2 4 -nx 32 32 -nt 16 -ml 15
 
    Description:  This code solves the diffusion problem 
 
@@ -1648,7 +1648,7 @@ my_Phi(warp_App     app,
       }
    } 
 
-   if( app->explicit && cfl ){
+   if (app->scheme[A_idx]) {
       /* Set up a vector for the MatVec result and modify the solution
        * from the previous time step to incorporate the boundary 
        * conditions. */    
@@ -2052,7 +2052,7 @@ my_Write(warp_App     app,
     *     if we want to visualize with GLVis, we also save the error
     *     at the initial time, middle time, and end time */
    if( app->write ){
-      if( app->explicit )
+      if( app->scheme[0] )
          /* forward (explicit) Euler */
          damping = 1 + ((2*(app->K)*(app->dt))/
                         ((app->dx)*(app->dx)))*(cos(app->dx)-1) 
@@ -2534,7 +2534,7 @@ int main (int argc, char *argv[])
    dy = PI / (ny - 1);
 
    /* Set time-step size. */
-   dt = K*c*(dx*dx);
+   dt = c/K/(1.0/(dx*dx)+1.0/(dy*dy));
    /* Determine tstop. */
    tstop =  tstart + nt*dt;
 
@@ -2688,14 +2688,15 @@ int main (int argc, char *argv[])
    MPI_Allreduce( &(app->nA), &nA_max, 1, MPI_INT, MPI_MAX, comm ); 
    max_num_iterations_global = (int*) malloc( nA_max*sizeof(int) );
    explicit_scheme_global = (int*) malloc( nA_max*sizeof(int) ); 
-   for( i = 0; i < nA_max; i++ ){
-      MPI_Allreduce( &(app->max_num_iterations[i]), 
-                     &max_num_iterations_global[i], 1, MPI_INT,
-                     MPI_MAX, comm );
-      MPI_Allreduce( &(app->scheme[i]), 
-                     &explicit_scheme_global[i], 1, MPI_INT,
-                     MPI_MAX, comm );
-   }
+   MPI_Allreduce( app->max_num_iterations,
+                  max_num_iterations_global, nA_max, MPI_INT,
+                  MPI_MAX, comm );
+   MPI_Allreduce( app->scheme,
+                  explicit_scheme_global, nA_max, MPI_INT,
+                  MPI_MAX, comm );
+   for (i = 0; i < app->nA; i++)
+      if (app->scheme[i] != explicit_scheme_global[i])
+         printf("\n\nError: (app->scheme[i] != explicit_scheme_global[i])\n\n");
 
    if( myid == 0 )
    {
@@ -2734,7 +2735,7 @@ int main (int argc, char *argv[])
    free( app->dt_A );
    for( i = 0; i < app->nA; i++ ){
       HYPRE_SStructMatrixDestroy( app->A[i] );
-      if( !explicit_scheme_global[i] )
+      if( !app->scheme[i] )
          HYPRE_StructPFMGDestroy( app->solver[i] );
    }
    free( app->A );

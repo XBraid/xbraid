@@ -152,7 +152,7 @@ warp_Drive(warp_Core  core)
    warp_Int      write_level = _warp_CoreElt(core, write_level);
 
    warp_Int      nlevels, iter;
-   warp_Real     rnorm;
+   warp_Real     rnorm, old_rnorm;
    warp_Real     accuracy;
    warp_Int      ilower, iupper;
    warp_Real    *ta;
@@ -216,6 +216,10 @@ warp_Drive(warp_Core  core)
             _warp_CFRelax(core, level);
 
             /* F-relax then restrict */
+            if( level == 0)
+            {
+               old_rnorm = rnorm;
+            }
             _warp_FRestrict(core, level, iter, &rnorm);
             /* Set initial guess on next coarser level */
             _warp_InitGuess(core, level+1);
@@ -286,7 +290,11 @@ warp_Drive(warp_Core  core)
                /* Note that this residual is based on an earlier iterate */
                if( (print_level >= 1) && (myid == 0) )
                {
-                  _warp_printf("  Warp || r_%d || = %e\n", iter, rnorm);
+                  if (iter == 0)
+                     printf("  Warp || r_%d || = %e\n", iter, rnorm);
+                  else
+                     printf("  Warp || r_%d || = %e,  conv. factor = %e\n", iter, rnorm,
+                            rnorm/old_rnorm);
                }
 
                if ( ((rnorm < tol) && (_warp_CoreElt(core, accuracy[0].tight_used) == 1)) || 

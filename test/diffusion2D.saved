@@ -2,7 +2,7 @@
 
   time steps = 256
   number of levels     = 9
-  iterations           = 10
+  iterations           = 9
 spatial problem size       : 16 x 16
 
 # Begin Test 1
