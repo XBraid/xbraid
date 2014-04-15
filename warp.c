@@ -291,9 +291,9 @@ warp_Drive(warp_Core  core)
                if( (print_level >= 1) && (myid == 0) )
                {
                   if (iter == 0)
-                     printf("  Warp || r_%d || = %e\n", iter, rnorm);
+                     _warp_printf("  Warp || r_%d || = %e\n", iter, rnorm);
                   else
-                     printf("  Warp || r_%d || = %e,  conv. factor = %e\n", iter, rnorm,
+                     _warp_printf("  Warp || r_%d || = %e,  conv. factor = %e\n", iter, rnorm,
                             rnorm/old_rnorm);
                }
 
