@@ -1209,6 +1209,8 @@ public:
 
    void SetAbsTol(double tol) { warp_SetAbsTol(core, tol); }
 
+   void SetRelTol(double tol) { warp_SetRelTol(core, tol); }
+   
    void SetCFactor(int level, int cfactor)
    { warp_SetCFactor(core, level, cfactor); }
 
