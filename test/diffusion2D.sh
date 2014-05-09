@@ -73,6 +73,7 @@ TESTS=( "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 " \
         "$RunString -np 2 $example_dir/drive-05 -pgrid 1 1 2 -nt 32 -ml 15 -write_level 2 " \
         "$RunString -np 2 $example_dir/drive-05 -pgrid 1 1 2 -nt 32 -ml 15 -print_level 0 " \
         "$RunString -np 2 $example_dir/drive-05 -pgrid 1 1 2 -nt 32 -ml 15 -print_level 1 " \
+        "$RunString -np 2 $example_dir/drive-05 -pgrid 1 1 2 -nt 32 -ml 15 -print_level 1 -fmg 2" \
         "$RunString -np 1 $example_dir/drive-05 -pgrid 1 1 1 -run_wrapper_tests " )
 
 # The below commands will then dump each of the tests to the output files 
