@@ -293,6 +293,14 @@ warp_Int
 warp_SetFMG(warp_Core  core);
 
 /**
+ * Set number of V cycles to use at each FMG level (standard is 1)
+ **/
+warp_Int
+warp_SetNFMGVcyc(warp_Core  core,
+                 warp_Int   nfmg_Vcyc);
+
+
+/**
  * Set spatial coarsening routine with user-defined routine.
  * Default is no spatial refinment or coarsening.
  **/
