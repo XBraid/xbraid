@@ -761,4 +761,28 @@ warp_GetStatusDone(warp_Status  status,
    return _warp_error_flag;
 }
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
+warp_GetNumIter(warp_Core  core,
+                warp_Int   *niter_ptr)
+{
+   *niter_ptr =  _warp_CoreElt(core, niter);
+   return _warp_error_flag;
+} 
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
+warp_GetRNorm(warp_Core  core,
+              warp_Real  *rnorm_ptr)
+
+{
+   *rnorm_ptr = _warp_CoreElt(core, rnorm);
+   return _warp_error_flag;
+} 
+
+
 

@@ -392,6 +392,21 @@ warp_Int
 warp_GetStatusDone(warp_Status  status,
                    warp_Int    *done_ptr);
 
+/**
+ * After Drive() finishes, this returns the number of iterations taken
+ **/
+warp_Int
+warp_GetNumIter(warp_Core  core,
+                warp_Int   *niter_ptr);
+
+
+/**
+ * After Drive() finishes, this returns the last measured residual norm
+ **/
+warp_Int
+warp_GetRNorm(warp_Core  core,
+              warp_Real  *rnorm_ptr);
+
 
 #ifdef __cplusplus
 }

@@ -1238,6 +1238,10 @@ public:
    void SetFMG() { warp_SetFMG(core); }
    
    void SetNFMGVcyc(int nfmg_Vcyc) { warp_SetNFMGVcyc(core, nfmg_Vcyc); }
+   
+   void GetNumIter(int *niter_ptr) { warp_GetNumIter(core, niter_ptr); }
+   
+   void GetRNorm(double *rnorm_ptr) { warp_GetRNorm(core, rnorm_ptr); }
 
    void Drive() { warp_Drive(core); }
 
