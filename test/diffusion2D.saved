@@ -93,6 +93,14 @@ spatial problem size       : 17 x 17
 spatial problem size       : 17 x 17
 
 # Begin Test 7
+ 
+  my_Write() called, iter= 7, level= 0
+  time steps = 32
+  number of levels     = 6
+  iterations           = 7
+spatial problem size       : 17 x 17
+
+# Begin Test 8
 
 Starting warp_TestInitWrite
    warp_TestInitWrite:   Starting Test 1

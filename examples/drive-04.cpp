@@ -1209,6 +1209,8 @@ public:
 
    void SetAbsTol(double tol) { warp_SetAbsTol(core, tol); }
 
+   void SetRelTol(double tol) { warp_SetRelTol(core, tol); }
+   
    void SetCFactor(int level, int cfactor)
    { warp_SetCFactor(core, level, cfactor); }
 
@@ -1234,6 +1236,12 @@ public:
    void SetWriteLevel(int write_level) { warp_SetWriteLevel(core, write_level); }
 
    void SetFMG() { warp_SetFMG(core); }
+   
+   void SetNFMGVcyc(int nfmg_Vcyc) { warp_SetNFMGVcyc(core, nfmg_Vcyc); }
+   
+   void GetNumIter(int *niter_ptr) { warp_GetNumIter(core, niter_ptr); }
+   
+   void GetRNorm(double *rnorm_ptr) { warp_GetRNorm(core, rnorm_ptr); }
 
    void Drive() { warp_Drive(core); }
 
@@ -1335,6 +1343,7 @@ int main(int argc, char *argv[])
    int    cfactor0    = -1;
    int    max_iter    = 100;
    int    fmg         = 0;
+   int    nfmg_Vcyc   = 1;
    int    write_level = 1;
    bool   wrapper_tests = false;
    bool   one_wrapper_test = false;
@@ -1432,6 +1441,7 @@ int main(int argc, char *argv[])
       else if (strcmp(argv[arg_index], "-fmg") == 0)
       {
          fmg = 1;
+         nfmg_Vcyc = atoi(argv[++arg_index]);
       }
       else if (strcmp(argv[arg_index], "-wrapper_tests") == 0)
       {
@@ -1509,7 +1519,7 @@ int main(int argc, char *argv[])
          "  -cf  <cfactor>    : set coarsening factor (default: 2)\n"
          "  -cf0 <cfactor0>   : set aggressive coarsening (default: off)\n"
          "  -mi  <max_iter>   : set max iterations (default: 100)\n"
-         "  -fmg              : use FMG cycling\n"
+         "  -fmg <nfmg_Vcyc>  : use FMG cycling with nfmg_Vcyc V-cycles at each fmg level\n"
          "  -write            : set write_level (default: 1) \n"
          "\n";
    }
@@ -1729,8 +1739,10 @@ int main(int argc, char *argv[])
          core.SetAggCFactor(cfactor0);
          core.SetMaxIter(max_iter);
          if (fmg)
+         {
             core.SetFMG();
-
+            core.SetNFMGVcyc(nfmg_Vcyc);
+         }
          core.Drive();
       }
    }
