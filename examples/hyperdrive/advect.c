@@ -18,6 +18,7 @@ int main(int argc, char ** argv)
    double L, t, l2, li, tfinal;
    double amp, ph, om;
    double wave_speed, viscosity, restr_coeff=0.0, ad_coeff=0.0;
+   int wave_no = 1;
    
    double dummy=0;
    int rfact_dummy=0;
@@ -38,7 +39,7 @@ int main(int argc, char ** argv)
 /*!**  Twilight testing parameters*/
    amp  = 0.8;
    ph   = 0.17;
-   om   = 2.0*M_PI;
+   om   = wave_no*2.0*M_PI;
    
 /*!** exact solution
 ! pnr == 1:
@@ -78,6 +79,11 @@ int main(int argc, char ** argv)
       else if( strcmp(argv[arg_index], "-nu") == 0 ){
          arg_index++;
          viscosity = atof(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-wn") == 0 ){
+         arg_index++;
+         wave_no = atoi(argv[arg_index++]);
+         om = wave_no*2.0*M_PI;
       }
       else if( strcmp(argv[arg_index], "-nsteps") == 0 ){
           arg_index++;
@@ -119,6 +125,7 @@ int main(int argc, char ** argv)
       printf("  -nu  <float>    : viscosity (>=0, default 0.0)\n");
       printf("  -nsteps <int>   : number of time steps (positive) (default tfinal/dt)\n");
       printf("  -tfinal <float> : end time (default 1.0)\n");
+      printf("  -wn <int>       : wave number in exact solution (default 1)\n");
       printf("  -rc <float>     : dissipation coefficient in restriction operator (default 0.25)\n");
       printf("  -tbc <int>      : treatment of bndry forcing at intermediate stages (0,1, or 3) (default 1)\n");
       printf("\n");
@@ -155,6 +162,7 @@ int main(int argc, char ** argv)
    printf("Viscosity (nu): %e\n", kd_->nu_coeff);
    printf("Problem number (pnr): %i\n", kd_->pnr);
    printf("Boundary treatment: bcnr(left, right): %i, %i\n", bcnr(1), bcnr(2));
+   printf("Wave number in exact solution: %i\n", wave_no);
    printf("Treatment of time-dependent bndry data: %i\n", kd_->taylorbc);
    printf("Solving to time %e using %i steps\n",kd_->tstop, kd_->nsteps);
    printf("Time step on fine grid is %e\n",kd_->dt_fine);
