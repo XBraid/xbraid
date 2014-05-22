@@ -17,8 +17,8 @@ int main(int argc, char ** argv)
    double h, cfl;
    double L, t, l2, li, tfinal;
    double amp, ph, om;
-   double wave_speed, viscosity, restr_coeff=0.0, ad_coeff=0.0;
-   int wave_no = 1;
+   double wave_speed, viscosity, ad_coeff=0.0;
+   int wave_no = 1, spatial_order=6;
    
    double dummy=0;
    int rfact_dummy=0;
@@ -90,13 +90,17 @@ int main(int argc, char ** argv)
           nsteps = atoi(argv[arg_index++]);
           nstepsset = 1;
       }
+      else if( strcmp(argv[arg_index], "-order") == 0 ){
+          arg_index++;
+          spatial_order = atoi(argv[arg_index++]);
+      }
       else if( strcmp(argv[arg_index], "-tfinal") == 0 ){
           arg_index++;
           tfinal = atof(argv[arg_index++]);
       }
-      else if( strcmp(argv[arg_index], "-rc") == 0 ){
+      else if( strcmp(argv[arg_index], "-ad") == 0 ){
          arg_index++;
-         restr_coeff = atof(argv[arg_index++]);
+         ad_coeff = atof(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-tbc") == 0 ){
           arg_index++;
@@ -124,9 +128,10 @@ int main(int argc, char ** argv)
       printf("  -cfl <float>    : cfl-number (default 1.0)\n");
       printf("  -nu  <float>    : viscosity (>=0, default 0.0)\n");
       printf("  -nsteps <int>   : number of time steps (positive) (default tfinal/dt)\n");
+      printf("  -order <int>    : spatial order of accuracy (positive, even, <=6) (default 6)\n");
       printf("  -tfinal <float> : end time (default 1.0)\n");
       printf("  -wn <int>       : wave number in exact solution (default 1)\n");
-      printf("  -rc <float>     : dissipation coefficient in restriction operator (default 0.25)\n");
+      printf("  -ad <float>     : artificial dissipation coefficient (default 0.0)\n");
       printf("  -tbc <int>      : treatment of bndry forcing at intermediate stages (0,1, or 3) (default 1)\n");
       printf("\n");
 /* MPI_Finalize(); */
@@ -150,7 +155,8 @@ int main(int argc, char ** argv)
    kd_ = malloc(sizeof(advection_setup));
 /* Note: stopping criteria not used by this solver */
    init_advection_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, 
-                         wave_speed, viscosity, bcLeft, bcRight, 0, 0.0, restr_coeff, ad_coeff, kd_); 
+                         wave_speed, viscosity, bcLeft, bcRight, 0, 0.0, 0.0, ad_coeff, spatial_order, 
+                         kd_); 
    
 /* create solution vector */
    init_grid_fcn(kd_, 0.0, &gf_);
@@ -167,7 +173,8 @@ int main(int argc, char ** argv)
    printf("Solving to time %e using %i steps\n",kd_->tstop, kd_->nsteps);
    printf("Time step on fine grid is %e\n",kd_->dt_fine);
    printf("Grid spacing is %e with %i grid points\n", kd_->h_fine, kd_->n_fine);
-   printf("Artificial damping coefficient for coarse grids %e\n", kd_->ad_coeff);
+   printf("Artificial damping coefficient: %e\n", kd_->ad_coeff);
+   printf("Spatial order of accuracy: %i\n", kd_->spatial_order);
    printf("------------------------------\n");
 
    t = 0.0;

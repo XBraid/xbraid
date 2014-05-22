@@ -59,14 +59,15 @@ void
 init_advection_solver(double h, double amp, double ph, double om, int pnr, int taylorbc, 
                       double L, double cfl, int nstepsset, int nsteps, double tfinal, 
                       double wave_speed, double viscosity, int bcLeft, int bcRight, int warpMaxIter, 
-                      double warpResidualLevel, double restr_coeff, double ad_coeff, advection_setup *kd_)
+                      double warpResidualLevel, double restr_coeff, double ad_coeff, int spatial_order,
+                      advection_setup *kd_)
 {
    double mxeg, p1, beta, pi=M_PI, omL2pi;
    int n;
 /* # ghost points */
    const int o = 1;
 
-   n = (int) L/h+o;
+   n = (int) rint(L/h) + o;
    
    if( fabs( L/(n-o) - h ) > 1e-10 )
    {
@@ -106,6 +107,9 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
 
 /* artificial dissipation coefficient */
    kd_->ad_coeff = ad_coeff;
+
+/* spatial order of accuracy */
+   kd_->spatial_order = spatial_order;
    
 /* ! compute time step */
    if (kd_->c_coeff <= 4.0*kd_->nu_coeff / h)

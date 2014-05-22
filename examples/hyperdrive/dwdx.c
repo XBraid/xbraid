@@ -4,7 +4,35 @@
 void
 dwdx( grid_fcn *w, grid_fcn *wx, advection_setup *kd_ )
 {
-   const double d6a= 0.75, d6b=-0.15, d6c=1.0/60;
+   double d6a, d6b, d6c;
+
+/* 6th order interior coefficients */
+   if (kd_->spatial_order == 6)
+   {
+      d6a= 0.75;
+      d6b=-0.15;
+      d6c=1.0/60;
+   }
+   else if (kd_->spatial_order == 4)
+   {
+/* 4th order interior coefficients */
+      d6a= 2.0/3.0;
+      d6b=-1.0/12.0;
+      d6c=0.0;
+   }
+   else if (kd_->spatial_order == 2)
+   {
+/* 2nd order interior coefficients */
+      d6a=1.0/2.0;
+      d6b=0.0;
+      d6c=0.0;
+   }
+   else
+   {
+      printf("ERROR: dwdx: spatial_order=%i is not implemented\n", kd_->spatial_order);
+      exit(-1);
+   }
+   
    
    int i, k;
 /* w: input grid function with ghost points */
@@ -228,6 +256,87 @@ d2wdx2( grid_fcn *w, grid_fcn *wxx, advection_setup *kd_ )
       }
       du = du + kd_->gh2 * w->sol[n+1];
       wxx->sol[i] = ih2* (du );
+   } /* end non-periodic case */
+#undef bop
+#undef bope
+}
+
+/* art diss term (undivided) */
+void
+adterm( grid_fcn *w, grid_fcn *dpwdxp, advection_setup *kd_ )
+{
+   int i;
+
+/* w: input grid function with ghost points */
+/* dpwdxp: output grid function with ghost points. Only 1 <= i <= n are assigned (undivided differences)*/
+   
+#define bcnr(i)  compute_index_1d(kd_->bcnr_, i)
+   double du, d60, d61, d62, d63;
+   int n=w->n;
+   const int off=2; /* number of extra ghost points */
+   double *wpad;
+      
+/* coefficients for centered 6th order art. dissipation (D+D-)^3 */
+   if (kd_->spatial_order == 6)
+   {
+      d60 =-20.0;
+      d61 = 15.0;
+      d62 =-6.0;
+      d63 = 1.0;
+   }
+   else if (kd_->spatial_order == 4)
+   {
+/* coefficients for centered 4th order art. dissipation -(D+D-)^2 */
+      d60 =-6.0;
+      d61 = 4.0;
+      d62 =-1.0;
+      d63 = 0.0;
+   }
+   else if (kd_->spatial_order == 2)
+   {
+/* coefficients for centered 2nd order art. dissipation (D+D-) */
+      d60 =-2.0;
+      d61 = 1.0;
+      d62 = 0.0;
+      d63 = 0.0;
+   }
+   else
+   {
+      printf("ERROR: adterm: spatial_order=%i not implemented\n", kd_->spatial_order);
+      exit(-1);
+   }
+   
+   if (bcnr(1) == Periodic)
+   {
+/* allocate tmp space */
+      wpad=(double*) malloc((n+6)*sizeof(double));
+/* copy data (assume w->sol[1] = w->sol[n] */
+      for (i=1; i<=n; i++)
+      {
+         wpad[i+off] = w->sol[i];
+      }
+      wpad[off-0] = w->sol[n-1];
+      wpad[off-1] = w->sol[n-2];
+      wpad[off-2] = w->sol[n-3];
+
+      wpad[n+1+off] = w->sol[2];
+      wpad[n+2+off] = w->sol[3];
+      wpad[n+3+off] = w->sol[4];
+/* centered formula for all points */
+      for (i=1; i<=n; i++)
+      {
+         du = d60*wpad[i+off] + d61*(wpad[i-1+off] + wpad[i+1+off]) + d62*(wpad[i-2+off] + wpad[i+2+off])
+            + d63*(wpad[i-3+off] + wpad[i+3+off]);
+         dpwdxp->sol[i] = du;
+      }
+/* free tmp space */
+      free(wpad);
+   }
+   else
+   { /* non-periodic case... */
+      printf("ERROR: adterm: non-periodic case not implemented\n");
+      exit(-1);
+      
    } /* end non-periodic case */
 #undef bop
 #undef bope

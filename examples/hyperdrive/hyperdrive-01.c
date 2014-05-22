@@ -20,7 +20,7 @@ int main(int argc, char ** argv)
    double wave_speed, viscosity, restr_coeff=0.0, ad_coeff=0.0;
    
    int nstepsset, tfinalset, arg_index, print_usage=0, myid=0;
-   int wave_no=1;
+   int wave_no = 1, spatial_order=6;
 
    FILE *eun, *fp;
    
@@ -164,6 +164,10 @@ int main(int argc, char ** argv)
             nsteps = atoi(argv[arg_index++]);
             nstepsset = 1;
          }
+         else if( strcmp(argv[arg_index], "-order") == 0 ){
+            arg_index++;
+            spatial_order = atoi(argv[arg_index++]);
+         }
          else if( strcmp(argv[arg_index], "-tfinal") == 0 ){
             arg_index++;
             tfinal = atof(argv[arg_index++]);
@@ -172,10 +176,10 @@ int main(int argc, char ** argv)
             arg_index++;
             ad_coeff = atof(argv[arg_index++]);
          }
-         else if( strcmp(argv[arg_index], "-rc") == 0 ){
-            arg_index++;
-            restr_coeff = atof(argv[arg_index++]);
-         }
+         /* else if( strcmp(argv[arg_index], "-rc") == 0 ){ */
+         /*    arg_index++; */
+         /*    restr_coeff = atof(argv[arg_index++]); */
+         /* } */
          else if( strcmp(argv[arg_index], "-tbc") == 0 ){
             arg_index++;
             taylorbc = atoi(argv[arg_index++]);
@@ -206,10 +210,10 @@ int main(int argc, char ** argv)
       printf("  -cfl <float>    : cfl-number (default 0.5)\n");
       printf("  -nu  <float>    : viscosity (>=0, default 0.0)\n");
       printf("  -nsteps <int>   : number of time steps (positive) (default tfinal/dt)\n");
+      printf("  -order <int>    : spatial order of accuracy (positive, even, <=6) (default 6)\n");
       printf("  -tfinal <float> : end time (default 1.0)\n");
       printf("  -wn <int>       : wave number in exact solution (default 1)\n");
       printf("  -ad <float>     : artificial dissipation coefficient for coarse grids (default 0.0)\n");
-      printf("  -rc <float>     : dissipation coefficient in restriction operator (default 0.0)\n");
       printf("  -tbc <int>      : treatment of bndry forcing at intermediate stages (0,1, or 3) (default 1)\n");
       printf("\n");
 /* MPI_Finalize(); */
@@ -227,8 +231,9 @@ int main(int argc, char ** argv)
 
 /* setup solver meta-data */
    kd_ = malloc(sizeof(advection_setup));
-   init_advection_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, 
-                         wave_speed, viscosity, bcLeft, bcRight, max_iter, tol, restr_coeff, ad_coeff, kd_);
+   init_advection_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, wave_speed,
+                         viscosity, bcLeft, bcRight, max_iter, tol, restr_coeff, ad_coeff, spatial_order,
+                         kd_);
    
 #define bcnr(i) compute_index_1d(kd_->bcnr_, i)    
 
@@ -242,12 +247,16 @@ int main(int argc, char ** argv)
    printf("Time step on finest grid is %e\n",kd_->dt_fine);
    printf("Finest grid has spacing h=%e with n=%i grid points\n", kd_->h_fine, kd_->n_fine);
    printf("Artificial damping coefficient for coarse grids %e\n", kd_->ad_coeff);
-   printf("Restriction coefficient for 2nd undivided difference %e\n", kd_->restr_coeff);
+   printf("Spatial order of accuracy: %i\n", kd_->spatial_order);
+   /* printf("Restriction coefficient for 2nd undivided difference %e\n", kd_->restr_coeff); */
    printf("------------------------------\n");
 
 /* Start timer. */
    mystarttime = MPI_Wtime();
 
+/* seed the random number generator */
+   srand(1);
+   
 /* nt = nsteps : number of time steps */
    warp_Init(comm, comm_t, kd_->tstart, kd_->tstop, kd_->nsteps, kd_,
              explicit_rk4_stepper, init_grid_fcn, copy_grid_fcn, free_grid_fcn, sum_grid_fcn, dot_grid_fcn, 
