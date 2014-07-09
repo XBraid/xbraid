@@ -242,9 +242,11 @@ warp_Drive(warp_Core  core)
                _warp_CoreElt(core, accuracy[0].value)     = accuracy;
                _warp_CoreElt(core, accuracy[0].matchF)    = 1;
                
-               if( (print_level >= 2) && (myid == 0) )
+               /* Debug printing only if the accuracy value has changed */
+               if( (print_level >= 2) && (myid == 0) && 
+                   ( _warp_CoreElt(core, accuracy[0].old_value) != _warp_CoreElt(core, accuracy[0].value)) )
                {
-                  _warp_printf("  **** Accuracy changed to %.2e ****\n", accuracy);
+                  _warp_printf("  Warp:  Accuracy changed to %.2e \n", accuracy);
                }
             }
 
@@ -291,9 +293,9 @@ warp_Drive(warp_Core  core)
                if( (print_level >= 1) && (myid == 0) )
                {
                   if (iter == 0)
-                     _warp_printf("  Warp || r_%d || = %e\n", iter, rnorm);
+                     _warp_printf("  Warp:  || r_%d || = %e\n", iter, rnorm);
                   else
-                     _warp_printf("  Warp || r_%d || = %e,  conv. factor = %e\n", iter, rnorm,
+                     _warp_printf("  Warp:  || r_%d || = %e,  conv. factor = %e\n", iter, rnorm,
                             rnorm/old_rnorm);
                }
 

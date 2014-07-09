@@ -921,9 +921,11 @@ _warp_FRestrict(warp_Core   core,
                 warp_Int    iter,
                 warp_Real  *rnorm_ptr)
 {
+   MPI_Comm            comm_world  = _warp_CoreElt(core, comm_world);
    MPI_Comm            comm        = _warp_CoreElt(core, comm);
    warp_App            app         = _warp_CoreElt(core, app);
    _warp_Grid        **grids       = _warp_CoreElt(core, grids);
+   warp_Int            print_level = _warp_CoreElt(core, print_level);
    warp_Int            write_level = _warp_CoreElt(core, write_level);
    warp_Int            cfactor     = _warp_GridElt(grids[level], cfactor);
    warp_Int            ncpoints    = _warp_GridElt(grids[level], ncpoints);
@@ -931,6 +933,7 @@ _warp_FRestrict(warp_Core   core,
    _warp_CommHandle   *send_handle = NULL;
    warp_Real           old_rnorm   = *rnorm_ptr;
 
+   warp_Int            myid;
    warp_Int            c_level, c_ilower, c_iupper, c_index, c_i, c_ii;
    warp_Vector         c_u, *c_va, *c_wa;
 
@@ -946,6 +949,7 @@ _warp_FRestrict(warp_Core   core,
    c_wa     = _warp_GridElt(grids[c_level], wa);
 
    rnorm = 0.0;
+   MPI_Comm_rank(comm_world, &myid);
 
    /* Create status structure to give user info about the current state of Warp */
    _warp_InitStatus(old_rnorm, iter, level, 0, &status);
@@ -1018,6 +1022,14 @@ _warp_FRestrict(warp_Core   core,
          {
             _warp_CoreFcn(core, dot)(app, r, r, &rdot);
             rnorm += rdot;
+            
+            /* If debug printing, print out rdot for this interval. rdot
+             * should show the serial propagation of the exact solution */
+            if (print_level >= 2)
+            {
+               _warp_printf("  Warp:  time step: %d, rdot: %1.2e\n", fhi, rdot);
+            }
+
          }
 
          /* Restrict u and residual, coarsening in space if needed */
@@ -1078,7 +1090,7 @@ _warp_FRestrict(warp_Core   core,
 
       *rnorm_ptr = grnorm;
    }
-
+   
    /* Destroy status structure */
    _warp_DestroyStatus(status);
 
