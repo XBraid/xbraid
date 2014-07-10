@@ -2924,6 +2924,7 @@ int main (int argc, char *argv[])
    warp_Core  core;
    my_App    *app;
    int        max_levels;
+   int        max_coarse;
    int        nrelax, nrelax0;
    double     tol;
    int        cfactor, cfactor0;
@@ -2978,6 +2979,7 @@ int main (int argc, char *argv[])
    /* Default parameters. */
    comm                = MPI_COMM_WORLD;
    max_levels          = 2;  /* Must be two, in order for coarsen and refine wrapper tests to run */
+   max_coarse          = 1;  
    nrelax              = 1;
    nrelax0             = -1;
    tol                 = 1.0e-09;
@@ -3044,6 +3046,10 @@ int main (int argc, char *argv[])
       else if( strcmp(argv[arg_index], "-ml") == 0 ){
           arg_index++;
           max_levels = atoi(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-mc") == 0 ){
+          arg_index++;
+          max_coarse = atoi(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-nu") == 0 ){
           arg_index++;
@@ -3159,6 +3165,7 @@ int main (int argc, char *argv[])
       printf("  -nt  <n>                         : number of time steps (default: 32)\n"); 
       printf("  -c  <c>                          : ratio dt/(dx^2) (default: 1.0)\n"); 
       printf("  -ml  <max_levels>                : set max number of time levels (default: 1)\n");
+      printf("  -mc  <max_coarse>                : set max allowed coarse level size in terms of C-points (default: 1)\n");
       printf("  -nu  <nrelax>                    : set num F-C relaxations (default: 1)\n");
       printf("  -nu0 <nrelax>                    : set num F-C relaxations on level 0\n");
       printf("  -tol <tol>                       : set stopping tolerance (default: 1e-09)\n");
@@ -3464,6 +3471,7 @@ int main (int argc, char *argv[])
       warp_SetTightxTol( core, 0, tol_x[1] );
 
       warp_SetMaxLevels( core, max_levels );
+      warp_SetMaxCoarse( core, max_coarse );
 
       warp_SetPrintLevel( core, print_level);
       warp_SetWriteLevel( core, write_level);

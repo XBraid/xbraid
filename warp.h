@@ -246,6 +246,13 @@ warp_SetMaxLevels(warp_Core  core,
                   warp_Int   max_levels);
 
 /**
+ * Set max allowed coarse grid size (in terms of C-points) 
+ **/
+warp_Int
+warp_SetMaxCoarse(warp_Core  core,
+                  warp_Int   max_coarse);
+
+/**
  * Set absolute stopping tolerance.
  **/
 warp_Int

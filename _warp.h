@@ -128,6 +128,7 @@ typedef struct _warp_Core_struct
    warp_Int              write_level;  /**< determines how often to call the user's write routine */ 
    warp_Int              print_level;  /**< determines amount of output printed to screem (0,1,2) */ 
    warp_Int              max_levels;   /**< maximum number of temporal grid levels */
+   warp_Int              max_coarse;   /**< maximum allowed coarse grid size  (in terms of C-points) */
    warp_Real             tol;          /**< stopping tolerance */
    warp_Int              rtol;         /**< use relative tolerance */
    warp_Int             *nrels;        /**< number of pre-relaxations on each level */

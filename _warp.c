@@ -1427,6 +1427,7 @@ _warp_InitHierarchy(warp_Core    core,
 {
    MPI_Comm      comm       = _warp_CoreElt(core, comm);
    warp_Int      max_levels = _warp_CoreElt(core, max_levels);
+   warp_Int      max_coarse = _warp_CoreElt(core, max_coarse);
    warp_Real     tol        = _warp_CoreElt(core, tol);
    warp_Int     *nrels      = _warp_CoreElt(core, nrels);
    warp_Int      nrdefault  = _warp_CoreElt(core, nrdefault);
@@ -1454,8 +1455,10 @@ _warp_InitHierarchy(warp_Core    core,
 
    grids[0] = fine_grid;
 
-   /* Do sequential time marching if tolerance is not positive */
-   if ((tol <= 0.0) && (max_levels > 1))
+   /* Do sequential time marching if tolerance is not positive, 
+    * or max_coarse is already reached */
+
+   if ((tol <= 0.0) && (max_levels > 1) && (gupper >= max_coarse) )
    {
       max_levels = 1;
       _warp_CoreElt(core, max_levels) = max_levels;
@@ -1516,7 +1519,7 @@ _warp_InitHierarchy(warp_Core    core,
       _warp_ProjectInterval(gclower, gcupper, 0, cfactor, &gclower, &gcupper);
       _warp_MapFineToCoarse(gclower, cfactor, gclower);
       _warp_MapFineToCoarse(gcupper, cfactor, gcupper);
-      if ( (gclower < gcupper) && (max_levels > level+1) )
+      if ( (gclower < gcupper) && (max_levels > level+1) && ((gcupper - gclower) >= max_coarse) ) 
       {
          /* Coarsen */
          _warp_ProjectInterval(ilower, iupper, 0, cfactor, &clower, &cupper);

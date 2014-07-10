@@ -55,6 +55,7 @@ warp_Init(MPI_Comm              comm_world,
    warp_Int              nfmg_Vcyc = 1;         /* Default num V-cycles at each fmg level is 1 */
    warp_Int              max_iter = 100;        /* Default max_iter */
    warp_Int              max_levels = 30;       /* Default max_levels */
+   warp_Int              max_coarse = 1;        /* Default max_coarse (in terms of number of C-points) */
    warp_Int              print_level = 1;       /* Default print level */
    warp_Int              write_level = 1;       /* Default write level */
    warp_Real             tol = 1.0e-09;         /* Default absolute tolerance */
@@ -85,6 +86,7 @@ warp_Init(MPI_Comm              comm_world,
    _warp_CoreElt(core, write_level) = write_level;
    _warp_CoreElt(core, print_level) = print_level;
    _warp_CoreElt(core, max_levels) = max_levels;
+   _warp_CoreElt(core, max_coarse) = max_coarse;
    _warp_CoreElt(core, tol)        = tol;
    _warp_CoreElt(core, rtol)       = rtol;
 
@@ -399,6 +401,7 @@ warp_PrintStats(warp_Core  core)
    warp_Real    tstop      = _warp_CoreElt(core, tstop);
    warp_Int     ntime      = _warp_CoreElt(core, ntime);
    warp_Int     max_levels = _warp_CoreElt(core, max_levels);
+   warp_Int     max_coarse = _warp_CoreElt(core, max_coarse);
    warp_Real    tol        = _warp_CoreElt(core, tol);
    warp_Int     rtol       = _warp_CoreElt(core, rtol);
    warp_Int    *nrels      = _warp_CoreElt(core, nrels);
@@ -422,6 +425,7 @@ warp_PrintStats(warp_Core  core)
       _warp_printf("  time steps = %d\n", ntime);
       _warp_printf("\n");
       _warp_printf("  max number of levels = %d\n", max_levels);
+      _warp_printf("  max coarse           = %d\n", max_coarse);
       _warp_printf("  number of levels     = %d\n", nlevels);
       _warp_printf("  stopping tolerance   = %e\n", tol);
       _warp_printf("  relative tolerance?  = %d\n", rtol);
@@ -513,6 +517,19 @@ warp_SetMaxLevels(warp_Core  core,
 
    return _warp_error_flag;
 }
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
+warp_SetMaxCoarse(warp_Core  core,
+                  warp_Int   max_coarse)
+{
+   _warp_CoreElt(core, max_coarse) = max_coarse;
+
+   return _warp_error_flag;
+}
+
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/

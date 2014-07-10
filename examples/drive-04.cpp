@@ -1203,6 +1203,8 @@ public:
    }
 
    void SetMaxLevels(int max_levels) { warp_SetMaxLevels(core, max_levels); }
+   
+   void SetMaxCoarse(int max_coarse) { warp_SetMaxCoarse(core, max_coarse); }
 
    void SetNRelax(int level, int nrelax)
    { warp_SetNRelax(core, level, nrelax); }
@@ -1336,6 +1338,7 @@ int main(int argc, char *argv[])
 
    // WARP default parameters:
    int    max_levels  = 10;
+   int    max_coarse  = 1;
    int    nrelax      = 1;
    int    nrelax0     = -1;
    double tol         = 1e-9;
@@ -1413,6 +1416,10 @@ int main(int argc, char *argv[])
       else if (strcmp(argv[arg_index], "-ml") == 0)
       {
          max_levels = atoi(argv[++arg_index]);
+      }
+      else if (strcmp(argv[arg_index], "-mc") == 0)
+      {
+         max_coarse = atoi(argv[++arg_index]);
       }
       else if (strcmp(argv[arg_index], "-nu") == 0)
       {
@@ -1513,6 +1520,7 @@ int main(int argc, char *argv[])
          "                        -31 - SDIRK(2,3)\n"
          "                        -41 - SDIRK(3,4)\n"
          "  -ml  <max_levels> : set max number of time levels (default: 10)\n"
+         "  -mc  <max_coarse> : set max allowed coarse level size in terms of C-points (default: 1)\n"
          "  -nu  <nrelax>     : set num F-C relaxations (default: 1)\n"
          "  -nu0 <nrelax>     : set num F-C relaxations on level 0\n"
          "  -tol <tol>        : set stopping tolerance (default: 1e-9)\n"
@@ -1731,6 +1739,7 @@ int main(int argc, char *argv[])
          core.SetWriteLevel(write_level);
          core.SetPrintLevel(1);
          core.SetMaxLevels(max_levels);
+         core.SetMaxCoarse(max_coarse);
          core.SetNRelax(-1, nrelax);
          if (nrelax0 > -1)
             core.SetNRelax(0, nrelax0);

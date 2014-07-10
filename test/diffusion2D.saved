@@ -369,3 +369,37 @@ Starting warp_TestCoarsenRefine
    warp_TestCoarsenRefine:   free(vc)
    warp_TestCoarsenRefine:   free(wc)
 Finished warp_TestCoarsenRefine: all tests passed successfully
+
+# Begin Test 9
+
+  my_Write() called, iter= 0, level= 0
+  time steps = 128
+  number of levels     = 1
+  iterations           = 0
+spatial problem size       : 17 x 17
+
+# Begin Test 10
+
+  my_Write() called, iter= 7, level= 0
+  time steps = 128
+  number of levels     = 2
+  iterations           = 7
+spatial problem size       : 17 x 17
+
+# Begin Test 11
+
+  my_Write() called, iter= 8, level= 0
+  time steps = 128
+  number of levels     = 8
+  iterations           = 8
+spatial problem size       : 17 x 17
+
+# Begin Test 12
+
+  my_Write() called, iter= 8, level= 0
+  time steps = 128
+  number of levels     = 2
+  iterations           = 8
+spatial problem size       : 17 x 17
+
+
