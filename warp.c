@@ -52,6 +52,7 @@ warp_Init(MPI_Comm              comm_world,
    warp_Int              cfdefault = 2;         /* Default coarsening factor */
    warp_Int              nrdefault = 1;         /* Default number of FC sweeps on each level */
    warp_Int              fmg = 0;               /* Default fmg (0 is off) */
+   warp_Int              nfmg_Vcyc = 1;         /* Default num V-cycles at each fmg level is 1 */
    warp_Int              max_iter = 100;        /* Default max_iter */
    warp_Int              max_levels = 30;       /* Default max_levels */
    warp_Int              print_level = 1;       /* Default print level */
@@ -102,6 +103,7 @@ warp_Init(MPI_Comm              comm_world,
    _warp_CoreElt(core, niter)      = 0;
    _warp_CoreElt(core, rnorm)      = 0.0;
    _warp_CoreElt(core, fmg)        = fmg;
+   _warp_CoreElt(core, nfmg_Vcyc)  = nfmg_Vcyc;
 
    /* Accuracy for spatial solves for using implicit schemes
     *  - accuracy[0] refers to accuracy on level 0
@@ -150,13 +152,14 @@ warp_Drive(warp_Core  core)
    warp_Int      max_iter    = _warp_CoreElt(core, max_iter);
    warp_Int      print_level = _warp_CoreElt(core, print_level);
    warp_Int      write_level = _warp_CoreElt(core, write_level);
+   warp_Int      nfmg_Vcyc   = _warp_CoreElt(core, nfmg_Vcyc); 
 
    warp_Int      nlevels, iter;
    warp_Real     rnorm, old_rnorm;
    warp_Real     accuracy;
    warp_Int      ilower, iupper;
    warp_Real    *ta;
-   warp_Int      level, fmglevel, down, done, i, refined;
+   warp_Int      level, fmglevel, fmg_Vcyc, down, done, i, refined;
    _warp_Grid   *grid;
    warp_Real     localtime, globaltime;
 
@@ -191,6 +194,7 @@ warp_Drive(warp_Core  core)
 
    /* Set cycling variables */
    fmglevel = 0;
+   fmg_Vcyc = 0;
    if (fmg)
    {
       fmglevel = nlevels-1;
@@ -273,8 +277,15 @@ warp_Drive(warp_Core  core)
                level--;
             }
             else
-            {
-               fmglevel--;
+            {  
+               // Do nfmg_Vcyc number of V-cycles at each level in FMG
+               fmg_Vcyc += 1;
+               if ( fmg_Vcyc == nfmg_Vcyc )
+               {
+                  fmg_Vcyc = 0;
+                  fmglevel--;
+               }
+               
                down = 1;
             }
          }
@@ -675,6 +686,18 @@ warp_SetFMG(warp_Core  core)
  *--------------------------------------------------------------------------*/
 
 warp_Int
+warp_SetNFMGVcyc(warp_Core  core,
+                  warp_Int   nfmg_Vcyc)
+{
+   _warp_CoreElt(core, nfmg_Vcyc) = nfmg_Vcyc;
+
+   return _warp_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
 warp_SetSpatialCoarsen(warp_Core  core, 
                        warp_PtFcnCoarsen coarsen)
 {
@@ -739,4 +762,29 @@ warp_GetStatusDone(warp_Status  status,
    *done_ptr = _warp_StatusElt(status, done);
    return _warp_error_flag;
 }
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
+warp_GetNumIter(warp_Core  core,
+                warp_Int   *niter_ptr)
+{
+   *niter_ptr =  _warp_CoreElt(core, niter);
+   return _warp_error_flag;
+} 
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+warp_Int
+warp_GetRNorm(warp_Core  core,
+              warp_Real  *rnorm_ptr)
+
+{
+   *rnorm_ptr = _warp_CoreElt(core, rnorm);
+   return _warp_error_flag;
+} 
+
+
 

@@ -138,6 +138,7 @@ typedef struct _warp_Core_struct
    warp_Int              niter;        /**< number of iterations */
    warp_Real             rnorm;        /**< residual norm */
    warp_Int              fmg;          /**< use FMG cycle */
+   warp_Int              nfmg_Vcyc;    /**< number of V-cycle calls at each level in FMG */
    _warp_AccuracyHandle *accuracy;     /**< accuracy of spatial solves on different levels */
 
    warp_Int              gupper;       /**< global upper index on the fine grid */

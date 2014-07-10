@@ -2929,6 +2929,7 @@ int main (int argc, char *argv[])
    int        cfactor, cfactor0;
    int        max_iter;
    int        fmg;
+   int        nfmg_Vcyc;
    int        scoarsen;
 
    MPI_Comm    comm, comm_x, comm_t;
@@ -2984,6 +2985,7 @@ int main (int argc, char *argv[])
    cfactor0            = -1;
    max_iter            = 100;
    fmg                 = 0;
+   nfmg_Vcyc           = 1;
    scoarsen            = 0;
    K                   = 1.0;
    nx                  = 17;
@@ -3070,6 +3072,7 @@ int main (int argc, char *argv[])
       else if ( strcmp(argv[arg_index], "-fmg") == 0 ){
          arg_index++;
          fmg = 1;
+         nfmg_Vcyc = atoi(argv[arg_index++]);
       }
       else if ( strcmp(argv[arg_index], "-scoarsen") == 0 ){
          arg_index++;
@@ -3165,7 +3168,7 @@ int main (int argc, char *argv[])
       printf("  -iter <max_iter max_iter_cheap>  : maximum number of PFMG iterations (default: 50 50)\n"); 
       printf("  -tolx <loose_tol tight_tol>      : loose and tight stopping tolerance for PFMG (default: 1e-09 1e-09)\n"); 
       printf("  -tolxc <tol_x>                   : stopping tolerance for PFMG on coarse grids (default: 1e-09)\n");
-      printf("  -fmg                             : use FMG cycling\n");
+      printf("  -fmg <nfmg_Vcyc>                 : use FMG cycling, nfmg_Vcyc V-cycles at each fmg level\n");
       printf("  -scoarsen                        : use spatial coarsening when needed to satisfy CFL\n");
       printf("                                     0 - No spatial coarsening (default) \n");
       printf("                                     1 - Use injection for spatial restriction \n");
@@ -3488,6 +3491,7 @@ int main (int argc, char *argv[])
       if (fmg)
       {
          warp_SetFMG(core);
+         warp_SetNFMGVcyc(core, nfmg_Vcyc);
       }
       
       if (scoarsen)

@@ -293,6 +293,14 @@ warp_Int
 warp_SetFMG(warp_Core  core);
 
 /**
+ * Set number of V cycles to use at each FMG level (standard is 1)
+ **/
+warp_Int
+warp_SetNFMGVcyc(warp_Core  core,
+                 warp_Int   nfmg_Vcyc);
+
+
+/**
  * Set spatial coarsening routine with user-defined routine.
  * Default is no spatial refinment or coarsening.
  **/
@@ -383,6 +391,21 @@ warp_GetStatusLevel(warp_Status  status,
 warp_Int
 warp_GetStatusDone(warp_Status  status,
                    warp_Int    *done_ptr);
+
+/**
+ * After Drive() finishes, this returns the number of iterations taken
+ **/
+warp_Int
+warp_GetNumIter(warp_Core  core,
+                warp_Int   *niter_ptr);
+
+
+/**
+ * After Drive() finishes, this returns the last measured residual norm
+ **/
+warp_Int
+warp_GetRNorm(warp_Core  core,
+              warp_Real  *rnorm_ptr);
 
 
 #ifdef __cplusplus

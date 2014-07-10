@@ -13,7 +13,7 @@ init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle)
 /* allocate memory */
    u_ = (grid_fcn *) malloc(sizeof(grid_fcn));
    
-/* should make sure the kd_ and gf_ are not NULL */
+/* make sure the kd_ pointer is not NULL */
    if (kd_ == NULL)
    {
       printf("ERROR init_grid_fcn: kd_ == NULL\n");
@@ -40,12 +40,12 @@ init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle)
       printf("Init: assigning zero grid function at t=%e\n", t);
 #endif
       for (i=0; i< u_->n+2; i++)
-         u_->sol[i] = 0;
+         u_->sol[i] = ((double)rand())/RAND_MAX;
 
 /* then the 3 values in the bndry ode */
 #define uvsol(i) compute_index_1d(u_->vsol_, i)
       for (i=1; i<=3; i++)
-         uvsol(i) = 0;
+         uvsol(i) = ((double)rand())/RAND_MAX;
 #undef uvsol
    }
    
@@ -59,14 +59,15 @@ void
 init_advection_solver(double h, double amp, double ph, double om, int pnr, int taylorbc, 
                       double L, double cfl, int nstepsset, int nsteps, double tfinal, 
                       double wave_speed, double viscosity, int bcLeft, int bcRight, int warpMaxIter, 
-                      double warpResidualLevel, double restr_coeff, double ad_coeff, advection_setup *kd_)
+                      double warpResidualLevel, double restr_coeff, double ad_coeff, int spatial_order,
+                      advection_setup *kd_)
 {
    double mxeg, p1, beta, pi=M_PI, omL2pi;
    int n;
 /* # ghost points */
    const int o = 1;
 
-   n = (int) L/h+o;
+   n = (int) rint(L/h) + o;
    
    if( fabs( L/(n-o) - h ) > 1e-10 )
    {
@@ -87,6 +88,9 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
       printf("NOTE: Periodic bc, om*L/(2*pi)=%e, must be integer\n", omL2pi);      
    }
    kd_->om = om;
+// scaled wave number
+   printf("Scaled wave number om*h/pi = %e\n", om*h/pi);
+
    kd_->taylorbc = taylorbc;
    kd_->L = L;
    if (wave_speed < 0.0)
@@ -103,6 +107,9 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
 
 /* artificial dissipation coefficient */
    kd_->ad_coeff = ad_coeff;
+
+/* spatial order of accuracy */
+   kd_->spatial_order = spatial_order;
    
 /* ! compute time step */
    if (kd_->c_coeff <= 4.0*kd_->nu_coeff / h)
@@ -188,6 +195,12 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
    else
    {
       nsteps       = tfinal/kd_->dt_fine;
+      if (nsteps%2 == 1)
+      {
+         nsteps++;
+         printf("After adding an extra time step to make nsteps=%i even\n", nsteps);
+      }
+      
       kd_->dt_fine = tfinal/nsteps;
       kd_->tstop   = tfinal;
    }
@@ -251,6 +264,8 @@ int
 free_grid_fcn(advection_setup    *kd_,
               grid_fcn  *u_)
 {
+   if (u_ == NULL) return 0;
+   
 /* de-allocate everything inside u_ */
    if (u_->sol) free(u_->sol);
    delete_double_array_1d( u_->vsol_);

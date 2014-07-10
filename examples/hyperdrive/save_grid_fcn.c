@@ -34,7 +34,8 @@ save_grid_fcn(advection_setup *kd_,
        warp_GetStatusLevel(status, &level);
 
 /* done_iterating is only well-defined on the finest level */
-       done_iterating = (residual < kd_->warpResidualLevel || iteration >= kd_->warpMaxIter);
+/*       done_iterating = (residual < kd_->warpResidualLevel || iteration >= kd_->warpMaxIter); */
+       done_iterating = (residual >= 0.0 || iteration >= kd_->warpMaxIter);
 
        printf("Inside save_grid_fcn, final time t=%e, iter=%i, residual=%e, done iterating=%i, level=%i\n", 
               t, iteration, residual, done_iterating, level);
