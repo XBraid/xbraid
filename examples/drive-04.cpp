@@ -845,6 +845,9 @@ public:
    socketstream *sol_sock;
    ParMesh *pmesh;
 
+   const char * vishost;
+   int  visport;
+
    WarpApp(MPI_Comm _comm_t, TimeDependentOperator *_ode,
            HypreParVector *_X0, ParGridFunction *_x, ODESolver *_solver,
            double _tstart = 0.0, double _tstop = 1.0, int _ntime = 100)
@@ -948,6 +951,12 @@ public:
       return 0;
    }
 
+   void SetVisHostAndPort(const char * vh, int vp)
+   {
+      vishost = vh;
+      visport = vp;
+   }
+
    static int Write(warp_App     _app,
                     double       t,
                     warp_Status  _status,
@@ -976,12 +985,10 @@ public:
 
          ParMesh *pmesh = app->pmesh;
 
-         char vishost[] = "localhost";
-         int  visport   = 19916;
          int  init_sock = 0;
          if (!app->sol_sock)
          {
-            app->sol_sock = new socketstream(vishost, visport);
+            app->sol_sock = new socketstream(app->vishost, app->visport);
             init_sock = 1;
          }
 
@@ -1335,6 +1342,10 @@ int main(int argc, char *argv[])
 
    int heat_equation = 1;
    int scalar_ode_option = 2;
+   
+   // Vis parameters
+   const char * vishost = "localhost";
+   int visport = 19916;
 
    // WARP default parameters:
    int    max_levels  = 10;
@@ -1462,6 +1473,14 @@ int main(int argc, char *argv[])
       {
          write_level = atoi(argv[++arg_index]);
       }
+      else if (strcmp(argv[arg_index], "-visport") == 0)
+      {
+         visport = atoi(argv[++arg_index]);
+      }
+      else if (strcmp(argv[arg_index], "-vishost") == 0)
+      {
+         vishost = argv[++arg_index];
+      }
       else if (strcmp(argv[arg_index], "-help") == 0)
       {
          print_usage = 1;
@@ -1528,7 +1547,9 @@ int main(int argc, char *argv[])
          "  -cf0 <cfactor0>   : set aggressive coarsening (default: off)\n"
          "  -mi  <max_iter>   : set max iterations (default: 100)\n"
          "  -fmg <nfmg_Vcyc>  : use FMG cycling with nfmg_Vcyc V-cycles at each fmg level\n"
-         "  -write            : set write_level (default: 1) \n"
+         "  -write   <w>      : set write_level (default: 1) \n"
+         "  -vishost <vh>     : set glvis visualisation host (default: 'localhost') \n"
+         "  -visport <vp>     : set glvis visualisation port (default: 19916) \n"
          "\n";
    }
 
@@ -1675,6 +1696,7 @@ int main(int argc, char *argv[])
    else
    {
       WarpApp app(comm_t, ode, X0, &x0, solver, tstart, tstop, ntime);
+      app.SetVisHostAndPort(vishost, visport);
 
       if (wrapper_tests)
       {
