@@ -31,3 +31,4 @@
          $ cd examples
          $ mpirun -np 4 drive-*
 
+- To set compilers and library locations, look in makefile.in and examples/makefile.
