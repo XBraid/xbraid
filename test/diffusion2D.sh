@@ -108,7 +108,7 @@ counter=0
 for test in "${TESTS[@]}"
 do
    echo "Running Test $counter"
-   eval "$test" 1>> $output_dir/unfiltered.std.out.$counter  2>> $output_dir/std.err.$counter
+   eval "$test" 1>> $output_dir/unfiltered.std.out.$counter  2>> $output_dir/std.out.$counter
    cd $output_dir
    egrep -o "$lines_to_check" unfiltered.std.out.$counter > std.out.$counter
    diff -U3 -B -bI"$TestDelimiter" $scriptname.saved.$counter std.out.$counter >> std.err.$counter
