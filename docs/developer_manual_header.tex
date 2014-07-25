@@ -101,10 +101,40 @@
   unicode%
 }
 
+% Subfloat
+\usepackage[caption = false]{subfig}
+
 % Custom commands
 \newcommand{\clearemptydoublepage}{%
   \newpage{\pagestyle{empty}\cleardoublepage}%
 }
+\def\XVec#1{{\mathbf #1}}       
+\def\XOne{{\mathbf 1}}          
+\def\XFGrid{{\cal G}}           
+\def\XCGrid{{\cal G}_c}                                         
+\def\XReals{{\mathbb R}}
+\def\XFSpace{\XReals^{n}}       
+\def\XCSpace{\XReals^{n_c}}     
+\def\XSSpace{\XReals^{n_s}}     
+\def\XFPts{{\cal F}}            % set of C pts
+\def\XCPts{{\cal C}}            % set of F pts
+\def\XNPts{{\cal N}}            % set of neighbor pts
+\def\XPx{P_{\star}}
+\def\Xu{\XVec{u}}
+\def\Xf{\XVec{f}}
+\def\Xg{\XVec{g}}              
+\def\Xe{\XVec{e}}
+\def\Xr{\XVec{r}}
+\def\Xx{\XVec{x}}
+\def\Xy{\XVec{y}}
+\def\Xv{\XVec{v}}
+\def\Xw{\XVec{w}}
+\def\XUnit{\mbox{\boldmath $\varepsilon$}}  
+\def\XCL{{\cal L}}
+\def\XCM{{\cal M}}
+\def\Xux{\boldsymbol{u}}
+\def\Xfx{\boldsymbol{f}}
+\def\Xgx{\boldsymbol{g}}
 
 
 %===== C O N T E N T S =====
@@ -144,6 +174,7 @@ Livermore, CA 94551 \\
 ~\\~\\ ~\\~\\~\\~\\~\\~\\~\\~\\~\\
 This work performed under the auspices of the U.S. Department of Energy by
 Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.
+LLNL-******
 \end{center}
 
 

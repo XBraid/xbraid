@@ -44,15 +44,23 @@ or build doxygen from
    http://www.stack.nl/~dimitri/doxygen/manual/index.html
 
 ### Warp Doxygen details
--  The latex manuals are built according to 
-
-   -  docs/local_doxygen.sty           :: Latex style file
-   -  docs/user_manual_header.tex      :: User manual title page and header info
-   -  docs/developer_manual_header.tex :: Developer manual title page and header info
-   -  docs/Introduction.md             :: Extra material that goes at the front of the PDF
-   -  docs/user_manual.conf            :: Only includes the user interface routines in warp.h
-   -  docs/reference_manual.conf       :: Includes everything, and the kitchen sink
-   -  docs/img                         :: Contains the images
+The latex manuals are built according to 
+-  docs/local_doxygen.sty           
+  + Latex style file used
+-  docs/user_manual_header.tex      
+  + User manual title page and header info
+-  docs/developer_manual_header.tex
+  + Developer manual title page and header info
+-  filename.md                      
+  + Extra material in markdown format, like Abstract.md and Introduction.md
+-  docs/user_manual.conf             
+  + Doxygen configure file for the user manual
+  + The FILE_NAMES tag filters to only include the user interface routines in warp.h
+  + The INPUT tag orders the processing of the files and hence the section ordering
+-  docs/reference_manual.conf       
+  + Same as user_manual.conf, out the FILE_NAMES tag doesn't exclude anything
+- docs/img                         
+  + Contains the images
 
 -  To regenerate generic doxygen latex files, type
   
