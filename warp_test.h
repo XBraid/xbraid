@@ -31,8 +31,17 @@ extern "C" {
 /*--------------------------------------------------------------------------
  * Routines for user to test interface routines
  *--------------------------------------------------------------------------*/
+/** \defgroup warptest Warp user test routines
+ *  
+ *  These sanity check routines to help a user test their Warp code
+ *
+ *  @{
+ */
 
-
+/**
+ * Test Init, Write and Free\n
+ * A vector is initialized at time t, written, and then free-d
+ **/
 warp_Int
 warp_TestInitWrite( warp_App              app,     /**< User defined App structure */
                     MPI_Comm              comm_x,  /**< Spatial communicator */
@@ -42,6 +51,13 @@ warp_TestInitWrite( warp_App              app,     /**< User defined App structu
                     warp_PtFcnWrite       write,   /**< Write temporal state warp_Vector (can be NULL for no writing)*/
                     warp_PtFcnFree        free     /**< Free a temporal state warp_Vector*/
                     );
+
+ /**
+  * Test Clone\n
+  * A vector is initialized at time t, cloned, and both vectors are written.
+  * Then both vectors are free-d.  The user is to check the output to see if 
+  * it is identical.
+  **/
 warp_Int
 warp_TestClone( warp_App              app,         /**< User defined App structure */
                 MPI_Comm              comm_x,      /**< Spatial communicator */
@@ -55,6 +71,12 @@ warp_TestClone( warp_App              app,         /**< User defined App structu
 
 
 
+ /**
+  * Test Sum\n
+  * A vector is initialized at time t, cloned, and then these two vectors
+  * are summed a few times, with the results written.  The vectors are then free-d.
+  * The user is to check that the output matches the sum of the two original vectors.
+  **/
 warp_Int
 warp_TestSum( warp_App              app,         /**< User defined App structure */
               MPI_Comm              comm_x,      /**< Spatial communicator */
@@ -68,6 +90,10 @@ warp_TestSum( warp_App              app,         /**< User defined App structure
               );
 
 /**
+ * Test Dot.  A vector is initialized at time t and then cloned.  Various
+ * dot products like <3 v, v>/<v, v> are computed with known output, e.g.,
+ * <3 v, v>/<v, v> must equal 3.  If all the tests pass, then 1 is returned.
+ *
  * Returns 0 if the tests fail
  * Returns 1 if the tests pass
  * Check the log messages to see details of which tests failed.
@@ -85,6 +111,9 @@ warp_TestDot( warp_App              app,         /**< User defined App structure
               );
               
 /**
+ * A vector is initialized at time t, packed into a buffer, then unpacked from a buffer.
+ * The unpacked result must equal the original vector.  
+ *
  * Returns 0 if the tests fail
  * Returns 1 if the tests pass
  * Check the log messages to see details of which tests failed.
@@ -104,6 +133,9 @@ warp_TestBuf( warp_App              app,         /**< User defined App structure
               );
 
 /**
+ * A vector is initialized at time t, and various sanity checks on the spatial
+ * coarsening and refinement routines are run.
+ *
  * Returns 0 if the tests fail
  * Returns 1 if the tests pass
  * Check the log messages to see details of which tests failed.
@@ -125,6 +157,8 @@ warp_TestCoarsenRefine( warp_App          app,         /**< User defined App str
                         warp_PtFcnRefine  refine       /**< Spatially refine a vector */
                         );
 /**
+ * Runs all of the individual warp_Test* routines
+ *
  * Returns 0 if the tests fail
  * Returns 1 if the tests pass
  * Check the log messages to see details of which tests failed.
@@ -148,6 +182,7 @@ warp_TestAll( warp_App             app,         /**< User defined App structure 
               warp_PtFcnRefine     refine       /**< Spatially refine a vector. If null, test is skipped.*/
               );
 
+/** @}*/
 
 #ifdef __cplusplus
 }

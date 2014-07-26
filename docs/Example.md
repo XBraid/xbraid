@@ -186,6 +186,7 @@ various Warp levels and Warp iterations if status is querried.
 
 8. **BufSize**, **BufPack**, **BufUnpack**: packs a vector into a ``void *`` buffer for MPI
   and then unpacks it from ``void *`` to vector.  Here doing that for a scalar is trivial.
+  BufSize computes the upper bound for the size of an arbitrary vector.
 
       int
       my_BufSize(warp_App  app,
