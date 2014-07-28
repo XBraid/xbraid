@@ -16,7 +16,8 @@ dimensions. These examples can also be used to show that MGRIT can achieve
 significant speedup in comparison to sequential time marching on modern
 architectures.
 
-It is **strongly recommended** that you read [Parallel Time Integration
+It is **strongly recommended** that you also read [Parallel Time Integration
 with Multigrid](https://computation-rnd.llnl.gov/linear_solvers/pubs/mgritPaper-2013.pdf)
-before proceeding. 
+after reading the @ref intro.  It is a more in depth discussion of the algorithm
+and associated experiments.
 

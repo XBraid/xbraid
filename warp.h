@@ -58,9 +58,9 @@ typedef struct _warp_App_struct *warp_App;
 
 struct _warp_Vector_struct;
 /**
- * This defines something like a state vector at a certain time value.  It 
- * could contain any other information related to this vector needed to evolve
- * the vector to the next time value, like mesh information.
+ * This defines (roughly) a state vector at a certain time value.  
+ * It could also contain any other information related to this vector which is 
+ * needed to evolve the vector to the next time value, like mesh information.
  **/
 typedef struct _warp_Vector_struct *warp_Vector;
 
@@ -74,31 +74,30 @@ typedef struct _warp_Status_struct *warp_Status;
 
 /**
  * Defines the central time stepping function that the user must write.
- * The user must advance the vector u from time tstart to time tstop.
- * Here advancing the solution just involves the scalar \f$ \lambda \f$.  
- * The rfactor_ptr and accuracy inputs are advanced topics.  rfactor_ptr
+ * The user must advance the vector *u* from time *tstart* to time *tstop*.
+ * The *rfactor_ptr* and *accuracy* inputs are advanced topics.  *rfactor_ptr*
  * allows the user to tell Warp to refine this time interval.
  **/
 typedef warp_Int
 (*warp_PtFcnPhi)(warp_App      app,                /**< user-defined _warp_App structure */
-                 warp_Real     tstart,             /**< time value for u */
-                 warp_Real     tstop,              /**< time value to evolve u towards */
+                 warp_Real     tstart,             /**< time value for *u* */
+                 warp_Real     tstop,              /**< time value to evolve *u* towards */
                  warp_Real     accuracy,           /**< advanced option */
                  warp_Vector   u,                  /**< output, vector to evolve */
                  warp_Int     *rfactor_ptr         /**< output, allows user to subdivide this interval for accuracy */
                  );
 
 /**
- * Initializes a vector at time t
+ * Initializes a vector *u_ptr* at time *t*
  **/
 typedef warp_Int
 (*warp_PtFcnInit)(warp_App      app,               /**< user-defined _warp_App structure */
-                  warp_Real     t,                 /**< time value for u */
+                  warp_Real     t,                 /**< time value for *u_ptr* */
                   warp_Vector  *u_ptr              /**< output, newly allocated and initialized vector */
                   );
 
 /**
- * Clone u into v_ptr
+ * Clone *u* into *v_ptr*
  **/
 typedef warp_Int
 (*warp_PtFcnClone)(warp_App      app,              /**< user-defined _warp_App structure */
@@ -107,7 +106,7 @@ typedef warp_Int
                    );
 
 /**
- * Free and deallocate u
+ * Free and deallocate *u*
  **/
 typedef warp_Int
 (*warp_PtFcnFree)(warp_App     app,               /**< user-defined _warp_App structure */
@@ -115,8 +114,8 @@ typedef warp_Int
                   );
 
 /**
- * AXPY, alpha*x + beta*y --> y
- **/
+ * AXPY, *alpha* *x* + *beta* *y* --> *y*
+ **/ 
 typedef warp_Int
 (*warp_PtFcnSum)(warp_App     app,                /**< user-defined _warp_App structure */
                  warp_Real    alpha,              /**< scalar for AXPY */
@@ -127,7 +126,7 @@ typedef warp_Int
 
 /**
  *  Carry out a dot product
- *  *dot_ptr = <u, v>
+ *  *dot_ptr* = <*u*, *v*>
  **/
 typedef warp_Int
 (*warp_PtFcnDot)(warp_App      app,                /**< user-defined _warp_App structure */
@@ -137,115 +136,130 @@ typedef warp_Int
                  );
 
 /**
- * Write the vector u at time t.  The user decides whether to write to
- * file, screen or do nothing.  Only solution values at certain times or
- * Warp iterations may be desired.
+ * Write the vector *u* at time *t* to screen, file, etc...  The user decides 
+ * what is appropriate.  Notice how you are told the time value of the 
+ * vector *u* and even more information in *status*.  This lets you tailor the 
+ * output to only certain time values. \n 
+ * 
+ * If write_level is 2 (see [warp_SetWriteLevel](@ref warp_SetWriteLevel) ), then 
+ * *write* is called every Warp iteration and on every Warp level.  In this case, 
+ * *status* can be querried using the warp_Get**Status() functions, to determine the 
+ * current warp level and iteration.  This allows for even more detailed tracking of the
+ * simulation. 
  **/
-typedef warp_Int
-(*warp_PtFcnWrite)(warp_App      app,              /**< user-defined _warp_App structure */
-                   warp_Real     t,                /**< time value for u */
+typedef warp_int
+(*warp_ptfcnwrite)(warp_App      app,              /**< user-defined _warp_App structure */
+                   warp_Real     t,                /**< time value for *u* */
                    warp_Status   status,           /**< can be querried for info like Warp Iteration */
                    warp_Vector   u                 /**< vector to write */
                    );
 
 /**
- * Computes an upper bound for the MPI Buffer size in bytes for an arbitrary warp_Vector
+ * this routine tells Warp message sizes by computing an upper bound in bytes for 
+ * an arbitrary warp_Vector.  This size must be an upper bound for what BufPack and BufUnPack 
+ * will assume.
  **/
-typedef warp_Int
-(*warp_PtFcnBufSize)(warp_App   app,               /**< user-defined _warp_App structure */
+typedef warp_int
+(*warp_ptfcnbufsize)(warp_App   app,               /**< user-defined _warp_App structure */
                      warp_Int  *size_ptr           /**< upper bound on vector size in bytes */
                      );      
 
 /**
- * Packs a vector u into a void * buffer for MPI
+ * this allows warp to send messages containing warp_Vectors.  This routine
+ * packs a vector _u_ into a _void \*  buffer_ for MPI.
  **/
-typedef warp_Int
-(*warp_PtFcnBufPack)(warp_App      app,            /**< user-defined _warp_App structure */
+typedef warp_int
+(*warp_ptfcnbufpack)(warp_App      app,            /**< user-defined _warp_App structure */
                      warp_Vector   u,              /**< vector to back into buffer */
                      void         *buffer          /**< output, MPI buffer containing u */
                      );
 /**
- * Unpack that buffer from void * to warp_Vector
+ * this allows warp to receive messages containing warp_Vectors.  This routine
+ * unpacks a _void * buffer_ from MPI into a warp_Vector.
  **/
-typedef warp_Int
-(*warp_PtFcnBufUnpack)(warp_App      app,          /**< user-defined _warp_App structure */
+typedef warp_int
+(*warp_ptfcnbufunpack)(warp_App      app,          /**< user-defined _warp_App structure */
                        void         *buffer,       /**< MPI Buffer to unpack and place in u_ptr */
                        warp_Vector  *u_ptr         /**< output, warp_Vector containing buffer's data */
                        );
 /**
- * Spatial coarsening (optional).  Allows the user to coarsen
+ * spatial coarsening (optional).  Allows the user to coarsen
  * when going from a fine time grid to a coarse time grid.
- * This function is called on every vector at each level, thus
- * you can coarsem the entire space time domain.
+ * this function is called on every vector at each level, thus
+ * you can coarsem the entire space time domain.  This action of 
+ * this function should match the @ref warp_PtFcnRefine function.
  **/
-typedef warp_Int
-(*warp_PtFcnCoarsen)(warp_App      app,         /**< user-defined _warp_App structure */
-                     warp_Real     tstart,      /**< time value for cu */                          
-                     warp_Real     f_tminus,    /**< time value for cu to the left on fine grid */ 
-                     warp_Real     f_tplus,     /**< time value for cu to the right on fine grid */
-                     warp_Real     c_tminus,    /**< time value for cu to the left on coarse grid */
-                     warp_Real     c_tplus,     /**< time value for cu to the right on coarse grid */
+typedef warp_int
+(*warp_ptfcncoarsen)(warp_App      app,         /**< user-defined _warp_App structure */
+                     warp_Real     tstart,      /**< time value for *cu* */                          
+                     warp_Real     f_tminus,    /**< time value for *cu* to the left on fine grid */ 
+                     warp_Real     f_tplus,     /**< time value for *cu* to the right on fine grid */
+                     warp_Real     c_tminus,    /**< time value for *cu* to the left on coarse grid */
+                     warp_Real     c_tplus,     /**< time value for *cu* to the right on coarse grid */
                      warp_Vector   fu,          /**< warp_Vector to refine*/                       
                      warp_Vector  *cu_ptr       /**< output, refined vector */    
                      );
 
 /**
- * Spatial refinement (optional). Allows the user to refine 
+ * spatial refinement (optional). Allows the user to refine 
  * when going from a coarse time grid to a fine time grid.  
- * This function is called on every vector at each level, thus
- * you can refine the entire space time domain.
+ * this function is called on every vector at each level, thus
+ * you can refine the entire space time domain. This action of 
+ * this function should match the @ref warp_PtFcnCoarsen function.
  **/
-typedef warp_Int
-(*warp_PtFcnRefine)(warp_App      app,          /**< user-defined _warp_App structure */
-                    warp_Real     tstart,       /**< time value for cu */                          
-                    warp_Real     f_tminus,     /**< time value for cu to the left on fine grid */ 
-                    warp_Real     f_tplus,      /**< time value for cu to the right on fine grid */
-                    warp_Real     c_tminus,     /**< time value for cu to the left on coarse grid */
-                    warp_Real     c_tplus,      /**< time value for cu to the right on coarse grid */
+typedef warp_int
+(*warp_ptfcnrefine)(warp_App      app,          /**< user-defined _warp_App structure */
+                    warp_Real     tstart,       /**< time value for *cu* */                          
+                    warp_Real     f_tminus,     /**< time value for *cu* to the left on fine grid */ 
+                    warp_Real     f_tplus,      /**< time value for *cu* to the right on fine grid */
+                    warp_Real     c_tminus,     /**< time value for *cu* to the left on coarse grid */
+                    warp_Real     c_tplus,      /**< time value for *cu* to the right on coarse grid */
                     warp_Vector   cu,           /**< warp_Vector to refine*/                       
                     warp_Vector  *fu_ptr        /**< output, refined vector */       
                     );
 /** @}*/
 
 /*--------------------------------------------------------------------------
- * User interface routines
+ * user interface routines
  *--------------------------------------------------------------------------*/
 /** \defgroup userinterface User interface routines
  *  
- *  These are interface routines to initialize and run Warp
+ *  these are interface routines to initialize and run Warp
  *
  *  @{
  */
 
-struct _warp_Core_struct;
+struct _warp_core_struct;
 /**
- * Points to the core structure defined in _warp.h 
+ * points to the core structure defined in _warp.h 
  **/
 typedef struct _warp_Core_struct *warp_Core;
 
 
 /**
  * Create a core object with the required initial data.\n
- * The output is the core_ptr pointing to the newly created warp_Core structure. 
+ * This core is used by Warp for internal data structures. 
+ * The output is *core_ptr* which points to the newly created 
+ * warp_Core structure. 
  **/
-warp_Int
-warp_Init(MPI_Comm              comm_world,  /**< Global communicator for space and time */
-          MPI_Comm              comm,        /**< Communicator for temporal dimension*/
-          warp_Real             tstart,      /**< start time */
-          warp_Real             tstop,       /**< End time*/
-          warp_Int              ntime,       /**< Initial number of temporal grid values*/
-          warp_App              app,         /**< User-defined _warp_App structure */
-          warp_PtFcnPhi         phi,         /**< User time stepping routine to advance state one time value*/
-          warp_PtFcnInit        init,        /**< Initialize a warp_Vector function on finest temporal grid*/
-          warp_PtFcnClone       clone,       /**< Clone a warp_Vector*/
-          warp_PtFcnFree        free,        /**< Free a temporal state warp_Vector*/
-          warp_PtFcnSum         sum,         /**< Compute vector sum of two temporal states*/
-          warp_PtFcnDot         dot,         /**< Compute dot product between two temporal states*/
-          warp_PtFcnWrite       write,       /**< *Writes* (file, screen..) upon completion. */
-          warp_PtFcnBufSize     bufsize,     /**< Computes size for MPI buffer for one */
-          warp_PtFcnBufPack     bufpack,     /**< Packs MPI buffer to contain one temporal state*/
-          warp_PtFcnBufUnpack   bufunpack,   /**< Unpacks MPI buffer containing one temporal state*/
-          warp_Core            *core_ptr     /**< Pointer to warp_Core (_warp_Core) struct*/   
+warp_int
+warp_init(mpi_comm              comm_world,  /**< Global communicator for space and time */
+          mpi_comm              comm,        /**< Communicator for temporal dimension*/
+          warp_real             tstart,      /**< start time */
+          warp_real             tstop,       /**< End time*/
+          warp_int              ntime,       /**< Initial number of temporal grid values*/
+          warp_app              app,         /**< User-defined _warp_App structure */
+          warp_ptFcnPhi         phi,         /**< User time stepping routine to advance a warp_Vector forward one step */
+          warp_ptFcnInit        init,        /**< Initialize a warp_Vector on the finest temporal grid*/
+          warp_ptFcnClone       clone,       /**< Clone a warp_Vector*/
+          warp_ptFcnFree        free,        /**< Free a warp_Vector*/
+          warp_ptFcnSum         sum,         /**< Compute vector sum of two warp_Vectors*/
+          warp_ptFcnDot         dot,         /**< Compute dot product between two warp_Vectors*/
+          warp_ptFcnWrite       write,       /**< Writes a warp_Vector to file, screen */
+          warp_ptFcnBufSize     bufsize,     /**< Computes size for MPI buffer for one warp_Vector */
+          warp_ptFcnBufPack     bufpack,     /**< Packs MPI buffer to contain one warp_Vector*/
+          warp_ptFcnBufUnpack   bufunpack,   /**< Unpacks MPI buffer into a warp_Vector */
+          warp_core            *core_ptr     /**< Pointer to warp_Core (_warp_Core) struct*/   
           );
 
 /**
@@ -270,22 +284,22 @@ warp_PrintStats(warp_Core  core           /**< warp_Core (_warp_Core) struct*/
                );
 
 /**
- * Set loose stopping tolerance for spatial solves on grid level
+ * Set loose stopping tolerance *loose_tol* for spatial solves on grid
  * *level* (level 0 is the finest grid).
  **/
 warp_Int
 warp_SetLoosexTol(warp_Core  core,        /**< warp_Core (_warp_Core) struct*/
-                  warp_Int   level,       /**< level to set loose_tol */
+                  warp_Int   level,       /**< level to set *loose_tol* */
                   warp_Real  loose_tol    /**< tolerance to set */
                   );
 
 /**
- * Set tight stopping tolerance for spatial solves on grid level
+ * Set tight stopping tolerance *tight_tol* for spatial solves on grid 
  * *level* (level 0 is the finest grid).
  **/
 warp_Int
 warp_SetTightxTol(warp_Core  core,        /**< warp_Core (_warp_Core) struct*/
-                  warp_Int   level,       /**< level to set tight_tol */
+                  warp_Int   level,       /**< level to set *tight_tol* */
                   warp_Real  tight_tol    /**< tolerance to set */
                   );
 
@@ -294,7 +308,7 @@ warp_SetTightxTol(warp_Core  core,        /**< warp_Core (_warp_Core) struct*/
  **/
 warp_Int
 warp_SetMaxLevels(warp_Core  core,        /**< warp_Core (_warp_Core) struct*/
-                  warp_Int   max_levels   /**< maximum levels */
+                  warp_Int   max_levels   /**< maximum levels to allow */
                   );
 
 /**
@@ -307,7 +321,7 @@ warp_SetMaxCoarse(warp_Core  core,        /**< warp_Core (_warp_Core) struct*/
 
 /**
  * Set absolute stopping tolerance.\n
- * **Recommended Option**
+ * **Recommended option over relative tolerance**
  **/
 warp_Int
 warp_SetAbsTol(warp_Core  core,           /**< warp_Core (_warp_Core) struct*/
@@ -326,24 +340,24 @@ warp_SetRelTol(warp_Core  core,           /**< warp_Core (_warp_Core) struct*/
                );
 
 /**
- * Set the number of relaxation sweeps *nrelax* on grid level *level*
+ * Set the number of relaxation sweeps *nrelax* on grid *level*
  * (level 0 is the finest grid).  The default is 1 on all levels.  To change the
- * default factor, use *level* = -1.  One sweep is a CF relaxation sweep.
+ * default factor, use *level = -1*.  One sweep is a CF relaxation sweep.
  **/
 warp_Int
 warp_SetNRelax(warp_Core  core,           /**< warp_Core (_warp_Core) struct*/           
-               warp_Int   level,          /**< level to set nrelax on */
-               warp_Int   nrelax          /**< number of relaxations to do on level */
+               warp_Int   level,          /**< *level* to set *nrelax* on */
+               warp_Int   nrelax          /**< number of relaxations to do on *level* */
                );
 
 /**
- * Set the coarsening factor *cfactor* on grid level *level* (level 0 is
+ * Set the coarsening factor *cfactor* on grid *level* (level 0 is
  * the finest grid).  The default factor is 2 on all levels.  To change the
- * default factor, use *level* = -1.
+ * default factor, use *level = -1*.
  **/
 warp_Int
 warp_SetCFactor(warp_Core  core,          /**< warp_Core (_warp_Core) struct*/
-                warp_Int   level,         /**< level to set coarsening factor on */
+                warp_Int   level,         /**< *level* to set coarsening factor on */
                 warp_Int   cfactor        /**< desired coarsening factor */
                 );
 
@@ -356,14 +370,14 @@ warp_SetMaxIter(warp_Core  core,          /**< warp_Core (_warp_Core) struct*/
                 );
 
 /**
- * Use FMG cycling.
+ * Once called, Warp will use FMG (i.e., F-cycles.
  **/
 warp_Int
 warp_SetFMG(warp_Core  core               /**< warp_Core (_warp_Core) struct*/
             );
 
 /**
- * Set number of V cycles to use at each FMG level (standard is 1)
+ * Set number of V-cycles to use at each FMG level (standard is 1)
  **/
 warp_Int
 warp_SetNFMGVcyc(warp_Core  core,         /**< warp_Core (_warp_Core) struct*/
@@ -391,12 +405,12 @@ warp_SetSpatialRefine(warp_Core  core,             /**< warp_Core (_warp_Core) s
 
 /**
  * Set print level for warp.  This controls how much information is 
- * printed to standard out.
+ * printed to the Warp print file (@ref warp_SetPrintFile).
  * 
- * Level 0: no output
- * Level 1: print typical information like a residual history, 
+ * - Level 0: no output
+ * - Level 1: print typical information like a residual history, 
  *    number of levels in the Warp hierarchy, and so on.
- * Level 2: level 1 output, plus debug level output.
+ * - Level 2: level 1 output, plus debug level output.
  * 
  * Default is level 1.
  **/
@@ -407,7 +421,7 @@ warp_SetPrintLevel(warp_Core  core,          /**< warp_Core (_warp_Core) struct*
 
 /**
  * Set output file for runtime print messages.  Level of printing is 
- * controlled by warp_SetPrintLevel.  Default is stdout.
+ * controlled by @ref warp_SetPrintLevel.  Default is stdout.
  **/
 warp_Int
 warp_SetPrintFile(warp_Core   core,             /**< warp_Core (_warp_Core) struct*/
@@ -418,10 +432,10 @@ warp_SetPrintFile(warp_Core   core,             /**< warp_Core (_warp_Core) stru
  * Set write level for warp.  This controls how often the user's
  * write routine is called.
  * 
- * Level 0:  Never call the user's write routine
- * Level 1:  Only call the user's write routine after Warp is finished
- * Level 2:  Call the user's write routine every iteration in _warp_FRestrict(),
- *   which is during the down-cycle part of a Warp iteration 
+ * - Level 0:  Never call the user's write routine
+ * - Level 1:  Only call the user's write routine after Warp is finished
+ * - Level 2:  Call the user's write routine every iteration and on every level.
+ *             This is during @ref _warp_FRestrict, during the down-cycle part of a Warp iteration. 
  * 
  * Default is level 1.
  **/
@@ -431,8 +445,10 @@ warp_SetWriteLevel(warp_Core  core,          /**< warp_Core (_warp_Core) struct*
                    );
 
 /**
- * Split MPI commworld into comm_x and comm_t, the 
- * spatial and temporal communicators
+ * Split MPI commworld into *comm_x* and *comm_t*, the 
+ * spatial and temporal communicators.  The total number of processors
+ * will equal Px*Pt, there Px is the number of procs in space, and Pt is 
+ * the number of procs in time.
  **/
 warp_Int
 warp_SplitCommworld(const MPI_Comm  *comm_world,  /**< Global communicator to split */
@@ -442,7 +458,7 @@ warp_SplitCommworld(const MPI_Comm  *comm_world,  /**< Global communicator to sp
                           );
 
 /**
- * Return the residual for the current status object
+ * Return the residual for the current status object.
  **/
 warp_Int
 warp_GetStatusResidual(warp_Status  status,     /**< structure containing current simulation info */
@@ -450,7 +466,7 @@ warp_GetStatusResidual(warp_Status  status,     /**< structure containing curren
                        );
 
 /**
- * Return the iteration for the current status object
+ * Return the iteration for the current status object.
  **/
 warp_Int
 warp_GetStatusIter(warp_Status  status,         /**< structure containing current simulation info */
@@ -458,7 +474,7 @@ warp_GetStatusIter(warp_Status  status,         /**< structure containing curren
                    );
 
 /**
- * Return the warp level for the current status object
+ * Return the warp level for the current status object.
  **/
 warp_Int
 warp_GetStatusLevel(warp_Status  status,        /**< structure containing current simulation info */
@@ -466,7 +482,10 @@ warp_GetStatusLevel(warp_Status  status,        /**< structure containing curren
                     );
 
 /**
- * Return whether warp is done for the current status object
+ * Return whether warp is done for the current status object\n
+ * *done_ptr = 1* indicates that this is the last call to Write, because
+ * Warp has stopped iterating (either maxiter has been reached, or the tolerance
+ * has been met).
  **/
 warp_Int
 warp_GetStatusDone(warp_Status  status,         /**< structure containing current simulation info */
@@ -474,7 +493,7 @@ warp_GetStatusDone(warp_Status  status,         /**< structure containing curren
                    );
 
 /**
- * After Drive() finishes, this returns the number of iterations taken
+ * After Drive() finishes, this returns the number of iterations taken.
  **/
 warp_Int
 warp_GetNumIter(warp_Core  core,          /**< warp_Core (_warp_Core) struct*/
@@ -483,7 +502,7 @@ warp_GetNumIter(warp_Core  core,          /**< warp_Core (_warp_Core) struct*/
 
 
 /**
- * After Drive() finishes, this returns the last measured residual norm
+ * After Drive() finishes, this returns the last measured residual norm.
  **/
 warp_Int
 warp_GetRNorm(warp_Core  core,            /**< warp_Core (_warp_Core) struct*/

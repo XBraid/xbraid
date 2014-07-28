@@ -1,69 +1,83 @@
-## Compiling the examples
+## Compiling and running the examples
 
 - Type
 
-   drive-0* -help
+         drive-0* -help
 
-for instructions on how to run any driver
+   for instructions on how to run any driver
 
 -  To run the examples
    
-    mpirun -np 4 drive-*  [args]
+         mpirun -np 4 drive-*  [args]
 
 
-- drive-01 is the simplest example.  It implements a scalar ODE and can be compiled and run
-with no outside dependencies.
+1. drive-01 is the simplest example.  It implements a scalar ODE and can be
+  compiled and run with no outside dependencies.
 
-- drive-02 implements the 2D heat equation on a regular grid.  You must have
-[hypre](https://computation-rnd.llnl.gov/linear_solvers/software.php)
-installed and these variables in the Makefile set correctly
+2. drive-02 implements the 2D heat equation on a regular grid.  You must have
+   [hypre](https://computation-rnd.llnl.gov/linear_solvers/software.php)
+   installed and these variables in examples/Makefile set correctly
     
-    HYPRE_DIR = ../../linear_solvers/hypre
-    HYPRE_FLAGS = -I$(HYPRE_DIR)/include
-    HYPRE_LIB = -L$(HYPRE_DIR)/lib -lHYPRE
+          HYPRE_DIR = ../../linear_solvers/hypre
+          HYPRE_FLAGS = -I$(HYPRE_DIR)/include
+          HYPRE_LIB = -L$(HYPRE_DIR)/lib -lHYPRE
 
 
-- drive-03 implements the 3D heat equation on a regular grid, and assumes 
-hypre is installed just like drive-02.
+3. drive-03 implements the 3D heat equation on a regular grid, and assumes 
+   [hypre](https://computation-rnd.llnl.gov/linear_solvers/software.php) 
+   is installed just like drive-02.
 
-- drive-05 implements the 2D heat equation on a regular grid, but it
-uses with spatial coarsening.  This allows you to use explicit time stepping
-on each Warp level, regardless of time step size.  It assumes 
-hypre is installed just like drive-02.
+4. drive-05 implements the 2D heat equation on a regular grid, but it
+   uses spatial coarsening.  This allows you to use explicit time stepping
+   on each Warp level, regardless of time step size.  It assumes 
+   [hypre](https://computation-rnd.llnl.gov/linear_solvers/software.php) 
+   is installed just like drive-02.
 
-- drive-04 is sophisticated test bed for various PDEs, mostly parabolic.  It relies
-on the 
-[mfem](https://code.google.com/p/mfem/)
-package to create general finite element discretizations for the spatial problem.
-Other packages must be installed in this order.
-  + Unpack and install [Metis](http://glaros.dtc.umn.edu/gkhome/metis/metis/overview)
-  + Unpack and install hypre
-  + Unpack and install mfem.  Make the serial version of mfem first by only typing ``make``.
-    Then make sure to set these variables correctly in the Makefile
+5. drive-04 is a sophisticated test bed for various PDEs, mostly parabolic.  It relies
+   on the [mfem](https://code.google.com/p/mfem/)
+   package to create general finite element discretizations for the spatial problem.
+   Other packages must be installed in this order.
+     + Unpack and install [Metis](http://glaros.dtc.umn.edu/gkhome/metis/metis/overview)
+     + Unpack and install 
+       [hypre](https://computation-rnd.llnl.gov/linear_solvers/software.php) 
+     + Unpack and install 
+       [mfem.](https://code.google.com/p/mfem/)
+       Make the serial version of mfem first by only typing ``make``.
+       Then make sure to set these variables correctly in the mfem Makefile:
        
-       USE_METIS_5 = YES
-       HYPRE_DIR  = where_ever_linear_solvers_is/hypre 
+             USE_METIS_5 = YES
+             HYPRE_DIR  = where_ever_linear_solvers_is/hypre 
    
-  + Make [GLVIS](https://code.google.com/p/glvis/), which needs serial mfem.
-  + Go back to mfem 
-  
-         make clean
-         make parallel
+     + Make [GLVIS](https://code.google.com/p/glvis/), which needs serial mfem.
+       Set these variables in the glvis makefile
+            
+            MFEM_DIR   = mfem_location
+            MFEM_LIB   = -L$(MFEM_DIR) -lmfem
 
-  + Got to warp/examples and set these Makefile variables, and them ``make drive-04``.
+     + Go back to the mfem directory and type
+     
+            make clean
+            make parallel
 
-         METIS_DIR = ../../metis-5.1.0/lib
-         MFEM_DIR = ../../mfem
-         MFEM_FLAGS = -I$(MFEM_DIR)
-         MFEM_LIB = -L$(MFEM_DIR) -lmfem -L$(METIS_DIR) -lmetis
+     + Go to warp/examples and set these Makefile variables, 
 
-- To run drive-04 and glvis, open two windows.  In one, start a glvis session
+            METIS_DIR = ../../metis-5.1.0/lib
+            MFEM_DIR = ../../mfem
+            MFEM_FLAGS = -I$(MFEM_DIR)
+            MFEM_LIB = -L$(MFEM_DIR) -lmfem -L$(METIS_DIR) -lmetis
+       
+       then type
+            
+            make drive-04
+
+     + To run drive-04 and glvis, open two windows.  In one, start a glvis session
       
-         ./glvis
+               ./glvis
   
-  Then, in the other window, run drive-04
+         Then, in the other window, run drive-04
       
-         mpirun -np ... drive-04 [args]
-
+               mpirun -np ... drive-04 [args]
+         
+         Glvis will listen on a port to which drive-04 will dump visualization information.
 
 

@@ -28,7 +28,7 @@
   where you can set up an option for your machine to define simple
   stuff like
 
-    CC = mpicc
-    MPICC = mpicc
-    MPICXX = mpiCC
-    LFLAGS = -lm
+       CC = mpicc
+       MPICC = mpicc
+       MPICXX = mpiCC
+       LFLAGS = -lm
