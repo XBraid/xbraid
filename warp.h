@@ -150,7 +150,7 @@ typedef warp_Int
  * current warp level and iteration.  This allows for even more detailed tracking of the
  * simulation. 
  **/
-typedef warp_int
+typedef warp_Int
 (*warp_PtFcnWrite)(warp_App      app,              /**< user-defined _warp_App structure */
                    warp_Real     t,                /**< time value for *u* */
                    warp_Status   status,           /**< can be querried for info like Warp Iteration */
@@ -162,7 +162,7 @@ typedef warp_int
  * an arbitrary warp_Vector.  This size must be an upper bound for what BufPack and BufUnPack 
  * will assume.
  **/
-typedef warp_int
+typedef warp_Int
 (*warp_PtFcnBufSize)(warp_App   app,               /**< user-defined _warp_App structure */
                      warp_Int  *size_ptr           /**< upper bound on vector size in bytes */
                      );      
@@ -171,7 +171,7 @@ typedef warp_int
  * This allows warp to send messages containing warp_Vectors.  This routine
  * packs a vector _u_ into a _void \*  buffer_ for MPI.
  **/
-typedef warp_int
+typedef warp_Int
 (*warp_PtFcnBufPack)(warp_App      app,            /**< user-defined _warp_App structure */
                      warp_Vector   u,              /**< vector to back into buffer */
                      void         *buffer          /**< output, MPI buffer containing u */
@@ -180,7 +180,7 @@ typedef warp_int
  * This allows warp to receive messages containing warp_Vectors.  This routine
  * unpacks a _void * buffer_ from MPI into a warp_Vector.
  **/
-typedef warp_int
+typedef warp_Int
 (*warp_PtFcnBufUnpack)(warp_App      app,          /**< user-defined _warp_App structure */
                        void         *buffer,       /**< MPI Buffer to unpack and place in u_ptr */
                        warp_Vector  *u_ptr         /**< output, warp_Vector containing buffer's data */
@@ -192,7 +192,7 @@ typedef warp_int
  * you can coarsem the entire space time domain.  The action of 
  * this function should match the @ref warp_PtFcnRefine function.
  **/
-typedef warp_int
+typedef warp_Int
 (*warp_PtFcnCoarsen)(warp_App      app,         /**< user-defined _warp_App structure */
                      warp_Real     tstart,      /**< time value for *cu* */                          
                      warp_Real     f_tminus,    /**< time value for *cu* to the left on fine grid */ 
@@ -210,7 +210,7 @@ typedef warp_int
  * you can refine the entire space time domain. The action of 
  * this function should match the @ref warp_PtFcnCoarsen function.
  **/
-typedef warp_int
+typedef warp_Int
 (*warp_PtFcnRefine)(warp_App      app,          /**< user-defined _warp_App structure */
                     warp_Real     tstart,       /**< time value for *cu* */                          
                     warp_Real     f_tminus,     /**< time value for *cu* to the left on fine grid */ 
@@ -223,7 +223,7 @@ typedef warp_int
 /** @}*/
 
 /*--------------------------------------------------------------------------
- * user interface routines
+ * User Interface Routines
  *--------------------------------------------------------------------------*/
 /** \defgroup userinterface User interface routines
  *  
@@ -232,7 +232,7 @@ typedef warp_int
  *  @{
  */
 
-struct _warp_core_struct;
+struct _warp_Core_struct;
 /**
  * points to the core structure defined in _warp.h 
  **/
@@ -245,24 +245,24 @@ typedef struct _warp_Core_struct *warp_Core;
  * The output is *core_ptr* which points to the newly created 
  * warp_Core structure. 
  **/
-warp_int
-warp_init(mpi_comm              comm_world,  /**< Global communicator for space and time */
-          mpi_comm              comm,        /**< Communicator for temporal dimension*/
-          warp_real             tstart,      /**< start time */
-          warp_real             tstop,       /**< End time*/
-          warp_int              ntime,       /**< Initial number of temporal grid values*/
-          warp_app              app,         /**< User-defined _warp_App structure */
-          warp_ptFcnPhi         phi,         /**< User time stepping routine to advance a warp_Vector forward one step */
-          warp_ptFcnInit        init,        /**< Initialize a warp_Vector on the finest temporal grid*/
-          warp_ptFcnClone       clone,       /**< Clone a warp_Vector*/
-          warp_ptFcnFree        free,        /**< Free a warp_Vector*/
-          warp_ptFcnSum         sum,         /**< Compute vector sum of two warp_Vectors*/
-          warp_ptFcnDot         dot,         /**< Compute dot product between two warp_Vectors*/
-          warp_ptFcnWrite       write,       /**< Writes a warp_Vector to file, screen */
-          warp_ptFcnBufSize     bufsize,     /**< Computes size for MPI buffer for one warp_Vector */
-          warp_ptFcnBufPack     bufpack,     /**< Packs MPI buffer to contain one warp_Vector*/
-          warp_ptFcnBufUnpack   bufunpack,   /**< Unpacks MPI buffer into a warp_Vector */
-          warp_core            *core_ptr     /**< Pointer to warp_Core (_warp_Core) struct*/   
+warp_Int
+warp_Init(MPI_Comm              comm_world,  /**< Global communicator for space and time */
+          MPI_Comm              comm,        /**< Communicator for temporal dimension*/
+          warp_Real             tstart,      /**< start time */
+          warp_Real             tstop,       /**< End time*/
+          warp_Int              ntime,       /**< Initial number of temporal grid values*/
+          warp_App              app,         /**< User-defined _warp_App structure */
+          warp_PtFcnPhi         phi,         /**< User time stepping routine to advance a warp_Vector forward one step */
+          warp_PtFcnInit        init,        /**< Initialize a warp_Vector on the finest temporal grid*/
+          warp_PtFcnClone       clone,       /**< Clone a warp_Vector*/
+          warp_PtFcnFree        free,        /**< Free a warp_Vector*/
+          warp_PtFcnSum         sum,         /**< Compute vector sum of two warp_Vectors*/
+          warp_PtFcnDot         dot,         /**< Compute dot product between two warp_Vectors*/
+          warp_PtFcnWrite       write,       /**< Writes a warp_Vector to file, screen */
+          warp_PtFcnBufSize     bufsize,     /**< Computes size for MPI buffer for one warp_Vector */
+          warp_PtFcnBufPack     bufpack,     /**< Packs MPI buffer to contain one warp_Vector*/
+          warp_PtFcnBufUnpack   bufunpack,   /**< Unpacks MPI buffer into a warp_Vector */
+          warp_Core            *core_ptr     /**< Pointer to warp_Core (_warp_Core) struct*/   
           );
 
 /**
