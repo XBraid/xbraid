@@ -1,5 +1,14 @@
 ## Building Warp
-
+<!--
+ - Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
+ - Produced at the Lawrence Livermore National Laboratory.
+ - This file is part of WARP.  See file COPYRIGHT for details.
+ -
+ - WARP is free software; you can redistribute it and/or modify it under the
+ - terms of the GNU Lesser General Public License (as published by the Free
+ - Software Foundation) version 2.1 dated February 1999.
+ -->
+ 
 -  To specify the compilers, flags and options for your machine, edit
    makefile.inc.  For now, we keep it simple and avoid using configure or
    cmake.

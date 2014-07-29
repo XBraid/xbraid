@@ -1,3 +1,13 @@
+<!--
+ - Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
+ - Produced at the Lawrence Livermore National Laboratory.
+ - This file is part of WARP.  See file COPYRIGHT for details.
+ -
+ - WARP is free software; you can redistribute it and/or modify it under the
+ - terms of the GNU Lesser General Public License (as published by the Free
+ - Software Foundation) version 2.1 dated February 1999.
+ -->
+ 
 This package implements an optimal-scaling multigrid solver for the linear
 systems that arise from the discretization of problems with evolutionary
 behavior. Typically, solution algorithms for evolution equations are based on a

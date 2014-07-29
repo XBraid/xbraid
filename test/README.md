@@ -1,4 +1,13 @@
 ## Regression Testing
+<!--
+ - Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
+ - Produced at the Lawrence Livermore National Laboratory.
+ - This file is part of WARP.  See file COPYRIGHT for details.
+ -
+ - WARP is free software; you can redistribute it and/or modify it under the
+ - terms of the GNU Lesser General Public License (as published by the Free
+ - Software Foundation) version 2.1 dated February 1999.
+ -->
 
 ### Overview
 
@@ -8,21 +17,23 @@
    `testscript.sh` passes if `testscript.err` is empty (nothing is written to standard
    error).
 
--  Basic instructions:
+-  Basic instructions:  run a test with a command like
    
          $ ./test.sh diffusion2D.sh
 
    Then, see if `diffusion2D.err` is of size 0.  If it is not, look at it's contents
    to see which test failed.
 
--  To add a new regression test:
-   Create a new low level script like `diffusion2D.sh` and then call it from a machine
-   script at level 2.
+-  To add a new regression test, create a new lowest level script like
+   `diffusion2D.sh` and then call it from a machine script at level 2.
 
--  Regression tests should be run before pushing code.
+-  Regression tests should be run before pushing code.  It is recommended to run the 
+   basic (lowest level) tests like `diffusion2d.sh` or machine test like `machine-tux.sh`
 
 
 ### Lowest Level Test Scripts 
+
+As an example, here we look at one of the lowest level tests, the diffusion2d test.\n
 
 Files used:
 -  `test.sh`
@@ -100,7 +111,7 @@ Begin Test` as a delimiter) and these new files are placed in
 
 An individual test has passed if `std.err.num` is empty.  The file
 `std.err.num` contains a diff between `diffusion2D.save.num` and `std.out.num`
-(ignoring whitespace and the delimiter `# Begin Test`).
+(the diff ignores whitespace and the delimiter `# Begin Test`).
 
 Last in the directy where you ran `./test.sh diffusion2d.sh`, the files 
       
@@ -113,6 +124,9 @@ non-empty, representing failed tests.
 
 
 ### Level 2 Scripts
+
+As an example, here we look at one of the Level 2 tests, the machine-tux test that Jacob
+runs. \n
 
 Files used:
 -  `machine-tux.sh`
@@ -143,7 +157,7 @@ has passed.
 
 To begin testing on a new machine, like vulcan, add a new machine script
 similar to `machine-tux.sh` and change `autotest.sh` to recognize and run the new
-machine.  To then use `autotest.sh` with the machine script, you'll have to
+machine test.  To then use `autotest.sh` with the machine script, you'll have to
 set up a passwordless connection from the new machine to
 
       /usr/casc/hypre/warp/testing
@@ -151,12 +165,16 @@ set up a passwordless connection from the new machine to
 
 ### Level 3 Script
 
+Here we look at the highest level, where `autotest.sh` runs all of the level 2 
+machine tests and emails out the results. \n 
+
 Files used:
 -  `autotest.sh`
 
 Output:
 -  `test/autotest_finished`
 -  `/usr/casc/hypre/warp/testing/AUTOTEST-20**.**.**-Day` 
+- Email to recipients listed in `autotest.sh`
 
 At the highest level sits `autotest.sh` and is called automatically as a cronjob.
 If you just want to check to see if you've broken anything with a commit, just use lower
@@ -190,7 +208,9 @@ There are four steps to running autotest.
          $ ./autotest.sh -remote-copy
 
    will copy `/test/autotest_finished/*` to a time-stamped directory
-   such as  `/usr/casc/hypre/warp/testing/AUTOTEST-2013.11.18-Mon`
+   such as\n  `/usr/casc/hypre/warp/testing/AUTOTEST-2013.11.18-Mon` \n
+
+   Alternatively,
 
          $ ./autotesh.sh -remote-copy tux343
    
@@ -202,18 +222,19 @@ There are four steps to running autotest.
 
          $ ./autotest.sh -summary-email
 
-   will email everyone listed in in `$email_list` in `autotesh.sh`.
+   will email everyone listed in the `$email_list` (an `autotest.sh` variable) 
 
 
 
 ### Cronfile 
 
-To add entries to your crontab, put your new cronjob lines in cronfile. 
-Then see what you already have in your crontab file with
+To add entries to your crontab, First, put your new cronjob lines into 
+`cronfile`.  Then see what you already have in your crontab file with
 
       $ crontab -l
 
 Next, append to cronfile whatever you already have 
+
       $ crontab -l >> cronfile
 
 Finally, tell crontab to use your cronfile

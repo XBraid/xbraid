@@ -43,7 +43,10 @@ typedef double warp_Real;
  *--------------------------------------------------------------------------*/
 /** \defgroup userwritten User-written routines
  *  
- *  These are all user-written data structures and routines 
+ *  These are all user-written data structures and routines.  There are two
+ *  data structures (@ref warp_App and @ref warp_Vector) for the user to define.
+ *  And, there are a variety of function interfaces (defined through function pointer
+ *  declarations) that the user must implement.
  *
  *  @{
  */
@@ -148,49 +151,49 @@ typedef warp_Int
  * simulation. 
  **/
 typedef warp_int
-(*warp_ptfcnwrite)(warp_App      app,              /**< user-defined _warp_App structure */
+(*warp_PtFcnWrite)(warp_App      app,              /**< user-defined _warp_App structure */
                    warp_Real     t,                /**< time value for *u* */
                    warp_Status   status,           /**< can be querried for info like Warp Iteration */
                    warp_Vector   u                 /**< vector to write */
                    );
 
 /**
- * this routine tells Warp message sizes by computing an upper bound in bytes for 
+ * This routine tells Warp message sizes by computing an upper bound in bytes for 
  * an arbitrary warp_Vector.  This size must be an upper bound for what BufPack and BufUnPack 
  * will assume.
  **/
 typedef warp_int
-(*warp_ptfcnbufsize)(warp_App   app,               /**< user-defined _warp_App structure */
+(*warp_PtFcnBufSize)(warp_App   app,               /**< user-defined _warp_App structure */
                      warp_Int  *size_ptr           /**< upper bound on vector size in bytes */
                      );      
 
 /**
- * this allows warp to send messages containing warp_Vectors.  This routine
+ * This allows warp to send messages containing warp_Vectors.  This routine
  * packs a vector _u_ into a _void \*  buffer_ for MPI.
  **/
 typedef warp_int
-(*warp_ptfcnbufpack)(warp_App      app,            /**< user-defined _warp_App structure */
+(*warp_PtFcnBufPack)(warp_App      app,            /**< user-defined _warp_App structure */
                      warp_Vector   u,              /**< vector to back into buffer */
                      void         *buffer          /**< output, MPI buffer containing u */
                      );
 /**
- * this allows warp to receive messages containing warp_Vectors.  This routine
+ * This allows warp to receive messages containing warp_Vectors.  This routine
  * unpacks a _void * buffer_ from MPI into a warp_Vector.
  **/
 typedef warp_int
-(*warp_ptfcnbufunpack)(warp_App      app,          /**< user-defined _warp_App structure */
+(*warp_PtFcnBufUnpack)(warp_App      app,          /**< user-defined _warp_App structure */
                        void         *buffer,       /**< MPI Buffer to unpack and place in u_ptr */
                        warp_Vector  *u_ptr         /**< output, warp_Vector containing buffer's data */
                        );
 /**
  * spatial coarsening (optional).  Allows the user to coarsen
  * when going from a fine time grid to a coarse time grid.
- * this function is called on every vector at each level, thus
- * you can coarsem the entire space time domain.  This action of 
+ * This function is called on every vector at each level, thus
+ * you can coarsem the entire space time domain.  The action of 
  * this function should match the @ref warp_PtFcnRefine function.
  **/
 typedef warp_int
-(*warp_ptfcncoarsen)(warp_App      app,         /**< user-defined _warp_App structure */
+(*warp_PtFcnCoarsen)(warp_App      app,         /**< user-defined _warp_App structure */
                      warp_Real     tstart,      /**< time value for *cu* */                          
                      warp_Real     f_tminus,    /**< time value for *cu* to the left on fine grid */ 
                      warp_Real     f_tplus,     /**< time value for *cu* to the right on fine grid */
@@ -203,12 +206,12 @@ typedef warp_int
 /**
  * spatial refinement (optional). Allows the user to refine 
  * when going from a coarse time grid to a fine time grid.  
- * this function is called on every vector at each level, thus
- * you can refine the entire space time domain. This action of 
+ * This function is called on every vector at each level, thus
+ * you can refine the entire space time domain. The action of 
  * this function should match the @ref warp_PtFcnCoarsen function.
  **/
 typedef warp_int
-(*warp_ptfcnrefine)(warp_App      app,          /**< user-defined _warp_App structure */
+(*warp_PtFcnRefine)(warp_App      app,          /**< user-defined _warp_App structure */
                     warp_Real     tstart,       /**< time value for *cu* */                          
                     warp_Real     f_tminus,     /**< time value for *cu* to the left on fine grid */ 
                     warp_Real     f_tplus,      /**< time value for *cu* to the right on fine grid */

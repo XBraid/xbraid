@@ -1,4 +1,13 @@
 ## Using Doxygen
+<!--
+ - Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
+ - Produced at the Lawrence Livermore National Laboratory.
+ - This file is part of WARP.  See file COPYRIGHT for details.
+ -
+ - WARP is free software; you can redistribute it and/or modify it under the
+ - terms of the GNU Lesser General Public License (as published by the Free
+ - Software Foundation) version 2.1 dated February 1999.
+ -->
 
 To build the documentation, doxygen must be version 1.8 or greater.
 Warp documentation uses a 
@@ -44,21 +53,26 @@ or build doxygen from
    http://www.stack.nl/~dimitri/doxygen/manual/index.html
 
 ### Warp Doxygen details
-The latex manuals are built according to 
+
+The user and developer manuals are ultimately produced by Latex.  The formatting 
+of the manuals is configured according to the following.
 -  docs/local_doxygen.sty           
   + Latex style file used
 -  docs/user_manual_header.tex      
   + User manual title page and header info
 -  docs/developer_manual_header.tex
   + Developer manual title page and header info
--  filename.md                      
-  + Extra material in markdown format, like Abstract.md and Introduction.md
+-  *.md                      
+  + Any file ending in .md is extra documentation in markdown format, 
+    like Introduction.md or the various Readme.md files in each directory.  
+    This material can be read in plain-text or when it's compiled by Doxygen and Latex.
 -  docs/user_manual.conf             
   + Doxygen configure file for the user manual
-  + The FILE_NAMES tag filters to only include the user interface routines in warp.h
+  + The FILE_NAMES tag is a filter to only include the user interface routines in warp.h
   + The INPUT tag orders the processing of the files and hence the section ordering
 -  docs/reference_manual.conf       
-  + Same as user_manual.conf, out the FILE_NAMES tag doesn't exclude anything
+  + Same as user_manual.conf, but the FILE_NAMES tag does not exclude any 
+    file from processing.
 - docs/img                         
   + Contains the images
 
@@ -66,7 +80,7 @@ The latex manuals are built according to
   
          $ doxygen -w latex header.tex footer.tex doxygen.sty doxy.conf
 
-   The .conf file must then be changed to use the new header file
+   If this is done, then the .conf file must be changed to use the new header file
    and to copy the local_doxygen.sty file to the latex directory.
 
 

@@ -1,14 +1,23 @@
 ## Compiling and running the examples
+<!--
+ - Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
+ - Produced at the Lawrence Livermore National Laboratory.
+ - This file is part of WARP.  See file COPYRIGHT for details.
+ -
+ - WARP is free software; you can redistribute it and/or modify it under the
+ - terms of the GNU Lesser General Public License (as published by the Free
+ - Software Foundation) version 2.1 dated February 1999.
+ -->
 
-- Type
+Type
 
-         drive-0* -help
+      drive-0* -help
 
-   for instructions on how to run any driver
+for instructions on how to run any driver.
 
--  To run the examples
+To run the examples, type
    
-         mpirun -np 4 drive-*  [args]
+      mpirun -np 4 drive-*  [args]
 
 
 1. drive-01 is the simplest example.  It implements a scalar ODE and can be

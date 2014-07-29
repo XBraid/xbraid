@@ -22,6 +22,11 @@
 
 #include "_warp.h"
 
+/**
+ * Project an interval onto a strided index space that contains the index
+ * 'index' and has stride 'stride'.  An empty projection is represented by
+ * ilower > iupper.
+ **/
 warp_Int
 _warp_ProjectInterval( warp_Int   ilower,
                        warp_Int   iupper,
@@ -30,6 +35,10 @@ _warp_ProjectInterval( warp_Int   ilower,
                        warp_Int  *pilower,
                        warp_Int  *piupper );
 
+/**
+ * Determine the accuracy used for the spatial solves based on the ratio of
+ * the current residual norm and the stopping tolerance. 
+ **/
 warp_Int
 _warp_SetAccuracy( warp_Real   rnorm,
                    warp_Real   loose_tol,
@@ -38,6 +47,14 @@ _warp_SetAccuracy( warp_Real   rnorm,
                    warp_Real   tol,
                    warp_Real  *paccuracy );
 
+/**
+ * If set, print to @ref _warp_printfile and then flush.  
+ * Else print to standard out.\n
+ *
+ * The string *format* can be multiple parameters
+ * in the standard * C-format, like\n
+ * `` format = '%1.2e is a format string', 1.24 ``
+ **/
 warp_Int
 _warp_printf( const char *format, ...);
 
@@ -46,9 +63,9 @@ _warp_printf( const char *format, ...);
  * of information in parallel.  Currently, only 
  * myid = 0 prints, but this can be updated as needs change.
  *
- * Concatenate string1 and string2, print to file,
- * and then flush the file stream.  string1 + string2
- * must be less than 255 characters.
+ * The string *message* is printed and can be multiple parameters
+ * in the standard * C-format, like\n
+ * `` message = '%1.2e is a format string', 1.24 ``
  **/
 warp_Int
 _warp_ParFprintfFlush(FILE * file, 

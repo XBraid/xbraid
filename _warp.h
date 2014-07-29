@@ -86,9 +86,12 @@ typedef struct
 typedef struct
 {
    warp_Int     level;              /**< Level that grid is on */
-   warp_Int     ilower, iupper;     /**< smallest and largest time indices at this level*/
-   warp_Int     clower, cupper;     /**< smallest C point index, largest C point index */
-   warp_Int     cfactor, ncpoints;  /**< coarsening factor and number of C points */
+   warp_Int     ilower;             /**< smallest time index at this level*/
+   warp_Int     iupper;             /**< largest time index at this level*/
+   warp_Int     clower;             /**< smallest C point index */
+   warp_Int     cupper;             /**< largest C point index */
+   warp_Int     cfactor;            /**< coarsening factor */
+   warp_Int     ncpoints;           /**< number of C points */
 
    warp_Vector *ua;                 /**< unknown vectors            (C-points only)*/
    warp_Real   *ta;                 /**< time values                (all points) */
@@ -100,11 +103,10 @@ typedef struct
    _warp_CommHandle *recv_handle;   /**<  Handle for nonblocking receives of warp_Vectors */
    _warp_CommHandle *send_handle;   /**<  Handle for nonblocking sends of warp_Vectors */
 
-   /* pointers to the original memory allocation for ua, ta, va, and wa */
-   warp_Vector *ua_alloc;
-   warp_Real   *ta_alloc;
-   warp_Vector *va_alloc;
-   warp_Vector *wa_alloc;
+   warp_Vector *ua_alloc;           /**< original memory allocation for ua */
+   warp_Real   *ta_alloc;           /**< original memory allocation for ta */
+   warp_Vector *va_alloc;           /**< original memory allocation for va */
+   warp_Vector *wa_alloc;           /**< original memory allocation for wa */
 
 } _warp_Grid;
 
@@ -123,7 +125,7 @@ typedef struct _warp_Core_struct
    warp_App              app;          /**< application data for the user */
    
    warp_PtFcnPhi         phi;          /**< apply phi function */
-   warp_PtFcnInit        init;         /**< return an initial solution vector */
+   warp_PtFcnInit        init;         /**< return an initialized warp_Vector */
    warp_PtFcnClone       clone;        /**< clone a vector */
    warp_PtFcnFree        free;         /**< free up a vector */
    warp_PtFcnSum         sum;          /**< vector sum */
@@ -164,29 +166,60 @@ typedef struct _warp_Core_struct
 
 } _warp_Core;
 
-/* Accessor macros */
+/*--------------------------------------------------------------------------
+ * Accessor macros 
+ *--------------------------------------------------------------------------*/
 
+/** 
+ * Accessor for _warp_CommHandle attributes 
+ **/
 #define _warp_CommHandleElt(handle, elt)  ((handle) -> elt)
 
+/**
+ * Accessor for _warp_Grid attributes 
+ **/
 #define _warp_GridElt(grid, elt)  ((grid) -> elt)
 
+/**
+ * Accessor for _warp_Status attributes 
+ **/
 #define _warp_StatusElt(status, elt) ( (status) -> elt )
+
+/** 
+ * Accessor for _warp_Core attributes 
+ **/
 #define _warp_CoreElt(core, elt)     (  (core)  -> elt )
+
+/** 
+ * Accessor for _warp_Core functions 
+ **/
 #define _warp_CoreFcn(core, fcn)     (*((core)  -> fcn))
 
 /*--------------------------------------------------------------------------
  * Memory allocation macros
  *--------------------------------------------------------------------------*/
 
+/** 
+ * Allocation macro 
+ **/
 #define _warp_TAlloc(type, count) \
 ( (type *)malloc((size_t)(sizeof(type) * (count))) )
 
+/** 
+ * Allocation macro 
+ **/
 #define _warp_CTAlloc(type, count) \
 ( (type *)calloc((size_t)(count), (size_t)sizeof(type)) )
 
+/** 
+ * Re-allocation macro 
+ **/
 #define _warp_TReAlloc(ptr, type, count) \
 ( (type *)realloc((char *)ptr, (size_t)(sizeof(type) * (count))) )
 
+/** 
+ * Free memory macro 
+ **/
 #define _warp_TFree(ptr) \
 ( free((char *)ptr), ptr = NULL )
 
@@ -194,24 +227,48 @@ typedef struct _warp_Core_struct
  * Error handling
  *--------------------------------------------------------------------------*/
 
+/** 
+ * This is the global Warp error flag.  If it is ever nonzero, an error has 
+ * occurred. 
+ **/
 extern warp_Int _warp_error_flag;
 
 /*--------------------------------------------------------------------------
  * Print file for redirecting stdout when needed
  *--------------------------------------------------------------------------*/
 
+/** 
+ * This is the print file for redirecting stdout for all Warp screen output
+ **/
 extern FILE *_warp_printfile;
 
 /*--------------------------------------------------------------------------
  * Coarsening macros
  *--------------------------------------------------------------------------*/
 
+/** 
+ * Map a fine time index to a coarse time index, assumes a uniform coarsening
+ * factor.
+ **/
 #define _warp_MapFineToCoarse(findex, cfactor, cindex) \
 ( cindex = (findex)/(cfactor) )
+
+/** 
+ * Map a coarse time index to a fine time index, assumes a uniform coarsening
+ * factor.
+ **/
 #define _warp_MapCoarseToFine(cindex, cfactor, findex) \
 ( findex = (cindex)*(cfactor) )
+
+/** 
+ * Boolean, returns whether a time index is an F-point
+ **/
 #define _warp_IsFPoint(index, cfactor) \
 ( (index)%(cfactor) )
+
+/** 
+ * Boolean, returns whether a time index is an C-point
+ **/
 #define _warp_IsCPoint(index, cfactor) \
 ( !_warp_IsFPoint(index, cfactor) )
 
@@ -462,14 +519,15 @@ _warp_CFRelax(warp_Core  core,
 
 /**
  * F-Relax on *level* and then restrict to *level+1*\n
- * Output:
- * - The restricted vectors *va* and *wa* will be created, representing 
- *    *level+1* versions of the unknown and rhs vectors.
- *    
- *    If set, the user-defined coarsening routine is called.
+ * 
+ * The output is set in the warp_Grid in core, so that the restricted 
+ * vectors *va* and *wa* will be created, representing 
+ * *level+1* versions of the unknown and rhs vectors.\n
+ * 
+ * If the user has set spatial coarsening, then this user-defined routine is 
+ * also called.\n
  *
- * - If *level==0*, then *rnorm_ptr* will contain the
- *   residual norm.
+ * If *level==0*, then *rnorm_ptr* will contain the residual norm.
  */
 warp_Int
 _warp_FRestrict(warp_Core   core,       /**< warp_Core (_warp_Core) struct */   
@@ -478,13 +536,13 @@ _warp_FRestrict(warp_Core   core,       /**< warp_Core (_warp_Core) struct */
                 warp_Real  *rnorm_ptr   /**< pointer to residual norm (if level 0) */
                 );
 
-/**
- * F-Relax on *level* and interpolate to *level-1*\n
- * Output:
- * - The unknown vector *u* on *level* is created by interpolating
- *   from *level+1*.
- *    
- *   If set, the user-defined refinement routine is called.
+/** F-Relax on *level* and interpolate to *level-1*\n 
+ *
+ * The output is set in the warp_Grid in core, so that the 
+ * vector *u* on *level* is created by interpolating from *level+1*.\n
+ *
+ * If the user has set spatial refinement, then this user-defined routine is 
+ * also called.
  */
 warp_Int
 _warp_FInterp(warp_Core  core,           /**< warp_Core (_warp_Core) struct */  
