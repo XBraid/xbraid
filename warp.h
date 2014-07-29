@@ -438,7 +438,7 @@ warp_SetPrintFile(warp_Core   core,             /**< warp_Core (_warp_Core) stru
  * - Level 0:  Never call the user's write routine
  * - Level 1:  Only call the user's write routine after Warp is finished
  * - Level 2:  Call the user's write routine every iteration and on every level.
- *             This is during @ref _warp_FRestrict, during the down-cycle part of a Warp iteration. 
+ *             This is during _warp_FRestrict, during the down-cycle part of a Warp iteration. 
  * 
  * Default is level 1.
  **/
