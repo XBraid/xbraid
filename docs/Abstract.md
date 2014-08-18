@@ -28,6 +28,6 @@ architectures.
 
 It is **strongly recommended** that you also read [Parallel Time Integration
 with Multigrid](https://computation-rnd.llnl.gov/linear_solvers/pubs/mgritPaper-2013.pdf)
-after reading the @ref intro.  It is a more in depth discussion of the algorithm
+after reading the @ref braidoverview.  It is a more in depth discussion of the algorithm
 and associated experiments.
 
