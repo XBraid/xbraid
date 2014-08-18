@@ -7,10 +7,16 @@
  - terms of the GNU Lesser General Public License (as published by the Free
  - Software Foundation) version 2.1 dated February 1999.
  -->
- 
-# Introduction {#intro}
 
-# Overview of \f$\chi\f$Braid Algorithm {#braidoverview}
+# Meaning of the name {#braidname}
+
+We chose the package name \f$\chi\f$Braid to stand for _Time-Braid_, where
+\f$\chi\f$ is the first letter in the Greek work for time, _Chronos_.  The
+algorithm _braids_ together time-grids of different granularity in order to
+create a multigrid method and achieve parallelism in the time dimension.  In
+plain text, we say XBraid, or just Braid for short.
+
+# Overview of the Algorithm {#braidoverview}
 
 The goal of \f$\chi\f$Braid is to solve a problem faster than a
 traditional time marching algorithm.  Instead of sequential time marching, \f$\chi\f$Braid
@@ -318,7 +324,7 @@ In summary, a few points are
    steps.  \f$\chi\f$Braid is structured to handle variable time step sizes and adaptive
    time step sizes, and these features are coming. 
 
-# Overview of \f$\chi\f$Braid Code {#codeoverview}
+# Overview of the Code {#codeoverview}
 
 \f$\chi\f$Braid is designed to run in conjunction with an existing application code that
 can be wrapped per our interface.  This application code will implement some
@@ -332,7 +338,7 @@ the parallelism in the time dimension.
 - is written in C and can easily interface with Fortran and C++
 - uses MPI for parallelism
 - self documents through comments in the source code and through *.md files
-- functions and structures are prefixed by *tw* for \f$\chi\f$Braid
+- functions and structures are prefixed by *braid* 
   + User routines are prefixed by `braid_`
   + Developer routines are prefixed by `_braid_` 
 
@@ -506,7 +512,7 @@ Achieving the best speedup can require some tuning, and it is recommended to rea
 [Parallel Time Integration with Multigrid](https://computation-rnd.llnl.gov/linear_solvers/pubs/mgritPaper-2013.pdf)
 where this 2D heat equation example is explored in much more detail.
 
-# Summary of \f$\chi\f$Braid {#summary}
+# Summary {#summary}
 
 - \f$\chi\f$Braid applies multigrid to the time dimension.
  + This exposes concurrency in the time dimension.
