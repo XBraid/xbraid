@@ -2,9 +2,9 @@
 <!--
  - Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
  - Produced at the Lawrence Livermore National Laboratory.
- - This file is part of WARP.  See file COPYRIGHT for details.
+ - This file is part of XBraid.  See file COPYRIGHT for details.
  -
- - WARP is free software; you can redistribute it and/or modify it under the
+ - XBraid is free software; you can redistribute it and/or modify it under the
  - terms of the GNU Lesser General Public License (as published by the Free
  - Software Foundation) version 2.1 dated February 1999.
  -->
@@ -160,7 +160,7 @@ similar to `machine-tux.sh` and change `autotest.sh` to recognize and run the ne
 machine test.  To then use `autotest.sh` with the machine script, you'll have to
 set up a passwordless connection from the new machine to
 
-      /usr/casc/hypre/warp/testing
+      /usr/casc/hypre/braid/testing
 
 
 ### Level 3 Script
@@ -173,7 +173,7 @@ Files used:
 
 Output:
 -  `test/autotest_finished`
--  `/usr/casc/hypre/warp/testing/AUTOTEST-20**.**.**-Day` 
+-  `/usr/casc/hypre/braid/testing/AUTOTEST-20**.**.**-Day` 
 - Email to recipients listed in `autotest.sh`
 
 At the highest level sits `autotest.sh` and is called automatically as a cronjob.
@@ -187,7 +187,7 @@ There are four steps to running autotest.
          $ ./autotesh.sh -init
 
    will do a pull from master for the current working repository and recompile 
-   warp.  The autotest output files (`autotest.err` and `autotest.out`) and the output 
+   Braid.  The autotest output files (`autotest.err` and `autotest.out`) and the output 
    directory (autotest_finished) are initialized.
 
 -  Step 2
@@ -208,7 +208,7 @@ There are four steps to running autotest.
          $ ./autotest.sh -remote-copy
 
    will copy `/test/autotest_finished/*` to a time-stamped directory
-   such as\n  `/usr/casc/hypre/warp/testing/AUTOTEST-2013.11.18-Mon` \n
+   such as\n  `/usr/casc/hypre/braid/testing/AUTOTEST-2013.11.18-Mon` \n
 
    Alternatively,
 
@@ -256,8 +256,8 @@ correspond respectively to:
 
 Jacob's crontab (on tux343):
 
-      05 14 * * * source /etc/profile; source $HOME/.bashrc; cd $HOME/joint_repos/warp/test; ./autotest.sh -init
-      05 14 * * * source /etc/profile; source $HOME/.bashrc; cd $HOME/joint_repos/warp/test; ./autotest.sh -tux343
-      05 14 * * * source /etc/profile; source $HOME/.bashrc; cd $HOME/joint_repos/warp/test; ./autotest.sh -remote-copy
-      05 14 * * * source /etc/profile; source $HOME/.bashrc; cd $HOME/joint_repos/warp/test; ./autotest.sh -summary-email
+      05 14 * * * source /etc/profile; source $HOME/.bashrc; cd $HOME/joint_repos/braid/test; ./autotest.sh -init
+      05 14 * * * source /etc/profile; source $HOME/.bashrc; cd $HOME/joint_repos/braid/test; ./autotest.sh -tux343
+      05 14 * * * source /etc/profile; source $HOME/.bashrc; cd $HOME/joint_repos/braid/test; ./autotest.sh -remote-copy
+      05 14 * * * source /etc/profile; source $HOME/.bashrc; cd $HOME/joint_repos/braid/test; ./autotest.sh -summary-email
 

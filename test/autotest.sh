@@ -2,9 +2,9 @@
 #BHEADER**********************************************************************
 # Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
 # Produced at the Lawrence Livermore National Laboratory.
-# This file is part of WARP.  See file COPYRIGHT for details.
+# This file is part of XBraid.  See file COPYRIGHT for details.
 #                                                                          
-# WARP is free software; you can redistribute it and/or modify it under the
+# XBraid is free software; you can redistribute it and/or modify it under the
 # terms of the GNU Lesser General Public License (as published by the Free
 # Software Foundation) version 2.1 dated February 1999.                    
 #
@@ -21,16 +21,15 @@ remote_dir="/usr/casc/hypre/warp/testing/"
 remote_subdir="AUTOTEST-`date +%Y.%m.%d-%a`"
 
 # Email Setup
-summary_file="WARP_SUMMARY.html"
-summary_subject="Warp Autotest Summary `date +%Y-%m-%d`"
+summary_file="XBraid_SUMMARY.html"
+summary_subject="XBraid Autotest Summary `date +%Y-%m-%d`"
 email_list="tzanio@llnl.gov, schroder2@llnl.gov, rfalgout@llnl.gov"
 #email_list="rfalgout@llnl.gov, tzanio@llnl.gov, umyang@llnl.gov, schroder2@llnl.gov"
-warp_logo=" __    __                 
-/ / /\ \ \__ _ _ __ _ __  
-\ \/  \/ / _\` | '__| '_ \\ 
- \  /\  / (_| | |  | |_) |
-  \/  \/ \__,_|_|  | .__/ 
-                   |_|    "
+timebraid_logo= "\ \ / /| ___ \         (_)   | |
+ \ V / | |_/ /_ __ __ _ _  __| |
+ /   \ | ___ \ '__/ _` | |/ _` |
+/ /^\ \| |_/ / | | (_| | | (_| |
+\/   \/\____/|_|  \__,_|_|\__,_|"
 
 # Print Help Message
 case $1 in
@@ -142,7 +141,7 @@ case $1 in
       echo "<PRE>"                     >> $summary_file
       
       # echo logo
-      echo "$warp_logo" >> $summary_file
+      echo "$timebraid_logo" >> $summary_file
       echo -e "\n"     >> $summary_file
       echo $summary_subject            >> $summary_file
       echo ""         >> $summary_file

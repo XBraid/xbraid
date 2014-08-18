@@ -1,9 +1,9 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
  * Produced at the Lawrence Livermore National Laboratory.
- * This file is part of WARP.  See file COPYRIGHT for details.
+ * This file is part of XBraid.  See file COPYRIGHT for details.
  *
- * WARP is free software; you can redistribute it and/or modify it under the
+ * XBraid is free software; you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License (as published by the Free
  * Software Foundation) version 2.1 dated February 1999.
  *
@@ -14,7 +14,7 @@
 #include "advect_data.h"
 
 #define SQR(x) ((x)*(x))
-/**< Initialize a warp_Vector function on finest temporal grid*/
+/**< Initialize a tw_Vector function on finest temporal grid*/
 int
 init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle)
 {
@@ -69,8 +69,8 @@ init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle)
 void
 init_advection_solver(double h, double amp, double ph, double om, int pnr, int taylorbc, 
                       double L, double cfl, int nstepsset, int nsteps, double tfinal, 
-                      double wave_speed, double viscosity, int bcLeft, int bcRight, int warpMaxIter, 
-                      double warpResidualLevel, double restr_coeff, double ad_coeff, int spatial_order,
+                      double wave_speed, double viscosity, int bcLeft, int bcRight, int braidMaxIter, 
+                      double braidResidualLevel, double restr_coeff, double ad_coeff, int spatial_order,
                       advection_setup *kd_)
 {
    double mxeg, p1, beta, pi=M_PI, omL2pi;
@@ -221,9 +221,9 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
    kd_->write=1;
 /* save final solution at this level */
    kd_->copy_level=1; /* level=0 is the finest, level=1 is coarser, and so on */
-/* keep track of warp convergence criteria */
-   kd_->warpMaxIter = warpMaxIter;
-   kd_->warpResidualLevel = warpResidualLevel;
+/* keep track of braid convergence criteria */
+   kd_->braidMaxIter = braidMaxIter;
+   kd_->braidResidualLevel = braidResidualLevel;
    
 /* initialize solution pointer and time */
    kd_->sol_copy = NULL;
@@ -412,7 +412,7 @@ gridfcn_BufPack(advection_setup *kd_,
 int
 gridfcn_BufUnpack(advection_setup *kd_,
              void *buffer,
-             warp_Vector *u_handle)
+             tw_Vector *u_handle)
 {
    int i, offset, n;
    double h;

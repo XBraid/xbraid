@@ -1,8 +1,8 @@
 // Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
-// This file is part of WARP.  See file COPYRIGHT for details.
+// This file is part of XBraid.  See file COPYRIGHT for details.
 //
-// WARP is free software; you can redistribute it and/or modify it under the
+// XBraid is free software; you can redistribute it and/or modify it under the
 // terms of the GNU Lesser General Public License (as published by the Free
 // Software Foundation) version 2.1 dated February 1999.
 
@@ -13,16 +13,16 @@
 //
 // Sample runs:  mpirun -np 4 drive-04
 //               mpirun -np 4 drive-04 -pref 1 -px 2 -nt 100 -odesolver -2
-//               mpirun -np 4 drive-04 -mesh ../../mfem/data/beam-quad.mesh -sref 2 -nowarp
-//               mpirun -np 16 drive-04 -mesh ../../mfem/data/escher-p2.mesh -nowarp
+//               mpirun -np 4 drive-04 -mesh ../../mfem/data/beam-quad.mesh -sref 2 -nobraid
+//               mpirun -np 16 drive-04 -mesh ../../mfem/data/escher-p2.mesh -nobraid
 //
 // Description:  Unstructured 2D/3D ODE problems in MFEM.
 
 #include <fstream>
 #include "mfem.hpp"
-#include "_warp.h"
-#include "warp.h"
-#include "warp_test.h"
+#include "_braid.h"
+#include "braid.h"
+#include "braid_test.h"
 
 // Additional "HYPRE" functions
 namespace hypre
@@ -986,31 +986,31 @@ void SolveODE(TimeDependentOperator *ode, HypreParVector *X0,
    delete sol_sock;
 }
 
-// Wrapper for WARP's status object
-class WarpStatus
+// Wrapper for BRAID's status object
+class BraidStatus
 {
    private:
-      warp_Status status;
+      braid_Status status;
    
    public:
-      WarpStatus(warp_Status _status)
+      BraidStatus(braid_Status _status)
       {
          status = _status;
       }
 
-      void GetDone(warp_Int *done_ptr) { warp_GetStatusDone(status, done_ptr); }
-      void GetLevel(warp_Int *level_ptr) { warp_GetStatusLevel(status, level_ptr); }
-      void GetIter(warp_Int *iter_ptr) { warp_GetStatusIter(status, iter_ptr); }
-      void GetResidual(warp_Real *rnorm_ptr) { warp_GetStatusResidual(status, rnorm_ptr); }
+      void GetDone(braid_Int *done_ptr)       { braid_GetStatusDone(status, done_ptr); }
+      void GetLevel(braid_Int *level_ptr)     { braid_GetStatusLevel(status, level_ptr); }
+      void GetIter(braid_Int *iter_ptr)       { braid_GetStatusIter(status, iter_ptr); }
+      void GetResidual(braid_Real *rnorm_ptr) { braid_GetStatusResidual(status, rnorm_ptr); }
       
-      // The warp_Status structure is deallocated inside of Warp
+      // The braid_Status structure is deallocated inside of Braid
       // This class is just to make code consistently look object oriented
-      ~WarpStatus() { }
+      ~BraidStatus() { }
 };
 
 
-// Wrapper for WARP's App object
-class WarpApp
+// Wrapper for BRAID's App object
+class BraidApp
 {
 public:
    TimeDependentOperator *ode;
@@ -1031,9 +1031,9 @@ public:
 
    const char * vishost;
    int  visport;
-   WarpApp(MPI_Comm _comm_t, TimeDependentOperator *_ode,
-           HypreParVector *_X0, ParGridFunction *_x, ODESolver *_solver,
-           double _tstart = 0.0, double _tstop = 1.0, int _ntime = 100)
+   BraidApp(MPI_Comm _comm_t, TimeDependentOperator *_ode,
+            HypreParVector *_X0, ParGridFunction *_x, ODESolver *_solver,
+            double _tstart = 0.0, double _tstop = 1.0, int _ntime = 100)
       : ode(_ode), solver(_solver), comm_t(_comm_t), tstart(_tstart),
         tstop(_tstop), ntime(_ntime), X0(_X0), x(_x)
    {
@@ -1049,21 +1049,21 @@ public:
    void SetExactSolution(TimeDependentCoefficient *exsol)
    { exact_sol = exsol; }
 
-   ~WarpApp()
+   ~BraidApp()
    {
       delete sol_sock;
    }
 
-   // Below warp_Vector == HypreParVector* and warp_App == WarpApp*
+   // Below braid_Vector == HypreParVector* and braid_App == BraidApp*
 
-   static int Phi(warp_App     _app,
-                  double       tstart,
-                  double       tstop,
-                  double       accuracy,
-                  warp_Vector  _u,
-                  int         *rfactor_ptr)
+   static int Phi(braid_App     _app,
+                  double        tstart,
+                  double        tstop,
+                  double        accuracy,
+                  braid_Vector  _u,
+                  int          *rfactor_ptr)
    {
-      WarpApp *app = (WarpApp*) _app;
+      BraidApp *app     = (BraidApp*) _app;
       HypreParVector *u = (HypreParVector*) _u;
 
       double t = tstart;
@@ -1077,23 +1077,23 @@ public:
       return 0;
    }
 
-   static int Clone(warp_App     _app,
-                    warp_Vector  _u,
-                    warp_Vector *v_ptr)
+   static int Clone(braid_App     _app,
+                    braid_Vector  _u,
+                    braid_Vector *v_ptr)
    {
       HypreParVector *u = (HypreParVector*) _u;
       HypreParVector *v = new HypreParVector(*u);
       *v = *u;
-      *v_ptr = (warp_Vector) v;
+      *v_ptr = (braid_Vector) v;
       return 0;
    }
 
-   static int Init(warp_App    _app,
+   static int Init(braid_App    _app,
                    double       t,
-                   warp_Vector *u_ptr)
+                   braid_Vector *u_ptr)
    {
-      WarpApp *app = (WarpApp*) _app;
-      Clone(_app, (warp_Vector)app->X0, u_ptr);
+      BraidApp *app = (BraidApp*) _app;
+      Clone(_app, (braid_Vector)app->X0, u_ptr);
       if (t != app->tstart)
       {
          HypreParVector *u = (HypreParVector*) *u_ptr;
@@ -1103,19 +1103,19 @@ public:
       return 0;
    }
 
-   static int Free(warp_App    _app,
-                   warp_Vector _u)
+   static int Free(braid_App    _app,
+                   braid_Vector _u)
    {
       HypreParVector *u = (HypreParVector*) _u;
       delete u;
       return 0;
    }
 
-   static int Sum(warp_App    _app,
-                  double      alpha,
-                  warp_Vector _x,
-                  double      beta,
-                  warp_Vector _y)
+   static int Sum(braid_App    _app,
+                  double       alpha,
+                  braid_Vector _x,
+                  double       beta,
+                  braid_Vector _y)
    {
       HypreParVector *x = (HypreParVector*) _x;
       HypreParVector *y = (HypreParVector*) _y;
@@ -1123,10 +1123,10 @@ public:
       return 0;
    }
 
-   static int Dot(warp_App     _app,
-                  warp_Vector  _u,
-                  warp_Vector  _v,
-                  double      *dot_ptr)
+   static int Dot(braid_App     _app,
+                  braid_Vector  _u,
+                  braid_Vector  _v,
+                  double       *dot_ptr)
    {
       HypreParVector *u = (HypreParVector*) _u;
       HypreParVector *v = (HypreParVector*) _v;
@@ -1140,14 +1140,14 @@ public:
       visport = vp;
    }
 
-   static int Write(warp_App     _app,
-                    double       t,
-                    warp_Status  _status,
-                    warp_Vector  _u)
+   static int Write(braid_App     _app,
+                    double        t,
+                    braid_Status  _status,
+                    braid_Vector  _u)
    {
-      WarpApp *app = (WarpApp*) _app;
-      WarpStatus status = WarpStatus(_status);
-      HypreParVector *u = (HypreParVector*) _u;
+      BraidApp *app      = (BraidApp*) _app;
+      BraidStatus status = BraidStatus(_status);
+      HypreParVector *u  = (HypreParVector*) _u;
       
       // Extract information from status
       int done, level, iter;
@@ -1223,221 +1223,221 @@ public:
       return 0;
    }
 
-   static int BufSize(warp_App  _app,
-                      int      *size_ptr)
+   static int BufSize(braid_App  _app,
+                      int       *size_ptr)
    {
-      WarpApp *app = (WarpApp*) _app;
-      *size_ptr = app->buff_size;
+      BraidApp *app = (BraidApp*) _app;
+      *size_ptr     = app->buff_size;
       return 0;
    }
 
-   static int BufPack(warp_App     _app,
-                      warp_Vector  _u,
-                      void        *buffer)
+   static int BufPack(braid_App     _app,
+                      braid_Vector  _u,
+                      void         *buffer)
    {
-      WarpApp *app = (WarpApp*) _app;
+      BraidApp *app = (BraidApp*) _app;
       HypreParVector *u = (HypreParVector*) _u;
       memcpy(buffer, u->GetData(), app->buff_size);
       return 0;
    }
 
-   static int BufUnpack(warp_App     _app,
-                        void        *buffer,
-                        warp_Vector *u_ptr)
+   static int BufUnpack(braid_App     _app,
+                        void         *buffer,
+                        braid_Vector *u_ptr)
    {
-      WarpApp *app = (WarpApp*) _app;
-      Clone(_app, (warp_Vector)app->X0, u_ptr);
+      BraidApp *app = (BraidApp*) _app;
+      Clone(_app, (braid_Vector)app->X0, u_ptr);
       HypreParVector *u = (HypreParVector*) *u_ptr;
       memcpy(u->GetData(), buffer, app->buff_size);
       return 0;
    }
 };
 
-// Wrapper for WARP utilities that help the user, 
-// includes all the warp_Test* routines for testing the
+// Wrapper for BRAID utilities that help the user, 
+// includes all the braid_Test* routines for testing the
 // user-written wrappers.
-class WarpUtil
+class BraidUtil
 {
 private:
 
 public:
    
    // Empty constructor
-   WarpUtil( ){ }
+   BraidUtil( ){ }
    
    // Split comm_world into comm_x and comm_t, the spatial 
    // and temporal communicators
    void SplitCommworld(const MPI_Comm  *comm_world,
-                             warp_Int  px,
+                             braid_Int  px,
                              MPI_Comm  *comm_x,
                              MPI_Comm  *comm_t)
-   { warp_SplitCommworld(comm_world, px, comm_x, comm_t); }
+   { braid_SplitCommworld(comm_world, px, comm_x, comm_t); }
 
    // Test Function for Init and Write function
-   void TestInitWrite( WarpApp              *app,
-                       MPI_Comm              comm_x,
-                       FILE                 *fp,
-                       double                t,
-                       warp_PtFcnInit        init,
-                       warp_PtFcnWrite       write,
-                       warp_PtFcnFree        free)
-   { warp_TestInitWrite((warp_App) app, comm_x, fp, t, init, write, free); }
+   void TestInitWrite( BraidApp              *app,
+                       MPI_Comm               comm_x,
+                       FILE                  *fp,
+                       double                 t,
+                       braid_PtFcnInit        init,
+                       braid_PtFcnWrite       write,
+                       braid_PtFcnFree        free)
+   { braid_TestInitWrite((braid_App) app, comm_x, fp, t, init, write, free); }
 
    // Test Function for Clone 
-   void TestClone( WarpApp              *app,
-                   MPI_Comm              comm_x,
-                   FILE                 *fp,
-                   double                t,
-                   warp_PtFcnInit        init,
-                   warp_PtFcnWrite       write,
-                   warp_PtFcnFree        free,
-                   warp_PtFcnClone       clone)
-   { warp_TestClone((warp_App) app, comm_x, fp, t, init, write, free, clone); }
+   void TestClone( BraidApp              *app,
+                   MPI_Comm               comm_x,
+                   FILE                  *fp,
+                   double                 t,
+                   braid_PtFcnInit        init,
+                   braid_PtFcnWrite       write,
+                   braid_PtFcnFree        free,
+                   braid_PtFcnClone       clone)
+   { braid_TestClone((braid_App) app, comm_x, fp, t, init, write, free, clone); }
    
    // Test Function for Sum 
-   void TestSum( WarpApp              *app,
-                 MPI_Comm              comm_x,
-                 FILE                 *fp,
-                 double                t,
-                 warp_PtFcnInit        init,
-                 warp_PtFcnWrite       write,
-                 warp_PtFcnFree        free,
-                 warp_PtFcnClone       clone,
-                 warp_PtFcnSum         sum)
-   { warp_TestSum((warp_App) app, comm_x, fp, t, init, write, free, clone, sum); }
+   void TestSum( BraidApp              *app,
+                 MPI_Comm               comm_x,
+                 FILE                  *fp,
+                 double                 t,
+                 braid_PtFcnInit        init,
+                 braid_PtFcnWrite       write,
+                 braid_PtFcnFree        free,
+                 braid_PtFcnClone       clone,
+                 braid_PtFcnSum         sum)
+   { braid_TestSum((braid_App) app, comm_x, fp, t, init, write, free, clone, sum); }
    
    // Test Function for Dot 
-   int TestDot( WarpApp              *app,
-                 MPI_Comm              comm_x,
-                 FILE                 *fp,
-                 double                t,
-                 warp_PtFcnInit        init,
-                 warp_PtFcnFree        free,
-                 warp_PtFcnClone       clone,
-                 warp_PtFcnSum         sum,
-                 warp_PtFcnDot         dot)
-   { return warp_TestDot((warp_App) app, comm_x, fp, t, init, free, clone, sum, dot); }
+   int TestDot( BraidApp               *app,
+                 MPI_Comm               comm_x,
+                 FILE                  *fp,
+                 double                 t,
+                 braid_PtFcnInit        init,
+                 braid_PtFcnFree        free,
+                 braid_PtFcnClone       clone,
+                 braid_PtFcnSum         sum,
+                 braid_PtFcnDot         dot)
+   { return braid_TestDot((braid_App) app, comm_x, fp, t, init, free, clone, sum, dot); }
 
    // Test Functions BufSize, BufPack, BufUnpack
-   int TestBuf( WarpApp              *app,
-                 MPI_Comm              comm_x,
-                 FILE                 *fp,
-                 double                t,
-                 warp_PtFcnInit        init,
-                 warp_PtFcnFree        free,
-                 warp_PtFcnSum         sum,  
-                 warp_PtFcnDot         dot,
-                 warp_PtFcnBufSize     bufsize,
-                 warp_PtFcnBufPack     bufpack,
-                 warp_PtFcnBufUnpack   bufunpack)
-   { return warp_TestBuf((warp_App) app, comm_x, fp, t, init, free, sum, dot, bufsize, bufpack, bufunpack); }
+   int TestBuf( BraidApp               *app,
+                 MPI_Comm               comm_x,
+                 FILE                  *fp,
+                 double                 t,
+                 braid_PtFcnInit        init,
+                 braid_PtFcnFree        free,
+                 braid_PtFcnSum         sum,  
+                 braid_PtFcnDot         dot,
+                 braid_PtFcnBufSize     bufsize,
+                 braid_PtFcnBufPack     bufpack,
+                 braid_PtFcnBufUnpack   bufunpack)
+   { return braid_TestBuf((braid_App) app, comm_x, fp, t, init, free, sum, dot, bufsize, bufpack, bufunpack); }
 
    // Test Functions Coarsen and Refine
-   int TestCoarsenRefine(WarpApp          *app,
-                          MPI_Comm          comm_x,
-                          FILE             *fp,
-                          double            t,
-                          double            fdt,
-                          double            cdt,
-                          warp_PtFcnInit    init,
-                          warp_PtFcnWrite   write,
-                          warp_PtFcnFree    free,
-                          warp_PtFcnClone   clone,
-                          warp_PtFcnSum     sum,
-                          warp_PtFcnDot     dot,
-                          warp_PtFcnCoarsen coarsen,
-                          warp_PtFcnRefine  refine)
-   { return warp_TestCoarsenRefine( (warp_App) app, comm_x, fp, t, fdt, cdt, init,
+   int TestCoarsenRefine(BraidApp           *app,
+                          MPI_Comm           comm_x,
+                          FILE              *fp,
+                          double             t,
+                          double             fdt,
+                          double             cdt,
+                          braid_PtFcnInit    init,
+                          braid_PtFcnWrite   write,
+                          braid_PtFcnFree    free,
+                          braid_PtFcnClone   clone,
+                          braid_PtFcnSum     sum,
+                          braid_PtFcnDot     dot,
+                          braid_PtFcnCoarsen coarsen,
+                          braid_PtFcnRefine  refine)
+   { return braid_TestCoarsenRefine( (braid_App) app, comm_x, fp, t, fdt, cdt, init,
                             write, free, clone, sum, dot, coarsen, refine); }
 
-   int TestAll(WarpApp             *app,
-                MPI_Comm             comm_x,
-                FILE                *fp,
-                double               t,
-                double               fdt,
-                double               cdt,
-                warp_PtFcnInit       init,
-                warp_PtFcnFree       free,
-                warp_PtFcnClone      clone,
-                warp_PtFcnSum        sum,
-                warp_PtFcnDot        dot,
-                warp_PtFcnBufSize    bufsize,  
-                warp_PtFcnBufPack    bufpack,  
-                warp_PtFcnBufUnpack  bufunpack,
-                warp_PtFcnCoarsen    coarsen,
-                warp_PtFcnRefine     refine)
-   { return warp_TestAll( (warp_App) app, comm_x, fp, t, fdt, cdt,
+   int TestAll(BraidApp              *app,
+                MPI_Comm              comm_x,
+                FILE                 *fp,
+                double                t,
+                double                fdt,
+                double                cdt,
+                braid_PtFcnInit       init,
+                braid_PtFcnFree       free,
+                braid_PtFcnClone      clone,
+                braid_PtFcnSum        sum,
+                braid_PtFcnDot        dot,
+                braid_PtFcnBufSize    bufsize,  
+                braid_PtFcnBufPack    bufpack,  
+                braid_PtFcnBufUnpack  bufunpack,
+                braid_PtFcnCoarsen    coarsen,
+                braid_PtFcnRefine     refine)
+   { return braid_TestAll( (braid_App) app, comm_x, fp, t, fdt, cdt,
                    init, free, clone, sum, dot, bufsize, bufpack, 
                    bufunpack, coarsen, refine); }
 
-   ~WarpUtil() { }
+   ~BraidUtil() { }
 
 };
 
 
 
-// Wrapper for WARP's core object
-class WarpCore
+// Wrapper for BRAID's core object
+class BraidCore
 {
 private:
-   warp_Core core;
+   braid_Core core;
 
 public:
-   WarpCore(MPI_Comm comm_world, WarpApp *app)
+   BraidCore(MPI_Comm comm_world, BraidApp *app)
    {
-      warp_Init(comm_world,
-                app->comm_t, app->tstart, app->tstop, app->ntime, (warp_App)app,
-                WarpApp::Phi, WarpApp::Init, WarpApp::Clone, WarpApp::Free,
-                WarpApp::Sum, WarpApp::Dot, WarpApp::Write,
-                WarpApp::BufSize, WarpApp::BufPack, WarpApp::BufUnpack, &core);
+      braid_Init(comm_world,
+                 app->comm_t, app->tstart, app->tstop, app->ntime, (braid_App)app,
+                 BraidApp::Phi, BraidApp::Init, BraidApp::Clone, BraidApp::Free,
+                 BraidApp::Sum, BraidApp::Dot, BraidApp::Write,
+                 BraidApp::BufSize, BraidApp::BufPack, BraidApp::BufUnpack, &core);
    }
 
-   void SetMaxLevels(int max_levels) { warp_SetMaxLevels(core, max_levels); }
+   void SetMaxLevels(int max_levels) { braid_SetMaxLevels(core, max_levels); }
    
-   void SetMaxCoarse(int max_coarse) { warp_SetMaxCoarse(core, max_coarse); }
+   void SetMaxCoarse(int max_coarse) { braid_SetMaxCoarse(core, max_coarse); }
 
    void SetNRelax(int level, int nrelax)
-   { warp_SetNRelax(core, level, nrelax); }
+   { braid_SetNRelax(core, level, nrelax); }
 
-   void SetAbsTol(double tol) { warp_SetAbsTol(core, tol); }
+   void SetAbsTol(double tol) { braid_SetAbsTol(core, tol); }
 
-   void SetRelTol(double tol) { warp_SetRelTol(core, tol); }
+   void SetRelTol(double tol) { braid_SetRelTol(core, tol); }
    
    void SetCFactor(int level, int cfactor)
-   { warp_SetCFactor(core, level, cfactor); }
+   { braid_SetCFactor(core, level, cfactor); }
 
    /** Use cfactor0 on all levels until there are < cfactor0 points
        on each processor. */
    void SetAggCFactor(int cfactor0)
    {
-      WarpApp *app = (WarpApp *) core->app;
+      BraidApp *app = (BraidApp *) core->app;
       int nt = app->ntime, pt;
       MPI_Comm_size(app->comm_t, &pt);
       if (cfactor0 > -1)
       {
          int level = (int) (log10((nt + 1) / pt) / log10(cfactor0));
          for (int i = 0; i < level; i++)
-            warp_SetCFactor(core, i, cfactor0);
+            braid_SetCFactor(core, i, cfactor0);
       }
    }
 
-   void SetMaxIter(int max_iter) { warp_SetMaxIter(core, max_iter); }
+   void SetMaxIter(int max_iter) { braid_SetMaxIter(core, max_iter); }
    
-   void SetPrintLevel(int print_level) { warp_SetPrintLevel(core, print_level); }
+   void SetPrintLevel(int print_level) { braid_SetPrintLevel(core, print_level); }
    
-   void SetWriteLevel(int write_level) { warp_SetWriteLevel(core, write_level); }
+   void SetWriteLevel(int write_level) { braid_SetWriteLevel(core, write_level); }
 
-   void SetFMG() { warp_SetFMG(core); }
+   void SetFMG() { braid_SetFMG(core); }
    
-   void SetNFMGVcyc(int nfmg_Vcyc) { warp_SetNFMGVcyc(core, nfmg_Vcyc); }
+   void SetNFMGVcyc(int nfmg_Vcyc) { braid_SetNFMGVcyc(core, nfmg_Vcyc); }
    
-   void GetNumIter(int *niter_ptr) { warp_GetNumIter(core, niter_ptr); }
+   void GetNumIter(int *niter_ptr) { braid_GetNumIter(core, niter_ptr); }
    
-   void GetRNorm(double *rnorm_ptr) { warp_GetRNorm(core, rnorm_ptr); }
+   void GetRNorm(double *rnorm_ptr) { braid_GetRNorm(core, rnorm_ptr); }
 
-   void Drive() { warp_Drive(core); }
+   void Drive() { braid_Drive(core); }
 
-   ~WarpCore() { warp_Destroy(core); }
+   ~BraidCore() { braid_Destroy(core); }
 };
 
 
@@ -1586,23 +1586,23 @@ int main(int argc, char *argv[])
    MPI_Comm_size(comm, &num_procs);
    MPI_Comm_rank(comm, &myid);
 
-   // Variables used by WarpUtil
-   WarpUtil util;
+   // Variables used by BraidUtil
+   BraidUtil util;
    int correct = 1;
    double test_t;
 
    // Default parameters:
    const char *meshfile = "../../mfem/data/star.mesh";
-   int    sref        = 1;
-   int    pref        = 1;
-   int    use_warp    = 1;
-   int    num_procs_x = 1;
-   double tstart      = 0.0;
-   double tstop       = 1.0;
-   int    ntime       = 32;
-   int    picard      = 5;
-   double tolf        = 0.0001; 
-   double tolc        = tolf;
+   int    sref          = 1;
+   int    pref          = 1;
+   int    use_braid     = 1;
+   int    num_procs_x   = 1;
+   double tstart        = 0.0;
+   double tstop         = 1.0;
+   int    ntime         = 32;
+   int    picard        = 5;
+   double tolf          = 0.0001; 
+   double tolc          = tolf;
 
 
    extern double diff_term;
@@ -1625,7 +1625,7 @@ int main(int argc, char *argv[])
    int visport = 19916;
 
    
-   // WARP default parameters:
+   // BRAID default parameters:
    int    max_levels  = 10;
    int    max_coarse  = 1;
    int    nrelax      = 1;
@@ -1669,9 +1669,9 @@ int main(int argc, char *argv[])
       {
          pref = atoi(argv[++arg_index]);
       }
-      else if (strcmp(argv[arg_index], "-nowarp") == 0)
+      else if (strcmp(argv[arg_index], "-nobraid") == 0)
       {
-         use_warp = 0;
+         use_braid = 0;
       }
       else if (strcmp(argv[arg_index], "-px") == 0)
       {
@@ -1812,14 +1812,14 @@ int main(int argc, char *argv[])
          "Usage: " << argv[0] << " [<options>]\n"
          "\n"
          "  -mesh <file>      : spatial mesh (default: " << meshfile << ")\n"
-         "  -wrapper_tests:   : quick run of the Warp wrapper tests\n"
+         "  -wrapper_tests:   : quick run of the Braid wrapper tests\n"
          "                      (do not combine with temporal parallelism)\n"
          "  -one_wrapper_test : run only one wrapper test. can comment out/in\n"
          "                      the wrapper test that you want to focus on.\n"
          "                      (do not combine with temporal parallelism)\n"
          "  -sref <num>       : levels of serial refinements (default: 1)\n"
          "  -pref <num>       : levels of parallel refinements (default: 1)\n"
-         "  -nowarp           : sequential time integration (default: off)\n"
+         "  -nobraid          : sequential time integration (default: off)\n"
          "  -px  <px>         : processors in space (default: 1)\n"
          "  -tstart <tstart>  : start time (default: 0.0)\n"
          "  -tstop  <tstop>   : stop time (default: 1.0)\n"
@@ -1874,7 +1874,7 @@ int main(int argc, char *argv[])
       return 0;
    }
 
-   if (!use_warp)
+   if (!use_braid)
       num_procs_x = num_procs;
 
    // Split comm into spatial and temporal communicators
@@ -1967,7 +1967,7 @@ int main(int argc, char *argv[])
 	HypreParMatrix *M = m->ParallelAssemble();
    
    delete m;
-  // Define the righ-hand side of the ODE and call MFEM or WARP to solve it.
+  // Define the righ-hand side of the ODE and call MFEM or BRAID to solve it.
    TimeDependentOperator *ode;
    if (heat_equation)
 			{
@@ -2019,7 +2019,7 @@ int main(int argc, char *argv[])
       solver = new BackwardEulerSolver;
    }
 
-   if (!use_warp)
+   if (!use_braid)
    {
       if (heat_equation)
          SolveODE(ode, X0, solver, tstart, tstop, ntime, &x0, &exact_sol);
@@ -2028,16 +2028,16 @@ int main(int argc, char *argv[])
    }
    else
    {
-      WarpApp app(comm_t, ode, X0, &x0, solver, tstart, tstop, ntime);
+      BraidApp app(comm_t, ode, X0, &x0, solver, tstart, tstop, ntime);
       app.SetVisHostAndPort(vishost, visport);
 
       if (wrapper_tests)
       {
          test_t = (app.tstop - app.tstart)/ (double) app.ntime;
          correct = util.TestAll(&app, comm_x, stdout, 0.0, test_t, 2*test_t,
-                      WarpApp::Init, WarpApp::Free, WarpApp::Clone, 
-                      WarpApp::Sum, WarpApp::Dot, WarpApp::BufSize,
-                      WarpApp::BufPack, WarpApp::BufUnpack, NULL, NULL);
+                      BraidApp::Init, BraidApp::Free, BraidApp::Clone, 
+                      BraidApp::Sum, BraidApp::Dot, BraidApp::BufSize,
+                      BraidApp::BufPack, BraidApp::BufUnpack, NULL, NULL);
          
          if(correct == 0)
          {
@@ -2056,27 +2056,27 @@ int main(int argc, char *argv[])
          test_t = app.tstop;
 
          // Test init(), write(), free()
-         util.TestInitWrite( &app, comm_x, stdout, test_t, WarpApp::Init, 
-                             WarpApp::Write, WarpApp::Free);
+         util.TestInitWrite( &app, comm_x, stdout, test_t, BraidApp::Init, 
+                             BraidApp::Write, BraidApp::Free);
 
          // Test clone()
-         //util.TestClone( &app, comm_x, stdout, test_t, WarpApp::Init, 
-         //                WarpApp::Write, WarpApp::Free, 
-         //                WarpApp::Clone);
+         //util.TestClone( &app, comm_x, stdout, test_t, BraidApp::Init, 
+         //                BraidApp::Write, BraidApp::Free, 
+         //                BraidApp::Clone);
 
          // Test sum() 
-         //util.TestSum( &app, comm_x, stdout, test_t, WarpApp::Init, 
-         //              WarpApp::Write, WarpApp::Free, 
-         //              WarpApp::Clone, WarpApp::Sum);
+         //util.TestSum( &app, comm_x, stdout, test_t, BraidApp::Init, 
+         //              BraidApp::Write, BraidApp::Free, 
+         //              BraidApp::Clone, BraidApp::Sum);
 
          // Test dot()
-         //correct = util.TestDot( &app, comm_x, stdout, test_t, WarpApp::Init, WarpApp::Free, 
-         //              WarpApp::Clone, WarpApp::Sum, WarpApp::Dot);
+         //correct = util.TestDot( &app, comm_x, stdout, test_t, BraidApp::Init, BraidApp::Free, 
+         //              BraidApp::Clone, BraidApp::Sum, BraidApp::Dot);
 
          // Test bufsize(), bufpack(), bufunpack()
-         //correct = util.TestBuf( &app, comm_x, stdout, test_t, WarpApp::Init, WarpApp::Free, 
-         //              WarpApp::Sum, WarpApp::Dot, WarpApp::BufSize, 
-         //              WarpApp::BufPack, WarpApp::BufUnpack);
+         //correct = util.TestBuf( &app, comm_x, stdout, test_t, BraidApp::Init, BraidApp::Free, 
+         //              BraidApp::Sum, BraidApp::Dot, BraidApp::BufSize, 
+         //              BraidApp::BufPack, BraidApp::BufUnpack);
 
          if(correct == 0)
          {
@@ -2085,8 +2085,8 @@ int main(int argc, char *argv[])
       }
       else
       {
-         // Run a warp simulation
-         WarpCore core(comm, &app);
+         // Run a Braid simulation
+         BraidCore core(comm, &app);
          if (heat_equation)
             app.SetExactSolution(&exact_sol);
 

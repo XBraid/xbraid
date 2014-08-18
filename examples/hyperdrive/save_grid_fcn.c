@@ -1,9 +1,9 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
  * Produced at the Lawrence Livermore National Laboratory.
- * This file is part of WARP.  See file COPYRIGHT for details.
+ * This file is part of XBraid.  See file COPYRIGHT for details.
  *
- * WARP is free software; you can redistribute it and/or modify it under the
+ * XBraid is free software; you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License (as published by the Free
  * Software Foundation) version 2.1 dated February 1999.
  *
@@ -18,8 +18,8 @@
  * -------------------------------------------------------------------- */
 int 
 save_grid_fcn(advection_setup *kd_,
-              warp_Real t,
-              warp_Status   status,
+              tw_Real t,
+              tw_Status   status,
               grid_fcn *u_)
 {
    MPI_Comm   comm   = MPI_COMM_WORLD;
@@ -39,14 +39,14 @@ save_grid_fcn(advection_setup *kd_,
      if (fabs(t-kd_->tstop)<1e-12)
      {
 /* get more details about about the current level, iteration, etc */
-       warp_GetStatusIter(status, &iteration);
-       warp_GetStatusResidual(status, &residual);
-       warp_GetStatusDone(status, &done_iterating);
-       warp_GetStatusLevel(status, &level);
+       tw_GetStatusIter(status, &iteration);
+       tw_GetStatusResidual(status, &residual);
+       tw_GetStatusDone(status, &done_iterating);
+       tw_GetStatusLevel(status, &level);
 
 /* done_iterating is only well-defined on the finest level */
-/*       done_iterating = (residual < kd_->warpResidualLevel || iteration >= kd_->warpMaxIter); */
-       done_iterating = (residual >= 0.0 || iteration >= kd_->warpMaxIter);
+/*       done_iterating = (residual < kd_->braidResidualLevel || iteration >= kd_->braidMaxIter); */
+       done_iterating = (residual >= 0.0 || iteration >= kd_->braidMaxIter);
 
        printf("Inside save_grid_fcn, final time t=%e, iter=%i, residual=%e, done iterating=%i, level=%i\n", 
               t, iteration, residual, done_iterating, level);

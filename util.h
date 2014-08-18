@@ -1,9 +1,9 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
  * Produced at the Lawrence Livermore National Laboratory.
- * This file is part of WARP.  See file COPYRIGHT for details.
+ * This file is part of XBraid.  See file COPYRIGHT for details.
  *
- * WARP is free software; you can redistribute it and/or modify it under the
+ * XBraid is free software; you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License (as published by the Free
  * Software Foundation) version 2.1 dated February 1999.
  *
@@ -13,50 +13,50 @@
  * \brief Define headers for utility routines.
  *
  * This file contains the headers for utility routines. Essentially,
- * if a routine does not take warp_Core (or other warp specific structs) 
+ * if a routine does not take braid_Core (or other Braid specific structs) 
  * as an argument, then it's a utility routine.
  */
 
-#ifndef warp_util_HEADER
-#define warp_util_HEADER
+#ifndef braid_util_HEADER
+#define braid_util_HEADER
 
-#include "_warp.h"
+#include "_braid.h"
 
 /**
  * Project an interval onto a strided index space that contains the index
  * 'index' and has stride 'stride'.  An empty projection is represented by
  * ilower > iupper.
  **/
-warp_Int
-_warp_ProjectInterval( warp_Int   ilower,
-                       warp_Int   iupper,
-                       warp_Int   index,
-                       warp_Int   stride,
-                       warp_Int  *pilower,
-                       warp_Int  *piupper );
+braid_Int
+_braid_ProjectInterval( braid_Int   ilower,
+                        braid_Int   iupper,
+                        braid_Int   index,
+                        braid_Int   stride,
+                        braid_Int  *pilower,
+                        braid_Int  *piupper );
 
 /**
  * Determine the accuracy used for the spatial solves based on the ratio of
  * the current residual norm and the stopping tolerance. 
  **/
-warp_Int
-_warp_SetAccuracy( warp_Real   rnorm,
-                   warp_Real   loose_tol,
-                   warp_Real   tight_tol,
-                   warp_Real   oldAccuracy,
-                   warp_Real   tol,
-                   warp_Real  *paccuracy );
+braid_Int
+_braid_SetAccuracy( braid_Real   rnorm,
+                    braid_Real   loose_tol,
+                    braid_Real   tight_tol,
+                    braid_Real   oldAccuracy,
+                    braid_Real   tol,
+                    braid_Real  *paccuracy );
 
 /**
- * If set, print to @ref _warp_printfile and then flush.  
+ * If set, print to @ref _braid_printfile and then flush.  
  * Else print to standard out.\n
  *
  * The string *format* can be multiple parameters
  * in the standard * C-format, like\n
  * `` format = '%1.2e is a format string', 1.24 ``
  **/
-warp_Int
-_warp_printf( const char *format, ...);
+braid_Int
+_braid_printf( const char *format, ...);
 
 /**
  * This is a function that allows for "sane" printing
@@ -67,11 +67,11 @@ _warp_printf( const char *format, ...);
  * in the standard * C-format, like\n
  * `` message = '%1.2e is a format string', 1.24 ``
  **/
-warp_Int
-_warp_ParFprintfFlush(FILE * file, 
-                      warp_Int myid,
-                      char * message, 
-                      ...);
+braid_Int
+_braid_ParFprintfFlush(FILE * file, 
+                       braid_Int myid,
+                       char * message, 
+                       ...);
 
 #endif
 

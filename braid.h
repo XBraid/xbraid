@@ -1,23 +1,23 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
  * Produced at the Lawrence Livermore National Laboratory.
- * This file is part of WARP.  See file COPYRIGHT for details.
+ * This file is part of XBraid.  See file COPYRIGHT for details.
  *
- * WARP is free software; you can redistribute it and/or modify it under the
+ * XBraid is free software; you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License (as published by the Free
  * Software Foundation) version 2.1 dated February 1999.
  *
  ***********************************************************************EHEADER*/
 
-/** \file warp.h
+/** \file braid.h
  * \brief Define headers for user interface routines.
  *
  * This file contains routines used to allow the user to initialize, run
- * and get and set warp. 
+ * and get and set a Braid solver. 
  */
 
-#ifndef warp_HEADER
-#define warp_HEADER
+#ifndef braid_HEADER
+#define braid_HEADER
 
 #include "mpi.h"
 
@@ -31,12 +31,12 @@ extern "C" {
 /**
  * Defines integer type
  **/
-typedef int    warp_Int;
+typedef int    braid_Int;
 
 /**
  * Defines floating point type
  **/
-typedef double warp_Real;
+typedef double braid_Real;
 
 /*--------------------------------------------------------------------------
  * User-written routines
@@ -44,99 +44,99 @@ typedef double warp_Real;
 /** \defgroup userwritten User-written routines
  *  
  *  These are all user-written data structures and routines.  There are two
- *  data structures (@ref warp_App and @ref warp_Vector) for the user to define.
+ *  data structures (@ref braid_App and @ref braid_Vector) for the user to define.
  *  And, there are a variety of function interfaces (defined through function pointer
  *  declarations) that the user must implement.
  *
  *  @{
  */
-struct _warp_App_struct;
+struct _braid_App_struct;
 /**
  * This holds a wide variety of information and is ``global`` in that it
  * is passed to every function.  This structure holds everything that the user 
  * will need to carry out a simulation.  For a simple example, this could just
  * hold the global MPI communicator and a few values describing the temporal domain.
  **/
-typedef struct _warp_App_struct *warp_App;
+typedef struct _braid_App_struct *braid_App;
 
-struct _warp_Vector_struct;
+struct _braid_Vector_struct;
 /**
  * This defines (roughly) a state vector at a certain time value.  
  * It could also contain any other information related to this vector which is 
  * needed to evolve the vector to the next time value, like mesh information.
  **/
-typedef struct _warp_Vector_struct *warp_Vector;
+typedef struct _braid_Vector_struct *braid_Vector;
 
-struct _warp_Status_struct;
+struct _braid_Status_struct;
 /**
- * Points to the status structure defined in _warp.h 
+ * Points to the status structure defined in _braid.h 
  * This is NOT a user-defined structure.
  **/
-typedef struct _warp_Status_struct *warp_Status;
+typedef struct _braid_Status_struct *braid_Status;
 
 
 /**
  * Defines the central time stepping function that the user must write.
  * The user must advance the vector *u* from time *tstart* to time *tstop*.
  * The *rfactor_ptr* and *accuracy* inputs are advanced topics.  *rfactor_ptr*
- * allows the user to tell Warp to refine this time interval.
+ * allows the user to tell Braid to refine this time interval.
  **/
-typedef warp_Int
-(*warp_PtFcnPhi)(warp_App      app,                /**< user-defined _warp_App structure */
-                 warp_Real     tstart,             /**< time value for *u* */
-                 warp_Real     tstop,              /**< time value to evolve *u* towards */
-                 warp_Real     accuracy,           /**< advanced option */
-                 warp_Vector   u,                  /**< output, vector to evolve */
-                 warp_Int     *rfactor_ptr         /**< output, allows user to subdivide this interval for accuracy */
-                 );
+typedef braid_Int
+(*braid_PtFcnPhi)(braid_App      app,                /**< user-defined _braid_App structure */
+                  braid_Real     tstart,             /**< time value for *u* */
+                  braid_Real     tstop,              /**< time value to evolve *u* towards */
+                  braid_Real     accuracy,           /**< advanced option */
+                  braid_Vector   u,                  /**< output, vector to evolve */
+                  braid_Int     *rfactor_ptr         /**< output, allows user to subdivide this interval for accuracy */
+                  );
 
 /**
  * Initializes a vector *u_ptr* at time *t*
  **/
-typedef warp_Int
-(*warp_PtFcnInit)(warp_App      app,               /**< user-defined _warp_App structure */
-                  warp_Real     t,                 /**< time value for *u_ptr* */
-                  warp_Vector  *u_ptr              /**< output, newly allocated and initialized vector */
-                  );
+typedef braid_Int
+(*braid_PtFcnInit)(braid_App      app,               /**< user-defined _braid_App structure */
+                   braid_Real     t,                 /**< time value for *u_ptr* */
+                   braid_Vector  *u_ptr              /**< output, newly allocated and initialized vector */
+                   );
 
 /**
  * Clone *u* into *v_ptr*
  **/
-typedef warp_Int
-(*warp_PtFcnClone)(warp_App      app,              /**< user-defined _warp_App structure */
-                   warp_Vector   u,                /**< vector to clone */ 
-                   warp_Vector  *v_ptr             /**< output, newly allocated and cloned vector */
-                   );
+typedef braid_Int
+(*braid_PtFcnClone)(braid_App      app,              /**< user-defined _braid_App structure */
+                    braid_Vector   u,                /**< vector to clone */ 
+                    braid_Vector  *v_ptr             /**< output, newly allocated and cloned vector */
+                    );
 
 /**
  * Free and deallocate *u*
  **/
-typedef warp_Int
-(*warp_PtFcnFree)(warp_App     app,               /**< user-defined _warp_App structure */
-                  warp_Vector  u                  /**< vector to free */
-                  );
+typedef braid_Int
+(*braid_PtFcnFree)(braid_App     app,               /**< user-defined _braid_App structure */
+                   braid_Vector  u                  /**< vector to free */
+                   );
 
 /**
  * AXPY, *alpha* *x* + *beta* *y* --> *y*
  **/ 
-typedef warp_Int
-(*warp_PtFcnSum)(warp_App     app,                /**< user-defined _warp_App structure */
-                 warp_Real    alpha,              /**< scalar for AXPY */
-                 warp_Vector  x,                  /**< vector for AXPY */
-                 warp_Real    beta,               /**< scalar for AXPY */
-                 warp_Vector  y                   /**< output and vector for AXPY */
-                 );
+typedef braid_Int
+(*braid_PtFcnSum)(braid_App     app,                /**< user-defined _braid_App structure */
+                  braid_Real    alpha,              /**< scalar for AXPY */
+                  braid_Vector  x,                  /**< vector for AXPY */
+                  braid_Real    beta,               /**< scalar for AXPY */
+                  braid_Vector  y                   /**< output and vector for AXPY */
+                  );
 
 /**
  *  Carry out a dot product
  *  *dot_ptr* = <*u*, *v*>
  **/
-typedef warp_Int
-(*warp_PtFcnDot)(warp_App      app,                /**< user-defined _warp_App structure */
-                 warp_Vector   u,                  /**< vector to dot */
-                 warp_Vector   v,                  /**< vector to dot */
-                 warp_Real    *dot_ptr             /**< output, scalar dot product value */
-                 );
+typedef braid_Int
+(*braid_PtFcnDot)(braid_App      app,                /**< user-defined _braid_App structure */
+                  braid_Vector   u,                  /**< vector to dot */
+                  braid_Vector   v,                  /**< vector to dot */
+                  braid_Real    *dot_ptr             /**< output, scalar dot product value */
+                  );
 
 /**
  * Write the vector *u* at time *t* to screen, file, etc...  The user decides 
@@ -144,82 +144,84 @@ typedef warp_Int
  * vector *u* and even more information in *status*.  This lets you tailor the 
  * output to only certain time values. \n 
  * 
- * If write_level is 2 (see [warp_SetWriteLevel](@ref warp_SetWriteLevel) ), then 
- * *write* is called every Warp iteration and on every Warp level.  In this case, 
- * *status* can be querried using the warp_Get**Status() functions, to determine the 
- * current warp level and iteration.  This allows for even more detailed tracking of the
+ * If write_level is 2 (see [braid_SetWriteLevel](@ref braid_SetWriteLevel) ), then 
+ * *write* is called every Braid iteration and on every Braid level.  In this case, 
+ * *status* can be querried using the braid_Get**Status() functions, to determine the 
+ * current Braid level and iteration.  This allows for even more detailed tracking of the
  * simulation. 
  **/
-typedef warp_Int
-(*warp_PtFcnWrite)(warp_App      app,              /**< user-defined _warp_App structure */
-                   warp_Real     t,                /**< time value for *u* */
-                   warp_Status   status,           /**< can be querried for info like Warp Iteration */
-                   warp_Vector   u                 /**< vector to write */
-                   );
+typedef braid_Int
+(*braid_PtFcnWrite)(braid_App      app,              /**< user-defined _braid_App structure */
+                    braid_Real     t,                /**< time value for *u* */
+                    braid_Status   status,           /**< can be querried for info like Braid Iteration */
+                    braid_Vector   u                 /**< vector to write */
+                    );
 
 /**
- * This routine tells Warp message sizes by computing an upper bound in bytes for 
- * an arbitrary warp_Vector.  This size must be an upper bound for what BufPack and BufUnPack 
+ * This routine tells Braid message sizes by computing an upper bound in bytes for 
+ * an arbitrary braid_Vector.  This size must be an upper bound for what BufPack and BufUnPack 
  * will assume.
  **/
-typedef warp_Int
-(*warp_PtFcnBufSize)(warp_App   app,               /**< user-defined _warp_App structure */
-                     warp_Int  *size_ptr           /**< upper bound on vector size in bytes */
-                     );      
+typedef braid_Int
+(*braid_PtFcnBufSize)(braid_App   app,               /**< user-defined _braid_App structure */
+                      braid_Int  *size_ptr           /**< upper bound on vector size in bytes */
+                      );      
 
 /**
- * This allows warp to send messages containing warp_Vectors.  This routine
+ * This allows Braid to send messages containing braid_Vectors.  This routine
  * packs a vector _u_ into a _void \*  buffer_ for MPI.
  **/
-typedef warp_Int
-(*warp_PtFcnBufPack)(warp_App      app,            /**< user-defined _warp_App structure */
-                     warp_Vector   u,              /**< vector to back into buffer */
-                     void         *buffer          /**< output, MPI buffer containing u */
-                     );
+typedef braid_Int
+(*braid_PtFcnBufPack)(braid_App      app,            /**< user-defined _braid_App structure */
+                      braid_Vector   u,              /**< vector to back into buffer */
+                      void          *buffer          /**< output, MPI buffer containing u */
+                      );
+
 /**
- * This allows warp to receive messages containing warp_Vectors.  This routine
- * unpacks a _void * buffer_ from MPI into a warp_Vector.
+ * This allows Braid to receive messages containing braid_Vectors.  This routine
+ * unpacks a _void * buffer_ from MPI into a braid_Vector.
  **/
-typedef warp_Int
-(*warp_PtFcnBufUnpack)(warp_App      app,          /**< user-defined _warp_App structure */
-                       void         *buffer,       /**< MPI Buffer to unpack and place in u_ptr */
-                       warp_Vector  *u_ptr         /**< output, warp_Vector containing buffer's data */
-                       );
+typedef braid_Int
+(*braid_PtFcnBufUnpack)(braid_App      app,          /**< user-defined _braid_App structure */
+                        void          *buffer,       /**< MPI Buffer to unpack and place in u_ptr */
+                        braid_Vector  *u_ptr         /**< output, braid_Vector containing buffer's data */
+                        );
+
 /**
  * spatial coarsening (optional).  Allows the user to coarsen
  * when going from a fine time grid to a coarse time grid.
  * This function is called on every vector at each level, thus
  * you can coarsem the entire space time domain.  The action of 
- * this function should match the @ref warp_PtFcnRefine function.
+ * this function should match the @ref braid_PtFcnRefine function.
  **/
-typedef warp_Int
-(*warp_PtFcnCoarsen)(warp_App      app,         /**< user-defined _warp_App structure */
-                     warp_Real     tstart,      /**< time value for *cu* */                          
-                     warp_Real     f_tminus,    /**< time value for *cu* to the left on fine grid */ 
-                     warp_Real     f_tplus,     /**< time value for *cu* to the right on fine grid */
-                     warp_Real     c_tminus,    /**< time value for *cu* to the left on coarse grid */
-                     warp_Real     c_tplus,     /**< time value for *cu* to the right on coarse grid */
-                     warp_Vector   fu,          /**< warp_Vector to refine*/                       
-                     warp_Vector  *cu_ptr       /**< output, refined vector */    
-                     );
+typedef braid_Int
+(*braid_PtFcnCoarsen)(braid_App      app,         /**< user-defined _braid_App structure */
+                      braid_Real     tstart,      /**< time value for *cu* */                          
+                      braid_Real     f_tminus,    /**< time value for *cu* to the left on fine grid */ 
+                      braid_Real     f_tplus,     /**< time value for *cu* to the right on fine grid */
+                      braid_Real     c_tminus,    /**< time value for *cu* to the left on coarse grid */
+                      braid_Real     c_tplus,     /**< time value for *cu* to the right on coarse grid */
+                      braid_Vector   fu,          /**< braid_Vector to refine*/                       
+                      braid_Vector  *cu_ptr       /**< output, refined vector */    
+                      );
 
 /**
  * spatial refinement (optional). Allows the user to refine 
  * when going from a coarse time grid to a fine time grid.  
  * This function is called on every vector at each level, thus
  * you can refine the entire space time domain. The action of 
- * this function should match the @ref warp_PtFcnCoarsen function.
+ * this function should match the @ref braid_PtFcnCoarsen function.
  **/
-typedef warp_Int
-(*warp_PtFcnRefine)(warp_App      app,          /**< user-defined _warp_App structure */
-                    warp_Real     tstart,       /**< time value for *cu* */                          
-                    warp_Real     f_tminus,     /**< time value for *cu* to the left on fine grid */ 
-                    warp_Real     f_tplus,      /**< time value for *cu* to the right on fine grid */
-                    warp_Real     c_tminus,     /**< time value for *cu* to the left on coarse grid */
-                    warp_Real     c_tplus,      /**< time value for *cu* to the right on coarse grid */
-                    warp_Vector   cu,           /**< warp_Vector to refine*/                       
-                    warp_Vector  *fu_ptr        /**< output, refined vector */       
-                    );
+typedef braid_Int
+(*braid_PtFcnRefine)(braid_App      app,          /**< user-defined _braid_App structure */
+                     braid_Real     tstart,       /**< time value for *cu* */                          
+                     braid_Real     f_tminus,     /**< time value for *cu* to the left on fine grid */ 
+                     braid_Real     f_tplus,      /**< time value for *cu* to the right on fine grid */
+                     braid_Real     c_tminus,     /**< time value for *cu* to the left on coarse grid */
+                     braid_Real     c_tplus,      /**< time value for *cu* to the right on coarse grid */
+                     braid_Vector   cu,           /**< braid_Vector to refine*/                       
+                     braid_Vector  *fu_ptr        /**< output, refined vector */       
+                     );
 /** @}*/
 
 /*--------------------------------------------------------------------------
@@ -227,109 +229,109 @@ typedef warp_Int
  *--------------------------------------------------------------------------*/
 /** \defgroup userinterface User interface routines
  *  
- *  these are interface routines to initialize and run Warp
+ *  these are interface routines to initialize and run Braid
  *
  *  @{
  */
 
-struct _warp_Core_struct;
+struct _braid_Core_struct;
 /**
- * points to the core structure defined in _warp.h 
+ * points to the core structure defined in _braid.h 
  **/
-typedef struct _warp_Core_struct *warp_Core;
+typedef struct _braid_Core_struct *braid_Core;
 
 
 /**
  * Create a core object with the required initial data.\n
- * This core is used by Warp for internal data structures. 
+ * This core is used by Braid for internal data structures. 
  * The output is *core_ptr* which points to the newly created 
- * warp_Core structure. 
+ * braid_Core structure. 
  **/
-warp_Int
-warp_Init(MPI_Comm              comm_world,  /**< Global communicator for space and time */
-          MPI_Comm              comm,        /**< Communicator for temporal dimension*/
-          warp_Real             tstart,      /**< start time */
-          warp_Real             tstop,       /**< End time*/
-          warp_Int              ntime,       /**< Initial number of temporal grid values*/
-          warp_App              app,         /**< User-defined _warp_App structure */
-          warp_PtFcnPhi         phi,         /**< User time stepping routine to advance a warp_Vector forward one step */
-          warp_PtFcnInit        init,        /**< Initialize a warp_Vector on the finest temporal grid*/
-          warp_PtFcnClone       clone,       /**< Clone a warp_Vector*/
-          warp_PtFcnFree        free,        /**< Free a warp_Vector*/
-          warp_PtFcnSum         sum,         /**< Compute vector sum of two warp_Vectors*/
-          warp_PtFcnDot         dot,         /**< Compute dot product between two warp_Vectors*/
-          warp_PtFcnWrite       write,       /**< Writes a warp_Vector to file, screen */
-          warp_PtFcnBufSize     bufsize,     /**< Computes size for MPI buffer for one warp_Vector */
-          warp_PtFcnBufPack     bufpack,     /**< Packs MPI buffer to contain one warp_Vector*/
-          warp_PtFcnBufUnpack   bufunpack,   /**< Unpacks MPI buffer into a warp_Vector */
-          warp_Core            *core_ptr     /**< Pointer to warp_Core (_warp_Core) struct*/   
-          );
+braid_Int
+braid_Init(MPI_Comm            comm_world,  /**< Global communicator for space and time */
+        MPI_Comm               comm,        /**< Communicator for temporal dimension*/
+        braid_Real             tstart,      /**< start time */
+        braid_Real             tstop,       /**< End time*/
+        braid_Int              ntime,       /**< Initial number of temporal grid values*/
+        braid_App              app,         /**< User-defined _braid_App structure */
+        braid_PtFcnPhi         phi,         /**< User time stepping routine to advance a braid_Vector forward one step */
+        braid_PtFcnInit        init,        /**< Initialize a braid_Vector on the finest temporal grid*/
+        braid_PtFcnClone       clone,       /**< Clone a braid_Vector*/
+        braid_PtFcnFree        free,        /**< Free a braid_Vector*/
+        braid_PtFcnSum         sum,         /**< Compute vector sum of two braid_Vectors*/
+        braid_PtFcnDot         dot,         /**< Compute dot product between two braid_Vectors*/
+        braid_PtFcnWrite       write,       /**< Writes a braid_Vector to file, screen */
+        braid_PtFcnBufSize     bufsize,     /**< Computes size for MPI buffer for one braid_Vector */
+        braid_PtFcnBufPack     bufpack,     /**< Packs MPI buffer to contain one braid_Vector*/
+        braid_PtFcnBufUnpack   bufunpack,   /**< Unpacks MPI buffer into a braid_Vector */
+        braid_Core            *core_ptr     /**< Pointer to braid_Core (_braid_Core) struct*/   
+        );
 
 /**
- * Carry out a simulation with Warp.  Integrate in time.
+ * Carry out a simulation with Braid.  Integrate in time.
  **/
-warp_Int
-warp_Drive(warp_Core  core                /**< warp_Core (_warp_Core) struct*/
-          );
+braid_Int
+braid_Drive(braid_Core  core                /**< braid_Core (_braid_Core) struct*/
+            );
 
 /**
  * Clean up and destroy core.
  **/
-warp_Int
-warp_Destroy(warp_Core  core              /**< warp_Core (_warp_Core) struct*/
-            );
+braid_Int
+braid_Destroy(braid_Core  core              /**< braid_Core (_braid_Core) struct*/
+              );
 
 /**
- * Print statistics after a Warp run.
+ * Print statistics after a Braid run.
  **/
-warp_Int
-warp_PrintStats(warp_Core  core           /**< warp_Core (_warp_Core) struct*/
-               );
+braid_Int
+braid_PrintStats(braid_Core  core           /**< braid_Core (_braid_Core) struct*/
+                 );
 
 /**
  * Set loose stopping tolerance *loose_tol* for spatial solves on grid
  * *level* (level 0 is the finest grid).
  **/
-warp_Int
-warp_SetLoosexTol(warp_Core  core,        /**< warp_Core (_warp_Core) struct*/
-                  warp_Int   level,       /**< level to set *loose_tol* */
-                  warp_Real  loose_tol    /**< tolerance to set */
-                  );
+braid_Int
+braid_SetLoosexTol(braid_Core  core,        /**< braid_Core (_braid_Core) struct*/
+                   braid_Int   level,       /**< level to set *loose_tol* */
+                   braid_Real  loose_tol    /**< tolerance to set */
+                   );
 
 /**
  * Set tight stopping tolerance *tight_tol* for spatial solves on grid 
  * *level* (level 0 is the finest grid).
  **/
-warp_Int
-warp_SetTightxTol(warp_Core  core,        /**< warp_Core (_warp_Core) struct*/
-                  warp_Int   level,       /**< level to set *tight_tol* */
-                  warp_Real  tight_tol    /**< tolerance to set */
-                  );
+braid_Int
+braid_SetTightxTol(braid_Core  core,        /**< braid_Core (_braid_Core) struct*/
+                   braid_Int   level,       /**< level to set *tight_tol* */
+                   braid_Real  tight_tol    /**< tolerance to set */
+                   );
 
 /**
  * Set max number of multigrid levels.
  **/
-warp_Int
-warp_SetMaxLevels(warp_Core  core,        /**< warp_Core (_warp_Core) struct*/
-                  warp_Int   max_levels   /**< maximum levels to allow */
-                  );
+braid_Int
+braid_SetMaxLevels(braid_Core  core,        /**< braid_Core (_braid_Core) struct*/
+                   braid_Int   max_levels   /**< maximum levels to allow */
+                   );
 
 /**
  * Set max allowed coarse grid size (in terms of C-points) 
  **/
-warp_Int
-warp_SetMaxCoarse(warp_Core  core,        /**< warp_Core (_warp_Core) struct*/
-                  warp_Int   max_coarse   /** maximum coarse grid size */
-                  );
+braid_Int
+braid_SetMaxCoarse(braid_Core  core,        /**< braid_Core (_braid_Core) struct*/
+                   braid_Int   max_coarse   /** maximum coarse grid size */
+                   );
 
 /**
  * Set absolute stopping tolerance.\n
  * **Recommended option over relative tolerance**
  **/
-warp_Int
-warp_SetAbsTol(warp_Core  core,           /**< warp_Core (_warp_Core) struct*/
-               warp_Real  atol            /**< absolute stopping tolerance */
-               );
+braid_Int
+braid_SetAbsTol(braid_Core  core,           /**< braid_Core (_braid_Core) struct*/
+                braid_Real  atol            /**< absolute stopping tolerance */
+                );
 
 /**
  * Set relative stopping tolerance, relative to the initial residual.  Be 
@@ -337,115 +339,115 @@ warp_SetAbsTol(warp_Core  core,           /**< warp_Core (_warp_Core) struct*/
  * may only be nonzero over one or two time values, and this will skew the
  * relative tolerance.  Absolute tolerances are recommended.
  **/
-warp_Int
-warp_SetRelTol(warp_Core  core,           /**< warp_Core (_warp_Core) struct*/
-               warp_Real  rtol            /**< relative stopping tolerance */
-               );
+braid_Int
+braid_SetRelTol(braid_Core  core,           /**< braid_Core (_braid_Core) struct*/
+                braid_Real  rtol            /**< relative stopping tolerance */
+                );
 
 /**
  * Set the number of relaxation sweeps *nrelax* on grid *level*
  * (level 0 is the finest grid).  The default is 1 on all levels.  To change the
  * default factor, use *level = -1*.  One sweep is a CF relaxation sweep.
  **/
-warp_Int
-warp_SetNRelax(warp_Core  core,           /**< warp_Core (_warp_Core) struct*/           
-               warp_Int   level,          /**< *level* to set *nrelax* on */
-               warp_Int   nrelax          /**< number of relaxations to do on *level* */
-               );
+braid_Int
+braid_SetNRelax(braid_Core  core,           /**< braid_Core (_braid_Core) struct*/           
+                braid_Int   level,          /**< *level* to set *nrelax* on */
+                braid_Int   nrelax          /**< number of relaxations to do on *level* */
+                );
 
 /**
  * Set the coarsening factor *cfactor* on grid *level* (level 0 is
  * the finest grid).  The default factor is 2 on all levels.  To change the
  * default factor, use *level = -1*.
  **/
-warp_Int
-warp_SetCFactor(warp_Core  core,          /**< warp_Core (_warp_Core) struct*/
-                warp_Int   level,         /**< *level* to set coarsening factor on */
-                warp_Int   cfactor        /**< desired coarsening factor */
-                );
+braid_Int
+braid_SetCFactor(braid_Core  core,          /**< braid_Core (_braid_Core) struct*/
+                 braid_Int   level,         /**< *level* to set coarsening factor on */
+                 braid_Int   cfactor        /**< desired coarsening factor */
+                 );
 
 /**
  * Set max number of multigrid iterations.
  **/
-warp_Int
-warp_SetMaxIter(warp_Core  core,          /**< warp_Core (_warp_Core) struct*/
-                warp_Int   max_iter       /**< maximum iterations to allow */
-                );
+braid_Int
+braid_SetMaxIter(braid_Core  core,          /**< braid_Core (_braid_Core) struct*/
+                 braid_Int   max_iter       /**< maximum iterations to allow */
+                 );
 
 /**
- * Once called, Warp will use FMG (i.e., F-cycles.
+ * Once called, Braid will use FMG (i.e., F-cycles.
  **/
-warp_Int
-warp_SetFMG(warp_Core  core               /**< warp_Core (_warp_Core) struct*/
-            );
+braid_Int
+braid_SetFMG(braid_Core  core               /**< braid_Core (_braid_Core) struct*/
+             );
 
 /**
  * Set number of V-cycles to use at each FMG level (standard is 1)
  **/
-warp_Int
-warp_SetNFMGVcyc(warp_Core  core,         /**< warp_Core (_warp_Core) struct*/
-                 warp_Int   nfmg_Vcyc     /**< number of V-cycles to do each FMG level */
-                 );
+braid_Int
+braid_SetNFMGVcyc(braid_Core  core,         /**< braid_Core (_braid_Core) struct*/
+                  braid_Int   nfmg_Vcyc     /**< number of V-cycles to do each FMG level */
+                  );
 
 
 /**
  * Set spatial coarsening routine with user-defined routine.
  * Default is no spatial refinment or coarsening.
  **/
-warp_Int
-warp_SetSpatialCoarsen(warp_Core  core,            /**< warp_Core (_warp_Core) struct*/ 
-                       warp_PtFcnCoarsen coarsen   /**< function pointer to spatial coarsening routine */
-                       );
+braid_Int
+braid_SetSpatialCoarsen(braid_Core  core,            /**< braid_Core (_braid_Core) struct*/ 
+                        braid_PtFcnCoarsen coarsen   /**< function pointer to spatial coarsening routine */
+                        );
 
 /**
  * Set spatial refinement routine with user-defined routine.
  * Default is no spatial refinment or coarsening.
  **/
-warp_Int
-warp_SetSpatialRefine(warp_Core  core,             /**< warp_Core (_warp_Core) struct*/
-                      warp_PtFcnRefine refine      /**< function pointer to spatial refinement routine */
-                      );
+braid_Int
+braid_SetSpatialRefine(braid_Core  core,             /**< braid_Core (_braid_Core) struct*/
+                       braid_PtFcnRefine refine      /**< function pointer to spatial refinement routine */
+                       );
 
 /**
- * Set print level for warp.  This controls how much information is 
- * printed to the Warp print file (@ref warp_SetPrintFile).
+ * Set print level for Braid.  This controls how much information is 
+ * printed to the Braid print file (@ref braid_SetPrintFile).
  * 
  * - Level 0: no output
  * - Level 1: print typical information like a residual history, 
- *    number of levels in the Warp hierarchy, and so on.
+ *    number of levels in the Braid hierarchy, and so on.
  * - Level 2: level 1 output, plus debug level output.
  * 
  * Default is level 1.
  **/
-warp_Int
-warp_SetPrintLevel(warp_Core  core,          /**< warp_Core (_warp_Core) struct*/
-                   warp_Int   print_level    /**< desired print level */
-                   );
+braid_Int
+braid_SetPrintLevel(braid_Core  core,          /**< braid_Core (_braid_Core) struct*/
+                    braid_Int   print_level    /**< desired print level */
+                    );
 
 /**
  * Set output file for runtime print messages.  Level of printing is 
- * controlled by @ref warp_SetPrintLevel.  Default is stdout.
+ * controlled by @ref braid_SetPrintLevel.  Default is stdout.
  **/
-warp_Int
-warp_SetPrintFile(warp_Core   core,             /**< warp_Core (_warp_Core) struct*/
-                  const char *printfile_name    /**< output file for Warp runtime output */
-                  );
+braid_Int
+braid_SetPrintFile(braid_Core     core,             /**< braid_Core (_braid_Core) struct*/
+                   const char    *printfile_name    /**< output file for Braid runtime output */
+                   );
 
 /**
- * Set write level for warp.  This controls how often the user's
+ * Set write level for Braid.  This controls how often the user's
  * write routine is called.
  * 
  * - Level 0:  Never call the user's write routine
- * - Level 1:  Only call the user's write routine after Warp is finished
+ * - Level 1:  Only call the user's write routine after Braid is finished
  * - Level 2:  Call the user's write routine every iteration and on every level.
- *             This is during _warp_FRestrict, during the down-cycle part of a Warp iteration. 
+ *             This is during _braid_FRestrict, during the down-cycle part of a Braid iteration. 
  * 
  * Default is level 1.
  **/
-warp_Int
-warp_SetWriteLevel(warp_Core  core,          /**< warp_Core (_warp_Core) struct*/
-                   warp_Int   write_level    /**< desired write_level */
-                   );
+braid_Int
+braid_SetWriteLevel(braid_Core  core,          /**< braid_Core (_braid_Core) struct*/
+                    braid_Int   write_level    /**< desired write_level */
+                    );
 
 /**
  * Split MPI commworld into *comm_x* and *comm_t*, the 
@@ -453,64 +455,64 @@ warp_SetWriteLevel(warp_Core  core,          /**< warp_Core (_warp_Core) struct*
  * will equal Px*Pt, there Px is the number of procs in space, and Pt is 
  * the number of procs in time.
  **/
-warp_Int
-warp_SplitCommworld(const MPI_Comm  *comm_world,  /**< Global communicator to split */
-                          warp_Int  px,           /**< Number of processors parallelizing space for a single time step*/
-                          MPI_Comm  *comm_x,      /**< Spatial communicator (written as output) */
-                          MPI_Comm  *comm_t       /**< Temporal communicator (written as output) */
-                          );
+braid_Int
+braid_SplitCommworld(const MPI_Comm  *comm_world,  /**< Global communicator to split */
+                     braid_Int        px,          /**< Number of processors parallelizing space for a single time step*/
+                     MPI_Comm        *comm_x,      /**< Spatial communicator (written as output) */
+                     MPI_Comm        *comm_t       /**< Temporal communicator (written as output) */
+                     );
 
 /**
  * Return the residual for the current status object.
  **/
-warp_Int
-warp_GetStatusResidual(warp_Status  status,     /**< structure containing current simulation info */
-                       warp_Real   *rnorm_ptr   /**< output, current residual norm */
-                       );
+braid_Int
+braid_GetStatusResidual(braid_Status  status,     /**< structure containing current simulation info */
+                        braid_Real   *rnorm_ptr   /**< output, current residual norm */
+                        );
 
 /**
  * Return the iteration for the current status object.
  **/
-warp_Int
-warp_GetStatusIter(warp_Status  status,         /**< structure containing current simulation info */
-                   warp_Int    *iter_ptr        /**< output, current iteration number*/
-                   );
-
-/**
- * Return the warp level for the current status object.
- **/
-warp_Int
-warp_GetStatusLevel(warp_Status  status,        /**< structure containing current simulation info */
-                    warp_Int    *level_ptr      /**< output, current level in Warp */
+braid_Int
+braid_GetStatusIter(braid_Status  status,         /**< structure containing current simulation info */
+                    braid_Int    *iter_ptr        /**< output, current iteration number*/
                     );
 
 /**
- * Return whether warp is done for the current status object\n
+ * Return the Braid level for the current status object.
+ **/
+braid_Int
+braid_GetStatusLevel(braid_Status  status,        /**< structure containing current simulation info */
+                     braid_Int    *level_ptr      /**< output, current level in Braid */
+                     );
+
+/**
+ * Return whether Braid is done for the current status object\n
  * *done_ptr = 1* indicates that this is the last call to Write, because
- * Warp has stopped iterating (either maxiter has been reached, or the tolerance
+ * Braid has stopped iterating (either maxiter has been reached, or the tolerance
  * has been met).
  **/
-warp_Int
-warp_GetStatusDone(warp_Status  status,         /**< structure containing current simulation info */
-                   warp_Int    *done_ptr        /**< output,  =1 if warp has finished and this is the final Write, else =0 */
-                   );
+braid_Int
+braid_GetStatusDone(braid_Status  status,         /**< structure containing current simulation info */
+                    braid_Int    *done_ptr        /**< output,  =1 if Braid has finished and this is the final Write, else =0 */
+                    );
 
 /**
  * After Drive() finishes, this returns the number of iterations taken.
  **/
-warp_Int
-warp_GetNumIter(warp_Core  core,          /**< warp_Core (_warp_Core) struct*/
-                warp_Int   *niter_ptr     /**< output, holds number of iterations taken */
-                );
+braid_Int
+braid_GetNumIter(braid_Core  core,          /**< braid_Core (_braid_Core) struct*/
+                 braid_Int   *niter_ptr     /**< output, holds number of iterations taken */
+                 );
 
 
 /**
  * After Drive() finishes, this returns the last measured residual norm.
  **/
-warp_Int
-warp_GetRNorm(warp_Core  core,            /**< warp_Core (_warp_Core) struct*/
-              warp_Real  *rnorm_ptr       /**< output, holds final residual norm */
-              );
+braid_Int
+braid_GetRNorm(braid_Core  core,            /**< braid_Core (_braid_Core) struct*/
+               braid_Real  *rnorm_ptr       /**< output, holds final residual norm */
+               );
 
 /** @}*/
 

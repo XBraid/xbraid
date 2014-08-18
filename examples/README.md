@@ -2,9 +2,9 @@
 <!--
  - Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
  - Produced at the Lawrence Livermore National Laboratory.
- - This file is part of WARP.  See file COPYRIGHT for details.
+ - This file is part of XBraid.  See file COPYRIGHT for details.
  -
- - WARP is free software; you can redistribute it and/or modify it under the
+ - XBraid is free software; you can redistribute it and/or modify it under the
  - terms of the GNU Lesser General Public License (as published by the Free
  - Software Foundation) version 2.1 dated February 1999.
  -->
@@ -38,7 +38,7 @@ To run the examples, type
 
 4. drive-05 implements the 2D heat equation on a regular grid, but it
    uses spatial coarsening.  This allows you to use explicit time stepping
-   on each Warp level, regardless of time step size.  It assumes 
+   on each Braid level, regardless of time step size.  It assumes 
    [hypre](https://computation-rnd.llnl.gov/linear_solvers/software.php) 
    is installed just like drive-02.
 
@@ -68,7 +68,7 @@ To run the examples, type
             make clean
             make parallel
 
-     + Go to warp/examples and set these Makefile variables, 
+     + Go to braid/examples and set these Makefile variables, 
 
             METIS_DIR = ../../metis-5.1.0/lib
             MFEM_DIR = ../../mfem

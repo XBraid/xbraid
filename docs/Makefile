@@ -1,9 +1,9 @@
 #BHEADER**********************************************************************
 # Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
 # Produced at the Lawrence Livermore National Laboratory.
-# This file is part of WARP.  See file COPYRIGHT for details.
+# This file is part of XBraid.  See file COPYRIGHT for details.
 #
-# WARP is free software; you can redistribute it and/or modify it under the
+# XBraid is free software; you can redistribute it and/or modify it under the
 # terms of the GNU Lesser General Public License (as published by the Free
 # Software Foundation) version 2.1 dated February 1999.
 #
@@ -19,6 +19,7 @@ clean_latex:
 	if test -d developer_manual; then cd developer_manual; sed '/.*8md.*/d' refman.tex > refman.temp.tex; mv refman.temp.tex refman.tex; fi
 	# sed command changes pdflatex to nonstop mode (important for regression testing)
 	if test -d user_manual; then cd user_manual; sed 's/pdflatex/pdflatex --interaction=nonstopmode/g' Makefile > Makefile.temp; mv Makefile.temp Makefile; fi
+	if test -d developer_manual; then cd developer_manual; sed 's/pdflatex/pdflatex --interaction=nonstopmode/g' Makefile > Makefile.temp; mv Makefile.temp Makefile; fi
 	# sed command changes makeindex to quiet mode (important for regression testing)
 	if test -d user_manual; then cd user_manual; sed 's/makeindex/makeindex -q/g' Makefile > Makefile.temp; mv Makefile.temp Makefile; fi
 	if test -d developer_manual; then cd developer_manual; sed 's/makeindex/makeindex -q/g' Makefile > Makefile.temp; mv Makefile.temp Makefile; fi

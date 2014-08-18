@@ -1,9 +1,9 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
  * Produced at the Lawrence Livermore National Laboratory.
- * This file is part of WARP.  See file COPYRIGHT for details.
+ * This file is part of XBraid.  See file COPYRIGHT for details.
  *
- * WARP is free software; you can redistribute it and/or modify it under the
+ * XBraid is free software; you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License (as published by the Free
  * Software Foundation) version 2.1 dated February 1999.
  *
@@ -17,7 +17,7 @@
 #include "c_array.h"
 #include "advect_data.h"
 
-#include "warp.h"
+#include "braid.h"
 
 int main(int argc, char ** argv)
 {
@@ -43,7 +43,7 @@ int main(int argc, char ** argv)
 /* from drive-05.c */
    int i;
 
-/*   warp_Core  core;*/
+/*   tw_Core  core;*/
 /* my_App is called advection_setup, app = kd_ */
 /*   my_App    *app; */
    int        max_levels;

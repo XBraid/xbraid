@@ -1,9 +1,9 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
  * Produced at the Lawrence Livermore National Laboratory.
- * This file is part of WARP.  See file COPYRIGHT for details.
+ * This file is part of XBraid.  See file COPYRIGHT for details.
  *
- * WARP is free software; you can redistribute it and/or modify it under the
+ * XBraid is free software; you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License (as published by the Free
  * Software Foundation) version 2.1 dated February 1999.
  *
@@ -74,7 +74,7 @@
 #include "HYPRE_sstruct_ls.h"
 #include "_hypre_sstruct_mv.h"
 
-#include "warp.h"
+#include "braid.h"
 
 #define DEBUG 0
 
@@ -152,7 +152,7 @@
  *               implicit 
  *   write       save the solution/error/error norm to files
  */
-typedef struct _warp_App_struct {
+typedef struct _braid_App_struct {
    MPI_Comm                comm_t;
    MPI_Comm                comm_x;
    int                     dim_x;
@@ -192,7 +192,7 @@ typedef struct _warp_App_struct {
 /* struct my_Vector contains local information specific to one time point
  *   x            spatial vector 
  */
-typedef struct _warp_Vector_struct
+typedef struct _braid_Vector_struct
 {
    HYPRE_SStructVector   x;
 } my_Vector;
@@ -2395,12 +2395,12 @@ setUpStructSolver( MPI_Comm             comm,
  * set to u_i.
  * -------------------------------------------------------------------- */
 int
-my_Phi(warp_App     app,
-       double       tstart,
-       double       tstop,
-       double       accuracy,
-       warp_Vector  u,
-       int         *rfactor_ptr)
+my_Phi(braid_App     app,
+       double        tstart,
+       double        tstop,
+       double        accuracy,
+       braid_Vector  u,
+       int          *rfactor_ptr)
 {
    int i, A_idx;
    double *values;
@@ -2591,9 +2591,9 @@ my_Phi(warp_App     app,
  * Create a vector object for a given time point.
  * -------------------------------------------------------------------- */
 int
-my_Init(warp_App     app,
-        double       t,
-        warp_Vector *u_ptr)
+my_Init(braid_App     app,
+        double        t,
+        braid_Vector *u_ptr)
 {
    my_Vector *u;
    double    *values;
@@ -2652,9 +2652,9 @@ my_Init(warp_App     app,
  * Create a a copy of a vector object.
  * -------------------------------------------------------------------- */
 int
-my_Clone(warp_App     app,
-         warp_Vector  u,
-         warp_Vector *v_ptr)
+my_Clone(braid_App     app,
+         braid_Vector  u,
+         braid_Vector *v_ptr)
 {
    my_Vector *v;
    double    *values;
@@ -2694,8 +2694,8 @@ my_Clone(warp_App     app,
  * Destroy vector object.
  * -------------------------------------------------------------------- */
 int
-my_Free(warp_App    app,
-        warp_Vector u)
+my_Free(braid_App    app,
+        braid_Vector u)
 {
    HYPRE_SStructVectorDestroy( u->x );
    free( u );
@@ -2708,11 +2708,11 @@ my_Free(warp_App    app,
  * Compute vector sum y = alpha*x + beta*y.
  * -------------------------------------------------------------------- */
 int
-my_Sum(warp_App    app,
-       double      alpha,
-       warp_Vector x,
-       double      beta,
-       warp_Vector y)
+my_Sum(braid_App    app,
+       double       alpha,
+       braid_Vector x,
+       double       beta,
+       braid_Vector y)
 {
    int i;
    double *values_x, *values_y;
@@ -2752,10 +2752,10 @@ my_Sum(warp_App    app,
  * Compute dot product.
  * -------------------------------------------------------------------- */
 int
-my_Dot(warp_App     app,
-       warp_Vector  u,
-       warp_Vector  v,
-       double      *dot_ptr)
+my_Dot(braid_App     app,
+       braid_Vector  u,
+       braid_Vector  v,
+       double       *dot_ptr)
 {
    double dot;
 
@@ -2804,10 +2804,10 @@ my_Dot(warp_App     app,
  * Write the vector.
  * -------------------------------------------------------------------- */
 int
-my_Write(warp_App     app,
-         warp_Real    t,
-         warp_Status  status,
-         warp_Vector  u)
+my_Write(braid_App     app,
+         braid_Real    t,
+         braid_Status  status,
+         braid_Vector  u)
 {
    MPI_Comm   comm   = MPI_COMM_WORLD;
    double     tstart = (app->tstart);
@@ -2833,14 +2833,14 @@ my_Write(warp_App     app,
    int nly = (app->nly);
    int nlz = (app->nlz);
    
-   /* Retrieve Warp State Information from Status Object */
+   /* Retrieve Braid State Information from Status Object */
    /*double rnorm;
    int iter, level, done;
    
-   warp_GetStatusResidual(status, &rnorm);
-   warp_GetStatusIter(status, &iter);
-   warp_GetStatusLevel(status, &level);
-   warp_GetStatusDone(status, &done);
+   braid_GetStatusResidual(status, &rnorm);
+   braid_GetStatusIter(status, &iter);
+   braid_GetStatusLevel(status, &level);
+   braid_GetStatusDone(status, &done);
    printf("iter= %d, level= %d, t= %1.2e, done= %d, ||r|| = %1.2e\n", iter, level, t, done, rnorm);*/
 
    /* Write to files:
@@ -2912,8 +2912,8 @@ my_Write(warp_App     app,
  * of grid points.
  * -------------------------------------------------------------------- */
 int
-my_BufSize(warp_App  app,
-           int      *size_ptr)
+my_BufSize(braid_App  app,
+           int       *size_ptr)
 {
    *size_ptr = (app->nlx)*(app->nly)*(app->nlz)*sizeof(double);
    return 0;
@@ -2924,9 +2924,9 @@ my_BufSize(warp_App  app,
  * Pack a vector object in a buffer.
  * -------------------------------------------------------------------- */
 int
-my_BufPack(warp_App     app,
-           warp_Vector  u,
-           void        *buffer)
+my_BufPack(braid_App     app,
+           braid_Vector  u,
+           void         *buffer)
 {
    double *dbuffer = buffer;
 
@@ -2946,9 +2946,9 @@ my_BufPack(warp_App     app,
  * Unpack a vector object from a buffer.
  * -------------------------------------------------------------------- */
 int
-my_BufUnpack(warp_App     app,
-             void        *buffer,
-             warp_Vector *u_ptr)
+my_BufUnpack(braid_App     app,
+             void         *buffer,
+             braid_Vector *u_ptr)
 {
    double    *dbuffer = buffer;
    my_Vector *u;
@@ -2989,18 +2989,18 @@ int main (int argc, char *argv[])
    int arg_index;
    int print_usage = 0;
 
-   warp_Core  core;
-   my_App    *app;
-   int        max_levels;
-   int        nrelax, nrelax0;
-   double     tol;
-   int        cfactor, cfactor0;
-   int        max_iter;
-   int        fmg;
-
-   MPI_Comm    comm, comm_x, comm_t;
-   int         myid, num_procs;
-   double      mystarttime, myendtime, mytime, maxtime;
+   braid_Core    core;
+   my_App       *app;
+   int           max_levels;
+   int           nrelax, nrelax0;
+   double        tol;
+   int           cfactor, cfactor0;
+   int           max_iter;
+   int           fmg;
+                
+   MPI_Comm       comm, comm_x, comm_t;
+   int            myid, num_procs;
+   double         mystarttime, myendtime, mytime, maxtime;
 
    /* We consider a 3D problem. */
    int ndim = 3;
@@ -3242,7 +3242,7 @@ int main (int argc, char *argv[])
    }
 
    /* Create communicators for the time and space dimensions */
-   warp_SplitCommworld(&comm, px*py*pz, &comm_x, &comm_t);
+   braid_SplitCommworld(&comm, px*py*pz, &comm_x, &comm_t);
 
 #if DEBUG
    MPI_Comm_size( comm_t, &num_procs );
@@ -3382,45 +3382,45 @@ int main (int argc, char *argv[])
    /* Start timer. */
    mystarttime = MPI_Wtime();
 
-   warp_Init(comm, comm_t, tstart, tstop, nt, app,
+   braid_Init(comm, comm_t, tstart, tstop, nt, app,
              my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_Dot, 
              my_Write, my_BufSize, my_BufPack, my_BufUnpack,
              &core);
 
-   warp_SetLoosexTol( core, 0, tol_x[0] );
-   warp_SetLoosexTol( core, 1, tol_x_coarse );
+   braid_SetLoosexTol( core, 0, tol_x[0] );
+   braid_SetLoosexTol( core, 1, tol_x_coarse );
 
-   warp_SetTightxTol( core, 0, tol_x[1] );
+   braid_SetTightxTol( core, 0, tol_x[1] );
 
-   warp_SetPrintLevel( core, 1);
+   braid_SetPrintLevel( core, 1);
 
-   warp_SetMaxLevels( core, max_levels );
+   braid_SetMaxLevels( core, max_levels );
 
-   warp_SetNRelax(core, -1, nrelax);
+   braid_SetNRelax(core, -1, nrelax);
    if (nrelax0 > -1)
    {
-      warp_SetNRelax(core,  0, nrelax0);
+      braid_SetNRelax(core,  0, nrelax0);
    }
 
-   /*warp_SetRelTol(core, tol);*/
-   warp_SetAbsTol(core, tol/sqrt(dx*dy*dz*dt));
+   /*braid_SetRelTol(core, tol);*/
+   braid_SetAbsTol(core, tol/sqrt(dx*dy*dz*dt));
 
-   warp_SetCFactor(core, -1, cfactor);
+   braid_SetCFactor(core, -1, cfactor);
    if( cfactor0 > -1 ){
       /* Use cfactor0 on all levels until there are < cfactor0 points
        * on each processor. */
       level = (int) (log10((nt + 1) / pt) / log10(cfactor0));
       for( i = 0; i < level; i++ )
-         warp_SetCFactor(core,  i, cfactor0);
+         braid_SetCFactor(core,  i, cfactor0);
    }
    
-   warp_SetMaxIter(core, max_iter);
+   braid_SetMaxIter(core, max_iter);
    if (fmg)
    {
-      warp_SetFMG(core);
+      braid_SetFMG(core);
    }
 
-   warp_Drive(core);
+   braid_Drive(core);
 
    /* Stop timer. */
    myendtime = MPI_Wtime();
@@ -3493,7 +3493,7 @@ int main (int argc, char *argv[])
    free( app->max_iter_x );
    free( app->tol_x );
    free( app );
-   warp_Destroy(core);
+   braid_Destroy(core);
    MPI_Comm_free( &comm_x );
    MPI_Comm_free( &comm_t );
 

@@ -1,9 +1,9 @@
 #BHEADER**********************************************************************
 # Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
 # Produced at the Lawrence Livermore National Laboratory.
-# This file is part of WARP.  See file COPYRIGHT for details.
+# This file is part of XBraid.  See file COPYRIGHT for details.
 #
-# WARP is free software; you can redistribute it and/or modify it under the
+# XBraid is free software; you can redistribute it and/or modify it under the
 # terms of the GNU Lesser General Public License (as published by the Free
 # Software Foundation) version 2.1 dated February 1999.
 #
@@ -36,8 +36,10 @@ ifeq ($(findstring tux343,$(HOSTNAME)),tux343)
 	LFLAGS = -lm
 	ifeq ($(optlevel),DEBUG)
 		CFLAGS = -g -Wall -lm
+		CXXFLAGS = -g -Wall -Wno-reorder -lm
 	else
 		CFLAGS = -O -Wall -lm
+		CXXFLAGS = -O -Wall -Wno-reorder -lm
 	endif
 	ifeq ($(lvalgrind),YES)
 		LFLAGS += /usr/lib64/valgrind/libmpiwrap-amd64-linux.so 
@@ -49,8 +51,10 @@ else ifeq ($(findstring yorkville,$(HOSTNAME)),yorkville)
 	LFLAGS = -lm
 	ifeq ($(optlevel),DEBUG)
 		CFLAGS = -g -Wall
+		CXXFLAGS = -g -Wall
 	else
 		CFLAGS = -O -Wall
+		CXXFLAGS = -O -Wall
 	endif
 else ifeq ($(findstring sierra,$(HOSTNAME)),sierra)
   # for Sierra
@@ -59,28 +63,32 @@ else ifeq ($(findstring sierra,$(HOSTNAME)),sierra)
 	LFLAGS = -lm
 	ifeq ($(optlevel),DEBUG)
 		CFLAGS = -g -Wall
+		CXXFLAGS = -g -Wall
 	else
 		CFLAGS = -O -Wall
+		CXXFLAGS = -O -Wall
 	endif
 else ifeq ($(shell uname -s),Linux)
 	MPICC = mpicc
 	MPICXX = mpiCC
-	CFLAGS = -g -Wall
 	LFLAGS = -lm
 	ifeq ($(optlevel),DEBUG)
 		CFLAGS = -g -Wall
+		CXXFLAGS = -g -Wall
 	else
 		CFLAGS = -O -Wall
+		CXXFLAGS = -O -Wall
 	endif
 else
 	MPICC = mpicc
 	MPICXX = mpiCC
-	CFLAGS = -g -Wall
 	LFLAGS = -lm
 	ifeq ($(optlevel),DEBUG)
 		CFLAGS = -g -Wall
+		CXXFLAGS = -g -Wall
 	else
 		CFLAGS = -O -Wall
+		CXXFLAGS = -O -Wall
 	endif
 endif
 

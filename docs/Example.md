@@ -1,9 +1,9 @@
 <!--
  - Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
  - Produced at the Lawrence Livermore National Laboratory.
- - This file is part of WARP.  See file COPYRIGHT for details.
+ - This file is part of XBraid.  See file COPYRIGHT for details.
  -
- - WARP is free software; you can redistribute it and/or modify it under the
+ - XBraid is free software; you can redistribute it and/or modify it under the
  - terms of the GNU Lesser General Public License (as published by the Free
  - Software Foundation) version 2.1 dated February 1999.
  -->
@@ -12,7 +12,7 @@
 
 ### User Defined Structures and Wrappers
 
-As mentioned, the user must wrap their existing time stepping routine per the Warp interface. 
+As mentioned, the user must wrap their existing time stepping routine per the \f$\chi\f$Braid interface. 
 To do this, the user must define two data structures and some wrapper routines.  To make the 
 idea more concrete, we now give these function definitions from examples/drive-01, which 
 implements a scalar ODE, \f$ u_t = \lambda u \f$.
@@ -23,7 +23,7 @@ The two data structures are:
   to carry out a simulation.  Here, this is just the global MPI communicator and few values
   describing the temporal domain.
       
-      typedef struct _warp_App_struct
+      typedef struct _braid_App_struct
       {
          MPI_Comm  comm;
          double    tstart;
@@ -38,7 +38,7 @@ The two data structures are:
   needed to evolve the vector to the next time value, like mesh information.
   Here, the vector is just a scalar double.    
 
-      typedef struct _warp_Vector_struct
+      typedef struct _braid_Vector_struct
       {
          double value;
       
@@ -47,21 +47,21 @@ The two data structures are:
 
 The user must also define a few wrapper routines.  Note, that the app structure is the 
 first argument to every function.
-1. **Phi**: This function tells Warp how to take a time step, and is the core user routine. 
+1. **Phi**: This function tells \f$\chi\f$Braid how to take a time step, and is the core user routine. 
    The user must advance the vector *u* 
    from time *tstart* to time *tstop*.  Here advancing the solution just involves the scalar \f$ \lambda \f$.  
    The *rfactor_ptr* and *accuracy* parameters are advanced topics not used here.
 
-   **Importantly,** the \f$ g_i \f$ function (from @ref warpoverview) must be 
+   **Importantly,** the \f$ g_i \f$ function (from @ref braidoverview) must be 
    incorporated into Phi, so that \f$\Phi(u_i) \rightarrow u_{i+1} \f$
 
          int
-         my_Phi(warp_App     app,
-                double       tstart,
-                double       tstop,
-                double       accuracy,
-                warp_Vector  u,
-                int         *rfactor_ptr)
+         my_Phi(braid_App     app,
+                double     tstart,
+                double     tstop,
+                double     accuracy,
+                braid_Vector  u,
+                int        *rfactor_ptr)
          {
             /* On the finest grid, each value is half the previous value */
             (u->value) = pow(0.5, tstop-tstart)*(u->value);
@@ -75,13 +75,13 @@ first argument to every function.
             return 0;
          }
 
-2. **Init**: This function tells Warp how to initialize a vector at time *t*.  
+2. **Init**: This function tells \f$\chi\f$Braid how to initialize a vector at time *t*.  
    Here that is just allocating and setting a scalar on the heap.
 
          int
-         my_Init(warp_App     app,
-                 double       t,
-                 warp_Vector *u_ptr)
+         my_Init(braid_App     app,
+                 double     t,
+                 braid_Vector *u_ptr)
          {
             my_Vector *u;
 
@@ -102,13 +102,13 @@ first argument to every function.
          }
 
 
-3. **Clone**: This function tells Warp how to clone a vector 
+3. **Clone**: This function tells \f$\chi\f$Braid how to clone a vector 
    into a new vector.
 
          int
-         my_Clone(warp_App     app,
-                  warp_Vector  u,
-                  warp_Vector *v_ptr)
+         my_Clone(braid_App     app,
+                  braid_Vector  u,
+                  braid_Vector *v_ptr)
          {
             my_Vector *v;
 
@@ -119,41 +119,41 @@ first argument to every function.
             return 0;
          }
 
-4. **Free**: This function tells Warp how to free 
+4. **Free**: This function tells \f$\chi\f$Braid how to free 
    a vector.
 
          int
-         my_Free(warp_App    app,
-                 warp_Vector u)
+         my_Free(braid_App    app,
+                 braid_Vector u)
          {
             free(u);
 
             return 0;
          }
 
-5. **Sum**: This function tells Warp how to sum two 
+5. **Sum**: This function tells \f$\chi\f$Braid how to sum two 
    vectors (AXPY operation).
 
          int
-         my_Sum(warp_App    app,
-                double      alpha,
-                warp_Vector x,
-                double      beta,
-                warp_Vector y)
+         my_Sum(braid_App    app,
+                double    alpha,
+                braid_Vector x,
+                double    beta,
+                braid_Vector y)
          {
             (y->value) = alpha*(x->value) + beta*(y->value);
 
             return 0;
          }
 
-6. **Dot**: This function tells Warp how to take the dot 
+6. **Dot**: This function tells \f$\chi\f$Braid how to take the dot 
    product of two vectors.
 
          int
-         my_Dot(warp_App     app,
-                warp_Vector  u,
-                warp_Vector  v,
-                double      *dot_ptr)
+         my_Dot(braid_App     app,
+                braid_Vector  u,
+                braid_Vector  v,
+                double    *dot_ptr)
          {
             double dot;
 
@@ -163,25 +163,25 @@ first argument to every function.
             return 0;
          }
 
-7. **Write**: This function tells Warp how to write a vector at time *t* to screen, file, etc... 
+7. **Write**: This function tells \f$\chi\f$Braid how to write a vector at time *t* to screen, file, etc... 
    The user defines what is appropriate output.  Notice how you are told the time value of the 
    vector *u* and even more information in *status*.  This lets you tailor the output to only 
    certain time values.  
    
-   If write_level is 2 (see [warp_SetWriteLevel](@ref warp_SetWriteLevel) ), then 
-   *Write* is called every Warp iteration and on every Warp level.  In this case, 
-   *status* can be querried using the warp_Get**Status() functions, to determine the 
-   current Warp level and iteration.  This allows for even more detailed tracking of the
+   If write_level is 2 (see [braid_SetWriteLevel](@ref braid_SetWriteLevel) ), then 
+   *Write* is called every \f$\chi\f$Braid iteration and on every \f$\chi\f$Braid level.  In this case, 
+   *status* can be querried using the braid_Get**Status() functions, to determine the 
+   current \f$\chi\f$Braid level and iteration.  This allows for even more detailed tracking of the
    simulation. 
    
    See examples/drive-02 and examples/drive-04 for more advanced uses of the Write function.  
    Drive-04 writes to a GLVIS visualization port, and examples/drive-02 writes to .vtu files.
 
          int
-         my_Write(warp_App     app,
-                  double       t,
-                  warp_Status  status,
-                  warp_Vector  u)
+         my_Write(braid_App     app,
+                  double     t,
+                  braid_Status  status,
+                  braid_Vector  u)
          {
             MPI_Comm   comm   = (app->comm);
             double     tstart = (app->tstart);
@@ -205,24 +205,24 @@ first argument to every function.
          }
 
 
-8. **BufSize**, **BufPack**, **BufUnpack**: These three routines tell Warp how to 
+8. **BufSize**, **BufPack**, **BufUnpack**: These three routines tell \f$\chi\f$Braid how to 
    communicate vectors between processors.  *BufPack* packs a vector 
    into a ``void *`` buffer for MPI and then *BufUnPack* unpacks it from ``void *`` 
    to vector.  Here doing that for a scalar is trivial.  *BufSize* computes the 
    upper bound for the size of an arbitrary vector.
 
          int
-         my_BufSize(warp_App  app,
-                    int      *size_ptr)
+         my_BufSize(braid_App  app,
+                    int    *size_ptr)
          {
             *size_ptr = sizeof(double);
             return 0;
          }
 
          int
-         my_BufPack(warp_App     app,
-                    warp_Vector  u,
-                    void        *buffer)
+         my_BufPack(braid_App     app,
+                    braid_Vector  u,
+                    void      *buffer)
          {
             double *dbuffer = buffer;
 
@@ -232,9 +232,9 @@ first argument to every function.
          }
 
          int
-         my_BufUnpack(warp_App     app,
-                      void        *buffer,
-                      warp_Vector *u_ptr)
+         my_BufUnpack(braid_App     app,
+                      void      *buffer,
+                      braid_Vector *u_ptr)
          {
             double    *dbuffer = buffer;
             my_Vector *u;
@@ -253,7 +253,7 @@ first argument to every function.
   explicit schemes on coarse time scales and is not needed here.  See for instance
   examples/drive-04 and examples/drive-05 which use these routines.
 
-  These functions allow you vary the spatial mesh size on Warp levels as depicted here
+  These functions allow you vary the spatial mesh size on \f$\chi\f$Braid levels as depicted here
   where the spatial and temporal grid sizes are halved every level.
   \latexonly
    \begin{figure}[!ht] \centering 
@@ -266,7 +266,7 @@ first argument to every function.
 in *Phi* will allow this.
 
 
-### Running Warp
+### Running \f$\chi\f$Braid
 
 A typical flow of events in the ``main`` function is to first initialize the ``app``
 structure.
@@ -278,31 +278,31 @@ structure.
     (app->tstop)  = tstop;
     (app->ntime)  = ntime;
 
-Then, the data structure definitions and wrapper routines are passed to Warp.
-The core structure is used by Warp for internal data structures. 
+Then, the data structure definitions and wrapper routines are passed to \f$\chi\f$Braid.
+The core structure is used by \f$\chi\f$Braid for internal data structures. 
 
-    warp_Core  core;
-    warp_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
-              my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_Dot, my_Write,
-              my_BufSize, my_BufPack, my_BufUnpack,
-              &core);
+    braid_Core  core;
+    braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
+            my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_Dot, my_Write,
+            my_BufSize, my_BufPack, my_BufUnpack,
+            &core);
     
-Then, Warp options are set.
+Then, \f$\chi\f$Braid options are set.
 
-    warp_SetPrintLevel( core, 1);
-    warp_SetMaxLevels(core, max_levels);
-    warp_SetNRelax(core, -1, nrelax);
-    warp_SetAbsTol(core, tol);
-    warp_SetCFactor(core, -1, cfactor);
-    warp_SetMaxIter(core, max_iter);
+    braid_SetPrintLevel( core, 1);
+    braid_SetMaxLevels(core, max_levels);
+    braid_SetNRelax(core, -1, nrelax);
+    braid_SetAbsTol(core, tol);
+    braid_SetCFactor(core, -1, cfactor);
+    braid_SetMaxIter(core, max_iter);
    
 Then, the simulation is run.
 
-    warp_Drive(core);
+    braid_Drive(core);
 
 Then, we clean up.
 
-    warp_Destroy(core);
+    braid_Destroy(core);
 
 Finally, to run drive-01, type
 
@@ -310,42 +310,42 @@ Finally, to run drive-01, type
 
 This will run drive-01. See examples/drive-0* for more extensive examples.
 
-### Testing Warp
+### Testing \f$\chi\f$Braid
 
-The best overall test for Warp, is to set the maximum number of levels to 1 
-(see [warp_SetMaxLevels](@ref warp_SetMaxLevels) ) which will carry out a
+The best overall test for \f$\chi\f$Braid, is to set the maximum number of levels to 1 
+(see [braid_SetMaxLevels](@ref braid_SetMaxLevels) ) which will carry out a
 sequential time stepping test.  Take the output given to you by your *Write*
-function and compare it to output from a non-Warp run.  Is everything OK?
-Once this is complete, repeat for multilevel Warp, and check that the solution
+function and compare it to output from a non-\f$\chi\f$Braid run.  Is everything OK?
+Once this is complete, repeat for multilevel \f$\chi\f$Braid, and check that the solution
 is correct (that is, it matches a serial run to within tolerance).
 
 At a lower level, to do sanity checks of your data structures and wrapper routines, there are
-also Warp test functions, which can be easily run.  The test routines also 
+also \f$\chi\f$Braid test functions, which can be easily run.  The test routines also 
 take as arguments the app structure, spatial communicator comm_x, a stream
 like stdout for test output and a time step size to test dt.  After these arguments,
 function pointers to wrapper routines are the rest of the arguments. Some of the tests
 can return a boolean variable to indicate correctness.
       
     /* Test init(), write(), free() */
-    warp_TestInitWrite( app, comm_x, stdout, dt, my_Init, my_Write, my_Free);
+    braid_TestInitWrite( app, comm_x, stdout, dt, my_Init, my_Write, my_Free);
 
     /* Test clone() */
-    warp_TestClone( app, comm_x, stdout, dt, my_Init, my_Write, my_Free, my_Clone);
+    braid_TestClone( app, comm_x, stdout, dt, my_Init, my_Write, my_Free, my_Clone);
 
     /* Test sum() */
-    warp_TestSum( app, comm_x, stdout, dt, my_Init, my_Write, my_Free, my_Clone, my_Sum);
+    braid_TestSum( app, comm_x, stdout, dt, my_Init, my_Write, my_Free, my_Clone, my_Sum);
 
     /* Test dot() */
-    correct = warp_TestDot( app, comm_x, stdout, dt, my_Init, my_Free, my_Clone, my_Sum, my_Dot);
+    correct = braid_TestDot( app, comm_x, stdout, dt, my_Init, my_Free, my_Clone, my_Sum, my_Dot);
 
     /* Test bufsize(), bufpack(), bufunpack() */
-    correct = warp_TestBuf( app, comm_x, stdout, dt, my_Init, my_Free, my_Sum, my_Dot, my_BufSize, my_BufPack, my_BufUnpack);
+    correct = braid_TestBuf( app, comm_x, stdout, dt, my_Init, my_Free, my_Sum, my_Dot, my_BufSize, my_BufPack, my_BufUnpack);
      
     /* Test coarsen and refine */
-    correct = warp_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
+    correct = braid_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
                            my_Write, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenInjection, 
                            my_Refine);
-    correct = warp_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
+    correct = braid_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
                           my_Write, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenBilinear, 
                           my_Refine);
 

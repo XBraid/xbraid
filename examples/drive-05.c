@@ -1,9 +1,9 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
  * Produced at the Lawrence Livermore National Laboratory.
- * This file is part of WARP.  See file COPYRIGHT for details.
+ * This file is part of XBraid.  See file COPYRIGHT for details.
  *
- * WARP is free software; you can redistribute it and/or modify it under the
+ * XBraid is free software; you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License (as published by the Free
  * Software Foundation) version 2.1 dated February 1999.
  *
@@ -74,8 +74,8 @@
 #include "HYPRE_sstruct_ls.h"
 #include "_hypre_sstruct_mv.h"
 
-#include "warp.h"
-#include "warp_test.h"
+#include "braid.h"
+#include "braid_test.h"
 
 #include "vis.c"
 
@@ -180,7 +180,7 @@ typedef struct _spatial_discretization
  *   output_files    save the solution/error/error norm to files
  *   output_vis      save the error for GLVis visualization
  */
-typedef struct _warp_App_struct {
+typedef struct _braid_App_struct {
    MPI_Comm                comm_t;
    MPI_Comm                comm_x;
    int                     dim_x;
@@ -222,7 +222,7 @@ typedef struct _warp_App_struct {
 /* struct my_Vector contains local information specific to one time point
  *   x            spatial vector 
  */
-typedef struct _warp_Vector_struct
+typedef struct _braid_Vector_struct
 {
    int                   spatial_disc_idx;
    HYPRE_SStructVector   x;
@@ -1607,12 +1607,12 @@ setUpStructSolver( MPI_Comm             comm,
  * set to u_i.
  * -------------------------------------------------------------------- */
 int
-my_Phi(warp_App     app,
-       double       tstart,
-       double       tstop,
-       double       accuracy,
-       warp_Vector  u,
-       int         *rfactor_ptr)
+my_Phi(braid_App     app,
+       double        tstart,
+       double        tstop,
+       double        accuracy,
+       braid_Vector  u,
+       int          *rfactor_ptr)
 {
    int i, A_idx;
    double *values;
@@ -1869,9 +1869,9 @@ my_Phi(warp_App     app,
  * This function is only called on the finest level
  * -------------------------------------------------------------------- */
 int
-my_Init(warp_App     app,
-        double       t,
-        warp_Vector *u_ptr)
+my_Init(braid_App     app,
+        double        t,
+        braid_Vector *u_ptr)
 {
    my_Vector *u;
    double    *values;
@@ -1930,9 +1930,9 @@ my_Init(warp_App     app,
  * Create a a copy of a vector object.
  * -------------------------------------------------------------------- */
 int
-my_Clone(warp_App     app,
-         warp_Vector  u,
-         warp_Vector *v_ptr)
+my_Clone(braid_App     app,
+         braid_Vector  u,
+         braid_Vector *v_ptr)
 {
    /* We have one part and one var*/
    int        part = 0;
@@ -2031,17 +2031,17 @@ int my_ComputeNumCoarsenings(double dt,
  * Return value is 
  *    spatial_disc_idx
  * -------------------------------------------------------------------- */
-void get_coarse_spatial_disc( warp_App app, 
-                              double cdt, 
-                              double fdt, 
-                              double fdx,
-                              double fdy,
-                              int fnlx,
-                              int fnly,
-                              int fspatial_disc_idx,
-                              int* filower_x,
-                              int* fiupper_x,
-                              int* spatial_disc_idx)
+void get_coarse_spatial_disc( braid_App app, 
+                              double    cdt, 
+                              double    fdt, 
+                              double    fdx,
+                              double    fdy,
+                              int       fnlx,
+                              int       fnly,
+                              int       fspatial_disc_idx,
+                              int*      filower_x,
+                              int*      fiupper_x,
+                              int*      spatial_disc_idx)
 {
    int i, ncoarsen, cnlx, cnly;
    int cilower_x[2], ciupper_x[2];
@@ -2121,10 +2121,10 @@ void get_coarse_spatial_disc( warp_App app,
 /* --------------------------------------------------------------------
  * Retrieve a spatial discretization 
  * -------------------------------------------------------------------- */
-void retrieve_spatial_discretization( warp_App app, 
-                                      double cdt, 
-                                      double fdt,
-                                      int *spatial_disc_idx)
+void retrieve_spatial_discretization( braid_App app, 
+                                      double    cdt, 
+                                      double    fdt,
+                                      int       *spatial_disc_idx)
 {
    int max_levels = app->max_levels;
    int i;
@@ -2151,14 +2151,14 @@ void retrieve_spatial_discretization( warp_App app,
  * Assuming no spatial parallelism
  * -------------------------------------------------------------------- */
 int
-my_Refine(warp_App       app,          
-           double        tstart,
-           double        f_tminus,
-           double        f_tplus,
-           double        c_tminus,
-           double        c_tplus,
-           warp_Vector   cu,
-           warp_Vector  *fu_ptr)
+my_Refine(braid_App       app,          
+           double         tstart,
+           double         f_tminus,
+           double         f_tplus,
+           double         c_tminus,
+           double         c_tplus,
+           braid_Vector   cu,
+           braid_Vector  *fu_ptr)
 {
    my_Vector *fu;
    double     *cvalues, *fvalues;
@@ -2314,14 +2314,14 @@ my_Refine(warp_App       app,
  * Assuming no spatial parallelism
  * -------------------------------------------------------------------- */
 int
-my_CoarsenInjection(warp_App      app,           
-           double        tstart,
-           double        f_tminus,
-           double        f_tplus,
-           double        c_tminus,
-           double        c_tplus,
-           warp_Vector   fu,
-           warp_Vector  *cu_ptr)
+my_CoarsenInjection(braid_App      app,           
+                    double         tstart,
+                    double         f_tminus,
+                    double         f_tplus,
+                    double         c_tminus,
+                    double         c_tplus,
+                    braid_Vector   fu,
+                    braid_Vector  *cu_ptr)
 {
    my_Vector *cu;
    double     *cvalues, *fvalues;
@@ -2419,14 +2419,14 @@ my_CoarsenInjection(warp_App      app,
  * Assuming no spatial parallelism
  * -------------------------------------------------------------------- */
 int
-my_CoarsenBilinear(warp_App      app,           
-           double        tstart,
-           double        f_tminus,
-           double        f_tplus,
-           double        c_tminus,
-           double        c_tplus,
-           warp_Vector   fu,
-           warp_Vector  *cu_ptr)
+my_CoarsenBilinear(braid_App      app,           
+                   double         tstart,
+                   double         f_tminus,
+                   double         f_tplus,
+                   double         c_tminus,
+                   double         c_tplus,
+                   braid_Vector   fu,
+                   braid_Vector  *cu_ptr)
 {
    my_Vector *cu;
    double     *cvalues, *fvalues;
@@ -2580,8 +2580,8 @@ my_CoarsenBilinear(warp_App      app,
  * Destroy vector object.
  * -------------------------------------------------------------------- */
 int
-my_Free(warp_App    app,
-        warp_Vector u)
+my_Free(braid_App    app,
+        braid_Vector u)
 {
    HYPRE_SStructVectorDestroy( u->x );
    free( u );
@@ -2594,11 +2594,11 @@ my_Free(warp_App    app,
  * Compute vector sum y = alpha*x + beta*y.
  * -------------------------------------------------------------------- */
 int
-my_Sum(warp_App    app,
-       double      alpha,
-       warp_Vector x,
-       double      beta,
-       warp_Vector y)
+my_Sum(braid_App    app,
+       double       alpha,
+       braid_Vector x,
+       double       beta,
+       braid_Vector y)
 {
    int i;
    double *values_x, *values_y;
@@ -2645,10 +2645,10 @@ my_Sum(warp_App    app,
  * Compute dot product.
  * -------------------------------------------------------------------- */
 int
-my_Dot(warp_App     app,
-       warp_Vector  u,
-       warp_Vector  v,
-       double      *dot_ptr)
+my_Dot(braid_App     app,
+       braid_Vector  u,
+       braid_Vector  v,
+       double       *dot_ptr)
 {
    double dot;
 
@@ -2664,10 +2664,10 @@ my_Dot(warp_App     app,
  * Write the vector.
  * -------------------------------------------------------------------- */
 int
-my_Write(warp_App     app,
-         warp_Real    t,
-         warp_Status  status,
-         warp_Vector  u)
+my_Write(braid_App     app,
+         braid_Real    t,
+         braid_Status  status,
+         braid_Vector  u)
 {
    MPI_Comm   comm   = MPI_COMM_WORLD;
    double     tstart = (app->tstart);
@@ -2708,12 +2708,12 @@ my_Write(warp_App     app,
    iupper_x[0]    = (app->spatial_disc_table[u->spatial_disc_idx]).iupper_x[0];
    iupper_x[1]    = (app->spatial_disc_table[u->spatial_disc_idx]).iupper_x[1];
 
-   /* Retrieve Warp State Information from Status Object */
+   /* Retrieve Braid State Information from Status Object */
    MPI_Comm_rank(comm, &myid);
-   warp_GetStatusResidual(status, &rnorm);
-   warp_GetStatusIter(status, &iter);
-   warp_GetStatusLevel(status, &level);
-   warp_GetStatusDone(status, &done);
+   braid_GetStatusResidual(status, &rnorm);
+   braid_GetStatusIter(status, &iter);
+   braid_GetStatusLevel(status, &level);
+   braid_GetStatusDone(status, &done);
    if( (myid == 0) && (level != previous_level) )
    {
       previous_level = level;
@@ -2827,8 +2827,8 @@ my_Write(warp_App     app,
  * of grid points.
  * -------------------------------------------------------------------- */
 int
-my_BufSize(warp_App  app,
-           int      *size_ptr)
+my_BufSize(braid_App  app,
+           int       *size_ptr)
 {
     /* A vector needs to contain 1 extra doubles for the coarsening rule */ 
     *size_ptr = (1 + (app->nlx)*(app->nly))*sizeof(double);
@@ -2840,9 +2840,9 @@ my_BufSize(warp_App  app,
  * Pack a vector object in a buffer.
  * -------------------------------------------------------------------- */
 int
-my_BufPack(warp_App     app,
-           warp_Vector  u,
-           void        *buffer)
+my_BufPack(braid_App     app,
+           braid_Vector  u,
+           void         *buffer)
 {
    double *dbuffer = buffer;
    int ilower_x[2], iupper_x[2];
@@ -2873,9 +2873,9 @@ my_BufPack(warp_App     app,
  * Unpack a vector object from a buffer.
  * -------------------------------------------------------------------- */
 int
-my_BufUnpack(warp_App     app,
-             void        *buffer,
-             warp_Vector *u_ptr)
+my_BufUnpack(braid_App     app,
+             void         *buffer,
+             braid_Vector *u_ptr)
 {
    int ilower_x[2], iupper_x[2];
    double    *dbuffer = buffer;
@@ -2932,7 +2932,7 @@ int main (int argc, char *argv[])
 
    int correct;
 
-   warp_Core  core;
+   braid_Core    core;
    my_App    *app;
    int        max_levels;
    int        max_coarse;
@@ -3169,7 +3169,7 @@ int main (int argc, char *argv[])
       printf("\n");
       printf("Usage: %s [<options>]\n", argv[0]);
       printf("\n");
-      printf("  -run_wrapper_tests               : Only run the Warp wrapper tests\n");
+      printf("  -run_wrapper_tests               : Only run the Braid wrapper tests\n");
       printf("                                     (do not combine with temporal parallelism)\n");
       printf("  -pgrid  <px py pt>               : processors in each dimension (default: 1 1 1)\n");
       printf("  -nx  <nlx nly>                   : 2D spatial problem size of form 2^k+1, 2^k+1 (default: 17 17)\n");
@@ -3267,7 +3267,7 @@ int main (int argc, char *argv[])
    }
 
    /* Create communicators for the time and space dimensions */
-   warp_SplitCommworld(&comm, px*py, &comm_x, &comm_t);
+   braid_SplitCommworld(&comm, px*py, &comm_x, &comm_t);
 
 #if DEBUG
    MPI_Comm_size( comm_t, &num_procs );
@@ -3425,34 +3425,34 @@ int main (int argc, char *argv[])
    
    if( run_wrapper_tests)
    {
-      /* Run only the warp wrapper tests */
+      /* Run only the Braid wrapper tests */
       MPI_Comm_rank( comm_x, &myid );
 
       /* Test init(), write(), free() */
-      warp_TestInitWrite( app, comm_x, stdout, 0.0, my_Init, my_Write, my_Free);
-      warp_TestInitWrite( app, comm_x, stdout, dt, my_Init, my_Write, my_Free);
+      braid_TestInitWrite( app, comm_x, stdout, 0.0, my_Init, my_Write, my_Free);
+      braid_TestInitWrite( app, comm_x, stdout, dt, my_Init, my_Write, my_Free);
 
       /* Test clone() */
-      warp_TestClone( app, comm_x, stdout, 0.0, my_Init, my_Write, my_Free, my_Clone);
-      warp_TestClone( app, comm_x, stdout, dt, my_Init, my_Write, my_Free, my_Clone);
+      braid_TestClone( app, comm_x, stdout, 0.0, my_Init, my_Write, my_Free, my_Clone);
+      braid_TestClone( app, comm_x, stdout, dt, my_Init, my_Write, my_Free, my_Clone);
 
       /* Test sum() */
-      warp_TestSum( app, comm_x, stdout, 0.0, my_Init, my_Write, my_Free, my_Clone, my_Sum);
-      warp_TestSum( app, comm_x, stdout, dt, my_Init, my_Write, my_Free, my_Clone, my_Sum);
+      braid_TestSum( app, comm_x, stdout, 0.0, my_Init, my_Write, my_Free, my_Clone, my_Sum);
+      braid_TestSum( app, comm_x, stdout, dt, my_Init, my_Write, my_Free, my_Clone, my_Sum);
 
       /* Test dot() */
-      correct = warp_TestDot( app, comm_x, stdout, 0.0, my_Init, my_Free, my_Clone, my_Sum, my_Dot);
-      correct = warp_TestDot( app, comm_x, stdout, dt, my_Init, my_Free, my_Clone, my_Sum, my_Dot);
+      correct = braid_TestDot( app, comm_x, stdout, 0.0, my_Init, my_Free, my_Clone, my_Sum, my_Dot);
+      correct = braid_TestDot( app, comm_x, stdout, dt, my_Init, my_Free, my_Clone, my_Sum, my_Dot);
 
       /* Test bufsize(), bufpack(), bufunpack() */
-      correct = warp_TestBuf( app, comm_x, stdout, 0.0, my_Init, my_Free, my_Sum, my_Dot, my_BufSize, my_BufPack, my_BufUnpack);
-      correct = warp_TestBuf( app, comm_x, stdout, dt, my_Init, my_Free, my_Sum, my_Dot, my_BufSize, my_BufPack, my_BufUnpack);
+      correct = braid_TestBuf( app, comm_x, stdout, 0.0, my_Init, my_Free, my_Sum, my_Dot, my_BufSize, my_BufPack, my_BufUnpack);
+      correct = braid_TestBuf( app, comm_x, stdout, dt, my_Init, my_Free, my_Sum, my_Dot, my_BufSize, my_BufPack, my_BufUnpack);
        
       /* Test coarsen and refine */
-      correct = warp_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
+      correct = braid_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
                              my_Write, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenInjection, 
                              my_Refine);
-      correct = warp_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
+      correct = braid_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
                             my_Write, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenBilinear, 
                             my_Refine);
       if(correct == 0)
@@ -3467,50 +3467,50 @@ int main (int argc, char *argv[])
    }
    else
    {
-      /* Run a Warp simulation */
+      /* Run a Braid simulation */
       /* Start timer. */
       mystarttime = MPI_Wtime();
 
-      warp_Init(comm, comm_t, tstart, tstop, nt, app,
+      braid_Init(comm, comm_t, tstart, tstop, nt, app,
                 my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_Dot, 
                 my_Write, my_BufSize, my_BufPack, my_BufUnpack,
                 &core);
 
-      warp_SetLoosexTol( core, 0, tol_x[0] );
-      warp_SetLoosexTol( core, 1, tol_x_coarse );
+      braid_SetLoosexTol( core, 0, tol_x[0] );
+      braid_SetLoosexTol( core, 1, tol_x_coarse );
 
-      warp_SetTightxTol( core, 0, tol_x[1] );
+      braid_SetTightxTol( core, 0, tol_x[1] );
 
-      warp_SetMaxLevels( core, max_levels );
-      warp_SetMaxCoarse( core, max_coarse );
+      braid_SetMaxLevels( core, max_levels );
+      braid_SetMaxCoarse( core, max_coarse );
 
-      warp_SetPrintLevel( core, print_level);
-      warp_SetWriteLevel( core, write_level);
+      braid_SetPrintLevel( core, print_level);
+      braid_SetWriteLevel( core, write_level);
 
-      warp_SetNRelax(core, -1, nrelax);
+      braid_SetNRelax(core, -1, nrelax);
       if (nrelax0 > -1)
       {
-         warp_SetNRelax(core,  0, nrelax0);
+         braid_SetNRelax(core,  0, nrelax0);
       }
 
-      /*warp_SetRelTol(core, tol);*/
-      /*warp_SetAbsTol(core, tol*sqrt(px*nlx*py*nly*(nt+1)) );*/
-      warp_SetAbsTol(core, tol/sqrt(dx*dy*dt));
+      /*braid_SetRelTol(core, tol);*/
+      /*braid_SetAbsTol(core, tol*sqrt(px*nlx*py*nly*(nt+1)) );*/
+      braid_SetAbsTol(core, tol/sqrt(dx*dy*dt));
 
-      warp_SetCFactor(core, -1, cfactor);
+      braid_SetCFactor(core, -1, cfactor);
       if( cfactor0 > -1 ){
          /* Use cfactor0 on all levels until there are < cfactor0 points
           * on each processor. */
          level = (int) (log10((nt + 1) / pt) / log10(cfactor0));
          for( i = 0; i < level; i++ )
-            warp_SetCFactor(core,  i, cfactor0);
+            braid_SetCFactor(core,  i, cfactor0);
       }
       
-      warp_SetMaxIter(core, max_iter);
+      braid_SetMaxIter(core, max_iter);
       if (fmg)
       {
-         warp_SetFMG(core);
-         warp_SetNFMGVcyc(core, nfmg_Vcyc);
+         braid_SetFMG(core);
+         braid_SetNFMGVcyc(core, nfmg_Vcyc);
       }
       
       if (scoarsen)
@@ -3518,20 +3518,20 @@ int main (int argc, char *argv[])
          app->scoarsen=1;
          if (scoarsen == 1)
          {
-            warp_SetSpatialCoarsen(core, my_CoarsenInjection);
+            braid_SetSpatialCoarsen(core, my_CoarsenInjection);
          }
          else if (scoarsen == 2)
          {
-            warp_SetSpatialCoarsen(core, my_CoarsenBilinear);
+            braid_SetSpatialCoarsen(core, my_CoarsenBilinear);
          }
          else
          {
             printf("Invalid scoarsen choice.  Ignoring this parameter\n");
          }
-         warp_SetSpatialRefine(core, my_Refine);
+         braid_SetSpatialRefine(core, my_Refine);
       }
 
-      warp_Drive(core);
+      braid_Drive(core);
 
       /* Stop timer. */
       myendtime = MPI_Wtime();
@@ -3600,7 +3600,7 @@ int main (int argc, char *argv[])
          printf( "\n" );
       }
 
-      warp_Destroy(core);
+      braid_Destroy(core);
    }
    
    /* Free memory */

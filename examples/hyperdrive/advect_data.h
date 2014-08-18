@@ -1,9 +1,9 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
  * Produced at the Lawrence Livermore National Laboratory.
- * This file is part of WARP.  See file COPYRIGHT for details.
+ * This file is part of XBraid.  See file COPYRIGHT for details.
  *
- * WARP is free software; you can redistribute it and/or modify it under the
+ * XBraid is free software; you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License (as published by the Free
  * Software Foundation) version 2.1 dated February 1999.
  *
@@ -13,7 +13,7 @@
 #define ADVECT_DATA
 
 #include "c_array.h"
-#include "warp.h"
+#include "braid.h"
 
 #define MY_EPS 1e-12
 
@@ -22,7 +22,7 @@
 
 enum bcType {Periodic, Dirichlet, Extrapolation};
 
-typedef struct _warp_Vector_struct
+typedef struct _braid_Vector_struct
 {
    double *sol;
    int n;
@@ -30,7 +30,7 @@ typedef struct _warp_Vector_struct
    double_array_1d *vsol_;
 } grid_fcn;
 
-typedef struct _warp_App_struct
+typedef struct _braid_App_struct
 {
    int n_fine;     /* number of grid points in the finest grid */
    double h_fine;  /* finest grid size */
@@ -61,14 +61,14 @@ typedef struct _warp_App_struct
    double_array_1d *alpha_, *beta_; /* RK-4 coefficients */
    int spatial_order;      /* spatial order of accuracy */
 
-/* warp specific stuff */
-   int warpMaxIter;
-   double warpResidualLevel;
+/* braid specific stuff */
+   int braidMaxIter;
+   double braidResidualLevel;
    int copy_level; /* copy the solution at this level */
    grid_fcn *sol_copy; /* assigned by the call-back routine save_grid_fcn() */
    double t_copy;
    
-   int write; /* flag to tell warp if it should save grid functions to file */
+   int write; /* flag to tell braid if it should save grid functions to file */
    double tstart, tstop;
    int nsteps;
    
@@ -81,8 +81,8 @@ init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle);
 void
 init_advection_solver(double h, double amp, double ph, double om, int pnr, int taylorbc, 
                       double L, double cfl, int nstepsset, int nsteps, double tfinal, 
-                      double wave_speed, double viscosity, int bcLeft, int bcRight, int warpMaxIter, 
-                      double warpResidualLevel, double restr_coeff, double ad_coeff, int spatial_order,
+                      double wave_speed, double viscosity, int bcLeft, int bcRight, int braidMaxIter, 
+                      double braidResidualLevel, double restr_coeff, double ad_coeff, int spatial_order,
                       advection_setup *kd_);
 int
 explicit_rk4_stepper(advection_setup *kd_, double t, double tend, double accuracy, grid_fcn *gf_, 
@@ -108,7 +108,7 @@ dot_grid_fcn(advection_setup *kd_,
 int
 save_grid_fcn(advection_setup *kd_,
               double t,
-              warp_Status   status,
+              braid_Status   status,
               grid_fcn *u_);
 int
 gridfcn_BufSize(advection_setup *kd_,
@@ -120,7 +120,7 @@ gridfcn_BufPack(advection_setup *kd_,
 int
 gridfcn_BufUnpack(advection_setup *kd_,
                   void *buffer,
-                  warp_Vector *u_handle);
+                  braid_Vector *u_handle);
 int
 gridfcn_Refine(advection_setup * kd_,
                double     tstart,

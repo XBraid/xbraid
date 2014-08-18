@@ -1,9 +1,9 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013,  Lawrence Livermore National Security, LLC.
  * Produced at the Lawrence Livermore National Laboratory.
- * This file is part of WARP.  See file COPYRIGHT for details.
+ * This file is part of XBraid.  See file COPYRIGHT for details.
  *
- * WARP is free software; you can redistribute it and/or modify it under the
+ * XBraid is free software; you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License (as published by the Free
  * Software Foundation) version 2.1 dated February 1999.
  *
@@ -17,7 +17,7 @@
 #include "c_array.h"
 #include "advect_data.h"
 
-#include "warp.h"
+#include "braid.h"
 
 int main(int argc, char ** argv)
 {
@@ -41,7 +41,7 @@ int main(int argc, char ** argv)
 /* from drive-05.c */
    int i, level;
 
-   warp_Core  core;
+   tw_Core  core;
 /* my_App is called advection_setup, app = kd_ */
 /*   my_App    *app; */
    int        max_levels;
@@ -269,66 +269,66 @@ int main(int argc, char ** argv)
    srand(1);
    
 /* nt = nsteps : number of time steps */
-   warp_Init(comm, comm_t, kd_->tstart, kd_->tstop, kd_->nsteps, kd_,
+   tw_Init(comm, comm_t, kd_->tstart, kd_->tstop, kd_->nsteps, kd_,
              explicit_rk4_stepper, init_grid_fcn, copy_grid_fcn, free_grid_fcn, sum_grid_fcn, dot_grid_fcn, 
              save_grid_fcn, gridfcn_BufSize, gridfcn_BufPack, gridfcn_BufUnpack,
              &core);
 
-   warp_SetLoosexTol( core, 0, tol_x[0] );
-   warp_SetLoosexTol( core, 1, tol_x_coarse );
+   tw_SetLoosexTol( core, 0, tol_x[0] );
+   tw_SetLoosexTol( core, 1, tol_x_coarse );
 
-   warp_SetTightxTol( core, 0, tol_x[1] );
+   tw_SetTightxTol( core, 0, tol_x[1] );
 
 /* set max number of MG levels */
-   warp_SetMaxLevels( core, max_levels );
+   tw_SetMaxLevels( core, max_levels );
 
-   warp_SetNRelax(core, -1, nrelax);
+   tw_SetNRelax(core, -1, nrelax);
    if (nrelax0 > -1)
    {
-      warp_SetNRelax(core,  0, nrelax0);
+      tw_SetNRelax(core,  0, nrelax0);
    }
 
-   /*warp_SetAbsTol(core, tol*sqrt(px*nlx*py*nly*(nt+1)) );*/
-   /* warp_SetAbsTol(core, tol/sqrt(dx*dy*dt)); */
+   /*tw_SetAbsTol(core, tol*sqrt(px*nlx*py*nly*(nt+1)) );*/
+   /* tw_SetAbsTol(core, tol/sqrt(dx*dy*dt)); */
 
-   /* warp_SetAbsTol(core, tol); */
+   /* tw_SetAbsTol(core, tol); */
 
-   warp_SetRelTol(core, tol);
+   tw_SetRelTol(core, tol);
 
 /* AP: this is probably related to grid coarsening in time */
-   warp_SetCFactor(core, -1, cfactor);
+   tw_SetCFactor(core, -1, cfactor);
    if( cfactor0 > -1 ){
       /* Use cfactor0 on all levels until there are < cfactor0 points
        * on each processor. */
       level = (int) (log10((nsteps + 1) / pt) / log10(cfactor0));
       for( i = 0; i < level; i++ )
-         warp_SetCFactor(core,  i, cfactor0);
+         tw_SetCFactor(core,  i, cfactor0);
    }
    
-   warp_SetMaxIter(core, max_iter);
+   tw_SetMaxIter(core, max_iter);
    if (fmg)
    {
-      warp_SetFMG(core);
+      tw_SetFMG(core);
    }
    
 /* this is where the coarsen and refine routines are defined */
    if (scoarsen)
    {
-      warp_SetSpatialCoarsen(core, gridfcn_Coarsen);
-      warp_SetSpatialRefine(core, gridfcn_Refine);
+      tw_SetSpatialCoarsen(core, gridfcn_Coarsen);
+      tw_SetSpatialRefine(core, gridfcn_Refine);
    }
    
    /* control how often my save_grid_fcn routine is called. */
 /* 0 is never, 1 is at convergence for the finest level, 2 is after every iteration on every level */
-   warp_SetWriteLevel(core, 2);
+   tw_SetWriteLevel(core, 2);
 
-   warp_Drive(core);
+   tw_Drive(core);
 
    /* Stop timer. */
    myendtime = MPI_Wtime();
    mytime    = myendtime - mystarttime;
 
-   warp_PrintStats(core);
+   tw_PrintStats(core);
 
 /* my stuff... */
    printf("------------------------------\n");
