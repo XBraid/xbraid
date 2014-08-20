@@ -17,7 +17,7 @@
 test_dir=`pwd`
 source_dir=`cd ..; pwd`
 finished_dir="autotest_finished"
-remote_dir="/usr/casc/hypre/warp/testing/"
+remote_dir="/usr/casc/hypre/braid/testing/"
 remote_subdir="AUTOTEST-`date +%Y.%m.%d-%a`"
 
 # Email Setup
@@ -46,13 +46,13 @@ case $1 in
       -{test}             Run a single indicated test associated with a specific
                           machine name (e.g., -tux343, -vulcan).
       -remote-copy        Copy the autotest results to the remote archive in
-                          /usr/casc/hypre/warp/testing.  A second argument can be
+                          /usr/casc/hypre/braid/testing.  A second argument can be
                           passed in this instance that tells autotest to tunnel
                           through a machine during the copy.
       -summary-email      Sends out a summary email to the developers for all the 
                           tests run today.  This command cannot be run over ssh, 
                           and must be run from a machine with direct access to 
-                          /usr/casc/hypre/warp/testing.
+                          /usr/casc/hypre/braid/testing.
 
    with options:
 
