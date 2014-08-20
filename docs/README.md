@@ -10,7 +10,7 @@
  -->
 
 To build the documentation, doxygen must be version 1.8 or greater.
-\f$\chi\f$Braid documentation uses a 
+XBraid documentation uses a 
 [markdown](http://www.stack.nl/~dimitri/doxygen/manual/markdown.html) syntax
 both in source file comments and in \*.md files.  
 
@@ -52,7 +52,7 @@ or build doxygen from
 -  The Doxygen manual is at 
    http://www.stack.nl/~dimitri/doxygen/manual/index.html
 
-### \f$\chi\f$Braid Doxygen details
+### XBraid Doxygen details
 
 The user and developer manuals are ultimately produced by Latex.  The formatting 
 of the manuals is configured according to the following.

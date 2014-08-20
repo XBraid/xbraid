@@ -17,6 +17,9 @@ clean_latex:
 	# sed command cleans up latex file some
 	if test -d user_manual; then cd user_manual; sed '/.*8md.*/d' refman.tex > refman.temp.tex; mv refman.temp.tex refman.tex; fi
 	if test -d developer_manual; then cd developer_manual; sed '/.*8md.*/d' refman.tex > refman.temp.tex; mv refman.temp.tex refman.tex; fi
+	# sed commands to change XBraid to $\chi$~Braid in Latex files, note use double $$ to keep makefile from expanding the $f
+	if test -d user_manual; then cd user_manual; for f in *.tex; do sed 's/X\\-Braid/\\mbox{$$\\chi$$Braid}/g' "$$f" > "$$f.temp"; mv "$$f.temp" "$$f"; done; fi
+	if test -d developer_manual; then cd developer_manual; for f in *.tex; do sed 's/X\\-Braid/\\mbox{$$\\chi$$Braid}/g' "$$f" > "$$f.temp"; mv "$$f.temp" "$$f"; done; fi
 	# sed command changes pdflatex to nonstop mode (important for regression testing)
 	if test -d user_manual; then cd user_manual; sed 's/pdflatex/pdflatex --interaction=nonstopmode/g' Makefile > Makefile.temp; mv Makefile.temp Makefile; fi
 	if test -d developer_manual; then cd developer_manual; sed 's/pdflatex/pdflatex --interaction=nonstopmode/g' Makefile > Makefile.temp; mv Makefile.temp Makefile; fi

@@ -12,7 +12,7 @@
 
 ### User Defined Structures and Wrappers
 
-As mentioned, the user must wrap their existing time stepping routine per the \f$\chi\f$Braid interface. 
+As mentioned, the user must wrap their existing time stepping routine per the XBraid interface. 
 To do this, the user must define two data structures and some wrapper routines.  To make the 
 idea more concrete, we now give these function definitions from examples/drive-01, which 
 implements a scalar ODE, \f$ u_t = \lambda u \f$.
@@ -47,7 +47,7 @@ The two data structures are:
 
 The user must also define a few wrapper routines.  Note, that the app structure is the 
 first argument to every function.
-1. **Phi**: This function tells \f$\chi\f$Braid how to take a time step, and is the core user routine. 
+1. **Phi**: This function tells XBraid how to take a time step, and is the core user routine. 
    The user must advance the vector *u* 
    from time *tstart* to time *tstop*.  Here advancing the solution just involves the scalar \f$ \lambda \f$.  
    The *rfactor_ptr* and *accuracy* parameters are advanced topics not used here.
@@ -75,7 +75,7 @@ first argument to every function.
             return 0;
          }
 
-2. **Init**: This function tells \f$\chi\f$Braid how to initialize a vector at time *t*.  
+2. **Init**: This function tells XBraid how to initialize a vector at time *t*.  
    Here that is just allocating and setting a scalar on the heap.
 
          int
@@ -102,7 +102,7 @@ first argument to every function.
          }
 
 
-3. **Clone**: This function tells \f$\chi\f$Braid how to clone a vector 
+3. **Clone**: This function tells XBraid how to clone a vector 
    into a new vector.
 
          int
@@ -119,7 +119,7 @@ first argument to every function.
             return 0;
          }
 
-4. **Free**: This function tells \f$\chi\f$Braid how to free 
+4. **Free**: This function tells XBraid how to free 
    a vector.
 
          int
@@ -131,7 +131,7 @@ first argument to every function.
             return 0;
          }
 
-5. **Sum**: This function tells \f$\chi\f$Braid how to sum two 
+5. **Sum**: This function tells XBraid how to sum two 
    vectors (AXPY operation).
 
          int
@@ -146,7 +146,7 @@ first argument to every function.
             return 0;
          }
 
-6. **Dot**: This function tells \f$\chi\f$Braid how to take the dot 
+6. **Dot**: This function tells XBraid how to take the dot 
    product of two vectors.
 
          int
@@ -163,15 +163,15 @@ first argument to every function.
             return 0;
          }
 
-7. **Write**: This function tells \f$\chi\f$Braid how to write a vector at time *t* to screen, file, etc... 
+7. **Write**: This function tells XBraid how to write a vector at time *t* to screen, file, etc... 
    The user defines what is appropriate output.  Notice how you are told the time value of the 
    vector *u* and even more information in *status*.  This lets you tailor the output to only 
    certain time values.  
    
    If write_level is 2 (see [braid_SetWriteLevel](@ref braid_SetWriteLevel) ), then 
-   *Write* is called every \f$\chi\f$Braid iteration and on every \f$\chi\f$Braid level.  In this case, 
+   *Write* is called every XBraid iteration and on every XBraid level.  In this case, 
    *status* can be querried using the braid_Get**Status() functions, to determine the 
-   current \f$\chi\f$Braid level and iteration.  This allows for even more detailed tracking of the
+   current XBraid level and iteration.  This allows for even more detailed tracking of the
    simulation. 
    
    See examples/drive-02 and examples/drive-04 for more advanced uses of the Write function.  
@@ -205,7 +205,7 @@ first argument to every function.
          }
 
 
-8. **BufSize**, **BufPack**, **BufUnpack**: These three routines tell \f$\chi\f$Braid how to 
+8. **BufSize**, **BufPack**, **BufUnpack**: These three routines tell XBraid how to 
    communicate vectors between processors.  *BufPack* packs a vector 
    into a ``void *`` buffer for MPI and then *BufUnPack* unpacks it from ``void *`` 
    to vector.  Here doing that for a scalar is trivial.  *BufSize* computes the 
@@ -253,7 +253,7 @@ first argument to every function.
   explicit schemes on coarse time scales and is not needed here.  See for instance
   examples/drive-04 and examples/drive-05 which use these routines.
 
-  These functions allow you vary the spatial mesh size on \f$\chi\f$Braid levels as depicted here
+  These functions allow you vary the spatial mesh size on XBraid levels as depicted here
   where the spatial and temporal grid sizes are halved every level.
   \latexonly
    \begin{figure}[!ht] \centering 
@@ -266,7 +266,7 @@ first argument to every function.
 in *Phi* will allow this.
 
 
-### Running \f$\chi\f$Braid
+### Running XBraid
 
 A typical flow of events in the ``main`` function is to first initialize the ``app``
 structure.
@@ -278,8 +278,8 @@ structure.
     (app->tstop)  = tstop;
     (app->ntime)  = ntime;
 
-Then, the data structure definitions and wrapper routines are passed to \f$\chi\f$Braid.
-The core structure is used by \f$\chi\f$Braid for internal data structures. 
+Then, the data structure definitions and wrapper routines are passed to XBraid.
+The core structure is used by XBraid for internal data structures. 
 
     braid_Core  core;
     braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
@@ -287,7 +287,7 @@ The core structure is used by \f$\chi\f$Braid for internal data structures.
             my_BufSize, my_BufPack, my_BufUnpack,
             &core);
     
-Then, \f$\chi\f$Braid options are set.
+Then, XBraid options are set.
 
     braid_SetPrintLevel( core, 1);
     braid_SetMaxLevels(core, max_levels);
@@ -310,17 +310,17 @@ Finally, to run drive-01, type
 
 This will run drive-01. See examples/drive-0* for more extensive examples.
 
-### Testing \f$\chi\f$Braid
+### Testing XBraid
 
-The best overall test for \f$\chi\f$Braid, is to set the maximum number of levels to 1 
+The best overall test for XBraid, is to set the maximum number of levels to 1 
 (see [braid_SetMaxLevels](@ref braid_SetMaxLevels) ) which will carry out a
 sequential time stepping test.  Take the output given to you by your *Write*
-function and compare it to output from a non-\f$\chi\f$Braid run.  Is everything OK?
-Once this is complete, repeat for multilevel \f$\chi\f$Braid, and check that the solution
+function and compare it to output from a non-XBraid run.  Is everything OK?
+Once this is complete, repeat for multilevel XBraid, and check that the solution
 is correct (that is, it matches a serial run to within tolerance).
 
 At a lower level, to do sanity checks of your data structures and wrapper routines, there are
-also \f$\chi\f$Braid test functions, which can be easily run.  The test routines also 
+also XBraid test functions, which can be easily run.  The test routines also 
 take as arguments the app structure, spatial communicator comm_x, a stream
 like stdout for test output and a time step size to test dt.  After these arguments,
 function pointers to wrapper routines are the rest of the arguments. Some of the tests
