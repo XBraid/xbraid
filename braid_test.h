@@ -38,23 +38,23 @@ extern "C" {
  */
 
 /**
- * Test the init, write and free functions.\n
+ * Test the init, access and free functions.\n
  * A vector is initialized at time *t*, written, and then free-d
  **/
 braid_Int
-braid_TestInitWrite( braid_App              app,     /**< User defined App structure */
-                     MPI_Comm               comm_x,  /**< Spatial communicator */
-                     FILE                  *fp,      /**< File pointer (could be stdout or stderr) for log messages*/
-                     braid_Real             t,       /**< Time value to test init with (used to initialize the vectors)*/
-                     braid_PtFcnInit        init,    /**< Initialize a braid_Vector on finest temporal grid*/
-                     braid_PtFcnWrite       write,   /**< Write a braid_Vector (can be NULL for no writing)*/
-                     braid_PtFcnFree        free     /**< Free a braid_Vector*/
-                     );
+braid_TestInitAccess( braid_App              app,     /**< User defined App structure */
+                      MPI_Comm               comm_x,  /**< Spatial communicator */
+                      FILE                  *fp,      /**< File pointer (could be stdout or stderr) for log messages*/
+                      braid_Real             t,       /**< Time value to test init with (used to initialize the vectors)*/
+                      braid_PtFcnInit        init,    /**< Initialize a braid_Vector on finest temporal grid*/
+                      braid_PtFcnAccess      access,  /**< Allows access to Braid and current braid_Vector (can be NULL for no writing)*/
+                      braid_PtFcnFree        free     /**< Free a braid_Vector*/
+                      );
 
  /**
   * Test the clone function.\n
   * A vector is initialized at time *t*, cloned, and both vectors are written.
-  * Then both vectors are free-d.  The user is to check (via the write function) 
+  * Then both vectors are free-d.  The user is to check (via the access function) 
   * to see if it is identical.
   **/
 braid_Int
@@ -63,7 +63,7 @@ braid_TestClone( braid_App              app,         /**< User defined App struc
                  FILE                  *fp,          /**< File pointer (could be stdout or stderr) for log messages*/
                  braid_Real             t,           /**< Time value to test clone with  (used to initialize the vectors)*/
                  braid_PtFcnInit        init,        /**< Initialize a braid_Vector on finest temporal grid*/
-                 braid_PtFcnWrite       write,       /**< Write a braid_Vector (can be NULL for no writing)*/
+                 braid_PtFcnAccess      access,      /**< Allows access to Braid and current braid_Vector (can be NULL for no writing)*/
                  braid_PtFcnFree        free,        /**< Free a braid_Vector*/
                  braid_PtFcnClone       clone        /**< Clone a braid_Vector */
                  );
@@ -74,7 +74,7 @@ braid_TestClone( braid_App              app,         /**< User defined App struc
   * Test the sum function.\n
   * A vector is initialized at time *t*, cloned, and then these two vectors
   * are summed a few times, with the results written.  The vectors are then free-d.
-  * The user is to check (via the write function) that the output matches the 
+  * The user is to check (via the access function) that the output matches the 
   * sum of the two original vectors.
   **/
 braid_Int
@@ -83,7 +83,7 @@ braid_TestSum( braid_App              app,         /**< User defined App structu
                FILE                  *fp,          /**< File pointer (could be stdout or stderr) for log messages*/
                braid_Real             t,           /**< Time value to test Sum with  (used to initialize the vectors)*/
                braid_PtFcnInit        init,        /**< Initialize a braid_Vector on finest temporal grid*/
-               braid_PtFcnWrite       write,       /**< Write a braid_Vector (can be NULL for no writing)*/
+               braid_PtFcnAccess      access,      /**< Allows access to Braid and current braid_Vector (can be NULL for no writing)*/
                braid_PtFcnFree        free,        /**< Free a braid_Vector*/
                braid_PtFcnClone       clone,       /**< Clone a braid_Vector */
                braid_PtFcnSum         sum          /**< Compute vector sum of two braid_Vectors */
@@ -151,7 +151,7 @@ braid_TestCoarsenRefine( braid_App          app,         /**< User defined App s
                          braid_Real         fdt,         /**< Fine time step value that you spatially coarsen from */
                          braid_Real         cdt,         /**< Coarse time step value that you coarsen to */
                          braid_PtFcnInit    init,        /**< Initialize a braid_Vector on finest temporal grid*/
-                         braid_PtFcnWrite   write,       /**< Write a braid_Vector (can be NULL for no writing)*/
+                         braid_PtFcnAccess  access,      /**< Allows access to Braid and current braid_Vector (can be NULL for no writing)*/
                          braid_PtFcnFree    free,        /**< Free a braid_Vector*/
                          braid_PtFcnClone   clone,       /**< Clone a braid_Vector */
                          braid_PtFcnSum     sum,         /**< Compute vector sum of two braid_Vectors */

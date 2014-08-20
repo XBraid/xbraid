@@ -130,14 +130,14 @@ typedef struct _braid_Core_struct
    braid_PtFcnFree        free;         /**< free up a vector */
    braid_PtFcnSum         sum;          /**< vector sum */
    braid_PtFcnDot         dot;          /**< dot product */
-   braid_PtFcnWrite       write;        /**< write the vector */
+   braid_PtFcnAccess      access;       /**< user access function to Braid and current vector */
    braid_PtFcnBufSize     bufsize;      /**< return buffer size */
    braid_PtFcnBufPack     bufpack;      /**< pack a buffer */
    braid_PtFcnBufUnpack   bufunpack;    /**< unpack a buffer */
    braid_PtFcnCoarsen     coarsen;      /**< (optional) return a coarsened vector */
    braid_PtFcnRefine      refine;       /**< (optional) return a refined vector */
 
-   braid_Int              write_level;  /**< determines how often to call the user's write routine */ 
+   braid_Int              access_level; /**< determines how often to call the user's access routine */ 
    braid_Int              print_level;  /**< determines amount of output printed to screem (0,1,2) */ 
    braid_Int              max_levels;   /**< maximum number of temporal grid levels */
    braid_Int              max_coarse;   /**< maximum allowed coarse grid size  (in terms of C-points) */
@@ -417,17 +417,19 @@ _braid_USetVector(braid_Core    core,
                   braid_Int     index,
                   braid_Vector  u);
 
-/**
- * Call the user's write function to write *u* which is the vector corresponding to 
- * time step *index* on *level*.  *status* holds state information about the current 
- * Braid iteration, time value, etc...
+/** 
+ * Call user's access function in order to give access to Braid and the
+ * current vector.  Most commonly, this lets the user write *u* to screen,
+ * disk, etc...  The vector *u* corresponds to time step *index* on *level*.
+ * *status* holds state information about the current Braid iteration, time
+ * value, etc...
  */
 braid_Int
-_braid_UWriteVector(braid_Core    core,
-                    braid_Int     level,
-                    braid_Int     index,
-                    braid_Status  status,
-                    braid_Vector  u);
+_braid_UAccessVector(braid_Core    core,
+                     braid_Int     level,
+                     braid_Int     index,
+                     braid_Status  status,
+                     braid_Vector  u);
 
 /**
  * Apply Phi to the vector *u*\n
@@ -562,18 +564,20 @@ braid_Int
 _braid_FRefine(braid_Core   core,
                braid_Int   *refined_ptr);
 
-/**
- * Write out the solution on grid *level* at Braid iteration *iter*.\n
- * *rnorm* denotes the last computed residual norm, and *done* is a boolean
- * indicating whether Braid has finished iterating and this is the last Write
- * call.
+/** 
+ * Call the user's access function in order to give access to Braid and 
+ * the current vector at grid *level and iteration *iter*.  Most commonly, 
+ * this lets the user write solutions to screen, disk, etc... 
+ * The quantity *rnorm* denotes the last computed residual
+ * norm, and *done* is a boolean indicating whether Braid has finished
+ * iterating and this is the last Access call. 
  */
 braid_Int
-_braid_FWrite(braid_Core     core,
-              braid_Real     rnorm,
-              braid_Int      iter,
-              braid_Int      level,
-              braid_Int      done);
+_braid_FAccess(braid_Core     core,
+               braid_Real     rnorm,
+               braid_Int      iter,
+               braid_Int      level,
+               braid_Int      done);
 
 /**
  * Initialize (and re-initialize) hierarchy

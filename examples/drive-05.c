@@ -2661,10 +2661,10 @@ my_Dot(braid_App     app,
 
 
 /* --------------------------------------------------------------------
- * Write the vector.
+ * Access the vector.
  * -------------------------------------------------------------------- */
 int
-my_Write(braid_App     app,
+my_Access(braid_App     app,
          braid_Real    t,
          braid_Status  status,
          braid_Vector  u)
@@ -2717,7 +2717,7 @@ my_Write(braid_App     app,
    if( (myid == 0) && (level != previous_level) )
    {
       previous_level = level;
-      printf("  my_Write() called, iter= %d, level= %d\n", iter, level);
+      printf("  my_Access() called, iter= %d, level= %d\n", iter, level);
    }
 
    /* Write to files:
@@ -2981,7 +2981,7 @@ int main (int argc, char *argv[])
    int *max_num_iterations_global = NULL;
    double *scoarsen_table_global = NULL;
 
-   int output_files, explicit, output_vis, print_level, write_level;
+   int output_files, explicit, output_vis, print_level, access_level;
    int run_wrapper_tests;
 
    /* Initialize MPI */
@@ -3026,7 +3026,7 @@ int main (int argc, char *argv[])
    output_files        = 0;
    output_vis          = 0;
    print_level         = 1;
-   write_level         = 1;
+   access_level        = 1;
    run_wrapper_tests   = 0;
 
    MPI_Comm_rank( comm, &myid );
@@ -3138,9 +3138,9 @@ int main (int argc, char *argv[])
          arg_index++;
          print_level = atoi(argv[arg_index++]);
       }
-      else if( strcmp(argv[arg_index], "-write_level") == 0 ){
+      else if( strcmp(argv[arg_index], "-access_level") == 0 ){
          arg_index++;
-         write_level = atoi(argv[arg_index++]);
+         access_level = atoi(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-run_wrapper_tests") == 0 ){
          arg_index++;
@@ -3208,14 +3208,14 @@ int main (int argc, char *argv[])
       printf("                                    0 - no output to standard out \n");
       printf("                                    1 - Basic convergence information and hierarchy statistics\n");
       printf("                                    2 - Debug level output \n");
-      printf("  -write_level <l>                : sets the write_level (default: 1) \n");
-      printf("                                    0 - never call write \n");
-      printf("                                    1 - call write only after completion \n");
-      printf("                                    2 - call write every iteration and level\n");
+      printf("  -access_level <l>               : sets the access_level (default: 1) \n");
+      printf("                                    0 - never call access \n");
+      printf("                                    1 - call access only after completion \n");
+      printf("                                    2 - call access every iteration and level\n");
       printf("  -output_files                   : save the solution/error/error norms to files\n");
-      printf("                                    frequency of file writes is set by write_level\n");
+      printf("                                    frequency of file accesss is set by access_level\n");
       printf("  -output_vis                     : save the error for GLVis visualization\n");
-      printf("                                    frequency of file writes is set by write_level\n");
+      printf("                                    frequency of file accesss is set by access_level\n");
       printf("\n");
    }
 
@@ -3428,17 +3428,17 @@ int main (int argc, char *argv[])
       /* Run only the Braid wrapper tests */
       MPI_Comm_rank( comm_x, &myid );
 
-      /* Test init(), write(), free() */
-      braid_TestInitWrite( app, comm_x, stdout, 0.0, my_Init, my_Write, my_Free);
-      braid_TestInitWrite( app, comm_x, stdout, dt, my_Init, my_Write, my_Free);
+      /* Test init(), access(), free() */
+      braid_TestInitAccess( app, comm_x, stdout, 0.0, my_Init, my_Access, my_Free);
+      braid_TestInitAccess( app, comm_x, stdout, dt, my_Init, my_Access, my_Free);
 
       /* Test clone() */
-      braid_TestClone( app, comm_x, stdout, 0.0, my_Init, my_Write, my_Free, my_Clone);
-      braid_TestClone( app, comm_x, stdout, dt, my_Init, my_Write, my_Free, my_Clone);
+      braid_TestClone( app, comm_x, stdout, 0.0, my_Init, my_Access, my_Free, my_Clone);
+      braid_TestClone( app, comm_x, stdout, dt, my_Init, my_Access, my_Free, my_Clone);
 
       /* Test sum() */
-      braid_TestSum( app, comm_x, stdout, 0.0, my_Init, my_Write, my_Free, my_Clone, my_Sum);
-      braid_TestSum( app, comm_x, stdout, dt, my_Init, my_Write, my_Free, my_Clone, my_Sum);
+      braid_TestSum( app, comm_x, stdout, 0.0, my_Init, my_Access, my_Free, my_Clone, my_Sum);
+      braid_TestSum( app, comm_x, stdout, dt, my_Init, my_Access, my_Free, my_Clone, my_Sum);
 
       /* Test dot() */
       correct = braid_TestDot( app, comm_x, stdout, 0.0, my_Init, my_Free, my_Clone, my_Sum, my_Dot);
@@ -3450,10 +3450,10 @@ int main (int argc, char *argv[])
        
       /* Test coarsen and refine */
       correct = braid_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
-                             my_Write, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenInjection, 
+                             my_Access, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenInjection, 
                              my_Refine);
       correct = braid_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
-                            my_Write, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenBilinear, 
+                            my_Access, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenBilinear, 
                             my_Refine);
       if(correct == 0)
       {
@@ -3473,7 +3473,7 @@ int main (int argc, char *argv[])
 
       braid_Init(comm, comm_t, tstart, tstop, nt, app,
                 my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_Dot, 
-                my_Write, my_BufSize, my_BufPack, my_BufUnpack,
+                my_Access, my_BufSize, my_BufPack, my_BufUnpack,
                 &core);
 
       braid_SetLoosexTol( core, 0, tol_x[0] );
@@ -3485,7 +3485,7 @@ int main (int argc, char *argv[])
       braid_SetMaxCoarse( core, max_coarse );
 
       braid_SetPrintLevel( core, print_level);
-      braid_SetWriteLevel( core, write_level);
+      braid_SetAccessLevel( core, access_level);
 
       braid_SetNRelax(core, -1, nrelax);
       if (nrelax0 > -1)

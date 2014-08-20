@@ -163,22 +163,26 @@ first argument to every function.
             return 0;
          }
 
-7. **Write**: This function tells XBraid how to write a vector at time *t* to screen, file, etc... 
+7. **Access**: This function allows the user access to XBraid and the current solution vector 
+   at time *t*.  This is most commonly used to print solution(s) to screen, file, etc... 
    The user defines what is appropriate output.  Notice how you are told the time value of the 
    vector *u* and even more information in *status*.  This lets you tailor the output to only 
    certain time values.  
+
+   Eventually, this routine will allow for broader access to XBraid and computational steering.
    
-   If write_level is 2 (see [braid_SetWriteLevel](@ref braid_SetWriteLevel) ), then 
-   *Write* is called every XBraid iteration and on every XBraid level.  In this case, 
+   If access_level is 2 (see [braid_SetAccessLevel](@ref braid_SetAccessLevel) ), then 
+   *Access* is called every XBraid iteration and on every XBraid level.  In this case, 
    *status* can be querried using the braid_Get**Status() functions, to determine the 
    current XBraid level and iteration.  This allows for even more detailed tracking of the
    simulation. 
    
-   See examples/drive-02 and examples/drive-04 for more advanced uses of the Write function.  
-   Drive-04 writes to a GLVIS visualization port, and examples/drive-02 writes to .vtu files.
+   See examples/drive-02 and examples/drive-04 for more advanced uses of the *Access* function.  
+   Drive-04 uses *Access* to write solution vectors to a GLVIS visualization port, and 
+   examples/drive-02 uses *Access* to write to .vtu files.
 
          int
-         my_Write(braid_App     app,
+         my_Access(braid_App     app,
                   double     t,
                   braid_Status  status,
                   braid_Vector  u)
@@ -283,7 +287,7 @@ The core structure is used by XBraid for internal data structures.
 
     braid_Core  core;
     braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
-            my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_Dot, my_Write,
+            my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_Dot, my_Access,
             my_BufSize, my_BufPack, my_BufUnpack,
             &core);
     
@@ -314,7 +318,7 @@ This will run drive-01. See examples/drive-0* for more extensive examples.
 
 The best overall test for XBraid, is to set the maximum number of levels to 1 
 (see [braid_SetMaxLevels](@ref braid_SetMaxLevels) ) which will carry out a
-sequential time stepping test.  Take the output given to you by your *Write*
+sequential time stepping test.  Take the output given to you by your *Access*
 function and compare it to output from a non-XBraid run.  Is everything OK?
 Once this is complete, repeat for multilevel XBraid, and check that the solution
 is correct (that is, it matches a serial run to within tolerance).
@@ -326,14 +330,14 @@ like stdout for test output and a time step size to test dt.  After these argume
 function pointers to wrapper routines are the rest of the arguments. Some of the tests
 can return a boolean variable to indicate correctness.
       
-    /* Test init(), write(), free() */
-    braid_TestInitWrite( app, comm_x, stdout, dt, my_Init, my_Write, my_Free);
+    /* Test init(), access(), free() */
+    braid_TestInitAccess( app, comm_x, stdout, dt, my_Init, my_Access, my_Free);
 
     /* Test clone() */
-    braid_TestClone( app, comm_x, stdout, dt, my_Init, my_Write, my_Free, my_Clone);
+    braid_TestClone( app, comm_x, stdout, dt, my_Init, my_Access, my_Free, my_Clone);
 
     /* Test sum() */
-    braid_TestSum( app, comm_x, stdout, dt, my_Init, my_Write, my_Free, my_Clone, my_Sum);
+    braid_TestSum( app, comm_x, stdout, dt, my_Init, my_Access, my_Free, my_Clone, my_Sum);
 
     /* Test dot() */
     correct = braid_TestDot( app, comm_x, stdout, dt, my_Init, my_Free, my_Clone, my_Sum, my_Dot);
@@ -343,9 +347,9 @@ can return a boolean variable to indicate correctness.
      
     /* Test coarsen and refine */
     correct = braid_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
-                           my_Write, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenInjection, 
+                           my_Access, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenInjection, 
                            my_Refine);
     correct = braid_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
-                          my_Write, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenBilinear, 
+                          my_Access, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenBilinear, 
                           my_Refine);
 

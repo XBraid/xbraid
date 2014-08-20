@@ -14,7 +14,7 @@
 #include "advect_data.h"
 
 #define SQR(x) ((x)*(x))
-/**< Initialize a tw_Vector function on finest temporal grid*/
+/**< Initialize a braidVector function on finest temporal grid*/
 int
 init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle)
 {
@@ -412,7 +412,7 @@ gridfcn_BufPack(advection_setup *kd_,
 int
 gridfcn_BufUnpack(advection_setup *kd_,
              void *buffer,
-             tw_Vector *u_handle)
+             braidVector *u_handle)
 {
    int i, offset, n;
    double h;

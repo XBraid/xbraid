@@ -14,7 +14,7 @@ spatial problem size       : 16 x 16
 
 # Begin Test 2
 
-  my_Write() called, iter= 24, level= 0
+  my_Access() called, iter= 24, level= 0
   time steps = 128
   number of levels     = 8
   iterations           = 24
@@ -30,7 +30,7 @@ spatial problem size       : 33 x 33
 
 # Begin Test 3
 
-  my_Write() called, iter= 7, level= 0
+  my_Access() called, iter= 7, level= 0
   time steps = 32
   number of levels     = 6
   iterations           = 7
@@ -38,42 +38,42 @@ spatial problem size       : 17 x 17
 
 # Begin Test 4
 
-  my_Write() called, iter= 0, level= 0
-  my_Write() called, iter= 1, level= 4
-  my_Write() called, iter= 1, level= 3
-  my_Write() called, iter= 1, level= 2
-  my_Write() called, iter= 1, level= 1
-  my_Write() called, iter= 1, level= 0
-  my_Write() called, iter= 2, level= 4
-  my_Write() called, iter= 2, level= 3
-  my_Write() called, iter= 2, level= 2
-  my_Write() called, iter= 2, level= 1
-  my_Write() called, iter= 2, level= 0
-  my_Write() called, iter= 3, level= 4
-  my_Write() called, iter= 3, level= 3
-  my_Write() called, iter= 3, level= 2
-  my_Write() called, iter= 3, level= 1
-  my_Write() called, iter= 3, level= 0
-  my_Write() called, iter= 4, level= 4
-  my_Write() called, iter= 4, level= 3
-  my_Write() called, iter= 4, level= 2
-  my_Write() called, iter= 4, level= 1
-  my_Write() called, iter= 4, level= 0
-  my_Write() called, iter= 5, level= 4
-  my_Write() called, iter= 5, level= 3
-  my_Write() called, iter= 5, level= 2
-  my_Write() called, iter= 5, level= 1
-  my_Write() called, iter= 5, level= 0
-  my_Write() called, iter= 6, level= 4
-  my_Write() called, iter= 6, level= 3
-  my_Write() called, iter= 6, level= 2
-  my_Write() called, iter= 6, level= 1
-  my_Write() called, iter= 6, level= 0
-  my_Write() called, iter= 7, level= 4
-  my_Write() called, iter= 7, level= 3
-  my_Write() called, iter= 7, level= 2
-  my_Write() called, iter= 7, level= 1
-  my_Write() called, iter= 7, level= 0
+  my_Access() called, iter= 0, level= 0
+  my_Access() called, iter= 1, level= 4
+  my_Access() called, iter= 1, level= 3
+  my_Access() called, iter= 1, level= 2
+  my_Access() called, iter= 1, level= 1
+  my_Access() called, iter= 1, level= 0
+  my_Access() called, iter= 2, level= 4
+  my_Access() called, iter= 2, level= 3
+  my_Access() called, iter= 2, level= 2
+  my_Access() called, iter= 2, level= 1
+  my_Access() called, iter= 2, level= 0
+  my_Access() called, iter= 3, level= 4
+  my_Access() called, iter= 3, level= 3
+  my_Access() called, iter= 3, level= 2
+  my_Access() called, iter= 3, level= 1
+  my_Access() called, iter= 3, level= 0
+  my_Access() called, iter= 4, level= 4
+  my_Access() called, iter= 4, level= 3
+  my_Access() called, iter= 4, level= 2
+  my_Access() called, iter= 4, level= 1
+  my_Access() called, iter= 4, level= 0
+  my_Access() called, iter= 5, level= 4
+  my_Access() called, iter= 5, level= 3
+  my_Access() called, iter= 5, level= 2
+  my_Access() called, iter= 5, level= 1
+  my_Access() called, iter= 5, level= 0
+  my_Access() called, iter= 6, level= 4
+  my_Access() called, iter= 6, level= 3
+  my_Access() called, iter= 6, level= 2
+  my_Access() called, iter= 6, level= 1
+  my_Access() called, iter= 6, level= 0
+  my_Access() called, iter= 7, level= 4
+  my_Access() called, iter= 7, level= 3
+  my_Access() called, iter= 7, level= 2
+  my_Access() called, iter= 7, level= 1
+  my_Access() called, iter= 7, level= 0
   time steps = 32
   number of levels     = 6
   iterations           = 7
@@ -81,12 +81,12 @@ spatial problem size       : 17 x 17
 
 # Begin Test 5
 
-  my_Write() called, iter= 7, level= 0
+  my_Access() called, iter= 7, level= 0
 spatial problem size       : 17 x 17
 
 # Begin Test 6
  
-  my_Write() called, iter= 7, level= 0
+  my_Access() called, iter= 7, level= 0
   time steps = 32
   number of levels     = 6
   iterations           = 7
@@ -94,7 +94,7 @@ spatial problem size       : 17 x 17
 
 # Begin Test 7
  
-  my_Write() called, iter= 7, level= 0
+  my_Access() called, iter= 7, level= 0
   time steps = 32
   number of levels     = 6
   iterations           = 7
@@ -102,27 +102,27 @@ spatial problem size       : 17 x 17
 
 # Begin Test 8
 
-Starting braid_TestInitWrite
-   braid_TestInitWrite:   Starting Test 1
-   braid_TestInitWrite:   u = init(t=0.00e+00)
-   braid_TestInitWrite:   write(u) 
-  my_Write() called, iter= 0, level= 0
-   braid_TestInitWrite:   check output: wrote u for initial condition at t=0.00e+00. 
-   braid_TestInitWrite:   free(u) 
-Finished braid_TestInitWrite
-Starting braid_TestInitWrite
-   braid_TestInitWrite:   Starting Test 1
-   braid_TestInitWrite:   u = init(t=5.78e-03)
-   braid_TestInitWrite:   write(u) 
-   braid_TestInitWrite:   check output: wrote u for initial condition at t=5.78e-03. 
-   braid_TestInitWrite:   free(u) 
-Finished braid_TestInitWrite
+Starting braid_TestInitAccess
+   braid_TestInitAccess:   Starting Test 1
+   braid_TestInitAccess:   u = init(t=0.00e+00)
+   braid_TestInitAccess:   access(u) 
+  my_Access() called, iter= 0, level= 0
+   braid_TestInitAccess:   check output: wrote u for initial condition at t=0.00e+00. 
+   braid_TestInitAccess:   free(u) 
+Finished braid_TestInitAccess
+Starting braid_TestInitAccess
+   braid_TestInitAccess:   Starting Test 1
+   braid_TestInitAccess:   u = init(t=5.78e-03)
+   braid_TestInitAccess:   access(u) 
+   braid_TestInitAccess:   check output: wrote u for initial condition at t=5.78e-03. 
+   braid_TestInitAccess:   free(u) 
+Finished braid_TestInitAccess
 Starting braid_TestClone
    braid_TestClone:   Starting Test 1
    braid_TestClone:   u = init(t=0.00e+00)
    braid_TestClone:   v = clone(u)
-   braid_TestClone:   write(u)
-   braid_TestClone:   write(v)
+   braid_TestClone:   access(u)
+   braid_TestClone:   access(v)
    braid_TestClone:   check output:  wrote u and v for initial condition at t=0.00e+00.
    braid_TestClone:   free(u)
    braid_TestClone:   free(v)
@@ -131,8 +131,8 @@ Starting braid_TestClone
    braid_TestClone:   Starting Test 1
    braid_TestClone:   u = init(t=5.78e-03)
    braid_TestClone:   v = clone(u)
-   braid_TestClone:   write(u)
-   braid_TestClone:   write(v)
+   braid_TestClone:   access(u)
+   braid_TestClone:   access(v)
    braid_TestClone:   check output:  wrote u and v for initial condition at t=5.78e-03.
    braid_TestClone:   free(u)
    braid_TestClone:   free(v)
@@ -142,12 +142,12 @@ Starting braid_TestSum
    braid_TestSum:   u = init(t=0.00e+00)
    braid_TestSum:   v = clone(u)
    braid_TestSum:   v = u - v
-   braid_TestSum:   write(v)
+   braid_TestSum:   access(v)
    braid_TestSum:   check output:  v should equal the zero vector
    braid_TestSum:   Starting Test 2
    braid_TestSum:   v = 2*u + v
-   braid_TestSum:   write(v)
-   braid_TestSum:   write(u)
+   braid_TestSum:   access(v)
+   braid_TestSum:   access(u)
    braid_TestSum:   check output:  v should equal 2*u 
    braid_TestSum:   free(u)
    braid_TestSum:   free(v)
@@ -157,12 +157,12 @@ Starting braid_TestSum
    braid_TestSum:   u = init(t=5.78e-03)
    braid_TestSum:   v = clone(u)
    braid_TestSum:   v = u - v
-   braid_TestSum:   write(v)
+   braid_TestSum:   access(v)
    braid_TestSum:   check output:  v should equal the zero vector
    braid_TestSum:   Starting Test 2
    braid_TestSum:   v = 2*u + v
-   braid_TestSum:   write(v)
-   braid_TestSum:   write(u)
+   braid_TestSum:   access(v)
+   braid_TestSum:   access(u)
    braid_TestSum:   check output:  v should equal 2*u 
    braid_TestSum:   free(u)
    braid_TestSum:   free(v)
@@ -290,10 +290,10 @@ Starting braid_TestCoarsenRefine
    braid_TestCoarsenRefine:   u = init(t=0.00e+00)
    braid_TestCoarsenRefine:   dot(u,u) 
    braid_TestCoarsenRefine:   uc = coarsen(u)
-   braid_TestCoarsenRefine:   write(uc) 
-  my_Write() called, iter= 0, level= 1
-   braid_TestCoarsenRefine:   write(u) 
-  my_Write() called, iter= 0, level= 0
+   braid_TestCoarsenRefine:   access(uc) 
+  my_Access() called, iter= 0, level= 1
+   braid_TestCoarsenRefine:   access(u) 
+  my_Access() called, iter= 0, level= 0
    braid_TestCoarsenRefine:   actual output:   wrote u and spatially coarsened u 
    braid_TestCoarsenRefine:   Starting Test 2
    braid_TestCoarsenRefine:   v = clone(u)
@@ -332,10 +332,10 @@ Starting braid_TestCoarsenRefine
    braid_TestCoarsenRefine:   u = init(t=0.00e+00)
    braid_TestCoarsenRefine:   dot(u,u) 
    braid_TestCoarsenRefine:   uc = coarsen(u)
-   braid_TestCoarsenRefine:   write(uc) 
-  my_Write() called, iter= 0, level= 1
-   braid_TestCoarsenRefine:   write(u) 
-  my_Write() called, iter= 0, level= 0
+   braid_TestCoarsenRefine:   access(uc) 
+  my_Access() called, iter= 0, level= 1
+   braid_TestCoarsenRefine:   access(u) 
+  my_Access() called, iter= 0, level= 0
    braid_TestCoarsenRefine:   actual output:   wrote u and spatially coarsened u 
    braid_TestCoarsenRefine:   Starting Test 2
    braid_TestCoarsenRefine:   v = clone(u)
@@ -372,7 +372,7 @@ Finished braid_TestCoarsenRefine: all tests passed successfully
 
 # Begin Test 9
 
-  my_Write() called, iter= 0, level= 0
+  my_Access() called, iter= 0, level= 0
   time steps = 128
   number of levels     = 1
   iterations           = 0
@@ -380,7 +380,7 @@ spatial problem size       : 17 x 17
 
 # Begin Test 10
 
-  my_Write() called, iter= 7, level= 0
+  my_Access() called, iter= 7, level= 0
   time steps = 128
   number of levels     = 2
   iterations           = 7
@@ -388,7 +388,7 @@ spatial problem size       : 17 x 17
 
 # Begin Test 11
 
-  my_Write() called, iter= 8, level= 0
+  my_Access() called, iter= 8, level= 0
   time steps = 128
   number of levels     = 8
   iterations           = 8
@@ -396,7 +396,7 @@ spatial problem size       : 17 x 17
 
 # Begin Test 12
 
-  my_Write() called, iter= 8, level= 0
+  my_Access() called, iter= 8, level= 0
   time steps = 128
   number of levels     = 2
   iterations           = 8

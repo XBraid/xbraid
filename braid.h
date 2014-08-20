@@ -139,23 +139,26 @@ typedef braid_Int
                   );
 
 /**
- * Write the vector *u* at time *t* to screen, file, etc...  The user decides 
+ * Gives access to Braid and to the current vector *u* at time *t*.  Most commonly,
+ * this lets the user write the vector to screen, file, etc...  The user decides 
  * what is appropriate.  Notice how you are told the time value of the 
  * vector *u* and even more information in *status*.  This lets you tailor the 
- * output to only certain time values. \n 
+ * output to only certain time values. \n
+ *
+ * Eventually, access will be broadened to allow the user to steer Braid.
  * 
- * If write_level is 2 (see [braid_SetWriteLevel](@ref braid_SetWriteLevel) ), then 
- * *write* is called every Braid iteration and on every Braid level.  In this case, 
+ * If access_level is 2 (see [braid_SetAccessLevel](@ref braid_SetAccessLevel) ), then 
+ * *access* is called every Braid iteration and on every Braid level.  In this case, 
  * *status* can be querried using the braid_Get**Status() functions, to determine the 
  * current Braid level and iteration.  This allows for even more detailed tracking of the
  * simulation. 
  **/
 typedef braid_Int
-(*braid_PtFcnWrite)(braid_App      app,              /**< user-defined _braid_App structure */
-                    braid_Real     t,                /**< time value for *u* */
-                    braid_Status   status,           /**< can be querried for info like Braid Iteration */
-                    braid_Vector   u                 /**< vector to write */
-                    );
+(*braid_PtFcnAccess)(braid_App      app,              /**< user-defined _braid_App structure */
+                     braid_Real     t,                /**< time value for *u* */
+                     braid_Status   status,           /**< can be querried for info like Braid Iteration */
+                     braid_Vector   u                 /**< vector to be accessed */
+                     );
 
 /**
  * This routine tells Braid message sizes by computing an upper bound in bytes for 
@@ -260,7 +263,7 @@ braid_Init(MPI_Comm            comm_world,  /**< Global communicator for space a
         braid_PtFcnFree        free,        /**< Free a braid_Vector*/
         braid_PtFcnSum         sum,         /**< Compute vector sum of two braid_Vectors*/
         braid_PtFcnDot         dot,         /**< Compute dot product between two braid_Vectors*/
-        braid_PtFcnWrite       write,       /**< Writes a braid_Vector to file, screen */
+        braid_PtFcnAccess      access,      /**< Allows access to Braid and current braid_Vector */
         braid_PtFcnBufSize     bufsize,     /**< Computes size for MPI buffer for one braid_Vector */
         braid_PtFcnBufPack     bufpack,     /**< Packs MPI buffer to contain one braid_Vector*/
         braid_PtFcnBufUnpack   bufunpack,   /**< Unpacks MPI buffer into a braid_Vector */
@@ -434,20 +437,20 @@ braid_SetPrintFile(braid_Core     core,             /**< braid_Core (_braid_Core
                    );
 
 /**
- * Set write level for Braid.  This controls how often the user's
- * write routine is called.
+ * Set access level for Braid.  This controls how often the user's
+ * access routine is called.
  * 
- * - Level 0:  Never call the user's write routine
- * - Level 1:  Only call the user's write routine after Braid is finished
- * - Level 2:  Call the user's write routine every iteration and on every level.
+ * - Level 0:  Never call the user's access routine
+ * - Level 1:  Only call the user's access routine after Braid is finished
+ * - Level 2:  Call the user's access routine every iteration and on every level.
  *             This is during _braid_FRestrict, during the down-cycle part of a Braid iteration. 
  * 
  * Default is level 1.
  **/
 braid_Int
-braid_SetWriteLevel(braid_Core  core,          /**< braid_Core (_braid_Core) struct*/
-                    braid_Int   write_level    /**< desired write_level */
-                    );
+braid_SetAccessLevel(braid_Core  core,          /**< braid_Core (_braid_Core) struct*/
+                     braid_Int   access_level   /**< desired access_level */
+                     );
 
 /**
  * Split MPI commworld into *comm_x* and *comm_t*, the 
@@ -488,13 +491,12 @@ braid_GetStatusLevel(braid_Status  status,        /**< structure containing curr
 
 /**
  * Return whether Braid is done for the current status object\n
- * *done_ptr = 1* indicates that this is the last call to Write, because
- * Braid has stopped iterating (either maxiter has been reached, or the tolerance
- * has been met).
+ * *done_ptr = 1* indicates that Braid has finished iterating, 
+ * (either maxiter has been reached, or the tolerance has been met).
  **/
 braid_Int
 braid_GetStatusDone(braid_Status  status,         /**< structure containing current simulation info */
-                    braid_Int    *done_ptr        /**< output,  =1 if Braid has finished and this is the final Write, else =0 */
+                    braid_Int    *done_ptr        /**< output,  =1 if Braid has finished, else =0 */
                     );
 
 /**

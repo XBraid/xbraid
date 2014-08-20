@@ -157,10 +157,10 @@ my_Dot(braid_App     app,
 }
 
 int
-my_Write(braid_App     app,
-         double        t,
-         braid_Status  status,
-         braid_Vector  u)
+my_Access(braid_App     app,
+          double        t,
+          braid_Status  status,
+          braid_Vector  u)
 {
    MPI_Comm   comm   = (app->comm);
    double     tstart = (app->tstart);
@@ -322,7 +322,7 @@ int main (int argc, char *argv[])
    (app->ntime)  = ntime;
 
    braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
-             my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_Dot, my_Write,
+             my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_Dot, my_Access,
              my_BufSize, my_BufPack, my_BufUnpack,
              &core);
 

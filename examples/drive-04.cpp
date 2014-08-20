@@ -1140,10 +1140,10 @@ public:
       visport = vp;
    }
 
-   static int Write(braid_App     _app,
-                    double        t,
-                    braid_Status  _status,
-                    braid_Vector  _u)
+   static int Access(braid_App     _app,
+                     double        t,
+                     braid_Status  _status,
+                     braid_Vector  _u)
    {
       BraidApp *app      = (BraidApp*) _app;
       BraidStatus status = BraidStatus(_status);
@@ -1273,15 +1273,15 @@ public:
                              MPI_Comm  *comm_t)
    { braid_SplitCommworld(comm_world, px, comm_x, comm_t); }
 
-   // Test Function for Init and Write function
-   void TestInitWrite( BraidApp              *app,
-                       MPI_Comm               comm_x,
-                       FILE                  *fp,
-                       double                 t,
-                       braid_PtFcnInit        init,
-                       braid_PtFcnWrite       write,
-                       braid_PtFcnFree        free)
-   { braid_TestInitWrite((braid_App) app, comm_x, fp, t, init, write, free); }
+   // Test Function for Init and Access function
+   void TestInitAccess( BraidApp              *app,
+                        MPI_Comm               comm_x,
+                        FILE                  *fp,
+                        double                 t,
+                        braid_PtFcnInit        init,
+                        braid_PtFcnAccess      access,
+                        braid_PtFcnFree        free)
+   { braid_TestInitAccess((braid_App) app, comm_x, fp, t, init, access, free); }
 
    // Test Function for Clone 
    void TestClone( BraidApp              *app,
@@ -1289,10 +1289,10 @@ public:
                    FILE                  *fp,
                    double                 t,
                    braid_PtFcnInit        init,
-                   braid_PtFcnWrite       write,
+                   braid_PtFcnAccess      access,
                    braid_PtFcnFree        free,
                    braid_PtFcnClone       clone)
-   { braid_TestClone((braid_App) app, comm_x, fp, t, init, write, free, clone); }
+   { braid_TestClone((braid_App) app, comm_x, fp, t, init, access, free, clone); }
    
    // Test Function for Sum 
    void TestSum( BraidApp              *app,
@@ -1300,11 +1300,11 @@ public:
                  FILE                  *fp,
                  double                 t,
                  braid_PtFcnInit        init,
-                 braid_PtFcnWrite       write,
+                 braid_PtFcnAccess      access,
                  braid_PtFcnFree        free,
                  braid_PtFcnClone       clone,
                  braid_PtFcnSum         sum)
-   { braid_TestSum((braid_App) app, comm_x, fp, t, init, write, free, clone, sum); }
+   { braid_TestSum((braid_App) app, comm_x, fp, t, init, access, free, clone, sum); }
    
    // Test Function for Dot 
    int TestDot( BraidApp               *app,
@@ -1340,7 +1340,7 @@ public:
                           double             fdt,
                           double             cdt,
                           braid_PtFcnInit    init,
-                          braid_PtFcnWrite   write,
+                          braid_PtFcnAccess  access,
                           braid_PtFcnFree    free,
                           braid_PtFcnClone   clone,
                           braid_PtFcnSum     sum,
@@ -1348,7 +1348,7 @@ public:
                           braid_PtFcnCoarsen coarsen,
                           braid_PtFcnRefine  refine)
    { return braid_TestCoarsenRefine( (braid_App) app, comm_x, fp, t, fdt, cdt, init,
-                            write, free, clone, sum, dot, coarsen, refine); }
+                            access, free, clone, sum, dot, coarsen, refine); }
 
    int TestAll(BraidApp              *app,
                 MPI_Comm              comm_x,
@@ -1388,7 +1388,7 @@ public:
       braid_Init(comm_world,
                  app->comm_t, app->tstart, app->tstop, app->ntime, (braid_App)app,
                  BraidApp::Phi, BraidApp::Init, BraidApp::Clone, BraidApp::Free,
-                 BraidApp::Sum, BraidApp::Dot, BraidApp::Write,
+                 BraidApp::Sum, BraidApp::Dot, BraidApp::Access,
                  BraidApp::BufSize, BraidApp::BufPack, BraidApp::BufUnpack, &core);
    }
 
@@ -1425,7 +1425,7 @@ public:
    
    void SetPrintLevel(int print_level) { braid_SetPrintLevel(core, print_level); }
    
-   void SetWriteLevel(int write_level) { braid_SetWriteLevel(core, write_level); }
+   void SetAccessLevel(int access_level) { braid_SetAccessLevel(core, access_level); }
 
    void SetFMG() { braid_SetFMG(core); }
    
@@ -1636,7 +1636,7 @@ int main(int argc, char *argv[])
    int    max_iter    = 100;
    int    fmg         = 0;
    int    nfmg_Vcyc   = 1;
-   int    write_level = 1;
+   int    access_level= 1;
    bool   wrapper_tests = false;
    bool   one_wrapper_test = false;
 
@@ -1771,9 +1771,9 @@ int main(int argc, char *argv[])
       {
          one_wrapper_test = true;
       }
-      else if (strcmp(argv[arg_index], "-write") == 0)
+      else if (strcmp(argv[arg_index], "-access") == 0)
       {
-         write_level = atoi(argv[++arg_index]);
+         access_level = atoi(argv[++arg_index]);
       }
       else if (strcmp(argv[arg_index], "-visport") == 0)
       {
@@ -1861,7 +1861,7 @@ int main(int argc, char *argv[])
          "  -cf0 <cfactor0>   : set aggressive coarsening (default: off)\n"
          "  -mi  <max_iter>   : set max iterations (default: 100)\n"
          "  -fmg <nfmg_Vcyc>  : use FMG cycling with nfmg_Vcyc V-cycles at each fmg level\n"
-         "  -write   <w>      : set write_level (default: 1) \n"
+         "  -access  <a>      : set access_level (default: 1) \n"
          "  -vishost <vh>     : set glvis visualisation host (default: 'localhost') \n"
          "  -visport <vp>     : set glvis visualisation port (default: 19916) \n"
          "\n";
@@ -2055,18 +2055,18 @@ int main(int argc, char *argv[])
          //test_t = app.tstart;
          test_t = app.tstop;
 
-         // Test init(), write(), free()
-         util.TestInitWrite( &app, comm_x, stdout, test_t, BraidApp::Init, 
-                             BraidApp::Write, BraidApp::Free);
+         // Test init(), access(), free()
+         util.TestInitAccess( &app, comm_x, stdout, test_t, BraidApp::Init, 
+                             BraidApp::Access, BraidApp::Free);
 
          // Test clone()
          //util.TestClone( &app, comm_x, stdout, test_t, BraidApp::Init, 
-         //                BraidApp::Write, BraidApp::Free, 
+         //                BraidApp::Access, BraidApp::Free, 
          //                BraidApp::Clone);
 
          // Test sum() 
          //util.TestSum( &app, comm_x, stdout, test_t, BraidApp::Init, 
-         //              BraidApp::Write, BraidApp::Free, 
+         //              BraidApp::Access, BraidApp::Free, 
          //              BraidApp::Clone, BraidApp::Sum);
 
          // Test dot()
@@ -2090,7 +2090,7 @@ int main(int argc, char *argv[])
          if (heat_equation)
             app.SetExactSolution(&exact_sol);
 
-         core.SetWriteLevel(write_level);
+         core.SetAccessLevel(access_level);
          core.SetPrintLevel(1);
          core.SetMaxLevels(max_levels);
          core.SetMaxCoarse(max_coarse);

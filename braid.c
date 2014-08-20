@@ -37,7 +37,7 @@ braid_Init(MPI_Comm               comm_world,
            braid_PtFcnFree        free,
            braid_PtFcnSum         sum,
            braid_PtFcnDot         dot,
-           braid_PtFcnWrite       write,
+           braid_PtFcnAccess      access,
            braid_PtFcnBufSize     bufsize,
            braid_PtFcnBufPack     bufpack,
            braid_PtFcnBufUnpack   bufunpack,
@@ -57,38 +57,38 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              max_levels = 30;       /* Default max_levels */
    braid_Int              max_coarse = 1;        /* Default max_coarse (in terms of number of C-points) */
    braid_Int              print_level = 1;       /* Default print level */
-   braid_Int              write_level = 1;       /* Default write level */
+   braid_Int              access_level = 1;      /* Default access level */
    braid_Real             tol = 1.0e-09;         /* Default absolute tolerance */
    braid_Real             rtol = 1.0e-09;        /* Default relative tolerance */
 
    core = _braid_CTAlloc(_braid_Core, 1);
 
-   _braid_CoreElt(core, comm_world) = comm_world;
-   _braid_CoreElt(core, comm)       = comm;
-   _braid_CoreElt(core, tstart)     = tstart;
-   _braid_CoreElt(core, tstop)      = tstop;
-   _braid_CoreElt(core, ntime)      = ntime;
-   _braid_CoreElt(core, app)        = app;
+   _braid_CoreElt(core, comm_world)    = comm_world;
+   _braid_CoreElt(core, comm)          = comm;
+   _braid_CoreElt(core, tstart)        = tstart;
+   _braid_CoreElt(core, tstop)         = tstop;
+   _braid_CoreElt(core, ntime)         = ntime;
+   _braid_CoreElt(core, app)           = app;
 
-   _braid_CoreElt(core, phi)        = phi;
-   _braid_CoreElt(core, init)       = init;
-   _braid_CoreElt(core, clone)      = clone;
-   _braid_CoreElt(core, free)       = free;
-   _braid_CoreElt(core, sum)        = sum;
-   _braid_CoreElt(core, dot)        = dot;
-   _braid_CoreElt(core, write)      = write;
-   _braid_CoreElt(core, bufsize)    = bufsize;
-   _braid_CoreElt(core, bufpack)    = bufpack;
-   _braid_CoreElt(core, bufunpack)  = bufunpack;
-   _braid_CoreElt(core, coarsen)    = NULL;
-   _braid_CoreElt(core, refine)     = NULL;
+   _braid_CoreElt(core, phi)           = phi;
+   _braid_CoreElt(core, init)          = init;
+   _braid_CoreElt(core, clone)         = clone;
+   _braid_CoreElt(core, free)          = free;
+   _braid_CoreElt(core, sum)           = sum;
+   _braid_CoreElt(core, dot)           = dot;
+   _braid_CoreElt(core, access)        = access;
+   _braid_CoreElt(core, bufsize)       = bufsize;
+   _braid_CoreElt(core, bufpack)       = bufpack;
+   _braid_CoreElt(core, bufunpack)     = bufunpack;
+   _braid_CoreElt(core, coarsen)       = NULL;
+   _braid_CoreElt(core, refine)        = NULL;
 
-   _braid_CoreElt(core, write_level)= write_level;
-   _braid_CoreElt(core, print_level)= print_level;
-   _braid_CoreElt(core, max_levels) = max_levels;
-   _braid_CoreElt(core, max_coarse) = max_coarse;
-   _braid_CoreElt(core, tol)        = tol;
-   _braid_CoreElt(core, rtol)       = rtol;
+   _braid_CoreElt(core, access_level)  = access_level;
+   _braid_CoreElt(core, print_level)   = print_level;
+   _braid_CoreElt(core, max_levels)    = max_levels;
+   _braid_CoreElt(core, max_coarse)    = max_coarse;
+   _braid_CoreElt(core, tol)           = tol;
+   _braid_CoreElt(core, rtol)          = rtol;
 
    nrels = _braid_TAlloc(braid_Int, max_levels);
    for (level = 0; level < max_levels; level++)
@@ -153,7 +153,7 @@ braid_Drive(braid_Core  core)
    braid_Int      fmg         = _braid_CoreElt(core, fmg);
    braid_Int      max_iter    = _braid_CoreElt(core, max_iter);
    braid_Int      print_level = _braid_CoreElt(core, print_level);
-   braid_Int      write_level = _braid_CoreElt(core, write_level);
+   braid_Int      access_level= _braid_CoreElt(core, access_level);
    braid_Int      nfmg_Vcyc   = _braid_CoreElt(core, nfmg_Vcyc); 
 
    braid_Int      nlevels, iter;
@@ -332,11 +332,11 @@ braid_Drive(braid_Core  core)
 
    }
 
-   /* F-relax and write solution to file */
+   /* All final access to Braid by carrying out an F-relax to generate all points */
 
-   if( write_level >= 1)
+   if( access_level >= 1)
    {
-      _braid_FWrite(core, rnorm, iter, 0, 1);
+      _braid_FAccess(core, rnorm, iter, 0, 1);
    }
 
    _braid_CoreElt(core, niter) = iter;
@@ -571,10 +571,10 @@ braid_SetPrintFile(braid_Core     core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_SetWriteLevel(braid_Core  core,
-                    braid_Int   write_level)
+braid_SetAccessLevel(braid_Core  core,
+                     braid_Int   access_level)
 {
-   _braid_CoreElt(core, write_level) = write_level;
+   _braid_CoreElt(core, access_level) = access_level;
 
    return _braid_error_flag;
 }

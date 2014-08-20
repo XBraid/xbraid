@@ -41,7 +41,7 @@ int main(int argc, char ** argv)
 /* from drive-05.c */
    int i, level;
 
-   tw_Core  core;
+   braidCore  core;
 /* my_App is called advection_setup, app = kd_ */
 /*   my_App    *app; */
    int        max_levels;
@@ -269,66 +269,66 @@ int main(int argc, char ** argv)
    srand(1);
    
 /* nt = nsteps : number of time steps */
-   tw_Init(comm, comm_t, kd_->tstart, kd_->tstop, kd_->nsteps, kd_,
+   braidInit(comm, comm_t, kd_->tstart, kd_->tstop, kd_->nsteps, kd_,
              explicit_rk4_stepper, init_grid_fcn, copy_grid_fcn, free_grid_fcn, sum_grid_fcn, dot_grid_fcn, 
              save_grid_fcn, gridfcn_BufSize, gridfcn_BufPack, gridfcn_BufUnpack,
              &core);
 
-   tw_SetLoosexTol( core, 0, tol_x[0] );
-   tw_SetLoosexTol( core, 1, tol_x_coarse );
+   braidSetLoosexTol( core, 0, tol_x[0] );
+   braidSetLoosexTol( core, 1, tol_x_coarse );
 
-   tw_SetTightxTol( core, 0, tol_x[1] );
+   braidSetTightxTol( core, 0, tol_x[1] );
 
 /* set max number of MG levels */
-   tw_SetMaxLevels( core, max_levels );
+   braidSetMaxLevels( core, max_levels );
 
-   tw_SetNRelax(core, -1, nrelax);
+   braidSetNRelax(core, -1, nrelax);
    if (nrelax0 > -1)
    {
-      tw_SetNRelax(core,  0, nrelax0);
+      braidSetNRelax(core,  0, nrelax0);
    }
 
-   /*tw_SetAbsTol(core, tol*sqrt(px*nlx*py*nly*(nt+1)) );*/
-   /* tw_SetAbsTol(core, tol/sqrt(dx*dy*dt)); */
+   /*braidSetAbsTol(core, tol*sqrt(px*nlx*py*nly*(nt+1)) );*/
+   /* braidSetAbsTol(core, tol/sqrt(dx*dy*dt)); */
 
-   /* tw_SetAbsTol(core, tol); */
+   /* braidSetAbsTol(core, tol); */
 
-   tw_SetRelTol(core, tol);
+   braidSetRelTol(core, tol);
 
 /* AP: this is probably related to grid coarsening in time */
-   tw_SetCFactor(core, -1, cfactor);
+   braidSetCFactor(core, -1, cfactor);
    if( cfactor0 > -1 ){
       /* Use cfactor0 on all levels until there are < cfactor0 points
        * on each processor. */
       level = (int) (log10((nsteps + 1) / pt) / log10(cfactor0));
       for( i = 0; i < level; i++ )
-         tw_SetCFactor(core,  i, cfactor0);
+         braidSetCFactor(core,  i, cfactor0);
    }
    
-   tw_SetMaxIter(core, max_iter);
+   braidSetMaxIter(core, max_iter);
    if (fmg)
    {
-      tw_SetFMG(core);
+      braidSetFMG(core);
    }
    
 /* this is where the coarsen and refine routines are defined */
    if (scoarsen)
    {
-      tw_SetSpatialCoarsen(core, gridfcn_Coarsen);
-      tw_SetSpatialRefine(core, gridfcn_Refine);
+      braidSetSpatialCoarsen(core, gridfcn_Coarsen);
+      braidSetSpatialRefine(core, gridfcn_Refine);
    }
    
    /* control how often my save_grid_fcn routine is called. */
 /* 0 is never, 1 is at convergence for the finest level, 2 is after every iteration on every level */
-   tw_SetWriteLevel(core, 2);
+   braidSetAccessLevel(core, 2);
 
-   tw_Drive(core);
+   braidDrive(core);
 
    /* Stop timer. */
    myendtime = MPI_Wtime();
    mytime    = myendtime - mystarttime;
 
-   tw_PrintStats(core);
+   braidPrintStats(core);
 
 /* my stuff... */
    printf("------------------------------\n");

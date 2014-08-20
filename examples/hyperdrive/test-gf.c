@@ -43,7 +43,7 @@ int main(int argc, char ** argv)
 /* from drive-05.c */
    int i;
 
-/*   tw_Core  core;*/
+/*   braidCore  core;*/
 /* my_App is called advection_setup, app = kd_ */
 /*   my_App    *app; */
    int        max_levels;

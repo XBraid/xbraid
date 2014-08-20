@@ -568,7 +568,7 @@ _braid_USetVector(braid_Core    core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-_braid_UWriteVector(braid_Core    core,
+_braid_UAccessVector(braid_Core    core,
                     braid_Int     level,
                     braid_Int     index,
                     braid_Status  status,
@@ -579,7 +579,7 @@ _braid_UWriteVector(braid_Core    core,
    braid_Int      ilower = _braid_GridElt(grids[level], ilower);
    braid_Real    *ta     = _braid_GridElt(grids[level], ta);
 
-   _braid_CoreFcn(core, write)(app, ta[index-ilower], status, u);
+   _braid_CoreFcn(core, access)(app, ta[index-ilower], status, u);
 
    return _braid_error_flag;
 }
@@ -926,7 +926,7 @@ _braid_FRestrict(braid_Core   core,
    braid_App            app         = _braid_CoreElt(core, app);
    _braid_Grid        **grids       = _braid_CoreElt(core, grids);
    braid_Int            print_level = _braid_CoreElt(core, print_level);
-   braid_Int            write_level = _braid_CoreElt(core, write_level);
+   braid_Int            access_level= _braid_CoreElt(core, access_level);
    braid_Int            cfactor     = _braid_GridElt(grids[level], cfactor);
    braid_Int            ncpoints    = _braid_GridElt(grids[level], ncpoints);
    _braid_CommHandle   *recv_handle = NULL;
@@ -996,17 +996,17 @@ _braid_FRestrict(braid_Core   core,
          
          /* Allow user to process current vector, note that r here is
           * temporarily holding the state vector */
-         if( (write_level >= 2) && (level == 0) )
+         if( (access_level >= 2) && (level == 0) )
          {
-            _braid_UWriteVector(core, level, fi, status, r);
+            _braid_UAccessVector(core, level, fi, status, r);
          }
       }
 
       /* Allow user to process current C-point */
-      if( (write_level >= 2) && (level == 0) && (ci > -1) )
+      if( (access_level>= 2) && (level == 0) && (ci > -1) )
       {
          _braid_UGetVectorRef(core, level, ci, &u);
-         _braid_UWriteVector(core, level, ci, status, u);
+         _braid_UAccessVector(core, level, ci, status, u);
       }
       
       /* Compute residual and restrict */
@@ -1109,7 +1109,7 @@ _braid_FInterp(braid_Core  core,
 {
    braid_App       app         = _braid_CoreElt(core, app);
    _braid_Grid   **grids       = _braid_CoreElt(core, grids);
-   braid_Int       write_level = _braid_CoreElt(core, write_level);
+   braid_Int       access_level= _braid_CoreElt(core, access_level);
    braid_Int       ilower      = _braid_GridElt(grids[level], ilower);
    braid_Int       iupper      = _braid_GridElt(grids[level], iupper);
    braid_Int       ncpoints    = _braid_GridElt(grids[level], ncpoints);
@@ -1153,9 +1153,9 @@ _braid_FInterp(braid_Core  core,
          _braid_Step(core, level, fi, _braid_CoreElt(core, accuracy[1].value), u);
          _braid_USetVector(core, level, fi, u);
          /* Allow user to process current vector */
-         if( (write_level >= 2) )
+         if( (access_level >= 2) )
          {
-            _braid_UWriteVector(core, level, fi, status, u);
+            _braid_UAccessVector(core, level, fi, status, u);
          }
          e = va[fi-ilower];
          _braid_CoreFcn(core, sum)(app, 1.0, u, -1.0, e);
@@ -1176,9 +1176,9 @@ _braid_FInterp(braid_Core  core,
       {
          _braid_UGetVectorRef(core, level, ci, &u);
          /* Allow user to process current C-point */
-         if( (write_level >= 2) )
+         if( (access_level >= 2) )
          {
-            _braid_UWriteVector(core, level, ci, status, u);
+            _braid_UAccessVector(core, level, ci, status, u);
          }
          e = va[ci-ilower];
          _braid_CoreFcn(core, sum)(app, 1.0, u, -1.0, e);
@@ -1346,16 +1346,16 @@ _braid_FRefine(braid_Core   core,
 }
 
 /*--------------------------------------------------------------------------
- * Write out the solution on grid level
+ * Access to Braid on grid level
  *--------------------------------------------------------------------------*/
 
 braid_Int
 
-_braid_FWrite(braid_Core     core,
-              braid_Real     rnorm,
-              braid_Int      iter,
-              braid_Int      level,
-              braid_Int      done)
+_braid_FAccess(braid_Core     core,
+               braid_Real     rnorm,
+               braid_Int      iter,
+               braid_Int      level,
+               braid_Int      done)
 {
    braid_App       app      = _braid_CoreElt(core, app);
    _braid_Grid   **grids    = _braid_CoreElt(core, grids);
@@ -1386,7 +1386,7 @@ _braid_FWrite(braid_Core     core,
    {
       _braid_UGetInterval(core, level, interval, &flo, &fhi, &ci);
 
-      /* Write out F-points */
+      /* Give access at F-points */
       if (flo <= fhi)
       {
          _braid_UGetVector(core, level, flo-1, &u);
@@ -1395,18 +1395,18 @@ _braid_FWrite(braid_Core     core,
       {
          _braid_Step(core, level, fi, accuracy, u);
          _braid_USetVector(core, level, fi, u);
-         _braid_UWriteVector(core, level, fi, status, u);
+         _braid_UAccessVector(core, level, fi, status, u);
       }
       if (flo <= fhi)
       {
          _braid_CoreFcn(core, free)(app, u);
       }
 
-      /* Write out C-points */
+      /* Give access at C-points */
       if (ci > -1)
       {
          _braid_UGetVectorRef(core, level, ci, &u);
-         _braid_UWriteVector(core, level, ci, status, u);
+         _braid_UAccessVector(core, level, ci, status, u);
       }
    }
    _braid_UCommWait(core, level);

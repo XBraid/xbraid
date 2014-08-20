@@ -143,7 +143,7 @@
  *   explicit    use explicit discretization (1) or not (0)
  *   scheme      int array of integration scheme used: explicit or
  *               implicit 
- *   write       save the solution/error/error norm to files
+ *   access      save the solution/error/error norm to files
  *   vis         save the error for GLVis visualization
  */
 typedef struct _braid_App_struct {
@@ -180,7 +180,7 @@ typedef struct _braid_App_struct {
    double                 *tol_x;
    int                    *scheme;
    int                     explicit;
-   int                     write;
+   int                     access;
    int                     vis;
 } my_App;
 
@@ -2011,10 +2011,10 @@ my_Dot(braid_App     app,
 
 
 /* --------------------------------------------------------------------
- * Write the vector.
+ * Access the current vector.
  * -------------------------------------------------------------------- */
 int
-my_Write(braid_App     app,
+my_Access(braid_App     app,
          braid_Real    t,
          braid_Status  status,
          braid_Vector  u)
@@ -2062,7 +2062,7 @@ my_Write(braid_App     app,
     *   - save error norm at each time point
     *     if we want to visualize with GLVis, we also save the error
     *     at the initial time, middle time, and end time */
-   if( app->write ){
+   if( app->access ){
       if( app->scheme[0] )
          /* forward (explicit) Euler */
          damping = 1 + ((2*(app->K)*(app->dt))/
@@ -2297,7 +2297,7 @@ int main (int argc, char *argv[])
 
    int nA_max, *max_num_iterations_global, *explicit_scheme_global;
 
-   int write, explicit, vis;
+   int access, explicit, vis;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -2335,7 +2335,7 @@ int main (int argc, char *argv[])
    tol_x[1]            = 1.0e-09;
    tol_x_coarse        = 1.0e-09;
    explicit            = 0;
-   write               = 0;
+   access              = 0;
    vis                 = 0;
 
    MPI_Comm_rank( comm, &myid );
@@ -2434,9 +2434,9 @@ int main (int argc, char *argv[])
          arg_index++;
          explicit = 1;
       }
-      else if( strcmp(argv[arg_index], "-write") == 0 ){
+      else if( strcmp(argv[arg_index], "-access") == 0 ){
          arg_index++;
-         write = 1;
+         access = 1;
       }
       else if( strcmp(argv[arg_index], "-vis") == 0 ){
          arg_index++;
@@ -2485,7 +2485,7 @@ int main (int argc, char *argv[])
       printf("  -skip <s>                       : skip levels in PFMG (0 or 1)\n");      
       printf("  -sym <s>                        : symmetric storage (1) or not (0)\n");  
       printf("  -expl <e>                       : use explicit scheme\n");
-      printf("  -write                          : save the solution/error/error norms to files\n");
+      printf("  -access <a>                     : save the solution/error/error norms to files\n");
       printf("  -vis                            : save the error for GLVis visualization\n");
       printf("\n");
    }
@@ -2584,7 +2584,7 @@ int main (int argc, char *argv[])
    (app->relax)       = relax;
    (app->skip)        = skip;
    (app->explicit)    = explicit;
-   (app->write)       = write;
+   (app->access)      = access;
    (app->vis)         = vis;
 
    /* Set the maximum number of PFMG iterations for expensive (index 0)
@@ -2645,7 +2645,7 @@ int main (int argc, char *argv[])
 
    braid_Init(comm, comm_t, tstart, tstop, nt, app,
              my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_Dot, 
-             my_Write, my_BufSize, my_BufPack, my_BufUnpack,
+             my_Access, my_BufSize, my_BufPack, my_BufUnpack,
              &core);
 
    braid_SetLoosexTol( core, 0, tol_x[0] );
