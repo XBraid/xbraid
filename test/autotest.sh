@@ -25,9 +25,10 @@ summary_file="Braid_SUMMARY.html"
 summary_subject="Braid Autotest Summary `date +%Y-%m-%d`"
 email_list="tzanio@llnl.gov, schroder2@llnl.gov, rfalgout@llnl.gov"
 #email_list="rfalgout@llnl.gov, tzanio@llnl.gov, umyang@llnl.gov, schroder2@llnl.gov"
-timebraid_logo="| ___ \         (_)   | |
+timebraid_logo="______           _     _ 
+| ___ \         (_)   | |
 | |_/ /_ __ __ _ _  __| |
-| ___ \ '__/ _` | |/ _` |
+| ___ \ '__/ _\` | |/ _\` |
 | |_/ / | | (_| | | (_| |
 \____/|_|  \__,_|_|\__,_| "
 
