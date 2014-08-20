@@ -21,15 +21,15 @@ remote_dir="/usr/casc/hypre/warp/testing/"
 remote_subdir="AUTOTEST-`date +%Y.%m.%d-%a`"
 
 # Email Setup
-summary_file="XBraid_SUMMARY.html"
-summary_subject="XBraid Autotest Summary `date +%Y-%m-%d`"
+summary_file="Braid_SUMMARY.html"
+summary_subject="Braid Autotest Summary `date +%Y-%m-%d`"
 email_list="tzanio@llnl.gov, schroder2@llnl.gov, rfalgout@llnl.gov"
 #email_list="rfalgout@llnl.gov, tzanio@llnl.gov, umyang@llnl.gov, schroder2@llnl.gov"
-timebraid_logo= "\ \ / /| ___ \         (_)   | |
- \ V / | |_/ /_ __ __ _ _  __| |
- /   \ | ___ \ '__/ _` | |/ _` |
-/ /^\ \| |_/ / | | (_| | | (_| |
-\/   \/\____/|_|  \__,_|_|\__,_|"
+timebraid_logo="| ___ \         (_)   | |
+| |_/ /_ __ __ _ _  __| |
+| ___ \ '__/ _` | |/ _` |
+| |_/ / | | (_| | | (_| |
+\____/|_|  \__,_|_|\__,_| "
 
 # Print Help Message
 case $1 in
