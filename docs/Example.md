@@ -149,7 +149,8 @@ first argument to every function.
 6. **ResidDot**: This function tells XBraid how to take the dot 
    product bewteen two residual vectors.  This is used for halting
    purposes.  Usually *u* = *v*.  The choice of the inner product
-   is completely up to the user.
+   is completely up to the user, although the standard Euclidean
+   inner-product is a common choice.
 
          int
          my_ResidDot(braid_App     app,

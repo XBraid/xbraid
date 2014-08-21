@@ -739,51 +739,6 @@ braid_SetSpatialRefine(braid_Core  core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_GetStatusResidual(braid_Status  status,
-                        braid_Real   *rnorm_ptr)
-{
-   *rnorm_ptr = _braid_StatusElt(status, rnorm);
-   return _braid_error_flag;
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-braid_Int
-braid_GetStatusIter(braid_Status  status,
-                    braid_Int    *iter_ptr)
-{
-   *iter_ptr = _braid_StatusElt(status, iter);
-   return _braid_error_flag;
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-braid_Int
-braid_GetStatusLevel(braid_Status  status,
-                     braid_Int    *level_ptr)
-{
-   *level_ptr = _braid_StatusElt(status, level);
-   return _braid_error_flag;
-}
-
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-braid_Int
-braid_GetStatusDone(braid_Status  status,
-                    braid_Int    *done_ptr)
-{
-   *done_ptr = _braid_StatusElt(status, done);
-   return _braid_error_flag;
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-braid_Int
 braid_GetNumIter(braid_Core  core,
               braid_Int   *niter_ptr)
 {

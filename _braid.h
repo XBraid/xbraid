@@ -34,20 +34,6 @@ extern "C" {
  *--------------------------------------------------------------------------*/
 
 /**
- * Points to the status structure which defines the status of Braid
- * at a given instant on a some level during a run.  The user accesses
- * it through braid_Get**Status() functions.
- **/
-typedef struct _braid_Status_struct
-{
-   braid_Int     iter;         /**< Braid iteration number */
-   braid_Int     level;        /**< current level in Braid*/
-   braid_Real    rnorm;        /**< residual norm */
-   braid_Int     done;         /**< boolean describing whether Braid has finished */
-   
-} _braid_Status;
-
-/**
  * Braid comm handle structure\n
  * Used for initiating and completing nonblocking communication to pass
  * braid_Vectors between processors.
@@ -180,11 +166,6 @@ typedef struct _braid_Core_struct
  **/
 #define _braid_GridElt(grid, elt)  ((grid) -> elt)
 
-/**
- * Accessor for _braid_Status attributes 
- **/
-#define _braid_StatusElt(status, elt) ( (status) -> elt )
-
 /** 
  * Accessor for _braid_Core attributes 
  **/
@@ -222,16 +203,6 @@ typedef struct _braid_Core_struct
  **/
 #define _braid_TFree(ptr) \
 ( free((char *)ptr), ptr = NULL )
-
-/*--------------------------------------------------------------------------
- * Error handling
- *--------------------------------------------------------------------------*/
-
-/** 
- * This is the global Braid error flag.  If it is ever nonzero, an error has 
- * occurred. 
- **/
-extern braid_Int _braid_error_flag;
 
 /*--------------------------------------------------------------------------
  * Print file for redirecting stdout when needed
@@ -585,23 +556,6 @@ _braid_FAccess(braid_Core     core,
 braid_Int
 _braid_InitHierarchy(braid_Core    core,
                      _braid_Grid  *fine_grid);
-
-/**
- * Initialize a braid_Status structure in *status_ptr*, setting
- * the status values *rnorm*, *iter*, *level*, *done*
- **/
-braid_Int
-_braid_InitStatus(braid_Real        rnorm,
-                  braid_Int         iter,
-                  braid_Int         level,
-                  braid_Int         done,
-                  braid_Status     *status_ptr);
-
-/**
- * Destroy a braid_Status structure
- **/
-braid_Int
-_braid_DestroyStatus(braid_Status  status);
 
 
 #ifdef __cplusplus

@@ -20,23 +20,12 @@
 #define braid_HEADER
 
 #include "mpi.h"
+#include "braid_defs.h"
+#include "braid_status.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/*--------------------------------------------------------------------------
- * Define basic types
- *--------------------------------------------------------------------------*/
-/**
- * Defines integer type
- **/
-typedef int    braid_Int;
-
-/**
- * Defines floating point type
- **/
-typedef double braid_Real;
 
 /*--------------------------------------------------------------------------
  * User-written routines
@@ -66,14 +55,6 @@ struct _braid_Vector_struct;
  * needed to evolve the vector to the next time value, like mesh information.
  **/
 typedef struct _braid_Vector_struct *braid_Vector;
-
-struct _braid_Status_struct;
-/**
- * Points to the status structure defined in _braid.h 
- * This is NOT a user-defined structure.
- **/
-typedef struct _braid_Status_struct *braid_Status;
-
 
 /**
  * Defines the central time stepping function that the user must write.
@@ -131,7 +112,9 @@ typedef braid_Int
  *  Carry out a dot product between two residual vectors
  *  *dot_ptr* = <*u*, *v*>
  *  This function is used for halting and usually *u* = *v*.  
- *  The inner-product choice is completely up to the user.
+ *  The inner-product choice is completely up to the user,
+ *  although the standard Euclidean inner-product is a common 
+ *  choice.
  **/
 typedef braid_Int
 (*braid_PtFcnResidDot)(braid_App      app,                /**< user-defined _braid_App structure */
@@ -151,7 +134,7 @@ typedef braid_Int
  * 
  * If access_level is 2 (see [braid_SetAccessLevel](@ref braid_SetAccessLevel) ), then 
  * *access* is called every Braid iteration and on every Braid level.  In this case, 
- * *status* can be querried using the braid_Get**Status() functions, to determine the 
+ * *status* can be querried using the braid_***StatusGet() functions, to determine the 
  * current Braid level and iteration.  This allows for even more detailed tracking of the
  * simulation. 
  **/
@@ -466,40 +449,6 @@ braid_SplitCommworld(const MPI_Comm  *comm_world,  /**< Global communicator to s
                      MPI_Comm        *comm_x,      /**< Spatial communicator (written as output) */
                      MPI_Comm        *comm_t       /**< Temporal communicator (written as output) */
                      );
-
-/**
- * Return the residual for the current status object.
- **/
-braid_Int
-braid_GetStatusResidual(braid_Status  status,     /**< structure containing current simulation info */
-                        braid_Real   *rnorm_ptr   /**< output, current residual norm */
-                        );
-
-/**
- * Return the iteration for the current status object.
- **/
-braid_Int
-braid_GetStatusIter(braid_Status  status,         /**< structure containing current simulation info */
-                    braid_Int    *iter_ptr        /**< output, current iteration number*/
-                    );
-
-/**
- * Return the Braid level for the current status object.
- **/
-braid_Int
-braid_GetStatusLevel(braid_Status  status,        /**< structure containing current simulation info */
-                     braid_Int    *level_ptr      /**< output, current level in Braid */
-                     );
-
-/**
- * Return whether Braid is done for the current status object\n
- * *done_ptr = 1* indicates that Braid has finished iterating, 
- * (either maxiter has been reached, or the tolerance has been met).
- **/
-braid_Int
-braid_GetStatusDone(braid_Status  status,         /**< structure containing current simulation info */
-                    braid_Int    *done_ptr        /**< output,  =1 if Braid has finished, else =0 */
-                    );
 
 /**
  * After Drive() finishes, this returns the number of iterations taken.

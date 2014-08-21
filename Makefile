@@ -20,9 +20,9 @@ include makefile.inc
 # Targets
 ##################################################################
 
-BRAID_HEADERS = _braid.h braid.h util.h braid_test.h
+BRAID_HEADERS = _braid.h braid.h util.h braid_test.h braid_status.h braid_defs.h
 
-BRAID_FILES = util.c braid.c _braid.c braid_test.c
+BRAID_FILES = util.c braid.c _braid.c braid_test.c braid_status.c
 
 BRAID_OBJ = $(BRAID_FILES:.c=.o)
 

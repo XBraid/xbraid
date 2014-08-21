@@ -92,7 +92,7 @@ braid_TestSum( braid_App              app,         /**< User defined App structu
 /**
  * Test the residdot function.\n
  * A vector is initialized at time *t* and then cloned.  Various
- * residdot products like <3 v, v>/<v, v> are computed with known output, e.g.,
+ * residdot evaluations like <3 v, v>/<v, v> are computed with known output, e.g.,
  * <3 v, v>/<v, v> must equal 3.  If all the tests pass, then 1 is returned.
  *
  * - Returns 0 if the tests fail
