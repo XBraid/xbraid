@@ -143,10 +143,10 @@ my_Sum(braid_App     app,
 }
 
 int
-my_Dot(braid_App     app,
-       braid_Vector  u,
-       braid_Vector  v,
-       double       *dot_ptr)
+my_ResidDot(braid_App     app,
+            braid_Vector  u,
+            braid_Vector  v,
+            double       *dot_ptr)
 {
    double dot;
 
@@ -322,9 +322,8 @@ int main (int argc, char *argv[])
    (app->ntime)  = ntime;
 
    braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
-             my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_Dot, my_Access,
-             my_BufSize, my_BufPack, my_BufUnpack,
-             &core);
+             my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_ResidDot, 
+             my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
 
    braid_SetPrintLevel( core, 1);
    braid_SetMaxLevels(core, max_levels);

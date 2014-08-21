@@ -36,7 +36,7 @@ braid_Init(MPI_Comm               comm_world,
            braid_PtFcnClone       clone,
            braid_PtFcnFree        free,
            braid_PtFcnSum         sum,
-           braid_PtFcnDot         dot,
+           braid_PtFcnResidDot    residdot,
            braid_PtFcnAccess      access,
            braid_PtFcnBufSize     bufsize,
            braid_PtFcnBufPack     bufpack,
@@ -75,7 +75,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, clone)         = clone;
    _braid_CoreElt(core, free)          = free;
    _braid_CoreElt(core, sum)           = sum;
-   _braid_CoreElt(core, dot)           = dot;
+   _braid_CoreElt(core, residdot)      = residdot;
    _braid_CoreElt(core, access)        = access;
    _braid_CoreElt(core, bufsize)       = bufsize;
    _braid_CoreElt(core, bufpack)       = bufpack;

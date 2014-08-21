@@ -146,14 +146,16 @@ first argument to every function.
             return 0;
          }
 
-6. **Dot**: This function tells XBraid how to take the dot 
-   product of two vectors.
+6. **ResidDot**: This function tells XBraid how to take the dot 
+   product bewteen two residual vectors.  This is used for halting
+   purposes.  Usually *u* = *v*.  The choice of the inner product
+   is completely up to the user.
 
          int
-         my_Dot(braid_App     app,
-                braid_Vector  u,
-                braid_Vector  v,
-                double    *dot_ptr)
+         my_ResidDot(braid_App     app,
+                     braid_Vector  u,
+                     braid_Vector  v,
+                     double    *dot_ptr)
          {
             double dot;
 
@@ -287,10 +289,9 @@ The core structure is used by XBraid for internal data structures.
 
     braid_Core  core;
     braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
-            my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_Dot, my_Access,
-            my_BufSize, my_BufPack, my_BufUnpack,
-            &core);
-    
+            my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_ResidDot, 
+            my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
+
 Then, XBraid options are set.
 
     braid_SetPrintLevel( core, 1);
@@ -339,17 +340,19 @@ can return a boolean variable to indicate correctness.
     /* Test sum() */
     braid_TestSum( app, comm_x, stdout, dt, my_Init, my_Access, my_Free, my_Clone, my_Sum);
 
-    /* Test dot() */
-    correct = braid_TestDot( app, comm_x, stdout, dt, my_Init, my_Free, my_Clone, my_Sum, my_Dot);
+    /* Test residdot() */
+    correct = braid_TestResidDot( app, comm_x, stdout, dt, my_Init, my_Free, my_Clone, 
+                              my_Sum, my_ResidDot);
 
     /* Test bufsize(), bufpack(), bufunpack() */
-    correct = braid_TestBuf( app, comm_x, stdout, dt, my_Init, my_Free, my_Sum, my_Dot, my_BufSize, my_BufPack, my_BufUnpack);
+    correct = braid_TestBuf( app, comm_x, stdout, dt, my_Init, my_Free, my_Sum, my_ResidDot, 
+                        my_BufSize, my_BufPack, my_BufUnpack);
      
     /* Test coarsen and refine */
     correct = braid_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
-                           my_Access, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenInjection, 
-                           my_Refine);
+                           my_Access, my_Free, my_Clone, my_Sum, my_ResidDot, 
+                           my_CoarsenInjection, my_Refine);
     correct = braid_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
-                          my_Access, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenBilinear, 
-                          my_Refine);
+                          my_Access, my_Free, my_Clone, my_Sum, my_ResidDot, 
+                          my_CoarsenBilinear, my_Refine);
 

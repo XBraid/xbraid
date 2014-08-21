@@ -128,15 +128,17 @@ typedef braid_Int
                   );
 
 /**
- *  Carry out a dot product
+ *  Carry out a dot product between two residual vectors
  *  *dot_ptr* = <*u*, *v*>
+ *  This function is used for halting and usually *u* = *v*.  
+ *  The inner-product choice is completely up to the user.
  **/
 typedef braid_Int
-(*braid_PtFcnDot)(braid_App      app,                /**< user-defined _braid_App structure */
-                  braid_Vector   u,                  /**< vector to dot */
-                  braid_Vector   v,                  /**< vector to dot */
-                  braid_Real    *dot_ptr             /**< output, scalar dot product value */
-                  );
+(*braid_PtFcnResidDot)(braid_App      app,                /**< user-defined _braid_App structure */
+                       braid_Vector   u,                  /**< residual vector to dot */
+                       braid_Vector   v,                  /**< residual vector to dot */
+                       braid_Real    *dot_ptr             /**< output, scalar dot product value */
+                       );
 
 /**
  * Gives access to Braid and to the current vector *u* at time *t*.  Most commonly,
@@ -262,7 +264,7 @@ braid_Init(MPI_Comm            comm_world,  /**< Global communicator for space a
         braid_PtFcnClone       clone,       /**< Clone a braid_Vector*/
         braid_PtFcnFree        free,        /**< Free a braid_Vector*/
         braid_PtFcnSum         sum,         /**< Compute vector sum of two braid_Vectors*/
-        braid_PtFcnDot         dot,         /**< Compute dot product between two braid_Vectors*/
+        braid_PtFcnResidDot    residdot,    /**< Compute dot product between two residual braid_Vectors*/
         braid_PtFcnAccess      access,      /**< Allows access to Braid and current braid_Vector */
         braid_PtFcnBufSize     bufsize,     /**< Computes size for MPI buffer for one braid_Vector */
         braid_PtFcnBufPack     bufpack,     /**< Packs MPI buffer to contain one braid_Vector*/

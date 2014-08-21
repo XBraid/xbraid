@@ -90,9 +90,9 @@ braid_TestSum( braid_App              app,         /**< User defined App structu
                );
 
 /**
- * Test the dot function.\n
+ * Test the residdot function.\n
  * A vector is initialized at time *t* and then cloned.  Various
- * dot products like <3 v, v>/<v, v> are computed with known output, e.g.,
+ * residdot products like <3 v, v>/<v, v> are computed with known output, e.g.,
  * <3 v, v>/<v, v> must equal 3.  If all the tests pass, then 1 is returned.
  *
  * - Returns 0 if the tests fail
@@ -100,16 +100,16 @@ braid_TestSum( braid_App              app,         /**< User defined App structu
  * - Check the log messages to see details of which tests failed.
  **/
 braid_Int
-braid_TestDot( braid_App              app,         /**< User defined App structure */
-               MPI_Comm               comm_x,      /**< Spatial communicator */
-               FILE                  *fp,          /**< File pointer (could be stdout or stderr) for log messages*/
-               braid_Real             t,           /**< Time value to test Dot with  (used to initialize the vectors)*/
-               braid_PtFcnInit        init,        /**< Initialize a braid_Vector on finest temporal grid*/
-               braid_PtFcnFree        free,        /**< Free a braid_Vector*/
-               braid_PtFcnClone       clone,       /**< Clone a braid_Vector */
-               braid_PtFcnSum         sum,         /**< Compute vector sum of two braid_Vectors */
-               braid_PtFcnDot         dot          /**< Compute dot product of two braid_Vectors */
-               );
+braid_TestResidDot( braid_App              app,         /**< User defined App structure */
+                    MPI_Comm               comm_x,      /**< Spatial communicator */
+                    FILE                  *fp,          /**< File pointer (could be stdout or stderr) for log messages*/
+                    braid_Real             t,           /**< Time value to test ResidDot with  (used to initialize the vectors)*/
+                    braid_PtFcnInit        init,        /**< Initialize a braid_Vector on finest temporal grid*/
+                    braid_PtFcnFree        free,        /**< Free a braid_Vector*/
+                    braid_PtFcnClone       clone,       /**< Clone a braid_Vector */
+                    braid_PtFcnSum         sum,         /**< Compute vector sum of two braid_Vectors */
+                    braid_PtFcnResidDot    residdot     /**< Compute dot product between two residual braid_Vectors */
+                    );
               
 /**
  * Test the BufPack, BufUnpack and BufSize functions.\n
@@ -128,7 +128,7 @@ braid_TestBuf( braid_App              app,         /**< User defined App structu
                braid_PtFcnInit        init,        /**< Initialize a braid_Vector on finest temporal grid*/
                braid_PtFcnFree        free,        /**< Free a braid_Vector*/
                braid_PtFcnSum         sum,         /**< Compute vector sum of two braid_Vectors */
-               braid_PtFcnDot         dot,         /**< Compute dot product of two braid_Vectors */
+               braid_PtFcnResidDot    residdot,    /**< Compute dot product between two residual braid_Vectors */
                braid_PtFcnBufSize     bufsize,     /**< Computes size in bytes for one braid_Vector MPI buffer */
                braid_PtFcnBufPack     bufpack,     /**< Packs MPI buffer to contain one braid_Vector */
                braid_PtFcnBufUnpack   bufunpack    /**< Unpacks MPI buffer containing one braid_Vector */
@@ -144,20 +144,20 @@ braid_TestBuf( braid_App              app,         /**< User defined App structu
  * - Check the log messages to see details of which tests failed.
  **/
 braid_Int
-braid_TestCoarsenRefine( braid_App          app,         /**< User defined App structure */
-                         MPI_Comm           comm_x,      /**< Spatial communicator */
-                         FILE              *fp,          /**< File pointer (could be stdout or stderr) for log messages*/
-                         braid_Real         t,           /**< Time value to initialize test vectors */
-                         braid_Real         fdt,         /**< Fine time step value that you spatially coarsen from */
-                         braid_Real         cdt,         /**< Coarse time step value that you coarsen to */
-                         braid_PtFcnInit    init,        /**< Initialize a braid_Vector on finest temporal grid*/
-                         braid_PtFcnAccess  access,      /**< Allows access to Braid and current braid_Vector (can be NULL for no writing)*/
-                         braid_PtFcnFree    free,        /**< Free a braid_Vector*/
-                         braid_PtFcnClone   clone,       /**< Clone a braid_Vector */
-                         braid_PtFcnSum     sum,         /**< Compute vector sum of two braid_Vectors */
-                         braid_PtFcnDot     dot,         /**< Compute dot product of two braid_Vectors */
-                         braid_PtFcnCoarsen coarsen,     /**< Spatially coarsen a vector */
-                         braid_PtFcnRefine  refine       /**< Spatially refine a vector */
+braid_TestCoarsenRefine( braid_App             app,         /**< User defined App structure */
+                         MPI_Comm              comm_x,      /**< Spatial communicator */
+                         FILE                 *fp,          /**< File pointer (could be stdout or stderr) for log messages*/
+                         braid_Real            t,           /**< Time value to initialize test vectors */
+                         braid_Real            fdt,         /**< Fine time step value that you spatially coarsen from */
+                         braid_Real            cdt,         /**< Coarse time step value that you coarsen to */
+                         braid_PtFcnInit       init,        /**< Initialize a braid_Vector on finest temporal grid*/
+                         braid_PtFcnAccess     access,      /**< Allows access to Braid and current braid_Vector (can be NULL for no writing)*/
+                         braid_PtFcnFree       free,        /**< Free a braid_Vector*/
+                         braid_PtFcnClone      clone,       /**< Clone a braid_Vector */
+                         braid_PtFcnSum        sum,         /**< Compute vector sum of two braid_Vectors */
+                         braid_PtFcnResidDot   residdot,    /**< Compute dot product between two residual braid_Vectors */
+                         braid_PtFcnCoarsen    coarsen,     /**< Spatially coarsen a vector */
+                         braid_PtFcnRefine     refine       /**< Spatially refine a vector */
                          );
 
 /**
@@ -178,7 +178,7 @@ braid_TestAll( braid_App             app,         /**< User defined App structur
                braid_PtFcnFree       free,        /**< Free a braid_Vector*/
                braid_PtFcnClone      clone,       /**< Clone a braid_Vector */
                braid_PtFcnSum        sum,         /**< Compute vector sum of two braid_Vectors */
-               braid_PtFcnDot        dot,         /**< Compute dot product of two braid_Vectors */
+               braid_PtFcnResidDot   residdot,    /**< Compute dot product between two residual braid_Vectors */
                braid_PtFcnBufSize    bufsize,     /**< Computes size in bytes for one braid_Vector MPI buffer */
                braid_PtFcnBufPack    bufpack,     /**< Packs MPI buffer to contain one braid_Vector */
                braid_PtFcnBufUnpack  bufunpack,   /**< Unpacks MPI buffer into a braid_Vector */

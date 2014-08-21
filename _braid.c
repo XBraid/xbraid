@@ -1020,7 +1020,7 @@ _braid_FRestrict(braid_Core   core,
          /* Compute rnorm (only on level 0) */
          if (level == 0)
          {
-            _braid_CoreFcn(core, dot)(app, r, r, &rdot);
+            _braid_CoreFcn(core, residdot)(app, r, r, &rdot);
             rnorm += rdot;
             
             /* If debug printing, print out rdot for this interval. rdot

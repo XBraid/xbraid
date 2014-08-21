@@ -2642,13 +2642,13 @@ my_Sum(braid_App    app,
 
 
 /* --------------------------------------------------------------------
- * Compute dot product.
+ * Compute dot product of residuals.
  * -------------------------------------------------------------------- */
 int
-my_Dot(braid_App     app,
-       braid_Vector  u,
-       braid_Vector  v,
-       double       *dot_ptr)
+my_ResidDot(braid_App     app,
+            braid_Vector  u,
+            braid_Vector  v,
+            double       *dot_ptr)
 {
    double dot;
 
@@ -3441,19 +3441,19 @@ int main (int argc, char *argv[])
       braid_TestSum( app, comm_x, stdout, dt, my_Init, my_Access, my_Free, my_Clone, my_Sum);
 
       /* Test dot() */
-      correct = braid_TestDot( app, comm_x, stdout, 0.0, my_Init, my_Free, my_Clone, my_Sum, my_Dot);
-      correct = braid_TestDot( app, comm_x, stdout, dt, my_Init, my_Free, my_Clone, my_Sum, my_Dot);
+      correct = braid_TestResidDot( app, comm_x, stdout, 0.0, my_Init, my_Free, my_Clone, my_Sum, my_ResidDot);
+      correct = braid_TestResidDot( app, comm_x, stdout, dt, my_Init, my_Free, my_Clone, my_Sum, my_ResidDot);
 
       /* Test bufsize(), bufpack(), bufunpack() */
-      correct = braid_TestBuf( app, comm_x, stdout, 0.0, my_Init, my_Free, my_Sum, my_Dot, my_BufSize, my_BufPack, my_BufUnpack);
-      correct = braid_TestBuf( app, comm_x, stdout, dt, my_Init, my_Free, my_Sum, my_Dot, my_BufSize, my_BufPack, my_BufUnpack);
+      correct = braid_TestBuf( app, comm_x, stdout, 0.0, my_Init, my_Free, my_Sum, my_ResidDot, my_BufSize, my_BufPack, my_BufUnpack);
+      correct = braid_TestBuf( app, comm_x, stdout, dt, my_Init, my_Free, my_Sum, my_ResidDot, my_BufSize, my_BufPack, my_BufUnpack);
        
       /* Test coarsen and refine */
       correct = braid_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
-                             my_Access, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenInjection, 
+                             my_Access, my_Free, my_Clone, my_Sum, my_ResidDot, my_CoarsenInjection, 
                              my_Refine);
       correct = braid_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
-                            my_Access, my_Free, my_Clone, my_Sum, my_Dot, my_CoarsenBilinear, 
+                            my_Access, my_Free, my_Clone, my_Sum, my_ResidDot, my_CoarsenBilinear, 
                             my_Refine);
       if(correct == 0)
       {
@@ -3471,10 +3471,9 @@ int main (int argc, char *argv[])
       /* Start timer. */
       mystarttime = MPI_Wtime();
 
-      braid_Init(comm, comm_t, tstart, tstop, nt, app,
-                my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_Dot, 
-                my_Access, my_BufSize, my_BufPack, my_BufUnpack,
-                &core);
+      braid_Init(comm, comm_t, tstart, tstop, nt, app, my_Phi, my_Init,
+            my_Clone, my_Free, my_Sum, my_ResidDot, my_Access, my_BufSize,
+            my_BufPack, my_BufUnpack, &core);
 
       braid_SetLoosexTol( core, 0, tol_x[0] );
       braid_SetLoosexTol( core, 1, tol_x_coarse );

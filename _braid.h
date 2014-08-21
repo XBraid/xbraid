@@ -129,7 +129,7 @@ typedef struct _braid_Core_struct
    braid_PtFcnClone       clone;        /**< clone a vector */
    braid_PtFcnFree        free;         /**< free up a vector */
    braid_PtFcnSum         sum;          /**< vector sum */
-   braid_PtFcnDot         dot;          /**< dot product */
+   braid_PtFcnResidDot    residdot;     /**< dot product between two residual vectors*/
    braid_PtFcnAccess      access;       /**< user access function to Braid and current vector */
    braid_PtFcnBufSize     bufsize;      /**< return buffer size */
    braid_PtFcnBufPack     bufpack;      /**< pack a buffer */
