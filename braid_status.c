@@ -25,8 +25,8 @@
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_GetStatusResidual(braid_Status  status,
-                        braid_Real   *rnorm_ptr)
+braid_AccessStatusGetResidual(braid_AccessStatus  status,
+                              braid_Real         *rnorm_ptr)
 {
    *rnorm_ptr = _braid_StatusElt(status, rnorm);
    return _braid_error_flag;
@@ -36,8 +36,8 @@ braid_GetStatusResidual(braid_Status  status,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_GetStatusIter(braid_Status  status,
-                    braid_Int    *iter_ptr)
+braid_AccessStatusGetIter(braid_AccessStatus  status,
+                          braid_Int          *iter_ptr)
 {
    *iter_ptr = _braid_StatusElt(status, iter);
    return _braid_error_flag;
@@ -47,8 +47,8 @@ braid_GetStatusIter(braid_Status  status,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_GetStatusLevel(braid_Status  status,
-                     braid_Int    *level_ptr)
+braid_AccessStatusGetLevel(braid_AccessStatus  status,
+                           braid_Int          *level_ptr)
 {
    *level_ptr = _braid_StatusElt(status, level);
    return _braid_error_flag;
@@ -59,10 +59,42 @@ braid_GetStatusLevel(braid_Status  status,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_GetStatusDone(braid_Status  status,
-                    braid_Int    *done_ptr)
+braid_AccessStatusGetDone(braid_AccessStatus  status,
+                          braid_Int          *done_ptr)
 {
    *done_ptr = _braid_StatusElt(status, done);
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ * Destroy a braid_AccessStatus structure
+ *--------------------------------------------------------------------------*/
+braid_Int
+_braid_AccessStatusDestroy(braid_AccessStatus  status)
+{
+   if (status)
+   {
+      _braid_TFree(status);
+   }
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ * Initialize members of a braid_AccessStatus structure 
+ *--------------------------------------------------------------------------*/
+braid_Int
+_braid_AccessStatusInit(braid_Real           rnorm,
+                        braid_Int            iter,
+                        braid_Int            level,
+                        braid_Int            done,
+                        braid_AccessStatus   status)
+{
+   _braid_StatusElt(status, level) = level;
+   _braid_StatusElt(status, rnorm) = rnorm;
+   _braid_StatusElt(status, done)  = done;
+   _braid_StatusElt(status, iter)  = iter; 
+
    return _braid_error_flag;
 }
 

@@ -157,10 +157,10 @@ my_ResidDot(braid_App     app,
 }
 
 int
-my_Access(braid_App     app,
-          double        t,
-          braid_Status  status,
-          braid_Vector  u)
+my_Access(braid_App          app,
+          double             t,
+          braid_AccessStatus astatus,
+          braid_Vector       u)
 {
    MPI_Comm   comm   = (app->comm);
    double     tstart = (app->tstart);

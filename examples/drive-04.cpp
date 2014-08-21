@@ -986,26 +986,26 @@ void SolveODE(TimeDependentOperator *ode, HypreParVector *X0,
    delete sol_sock;
 }
 
-// Wrapper for BRAID's status object
-class BraidStatus
+// Wrapper for BRAID's AccessStatus object
+class BraidAccessStatus
 {
    private:
-      braid_Status status;
+      braid_AccessStatus astatus;
    
    public:
-      BraidStatus(braid_Status _status)
+      BraidAccessStatus(braid_AccessStatus _astatus)
       {
-         status = _status;
+         astatus = _astatus;
       }
 
-      void GetDone(braid_Int *done_ptr)       { braid_GetStatusDone(status, done_ptr); }
-      void GetLevel(braid_Int *level_ptr)     { braid_GetStatusLevel(status, level_ptr); }
-      void GetIter(braid_Int *iter_ptr)       { braid_GetStatusIter(status, iter_ptr); }
-      void GetResidual(braid_Real *rnorm_ptr) { braid_GetStatusResidual(status, rnorm_ptr); }
+      void GetDone(braid_Int *done_ptr)       { braid_AccessStatusGetDone(astatus, done_ptr); }
+      void GetLevel(braid_Int *level_ptr)     { braid_AccessStatusGetLevel(astatus, level_ptr); }
+      void GetIter(braid_Int *iter_ptr)       { braid_AccessStatusGetIter(astatus, iter_ptr); }
+      void GetResidual(braid_Real *rnorm_ptr) { braid_AccessStatusGetResidual(astatus, rnorm_ptr); }
       
-      // The braid_Status structure is deallocated inside of Braid
+      // The braid_AccessStatus structure is deallocated inside of Braid
       // This class is just to make code consistently look object oriented
-      ~BraidStatus() { }
+      ~BraidAccessStatus() { }
 };
 
 
@@ -1140,22 +1140,22 @@ public:
       visport = vp;
    }
 
-   static int Access(braid_App     _app,
-                     double        t,
-                     braid_Status  _status,
+   static int Access(braid_App           _app,
+                     double              t,
+                     braid_AccessStatus  _astatus,
                      braid_Vector  _u)
    {
-      BraidApp *app      = (BraidApp*) _app;
-      BraidStatus status = BraidStatus(_status);
-      HypreParVector *u  = (HypreParVector*) _u;
+      BraidApp *app             = (BraidApp*) _app;
+      BraidAccessStatus astatus = BraidAccessStatus(_astatus);
+      HypreParVector *u         = (HypreParVector*) _u;
       
-      // Extract information from status
+      // Extract information from astatus
       int done, level, iter;
       double rnorm;
-      status.GetDone(&done);
-      status.GetLevel(&level);
-      status.GetIter(&iter);
-      status.GetResidual(&rnorm); 
+      astatus.GetDone(&done);
+      astatus.GetLevel(&level);
+      astatus.GetIter(&iter);
+      astatus.GetResidual(&rnorm); 
 
       // if (t == app->tstart || t == app->tstop)
       if ( (t == app->tstop) && (level == 0) )

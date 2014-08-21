@@ -17,6 +17,8 @@
 #ifndef braiddefs_HEADER
 #define braiddefs_HEADER
 
+#include <stdlib.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -45,6 +47,34 @@ typedef double braid_Real;
  * occurred. 
  **/
 extern braid_Int _braid_error_flag;
+
+/*--------------------------------------------------------------------------
+ * Memory allocation macros
+ *--------------------------------------------------------------------------*/
+
+/** 
+ * Allocation macro 
+ **/
+#define _braid_TAlloc(type, count) \
+( (type *)malloc((size_t)(sizeof(type) * (count))) )
+
+/** 
+ * Allocation macro 
+ **/
+#define _braid_CTAlloc(type, count) \
+( (type *)calloc((size_t)(count), (size_t)sizeof(type)) )
+
+/** 
+ * Re-allocation macro 
+ **/
+#define _braid_TReAlloc(ptr, type, count) \
+( (type *)realloc((char *)ptr, (size_t)(sizeof(type) * (count))) )
+
+/** 
+ * Free memory macro 
+ **/
+#define _braid_TFree(ptr) \
+( free((char *)ptr), ptr = NULL )
 
 
 #ifdef __cplusplus

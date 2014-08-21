@@ -134,15 +134,15 @@ typedef braid_Int
  * 
  * If access_level is 2 (see [braid_SetAccessLevel](@ref braid_SetAccessLevel) ), then 
  * *access* is called every Braid iteration and on every Braid level.  In this case, 
- * *status* can be querried using the braid_***StatusGet() functions, to determine the 
- * current Braid level and iteration.  This allows for even more detailed tracking of the
- * simulation. 
+ * *status* can be querried using the braid_AccessStatusGet***() functions, to determine
+ * the current Braid level and iteration.  This allows for even more detailed tracking of
+ * the simulation. 
  **/
 typedef braid_Int
-(*braid_PtFcnAccess)(braid_App      app,              /**< user-defined _braid_App structure */
-                     braid_Real     t,                /**< time value for *u* */
-                     braid_Status   status,           /**< can be querried for info like Braid Iteration */
-                     braid_Vector   u                 /**< vector to be accessed */
+(*braid_PtFcnAccess)(braid_App           app,              /**< user-defined _braid_App structure */
+                     braid_Real          t,                /**< time value for *u* */
+                     braid_AccessStatus  status,           /**< can be querried for info like Braid Iteration */
+                     braid_Vector        u                 /**< vector to be accessed */
                      );
 
 /**
@@ -236,24 +236,24 @@ typedef struct _braid_Core_struct *braid_Core;
  * braid_Core structure. 
  **/
 braid_Int
-braid_Init(MPI_Comm            comm_world,  /**< Global communicator for space and time */
-        MPI_Comm               comm,        /**< Communicator for temporal dimension*/
-        braid_Real             tstart,      /**< start time */
-        braid_Real             tstop,       /**< End time*/
-        braid_Int              ntime,       /**< Initial number of temporal grid values*/
-        braid_App              app,         /**< User-defined _braid_App structure */
-        braid_PtFcnPhi         phi,         /**< User time stepping routine to advance a braid_Vector forward one step */
-        braid_PtFcnInit        init,        /**< Initialize a braid_Vector on the finest temporal grid*/
-        braid_PtFcnClone       clone,       /**< Clone a braid_Vector*/
-        braid_PtFcnFree        free,        /**< Free a braid_Vector*/
-        braid_PtFcnSum         sum,         /**< Compute vector sum of two braid_Vectors*/
-        braid_PtFcnResidDot    residdot,    /**< Compute dot product between two residual braid_Vectors*/
-        braid_PtFcnAccess      access,      /**< Allows access to Braid and current braid_Vector */
-        braid_PtFcnBufSize     bufsize,     /**< Computes size for MPI buffer for one braid_Vector */
-        braid_PtFcnBufPack     bufpack,     /**< Packs MPI buffer to contain one braid_Vector*/
-        braid_PtFcnBufUnpack   bufunpack,   /**< Unpacks MPI buffer into a braid_Vector */
-        braid_Core            *core_ptr     /**< Pointer to braid_Core (_braid_Core) struct*/   
-        );
+braid_Init(MPI_Comm               comm_world,  /**< Global communicator for space and time */
+           MPI_Comm               comm,        /**< Communicator for temporal dimension*/
+           braid_Real             tstart,      /**< start time */
+           braid_Real             tstop,       /**< End time*/
+           braid_Int              ntime,       /**< Initial number of temporal grid values*/
+           braid_App              app,         /**< User-defined _braid_App structure */
+           braid_PtFcnPhi         phi,         /**< User time stepping routine to advance a braid_Vector forward one step */
+           braid_PtFcnInit        init,        /**< Initialize a braid_Vector on the finest temporal grid*/
+           braid_PtFcnClone       clone,       /**< Clone a braid_Vector*/
+           braid_PtFcnFree        free,        /**< Free a braid_Vector*/
+           braid_PtFcnSum         sum,         /**< Compute vector sum of two braid_Vectors*/
+           braid_PtFcnResidDot    residdot,    /**< Compute dot product between two residual braid_Vectors*/
+           braid_PtFcnAccess      access,      /**< Allows access to Braid and current braid_Vector */
+           braid_PtFcnBufSize     bufsize,     /**< Computes size for MPI buffer for one braid_Vector */
+           braid_PtFcnBufPack     bufpack,     /**< Packs MPI buffer to contain one braid_Vector*/
+           braid_PtFcnBufUnpack   bufunpack,   /**< Unpacks MPI buffer into a braid_Vector */
+           braid_Core            *core_ptr     /**< Pointer to braid_Core (_braid_Core) struct*/   
+           );
 
 /**
  * Carry out a simulation with Braid.  Integrate in time.

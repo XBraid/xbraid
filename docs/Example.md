@@ -169,14 +169,14 @@ first argument to every function.
 7. **Access**: This function allows the user access to XBraid and the current solution vector 
    at time *t*.  This is most commonly used to print solution(s) to screen, file, etc... 
    The user defines what is appropriate output.  Notice how you are told the time value of the 
-   vector *u* and even more information in *status*.  This lets you tailor the output to only 
+   vector *u* and even more information in *astatus*.  This lets you tailor the output to only 
    certain time values.  
 
    Eventually, this routine will allow for broader access to XBraid and computational steering.
    
    If access_level is 2 (see [braid_SetAccessLevel](@ref braid_SetAccessLevel) ), then 
    *Access* is called every XBraid iteration and on every XBraid level.  In this case, 
-   *status* can be querried using the braid_Get**Status() functions, to determine the 
+   *astatus* can be querried using the braid_AccessStatusGet**() functions, to determine the 
    current XBraid level and iteration.  This allows for even more detailed tracking of the
    simulation. 
    
@@ -185,10 +185,10 @@ first argument to every function.
    examples/drive-02 uses *Access* to write to .vtu files.
 
          int
-         my_Access(braid_App     app,
-                  double     t,
-                  braid_Status  status,
-                  braid_Vector  u)
+         my_Access(braid_App          app,
+                  double              t,
+                  braid_AccessStatus  astatus,
+                  braid_Vector        u)
          {
             MPI_Comm   comm   = (app->comm);
             double     tstart = (app->tstart);

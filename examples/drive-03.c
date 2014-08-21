@@ -2804,10 +2804,10 @@ my_ResidDot(braid_App     app,
  * Access the current vector.
  * -------------------------------------------------------------------- */
 int
-my_Access(braid_App     app,
-          braid_Real    t,
-          braid_Status  status,
-          braid_Vector  u)
+my_Access(braid_App           app,
+          braid_Real          t,
+          braid_AccessStatus  astatus,
+          braid_Vector        u)
 {
    MPI_Comm   comm   = MPI_COMM_WORLD;
    double     tstart = (app->tstart);
@@ -2837,10 +2837,10 @@ my_Access(braid_App     app,
    /*double rnorm;
    int iter, level, done;
    
-   braid_GetStatusResidual(status, &rnorm);
-   braid_GetStatusIter(status, &iter);
-   braid_GetStatusLevel(status, &level);
-   braid_GetStatusDone(status, &done);
+   braid_GetStatusResidual(astatus, &rnorm);
+   braid_GetStatusIter(astatus, &iter);
+   braid_GetStatusLevel(astatus, &level);
+   braid_GetStatusDone(astatus, &done);
    printf("iter= %d, level= %d, t= %1.2e, done= %d, ||r|| = %1.2e\n", iter, level, t, done, rnorm);*/
 
    /* Write to files:

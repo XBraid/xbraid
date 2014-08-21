@@ -29,34 +29,33 @@ extern "C" {
  *--------------------------------------------------------------------------*/
 /** \defgroup braidstatus Braid status routines
  *  
- *  Braid status structures are what the user accesses to determine the status
- *  of the simulation when their routines (phi, coarsen/refine, access) are 
- *  called. 
+ *  Braid status structures are what tell the user the status of the simulation
+ *  when their routines (phi, coarsen/refine, access) are called. 
  *
  *  @{
  */
 
-struct _braid_Status_struct;
+struct _braid_AccessStatus_struct;
 /**
- * The user routines will receive braid_Status structures, which will be 
- * pointers to the actual _braid_Status_struct
+ * The user access routine will receive braid_AccessStatus, which will be 
+ * a pointer to the actual _braid_AccessStatus_struct
  **/
-typedef struct _braid_Status_struct *braid_Status;
+typedef struct _braid_AccessStatus_struct *braid_AccessStatus;
 
 
-/**
- * Points to the status structure which defines the status of Braid
- * at a given instant on a some level during a run.  The user accesses
- * it through braid_Get**Status() functions.
+/** 
+ * AccessStatus structure which defines the status of Braid at a given instant
+ * on some level during a run.  The user accesses it through
+ * braid_AccessStatusGet**() functions.
  **/
-typedef struct _braid_Status_struct
+typedef struct _braid_AccessStatus_struct
 {
    braid_Int     iter;         /**< Braid iteration number */
    braid_Int     level;        /**< current level in Braid*/
    braid_Real    rnorm;        /**< residual norm */
    braid_Int     done;         /**< boolean describing whether Braid has finished */
    
-} _braid_Status;
+} _braid_AccessStatus;
 
 
 /*--------------------------------------------------------------------------
@@ -64,65 +63,65 @@ typedef struct _braid_Status_struct
  *--------------------------------------------------------------------------*/
 
 /**
- * Accessor for _braid_Status attributes 
+ * Accessor for all _braid_**Status attributes 
  **/
 #define _braid_StatusElt(status, elt) ( (status) -> elt )
 
 
 /*--------------------------------------------------------------------------
- * Prototypes
+ * AccessStatus Prototypes
  *--------------------------------------------------------------------------*/
 
 /**
- * Initialize a braid_Status structure in *status_ptr*, setting
+ * Initialize a braid_AccessStatus structure in *status_ptr*, setting
  * the status values *rnorm*, *iter*, *level*, *done*
  **/
 braid_Int
-_braid_InitStatus(braid_Real        rnorm,
-                  braid_Int         iter,
-                  braid_Int         level,
-                  braid_Int         done,
-                  braid_Status     *status_ptr);
+_braid_AccessStatusInit(braid_Real          rnorm,
+                        braid_Int           iter,
+                        braid_Int           level,
+                        braid_Int           done,
+                        braid_AccessStatus  status);
 
 /**
- * Destroy a braid_Status structure
+ * Destroy a braid_AccessStatus structure
  **/
 braid_Int
-_braid_DestroyStatus(braid_Status  status);
+_braid_AccessStatusDestroy(braid_AccessStatus  status);
 
 /**
- * Return the residual for the current status object.
+ * Return the residual for the current AccessStatus object.
  **/
 braid_Int
-braid_GetStatusResidual(braid_Status  status,     /**< structure containing current simulation info */
-                        braid_Real   *rnorm_ptr   /**< output, current residual norm */
-                        );
+braid_AccessStatusGetResidual(braid_AccessStatus  status,     /**< structure containing current simulation info */
+                              braid_Real         *rnorm_ptr   /**< output, current residual norm */
+                              );
 
 /**
- * Return the iteration for the current status object.
+ * Return the iteration for the current AccessStatus object.
  **/
 braid_Int
-braid_GetStatusIter(braid_Status  status,         /**< structure containing current simulation info */
-                    braid_Int    *iter_ptr        /**< output, current iteration number*/
-                    );
+braid_AccessStatusGetIter(braid_AccessStatus  status,         /**< structure containing current simulation info */
+                          braid_Int          *iter_ptr        /**< output, current iteration number*/
+                          );
 
 /**
- * Return the Braid level for the current status object.
+ * Return the Braid level for the current AccessStatus object.
  **/
 braid_Int
-braid_GetStatusLevel(braid_Status  status,        /**< structure containing current simulation info */
-                     braid_Int    *level_ptr      /**< output, current level in Braid */
-                     );
+braid_AccessStatusGetLevel(braid_AccessStatus  status,        /**< structure containing current simulation info */
+                           braid_Int          *level_ptr      /**< output, current level in Braid */
+                           );
 
 /**
- * Return whether Braid is done for the current status object\n
+ * Return whether Braid is done for the current AccessStatus object\n
  * *done_ptr = 1* indicates that Braid has finished iterating, 
  * (either maxiter has been reached, or the tolerance has been met).
  **/
 braid_Int
-braid_GetStatusDone(braid_Status  status,         /**< structure containing current simulation info */
-                    braid_Int    *done_ptr        /**< output,  =1 if Braid has finished, else =0 */
-                    );
+braid_AccessStatusGetDone(braid_AccessStatus  status,         /**< structure containing current simulation info */
+                          braid_Int          *done_ptr        /**< output,  =1 if Braid has finished, else =0 */
+                          );
 
 
 /** @}*/

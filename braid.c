@@ -107,6 +107,8 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, fmg)        = fmg;
    _braid_CoreElt(core, nfmg_Vcyc)  = nfmg_Vcyc;
 
+   _braid_CoreElt(core, astatus)    = _braid_CTAlloc(_braid_AccessStatus, 1);
+
    /* Accuracy for spatial solves for using implicit schemes
     *  - accuracy[0] refers to accuracy on level 0
     *  - accuracy[1] refers to accuracy on all levels > 0 */
@@ -365,14 +367,16 @@ braid_Destroy(braid_Core  core)
 {
    if (core)
    {
-      braid_Int      nlevels    = _braid_CoreElt(core, nlevels);
-      _braid_Grid  **grids      = _braid_CoreElt(core, grids);
-      braid_Int      level;
+      braid_Int             nlevels    = _braid_CoreElt(core, nlevels);
+      _braid_Grid         **grids      = _braid_CoreElt(core, grids);
+      braid_AccessStatus    astatus    = _braid_CoreElt(core, astatus);
+      braid_Int             level;
 
       _braid_TFree(_braid_CoreElt(core, nrels));
       _braid_TFree(_braid_CoreElt(core, cfactors));
       _braid_TFree(_braid_CoreElt(core, accuracy));
       _braid_TFree(_braid_CoreElt(core, rfactors));
+      _braid_AccessStatusDestroy(astatus);
       for (level = 0; level < nlevels; level++)
       {
          _braid_GridDestroy(core, grids[level]);

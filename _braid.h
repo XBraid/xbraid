@@ -140,6 +140,8 @@ typedef struct _braid_Core_struct
    braid_Int              nfmg_Vcyc;    /**< number of V-cycle calls at each level in FMG */
    _braid_AccuracyHandle *accuracy;     /**< accuracy of spatial solves on different levels */
 
+   braid_AccessStatus     astatus;      /**< status structure passed to user-written Access routine */
+
    braid_Int              gupper;       /**< global upper index on the fine grid */
 
    braid_Int             *rfactors;     /**< refinement factors for finest grid (if any) */
@@ -175,34 +177,6 @@ typedef struct _braid_Core_struct
  * Accessor for _braid_Core functions 
  **/
 #define _braid_CoreFcn(core, fcn)     (*((core)  -> fcn))
-
-/*--------------------------------------------------------------------------
- * Memory allocation macros
- *--------------------------------------------------------------------------*/
-
-/** 
- * Allocation macro 
- **/
-#define _braid_TAlloc(type, count) \
-( (type *)malloc((size_t)(sizeof(type) * (count))) )
-
-/** 
- * Allocation macro 
- **/
-#define _braid_CTAlloc(type, count) \
-( (type *)calloc((size_t)(count), (size_t)sizeof(type)) )
-
-/** 
- * Re-allocation macro 
- **/
-#define _braid_TReAlloc(ptr, type, count) \
-( (type *)realloc((char *)ptr, (size_t)(sizeof(type) * (count))) )
-
-/** 
- * Free memory macro 
- **/
-#define _braid_TFree(ptr) \
-( free((char *)ptr), ptr = NULL )
 
 /*--------------------------------------------------------------------------
  * Print file for redirecting stdout when needed
@@ -396,11 +370,11 @@ _braid_USetVector(braid_Core    core,
  * value, etc...
  */
 braid_Int
-_braid_UAccessVector(braid_Core    core,
-                     braid_Int     level,
-                     braid_Int     index,
-                     braid_Status  status,
-                     braid_Vector  u);
+_braid_UAccessVector(braid_Core         core,
+                     braid_Int          level,
+                     braid_Int          index,
+                     braid_AccessStatus status,
+                     braid_Vector       u);
 
 /**
  * Apply Phi to the vector *u*\n

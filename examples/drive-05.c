@@ -2664,10 +2664,10 @@ my_ResidDot(braid_App     app,
  * Access the vector.
  * -------------------------------------------------------------------- */
 int
-my_Access(braid_App     app,
-         braid_Real    t,
-         braid_Status  status,
-         braid_Vector  u)
+my_Access(braid_App           app,
+          braid_Real          t,
+          braid_AccessStatus  astatus,
+          braid_Vector        u)
 {
    MPI_Comm   comm   = MPI_COMM_WORLD;
    double     tstart = (app->tstart);
@@ -2710,10 +2710,10 @@ my_Access(braid_App     app,
 
    /* Retrieve Braid State Information from Status Object */
    MPI_Comm_rank(comm, &myid);
-   braid_GetStatusResidual(status, &rnorm);
-   braid_GetStatusIter(status, &iter);
-   braid_GetStatusLevel(status, &level);
-   braid_GetStatusDone(status, &done);
+   braid_AccessStatusGetResidual(astatus, &rnorm);
+   braid_AccessStatusGetIter(astatus, &iter);
+   braid_AccessStatusGetLevel(astatus, &level);
+   braid_AccessStatusGetDone(astatus, &done);
    if( (myid == 0) && (level != previous_level) )
    {
       previous_level = level;
