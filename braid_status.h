@@ -56,6 +56,7 @@ typedef struct _braid_AccessStatus_struct *braid_AccessStatus;
  **/
 typedef struct _braid_AccessStatus_struct
 {
+   braid_Real    t;            /**< current time */
    braid_Int     iter;         /**< XBraid iteration number */
    braid_Int     level;        /**< current level in XBraid*/
    braid_Real    rnorm;        /**< residual norm */
@@ -134,9 +135,10 @@ typedef struct _braid_PhiStatus_struct
  * Initialize a braid_AccessStatus structure  
  **/
 braid_Int
-_braid_AccessStatusInit(braid_Real          rnorm,       /**< XBraid iteration number */
-                        braid_Int           iter,        /**< current level in XBraid*/
-                        braid_Int           level,       /**< residual norm */
+_braid_AccessStatusInit(braid_Real          t,           /**< current time */
+                        braid_Real          rnorm,       /**< current residual norm in XBraid */
+                        braid_Int           iter,        /**< current iteration in XBraid*/
+                        braid_Int           level,       /**< current level in XBraid */
                         braid_Int           done,        /**< boolean describing whether XBraid has finished */
                         braid_AccessStatus  status       /**< structure to initialize */
                         );
@@ -147,6 +149,13 @@ _braid_AccessStatusInit(braid_Real          rnorm,       /**< XBraid iteration n
 braid_Int
 _braid_AccessStatusDestroy(braid_AccessStatus  status);        /**< structure to be destroyed */
 
+/**
+ * Return the current time from the AccessStatus structure.
+ **/
+braid_Int
+braid_AccessStatusGetT(braid_AccessStatus  status,     /**< structure containing current simulation info */
+                       braid_Real         *t_ptr       /**< output, current time */
+                       );
 /**
  * Return the current residual norm from the AccessStatus structure.
  **/

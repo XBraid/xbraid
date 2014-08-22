@@ -160,9 +160,8 @@ my_ResidDot(braid_App     app,
 
 int
 my_Access(braid_App          app,
-          double             t,
-          braid_AccessStatus astatus,
-          braid_Vector       u)
+          braid_Vector       u,
+          braid_AccessStatus astatus)
 {
    MPI_Comm   comm   = (app->comm);
    double     tstart = (app->tstart);
@@ -171,7 +170,9 @@ my_Access(braid_App          app,
    int        index, myid;
    char       filename[255];
    FILE      *file;
-
+   double     t;
+   
+   braid_AccessStatusGetT(astatus, &t);
    index = ((t-tstart) / ((tstop-tstart)/ntime) + 0.1);
 
    MPI_Comm_rank(comm, &myid);

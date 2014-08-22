@@ -2684,9 +2684,8 @@ my_ResidDot(braid_App     app,
  * -------------------------------------------------------------------- */
 int
 my_Access(braid_App           app,
-          braid_Real          t,
-          braid_AccessStatus  astatus,
-          braid_Vector        u)
+          braid_Vector        u,
+          braid_AccessStatus  astatus)
 {
    MPI_Comm   comm   = MPI_COMM_WORLD;
    double     tstart = (app->tstart);
@@ -2698,6 +2697,7 @@ my_Access(braid_App           app,
    static int previous_level = -5;
    char       filename[255];
    FILE      *file;
+   double     t;
 
    double    *values;
    /* We have one part and one variable. */
@@ -2726,6 +2726,9 @@ my_Access(braid_App           app,
    ilower_x[1]    = (app->spatial_disc_table[u->spatial_disc_idx]).ilower_x[1];
    iupper_x[0]    = (app->spatial_disc_table[u->spatial_disc_idx]).iupper_x[0];
    iupper_x[1]    = (app->spatial_disc_table[u->spatial_disc_idx]).iupper_x[1];
+   
+   /* Retrieve current time from Status Object */
+   braid_AccessStatusGetT(astatus, &t);
 
    /* Retrieve Braid State Information from Status Object */
    MPI_Comm_rank(comm, &myid);

@@ -2809,9 +2809,8 @@ my_ResidDot(braid_App     app,
  * -------------------------------------------------------------------- */
 int
 my_Access(braid_App           app,
-          braid_Real          t,
-          braid_AccessStatus  astatus,
-          braid_Vector        u)
+          braid_Vector        u,
+          braid_AccessStatus  astatus)
 {
    MPI_Comm   comm   = MPI_COMM_WORLD;
    double     tstart = (app->tstart);
@@ -2820,6 +2819,7 @@ my_Access(braid_App           app,
    int        index, myid;
    char       filename[255];
    FILE      *file;
+   double     t;
 
    double    *values;
    /* We have one part and one variable. */
@@ -2836,6 +2836,9 @@ my_Access(braid_App           app,
    int nlx = (app->nlx);
    int nly = (app->nly);
    int nlz = (app->nlz);
+   
+   /* Retrieve current time from Status Object */
+   braid_AccessStatusGetT(astatus, &t);
    
    /* Retrieve Braid State Information from Status Object */
    /*double rnorm;

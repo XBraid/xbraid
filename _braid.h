@@ -378,8 +378,6 @@ _braid_USetVector(braid_Core    core,
  */
 braid_Int
 _braid_UAccessVector(braid_Core         core,
-                     braid_Int          level,
-                     braid_Int          index,
                      braid_AccessStatus status,
                      braid_Vector       u);
 

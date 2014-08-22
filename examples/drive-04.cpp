@@ -998,6 +998,7 @@ class BraidAccessStatus
          astatus = _astatus;
       }
 
+      void GetT(braid_Real *t_ptr)            { braid_AccessStatusGetT(astatus, t_ptr); }
       void GetDone(braid_Int *done_ptr)       { braid_AccessStatusGetDone(astatus, done_ptr); }
       void GetLevel(braid_Int *level_ptr)     { braid_AccessStatusGetLevel(astatus, level_ptr); }
       void GetIter(braid_Int *iter_ptr)       { braid_AccessStatusGetIter(astatus, iter_ptr); }
@@ -1189,9 +1190,8 @@ public:
    }
 
    static int Access(braid_App           _app,
-                     double              t,
-                     braid_AccessStatus  _astatus,
-                     braid_Vector  _u)
+                     braid_Vector        _u,
+                     braid_AccessStatus  _astatus)
    {
       BraidApp *app             = (BraidApp*) _app;
       BraidAccessStatus astatus = BraidAccessStatus(_astatus);
@@ -1199,7 +1199,8 @@ public:
       
       // Extract information from astatus
       int done, level, iter;
-      double rnorm;
+      double rnorm, t;
+      astatus.GetT(&t);
       astatus.GetDone(&done);
       astatus.GetLevel(&level);
       astatus.GetIter(&iter);

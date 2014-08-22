@@ -26,6 +26,17 @@
  *--------------------------------------------------------------------------*/
 
 braid_Int
+braid_AccessStatusGetT(braid_AccessStatus  status,
+                       braid_Real         *t_ptr)
+{
+   *t_ptr = _braid_StatusElt(status, t);
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
 braid_AccessStatusGetResidual(braid_AccessStatus  status,
                               braid_Real         *rnorm_ptr)
 {
@@ -83,12 +94,14 @@ _braid_AccessStatusDestroy(braid_AccessStatus  status)
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 braid_Int
-_braid_AccessStatusInit(braid_Real           rnorm,
+_braid_AccessStatusInit(braid_Real           t,
+                        braid_Real           rnorm,
                         braid_Int            iter,
                         braid_Int            level,
                         braid_Int            done,
                         braid_AccessStatus   status)
 {
+   _braid_StatusElt(status, t)     = t;
    _braid_StatusElt(status, level) = level;
    _braid_StatusElt(status, rnorm) = rnorm;
    _braid_StatusElt(status, done)  = done;

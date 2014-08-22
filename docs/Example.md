@@ -192,9 +192,8 @@ first argument to every function.
 
          int
          my_Access(braid_App          app,
-                  double              t,
-                  braid_AccessStatus  astatus,
-                  braid_Vector        u)
+                   braid_Vector       u,
+                   braid_AccessStatus astatus)
          {
             MPI_Comm   comm   = (app->comm);
             double     tstart = (app->tstart);
@@ -203,17 +202,19 @@ first argument to every function.
             int        index, myid;
             char       filename[255];
             FILE      *file;
-
+            double     t;
+            
+            braid_AccessStatusGetT(astatus, &t);
             index = ((t-tstart) / ((tstop-tstart)/ntime) + 0.1);
-
+        
             MPI_Comm_rank(comm, &myid);
-
+        
             sprintf(filename, "%s.%07d.%05d", "drive-01.out", index, myid);
             file = fopen(filename, "w");
             fprintf(file, "%.14e\n", (u->value));
             fflush(file);
             fclose(file);
-
+        
             return 0;
          }
 

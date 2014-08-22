@@ -143,9 +143,8 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnAccess)(braid_App           app,              /**< user-defined _braid_App structure */
-                     braid_Real          t,                /**< time value for *u* */
-                     braid_AccessStatus  status,           /**< can be querried for info like the current XBraid Iteration */
-                     braid_Vector        u                 /**< vector to be accessed */
+                     braid_Vector        u,                /**< vector to be accessed */
+                     braid_AccessStatus  status            /**< can be querried for info like the current XBraid Iteration */
                      );
 
 /**

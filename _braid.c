@@ -570,17 +570,11 @@ _braid_USetVector(braid_Core    core,
 
 braid_Int
 _braid_UAccessVector(braid_Core          core,
-                     braid_Int           level,
-                     braid_Int           index,
                      braid_AccessStatus  status,
                      braid_Vector        u)
 {
    braid_App      app    = _braid_CoreElt(core, app);
-   _braid_Grid  **grids  = _braid_CoreElt(core, grids);
-   braid_Int      ilower = _braid_GridElt(grids[level], ilower);
-   braid_Real    *ta     = _braid_GridElt(grids[level], ta);
-
-   _braid_CoreFcn(core, access)(app, ta[index-ilower], status, u);
+   _braid_CoreFcn(core, access)(app, u, status);
 
    return _braid_error_flag;
 }
@@ -942,6 +936,8 @@ _braid_FRestrict(braid_Core   core,
    braid_Int            access_level= _braid_CoreElt(core, access_level);
    braid_Int            cfactor     = _braid_GridElt(grids[level], cfactor);
    braid_Int            ncpoints    = _braid_GridElt(grids[level], ncpoints);
+   braid_Real          *ta          = _braid_GridElt(grids[level], ta);
+   braid_Int            f_ilower    = _braid_GridElt(grids[level], ilower);
    _braid_CommHandle   *recv_handle = NULL;
    _braid_CommHandle   *send_handle = NULL;
    braid_Real           old_rnorm   = *rnorm_ptr;
@@ -962,9 +958,6 @@ _braid_FRestrict(braid_Core   core,
 
    rnorm = 0.0;
    MPI_Comm_rank(comm_world, &myid);
-
-   /* Create status structure to give user info about the current state of XBraid*/
-   _braid_AccessStatusInit(old_rnorm, iter, level, 0, astatus);
 
    if (level == 0)
    {
@@ -1010,7 +1003,8 @@ _braid_FRestrict(braid_Core   core,
           * temporarily holding the state vector */
          if( (access_level >= 2) && (level == 0) )
          {
-            _braid_UAccessVector(core, level, fi, astatus, r);
+            _braid_AccessStatusInit(ta[fi-f_ilower], old_rnorm, iter, level, 0, astatus);
+            _braid_UAccessVector(core, astatus, r);
          }
       }
 
@@ -1018,7 +1012,8 @@ _braid_FRestrict(braid_Core   core,
       if( (access_level>= 2) && (level == 0) && (ci > -1) )
       {
          _braid_UGetVectorRef(core, level, ci, &u);
-         _braid_UAccessVector(core, level, ci, astatus, u);
+         _braid_AccessStatusInit(ta[ci-f_ilower], old_rnorm, iter, level, 0, astatus);
+         _braid_UAccessVector(core, astatus, u);
       }
       
       /* Compute residual and restrict */
@@ -1126,6 +1121,7 @@ _braid_FInterp(braid_Core  core,
    braid_Vector      *ua          = _braid_GridElt(grids[level], ua);
    braid_Vector      *va          = _braid_GridElt(grids[level], va);
    braid_Vector      *wa          = _braid_GridElt(grids[level], wa);
+   braid_Real        *ta          = _braid_GridElt(grids[level], ta);
 
    braid_Int          f_level, f_cfactor, f_index;
    braid_Vector       f_u, f_e;
@@ -1136,9 +1132,6 @@ _braid_FInterp(braid_Core  core,
 
    f_level   = level-1;
    f_cfactor = _braid_GridElt(grids[f_level], cfactor);
-
-   /* Create astatus structure to give user info about the current state of XBraid*/
-   _braid_AccessStatusInit(rnorm, iter, level, 0, astatus);
 
    _braid_UCommInitF(core, level);
 
@@ -1164,7 +1157,8 @@ _braid_FInterp(braid_Core  core,
          /* Allow user to process current vector */
          if( (access_level >= 2) )
          {
-            _braid_UAccessVector(core, level, fi, astatus, u);
+            _braid_AccessStatusInit(ta[fi-ilower], rnorm, iter, level, 0, astatus);
+            _braid_UAccessVector(core, astatus, u);
          }
          e = va[fi-ilower];
          _braid_CoreFcn(core, sum)(app, 1.0, u, -1.0, e);
@@ -1187,7 +1181,8 @@ _braid_FInterp(braid_Core  core,
          /* Allow user to process current C-point */
          if( (access_level >= 2) )
          {
-            _braid_UAccessVector(core, level, ci, astatus, u);
+            _braid_AccessStatusInit(ta[ci-ilower], rnorm, iter, level, 0, astatus);
+            _braid_UAccessVector(core, astatus, u);
          }
          e = va[ci-ilower];
          _braid_CoreFcn(core, sum)(app, 1.0, u, -1.0, e);
@@ -1367,10 +1362,9 @@ _braid_FAccess(braid_Core     core,
    _braid_Grid       **grids    = _braid_CoreElt(core, grids);
    braid_AccessStatus  astatus  = _braid_CoreElt(core, astatus);
    braid_Int           ncpoints = _braid_GridElt(grids[level], ncpoints);
+   braid_Real          *ta      = _braid_GridElt(grids[level], ta);
+   braid_Int           ilower   = _braid_GridElt(grids[level], ilower);
    braid_Real          accuracy;
-
-   /* Create astatus structure to give user info about the current state of XBraid*/
-   _braid_AccessStatusInit( rnorm, iter, level, done, astatus);
 
    braid_Vector   u;
    braid_Int      interval, flo, fhi, fi, ci;
@@ -1401,7 +1395,8 @@ _braid_FAccess(braid_Core     core,
       {
          _braid_Step(core, level, fi, accuracy, u);
          _braid_USetVector(core, level, fi, u);
-         _braid_UAccessVector(core, level, fi, astatus, u);
+         _braid_AccessStatusInit( ta[fi-ilower], rnorm, iter, level, done, astatus);
+         _braid_UAccessVector(core, astatus, u);
       }
       if (flo <= fhi)
       {
@@ -1412,7 +1407,8 @@ _braid_FAccess(braid_Core     core,
       if (ci > -1)
       {
          _braid_UGetVectorRef(core, level, ci, &u);
-         _braid_UAccessVector(core, level, ci, astatus, u);
+         _braid_AccessStatusInit( ta[ci-ilower], rnorm, iter, level, done, astatus);
+         _braid_UAccessVector(core, astatus, u);
       }
    }
    _braid_UCommWait(core, level);
