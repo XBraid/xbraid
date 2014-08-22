@@ -223,7 +223,7 @@ braid_Drive(braid_Core  core)
          if (level < (nlevels-1))
          {
             /* CF-relaxation */
-            _braid_CFRelax(core, level);
+            _braid_FCRelax(core, level);
 
             /* F-relax then restrict */
             if( level == 0)

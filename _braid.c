@@ -849,7 +849,7 @@ _braid_InitGuess(braid_Core  core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-_braid_CFRelax(braid_Core  core,
+_braid_FCRelax(braid_Core  core,
                braid_Int   level)
 {
    braid_App       app      = _braid_CoreElt(core, app);

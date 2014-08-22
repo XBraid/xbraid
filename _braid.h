@@ -469,7 +469,7 @@ _braid_InitGuess(braid_Core  core,
  * Do nu sweeps of F-then-C relaxation on *level*
  */
 braid_Int
-_braid_CFRelax(braid_Core  core,
+_braid_FCRelax(braid_Core  core,
                braid_Int   level);
 
 /**
