@@ -18,13 +18,12 @@
  * -------------------------------------------------------------------- */
 int 
 save_grid_fcn(advection_setup *kd_,
-              braidReal t,
-              braidStatus   status,
-              grid_fcn *u_)
+              grid_fcn *u_,
+              braidStatus   status)
 {
    MPI_Comm   comm   = MPI_COMM_WORLD;
    int        myid, level=-1, done_iterating=-1, iteration=-1;
-   double residual;
+   double residual, t;
    
    /* char       filename[255]; */
    /* FILE      *file; */
@@ -39,6 +38,7 @@ save_grid_fcn(advection_setup *kd_,
      if (fabs(t-kd_->tstop)<1e-12)
      {
 /* get more details about about the current level, iteration, etc */
+       braidGetStatusT(status, &t);
        braidGetStatusIter(status, &iteration);
        braidGetStatusResidual(status, &residual);
        braidGetStatusDone(status, &done_iterating);

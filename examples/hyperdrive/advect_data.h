@@ -107,9 +107,8 @@ dot_grid_fcn(advection_setup *kd_,
              double      *dot_ptr);
 int
 save_grid_fcn(advection_setup *kd_,
-              double t,
-              braid_AccessStatus   status,
-              grid_fcn *u_);
+              grid_fcn *u_,
+              braid_AccessStatus   status);
 int
 gridfcn_BufSize(advection_setup *kd_,
                 int *size_ptr);
