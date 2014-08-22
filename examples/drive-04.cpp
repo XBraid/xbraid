@@ -1020,14 +1020,37 @@ class BraidPhiStatus
          pstatus = _pstatus;
       }
 
-      void GetTstart(braid_Real *t_start_ptr)     { braid_PhiStatusGetTstart(pstatus, t_start_ptr); }
-      void GetTplus(braid_Real *t_plus_ptr)       { braid_PhiStatusGetTplus(pstatus, t_plus_ptr); }
+      void GetTstart(braid_Real *tstart_ptr)     { braid_PhiStatusGetTstart(pstatus, tstart_ptr); }
+      void GetTplus(braid_Real *tplus_ptr)       { braid_PhiStatusGetTplus(pstatus, tplus_ptr); }
       void GetAccuracy(braid_Real *accuracy_ptr)  { braid_PhiStatusGetAccuracy(pstatus, accuracy_ptr); }
       void SetRFactor(braid_Int rfactor)         { braid_PhiStatusSetRFactor(pstatus, rfactor); }
       
       // The braid_PhiStatus structure is deallocated inside of Braid
       // This class is just to make code consistently look object oriented
       ~BraidPhiStatus() { }
+};
+
+// Wrapper for BRAID's CoarsenRefStatus object
+class BraidCoarsenRefStatus
+{
+   private:
+      braid_CoarsenRefStatus cstatus;
+   
+   public:
+      BraidCoarsenRefStatus(braid_CoarsenRefStatus  _cstatus)
+      {
+         cstatus = _cstatus;
+      }
+
+      void GetTstart(braid_Real *tstart_ptr)     { braid_CoarsenRefStatusGetTstart(cstatus, tstart_ptr); }
+      void GetFTplus(braid_Real *f_tplus_ptr)    { braid_CoarsenRefStatusGetFTplus(cstatus, f_tplus_ptr); }
+      void GetFTminus(braid_Real *f_tminus_ptr)  { braid_CoarsenRefStatusGetFTminus(cstatus, f_tminus_ptr); }
+      void GetCTplus(braid_Real *c_tplus_ptr)    { braid_CoarsenRefStatusGetCTplus(cstatus, c_tplus_ptr); }
+      void GetCTminus(braid_Real *c_tminus_ptr)  { braid_CoarsenRefStatusGetCTminus(cstatus, c_tminus_ptr); }
+      
+      // The braid_CoarsenRefStatus structure is deallocated inside of Braid
+      // This class is just to make code consistently look object oriented
+      ~BraidCoarsenRefStatus() { }
 };
 
 
