@@ -35,6 +35,7 @@ EOF
 esac
 
 # Setup
+share_dir="/usr/casc/hypre/braid/share/braid_manuals/"
 example_dir="../examples"
 test_dir=`pwd`
 docs_dir=`cd ../docs; pwd`
@@ -45,8 +46,10 @@ mkdir -p $output_dir
 # Run the following regression tests 
 TESTS=( "cd $docs_dir; make clean; make developer_manual " \
         'PDFsize=$(du -k $docs_dir/developer_manual.pdf | cut -f 1); if [ $PDFsize -le 700 ] ; then echo docs/developermanual.pdf is too small ; else echo docs/developermanual.pdf is appropriately sized ; fi  ' \
+        "cd $docs_dir; cp developer_manual.pdf $share_dir" \
         "cd $docs_dir; make clean; make user_manual "
-        'PDFsize=$(du -k $docs_dir/user_manual.pdf | cut -f 1); if [ $PDFsize -le 500 ] ; then echo docs/usermanual.pdf is too small ; else echo docs/usermanual.pdf is appropriately sized ; fi  ' )
+        'PDFsize=$(du -k $docs_dir/user_manual.pdf | cut -f 1); if [ $PDFsize -le 500 ] ; then echo docs/usermanual.pdf is too small ; else echo docs/usermanual.pdf is appropriately sized ; fi  ' \
+        "cd $docs_dir; cp user_manual.pdf $share_dir" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 
