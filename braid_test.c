@@ -10,7 +10,7 @@
  ***********************************************************************EHEADER*/
 
 /** \file braid_test.c
- * \brief Define Braid test routines.
+ * \brief Define XBraid test routines.
  */
 
 #include "braid.h"

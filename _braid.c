@@ -963,7 +963,7 @@ _braid_FRestrict(braid_Core   core,
    rnorm = 0.0;
    MPI_Comm_rank(comm_world, &myid);
 
-   /* Create status structure to give user info about the current state of Time Braid*/
+   /* Create status structure to give user info about the current state of XBraid*/
    _braid_AccessStatusInit(old_rnorm, iter, level, 0, astatus);
 
    if (level == 0)
@@ -1137,7 +1137,7 @@ _braid_FInterp(braid_Core  core,
    f_level   = level-1;
    f_cfactor = _braid_GridElt(grids[f_level], cfactor);
 
-   /* Create astatus structure to give user info about the current state of Time Braid*/
+   /* Create astatus structure to give user info about the current state of XBraid*/
    _braid_AccessStatusInit(rnorm, iter, level, 0, astatus);
 
    _braid_UCommInitF(core, level);
@@ -1352,7 +1352,7 @@ _braid_FRefine(braid_Core   core,
 }
 
 /*--------------------------------------------------------------------------
- * Access to Braid on grid level
+ * Access to XBraid on grid level
  *--------------------------------------------------------------------------*/
 
 braid_Int
@@ -1369,7 +1369,7 @@ _braid_FAccess(braid_Core     core,
    braid_Int           ncpoints = _braid_GridElt(grids[level], ncpoints);
    braid_Real          accuracy;
 
-   /* Create astatus structure to give user info about the current state of Time Braid*/
+   /* Create astatus structure to give user info about the current state of XBraid*/
    _braid_AccessStatusInit( rnorm, iter, level, done, astatus);
 
    braid_Vector   u;

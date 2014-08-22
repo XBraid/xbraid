@@ -34,7 +34,7 @@ extern "C" {
  *--------------------------------------------------------------------------*/
 
 /**
- * Braid comm handle structure
+ * XBraid comm handle structure
  *
  * Used for initiating and completing nonblocking communication to pass
  * braid_Vectors between processors.
@@ -51,7 +51,7 @@ typedef struct
 } _braid_CommHandle;
 
 /**
- * Braid Accuracy Handle, used for controlling the accuracy of solves during
+ * XBraid Accuracy Handle, used for controlling the accuracy of solves during
  * implicit time stepping.  For instance, to do less accurate solves on coarse
  * time grids
  **/
@@ -66,7 +66,7 @@ typedef struct
 } _braid_AccuracyHandle;
 
 /**
- * Braid Grid structure for a certain time level
+ * XBraid Grid structure for a certain time level
  *
  * Holds all the information for a processor related to the temporal
  * grid at this level.
@@ -99,9 +99,9 @@ typedef struct
 } _braid_Grid;
 
 /**
- * The typedef _braid_Core struct is a **critical** part of Braid and 
- * is passed to *each* routine in Braid.  It thus allows each routine access 
- * to Braid attributes.
+ * The typedef _braid_Core struct is a **critical** part of XBraid and 
+ * is passed to *each* routine in XBraid.  It thus allows each routine access 
+ * to XBraid attributes.
  **/
 typedef struct _braid_Core_struct
 {
@@ -118,7 +118,7 @@ typedef struct _braid_Core_struct
    braid_PtFcnFree        free;         /**< free up a vector */
    braid_PtFcnSum         sum;          /**< vector sum */
    braid_PtFcnResidDot    residdot;     /**< dot product between two residual vectors*/
-   braid_PtFcnAccess      access;       /**< user access function to Braid and current vector */
+   braid_PtFcnAccess      access;       /**< user access function to XBraid and current vector */
    braid_PtFcnBufSize     bufsize;      /**< return buffer size */
    braid_PtFcnBufPack     bufpack;      /**< pack a buffer */
    braid_PtFcnBufUnpack   bufunpack;    /**< unpack a buffer */
@@ -187,7 +187,7 @@ typedef struct _braid_Core_struct
  *--------------------------------------------------------------------------*/
 
 /** 
- * This is the print file for redirecting stdout for all Braid screen output
+ * This is the print file for redirecting stdout for all XBraid screen output
  **/
 extern FILE *_braid_printfile;
 
@@ -370,10 +370,10 @@ _braid_USetVector(braid_Core    core,
                   braid_Vector  u);
 
 /** 
- * Call user's access function in order to give access to Braid and the
+ * Call user's access function in order to give access to XBraid and the
  * current vector.  Most commonly, this lets the user write *u* to screen,
  * disk, etc...  The vector *u* corresponds to time step *index* on *level*.
- * *status* holds state information about the current Braid iteration, time
+ * *status* holds state information about the current XBraid iteration, time
  * value, etc...
  */
 braid_Int
@@ -454,7 +454,7 @@ _braid_GridInit(braid_Core     core,
                 _braid_Grid  **grid_ptr);
 
 /**
- * Destroy a Braid *grid*
+ * Destroy an XBraid *grid*
  */
 braid_Int
 _braid_GridDestroy(braid_Core    core,
@@ -520,11 +520,11 @@ _braid_FRefine(braid_Core   core,
                braid_Int   *refined_ptr);
 
 /** 
- * Call the user's access function in order to give access to Braid and 
+ * Call the user's access function in order to give access to XBraid and 
  * the current vector at grid *level and iteration *iter*.  Most commonly, 
  * this lets the user write solutions to screen, disk, etc... 
  * The quantity *rnorm* denotes the last computed residual
- * norm, and *done* is a boolean indicating whether Braid has finished
+ * norm, and *done* is a boolean indicating whether XBraid has finished
  * iterating and this is the last Access call. 
  */
 braid_Int

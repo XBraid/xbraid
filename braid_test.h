@@ -10,9 +10,9 @@
  ***********************************************************************EHEADER*/
 
 /** \file braid_test.h
- * \brief Define headers for Braid test routines.
+ * \brief Define headers for XBraid test routines.
  *
- * This file contains routines used to test a user's Braid wrapper routines 
+ * This file contains routines used to test a user's XBraid wrapper routines 
  * one-by-one.
  */
 
@@ -30,9 +30,9 @@ extern "C" {
 /*--------------------------------------------------------------------------
  * Routines for user to test interface routines
  *--------------------------------------------------------------------------*/
-/** \defgroup braidtest Braid test routines
+/** \defgroup braidtest XBraid test routines
  *  
- *  These are sanity check routines to help a user test their Braid code.
+ *  These are sanity check routines to help a user test their XBraid code.
  *
  *  @{
  */
@@ -47,7 +47,7 @@ braid_TestInitAccess( braid_App              app,     /**< User defined App stru
                       FILE                  *fp,      /**< File pointer (could be stdout or stderr) for log messages*/
                       braid_Real             t,       /**< Time value to test init with (used to initialize the vectors)*/
                       braid_PtFcnInit        init,    /**< Initialize a braid_Vector on finest temporal grid*/
-                      braid_PtFcnAccess      access,  /**< Allows access to Braid and current braid_Vector (can be NULL for no writing)*/
+                      braid_PtFcnAccess      access,  /**< Allows access to XBraid and current braid_Vector (can be NULL for no writing)*/
                       braid_PtFcnFree        free     /**< Free a braid_Vector*/
                       );
 
@@ -63,7 +63,7 @@ braid_TestClone( braid_App              app,         /**< User defined App struc
                  FILE                  *fp,          /**< File pointer (could be stdout or stderr) for log messages*/
                  braid_Real             t,           /**< Time value to test clone with  (used to initialize the vectors)*/
                  braid_PtFcnInit        init,        /**< Initialize a braid_Vector on finest temporal grid*/
-                 braid_PtFcnAccess      access,      /**< Allows access to Braid and current braid_Vector (can be NULL for no writing)*/
+                 braid_PtFcnAccess      access,      /**< Allows access to XBraid and current braid_Vector (can be NULL for no writing)*/
                  braid_PtFcnFree        free,        /**< Free a braid_Vector*/
                  braid_PtFcnClone       clone        /**< Clone a braid_Vector */
                  );
@@ -83,7 +83,7 @@ braid_TestSum( braid_App              app,         /**< User defined App structu
                FILE                  *fp,          /**< File pointer (could be stdout or stderr) for log messages*/
                braid_Real             t,           /**< Time value to test Sum with  (used to initialize the vectors)*/
                braid_PtFcnInit        init,        /**< Initialize a braid_Vector on finest temporal grid*/
-               braid_PtFcnAccess      access,      /**< Allows access to Braid and current braid_Vector (can be NULL for no writing)*/
+               braid_PtFcnAccess      access,      /**< Allows access to XBraid and current braid_Vector (can be NULL for no writing)*/
                braid_PtFcnFree        free,        /**< Free a braid_Vector*/
                braid_PtFcnClone       clone,       /**< Clone a braid_Vector */
                braid_PtFcnSum         sum          /**< Compute vector sum of two braid_Vectors */
@@ -151,7 +151,7 @@ braid_TestCoarsenRefine( braid_App             app,         /**< User defined Ap
                          braid_Real            fdt,         /**< Fine time step value that you spatially coarsen from */
                          braid_Real            cdt,         /**< Coarse time step value that you coarsen to */
                          braid_PtFcnInit       init,        /**< Initialize a braid_Vector on finest temporal grid*/
-                         braid_PtFcnAccess     access,      /**< Allows access to Braid and current braid_Vector (can be NULL for no writing)*/
+                         braid_PtFcnAccess     access,      /**< Allows access to XBraid and current braid_Vector (can be NULL for no writing)*/
                          braid_PtFcnFree       free,        /**< Free a braid_Vector*/
                          braid_PtFcnClone      clone,       /**< Clone a braid_Vector */
                          braid_PtFcnSum        sum,         /**< Compute vector sum of two braid_Vectors */

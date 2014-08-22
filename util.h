@@ -13,7 +13,7 @@
  * \brief Define headers for utility routines.
  *
  * This file contains the headers for utility routines. Essentially,
- * if a routine does not take braid_Core (or other Braid specific structs) 
+ * if a routine does not take braid_Core (or other XBraid specific structs) 
  * as an argument, then it's a utility routine.
  */
 

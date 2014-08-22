@@ -43,7 +43,7 @@ typedef double braid_Real;
  *--------------------------------------------------------------------------*/
 
 /** 
- * This is the global Braid error flag.  If it is ever nonzero, an error has 
+ * This is the global XBraid error flag.  If it is ever nonzero, an error has 
  * occurred. 
  **/
 extern braid_Int _braid_error_flag;

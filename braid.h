@@ -13,7 +13,7 @@
  * \brief Define headers for user interface routines.
  *
  * This file contains routines used to allow the user to initialize, run
- * and get and set a Braid solver. 
+ * and get and set a XBraid solver. 
  */
 
 #ifndef braid_HEADER
@@ -64,7 +64,7 @@ typedef struct _braid_Vector_struct *braid_Vector;
  * and *braid_PhiStatusGetTplus(status, &tplus)* to get *tstart* and
  * *tplus*.  The status structure also allows for steering.  For example,
  * *braid_PhiStatusSetRFactor(...)* allows for setting rfactor, which 
- * tells Braid to refine this time interval.
+ * tells XBraid to refine this time interval.
  **/
 typedef braid_Int
 (*braid_PtFcnPhi)(braid_App       app,           /**< user-defined _braid_App structure */
@@ -125,31 +125,31 @@ typedef braid_Int
                        );
 
 /**
- * Gives user access to Braid and to the current vector *u* at time *t*.  Most commonly,
+ * Gives user access to XBraid and to the current vector *u* at time *t*.  Most commonly,
  * this lets the user write the vector to screen, file, etc...  The user decides 
  * what is appropriate.  Note how you are told the time value *t* of the 
  * vector *u* and other information in *status*.  This lets you tailor the 
- * output, e.g., for only certain time values at certain Braid iterations.
+ * output, e.g., for only certain time values at certain XBraid iterations.
  * Querrying status for such information is done through 
  * _braid_AccessStatusGet**(..)_ routines.
  * 
- * The frequency of Braid's calls to *access* is controlled through 
+ * The frequency of XBraid's calls to *access* is controlled through 
  * [braid_SetAccessLevel](@ref braid_SetAccessLevel).  For instance, if access_level is 
- * set to 2, then *access* is called every Braid iteration and on every Braid level.  In 
- * this case, querrying *status* to determine the current Braid level and iteration will 
+ * set to 2, then *access* is called every XBraid iteration and on every XBraid level.  In 
+ * this case, querrying *status* to determine the current XBraid level and iteration will 
  * be useful. This scenario allows for even more detailed tracking of the simulation.
  *
- * Eventually, access will be broadened to allow the user to steer Braid.
+ * Eventually, access will be broadened to allow the user to steer XBraid.
  **/
 typedef braid_Int
 (*braid_PtFcnAccess)(braid_App           app,              /**< user-defined _braid_App structure */
                      braid_Real          t,                /**< time value for *u* */
-                     braid_AccessStatus  status,           /**< can be querried for info like the current Braid Iteration */
+                     braid_AccessStatus  status,           /**< can be querried for info like the current XBraid Iteration */
                      braid_Vector        u                 /**< vector to be accessed */
                      );
 
 /**
- * This routine tells Braid message sizes by computing an upper bound in bytes for 
+ * This routine tells XBraid message sizes by computing an upper bound in bytes for 
  * an arbitrary braid_Vector.  This size must be an upper bound for what BufPack and BufUnPack 
  * will assume.
  **/
@@ -159,7 +159,7 @@ typedef braid_Int
                       );      
 
 /**
- * This allows Braid to send messages containing braid_Vectors.  This routine
+ * This allows XBraid to send messages containing braid_Vectors.  This routine
  * packs a vector _u_ into a _void \*  buffer_ for MPI.
  **/
 typedef braid_Int
@@ -169,7 +169,7 @@ typedef braid_Int
                       );
 
 /**
- * This allows Braid to receive messages containing braid_Vectors.  This routine
+ * This allows XBraid to receive messages containing braid_Vectors.  This routine
  * unpacks a _void * buffer_ from MPI into a braid_Vector.
  **/
 typedef braid_Int
@@ -231,7 +231,7 @@ typedef braid_Int
  *  \ingroup userinterface
  *
  *  These are general interface routines, e.g., routines to initialize and 
- *  run a Braid solver, or to split a communicator into spatial and temporal
+ *  run a XBraid solver, or to split a communicator into spatial and temporal
  *  components.
  *
  *  @{
@@ -247,7 +247,7 @@ typedef struct _braid_Core_struct *braid_Core;
 /**
  * Create a core object with the required initial data.
  *
- * This core is used by Braid for internal data structures. 
+ * This core is used by XBraid for internal data structures. 
  * The output is *core_ptr* which points to the newly created 
  * braid_Core structure. 
  **/
@@ -264,7 +264,7 @@ braid_Init(MPI_Comm               comm_world,  /**< Global communicator for spac
            braid_PtFcnFree        free,        /**< Free a braid_Vector*/
            braid_PtFcnSum         sum,         /**< Compute vector sum of two braid_Vectors*/
            braid_PtFcnResidDot    residdot,    /**< Compute dot product between two residual braid_Vectors*/
-           braid_PtFcnAccess      access,      /**< Allows access to Braid and current braid_Vector */
+           braid_PtFcnAccess      access,      /**< Allows access to XBraid and current braid_Vector */
            braid_PtFcnBufSize     bufsize,     /**< Computes size for MPI buffer for one braid_Vector */
            braid_PtFcnBufPack     bufpack,     /**< Packs MPI buffer to contain one braid_Vector*/
            braid_PtFcnBufUnpack   bufunpack,   /**< Unpacks MPI buffer into a braid_Vector */
@@ -272,7 +272,7 @@ braid_Init(MPI_Comm               comm_world,  /**< Global communicator for spac
            );
 
 /**
- * Carry out a simulation with Braid.  Integrate in time.
+ * Carry out a simulation with XBraid.  Integrate in time.
  **/
 braid_Int
 braid_Drive(braid_Core  core                /**< braid_Core (_braid_Core) struct*/
@@ -286,7 +286,7 @@ braid_Destroy(braid_Core  core              /**< braid_Core (_braid_Core) struct
               );
 
 /**
- * Print statistics after a Braid run.
+ * Print statistics after a XBraid run.
  **/
 braid_Int
 braid_PrintStats(braid_Core  core           /**< braid_Core (_braid_Core) struct*/
@@ -380,7 +380,7 @@ braid_SetMaxIter(braid_Core  core,          /**< braid_Core (_braid_Core) struct
                  );
 
 /**
- * Once called, Braid will use FMG (i.e., F-cycles.
+ * Once called, XBraid will use FMG (i.e., F-cycles.
  **/
 braid_Int
 braid_SetFMG(braid_Core  core               /**< braid_Core (_braid_Core) struct*/
@@ -414,12 +414,12 @@ braid_SetSpatialRefine(braid_Core  core,             /**< braid_Core (_braid_Cor
                        );
 
 /**
- * Set print level for Braid.  This controls how much information is 
- * printed to the Braid print file (@ref braid_SetPrintFile).
+ * Set print level for XBraid.  This controls how much information is 
+ * printed to the XBraid print file (@ref braid_SetPrintFile).
  * 
  * - Level 0: no output
  * - Level 1: print typical information like a residual history, 
- *    number of levels in the Braid hierarchy, and so on.
+ *    number of levels in the XBraid hierarchy, and so on.
  * - Level 2: level 1 output, plus debug level output.
  * 
  * Default is level 1.
@@ -435,17 +435,17 @@ braid_SetPrintLevel(braid_Core  core,          /**< braid_Core (_braid_Core) str
  **/
 braid_Int
 braid_SetPrintFile(braid_Core     core,             /**< braid_Core (_braid_Core) struct*/
-                   const char    *printfile_name    /**< output file for Braid runtime output */
+                   const char    *printfile_name    /**< output file for XBraid runtime output */
                    );
 
 /**
- * Set access level for Braid.  This controls how often the user's
+ * Set access level for XBraid.  This controls how often the user's
  * access routine is called.
  * 
  * - Level 0:  Never call the user's access routine
- * - Level 1:  Only call the user's access routine after Braid is finished
+ * - Level 1:  Only call the user's access routine after XBraid is finished
  * - Level 2:  Call the user's access routine every iteration and on every level.
- *             This is during _braid_FRestrict, during the down-cycle part of a Braid iteration. 
+ *             This is during _braid_FRestrict, during the down-cycle part of a XBraid iteration. 
  * 
  * Default is level 1.
  **/

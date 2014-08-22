@@ -10,7 +10,7 @@
  ***********************************************************************EHEADER*/
 
 /** \file braid_status.h
- * \brief Define headers for Braid status structures, status get/set routines
+ * \brief Define headers for XBraid status structures, status get/set routines
  * and status create/destroy routines.
  *
  */
@@ -25,13 +25,13 @@ extern "C" {
 #endif
 
 /*--------------------------------------------------------------------------
- * Routines for user to access Braid status structures
+ * Routines for user to access XBraid status structures
  *--------------------------------------------------------------------------*/
 
-/** \defgroup braidstatus Braid status routines
+/** \defgroup braidstatus XBraid status routines
  *  \ingroup userinterface
  *  
- *  Braid status structures are what tell the user the status of the simulation
+ *  XBraid status structures are what tell the user the status of the simulation
  *  when their routines (phi, coarsen/refine, access) are called. 
  *
  *  @{
@@ -50,16 +50,16 @@ struct _braid_AccessStatus_struct;
 typedef struct _braid_AccessStatus_struct *braid_AccessStatus;
 
 /** 
- * AccessStatus structure which defines the status of Braid at a given instant
+ * AccessStatus structure which defines the status of XBraid at a given instant
  * on some level during a run.  The user accesses it through
  * _braid_AccessStatusGet**()_ functions.
  **/
 typedef struct _braid_AccessStatus_struct
 {
-   braid_Int     iter;         /**< Braid iteration number */
-   braid_Int     level;        /**< current level in Braid*/
+   braid_Int     iter;         /**< XBraid iteration number */
+   braid_Int     level;        /**< current level in XBraid*/
    braid_Real    rnorm;        /**< residual norm */
-   braid_Int     done;         /**< boolean describing whether Braid has finished */
+   braid_Int     done;         /**< boolean describing whether XBraid has finished */
    
 } _braid_AccessStatus;
 
@@ -77,7 +77,7 @@ typedef struct _braid_CoarsenRefStatus_struct *braid_CoarsenRefStatus;
 
 /** 
  * The user coarsen and refine routines will receive a CoarsenRefStatus structure, which 
- * defines the status of Braid at a given instant of coarsening or refinement on some level 
+ * defines the status of XBraid at a given instant of coarsening or refinement on some level 
  * during a run.  The user accesses it through _braid_CoarsenRefStatusGet**()_ functions.
  **/
 typedef struct _braid_CoarsenRefStatus_struct
@@ -104,7 +104,7 @@ typedef struct _braid_PhiStatus_struct *braid_PhiStatus;
 
 /** 
  * The user's phi routine routine will receive a PhiStatus structure, which 
- * defines the status of Braid at the given instant for phi evaluation on some level 
+ * defines the status of XBraid at the given instant for phi evaluation on some level 
  * during a run.  The user accesses it through _braid_PhiStatusGet**()_ functions.
  **/
 typedef struct _braid_PhiStatus_struct
@@ -134,10 +134,10 @@ typedef struct _braid_PhiStatus_struct
  * Initialize a braid_AccessStatus structure  
  **/
 braid_Int
-_braid_AccessStatusInit(braid_Real          rnorm,       /**< Braid iteration number */
-                        braid_Int           iter,        /**< current level in Braid*/
+_braid_AccessStatusInit(braid_Real          rnorm,       /**< XBraid iteration number */
+                        braid_Int           iter,        /**< current level in XBraid*/
                         braid_Int           level,       /**< residual norm */
-                        braid_Int           done,        /**< boolean describing whether Braid has finished */
+                        braid_Int           done,        /**< boolean describing whether XBraid has finished */
                         braid_AccessStatus  status       /**< structure to initialize */
                         );
 
@@ -160,26 +160,26 @@ braid_AccessStatusGetResidual(braid_AccessStatus  status,     /**< structure con
  **/
 braid_Int
 braid_AccessStatusGetIter(braid_AccessStatus  status,         /**< structure containing current simulation info */
-                          braid_Int          *iter_ptr        /**< output, current Braid iteration number*/
+                          braid_Int          *iter_ptr        /**< output, current XBraid iteration number*/
                           );
 
 /**
- * Return the current Braid level from the AccessStatus structure.
+ * Return the current XBraid level from the AccessStatus structure.
  **/
 braid_Int
 braid_AccessStatusGetLevel(braid_AccessStatus  status,        /**< structure containing current simulation info */
-                           braid_Int          *level_ptr      /**< output, current level in Braid */
+                           braid_Int          *level_ptr      /**< output, current level in XBraid */
                            );
 
 /**
- * Return whether Braid is done for the current simulation.
+ * Return whether XBraid is done for the current simulation.
  *
- * *done_ptr = 1* indicates that Braid has finished iterating, 
+ * *done_ptr = 1* indicates that XBraid has finished iterating, 
  * (either maxiter has been reached, or the tolerance has been met).
  **/
 braid_Int
 braid_AccessStatusGetDone(braid_AccessStatus  status,         /**< structure containing current simulation info */
-                          braid_Int          *done_ptr        /**< output,  =1 if Braid has finished, else =0 */
+                          braid_Int          *done_ptr        /**< output,  =1 if XBraid has finished, else =0 */
                           );
 
 

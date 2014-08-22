@@ -175,12 +175,12 @@ first argument to every function.
    at time *t*.  This is most commonly used to print solution(s) to screen, file, etc... 
    The user defines what is appropriate output.  Notice how you are told the time value *t* of the 
    vector *u* and even more information in *astatus*.  This lets you tailor the output to only 
-   certain time values at certain Braid iterations.  Querrying *astatus* for such information 
+   certain time values at certain XBraid iterations.  Querrying *astatus* for such information 
    is done through _braid_AccessStatusGet**(..)_ routines.\n
 
    The frequency of the calls to *access* is controlled through 
    [braid_SetAccessLevel](@ref braid_SetAccessLevel).  For instance, if access_level is 
-   set to 2, then *access* is called every Braid iteration and on every Braid level.  In 
+   set to 2, then *access* is called every XBraid iteration and on every XBraid level.  In 
    this case, querrying *astatus* to determine the current XBraid level and iteration will 
    be useful. This scenario allows for even more detailed tracking of the simulation.\n
 
