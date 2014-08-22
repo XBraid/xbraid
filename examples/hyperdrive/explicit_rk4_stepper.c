@@ -12,8 +12,7 @@
 #include "advect_data.h"
 
 int
-explicit_rk4_stepper(advection_setup *kd_, double t, double tend, double accuracy, grid_fcn *gf_, 
-                     int *rfact_)
+explicit_rk4_stepper(advection_setup *kd_, grid_fcn *gf_, braid_PhiStatus status) 
 {
 /* this is a 'my_Phi()' routine, where kd_ is of type 'my_App' and gf_ is of type 'my_Vector' */
 /* take 1 time step with RK-4 */
@@ -21,6 +20,7 @@ explicit_rk4_stepper(advection_setup *kd_, double t, double tend, double accurac
    
    int i, stage;
    double tstage, tbc, bdata[2], dt;   
+   double t, tend, accuracy; 
    grid_fcn *eval_, *current_, *dwdt_;
 
 #define vsol(i) compute_index_1d(gf_->vsol_, i)   
@@ -33,6 +33,9 @@ explicit_rk4_stepper(advection_setup *kd_, double t, double tend, double accurac
 #define bcnr(i) compute_index_1d(kd_->bcnr_, i)   
 
 /* get the time-step from tend and t */
+   braid_PhiStatusGetTstart(status, &t);
+   braid_PhiStatusGetTplus(status, &tend);
+   braid_PhiStatusGetAccuracy(status, &accuracy);
    dt = tend - t;
    
 #ifdef HD_DEBUG

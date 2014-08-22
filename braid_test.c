@@ -500,11 +500,13 @@ braid_TestCoarsenRefine( braid_App        app,
                       braid_PtFcnCoarsen  coarsen,
                       braid_PtFcnRefine   refine)
  {   
-   braid_Vector        u, v, w, uc, vc, wc;
-   braid_Real          result1;
-   braid_Int           myid_x, level, correct;
-   braid_AccessStatus  astatus = _braid_CTAlloc(_braid_AccessStatus, 1);;
+   braid_Vector            u, v, w, uc, vc, wc;
+   braid_Real              result1;
+   braid_Int               myid_x, level, correct;
+   braid_AccessStatus      astatus = _braid_CTAlloc(_braid_AccessStatus, 1);;
+   braid_CoarsenRefStatus  cstatus = _braid_CTAlloc(_braid_CoarsenRefStatus, 1);;
    
+   _braid_CoarsenRefStatusInit(t, t-fdt, t+fdt, t-cdt, t+cdt, cstatus);
    MPI_Comm_rank( comm_x, &myid_x );
 
    /* Initialize the correct flag */
@@ -531,7 +533,7 @@ braid_TestCoarsenRefine( braid_App        app,
    }
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   uc = coarsen(u)\n");
-   coarsen(app, t, t-fdt, t+fdt, t-cdt, t+cdt, u, &uc); 
+   coarsen(app, u, &uc, cstatus); 
 
    if(access != NULL)
    {
@@ -555,7 +557,7 @@ braid_TestCoarsenRefine( braid_App        app,
    clone(app, u, &v);
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   vc = coarsen(v)\n");
-   coarsen(app, t, t-fdt, t+fdt, t-cdt, t+cdt, v, &vc); 
+   coarsen(app, v, &vc, cstatus); 
    
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   wc = clone(vc)\n");
    clone(app, vc, &wc);
@@ -592,10 +594,10 @@ braid_TestCoarsenRefine( braid_App        app,
    free(app, v);
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   v = refine(vc)\n");
-   refine(app, t, t-fdt, t+fdt, t-cdt, t+cdt, vc, &v); 
+   refine(app, vc, &v, cstatus); 
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   u = refine(uc)\n");
-   refine(app, t, t-fdt, t+fdt, t-cdt, t+cdt, uc, &u); 
+   refine(app, uc, &u, cstatus); 
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   v = u - v \n");
    sum(app, 1.0, u, -1.0, v); 

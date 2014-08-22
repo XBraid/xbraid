@@ -597,15 +597,22 @@ _braid_Phi(braid_Core     core,
            braid_Vector   u,
            braid_Int     *rfactor)
 {
-   braid_App      app    = _braid_CoreElt(core, app);
-   _braid_Grid  **grids  = _braid_CoreElt(core, grids);
-   braid_Int      ilower = _braid_GridElt(grids[level], ilower);
-   braid_Real    *ta     = _braid_GridElt(grids[level], ta);
+   braid_App      app      = _braid_CoreElt(core, app);
+   _braid_Grid  **grids    = _braid_CoreElt(core, grids);
+   braid_PhiStatus pstatus = _braid_CoreElt(core, pstatus);
+   braid_Int      ilower   = _braid_GridElt(grids[level], ilower);
+   braid_Real    *ta       = _braid_GridElt(grids[level], ta);
 
    braid_Int      ii;
 
    ii = index-ilower;
-   _braid_CoreFcn(core, phi)(app, ta[ii-1], ta[ii], accuracy,  u, rfactor);
+   _braid_PhiStatusInit(ta[ii-1], ta[ii], accuracy, pstatus);
+   
+   /* Call Phi */
+   _braid_CoreFcn(core, phi)(app, u, pstatus);
+   
+   /* Grad user's rfactor */
+   *rfactor = _braid_StatusElt(pstatus, rfactor);
 
    return _braid_error_flag;
 }
@@ -658,12 +665,13 @@ _braid_Coarsen(braid_Core     core,
                braid_Vector   fvector,
                braid_Vector  *cvector)
 {
-   braid_App      app      = _braid_CoreElt(core, app);
-   _braid_Grid  **grids    = _braid_CoreElt(core, grids);
-   braid_Int      c_ilower = _braid_GridElt(grids[level], ilower);
-   braid_Int      f_ilower = _braid_GridElt(grids[level-1], ilower);
-   braid_Real    *c_ta     = _braid_GridElt(grids[level], ta);
-   braid_Real    *f_ta     = _braid_GridElt(grids[level-1], ta);
+   braid_App      app             = _braid_CoreElt(core, app);
+   _braid_Grid  **grids           = _braid_CoreElt(core, grids);
+   braid_CoarsenRefStatus cstatus = _braid_CoreElt(core, cstatus);
+   braid_Int      c_ilower        = _braid_GridElt(grids[level], ilower);
+   braid_Int      f_ilower        = _braid_GridElt(grids[level-1], ilower);
+   braid_Real    *c_ta            = _braid_GridElt(grids[level], ta);
+   braid_Real    *f_ta            = _braid_GridElt(grids[level-1], ta);
 
    braid_Int      c_ii = c_index-c_ilower;
    braid_Int      f_ii = f_index-f_ilower;
@@ -676,8 +684,9 @@ _braid_Coarsen(braid_Core     core,
    else
    {
       /* Call the user's coarsening routine */
-      _braid_CoreFcn(core, coarsen)(app, f_ta[f_ii], f_ta[f_ii-1], f_ta[f_ii+1], 
-                                   c_ta[c_ii-1], c_ta[c_ii+1], fvector, cvector);
+      _braid_CoarsenRefStatusInit(f_ta[f_ii], f_ta[f_ii-1], f_ta[f_ii+1], 
+                                 c_ta[c_ii-1], c_ta[c_ii+1], cstatus);
+      _braid_CoreFcn(core, coarsen)(app, fvector, cvector, cstatus);
    }
    return _braid_error_flag;
 }
@@ -694,12 +703,13 @@ _braid_Refine(braid_Core     core,
               braid_Vector   cvector,
               braid_Vector  *fvector)
 {
-   braid_App      app      = _braid_CoreElt(core, app);
-   _braid_Grid  **grids    = _braid_CoreElt(core, grids);
-   braid_Int      f_ilower = _braid_GridElt(grids[level], ilower);
-   braid_Int      c_ilower = _braid_GridElt(grids[level+1], ilower);
-   braid_Real    *f_ta     = _braid_GridElt(grids[level], ta);
-   braid_Real    *c_ta     = _braid_GridElt(grids[level+1], ta);
+   braid_App      app             = _braid_CoreElt(core, app);
+   _braid_Grid  **grids           = _braid_CoreElt(core, grids);
+   braid_CoarsenRefStatus cstatus = _braid_CoreElt(core, cstatus);
+   braid_Int      f_ilower        = _braid_GridElt(grids[level], ilower);
+   braid_Int      c_ilower        = _braid_GridElt(grids[level+1], ilower);
+   braid_Real    *f_ta            = _braid_GridElt(grids[level], ta);
+   braid_Real    *c_ta            = _braid_GridElt(grids[level+1], ta);
 
    braid_Int      c_ii = c_index-c_ilower;
    braid_Int      f_ii = f_index-f_ilower;
@@ -712,8 +722,9 @@ _braid_Refine(braid_Core     core,
    else
    {
       /* Call the user's refinement routine */
-      _braid_CoreFcn(core, refine)(app, f_ta[f_ii], f_ta[f_ii-1], f_ta[f_ii+1], 
-                                  c_ta[c_ii-1], c_ta[c_ii+1], cvector, fvector);
+      _braid_CoarsenRefStatusInit(f_ta[f_ii], f_ta[f_ii-1], f_ta[f_ii+1], 
+                                 c_ta[c_ii-1], c_ta[c_ii+1], cstatus);
+      _braid_CoreFcn(core, refine)(app, cvector, fvector, cstatus);
    }
 
    return _braid_error_flag;

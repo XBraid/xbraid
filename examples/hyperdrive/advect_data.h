@@ -85,8 +85,8 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
                       double braidResidualLevel, double restr_coeff, double ad_coeff, int spatial_order,
                       advection_setup *kd_);
 int
-explicit_rk4_stepper(advection_setup *kd_, double t, double tend, double accuracy, grid_fcn *gf_, 
-                     int *rfact_);
+explicit_rk4_stepper(advection_setup *kd_, grid_fcn *gf_, braid_PhiStatus status);
+
 int
 copy_grid_fcn(advection_setup    *kd_,
               grid_fcn  *u_,
@@ -108,7 +108,7 @@ dot_grid_fcn(advection_setup *kd_,
 int
 save_grid_fcn(advection_setup *kd_,
               double t,
-              braid_Status   status,
+              braid_AccessStatus   status,
               grid_fcn *u_);
 int
 gridfcn_BufSize(advection_setup *kd_,
@@ -123,22 +123,15 @@ gridfcn_BufUnpack(advection_setup *kd_,
                   braid_Vector *u_handle);
 int
 gridfcn_Refine(advection_setup * kd_,
-               double     tstart,
-               double     f_tminus,
-               double     f_tplus,
-               double     c_tminus,
-               double     c_tplus,
                grid_fcn *cu_,
-               grid_fcn **fu_handle);
+               grid_fcn **fu_handle,
+               braid_CoarsenRefStatus status);
+
 int
 gridfcn_Coarsen(advection_setup *kd_,
-                double tstart,
-                double f_tminus,
-                double f_tplus,
-                double c_tminus,
-                double c_tplus,
                 grid_fcn *fu_,
-                grid_fcn **cu_handle);
+                grid_fcn **cu_handle,
+                braid_CoarsenRefStatus status);
 
 void
 exact1( grid_fcn *w, double t, advection_setup *kd_);

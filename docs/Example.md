@@ -48,30 +48,35 @@ The two data structures are:
 The user must also define a few wrapper routines.  Note, that the app structure is the 
 first argument to every function.
 1. **Phi**: This function tells XBraid how to take a time step, and is the core user routine. 
-   The user must advance the vector *u* 
-   from time *tstart* to time *tstop*.  Here advancing the solution just involves the scalar \f$ \lambda \f$.  
-   The *rfactor_ptr* and *accuracy* parameters are advanced topics not used here.
+   The user must advance the vector *u* from time *tstart* to time *tplus*.
+   Note how the time values are given to the user through the *status*
+   structure and associated Get routines.  The *rfactor_ptr* parameter is an
+   advanced topics not used here.
+   
+   Here advancing the solution just involves the scalar \f$ \lambda \f$.  
 
    **Importantly,** the \f$ g_i \f$ function (from @ref braidoverview) must be 
    incorporated into Phi, so that \f$\Phi(u_i) \rightarrow u_{i+1} \f$
 
          int
-         my_Phi(braid_App     app,
-                double     tstart,
-                double     tstop,
-                double     accuracy,
-                braid_Vector  u,
-                int        *rfactor_ptr)
+         my_Phi(braid_App       app,
+                braid_Vector    u,
+                braid_PhiStatus status)
          {
+            double tstart;             /* current time */
+            double tplus;              /* evolve to this time*/
+            braid_PhiStatusGetTstart(status, &tstart);
+            braid_PhiStatusGetTplus(status, &tplus);
+      
             /* On the finest grid, each value is half the previous value */
-            (u->value) = pow(0.5, tstop-tstart)*(u->value);
-
+            (u->value) = pow(0.5, tplus-tstart)*(u->value);
+      
             /* Zero rhs for now */
             (u->value) += 0.0;
-
+      
             /* no refinement */
-            *rfactor_ptr = 1;
-
+            braid_PhiStatusSetRFactor(status, 1);
+      
             return 0;
          }
 

@@ -58,54 +58,53 @@ typedef struct _braid_Vector_struct *braid_Vector;
 
 /**
  * Defines the central time stepping function that the user must write.
- * The user must advance the vector *u* from time *tstart* to time *tstop*.
- * The *rfactor_ptr* and *accuracy* inputs are advanced topics.  *rfactor_ptr*
+ * The user must advance the vector *u* from time *tstart* to time *tplus*.\n
+ * Query the status structure with braid_PhiStatusGet***() to get *tstart* and
+ * *tplus*.  The status structure also allows for steering, e.g., 
+ * braid_PhiStatusSetRFactor() allows for setting rfactor, which 
  * allows the user to tell Braid to refine this time interval.
  **/
 typedef braid_Int
-(*braid_PtFcnPhi)(braid_App      app,                /**< user-defined _braid_App structure */
-                  braid_Real     tstart,             /**< time value for *u* */
-                  braid_Real     tstop,              /**< time value to evolve *u* towards */
-                  braid_Real     accuracy,           /**< advanced option */
-                  braid_Vector   u,                  /**< output, vector to evolve */
-                  braid_Int     *rfactor_ptr         /**< output, allows user to subdivide this interval for accuracy */
+(*braid_PtFcnPhi)(braid_App       app,           /**< user-defined _braid_App structure */
+                  braid_Vector    u,             /**< output, vector to evolve */
+                  braid_PhiStatus status         /**< query this struct for info about u (e.g., tstart and tplus), allows for steering (e.g., set rfactor) */ 
                   );
 
 /**
  * Initializes a vector *u_ptr* at time *t*
  **/
 typedef braid_Int
-(*braid_PtFcnInit)(braid_App      app,               /**< user-defined _braid_App structure */
-                   braid_Real     t,                 /**< time value for *u_ptr* */
-                   braid_Vector  *u_ptr              /**< output, newly allocated and initialized vector */
+(*braid_PtFcnInit)(braid_App      app,           /**< user-defined _braid_App structure */
+                   braid_Real     t,             /**< time value for *u_ptr* */
+                   braid_Vector  *u_ptr          /**< output, newly allocated and initialized vector */
                    );
 
 /**
  * Clone *u* into *v_ptr*
  **/
 typedef braid_Int
-(*braid_PtFcnClone)(braid_App      app,              /**< user-defined _braid_App structure */
-                    braid_Vector   u,                /**< vector to clone */ 
-                    braid_Vector  *v_ptr             /**< output, newly allocated and cloned vector */
+(*braid_PtFcnClone)(braid_App      app,          /**< user-defined _braid_App structure */
+                    braid_Vector   u,            /**< vector to clone */ 
+                    braid_Vector  *v_ptr         /**< output, newly allocated and cloned vector */
                     );
 
 /**
  * Free and deallocate *u*
  **/
 typedef braid_Int
-(*braid_PtFcnFree)(braid_App     app,               /**< user-defined _braid_App structure */
-                   braid_Vector  u                  /**< vector to free */
+(*braid_PtFcnFree)(braid_App     app,            /**< user-defined _braid_App structure */
+                   braid_Vector  u               /**< vector to free */
                    );
 
 /**
  * AXPY, *alpha* *x* + *beta* *y* --> *y*
  **/ 
 typedef braid_Int
-(*braid_PtFcnSum)(braid_App     app,                /**< user-defined _braid_App structure */
-                  braid_Real    alpha,              /**< scalar for AXPY */
-                  braid_Vector  x,                  /**< vector for AXPY */
-                  braid_Real    beta,               /**< scalar for AXPY */
-                  braid_Vector  y                   /**< output and vector for AXPY */
+(*braid_PtFcnSum)(braid_App     app,             /**< user-defined _braid_App structure */
+                  braid_Real    alpha,           /**< scalar for AXPY */
+                  braid_Vector  x,               /**< vector for AXPY */
+                  braid_Real    beta,            /**< scalar for AXPY */
+                  braid_Vector  y                /**< output and vector for AXPY */
                   );
 
 /**
@@ -141,7 +140,7 @@ typedef braid_Int
 typedef braid_Int
 (*braid_PtFcnAccess)(braid_App           app,              /**< user-defined _braid_App structure */
                      braid_Real          t,                /**< time value for *u* */
-                     braid_AccessStatus  status,           /**< can be querried for info like Braid Iteration */
+                     braid_AccessStatus  status,           /**< can be querried for info like the current Braid Iteration */
                      braid_Vector        u                 /**< vector to be accessed */
                      );
 
@@ -180,17 +179,17 @@ typedef braid_Int
  * when going from a fine time grid to a coarse time grid.
  * This function is called on every vector at each level, thus
  * you can coarsem the entire space time domain.  The action of 
- * this function should match the @ref braid_PtFcnRefine function.
+ * this function should match the @ref braid_PtFcnRefine function.\n
+ * The status structure will be querried by the user at run time 
+ * to determine how to coarsen.  For instance, status tells you 
+ * what the current time value is, and what the time
+ * step sizes on the fine and coarse levels.
  **/
 typedef braid_Int
-(*braid_PtFcnCoarsen)(braid_App      app,         /**< user-defined _braid_App structure */
-                      braid_Real     tstart,      /**< time value for *cu* */                          
-                      braid_Real     f_tminus,    /**< time value for *cu* to the left on fine grid */ 
-                      braid_Real     f_tplus,     /**< time value for *cu* to the right on fine grid */
-                      braid_Real     c_tminus,    /**< time value for *cu* to the left on coarse grid */
-                      braid_Real     c_tplus,     /**< time value for *cu* to the right on coarse grid */
-                      braid_Vector   fu,          /**< braid_Vector to refine*/                       
-                      braid_Vector  *cu_ptr       /**< output, refined vector */    
+(*braid_PtFcnCoarsen)(braid_App               app,         /**< user-defined _braid_App structure */
+                      braid_Vector            fu,          /**< braid_Vector to refine*/                       
+                      braid_Vector           *cu_ptr,      /**< output, refined vector */   
+                      braid_CoarsenRefStatus  status       /**< query this struct for info about fu and cu (e.g., where in time fu and cu are)  */ 
                       );
 
 /**
@@ -198,17 +197,17 @@ typedef braid_Int
  * when going from a coarse time grid to a fine time grid.  
  * This function is called on every vector at each level, thus
  * you can refine the entire space time domain. The action of 
- * this function should match the @ref braid_PtFcnCoarsen function.
+ * this function should match the @ref braid_PtFcnCoarsen function.\n
+ * The status structure will be querried by the user at run time 
+ * to determine how to coarsen.  For instance, status tells you 
+ * what the current time value is, and what the time
+ * step sizes on the fine and coarse levels.
  **/
 typedef braid_Int
-(*braid_PtFcnRefine)(braid_App      app,          /**< user-defined _braid_App structure */
-                     braid_Real     tstart,       /**< time value for *cu* */                          
-                     braid_Real     f_tminus,     /**< time value for *cu* to the left on fine grid */ 
-                     braid_Real     f_tplus,      /**< time value for *cu* to the right on fine grid */
-                     braid_Real     c_tminus,     /**< time value for *cu* to the left on coarse grid */
-                     braid_Real     c_tplus,      /**< time value for *cu* to the right on coarse grid */
-                     braid_Vector   cu,           /**< braid_Vector to refine*/                       
-                     braid_Vector  *fu_ptr        /**< output, refined vector */       
+(*braid_PtFcnRefine)(braid_App               app,    /**< user-defined _braid_App structure */
+                     braid_Vector            cu,     /**< braid_Vector to refine*/                       
+                     braid_Vector           *fu_ptr, /**< output, refined vector */       
+                     braid_CoarsenRefStatus  status       /**< query this struct for info about fu and cu (e.g., where in time fu and cu are)  */ 
                      );
 /** @}*/
 

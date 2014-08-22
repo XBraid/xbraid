@@ -16,6 +16,8 @@
 
 #include "c_array.h"
 #include "advect_data.h"
+#include "braid_status.h"
+#include "braid_defs.h"
 
 int main(int argc, char ** argv)
 {
@@ -32,15 +34,16 @@ int main(int argc, char ** argv)
    int wave_no = 1, spatial_order=6;
    
    double dummy=0;
-   int rfact_dummy=0;
    
-   int nstepsset, tfinalset, arg_index, print_usage=0, myid=0;
+   int nstepsset, arg_index, print_usage=0, myid=0;
 
    FILE *eun;
    
    advection_setup *kd_ = NULL;
    grid_fcn *gf_ = NULL, *exact_ = NULL;
-      
+   
+   braid_PhiStatus pstatus = _braid_CTAlloc(_braid_PhiStatus, 1); 
+
 /* Default problem parameters */
 
    L = 1.0; /* Domain length*/
@@ -68,7 +71,6 @@ int main(int argc, char ** argv)
    tfinal = 1.0;
 
    nstepsset = 0;
-   tfinalset = 0;
 
 /*! time-dependent boundary data
 ! taylorbc = 0: assign exact boundary data at intermediate stages
@@ -212,7 +214,8 @@ int main(int argc, char ** argv)
       fprintf(eun,"%e %e %e %e\n", t, li, l2, fabs(ex_vsol(1) - vsol(1)) ); 
 
 /* ! time-stepper from t_n to t_{n+1} starts here */
-      explicit_rk4_stepper(kd_, t, t+kd_->dt_fine, dummy, gf_, &rfact_dummy); /* this is my_Phi() */
+      _braid_PhiStatusInit(t, t+kd_->dt_fine, dummy, pstatus);
+      explicit_rk4_stepper(kd_, gf_, pstatus);  /* this is my_Phi() */
 
       t = t + kd_->dt_fine;
 /* ! time-stepper from t_n to t_{n+1} ends here */

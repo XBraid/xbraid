@@ -65,21 +65,23 @@ typedef struct _braid_Vector_struct
 } my_Vector;
 
 int
-my_Phi(braid_App     app,
-       double        tstart,
-       double        tstop,
-       double        accuracy,
-       braid_Vector  u,
-       int          *rfactor_ptr)
+my_Phi(braid_App       app,
+       braid_Vector    u,
+       braid_PhiStatus status)
 {
+   double tstart;             /* current time */
+   double tplus;              /* evolve to this time*/
+   braid_PhiStatusGetTstart(status, &tstart);
+   braid_PhiStatusGetTplus(status, &tplus);
+
    /* On the finest grid, each value is half the previous value */
-   (u->value) = pow(0.5, tstop-tstart)*(u->value);
+   (u->value) = pow(0.5, tplus-tstart)*(u->value);
 
    /* Zero rhs for now */
    (u->value) += 0.0;
 
    /* no refinement */
-   *rfactor_ptr = 1;
+   braid_PhiStatusSetRFactor(status, 1);
 
    return 0;
 }

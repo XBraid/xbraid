@@ -412,7 +412,7 @@ gridfcn_BufPack(advection_setup *kd_,
 int
 gridfcn_BufUnpack(advection_setup *kd_,
              void *buffer,
-             braidVector *u_handle)
+             braid_Vector *u_handle)
 {
    int i, offset, n;
    double h;
@@ -453,17 +453,20 @@ gridfcn_BufUnpack(advection_setup *kd_,
 #define MAX(a,b) (a<b? b:a)
 int
 gridfcn_Coarsen(advection_setup *kd_,
-                double tstart,
-                double f_tminus,
-                double f_tplus,
-                double c_tminus,
-                double c_tplus,
                 grid_fcn *gf_, /* pointer to the fine grid function */
-                grid_fcn **cu_handle) /* handle to the coarse grid function */
+                grid_fcn **cu_handle, /* handle to the coarse grid function */
+                braid_CoarsenRefStatus status)
 {
    grid_fcn * u_;
    int i, nf, nc, ifine;
    double dt_f, dt_c;
+   double  tstart, f_tminus, f_tplus, c_tminus, c_tplus;
+   braid_CoarsenRefStatusGetTstart(status, &tstart);
+   braid_CoarsenRefStatusGetCTplus(status, &c_tplus);
+   braid_CoarsenRefStatusGetCTminus(status, &c_tminus);
+   braid_CoarsenRefStatusGetFTplus(status, &f_tplus);
+   braid_CoarsenRefStatusGetFTminus(status, &f_tminus);
+
 #define bcnr(i) compute_index_1d(kd_->bcnr_, i)   
 
    dt_f = MAX(f_tplus - tstart, tstart - f_tminus);
@@ -554,17 +557,21 @@ gridfcn_Coarsen(advection_setup *kd_,
 
 int
 gridfcn_Refine(advection_setup * kd_,
-               double tstart,
-               double f_tminus,
-               double f_tplus,
-               double c_tminus,
-               double c_tplus,
                grid_fcn *gf_, /* pointer to the coarse grid function */
-               grid_fcn **fu_handle) /* handle to the fine grid function */
+               grid_fcn **fu_handle, /* handle to the fine grid function */
+               braid_CoarsenRefStatus status)
 {
    grid_fcn *u_;
    int i, nc, nf, ifine, ig;   
    double dt_f, dt_c;
+   double  tstart, f_tminus, f_tplus, c_tminus, c_tplus;
+   braid_CoarsenRefStatusGetTstart(status, &tstart);
+   braid_CoarsenRefStatusGetCTplus(status, &c_tplus);
+   braid_CoarsenRefStatusGetCTminus(status, &c_tminus);
+   braid_CoarsenRefStatusGetFTplus(status, &f_tplus);
+   braid_CoarsenRefStatusGetFTminus(status, &f_tminus);
+
+
 #define bcnr(i) compute_index_1d(kd_->bcnr_, i)   
 
    dt_f = MAX(f_tplus - tstart, tstart - f_tminus);

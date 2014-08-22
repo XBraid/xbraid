@@ -1008,6 +1008,28 @@ class BraidAccessStatus
       ~BraidAccessStatus() { }
 };
 
+// Wrapper for BRAID's PhiStatus object
+class BraidPhiStatus
+{
+   private:
+      braid_PhiStatus pstatus;
+   
+   public:
+      BraidPhiStatus(braid_PhiStatus _pstatus)
+      {
+         pstatus = _pstatus;
+      }
+
+      void GetTstart(braid_Real *t_start_ptr)     { braid_PhiStatusGetTstart(pstatus, t_start_ptr); }
+      void GetTplus(braid_Real *t_plus_ptr)       { braid_PhiStatusGetTplus(pstatus, t_plus_ptr); }
+      void GetAccuracy(braid_Real *accuracy_ptr)  { braid_PhiStatusGetAccuracy(pstatus, accuracy_ptr); }
+      void SetRFactor(braid_Int rfactor)         { braid_PhiStatusSetRFactor(pstatus, rfactor); }
+      
+      // The braid_PhiStatus structure is deallocated inside of Braid
+      // This class is just to make code consistently look object oriented
+      ~BraidPhiStatus() { }
+};
+
 
 // Wrapper for BRAID's App object
 class BraidApp
@@ -1056,23 +1078,26 @@ public:
 
    // Below braid_Vector == HypreParVector* and braid_App == BraidApp*
 
-   static int Phi(braid_App     _app,
-                  double        tstart,
-                  double        tstop,
-                  double        accuracy,
-                  braid_Vector  _u,
-                  int          *rfactor_ptr)
+   static int Phi(braid_App       _app,
+                  braid_Vector    _u,
+                  braid_PhiStatus _pstatus)
    {
-      BraidApp *app     = (BraidApp*) _app;
-      HypreParVector *u = (HypreParVector*) _u;
-
-      double t = tstart;
-      double dt = tstop-tstart;
-
+      BraidApp *app          = (BraidApp*) _app;
+      HypreParVector *u      = (HypreParVector*) _u;
+      BraidPhiStatus pstatus = BraidPhiStatus(_pstatus);
+      double tstart, tplus, accuracy, t, dt;
+      
+      // Get time step information
+      pstatus.GetTstart(&tstart);
+      pstatus.GetTplus(&tplus);
+      pstatus.GetAccuracy(&accuracy);
+      t = tstart;
+      dt = tplus-tstart;
+      
       app->solver->Step(*u, t, dt);
 
       // no refinement
-      *rfactor_ptr = 1;
+      pstatus.SetRFactor(1);
 
       return 0;
    }

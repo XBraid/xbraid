@@ -2395,13 +2395,13 @@ setUpStructSolver( MPI_Comm             comm,
  * set to u_i.
  * -------------------------------------------------------------------- */
 int
-my_Phi(braid_App     app,
-       double        tstart,
-       double        tstop,
-       double        accuracy,
-       braid_Vector  u,
-       int          *rfactor_ptr)
+my_Phi(braid_App       app,
+       braid_Vector    u,
+       braid_PhiStatus status)
 {
+   double tstart;             /* current time */
+   double tplus;              /* evolve to this time*/
+   double accuracy;
    int i, A_idx;
    double *values;
 
@@ -2409,6 +2409,10 @@ my_Phi(braid_App     app,
    HYPRE_StructMatrix  sA;
    HYPRE_StructVector  sb;
    HYPRE_StructVector  sx;
+   
+   braid_PhiStatusGetTstart(status, &tstart);
+   braid_PhiStatusGetTplus(status, &tplus);
+   braid_PhiStatusGetAccuracy(status, &accuracy);
    
    /* We have one part and one variable. */
    int part = 0;
@@ -2419,22 +2423,22 @@ my_Phi(braid_App     app,
    /* -----------------------------------------------------------------
     * Set up the discretization matrix.
     * If no variable coefficients, check matrix lookup table if matrix 
-    * has already been created for time step size tstop-tstart.
+    * has already been created for time step size tplus-tstart.
     * ----------------------------------------------------------------- */
    A_idx = -1.0;
    for( i = 0; i < app->max_levels; i++ ){
       if( app->dt_A[i] == -1.0 )
          break;
-      if( fabs( app->dt_A[i] - (tstop-tstart) ) <= (app->dt)/10 ){
+      if( fabs( app->dt_A[i] - (tplus-tstart) ) <= (app->dt)/10 ){
          A_idx = i;
          break;
       }
    }
 
    /* check CFL condition */
-   if( (app->K)*( (tstop-tstart)/((app->dx)*(app->dx))
-                 +(tstop-tstart)/((app->dy)*(app->dy))
-                 +(tstop-tstart)/((app->dz)*(app->dz)) ) < 0.5 ){
+   if( (app->K)*( (tplus-tstart)/((app->dx)*(app->dx))
+                 +(tplus-tstart)/((app->dy)*(app->dy))
+                 +(tplus-tstart)/((app->dz)*(app->dz)) ) < 0.5 ){
       cfl = 1;
    }
 
@@ -2444,10 +2448,10 @@ my_Phi(braid_App     app,
 #if DEBUG
       printf( "Create new matrix %d\n", A_idx );
 #endif
-      /* No matrix for time step tstop-tstart exists.  
+      /* No matrix for time step tplus-tstart exists.  
        * Add entry to matrix lookup table. */
 
-      app->dt_A[A_idx] = tstop-tstart;
+      app->dt_A[A_idx] = tplus-tstart;
 
       /* If we want to use an explicit scheme, check CFL condition 
        * to determine whether we can still use explicit scheme for
@@ -2499,7 +2503,7 @@ my_Phi(braid_App     app,
                                        app->iupper_x, var, values );
       free( values );
 
-      addBoundary( b, app->K, app->dx, app->dy, app->dz, tstop-tstart,
+      addBoundary( b, app->K, app->dx, app->dy, app->dz, tplus-tstart,
                    app->ilower_x, app->nlx, app->nly, app->nlz, app->px, 
                    app->py, app->pz, app->pi, app->pj, app->pk );
 
@@ -2533,7 +2537,7 @@ my_Phi(braid_App     app,
       HYPRE_SStructVectorSetBoxValues( b, part, app->ilower_x,
                                        app->iupper_x, var, values );
       free( values );
-      addBoundaryToRHS( b, app->K, app->dx, app->dy, app->dz, tstop-tstart,
+      addBoundaryToRHS( b, app->K, app->dx, app->dy, app->dz, tplus-tstart,
                         app->ilower_x, app->nlx, app->nly, app->nlz, app->px, 
                         app->py, app->pz, app->pi, app->pj, app->pk);
       /* add infos from RHS of PDE here */ 
@@ -2581,7 +2585,7 @@ my_Phi(braid_App     app,
       HYPRE_SStructVectorDestroy( b );
    }
    /* no refinement */
-   *rfactor_ptr = 1;
+   braid_PhiStatusSetRFactor(status, 1);
 
    return 0;
 }

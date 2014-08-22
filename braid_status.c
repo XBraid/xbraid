@@ -22,6 +22,7 @@
 #endif
 
 /*--------------------------------------------------------------------------
+ * AccessStatus Routines
  *--------------------------------------------------------------------------*/
 
 braid_Int
@@ -67,7 +68,6 @@ braid_AccessStatusGetDone(braid_AccessStatus  status,
 }
 
 /*--------------------------------------------------------------------------
- * Destroy a braid_AccessStatus structure
  *--------------------------------------------------------------------------*/
 braid_Int
 _braid_AccessStatusDestroy(braid_AccessStatus  status)
@@ -81,7 +81,6 @@ _braid_AccessStatusDestroy(braid_AccessStatus  status)
 }
 
 /*--------------------------------------------------------------------------
- * Initialize members of a braid_AccessStatus structure 
  *--------------------------------------------------------------------------*/
 braid_Int
 _braid_AccessStatusInit(braid_Real           rnorm,
@@ -95,6 +94,145 @@ _braid_AccessStatusInit(braid_Real           rnorm,
    _braid_StatusElt(status, done)  = done;
    _braid_StatusElt(status, iter)  = iter; 
 
+   return _braid_error_flag;
+}
+
+
+/*--------------------------------------------------------------------------
+ * CoarsenRefStatus Routines
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+_braid_CoarsenRefStatusInit(braid_Real              tstart,  
+                            braid_Real              f_tminus,
+                            braid_Real              f_tplus, 
+                            braid_Real              c_tminus,
+                            braid_Real              c_tplus,
+                            braid_CoarsenRefStatus  status)
+{
+   _braid_StatusElt(status, tstart) = tstart;
+   _braid_StatusElt(status, f_tminus) = f_tminus;
+   _braid_StatusElt(status, f_tplus)  = f_tplus;
+   _braid_StatusElt(status, c_tminus) = c_tminus;
+   _braid_StatusElt(status, c_tplus)  = c_tplus;
+
+   return _braid_error_flag;
+}
+
+braid_Int
+_braid_CoarsenRefStatusDestroy(braid_CoarsenRefStatus  status)
+{
+   if (status)
+   {
+      _braid_TFree(status);
+   }
+
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_CoarsenRefStatusGetTstart(braid_CoarsenRefStatus  status,
+                                braid_Real             *tstart_ptr
+                                )
+{
+   *tstart_ptr = _braid_StatusElt(status, tstart);
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_CoarsenRefStatusGetFTplus(braid_CoarsenRefStatus  status,
+                                braid_Real             *f_tplus_ptr
+                                )
+{
+   *f_tplus_ptr = _braid_StatusElt(status, f_tplus);
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_CoarsenRefStatusGetFTminus(braid_CoarsenRefStatus  status,
+                                 braid_Real             *f_tminus_ptr
+                                 )
+{
+   *f_tminus_ptr = _braid_StatusElt(status, f_tminus);
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_CoarsenRefStatusGetCTplus(braid_CoarsenRefStatus  status,
+                                braid_Real             *c_tplus_ptr
+                                )
+{
+   *c_tplus_ptr = _braid_StatusElt(status, c_tplus);
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_CoarsenRefStatusGetCTminus(braid_CoarsenRefStatus  status,
+                                 braid_Real             *c_tminus_ptr
+                                 )
+{
+   *c_tminus_ptr = _braid_StatusElt(status, c_tminus);
+   return _braid_error_flag;
+}
+
+
+/*--------------------------------------------------------------------------
+ * CoarsenRefStatus Routines
+ *--------------------------------------------------------------------------*/
+braid_Int
+_braid_PhiStatusInit(braid_Real       tstart,
+                     braid_Real       tplus,
+                     braid_Real       accuracy,
+                     braid_PhiStatus  status)
+{
+   _braid_StatusElt(status, tstart)   = tstart;
+   _braid_StatusElt(status, tplus)    = tplus;
+   _braid_StatusElt(status, accuracy) = accuracy;
+
+   return _braid_error_flag;
+}
+
+braid_Int
+_braid_PhiStatusDestroy(braid_PhiStatus  status)
+{
+   if (status)
+   {
+      _braid_TFree(status);
+   }
+
+   return _braid_error_flag;
+}
+
+
+braid_Int
+braid_PhiStatusGetTstart(braid_PhiStatus  status,
+                         braid_Real      *tstart_ptr)
+{
+   *tstart_ptr = _braid_StatusElt(status, tstart);
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_PhiStatusGetTplus(braid_PhiStatus  status,
+                        braid_Real      *tplus_ptr)
+{
+   *tplus_ptr = _braid_StatusElt(status, tplus);
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_PhiStatusGetAccuracy(braid_PhiStatus  status,
+                           braid_Real      *accuracy_ptr)
+{
+   *accuracy_ptr = _braid_StatusElt(status, accuracy);
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_PhiStatusSetRFactor(braid_PhiStatus  status,
+                          braid_Real       rfactor)
+{
+   _braid_StatusElt(status, rfactor) = rfactor;
    return _braid_error_flag;
 }
 

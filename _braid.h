@@ -141,6 +141,8 @@ typedef struct _braid_Core_struct
    _braid_AccuracyHandle *accuracy;     /**< accuracy of spatial solves on different levels */
 
    braid_AccessStatus     astatus;      /**< status structure passed to user-written Access routine */
+   braid_CoarsenRefStatus cstatus;      /**< status structure passed to user-written coarsen/refine routines */
+   braid_PhiStatus        pstatus;      /**< status structure passed to user-written phi routines */
 
    braid_Int              gupper;       /**< global upper index on the fine grid */
 
