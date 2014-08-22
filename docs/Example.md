@@ -51,7 +51,7 @@ first argument to every function.
    The user must advance the vector *u* from time *tstart* to time *tplus*.
    Note how the time values are given to the user through the *status*
    structure and associated Get routines.  The *rfactor_ptr* parameter is an
-   advanced topics not used here.
+   advanced topic not used here.
    
    Here advancing the solution just involves the scalar \f$ \lambda \f$.  
 
@@ -173,21 +173,22 @@ first argument to every function.
 
 7. **Access**: This function allows the user access to XBraid and the current solution vector 
    at time *t*.  This is most commonly used to print solution(s) to screen, file, etc... 
-   The user defines what is appropriate output.  Notice how you are told the time value of the 
+   The user defines what is appropriate output.  Notice how you are told the time value *t* of the 
    vector *u* and even more information in *astatus*.  This lets you tailor the output to only 
-   certain time values.  
+   certain time values at certain Braid iterations.  Querrying *astatus* for such information 
+   is done through _braid_AccessStatusGet**(..)_ routines.\n
 
-   Eventually, this routine will allow for broader access to XBraid and computational steering.
+   The frequency of the calls to *access* is controlled through 
+   [braid_SetAccessLevel](@ref braid_SetAccessLevel).  For instance, if access_level is 
+   set to 2, then *access* is called every Braid iteration and on every Braid level.  In 
+   this case, querrying *astatus* to determine the current XBraid level and iteration will 
+   be useful. This scenario allows for even more detailed tracking of the simulation.\n
+
+   Eventually, this routine will allow for broader access to XBraid and computational steering.\n
    
-   If access_level is 2 (see [braid_SetAccessLevel](@ref braid_SetAccessLevel) ), then 
-   *Access* is called every XBraid iteration and on every XBraid level.  In this case, 
-   *astatus* can be querried using the braid_AccessStatusGet**() functions, to determine the 
-   current XBraid level and iteration.  This allows for even more detailed tracking of the
-   simulation. 
-   
-   See examples/drive-02 and examples/drive-04 for more advanced uses of the *Access* function.  
-   Drive-04 uses *Access* to write solution vectors to a GLVIS visualization port, and 
-   examples/drive-02 uses *Access* to write to .vtu files.
+   See examples/drive-02 and examples/drive-04 for more advanced uses of the *access* function.  
+   Drive-04 uses *access* to write solution vectors to a GLVIS visualization port, and 
+   examples/drive-02 uses *access* to write to .vtu files.
 
          int
          my_Access(braid_App          app,

@@ -58,11 +58,13 @@ typedef struct _braid_Vector_struct *braid_Vector;
 
 /**
  * Defines the central time stepping function that the user must write.
- * The user must advance the vector *u* from time *tstart* to time *tplus*.\n
- * Query the status structure with braid_PhiStatusGet***() to get *tstart* and
- * *tplus*.  The status structure also allows for steering, e.g., 
- * braid_PhiStatusSetRFactor() allows for setting rfactor, which 
- * allows the user to tell Braid to refine this time interval.
+ * The user must advance the vector *u* from time *tstart* to time *tplus*.
+ *
+ * Query the status structure with *braid_PhiStatusGetTstart(status, &tstart)*  
+ * and *braid_PhiStatusGetTplus(status, &tplus)* to get *tstart* and
+ * *tplus*.  The status structure also allows for steering.  For example,
+ * *braid_PhiStatusSetRFactor(...)* allows for setting rfactor, which 
+ * tells Braid to refine this time interval.
  **/
 typedef braid_Int
 (*braid_PtFcnPhi)(braid_App       app,           /**< user-defined _braid_App structure */
@@ -123,19 +125,21 @@ typedef braid_Int
                        );
 
 /**
- * Gives access to Braid and to the current vector *u* at time *t*.  Most commonly,
+ * Gives user access to Braid and to the current vector *u* at time *t*.  Most commonly,
  * this lets the user write the vector to screen, file, etc...  The user decides 
- * what is appropriate.  Notice how you are told the time value of the 
- * vector *u* and even more information in *status*.  This lets you tailor the 
- * output to only certain time values. \n
+ * what is appropriate.  Note how you are told the time value *t* of the 
+ * vector *u* and other information in *status*.  This lets you tailor the 
+ * output, e.g., for only certain time values at certain Braid iterations.
+ * Querrying status for such information is done through 
+ * _braid_AccessStatusGet**(..)_ routines.
+ * 
+ * The frequency of Braid's calls to *access* is controlled through 
+ * [braid_SetAccessLevel](@ref braid_SetAccessLevel).  For instance, if access_level is 
+ * set to 2, then *access* is called every Braid iteration and on every Braid level.  In 
+ * this case, querrying *status* to determine the current Braid level and iteration will 
+ * be useful. This scenario allows for even more detailed tracking of the simulation.
  *
  * Eventually, access will be broadened to allow the user to steer Braid.
- * 
- * If access_level is 2 (see [braid_SetAccessLevel](@ref braid_SetAccessLevel) ), then 
- * *access* is called every Braid iteration and on every Braid level.  In this case, 
- * *status* can be querried using the braid_AccessStatusGet***() functions, to determine
- * the current Braid level and iteration.  This allows for even more detailed tracking of
- * the simulation. 
  **/
 typedef braid_Int
 (*braid_PtFcnAccess)(braid_App           app,              /**< user-defined _braid_App structure */
@@ -175,15 +179,16 @@ typedef braid_Int
                         );
 
 /**
- * spatial coarsening (optional).  Allows the user to coarsen
+ * Spatial coarsening (optional).  Allows the user to coarsen
  * when going from a fine time grid to a coarse time grid.
  * This function is called on every vector at each level, thus
  * you can coarsem the entire space time domain.  The action of 
- * this function should match the @ref braid_PtFcnRefine function.\n
- * The status structure will be querried by the user at run time 
- * to determine how to coarsen.  For instance, status tells you 
- * what the current time value is, and what the time
- * step sizes on the fine and coarse levels.
+ * this function should match the @ref braid_PtFcnRefine function.
+ *
+ * The user should query the status structure at run time with 
+ * _braid_CoarsenRefGet**()_ calls in order to determine how to coarsen.  
+ * For instance, status tells you what the current time value is, and 
+ * what the time step sizes on the fine and coarse levels are.
  **/
 typedef braid_Int
 (*braid_PtFcnCoarsen)(braid_App               app,         /**< user-defined _braid_App structure */
@@ -193,21 +198,22 @@ typedef braid_Int
                       );
 
 /**
- * spatial refinement (optional). Allows the user to refine 
+ * Spatial refinement (optional). Allows the user to refine 
  * when going from a coarse time grid to a fine time grid.  
  * This function is called on every vector at each level, thus
  * you can refine the entire space time domain. The action of 
- * this function should match the @ref braid_PtFcnCoarsen function.\n
- * The status structure will be querried by the user at run time 
- * to determine how to coarsen.  For instance, status tells you 
- * what the current time value is, and what the time
- * step sizes on the fine and coarse levels.
+ * this function should match the @ref braid_PtFcnCoarsen function.
+ *
+ * The user should query the status structure at run time with 
+ * _braid_CoarsenRefGet**()_ calls in order to determine how to coarsen.  
+ * For instance, status tells you what the current time value is, and 
+ * what the time step sizes on the fine and coarse levels are.
  **/
 typedef braid_Int
 (*braid_PtFcnRefine)(braid_App               app,    /**< user-defined _braid_App structure */
                      braid_Vector            cu,     /**< braid_Vector to refine*/                       
                      braid_Vector           *fu_ptr, /**< output, refined vector */       
-                     braid_CoarsenRefStatus  status       /**< query this struct for info about fu and cu (e.g., where in time fu and cu are)  */ 
+                     braid_CoarsenRefStatus  status  /**< query this struct for info about fu and cu (e.g., where in time fu and cu are)  */ 
                      );
 /** @}*/
 
@@ -216,7 +222,17 @@ typedef braid_Int
  *--------------------------------------------------------------------------*/
 /** \defgroup userinterface User interface routines
  *  
- *  these are interface routines to initialize and run Braid
+ *  These are all the user interface routines.
+ *  @{
+ */
+/** @}*/
+
+/** \defgroup generalinterface General Interface routines
+ *  \ingroup userinterface
+ *
+ *  These are general interface routines, e.g., routines to initialize and 
+ *  run a Braid solver, or to split a communicator into spatial and temporal
+ *  components.
  *
  *  @{
  */
@@ -229,7 +245,8 @@ typedef struct _braid_Core_struct *braid_Core;
 
 
 /**
- * Create a core object with the required initial data.\n
+ * Create a core object with the required initial data.
+ *
  * This core is used by Braid for internal data structures. 
  * The output is *core_ptr* which points to the newly created 
  * braid_Core structure. 
@@ -312,7 +329,8 @@ braid_SetMaxCoarse(braid_Core  core,        /**< braid_Core (_braid_Core) struct
                    );
 
 /**
- * Set absolute stopping tolerance.\n
+ * Set absolute stopping tolerance.
+ *
  * **Recommended option over relative tolerance**
  **/
 braid_Int

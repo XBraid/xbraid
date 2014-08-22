@@ -27,13 +27,16 @@ extern "C" {
 /*--------------------------------------------------------------------------
  * Routines for user to access Braid status structures
  *--------------------------------------------------------------------------*/
+
 /** \defgroup braidstatus Braid status routines
+ *  \ingroup userinterface
  *  
  *  Braid status structures are what tell the user the status of the simulation
  *  when their routines (phi, coarsen/refine, access) are called. 
  *
  *  @{
  */
+
 
 /*--------------------------------------------------------------------------
  * Define Access Status Structure
@@ -49,7 +52,7 @@ typedef struct _braid_AccessStatus_struct *braid_AccessStatus;
 /** 
  * AccessStatus structure which defines the status of Braid at a given instant
  * on some level during a run.  The user accesses it through
- * braid_AccessStatusGet**() functions.
+ * _braid_AccessStatusGet**()_ functions.
  **/
 typedef struct _braid_AccessStatus_struct
 {
@@ -75,7 +78,7 @@ typedef struct _braid_CoarsenRefStatus_struct *braid_CoarsenRefStatus;
 /** 
  * The user coarsen and refine routines will receive a CoarsenRefStatus structure, which 
  * defines the status of Braid at a given instant of coarsening or refinement on some level 
- * during a run.  The user accesses it through * braid_CoarsenRefStatusGet**() functions.
+ * during a run.  The user accesses it through _braid_CoarsenRefStatusGet**()_ functions.
  **/
 typedef struct _braid_CoarsenRefStatus_struct
 {
@@ -102,7 +105,7 @@ typedef struct _braid_PhiStatus_struct *braid_PhiStatus;
 /** 
  * The user's phi routine routine will receive a PhiStatus structure, which 
  * defines the status of Braid at the given instant for phi evaluation on some level 
- * during a run.  The user accesses it through * braid_PhiStatusGet**() functions.
+ * during a run.  The user accesses it through _braid_PhiStatusGet**()_ functions.
  **/
 typedef struct _braid_PhiStatus_struct
 {
@@ -145,7 +148,7 @@ braid_Int
 _braid_AccessStatusDestroy(braid_AccessStatus  status);        /**< structure to be destroyed */
 
 /**
- * Return the residual for the current AccessStatus object.
+ * Return the current residual norm from the AccessStatus structure.
  **/
 braid_Int
 braid_AccessStatusGetResidual(braid_AccessStatus  status,     /**< structure containing current simulation info */
@@ -153,15 +156,15 @@ braid_AccessStatusGetResidual(braid_AccessStatus  status,     /**< structure con
                               );
 
 /**
- * Return the iteration for the current AccessStatus object.
+ * Return the current iteration from the AccessStatus structure.
  **/
 braid_Int
 braid_AccessStatusGetIter(braid_AccessStatus  status,         /**< structure containing current simulation info */
-                          braid_Int          *iter_ptr        /**< output, current iteration number*/
+                          braid_Int          *iter_ptr        /**< output, current Braid iteration number*/
                           );
 
 /**
- * Return the Braid level for the current AccessStatus object.
+ * Return the current Braid level from the AccessStatus structure.
  **/
 braid_Int
 braid_AccessStatusGetLevel(braid_AccessStatus  status,        /**< structure containing current simulation info */
@@ -169,7 +172,8 @@ braid_AccessStatusGetLevel(braid_AccessStatus  status,        /**< structure con
                            );
 
 /**
- * Return whether Braid is done for the current AccessStatus object\n
+ * Return whether Braid is done for the current simulation.
+ *
  * *done_ptr = 1* indicates that Braid has finished iterating, 
  * (either maxiter has been reached, or the tolerance has been met).
  **/
@@ -203,16 +207,16 @@ braid_Int
 _braid_CoarsenRefStatusDestroy(braid_CoarsenRefStatus  status);        /**< structure to be destroyed */
 
 /**
- * Return the current time for the current CoarsenRefStatus object.
+ * Return the current time value from the CoarsenRefStatus structure.
  **/
 braid_Int
 braid_CoarsenRefStatusGetTstart(braid_CoarsenRefStatus  status,         /**< structure containing current simulation info */
                                 braid_Real             *tstart_ptr      /**< output, current time */
                                 );
 
-/**
- * Return the time value to the right on the fine grid for 
- * the current CoarsenRefStatus object.
+/** 
+ * Return the time value to the right of the current **fine** time grid value from
+ * the CoarsenRefStatus structure.
  **/
 braid_Int
 braid_CoarsenRefStatusGetFTplus(braid_CoarsenRefStatus  status,         /**< structure containing current simulation info */
@@ -220,8 +224,8 @@ braid_CoarsenRefStatusGetFTplus(braid_CoarsenRefStatus  status,         /**< str
                                 );
 
 /**
- * Return the time value to the left on the fine grid for 
- * the current CoarsenRefStatus object.
+ * Return the time value to the left of the current **fine** time grid value from
+ * the CoarsenRefStatus structure.
  **/
 braid_Int
 braid_CoarsenRefStatusGetFTminus(braid_CoarsenRefStatus  status,        /**< structure containing current simulation info */
@@ -229,8 +233,8 @@ braid_CoarsenRefStatusGetFTminus(braid_CoarsenRefStatus  status,        /**< str
                                  );
 
 /**
- * Return the time value to the right on the coarse grid for 
- * the current CoarsenRefStatus object.
+ * Return the time value to the right of the current **coarse** time grid value from
+ * the CoarsenRefStatus structure.
  **/
 braid_Int
 braid_CoarsenRefStatusGetCTplus(braid_CoarsenRefStatus  status,         /**< structure containing current simulation info */
@@ -238,8 +242,8 @@ braid_CoarsenRefStatusGetCTplus(braid_CoarsenRefStatus  status,         /**< str
                                 );
 
 /**
- * Return the time value to the left on the coarse grid for 
- * the current CoarsenRefStatus object.
+ * Return the time value to the left of the current **coarse** time grid value from
+ * the CoarsenRefStatus structure.
  **/
 braid_Int
 braid_CoarsenRefStatusGetCTminus(braid_CoarsenRefStatus  status,        /**< structure containing current simulation info */
@@ -268,14 +272,15 @@ braid_Int
 _braid_PhiStatusDestroy(braid_PhiStatus  status);        /**< structure to be destroyed */
 
 /**
- * Return the current time for the current PhiStatus object.
+ * Return the current time value from the PhiStatus structure.
  **/
 braid_Int
 braid_PhiStatusGetTstart(braid_PhiStatus  status,         /**< structure containing current simulation info */
                          braid_Real      *tstart_ptr      /**< output, current time */
                          );
 /**
- * Return the next time value to evolve towards for the current PhiStatus object.
+ * Return the time value to the right of the current time value from
+ * the PhiStatus structure.
  **/
 braid_Int
 braid_PhiStatusGetTplus(braid_PhiStatus  status,         /**< structure containing current simulation info */

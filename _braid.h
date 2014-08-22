@@ -34,7 +34,8 @@ extern "C" {
  *--------------------------------------------------------------------------*/
 
 /**
- * Braid comm handle structure\n
+ * Braid comm handle structure
+ *
  * Used for initiating and completing nonblocking communication to pass
  * braid_Vectors between processors.
  **/
@@ -65,7 +66,8 @@ typedef struct
 } _braid_AccuracyHandle;
 
 /**
- * Braid Grid structure for a certain time level\n
+ * Braid Grid structure for a certain time level
+ *
  * Holds all the information for a processor related to the temporal
  * grid at this level.
  **/
@@ -277,7 +279,8 @@ _braid_CommWait(braid_Core          core,
                _braid_CommHandle **handle_ptr);
 
 /**
- * Working on all intervals\n
+ * Working on all intervals
+ *
  * At *level*, post a receive for the point to the left of ilower (regardless 
  * whether ilower is F or C).  Then, post a send of iupper if iupper is a C 
  * point.
@@ -287,7 +290,8 @@ _braid_UCommInit(braid_Core  core,
                  braid_Int   level);
 
 /**
- * Working only on F-pt intervals\n
+ * Working only on F-pt intervals
+ *
  * At *level*, **only** post a receive for the point to the left of ilower 
  * if ilower is an F point.  Then, post a send of iupper if iupper is a C point.
  */
@@ -296,7 +300,8 @@ _braid_UCommInitF(braid_Core  core,
                   braid_Int   level);
 
 /**
- * Finish up communication\n
+ * Finish up communication
+ *
  * On *level*, wait on both the recv and send handles at this level.
  */
 braid_Int
@@ -379,7 +384,8 @@ _braid_UAccessVector(braid_Core         core,
                      braid_Vector       u);
 
 /**
- * Apply Phi to the vector *u*\n
+ * Apply Phi to the vector *u*
+ *
  * This is the vector corresponding to the time step *index* on *level*.
  * *accuracy* is a user set variable to allow for tuning the accuracy of 
  * spatial solvesfor implicit stepping. And, *rfactor* allows the user to
@@ -395,7 +401,8 @@ _braid_Phi(braid_Core     core,
 
 
 /**
- * Integrate one time step at time step *index* to time step *index*+1\n
+ * Integrate one time step at time step *index* to time step *index*+1
+ *
  */
 braid_Int
 _braid_Step(braid_Core     core,
@@ -434,7 +441,8 @@ _braid_Refine(braid_Core     core,
               braid_Vector  *fvector);
 
 /**
- * Create a new grid object *grid_ptr* in core at *level*\n
+ * Create a new grid object *grid_ptr* in core at *level*
+ *
  * *ilower* and *iupper* correspond to the lower and upper time index values
  * for this processor on this grid.
  */
@@ -467,14 +475,14 @@ _braid_CFRelax(braid_Core  core,
                braid_Int   level);
 
 /**
- * F-Relax on *level* and then restrict to *level+1*\n
+ * F-Relax on *level* and then restrict to *level+1*
  * 
  * The output is set in the braid_Grid in core, so that the restricted 
  * vectors *va* and *wa* will be created, representing 
- * *level+1* versions of the unknown and rhs vectors.\n
+ * *level+1* versions of the unknown and rhs vectors.
  * 
  * If the user has set spatial coarsening, then this user-defined routine is 
- * also called.\n
+ * also called.
  *
  * If *level==0*, then *rnorm_ptr* will contain the residual norm.
  */
@@ -485,10 +493,10 @@ _braid_FRestrict(braid_Core   core,       /**< braid_Core (_braid_Core) struct *
                  braid_Real  *rnorm_ptr   /**< pointer to residual norm (if level 0) */
                  );
 
-/** F-Relax on *level* and interpolate to *level-1*\n 
+/** F-Relax on *level* and interpolate to *level-1*
  *
  * The output is set in the braid_Grid in core, so that the 
- * vector *u* on *level* is created by interpolating from *level+1*.\n
+ * vector *u* on *level* is created by interpolating from *level+1*.
  *
  * If the user has set spatial refinement, then this user-defined routine is 
  * also called.
