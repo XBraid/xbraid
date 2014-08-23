@@ -1633,8 +1633,7 @@ my_Phi(braid_App       app,
    HYPRE_StructVector  sb;
    HYPRE_StructVector  sx;
    
-   braid_PhiStatusGetTstart(status, &tstart);
-   braid_PhiStatusGetTplus(status, &tplus);
+   braid_PhiStatusGetTstartTplus(status, &tstart, &tplus);
    braid_PhiStatusGetAccuracy(status, &accuracy);
    
    /* We have one part and one variable. */
@@ -2732,10 +2731,8 @@ my_Access(braid_App           app,
 
    /* Retrieve Braid State Information from Status Object */
    MPI_Comm_rank(comm, &myid);
+   braid_AccessStatusGetTILD(astatus, &t, &iter, &level, &done);
    braid_AccessStatusGetResidual(astatus, &rnorm);
-   braid_AccessStatusGetIter(astatus, &iter);
-   braid_AccessStatusGetLevel(astatus, &level);
-   braid_AccessStatusGetDone(astatus, &done);
    if( (myid == 0) && (level != previous_level) )
    {
       previous_level = level;

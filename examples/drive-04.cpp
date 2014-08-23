@@ -998,6 +998,7 @@ class BraidAccessStatus
          astatus = _astatus;
       }
 
+      void GetTILD(braid_Real *t_ptr, braid_Int *iter_ptr, braid_Int *level_ptr, braid_Int *done_ptr) { braid_AccessStatusGetTILD(astatus, t_ptr, iter_ptr, level_ptr, done_ptr); }
       void GetT(braid_Real *t_ptr)            { braid_AccessStatusGetT(astatus, t_ptr); }
       void GetDone(braid_Int *done_ptr)       { braid_AccessStatusGetDone(astatus, done_ptr); }
       void GetLevel(braid_Int *level_ptr)     { braid_AccessStatusGetLevel(astatus, level_ptr); }
@@ -1021,6 +1022,7 @@ class BraidPhiStatus
          pstatus = _pstatus;
       }
 
+      void GetTstartTplus(braid_Real *tstart_ptr, braid_Real *tplus_ptr)     { braid_PhiStatusGetTstartTplus(pstatus, tstart_ptr, tplus_ptr); }
       void GetTstart(braid_Real *tstart_ptr)     { braid_PhiStatusGetTstart(pstatus, tstart_ptr); }
       void GetTplus(braid_Real *tplus_ptr)       { braid_PhiStatusGetTplus(pstatus, tplus_ptr); }
       void GetAccuracy(braid_Real *accuracy_ptr)  { braid_PhiStatusGetAccuracy(pstatus, accuracy_ptr); }
@@ -1043,6 +1045,7 @@ class BraidCoarsenRefStatus
          cstatus = _cstatus;
       }
 
+      void GetTminusTplus(braid_Real *tstart_ptr, braid_Real *f_tminus_ptr, braid_Real *f_tplus_ptr, braid_Real *c_tminus_ptr, braid_Real *c_tplus_ptr)     { braid_CoarsenRefStatusGetTminusTplus(cstatus, tstart_ptr, f_tminus_ptr, f_tplus_ptr, c_tminus_ptr, c_tplus_ptr); }
       void GetTstart(braid_Real *tstart_ptr)     { braid_CoarsenRefStatusGetTstart(cstatus, tstart_ptr); }
       void GetFTplus(braid_Real *f_tplus_ptr)    { braid_CoarsenRefStatusGetFTplus(cstatus, f_tplus_ptr); }
       void GetFTminus(braid_Real *f_tminus_ptr)  { braid_CoarsenRefStatusGetFTminus(cstatus, f_tminus_ptr); }
@@ -1112,8 +1115,7 @@ public:
       double tstart, tplus, accuracy, t, dt;
       
       // Get time step information
-      pstatus.GetTstart(&tstart);
-      pstatus.GetTplus(&tplus);
+      pstatus.GetTstartTplus(&tstart, &tplus);
       pstatus.GetAccuracy(&accuracy);
       t = tstart;
       dt = tplus-tstart;
@@ -1200,10 +1202,7 @@ public:
       // Extract information from astatus
       int done, level, iter;
       double rnorm, t;
-      astatus.GetT(&t);
-      astatus.GetDone(&done);
-      astatus.GetLevel(&level);
-      astatus.GetIter(&iter);
+      astatus.GetTILD(&t, &iter, &level, &done);
       astatus.GetResidual(&rnorm); 
 
       // if (t == app->tstart || t == app->tstop)

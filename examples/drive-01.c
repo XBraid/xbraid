@@ -71,8 +71,7 @@ my_Phi(braid_App       app,
 {
    double tstart;             /* current time */
    double tplus;              /* evolve to this time*/
-   braid_PhiStatusGetTstart(status, &tstart);
-   braid_PhiStatusGetTplus(status, &tplus);
+   braid_PhiStatusGetTstartTplus(status, &tstart, &tplus);
 
    /* On the finest grid, each value is half the previous value */
    (u->value) = pow(0.5, tplus-tstart)*(u->value);

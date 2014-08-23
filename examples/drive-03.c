@@ -2410,8 +2410,7 @@ my_Phi(braid_App       app,
    HYPRE_StructVector  sb;
    HYPRE_StructVector  sx;
    
-   braid_PhiStatusGetTstart(status, &tstart);
-   braid_PhiStatusGetTplus(status, &tplus);
+   braid_PhiStatusGetTstartTplus(status, &tstart, &tplus);
    braid_PhiStatusGetAccuracy(status, &accuracy);
    
    /* We have one part and one variable. */
@@ -2837,18 +2836,13 @@ my_Access(braid_App           app,
    int nly = (app->nly);
    int nlz = (app->nlz);
    
-   /* Retrieve current time from Status Object */
-   braid_AccessStatusGetT(astatus, &t);
-   
-   /* Retrieve Braid State Information from Status Object */
-   /*double rnorm;
+   double rnorm;
    int iter, level, done;
    
-   braid_GetStatusResidual(astatus, &rnorm);
-   braid_GetStatusIter(astatus, &iter);
-   braid_GetStatusLevel(astatus, &level);
-   braid_GetStatusDone(astatus, &done);
-   printf("iter= %d, level= %d, t= %1.2e, done= %d, ||r|| = %1.2e\n", iter, level, t, done, rnorm);*/
+   /* Retrieve Braid State Information from Status Object */
+   braid_AccessStatusGetTILD(astatus, &t, &iter, &level, &done);
+   braid_AccessStatusGetResidual(astatus, &rnorm);
+   /*printf("iter= %d, level= %d, t= %1.2e, done= %d, ||r|| = %1.2e\n", iter, level, t, done, rnorm);*/
 
    /* Write to files:
     *   - save computed solution and true discrete solution

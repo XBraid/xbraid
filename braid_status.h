@@ -191,6 +191,13 @@ braid_AccessStatusGetDone(braid_AccessStatus  status,         /**< structure con
                           braid_Int          *done_ptr        /**< output,  =1 if XBraid has finished, else =0 */
                           );
 
+braid_Int
+braid_AccessStatusGetTILD(braid_AccessStatus  status,       /**< structure containing current simulation info */
+                          braid_Real          *t_ptr,       /**< current time */
+                          braid_Int           *iter_ptr,    /**< current iteration in XBraid*/
+                          braid_Int           *level_ptr,   /**< current level in XBraid */
+                          braid_Int           *done_ptr     /**< boolean describing whether XBraid has finished */
+                          );
 
 /*--------------------------------------------------------------------------
  * CoarsenRefStatus Prototypes
@@ -259,6 +266,14 @@ braid_CoarsenRefStatusGetCTminus(braid_CoarsenRefStatus  status,        /**< str
                                  braid_Real             *c_tminus_ptr   /**< output, time value to the left on coarse grid */
                                  );
 
+braid_Int
+braid_CoarsenRefStatusGetTminusTplus(braid_CoarsenRefStatus  status,           /**< structure containing current simulation info */
+                                     braid_Real              *tstart_ptr,      /**< time value for current vector */             
+                                     braid_Real              *f_tminus_ptr,    /**< time value for to the left on fine grid */ 
+                                     braid_Real              *f_tplus_ptr,     /**< time value for to the right on fine grid */
+                                     braid_Real              *c_tminus_ptr,    /**< time value for to the left on coarse grid */
+                                     braid_Real              *c_tplus_ptr      /**< time value for to the right on coarse grid */
+                                     );
 
 /*--------------------------------------------------------------------------
  * PhiStatus Prototypes
@@ -315,6 +330,13 @@ braid_PhiStatusSetRFactor(braid_PhiStatus  status,         /**< structure contai
                           braid_Real       rfactor         /**< user-determined desired rfactor */
                           );
 
+braid_Int
+braid_PhiStatusGetTstartTplus(braid_PhiStatus  status,         /**< structure containing current simulation info */
+                              braid_Real       *tstart_ptr,    /**< output, current time */
+                              braid_Real       *tplus_ptr      /**< output, next time value to evolve towards */
+                              );
+
+
 
 /** @}*/
 
@@ -323,5 +345,6 @@ braid_PhiStatusSetRFactor(braid_PhiStatus  status,         /**< structure contai
 #endif
 
 #endif
+
 
 
