@@ -948,7 +948,7 @@ _braid_FRestrict(braid_Core   core,
 
    braid_Vector         u, r;
    braid_Int            interval, flo, fhi, fi, ci, rfactor;
-   braid_Real           rnorm, grnorm, rdot, accuracy;
+   braid_Real           rnorm, grnorm, rnorm_temp, accuracy;
 
    c_level  = level+1;
    c_ilower = _braid_GridElt(grids[c_level], ilower);
@@ -1027,14 +1027,14 @@ _braid_FRestrict(braid_Core   core,
          /* Compute rnorm (only on level 0) */
          if (level == 0)
          {
-            _braid_CoreFcn(core, residdot)(app, r, r, &rdot);
-            rnorm += rdot;
+            _braid_CoreFcn(core, spatialnorm)(app, r, &rnorm_temp);
+            rnorm += (rnorm_temp*rnorm_temp);
             
-            /* If debug printing, print out rdot for this interval. rdot
+            /* If debug printing, print out rnorm_temp for this interval. rnorm_temp
              * should show the serial propagation of the exact solution */
             if (print_level >= 2)
             {
-               _braid_printf("  Braid:  time step: %d, rdot: %1.2e\n", fhi, rdot);
+               _braid_printf("  Braid:  time step: %d, rnorm: %1.2e\n", fhi, rnorm_temp);
             }
 
          }

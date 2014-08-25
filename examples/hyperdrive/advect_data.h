@@ -101,10 +101,10 @@ sum_grid_fcn(advection_setup *kd_,
              double      beta,
              grid_fcn *y_);
 int
-dot_grid_fcn(advection_setup *kd_,
-             grid_fcn *u_,
-             grid_fcn *v_,
-             double      *dot_ptr);
+norm_grid_fcn(advection_setup *kd_,
+              grid_fcn *u_,
+              grid_fcn *v_,
+              double      *norm_ptr);
 int
 save_grid_fcn(advection_setup *kd_,
               grid_fcn *u_,

@@ -321,38 +321,38 @@ sum_grid_fcn(advection_setup *kd_,
 }
 
 /* --------------------------------------------------------------------
- * Compute dot product of 2 grid functions
+ * Compute norm of grid functions
  * -------------------------------------------------------------------- */
 int
-dot_grid_fcn(advection_setup *kd_,
+norm_grid_fcn(advection_setup *kd_,
              grid_fcn *u_,
              grid_fcn *v_,
-             double *dot_ptr)
+             double *norm_ptr)
 {
-   double dot=0;
+   double norm=0;
    int i;
 
 /* make sure the grid functions have the same number of grid points */
    if (u_->n != v_->n)
    {
-      printf("ERROR: incompatible sizes in dot_grid_fcn: u_->n=%i but v_->n=%i\n", u_->n, v_->n);
+      printf("ERROR: incompatible sizes in norm_grid_fcn: u_->n=%i but v_->n=%i\n", u_->n, v_->n);
       return 1;
    }
 /* I am NOT including the ghost point values... */
    for (i=1; i<=u_->n; i++) 
-      dot += u_->sol[i] * v_->sol[i];
+      norm += u_->sol[i] * v_->sol[i];
 
 /* I am not including the boundary ODE variables either */
 #define uvsol(i) compute_index_1d(u_->vsol_, i)
 #define vvsol(i) compute_index_1d(v_->vsol_, i)   
 /* it is not clear if the boundary variable should have the same weights as the interior solution??? */
    /* for (i=1; i<=3; i++) */
-   /*    dot += uvsol(i)*vvsol(i); */
+   /*    norm += uvsol(i)*vvsol(i); */
 #undef uvsol
 #undef xvsol
 
 /* make the result useful outside this routine */
-   *dot_ptr = dot;
+   *norm_ptr = sqrt(norm);
 
    return 0;
 }

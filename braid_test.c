@@ -192,18 +192,18 @@ braid_TestSum( braid_App        app,
 }
 
 braid_Int
-braid_TestResidDot( braid_App        app, 
-                    MPI_Comm            comm_x,
-                    FILE               *fp, 
-                    braid_Real          t,
-                    braid_PtFcnInit     init, 
-                    braid_PtFcnFree     free, 
-                    braid_PtFcnClone    clone,
-                    braid_PtFcnSum      sum,  
-                    braid_PtFcnResidDot residdot)
+braid_TestSpatialNorm( braid_App              app, 
+                       MPI_Comm               comm_x,
+                       FILE                  *fp, 
+                       braid_Real             t,
+                       braid_PtFcnInit        init, 
+                       braid_PtFcnFree        free, 
+                       braid_PtFcnClone       clone,
+                       braid_PtFcnSum         sum,  
+                       braid_PtFcnSpatialNorm spatialnorm) 
 {   
    braid_Vector  u, v, w;
-   braid_Real    result1, result2, result3;
+   braid_Real    result1, result2;
    braid_Int     myid_x, correct;
    double     wiggle = 1e-12;
    
@@ -214,181 +214,139 @@ braid_TestResidDot( braid_App        app,
    braid_Int zero_flag = 0;
 
    /* Print intro */
-   _braid_ParFprintfFlush(fp, myid_x, "\nStarting braid_TestResidDot\n\n");
+   _braid_ParFprintfFlush(fp, myid_x, "\nStarting braid_TestSpatialNorm\n\n");
    
    /* Test 1 */
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   Starting Test 1\n");
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   u = init(t=%1.2e)\n", t);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Starting Test 1\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   u = init(t=%1.2e)\n", t);
    init(app, t, &u);
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   residdot(u,u) \n");
-   residdot(app, u, u, &result1);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   spatialnorm(u) \n");
+   spatialnorm(app, u, &result1);
    if( fabs(result1) == 0.0)
    {
       zero_flag = 1;
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   Warning:  residdot(u,u) = 0.0\n"); 
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Warning:  spatialnorm(u) = 0.0\n"); 
    }
    else if( isnan(result1) )
    {
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   Warning:  residdot(u,u) = nan\n"); 
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Warning:  spatialnorm(u) = nan\n"); 
       correct = 0;
    }
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   v = clone(u)\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   v = clone(u)\n");
    clone(app, u, &v);
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   v = u - v \n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   v = u - v \n");
    sum(app, 1.0, u, -1.0, v); 
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   residdot(v,v) \n");
-   residdot(app, v, v, &result1);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   spatialnorm(v) \n");
+   spatialnorm(app, v, &result1);
    if( (fabs(result1) > wiggle) || isnan(result1) )
    {
       correct = 0;
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   Test 1 Failed\n");
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Test 1 Failed\n");
    }
    else
    {
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   Test 1 Passed\n");
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Test 1 Passed\n");
    }
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   actual output:    residdot(v,v) = %1.2e  \n", result1);
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   expected output:  residdot(v,v) = 0.0 \n\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   actual output:    spatialnorm(v) = %1.2e  \n", result1);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   expected output:  spatialnorm(v) = 0.0 \n\n");
    
 
    /* Test 2 */
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   Starting Test 2\n");
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   w = clone(u)\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Starting Test 2\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   w = clone(u)\n");
    clone(app, u, &w);
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   w = u + w \n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   w = u + w \n");
    sum(app, 1.0, u, 1.0, w); 
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   residdot(u,u)\n");
-   residdot(app, u, u, &result1);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   spatialnorm(u)\n");
+   spatialnorm(app, u, &result1);
    
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   residdot(w,w)\n");
-   residdot(app, w, w, &result2);
-   if( (fabs(result2/result1 - 4.0) > wiggle) || isnan(result2/result1) )
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   spatialnorm(w)\n");
+   spatialnorm(app, w, &result2);
+   if( (fabs(result2/result1 - 2.0) > wiggle) || isnan(result2/result1) )
    {
       correct = 0;
       if(zero_flag)
       {
-         _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   Test 2 Failed, Likely due to u = 0\n");
+         _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Test 2 Failed, Likely due to u = 0\n");
       }
       else
       {
-         _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   Test 2 Failed\n");
+         _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Test 2 Failed\n");
       }
    }
    else
    {
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   Test 2 Passed\n");
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Test 2 Passed\n");
    }
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   actual output:    residdot(w,w) / residdot(u,u) = %1.2e / %1.2e = %1.2e \n",
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = %1.2e / %1.2e = %1.2e \n",
          result2, result1, result2/result1);
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   expected output:  residdot(w,w) / residdot(u,u) = 4.0 \n\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   expected output:  spatialnorm(w) / spatialnorm(u) = 2.0 \n\n");
 
    /* Test 3 */
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   Starting Test 3\n");
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   free(w)\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Starting Test 3\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   free(w)\n");
    free(app, w);
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   w = clone(u)\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   w = clone(u)\n");
    clone(app, u, &w);
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   w = 0.0*u + 0.5*w \n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   w = 0.0*u + 0.5*w \n");
    sum(app, 0.0, u, 0.5, w); 
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   residdot(u,u)\n");
-   residdot(app, u, u, &result1);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   spatialnorm(u)\n");
+   spatialnorm(app, u, &result1);
    
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   residdot(w,w)\n");
-   residdot(app, w, w, &result2);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   spatialnorm(w)\n");
+   spatialnorm(app, w, &result2);
    /* Check Result */
-   if( (fabs(result2/result1 - 0.25) > wiggle) || isnan(result2/result1) )
+   if( (fabs(result2/result1 - 0.5) > wiggle) || isnan(result2/result1) )
 
    {
       correct = 0;
       if(zero_flag)
       {
-         _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   Test 3 Failed, Likely due to u = 0\n");
+         _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Test 3 Failed, Likely due to u = 0\n");
       }
       else
       {
-         _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   Test 3 Failed\n");
+         _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Test 3 Failed\n");
       }
    }
    else
    {
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   Test 3 Passed\n");
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Test 3 Passed\n");
    }
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   actual output:    residdot(w,w) / residdot(u,u) = %1.2e / %1.2e = %1.2e \n",
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = %1.2e / %1.2e = %1.2e \n",
          result2, result1, result2/result1);
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   expected output:  residdot(w,w) / residdot(u,u) = 0.25 \n\n");
-
-   /* Test 4 */
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   Starting Test 4\n");
-
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   free(w)\n");
-   free(app, w);
-   
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   w = clone(u)\n");
-   clone(app, u, &w);
-   
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   w = u + 0.5*w \n");
-   sum(app, 1.0, u, 0.5, w); 
-
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   residdot(u,u)\n");
-   residdot(app, u, u, &result1);
-   
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   residdot(w,u)\n");
-   residdot(app, w, u, &result2);
-
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   actual output:    residdot(w,u) + residdot(u,u) = %1.2e + %1.2e = %1.2e\n", 
-      result2, result1, result2+result1);
-   
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   v = u + w \n");
-   sum(app, 1.0, u, 1.0, w);   
-   
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   residdot(v,u)\n");
-   residdot(app, w, u, &result3);
-
-   /* Check Result */
-   if( (fabs(result2 + result1 - result3)/fabs(result3) > wiggle) || 
-       isnan(result2) || isnan(result1) || isnan(result3) )
-   {
-      correct = 0;
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   Test 4 Failed\n");
-   }
-   else
-   {
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   Test 4 Passed\n");
-   }
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   actual output:    residdot(v,u) = %1.2e  \n", result3);
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   expected output:  residdot(v,u) = residdot(w,u) + residdot(u,u) \n\n");
- 
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   expected output:  spatialnorm(w) / spatialnorm(u) = 0.5 \n\n");
 
    /* Free variables */
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   free(u)\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   free(u)\n");
    free(app, u);
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   free(v)\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   free(v)\n");
    free(app, v);
    
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidDot:   free(w)\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   free(w)\n");
    free(app, w);
 
    if(correct == 1) 
-      _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestResidDot: all tests passed successfully\n");
+      _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestSpatialNorm: all tests passed successfully\n");
    else
    {
       if(zero_flag)
       {
-         _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestResidDot: some tests failed, possibly due to u = 0\n");
+         _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestSpatialNorm: some tests failed, possibly due to u = 0\n");
       }
       else
       {
-         _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestResidDot: some tests failed\n");
+         _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestSpatialNorm: some tests failed\n");
       }
    }
 
@@ -403,7 +361,7 @@ braid_TestBuf( braid_App              app,
                braid_PtFcnInit        init,
                braid_PtFcnFree        free,
                braid_PtFcnSum         sum,  
-               braid_PtFcnResidDot    residdot,
+               braid_PtFcnSpatialNorm spatialnorm, 
                braid_PtFcnBufSize     bufsize,
                braid_PtFcnBufPack     bufpack,
                braid_PtFcnBufUnpack   bufunpack)
@@ -427,15 +385,15 @@ braid_TestBuf( braid_App              app,
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   u = init(t=%1.2e)\n", t);
    init(app, t, &u);
    
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   residdot(u,u) \n");
-   residdot(app, u, u, &result1);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   spatialnorm(u) \n");
+   spatialnorm(app, u, &result1);
    if( fabs(result1) == 0.0)
    {
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   Warning:  residdot(u,u) = 0.0\n"); 
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   Warning:  spatialnorm(u) = 0.0\n"); 
    }
    else if( isnan(result1) )
    {
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   Warning:  residdot(u,u) = nan\n"); 
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   Warning:  spatialnorm(u) = nan\n"); 
       correct = 0;
    }
 
@@ -454,8 +412,8 @@ braid_TestBuf( braid_App              app,
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   v = u - v \n");
    sum(app, 1.0, u, -1.0, v); 
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   residdot(v,v) \n");
-   residdot(app, v, v, &result1);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   spatialnorm(v) \n");
+   spatialnorm(app, v, &result1);
    if( (fabs(result1) > wiggle) || isnan(result1) )
 
    {
@@ -466,8 +424,8 @@ braid_TestBuf( braid_App              app,
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   Test 1 Passed\n");
    }
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   actual output:    residdot(v,v) = %1.2e  \n", result1);
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   expected output:  residdot(v,v) = 0.0 \n\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   actual output:    spatialnorm(v) = %1.2e  \n", result1);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   expected output:  spatialnorm(v) = 0.0 \n\n");
    
    /* Free variables */
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   free(u)\n");
@@ -485,20 +443,20 @@ braid_TestBuf( braid_App              app,
 }
 
 braid_Int
-braid_TestCoarsenRefine( braid_App        app,
-                      MPI_Comm            comm_x,
-                      FILE                *fp, 
-                      braid_Real          t,
-                      braid_Real          fdt,
-                      braid_Real          cdt,
-                      braid_PtFcnInit     init,
-                      braid_PtFcnAccess   access,
-                      braid_PtFcnFree     free,
-                      braid_PtFcnClone    clone,
-                      braid_PtFcnSum      sum,
-                      braid_PtFcnResidDot residdot,
-                      braid_PtFcnCoarsen  coarsen,
-                      braid_PtFcnRefine   refine)
+braid_TestCoarsenRefine( braid_App           app,
+                      MPI_Comm               comm_x,
+                      FILE                   *fp, 
+                      braid_Real             t,
+                      braid_Real             fdt,
+                      braid_Real             cdt,
+                      braid_PtFcnInit        init,
+                      braid_PtFcnAccess      access,
+                      braid_PtFcnFree        free,
+                      braid_PtFcnClone       clone,
+                      braid_PtFcnSum         sum,
+                      braid_PtFcnSpatialNorm spatialnorm, 
+                      braid_PtFcnCoarsen     coarsen,
+                      braid_PtFcnRefine      refine)
  {   
    braid_Vector            u, v, w, uc, vc, wc;
    braid_Real              result1;
@@ -520,15 +478,15 @@ braid_TestCoarsenRefine( braid_App        app,
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   u = init(t=%1.2e)\n", t);
    init(app, t, &u);
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   residdot(u,u) \n");
-   residdot(app, u, u, &result1);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   spatialnorm(u) \n");
+   spatialnorm(app, u, &result1);
    if( fabs(result1) == 0.0)
    {
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   Warning:  residdot(u,u) = 0.0\n"); 
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   Warning:  spatialnorm(u) = 0.0\n"); 
    }
    else if( isnan(result1) )
    {
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   Warning:  residdot(u,u) = nan\n"); 
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   Warning:  spatialnorm(u) = nan\n"); 
       correct = 0;
    }
 
@@ -565,8 +523,8 @@ braid_TestCoarsenRefine( braid_App        app,
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   wc = uc - wc \n");
    sum(app, 1.0, uc, -1.0, wc); 
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   residdot(wc,wc)\n");
-   residdot(app, wc, wc, &result1);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   spatialnorm(wc)\n");
+   spatialnorm(app, wc, &result1);
    
    /* We expect exact equality between uc and vc */
    if( (fabs(result1) != 0.0) || isnan(result1) )
@@ -578,8 +536,8 @@ braid_TestCoarsenRefine( braid_App        app,
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   Test 2 Passed\n");
    }
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   actual output:    residdot(wc,wc) = %1.2e \n", result1);
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   expected output:  residdot(wc,wc) = 0.0 \n\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   actual output:    spatialnorm(wc) = %1.2e \n", result1);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   expected output:  spatialnorm(wc) = 0.0 \n\n");
 
    /* Test 3 */
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   Starting Test 3\n");
@@ -602,8 +560,8 @@ braid_TestCoarsenRefine( braid_App        app,
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   v = u - v \n");
    sum(app, 1.0, u, -1.0, v); 
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   residdot(v,v)\n");
-   residdot(app, v, v, &result1);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   spatialnorm(v)\n");
+   spatialnorm(app, v, &result1);
    
    /* We expect exact equality between u and v */
    if( (fabs(result1) != 0.0) || isnan(result1) )
@@ -615,8 +573,8 @@ braid_TestCoarsenRefine( braid_App        app,
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   Test 3 Passed\n");
    }
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   actual output:    residdot(v,v) = %1.2e \n", result1);
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   expected output:  residdot(v,v) = 0.0 \n\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   actual output:    spatialnorm(v) = %1.2e \n", result1);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   expected output:  spatialnorm(v) = 0.0 \n\n");
 
    /* Test 4 */
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   Starting Test 4\n");
@@ -624,14 +582,14 @@ braid_TestCoarsenRefine( braid_App        app,
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   w = w - u \n");
    sum(app, 1.0, u, -1.0, w); 
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   residdot(w,w)\n");
-   residdot(app, w, w, &result1);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   spatialnorm(w)\n");
+   spatialnorm(app, w, &result1);
    
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   actual output:    residdot(w,w) = %1.2e \n", result1);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   actual output:    spatialnorm(w) = %1.2e \n", result1);
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   %s%s%s", 
                    "expected output:  For simple interpolation formulas\n",
                    "                             (e.g., bilinear) and a known function\n",
-                   "                             (e.g., constant), residdot(w,w) should = 0\n\n");
+                   "                             (e.g., constant), spatialnorm(w) should = 0\n\n");
 
    /* Free variables */
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   free(u)\n");
@@ -663,22 +621,22 @@ braid_TestCoarsenRefine( braid_App        app,
 }
 
 braid_Int
-braid_TestAll( braid_App         app,
-            MPI_Comm             comm_x,
-            FILE                 *fp, 
-            braid_Real           t,
-            braid_Real           fdt,
-            braid_Real           cdt,
-            braid_PtFcnInit      init,
-            braid_PtFcnFree      free,
-            braid_PtFcnClone     clone,
-            braid_PtFcnSum       sum,
-            braid_PtFcnResidDot  residdot,
-            braid_PtFcnBufSize   bufsize,
-            braid_PtFcnBufPack   bufpack,
-            braid_PtFcnBufUnpack bufunpack,
-            braid_PtFcnCoarsen   coarsen,
-            braid_PtFcnRefine    refine)
+braid_TestAll( braid_App            app,
+            MPI_Comm                comm_x,
+            FILE                    *fp, 
+            braid_Real              t,
+            braid_Real              fdt,
+            braid_Real              cdt,
+            braid_PtFcnInit         init,
+            braid_PtFcnFree         free,
+            braid_PtFcnClone        clone,
+            braid_PtFcnSum          sum,
+            braid_PtFcnSpatialNorm  spatialnorm, 
+            braid_PtFcnBufSize      bufsize,
+            braid_PtFcnBufPack      bufpack,
+            braid_PtFcnBufUnpack    bufunpack,
+            braid_PtFcnCoarsen      coarsen,
+            braid_PtFcnRefine       refine)
 {
    braid_Int    myid_x, flag = 0, correct = 1;
    
@@ -701,28 +659,28 @@ braid_TestAll( braid_App         app,
    braid_TestSum( app, comm_x, fp, t, init, NULL, free, clone, sum);
    braid_TestSum( app, comm_x, fp, fdt, init, NULL, free, clone, sum);
 
-   /* Test residdot() */
-   flag = braid_TestResidDot( app, comm_x, fp, t, init, free, clone, sum, residdot);
+   /* Test spatialnorm() */
+   flag = braid_TestSpatialNorm( app, comm_x, fp, t, init, free, clone, sum, spatialnorm);
    if(flag == 0)
    {
-      _braid_ParFprintfFlush(fp, myid_x, "-> braid_TestAll:   TestResidDot 1 Failed\n");
+      _braid_ParFprintfFlush(fp, myid_x, "-> braid_TestAll:   TestSpatialNorm 1 Failed\n");
       correct = 0;
    }
-   flag = braid_TestResidDot( app, comm_x, fp, fdt, init, free, clone, sum, residdot);
+   flag = braid_TestSpatialNorm( app, comm_x, fp, fdt, init, free, clone, sum, spatialnorm);
    if(flag == 0)
    {
-      _braid_ParFprintfFlush(fp, myid_x, "-> braid_TestAll:   TestResidDot 2 Failed\n");
+      _braid_ParFprintfFlush(fp, myid_x, "-> braid_TestAll:   TestSpatialNorm 2 Failed\n");
       correct = 0;
    }
 
    /* Test bufsize(), bufpack(), bufunpack() */
-   flag = braid_TestBuf( app, comm_x, fp, t, init, free, sum, residdot, bufsize, bufpack, bufunpack);
+   flag = braid_TestBuf( app, comm_x, fp, t, init, free, sum, spatialnorm, bufsize, bufpack, bufunpack);
    if(flag == 0)
    {
       _braid_ParFprintfFlush(fp, myid_x, "-> braid_TestAll:   TestBuf 1 Failed\n");
       correct = 0;
    }
-   flag = braid_TestBuf( app, comm_x, fp, fdt, init, free, sum, residdot, bufsize, bufpack, bufunpack);
+   flag = braid_TestBuf( app, comm_x, fp, fdt, init, free, sum, spatialnorm, bufsize, bufpack, bufunpack);
    if(flag == 0)
    {
       _braid_ParFprintfFlush(fp, myid_x, "-> braid_TestAll:   TestBuf 2 Failed\n");
@@ -733,7 +691,7 @@ braid_TestAll( braid_App         app,
    if( (coarsen != NULL) && (refine != NULL) )
    {
       flag = braid_TestCoarsenRefine(app, comm_x, fp, t, fdt, cdt, init,
-                          NULL, free, clone, sum, residdot, coarsen, refine);
+                          NULL, free, clone, sum, spatialnorm, coarsen, refine);
       if(flag == 0)
       {
          _braid_ParFprintfFlush(fp, myid_x, "-> braid_TestAll:   TestCoarsenRefine 1 Failed\n");

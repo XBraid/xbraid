@@ -110,19 +110,18 @@ typedef braid_Int
                   );
 
 /**
- *  Carry out a dot product between two residual vectors
- *  *dot_ptr* = <*u*, *v*>
- *  This function is used for halting and usually *u* = *v*.  
- *  The inner-product choice is completely up to the user,
- *  although the standard Euclidean inner-product is a common 
- *  choice.
+ *  Carry out a spatial norm of braid_Vector 
+ *  *norm_ptr* = || *u* || 
+ *  This function is used for halting.  A common choice is 
+ *  the standard Eucliden norm, but many other choices are 
+ *  possible, such as an L2-norm based on a finite element 
+ *  space.
  **/
 typedef braid_Int
-(*braid_PtFcnResidDot)(braid_App      app,                /**< user-defined _braid_App structure */
-                       braid_Vector   u,                  /**< residual vector to dot */
-                       braid_Vector   v,                  /**< residual vector to dot */
-                       braid_Real    *dot_ptr             /**< output, scalar dot product value */
-                       );
+(*braid_PtFcnSpatialNorm)(braid_App      app,                /**< user-defined _braid_App structure */
+                          braid_Vector   u,                  /**< vector to norm */
+                          braid_Real    *norm_ptr            /**< output, norm of braid_Vector (this is a spatial norm) */ 
+                          );
 
 /**
  * Gives user access to XBraid and to the current vector *u* at time *t*.  Most commonly,
@@ -262,7 +261,7 @@ braid_Init(MPI_Comm               comm_world,  /**< Global communicator for spac
            braid_PtFcnClone       clone,       /**< Clone a braid_Vector*/
            braid_PtFcnFree        free,        /**< Free a braid_Vector*/
            braid_PtFcnSum         sum,         /**< Compute vector sum of two braid_Vectors*/
-           braid_PtFcnResidDot    residdot,    /**< Compute dot product between two residual braid_Vectors*/
+           braid_PtFcnSpatialNorm spatialnorm, /**< Compute norm of a braid_Vector, this is a norm only over space */
            braid_PtFcnAccess      access,      /**< Allows access to XBraid and current braid_Vector */
            braid_PtFcnBufSize     bufsize,     /**< Computes size for MPI buffer for one braid_Vector */
            braid_PtFcnBufPack     bufpack,     /**< Packs MPI buffer to contain one braid_Vector*/

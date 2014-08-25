@@ -270,7 +270,7 @@ int main(int argc, char ** argv)
    
 /* nt = nsteps : number of time steps */
    braid_Init(comm, comm_t, kd_->tstart, kd_->tstop, kd_->nsteps, kd_,
-             explicit_rk4_stepper, init_grid_fcn, copy_grid_fcn, free_grid_fcn, sum_grid_fcn, dot_grid_fcn, 
+             explicit_rk4_stepper, init_grid_fcn, copy_grid_fcn, free_grid_fcn, sum_grid_fcn, norm_grid_fcn, 
              save_grid_fcn, gridfcn_BufSize, gridfcn_BufPack, gridfcn_BufUnpack,
              &core);
 

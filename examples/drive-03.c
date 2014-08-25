@@ -2752,52 +2752,18 @@ my_Sum(braid_App    app,
 
 
 /* --------------------------------------------------------------------
- * Compute dot product of residuals.
+ * Compute spatial norm 
  * -------------------------------------------------------------------- */
 int
-my_ResidDot(braid_App     app,
-            braid_Vector  u,
-            braid_Vector  v,
-            double       *dot_ptr)
+my_SpatialNorm(braid_App     app,
+               braid_Vector  u,
+               double       *norm_ptr)
 {
    double dot;
 
-   hypre_SStructInnerProd( u->x, v->x, &dot );
+   hypre_SStructInnerProd( u->x, u->x, &dot );
 
-   *dot_ptr = dot;
-
-   /*double dot, gdot;
-   int i;
-   double *values_u, *values_v;
-   int part;
-   int var;
-   
-   values_u = (double *) malloc( (app->nlx)*(app->nly)*
-                                 (app->nlz)*sizeof(double) );
-   values_v = (double *) malloc( (app->nlx)*(app->nly)*
-                                 (app->nlz)*sizeof(double) );
-
-   dot = 0;
-   for( part = 0; part < app->nparts; part++ )
-      for( var = 0; var < app->nvars; var++ ){
-         HYPRE_SStructVectorGather( u->x );
-         HYPRE_SStructVectorGetBoxValues( u->x, part, app->ilower_x,
-                                          app->iupper_x, var, values_u );
-
-         HYPRE_SStructVectorGather( v->x );
-         HYPRE_SStructVectorGetBoxValues( v->x, part, app->ilower_x,
-                                          app->iupper_x, var, values_v );
-
-         for( i = 0; i < (app->nlx)*(app->nly)*(app->nlz); i++ )
-            dot += values_u[i]*values_v[i];
-      }
-   
-   MPI_Allreduce( &dot, &gdot, 1, MPI_DOUBLE, MPI_SUM, app->comm_x );
-   
-   *dot_ptr = gdot;
-
-   free( values_u );
-   free( values_v );*/
+   *norm_ptr = sqrt(dot);
 
    return 0;
 }
@@ -3384,7 +3350,7 @@ int main (int argc, char *argv[])
    mystarttime = MPI_Wtime();
 
    braid_Init(comm, comm_t, tstart, tstop, nt, app, my_Phi, my_Init, my_Clone,
-         my_Free, my_Sum, my_ResidDot, my_Access, my_BufSize, my_BufPack,
+         my_Free, my_Sum, my_SpatialNorm, my_Access, my_BufSize, my_BufPack,
          my_BufUnpack, &core);
 
    braid_SetLoosexTol( core, 0, tol_x[0] );

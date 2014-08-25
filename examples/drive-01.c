@@ -144,15 +144,14 @@ my_Sum(braid_App     app,
 }
 
 int
-my_ResidDot(braid_App     app,
-            braid_Vector  u,
-            braid_Vector  v,
-            double       *dot_ptr)
+my_SpatialNorm(braid_App     app,
+               braid_Vector  u,
+               double       *norm_ptr)
 {
    double dot;
 
-   dot = (u->value)*(v->value);
-   *dot_ptr = dot;
+   dot = (u->value)*(u->value);
+   *norm_ptr = sqrt(dot);
 
    return 0;
 }
@@ -324,7 +323,7 @@ int main (int argc, char *argv[])
    (app->ntime)  = ntime;
 
    braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
-             my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_ResidDot, 
+             my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
              my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
 
    braid_SetPrintLevel( core, 1);

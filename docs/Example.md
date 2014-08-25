@@ -150,23 +150,25 @@ first argument to every function.
             return 0;
          }
 
-6. **ResidDot**: This function tells XBraid how to take the dot 
-   product bewteen two residual vectors.  This is used for halting
-   purposes.  Usually *u* = *v*.  The choice of the inner product
-   is completely up to the user, although the standard Euclidean
-   inner-product is a common choice.
+6. **SpatialNorm**: This function tells XBraid how to take the norm 
+   of a braid_Vector and is used for halting. This norm is only over 
+   space.  A common norm choice is the standard Eucliden norm, but 
+   many other choices are possible, such as an L2-norm based on a 
+   finite element space.  The norm choice should be based on what 
+   makes sense for you problem.  How to accumulate spatial norm values
+   for halting decsions, i.e., taking the norm over time, is controlled  
+   by [braid_SetTemporalNorm](@ref braid_SetTemporalNorm).
 
          int
-         my_ResidDot(braid_App     app,
-                     braid_Vector  u,
-                     braid_Vector  v,
-                     double    *dot_ptr)
+         my_SpatialNorm(braid_App     app,
+                        braid_Vector  u,
+                        double       *norm_ptr)
          {
             double dot;
-
-            dot = (u->value)*(v->value);
-            *dot_ptr = dot;
-
+      
+            dot = (u->value)*(u->value);
+            *norm_ptr = sqrt(dot);
+      
             return 0;
          }
 
@@ -296,7 +298,7 @@ The core structure is used by XBraid for internal data structures.
 
     braid_Core  core;
     braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
-            my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_ResidDot, 
+            my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
             my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
 
 Then, XBraid options are set.
@@ -347,19 +349,19 @@ can return a boolean variable to indicate correctness.
     /* Test sum() */
     braid_TestSum( app, comm_x, stdout, dt, my_Init, my_Access, my_Free, my_Clone, my_Sum);
 
-    /* Test residdot() */
-    correct = braid_TestResidDot( app, comm_x, stdout, dt, my_Init, my_Free, my_Clone, 
-                              my_Sum, my_ResidDot);
+    /* Test spatialnorm() */
+    correct = braid_TestSpatialNorm( app, comm_x, stdout, dt, my_Init, my_Free, my_Clone, 
+                              my_Sum, my_SpatialNorm);
 
     /* Test bufsize(), bufpack(), bufunpack() */
-    correct = braid_TestBuf( app, comm_x, stdout, dt, my_Init, my_Free, my_Sum, my_ResidDot, 
+    correct = braid_TestBuf( app, comm_x, stdout, dt, my_Init, my_Free, my_Sum, my_SpatialNorm, 
                         my_BufSize, my_BufPack, my_BufUnpack);
      
     /* Test coarsen and refine */
     correct = braid_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
-                           my_Access, my_Free, my_Clone, my_Sum, my_ResidDot, 
+                           my_Access, my_Free, my_Clone, my_Sum, my_SpatialNorm, 
                            my_CoarsenInjection, my_Refine);
     correct = braid_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
-                          my_Access, my_Free, my_Clone, my_Sum, my_ResidDot, 
+                          my_Access, my_Free, my_Clone, my_Sum, my_SpatialNorm, 
                           my_CoarsenBilinear, my_Refine);
 

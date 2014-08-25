@@ -1174,14 +1174,14 @@ public:
       return 0;
    }
 
-   static int ResidDot(braid_App     _app,
-                       braid_Vector  _u,
-                       braid_Vector  _v,
-                       double       *dot_ptr)
+   static int SpatialNorm(braid_App     _app,
+                          braid_Vector  _u,
+                          double       *norm_ptr)
    {
+      double dot; 
       HypreParVector *u = (HypreParVector*) _u;
-      HypreParVector *v = (HypreParVector*) _v;
-      *dot_ptr = InnerProduct(u,v);
+      dot = InnerProduct(u,u);
+      *norm_ptr = sqrt(dot);
       return 0;
    }
   
@@ -1354,17 +1354,17 @@ public:
                  braid_PtFcnSum         sum)
    { braid_TestSum((braid_App) app, comm_x, fp, t, init, access, free, clone, sum); }
    
-   // Test Function for ResidDot 
-   int TestResidDot( BraidApp               *app,
-                      MPI_Comm               comm_x,
-                      FILE                  *fp,
-                      double                 t,
-                      braid_PtFcnInit        init,
-                      braid_PtFcnFree        free,
-                      braid_PtFcnClone       clone,
-                      braid_PtFcnSum         sum,
-                      braid_PtFcnResidDot    residdot)
-   { return braid_TestResidDot((braid_App) app, comm_x, fp, t, init, free, clone, sum, residdot); }
+   // Test Function for SpatialNorm 
+   int TestSpatialNorm( BraidApp              *app,
+                        MPI_Comm               comm_x,
+                        FILE                  *fp,
+                        double                 t,
+                        braid_PtFcnInit        init,
+                        braid_PtFcnFree        free,
+                        braid_PtFcnClone       clone,
+                        braid_PtFcnSum         sum,
+                        braid_PtFcnSpatialNorm spatialnorm)
+   { return braid_TestSpatialNorm((braid_App) app, comm_x, fp, t, init, free, clone, sum, spatialnorm); }
 
    // Test Functions BufSize, BufPack, BufUnpack
    int TestBuf( BraidApp               *app,
@@ -1374,48 +1374,48 @@ public:
                  braid_PtFcnInit        init,
                  braid_PtFcnFree        free,
                  braid_PtFcnSum         sum,  
-                 braid_PtFcnResidDot    residdot,
+                 braid_PtFcnSpatialNorm spatialnorm,
                  braid_PtFcnBufSize     bufsize,
                  braid_PtFcnBufPack     bufpack,
                  braid_PtFcnBufUnpack   bufunpack)
-   { return braid_TestBuf((braid_App) app, comm_x, fp, t, init, free, sum, residdot, bufsize, bufpack, bufunpack); }
+   { return braid_TestBuf((braid_App) app, comm_x, fp, t, init, free, sum, spatialnorm, bufsize, bufpack, bufunpack); }
 
    // Test Functions Coarsen and Refine
-   int TestCoarsenRefine(BraidApp              *app,
-                          MPI_Comm              comm_x,
-                          FILE                 *fp,
-                          double                t,
-                          double                fdt,
-                          double                cdt,
-                          braid_PtFcnInit       init,
-                          braid_PtFcnAccess     access,
-                          braid_PtFcnFree       free,
-                          braid_PtFcnClone      clone,
-                          braid_PtFcnSum        sum,
-                          braid_PtFcnResidDot   residdot,
-                          braid_PtFcnCoarsen    coarsen,
-                          braid_PtFcnRefine     refine)
+   int TestCoarsenRefine(BraidApp                 *app,
+                          MPI_Comm                 comm_x,
+                          FILE                    *fp,
+                          double                   t,
+                          double                   fdt,
+                          double                   cdt,
+                          braid_PtFcnInit          init,
+                          braid_PtFcnAccess        access,
+                          braid_PtFcnFree          free,
+                          braid_PtFcnClone         clone,
+                          braid_PtFcnSum           sum,
+                          braid_PtFcnSpatialNorm   spatialnorm,
+                          braid_PtFcnCoarsen       coarsen,
+                          braid_PtFcnRefine        refine)
    { return braid_TestCoarsenRefine( (braid_App) app, comm_x, fp, t, fdt, cdt, init,
-                            access, free, clone, sum, residdot, coarsen, refine); }
+                            access, free, clone, sum, spatialnorm, coarsen, refine); }
 
-   int TestAll(BraidApp              *app,
-                MPI_Comm              comm_x,
-                FILE                 *fp,
-                double                t,
-                double                fdt,
-                double                cdt,
-                braid_PtFcnInit       init,
-                braid_PtFcnFree       free,
-                braid_PtFcnClone      clone,
-                braid_PtFcnSum        sum,
-                braid_PtFcnResidDot   residdot,
-                braid_PtFcnBufSize    bufsize,  
-                braid_PtFcnBufPack    bufpack,  
-                braid_PtFcnBufUnpack  bufunpack,
-                braid_PtFcnCoarsen    coarsen,
-                braid_PtFcnRefine     refine)
+   int TestAll(BraidApp                 *app,
+                MPI_Comm                 comm_x,
+                FILE                    *fp,
+                double                   t,
+                double                   fdt,
+                double                   cdt,
+                braid_PtFcnInit          init,
+                braid_PtFcnFree          free,
+                braid_PtFcnClone         clone,
+                braid_PtFcnSum           sum,
+                braid_PtFcnSpatialNorm   spatialnorm,
+                braid_PtFcnBufSize       bufsize,  
+                braid_PtFcnBufPack       bufpack,  
+                braid_PtFcnBufUnpack     bufunpack,
+                braid_PtFcnCoarsen       coarsen,
+                braid_PtFcnRefine        refine)
    { return braid_TestAll( (braid_App) app, comm_x, fp, t, fdt, cdt,
-                   init, free, clone, sum, residdot, bufsize, bufpack, 
+                   init, free, clone, sum, spatialnorm, bufsize, bufpack, 
                    bufunpack, coarsen, refine); }
 
    ~BraidUtil() { }
@@ -1436,7 +1436,7 @@ public:
       braid_Init(comm_world,
                  app->comm_t, app->tstart, app->tstop, app->ntime, (braid_App)app,
                  BraidApp::Phi, BraidApp::Init, BraidApp::Clone, BraidApp::Free,
-                 BraidApp::Sum, BraidApp::ResidDot, BraidApp::Access,
+                 BraidApp::Sum, BraidApp::SpatialNorm, BraidApp::Access,
                  BraidApp::BufSize, BraidApp::BufPack, BraidApp::BufUnpack, &core);
    }
 
@@ -2084,7 +2084,7 @@ int main(int argc, char *argv[])
          test_t = (app.tstop - app.tstart)/ (double) app.ntime;
          correct = util.TestAll(&app, comm_x, stdout, 0.0, test_t, 2*test_t,
                       BraidApp::Init, BraidApp::Free, BraidApp::Clone, 
-                      BraidApp::Sum, BraidApp::ResidDot, BraidApp::BufSize,
+                      BraidApp::Sum, BraidApp::SpatialNorm, BraidApp::BufSize,
                       BraidApp::BufPack, BraidApp::BufUnpack, NULL, NULL);
          
          if(correct == 0)
@@ -2117,13 +2117,13 @@ int main(int argc, char *argv[])
          //              BraidApp::Access, BraidApp::Free, 
          //              BraidApp::Clone, BraidApp::Sum);
 
-         // Test residdot()
-         //correct = util.TestResidDot( &app, comm_x, stdout, test_t, BraidApp::Init, BraidApp::Free, 
-         //              BraidApp::Clone, BraidApp::Sum, BraidApp::ResidDot);
+         // Test spatialnorm()
+         //correct = util.TestSpatialNorm( &app, comm_x, stdout, test_t, BraidApp::Init, BraidApp::Free, 
+         //              BraidApp::Clone, BraidApp::Sum, BraidApp::SpatialNorm);
 
          // Test bufsize(), bufpack(), bufunpack()
          //correct = util.TestBuf( &app, comm_x, stdout, test_t, BraidApp::Init, BraidApp::Free, 
-         //              BraidApp::Sum, BraidApp::ResidDot, BraidApp::BufSize, 
+         //              BraidApp::Sum, BraidApp::SpatialNorm, BraidApp::BufSize, 
          //              BraidApp::BufPack, BraidApp::BufUnpack);
 
          if(correct == 0)

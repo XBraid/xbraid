@@ -167,128 +167,104 @@ Starting braid_TestSum
    braid_TestSum:   free(u)
    braid_TestSum:   free(v)
 Finished braid_TestSum
-Starting braid_TestResidDot
-   braid_TestResidDot:   Starting Test 1
-   braid_TestResidDot:   u = init(t=0.00e+00)
-   braid_TestResidDot:   residdot(u,u) 
-   braid_TestResidDot:   v = clone(u)
-   braid_TestResidDot:   v = u - v 
-   braid_TestResidDot:   residdot(v,v) 
-   braid_TestResidDot:   Test 1 Passed
-   braid_TestResidDot:   actual output:    residdot(v,v) = 0.00e+00  
-   braid_TestResidDot:   expected output:  residdot(v,v) = 0.0 
-   braid_TestResidDot:   Starting Test 2
-   braid_TestResidDot:   w = clone(u)
-   braid_TestResidDot:   w = u + w 
-   braid_TestResidDot:   residdot(u,u)
-   braid_TestResidDot:   residdot(w,w)
-   braid_TestResidDot:   Test 2 Passed
-   braid_TestResidDot:   actual output:    residdot(w,w) / residdot(u,u) = 2.56e+02 / 6.40e+01 = 4.00e+00 
-   braid_TestResidDot:   expected output:  residdot(w,w) / residdot(u,u) = 4.0 
-   braid_TestResidDot:   Starting Test 3
-   braid_TestResidDot:   free(w)
-   braid_TestResidDot:   w = clone(u)
-   braid_TestResidDot:   w = 0.0*u + 0.5*w 
-   braid_TestResidDot:   residdot(u,u)
-   braid_TestResidDot:   residdot(w,w)
-   braid_TestResidDot:   Test 3 Passed
-   braid_TestResidDot:   actual output:    residdot(w,w) / residdot(u,u) = 1.60e+01 / 6.40e+01 = 2.50e-01 
-   braid_TestResidDot:   expected output:  residdot(w,w) / residdot(u,u) = 0.25 
-   braid_TestResidDot:   Starting Test 4
-   braid_TestResidDot:   free(w)
-   braid_TestResidDot:   w = clone(u)
-   braid_TestResidDot:   w = u + 0.5*w 
-   braid_TestResidDot:   residdot(u,u)
-   braid_TestResidDot:   residdot(w,u)
-   braid_TestResidDot:   actual output:    residdot(w,u) + residdot(u,u) = 9.60e+01 + 6.40e+01 = 1.60e+02
-   braid_TestResidDot:   v = u + w 
-   braid_TestResidDot:   residdot(v,u)
-   braid_TestResidDot:   Test 4 Passed
-   braid_TestResidDot:   actual output:    residdot(v,u) = 1.60e+02  
-   braid_TestResidDot:   expected output:  residdot(v,u) = residdot(w,u) + residdot(u,u) 
-   braid_TestResidDot:   free(u)
-   braid_TestResidDot:   free(v)
-   braid_TestResidDot:   free(w)
-Finished braid_TestResidDot: all tests passed successfully
-Starting braid_TestResidDot
-   braid_TestResidDot:   Starting Test 1
-   braid_TestResidDot:   u = init(t=5.78e-03)
-   braid_TestResidDot:   residdot(u,u) 
-   braid_TestResidDot:   v = clone(u)
-   braid_TestResidDot:   v = u - v 
-   braid_TestResidDot:   residdot(v,v) 
-   braid_TestResidDot:   Test 1 Passed
-   braid_TestResidDot:   actual output:    residdot(v,v) = 0.00e+00  
-   braid_TestResidDot:   expected output:  residdot(v,v) = 0.0 
-   braid_TestResidDot:   Starting Test 2
-   braid_TestResidDot:   w = clone(u)
-   braid_TestResidDot:   w = u + w 
-   braid_TestResidDot:   residdot(u,u)
-   braid_TestResidDot:   residdot(w,w)
-   braid_TestResidDot:   Test 2 Passed
-   braid_TestResidDot:   actual output:    residdot(w,w) / residdot(u,u) = 3.90e+02 / 9.75e+01 = 4.00e+00 
-   braid_TestResidDot:   expected output:  residdot(w,w) / residdot(u,u) = 4.0 
-   braid_TestResidDot:   Starting Test 3
-   braid_TestResidDot:   free(w)
-   braid_TestResidDot:   w = clone(u)
-   braid_TestResidDot:   w = 0.0*u + 0.5*w 
-   braid_TestResidDot:   residdot(u,u)
-   braid_TestResidDot:   residdot(w,w)
-   braid_TestResidDot:   Test 3 Passed
-   braid_TestResidDot:   actual output:    residdot(w,w) / residdot(u,u) = 2.44e+01 / 9.75e+01 = 2.50e-01 
-   braid_TestResidDot:   expected output:  residdot(w,w) / residdot(u,u) = 0.25 
-   braid_TestResidDot:   Starting Test 4
-   braid_TestResidDot:   free(w)
-   braid_TestResidDot:   w = clone(u)
-   braid_TestResidDot:   w = u + 0.5*w 
-   braid_TestResidDot:   residdot(u,u)
-   braid_TestResidDot:   residdot(w,u)
-   braid_TestResidDot:   actual output:    residdot(w,u) + residdot(u,u) = 1.46e+02 + 9.75e+01 = 2.44e+02
-   braid_TestResidDot:   v = u + w 
-   braid_TestResidDot:   residdot(v,u)
-   braid_TestResidDot:   Test 4 Passed
-   braid_TestResidDot:   actual output:    residdot(v,u) = 2.44e+02  
-   braid_TestResidDot:   expected output:  residdot(v,u) = residdot(w,u) + residdot(u,u) 
-   braid_TestResidDot:   free(u)
-   braid_TestResidDot:   free(v)
-   braid_TestResidDot:   free(w)
-Finished braid_TestResidDot: all tests passed successfully
+Starting braid_TestSpatialNorm
+   braid_TestSpatialNorm:   Starting Test 1
+   braid_TestSpatialNorm:   u = init(t=0.00e+00)
+   braid_TestSpatialNorm:   spatialnorm(u) 
+   braid_TestSpatialNorm:   v = clone(u)
+   braid_TestSpatialNorm:   v = u - v 
+   braid_TestSpatialNorm:   spatialnorm(v) 
+   braid_TestSpatialNorm:   Test 1 Passed
+   braid_TestSpatialNorm:   actual output:    spatialnorm(v) = 0.00e+00  
+   braid_TestSpatialNorm:   expected output:  spatialnorm(v) = 0.0 
+   braid_TestSpatialNorm:   Starting Test 2
+   braid_TestSpatialNorm:   w = clone(u)
+   braid_TestSpatialNorm:   w = u + w 
+   braid_TestSpatialNorm:   spatialnorm(u)
+   braid_TestSpatialNorm:   spatialnorm(w)
+   braid_TestSpatialNorm:   Test 2 Passed
+   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 1.60e+01 / 8.00e+00 = 2.00e+00 
+   braid_TestSpatialNorm:   expected output:  spatialnorm(w) / spatialnorm(u) = 2.0 
+   braid_TestSpatialNorm:   Starting Test 3
+   braid_TestSpatialNorm:   free(w)
+   braid_TestSpatialNorm:   w = clone(u)
+   braid_TestSpatialNorm:   w = 0.0*u + 0.5*w 
+   braid_TestSpatialNorm:   spatialnorm(u)
+   braid_TestSpatialNorm:   spatialnorm(w)
+   braid_TestSpatialNorm:   Test 3 Passed
+   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 4.00e+00 / 8.00e+00 = 5.00e-01 
+   braid_TestSpatialNorm:   expected output:  spatialnorm(w) / spatialnorm(u) = 0.5 
+   braid_TestSpatialNorm:   free(u)
+   braid_TestSpatialNorm:   free(v)
+   braid_TestSpatialNorm:   free(w)
+Finished braid_TestSpatialNorm: all tests passed successfully
+Starting braid_TestSpatialNorm
+   braid_TestSpatialNorm:   Starting Test 1
+   braid_TestSpatialNorm:   u = init(t=5.78e-03)
+   braid_TestSpatialNorm:   spatialnorm(u) 
+   braid_TestSpatialNorm:   v = clone(u)
+   braid_TestSpatialNorm:   v = u - v 
+   braid_TestSpatialNorm:   spatialnorm(v) 
+   braid_TestSpatialNorm:   Test 1 Passed
+   braid_TestSpatialNorm:   actual output:    spatialnorm(v) = 0.00e+00  
+   braid_TestSpatialNorm:   expected output:  spatialnorm(v) = 0.0 
+   braid_TestSpatialNorm:   Starting Test 2
+   braid_TestSpatialNorm:   w = clone(u)
+   braid_TestSpatialNorm:   w = u + w 
+   braid_TestSpatialNorm:   spatialnorm(u)
+   braid_TestSpatialNorm:   spatialnorm(w)
+   braid_TestSpatialNorm:   Test 2 Passed
+   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 1.98e+01 / 9.88e+00 = 2.00e+00 
+   braid_TestSpatialNorm:   expected output:  spatialnorm(w) / spatialnorm(u) = 2.0 
+   braid_TestSpatialNorm:   Starting Test 3
+   braid_TestSpatialNorm:   free(w)
+   braid_TestSpatialNorm:   w = clone(u)
+   braid_TestSpatialNorm:   w = 0.0*u + 0.5*w 
+   braid_TestSpatialNorm:   spatialnorm(u)
+   braid_TestSpatialNorm:   spatialnorm(w)
+   braid_TestSpatialNorm:   Test 3 Passed
+   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 4.94e+00 / 9.88e+00 = 5.00e-01 
+   braid_TestSpatialNorm:   expected output:  spatialnorm(w) / spatialnorm(u) = 0.5 
+   braid_TestSpatialNorm:   free(u)
+   braid_TestSpatialNorm:   free(v)
+   braid_TestSpatialNorm:   free(w)
+Finished braid_TestSpatialNorm: all tests passed successfully
 Starting braid_TestBuf
    braid_TestBuf:   Starting Test 1
    braid_TestBuf:   u = init(t=0.00e+00)
-   braid_TestBuf:   residdot(u,u) 
+   braid_TestBuf:   spatialnorm(u) 
    braid_TestBuf:   size = bufsize()
    braid_TestBuf:   buffer = malloc(size)
    braid_TestBuf:   buffer = bufpack(u, buffer))
    braid_TestBuf:   v = bufunpack(buffer)
    braid_TestBuf:   v = u - v 
-   braid_TestBuf:   residdot(v,v) 
+   braid_TestBuf:   spatialnorm(v) 
    braid_TestBuf:   Test 1 Passed
-   braid_TestBuf:   actual output:    residdot(v,v) = 0.00e+00  
-   braid_TestBuf:   expected output:  residdot(v,v) = 0.0 
+   braid_TestBuf:   actual output:    spatialnorm(v) = 0.00e+00  
+   braid_TestBuf:   expected output:  spatialnorm(v) = 0.0 
    braid_TestBuf:   free(u)
    braid_TestBuf:   free(v)
 Finished braid_TestBuf: all tests passed successfully
 Starting braid_TestBuf
    braid_TestBuf:   Starting Test 1
    braid_TestBuf:   u = init(t=5.78e-03)
-   braid_TestBuf:   residdot(u,u) 
+   braid_TestBuf:   spatialnorm(u) 
    braid_TestBuf:   size = bufsize()
    braid_TestBuf:   buffer = malloc(size)
    braid_TestBuf:   buffer = bufpack(u, buffer))
    braid_TestBuf:   v = bufunpack(buffer)
    braid_TestBuf:   v = u - v 
-   braid_TestBuf:   residdot(v,v) 
+   braid_TestBuf:   spatialnorm(v) 
    braid_TestBuf:   Test 1 Passed
-   braid_TestBuf:   actual output:    residdot(v,v) = 0.00e+00  
-   braid_TestBuf:   expected output:  residdot(v,v) = 0.0 
+   braid_TestBuf:   actual output:    spatialnorm(v) = 0.00e+00  
+   braid_TestBuf:   expected output:  spatialnorm(v) = 0.0 
    braid_TestBuf:   free(u)
    braid_TestBuf:   free(v)
 Finished braid_TestBuf: all tests passed successfully
 Starting braid_TestCoarsenRefine
    braid_TestCoarsenRefine:   Starting Test 1
    braid_TestCoarsenRefine:   u = init(t=0.00e+00)
-   braid_TestCoarsenRefine:   residdot(u,u) 
+   braid_TestCoarsenRefine:   spatialnorm(u) 
    braid_TestCoarsenRefine:   uc = coarsen(u)
    braid_TestCoarsenRefine:   access(uc) 
   my_Access() called, iter= 0, level= 1
@@ -300,10 +276,10 @@ Starting braid_TestCoarsenRefine
    braid_TestCoarsenRefine:   vc = coarsen(v)
    braid_TestCoarsenRefine:   wc = clone(vc)
    braid_TestCoarsenRefine:   wc = uc - wc 
-   braid_TestCoarsenRefine:   residdot(wc,wc)
+   braid_TestCoarsenRefine:   spatialnorm(wc)
    braid_TestCoarsenRefine:   Test 2 Passed
-   braid_TestCoarsenRefine:   actual output:    residdot(wc,wc) = 0.00e+00 
-   braid_TestCoarsenRefine:   expected output:  residdot(wc,wc) = 0.0 
+   braid_TestCoarsenRefine:   actual output:    spatialnorm(wc) = 0.00e+00 
+   braid_TestCoarsenRefine:   expected output:  spatialnorm(wc) = 0.0 
    braid_TestCoarsenRefine:   Starting Test 3
    braid_TestCoarsenRefine:   w = clone(u)
    braid_TestCoarsenRefine:   free(u)
@@ -311,14 +287,14 @@ Starting braid_TestCoarsenRefine
    braid_TestCoarsenRefine:   v = refine(vc)
    braid_TestCoarsenRefine:   u = refine(uc)
    braid_TestCoarsenRefine:   v = u - v 
-   braid_TestCoarsenRefine:   residdot(v,v)
+   braid_TestCoarsenRefine:   spatialnorm(v)
    braid_TestCoarsenRefine:   Test 3 Passed
-   braid_TestCoarsenRefine:   actual output:    residdot(v,v) = 0.00e+00 
-   braid_TestCoarsenRefine:   expected output:  residdot(v,v) = 0.0 
+   braid_TestCoarsenRefine:   actual output:    spatialnorm(v) = 0.00e+00 
+   braid_TestCoarsenRefine:   expected output:  spatialnorm(v) = 0.0 
    braid_TestCoarsenRefine:   Starting Test 4
    braid_TestCoarsenRefine:   w = w - u 
-   braid_TestCoarsenRefine:   residdot(w,w)
-   braid_TestCoarsenRefine:   actual output:    residdot(w,w) = 3.50e-02 
+   braid_TestCoarsenRefine:   spatialnorm(w)
+   braid_TestCoarsenRefine:   actual output:    spatialnorm(w) = 1.87e-01 
    braid_TestCoarsenRefine:   expected output:  For simple interpolation formulas
    braid_TestCoarsenRefine:   free(u)
    braid_TestCoarsenRefine:   free(v)
@@ -330,7 +306,7 @@ Finished braid_TestCoarsenRefine: all tests passed successfully
 Starting braid_TestCoarsenRefine
    braid_TestCoarsenRefine:   Starting Test 1
    braid_TestCoarsenRefine:   u = init(t=0.00e+00)
-   braid_TestCoarsenRefine:   residdot(u,u) 
+   braid_TestCoarsenRefine:   spatialnorm(u) 
    braid_TestCoarsenRefine:   uc = coarsen(u)
    braid_TestCoarsenRefine:   access(uc) 
   my_Access() called, iter= 0, level= 1
@@ -342,10 +318,10 @@ Starting braid_TestCoarsenRefine
    braid_TestCoarsenRefine:   vc = coarsen(v)
    braid_TestCoarsenRefine:   wc = clone(vc)
    braid_TestCoarsenRefine:   wc = uc - wc 
-   braid_TestCoarsenRefine:   residdot(wc,wc)
+   braid_TestCoarsenRefine:   spatialnorm(wc)
    braid_TestCoarsenRefine:   Test 2 Passed
-   braid_TestCoarsenRefine:   actual output:    residdot(wc,wc) = 0.00e+00 
-   braid_TestCoarsenRefine:   expected output:  residdot(wc,wc) = 0.0 
+   braid_TestCoarsenRefine:   actual output:    spatialnorm(wc) = 0.00e+00 
+   braid_TestCoarsenRefine:   expected output:  spatialnorm(wc) = 0.0 
    braid_TestCoarsenRefine:   Starting Test 3
    braid_TestCoarsenRefine:   w = clone(u)
    braid_TestCoarsenRefine:   free(u)
@@ -353,14 +329,14 @@ Starting braid_TestCoarsenRefine
    braid_TestCoarsenRefine:   v = refine(vc)
    braid_TestCoarsenRefine:   u = refine(uc)
    braid_TestCoarsenRefine:   v = u - v 
-   braid_TestCoarsenRefine:   residdot(v,v)
+   braid_TestCoarsenRefine:   spatialnorm(v)
    braid_TestCoarsenRefine:   Test 3 Passed
-   braid_TestCoarsenRefine:   actual output:    residdot(v,v) = 0.00e+00 
-   braid_TestCoarsenRefine:   expected output:  residdot(v,v) = 0.0 
+   braid_TestCoarsenRefine:   actual output:    spatialnorm(v) = 0.00e+00 
+   braid_TestCoarsenRefine:   expected output:  spatialnorm(v) = 0.0 
    braid_TestCoarsenRefine:   Starting Test 4
    braid_TestCoarsenRefine:   w = w - u 
-   braid_TestCoarsenRefine:   residdot(w,w)
-   braid_TestCoarsenRefine:   actual output:    residdot(w,w) = 1.81e-01 
+   braid_TestCoarsenRefine:   spatialnorm(w)
+   braid_TestCoarsenRefine:   actual output:    spatialnorm(w) = 4.25e-01 
    braid_TestCoarsenRefine:   expected output:  For simple interpolation formulas
    braid_TestCoarsenRefine:   free(u)
    braid_TestCoarsenRefine:   free(v)

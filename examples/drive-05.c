@@ -2659,20 +2659,20 @@ my_Sum(braid_App    app,
 }
 
 
+
 /* --------------------------------------------------------------------
- * Compute dot product of residuals.
+ * Compute spatial norm 
  * -------------------------------------------------------------------- */
 int
-my_ResidDot(braid_App     app,
-            braid_Vector  u,
-            braid_Vector  v,
-            double       *dot_ptr)
+my_SpatialNorm(braid_App     app,
+               braid_Vector  u,
+               double       *norm_ptr)
 {
    double dot;
 
-   hypre_SStructInnerProd( u->x, v->x, &dot );
+   hypre_SStructInnerProd( u->x, u->x, &dot );
 
-   *dot_ptr = dot;
+   *norm_ptr = sqrt(dot);
 
    return 0;
 }
@@ -3459,20 +3459,20 @@ int main (int argc, char *argv[])
       braid_TestSum( app, comm_x, stdout, 0.0, my_Init, my_Access, my_Free, my_Clone, my_Sum);
       braid_TestSum( app, comm_x, stdout, dt, my_Init, my_Access, my_Free, my_Clone, my_Sum);
 
-      /* Test dot() */
-      correct = braid_TestResidDot( app, comm_x, stdout, 0.0, my_Init, my_Free, my_Clone, my_Sum, my_ResidDot);
-      correct = braid_TestResidDot( app, comm_x, stdout, dt, my_Init, my_Free, my_Clone, my_Sum, my_ResidDot);
+      /* Test spatialnorm() */
+      correct = braid_TestSpatialNorm( app, comm_x, stdout, 0.0, my_Init, my_Free, my_Clone, my_Sum, my_SpatialNorm);
+      correct = braid_TestSpatialNorm( app, comm_x, stdout, dt, my_Init, my_Free, my_Clone, my_Sum, my_SpatialNorm);
 
       /* Test bufsize(), bufpack(), bufunpack() */
-      correct = braid_TestBuf( app, comm_x, stdout, 0.0, my_Init, my_Free, my_Sum, my_ResidDot, my_BufSize, my_BufPack, my_BufUnpack);
-      correct = braid_TestBuf( app, comm_x, stdout, dt, my_Init, my_Free, my_Sum, my_ResidDot, my_BufSize, my_BufPack, my_BufUnpack);
+      correct = braid_TestBuf( app, comm_x, stdout, 0.0, my_Init, my_Free, my_Sum, my_SpatialNorm, my_BufSize, my_BufPack, my_BufUnpack);
+      correct = braid_TestBuf( app, comm_x, stdout, dt, my_Init, my_Free, my_Sum, my_SpatialNorm, my_BufSize, my_BufPack, my_BufUnpack);
        
       /* Test coarsen and refine */
       correct = braid_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
-                             my_Access, my_Free, my_Clone, my_Sum, my_ResidDot, my_CoarsenInjection, 
+                             my_Access, my_Free, my_Clone, my_Sum, my_SpatialNorm, my_CoarsenInjection, 
                              my_Refine);
       correct = braid_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
-                            my_Access, my_Free, my_Clone, my_Sum, my_ResidDot, my_CoarsenBilinear, 
+                            my_Access, my_Free, my_Clone, my_Sum, my_SpatialNorm, my_CoarsenBilinear, 
                             my_Refine);
       if(correct == 0)
       {
@@ -3491,7 +3491,7 @@ int main (int argc, char *argv[])
       mystarttime = MPI_Wtime();
 
       braid_Init(comm, comm_t, tstart, tstop, nt, app, my_Phi, my_Init,
-            my_Clone, my_Free, my_Sum, my_ResidDot, my_Access, my_BufSize,
+            my_Clone, my_Free, my_Sum, my_SpatialNorm, my_Access, my_BufSize,
             my_BufPack, my_BufUnpack, &core);
 
       braid_SetLoosexTol( core, 0, tol_x[0] );

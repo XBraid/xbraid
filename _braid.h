@@ -117,7 +117,7 @@ typedef struct _braid_Core_struct
    braid_PtFcnClone       clone;        /**< clone a vector */
    braid_PtFcnFree        free;         /**< free up a vector */
    braid_PtFcnSum         sum;          /**< vector sum */
-   braid_PtFcnResidDot    residdot;     /**< dot product between two residual vectors*/
+   braid_PtFcnSpatialNorm spatialnorm;  /**< Compute norm of a braid_Vector, this is a norm only over space */
    braid_PtFcnAccess      access;       /**< user access function to XBraid and current vector */
    braid_PtFcnBufSize     bufsize;      /**< return buffer size */
    braid_PtFcnBufPack     bufpack;      /**< pack a buffer */
