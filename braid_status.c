@@ -209,11 +209,11 @@ braid_CoarsenRefStatusGetCTminus(braid_CoarsenRefStatus  status,
 
 braid_Int
 braid_CoarsenRefStatusGetTminusTplus(braid_CoarsenRefStatus  status,
-                               braid_Real              *tstart_ptr,
-                               braid_Real              *f_tminus_ptr,
-                               braid_Real              *f_tplus_ptr, 
-                               braid_Real              *c_tminus_ptr,
-                               braid_Real              *c_tplus_ptr)
+                                     braid_Real              *tstart_ptr,
+                                     braid_Real              *f_tminus_ptr,
+                                     braid_Real              *f_tplus_ptr, 
+                                     braid_Real              *c_tminus_ptr,
+                                     braid_Real              *c_tplus_ptr)
 {
    *tstart_ptr = _braid_StatusElt(status, tstart);
    *f_tminus_ptr = _braid_StatusElt(status, f_tminus);

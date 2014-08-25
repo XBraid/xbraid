@@ -191,12 +191,23 @@ braid_AccessStatusGetDone(braid_AccessStatus  status,         /**< structure con
                           braid_Int          *done_ptr        /**< output,  =1 if XBraid has finished, else =0 */
                           );
 
+/**
+ * Return XBraid status for the current simulation. Four values are 
+ * returned.
+ *
+ * TILD : time, iteration, level, done
+ *
+ * These values are also available through individual Get routines. 
+ * These individual routines are the location of detailed documentation on 
+ * each parameter, e.g., see *braid_AccessStatusGetDone* for more information
+ * on the *done* value.
+ **/
 braid_Int
 braid_AccessStatusGetTILD(braid_AccessStatus  status,       /**< structure containing current simulation info */
-                          braid_Real          *t_ptr,       /**< current time */
-                          braid_Int           *iter_ptr,    /**< current iteration in XBraid*/
-                          braid_Int           *level_ptr,   /**< current level in XBraid */
-                          braid_Int           *done_ptr     /**< boolean describing whether XBraid has finished */
+                          braid_Real          *t_ptr,       /**< output,  current time */
+                          braid_Int           *iter_ptr,    /**< output,  current iteration in XBraid*/
+                          braid_Int           *level_ptr,   /**< output,  current level in XBraid */
+                          braid_Int           *done_ptr     /**< output,  boolean describing whether XBraid has finished */
                           );
 
 /*--------------------------------------------------------------------------
@@ -266,13 +277,22 @@ braid_CoarsenRefStatusGetCTminus(braid_CoarsenRefStatus  status,        /**< str
                                  braid_Real             *c_tminus_ptr   /**< output, time value to the left on coarse grid */
                                  );
 
+/**
+ * Return XBraid status for the current simulation. Five values are 
+ * returned, tstart, f_tminus, f_tplus, c_tminus,  c_tplus. 
+ *
+ * These values are also available through individual Get routines. 
+ * These individual routines are the location of detailed documentation on 
+ * each parameter, e.g., see *braid_CoarsenRefStatusGetCTminus* for more 
+ * information on the *c_tminus* value.
+ **/
 braid_Int
 braid_CoarsenRefStatusGetTminusTplus(braid_CoarsenRefStatus  status,           /**< structure containing current simulation info */
-                                     braid_Real              *tstart_ptr,      /**< time value for current vector */             
-                                     braid_Real              *f_tminus_ptr,    /**< time value for to the left on fine grid */ 
-                                     braid_Real              *f_tplus_ptr,     /**< time value for to the right on fine grid */
-                                     braid_Real              *c_tminus_ptr,    /**< time value for to the left on coarse grid */
-                                     braid_Real              *c_tplus_ptr      /**< time value for to the right on coarse grid */
+                                     braid_Real              *tstart_ptr,      /**< output, time value for current vector */             
+                                     braid_Real              *f_tminus_ptr,    /**< output, time value for to the left on fine grid */ 
+                                     braid_Real              *f_tplus_ptr,     /**< output, time value for to the right on fine grid */
+                                     braid_Real              *c_tminus_ptr,    /**< output, time value for to the left on coarse grid */
+                                     braid_Real              *c_tplus_ptr      /**< output, time value for to the right on coarse grid */
                                      );
 
 /*--------------------------------------------------------------------------
@@ -330,6 +350,15 @@ braid_PhiStatusSetRFactor(braid_PhiStatus  status,         /**< structure contai
                           braid_Real       rfactor         /**< user-determined desired rfactor */
                           );
 
+/**
+ * Return XBraid status for the current simulation. Two values are 
+ * returned, tstart and tplus. 
+ *
+ * These values are also available through individual Get routines. 
+ * These individual routines are the location of detailed documentation on 
+ * each parameter, e.g., see *braid_PhiStatusGetTstart* for more information
+ * on the *tstart* value.
+ **/
 braid_Int
 braid_PhiStatusGetTstartTplus(braid_PhiStatus  status,         /**< structure containing current simulation info */
                               braid_Real       *tstart_ptr,    /**< output, current time */
