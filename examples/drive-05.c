@@ -1884,6 +1884,9 @@ my_Init(braid_App     app,
    int        part = 0;
    int        var = 0;
 
+   /* Guarantee reproducibility by seeding rand every call */
+   srand(0);
+
    u = (my_Vector *) malloc( sizeof(my_Vector) );
 
    /* Create an empty vector object. */

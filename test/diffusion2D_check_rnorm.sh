@@ -26,9 +26,10 @@ case $1 in
    equation. The output is written to $scriptname.out, $scriptname.err and 
    $scriptname.dir. This test passes if $scriptname.err is empty.
 
-   The focus of these tests is on reproducing the first three columns of 
-   Table 1 from the original SISC publication of MGRIT.  This table verifies
-   a basic scaling study of the 2D heat equation.
+   The focus of these tests is guaranteeing that the same XBraid result is
+   achieved as the processor configuration is changed.  The choice of temporal
+   norm is also tested against stored norm values to guarantee the precise same
+   result is achieved.
 
    Example usage: ./test.sh $0 
 
@@ -69,27 +70,24 @@ make
 cd $test_dir
 
 
-# Run the following regression tests
-# These tests run three consecutive refinements for various solver configurations for a mini-scaling
-# study.  These tests mirror Table 1 from the SISC paper.
-TESTS=( "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 32  -nx 16 16 -nu 1 -nu0 1 -ml 2 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 32 32 -nu 1 -nu0 1 -ml 2 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 512 -nx 64 64 -nu 1 -nu0 1 -ml 2 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 32  -nx 16 16 -nu 1 -nu0 1 -ml 15 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 32 32 -nu 1 -nu0 1 -ml 15 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 512 -nx 64 64 -nu 1 -nu0 1 -ml 15 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 32  -nx 16 16 -nu 1 -nu0 1 -ml 15 -fmg" \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 32 32 -nu 1 -nu0 1 -ml 15 -fmg" \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 512 -nx 64 64 -nu 1 -nu0 1 -ml 15 -fmg"\
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 32  -nx 16 16 -nu 0 -nu0 0 -ml 2 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 32 32 -nu 0 -nu0 0 -ml 2 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 512 -nx 64 64 -nu 0 -nu0 0 -ml 2 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 32  -nx 16 16 -nu 0 -nu0 0 -ml 15 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 32 32 -nu 0 -nu0 0 -ml 15 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 512 -nx 64 64 -nu 0 -nu0 0 -ml 15 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 32  -nx 16 16 -nu 0 -nu0 0 -ml 15 -fmg" \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 32 32 -nu 0 -nu0 0 -ml 15 -fmg" \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 512 -nx 64 64 -nu 0 -nu0 0 -ml 15 -fmg" )
+# Run the following regression tests 
+# These tests run 5 different processor configurations in time and make sure that the exact same residual
+# norm is returned in all cases.  The three different temporal norm options are all tested.  
+TESTS=( "$RunString -np 1 $example_dir/drive-02 -pgrid 1 1 1 -nt 16 -nx 8 8 -nu 1 -nu0 1 -ml 3 -mi 1 " \
+        "$RunString -np 2 $example_dir/drive-02 -pgrid 1 1 2 -nt 16 -nx 8 8 -nu 1 -nu0 1 -ml 3 -mi 1 " \
+        "$RunString -np 3 $example_dir/drive-02 -pgrid 1 1 3 -nt 16 -nx 8 8 -nu 1 -nu0 1 -ml 3 -mi 1 " \
+        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 16 -nx 8 8 -nu 1 -nu0 1 -ml 3 -mi 1 " \
+        "$RunString -np 5 $example_dir/drive-02 -pgrid 1 1 5 -nt 16 -nx 8 8 -nu 1 -nu0 1 -ml 3 -mi 1 " \
+        "$RunString -np 1 $example_dir/drive-02 -pgrid 1 1 1 -nt 16 -nx 8 8 -nu 1 -nu0 1 -ml 3 -mi 1 -tnorm 1" \
+        "$RunString -np 2 $example_dir/drive-02 -pgrid 1 1 2 -nt 16 -nx 8 8 -nu 1 -nu0 1 -ml 3 -mi 1 -tnorm 1" \
+        "$RunString -np 3 $example_dir/drive-02 -pgrid 1 1 3 -nt 16 -nx 8 8 -nu 1 -nu0 1 -ml 3 -mi 1 -tnorm 1" \
+        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 16 -nx 8 8 -nu 1 -nu0 1 -ml 3 -mi 1 -tnorm 1" \
+        "$RunString -np 5 $example_dir/drive-02 -pgrid 1 1 5 -nt 16 -nx 8 8 -nu 1 -nu0 1 -ml 3 -mi 1 -tnorm 1" \
+        "$RunString -np 1 $example_dir/drive-02 -pgrid 1 1 1 -nt 16 -nx 8 8 -nu 1 -nu0 1 -ml 3 -mi 1 -tnorm 3" \
+        "$RunString -np 2 $example_dir/drive-02 -pgrid 1 1 2 -nt 16 -nx 8 8 -nu 1 -nu0 1 -ml 3 -mi 1 -tnorm 3" \
+        "$RunString -np 3 $example_dir/drive-02 -pgrid 1 1 3 -nt 16 -nx 8 8 -nu 1 -nu0 1 -ml 3 -mi 1 -tnorm 3" \
+        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 16 -nx 8 8 -nu 1 -nu0 1 -ml 3 -mi 1 -tnorm 3" \
+        "$RunString -np 5 $example_dir/drive-02 -pgrid 1 1 5 -nt 16 -nx 8 8 -nu 1 -nu0 1 -ml 3 -mi 1 -tnorm 3" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 
@@ -104,7 +102,7 @@ TESTS=( "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 32  -nx 16 16 -
 # The unfiltered output is the direct output of the script, whereas std.out.*
 # is filtered by a grep for the lines that are to be checked.  
 #
-lines_to_check="^  time steps.*|^  number of levels.*|^  iterations.*|^spatial problem size.*|.*  expl.*|^  my_Access.*|.*braid_Test.*"
+lines_to_check=".*TemporalNorm.*|.*residual norm.*"
 #
 # Then, each std.out.num is compared against stored correct output in 
 # $scriptname.saved.num, which is generated by splitting $scriptname.saved

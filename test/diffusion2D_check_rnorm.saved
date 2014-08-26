@@ -1,0 +1,72 @@
+# Begin Test 0 -- begin 2-norm tests over np=1 to np=5, residual norms should all agree
+  
+  residual norm        = 1.602632e+00
+                        --> 2-norm TemporalNorm 
+
+# Begin Test 1
+  
+  residual norm        = 1.602632e+00
+                        --> 2-norm TemporalNorm 
+# Begin Test 2
+  
+  residual norm        = 1.602632e+00
+                        --> 2-norm TemporalNorm 
+# Begin Test 3
+  
+  residual norm        = 1.602632e+00
+                        --> 2-norm TemporalNorm 
+# Begin Test 4
+
+  residual norm        = 1.602632e+00
+                        --> 2-norm TemporalNorm 
+                        
+# Begin Test 5 -- begin 1-norm tests over np=1 to np=5, residual norms should all agree
+  
+  residual norm        = 4.215579e+00
+                        --> 1-norm TemporalNorm 
+
+# Begin Test 6
+  
+  residual norm        = 4.215579e+00
+                        --> 1-norm TemporalNorm 
+
+# Begin Test 7
+  
+  residual norm        = 4.215579e+00
+                        --> 1-norm TemporalNorm 
+
+# Begin Test 8
+  
+  residual norm        = 4.215579e+00
+                        --> 1-norm TemporalNorm 
+
+# Begin Test 9
+
+  residual norm        = 4.215579e+00
+                        --> 1-norm TemporalNorm 
+
+# Begin Test 10 -- begin Inf-norm tests over np=1 to np=5, residual norms should all agree
+  
+  residual norm        = 6.288178e-01
+                        --> Inf-norm TemporalNorm 
+
+# Begin Test 11
+  
+  residual norm        = 6.288178e-01
+                        --> Inf-norm TemporalNorm 
+
+# Begin Test 12
+  
+  residual norm        = 6.288178e-01
+                        --> Inf-norm TemporalNorm 
+
+# Begin Test 13
+  
+  residual norm        = 6.288178e-01
+                        --> Inf-norm TemporalNorm 
+
+# Begin Test 14
+
+  residual norm        = 6.288178e-01
+                        --> Inf-norm TemporalNorm 
+
