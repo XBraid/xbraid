@@ -462,6 +462,86 @@ discussed here.
 - [braid_SetMaxCoarse](@ref braid_SetMaxCoarse): sets the maximum coarse grid size, in terms of C-points
 - [braid_SetMaxLevels](@ref braid_SetMaxLevels): sets the maximum number of levels in the XBraid hierarchy
 
+## Halting tolerance {#halting}
+
+Another important configuration aspect regards setting a residual halting tolerance.
+Setting a tolerance involves these three XBraid options:
+1. [braid_PtFcnSpatialNorm](@ref braid_PtFcnSpatialNorm)
+ 
+    This user-defined function carries out a spatial norm by taking the norm a
+    braid_Vector.  A common choice is the standard Eucliden norm (2-norm), but
+    many other choices are possible, such as an L2-norm based on a finite
+    element space.  
+
+2. [braid_SetTemporalNorm](@ref braid_SetTemporalNorm)
+   
+   This option determines how to obtain a global space-time residual norm.
+   That is, this decides how to combine the spatial norms returned by
+   [braid_PtFcnSpatialNorm](@ref braid_PtFcnSpatialNorm) at each time step to
+   obtain a global norm over space and time.  It is this global norm that
+   then controls halting. 
+
+   There are three options for setting the *tnorm* value passed to 
+   [braid_SetTemporalNorm](@ref braid_SetTemporalNorm). We let the summation
+   index *i* be over all C-point values on the fine time grid, *k* refer to the
+   current XBraid iteration, *r* be residual values, *space_time* norms be a
+   norm over the entire space-time domain and *spatial_norm* be the
+   user-defined spatial norm from [braid_PtFcnSpatialNorm](@ref braid_PtFcnSpatialNorm).
+   Thus, \f$ r_i \f$ is the residual at the *ith$ C-point, and \f$ r^{(k)} \f$ 
+   is the residual at the *kth* XBraid iteration.  The three options are then
+   defined as,
+  
+   - *tnorm=1*: One-norm summation of spatial norms 
+        \f[ \| r^{(k)} \|_{\mbox{space\textunderscore time}} = \Sigma_i \| r^{(k)}_i \|_{\mbox{spatial\textunderscore norm}} \f]
+       If [braid_PtFcnSpatialNorm](@ref braid_PtFcnSpatialNorm) is the one-norm
+       over space, then this is equivalent to the one-norm of the global
+       space-time residual vector.
+
+   - *tnorm=2*: Two-norm summation of spatial norms 
+         \f[ \| r^{(k)} \|_{\mbox{space\textunderscore time}} = \left( \Sigma_i \| r^{(k)}_i \|^2_{\mbox{spatial\textunderscore norm}} \right)^{1/2} \f]
+       If [braid_PtFcnSpatialNorm](@ref braid_PtFcnSpatialNorm) is the
+       Euclidean norm (two-norm) over space, then this is equivalent to the
+       Euclidean-norm of the global space-time residual vector.
+  
+   - *tnorm=3*: Infinity-norm combination of spatial norms
+         \f[ \| r^{(k)} \|_{\mbox{space\textunderscore time}} = \max_i \| r^{(k)}_i \|_{\mbox{spatial\textunderscore norm}} \f]
+       If [braid_PtFcnSpatialNorm](@ref braid_PtFcnSpatialNorm) is the
+       infinity-norm over space, then this is equivalent to the infinity-norm
+       of the global space-time residual vector.
+  
+   **The default choice is _tnorm=2_**
+  
+
+
+3. [braid_SetAbsTol](@ref braid_SetAbsTol), [braid_SetRelTol](@ref braid_SetRelTol)
+   
+   - If an absolute tolerance is used, then 
+     \f[ \| r^{(k)} \|_{\mbox{space\textunderscore time}} < \mbox{tol} \f] 
+     defines when to halt.
+
+   - If a relative tolerance is used, then 
+     \f[ \frac{ \| r^{(k)} \|_{\mbox{space\textunderscore time}} } {\| r^{(0)} \|_{\mbox{space\textunderscore time}} } < \mbox{tol} \f]
+     defines when to halt.  That is, the current *kth* residual is scaled by
+     the initial residual before comparison to the halting tolerance.  This is 
+     similar to typical relative residual halting tolerances used in spatial multigrid,
+     but can be a dangerous choice in this setting.
+
+Care should be practiced when choosing a halting tolerance.  For instance, if a relative 
+tolerance is used, then issues can arise when the initial guess is zero for large numbers
+of time steps.  Taking the case where the initial guess (defined by 
+[braid_PtFcnInit](@ref braid_PtFcnInit)) is 0 for all time values *t > 0*,
+the initial residual norm will essentially only be nonzero at the first time value,
+
+   \f[ \| r^{(0)} \|_{\mbox{space\textunderscore time}} \approx \| r^{(k)}_1 \|_{\mbox{spatial\textunderscore norm}} \f]
+
+This will skew the relative halting tolerance, especially if the number of time steps 
+increases, but the initial residual norm does not.  
+
+A better strategy is to choose an absolute tolerance that takes your space-time domain
+size into account, as in Section @ref twodheat, or to use an infinity-norm temporal
+norm option.
+
+
 ## Heat equation example {#twodheat}
 
 Here is some experimental data for the 2D heat equation, \f$ u_t = u_{xx} + u_{yy} \f$ 
@@ -492,6 +572,17 @@ The problem setup is as follows.
      FCF-relaxation on all coarser levels.
   + *F-cycle, F* denotes F-cycles and F-relaxation on each level.
 - The initial guess at time values for \f$ t > 0 \f$ is zero, which is typical.
+- The halting tolerance corresponds to a discrete L2-norm and was 
+  \f[\mbox{tol} = \frac{10^{-8}}{\sqrt{ (h_x)^2 h_t} }, \f]
+  where \f$ h_x \f$ and \f$ h_t \f$ are the spatial and temporal grid spacings, 
+  respectively.
+
+  This corresponds to passing *tol* to [braid_SetAbsTol](@ref braid_SetAbsTol),
+  passing *2* to [braid_SetTemporalNorm](@ref braid_SetTemporalNorm) and
+  defining [braid_PtFcnSpatialNorm](@ref braid_PtFcnSpatialNorm) to be the
+  standard Euclidean 2-norm.  All together, this appropriately scales the
+  space-time residual in way that is relative to the number of space-time grid
+  points (i.e., it approximates the L2-norm).
 
 Regarding the performance, we can say
 - The best speedup is 10x and this would grow if more processors were available.

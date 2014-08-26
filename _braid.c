@@ -934,6 +934,8 @@ _braid_FRestrict(braid_Core   core,
    braid_AccessStatus   astatus     = _braid_CoreElt(core, astatus);
    braid_Int            print_level = _braid_CoreElt(core, print_level);
    braid_Int            access_level= _braid_CoreElt(core, access_level);
+   braid_Int            tnorm       = _braid_CoreElt(core, tnorm);
+   braid_Real          *tnorm_a     = _braid_CoreElt(core, tnorm_a);
    braid_Int            cfactor     = _braid_GridElt(grids[level], cfactor);
    braid_Int            ncpoints    = _braid_GridElt(grids[level], ncpoints);
    braid_Real          *ta          = _braid_GridElt(grids[level], ta);
@@ -1028,7 +1030,18 @@ _braid_FRestrict(braid_Core   core,
          if (level == 0)
          {
             _braid_CoreFcn(core, spatialnorm)(app, r, &rnorm_temp);
-            rnorm += (rnorm_temp*rnorm_temp);
+            if(tnorm == 1) 
+            {  
+               rnorm += rnorm_temp;               /* one-norm combination */ 
+            }
+            else if(tnorm == 2)
+            {  
+               rnorm += (rnorm_temp*rnorm_temp);  /* two-norm combination */
+            }
+            else if(tnorm == 3)
+            {  
+               tnorm_a[interval] = rnorm_temp;    /* inf-norm combination */
+            }
             
             /* If debug printing, print out rnorm_temp for this interval. rnorm_temp
              * should show the serial propagation of the exact solution */
@@ -1092,8 +1105,20 @@ _braid_FRestrict(braid_Core   core,
    /* Compute rnorm (only on level 0) */
    if (level == 0)
    {
-      MPI_Allreduce(&rnorm, &grnorm, 1, MPI_DOUBLE, MPI_SUM, comm);
-      grnorm = sqrt(grnorm);
+      if(tnorm == 1)          /* one-norm reduction */
+      {  
+         MPI_Allreduce(&rnorm, &grnorm, 1, MPI_DOUBLE, MPI_SUM, comm);
+      }
+      else if(tnorm == 2)     /* two-norm reduction */
+      {  
+         MPI_Allreduce(&rnorm, &grnorm, 1, MPI_DOUBLE, MPI_SUM, comm);
+         grnorm = sqrt(grnorm);
+      }
+      else if(tnorm == 3)     /* inf-norm reduction */
+      {  
+         _braid_Max(tnorm_a, ncpoints, &rnorm); 
+         MPI_Allreduce(&rnorm, &grnorm, 1, MPI_DOUBLE, MPI_MAX, comm);
+      }
 
       *rnorm_ptr = grnorm;
    }
@@ -1538,6 +1563,7 @@ _braid_InitHierarchy(braid_Core    core,
          _braid_GridElt(grid, ua)       = ua+1;  /* shift */
 
          _braid_GridInit(core, level+1, clo, chi, &grids[level+1]);
+
       }
       else
       {
@@ -1563,6 +1589,12 @@ _braid_InitHierarchy(braid_Core    core,
 
          /* Stop coarsening */
          break;
+      }
+      
+      if( level == 0)
+      {   
+         /* Allocate space for storage of residual norm at each C-point */
+         _braid_CoreElt(core, tnorm_a)  = _braid_CTAlloc(braid_Real, ncpoints);
       }
    }
    nlevels = level+1;

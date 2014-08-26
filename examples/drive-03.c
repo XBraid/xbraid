@@ -2964,6 +2964,7 @@ int main (int argc, char *argv[])
    int           cfactor, cfactor0;
    int           max_iter;
    int           fmg;
+   int           tnorm;
                 
    MPI_Comm       comm, comm_x, comm_t;
    int            myid, num_procs;
@@ -3010,6 +3011,7 @@ int main (int argc, char *argv[])
    nrelax              = 1;
    nrelax0             = -1;
    tol                 = 1.0e-09;
+   tnorm               = 2;
    cfactor             = 2;
    cfactor0            = -1;
    max_iter            = 100;
@@ -3084,6 +3086,10 @@ int main (int argc, char *argv[])
       else if( strcmp(argv[arg_index], "-tol") == 0 ){
           arg_index++;
           tol = atof(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-tnorm") == 0 ){
+          arg_index++;
+          tnorm = atoi(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-cf") == 0 ){
           arg_index++;
@@ -3163,6 +3169,10 @@ int main (int argc, char *argv[])
       printf("  -nu  <nrelax>                    : set num F-C relaxations (default: 1)\n");
       printf("  -nu0 <nrelax>                    : set num F-C relaxations on level 0\n");
       printf("  -tol <tol>                       : set stopping tolerance (default: 1e-09)\n");
+      printf("  -tnorm <tnorm>                   : set temporal norm \n");
+      printf("                                     1 - One-norm \n");
+      printf("                                     2 - Two-norm (default) \n");
+      printf("                                     3 - Infinity-norm \n");
       printf("  -cf  <cfactor>                   : set coarsening factor (default: 2)\n");   
       printf("  -cf0  <cfactor>                  : set coarsening factor on level 0\n");
       printf("  -mi  <max_iter>                  : set max iterations (default: 100)\n");
@@ -3370,6 +3380,7 @@ int main (int argc, char *argv[])
 
    /*braid_SetRelTol(core, tol);*/
    braid_SetAbsTol(core, tol/sqrt(dx*dy*dz*dt));
+   braid_SetTemporalNorm(core, tnorm);
 
    braid_SetCFactor(core, -1, cfactor);
    if( cfactor0 > -1 ){

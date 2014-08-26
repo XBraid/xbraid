@@ -109,13 +109,14 @@ typedef braid_Int
                   braid_Vector  y                /**< output and vector for AXPY */
                   );
 
-/**
- *  Carry out a spatial norm of braid_Vector 
- *  *norm_ptr* = || *u* || 
- *  This function is used for halting.  A common choice is 
- *  the standard Eucliden norm, but many other choices are 
- *  possible, such as an L2-norm based on a finite element 
- *  space.
+/** 
+ * Carry out a spatial norm by taking the norm of a braid_Vector 
+ * *norm_ptr* = || *u* || 
+ * A common choice is the standard Eucliden norm, but many other choices are
+ * possible, such as an L2-norm based on a finite element space.  See
+ * [braid_SetTemporalNorm](@ref braid_SetTemporalNorm) for information on how the
+ * spatial norm is combined over time for a global space-time residual norm.
+ * This global norm then controls halting. 
  **/
 typedef braid_Int
 (*braid_PtFcnSpatialNorm)(braid_App      app,                /**< user-defined _braid_App structure */
@@ -383,6 +384,31 @@ braid_SetMaxIter(braid_Core  core,          /**< braid_Core (_braid_Core) struct
 braid_Int
 braid_SetFMG(braid_Core  core               /**< braid_Core (_braid_Core) struct*/
              );
+
+/** 
+ * Sets XBraid temporal norm.
+ *
+ * This option determines how to obtain a global space-time residual norm.
+ * That is, this decides how to combine the spatial norms returned by
+ * [braid_PtFcnSpatialNorm](@ref braid_PtFcnSpatialNorm) at each time step to
+ * obtain a global norm over space and time.  It is this global norm  that 
+ * then controls halting.
+ *
+ * There are three options for setting *tnorm*.  See section @ref halting 
+ * for a more detailed discussion (in Introduction.md).
+ *
+ * - *tnorm=1*: One-norm summation of spatial norms
+ * - *tnorm=2*: Two-norm summation of spatial norms 
+ * - *tnorm=3*: Infinity-norm combination of spatial norms
+ *
+ * **The default choice is _tnorm=2_**
+ *
+ **/
+braid_Int
+braid_SetTemporalNorm(braid_Core  core,   /**< braid_Core (_braid_Core) struct*/
+                      braid_Int   tnorm   /**< choice of temporal norm*/
+                      );
+
 
 /**
  * Set number of V-cycles to use at each FMG level (standard is 1)

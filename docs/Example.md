@@ -156,8 +156,8 @@ first argument to every function.
    many other choices are possible, such as an L2-norm based on a 
    finite element space.  The norm choice should be based on what 
    makes sense for you problem.  How to accumulate spatial norm values
-   for halting decsions, i.e., taking the norm over time, is controlled  
-   by [braid_SetTemporalNorm](@ref braid_SetTemporalNorm).
+   to obtain a global space-time residual norm for halting decsions is 
+   controlled by [braid_SetTemporalNorm](@ref braid_SetTemporalNorm).
 
          int
          my_SpatialNorm(braid_App     app,

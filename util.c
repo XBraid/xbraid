@@ -134,3 +134,25 @@ _braid_ParFprintfFlush(FILE * file,
    return _braid_error_flag;
 }
 
+braid_Int
+_braid_Max(braid_Real  *array, 
+           braid_Int    size,
+           braid_Real  *max_val)
+{  
+   braid_Real val;
+   braid_Int i;
+   if(size > 0)
+   {
+      val = array[0];
+      for(i = 1; i < size; i++)
+      {
+         if(array[i] > val)
+         {  val = array[i]; }
+      }
+      *max_val = val;
+   }
+   
+   return _braid_error_flag;
+}
+
+

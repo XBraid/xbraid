@@ -1451,6 +1451,8 @@ public:
 
    void SetRelTol(double tol) { braid_SetRelTol(core, tol); }
    
+   void SetTemporalNorm(int tnorm) { braid_SetTemporalNorm(core, tnorm); }
+   
    void SetCFactor(int level, int cfactor)
    { braid_SetCFactor(core, level, cfactor); }
 
@@ -1679,6 +1681,7 @@ int main(int argc, char *argv[])
    int    nrelax      = 1;
    int    nrelax0     = -1;
    double tol         = 1e-9;
+   int    tnorm       = 2;
    int    cfactor     = 2;
    int    cfactor0    = -1;
    int    max_iter    = 100;
@@ -1794,6 +1797,10 @@ int main(int argc, char *argv[])
       {
          tol = atof(argv[++arg_index]);
       }
+      else if( strcmp(argv[arg_index], "-tnorm") == 0 ){
+          arg_index++;
+          tnorm = atoi(argv[arg_index++]);
+      }
       else if (strcmp(argv[arg_index], "-cf") == 0)
       {
          cfactor = atoi(argv[++arg_index]);
@@ -1905,6 +1912,10 @@ int main(int argc, char *argv[])
          "  -nu  <nrelax>     : set num F-C relaxations (default: 1)\n"
          "  -nu0 <nrelax>     : set num F-C relaxations on level 0\n"
          "  -tol <tol>        : set stopping tolerance (default: 1e-9)\n"
+         "  -tnorm <tnorm>    : set temporal norm \n"
+         "                      1 - One-norm \n"
+         "                      2 - Two-norm (default) \n"
+         "                      3 - Infinity-norm \n"
          "  -cf  <cfactor>    : set coarsening factor (default: 2)\n"
          "  -cf0 <cfactor0>   : set aggressive coarsening (default: off)\n"
          "  -mi  <max_iter>   : set max iterations (default: 100)\n"
@@ -2149,6 +2160,7 @@ int main(int argc, char *argv[])
          core.SetCFactor(-1, cfactor);
          core.SetAggCFactor(cfactor0);
          core.SetMaxIter(max_iter);
+         core.SetTemporalNorm(tnorm);
          if (fmg)
          {
             core.SetFMG();

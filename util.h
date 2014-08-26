@@ -73,5 +73,14 @@ _braid_ParFprintfFlush(FILE * file,
                        char * message, 
                        ...);
 
+/**
+ * This function finds the maximum value in a braid_Real array 
+ **/
+braid_Int
+_braid_Max(braid_Real * array, 
+           braid_Int    size,
+           braid_Real * max_val);
+
+
 #endif
 

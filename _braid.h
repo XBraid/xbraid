@@ -140,6 +140,8 @@ typedef struct _braid_Core_struct
    braid_Real             rnorm;        /**< residual norm */
    braid_Int              fmg;          /**< use FMG cycle */
    braid_Int              nfmg_Vcyc;    /**< number of V-cycle calls at each level in FMG */
+   braid_Int              tnorm;        /**< choice of temporal norm */
+   braid_Real            *tnorm_a;      /**< local array of residual norms on a proc's interval, used for inf-norm */
    _braid_AccuracyHandle *accuracy;     /**< accuracy of spatial solves on different levels */
 
    braid_AccessStatus     astatus;      /**< status structure passed to user-written Access routine */

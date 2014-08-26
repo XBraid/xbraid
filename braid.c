@@ -58,6 +58,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              max_coarse = 1;        /* Default max_coarse (in terms of number of C-points) */
    braid_Int              print_level = 1;       /* Default print level */
    braid_Int              access_level = 1;      /* Default access level */
+   braid_Int              tnorm = 2;             /* Default temporal norm */
    braid_Real             tol = 1.0e-09;         /* Default absolute tolerance */
    braid_Real             rtol = 1.0e-09;        /* Default relative tolerance */
 
@@ -84,6 +85,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, refine)        = NULL;
 
    _braid_CoreElt(core, access_level)  = access_level;
+   _braid_CoreElt(core, tnorm)         = tnorm;
    _braid_CoreElt(core, print_level)   = print_level;
    _braid_CoreElt(core, max_levels)    = max_levels;
    _braid_CoreElt(core, max_coarse)    = max_coarse;
@@ -380,6 +382,7 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, cfactors));
       _braid_TFree(_braid_CoreElt(core, accuracy));
       _braid_TFree(_braid_CoreElt(core, rfactors));
+      _braid_TFree(_braid_CoreElt(core, tnorm_a));
       _braid_AccessStatusDestroy(astatus);
       _braid_PhiStatusDestroy(pstatus);
       _braid_CoarsenRefStatusDestroy(cstatus);
@@ -421,6 +424,7 @@ braid_PrintStats(braid_Core  core)
    braid_Int     niter      = _braid_CoreElt(core, niter);
    braid_Real    rnorm      = _braid_CoreElt(core, rnorm);
    braid_Int     nlevels    = _braid_CoreElt(core, nlevels);
+   braid_Int     tnorm      = _braid_CoreElt(core, tnorm); 
    _braid_Grid **grids      = _braid_CoreElt(core, grids);
 
    braid_Real    globaltime = _braid_CoreElt(core, globaltime);
@@ -443,6 +447,12 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  max iterations       = %d\n", max_iter);
       _braid_printf("  iterations           = %d\n", niter);
       _braid_printf("  residual norm        = %e\n", rnorm);
+      if(tnorm == 1)
+      {  _braid_printf("                        --> 1-norm TemporalNorm \n"); }
+      else if(tnorm == 2)
+      {  _braid_printf("                        --> 2-norm TemporalNorm \n"); }
+      else if(tnorm == 3)
+      {  _braid_printf("                        --> Inf-norm TemporalNorm \n"); }
       _braid_printf("\n");
       _braid_printf("  level   cfactor   nrelax\n", globaltime);
       for (level = 0; level < nlevels-1; level++)
@@ -706,6 +716,18 @@ braid_Int
 braid_SetFMG(braid_Core  core)
 {
    _braid_CoreElt(core, fmg) = 1;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetTemporalNorm(braid_Core  core,
+                      braid_Int   tnorm)
+{
+   _braid_CoreElt(core, tnorm) = tnorm;
 
    return _braid_error_flag;
 }
