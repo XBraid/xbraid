@@ -136,17 +136,17 @@ _braid_AccessStatusInit(braid_Real           t,
 
 braid_Int
 _braid_CoarsenRefStatusInit(braid_Real              tstart,  
-                            braid_Real              f_tminus,
-                            braid_Real              f_tplus, 
-                            braid_Real              c_tminus,
-                            braid_Real              c_tplus,
+                            braid_Real              f_tprior,
+                            braid_Real              f_tstop, 
+                            braid_Real              c_tprior,
+                            braid_Real              c_tstop,
                             braid_CoarsenRefStatus  status)
 {
    _braid_StatusElt(status, tstart) = tstart;
-   _braid_StatusElt(status, f_tminus) = f_tminus;
-   _braid_StatusElt(status, f_tplus)  = f_tplus;
-   _braid_StatusElt(status, c_tminus) = c_tminus;
-   _braid_StatusElt(status, c_tplus)  = c_tplus;
+   _braid_StatusElt(status, f_tprior) = f_tprior;
+   _braid_StatusElt(status, f_tstop)  = f_tstop;
+   _braid_StatusElt(status, c_tprior) = c_tprior;
+   _braid_StatusElt(status, c_tstop)  = c_tstop;
 
    return _braid_error_flag;
 }
@@ -172,54 +172,54 @@ braid_CoarsenRefStatusGetTstart(braid_CoarsenRefStatus  status,
 }
 
 braid_Int
-braid_CoarsenRefStatusGetFTplus(braid_CoarsenRefStatus  status,
-                                braid_Real             *f_tplus_ptr
+braid_CoarsenRefStatusGetFTstop(braid_CoarsenRefStatus  status,
+                                braid_Real             *f_tstop_ptr
                                 )
 {
-   *f_tplus_ptr = _braid_StatusElt(status, f_tplus);
+   *f_tstop_ptr = _braid_StatusElt(status, f_tstop);
    return _braid_error_flag;
 }
 
 braid_Int
-braid_CoarsenRefStatusGetFTminus(braid_CoarsenRefStatus  status,
-                                 braid_Real             *f_tminus_ptr
+braid_CoarsenRefStatusGetFTprior(braid_CoarsenRefStatus  status,
+                                 braid_Real             *f_tprior_ptr
                                  )
 {
-   *f_tminus_ptr = _braid_StatusElt(status, f_tminus);
+   *f_tprior_ptr = _braid_StatusElt(status, f_tprior);
    return _braid_error_flag;
 }
 
 braid_Int
-braid_CoarsenRefStatusGetCTplus(braid_CoarsenRefStatus  status,
-                                braid_Real             *c_tplus_ptr
+braid_CoarsenRefStatusGetCTstop(braid_CoarsenRefStatus  status,
+                                braid_Real             *c_tstop_ptr
                                 )
 {
-   *c_tplus_ptr = _braid_StatusElt(status, c_tplus);
+   *c_tstop_ptr = _braid_StatusElt(status, c_tstop);
    return _braid_error_flag;
 }
 
 braid_Int
-braid_CoarsenRefStatusGetCTminus(braid_CoarsenRefStatus  status,
-                                 braid_Real             *c_tminus_ptr
+braid_CoarsenRefStatusGetCTprior(braid_CoarsenRefStatus  status,
+                                 braid_Real             *c_tprior_ptr
                                  )
 {
-   *c_tminus_ptr = _braid_StatusElt(status, c_tminus);
+   *c_tprior_ptr = _braid_StatusElt(status, c_tprior);
    return _braid_error_flag;
 }
 
 braid_Int
-braid_CoarsenRefStatusGetTminusTplus(braid_CoarsenRefStatus  status,
+braid_CoarsenRefStatusGetTpriorTstop(braid_CoarsenRefStatus  status,
                                      braid_Real              *tstart_ptr,
-                                     braid_Real              *f_tminus_ptr,
-                                     braid_Real              *f_tplus_ptr, 
-                                     braid_Real              *c_tminus_ptr,
-                                     braid_Real              *c_tplus_ptr)
+                                     braid_Real              *f_tprior_ptr,
+                                     braid_Real              *f_tstop_ptr, 
+                                     braid_Real              *c_tprior_ptr,
+                                     braid_Real              *c_tstop_ptr)
 {
    *tstart_ptr = _braid_StatusElt(status, tstart);
-   *f_tminus_ptr = _braid_StatusElt(status, f_tminus);
-   *f_tplus_ptr = _braid_StatusElt(status, f_tplus);
-   *c_tminus_ptr = _braid_StatusElt(status, c_tminus);
-   *c_tplus_ptr = _braid_StatusElt(status, c_tplus);
+   *f_tprior_ptr = _braid_StatusElt(status, f_tprior);
+   *f_tstop_ptr = _braid_StatusElt(status, f_tstop);
+   *c_tprior_ptr = _braid_StatusElt(status, c_tprior);
+   *c_tstop_ptr = _braid_StatusElt(status, c_tstop);
 
    return _braid_error_flag;
 }
@@ -230,12 +230,12 @@ braid_CoarsenRefStatusGetTminusTplus(braid_CoarsenRefStatus  status,
  *--------------------------------------------------------------------------*/
 braid_Int
 _braid_PhiStatusInit(braid_Real       tstart,
-                     braid_Real       tplus,
+                     braid_Real       tstop,
                      braid_Real       accuracy,
                      braid_PhiStatus  status)
 {
    _braid_StatusElt(status, tstart)   = tstart;
-   _braid_StatusElt(status, tplus)    = tplus;
+   _braid_StatusElt(status, tstop)    = tstop;
    _braid_StatusElt(status, accuracy) = accuracy;
 
    return _braid_error_flag;
@@ -262,10 +262,10 @@ braid_PhiStatusGetTstart(braid_PhiStatus  status,
 }
 
 braid_Int
-braid_PhiStatusGetTplus(braid_PhiStatus  status,
-                        braid_Real      *tplus_ptr)
+braid_PhiStatusGetTstop(braid_PhiStatus  status,
+                        braid_Real      *tstop_ptr)
 {
-   *tplus_ptr = _braid_StatusElt(status, tplus);
+   *tstop_ptr = _braid_StatusElt(status, tstop);
    return _braid_error_flag;
 }
 
@@ -286,12 +286,12 @@ braid_PhiStatusSetRFactor(braid_PhiStatus  status,
 }
 
 braid_Int
-braid_PhiStatusGetTstartTplus(braid_PhiStatus  status,
+braid_PhiStatusGetTstartTstop(braid_PhiStatus  status,
                               braid_Real       *tstart_ptr,
-                              braid_Real       *tplus_ptr)
+                              braid_Real       *tstop_ptr)
 {
    *tstart_ptr = _braid_StatusElt(status, tstart);
-   *tplus_ptr = _braid_StatusElt(status, tplus);
+   *tstop_ptr = _braid_StatusElt(status, tstop);
 
    return _braid_error_flag;
 }

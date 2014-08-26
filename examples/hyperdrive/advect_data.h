@@ -115,7 +115,8 @@ gridfcn_BufSize(advection_setup *kd_,
 int
 gridfcn_BufPack(advection_setup *kd_,
                 grid_fcn *u_,
-                void *buffer);
+                void *buffer,
+                int *size_ptr);
 int
 gridfcn_BufUnpack(advection_setup *kd_,
                   void *buffer,

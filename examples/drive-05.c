@@ -1612,7 +1612,7 @@ my_Phi(braid_App       app,
        braid_PhiStatus status)
 {
    double tstart;             /* current time */
-   double tplus;              /* evolve to this time*/
+   double tstop;              /* evolve to this time*/
    double accuracy;
    int i, A_idx;
    double *values;
@@ -1633,7 +1633,7 @@ my_Phi(braid_App       app,
    HYPRE_StructVector  sb;
    HYPRE_StructVector  sx;
    
-   braid_PhiStatusGetTstartTplus(status, &tstart, &tplus);
+   braid_PhiStatusGetTstartTstop(status, &tstart, &tstop);
    braid_PhiStatusGetAccuracy(status, &accuracy);
    
    /* We have one part and one variable. */
@@ -1645,7 +1645,7 @@ my_Phi(braid_App       app,
    /* -----------------------------------------------------------------
     * Set up the discretization matrix.
     * If no variable coefficients, check matrix lookup table if matrix 
-    * has already been created for time step size tplus-tstart.
+    * has already been created for time step size tstop-tstart.
     * ----------------------------------------------------------------- */
    A_idx = -1.0;
    for( i = 0; i < app->max_levels; i++ ){
@@ -1653,7 +1653,7 @@ my_Phi(braid_App       app,
       {
          break;
       }
-      if( fabs( app->dt_A[i] - (tplus-tstart) )/(tplus-tstart) < 1e-10)
+      if( fabs( app->dt_A[i] - (tstop-tstart) )/(tstop-tstart) < 1e-10)
       { 
          A_idx = i;
          break;
@@ -1661,7 +1661,7 @@ my_Phi(braid_App       app,
    }
 
    /* Check CFL condition */
-   cfl_value = (app->K)*( (tplus-tstart)/((dx)*(dx)) + (tplus-tstart)/((dy)*(dy)) );
+   cfl_value = (app->K)*( (tstop-tstart)/((dx)*(dx)) + (tstop-tstart)/((dy)*(dy)) );
    if( cfl_value < 0.5 )
    {
       cfl = 1;
@@ -1672,7 +1672,7 @@ my_Phi(braid_App       app,
    {
       (app->scoarsen_table)[ (5*i) + 1] = dx;
       (app->scoarsen_table)[ (5*i) + 2] = dy;
-      (app->scoarsen_table)[ (5*i) + 3] = (tplus-tstart);
+      (app->scoarsen_table)[ (5*i) + 3] = (tstop-tstart);
       (app->scoarsen_table)[ (5*i) + 4] = cfl_value;
    }
 
@@ -1682,10 +1682,10 @@ my_Phi(braid_App       app,
 #if DEBUG
       printf( "Create new matrix %d\n", A_idx );
 #endif
-      /* No matrix for time step tplus-tstart exists. 
+      /* No matrix for time step tstop-tstart exists. 
        * Add entry to matrix lookup table. */   
       
-      app->dt_A[A_idx] = tplus-tstart;
+      app->dt_A[A_idx] = tstop-tstart;
 
       /* If we want to use an explicit scheme, check CFL condition 
        * to determine whether we can still use explicit scheme for
@@ -1736,7 +1736,7 @@ my_Phi(braid_App       app,
                                        iupper_x, var, values );
       free( values );
 
-      addBoundary( b, app->K, dx, dy, tplus-tstart,
+      addBoundary( b, app->K, dx, dy, tstop-tstart,
                    ilower_x, nlx, nly, app->px, app->py, 
                    app->pi, app->pj );
 
@@ -1769,7 +1769,7 @@ my_Phi(braid_App       app,
       HYPRE_SStructVectorSetBoxValues( b, part, ilower_x,
                                        iupper_x, var, values );
       free( values );
-      addBoundaryToRHS( b, app->K, dx, dy, tplus-tstart,
+      addBoundaryToRHS( b, app->K, dx, dy, tstop-tstart,
                         ilower_x, nlx, nly, app->px, 
                         app->py, app->pi, app->pj );
       /* add infos from RHS of PDE here */ 
@@ -2167,30 +2167,30 @@ my_Refine(braid_App              app,
    int        fnlx, fnly, ncoarsen, spatial_disc_idx, fspatial_disc_idx;
    int        fnlx_temp, fnly_temp, cnlx_temp, cnly_temp;
    double     cdt, fdt;
-   double     tstart, f_tplus, f_tminus, c_tplus, c_tminus;
+   double     tstart, f_tstop, f_tprior, c_tstop, c_tprior;
 
    int        cilower_x[2], ciupper_x[2];
    int        cnlx, cnly;
    
    /* Get Coarse and fine time step sizes */
    braid_CoarsenRefStatusGetTstart(status, &tstart);
-   braid_CoarsenRefStatusGetCTplus(status, &c_tplus);
-   braid_CoarsenRefStatusGetCTminus(status, &c_tminus);
-   braid_CoarsenRefStatusGetFTplus(status, &f_tplus);
-   braid_CoarsenRefStatusGetFTminus(status, &f_tminus);
-   cdt = c_tplus - tstart;
-   fdt = f_tplus - tstart;
+   braid_CoarsenRefStatusGetCTstop(status, &c_tstop);
+   braid_CoarsenRefStatusGetCTprior(status, &c_tprior);
+   braid_CoarsenRefStatusGetFTstop(status, &f_tstop);
+   braid_CoarsenRefStatusGetFTprior(status, &f_tprior);
+   cdt = c_tstop - tstart;
+   fdt = f_tstop - tstart;
 
    /* If fdt or cdt is 0.0,  then this is a final time interval.  We then use a
     * simple rule to use the length of the previous time interval to represent
     * an appropriate dt. */
    if (fdt == 0.0)
    {
-      fdt = tstart - f_tminus;
+      fdt = tstart - f_tprior;
    }
    if (cdt == 0.0)
    {
-      cdt = tstart - c_tminus;
+      cdt = tstart - c_tprior;
    }
 
    /* Determine New sizes, negate ncoarsen because we are refining, i.e., multiplying dx 
@@ -2341,16 +2341,16 @@ my_CoarsenInjection(braid_App              app,
    double     coarsen_factor;
    int        cnlx, cnly, ncoarsen;
    double     cdt, fdt;
-   double     tstart, f_tplus, f_tminus, c_tplus, c_tminus;
+   double     tstart, f_tstop, f_tprior, c_tstop, c_tprior;
 
    /* Get Coarse and fine time step sizes */
    braid_CoarsenRefStatusGetTstart(status, &tstart);
-   braid_CoarsenRefStatusGetCTplus(status, &c_tplus);
-   braid_CoarsenRefStatusGetCTminus(status, &c_tminus);
-   braid_CoarsenRefStatusGetFTplus(status, &f_tplus);
-   braid_CoarsenRefStatusGetFTminus(status, &f_tminus);
-   cdt = c_tplus - tstart;
-   fdt = f_tplus - tstart;
+   braid_CoarsenRefStatusGetCTstop(status, &c_tstop);
+   braid_CoarsenRefStatusGetCTprior(status, &c_tprior);
+   braid_CoarsenRefStatusGetFTstop(status, &f_tstop);
+   braid_CoarsenRefStatusGetFTprior(status, &f_tprior);
+   cdt = c_tstop - tstart;
+   fdt = f_tstop - tstart;
    
    cu = (my_Vector *) malloc(sizeof(my_Vector));
    
@@ -2364,11 +2364,11 @@ my_CoarsenInjection(braid_App              app,
     * an appropriate dt. */
    if (fdt == 0.0)
    {
-      fdt = tstart - f_tminus;
+      fdt = tstart - f_tprior;
    }
    if (cdt == 0.0)
    {
-      cdt = tstart - c_tminus;
+      cdt = tstart - c_tprior;
    }
 
    /* Generate the next spatial discretization, which is stored in app->spatial_disc_table[i]
@@ -2452,16 +2452,16 @@ my_CoarsenBilinear(braid_App              app,
    int        ncoarsen;
    double     scale = 0.25;
    double     cdt, fdt;
-   double     tstart, f_tplus, f_tminus, c_tplus, c_tminus;
+   double     tstart, f_tstop, f_tprior, c_tstop, c_tprior;
 
    /* Get Coarse and fine time step sizes */
    braid_CoarsenRefStatusGetTstart(status, &tstart);
-   braid_CoarsenRefStatusGetCTplus(status, &c_tplus);
-   braid_CoarsenRefStatusGetCTminus(status, &c_tminus);
-   braid_CoarsenRefStatusGetFTplus(status, &f_tplus);
-   braid_CoarsenRefStatusGetFTminus(status, &f_tminus);
-   cdt = c_tplus - tstart;
-   fdt = f_tplus - tstart;
+   braid_CoarsenRefStatusGetCTstop(status, &c_tstop);
+   braid_CoarsenRefStatusGetCTprior(status, &c_tprior);
+   braid_CoarsenRefStatusGetFTstop(status, &f_tstop);
+   braid_CoarsenRefStatusGetFTprior(status, &f_tprior);
+   cdt = c_tstop - tstart;
+   fdt = f_tstop - tstart;
 
    cu = (my_Vector *) malloc(sizeof(my_Vector));
    
@@ -2475,11 +2475,11 @@ my_CoarsenBilinear(braid_App              app,
     * an appropriate dt. */
    if (fdt == 0.0)
    {
-      fdt = tstart - f_tminus;
+      fdt = tstart - f_tprior;
    }
    if (cdt == 0.0)
    {
-      cdt = tstart - c_tminus;
+      cdt = tstart - c_tprior;
    }
 
    /* Generate the next spatial discretization, which is stored in app->spatial_disc_table[i]
@@ -2861,10 +2861,11 @@ my_BufSize(braid_App  app,
 int
 my_BufPack(braid_App     app,
            braid_Vector  u,
-           void         *buffer)
+           void         *buffer,
+           braid_Int    *size_ptr)
 {
    double *dbuffer = buffer;
-   int ilower_x[2], iupper_x[2];
+   int ilower_x[2], iupper_x[2], nlx, nly;
    
    /* Retrieve ilower and iupper */
    ilower_x[0]    = (app->spatial_disc_table[u->spatial_disc_idx]).ilower_x[0];
@@ -2884,6 +2885,11 @@ my_BufPack(braid_App     app,
    HYPRE_SStructVectorGetBoxValues( u->x, part, ilower_x,
                                     iupper_x, var, &(dbuffer[1]) );
 
+   /* Determine number of bytes actually packed */
+   nlx = iupper_x[0] - ilower_x[0] + 1;
+   nly = iupper_x[1] - ilower_x[1] + 1;
+   *size_ptr = (nlx*nly + 1)*sizeof(double);
+   
    return 0;
 }
 
@@ -2952,17 +2958,17 @@ int main (int argc, char *argv[])
    int correct;
 
    braid_Core    core;
-   my_App    *app;
-   int        max_levels;
-   int        max_coarse;
-   int        nrelax, nrelax0;
-   double     tol;
-   int        cfactor, cfactor0;
-   int        max_iter;
-   int        fmg;
-   int        tnorm;
-   int        nfmg_Vcyc;
-   int        scoarsen;
+   my_App       *app;
+   int           max_levels;
+   int           max_coarse;
+   int           nrelax, nrelax0;
+   double        tol;
+   int           cfactor, cfactor0;
+   int           max_iter;
+   int           fmg;
+   int           tnorm;
+   int           nfmg_Vcyc;
+   int           scoarsen;
 
    MPI_Comm    comm, comm_x, comm_t;
    int         myid, num_procs;

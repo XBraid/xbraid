@@ -70,11 +70,11 @@ my_Phi(braid_App       app,
        braid_PhiStatus status)
 {
    double tstart;             /* current time */
-   double tplus;              /* evolve to this time*/
-   braid_PhiStatusGetTstartTplus(status, &tstart, &tplus);
+   double tstop;              /* evolve to this time*/
+   braid_PhiStatusGetTstartTstop(status, &tstart, &tstop);
 
    /* On the finest grid, each value is half the previous value */
-   (u->value) = pow(0.5, tplus-tstart)*(u->value);
+   (u->value) = pow(0.5, tstop-tstart)*(u->value);
 
    /* Zero rhs for now */
    (u->value) += 0.0;
@@ -195,11 +195,13 @@ my_BufSize(braid_App  app,
 int
 my_BufPack(braid_App     app,
            braid_Vector  u,
-           void         *buffer)
+           void         *buffer,
+           braid_Int    *size_ptr)
 {
    double *dbuffer = buffer;
 
    dbuffer[0] = (u->value);
+   *size_ptr = sizeof(double);
 
    return 0;
 }

@@ -167,9 +167,9 @@ _braid_CommSendInit(braid_Core           core,
    braid_App        app  = _braid_CoreElt(core, app);
 
    _braid_CommHandle  *handle = NULL;
-   void            *buffer;
-   MPI_Request     *requests;
-   MPI_Status      *status;
+   void               *buffer;
+   MPI_Request        *requests;
+   MPI_Status         *status;
    braid_Int           proc, size, num_requests;
 
    _braid_GetProc(core, level, index+1, &proc);
@@ -180,7 +180,8 @@ _braid_CommSendInit(braid_Core           core,
       /* Allocate buffer through user routine */
       _braid_CoreFcn(core, bufsize)(app, &size);
       buffer = malloc(size);
-      _braid_CoreFcn(core, bufpack)(app, vector, buffer);
+      /* Note that bufpack may return a size smaller than bufsize */
+      _braid_CoreFcn(core, bufpack)(app, vector, buffer, &size);
 
       num_requests = 1;
       requests = _braid_CTAlloc(MPI_Request, num_requests);
@@ -213,9 +214,9 @@ _braid_CommWait(braid_Core          core,
    {
       braid_Int      request_type = _braid_CommHandleElt(handle, request_type);
       braid_Int      num_requests = _braid_CommHandleElt(handle, num_requests);
-      MPI_Request  *requests      = _braid_CommHandleElt(handle, requests);
-      MPI_Status   *status        = _braid_CommHandleElt(handle, status);
-      void         *buffer        = _braid_CommHandleElt(handle, buffer);
+      MPI_Request   *requests     = _braid_CommHandleElt(handle, requests);
+      MPI_Status    *status       = _braid_CommHandleElt(handle, status);
+      void          *buffer       = _braid_CommHandleElt(handle, buffer);
 
       MPI_Waitall(num_requests, requests, status);
       
@@ -605,7 +606,7 @@ _braid_Phi(braid_Core     core,
    /* Call Phi */
    _braid_CoreFcn(core, phi)(app, u, pstatus);
    
-   /* Grad user's rfactor */
+   /* Grab user's rfactor */
    *rfactor = _braid_StatusElt(pstatus, rfactor);
 
    return _braid_error_flag;
@@ -1047,7 +1048,7 @@ _braid_FRestrict(braid_Core   core,
              * should show the serial propagation of the exact solution */
             if (print_level >= 2)
             {
-               _braid_printf("  Braid:  time step: %d, rnorm: %1.2e\n", fhi, rnorm_temp);
+               _braid_printf("  Braid:  time step: %6d, rnorm: %1.2e\n", fhi, rnorm_temp);
             }
 
          }

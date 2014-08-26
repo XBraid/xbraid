@@ -381,7 +381,8 @@ gridfcn_BufSize(advection_setup *kd_,
 int
 gridfcn_BufPack(advection_setup *kd_,
                 grid_fcn *u_,
-                void *buffer)
+                void *buffer,
+                int *size_ptr)
 {
 /* not all elements are doubles, but for simplicity we give all elements the size of a double */
    double *dbuff = buffer;
@@ -402,6 +403,8 @@ gridfcn_BufPack(advection_setup *kd_,
    for (i=0; i<3; i++)
       dbuff[offset+i] = uvsol(i+1); /* uvsol(i) is base 1 */ 
 #undef uvsol
+
+   *size_ptr = (kd_->n_fine+2+3+1+1)*sizeof(double);
 
    return 0;
 }
@@ -460,17 +463,17 @@ gridfcn_Coarsen(advection_setup *kd_,
    grid_fcn * u_;
    int i, nf, nc, ifine;
    double dt_f, dt_c;
-   double  tstart, f_tminus, f_tplus, c_tminus, c_tplus;
+   double  tstart, f_tprior, f_tstop, c_tprior, c_tstop;
    braid_CoarsenRefStatusGetTstart(status, &tstart);
-   braid_CoarsenRefStatusGetCTplus(status, &c_tplus);
-   braid_CoarsenRefStatusGetCTminus(status, &c_tminus);
-   braid_CoarsenRefStatusGetFTplus(status, &f_tplus);
-   braid_CoarsenRefStatusGetFTminus(status, &f_tminus);
+   braid_CoarsenRefStatusGetCTstop(status, &c_tstop);
+   braid_CoarsenRefStatusGetCTprior(status, &c_tprior);
+   braid_CoarsenRefStatusGetFTstop(status, &f_tstop);
+   braid_CoarsenRefStatusGetFTprior(status, &f_tprior);
 
 #define bcnr(i) compute_index_1d(kd_->bcnr_, i)   
 
-   dt_f = MAX(f_tplus - tstart, tstart - f_tminus);
-   dt_c = MAX(c_tplus - tstart, tstart - c_tminus);
+   dt_f = MAX(f_tstop - tstart, tstart - f_tprior);
+   dt_c = MAX(c_tstop - tstart, tstart - c_tprior);
    
 #ifdef HD_DEBUG
    printf("Coarsen: tstart=%e, dt_f = %e, dt_c=%e, grid pts (fine)=%i\n", 
@@ -564,18 +567,18 @@ gridfcn_Refine(advection_setup * kd_,
    grid_fcn *u_;
    int i, nc, nf, ifine, ig;   
    double dt_f, dt_c;
-   double  tstart, f_tminus, f_tplus, c_tminus, c_tplus;
+   double  tstart, f_tprior, f_tstop, c_tprior, c_tstop;
    braid_CoarsenRefStatusGetTstart(status, &tstart);
-   braid_CoarsenRefStatusGetCTplus(status, &c_tplus);
-   braid_CoarsenRefStatusGetCTminus(status, &c_tminus);
-   braid_CoarsenRefStatusGetFTplus(status, &f_tplus);
-   braid_CoarsenRefStatusGetFTminus(status, &f_tminus);
+   braid_CoarsenRefStatusGetCTstop(status, &c_tstop);
+   braid_CoarsenRefStatusGetCTprior(status, &c_tprior);
+   braid_CoarsenRefStatusGetFTstop(status, &f_tstop);
+   braid_CoarsenRefStatusGetFTprior(status, &f_tprior);
 
 
 #define bcnr(i) compute_index_1d(kd_->bcnr_, i)   
 
-   dt_f = MAX(f_tplus - tstart, tstart - f_tminus);
-   dt_c = MAX(c_tplus - tstart, tstart - c_tminus);
+   dt_f = MAX(f_tstop - tstart, tstart - f_tprior);
+   dt_c = MAX(c_tstop - tstart, tstart - c_tprior);
    
 #ifdef HD_DEBUG
    printf("Refine: tstart=%e, dt_f = %e, dt_c=%e, grid pts (coarse)=%i\n", 

@@ -1022,9 +1022,9 @@ class BraidPhiStatus
          pstatus = _pstatus;
       }
 
-      void GetTstartTplus(braid_Real *tstart_ptr, braid_Real *tplus_ptr)     { braid_PhiStatusGetTstartTplus(pstatus, tstart_ptr, tplus_ptr); }
+      void GetTstartTstop(braid_Real *tstart_ptr, braid_Real *tstop_ptr)     { braid_PhiStatusGetTstartTstop(pstatus, tstart_ptr, tstop_ptr); }
       void GetTstart(braid_Real *tstart_ptr)     { braid_PhiStatusGetTstart(pstatus, tstart_ptr); }
-      void GetTplus(braid_Real *tplus_ptr)       { braid_PhiStatusGetTplus(pstatus, tplus_ptr); }
+      void GetTstop(braid_Real *tstop_ptr)       { braid_PhiStatusGetTstop(pstatus, tstop_ptr); }
       void GetAccuracy(braid_Real *accuracy_ptr)  { braid_PhiStatusGetAccuracy(pstatus, accuracy_ptr); }
       void SetRFactor(braid_Int rfactor)         { braid_PhiStatusSetRFactor(pstatus, rfactor); }
       
@@ -1045,12 +1045,12 @@ class BraidCoarsenRefStatus
          cstatus = _cstatus;
       }
 
-      void GetTminusTplus(braid_Real *tstart_ptr, braid_Real *f_tminus_ptr, braid_Real *f_tplus_ptr, braid_Real *c_tminus_ptr, braid_Real *c_tplus_ptr)     { braid_CoarsenRefStatusGetTminusTplus(cstatus, tstart_ptr, f_tminus_ptr, f_tplus_ptr, c_tminus_ptr, c_tplus_ptr); }
+      void GetTpriorTstop(braid_Real *tstart_ptr, braid_Real *f_tprior_ptr, braid_Real *f_tstop_ptr, braid_Real *c_tprior_ptr, braid_Real *c_tstop_ptr)     { braid_CoarsenRefStatusGetTpriorTstop(cstatus, tstart_ptr, f_tprior_ptr, f_tstop_ptr, c_tprior_ptr, c_tstop_ptr); }
       void GetTstart(braid_Real *tstart_ptr)     { braid_CoarsenRefStatusGetTstart(cstatus, tstart_ptr); }
-      void GetFTplus(braid_Real *f_tplus_ptr)    { braid_CoarsenRefStatusGetFTplus(cstatus, f_tplus_ptr); }
-      void GetFTminus(braid_Real *f_tminus_ptr)  { braid_CoarsenRefStatusGetFTminus(cstatus, f_tminus_ptr); }
-      void GetCTplus(braid_Real *c_tplus_ptr)    { braid_CoarsenRefStatusGetCTplus(cstatus, c_tplus_ptr); }
-      void GetCTminus(braid_Real *c_tminus_ptr)  { braid_CoarsenRefStatusGetCTminus(cstatus, c_tminus_ptr); }
+      void GetFTstop(braid_Real *f_tstop_ptr)    { braid_CoarsenRefStatusGetFTstop(cstatus, f_tstop_ptr); }
+      void GetFTprior(braid_Real *f_tprior_ptr)  { braid_CoarsenRefStatusGetFTprior(cstatus, f_tprior_ptr); }
+      void GetCTstop(braid_Real *c_tstop_ptr)    { braid_CoarsenRefStatusGetCTstop(cstatus, c_tstop_ptr); }
+      void GetCTprior(braid_Real *c_tprior_ptr)  { braid_CoarsenRefStatusGetCTprior(cstatus, c_tprior_ptr); }
       
       // The braid_CoarsenRefStatus structure is deallocated inside of Braid
       // This class is just to make code consistently look object oriented
@@ -1112,13 +1112,13 @@ public:
       BraidApp *app          = (BraidApp*) _app;
       HypreParVector *u      = (HypreParVector*) _u;
       BraidPhiStatus pstatus = BraidPhiStatus(_pstatus);
-      double tstart, tplus, accuracy, t, dt;
+      double tstart, tstop, accuracy, t, dt;
       
       // Get time step information
-      pstatus.GetTstartTplus(&tstart, &tplus);
+      pstatus.GetTstartTstop(&tstart, &tstop);
       pstatus.GetAccuracy(&accuracy);
       t = tstart;
-      dt = tplus-tstart;
+      dt = tstop-tstart;
       
       app->solver->Step(*u, t, dt);
 
@@ -1281,11 +1281,13 @@ public:
 
    static int BufPack(braid_App     _app,
                       braid_Vector  _u,
-                      void         *buffer)
+                      void         *buffer,
+                      int          *size_ptr)
    {
-      BraidApp *app = (BraidApp*) _app;
+      BraidApp *app     = (BraidApp*) _app;
       HypreParVector *u = (HypreParVector*) _u;
       memcpy(buffer, u->GetData(), app->buff_size);
+      *size_ptr         = app->buff_size;
       return 0;
    }
 

@@ -58,18 +58,18 @@ typedef struct _braid_Vector_struct *braid_Vector;
 
 /**
  * Defines the central time stepping function that the user must write.
- * The user must advance the vector *u* from time *tstart* to time *tplus*.
+ * The user must advance the vector *u* from time *tstart* to time *tstop*.
  *
  * Query the status structure with *braid_PhiStatusGetTstart(status, &tstart)*  
- * and *braid_PhiStatusGetTplus(status, &tplus)* to get *tstart* and
- * *tplus*.  The status structure also allows for steering.  For example,
+ * and *braid_PhiStatusGetTstop(status, &tstop)* to get *tstart* and
+ * *tstop*.  The status structure also allows for steering.  For example,
  * *braid_PhiStatusSetRFactor(...)* allows for setting rfactor, which 
  * tells XBraid to refine this time interval.
  **/
 typedef braid_Int
 (*braid_PtFcnPhi)(braid_App       app,           /**< user-defined _braid_App structure */
                   braid_Vector    u,             /**< output, vector to evolve */
-                  braid_PhiStatus status         /**< query this struct for info about u (e.g., tstart and tplus), allows for steering (e.g., set rfactor) */ 
+                  braid_PhiStatus status         /**< query this struct for info about u (e.g., tstart and tstop), allows for steering (e.g., set rfactor) */ 
                   );
 
 /**
@@ -164,7 +164,8 @@ typedef braid_Int
 typedef braid_Int
 (*braid_PtFcnBufPack)(braid_App      app,            /**< user-defined _braid_App structure */
                       braid_Vector   u,              /**< vector to back into buffer */
-                      void          *buffer          /**< output, MPI buffer containing u */
+                      void          *buffer,         /**< output, MPI buffer containing u */
+                      braid_Int     *size_ptr        /**< output, number of bytes packed, must be less than or equal to value returned by BufSize */
                       );
 
 /**

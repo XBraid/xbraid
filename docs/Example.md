@@ -48,7 +48,7 @@ The two data structures are:
 The user must also define a few wrapper routines.  Note, that the app structure is the 
 first argument to every function.
 1. **Phi**: This function tells XBraid how to take a time step, and is the core user routine. 
-   The user must advance the vector *u* from time *tstart* to time *tplus*.
+   The user must advance the vector *u* from time *tstart* to time *tstop*.
    Note how the time values are given to the user through the *status*
    structure and associated Get routines.  The *rfactor_ptr* parameter is an
    advanced topic not used here.
@@ -64,11 +64,11 @@ first argument to every function.
                 braid_PhiStatus status)
          {
             double tstart;             /* current time */
-            double tplus;              /* evolve to this time*/
-            braid_PhiStatusGetTstartTplus(status, &tstart, &tplus);
+            double tstop;              /* evolve to this time*/
+            braid_PhiStatusGetTstartTstop(status, &tstart, &tstop);
       
             /* On the finest grid, each value is half the previous value */
-            (u->value) = pow(0.5, tplus-tstart)*(u->value);
+            (u->value) = pow(0.5, tstop-tstart)*(u->value);
       
             /* Zero rhs for now */
             (u->value) += 0.0;
@@ -177,19 +177,23 @@ first argument to every function.
    The user defines what is appropriate output.  Notice how you are told the time value *t* of the 
    vector *u* and even more information in *astatus*.  This lets you tailor the output to only 
    certain time values at certain XBraid iterations.  Querrying *astatus* for such information 
-   is done through _braid_AccessStatusGet**(..)_ routines.\n
+   is done through _braid_AccessStatusGet**(..)_ routines.
+   \latexonly \\ \endlatexonly
 
    The frequency of the calls to *access* is controlled through 
    [braid_SetAccessLevel](@ref braid_SetAccessLevel).  For instance, if access_level is 
    set to 2, then *access* is called every XBraid iteration and on every XBraid level.  In 
    this case, querrying *astatus* to determine the current XBraid level and iteration will 
-   be useful. This scenario allows for even more detailed tracking of the simulation.\n
+   be useful. This scenario allows for even more detailed tracking of the simulation.
+   \latexonly \\ \endlatexonly
 
-   Eventually, this routine will allow for broader access to XBraid and computational steering.\n
+   Eventually, this routine will allow for broader access to XBraid and computational steering.
+   \latexonly \\ \endlatexonly
    
    See examples/drive-02 and examples/drive-04 for more advanced uses of the *access* function.  
    Drive-04 uses *access* to write solution vectors to a GLVIS visualization port, and 
    examples/drive-02 uses *access* to write to .vtu files.
+   \latexonly \\ \endlatexonly
 
          int
          my_Access(braid_App          app,
@@ -225,6 +229,20 @@ first argument to every function.
    into a ``void *`` buffer for MPI and then *BufUnPack* unpacks it from ``void *`` 
    to vector.  Here doing that for a scalar is trivial.  *BufSize* computes the 
    upper bound for the size of an arbitrary vector.
+   \latexonly \\ \endlatexonly
+
+   Note how *BufPack* also returns a size pointer.  This size pointer should be
+   the exact number of bytes packed, while *BufSize* should provide only an
+   upper-bound on a possible buffer size.  This flexibility allows for variable
+   spatial grid sizes to result in smaller messages sent when appropriate. **To
+   avoid MPI issues, it is very important that BufSize be pessimistic, provide 
+   an upper bound, and return the same value across processors.**
+   \latexonly \\ \endlatexonly
+
+   In general, the buffer should be self-contained.  The receiving processor
+   should be able to pull all necessary information from the buffer in order to
+   properly interpret and unpack the buffer.
+   \latexonly \\ \endlatexonly
 
          int
          my_BufSize(braid_App  app,
@@ -237,12 +255,14 @@ first argument to every function.
          int
          my_BufPack(braid_App     app,
                     braid_Vector  u,
-                    void      *buffer)
+                    void         *buffer,
+                    braid_Int    *size_ptr)
          {
             double *dbuffer = buffer;
-
+      
             dbuffer[0] = (u->value);
-
+            *size_ptr = sizeof(double);
+      
             return 0;
          }
 

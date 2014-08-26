@@ -34,7 +34,7 @@ explicit_rk4_stepper(advection_setup *kd_, grid_fcn *gf_, braid_PhiStatus status
 
 /* get the time-step from tend and t */
    braid_PhiStatusGetTstart(status, &t);
-   braid_PhiStatusGetTplus(status, &tend);
+   braid_PhiStatusGetTstop(status, &tend);
    braid_PhiStatusGetAccuracy(status, &accuracy);
    dt = tend - t;
    

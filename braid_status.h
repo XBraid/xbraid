@@ -84,10 +84,10 @@ typedef struct _braid_CoarsenRefStatus_struct *braid_CoarsenRefStatus;
 typedef struct _braid_CoarsenRefStatus_struct
 {
    braid_Real     tstart;      /**< current time value */                          
-   braid_Real     f_tminus;    /**< time value for to the left on fine grid */ 
-   braid_Real     f_tplus;     /**< time value for to the right on fine grid */
-   braid_Real     c_tminus;    /**< time value for to the left on coarse grid */
-   braid_Real     c_tplus;     /**< time value for to the right on coarse grid */
+   braid_Real     f_tprior;    /**< time value to the left of tstart on fine grid */ 
+   braid_Real     f_tstop;     /**< time value to the right of tstart  on fine grid */
+   braid_Real     c_tprior;    /**< time value to the left of tstart on coarse grid */
+   braid_Real     c_tstop;     /**< time value to the right of tstart on coarse grid */
    
 } _braid_CoarsenRefStatus;
 
@@ -111,7 +111,7 @@ typedef struct _braid_PhiStatus_struct *braid_PhiStatus;
 typedef struct _braid_PhiStatus_struct
 {
    braid_Real     tstart;          /**< current time value  */
-   braid_Real     tplus;           /**< time value to evolve towards, time value to the right */
+   braid_Real     tstop;           /**< time value to evolve towards, time value to the right of tstart */
    braid_Real     accuracy;        /**< advanced option allowing variable accuracy for implicit phi*/
    braid_Int      rfactor;         /**< if set by user, allows for subdivision of this interval for bettter time accuracy */
 } _braid_PhiStatus;
@@ -219,10 +219,10 @@ braid_AccessStatusGetTILD(braid_AccessStatus  status,       /**< structure conta
  **/
 braid_Int
 _braid_CoarsenRefStatusInit(braid_Real              tstart,      /**< time value for current vector */             
-                            braid_Real              f_tminus,    /**< time value for to the left on fine grid */ 
-                            braid_Real              f_tplus,     /**< time value for to the right on fine grid */
-                            braid_Real              c_tminus,    /**< time value for to the left on coarse grid */
-                            braid_Real              c_tplus,     /**< time value for to the right on coarse grid */
+                            braid_Real              f_tprior,    /**< time value to the left of tstart on fine grid */ 
+                            braid_Real              f_tstop,     /**< time value to the right of tstart on fine grid */
+                            braid_Real              c_tprior,    /**< time value to the left of tstart on coarse grid */
+                            braid_Real              c_tstop,     /**< time value to the right of tstart on coarse grid */
                             braid_CoarsenRefStatus  status       /**< structure to initialize */
                             );
 
@@ -242,57 +242,57 @@ braid_CoarsenRefStatusGetTstart(braid_CoarsenRefStatus  status,         /**< str
                                 );
 
 /** 
- * Return the time value to the right of the current **fine** time grid value from
+ * Return the **fine grid** time value to the right of the current time value from
  * the CoarsenRefStatus structure.
  **/
 braid_Int
-braid_CoarsenRefStatusGetFTplus(braid_CoarsenRefStatus  status,         /**< structure containing current simulation info */
-                                braid_Real             *f_tplus_ptr     /**< output, time value to the right on fine grid */
+braid_CoarsenRefStatusGetFTstop(braid_CoarsenRefStatus  status,         /**< structure containing current simulation info */
+                                braid_Real             *f_tstop_ptr     /**< output, time value to the right of current time value on fine grid */
                                 );
 
 /**
- * Return the time value to the left of the current **fine** time grid value from
+ * Return the **fine grid** time value to the left of the current time value from
  * the CoarsenRefStatus structure.
  **/
 braid_Int
-braid_CoarsenRefStatusGetFTminus(braid_CoarsenRefStatus  status,        /**< structure containing current simulation info */
-                                 braid_Real             *f_tminus_ptr   /**< output, time value to the left on fine grid */
+braid_CoarsenRefStatusGetFTprior(braid_CoarsenRefStatus  status,        /**< structure containing current simulation info */
+                                 braid_Real             *f_tprior_ptr   /**< output, time value to the left of current time value on fine grid */
                                  );
 
 /**
- * Return the time value to the right of the current **coarse** time grid value from
+ * Return the **coarse grid** time value to the right of the current time value from
  * the CoarsenRefStatus structure.
  **/
 braid_Int
-braid_CoarsenRefStatusGetCTplus(braid_CoarsenRefStatus  status,         /**< structure containing current simulation info */
-                                braid_Real             *c_tplus_ptr     /**< output, time value to the right on coarse grid */
+braid_CoarsenRefStatusGetCTstop(braid_CoarsenRefStatus  status,         /**< structure containing current simulation info */
+                                braid_Real             *c_tstop_ptr     /**< output, time value to the right of current time value on coarse grid */
                                 );
 
 /**
- * Return the time value to the left of the current **coarse** time grid value from
+ * Return the **coarse grid** time value to the left of the current time value from
  * the CoarsenRefStatus structure.
  **/
 braid_Int
-braid_CoarsenRefStatusGetCTminus(braid_CoarsenRefStatus  status,        /**< structure containing current simulation info */
-                                 braid_Real             *c_tminus_ptr   /**< output, time value to the left on coarse grid */
+braid_CoarsenRefStatusGetCTprior(braid_CoarsenRefStatus  status,        /**< structure containing current simulation info */
+                                 braid_Real             *c_tprior_ptr   /**< output, time value to the left of current time value on coarse grid */
                                  );
 
 /**
  * Return XBraid status for the current simulation. Five values are 
- * returned, tstart, f_tminus, f_tplus, c_tminus,  c_tplus. 
+ * returned, tstart, f_tprior, f_tstop, c_tprior,  c_tstop. 
  *
  * These values are also available through individual Get routines. 
  * These individual routines are the location of detailed documentation on 
- * each parameter, e.g., see *braid_CoarsenRefStatusGetCTminus* for more 
- * information on the *c_tminus* value.
+ * each parameter, e.g., see *braid_CoarsenRefStatusGetCTprior* for more 
+ * information on the *c_tprior* value.
  **/
 braid_Int
-braid_CoarsenRefStatusGetTminusTplus(braid_CoarsenRefStatus  status,           /**< structure containing current simulation info */
-                                     braid_Real              *tstart_ptr,      /**< output, time value for current vector */             
-                                     braid_Real              *f_tminus_ptr,    /**< output, time value for to the left on fine grid */ 
-                                     braid_Real              *f_tplus_ptr,     /**< output, time value for to the right on fine grid */
-                                     braid_Real              *c_tminus_ptr,    /**< output, time value for to the left on coarse grid */
-                                     braid_Real              *c_tplus_ptr      /**< output, time value for to the right on coarse grid */
+braid_CoarsenRefStatusGetTpriorTstop(braid_CoarsenRefStatus  status,           /**< structure containing current simulation info */
+                                     braid_Real              *tstart_ptr,      /**< output, time value current vector */             
+                                     braid_Real              *f_tprior_ptr,    /**< output, time value to the left of tstart on fine grid */ 
+                                     braid_Real              *f_tstop_ptr,     /**< output, time value to the right of tstart on fine grid */
+                                     braid_Real              *c_tprior_ptr,    /**< output, time value to the left of tstart on coarse grid */
+                                     braid_Real              *c_tstop_ptr      /**< output, time value to the right of tstart on coarse grid */
                                      );
 
 /*--------------------------------------------------------------------------
@@ -304,7 +304,7 @@ braid_CoarsenRefStatusGetTminusTplus(braid_CoarsenRefStatus  status,           /
  **/
 braid_Int
 _braid_PhiStatusInit(braid_Real       tstart,      /**< current time value  */
-                     braid_Real       tplus,       /**< time value to evolve towards, time value to the right */
+                     braid_Real       tstop,       /**< time value to evolve towards, time value to the right of tstart */
                      braid_Real       accuracy,    /**< advanced option allowing variable accuracy for implicit phi*/
                      braid_PhiStatus  status       /**< structure to initialize */
                      );
@@ -327,8 +327,8 @@ braid_PhiStatusGetTstart(braid_PhiStatus  status,         /**< structure contain
  * the PhiStatus structure.
  **/
 braid_Int
-braid_PhiStatusGetTplus(braid_PhiStatus  status,         /**< structure containing current simulation info */
-                        braid_Real      *tplus_ptr       /**< output, next time value to evolve towards */
+braid_PhiStatusGetTstop(braid_PhiStatus  status,         /**< structure containing current simulation info */
+                        braid_Real      *tstop_ptr       /**< output, next time value to evolve towards */
                         );
 
 /** 
@@ -352,7 +352,7 @@ braid_PhiStatusSetRFactor(braid_PhiStatus  status,         /**< structure contai
 
 /**
  * Return XBraid status for the current simulation. Two values are 
- * returned, tstart and tplus. 
+ * returned, tstart and tstop. 
  *
  * These values are also available through individual Get routines. 
  * These individual routines are the location of detailed documentation on 
@@ -360,9 +360,9 @@ braid_PhiStatusSetRFactor(braid_PhiStatus  status,         /**< structure contai
  * on the *tstart* value.
  **/
 braid_Int
-braid_PhiStatusGetTstartTplus(braid_PhiStatus  status,         /**< structure containing current simulation info */
+braid_PhiStatusGetTstartTstop(braid_PhiStatus  status,         /**< structure containing current simulation info */
                               braid_Real       *tstart_ptr,    /**< output, current time */
-                              braid_Real       *tplus_ptr      /**< output, next time value to evolve towards */
+                              braid_Real       *tstop_ptr      /**< output, next time value to evolve towards */
                               );
 
 

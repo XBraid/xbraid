@@ -468,7 +468,7 @@ Another important configuration aspect regards setting a residual halting tolera
 Setting a tolerance involves these three XBraid options:
 1. [braid_PtFcnSpatialNorm](@ref braid_PtFcnSpatialNorm)
  
-    This user-defined function carries out a spatial norm by taking the norm a
+    This user-defined function carries out a spatial norm by taking the norm of a
     braid_Vector.  A common choice is the standard Eucliden norm (2-norm), but
     many other choices are possible, such as an L2-norm based on a finite
     element space.  
@@ -487,7 +487,7 @@ Setting a tolerance involves these three XBraid options:
    current XBraid iteration, *r* be residual values, *space_time* norms be a
    norm over the entire space-time domain and *spatial_norm* be the
    user-defined spatial norm from [braid_PtFcnSpatialNorm](@ref braid_PtFcnSpatialNorm).
-   Thus, \f$ r_i \f$ is the residual at the *ith$ C-point, and \f$ r^{(k)} \f$ 
+   Thus, \f$ r_i \f$ is the residual at the *ith* C-point, and \f$ r^{(k)} \f$ 
    is the residual at the *kth* XBraid iteration.  The three options are then
    defined as,
   

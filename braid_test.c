@@ -368,7 +368,7 @@ braid_TestBuf( braid_App              app,
 {   
    braid_Vector  u, v;
    braid_Real    result1;
-   braid_Int     myid_x, size, correct;
+   braid_Int     myid_x, size, correct, dummy_size;
    void      *buffer;
    double     wiggle = 1e-12;
    
@@ -404,7 +404,7 @@ braid_TestBuf( braid_App              app,
    buffer = malloc(size);
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   buffer = bufpack(u, buffer))\n");
-   bufpack(app, u, buffer);
+   bufpack(app, u, buffer, &dummy_size);
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   v = bufunpack(buffer)\n");
    bufunpack(app, buffer, &v);
