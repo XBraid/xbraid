@@ -1,0 +1,126 @@
+# Begin Test 0
+  
+  time steps = 32
+  number of levels     = 2
+  iterations           = 7
+spatial problem size       : 16 x 16
+
+# Begin Test 1
+  
+  time steps = 128
+  number of levels     = 2
+  iterations           = 7
+spatial problem size       : 32 x 32
+
+# Begin Test 2
+  
+  time steps = 512
+  number of levels     = 2
+  iterations           = 7
+spatial problem size       : 64 x 64
+
+# Begin Test 3
+  
+  time steps = 32
+  number of levels     = 6
+  iterations           = 7
+spatial problem size       : 16 x 16
+
+# Begin Test 4
+  
+  time steps = 128
+  number of levels     = 8
+  iterations           = 8
+spatial problem size       : 32 x 32
+
+# Begin Test 5
+  
+  time steps = 512
+  number of levels     = 10
+  iterations           = 9
+spatial problem size       : 64 x 64
+
+# Begin Test 6
+  
+  time steps = 32
+  number of levels     = 6
+  iterations           = 7
+spatial problem size       : 16 x 16
+
+# Begin Test 7
+  
+  time steps = 128
+  number of levels     = 8
+  iterations           = 7
+spatial problem size       : 32 x 32
+
+# Begin Test 8
+  
+  time steps = 512
+  number of levels     = 10
+  iterations           = 7
+spatial problem size       : 64 x 64
+
+# Begin Test 9
+  
+  time steps = 32
+  number of levels     = 2
+  iterations           = 10
+spatial problem size       : 16 x 16
+
+# Begin Test 10
+  
+  time steps = 128
+  number of levels     = 2
+  iterations           = 10
+spatial problem size       : 32 x 32
+
+# Begin Test 11
+  
+  time steps = 512
+  number of levels     = 2
+  iterations           = 10
+spatial problem size       : 64 x 64
+
+# Begin Test 12
+  
+  time steps = 32
+  number of levels     = 6
+  iterations           = 12
+spatial problem size       : 16 x 16
+
+# Begin Test 13
+  
+  time steps = 128
+  number of levels     = 8
+  iterations           = 17
+spatial problem size       : 32 x 32
+
+# Begin Test 14
+  
+  time steps = 512
+  number of levels     = 10
+  iterations           = 23
+spatial problem size       : 64 x 64
+
+# Begin Test 15
+  
+  time steps = 32
+  number of levels     = 6
+  iterations           = 10
+spatial problem size       : 16 x 16
+
+# Begin Test 16
+  
+  time steps = 128
+  number of levels     = 8
+  iterations           = 10
+spatial problem size       : 32 x 32
+
+# Begin Test 17
+  
+  time steps = 512
+  number of levels     = 10
+  iterations           = 10
+spatial problem size       : 64 x 64
+
