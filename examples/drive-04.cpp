@@ -1,21 +1,21 @@
-// Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. Written by 
+// Copyright (c) 2013, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory. Written by
 // Jacob Schroder schroder2@llnl.gov, Rob Falgout falgout2@llnl.gov,
-// Tzanio Kolev kolev1@llnl.gov, Ulrike Yang yang11@llnl.gov, 
-// Veselin Dobrev dobrev1@llnl.gov, et al. 
+// Tzanio Kolev kolev1@llnl.gov, Ulrike Yang yang11@llnl.gov,
+// Veselin Dobrev dobrev1@llnl.gov, et al.
 // LLNL-CODE-660355. All rights reserved.
-// 
-// This file is part of XBraid. Email schroder2@llnl.gov on how to download. 
-// 
+//
+// This file is part of XBraid. Email schroder2@llnl.gov on how to download.
+//
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License (as published by the Free Software
 // Foundation) version 2.1 dated February 1999.
-// 
+//
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE. See the terms and conditions of the GNU General Public
 // License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public License along
 // with this program; if not, write to the Free Software Foundation, Inc., 59
 // Temple Place, Suite 330, Boston, MA 02111-1307 USA
@@ -36,9 +36,7 @@
 
 #include <fstream>
 #include "mfem.hpp"
-#include "_braid.h"
-#include "braid.h"
-#include "braid_test.h"
+#include "braid.hpp"
 
 // Additional "HYPRE" functions
 namespace hypre
@@ -469,18 +467,18 @@ namespace mfem
       void SetTime(double t) { time = t; }
       double GetTime() { return time; }
    };
-  
+
    /// Abstract Class for Time Dependent Matrix coefficient
-   class TimeDependentMatrixCoefficient : public MatrixCoefficient                   
-   {										       	
-   protected:										
-	double time;									
-	
+   class TimeDependentMatrixCoefficient : public MatrixCoefficient
+   {
+   protected:
+        double time;
+
    public:
        TimeDependentMatrixCoefficient( int vd)
-	  : MatrixCoefficient(vd) {time = 0.; }
-   	void SetTime(double t) {time = t;}
-	   double GetTime() {return time; }
+          : MatrixCoefficient(vd) {time = 0.; }
+        void SetTime(double t) {time = t;}
+           double GetTime() {return time; }
    };
 
 
@@ -506,7 +504,7 @@ namespace mfem
       virtual void Read(istream &in) { }
    };
 
-   ///class for a time dependent Vector function coefficient
+   /// Class for a time dependent Vector function coefficient
    class TimeDepVectorFunctionCoefficient
       : public TimeDependentVectorCoefficient
    {
@@ -533,27 +531,27 @@ namespace mfem
    };
 
 
-//class for a time dependent matrix function coefficient
+   /// Class for a time dependent matrix function coefficient
    class TimeDepMatrixFunctionCoefficient: public TimeDependentMatrixCoefficient
    {
-    protected:
-   	void (*F)(const Vector &, double, DenseMatrix &);
-    
-    public:
-	   TimeDepMatrixFunctionCoefficient(int vd, void (*f)(const Vector &, double , DenseMatrix &))
-		: TimeDependentMatrixCoefficient(vd),F(f) {} 
+   protected:
+      void (*F)(const Vector &, double, DenseMatrix &);
 
-	   virtual void Eval(DenseMatrix &K, ElementTransformation &T, const IntegrationPoint &ip)
-		{    
-		   double x[3];
+   public:
+      TimeDepMatrixFunctionCoefficient(int vd, void (*f)(const Vector &, double , DenseMatrix &))
+         : TimeDependentMatrixCoefficient(vd),F(f) {}
+
+      virtual void Eval(DenseMatrix &K, ElementTransformation &T, const IntegrationPoint &ip)
+      {
+         double x[3];
          Vector p(x, 3);
-		
+
          T.Transform(ip, p);
-		   
-          K.SetSize(vdim);
-		   (*F)(p , GetTime(),K);
-		}
-    };		
+
+         K.SetSize(vdim);
+         (*F)(p , GetTime(),K);
+      }
+   };
 
    class FuncDepGridFuncCoefficient : public GridFunctionCoefficient
    {
@@ -562,31 +560,31 @@ namespace mfem
        double power;
    public:
 
-       FuncDepGridFuncCoefficient(ParGridFunction *vd, double _power) : GridFunctionCoefficient(vd) {gfunc = vd; power = _power;}
+      FuncDepGridFuncCoefficient(ParGridFunction *vd, double _power) : GridFunctionCoefficient(vd) {gfunc = vd; power = _power;}
 
-      void SetGridFunction(HypreParVector *X) {*gfunc = *X;} 
-   
+      void SetGridFunction(HypreParVector *X) {*gfunc = *X;}
+
       void SetPower(double _power) {power = _power;}
 
-      double Eval(ElementTransformation &T, const IntegrationPoint &ip) 
+      double Eval(ElementTransformation &T, const IntegrationPoint &ip)
       {
       Vector d;
       gfunc->GetGradient(T,d);
       return -(pow(d*(d),power/2));
-      }      
-         
+      }
+
       virtual void Read(istream &in) { }
   };
 
 }
-		
+
 using namespace mfem;
 
-//All variables required for a nonlinear solve with variable tolerance. 
+// All variables required for a nonlinear solve with variable tolerance.
 
 class NonlinearOptions
 {
-//timeint = tstart-tstop, tolf and tolc are fine and coarse grid nonlinear solve tolerances 
+//timeint = tstart-tstop, tolf and tolc are fine and coarse grid nonlinear solve tolerances
 //and ntime is the number of time steps
 protected:
 int max_it, ntime;
@@ -602,7 +600,7 @@ public:
       }
 double GetMaxIteration() {return max_it;}
 
-double GetTolerance(double dt = 0) 
+double GetTolerance(double dt = 0)
 {
  if (dt - timeint/ntime < 0.000001)
    return tolf;
@@ -683,16 +681,16 @@ class LinearSystemODE : public Diagonal_Implicit_Evolution_Operator
 {
 private:
    HypreParMatrix *M, *B; // B = M - dt A, for ImplicitSolve
-	mutable HypreParMatrix *A;   
-	HypreParVector *X, *Y, *Z;
-   HypreParVector *W, *H,*D;  
+   mutable HypreParMatrix *A;
+   HypreParVector *X, *Y, *Z;
+   HypreParVector *W, *H,*D;
    mutable HypreParVector *b;
    ParLinearForm *b_form;
-	mutable ParBilinearForm *aform;
+   mutable ParBilinearForm *aform;
    TimeDependentCoefficient *b_coeff;
    TimeDependentVectorCoefficient *b_vcoeff;
-	TimeDependentMatrixCoefficient *mcoeff;
-   FuncDepGridFuncCoefficient *gcoeff;  
+   TimeDependentMatrixCoefficient *mcoeff;
+   FuncDepGridFuncCoefficient *gcoeff;
    HypreBoomerAMG *amg;
    HyprePCG *pcg;
    HypreBoomerAMG *B_amg;
@@ -702,37 +700,37 @@ private:
 
 public:
    LinearSystemODE(ParBilinearForm *_aform,
-                   int _timedep = 1,               
+                   int _timedep = 1,
                    HypreParMatrix *_M = NULL,
-						 ParLinearForm *_b_form = NULL,
+                                                 ParLinearForm *_b_form = NULL,
                    TimeDependentCoefficient *_b_coeff = NULL,
                    TimeDependentVectorCoefficient *_b_vcoeff = NULL,
-						 TimeDependentMatrixCoefficient *_mcoeff = NULL,
+                                                 TimeDependentMatrixCoefficient *_mcoeff = NULL,
                    FuncDepGridFuncCoefficient *_gcoeff = NULL,
                    NonlinearOptions *_NLO = NULL)
-                   
-          :aform(_aform),M(_M), b_form(_b_form),b_coeff(_b_coeff), b_vcoeff(_b_vcoeff), mcoeff(_mcoeff), timedep(_timedep), 
-          gcoeff(_gcoeff), NLO(_NLO) 
-         
-         { 
 
- 
+          :aform(_aform),M(_M), b_form(_b_form),b_coeff(_b_coeff), b_vcoeff(_b_vcoeff), mcoeff(_mcoeff), timedep(_timedep),
+          gcoeff(_gcoeff), NLO(_NLO)
+
+         {
+
+
          //Inital Assembly of Stiffness Matrix
          aform->Assemble(); aform->Finalize();
          A = aform->ParallelAssemble();
-	      size = A->Size();
-     
+              size = A->Size();
+
          double tmp; // workaround to avoid memory leak
-     		X = new HypreParVector(A->GetComm(), A->GetGlobalNumCols(), &tmp,A->GetColStarts());
+                X = new HypreParVector(A->GetComm(), A->GetGlobalNumCols(), &tmp,A->GetColStarts());
          Y = new HypreParVector(A->GetComm(), A->GetGlobalNumCols(), &tmp,A->GetColStarts());
-     
+
       if (!M)
       {
          amg = NULL;
          pcg = NULL;
          Z = NULL;
          W = NULL;
-      } 
+      }
       else
       {
          amg = new HypreBoomerAMG(*M);
@@ -757,25 +755,25 @@ public:
       B_amg = NULL;
       B_pcg = NULL;
    }
-   
+
    void AssembleDiffMatrix() const
    {	if (timedep)
-      {  
+      {
          delete A;
-         
+
          if (mcoeff && !gcoeff)
          mcoeff->SetTime(GetTime());
 
          aform->Update();
-         aform-> Assemble();        
+         aform-> Assemble();
          aform->Finalize();
          A = aform->ParallelAssemble();
       }
    }
-      
+
   //Assemble the Source Term Vector at each time t
   void AssembleBVector() const
-	
+
    {
       if (b_form)
       {
@@ -800,7 +798,7 @@ public:
       //Assemble
       AssembleBVector();
       AssembleDiffMatrix();
-      
+
       //Solve
       if (!M)
       {
@@ -817,7 +815,7 @@ public:
          pcg->Mult(*Z, *Y);
       }
    }
-   
+
    /** Solve for k in the equation: M k = A x + dt A k + b.
        This method is needed for backward Euler and other DIRK methods. */
    virtual void ImplicitSolve(const double dt, const Vector &x, Vector &k)
@@ -835,27 +833,27 @@ public:
 
       while (i <= iteration && resid >= tol )
        {
-       //Wrap the Data  
+       //Wrap the Data
        X->SetData(x.GetData());
        Y->SetData(k.GetData());
-  
+
         if (gcoeff && i==0)
-        gcoeff->SetGridFunction(X);       
+        gcoeff->SetGridFunction(X);
         if (i==0)
         {
-        AssembleBVector(); 
+        AssembleBVector();
         AssembleDiffMatrix();
         }
-  
+
        //Assemble
-        
-      //Solve  
+
+      //Solve
       if (!M)
       {
          cerr << "Not implemented!" << endl;
          abort();
       }
-   	// 1) Form the matrix: B = M - dt A
+        // 1) Form the matrix: B = M - dt A
       if (!B)
          B = new HypreParMatrix(hypre_ParCSRMatrixAdd(*M, *A));
       if (timedep || current_dt != dt)
@@ -884,8 +882,8 @@ public:
       *Z += *b;
 
       B_pcg->Mult(*Z, *Y);
-  
- 
+
+
 
 //Update the matrix for the next iteration and calculate the residual;
         add(*X,dt,*Y,*D);// D = X + k*dt
@@ -894,18 +892,18 @@ public:
         gcoeff->SetGridFunction(D);
         AssembleDiffMatrix();
         }
-         
+
        A->Mult(*D,*H);
       *H += *b;   // H = A(x+kdt) + b(t)
         M->Mult(*Y,*W);
-        *W -= *H; //W = Mk - A(x+k*dt) -b(t) 
+        *W -= *H; //W = Mk - A(x+k*dt) -b(t)
         Vector *tt = W->GlobalVector();
         resid = tt->Norml2();
         delete tt;
         i++;
         }
    }
- 
+
    virtual ~LinearSystemODE()
    {
       delete B_pcg;
@@ -921,7 +919,7 @@ public:
       //delete W;
       //delete H;
       //delete D;
-        
+
    }
 };
 
@@ -1002,80 +1000,8 @@ void SolveODE(TimeDependentOperator *ode, HypreParVector *X0,
    delete sol_sock;
 }
 
-// Wrapper for BRAID's AccessStatus object
-class BraidAccessStatus
-{
-   private:
-      braid_AccessStatus astatus;
-   
-   public:
-      BraidAccessStatus(braid_AccessStatus _astatus)
-      {
-         astatus = _astatus;
-      }
-
-      void GetTILD(braid_Real *t_ptr, braid_Int *iter_ptr, braid_Int *level_ptr, braid_Int *done_ptr) { braid_AccessStatusGetTILD(astatus, t_ptr, iter_ptr, level_ptr, done_ptr); }
-      void GetT(braid_Real *t_ptr)            { braid_AccessStatusGetT(astatus, t_ptr); }
-      void GetDone(braid_Int *done_ptr)       { braid_AccessStatusGetDone(astatus, done_ptr); }
-      void GetLevel(braid_Int *level_ptr)     { braid_AccessStatusGetLevel(astatus, level_ptr); }
-      void GetIter(braid_Int *iter_ptr)       { braid_AccessStatusGetIter(astatus, iter_ptr); }
-      void GetResidual(braid_Real *rnorm_ptr) { braid_AccessStatusGetResidual(astatus, rnorm_ptr); }
-      
-      // The braid_AccessStatus structure is deallocated inside of Braid
-      // This class is just to make code consistently look object oriented
-      ~BraidAccessStatus() { }
-};
-
-// Wrapper for BRAID's PhiStatus object
-class BraidPhiStatus
-{
-   private:
-      braid_PhiStatus pstatus;
-   
-   public:
-      BraidPhiStatus(braid_PhiStatus _pstatus)
-      {
-         pstatus = _pstatus;
-      }
-
-      void GetTstartTstop(braid_Real *tstart_ptr, braid_Real *tstop_ptr)     { braid_PhiStatusGetTstartTstop(pstatus, tstart_ptr, tstop_ptr); }
-      void GetTstart(braid_Real *tstart_ptr)     { braid_PhiStatusGetTstart(pstatus, tstart_ptr); }
-      void GetTstop(braid_Real *tstop_ptr)       { braid_PhiStatusGetTstop(pstatus, tstop_ptr); }
-      void GetAccuracy(braid_Real *accuracy_ptr)  { braid_PhiStatusGetAccuracy(pstatus, accuracy_ptr); }
-      void SetRFactor(braid_Int rfactor)         { braid_PhiStatusSetRFactor(pstatus, rfactor); }
-      
-      // The braid_PhiStatus structure is deallocated inside of Braid
-      // This class is just to make code consistently look object oriented
-      ~BraidPhiStatus() { }
-};
-
-// Wrapper for BRAID's CoarsenRefStatus object
-class BraidCoarsenRefStatus
-{
-   private:
-      braid_CoarsenRefStatus cstatus;
-   
-   public:
-      BraidCoarsenRefStatus(braid_CoarsenRefStatus  _cstatus)
-      {
-         cstatus = _cstatus;
-      }
-
-      void GetTpriorTstop(braid_Real *tstart_ptr, braid_Real *f_tprior_ptr, braid_Real *f_tstop_ptr, braid_Real *c_tprior_ptr, braid_Real *c_tstop_ptr)     { braid_CoarsenRefStatusGetTpriorTstop(cstatus, tstart_ptr, f_tprior_ptr, f_tstop_ptr, c_tprior_ptr, c_tstop_ptr); }
-      void GetTstart(braid_Real *tstart_ptr)     { braid_CoarsenRefStatusGetTstart(cstatus, tstart_ptr); }
-      void GetFTstop(braid_Real *f_tstop_ptr)    { braid_CoarsenRefStatusGetFTstop(cstatus, f_tstop_ptr); }
-      void GetFTprior(braid_Real *f_tprior_ptr)  { braid_CoarsenRefStatusGetFTprior(cstatus, f_tprior_ptr); }
-      void GetCTstop(braid_Real *c_tstop_ptr)    { braid_CoarsenRefStatusGetCTstop(cstatus, c_tstop_ptr); }
-      void GetCTprior(braid_Real *c_tprior_ptr)  { braid_CoarsenRefStatusGetCTprior(cstatus, c_tprior_ptr); }
-      
-      // The braid_CoarsenRefStatus structure is deallocated inside of Braid
-      // This class is just to make code consistently look object oriented
-      ~BraidCoarsenRefStatus() { }
-};
-
-
 // Wrapper for BRAID's App object
-class BraidApp
+class MFEMBraidApp : public BraidApp
 {
 public:
    TimeDependentOperator *ode;
@@ -1096,11 +1022,11 @@ public:
 
    const char * vishost;
    int  visport;
-   BraidApp(MPI_Comm _comm_t, TimeDependentOperator *_ode,
+   MFEMBraidApp(MPI_Comm _comm_t, TimeDependentOperator *_ode,
             HypreParVector *_X0, ParGridFunction *_x, ODESolver *_solver,
             double _tstart = 0.0, double _tstop = 1.0, int _ntime = 100)
-      : ode(_ode), solver(_solver), comm_t(_comm_t), tstart(_tstart),
-        tstop(_tstop), ntime(_ntime), X0(_X0), x(_x)
+      : BraidApp(_comm_t, _tstart, _tstop, _ntime), ode(_ode), solver(_solver),
+        X0(_X0), x(_x)
    {
       buff_size = sizeof(double) * X0->Size();
 
@@ -1114,28 +1040,28 @@ public:
    void SetExactSolution(TimeDependentCoefficient *exsol)
    { exact_sol = exsol; }
 
-   ~BraidApp()
+   ~MFEMBraidApp()
    {
       delete sol_sock;
    }
 
-   // Below braid_Vector == HypreParVector* and braid_App == BraidApp*
+   // Below braid_Vector == HypreParVector* and braid_App == MFEMBraidApp*
 
-   static int Phi(braid_App       _app,
+   virtual int Phi(braid_App       _app,
                   braid_Vector    _u,
                   braid_PhiStatus _pstatus)
    {
-      BraidApp *app          = (BraidApp*) _app;
+      MFEMBraidApp *app          = (MFEMBraidApp*) _app;
       HypreParVector *u      = (HypreParVector*) _u;
       BraidPhiStatus pstatus = BraidPhiStatus(_pstatus);
       double tstart, tstop, accuracy, t, dt;
-      
+
       // Get time step information
       pstatus.GetTstartTstop(&tstart, &tstop);
       pstatus.GetAccuracy(&accuracy);
       t = tstart;
       dt = tstop-tstart;
-      
+
       app->solver->Step(*u, t, dt);
 
       // no refinement
@@ -1144,7 +1070,7 @@ public:
       return 0;
    }
 
-   static int Clone(braid_App     _app,
+   virtual int Clone(braid_App     _app,
                     braid_Vector  _u,
                     braid_Vector *v_ptr)
    {
@@ -1155,11 +1081,11 @@ public:
       return 0;
    }
 
-   static int Init(braid_App    _app,
+   virtual int Init(braid_App    _app,
                    double       t,
                    braid_Vector *u_ptr)
    {
-      BraidApp *app = (BraidApp*) _app;
+      MFEMBraidApp *app = (MFEMBraidApp*) _app;
       Clone(_app, (braid_Vector)app->X0, u_ptr);
       if (t != app->tstart)
       {
@@ -1170,7 +1096,7 @@ public:
       return 0;
    }
 
-   static int Free(braid_App    _app,
+   virtual int Free(braid_App    _app,
                    braid_Vector _u)
    {
       HypreParVector *u = (HypreParVector*) _u;
@@ -1178,7 +1104,7 @@ public:
       return 0;
    }
 
-   static int Sum(braid_App    _app,
+   virtual int Sum(braid_App    _app,
                   double       alpha,
                   braid_Vector _x,
                   double       beta,
@@ -1190,36 +1116,36 @@ public:
       return 0;
    }
 
-   static int SpatialNorm(braid_App     _app,
+   virtual int SpatialNorm(braid_App     _app,
                           braid_Vector  _u,
                           double       *norm_ptr)
    {
-      double dot; 
+      double dot;
       HypreParVector *u = (HypreParVector*) _u;
       dot = InnerProduct(u,u);
       *norm_ptr = sqrt(dot);
       return 0;
    }
-  
+
    void SetVisHostAndPort(const char * vh, int vp)
    {
       vishost = vh;
       visport = vp;
    }
 
-   static int Access(braid_App           _app,
+   virtual int Access(braid_App           _app,
                      braid_Vector        _u,
                      braid_AccessStatus  _astatus)
    {
-      BraidApp *app             = (BraidApp*) _app;
+      MFEMBraidApp *app             = (MFEMBraidApp*) _app;
       BraidAccessStatus astatus = BraidAccessStatus(_astatus);
       HypreParVector *u         = (HypreParVector*) _u;
-      
+
       // Extract information from astatus
       int done, level, iter;
       double rnorm, t;
       astatus.GetTILD(&t, &iter, &level, &done);
-      astatus.GetResidual(&rnorm); 
+      astatus.GetResidual(&rnorm);
 
       // if (t == app->tstart || t == app->tstop)
       if ( (t == app->tstop) && (level == 0) )
@@ -1287,31 +1213,31 @@ public:
       return 0;
    }
 
-   static int BufSize(braid_App  _app,
+   virtual int BufSize(braid_App  _app,
                       int       *size_ptr)
    {
-      BraidApp *app = (BraidApp*) _app;
+      MFEMBraidApp *app = (MFEMBraidApp*) _app;
       *size_ptr     = app->buff_size;
       return 0;
    }
 
-   static int BufPack(braid_App     _app,
+   virtual int BufPack(braid_App     _app,
                       braid_Vector  _u,
                       void         *buffer,
                       int          *size_ptr)
    {
-      BraidApp *app     = (BraidApp*) _app;
+      MFEMBraidApp *app     = (MFEMBraidApp*) _app;
       HypreParVector *u = (HypreParVector*) _u;
       memcpy(buffer, u->GetData(), app->buff_size);
       *size_ptr         = app->buff_size;
       return 0;
    }
 
-   static int BufUnpack(braid_App     _app,
+   virtual int BufUnpack(braid_App     _app,
                         void         *buffer,
                         braid_Vector *u_ptr)
    {
-      BraidApp *app = (BraidApp*) _app;
+      MFEMBraidApp *app = (MFEMBraidApp*) _app;
       Clone(_app, (braid_Vector)app->X0, u_ptr);
       HypreParVector *u = (HypreParVector*) *u_ptr;
       memcpy(u->GetData(), buffer, app->buff_size);
@@ -1319,196 +1245,6 @@ public:
    }
 };
 
-// Wrapper for BRAID utilities that help the user, 
-// includes all the braid_Test* routines for testing the
-// user-written wrappers.
-class BraidUtil
-{
-private:
-
-public:
-   
-   // Empty constructor
-   BraidUtil( ){ }
-   
-   // Split comm_world into comm_x and comm_t, the spatial 
-   // and temporal communicators
-   void SplitCommworld(const MPI_Comm  *comm_world,
-                             braid_Int  px,
-                             MPI_Comm  *comm_x,
-                             MPI_Comm  *comm_t)
-   { braid_SplitCommworld(comm_world, px, comm_x, comm_t); }
-
-   // Test Function for Init and Access function
-   void TestInitAccess( BraidApp              *app,
-                        MPI_Comm               comm_x,
-                        FILE                  *fp,
-                        double                 t,
-                        braid_PtFcnInit        init,
-                        braid_PtFcnAccess      access,
-                        braid_PtFcnFree        free)
-   { braid_TestInitAccess((braid_App) app, comm_x, fp, t, init, access, free); }
-
-   // Test Function for Clone 
-   void TestClone( BraidApp              *app,
-                   MPI_Comm               comm_x,
-                   FILE                  *fp,
-                   double                 t,
-                   braid_PtFcnInit        init,
-                   braid_PtFcnAccess      access,
-                   braid_PtFcnFree        free,
-                   braid_PtFcnClone       clone)
-   { braid_TestClone((braid_App) app, comm_x, fp, t, init, access, free, clone); }
-   
-   // Test Function for Sum 
-   void TestSum( BraidApp              *app,
-                 MPI_Comm               comm_x,
-                 FILE                  *fp,
-                 double                 t,
-                 braid_PtFcnInit        init,
-                 braid_PtFcnAccess      access,
-                 braid_PtFcnFree        free,
-                 braid_PtFcnClone       clone,
-                 braid_PtFcnSum         sum)
-   { braid_TestSum((braid_App) app, comm_x, fp, t, init, access, free, clone, sum); }
-   
-   // Test Function for SpatialNorm 
-   int TestSpatialNorm( BraidApp              *app,
-                        MPI_Comm               comm_x,
-                        FILE                  *fp,
-                        double                 t,
-                        braid_PtFcnInit        init,
-                        braid_PtFcnFree        free,
-                        braid_PtFcnClone       clone,
-                        braid_PtFcnSum         sum,
-                        braid_PtFcnSpatialNorm spatialnorm)
-   { return braid_TestSpatialNorm((braid_App) app, comm_x, fp, t, init, free, clone, sum, spatialnorm); }
-
-   // Test Functions BufSize, BufPack, BufUnpack
-   int TestBuf( BraidApp               *app,
-                 MPI_Comm               comm_x,
-                 FILE                  *fp,
-                 double                 t,
-                 braid_PtFcnInit        init,
-                 braid_PtFcnFree        free,
-                 braid_PtFcnSum         sum,  
-                 braid_PtFcnSpatialNorm spatialnorm,
-                 braid_PtFcnBufSize     bufsize,
-                 braid_PtFcnBufPack     bufpack,
-                 braid_PtFcnBufUnpack   bufunpack)
-   { return braid_TestBuf((braid_App) app, comm_x, fp, t, init, free, sum, spatialnorm, bufsize, bufpack, bufunpack); }
-
-   // Test Functions Coarsen and Refine
-   int TestCoarsenRefine(BraidApp                 *app,
-                          MPI_Comm                 comm_x,
-                          FILE                    *fp,
-                          double                   t,
-                          double                   fdt,
-                          double                   cdt,
-                          braid_PtFcnInit          init,
-                          braid_PtFcnAccess        access,
-                          braid_PtFcnFree          free,
-                          braid_PtFcnClone         clone,
-                          braid_PtFcnSum           sum,
-                          braid_PtFcnSpatialNorm   spatialnorm,
-                          braid_PtFcnCoarsen       coarsen,
-                          braid_PtFcnRefine        refine)
-   { return braid_TestCoarsenRefine( (braid_App) app, comm_x, fp, t, fdt, cdt, init,
-                            access, free, clone, sum, spatialnorm, coarsen, refine); }
-
-   int TestAll(BraidApp                 *app,
-                MPI_Comm                 comm_x,
-                FILE                    *fp,
-                double                   t,
-                double                   fdt,
-                double                   cdt,
-                braid_PtFcnInit          init,
-                braid_PtFcnFree          free,
-                braid_PtFcnClone         clone,
-                braid_PtFcnSum           sum,
-                braid_PtFcnSpatialNorm   spatialnorm,
-                braid_PtFcnBufSize       bufsize,  
-                braid_PtFcnBufPack       bufpack,  
-                braid_PtFcnBufUnpack     bufunpack,
-                braid_PtFcnCoarsen       coarsen,
-                braid_PtFcnRefine        refine)
-   { return braid_TestAll( (braid_App) app, comm_x, fp, t, fdt, cdt,
-                   init, free, clone, sum, spatialnorm, bufsize, bufpack, 
-                   bufunpack, coarsen, refine); }
-
-   ~BraidUtil() { }
-
-};
-
-
-
-// Wrapper for BRAID's core object
-class BraidCore
-{
-private:
-   braid_Core core;
-
-public:
-   BraidCore(MPI_Comm comm_world, BraidApp *app)
-   {
-      braid_Init(comm_world,
-                 app->comm_t, app->tstart, app->tstop, app->ntime, (braid_App)app,
-                 BraidApp::Phi, BraidApp::Init, BraidApp::Clone, BraidApp::Free,
-                 BraidApp::Sum, BraidApp::SpatialNorm, BraidApp::Access,
-                 BraidApp::BufSize, BraidApp::BufPack, BraidApp::BufUnpack, &core);
-   }
-
-   void SetMaxLevels(int max_levels) { braid_SetMaxLevels(core, max_levels); }
-   
-   void SetMaxCoarse(int max_coarse) { braid_SetMaxCoarse(core, max_coarse); }
-
-   void SetNRelax(int level, int nrelax)
-   { braid_SetNRelax(core, level, nrelax); }
-
-   void SetAbsTol(double tol) { braid_SetAbsTol(core, tol); }
-
-   void SetRelTol(double tol) { braid_SetRelTol(core, tol); }
-   
-   void SetTemporalNorm(int tnorm) { braid_SetTemporalNorm(core, tnorm); }
-   
-   void SetCFactor(int level, int cfactor)
-   { braid_SetCFactor(core, level, cfactor); }
-
-   /** Use cfactor0 on all levels until there are < cfactor0 points
-       on each processor. */
-   void SetAggCFactor(int cfactor0)
-   {
-      BraidApp *app = (BraidApp *) core->app;
-      int nt = app->ntime, pt;
-      MPI_Comm_size(app->comm_t, &pt);
-      if (cfactor0 > -1)
-      {
-         int level = (int) (log10((nt + 1) / pt) / log10(cfactor0));
-         for (int i = 0; i < level; i++)
-            braid_SetCFactor(core, i, cfactor0);
-      }
-   }
-
-   void SetMaxIter(int max_iter) { braid_SetMaxIter(core, max_iter); }
-   
-   void SetPrintLevel(int print_level) { braid_SetPrintLevel(core, print_level); }
-   
-   void SetPrintFile(const char *printfile_name) { braid_SetPrintFile(core, printfile_name); }
-    
-   void SetAccessLevel(int access_level) { braid_SetAccessLevel(core, access_level); }
-
-   void SetFMG() { braid_SetFMG(core); }
-   
-   void SetNFMGVcyc(int nfmg_Vcyc) { braid_SetNFMGVcyc(core, nfmg_Vcyc); }
-   
-   void GetNumIter(int *niter_ptr) { braid_GetNumIter(core, niter_ptr); }
-   
-   void GetRNorm(double *rnorm_ptr) { braid_GetRNorm(core, rnorm_ptr); }
-
-   void Drive() { braid_Drive(core); }
-
-   ~BraidCore() { braid_Destroy(core); }
-};
 
 
 // Exact solution parameters
@@ -1533,7 +1269,7 @@ double ExSol(Vector &p, double t)
 }
 double Difffunction(double t )
 {
-  
+
    if (diff_term <10)
    return diff_term;
    else if (diff_term == 10)
@@ -1548,22 +1284,22 @@ double Difffunction(double t )
       return 1;
       else if ( t > tfinal/2 && t <= 3*tfinal/4)
       return 0.001;
-      else 
+      else
       return 1;
    }
-   else 
-   return 1; 
+   else
+   return 1;
 }
 //diffusion coefficient term
  void  Diff(const Vector &p,double t, DenseMatrix &m)
-{	
+{
       int dim = p.Size();
       if (dim == 2)
       {
          double aa[4]={-1,0,0,-Difffunction(t)};
          m = aa;
       }
-      else 
+      else
       {
          double aa[9] = {-1,0,0,0,-1,0,0,0,-Difffunction(t)};
          m = aa;
@@ -1574,13 +1310,13 @@ int timedep()
 {
  if (diff_term < 10 )
  return 0;
- else 
+ else
  return 1;
 }
 
 // Initial condition
 double IC(Vector &x)
-{ 
+{
 return ExSol(x, 0.0);
 }
 
@@ -1588,18 +1324,18 @@ return ExSol(x, 0.0);
 // Defined as a vector field, g, so that exact solutions will work with
 // arbitrary domains: du/dn|_{\partial\Omega} = g.n.
 void NBC(const Vector &p, double t, Vector &v)
-{ 
+{
 
     double Ux,Uy;
     int dim = p.Size();
     if (diff_term>20)
-      { 
+      {
        Ux = kap*cos(kap*p(0))*sin(kap*p(1))*sin(tau*t);
        Uy = kap*sin(kap*p(0))*cos(kap*p(1))*sin(tau*t);
        v(0) = pow(Ux*Ux + Uy*Uy,power/2)*Ux;
-       v(1) = pow(Ux*Ux + Uy*Uy,power/2)*Uy;  
+       v(1) = pow(Ux*Ux + Uy*Uy,power/2)*Uy;
        return;
-      } 
+      }
      else  if (diff_term<=0)
     {
        v(0) = -diff_term*kap*cos(kap*p(0))*sin(kap*p(1))*sin(tau*t);
@@ -1631,7 +1367,7 @@ double ST(Vector &p, double t)
         Uxy =  kap*kap*cos(kap*p(0))*cos(kap*p(1))*sin(tau*t);
       if (power == 0)
       return  Ut-(power+2)*pow((Ux*Ux +Uy*Uy),power/2)*Uxx; //
-      else 
+      else
       return  Ut-(power+2)*pow((Ux*Ux +Uy*Uy),power/2)*Uxx - 2*power*(Ux*Uy*Uxy)*pow(Ux*Ux+Uy*Uy,power/2-1);
 
 
@@ -1639,7 +1375,7 @@ double ST(Vector &p, double t)
       }
       else if (diff_term<=0 )
        return (tau*cos(tau*t) -(2*diff_term)*kap*kap*sin(tau*t))*sin(kap*p(0))*sin(kap*p(1));
-   
+
       else if (dim == 2)
       return (tau*cos(tau*t) +(1+Difffunction(t))*kap*kap*sin(tau*t))*sin(kap*p(0))*sin(kap*p(1));
       else
@@ -1671,7 +1407,7 @@ int main(int argc, char *argv[])
    double tstop         = 1.0;
    int    ntime         = 32;
    int    picard        = 5;
-   double tolf          = 0.0001; 
+   double tolf          = 0.0001;
    double tolc          = tolf;
 
 
@@ -1681,7 +1417,7 @@ int main(int argc, char *argv[])
    extern double kap;
 
    kap = M_PI;
-   power = 0; 
+   power = 0;
    diff_term = -1;
 
 // double cfl         = 1.0;
@@ -1694,7 +1430,7 @@ int main(int argc, char *argv[])
    const char * vishost = "localhost";
    int visport = 19916;
 
-   
+
    // BRAID default parameters:
    int    max_levels  = 10;
    int    max_coarse  = 1;
@@ -1735,7 +1471,7 @@ int main(int argc, char *argv[])
       else if (strcmp(argv[arg_index], "-tolc") == 0)
       {
          tolc = atof(argv[++arg_index]);
-      }     
+      }
       else if (strcmp(argv[arg_index], "-pref") == 0)
       {
          pref = atoi(argv[++arg_index]);
@@ -1915,15 +1651,15 @@ int main(int argc, char *argv[])
          "                        -21 - Implicit midpoint\n"
          "                        -31 - SDIRK(2,3)\n"
          "                        -41 - SDIRK(3,4)\n"
-         "  -dt <diff_term>           :   -dt<0 - constant coefficient with value = dt \n "         
-         "                    : set D(t) = [1 0 ; 0 f(t)], the diffusion tensor \n" 
-         "                         0<dt<10 f(t) = dt\n" 
+         "  -dt <diff_term>           :   -dt<0 - constant coefficient with value = dt \n "
+         "                    : set D(t) = [1 0 ; 0 f(t)], the diffusion tensor \n"
+         "                         0<dt<10 f(t) = dt\n"
          "                         10 - f(t) = cos(pi*t/(2*tstop))+0.001\n"
          "                         11 - f(t) = t/tstop + 0.001 \n"
-         "                         12 - f(t) = jump function \n" 
+         "                         12 - f(t) = jump function \n"
          "                         21 - nonlinear coefficient a = |grad(u)|^p\n"
          "  -pow <power>      : set the value of the power in nonlinear equation (dt = 21)\n"
-         "  -kap <kap>        : set the frequency of the exact solution sin wave\n" 
+         "  -kap <kap>        : set the frequency of the exact solution sin wave\n"
          "  -picard <picard>      : set maximum number of picard iterations for each nonlinear solve\n"
          "  -tolf <tolf>      : set the nonlinear solve tolerance for the fine grid (default 0.001)\n"
          "  -tolc <tolc>      : set the nonlinear solve tolerance for the coarse grids (default 0.001)\n"
@@ -2032,35 +1768,35 @@ int main(int argc, char *argv[])
           a->AddDomainIntegrator(new DiffusionIntegrator(minus));
        else if (diff_term < 20)
           a->AddDomainIntegrator(new DiffusionIntegrator(dc));
-       else 
+       else
           a->AddDomainIntegrator(new DiffusionIntegrator(gfc));
-          
+
    m->AddDomainIntegrator(new MassIntegrator(one));
    b->AddDomainIntegrator(new DomainLFIntegrator(source));
-   b->AddBoundaryIntegrator(new BoundaryNormalLFIntegrator(nbc));  
+   b->AddBoundaryIntegrator(new BoundaryNormalLFIntegrator(nbc));
 
    // Local assembly. Use precomputed sparsity to ensure that 'a' and 'm' have
    // the same sparsity patterns.
    a->UsePrecomputedSparsity();
    m->UsePrecomputedSparsity(); m->Assemble(); m->Finalize();
-	HypreParMatrix *M = m->ParallelAssemble();
-   
+        HypreParMatrix *M = m->ParallelAssemble();
+
    delete m;
   // Define the righ-hand side of the ODE and call MFEM or BRAID to solve it.
    TimeDependentOperator *ode;
    if (heat_equation)
-			{
+                        {
             if (diff_term <= 0)
-			         ode = new LinearSystemODE(a,0, M, b, &source, &nbc);
+                                 ode = new LinearSystemODE(a,0, M, b, &source, &nbc);
             else if (diff_term < 20)
-			         ode = new LinearSystemODE(a,timedep(), M, b, &source, &nbc, &dc);
-            else 
-			      {
+                                 ode = new LinearSystemODE(a,timedep(), M, b, &source, &nbc, &dc);
+            else
+                              {
                   ode = new LinearSystemODE(a,timedep(),M, b, &source, &nbc,&dc,&gfc,NLO);
-		         }
-         }   
+                         }
+         }
    else
-		{
+                {
       a->Assemble();
       a->Finalize();
       HypreParMatrix *A = a->ParallelAssemble();
@@ -2107,17 +1843,17 @@ int main(int argc, char *argv[])
    }
    else
    {
-      BraidApp app(comm_t, ode, X0, &x0, solver, tstart, tstop, ntime);
+      MFEMBraidApp app(comm_t, ode, X0, &x0, solver, tstart, tstop, ntime);
       app.SetVisHostAndPort(vishost, visport);
 
       if (wrapper_tests)
       {
          test_t = (app.tstop - app.tstart)/ (double) app.ntime;
          correct = util.TestAll(&app, comm_x, stdout, 0.0, test_t, 2*test_t,
-                      BraidApp::Init, BraidApp::Free, BraidApp::Clone, 
-                      BraidApp::Sum, BraidApp::SpatialNorm, BraidApp::BufSize,
-                      BraidApp::BufPack, BraidApp::BufUnpack, NULL, NULL);
-         
+                      _BraidAppInit, _BraidAppFree, _BraidAppClone,
+                      _BraidAppSum, _BraidAppSpatialNorm, _BraidAppBufSize,
+                      _BraidAppBufPack, _BraidAppBufUnpack, NULL, NULL);
+
          if(correct == 0)
          {
            cout << "Drive-04 Failed: at least one of the tests failed\n";
@@ -2125,9 +1861,9 @@ int main(int argc, char *argv[])
       }
       else if(one_wrapper_test)
       {
-         // Simple tests for the wrappers 
+         // Simple tests for the wrappers
          // Comment in/out the wrapper test that you want to focus on
-         
+
          // Change the time value passed into the test routines to test
          // various scenarios
          //test_t = (app.tstop - app.tstart)/ (double) app.ntime;
@@ -2135,27 +1871,27 @@ int main(int argc, char *argv[])
          test_t = app.tstop;
 
          // Test init(), access(), free()
-         util.TestInitAccess( &app, comm_x, stdout, test_t, BraidApp::Init, 
-                             BraidApp::Access, BraidApp::Free);
+         util.TestInitAccess( &app, comm_x, stdout, test_t, _BraidAppInit,
+                             _BraidAppAccess, _BraidAppFree);
 
          // Test clone()
-         //util.TestClone( &app, comm_x, stdout, test_t, BraidApp::Init, 
-         //                BraidApp::Access, BraidApp::Free, 
-         //                BraidApp::Clone);
+         //util.TestClone( &app, comm_x, stdout, test_t, _BraidAppInit,
+         //                _BraidAppAccess, _BraidAppFree,
+         //                _BraidAppClone);
 
-         // Test sum() 
-         //util.TestSum( &app, comm_x, stdout, test_t, BraidApp::Init, 
-         //              BraidApp::Access, BraidApp::Free, 
-         //              BraidApp::Clone, BraidApp::Sum);
+         // Test sum()
+         //util.TestSum( &app, comm_x, stdout, test_t, _BraidAppInit,
+         //              _BraidAppAccess, _BraidAppFree,
+         //              _BraidAppClone, _BraidAppSum);
 
          // Test spatialnorm()
-         //correct = util.TestSpatialNorm( &app, comm_x, stdout, test_t, BraidApp::Init, BraidApp::Free, 
-         //              BraidApp::Clone, BraidApp::Sum, BraidApp::SpatialNorm);
+         //correct = util.TestSpatialNorm( &app, comm_x, stdout, test_t, _BraidAppInit, _BraidAppFree,
+         //              _BraidAppClone, _BraidAppSum, _BraidAppSpatialNorm);
 
          // Test bufsize(), bufpack(), bufunpack()
-         //correct = util.TestBuf( &app, comm_x, stdout, test_t, BraidApp::Init, BraidApp::Free, 
-         //              BraidApp::Sum, BraidApp::SpatialNorm, BraidApp::BufSize, 
-         //              BraidApp::BufPack, BraidApp::BufUnpack);
+         //correct = util.TestBuf( &app, comm_x, stdout, test_t, _BraidAppInit, _BraidAppFree,
+         //              _BraidAppSum, _BraidAppSpatialNorm, _BraidAppBufSize,
+         //              _BraidAppBufPack, _BraidAppBufUnpack);
 
          if(correct == 0)
          {
