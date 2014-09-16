@@ -40,7 +40,7 @@ remote_subdir="AUTOTEST-`date +%Y.%m.%d-%a`"
 summary_file="Braid_SUMMARY.html"
 summary_subject="Braid Autotest Summary `date +%Y-%m-%d`"
 email_list="tzanio@llnl.gov, schroder2@llnl.gov, rfalgout@llnl.gov"
-#email_list="rfalgout@llnl.gov, tzanio@llnl.gov, umyang@llnl.gov, schroder2@llnl.gov"
+#email_list="schroder2@llnl.gov"
 timebraid_logo="______           _     _ 
 | ___ \         (_)   | |
 | |_/ /_ __ __ _ _  __| |
@@ -53,7 +53,7 @@ case $1 in
    -h|-help)
       cat <<EOF
 
-   $0  [-init | -{test} ... | -remote-copy | -summary-email]
+   $0  [-init | -{test} ... | -remote-copy | -summary-email | -create-tarball]
 
    where:
 
@@ -70,6 +70,9 @@ case $1 in
                           tests run today.  This command cannot be run over ssh, 
                           and must be run from a machine with direct access to 
                           /usr/casc/hypre/braid/testing.
+      -create-tarball     Creates a nice share-able tarball of braid, with 
+                          unnecessary files removed, fresh documentation and a
+                          VERSION file to identify this checkout
 
    with options:
 
@@ -83,6 +86,7 @@ case $1 in
                   $0 -tux149
                   $0 -remote-copy 'tux343'
                   $0 -summary-email
+                  $0 -create-tarball
 
 EOF
       exit
@@ -234,6 +238,15 @@ case $1 in
 
        break
        ;;
+   
+    -create-tarball)
+        # Create a nice share-able tarball
+        (
+            create_release.sh
+        ) 1>> $test_dir/autotest.out 2>> $test_dir/autotest.err
+
+        break
+        ;;
  
    *)
       (
