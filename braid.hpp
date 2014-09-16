@@ -43,45 +43,35 @@ public:
 
    ~BraidApp() { }
 
-   virtual int Phi(braid_App       _app,
-                   braid_Vector    _u,
+   virtual int Phi(braid_Vector    _u,
                    braid_PhiStatus _pstatus) = 0;
 
-   virtual int Clone(braid_App     _app,
-                     braid_Vector  _u,
+   virtual int Clone(braid_Vector  _u,
                      braid_Vector *v_ptr) = 0;
 
-   virtual int Init(braid_App    _app,
-                    double       t,
+   virtual int Init(double       t,
                     braid_Vector *u_ptr) = 0;
 
-   virtual int Free(braid_App    _app,
-                    braid_Vector _u) = 0;
+   virtual int Free(braid_Vector _u) = 0;
 
-   virtual int Sum(braid_App    _app,
-                   double       alpha,
+   virtual int Sum(double       alpha,
                    braid_Vector _x,
                    double       beta,
                    braid_Vector _y) = 0;
 
-   virtual int SpatialNorm(braid_App     _app,
-                           braid_Vector  _u,
+   virtual int SpatialNorm(braid_Vector  _u,
                            double       *norm_ptr) = 0;
 
-   virtual int Access(braid_App           _app,
-                      braid_Vector        _u,
+   virtual int Access(braid_Vector        _u,
                       braid_AccessStatus  _astatus) = 0;
 
-   virtual int BufSize(braid_App  _app,
-                       int       *size_ptr) = 0;
+   virtual int BufSize(int *size_ptr) = 0;
 
-   virtual int BufPack(braid_App     _app,
-                       braid_Vector  _u,
+   virtual int BufPack(braid_Vector  _u,
                        void         *buffer,
                        int          *size_ptr) = 0;
 
-   virtual int BufUnpack(braid_App     _app,
-                         void         *buffer,
+   virtual int BufUnpack(void         *buffer,
                          braid_Vector *u_ptr) = 0;
 };
 
@@ -91,7 +81,7 @@ static int _BraidAppPhi(braid_App       _app,
                         braid_PhiStatus _pstatus)
 {
    BraidApp *app = (BraidApp*)_app;
-   return app -> Phi(_app, _u, _pstatus);
+   return app -> Phi(_u, _pstatus);
 }
 
 static int _BraidAppClone(braid_App     _app,
@@ -99,7 +89,7 @@ static int _BraidAppClone(braid_App     _app,
                           braid_Vector *v_ptr)
 {
    BraidApp *app = (BraidApp*)_app;
-   return app -> Clone(_app, _u, v_ptr);
+   return app -> Clone(_u, v_ptr);
 }
 
 static int _BraidAppInit(braid_App    _app,
@@ -107,14 +97,14 @@ static int _BraidAppInit(braid_App    _app,
                          braid_Vector *u_ptr)
 {
    BraidApp *app = (BraidApp*)_app;
-   return app -> Init(_app, t, u_ptr);
+   return app -> Init(t, u_ptr);
 }
 
 static int _BraidAppFree(braid_App    _app,
                          braid_Vector _u)
 {
    BraidApp *app = (BraidApp*)_app;
-   return app -> Free(_app, _u);
+   return app -> Free(_u);
 }
 
 static int _BraidAppSum(braid_App    _app,
@@ -124,7 +114,7 @@ static int _BraidAppSum(braid_App    _app,
                         braid_Vector _y)
 {
    BraidApp *app = (BraidApp*)_app;
-   return app -> Sum(_app, alpha, _x, beta, _y);
+   return app -> Sum(alpha, _x, beta, _y);
 }
 
 static int _BraidAppSpatialNorm(braid_App     _app,
@@ -132,7 +122,7 @@ static int _BraidAppSpatialNorm(braid_App     _app,
                                 double       *norm_ptr)
 {
    BraidApp *app = (BraidApp*)_app;
-   return app -> SpatialNorm(_app, _u, norm_ptr);
+   return app -> SpatialNorm(_u, norm_ptr);
 }
 
 static int _BraidAppAccess(braid_App           _app,
@@ -140,14 +130,14 @@ static int _BraidAppAccess(braid_App           _app,
                            braid_AccessStatus  _astatus)
 {
    BraidApp *app = (BraidApp*)_app;
-   return app -> Access(_app, _u, _astatus);
+   return app -> Access(_u, _astatus);
 }
 
 static int _BraidAppBufSize(braid_App  _app,
                             int       *size_ptr)
 {
    BraidApp *app = (BraidApp*)_app;
-   return app -> BufSize(_app, size_ptr);
+   return app -> BufSize(size_ptr);
 }
 
 static int _BraidAppBufPack(braid_App     _app,
@@ -156,7 +146,7 @@ static int _BraidAppBufPack(braid_App     _app,
                             int          *size_ptr)
 {
    BraidApp *app = (BraidApp*)_app;
-   return app -> BufPack(_app, _u, buffer, size_ptr);
+   return app -> BufPack(_u, buffer, size_ptr);
 }
 
 static int _BraidAppBufUnpack(braid_App     _app,
@@ -164,7 +154,7 @@ static int _BraidAppBufUnpack(braid_App     _app,
                               braid_Vector *u_ptr)
 {
    BraidApp *app = (BraidApp*)_app;
-   return app -> BufUnpack(_app, buffer, u_ptr);
+   return app -> BufUnpack(buffer, u_ptr);
 }
 
 // Wrapper for BRAID's core object

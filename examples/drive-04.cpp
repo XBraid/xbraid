@@ -1047,11 +1047,9 @@ public:
 
    // Below braid_Vector == HypreParVector* and braid_App == MFEMBraidApp*
 
-   virtual int Phi(braid_App       _app,
-                  braid_Vector    _u,
-                  braid_PhiStatus _pstatus)
+   virtual int Phi(braid_Vector    _u,
+                   braid_PhiStatus _pstatus)
    {
-      MFEMBraidApp *app          = (MFEMBraidApp*) _app;
       HypreParVector *u      = (HypreParVector*) _u;
       BraidPhiStatus pstatus = BraidPhiStatus(_pstatus);
       double tstart, tstop, accuracy, t, dt;
@@ -1062,7 +1060,7 @@ public:
       t = tstart;
       dt = tstop-tstart;
 
-      app->solver->Step(*u, t, dt);
+      solver->Step(*u, t, dt);
 
       // no refinement
       pstatus.SetRFactor(1);
@@ -1070,9 +1068,8 @@ public:
       return 0;
    }
 
-   virtual int Clone(braid_App     _app,
-                    braid_Vector  _u,
-                    braid_Vector *v_ptr)
+   virtual int Clone(braid_Vector  _u,
+                     braid_Vector *v_ptr)
    {
       HypreParVector *u = (HypreParVector*) _u;
       HypreParVector *v = new HypreParVector(*u);
@@ -1081,13 +1078,11 @@ public:
       return 0;
    }
 
-   virtual int Init(braid_App    _app,
-                   double       t,
-                   braid_Vector *u_ptr)
+   virtual int Init(double       t,
+                    braid_Vector *u_ptr)
    {
-      MFEMBraidApp *app = (MFEMBraidApp*) _app;
-      Clone(_app, (braid_Vector)app->X0, u_ptr);
-      if (t != app->tstart)
+      Clone((braid_Vector)X0, u_ptr);
+      if (t != tstart)
       {
          HypreParVector *u = (HypreParVector*) *u_ptr;
          // u->Randomize(2142);
@@ -1096,19 +1091,17 @@ public:
       return 0;
    }
 
-   virtual int Free(braid_App    _app,
-                   braid_Vector _u)
+   virtual int Free(braid_Vector _u)
    {
       HypreParVector *u = (HypreParVector*) _u;
       delete u;
       return 0;
    }
 
-   virtual int Sum(braid_App    _app,
-                  double       alpha,
-                  braid_Vector _x,
-                  double       beta,
-                  braid_Vector _y)
+   virtual int Sum(double       alpha,
+                   braid_Vector _x,
+                   double       beta,
+                   braid_Vector _y)
    {
       HypreParVector *x = (HypreParVector*) _x;
       HypreParVector *y = (HypreParVector*) _y;
@@ -1116,9 +1109,8 @@ public:
       return 0;
    }
 
-   virtual int SpatialNorm(braid_App     _app,
-                          braid_Vector  _u,
-                          double       *norm_ptr)
+   virtual int SpatialNorm(braid_Vector  _u,
+                           double       *norm_ptr)
    {
       double dot;
       HypreParVector *u = (HypreParVector*) _u;
@@ -1133,11 +1125,9 @@ public:
       visport = vp;
    }
 
-   virtual int Access(braid_App           _app,
-                     braid_Vector        _u,
-                     braid_AccessStatus  _astatus)
+   virtual int Access(braid_Vector        _u,
+                      braid_AccessStatus  _astatus)
    {
-      MFEMBraidApp *app             = (MFEMBraidApp*) _app;
       BraidAccessStatus astatus = BraidAccessStatus(_astatus);
       HypreParVector *u         = (HypreParVector*) _u;
 
@@ -1147,61 +1137,57 @@ public:
       astatus.GetTILD(&t, &iter, &level, &done);
       astatus.GetResidual(&rnorm);
 
-      // if (t == app->tstart || t == app->tstop)
-      if ( (t == app->tstop) && (level == 0) )
+      // if (t == tstart || t == tstop)
+      if ( (t == tstop) && (level == 0) )
       {
-         (*app->x) = *u; // Distribute
+         (*x) = *u; // Distribute
 
          // Opening multiple 'parallel' connections to GLVis simultaneously
          // (from different time intervals in this case) may cause incorrect
          // behavior.
 
-         ParMesh *pmesh = app->pmesh;
-
          int  init_sock = 0;
-         if (!app->sol_sock)
+         if (!sol_sock)
          {
-            app->sol_sock = new socketstream(app->vishost, app->visport);
+            sol_sock = new socketstream(vishost, visport);
             init_sock = 1;
          }
 
-         socketstream &sol_sock = *app->sol_sock;
-
          int good, all_good;
-         good = sol_sock.good();
+         good = sol_sock->good();
          MPI_Allreduce(&good, &all_good, 1, MPI_INT, MPI_LAND,
                        pmesh->GetComm());
 
          if (all_good)
          {
-            sol_sock << "parallel " << pmesh->GetNRanks()
-                     << " " << pmesh->GetMyRank() << "\n";
-            sol_sock << "solution\n";
-            sol_sock.precision(8);
-            pmesh->Print(sol_sock);
-            app->x->Save(sol_sock);
+            (*sol_sock) << "parallel " << pmesh->GetNRanks()
+                        << " " << pmesh->GetMyRank() << "\n";
+            (*sol_sock) << "solution\n";
+            sol_sock->precision(8);
+            pmesh->Print(*sol_sock);
+            x->Save(*sol_sock);
 
             if (init_sock)
             {
                int comm_t_rank;
-               MPI_Comm_rank(app->comm_t, &comm_t_rank);
+               MPI_Comm_rank(comm_t, &comm_t_rank);
 
                // sol_sock << "valuerange 0 1\n";
                // sol_sock << "autoscale off\n";
-               sol_sock << "keys cmAaa\n";
-               sol_sock << "window_title 'comm_t rank: " << comm_t_rank
-                        << ", t = " << t << "'\n";
+               (*sol_sock) << "keys cmAaa\n";
+               (*sol_sock) << "window_title 'comm_t rank: " << comm_t_rank
+                           << ", t = " << t << "'\n";
             }
-            sol_sock << flush;
+            (*sol_sock) << flush;
             if (pmesh->GetMyRank() == 0)
                cout << "Solution updated." << flush;
          }
 
-         if (app->exact_sol)
+         if (exact_sol)
          {
-            app->exact_sol->SetTime(t);
+            exact_sol->SetTime(t);
 
-            double err = app->x->ComputeL2Error(*app->exact_sol);
+            double err = x->ComputeL2Error(*exact_sol);
 
             if (pmesh->GetMyRank() == 0)
                cout << " L2 norm of the error = " << err << endl;
@@ -1213,34 +1199,28 @@ public:
       return 0;
    }
 
-   virtual int BufSize(braid_App  _app,
-                      int       *size_ptr)
+   virtual int BufSize(int *size_ptr)
    {
-      MFEMBraidApp *app = (MFEMBraidApp*) _app;
-      *size_ptr     = app->buff_size;
+      *size_ptr = buff_size;
       return 0;
    }
 
-   virtual int BufPack(braid_App     _app,
-                      braid_Vector  _u,
-                      void         *buffer,
-                      int          *size_ptr)
+   virtual int BufPack(braid_Vector  _u,
+                       void         *buffer,
+                       int          *size_ptr)
    {
-      MFEMBraidApp *app     = (MFEMBraidApp*) _app;
       HypreParVector *u = (HypreParVector*) _u;
-      memcpy(buffer, u->GetData(), app->buff_size);
-      *size_ptr         = app->buff_size;
+      memcpy(buffer, u->GetData(), buff_size);
+      *size_ptr = buff_size;
       return 0;
    }
 
-   virtual int BufUnpack(braid_App     _app,
-                        void         *buffer,
-                        braid_Vector *u_ptr)
+   virtual int BufUnpack(void         *buffer,
+                         braid_Vector *u_ptr)
    {
-      MFEMBraidApp *app = (MFEMBraidApp*) _app;
-      Clone(_app, (braid_Vector)app->X0, u_ptr);
+      Clone((braid_Vector)X0, u_ptr);
       HypreParVector *u = (HypreParVector*) *u_ptr;
-      memcpy(u->GetData(), buffer, app->buff_size);
+      memcpy(u->GetData(), buffer, buff_size);
       return 0;
    }
 };
