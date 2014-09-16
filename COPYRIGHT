@@ -1,5 +1,3 @@
-#BHEADER**********************************************************************
-#
 # Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
 # Produced at the Lawrence Livermore National Laboratory. Written by 
 # Jacob Schroder schroder2@llnl.gov, Rob Falgout falgout2@llnl.gov,
@@ -21,44 +19,19 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc., 59
 # Temple Place, Suite 330, Boston, MA 02111-1307 USA
-#
-#EHEADER**********************************************************************
-
-##################################################################
-# Import machine specific compilers, options, flags, etc.. 
-##################################################################
-
-include makefile.inc
 
 
-##################################################################
-# Targets
-##################################################################
+COPYRIGHT
 
-BRAID_HEADERS = _braid.h braid.h util.h braid_test.h braid_status.h braid_defs.h
+The following copyright applies to each file in the XBraid distribution, unless
+otherwise stated in the file:
 
-BRAID_FILES = util.c braid.c _braid.c braid_test.c braid_status.c
+Copyright (c) 2013, Lawrence Livermore National Security, LLC.  Produced at the
+Lawrence Livermore National Laboratory. Written by Jacob Schroder
+schroder2@llnl.gov, Rob Falgout falgout2@llnl.gov, Tzanio Kolev
+kolev1@llnl.gov, Ulrike Yang yang11@llnl.gov, Veselin Dobrev dobrev1@llnl.gov,
+et al.  LLNL-CODE-660355. All rights reserved.
 
-BRAID_OBJ = $(BRAID_FILES:.c=.o)
+This file is part of XBraid.
 
-.PHONY: examples
-.SUFFIXES:
-.SUFFIXES: .c .o
-
-# Rule for compiling .c files
-%.o: %.c $(BRAID_HEADERS)
-	$(MPICC) $(CFLAGS) -c $< -o $@
-
-libbraid.a: $(BRAID_HEADERS) $(BRAID_OBJ)
-	@echo "Building" $@ "..."
-	ar cruv libbraid.a $(BRAID_OBJ)
-	ranlib libbraid.a
-
-all: libbraid.a examples
-
-examples: libbraid.a
-	cd examples; $(MAKE)
-
-clean:
-	rm -f *.o libbraid.a
-	cd examples; $(MAKE) clean
+For more license information, see the LICENSE file.
