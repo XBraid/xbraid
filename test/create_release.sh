@@ -17,7 +17,7 @@
 
 ##
 # Set these variables to what you want
-this_version="1.0"
+this_version="1.0 beta"
 destination_dir="/usr/casc/hypre/braid/share/braid_tarballs"
 braid_version_to_checkout='HEAD'
 temp_dir="$HOME/braid_temp"
@@ -94,6 +94,7 @@ touch $destination_dir/$archive_name
    tar -cf braid.tar braid
    gzip braid.tar
    mv braid.tar.gz $destination_dir/$archive_name
+   chgrp hypre $destination_dir/$archive_name
    chmod g+rw $destination_dir/$archive_name
    rm -rf $temp_dir
 ) 1>> /dev/null 2>> /dev/null
