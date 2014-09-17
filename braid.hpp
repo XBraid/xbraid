@@ -115,11 +115,12 @@ class BraidAccessStatus
       }
 
       void GetTILD(braid_Real *t_ptr, braid_Int *iter_ptr, braid_Int *level_ptr, braid_Int *done_ptr) { braid_AccessStatusGetTILD(astatus, t_ptr, iter_ptr, level_ptr, done_ptr); }
-      void GetT(braid_Real *t_ptr)            { braid_AccessStatusGetT(astatus, t_ptr); }
-      void GetDone(braid_Int *done_ptr)       { braid_AccessStatusGetDone(astatus, done_ptr); }
-      void GetLevel(braid_Int *level_ptr)     { braid_AccessStatusGetLevel(astatus, level_ptr); }
-      void GetIter(braid_Int *iter_ptr)       { braid_AccessStatusGetIter(astatus, iter_ptr); }
-      void GetResidual(braid_Real *rnorm_ptr) { braid_AccessStatusGetResidual(astatus, rnorm_ptr); }
+      void GetT(braid_Real *t_ptr)              { braid_AccessStatusGetT(astatus, t_ptr); }
+      void GetDone(braid_Int *done_ptr)         { braid_AccessStatusGetDone(astatus, done_ptr); }
+      void GetLevel(braid_Int *level_ptr)       { braid_AccessStatusGetLevel(astatus, level_ptr); }
+      void GetIter(braid_Int *iter_ptr)         { braid_AccessStatusGetIter(astatus, iter_ptr); }
+      void GetWrapperTest(braid_Int *wtest_ptr) { braid_AccessStatusGetWrapperTest(astatus, wtest_ptr); }
+      void GetResidual(braid_Real *rnorm_ptr)   { braid_AccessStatusGetResidual(astatus, rnorm_ptr); }
 
       // The braid_AccessStatus structure is deallocated inside of Braid
       // This class is just to make code consistently look object oriented

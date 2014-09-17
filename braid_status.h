@@ -76,6 +76,7 @@ typedef struct _braid_AccessStatus_struct
    braid_Int     level;        /**< current level in XBraid*/
    braid_Real    rnorm;        /**< residual norm */
    braid_Int     done;         /**< boolean describing whether XBraid has finished */
+   braid_Int     wrapper_test; /**< boolean describing whether this call is only a wrapper test */
    
 } _braid_AccessStatus;
 
@@ -155,6 +156,7 @@ _braid_AccessStatusInit(braid_Real          t,           /**< current time */
                         braid_Int           iter,        /**< current iteration in XBraid*/
                         braid_Int           level,       /**< current level in XBraid */
                         braid_Int           done,        /**< boolean describing whether XBraid has finished */
+                        braid_Int           wrapper_test,/**< boolean describing whether this call is only a wrapper test */
                         braid_AccessStatus  status       /**< structure to initialize */
                         );
 
@@ -205,6 +207,14 @@ braid_Int
 braid_AccessStatusGetDone(braid_AccessStatus  status,         /**< structure containing current simulation info */
                           braid_Int          *done_ptr        /**< output,  =1 if XBraid has finished, else =0 */
                           );
+
+/**
+ * Return whether this is a wrapper test or an XBraid run
+ **/
+braid_Int
+braid_AccessStatusGetWrapperTest(braid_AccessStatus  status,      /**< structure containing current simulation info */
+                                 braid_Int          *wtest_ptr    /**< output, =1 if this is a wrapper test, =0 if XBraid run */
+                                 );
 
 /**
  * Return XBraid status for the current simulation. Four values are 

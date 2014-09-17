@@ -49,7 +49,7 @@ braid_TestInitAccess( braid_App           app,
    braid_AccessStatus    astatus = _braid_CTAlloc(_braid_AccessStatus, 1);;
    braid_Int             myid_x;
    
-   _braid_AccessStatusInit(t, 0.0, 0, 0, 0, astatus);
+   _braid_AccessStatusInit(t, 0.0, 0, 0, 0, 1, astatus);
    MPI_Comm_rank( comm_x, &myid_x );
 
    /* Print intro */
@@ -93,7 +93,7 @@ braid_TestClone( braid_App        app,
    braid_AccessStatus  astatus = _braid_CTAlloc(_braid_AccessStatus, 1);;
    braid_Int           myid_x;
    
-   _braid_AccessStatusInit(t, 0.0, 0, 0, 0, astatus);
+   _braid_AccessStatusInit(t, 0.0, 0, 0, 0, 1, astatus);
    MPI_Comm_rank( comm_x, &myid_x );
 
    /* Print intro */
@@ -151,7 +151,7 @@ braid_TestSum( braid_App        app,
    braid_AccessStatus  astatus = _braid_CTAlloc(_braid_AccessStatus, 1);;
    braid_Int           myid_x;
    
-   _braid_AccessStatusInit(t, 0.0, 0, 0, 0, astatus);
+   _braid_AccessStatusInit(t, 0.0, 0, 0, 0, 1, astatus);
    MPI_Comm_rank( comm_x, &myid_x );
 
    /* Print intro */
@@ -512,12 +512,12 @@ braid_TestCoarsenRefine( braid_App           app,
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   access(uc) \n");
       level = 1;
-      _braid_AccessStatusInit(t, 0.0, 0, level, 0, astatus);
+      _braid_AccessStatusInit(t, 0.0, 0, level, 0, 1, astatus);
       access(app, uc, astatus);
 
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   access(u) \n");
       level = 0;
-      _braid_AccessStatusInit(t, 0.0, 0, level, 0, astatus);
+      _braid_AccessStatusInit(t, 0.0, 0, level, 0, 1, astatus);
       access(app, u, astatus);
    }
 

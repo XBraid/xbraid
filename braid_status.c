@@ -126,19 +126,34 @@ _braid_AccessStatusDestroy(braid_AccessStatus  status)
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_AccessStatusGetWrapperTest(braid_AccessStatus  status,
+                                 braid_Int          *wtest_ptr
+                                 )
+{
+   *wtest_ptr = _braid_StatusElt(status, wrapper_test);
+   return _braid_error_flag;
+}
+
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
 braid_Int
 _braid_AccessStatusInit(braid_Real           t,
                         braid_Real           rnorm,
                         braid_Int            iter,
                         braid_Int            level,
                         braid_Int            done,
+                        braid_Int            wrapper_test,
                         braid_AccessStatus   status)
 {
-   _braid_StatusElt(status, t)     = t;
-   _braid_StatusElt(status, level) = level;
-   _braid_StatusElt(status, rnorm) = rnorm;
-   _braid_StatusElt(status, done)  = done;
-   _braid_StatusElt(status, iter)  = iter; 
+   _braid_StatusElt(status, t)            = t;
+   _braid_StatusElt(status, level)        = level;
+   _braid_StatusElt(status, rnorm)        = rnorm;
+   _braid_StatusElt(status, done)         = done;
+   _braid_StatusElt(status, iter)         = iter; 
+   _braid_StatusElt(status, wrapper_test) = wrapper_test;
 
    return _braid_error_flag;
 }
