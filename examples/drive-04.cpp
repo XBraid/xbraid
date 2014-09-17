@@ -708,21 +708,17 @@ public:
                                                  TimeDependentMatrixCoefficient *_mcoeff = NULL,
                    FuncDepGridFuncCoefficient *_gcoeff = NULL,
                    NonlinearOptions *_NLO = NULL)
+          : M(_M), b_form(_b_form), aform(_aform), b_coeff(_b_coeff), b_vcoeff(_b_vcoeff),
+            mcoeff(_mcoeff), gcoeff(_gcoeff), NLO(_NLO), timedep(_timedep)
+   {
+      // Inital Assembly of Stiffness Matrix
+      aform->Assemble(); aform->Finalize();
+      A = aform->ParallelAssemble();
+      size = A->Size();
 
-          :aform(_aform),M(_M), b_form(_b_form),b_coeff(_b_coeff), b_vcoeff(_b_vcoeff), mcoeff(_mcoeff), timedep(_timedep),
-          gcoeff(_gcoeff), NLO(_NLO)
-
-         {
-
-
-         //Inital Assembly of Stiffness Matrix
-         aform->Assemble(); aform->Finalize();
-         A = aform->ParallelAssemble();
-              size = A->Size();
-
-         double tmp; // workaround to avoid memory leak
-                X = new HypreParVector(A->GetComm(), A->GetGlobalNumCols(), &tmp,A->GetColStarts());
-         Y = new HypreParVector(A->GetComm(), A->GetGlobalNumCols(), &tmp,A->GetColStarts());
+      double tmp; // workaround to avoid memory leak
+      X = new HypreParVector(A->GetComm(), A->GetGlobalNumCols(), &tmp,A->GetColStarts());
+      Y = new HypreParVector(A->GetComm(), A->GetGlobalNumCols(), &tmp,A->GetColStarts());
 
       if (!M)
       {
@@ -757,7 +753,8 @@ public:
    }
 
    void AssembleDiffMatrix() const
-   {	if (timedep)
+   {
+      if (timedep)
       {
          delete A;
 
@@ -771,13 +768,12 @@ public:
       }
    }
 
-  //Assemble the Source Term Vector at each time t
-  void AssembleBVector() const
-
+   // Assemble the Source Term Vector at each time t
+   void AssembleBVector() const
    {
       if (b_form)
       {
-      // set the time for the b-coefficients
+         // set the time for the b-coefficients
          b_coeff->SetTime(GetTime());
          b_vcoeff->SetTime(GetTime());
 
@@ -791,15 +787,16 @@ public:
    }
 
    virtual void Mult(const Vector &x, Vector &y) const
-   {  //Wrap the Data
+   {
+      // Wrap the Data
       X->SetData(x.GetData());
       Y->SetData(y.GetData());
 
-      //Assemble
+      // Assemble
       AssembleBVector();
       AssembleDiffMatrix();
 
-      //Solve
+      // Solve
       if (!M)
       {
          A->Mult(*X, *Y); // A X
@@ -1835,7 +1832,7 @@ int main(int argc, char *argv[])
       {
          // Comment in/out the wrapper test that you want to focus on
 
-         // Change the time value used by the test routines 
+         // Change the time value used by the test routines
          //test_t = app.tstart;
          test_t = app.tstop;
          test_dt = (app.tstop - app.tstart)/ (double) app.ntime;
