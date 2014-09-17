@@ -28,204 +28,6 @@
 #include "braid.h"
 #include "braid_test.h"
 
-// Wrapper for BRAID's App object. Users should inherit this class and implement
-// the purely virtual functions (see braid.h for descriptions).
-class BraidApp
-{
-public:
-   MPI_Comm comm_t;
-   double   tstart;
-   double   tstop;
-   int      ntime;
-
-   BraidApp(MPI_Comm _comm_t, double _tstart = 0.0, double _tstop = 1.0, int _ntime = 100)
-      : comm_t(_comm_t), tstart(_tstart), tstop(_tstop), ntime(_ntime) { }
-
-   ~BraidApp() { }
-
-   virtual int Phi(braid_Vector    _u,
-                   braid_PhiStatus _pstatus) = 0;
-
-   virtual int Clone(braid_Vector  _u,
-                     braid_Vector *v_ptr) = 0;
-
-   virtual int Init(double       t,
-                    braid_Vector *u_ptr) = 0;
-
-   virtual int Free(braid_Vector _u) = 0;
-
-   virtual int Sum(double       alpha,
-                   braid_Vector _x,
-                   double       beta,
-                   braid_Vector _y) = 0;
-
-   virtual int SpatialNorm(braid_Vector  _u,
-                           double       *norm_ptr) = 0;
-
-   virtual int Access(braid_Vector        _u,
-                      braid_AccessStatus  _astatus) = 0;
-
-   virtual int BufSize(int *size_ptr) = 0;
-
-   virtual int BufPack(braid_Vector  _u,
-                       void         *buffer,
-                       int          *size_ptr) = 0;
-
-   virtual int BufUnpack(void         *buffer,
-                         braid_Vector *u_ptr) = 0;
-};
-
-// Static functions passed to Braid, with braid_App == BraidApp*
-static int _BraidAppPhi(braid_App       _app,
-                        braid_Vector    _u,
-                        braid_PhiStatus _pstatus)
-{
-   BraidApp *app = (BraidApp*)_app;
-   return app -> Phi(_u, _pstatus);
-}
-
-static int _BraidAppClone(braid_App     _app,
-                          braid_Vector  _u,
-                          braid_Vector *v_ptr)
-{
-   BraidApp *app = (BraidApp*)_app;
-   return app -> Clone(_u, v_ptr);
-}
-
-static int _BraidAppInit(braid_App    _app,
-                         double       t,
-                         braid_Vector *u_ptr)
-{
-   BraidApp *app = (BraidApp*)_app;
-   return app -> Init(t, u_ptr);
-}
-
-static int _BraidAppFree(braid_App    _app,
-                         braid_Vector _u)
-{
-   BraidApp *app = (BraidApp*)_app;
-   return app -> Free(_u);
-}
-
-static int _BraidAppSum(braid_App    _app,
-                        double       alpha,
-                        braid_Vector _x,
-                        double       beta,
-                        braid_Vector _y)
-{
-   BraidApp *app = (BraidApp*)_app;
-   return app -> Sum(alpha, _x, beta, _y);
-}
-
-static int _BraidAppSpatialNorm(braid_App     _app,
-                                braid_Vector  _u,
-                                double       *norm_ptr)
-{
-   BraidApp *app = (BraidApp*)_app;
-   return app -> SpatialNorm(_u, norm_ptr);
-}
-
-static int _BraidAppAccess(braid_App           _app,
-                           braid_Vector        _u,
-                           braid_AccessStatus  _astatus)
-{
-   BraidApp *app = (BraidApp*)_app;
-   return app -> Access(_u, _astatus);
-}
-
-static int _BraidAppBufSize(braid_App  _app,
-                            int       *size_ptr)
-{
-   BraidApp *app = (BraidApp*)_app;
-   return app -> BufSize(size_ptr);
-}
-
-static int _BraidAppBufPack(braid_App     _app,
-                            braid_Vector  _u,
-                            void         *buffer,
-                            int          *size_ptr)
-{
-   BraidApp *app = (BraidApp*)_app;
-   return app -> BufPack(_u, buffer, size_ptr);
-}
-
-static int _BraidAppBufUnpack(braid_App     _app,
-                              void         *buffer,
-                              braid_Vector *u_ptr)
-{
-   BraidApp *app = (BraidApp*)_app;
-   return app -> BufUnpack(buffer, u_ptr);
-}
-
-// Wrapper for BRAID's core object
-class BraidCore
-{
-private:
-   braid_Core core;
-
-public:
-   BraidCore(MPI_Comm comm_world, BraidApp *app)
-   {
-      braid_Init(comm_world,
-                 app->comm_t, app->tstart, app->tstop, app->ntime, (braid_App)app,
-                 _BraidAppPhi, _BraidAppInit, _BraidAppClone, _BraidAppFree,
-                 _BraidAppSum, _BraidAppSpatialNorm, _BraidAppAccess,
-                 _BraidAppBufSize, _BraidAppBufPack, _BraidAppBufUnpack, &core);
-   }
-
-   void SetMaxLevels(int max_levels) { braid_SetMaxLevels(core, max_levels); }
-
-   void SetMaxCoarse(int max_coarse) { braid_SetMaxCoarse(core, max_coarse); }
-
-   void SetNRelax(int level, int nrelax)
-   { braid_SetNRelax(core, level, nrelax); }
-
-   void SetAbsTol(double tol) { braid_SetAbsTol(core, tol); }
-
-   void SetRelTol(double tol) { braid_SetRelTol(core, tol); }
-
-   void SetTemporalNorm(int tnorm) { braid_SetTemporalNorm(core, tnorm); }
-
-   void SetCFactor(int level, int cfactor)
-   { braid_SetCFactor(core, level, cfactor); }
-
-   /** Use cfactor0 on all levels until there are < cfactor0 points
-       on each processor. */
-   void SetAggCFactor(int cfactor0)
-   {
-      BraidApp *app = (BraidApp *) core->app;
-      int nt = app->ntime, pt;
-      MPI_Comm_size(app->comm_t, &pt);
-      if (cfactor0 > -1)
-      {
-         int level = (int) (log10((nt + 1) / pt) / log10(cfactor0));
-         for (int i = 0; i < level; i++)
-            braid_SetCFactor(core, i, cfactor0);
-      }
-   }
-
-   void SetMaxIter(int max_iter) { braid_SetMaxIter(core, max_iter); }
-
-   void SetPrintLevel(int print_level) { braid_SetPrintLevel(core, print_level); }
-
-   void SetPrintFile(const char *printfile_name) { braid_SetPrintFile(core, printfile_name); }
-
-   void SetAccessLevel(int access_level) { braid_SetAccessLevel(core, access_level); }
-
-   void SetFMG() { braid_SetFMG(core); }
-
-   void SetNFMGVcyc(int nfmg_Vcyc) { braid_SetNFMGVcyc(core, nfmg_Vcyc); }
-
-   void GetNumIter(int *niter_ptr) { braid_GetNumIter(core, niter_ptr); }
-
-   void GetRNorm(double *rnorm_ptr) { braid_GetRNorm(core, rnorm_ptr); }
-
-   void Drive() { braid_Drive(core); }
-
-   ~BraidCore() { braid_Destroy(core); }
-};
-
-
 // Wrapper for BRAID's AccessStatus object
 class BraidAccessStatus
 {
@@ -297,6 +99,256 @@ class BraidCoarsenRefStatus
       ~BraidCoarsenRefStatus() { }
 };
 
+
+// Wrapper for BRAID's App object. Users should inherit this class and implement
+// the purely virtual functions (see braid.h for descriptions).
+class BraidApp
+{
+public:
+   // User must set these four values as they are used by Braid
+   MPI_Comm comm_t;
+   double   tstart;
+   double   tstop;
+   int      ntime;
+
+   BraidApp(MPI_Comm _comm_t, double _tstart = 0.0, double _tstop = 1.0, int _ntime = 100)
+      : comm_t(_comm_t), tstart(_tstart), tstop(_tstop), ntime(_ntime) { }
+
+   ~BraidApp() { }
+
+   virtual int Phi(braid_Vector    _u,
+                   BraidPhiStatus &pstatus) = 0;
+
+   virtual int Clone(braid_Vector  _u,
+                     braid_Vector *v_ptr) = 0;
+
+   virtual int Init(double       t,
+                    braid_Vector *u_ptr) = 0;
+
+   virtual int Free(braid_Vector _u) = 0;
+
+   virtual int Sum(double       alpha,
+                   braid_Vector _x,
+                   double       beta,
+                   braid_Vector _y) = 0;
+
+   virtual int SpatialNorm(braid_Vector  _u,
+                           double       *norm_ptr) = 0;
+
+   virtual int Access(braid_Vector        _u,
+                      BraidAccessStatus  &astatus) = 0;
+
+   virtual int BufSize(int *size_ptr) = 0;
+
+   virtual int BufPack(braid_Vector  _u,
+                       void         *buffer,
+                       int          *size_ptr) = 0;
+
+   virtual int BufUnpack(void         *buffer,
+                         braid_Vector *u_ptr) = 0;
+
+   // These two functions may be optionally defined by the user, if spatial
+   // coarsening is desired (see documentation for more details).  To turn on
+   // spatial coarsening, use core.SetSpatialCoarsenAndRefine() 
+   virtual int Coarsen( braid_Vector            _fu,
+                        braid_Vector           *cu_ptr,
+                        BraidCoarsenRefStatus  &status)
+   {
+      fprintf(stderr, "Braid C++ Wrapper Warning: turn off spatial coarsening until Coarsen and Refine have been user implemented\n");
+      Clone(_fu, cu_ptr);
+      return 0;
+   }
+
+   virtual int Refine( braid_Vector            _cu,
+                       braid_Vector           *fu_ptr,
+                       BraidCoarsenRefStatus  &status)
+   {
+      fprintf(stderr, "Braid C++ Wrapper Warning: turn off spatial coarsening until Coarsen and Refine have been user implemented\n");
+      Clone(_cu, fu_ptr);
+      return 0;
+   }
+
+};
+
+// Static functions passed to Braid, with braid_App == BraidApp*
+static int _BraidAppPhi(braid_App       _app,
+                        braid_Vector    _u,
+                        braid_PhiStatus _pstatus)
+{
+   BraidApp *app = (BraidApp*)_app;
+   BraidPhiStatus pstatus = BraidPhiStatus(_pstatus);
+   return app -> Phi(_u, pstatus);
+}
+
+static int _BraidAppClone(braid_App     _app,
+                          braid_Vector  _u,
+                          braid_Vector *v_ptr)
+{
+   BraidApp *app = (BraidApp*)_app;
+   return app -> Clone(_u, v_ptr);
+}
+
+static int _BraidAppInit(braid_App    _app,
+                         double       t,
+                         braid_Vector *u_ptr)
+{
+   BraidApp *app = (BraidApp*)_app;
+   return app -> Init(t, u_ptr);
+}
+
+static int _BraidAppFree(braid_App    _app,
+                         braid_Vector _u)
+{
+   BraidApp *app = (BraidApp*)_app;
+   return app -> Free(_u);
+}
+
+static int _BraidAppSum(braid_App    _app,
+                        double       alpha,
+                        braid_Vector _x,
+                        double       beta,
+                        braid_Vector _y)
+{
+   BraidApp *app = (BraidApp*)_app;
+   return app -> Sum(alpha, _x, beta, _y);
+}
+
+static int _BraidAppSpatialNorm(braid_App     _app,
+                                braid_Vector  _u,
+                                double       *norm_ptr)
+{
+   BraidApp *app = (BraidApp*)_app;
+   return app -> SpatialNorm(_u, norm_ptr);
+}
+
+static int _BraidAppAccess(braid_App           _app,
+                           braid_Vector        _u,
+                           braid_AccessStatus  _astatus)
+{
+   BraidApp *app = (BraidApp*)_app;
+   BraidAccessStatus astatus = BraidAccessStatus(_astatus);
+   return app -> Access(_u, astatus);
+}
+
+static int _BraidAppBufSize(braid_App  _app,
+                            int       *size_ptr)
+{
+   BraidApp *app = (BraidApp*)_app;
+   return app -> BufSize(size_ptr);
+}
+
+static int _BraidAppBufPack(braid_App     _app,
+                            braid_Vector  _u,
+                            void         *buffer,
+                            int          *size_ptr)
+{
+   BraidApp *app = (BraidApp*)_app;
+   return app -> BufPack(_u, buffer, size_ptr);
+}
+
+static int _BraidAppBufUnpack(braid_App     _app,
+                              void         *buffer,
+                              braid_Vector *u_ptr)
+{
+   BraidApp *app = (BraidApp*)_app;
+   return app -> BufUnpack(buffer, u_ptr);
+}
+
+static int _BraidAppCoarsen(braid_App               _app,
+                            braid_Vector            _fu,
+                            braid_Vector           *cu_ptr,
+                            braid_CoarsenRefStatus  _cstatus)
+{
+   BraidApp *app = (BraidApp*)_app;
+   BraidCoarsenRefStatus cstatus = BraidCoarsenRefStatus(_cstatus);
+   return app -> Coarsen(_fu, cu_ptr, cstatus);
+}
+
+static int _BraidAppRefine(braid_App               _app,
+                           braid_Vector            _fu,
+                           braid_Vector           *cu_ptr,
+                           braid_CoarsenRefStatus  _cstatus)
+{
+   BraidApp *app = (BraidApp*)_app;
+   BraidCoarsenRefStatus cstatus = BraidCoarsenRefStatus(_cstatus);
+   return app -> Refine(_fu, cu_ptr, cstatus);
+}
+
+
+// Wrapper for BRAID's core object
+class BraidCore
+{
+private:
+   braid_Core core;
+
+public:
+   BraidCore(MPI_Comm comm_world, BraidApp *app)
+   {
+      braid_Init(comm_world,
+                 app->comm_t, app->tstart, app->tstop, app->ntime, (braid_App)app,
+                 _BraidAppPhi, _BraidAppInit, _BraidAppClone, _BraidAppFree,
+                 _BraidAppSum, _BraidAppSpatialNorm, _BraidAppAccess,
+                 _BraidAppBufSize, _BraidAppBufPack, _BraidAppBufUnpack, &core);
+   }
+
+   void SetMaxLevels(braid_Int max_levels) { braid_SetMaxLevels(core, max_levels); }
+
+   void SetMaxCoarse(braid_Int max_coarse) { braid_SetMaxCoarse(core, max_coarse); }
+
+   void SetNRelax(braid_Int level, braid_Int nrelax)
+   { braid_SetNRelax(core, level, nrelax); }
+
+   void SetAbsTol(braid_Real tol) { braid_SetAbsTol(core, tol); }
+
+   void SetRelTol(braid_Real tol) { braid_SetRelTol(core, tol); }
+
+   void SetTemporalNorm(braid_Int tnorm) { braid_SetTemporalNorm(core, tnorm); }
+
+   void SetCFactor(braid_Int level, braid_Int cfactor)
+   { braid_SetCFactor(core, level, cfactor); }
+
+   /** Use cfactor0 on all levels until there are < cfactor0 points
+       on each processor. */
+   void SetAggCFactor(braid_Int cfactor0)
+   {
+      BraidApp *app = (BraidApp *) core->app;
+      braid_Int nt = app->ntime, pt;
+      MPI_Comm_size(app->comm_t, &pt);
+      if (cfactor0 > -1)
+      {
+         braid_Int level = (braid_Int) (log10((nt + 1) / pt) / log10(cfactor0));
+         for (braid_Int i = 0; i < level; i++)
+            braid_SetCFactor(core, i, cfactor0);
+      }
+   }
+
+   void SetSpatialCoarsenAndRefine()
+   {
+      braid_SetSpatialCoarsen(core, _BraidAppCoarsen );
+      braid_SetSpatialRefine(core, _BraidAppRefine );
+   }
+
+   void SetMaxIter(braid_Int max_iter) { braid_SetMaxIter(core, max_iter); }
+
+   void SetPrintLevel(braid_Int print_level) { braid_SetPrintLevel(core, print_level); }
+
+   void SetPrintFile(const char *printfile_name) { braid_SetPrintFile(core, printfile_name); }
+
+   void SetAccessLevel(braid_Int access_level) { braid_SetAccessLevel(core, access_level); }
+
+   void SetFMG() { braid_SetFMG(core); }
+
+   void SetNFMGVcyc(braid_Int nfmg_Vcyc) { braid_SetNFMGVcyc(core, nfmg_Vcyc); }
+
+   void GetNumIter(braid_Int *niter_ptr) { braid_GetNumIter(core, niter_ptr); }
+
+   void GetRNorm(braid_Real *rnorm_ptr) { braid_GetRNorm(core, rnorm_ptr); }
+
+   void Drive() { braid_Drive(core); }
+
+   ~BraidCore() { braid_Destroy(core); }
+};
+
 // Wrapper for BRAID utilities that help the user,
 // includes all the braid_Test* routines for testing the
 // user-written wrappers.
@@ -316,65 +368,51 @@ public:
                              MPI_Comm  *comm_x,
                              MPI_Comm  *comm_t)
    { braid_SplitCommworld(comm_world, px, comm_x, comm_t); }
-
+   
    // Test Function for Init and Access function
    void TestInitAccess( BraidApp              *app,
                         MPI_Comm               comm_x,
                         FILE                  *fp,
-                        double                 t,
-                        braid_PtFcnInit        init,
-                        braid_PtFcnAccess      access,
-                        braid_PtFcnFree        free)
-   { braid_TestInitAccess((braid_App) app, comm_x, fp, t, init, access, free); }
+                        double                 t)
+   { braid_TestInitAccess((braid_App) app, comm_x, fp, t,
+         _BraidAppInit, _BraidAppAccess, _BraidAppFree); }
 
    // Test Function for Clone
    void TestClone( BraidApp              *app,
                    MPI_Comm               comm_x,
                    FILE                  *fp,
-                   double                 t,
-                   braid_PtFcnInit        init,
-                   braid_PtFcnAccess      access,
-                   braid_PtFcnFree        free,
-                   braid_PtFcnClone       clone)
-   { braid_TestClone((braid_App) app, comm_x, fp, t, init, access, free, clone); }
+                   double                 t )
+   { braid_TestClone((braid_App) app, comm_x, fp, t,
+         _BraidAppInit, _BraidAppAccess, _BraidAppFree,
+         _BraidAppClone); }
 
    // Test Function for Sum
    void TestSum( BraidApp              *app,
                  MPI_Comm               comm_x,
                  FILE                  *fp,
-                 double                 t,
-                 braid_PtFcnInit        init,
-                 braid_PtFcnAccess      access,
-                 braid_PtFcnFree        free,
-                 braid_PtFcnClone       clone,
-                 braid_PtFcnSum         sum)
-   { braid_TestSum((braid_App) app, comm_x, fp, t, init, access, free, clone, sum); }
+                 double                 t )
+   { braid_TestSum((braid_App) app, comm_x, fp, t,
+         _BraidAppInit, _BraidAppAccess, _BraidAppFree,
+         _BraidAppClone, _BraidAppSum); }
 
    // Test Function for SpatialNorm
    int TestSpatialNorm( BraidApp              *app,
                         MPI_Comm               comm_x,
                         FILE                  *fp,
-                        double                 t,
-                        braid_PtFcnInit        init,
-                        braid_PtFcnFree        free,
-                        braid_PtFcnClone       clone,
-                        braid_PtFcnSum         sum,
-                        braid_PtFcnSpatialNorm spatialnorm)
-   { return braid_TestSpatialNorm((braid_App) app, comm_x, fp, t, init, free, clone, sum, spatialnorm); }
+                        double                 t )
+   { return braid_TestSpatialNorm((braid_App) app, comm_x, fp, t,
+         _BraidAppInit, _BraidAppFree, _BraidAppClone,
+         _BraidAppSum, _BraidAppSpatialNorm);  }
 
    // Test Functions BufSize, BufPack, BufUnpack
    int TestBuf( BraidApp               *app,
                  MPI_Comm               comm_x,
                  FILE                  *fp,
-                 double                 t,
-                 braid_PtFcnInit        init,
-                 braid_PtFcnFree        free,
-                 braid_PtFcnSum         sum,
-                 braid_PtFcnSpatialNorm spatialnorm,
-                 braid_PtFcnBufSize     bufsize,
-                 braid_PtFcnBufPack     bufpack,
-                 braid_PtFcnBufUnpack   bufunpack)
-   { return braid_TestBuf((braid_App) app, comm_x, fp, t, init, free, sum, spatialnorm, bufsize, bufpack, bufunpack); }
+                 double                 t )
+   { return braid_TestBuf((braid_App) app, comm_x, fp, t,
+         _BraidAppInit, _BraidAppFree, _BraidAppSum,
+         _BraidAppSpatialNorm, _BraidAppBufSize, _BraidAppBufPack,
+         _BraidAppBufUnpack ); }
 
    // Test Functions Coarsen and Refine
    int TestCoarsenRefine(BraidApp                 *app,
@@ -382,37 +420,24 @@ public:
                           FILE                    *fp,
                           double                   t,
                           double                   fdt,
-                          double                   cdt,
-                          braid_PtFcnInit          init,
-                          braid_PtFcnAccess        access,
-                          braid_PtFcnFree          free,
-                          braid_PtFcnClone         clone,
-                          braid_PtFcnSum           sum,
-                          braid_PtFcnSpatialNorm   spatialnorm,
-                          braid_PtFcnCoarsen       coarsen,
-                          braid_PtFcnRefine        refine)
-   { return braid_TestCoarsenRefine( (braid_App) app, comm_x, fp, t, fdt, cdt, init,
-                            access, free, clone, sum, spatialnorm, coarsen, refine); }
-
+                          double                   cdt)
+   { return braid_TestCoarsenRefine( (braid_App) app, comm_x, fp, t, fdt, cdt, 
+         _BraidAppInit, _BraidAppAccess, _BraidAppFree,
+         _BraidAppClone, _BraidAppSum, _BraidAppSpatialNorm,
+         _BraidAppCoarsen, _BraidAppRefine ); }
+         
    int TestAll(BraidApp                 *app,
                 MPI_Comm                 comm_x,
                 FILE                    *fp,
                 double                   t,
                 double                   fdt,
-                double                   cdt,
-                braid_PtFcnInit          init,
-                braid_PtFcnFree          free,
-                braid_PtFcnClone         clone,
-                braid_PtFcnSum           sum,
-                braid_PtFcnSpatialNorm   spatialnorm,
-                braid_PtFcnBufSize       bufsize,
-                braid_PtFcnBufPack       bufpack,
-                braid_PtFcnBufUnpack     bufunpack,
-                braid_PtFcnCoarsen       coarsen,
-                braid_PtFcnRefine        refine)
+                double                   cdt)
+
    { return braid_TestAll( (braid_App) app, comm_x, fp, t, fdt, cdt,
-                   init, free, clone, sum, spatialnorm, bufsize, bufpack,
-                   bufunpack, coarsen, refine); }
+         _BraidAppInit, _BraidAppFree, _BraidAppClone,
+         _BraidAppSum, _BraidAppSpatialNorm, _BraidAppBufSize,
+         _BraidAppBufPack, _BraidAppBufUnpack, _BraidAppCoarsen, 
+         _BraidAppRefine ); }
 
    ~BraidUtil() { }
 

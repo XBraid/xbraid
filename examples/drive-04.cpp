@@ -1004,15 +1004,12 @@ void SolveODE(TimeDependentOperator *ode, HypreParVector *X0,
 class MFEMBraidApp : public BraidApp
 {
 public:
+   // BraidApp defines tstart, tstop, ntime and _comm_t
+
    TimeDependentOperator *ode;
    ODESolver *solver;
 
    TimeDependentCoefficient *exact_sol;
-
-   MPI_Comm comm_t;
-   double   tstart;
-   double   tstop;
-   int      ntime;
 
    HypreParVector *X0;
    ParGridFunction *x;
@@ -1048,10 +1045,9 @@ public:
    // Below braid_Vector == HypreParVector* and braid_App == MFEMBraidApp*
 
    virtual int Phi(braid_Vector    _u,
-                   braid_PhiStatus _pstatus)
+                   BraidPhiStatus  &pstatus)
    {
       HypreParVector *u      = (HypreParVector*) _u;
-      BraidPhiStatus pstatus = BraidPhiStatus(_pstatus);
       double tstart, tstop, accuracy, t, dt;
 
       // Get time step information
@@ -1126,9 +1122,8 @@ public:
    }
 
    virtual int Access(braid_Vector        _u,
-                      braid_AccessStatus  _astatus)
+                      BraidAccessStatus   &astatus)
    {
-      BraidAccessStatus astatus = BraidAccessStatus(_astatus);
       HypreParVector *u         = (HypreParVector*) _u;
 
       // Extract information from astatus
@@ -1375,7 +1370,7 @@ int main(int argc, char *argv[])
    // Variables used by BraidUtil
    BraidUtil util;
    int correct = 1;
-   double test_t;
+   double test_t, test_dt;
 
    // Default parameters:
    const char *meshfile = "../../mfem/data/star.mesh";
@@ -1829,10 +1824,7 @@ int main(int argc, char *argv[])
       if (wrapper_tests)
       {
          test_t = (app.tstop - app.tstart)/ (double) app.ntime;
-         correct = util.TestAll(&app, comm_x, stdout, 0.0, test_t, 2*test_t,
-                      _BraidAppInit, _BraidAppFree, _BraidAppClone,
-                      _BraidAppSum, _BraidAppSpatialNorm, _BraidAppBufSize,
-                      _BraidAppBufPack, _BraidAppBufUnpack, NULL, NULL);
+         correct = util.TestAll(&app, comm_x, stdout, 0.0, test_t, 2*test_t);
 
          if(correct == 0)
          {
@@ -1841,37 +1833,22 @@ int main(int argc, char *argv[])
       }
       else if(one_wrapper_test)
       {
-         // Simple tests for the wrappers
          // Comment in/out the wrapper test that you want to focus on
 
-         // Change the time value passed into the test routines to test
-         // various scenarios
-         //test_t = (app.tstop - app.tstart)/ (double) app.ntime;
+         // Change the time value used by the test routines 
          //test_t = app.tstart;
          test_t = app.tstop;
+         test_dt = (app.tstop - app.tstart)/ (double) app.ntime;
 
-         // Test init(), access(), free()
-         util.TestInitAccess( &app, comm_x, stdout, test_t, _BraidAppInit,
-                             _BraidAppAccess, _BraidAppFree);
-
-         // Test clone()
-         //util.TestClone( &app, comm_x, stdout, test_t, _BraidAppInit,
-         //                _BraidAppAccess, _BraidAppFree,
-         //                _BraidAppClone);
-
-         // Test sum()
-         //util.TestSum( &app, comm_x, stdout, test_t, _BraidAppInit,
-         //              _BraidAppAccess, _BraidAppFree,
-         //              _BraidAppClone, _BraidAppSum);
-
-         // Test spatialnorm()
-         //correct = util.TestSpatialNorm( &app, comm_x, stdout, test_t, _BraidAppInit, _BraidAppFree,
-         //              _BraidAppClone, _BraidAppSum, _BraidAppSpatialNorm);
-
-         // Test bufsize(), bufpack(), bufunpack()
-         //correct = util.TestBuf( &app, comm_x, stdout, test_t, _BraidAppInit, _BraidAppFree,
-         //              _BraidAppSum, _BraidAppSpatialNorm, _BraidAppBufSize,
-         //              _BraidAppBufPack, _BraidAppBufUnpack);
+         // These tests are cumulative.  You should test InitAccess before
+         // Clone, Clone before Sum and so on.
+         util.TestInitAccess( &app, comm_x, stdout, test_t);
+         util.TestClone( &app, comm_x, stdout, test_t);
+         util.TestSum( &app, comm_x, stdout, test_t);
+         correct = util.TestSpatialNorm( &app, comm_x, stdout, test_t);
+         correct = util.TestBuf( &app, comm_x, stdout, test_t);
+         correct = util.TestCoarsenRefine(&app, comm_x, stdout,
+                                     2*test_dt, test_dt, test_dt/2);
 
          if(correct == 0)
          {
