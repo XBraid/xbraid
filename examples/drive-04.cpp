@@ -224,396 +224,71 @@ namespace hypre
 using namespace hypre;
 
 
-// Features that will become part of MFEM
-namespace mfem
+class FuncDepGridFuncCoefficient : public Coefficient
 {
-   /** A time-dependent operator, f(x,t), that defines a method to solve the
-       following equation: k = f(x + dt*k, t), for the unknown k.
+protected:
+   ParGridFunction *gfunc;
+   double power;
+   Vector grad;
+public:
 
-       This method allows for the abstract implementation of some time
-       integration methods, including diagonal implicit Runge-Kutta (DIRK)
-       methods and backward Euler method in particular.
-
-       Another (simpler) option is to make the solve method part of the
-       TimeDependentOperator class. */
-   class Diagonal_Implicit_Evolution_Operator : public TimeDependentOperator
+   FuncDepGridFuncCoefficient(ParGridFunction *vd, double _power)
    {
-   public:
-      /// Solve the equation: k = f(x + dt*k, t), for the unknown k.
-      virtual void ImplicitSolve(const double dt, const Vector &x,
-                                 Vector &k) = 0;
-   };
+      gfunc = vd;
+      power = _power;
+   }
 
-
-   /// Backward Euler ODE solver. L-stable.
-   class BackwardEulerSolver : public ODESolver
+   void SetGridFunction(HypreParVector *X)
    {
-   protected:
-      Vector k;
+      *gfunc = *X; // distribute (communication)
+   }
 
-   public:
-      virtual void Init(TimeDependentOperator &_f)
-      {
-         ODESolver::Init(_f);
-         k.SetSize(f->Size());
-      }
+   void SetPower(double _power) { power = _power; }
 
-      virtual void Step(Vector &x, double &t, double &dt)
-      {
-         Diagonal_Implicit_Evolution_Operator *g =
-            dynamic_cast<Diagonal_Implicit_Evolution_Operator *>(f);
-
-         g->SetTime(t+dt);
-         g->ImplicitSolve(dt, x, k); // solve for k: k = f(x + dt*k, t)
-         x.Add(dt, k);
-         t += dt;
-      }
-   };
-
-   /// Implicit midpoint method. A-stable, not L-stable.
-   class ImplicitMidpointSolver : public ODESolver
+   double Eval(ElementTransformation &T, const IntegrationPoint &ip)
    {
-   protected:
-      Vector k;
+      gfunc->GetGradient(T, grad);
+      return -pow(grad * grad, power/2);
+   }
 
-   public:
-      virtual void Init(TimeDependentOperator &_f)
-      {
-         ODESolver::Init(_f);
-         k.SetSize(f->Size());
-      }
+   virtual void Read(istream &in) { }
+};
 
-      virtual void Step(Vector &x, double &t, double &dt)
-      {
-         Diagonal_Implicit_Evolution_Operator *g =
-            dynamic_cast<Diagonal_Implicit_Evolution_Operator *>(f);
-
-         g->SetTime(t + dt/2);
-         g->ImplicitSolve(dt/2, x, k);
-         x.Add(dt, k);
-         t += dt;
-      }
-   };
-
-   /** Two stage, singly diagonal implicit Runge-Kutta (SDIRK) methods;
-       the choices for gamma_opt are:
-       0 - 3rd order method, not A-stable
-       1 - 3rd order method, A-stable, not L-stable (default)
-       2 - 2nd order method, L-stable
-       3 - 2nd order method, L-stable (has solves ouside [t,t+dt]). */
-   class SDIRK23Solver : public ODESolver
-   {
-   protected:
-      double gamma;
-      Vector k, y;
-
-   public:
-      SDIRK23Solver(int gamma_opt = 1)
-      {
-         if (gamma_opt == 0)
-            gamma = (3. - sqrt(3.))/6.; // not A-stable, order 3
-         else if (gamma_opt == 2)
-            gamma = (2. - sqrt(2.))/2.; // L-stable, order 2
-         else if (gamma_opt == 3)
-            gamma = (2. + sqrt(2.))/2.; // L-stable, order 2
-         else
-            gamma = (3. + sqrt(3.))/6.; // A-stable, order 3
-      }
-
-      virtual void Init(TimeDependentOperator &_f)
-      {
-         ODESolver::Init(_f);
-         k.SetSize(f->Size());
-         y.SetSize(f->Size());
-      }
-
-      virtual void Step(Vector &x, double &t, double &dt)
-      {
-         Diagonal_Implicit_Evolution_Operator *g =
-            dynamic_cast<Diagonal_Implicit_Evolution_Operator *>(f);
-
-         // with a = gamma:
-         //   a   |   a
-         //  1-a  |  1-2a  a
-         // ------+-----------
-         //       |  1/2  1/2
-         // note: with gamma_opt=3, both solve are outside [t,t+dt] since a>1
-         g->SetTime(t + gamma*dt);
-         g->ImplicitSolve(gamma*dt, x, k);
-         add(x, (1.-2.*gamma)*dt, k, y); // y = x + (1-2*gamma)*dt*k
-         x.Add(dt/2, k);
-
-         g->SetTime(t + (1.-gamma)*dt);
-         g->ImplicitSolve(gamma*dt, y, k);
-         x.Add(dt/2, k);
-         t += dt;
-      }
-   };
-
-   /** Three stage, singly diagonal implicit Runge-Kutta (SDIRK) method of
-       order 4. A-stable, not L-stable. */
-   class SDIRK34Solver : public ODESolver
-   {
-   protected:
-      Vector k, y, z;
-
-   public:
-      virtual void Init(TimeDependentOperator &_f)
-      {
-         ODESolver::Init(_f);
-         k.SetSize(f->Size());
-         y.SetSize(f->Size());
-         z.SetSize(f->Size());
-      }
-
-      virtual void Step(Vector &x, double &t, double &dt)
-      {
-         Diagonal_Implicit_Evolution_Operator *g =
-            dynamic_cast<Diagonal_Implicit_Evolution_Operator *>(f);
-
-         //   a   |    a
-         //  1/2  |  1/2-a    a
-         //  1-a  |   2a    1-4a   a
-         // ------+--------------------
-         //       |    b    1-2b   b
-         // note: two solves are outside [t,t+dt] since c1=a>1, c3=1-a<0
-         const double a = 1./sqrt(3.)*cos(M_PI/18.) + 0.5;
-         const double b = 1./(6.*(2.*a-1.)*(2.*a-1.));
-
-         g->SetTime(t + a*dt);
-         g->ImplicitSolve(a*dt, x, k);
-         add(x, (0.5-a)*dt, k, y);
-         add(x,  (2.*a)*dt, k, z);
-         x.Add(b*dt, k);
-
-         g->SetTime(t + dt/2);
-         g->ImplicitSolve(a*dt, y, k);
-         z.Add((1.-4.*a)*dt, k);
-         x.Add((1.-2.*b)*dt, k);
-
-         g->SetTime(t + (1.-a)*dt);
-         g->ImplicitSolve(a*dt, z, k);
-         x.Add(b*dt, k);
-         t += dt;
-      }
-   };
-
-   /** Three stage, singly diagonal implicit Runge-Kutta (SDIRK) method of
-       order 3. L-stable. */
-   class SDIRK33Solver : public ODESolver
-   {
-   protected:
-      Vector k, y;
-
-   public:
-      virtual void Init(TimeDependentOperator &_f)
-      {
-         ODESolver::Init(_f);
-         k.SetSize(f->Size());
-         y.SetSize(f->Size());
-      }
-
-      virtual void Step(Vector &x, double &t, double &dt)
-      {
-         Diagonal_Implicit_Evolution_Operator *g =
-            dynamic_cast<Diagonal_Implicit_Evolution_Operator *>(f);
-
-         //   a  |   a
-         //   c  |  c-a    a
-         //   1  |   b   1-a-b  a
-         // -----+----------------
-         //      |   b   1-a-b  a
-         const double a = 0.435866521508458999416019;
-         const double b = 1.20849664917601007033648;
-         const double c = 0.717933260754229499708010;
-
-         g->SetTime(t + a*dt);
-         g->ImplicitSolve(a*dt, x, k);
-         add(x, (c-a)*dt, k, y);
-         x.Add(b*dt, k);
-
-         g->SetTime(t + c*dt);
-         g->ImplicitSolve(a*dt, y, k);
-         x.Add((1.-a-b)*dt, k);
-
-         g->SetTime(t + dt);
-         g->ImplicitSolve(a*dt, x, k);
-         x.Add(a*dt, k);
-         t += dt;
-      }
-   };
-
-   /// Abstract class for time dependent coefficient
-   class TimeDependentCoefficient : public Coefficient
-   {
-   protected:
-      double time;
-
-   public:
-      TimeDependentCoefficient() { time = 0.; }
-      void SetTime(double t) { time = t; }
-      double GetTime() { return time; }
-   };
-
-   /// Abstract class for time dependent vector coefficient
-   class TimeDependentVectorCoefficient : public VectorCoefficient
-   {
-   protected:
-      double time;
-
-   public:
-      TimeDependentVectorCoefficient(int vd)
-         : VectorCoefficient(vd) { time = 0.; }
-      void SetTime(double t) { time = t; }
-      double GetTime() { return time; }
-   };
-
-   /// Abstract Class for Time Dependent Matrix coefficient
-   class TimeDependentMatrixCoefficient : public MatrixCoefficient
-   {
-   protected:
-        double time;
-
-   public:
-       TimeDependentMatrixCoefficient( int vd)
-          : MatrixCoefficient(vd) {time = 0.; }
-        void SetTime(double t) {time = t;}
-           double GetTime() {return time; }
-   };
-
-
-   /// Class for time dependent C-function coefficient
-   class TimeDepFunctionCoefficient : public TimeDependentCoefficient
-   {
-   protected:
-      double (*F)(Vector &, double);
-
-   public:
-      TimeDepFunctionCoefficient( double (*f)(Vector &, double) ) : F(f) { }
-
-      virtual double Eval(ElementTransformation &T, const IntegrationPoint &ip)
-      {
-         double x[3];
-         Vector p(x, 3);
-
-         T.Transform(ip, p);
-
-         return (*F)(p, GetTime());
-      }
-
-      virtual void Read(istream &in) { }
-   };
-
-   /// Class for a time dependent Vector function coefficient
-   class TimeDepVectorFunctionCoefficient
-      : public TimeDependentVectorCoefficient
-   {
-   protected:
-      void (*F)(const Vector &, double, Vector &);
-
-   public:
-      TimeDepVectorFunctionCoefficient(
-         int vd, void (*f)(const Vector &, double, Vector &))
-         : TimeDependentVectorCoefficient(vd), F(f) { }
-
-      using VectorCoefficient::Eval;
-      virtual void Eval(Vector &V, ElementTransformation &T,
-                        const IntegrationPoint &ip)
-      {
-         double x[3];
-         Vector p(x, 3);
-
-         T.Transform(ip, p);
-
-         V.SetSize(vdim);
-         (*F)(p, GetTime(), V);
-      }
-   };
-
-
-   /// Class for a time dependent matrix function coefficient
-   class TimeDepMatrixFunctionCoefficient: public TimeDependentMatrixCoefficient
-   {
-   protected:
-      void (*F)(const Vector &, double, DenseMatrix &);
-
-   public:
-      TimeDepMatrixFunctionCoefficient(int vd, void (*f)(const Vector &, double , DenseMatrix &))
-         : TimeDependentMatrixCoefficient(vd),F(f) {}
-
-      virtual void Eval(DenseMatrix &K, ElementTransformation &T, const IntegrationPoint &ip)
-      {
-         double x[3];
-         Vector p(x, 3);
-
-         T.Transform(ip, p);
-
-         K.SetSize(vdim);
-         (*F)(p , GetTime(),K);
-      }
-   };
-
-   class FuncDepGridFuncCoefficient : public GridFunctionCoefficient
-   {
-   protected:
-       ParGridFunction *gfunc;
-       double power;
-   public:
-
-      FuncDepGridFuncCoefficient(ParGridFunction *vd, double _power) : GridFunctionCoefficient(vd) {gfunc = vd; power = _power;}
-
-      void SetGridFunction(HypreParVector *X) {*gfunc = *X;}
-
-      void SetPower(double _power) {power = _power;}
-
-      double Eval(ElementTransformation &T, const IntegrationPoint &ip)
-      {
-      Vector d;
-      gfunc->GetGradient(T,d);
-      return -(pow(d*(d),power/2));
-      }
-
-      virtual void Read(istream &in) { }
-  };
-
-}
-
-using namespace mfem;
 
 // All variables required for a nonlinear solve with variable tolerance.
-
 class NonlinearOptions
 {
-//timeint = tstart-tstop, tolf and tolc are fine and coarse grid nonlinear solve tolerances
-//and ntime is the number of time steps
+   // timeint = tstart-tstop, tolf and tolc are fine and coarse grid nonlinear
+   // solve tolerances and ntime is the number of time steps
 protected:
-int max_it, ntime;
-double timeint , tolf, tolc;
+   int    max_it, ntime;
+   double timeint, tolf, tolc;
+
 public:
-      NonlinearOptions(int _maxit=100, int _ntime=32, double _timeint=1, double _tolf=0.001, double _tolc=0.001)
-      {
+   NonlinearOptions(int _maxit=100, int _ntime=32, double _timeint=1,
+                    double _tolf=0.001, double _tolc=0.001)
+   {
       tolf = _tolf;
       tolc = _tolc;
       max_it = _maxit;
       ntime = _ntime;
       timeint = _timeint;
-      }
-double GetMaxIteration() {return max_it;}
+   }
 
-double GetTolerance(double dt = 0)
-{
- if (dt - timeint/ntime < 0.000001)
-   return tolf;
- else
-   return tolc;
-}
+   double GetMaxIteration() {return max_it;}
 
+   double GetTolerance(double dt = 0)
+   {
+      if (dt - timeint/ntime < 0.000001)
+         return tolf;
+      else
+         return tolc;
+   }
 };
 
 
 // Right-hand side for the set of scalar ODEs du_i/dt = f(u_i,t)
-class ScalarODE : public Diagonal_Implicit_Evolution_Operator
-// class ScalarODE : public TimeDependentOperator
+class ScalarODE : public TimeDependentOperator
 {
 private:
    int option;
@@ -638,8 +313,6 @@ private:
    {
       if (option == 0 || option == 1)
          return f(0, t); // f(.,.) is independent of u
-      //else if (option == 2)
-      //   return 4*pow(t,3)-3*pow(t,2)+2*t-1; // f = 4t^3-3t^2+2t-1
       else if (option == 2)
          return ((1-2*dt*u) - sqrt(1-4*dt*(u+dt)))/(2*dt*dt); // f = u^2+1
       else if (option == 3)
@@ -676,56 +349,59 @@ public:
 // Right-hand side for the linear system of ODEs
 //               M du/dt = A u + b(t),
 // where A and M are time-dependent.
-class LinearSystemODE : public Diagonal_Implicit_Evolution_Operator
-//class LinearSystemODE : public TimeDependentOperator
+class LinearSystemODE : public TimeDependentOperator
 {
 private:
    HypreParMatrix *M, *B; // B = M - dt A, for ImplicitSolve
    mutable HypreParMatrix *A;
    HypreParVector *X, *Y, *Z;
-   HypreParVector *W, *H,*D;
+   HypreParVector *W, *H, *D;
    mutable HypreParVector *b;
    ParLinearForm *b_form;
    mutable ParBilinearForm *aform;
-   TimeDependentCoefficient *b_coeff;
-   TimeDependentVectorCoefficient *b_vcoeff;
-   TimeDependentMatrixCoefficient *mcoeff;
+   Coefficient *b_coeff;
+   VectorCoefficient *b_vcoeff;
+   MatrixCoefficient *mcoeff;
    FuncDepGridFuncCoefficient *gcoeff;
    HypreBoomerAMG *amg;
    HyprePCG *pcg;
+   double current_dt; // dt used in B
    HypreBoomerAMG *B_amg;
    HyprePCG *B_pcg;
    NonlinearOptions *NLO;
-   int timedep, current_dt;
+   int timedep_A; // Is 'a' time-dependent or nonlinear?
 
 public:
    LinearSystemODE(ParBilinearForm *_aform,
-                   int _timedep = 1,
+                   int _timedep_A = 1,
                    HypreParMatrix *_M = NULL,
-                                                 ParLinearForm *_b_form = NULL,
-                   TimeDependentCoefficient *_b_coeff = NULL,
-                   TimeDependentVectorCoefficient *_b_vcoeff = NULL,
-                                                 TimeDependentMatrixCoefficient *_mcoeff = NULL,
+                   ParLinearForm *_b_form = NULL,
+                   Coefficient *_b_coeff = NULL,
+                   VectorCoefficient *_b_vcoeff = NULL,
+                   MatrixCoefficient *_mcoeff = NULL,
                    FuncDepGridFuncCoefficient *_gcoeff = NULL,
                    NonlinearOptions *_NLO = NULL)
-          : M(_M), b_form(_b_form), aform(_aform), b_coeff(_b_coeff), b_vcoeff(_b_vcoeff),
-            mcoeff(_mcoeff), gcoeff(_gcoeff), NLO(_NLO), timedep(_timedep)
+      : M(_M), b_form(_b_form), aform(_aform), b_coeff(_b_coeff),
+        b_vcoeff(_b_vcoeff), mcoeff(_mcoeff), gcoeff(_gcoeff), NLO(_NLO),
+        timedep_A(_timedep_A)
    {
       // Inital Assembly of Stiffness Matrix
-      aform->Assemble(); aform->Finalize();
+      aform->Assemble();
+      aform->Finalize();
       A = aform->ParallelAssemble();
       size = A->Size();
 
       double tmp; // workaround to avoid memory leak
-      X = new HypreParVector(A->GetComm(), A->GetGlobalNumCols(), &tmp,A->GetColStarts());
-      Y = new HypreParVector(A->GetComm(), A->GetGlobalNumCols(), &tmp,A->GetColStarts());
+      X = new HypreParVector(A->GetComm(), A->GetGlobalNumCols(), &tmp,
+                             A->GetColStarts());
+      Y = new HypreParVector(A->GetComm(), A->GetGlobalNumCols(), &tmp,
+                             A->GetColStarts());
 
       if (!M)
       {
          amg = NULL;
          pcg = NULL;
-         Z = NULL;
-         W = NULL;
+         Z = W = H = D = NULL;
       }
       else
       {
@@ -754,15 +430,15 @@ public:
 
    void AssembleDiffMatrix() const
    {
-      if (timedep)
+      if (timedep_A)
       {
          delete A;
 
-         if (mcoeff && !gcoeff)
-         mcoeff->SetTime(GetTime());
+         if (mcoeff)
+            mcoeff->SetTime(GetTime());
 
          aform->Update();
-         aform-> Assemble();
+         aform->Assemble();
          aform->Finalize();
          A = aform->ParallelAssemble();
       }
@@ -794,6 +470,8 @@ public:
 
       // Assemble
       AssembleBVector();
+      if (gcoeff)
+         gcoeff->SetGridFunction(X);
       AssembleDiffMatrix();
 
       // Solve
@@ -813,7 +491,13 @@ public:
       }
    }
 
-   /** Solve for k in the equation: M k = A x + dt A k + b.
+   /** Solve for k in the equation: M k = A(x + dt k, t) + b(t).
+       In the nonlinear case we solve using a fixed point iteration for the
+       equation written as:
+       *     k = [M - dt*AA(x + dt*k, t)]^{-1} [AA(x + dt*k, t)*x + b(t)],
+       where AA(z,t) is the matrix assembled using the grid function z in the
+       coefficient of the bilinear form, so that the nonlinear operator A(z,t)
+       can be written as A(z,t) = AA(z,t)*z.
        This method is needed for backward Euler and other DIRK methods. */
    virtual void ImplicitSolve(const double dt, const Vector &x, Vector &k)
    {
@@ -824,81 +508,83 @@ public:
 
       if (NLO)
       {
-       iteration = NLO->GetMaxIteration();
-       tol = NLO->GetTolerance(dt);
+         iteration = NLO->GetMaxIteration();
+         tol = NLO->GetTolerance(dt);
       }
 
-      while (i <= iteration && resid >= tol )
-       {
-       //Wrap the Data
-       X->SetData(x.GetData());
-       Y->SetData(k.GetData());
+      // Wrap the Data
+      X->SetData(x.GetData());
+      Y->SetData(k.GetData());
 
-        if (gcoeff && i==0)
-        gcoeff->SetGridFunction(X);
-        if (i==0)
-        {
-        AssembleBVector();
-        AssembleDiffMatrix();
-        }
+      // Assemble
+      AssembleBVector();
+      if (gcoeff)
+         gcoeff->SetGridFunction(X);
+      AssembleDiffMatrix();
 
-       //Assemble
-
-      //Solve
-      if (!M)
+      while (resid >= tol)
       {
-         cerr << "Not implemented!" << endl;
-         abort();
+         if (!M)
+         {
+            cerr << "Not implemented!" << endl;
+            abort();
+         }
+
+         // 1) Form the matrix: B = M - dt A
+         if (!B)
+            B = new HypreParMatrix(hypre_ParCSRMatrixAdd(*M, *A));
+         if (timedep_A || current_dt != dt)
+         {
+            hypre_ParCSRMatrixSetConstantValues(*B, 0.0);
+            hypre_ParCSRMatrixSum(*B, 1.0, *M);
+            hypre_ParCSRMatrixSum(*B, -dt, *A);
+
+            delete B_amg;
+            B_amg = new HypreBoomerAMG(*B);
+            B_amg->SetPrintLevel(-1);
+
+            delete B_pcg;
+            B_pcg = new HyprePCG(*B);
+            B_pcg->SetTol(1e-12);
+            B_pcg->SetMaxIter(200);
+            B_pcg->SetPrintLevel(0);
+            B_pcg->SetPreconditioner(*B_amg);
+            B_pcg->SetZeroInintialIterate();
+
+            current_dt = dt;
+         }
+
+         // 2) Form the rhs: A x + b
+         A->Mult(*X, *Z);
+         if (b)
+            *Z += *b;
+
+         // 3) Solve the system B Y = Z
+         B_pcg->Mult(*Z, *Y);
+
+         if (++i >= iteration)
+            break;
+
+         // Update the matrix for the next iteration and calculate the residual;
+         add(*X, dt, *Y, *D); // D = X + k*dt
+         if (gcoeff)
+         {
+            gcoeff->SetGridFunction(D);
+            AssembleDiffMatrix();
+         }
+
+         A->Mult(*D, *H);
+         *H += *b;   // H = A(x + k dt) + b(t)
+         M->Mult(*Y, *W);
+         *W -= *H;   // W = M k - A(x + k*dt) - b(t)
+         resid = sqrt(InnerProduct(W, W));
+
+         cout << "LinearSystemODE::ImplicitSolve : resid = "
+              << resid << endl;
       }
-        // 1) Form the matrix: B = M - dt A
-      if (!B)
-         B = new HypreParMatrix(hypre_ParCSRMatrixAdd(*M, *A));
-      if (timedep || current_dt != dt)
-      {
-         hypre_ParCSRMatrixSetConstantValues(*B, 0.0);
-         hypre_ParCSRMatrixSum(*B, 1.0, *M);
-         hypre_ParCSRMatrixSum(*B, -dt, *A);
 
-         delete B_amg;
-         B_amg = new HypreBoomerAMG(*B);
-         B_amg->SetPrintLevel(-1);
-
-         delete B_pcg;
-         B_pcg = new HyprePCG(*B);
-         B_pcg->SetTol(1e-12);
-         B_pcg->SetMaxIter(200);
-         B_pcg->SetPrintLevel(0);
-         B_pcg->SetPreconditioner(*B_amg);
-         B_pcg->SetZeroInintialIterate();
-
-         current_dt = dt;
-      }
-      // 2) Form the rhs: A x + b
-      A->Mult(*X, *Z);
-      if (b)
-      *Z += *b;
-
-      B_pcg->Mult(*Z, *Y);
-
-
-
-//Update the matrix for the next iteration and calculate the residual;
-        add(*X,dt,*Y,*D);// D = X + k*dt
-        if (gcoeff)
-        {
-        gcoeff->SetGridFunction(D);
-        AssembleDiffMatrix();
-        }
-
-       A->Mult(*D,*H);
-      *H += *b;   // H = A(x+kdt) + b(t)
-        M->Mult(*Y,*W);
-        *W -= *H; //W = Mk - A(x+k*dt) -b(t)
-        Vector *tt = W->GlobalVector();
-        resid = tt->Norml2();
-        delete tt;
-        i++;
-        }
+      cout << "LinearSystemODE::ImplicitSolve : number of iterations = "
+           << i << endl;
    }
 
    virtual ~LinearSystemODE()
@@ -913,10 +599,9 @@ public:
       delete amg;
       delete Y;
       delete X;
-      //delete W;
-      //delete H;
-      //delete D;
-
+      delete W;
+      delete H;
+      delete D;
    }
 };
 
@@ -926,7 +611,7 @@ public:
 void SolveODE(TimeDependentOperator *ode, HypreParVector *X0,
               ODESolver *solver, double tstart = 0.0, double tstop = 1.0,
               int ntime = 100, ParGridFunction *x = NULL,
-              TimeDependentCoefficient *exsol = NULL)
+              Coefficient *exsol = NULL)
 {
    solver->Init(*ode);
 
@@ -951,7 +636,7 @@ void SolveODE(TimeDependentOperator *ode, HypreParVector *X0,
       x->Save(*sol_sock);
       *sol_sock << "valuerange -1 1\n";
       *sol_sock << "autoscale off\n";
-    //*sol_sock << "autoscale value\n";
+      //*sol_sock << "autoscale value\n";
       *sol_sock << "keys cmAaa\n";
       *sol_sock << flush;
    }
@@ -1006,7 +691,7 @@ public:
    TimeDependentOperator *ode;
    ODESolver *solver;
 
-   TimeDependentCoefficient *exact_sol;
+   Coefficient *exact_sol;
 
    HypreParVector *X0;
    ParGridFunction *x;
@@ -1031,7 +716,7 @@ public:
       exact_sol = NULL;
    }
 
-   void SetExactSolution(TimeDependentCoefficient *exsol)
+   void SetExactSolution(Coefficient *exsol)
    { exact_sol = exsol; }
 
    ~MFEMBraidApp()
@@ -1235,61 +920,62 @@ double ExSol(Vector &p, double t)
    int dim = p.Size();
 
    if (dim == 2)
-   return sin(kap*p(0))*sin(kap*p(1))*sin(tau*t);
+      return sin(kap*p(0))*sin(kap*p(1))*sin(tau*t);
    else
-   return sin(kap*p(0))*sin(kap*p(1))*sin(kap*p(2))*sin(tau*t);
+      return sin(kap*p(0))*sin(kap*p(1))*sin(kap*p(2))*sin(tau*t);
 }
-double Difffunction(double t )
-{
 
-   if (diff_term <10)
-   return diff_term;
+double DiffFunction(double t)
+{
+   if (diff_term < 10)
+      return diff_term;
    else if (diff_term == 10)
-   return cos(M_PI/2*t/(tfinal+ 0.01));
+      return cos(M_PI/2*t/(tfinal+ 0.01));
    else if (diff_term == 11)
-   return t/tfinal + 0.001;
+      return t/tfinal + 0.001;
    else if (diff_term == 12)
    {
       if (t <= tfinal/4)
-      return 0.001;
-      else if ( t > tfinal/4 && t <= tfinal/2)
-      return 1;
-      else if ( t > tfinal/2 && t <= 3*tfinal/4)
-      return 0.001;
+         return 0.001;
+      else if (t > tfinal/4 && t <= tfinal/2)
+         return 1;
+      else if (t > tfinal/2 && t <= 3*tfinal/4)
+         return 0.001;
       else
-      return 1;
+         return 1;
    }
    else
-   return 1;
+      return 1;
 }
-//diffusion coefficient term
- void  Diff(const Vector &p,double t, DenseMatrix &m)
+
+// matrix diffusion coefficient term
+void Diff(const Vector &p, double t, DenseMatrix &m)
 {
-      int dim = p.Size();
-      if (dim == 2)
-      {
-         double aa[4]={-1,0,0,-Difffunction(t)};
-         m = aa;
-      }
-      else
-      {
-         double aa[9] = {-1,0,0,0,-1,0,0,0,-Difffunction(t)};
-         m = aa;
-      }
+   int dim = p.Size();
+   if (dim == 2)
+   {
+      double aa[4]={-1,0,0,-DiffFunction(t)};
+      m = aa;
+   }
+   else
+   {
+      double aa[9] = {-1,0,0,0,-1,0,0,0,-DiffFunction(t)};
+      m = aa;
+   }
 }
 
 int timedep()
 {
- if (diff_term < 10 )
- return 0;
- else
- return 1;
+   if (diff_term < 10)
+      return 0;
+   else
+      return 1;
 }
 
 // Initial condition
 double IC(Vector &x)
 {
-return ExSol(x, 0.0);
+   return ExSol(x, 0.0);
 }
 
 // Neumann boundary conditions.
@@ -1297,61 +983,61 @@ return ExSol(x, 0.0);
 // arbitrary domains: du/dn|_{\partial\Omega} = g.n.
 void NBC(const Vector &p, double t, Vector &v)
 {
-
-    double Ux,Uy;
-    int dim = p.Size();
-    if (diff_term>20)
-      {
-       Ux = kap*cos(kap*p(0))*sin(kap*p(1))*sin(tau*t);
-       Uy = kap*sin(kap*p(0))*cos(kap*p(1))*sin(tau*t);
-       v(0) = pow(Ux*Ux + Uy*Uy,power/2)*Ux;
-       v(1) = pow(Ux*Ux + Uy*Uy,power/2)*Uy;
-       return;
-      }
-     else  if (diff_term<=0)
-    {
-       v(0) = -diff_term*kap*cos(kap*p(0))*sin(kap*p(1))*sin(tau*t);
-       v(1) = -diff_term*kap*sin(kap*p(0))*cos(kap*p(1))*sin(tau*t);
-       return;
-    }
-    else if (dim == 2)
-    {
-       v(0) = kap*cos(kap*p(0))*sin(kap*p(1))*sin(tau*t);
-       v(1) = Difffunction(t)*kap*sin(kap*p(0))*cos(kap*p(1))*sin(tau*t);
-       return;
-    }
-    //3D if only implimented for the matrix case and not the nonlinear case.
-    v(0) = kap*cos(kap*p(0))*sin(kap*p(1))*sin(kap*p(2))*sin(tau*t);
-    v(1) = kap*sin(kap*p(0))*cos(kap*p(1))*sin(kap*p(2))*sin(tau*t);
-    v(2) = Difffunction(t)*kap*sin(kap*p(0))*sin(kap*p(1))*cos(kap*p(2))*sin(tau*t);
+   int dim = p.Size();
+   if (diff_term > 20)
+   {
+      double Ux, Uy;
+      Ux = kap*cos(kap*p(0))*sin(kap*p(1))*sin(tau*t);
+      Uy = kap*sin(kap*p(0))*cos(kap*p(1))*sin(tau*t);
+      v(0) = pow(Ux*Ux + Uy*Uy,power/2)*Ux;
+      v(1) = pow(Ux*Ux + Uy*Uy,power/2)*Uy;
+      return;
+   }
+   else if (diff_term <= 0)
+   {
+      v(0) = -diff_term*kap*cos(kap*p(0))*sin(kap*p(1))*sin(tau*t);
+      v(1) = -diff_term*kap*sin(kap*p(0))*cos(kap*p(1))*sin(tau*t);
+      return;
+   }
+   else if (dim == 2)
+   {
+      v(0) = kap*cos(kap*p(0))*sin(kap*p(1))*sin(tau*t);
+      v(1) = DiffFunction(t)*kap*sin(kap*p(0))*cos(kap*p(1))*sin(tau*t);
+      return;
+   }
+   // 3D if only implimented for the matrix case and not the nonlinear case.
+   v(0) = kap*cos(kap*p(0))*sin(kap*p(1))*sin(kap*p(2))*sin(tau*t);
+   v(1) = kap*sin(kap*p(0))*cos(kap*p(1))*sin(kap*p(2))*sin(tau*t);
+   v(2) = DiffFunction(t)*kap*sin(kap*p(0))*sin(kap*p(1))*cos(kap*p(2))*sin(tau*t);
 }
+
 // Source term
 double ST(Vector &p, double t)
 {
    int dim = p.Size();
    if (diff_term > 20)
-      {
-         double Ut,Ux,Uxx,Uy,Uxy;
-         Ut = tau*sin(kap*p(0))*sin(kap*p(1))*cos(tau*t);
-         Ux = kap*cos(kap*p(0))*sin(kap*p(1))*sin(tau*t);
-         Uy = kap*sin(kap*p(0))*cos(kap*p(1))*sin(tau*t);
-         Uxx = -kap*kap*sin(kap*p(0))*sin(kap*p(1))*sin(tau*t);
-        Uxy =  kap*kap*cos(kap*p(0))*cos(kap*p(1))*sin(tau*t);
+   {
+      double Ut,Ux,Uxx,Uy,Uxy;
+      Ut = tau*sin(kap*p(0))*sin(kap*p(1))*cos(tau*t);
+      Ux = kap*cos(kap*p(0))*sin(kap*p(1))*sin(tau*t);
+      Uy = kap*sin(kap*p(0))*cos(kap*p(1))*sin(tau*t);
+      Uxx = -kap*kap*sin(kap*p(0))*sin(kap*p(1))*sin(tau*t);
+      Uxy =  kap*kap*cos(kap*p(0))*cos(kap*p(1))*sin(tau*t);
       if (power == 0)
-      return  Ut-(power+2)*pow((Ux*Ux +Uy*Uy),power/2)*Uxx; //
+         return  Ut-(power+2)*pow((Ux*Ux +Uy*Uy),power/2)*Uxx; //
       else
-      return  Ut-(power+2)*pow((Ux*Ux +Uy*Uy),power/2)*Uxx - 2*power*(Ux*Uy*Uxy)*pow(Ux*Ux+Uy*Uy,power/2-1);
-
-
-
-      }
-      else if (diff_term<=0 )
-       return (tau*cos(tau*t) -(2*diff_term)*kap*kap*sin(tau*t))*sin(kap*p(0))*sin(kap*p(1));
-
-      else if (dim == 2)
-      return (tau*cos(tau*t) +(1+Difffunction(t))*kap*kap*sin(tau*t))*sin(kap*p(0))*sin(kap*p(1));
-      else
-      return (tau*cos(tau*t) + (2+Difffunction(t))*kap*kap*sin(tau*t))*sin(kap*p(0))*sin(kap*p(1))*sin(kap*p(2));
+         return (Ut-(power+2)*pow((Ux*Ux +Uy*Uy),power/2)*Uxx -
+                 2*power*(Ux*Uy*Uxy)*pow(Ux*Ux+Uy*Uy,power/2-1));
+   }
+   else if (diff_term <= 0)
+      return ((tau*cos(tau*t) -(2*diff_term)*kap*kap*sin(tau*t))*
+              sin(kap*p(0))*sin(kap*p(1)));
+   else if (dim == 2)
+      return ((tau*cos(tau*t) +(1+DiffFunction(t))*kap*kap*sin(tau*t))*
+              sin(kap*p(0))*sin(kap*p(1)));
+   else
+      return ((tau*cos(tau*t) + (2+DiffFunction(t))*kap*kap*sin(tau*t))*
+              sin(kap*p(0))*sin(kap*p(1))*sin(kap*p(2)));
 }
 
 int main(int argc, char *argv[])
@@ -1392,7 +1078,7 @@ int main(int argc, char *argv[])
    power = 0;
    diff_term = -1;
 
-// double cfl         = 1.0;
+   // double cfl         = 1.0;
    int    ode_solver  = -1;
 
    int heat_equation = 1;
@@ -1724,24 +1410,18 @@ int main(int argc, char *argv[])
    // assemble and extract the corresponding parallel matrices.
    ConstantCoefficient one(1.0);
    ConstantCoefficient minus(diff_term);
-   TimeDepFunctionCoefficient source(&ST);
-   TimeDepVectorFunctionCoefficient nbc(dim, &NBC);
-   TimeDepFunctionCoefficient exact_sol(&ExSol);
-   TimeDepMatrixFunctionCoefficient dc(dim,&Diff);
-   FuncDepGridFuncCoefficient gfc(&x0,power);
+   FunctionCoefficient source(&ST);
+   VectorFunctionCoefficient nbc(dim, &NBC);
+   FunctionCoefficient exact_sol(&ExSol);
+   MatrixFunctionCoefficient dc(dim, &Diff);
+   FuncDepGridFuncCoefficient gfc(&x0, power);
    ParBilinearForm *a = new ParBilinearForm(fespace);
    ParBilinearForm *m = new ParBilinearForm(fespace);
    ParLinearForm   *b = new ParLinearForm(fespace);
-   NonlinearOptions *NLO = new NonlinearOptions(picard,ntime,tstop-tstart,tolf,tolc);
+   NonlinearOptions *NLO = new NonlinearOptions(picard, ntime, tstop - tstart,
+                                                tolf, tolc);
 
    tfinal = tstop;
-
-      if (diff_term <= 0)
-          a->AddDomainIntegrator(new DiffusionIntegrator(minus));
-       else if (diff_term < 20)
-          a->AddDomainIntegrator(new DiffusionIntegrator(dc));
-       else
-          a->AddDomainIntegrator(new DiffusionIntegrator(gfc));
 
    m->AddDomainIntegrator(new MassIntegrator(one));
    b->AddDomainIntegrator(new DomainLFIntegrator(source));
@@ -1751,29 +1431,37 @@ int main(int argc, char *argv[])
    // the same sparsity patterns.
    a->UsePrecomputedSparsity();
    m->UsePrecomputedSparsity(); m->Assemble(); m->Finalize();
-        HypreParMatrix *M = m->ParallelAssemble();
+   HypreParMatrix *M = m->ParallelAssemble();
 
    delete m;
-  // Define the righ-hand side of the ODE and call MFEM or BRAID to solve it.
+   // Define the righ-hand side of the ODE and call MFEM or BRAID to solve it.
    TimeDependentOperator *ode;
    if (heat_equation)
-                        {
-            if (diff_term <= 0)
-                                 ode = new LinearSystemODE(a,0, M, b, &source, &nbc);
-            else if (diff_term < 20)
-                                 ode = new LinearSystemODE(a,timedep(), M, b, &source, &nbc, &dc);
-            else
-                              {
-                  ode = new LinearSystemODE(a,timedep(),M, b, &source, &nbc,&dc,&gfc,NLO);
-                         }
-         }
-   else
-                {
-      a->Assemble();
-      a->Finalize();
-      HypreParMatrix *A = a->ParallelAssemble();
-      ode = new ScalarODE(A->Size(), scalar_ode_option);
+   {
+      if (diff_term <= 0)
+      {
+         // constant diffusion coefficient = (-diff_term)
+         a->AddDomainIntegrator(new DiffusionIntegrator(minus));
+         ode = new LinearSystemODE(a, 0, M, b, &source, &nbc);
       }
+      else if (diff_term < 20)
+      {
+         // matrix diffusion coefficient (possibly time dependent)
+         a->AddDomainIntegrator(new DiffusionIntegrator(dc));
+         ode = new LinearSystemODE(a, timedep(), M, b, &source, &nbc, &dc);
+      }
+      else
+      {
+         // nonlinear diffusion coefficient = |grad(u)|^p
+         a->AddDomainIntegrator(new DiffusionIntegrator(gfc));
+         ode = new LinearSystemODE(a, timedep(), M, b, &source, &nbc, NULL,
+                                   &gfc, NLO);
+      }
+   }
+   else
+   {
+      ode = new ScalarODE(M->Size(), scalar_ode_option);
+   }
    ODESolver *solver;
 
    if (ode_solver == 4)
@@ -1887,6 +1575,7 @@ int main(int argc, char *argv[])
    delete X0;
    delete M;
    delete b;
+   delete a;
 
    delete fespace;
    if (!pmesh->GetNodes())
