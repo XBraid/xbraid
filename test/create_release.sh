@@ -21,9 +21,12 @@ this_version="1.0 beta"
 destination_dir="/usr/casc/hypre/braid/share/braid_tarballs"
 braid_version_to_checkout='HEAD'
 temp_dir="$HOME/braid_temp"
-date=`date +%Y.%m.%d`
-archive_name="braid-`date +%Y.%m.%d`.tar.gz"
 
+##
+# Create archive name
+hash=$(git rev-parse $braid_version_to_checkout)
+hash_short=${hash:0:8}
+archive_name="braid_`date +%Y-%m-%d`_$hash_short.tar.gz"
 touch $destination_dir/$archive_name
 
 (
@@ -38,7 +41,6 @@ touch $destination_dir/$archive_name
 
    ##
    # Dump a version file into the new directory
-   cd braid
    head -n 22 COPYRIGHT > VERSION
    echo "XBraid Version: " >> VERSION
    echo $this_version >> VERSION
@@ -85,8 +87,13 @@ touch $destination_dir/$archive_name
    cd ../
 
    ##
-   # Remove all source tarballs older than 10 days
-   find $destination_dir/braid-*.tar.gz -mtime +10 -exec rm {} \;
+   # Remove all other tar balls for this hash, but leave an empty one for todays tarball
+   cd $destination_dir
+   rm *"$hash_short"*
+   touch $archive_name
+   # Remove all but the 10 most recent tarballs and go back to the directory where this code block started
+   rm `ls -t *.tar.gz | awk 'NR>10'`
+   cd $temp_dir/braid
 
    ##
    # zip it up! 
