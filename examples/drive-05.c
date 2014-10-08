@@ -2969,7 +2969,7 @@ my_BufUnpack(braid_App     app,
  * -------------------------------------------------------------------- */
 int main (int argc, char *argv[])
 {
-   int i, level;
+   int i;
    int arg_index;
    int print_usage = 0;
 
@@ -3234,7 +3234,7 @@ int main (int argc, char *argv[])
       printf("                                     2 - Two-norm (default) \n");
       printf("                                     3 - Infinity-norm \n");
       printf("  -cf  <cfactor>                   : set coarsening factor (default: 2)\n");   
-      printf("  -cf0  <cfactor>                  : set aggressive coarsening factor\n");
+      printf("  -cf0  <cfactor>                  : set coarsening factor for level 0 \n");
       printf("  -mi  <max_iter>                  : set max iterations (default: 100)\n");
       printf("  -iter <max_iter max_iter_cheap>  : maximum number of PFMG iterations (default: 50 50)\n"); 
       printf("  -tolx <loose_tol tight_tol>      : loose and tight stopping tolerance for PFMG (default: 1e-09 1e-09)\n"); 
@@ -3550,13 +3550,10 @@ int main (int argc, char *argv[])
       braid_SetAbsTol(core, tol/sqrt(dx*dy*dt));
       braid_SetTemporalNorm(core, tnorm);
 
+      /* Set cfactor */
       braid_SetCFactor(core, -1, cfactor);
       if( cfactor0 > -1 ){
-         /* Use cfactor0 on all levels until there are < cfactor0 points
-          * on each processor. */
-         level = (int) (log10((nt + 1) / pt) / log10(cfactor0));
-         for( i = 0; i < level; i++ )
-            braid_SetCFactor(core,  i, cfactor0);
+           braid_SetCFactor(core,  0, cfactor0);
       }
       
       braid_SetMaxIter(core, max_iter);

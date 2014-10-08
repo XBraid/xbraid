@@ -93,6 +93,7 @@ typedef struct
    braid_Int          iupper;        /**< largest time index at this level*/
    braid_Int          clower;        /**< smallest C point index */
    braid_Int          cupper;        /**< largest C point index */
+   braid_Int          gupper;        /**< global size of the grid */
    braid_Int          cfactor;       /**< coarsening factor */
    braid_Int          ncpoints;      /**< number of C points */
                   

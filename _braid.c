@@ -1554,6 +1554,8 @@ _braid_InitHierarchy(braid_Core    core,
       {
          cfactor = cfdefault;
       }
+      
+      _braid_GridElt(grid, gupper)   = gcupper;
 
       _braid_ProjectInterval(gclower, gcupper, 0, cfactor, &gclower, &gcupper);
       _braid_MapFineToCoarse(gclower, cfactor, gclower);

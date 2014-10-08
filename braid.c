@@ -326,10 +326,11 @@ braid_Drive(braid_Core  core)
                if( (print_level >= 1) && (myid == 0) )
                {
                   if (iter == 0)
-                     _braid_printf("  Braid:  || r_%d || = %e\n", iter, rnorm);
+                     _braid_printf("  Braid:  || r_%d || = %1.6e,  wall time = %1.2e\n", 
+                     iter, rnorm, (MPI_Wtime() - localtime));
                   else
-                     _braid_printf("  Braid:  || r_%d || = %e,  conv. factor = %e\n", iter, rnorm,
-                            rnorm/old_rnorm);
+                     _braid_printf("  Braid:  || r_%d || = %1.6e,  wall time = %1.2e,  conv. factor = %1.2e\n", 
+                     iter, rnorm, (MPI_Wtime() - localtime), rnorm/old_rnorm);
                }
 
                if ( ((rnorm < tol) && (_braid_CoreElt(core, accuracy[0].tight_used) == 1)) || 
@@ -468,14 +469,16 @@ braid_PrintStats(braid_Core  core)
       else if(tnorm == 3)
       {  _braid_printf("                        --> Inf-norm TemporalNorm \n"); }
       _braid_printf("\n");
-      _braid_printf("  level   cfactor   nrelax\n", globaltime);
+      _braid_printf("  level   time-pts   cfactor   nrelax\n", globaltime);
       for (level = 0; level < nlevels-1; level++)
       {
-         _braid_printf("  % 5d   % 7d   % 6d\n",
-                      level, _braid_GridElt(grids[level], cfactor), nrels[level]);
+         _braid_printf("  % 5d  % 8d  % 7d   % 6d\n",
+                      level, _braid_GridElt(grids[level], gupper), 
+                      _braid_GridElt(grids[level], cfactor), nrels[level]);
       }
-      /* Print out blank information on coarsest grid */
-      _braid_printf("  % 5d   % 7c   % 6c\n", level, ' ', ' ');
+      /* Print out coarsest level information */
+      _braid_printf("  % 5d  % 8d  \n",
+                      level, _braid_GridElt(grids[level], gupper) );
       _braid_printf("\n");
       _braid_printf("  wall time = %f\n", globaltime);
       _braid_printf("\n");
