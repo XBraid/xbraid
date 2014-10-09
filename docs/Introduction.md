@@ -474,7 +474,7 @@ discussed here.
 - [braid_SetCFactor](@ref braid_SetCFactor): sets the coarsening factor for any (or all levels)
 - [braid_SetNRelax](@ref braid_SetNRelax): sets the number of CF-relaxation sweeps for any (or all levels)
 - [braid_SetRelTol](@ref braid_SetRelTol), [braid_SetAbsTol](@ref braid_SetAbsTol): sets the stopping tolerance
-- [braid_SetMaxCoarse](@ref braid_SetMaxCoarse): sets the maximum coarse grid size, in terms of C-points
+- [braid_SetMinCoarse](@ref braid_SetMinCoarse): sets the minimum possible coarse grid size
 - [braid_SetMaxLevels](@ref braid_SetMaxLevels): sets the maximum number of levels in the XBraid hierarchy
 
 ## Halting tolerance {#halting}

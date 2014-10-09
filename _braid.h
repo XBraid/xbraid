@@ -144,7 +144,7 @@ typedef struct _braid_Core_struct
    braid_Int              access_level; /**< determines how often to call the user's access routine */ 
    braid_Int              print_level;  /**< determines amount of output printed to screem (0,1,2) */ 
    braid_Int              max_levels;   /**< maximum number of temporal grid levels */
-   braid_Int              max_coarse;   /**< maximum allowed coarse grid size  (in terms of C-points) */
+   braid_Int              min_coarse;   /**< minimum possible coarse grid size */
    braid_Real             tol;          /**< stopping tolerance */
    braid_Int              rtol;         /**< use relative tolerance */
    braid_Int             *nrels;        /**< number of pre-relaxations on each level */

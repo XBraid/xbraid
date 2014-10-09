@@ -2978,7 +2978,7 @@ int main (int argc, char *argv[])
    braid_Core    core;
    my_App       *app;
    int           max_levels;
-   int           max_coarse;
+   int           min_coarse;
    int           nrelax, nrelax0;
    double        tol;
    int           cfactor, cfactor0;
@@ -3034,7 +3034,7 @@ int main (int argc, char *argv[])
    /* Default parameters. */
    comm                = MPI_COMM_WORLD;
    max_levels          = 2;  /* Must be two, in order for coarsen and refine wrapper tests to run */
-   max_coarse          = 1;  
+   min_coarse          = 3;  
    nrelax              = 1;
    nrelax0             = -1;
    tol                 = 1.0e-09;
@@ -3105,7 +3105,7 @@ int main (int argc, char *argv[])
       }
       else if( strcmp(argv[arg_index], "-mc") == 0 ){
           arg_index++;
-          max_coarse = atoi(argv[arg_index++]);
+          min_coarse = atoi(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-nu") == 0 ){
           arg_index++;
@@ -3225,7 +3225,7 @@ int main (int argc, char *argv[])
       printf("  -nt  <n>                         : number of time steps (default: 32)\n"); 
       printf("  -c  <c>                          : ratio dt/(dx^2) (default: 1.0)\n"); 
       printf("  -ml  <max_levels>                : set max number of time levels (default: 1)\n");
-      printf("  -mc  <max_coarse>                : set max allowed coarse level size in terms of C-points (default: 1)\n");
+      printf("  -mc  <min_coarse>                : set min possible coarse level size (default: 3)\n");
       printf("  -nu  <nrelax>                    : set num F-C relaxations (default: 1)\n");
       printf("  -nu0 <nrelax>                    : set num F-C relaxations on level 0\n");
       printf("  -tol <tol>                       : set stopping tolerance (default: 1e-09)\n");
@@ -3534,7 +3534,7 @@ int main (int argc, char *argv[])
       braid_SetTightxTol( core, 0, tol_x[1] );
 
       braid_SetMaxLevels( core, max_levels );
-      braid_SetMaxCoarse( core, max_coarse );
+      braid_SetMinCoarse( core, min_coarse );
 
       braid_SetPrintLevel( core, print_level);
       braid_SetAccessLevel( core, access_level);

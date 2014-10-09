@@ -69,7 +69,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              nfmg_Vcyc = 1;         /* Default num V-cycles at each fmg level is 1 */
    braid_Int              max_iter = 100;        /* Default max_iter */
    braid_Int              max_levels = 30;       /* Default max_levels */
-   braid_Int              max_coarse = 1;        /* Default max_coarse (in terms of number of C-points) */
+   braid_Int              min_coarse = 3;        /* Default min_coarse */
    braid_Int              print_level = 1;       /* Default print level */
    braid_Int              access_level = 1;      /* Default access level */
    braid_Int              tnorm = 2;             /* Default temporal norm */
@@ -102,7 +102,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, tnorm)         = tnorm;
    _braid_CoreElt(core, print_level)   = print_level;
    _braid_CoreElt(core, max_levels)    = max_levels;
-   _braid_CoreElt(core, max_coarse)    = max_coarse;
+   _braid_CoreElt(core, min_coarse)    = min_coarse;
    _braid_CoreElt(core, tol)           = tol;
    _braid_CoreElt(core, rtol)          = rtol;
 
@@ -430,7 +430,7 @@ braid_PrintStats(braid_Core  core)
    braid_Real    tstop      = _braid_CoreElt(core, tstop);
    braid_Int     ntime      = _braid_CoreElt(core, ntime);
    braid_Int     max_levels = _braid_CoreElt(core, max_levels);
-   braid_Int     max_coarse = _braid_CoreElt(core, max_coarse);
+   braid_Int     min_coarse = _braid_CoreElt(core, min_coarse);
    braid_Real    tol        = _braid_CoreElt(core, tol);
    braid_Int     rtol       = _braid_CoreElt(core, rtol);
    braid_Int    *nrels      = _braid_CoreElt(core, nrels);
@@ -455,7 +455,7 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  time steps = %d\n", ntime);
       _braid_printf("\n");
       _braid_printf("  max number of levels = %d\n", max_levels);
-      _braid_printf("  max coarse           = %d\n", max_coarse);
+      _braid_printf("  min coarse           = %d\n", min_coarse);
       _braid_printf("  number of levels     = %d\n", nlevels);
       _braid_printf("  stopping tolerance   = %e\n", tol);
       _braid_printf("  relative tolerance?  = %d\n", rtol);
@@ -560,10 +560,10 @@ braid_SetMaxLevels(braid_Core  core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_SetMaxCoarse(braid_Core  core,
-                braid_Int   max_coarse)
+braid_SetMinCoarse(braid_Core  core,
+                   braid_Int   min_coarse)
 {
-   _braid_CoreElt(core, max_coarse) = max_coarse;
+   _braid_CoreElt(core, min_coarse) = min_coarse;
 
    return _braid_error_flag;
 }

@@ -300,7 +300,7 @@ public:
 
    void SetMaxLevels(braid_Int max_levels) { braid_SetMaxLevels(core, max_levels); }
 
-   void SetMaxCoarse(braid_Int max_coarse) { braid_SetMaxCoarse(core, max_coarse); }
+   void SetMinCoarse(braid_Int min_coarse) { braid_SetMinCoarse(core, min_coarse); }
 
    void SetNRelax(braid_Int level, braid_Int nrelax)
    { braid_SetNRelax(core, level, nrelax); }

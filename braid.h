@@ -336,11 +336,14 @@ braid_SetMaxLevels(braid_Core  core,        /**< braid_Core (_braid_Core) struct
                    );
 
 /**
- * Set max allowed coarse grid size (in terms of C-points) 
+ * Set minimum allowed coarse grid size. XBraid stops coarsening whenever
+ * creating the next coarser grid will result in a grid smaller than
+ * min_coarse.  The maximum possible coarse grid size will be
+ * min_coarse*coarsening_factor.
  **/
 braid_Int
-braid_SetMaxCoarse(braid_Core  core,        /**< braid_Core (_braid_Core) struct*/
-                   braid_Int   max_coarse   /** maximum coarse grid size */
+braid_SetMinCoarse(braid_Core  core,        /**< braid_Core (_braid_Core) struct*/
+                   braid_Int   min_coarse   /** minimum coarse grid size */
                    );
 
 /**

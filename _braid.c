@@ -1466,7 +1466,7 @@ _braid_InitHierarchy(braid_Core    core,
 {
    MPI_Comm       comm       = _braid_CoreElt(core, comm);
    braid_Int      max_levels = _braid_CoreElt(core, max_levels);
-   braid_Int      max_coarse = _braid_CoreElt(core, max_coarse);
+   braid_Int      min_coarse = _braid_CoreElt(core, min_coarse);
    braid_Real     tol        = _braid_CoreElt(core, tol);
    braid_Int     *nrels      = _braid_CoreElt(core, nrels);
    braid_Int      nrdefault  = _braid_CoreElt(core, nrdefault);
@@ -1495,9 +1495,9 @@ _braid_InitHierarchy(braid_Core    core,
    grids[0] = fine_grid;
 
    /* Do sequential time marching if tolerance is not positive, 
-    * or max_coarse is already reached */
+    * or min_coarse is already reached */
 
-   if ((tol <= 0.0) && (max_levels > 1) && (gupper >= max_coarse) )
+   if ((tol <= 0.0) && (max_levels > 1) && (gupper >= min_coarse) )
    {
       max_levels = 1;
       _braid_CoreElt(core, max_levels) = max_levels;
@@ -1560,7 +1560,7 @@ _braid_InitHierarchy(braid_Core    core,
       _braid_ProjectInterval(gclower, gcupper, 0, cfactor, &gclower, &gcupper);
       _braid_MapFineToCoarse(gclower, cfactor, gclower);
       _braid_MapFineToCoarse(gcupper, cfactor, gcupper);
-      if ( (gclower < gcupper) && (max_levels > level+1) && ((gcupper - gclower) >= max_coarse) ) 
+      if ( (gclower < gcupper) && (max_levels > level+1) && ((gcupper - gclower) >= min_coarse) ) 
       {
          /* Coarsen */
          _braid_ProjectInterval(ilower, iupper, 0, cfactor, &clower, &cupper);

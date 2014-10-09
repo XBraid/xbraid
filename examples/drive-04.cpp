@@ -1091,7 +1091,7 @@ int main(int argc, char *argv[])
 
    // BRAID default parameters:
    int    max_levels  = 10;
-   int    max_coarse  = 1;
+   int    min_coarse  = 3;
    int    nrelax      = 1;
    int    nrelax0     = -1;
    double tol         = 1e-9;
@@ -1197,7 +1197,7 @@ int main(int argc, char *argv[])
       }
       else if (strcmp(argv[arg_index], "-mc") == 0)
       {
-         max_coarse = atoi(argv[++arg_index]);
+         min_coarse = atoi(argv[++arg_index]);
       }
       else if (strcmp(argv[arg_index], "-nu") == 0)
       {
@@ -1322,7 +1322,7 @@ int main(int argc, char *argv[])
          "  -tolf <tolf>      : set the nonlinear solve tolerance for the fine grid (default 0.001)\n"
          "  -tolc <tolc>      : set the nonlinear solve tolerance for the coarse grids (default 0.001)\n"
          "  -ml  <max_levels> : set max number of time levels (default: 10)\n"
-         "  -mc  <max_coarse> : set max allowed coarse level size in terms of C-points (default: 1)\n"
+         "  -mc  <min_coarse> : set minimum possible coarse level size (default: 3)\n"
          "  -nu  <nrelax>     : set num F-C relaxations (default: 1)\n"
          "  -nu0 <nrelax>     : set num F-C relaxations on level 0\n"
          "  -tol <tol>        : set stopping tolerance (default: 1e-9)\n"
@@ -1550,7 +1550,7 @@ int main(int argc, char *argv[])
          core.SetAccessLevel(access_level);
          core.SetPrintLevel(1);
          core.SetMaxLevels(max_levels);
-         core.SetMaxCoarse(max_coarse);
+         core.SetMinCoarse(min_coarse);
          core.SetNRelax(-1, nrelax);
          if (nrelax0 > -1)
             core.SetNRelax(0, nrelax0);
