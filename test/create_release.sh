@@ -21,6 +21,7 @@ this_version="1.0 beta"
 destination_dir="/usr/casc/hypre/braid/share/braid_tarballs"
 braid_version_to_checkout='HEAD'
 temp_dir="$HOME/braid_temp"
+date="`date +%Y.%m.%d` at `date +%H.%M`"
 
 ##
 # Create archive name
