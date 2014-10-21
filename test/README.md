@@ -2,12 +2,10 @@
 <!--
   - Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
   - Produced at the Lawrence Livermore National Laboratory. Written by 
-  - Jacob Schroder schroder2@llnl.gov, Rob Falgout falgout2@llnl.gov,
-  - Tzanio Kolev kolev1@llnl.gov, Ulrike Yang yang11@llnl.gov, 
-  - Veselin Dobrev dobrev1@llnl.gov, et al. 
-  - LLNL-CODE-660355. All rights reserved.
+  - Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
+  - Dobrev, et al. LLNL-CODE-660355. All rights reserved.
   - 
-  - This file is part of XBraid. Email schroder2@llnl.gov on how to download. 
+  - This file is part of XBraid. Email xbraid-support@llnl.gov for support.
   - 
   - This program is free software; you can redistribute it and/or modify it under
   - the terms of the GNU General Public License (as published by the Free Software
