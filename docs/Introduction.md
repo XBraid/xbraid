@@ -26,8 +26,7 @@
 We chose the package name XBraid to stand for _Time-Braid_, where
 X is the first letter in the Greek work for time, _Chronos_.  The
 algorithm _braids_ together time-grids of different granularity in order to
-create a multigrid method and achieve parallelism in the time dimension.  In
-plain text, we say XBraid, or just Braid for short.
+create a multigrid method and achieve parallelism in the time dimension.
 
 # Overview of the XBraid Algorithm {#braidoverview}
 
@@ -615,6 +614,21 @@ Regarding the performance, we can say
 Achieving the best speedup can require some tuning, and it is recommended to read
 [Parallel Time Integration with Multigrid](https://computation-rnd.llnl.gov/linear_solvers/pubs/mgritPaper-2013.pdf)
 where this 2D heat equation example is explored in much more detail.
+
+
+# Citing XBraid {#braidcite}
+
+To cite XBraid, please state in your text the version number from the 
+VERSION file, and please cite the project website in your bibliography as
+   
+>  [1] XBraid: Parallel multigrid in time. http://llnl.gov/casc/xbraid.
+
+The corresponding BibTex entry is
+   
+     @misc{xbraid-package,
+       title = {{XB}raid: Parallel multigrid in time},
+       howpublished = {\url{http://llnl.gov/casc/xbraid}}
+       }
 
 # Summary {#summary}
 
