@@ -164,11 +164,11 @@ first argument to every function.
 
 6. **SpatialNorm**: This function tells XBraid how to take the norm 
    of a braid_Vector and is used for halting. This norm is only over 
-   space.  A common norm choice is the standard Eucliden norm, but 
+   space.  A common norm choice is the standard Euclidean norm, but 
    many other choices are possible, such as an L2-norm based on a 
    finite element space.  The norm choice should be based on what 
    makes sense for you problem.  How to accumulate spatial norm values
-   to obtain a global space-time residual norm for halting decsions is 
+   to obtain a global space-time residual norm for halting decisions is 
    controlled by [braid_SetTemporalNorm](@ref braid_SetTemporalNorm).
 
          int
@@ -188,14 +188,14 @@ first argument to every function.
    at time *t*.  This is most commonly used to print solution(s) to screen, file, etc... 
    The user defines what is appropriate output.  Notice how you are told the time value *t* of the 
    vector *u* and even more information in *astatus*.  This lets you tailor the output to only 
-   certain time values at certain XBraid iterations.  Querrying *astatus* for such information 
+   certain time values at certain XBraid iterations.  Querying *astatus* for such information 
    is done through _braid_AccessStatusGet**(..)_ routines.
    \latexonly \\ \endlatexonly
 
    The frequency of the calls to *access* is controlled through 
    [braid_SetAccessLevel](@ref braid_SetAccessLevel).  For instance, if access_level is 
    set to 2, then *access* is called every XBraid iteration and on every XBraid level.  In 
-   this case, querrying *astatus* to determine the current XBraid level and iteration will 
+   this case, querying *astatus* to determine the current XBraid level and iteration will 
    be useful. This scenario allows for even more detailed tracking of the simulation.
    \latexonly \\ \endlatexonly
 

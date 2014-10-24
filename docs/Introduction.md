@@ -30,19 +30,22 @@ create a multigrid method and achieve parallelism in the time dimension.
 
 # Overview of the XBraid Algorithm {#braidoverview}
 
-The goal of XBraid is to solve a problem faster than a
-traditional time marching algorithm.  Instead of sequential time marching, XBraid
-solves the problem iteratively by simultaneously updating a space-time solution
-guess over all time values.  The initial solution guess can be anything, even a
-random function over space-time.  The iterative updates to the solution guess
-are done by constructing a hierarchy of temporal grids, where the finest grid
-contains all of the time values for the simulation.  Each subsequent grid is a
-coarser grid with fewer time values.  The coarsest grid has a trivial number of
-time steps and can be quickly solved exactly.  The effect is that
-solutions to the time marching problem on the coarser (i.e., cheaper) grids can
-be used to correct the original finest grid solution.  Thus, a problem with 
-many time steps (thousands, tens of thousands or more) can be solved with 10 or 15
-XBraid iterations, and the overall time to solution can be greatly sped up.  However, 
+The goal of XBraid is to solve a problem faster than a traditional time
+marching algorithm.  Instead of sequential time marching, XBraid solves the
+problem iteratively by simultaneously updating a space-time solution guess over
+all time values.  The initial solution guess can be anything, even a random
+function over space-time.  The iterative updates to the solution guess are done
+by constructing a hierarchy of temporal grids, where the finest grid contains
+all of the time values for the simulation.  Each subsequent grid is a coarser
+grid with fewer time values.  The coarsest grid has a trivial number of time
+steps and can be quickly solved exactly.  The effect is that solutions to the
+time marching problem on the coarser (i.e., cheaper) grids can be used to
+correct the original finest grid solution.  Analogous to spatial multigrid, the
+coarse grid correction only *corrects* and *accelerates* convergence to the
+finest grid solution.  The coarse grid does not need to represent an
+accurate time discretization in its own right.  Thus, a problem with many time
+steps (thousands, tens of thousands or more) can be solved with 10 or 15 XBraid
+iterations, and the overall time to solution can be greatly sped up.  However,
 this is achieved at the cost of more computational resources.
 
 To understand how XBraid differs from traditional time marching, consider the
@@ -61,24 +64,24 @@ a wave, and this wave propagates sequentially across space as time increases.
    \endlatexonly
 
 XBraid instead begins with a solution guess over all of space-time, which for demonstration, 
-we let be random. A XBraid iteration then does
+we let be random. An XBraid iteration does
 
 1. Relaxation on the fine grid, i.e., the grid that contains all of the desired time values
-   - Relaxation is just a local application of the time stepping scheme, e.g., backward Euler
+   Relaxation is just a local application of the time stepping scheme, e.g., backward Euler.
 2. Restriction to the first coarse grid, i.e., interpolate the problem to a grid that 
-   contains fewer time values, say every second or every third time value
+   contains fewer time values, say every second or every third time value.
 3. Relaxation on the first coarse grid
 4. Restriction to the second coarse grid and so on...
 5. When a coarse grid of trivial size (say 2 time steps) is reached, it is solved exactly.
 6. The solution is then interpolated from the coarsest grid to the finest grid
 
-One XBraid iteration is called a *cycle* and these cycles continue until the the
+One XBraid iteration is called a *cycle* and these cycles continue until the
 solution is accurate enough.  This is depicted in the next figure, where only a
 few iterations are required for this simple problem.
    \latexonly
    \begin{figure}[!ht] \centering 
        \subfloat{\includegraphics[width=1.0\textwidth]{../img/3_MG_In_Time_Iterations.pdf}}
-       \caption{$\chi$~Braid iterations.}
+       \caption{XBraid iterations.}
        \label{img:mgrit_cycles}
    \end{figure}
    \endlatexonly
@@ -87,7 +90,7 @@ There are a few important points to make.
 - The coarse time grids allow for global propagation of information across
   space-time with only one XBraid iteration.  This is visible in the above figure by observing
   how the solution is updated from iteration 0 to iteration 1.
-- Using coarser (cheaper) grids to correct the fine grid is analagous to spatial multigrid.
+- Using coarser (cheaper) grids to correct the fine grid is analogous to spatial multigrid.
 - Only a few XBraid iterations are required to find the solution over 1024 time steps. 
   Therefore if enough processors are available to parallelize XBraid, we can see a speedup
   over traditional time stepping (more on this later).
@@ -96,17 +99,23 @@ There are a few important points to make.
    features will be coming. 
 
 To firm up our understanding, let`s do a little math.  Assume that you
-have a general ODE, 
+have a general system of ordinary differential equations (ODEs), 
    \f[
-   \Xux^{\prime}(t) = \Xfx(t, \Xux(t)), ~~~ \Xux(0) = \Xux_0, ~~~ t \in [0,T], 
+   \Xux^{\prime}(t) = \Xfx(t, \Xux(t)), ~~~ \Xux(0) = \Xux_0, ~~~ t \in [0,T]. 
    \f]
-which you descretize with the one-step integration
+Next, let \f$t_i = i \delta t, i = 0, 1, ..., N\f$ be a temporal mesh with spacing 
+\f$ \delta t = T/N \f$, and \f$u_i\f$ be an approximation to \f$u(t_i)\f$.
+A general one-step time discretization is now given by
    \f[
-   \Xux_i = \Phi_i(\Xux_{i-1}) + \Xgx_i , ~~~ i = 1, 2, ... , N.
+   \begin{split}
+      \Xux_0 =& g_0\\ 
+      \Xux_i =& \Phi_i(\Xux_{i-1}) + \Xgx_i , ~~~ i = 1, 2, ... , N.
+   \end{split}
    \f]
-Traditional time marchine would first solve for \f$ i = 1 \f$, then solve for 
-\f$ i = 2 \f$, and so on.  This process is equivalent to a forward solve of this
-system,
+
+Traditional time marching would first solve for \f$ i = 1 \f$, then solve for 
+\f$ i = 2 \f$, and so on.  For linear time propagators \f$\{\Phi_i\}\f$, this 
+can also be expressed as applying a direct solver (a forward solve) to the following system:
    \f[
    A \Xu \equiv
    \begin{pmatrix}
@@ -132,71 +141,94 @@ or
    \f[
    A \mathbf{u} = \mathbf{g}.
    \f]
-This process is optimal and O(N), but it is sequential.  XBraid instead solves
-the system iteratively, with a multigrid reduction method 
+This process is optimal and O(N), but it is sequential.  XBraid achieves
+parallelism in time by replacing this sequential solve with an optimal multigrid
+reduction iterative method
    \latexonly
    \footnote{ Ries, Manfred, Ulrich Trottenberg, and Gerd Winter. "A note on MGR methods." Linear Algebra and its Applications 49 (1983): 1-26.}
    \endlatexonly
-applied in only the time dimension. This approach is
-- nonintrusive, in that it coarsens only in time and the user defines \f$ \Phi \f$
-  + Thus, users can continue using existing time stepping codes by wrapping them
-    into our framework.
-- optimal and O(N), but O(N) with a higher constant than time stepping
-  + Thus with enough computational resources, XBraid will outperform sequential time stepping.
+applied to only the time dimension. This approach is
+- nonintrusive, in that it coarsens only in time and the user defines \f$ \Phi \f$. 
+  Thus, users can continue using existing time stepping codes by wrapping them
+  into our framework.
+- optimal and O(N), but O(N) with a higher constant than time stepping.
+  Thus with enough computational resources, XBraid will outperform sequential time stepping.
 - highly parallel
 
-XBraid solves this system iteratively by constructing a hierarchy of time grids.
-We describe the two-grid process, with the multigrid process being a recursive
+We now describe the two-grid process in more detail, with the multilevel analogue being a recursive
 application of the process.  We also assume that \f$ \Phi \f$ is constant
-for notational simplicity.  
+for notational simplicity.  XBraid coarsens in the time
+dimension with factor \f$m > 1\f$ to yield a coarse time grid with 
+\f$N_\Delta = N/m\f$ points and time step \f$\Delta T = m \delta t\f$.  
+The corresponding coarse grid problem,
+   \f[
+   A_{\Delta} =
+   \begin{pmatrix}
+    I & & & \\
+   -\Phi_{\Delta} & I & & \\
+    & \ddots & \ddots & \\
+    & & -\Phi_{\Delta} & I
+   \end{pmatrix},
+   \f]
+is obtained by defining coarse grid propagators \f$\{\Phi_{\Delta}\}\f$ which
+are at least as cheap to apply as the fine scale propagators \f$\{\Phi\}\f$.
+The matrix \f$ A_{\Delta} \f$ has fewer rows and columns than \f$ A \f$, e.g.,
+if we are coarsening in time by 2, \f$ A_{\Delta} \f$ has one half as many rows
+and columns.
 
-XBraid functions as follows.
-The next figure depicts a sample timeline of time values, where the time values
-have been split into C- and F-points.  C-points exist on both the fine and
-coarse time grid, but F-points exist only on the fine time scale.
+This coarse time grid induces a partition of the fine grid into C-points
+(associated with coarse grid points) and F-points, as visualized next. 
+C-points exist on both the fine and coarse time grid, but F-points exist only 
+on the fine time scale.
    \latexonly
    \begin{figure}[!ht] \centering 
        \subfloat{\includegraphics[width=0.75\textwidth]{../img/timeline.pdf}}
        \label{img:timeline}
    \end{figure}
    \endlatexonly
-The first task is relaxation and an effective relaxation alternates between C and F 
-sweeps (this is like line-relaxation in space in that the residual is set to 0 for 
-an entire time step). An F sweep simply updates time values by integrating with 
-\f$ \Phi \f$ over all the F-points from one C-point to the next, as depicted next.
-   \latexonly
-   \begin{figure}[!ht] \centering 
-       \subfloat{\includegraphics[width=0.15\textwidth]{../img/Frelaxation.pdf}}
-       \label{img:Frelax}
-   \end{figure}
-   \endlatexonly
 
-But, such an update can be done simultaneously over all F intervals in parallel, as 
-depicted next.
+Every multigrid algorithm requires a relaxation method and an approach to
+transfer values between grids.  Our relaxation scheme alternates between
+so-called F-relaxation and C-relaxation as illustrated next.  F-relaxation
+updates the F-point values \f$\{u_j\}\f$ on interval \f$(T_i, T_{i+1})\f$ by
+simply propagating the C-point value \f$u_{mi}\f$ across the interval using the
+time propagator \f$\{\Phi\}\f$.  While this is a sequential
+process, each F-point interval update is independent from the others and can be
+computed in parallel.  Similarly, C-relaxation updates the C-point value
+\f$u_{mi}\f$ based on the F-point value \f$u_{mi-1}\f$ and these updates can
+also be computed in parallel.  This approach to relaxation can be thought of as
+line relaxation in space in that the residual is set to 0 for an entire time
+step. 
+
+The F updates are done simultaneously in parallel,
+as depicted next.
    \latexonly
    \begin{figure}[!ht] \centering 
        \subfloat{\includegraphics[width=0.75\textwidth]{../img/FrelaxationDetail.pdf}}
        \label{img:FrelaxDetail}
+       \caption{Update all F-point intervals in parallel, using the time propagator $\Phi$.}
    \end{figure}
    \endlatexonly
 
-Following an F sweep we can also do C sweep, as depicted next.
+Following the F sweep, the C updates are also done simultaneously in parallel, 
+as depicted next.
    \latexonly
    \begin{figure}[!ht] \centering 
        \subfloat{\includegraphics[width=0.75\textwidth]{../img/CrelaxationDetail.pdf}}
        \label{img:CrelaxDetail}
+       \caption{Update all C-points in parallel, using the time propagator $\Phi$.}
    \end{figure}
    \endlatexonly
 
 \latexonly \newpage \endlatexonly
 In general, FCF- and F-relaxation will refer to the relaxation methods used in XBraid. We can say
-- FCF or F-relaxtion is highly parallel.
-- But, a sequential component exists equaling the the number of F-points between two C-points.
-- XBraid uses regular coarsening factors, i.e., the spacing of C-points happens every \f$k\f$ points.
+- FCF- or F-relaxation is highly parallel.
+- But, a sequential component exists equaling the number of F-points between two C-points.
+- XBraid uses regular coarsening factors, i.e., the spacing of C-points happens every \f$m\f$ points.
 
-After relaxation, comes coarse grid correction.  The restriction operator
-\f$ R \f$ maps fine grid quantities to the coarse grid by simply injecting 
-values at C-points from the fine grid to the coarse grid, 
+After relaxation, comes forming the coarse grid error correction.  To move
+quantities to the coarse grid, we use the restriction operator \f$ R \f$ which
+simply injects values at C-points from the fine grid to the coarse grid, 
    \f[
    R =
    \begin{pmatrix}
@@ -209,52 +241,43 @@ values at C-points from the fine grid to the coarse grid,
                & \vdots     &     \\
                & 0          &     \\
                &            & \ddots
-   \end{pmatrix},
+   \end{pmatrix}^T.
    \f]
-where the spacing between each \f$ I \f$ is \f$ m-1 \f$ block rows.  
-XBraid implements an FAS (Full Approximation Scheme) multigrid cycle, and hence
-the solution guess and residual 
-(i.e., \f$ A, \mathbf{u}, \mathbf{g} - A \mathbf{u}\f$)
-are restricted.  This is in contrast to linear multigrid which typically 
-restricts only the residual equation to the coarse grid.  We choose FAS because it is
-*nonlinear* multigrid and allows us to solve nonlinear problems.  FAS was invented
-by Achi Brandt, but this 
-[PDF](http://computation.llnl.gov/casc/people/henson/postscript/UCRL_JC_150259.pdf) 
-by Van Henson is a good intro. 
+The spacing between each \f$ I \f$ is \f$ m-1 \f$ block rows.  While injection
+is simple, XBraid always does an F-relaxation sweep before the application of \f$R\f$, 
+which is equivalent to using the transpose of harmonic interpolation for restriction 
+(see [Parallel Time Integration with Multigrid](https://computation-rnd.llnl.gov/linear_solvers/pubs/mgritPaper-2013.pdf) ).
 
-The main question here is how to form the coarse grid matrix, which in turn asks how 
-to define the coarse grid time stepper \f$ \Phi_{\Delta} \f$.  It is typical
-to let \f$ \Phi_{\Delta} \f$ simply be \f$ \Phi\f$ but with the coarse time step
-size \f$ \Delta T = m \delta t \f$.  Thus if 
+To define the coarse grid equations, we apply the Full Approximation
+Scheme (FAS) method, which is a nonlinear version of multigrid.  This is to
+accommodate the general case where \f$ f \f$ is a nonlinear function.  In FAS,
+the solution guess and residual (i.e., \f$ \mathbf{u}, \mathbf{g} - A
+\mathbf{u}\f$) are restricted.  This is in contrast to linear multigrid which
+typically restricts only the residual equation to the coarse grid.  This
+algorithmic change allows for the solution of general nonlinear problems.  For more
+details, see 
+[PDF](http://computation.llnl.gov/casc/people/henson/postscript/UCRL_JC_150259.pdf)
+by Van Henson for a good introduction to FAS.  However, FAS was originally invented 
+by Achi Brandt.
+
+A central question in applying FAS is how to form the coarse grid matrix
+\f$A_{\Delta}\f$, which in turn asks how to define the coarse grid time stepper \f$
+\Phi_{\Delta} \f$.  One of the simplest choices (and one frequently used in
+practice) is to let \f$ \Phi_{\Delta} \f$ simply be \f$\Phi\f$ but with the
+coarse time step size \f$ \Delta T = m \delta t \f$.  For example, if \f$ \Phi
+= (I - \delta t A)^{-1} \f$ for some backward Euler scheme, then \f$
+\Phi_{\Delta} = (I - m \delta t A)^{-1} \f$ would be one choice.
+
+With a \f$ \Phi_{\Delta} \f$ defined, the coarse grid equation
    \f[
-   A =
-   \begin{pmatrix}
-    I & & & \\
-   -\Phi & I & & \\
-    & \ddots & \ddots & \\
-    & & -\Phi & I
-   \end{pmatrix}
+   A_{\Delta}(\mathbf{v}_{\Delta})  = A_{\Delta}(\mathbf{u}_{\Delta}) + \mathbf{r}_{\Delta} 
    \f]
-then
-   \f[
-   A_{\Delta} =
-   \begin{pmatrix}
-    I & & & \\
-   -\Phi_{\Delta} & I & & \\
-    & \ddots & \ddots & \\
-    & & -\Phi_{\Delta} & I
-   \end{pmatrix},
-   \f]
-where \f$ A_{\Delta} \f$ has fewer rows and columns than \f$ A \f$, e.g., if we are coarsening
-in time by 2, \f$ A_{\Delta} \f$ has one half as many rows and columns.  This coarse grid equation
-   \f[
-   A_{\Delta} \mathbf{v}_{\Delta} = \mathbf{g}_{\Delta}
-   \f]
-is then solved, where the right-hand-side is defined by FAS (see @ref twogrid).  
-Finally, FAS defines a coarse grid error approximation \f$ \mathbf{e}_{\Delta} \f$, which is interpolated 
-with \f$ P_{\Phi} \f$ back to the fine grid and added to the current solution guess.  Interpolation 
-is equivalent to injecting the coarse grid to the C-points on the fine grid, followed by an F-relaxation 
-sweep.  That is,  
+is then solved. Finally, FAS defines a coarse grid error approximation 
+\f$ \mathbf{e}_{\Delta} = \mathbf{v}_{\Delta} - \mathbf{u}_{\Delta} \f$,
+which is interpolated with \f$ P_{\Phi} \f$ back to the fine grid and added to 
+the current solution guess.    Interpolation is equivalent to injecting the coarse grid to 
+the C-points on the fine grid, followed by an F-relaxation sweep (i.e., it is equivalent
+to harmonic interpolation, as mentioned above about restriction).  That is,  
    \f[
    P_{\Phi} =
    \begin{pmatrix}
@@ -271,30 +294,39 @@ sweep.  That is,
                &            & \ddots
    \end{pmatrix},
    \f]
-where \f$ m \f$ is the coarsening factor.  
+where \f$ m \f$ is the coarsening factor.  See @ref twogrid for a concise description of the 
+FAS algorithm for MGRIT.
 
 ## Two-Grid Algorithm {#twogrid}
 
-This two-grid process is captured with this algorithm.  Using a recursive coarse
-grid solve (i.e., step 3 becomes a recursive call) makes the process multilevel. 
-Halting is done based on a residual tolerance.  If the operator is linear, this FAS cycle is equivalent
-to standard linear multigrid.  Note that we represent \f$ A \f$ as a function below,
-whereas the above notation was simplified for the linear case.
+The two-grid FAS process is captured with this algorithm.  Using a recursive
+coarse grid solve (i.e., step 3 becomes a recursive call) makes the process
+multilevel.  Halting is done based on a residual tolerance.  If the operator is
+linear, this FAS cycle is equivalent to standard linear multigrid.  Note that
+we represent \f$ A \f$ as a function below, whereas the above notation was
+simplified for the linear case.
    1. Relax on \f$A(\mathbf{u}) = \mathbf{g}\f$ using FCF-relaxation
+
    2. Restrict the fine grid approximation and its residual:
-   \f$ \mathbf{u}_{\Delta} \leftarrow  R \mathbf{u}, \quad \mathbf{r}_{\Delta} \leftarrow  R (\mathbf{g} - A(\mathbf{u}) \f$ 
+   \f[ \mathbf{u}_{\Delta} \leftarrow  R \mathbf{u}, \quad \mathbf{r}_{\Delta} \leftarrow  R (\mathbf{g} - A(\mathbf{u}), \f] 
+   which is equivalent to updating each individual time step according to
+   \f[
+   u_{\Delta,i} \leftarrow u_{mi},\quad
+   r_{\Delta,i} \leftarrow g_{mi} - A (\mathbf{u})_{mi}
+   \quad \text{for}\quad i = 0, ..., N_\Delta.
+   \f]
+
    3. Solve \f$A_{\Delta}(\mathbf{v}_{\Delta})  = A_{\Delta}(\mathbf{u}_{\Delta}) + \mathbf{r}_{\Delta} \f$
+
    4. Compute the coarse grid error approximation: \f$ \mathbf{e}_{\Delta} = \mathbf{v}_{\Delta} - \mathbf{u}_{\Delta} \f$
+
    5. Correct: \f$ \mathbf{u} \leftarrow \mathbf{u} + P \mathbf{e}_{\Delta} \f$
 
-*Caveat*:  The XBraid implementation of FAS differs slightly from standard FAS.
-In standard FAS, the error is interpolated to the fine points on the fine grid (here
-F-points).  Instead, given our interpolation operator \f$P_{\Phi}\f$,  we add
-the error to the coarse points on the fine grid (here C-points), and then
-propagate the *solution* to F-points, like in a reduction method.  Thus,
-F-points are updated in a slightly different, but more exact manner.  This
-strategy allows XBraid to save on storage and to not store F-points, while still
-effectively solving nonlinear problems. 
+      This is equivalent to updating each individual time step by adding 
+      the error to the values of \f$\mathbf{u}\f$ at the C-points:
+      \f[ u_{mi} = u_{mi} + e_{\Delta,i}, \f]
+      followed by an F-relaxation sweep applied to \f$\mathbf{u}\f$.
+
 
 ## Summary {#algorithmsummary}
 
@@ -340,7 +372,7 @@ In summary, a few points are
 
 XBraid is designed to run in conjunction with an existing application code that
 can be wrapped per our interface.  This application code will implement some
-time marching type simulation like fluid flow.  Essentially, the user has to
+time marching simulation like fluid flow.  Essentially, the user has to
 take their application code and extract a stand-alone time-stepping function
 \f$ \Phi \f$ that can evolve a solution from one time value to another,
 regardless of time step size.  After this is done, the XBraid code takes care of
@@ -370,28 +402,31 @@ XBraid
 
 - XBraid only handles temporal parallelism and is agnostic to the spatial decomposition.  
   See [braid_SplitCommworld](@ref braid_SplitCommworld).  
-  Each processor owns a certain number of CF intervals of points, as depicted next, where
-  each processor owns 2 CF intervals.
+  Each processor owns a certain number of CF intervals of points. In the following figure, 
+  processor 1 and processor 2 each own 2 CF intervals.
    \latexonly
    \begin{figure}[!ht] \centering 
        \subfloat{\includegraphics[width=0.75\textwidth]{../img/parallel_timeline.pdf}}
        \label{img:data_layout}
    \end{figure}
    \endlatexonly
-   XBraid distributes Intervals evenly on the finest grid.
+   XBraid distributes intervals evenly on the finest grid.
 
-- Storage is greatly minimized by only storing C-points.  Whenever an F-point is needed,
-  it is generated by F-relaxation.  That is, we only store the red C-point time values in the 
-  previous figure.
-  Coarsening can by aggressive with \f$ m = 8, 16, 32 \f$, so the storage requirements
-  of XBraid are significantly reduced when compared to storing all of the time values.
+- XBraid increases the parallelism significantly, but now several time steps need 
+  to be stored, requiring more memory.  XBraid employs two strategies to address 
+  the increased memory costs.  
+  
+  + First, one need not solve the whole problem at once.  Storing only one
+    space-time slab is advisable.  That is, solve for as many time steps
+    (say _k_ time steps) as you have available memory for.  Then move on to
+    the next _k_ time steps.
 
-  By only storing data at C-points, we effect a subtle change to the standard FAS 
-  algorithm (see @ref twogrid).
-
-- In practice, storing only one space-time slab is advisable.  That is, solve
-  for as many time steps (say k time steps) as you have available memory for.
-  Then move on to the next k time steps.
+  + Second, XBraid only stores the C-points.  Whenever an F-point is
+    needed, it is generated by F-relaxation.  More precisely, we only store
+    the red C-point time values in the previous figure.  Coarsening is
+    usually aggressive with \f$ m = 8, 16, 32, ... \f$, so the storage
+    requirements of XBraid are significantly reduced when compared to
+    storing all of the time values.
 
 
 ## Cycling and relaxation strategies {#cyclingrelaxation}
@@ -448,12 +483,14 @@ has a more in depth case study of cycling and relaxation strategies
 
 ## Overlapping communication and computation {#overlapping}
 
-  XBraid effectively overlaps communication and computation.  The main
-  computational kernel of XBraid is relaxation (C or F).  At the start a each
-  sweep, each processor first posts a send at its left-most point, and then
-  carries out F-relaxation on its right-most interval in order to send the next
-  processor the data that it needs.  If each processor has multiple intervals
-  at this XBraid level, this should allow for complete overlap.
+  XBraid effectively overlaps communication and computation.
+  The main computational kernel of XBraid is one relaxation sweep touching all the
+  CF intervals. At the start of a relaxation sweep, each process first posts a
+  non-blocking receive at its left-most point.  It then carries out
+  F-relaxation in each interval, starting with the right-most interval to send
+  the data to the neighboring process as soon as possible.  If each process
+  has multiple CF intervals at this XBraid level, the strategy allows for
+  complete overlap.
   \latexonly
    \begin{figure}[!ht] \centering 
        \subfloat{\includegraphics[width=0.35\textwidth]{../img/overlap.pdf}}
