@@ -1173,12 +1173,14 @@ _braid_FInterp(braid_Core  core,
 
    _braid_UCommInitF(core, level);
 
-   /* Start from the right-most interval 
-   *
-   *  First, generate the coarse-grid F-points through F-relaxation and
-   *  interpolate them to the fine grid, where they are C-points.  Second,
-   *  interpolate the coarse-grid C-points to the fine-grid.  The user-defined
-   *  spatial refinement (if set) is also called.  */
+   /**
+    * Start from the right-most interval 
+    *
+    * First, generate the coarse-grid F-points through F-relaxation and
+    * interpolate them to the fine grid, where they are C-points.  Second,
+    * interpolate the coarse-grid C-points to the fine-grid.  The user-defined
+    * spatial refinement (if set) is also called.  
+    **/
    for (interval = ncpoints; interval > -1; interval--)
    {
       _braid_UGetInterval(core, level, interval, &flo, &fhi, &ci);
@@ -1474,6 +1476,23 @@ _braid_InitHierarchy(braid_Core    core,
    braid_Int      nlevels    = _braid_CoreElt(core, nlevels);
    _braid_Grid  **grids      = _braid_CoreElt(core, grids);
 
+   /**
+    * These are some common index names used to refer to intervals and
+    * time points.  Here's what they mean.
+    *
+    * cfactor              - coarsening factor, fixed on each level
+    * ilower, iupper       - lowest and highest time indices on a level for one processor, 
+    *                        could be C or F points
+    * clower, cupper       - lowest and highest C-point indices on a level for one processor
+    *                        analagous to ilower, iupper being projected onto C-points
+    * clo, chi             - the coarse level indices for clower and cupper
+    * f_iupper, f_ilower   - lowest and highest F-point indices on a level
+    * c_iupper, c_ilower   - lowest and highest time indices on the coarse level 
+    *                        (analagous to ilower and iupper, but on the next level down)
+    * flo, fhi, ci         - describes an interval [ci, flo, flo+1, ..., fhi] 
+    * gclower, gcupper     - global lowest and highest C-point indices on a level
+    **/
+
    braid_Int      level;
    braid_Int      ilower, iupper;
    braid_Int      clower, cupper, cfactor, ncpoints;
@@ -1582,7 +1601,8 @@ _braid_InitHierarchy(braid_Core    core,
       }
       else
       {
-         /* Make this the coarsest level */
+         /* Make this the coarsest level, with one C-point and all the rest F-points.
+          * This is a simple way to enforce serial time integration at this level. */
          if (ilower == 0)
          {
             ncpoints = 1;
@@ -1591,7 +1611,7 @@ _braid_InitHierarchy(braid_Core    core,
          {
             ncpoints = 0;
          }
-         _braid_GridElt(grid, clower)   = ilower;
+         _braid_GridElt(grid, clower)   = ilower;     /* clower > cupper indicates empty interval */
          _braid_GridElt(grid, cupper)   = 0;
          _braid_GridElt(grid, cfactor)  = gupper+1;
          _braid_GridElt(grid, ncpoints) = ncpoints;

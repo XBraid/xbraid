@@ -88,10 +88,10 @@ TESTS=( "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 " \
         "$RunString -np 2 $example_dir/drive-05 -pgrid 1 1 2 -nt 32 -ml 15 -print_level 1 " \
         "$RunString -np 2 $example_dir/drive-05 -pgrid 1 1 2 -nt 32 -ml 15 -print_level 1 -fmg 2" \
         "$RunString -np 1 $example_dir/drive-05 -pgrid 1 1 1 -run_wrapper_tests " \
-        "$RunString -np 4 $example_dir/drive-05 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -c 0.15 -nu0 1 -nu 1 -mc 65 " \
-        "$RunString -np 4 $example_dir/drive-05 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -c 0.15 -nu0 1 -nu 1 -mc 64 " \
-        "$RunString -np 4 $example_dir/drive-05 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -c 0.15 -nu0 1 -nu 1 -mc 1 " \
-        "$RunString -np 4 $example_dir/drive-05 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 4 -c 0.15 -nu0 1 -nu 1 -mc 16 " )
+        "$RunString -np 4 $example_dir/drive-05 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 65 " \
+        "$RunString -np 4 $example_dir/drive-05 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 64 " \
+        "$RunString -np 4 $example_dir/drive-05 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 1 " \
+        "$RunString -np 4 $example_dir/drive-05 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 4 -cfl 0.30 -nu0 1 -nu 1 -mc 16 " )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 

@@ -155,6 +155,10 @@ typedef struct _spatial_discretization
  *   A               array of discretization matrices (one per time level)
  *   dt_A            array of time steps for which discretization matrix
  *                   has been created
+ *   dx_A            array of x-direction mesh sizes for which a discretization 
+ *                   matrix has been created
+ *   dy_A            array of y-direction mesh sizes for which a discretization 
+ *                   matrix has been created
  *   nA              number of discretization matrices that have been
  *                   created
  *   sym             symmetric storage (1) or not (0)
@@ -185,6 +189,7 @@ typedef struct _spatial_discretization
  *   tol_x           loose and tight stopping tolerance for spatial MG
  *   explicit        use explicit discretization (1) or not (0)
  *   scoarsen        use spatial refinement and coarsening
+ *   scoarsenCFL     if CFL > scoarsenCFL, do spatial coarsening (scoarsen must also > 0)
  *   spatial_disc_table    Lookup table recording dx, dy when coarsening spatially
  *   last_tsize      output related flag that lets my_Phi know when the 
  *                   time step size has changed
@@ -211,6 +216,8 @@ typedef struct _braid_App_struct {
    HYPRE_SStructGraph      graph;
    HYPRE_SStructMatrix    *A;
    double                 *dt_A;
+   double                 *dx_A;
+   double                 *dy_A;
    int                     nA;
    int                     sym;
    int                     px, py;
@@ -226,6 +233,7 @@ typedef struct _braid_App_struct {
    double                 *scoarsen_table;
    int                     explicit;
    int                     scoarsen;
+   double                  scoarsenCFL;
    spatial_discretization *spatial_disc_table;
    double                  last_tsize;
    int                     output_files;
@@ -1658,7 +1666,8 @@ my_Phi(braid_App       app,
    /* -----------------------------------------------------------------
     * Set up the discretization matrix.
     * If no variable coefficients, check matrix lookup table if matrix 
-    * has already been created for time step size tstop-tstart.
+    * has already been created for time step size tstop-tstart and the 
+    * mesh size dx and dy.
     * ----------------------------------------------------------------- */
    A_idx = -1.0;
    for( i = 0; i < app->max_levels; i++ ){
@@ -1666,7 +1675,9 @@ my_Phi(braid_App       app,
       {
          break;
       }
-      if( fabs( app->dt_A[i] - (tstop-tstart) )/(tstop-tstart) < 1e-10)
+      if( (fabs( app->dt_A[i] - (tstop-tstart) )/(tstop-tstart) < 1e-10) &&
+          (fabs( app->dx_A[i] - dx )/dx < 1e-10) &&
+          (fabs( app->dy_A[i] - dy )/dy < 1e-10) )
       { 
          A_idx = i;
          break;
@@ -1692,13 +1703,13 @@ my_Phi(braid_App       app,
    if( A_idx == -1.0 ){
       A_idx = i;
       app->nA++;
-#if DEBUG
       printf( "Create new matrix %d\n", A_idx );
-#endif
       /* No matrix for time step tstop-tstart exists. 
        * Add entry to matrix lookup table. */   
       
       app->dt_A[A_idx] = tstop-tstart;
+      app->dy_A[A_idx] = dx;
+      app->dx_A[A_idx] = dy;
 
       /* If we want to use an explicit scheme, check CFL condition 
        * to determine whether we can still use explicit scheme for
@@ -2020,11 +2031,11 @@ int my_ComputeNumCoarsenings(double dt,
                              double dy,
                              double K,
                              int nlx,
-                             int nly)
+                             int nly,
+                             double scoarsenCFL)
 {
    /* compute required coarsening to satisfy CFL */
-   float alpha = 0.49;
-   int ncoarsen = ceil( (log2( K*dt*(dx*dx + dy*dy)/(dx*dx*dy*dy) ) - log2(alpha))/2.0 );
+   int ncoarsen = ceil( (log2( K*dt*(dx*dx + dy*dy)/(dx*dx*dy*dy) ) - log2(scoarsenCFL))/2.0 );
    int coarsen_factor =  (int) pow(2.0, ncoarsen);
    if( coarsen_factor == 0)
    {
@@ -2068,8 +2079,9 @@ void get_coarse_spatial_disc( braid_App app,
    double coarsen_factor, cdx, cdy;
 
    /* Search for this cdt, fdt combo and see if a spatial 
-    * discretization already exists for it */
-   for(i = 0; i < max_levels; i++)
+    * discretization already exists for it.  Note that we start at i=1.
+    * The first entry for the table is a dummy entry for cloning vectors. */
+   for(i = 1; i < max_levels; i++)
    {
       if( fabs((app->spatial_disc_table[i]).cdt - cdt)/cdt < 1e-10 )
       {
@@ -2083,14 +2095,14 @@ void get_coarse_spatial_disc( braid_App app,
          }
       }
    }
-    
+   
    /* 
     * A spatial discretization was not found, so generate a new one, 
     * and store in the next open spot 
     */
    
    /* Determine New sizes */
-   ncoarsen = my_ComputeNumCoarsenings(cdt, fdx, fdy, app->K, fnlx, fnly); 
+   ncoarsen = my_ComputeNumCoarsenings(cdt, fdx, fdy, app->K, fnlx, fnly, app->scoarsenCFL); 
    coarsen_factor = pow(2.0, ncoarsen);
    cdx = coarsen_factor * fdx;
    cdy = coarsen_factor * fdy;
@@ -2101,8 +2113,9 @@ void get_coarse_spatial_disc( braid_App app,
    ciupper_x[0] = cnlx-1;  /*        ...  */
    ciupper_x[1] = cnly-1;  /*        ...  */
 
-
-   for(i = 0; i < max_levels; i++)
+   /* Note that we start at i=1.  The first entry for the table is a dummy
+    * entry for cloning vectors. */
+   for(i = 1; i < max_levels; i++)
    {
       if( (app->spatial_disc_table[i]).cdt == -1.0 )
       {
@@ -2147,7 +2160,10 @@ void retrieve_spatial_discretization( braid_App app,
 {
    int max_levels = app->max_levels;
    int i;
-   for(i = 0; i < max_levels; i++)
+   
+   /* Note that we start at i=1.  The first entry for the table is a dummy
+    * entry for cloning vectors. */
+   for(i = 1; i < max_levels; i++)
    {
       if( fabs((app->spatial_disc_table[i]).cdt - cdt)/cdt < 1e-10 )
       {
@@ -2303,6 +2319,21 @@ my_Refine(braid_App              app,
           fvalues[i] = cvalues[i];
       }
    }
+
+   /* Sanity check interp 
+   for(ii = 0; ii < 3; ii++){
+      for(jj = 0; jj < 17; jj++)
+      {   fprintf(stderr, "%5.2f   ", fvalues[ii*17 + jj]);}
+      fprintf(stderr, "\n");
+   }
+   fprintf(stderr, "\n");
+   fprintf(stderr, "\n");
+   for(ii = 0; ii < 3; ii++){
+      for(jj = 0; jj < 9; jj++)
+      {   fprintf(stderr, "%5.2f   ", cvalues[ii*9 + jj]);}
+      fprintf(stderr, "\n");
+   } */
+      
    
    
    /* Create an empty vector object. */
@@ -2391,6 +2422,7 @@ my_CoarsenInjection(braid_App              app,
     * This could be the same as the fine spatial discretization */ 
    get_coarse_spatial_disc( app, cdt, fdt, fdx, fdy, fnlx, fnly, 
                             fspatial_disc_idx, filower_x, fiupper_x, &spatial_disc_idx);
+
    ncoarsen = (app->spatial_disc_table[spatial_disc_idx]).ncoarsen;
    cnlx     = (app->spatial_disc_table[spatial_disc_idx]).nlx;
    cnly     = (app->spatial_disc_table[spatial_disc_idx]).nly;
@@ -2742,9 +2774,6 @@ my_Access(braid_App           app,
    iupper_x[0]    = (app->spatial_disc_table[u->spatial_disc_idx]).iupper_x[0];
    iupper_x[1]    = (app->spatial_disc_table[u->spatial_disc_idx]).iupper_x[1];
    
-   /* Retrieve current time from Status Object */
-   braid_AccessStatusGetT(astatus, &t);
-
    /* Retrieve Braid State Information from Status Object */
    MPI_Comm_rank(comm, &myid);
    braid_AccessStatusGetTILD(astatus, &t, &iter, &level, &done);
@@ -2762,7 +2791,8 @@ my_Access(braid_App           app,
     *   - save error norm at each time point
     *     if we want to visualize with GLVis, we also save the error
     *     at the initial time, middle time, and end time */
-   if( app->output_files && (level == 0) ){
+   if( (app->output_files) && (level==0) )
+   {
       if( app->explicit )
          /* forward (explicit) Euler */
          damping = 1 + ((2*(app->K)*(app->dt))/
@@ -2786,7 +2816,7 @@ my_Access(braid_App           app,
 
       MPI_Comm_rank(comm, &myid);
 
-      sprintf(filename, "%s.iter%03d.time%07d.proc%05d", "drive-05.out", iter, index, myid);
+      sprintf(filename, "%s.iter%03d.time%07d.proc%05d.level%02d", "drive-05.out", iter, index, myid, level);
       file = fopen(filename, "w");
 
       values = (double *) malloc( nlx*nly*sizeof(double) );
@@ -2812,43 +2842,53 @@ my_Access(braid_App           app,
       free( values );
    }
 
-   /* Save the error and solution for GLVis visualization */
-   if( app->output_vis && (level == 0) ){ 
+   /* Save the error (if on fine grid) and solution (on all levels) for GLVis visualization */
+   if( app->output_vis )
+   { 
       MPI_Comm_rank(app->comm_x, &myid);
 
-      if( t == app->tstop ){
-         values = (double *) malloc( nlx*nly*sizeof(double) );
-         HYPRE_SStructVectorGetBoxValues( u->x, part, ilower_x, 
-                                          iupper_x, var, values );
+      /*if(t == app->tstop ) */
+      if( 1 ) 
+      {
+         /* Compute time step number, relative to the fine grid */
+         index = round(t / ((tstop-tstart)/ntime));
+         
+         if(level == 0)
+         {
+            values = (double *) malloc( nlx*nly*sizeof(double) );
+            HYPRE_SStructVectorGetBoxValues( u->x, part, ilower_x, 
+                                             iupper_x, var, values );
 
-         HYPRE_SStructVectorCreate( app->comm_x, app->grid_x, &e );
-         HYPRE_SStructVectorSetObjectType( e, app->object_type );
-         HYPRE_SStructVectorInitialize( e );
+            HYPRE_SStructVectorCreate( app->comm_x, app->grid_x, &e );
+            HYPRE_SStructVectorSetObjectType( e, app->object_type );
+            HYPRE_SStructVectorInitialize( e );
       
-         m = 0;
-         for( j = 0; j < nly; j++ )
-            for( i = 0; i < nlx; i++ )
-            {
-               values[m] = values[m] - 
-                           damping_nt*sin((ilower_x[0]+i)*dx)
-                                     *sin((ilower_x[1]+j)*dy);
-               m++;
-            }
+            m = 0;
+            for( j = 0; j < nly; j++ )
+               for( i = 0; i < nlx; i++ )
+               {
+                  values[m] = values[m] - 
+                              damping_nt*sin((ilower_x[0]+i)*dx)
+                                        *sin((ilower_x[1]+j)*dy);
+                  m++;
+               }
 
-         HYPRE_SStructVectorSetBoxValues( e, part, ilower_x,
-                                          iupper_x, var, values );
-         free( values );
-         HYPRE_SStructVectorAssemble( e );
-
-         sprintf(filename, "%s.iter%03d", "drive-05_mesh", iter);
-         GLVis_PrintSStructGrid( app->grid_x, filename, 
-                                 myid, NULL, NULL );
-         sprintf(filename, "%s.iter%03d", "drive-05_err_tstop", iter);
-         GLVis_PrintSStructVector( e, 0, filename, myid );
-         sprintf(filename, "%s.iter%03d", "drive-05_sol_tstop", iter);
+            HYPRE_SStructVectorSetBoxValues( e, part, ilower_x,
+                                             iupper_x, var, values );
+            free( values );
+            HYPRE_SStructVectorAssemble( e );
+            
+            sprintf(filename, "%s.iter%03d.level%02d.step%04d", "drive-05_err", iter, level, index);
+            GLVis_PrintSStructVector( e, 0, filename, myid );
+            HYPRE_SStructVectorDestroy( e );
+         }
+         
+         sprintf(filename, "%s.level%02d", "drive-05_mesh", level);
+         GLVis_PrintSStructGrid( (app->spatial_disc_table[u->spatial_disc_idx]).grid_x, 
+                                 filename,  myid, NULL, NULL );
+         sprintf(filename, "%s.iter%03d.level%02d.step%04d", "drive-05_sol", iter, level, index);
          GLVis_PrintSStructVector( u->x, 0, filename, myid );
 
-         HYPRE_SStructVectorDestroy( e );
       }
    }
 
@@ -2985,6 +3025,7 @@ int main (int argc, char *argv[])
    int           tnorm;
    int           nfmg_Vcyc;
    int           scoarsen;
+   double        scoarsenCFL;
 
    MPI_Comm    comm, comm_x, comm_t;
    int         myid, num_procs;
@@ -2999,7 +3040,7 @@ int main (int argc, char *argv[])
    int nx, ny, nlx, nly;
    double tstart, tstop;
    int nt;
-   double dx, dy, dt, c;
+   double dx, dy, dt, cfl;
    int ilower_x[2], iupper_x[2];
 
    /* We have one part and one variable.
@@ -3043,6 +3084,7 @@ int main (int argc, char *argv[])
    fmg                 = 0;
    nfmg_Vcyc           = 1;
    scoarsen            = 0;
+   scoarsenCFL         = 0.5;
    K                   = 1.0;
    nx                  = 17;
    ny                  = 17;
@@ -3050,7 +3092,7 @@ int main (int argc, char *argv[])
    nly                 = 17;
    tstart              = 0.0;
    nt                  = 32;
-   c                   = 0.15;
+   cfl                 = 0.30;
    sym                 = 0;
    px                  = 1;
    py                  = 1;
@@ -3093,9 +3135,9 @@ int main (int argc, char *argv[])
           arg_index++;
           nt = atoi(argv[arg_index++]);
       }
-      else if( strcmp(argv[arg_index], "-c") == 0 ){
+      else if( strcmp(argv[arg_index], "-cfl") == 0 ){
           arg_index++;
-          c = atof(argv[arg_index++]);
+          cfl = atof(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-ml") == 0 ){
           arg_index++;
@@ -3141,6 +3183,10 @@ int main (int argc, char *argv[])
       else if ( strcmp(argv[arg_index], "-scoarsen") == 0 ){
          arg_index++;
          scoarsen = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-scoarsenCFL") == 0 ){
+         arg_index++;
+         scoarsenCFL = atof(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-v") == 0 ){
          arg_index++;
@@ -3221,7 +3267,8 @@ int main (int argc, char *argv[])
       printf("  -pgrid  <px py pt>               : processors in each dimension (default: 1 1 1)\n");
       printf("  -nx  <nlx nly>                   : 2D spatial problem size of form 2^k+1, 2^k+1 (default: 17 17)\n");
       printf("  -nt  <n>                         : number of time steps (default: 32)\n"); 
-      printf("  -c  <c>                          : ratio dt/(dx^2) (default: 1.0)\n"); 
+      printf("  -cfl <cfl>                       : CFL number to run, note that 2*CFL = dt/(dx^2) (default: 0.30)\n"); 
+      printf("                                     CFL < 0.5 for explicit forward Euler\n");
       printf("  -ml  <max_levels>                : set max number of time levels (default: 1)\n");
       printf("  -mc  <min_coarse>                : set min possible coarse level size (default: 3)\n");
       printf("  -nu  <nrelax>                    : set num F-C relaxations (default: 1)\n");
@@ -3242,6 +3289,11 @@ int main (int argc, char *argv[])
       printf("                                     0 - No spatial coarsening (default) \n");
       printf("                                     1 - Use injection for spatial restriction \n");
       printf("                                     2 - Use transpose of bilinear interpolation for spatial restriction\n");
+      printf("  -scoarsenCFL                     : When CFL > scoarsenCFL, spatial coarsening will occur.\n");
+      printf("                                     For example, -scoarsenCFl 0.4 would tell Braid to spatially\n");
+      printf("                                     coarsen when the CFL number is greater than 0.4. 0.5.\n"); 
+      printf("                                     Notes: valid CFLs for explicit time stepping are in [0, 0.5],\n");
+      printf("                                     and this option must be used with scoarsen > 0.\n");
       printf("  -v <n_pre> <n_post>              : number of pre and post relaxations in PFMG\n");
       printf("  -rap <r>                         : coarse grid operator type in PFMG\n");
       printf("                                     0 - Galerkin (default)\n");
@@ -3351,7 +3403,7 @@ int main (int argc, char *argv[])
    dy = PI / (ny - 1);
 
    /* Set time-step size. */
-   dt = K*c*(dx*dx);
+   dt = K*(cfl/2.0)*(dx*dx);
    /* Determine tstop. */
    tstop =  tstart + nt*dt;
 
@@ -3428,15 +3480,22 @@ int main (int argc, char *argv[])
    {
       app->scoarsen_table[i] = -1.0;
    }
+   
+   /* Store CFl that controls spatial coarsening */
+   app->scoarsenCFL = scoarsenCFL;
 
    /* Allocate memory for array of discretization matrices. */
    app->A = (HYPRE_SStructMatrix*) malloc( (app->max_levels)*
                                            sizeof(HYPRE_SStructMatrix));
-   /* Create empty matrix lookup table. */
+   /* Create empty matrix lookup tables for dt, dx and dy. */
    app->dt_A = (double*) malloc( (app->max_levels)*sizeof(double) );
+   app->dy_A = (double*) malloc( (app->max_levels)*sizeof(double) );
+   app->dx_A = (double*) malloc( (app->max_levels)*sizeof(double) );
    for( i = 0; i < app->max_levels; i++ )
    {
       app->dt_A[i] = -1.0;
+      app->dx_A[i] = -1.0;
+      app->dy_A[i] = -1.0;
    }
    app->nA = 0;
 
@@ -3450,7 +3509,8 @@ int main (int argc, char *argv[])
       app->max_num_iterations[i] = 0;
 
    /* Setup the lookup table that records how grids are coarsened (refined)
-    * spatially */
+    * spatially.  Note that the first entry for the table is a dummy entry 
+    * for cloning vectors. */
    (app->spatial_disc_table) = (spatial_discretization*) malloc( max_levels*sizeof(spatial_discretization) );
    for( i = 1; i < app->max_levels; i++ )
    {
@@ -3548,10 +3608,10 @@ int main (int argc, char *argv[])
       braid_SetAbsTol(core, tol/sqrt(dx*dy*dt));
       braid_SetTemporalNorm(core, tnorm);
 
-      /* Set cfactor */
       braid_SetCFactor(core, -1, cfactor);
-      if( cfactor0 > -1 ){
-           braid_SetCFactor(core,  0, cfactor0);
+      if( cfactor0 > 0 )
+      {
+         braid_SetCFactor(core,  0, cfactor0);
       }
       
       braid_SetMaxIter(core, max_iter);
@@ -3661,6 +3721,8 @@ int main (int argc, char *argv[])
    HYPRE_SStructGraphDestroy( app->graph );
    free( app->vartypes );
    free( app->dt_A );
+   free( app->dx_A );
+   free( app->dy_A );
    for( i = 0; i < app->nA; i++ )
    {
       HYPRE_SStructMatrixDestroy( app->A[i] );
