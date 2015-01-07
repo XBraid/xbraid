@@ -692,7 +692,7 @@ _braid_Coarsen(braid_Core     core,
    {
       /* Call the user's coarsening routine */
       _braid_CoarsenRefStatusInit(f_ta[f_ii], f_ta[f_ii-1], f_ta[f_ii+1], 
-                                 c_ta[c_ii-1], c_ta[c_ii+1], cstatus);
+                                 c_ta[c_ii-1], c_ta[c_ii+1], level-1, cstatus);
       _braid_CoreFcn(core, coarsen)(app, fvector, cvector, cstatus);
    }
    return _braid_error_flag;
@@ -730,7 +730,7 @@ _braid_Refine(braid_Core     core,
    {
       /* Call the user's refinement routine */
       _braid_CoarsenRefStatusInit(f_ta[f_ii], f_ta[f_ii-1], f_ta[f_ii+1], 
-                                 c_ta[c_ii-1], c_ta[c_ii+1], cstatus);
+                                 c_ta[c_ii-1], c_ta[c_ii+1], level, cstatus);
       _braid_CoreFcn(core, refine)(app, cvector, fvector, cstatus);
    }
 

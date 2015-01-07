@@ -81,6 +81,18 @@ else ifeq ($(findstring sierra,$(HOSTNAME)),sierra)
 		CFLAGS = -O -Wall
 		CXXFLAGS = -O -Wall
 	endif
+else ifeq ($(findstring cab,$(HOSTNAME)),cab)
+  # for Cab
+	MPICC = mpiicc
+	MPICXX = mpiicpc
+	LFLAGS = -lm
+	ifeq ($(optlevel),DEBUG)
+		CFLAGS = -g -Wall
+		CXXFLAGS = -g -Wall
+	else
+		CFLAGS = -O -Wall
+		CXXFLAGS = -O -Wall
+	endif   
 else ifeq ($(shell uname -s),Linux)
 	MPICC = mpicc
 	MPICXX = mpiCC

@@ -102,6 +102,7 @@ typedef struct _braid_CoarsenRefStatus_struct
    braid_Real     f_tstop;     /**< time value to the right of tstart  on fine grid */
    braid_Real     c_tprior;    /**< time value to the left of tstart on coarse grid */
    braid_Real     c_tstop;     /**< time value to the right of tstart on coarse grid */
+   braid_Int      level;        /**< current fine level in XBraid*/
    
 } _braid_CoarsenRefStatus;
 
@@ -246,6 +247,7 @@ _braid_CoarsenRefStatusInit(braid_Real              tstart,      /**< time value
                             braid_Real              f_tstop,     /**< time value to the right of tstart on fine grid */
                             braid_Real              c_tprior,    /**< time value to the left of tstart on coarse grid */
                             braid_Real              c_tstop,     /**< time value to the right of tstart on coarse grid */
+                            braid_Int               level,       /**< current fine level in XBraid */
                             braid_CoarsenRefStatus  status       /**< structure to initialize */
                             );
 
@@ -317,6 +319,13 @@ braid_CoarsenRefStatusGetTpriorTstop(braid_CoarsenRefStatus  status,           /
                                      braid_Real              *c_tprior_ptr,    /**< output, time value to the left of tstart on coarse grid */
                                      braid_Real              *c_tstop_ptr      /**< output, time value to the right of tstart on coarse grid */
                                      );
+/**
+ * Return the current XBraid level from the CoarsenRefStatus structure.
+ **/
+braid_Int
+braid_CoarsenRefStatusGetLevel(braid_CoarsenRefStatus  status,        /**< structure containing current simulation info */
+                               braid_Int              *level_ptr      /**< output, current fine level in XBraid */
+                               );
 
 /*--------------------------------------------------------------------------
  * PhiStatus Prototypes

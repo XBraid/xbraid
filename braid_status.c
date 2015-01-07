@@ -167,6 +167,7 @@ _braid_CoarsenRefStatusInit(braid_Real              tstart,
                             braid_Real              f_tstop, 
                             braid_Real              c_tprior,
                             braid_Real              c_tstop,
+                            braid_Int               level,
                             braid_CoarsenRefStatus  status)
 {
    _braid_StatusElt(status, tstart) = tstart;
@@ -174,6 +175,7 @@ _braid_CoarsenRefStatusInit(braid_Real              tstart,
    _braid_StatusElt(status, f_tstop)  = f_tstop;
    _braid_StatusElt(status, c_tprior) = c_tprior;
    _braid_StatusElt(status, c_tstop)  = c_tstop;
+   _braid_StatusElt(status, level)  = level;
 
    return _braid_error_flag;
 }
@@ -251,6 +253,14 @@ braid_CoarsenRefStatusGetTpriorTstop(braid_CoarsenRefStatus  status,
    return _braid_error_flag;
 }
 
+braid_Int
+braid_CoarsenRefStatusGetLevel(braid_CoarsenRefStatus  status,
+                               braid_Int              *level_ptr
+                               )
+{
+   *level_ptr = _braid_StatusElt(status, level);
+   return _braid_error_flag;
+}
 
 /*--------------------------------------------------------------------------
  * CoarsenRefStatus Routines
