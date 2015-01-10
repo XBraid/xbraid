@@ -1,7 +1,0 @@
-# Begin Test 15 -- Begin multilvel-level F-cycle F-relaxation tests
-  
-  time steps = 32
-  number of levels     = 4
-  iterations           = 10
-spatial problem size       : 16 x 16
-
