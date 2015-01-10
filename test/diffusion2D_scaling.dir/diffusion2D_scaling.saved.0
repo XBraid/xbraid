@@ -1,0 +1,7 @@
+# Begin Test 0 -- Begin 2-level FCF-relaxation tests
+  
+  time steps = 32
+  number of levels     = 2
+  iterations           = 7
+spatial problem size       : 16 x 16
+

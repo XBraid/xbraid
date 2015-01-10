@@ -1,0 +1,71 @@
+
+-----------------------------------------------------------------
+-----------------------------------------------------------------
+
+  Begin simulation 
+
+  Braid:  || r_0 || = 5.465707e+00,  wall time = 3.54e-02
+  Braid:  || r_1 || = 2.272346e-01,  wall time = 6.76e-02,  conv. factor = 4.16e-02
+  Braid:  || r_2 || = 9.777049e-03,  wall time = 9.97e-02,  conv. factor = 4.30e-02
+  Braid:  || r_3 || = 3.691615e-04,  wall time = 1.32e-01,  conv. factor = 3.78e-02
+  Braid:  || r_4 || = 1.065220e-05,  wall time = 1.64e-01,  conv. factor = 2.89e-02
+  Braid:  || r_5 || = 2.081926e-07,  wall time = 1.96e-01,  conv. factor = 1.95e-02
+  Braid:  || r_6 || = 2.307848e-09,  wall time = 2.28e-01,  conv. factor = 1.11e-02
+  my_Access() called, iter= 7, level= 0
+
+  start time = 0.000000e+00
+  stop time  = 1.850551e-01
+  time steps = 32
+
+  max number of levels = 15
+  min coarse           = 3
+  number of levels     = 4
+  stopping tolerance   = 6.697220e-08
+  relative tolerance?  = 0
+  max iterations       = 100
+  iterations           = 7
+  residual norm        = 2.307848e-09
+                        --> 2-norm TemporalNorm 
+
+  level   time-pts   cfactor   nrelax
+      0        32        2        1
+      1        16        2        1
+      2         8        2        1
+      3         4  
+
+  wall time = 0.231375
+
+  runtime: 0.23145s
+
+
+-----------------------------------------------------------------
+-----------------------------------------------------------------
+
+ Implicit time stepping solve parameters
+
+   Fine-level loose stopping tol  :  1.00e-09    (while ||r|| is large)
+   Fine-level tight stopping tol  :  1.00e-09    (while ||r|| is small)
+   Coarse-level stopping tol      :  1.00e-09    (for all ||r||) 
+ 
+   Fine-level max iter            :  50
+   Coarse-level max iter          :  50
+
+-----------------------------------------------------------------
+-----------------------------------------------------------------
+
+ Per level diagnostic information 
+
+ Scheme is either explicit or implicit.  If implicit then the table
+ entry is 'impl, %d' where the integer represents the maximum number
+ of AMG iterations used by the implicit solver on that level.  'expl'
+ stands for explicit. 
+
+ Fine level spatial problem size  : 17 x 17
+
+level   scheme         dx          dy          dt          cfl
+-----------------------------------------------------------------
+  0   |  impl,  4   1.96e-01    1.96e-01    5.78e-03    3.00e-01
+  1   |  impl,  5   1.96e-01    1.96e-01    1.16e-02    6.00e-01
+  2   |  impl,  7   1.96e-01    1.96e-01    2.31e-02    1.20e+00
+  3   |  impl,  8   1.96e-01    1.96e-01    4.63e-02    2.40e+00
+

@@ -1,0 +1,41 @@
+
+-----------------------------------------------------------------
+-----------------------------------------------------------------
+
+  Begin simulation 
+
+  my_Access() called, iter= 7, level= 0
+  runtime: 0.23044s
+
+
+-----------------------------------------------------------------
+-----------------------------------------------------------------
+
+ Implicit time stepping solve parameters
+
+   Fine-level loose stopping tol  :  1.00e-09    (while ||r|| is large)
+   Fine-level tight stopping tol  :  1.00e-09    (while ||r|| is small)
+   Coarse-level stopping tol      :  1.00e-09    (for all ||r||) 
+ 
+   Fine-level max iter            :  50
+   Coarse-level max iter          :  50
+
+-----------------------------------------------------------------
+-----------------------------------------------------------------
+
+ Per level diagnostic information 
+
+ Scheme is either explicit or implicit.  If implicit then the table
+ entry is 'impl, %d' where the integer represents the maximum number
+ of AMG iterations used by the implicit solver on that level.  'expl'
+ stands for explicit. 
+
+ Fine level spatial problem size  : 17 x 17
+
+level   scheme         dx          dy          dt          cfl
+-----------------------------------------------------------------
+  0   |  impl,  4   1.96e-01    1.96e-01    5.78e-03    3.00e-01
+  1   |  impl,  5   1.96e-01    1.96e-01    1.16e-02    6.00e-01
+  2   |  impl,  7   1.96e-01    1.96e-01    2.31e-02    1.20e+00
+  3   |  impl,  8   1.96e-01    1.96e-01    4.63e-02    2.40e+00
+

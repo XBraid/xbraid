@@ -1,0 +1,7 @@
+# Begin Test 17
+  
+  time steps = 512
+  number of levels     = 8
+  iterations           = 10
+spatial problem size       : 64 x 64
+

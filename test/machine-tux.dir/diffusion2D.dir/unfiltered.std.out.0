@@ -1,0 +1,50 @@
+  Braid:  || r_0 || = 1.194678e+01,  wall time = 1.76e-01
+  Braid:  || r_1 || = 1.121615e+00,  wall time = 3.49e-01,  conv. factor = 9.39e-02
+  Braid:  || r_2 || = 9.624845e-02,  wall time = 5.22e-01,  conv. factor = 8.58e-02
+  Braid:  || r_3 || = 7.828182e-03,  wall time = 6.95e-01,  conv. factor = 8.13e-02
+  Braid:  || r_4 || = 5.971361e-04,  wall time = 8.68e-01,  conv. factor = 7.63e-02
+  Braid:  || r_5 || = 4.445962e-05,  wall time = 1.04e+00,  conv. factor = 7.45e-02
+  Braid:  || r_6 || = 3.437050e-06,  wall time = 1.21e+00,  conv. factor = 7.73e-02
+  Braid:  || r_7 || = 2.792997e-07,  wall time = 1.39e+00,  conv. factor = 8.13e-02
+  Braid:  || r_8 || = 2.316990e-08,  wall time = 1.56e+00,  conv. factor = 8.30e-02
+
+  start time = 0.000000e+00
+  stop time  = 5.614708e+00
+  time steps = 256
+
+  max number of levels = 15
+  min coarse           = 3
+  number of levels     = 7
+  stopping tolerance   = 3.224020e-08
+  relative tolerance?  = 0
+  max iterations       = 100
+  iterations           = 9
+  residual norm        = 2.316990e-08
+                        --> 2-norm TemporalNorm 
+
+  level   time-pts   cfactor   nrelax
+      0       256        2        1
+      1       128        2        1
+      2        64        2        1
+      3        32        2        1
+      4        16        2        1
+      5         8        2        1
+      6         4  
+
+  wall time = 1.575097
+
+  runtime: 1.57519s
+
+spatial problem size       : 16 x 16
+spatial stopping tolerance : 1.00e-09 (loose), 1.00e-09 (tight), 1.00e-09 (coarse levels)
+max spatial iterations     : 50 (expensive), 50 (cheap)
+
+explicit scheme            : 0
+max iterations on level 0  : 6
+max iterations on level 1  : 8
+max iterations on level 2  : 9
+max iterations on level 3  : 10
+max iterations on level 4  : 10
+max iterations on level 5  : 10
+max iterations on level 6  : 10
+
