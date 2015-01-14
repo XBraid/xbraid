@@ -2164,7 +2164,16 @@ int my_ComputeNumCoarsenings(double dt,
                              double scoarsenCFL)
 {
    /* compute required coarsening to satisfy CFL */
-   int ncoarsen = ceil( (log2( K*dt*(dx*dx + dy*dy)/(dx*dx*dy*dy) ) - log2(scoarsenCFL))/2.0 );
+   int ncoarsen1 = ceil( (log2( K*dt*(dx*dx + dy*dy)/(dx*dx*dy*dy) ) - log2(scoarsenCFL))/2.0 );
+   int ncoarsen2 = ceil( (log2( K*0.999999999*dt*(dx*dx + dy*dy)/(dx*dx*dy*dy) ) - log2(scoarsenCFL))/2.0 );
+   int ncoarsen3 = ceil( (log2( K*1.000000001*dt*(dx*dx + dy*dy)/(dx*dx*dy*dy) ) - log2(scoarsenCFL))/2.0 );
+   
+   /* Due to floating point arithmetic, this is our hack to make this the same
+    * across processors.  dt is the only value that will vary across processors, so we try a couple
+    * different tweaks up there on the order of the 10th digit. */
+   int ncoarsen = max(ncoarsen1, ncoarsen2);
+   ncoarsen = max(ncoarsen, ncoarsen3);
+
    int coarsen_factor =  (int) pow(2.0, ncoarsen);
    if( coarsen_factor == 0)
    {
