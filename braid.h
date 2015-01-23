@@ -525,6 +525,13 @@ braid_GetRNorm(braid_Core  core,            /**< braid_Core (_braid_Core) struct
                braid_Real  *rnorm_ptr       /**< output, holds final residual norm */
                );
 
+/**
+ * After Drive() finishes, this returns the number of XBraid levels
+ **/
+braid_Int
+braid_GetNLevels(braid_Core  core,          /**< braid_Core (_braid_Core) struct*/
+                 braid_Int  *nlevels_ptr    /**< output, holds the number of XBraid levels */
+                 );
 /** @}*/
 
 #ifdef __cplusplus

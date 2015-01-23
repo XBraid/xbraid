@@ -144,7 +144,8 @@ class BraidPhiStatus
       void GetTstartTstop(braid_Real *tstart_ptr, braid_Real *tstop_ptr) { braid_PhiStatusGetTstartTstop(pstatus, tstart_ptr, tstop_ptr); }
       void GetTstart(braid_Real *tstart_ptr)     { braid_PhiStatusGetTstart(pstatus, tstart_ptr); }
       void GetTstop(braid_Real *tstop_ptr)       { braid_PhiStatusGetTstop(pstatus, tstop_ptr); }
-      void GetAccuracy(braid_Real *accuracy_ptr)  { braid_PhiStatusGetAccuracy(pstatus, accuracy_ptr); }
+      void GetAccuracy(braid_Real *accuracy_ptr) { braid_PhiStatusGetAccuracy(pstatus, accuracy_ptr); }
+      void GetLevel(braid_Int *level_ptr)        { braid_PhiStatusGetLevel(pstatus, level_ptr); }
       void SetRFactor(braid_Int rfactor)         { braid_PhiStatusSetRFactor(pstatus, rfactor); }
 
       // The braid_PhiStatus structure is deallocated inside of Braid
@@ -170,6 +171,7 @@ class BraidCoarsenRefStatus
       void GetFTprior(braid_Real *f_tprior_ptr) { braid_CoarsenRefStatusGetFTprior(cstatus, f_tprior_ptr); }
       void GetCTstop(braid_Real *c_tstop_ptr)   { braid_CoarsenRefStatusGetCTstop(cstatus, c_tstop_ptr); }
       void GetCTprior(braid_Real *c_tprior_ptr) { braid_CoarsenRefStatusGetCTprior(cstatus, c_tprior_ptr); }
+      void GetLevel(braid_Int *level_ptr)       { braid_CoarsenRefStatusGetLevel(cstatus, level_ptr); }
 
       // The braid_CoarsenRefStatus structure is deallocated inside of Braid
       // This class is just to make code consistently look object oriented
@@ -348,6 +350,8 @@ public:
    void GetNumIter(braid_Int *niter_ptr) { braid_GetNumIter(core, niter_ptr); }
 
    void GetRNorm(braid_Real *rnorm_ptr) { braid_GetRNorm(core, rnorm_ptr); }
+   
+   void GetNLevels(braid_Int *nlevels_ptr) { braid_GetNLevels(core, nlevels_ptr); }
 
    void Drive() { braid_Drive(core); }
 

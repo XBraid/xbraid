@@ -129,6 +129,7 @@ typedef struct _braid_PhiStatus_struct
    braid_Real     tstop;           /**< time value to evolve towards, time value to the right of tstart */
    braid_Real     accuracy;        /**< advanced option allowing variable accuracy for implicit phi*/
    braid_Int      rfactor;         /**< if set by user, allows for subdivision of this interval for bettter time accuracy */
+   braid_Int      level;           /**< current level in XBraid*/
 } _braid_PhiStatus;
 
 
@@ -338,6 +339,7 @@ braid_Int
 _braid_PhiStatusInit(braid_Real       tstart,      /**< current time value  */
                      braid_Real       tstop,       /**< time value to evolve towards, time value to the right of tstart */
                      braid_Real       accuracy,    /**< advanced option allowing variable accuracy for implicit phi*/
+                     braid_Int        level,       /**< current level in XBraid */
                      braid_PhiStatus  status       /**< structure to initialize */
                      );
 
@@ -371,6 +373,14 @@ braid_Int
 braid_PhiStatusGetAccuracy(braid_PhiStatus  status,         /**< structure containing current simulation info */
                            braid_Real      *accuracy_ptr    /**< output, current accuracy value */
                            );
+
+/**
+ * Return the current XBraid level from the PhiStatus structure.
+ **/
+braid_Int
+braid_PhiStatusGetLevel(braid_PhiStatus  status,           /**< structure containing current simulation info */
+                        braid_Int       *level_ptr         /**< output, current level in XBraid */
+                        );
 
 /** 
  * Set the rfactor, a desired refinement factor for this interval.  rfactor=1

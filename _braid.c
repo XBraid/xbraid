@@ -613,7 +613,7 @@ _braid_Phi(braid_Core     core,
    braid_Int      ii;
 
    ii = index-ilower;
-   _braid_PhiStatusInit(ta[ii-1], ta[ii], accuracy, pstatus);
+   _braid_PhiStatusInit(ta[ii-1], ta[ii], accuracy, level, pstatus);
    
    /* Call Phi */
    _braid_CoreFcn(core, phi)(app, u, pstatus);

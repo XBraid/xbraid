@@ -269,11 +269,13 @@ braid_Int
 _braid_PhiStatusInit(braid_Real       tstart,
                      braid_Real       tstop,
                      braid_Real       accuracy,
+                     braid_Int        level,
                      braid_PhiStatus  status)
 {
    _braid_StatusElt(status, tstart)   = tstart;
    _braid_StatusElt(status, tstop)    = tstop;
    _braid_StatusElt(status, accuracy) = accuracy;
+   _braid_StatusElt(status, level)    = level;
 
    return _braid_error_flag;
 }
@@ -313,6 +315,16 @@ braid_PhiStatusGetAccuracy(braid_PhiStatus  status,
    *accuracy_ptr = _braid_StatusElt(status, accuracy);
    return _braid_error_flag;
 }
+
+braid_Int
+braid_PhiStatusGetLevel(braid_PhiStatus  status,
+                        braid_Int       *level_ptr
+                        )
+{
+   *level_ptr = _braid_StatusElt(status, level);
+   return _braid_error_flag;
+}
+
 
 braid_Int
 braid_PhiStatusSetRFactor(braid_PhiStatus  status,

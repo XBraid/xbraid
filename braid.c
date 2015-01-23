@@ -806,5 +806,16 @@ braid_GetRNorm(braid_Core  core,
    return _braid_error_flag;
 } 
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_GetNLevels(braid_Core  core,
+                 braid_Int  *nlevels_ptr)
+
+{
+   *nlevels_ptr = _braid_CoreElt(core, nlevels);
+   return _braid_error_flag;
+}
 
 
