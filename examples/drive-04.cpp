@@ -36,6 +36,9 @@
 #include "mfem.hpp"
 #include "braid.hpp"
 
+using namespace std;
+using namespace mfem;
+
 // Additional "HYPRE" functions
 namespace hypre
 {
@@ -322,7 +325,8 @@ private:
    }
 
 public:
-   ScalarODE(int _size, int _option=2) { size = _size; option=_option; }
+   ScalarODE(int _size, int _option=2) : TimeDependentOperator(_size)
+   { option=_option; }
 
    virtual void Mult(const Vector &x, Vector &y) const
    {
@@ -387,7 +391,8 @@ public:
       aform->Assemble();
       aform->Finalize();
       A = aform->ParallelAssemble();
-      size = A->Size();
+      height = A->Height();
+      width = A->Width();
 
       double tmp; // workaround to avoid memory leak
       X = new HypreParVector(A->GetComm(), A->GetGlobalNumCols(), &tmp,
@@ -1458,7 +1463,7 @@ int main(int argc, char *argv[])
    }
    else
    {
-      ode = new ScalarODE(M->Size(), scalar_ode_option);
+      ode = new ScalarODE(M->Height(), scalar_ode_option);
    }
    ODESolver *solver;
 
