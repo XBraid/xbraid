@@ -3617,7 +3617,7 @@ int main (int argc, char *argv[])
    dy = PI / (ny - 1);
 
    /* Set time-step size. */
-   dt = K*(cfl/2.0)*(dx*dx);
+   dt = K*cfl*( (dx*dx)*(dy*dy) / ((dx*dx)+(dy*dy)) );
    /* Determine tstop. */
    tstop =  tstart + nt*dt;
 

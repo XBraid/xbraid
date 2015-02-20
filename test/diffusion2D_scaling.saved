@@ -9,14 +9,14 @@ spatial problem size       : 16 x 16
   
   time steps = 128
   number of levels     = 2
-  iterations           = 7
+  iterations           = 8
 spatial problem size       : 32 x 32
 
 # Begin Test 2
   
   time steps = 512
   number of levels     = 2
-  iterations           = 7
+  iterations           = 8
 spatial problem size       : 64 x 64
 
 # Begin Test 3 -- Begin multilvel-level V-cycle FCF-relaxation tests
@@ -30,7 +30,7 @@ spatial problem size       : 16 x 16
   
   time steps = 128
   number of levels     = 6
-  iterations           = 8
+  iterations           = 9
 spatial problem size       : 32 x 32
 
 # Begin Test 5
@@ -51,14 +51,14 @@ spatial problem size       : 16 x 16
   
   time steps = 128
   number of levels     = 6
-  iterations           = 7
+  iterations           = 8
 spatial problem size       : 32 x 32
 
 # Begin Test 8
   
   time steps = 512
   number of levels     = 8
-  iterations           = 7
+  iterations           = 8
 spatial problem size       : 64 x 64
 
 # Begin Test 9-- Begin 2-level F-relaxation tests
@@ -93,14 +93,14 @@ spatial problem size       : 16 x 16
   
   time steps = 128
   number of levels     = 6
-  iterations           = 17
+  iterations           = 18
 spatial problem size       : 32 x 32
 
 # Begin Test 14
   
   time steps = 512
   number of levels     = 8
-  iterations           = 23
+  iterations           = 24
 spatial problem size       : 64 x 64
 
 # Begin Test 15 -- Begin multilvel-level F-cycle F-relaxation tests
