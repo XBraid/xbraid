@@ -2922,7 +2922,7 @@ my_BufPack(braid_App     app,
    HYPRE_SStructVectorGetBoxValues( u->x, part, app->ilower_x,
                                     app->iupper_x, var, dbuffer );
 
-   *size_ptr = (app->nlx)*(app->nly)*sizeof(double);
+   *size_ptr = (app->nlx)*(app->nly)*(app->nlz)*sizeof(double);
    
    return 0;
 }
