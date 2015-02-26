@@ -9,10 +9,17 @@ spatial problem size       : 16 x 16
 
   time steps = 256
   number of levels     = 7
-  iterations           = 8
+  iterations           = 10
 spatial problem size       : 16 x 16
 
 # Begin Test 2
+
+  time steps = 256
+  number of levels     = 7
+  iterations           = 8
+spatial problem size       : 16 x 16
+
+# Begin Test 3
 
   my_Access() called, iter= 24, level= 0
   time steps = 128
@@ -26,7 +33,7 @@ spatial problem size       : 16 x 16
   4   |  expl        3.93e-01    3.93e-01    2.31e-02    3.00e-01
   5   |  expl        7.85e-01    7.85e-01    4.63e-02    1.50e-01
 
-# Begin Test 3
+# Begin Test 4
 
   my_Access() called, iter= 7, level= 0
   time steps = 32
@@ -34,7 +41,7 @@ spatial problem size       : 16 x 16
   iterations           = 7
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 4
+# Begin Test 5
 
   my_Access() called, iter= 0, level= 0
   my_Access() called, iter= 1, level= 3
@@ -70,17 +77,9 @@ spatial problem size       : 16 x 16
   iterations           = 7
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 5
-
-  my_Access() called, iter= 7, level= 0
- Fine level spatial problem size  : 17 x 17
-
 # Begin Test 6
- 
+
   my_Access() called, iter= 7, level= 0
-  time steps = 32
-  number of levels     = 4
-  iterations           = 7
  Fine level spatial problem size  : 17 x 17
 
 # Begin Test 7
@@ -92,6 +91,14 @@ spatial problem size       : 16 x 16
  Fine level spatial problem size  : 17 x 17
 
 # Begin Test 8
+ 
+  my_Access() called, iter= 7, level= 0
+  time steps = 32
+  number of levels     = 4
+  iterations           = 7
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 9
 
 Starting braid_TestInitAccess
    braid_TestInitAccess:   Starting Test 1
@@ -337,7 +344,7 @@ Starting braid_TestCoarsenRefine
    braid_TestCoarsenRefine:   free(wc)
 Finished braid_TestCoarsenRefine: all tests passed successfully
 
-# Begin Test 9
+# Begin Test 10
 
   my_Access() called, iter= 0, level= 0
   time steps = 128
@@ -345,7 +352,7 @@ Finished braid_TestCoarsenRefine: all tests passed successfully
   iterations           = 0
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 10
+# Begin Test 11
 
   my_Access() called, iter= 8, level= 0
   time steps = 128
@@ -353,7 +360,7 @@ Finished braid_TestCoarsenRefine: all tests passed successfully
   iterations           = 8
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 11
+# Begin Test 12
 
   my_Access() called, iter= 8, level= 0
   time steps = 128
@@ -361,7 +368,7 @@ Finished braid_TestCoarsenRefine: all tests passed successfully
   iterations           = 8
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 12
+# Begin Test 13
 
   my_Access() called, iter= 8, level= 0
   time steps = 128

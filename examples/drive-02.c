@@ -34,7 +34,10 @@
 
    Description:  This code solves the diffusion problem 
 
-                                  u_t - K * div u = 0
+                                  u_t - K * div u = b,
+                        b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))
+                                          or
+                                     b(x,y,t) = 0
 
                  in the unit square subject to zero Dirichlet boundary
                  conditions,u_b = 0, and initial condition U0 at time t = 0.
@@ -55,13 +58,13 @@
                   parts of the solution vector x, respectively, and let 
                   u_b the boundary condition. If we split the matrix A as
 
-                             A = [A_ii A_ib; 
-                                  A_bi A_bb],
+                             A = [A_ii   A_ib]
+                                 [A_bi   A_bb],
 
                   then we solve
 
-                             [A_ii 0; [x_i;    [b_i - A_ib u_b;
-                              0    I]  x_b] =        u_b       ].
+                             [A_ii 0]  [x_i]    [b_i - A_ib u_b]
+                             [0    I]  [x_b] =  [    u_b       ].
 
                   For zero boundary conditions, u_b = 0, we are just 
                   solving
@@ -112,6 +115,8 @@
  *   dx          spatial step size in x-direction
  *   dy          spatial step size in y-direction
  *   dt          time step on finest grid
+ *   forcing     consider non-zero forcing term
+ *   zeroGuess   consider zero initial guess
  *   max_levels  maximum number of time levels
  *   nparts      number of structured parts of the spatial grid 
  *   nvars       number of variable types on structured parts of
@@ -170,6 +175,8 @@ typedef struct _braid_App_struct {
    int                     nt;
    double                  dx, dy;
    double                  dt;
+   int                     forcing;
+   int                     zeroGuess;
    int                     max_levels;
    int                     nparts; 
    int                     nvars; 
@@ -246,6 +253,14 @@ double U0(double x, double y){
  * -------------------------------------------------------------------- */
 double B0(double x, double y){
     return 0.0;
+}
+
+
+/* --------------------------------------------------------------------
+ * Forcing term: b(x,y,t) = -sin(x)*sin(y)*( sin(t) - 2*K*cos(t) )
+ * -------------------------------------------------------------------- */
+double Ft(double x, double y, double t, double K){
+   return (-1.0)*sin(x)*sin(y)*( sin(t) - 2.0*K*cos(t) );
 }
 
 
@@ -762,6 +777,96 @@ addBoundaryToRHS( HYPRE_SStructVector  b,
    /* Finalize the vector assembly. */
    HYPRE_SStructVectorAssemble(b);
 }
+
+
+/* --------------------------------------------------------------------
+ * Add forcing term:
+ * We have to multiply the RHS of the PDE by dt.
+ * -------------------------------------------------------------------- */
+void
+addForcingToRHS( HYPRE_SStructVector  b,
+                 double               t,
+                 double               K,
+                 double               dx,
+                 double               dy,
+                 double               dt,
+                 int                 *ilower,
+                 int                 *iupper,
+                 int                  nlx,
+                 int                  nly,
+                 int                  px,
+                 int                  py,
+                 int                  pi,
+                 int                  pj )
+{
+   double    *values;
+   int        i, j, m;
+   int        rhs_ilower[2];
+   int        rhs_iupper[2];
+   int        istart, iend, jstart, jend;
+   
+   /* We have one part and one variable. */
+   int part = 0;
+   int var  = 0;
+   
+   /* Add the values from the RHS of the PDE in left-to-right,
+    * bottom-to-top order. Entries associated with DoFs on the boundaries
+    * are not considered so that boundary conditions are not messed up. */
+   
+   values = (double *) malloc( nlx*nly*sizeof(double) );
+   
+   rhs_ilower[0] = ilower[0];
+   rhs_ilower[1] = ilower[1];
+   istart        = 0;
+   iend          = nlx;
+   
+   rhs_iupper[0] = iupper[0];
+   rhs_iupper[1] = iupper[1];
+   jstart        = 0;
+   jend          = nly;
+   
+   /* Adjust box to not include boundary nodes. */
+   
+   /* a) Boundaries y = 0 or y = PI */
+   /*    i) Processors at y = 0 */
+   if( pj == 0 )
+   {
+      rhs_ilower[1] += 1;
+      jstart        += 1;
+   }
+   /*    ii) Processors at y = PI */
+   if( pj == py-1 )
+   {
+      rhs_iupper[1] -= 1;
+      jend          -= 1;
+   }
+   
+   /* b) Boundaries x = 0 or x = PI */
+   /*    i) Processors at x = 0 */
+   if( pi == 0 )
+   {
+      rhs_ilower[0] += 1;
+      istart        += 1;
+   }
+   /*    ii) Processors at x = PI */
+   if( pi == px-1 )
+   {
+      rhs_iupper[0] -= 1;
+      iend          -= 1;
+   }
+   
+   for( m = 0, j = jstart; j < jend; j++ )
+      for( i = istart; i < iend; i++, m++ )
+         values[m] = dt*Ft( (rhs_ilower[0]+i-istart)*dx,
+                            (rhs_ilower[1]+j-jstart)*dy, t, K );
+   
+   HYPRE_SStructVectorAddToBoxValues(b, part, rhs_ilower,
+                                     rhs_iupper, var, values);
+   
+   HYPRE_SStructVectorAssemble( b );
+   free(values);
+}
+
 
 
 /* --------------------------------------------------------------------
@@ -1701,6 +1806,14 @@ my_Phi(braid_App       app,
       HYPRE_SStructVectorGetObject( u->x, (void **) &sx );
       HYPRE_SStructVectorGetObject( b, (void **) &sb );
       HYPRE_StructMatrixMatvec( 1, sA, sb, 0, sx );
+      
+      if (app->forcing) {
+         /* add RHS of PDE: g_i = dt*b_{i-1}, i > 0 */
+         addForcingToRHS( u->x, tstart, app->K, app->dx, app->dy,
+                          tstop-tstart, app->ilower_x, app->iupper_x,
+                          app->nlx, app->nly, app->px, app->py,
+                          app->pi, app->pj );
+      }
 
       /* free memory */
       HYPRE_SStructVectorDestroy( b );
@@ -1710,8 +1823,7 @@ my_Phi(braid_App       app,
        * Set up the right-hand side vector. 
        * The right-hand side is the solution from the previous time 
        * step modified to incorporate the boundary conditions and the 
-       * right-hand side of the PDE (here, we assume a zero RHS of the
-       * PDE).
+       * right-hand side of the PDE.
        * -------------------------------------------------------------- */
       values = (double *) malloc( (app->nlx)*(app->nly)*sizeof(double) );
       HYPRE_SStructVectorGather( u->x );
@@ -1726,7 +1838,14 @@ my_Phi(braid_App       app,
       addBoundaryToRHS( b, app->K, app->dx, app->dy, tstop-tstart,
                         app->ilower_x, app->nlx, app->nly, app->px, 
                         app->py, app->pi, app->pj );
-      /* add infos from RHS of PDE here */ 
+      
+      if (app->forcing) {
+         /* add RHS of PDE: g_i = Phi*dt*b_i, i > 0 */
+         addForcingToRHS( b, tstop, app->K, app->dx, app->dy,
+                          tstop-tstart, app->ilower_x, app->iupper_x,
+                          app->nlx, app->nly, app->px, app->py,
+                          app->pi, app->pj );
+      }
 
       /* --------------------------------------------------------------
        * Time integration to next time point: Solve the system Ax = b.
@@ -1850,8 +1969,9 @@ my_Init(braid_App     app,
    HYPRE_SStructVectorInitialize( u->x );
 
    /* Set the values in left-to-right, bottom-to-top order. 
-    * Use initial condition at start time and a random initial guess
-    * for all other times. */
+    * Use initial condition at start time and a random (if RHS of PDE is
+    * zero) or zero (if RHS of PDE is non-zero) initial guess for all
+    * other times. */
    values = (double *) malloc( (app->nlx)*(app->nly)*sizeof(double) );
    if( t == app->tstart )
    {
@@ -1863,10 +1983,17 @@ my_Init(braid_App     app,
    }
    else
    {
-      /* Random between 0 and 1 */
-      for( m = 0; m < ((app->nlx)*(app->nly)); m++ )
+      if (app->zeroGuess) {
+         /* zero initial guess */
+         for( m = 0; m < ((app->nlx)*(app->nly)); m++ )
+            values[m] = 0.0;
+      }
+      else {
          /* Random between 0 and 1 */
-         values[m] = ((double)rand())/RAND_MAX;
+         for( m = 0; m < ((app->nlx)*(app->nly)); m++ )
+            values[m] = ((double)rand())/RAND_MAX;
+      }
+      
    }
    for( part = 0; part < app->nparts; part++ )
       for( var = 0; var < app->nvars; var++ )
@@ -2019,8 +2146,11 @@ my_Access(braid_App           app,
    int part = 0;
    int var = 0;
 
-   /*  damping factor */
-   double damping, damping_nt = 1.0; 
+   /*  damping factor (zero RHS of PDE)*/
+   double damping, damping_nt = 1.0;
+   
+   /* damping factor (non-zero RHS of PDE) */
+   double lambda_0, alpha = 1.0, beta;
 
    /* error norm */
    double enorm = 0.0;
@@ -2048,26 +2178,91 @@ my_Access(braid_App           app,
     *     if we want to visualize with GLVis, we also save the error
     *     at the initial time, middle time, and end time */
    if( app->access ){
-      if( app->scheme[0] )
-         /* forward (explicit) Euler */
-         damping = 1 + ((2*(app->K)*(app->dt))/
-                        ((app->dx)*(app->dx)))*(cos(app->dx)-1) 
-                  + ((2*(app->K)*(app->dt))/
-                        ((app->dy)*(app->dy)))*(cos(app->dy)-1);
-      else
-         /* backward (implicit) Euler */
-         damping = 1.0 / ( 1 + ((2*(app->K)*(app->dt))/
-                                ((app->dx)*(app->dx)))*(1-cos(app->dx)) 
-                             + ((2*(app->K)*(app->dt))/
-                                ((app->dy)*(app->dy)))*(1-cos(app->dy)));
-
-      
-
+      /* Consider solution after index time steps. */
       index = ((t-tstart) / ((tstop-tstart)/ntime) + 0.1);
+      
+      if (app->forcing) {
+         /* Discrete solution:
+          *  - forward (explicit) Euler:
+          *      u_i = (I - dt*M)*u_{i-1} + dt*b_{i-1}
+          *    ansatz:  u_0 = sin(x)*sin(y)
+          *             (I - dt*M)*u_0 = lambda_0*u_0
+          *                        u_i = alpha_i*u_0
+          *                        b_i = beta_i*u_0
+          *    central FD in space
+          *     => lambda_0 = 1 + (2*K*dt/(dx^2))*(cos(dx)-1)
+          *                     + (2*K*dt/(dx^2))*(cos(dy)-1)
+          *    RHS: b_i = -sin(x)*sin(y)*(sin(t_i)-2*K*cos(t_i))
+          *     => beta_i = 2*K*cos(i*dt) - sin(i*dt)
+          *    alpha_0 = 0
+          *    recurrence relation:
+          *       alpha_i = lambda_0*alpha_{i-1} + dt*beta_{i-1}
+          *  - backward (implicit) Euler:
+          *      u_i = inv(I + dt*M)*( u_{i-1} + dt*b_i )
+          *    ansatz:  u_0 = sin(x)*sin(y)
+          *             inv(I - dt*M)*u_0 = lambda_0*u_0
+          *                           u_i = alpha_i*u_0
+          *                           b_i = beta_i*u_0
+          *    central FD in space
+          *     => lambda_0 = 1 / (1 + (2*K*dt/(dx^2))*(1-cos(dx))
+          *                          + (2*K*dt/(dx^2))*(1-cos(dy)))
+          *    RHS: b_i = -sin(x)*sin(y)*(sin(t_i)-2*K*cos(t_i))
+          *     => beta_i = 2*K*cos(i*dt) - sin(i*dt)
+          *    alpha_0 = 0
+          *    recurrence relation:
+          *       alpha_i = lambda_0*(alpha_{i-1} + dt*beta_i) */
+         
+         if( app->scheme[0] )
+         {
+            /* forward (explicit) Euler */
+            lambda_0 = 1 + ((2*(app->K)*(app->dt))/
+                            ((app->dx)*(app->dx)))*(cos(app->dx)-1)
+                         + ((2*(app->K)*(app->dt))/
+                            ((app->dy)*(app->dy)))*(cos(app->dy)-1);
+            for( i = 1; i <= index; i++ )
+            {
+               beta  = 2*(app->K)*cos((i-1)*(app->dt)) - sin((i-1)*(app->dt));
+               alpha = lambda_0*alpha + (app->dt)*beta;
+            }
+         }
+         else
+         {
+            /* backward (implicit) Euler */
+            lambda_0 = 1.0 / ( 1 + ((2*(app->K)*(app->dt))/
+                                    ((app->dx)*(app->dx)))*(1-cos(app->dx))
+                                 + ((2*(app->K)*(app->dt))/
+                                    ((app->dy)*(app->dy)))*(1-cos(app->dy)));
+            for( i = 1; i <= index; i++ )
+            {
+               beta  = 2*(app->K)*cos(i*(app->dt)) - sin(i*(app->dt));
+               alpha = lambda_0*(alpha + (app->dt)*beta);
+            }
+         }
+         
+         /* discrete solution after index time steps:
+          *   u_{index} = alpha_{index}*u_0 */
+         damping_nt = alpha;
+      }
+      else {
+         if( app->scheme[0] )
+            /* forward (explicit) Euler */
+            damping = 1 + ((2*(app->K)*(app->dt))/
+                           ((app->dx)*(app->dx)))*(cos(app->dx)-1)
+                        + ((2*(app->K)*(app->dt))/
+                           ((app->dy)*(app->dy)))*(cos(app->dy)-1);
+         else
+            /* backward (implicit) Euler */
+            damping = 1.0 / ( 1 + ((2*(app->K)*(app->dt))/
+                                   ((app->dx)*(app->dx)))*(1-cos(app->dx))
+                                + ((2*(app->K)*(app->dt))/
+                                   ((app->dy)*(app->dy)))*(1-cos(app->dy)));
+         
+         /* discrete solution after index time steps:
+          *    u_{index} = damping^{index}*u_0 */
+         for( i = 1; i <= index; i++ )
+            damping_nt *= damping;
+      }
 
-      /* damping factor after index time steps */
-      for( i = 1; i <= index; i++ )
-         damping_nt *= damping;
 
       MPI_Comm_rank(comm, &myid);
 
@@ -2241,15 +2436,15 @@ int main (int argc, char *argv[])
    int arg_index;
    int print_usage = 0;
 
-   braid_Core    core;
-   my_App    *app;
-   int        max_levels;
-   int        nrelax, nrelax0;
-   double     tol;
-   int        cfactor, cfactor0;
-   int        max_iter;
-   int        fmg;
-   int        tnorm; 
+   braid_Core  core;
+   my_App     *app;
+   int         max_levels;
+   int         nrelax, nrelax0;
+   double      tol;
+   int         cfactor, cfactor0;
+   int         max_iter;
+   int         fmg;
+   int         tnorm; 
 
    MPI_Comm    comm, comm_x, comm_t;
    int         myid, num_procs;
@@ -2265,6 +2460,7 @@ int main (int argc, char *argv[])
    double tstart, tstop;
    int nt;
    double dx, dy, dt, c;
+   int forcing, zeroGuess;
    int ilower_x[2], iupper_x[2];
 
    /* We have one part and one variable. */
@@ -2301,8 +2497,10 @@ int main (int argc, char *argv[])
    cfactor             = 2;
    cfactor0            = -1;
    max_iter            = 100;
+   zeroGuess           = 0;
    fmg                 = 0;
    K                   = 1.0;
+   forcing             = 0;
    nx                  = 16;
    ny                  = 16;
    nlx                 = 16;
@@ -2380,6 +2578,14 @@ int main (int argc, char *argv[])
       else if( strcmp(argv[arg_index], "-cf0") == 0 ){
           arg_index++;
           cfactor0 = atoi(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-forcing") == 0 ){
+         arg_index++;
+         forcing = 1;
+      }
+      else if( strcmp(argv[arg_index], "-zero") == 0 ){
+         arg_index++;
+         zeroGuess = 1;
       }
       else if( strcmp(argv[arg_index], "-mi") == 0 ){
           arg_index++;
@@ -2465,6 +2671,8 @@ int main (int argc, char *argv[])
       printf("                                     3 - Infinity-norm \n");
       printf("  -cf  <cfactor>                   : set coarsening factor (default: 2)\n");   
       printf("  -cf0  <cfactor>                  : set aggressive coarsening factor\n");
+      printf("  -forcing                         : consider non-zero RHS b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))\n");
+      printf("  -zero                            : use zero initial guess for all times t > 0\n");
       printf("  -mi  <max_iter>                  : set max iterations (default: 100)\n");
       printf("  -iter <max_iter max_iter_cheap>  : maximum number of PFMG iterations (default: 50 50)\n"); 
       printf("  -tolx <loose_tol tight_tol>      : loose and tight stopping tolerance for PFMG (default: 1e-09 1e-09)\n"); 
@@ -2563,6 +2771,8 @@ int main (int argc, char *argv[])
    (app->dx)          = dx;
    (app->dy)          = dy;
    (app->dt)          = dt;
+   (app->forcing)     = forcing;
+   (app->zeroGuess)   = zeroGuess;
    (app->max_levels)  = max_levels;
    (app->nparts)      = nparts;
    (app->nvars)       = nvars;

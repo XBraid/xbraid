@@ -39,7 +39,10 @@
 
    Description:  This code solves the diffusion problem 
 
-                                  u_t - K * div u = 0
+                                  u_t - K * div u = b,
+                        b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))
+                                          or
+                                     b(x,y,t) = 0
 
                  in the unit square subject to zero Dirichlet boundary
                  conditions,u_b = 0, and initial condition U0 at time t = 0.
@@ -177,6 +180,7 @@ typedef struct _spatial_discretization
  *                       matrix has been created
  *   dy_A                array of y-direction mesh sizes for which a discretization 
  *                       matrix has been created
+ *   forcing             consider non-zero forcing term
  *   nA                  number of discretization matrices that have been
  *                       created
  *   px                  number of processors in x-dimension
@@ -242,6 +246,7 @@ typedef struct _braid_App_struct {
    double                 *dt_A;
    double                 *dx_A;
    double                 *dy_A;
+   int                     forcing;
    int                     nA;
    int                     px, py;
    int                     pi, pj;
@@ -312,6 +317,17 @@ double U0(double x, double y){
     return sin(x)*sin(y);
 }
 
+
+/* --------------------------------------------------------------------
+ * Exact solution 
+ * -------------------------------------------------------------------- */
+double U_exact(my_App *app, double x, double y, double t){
+   if(app->forcing)
+      return sin(x)*sin(y)*cos(t);
+   else
+      return exp(-2.*t)*sin(x)*sin(y);
+}
+
 /* --------------------------------------------------------------------
  * Boundary condition: zero Dirichlet condition for now
  * -------------------------------------------------------------------- */
@@ -319,6 +335,12 @@ double B0(double x, double y){
     return 0.0;
 }
 
+/* --------------------------------------------------------------------
+ * Forcing term: b(x,y,t) = -sin(x)*sin(y)*( sin(t) - 2*K*cos(t) )
+ * -------------------------------------------------------------------- */
+double Ft(double x, double y, double t, double K){
+   return (-1.0)*sin(x)*sin(y)*( sin(t) - 2.0*K*cos(t) );
+}
 
 /* --------------------------------------------------------------------
  * Apply boundary conditions for explicit scheme:
@@ -767,6 +789,93 @@ addBoundaryToRHS( HYPRE_SStructVector  b,
    HYPRE_SStructVectorAssemble(b);
 }
 
+/* --------------------------------------------------------------------
+ * Add forcing term:
+ * We have to multiply the RHS of the PDE by dt.
+ * -------------------------------------------------------------------- */
+void
+addForcingToRHS( HYPRE_SStructVector  b,
+                 double               t,
+                 double               K,
+                 double               dx,
+                 double               dy,
+                 double               dt,
+                 int                 *ilower,
+                 int                 *iupper,
+                 int                  nlx,
+                 int                  nly,
+                 int                  px,
+                 int                  py,
+                 int                  pi,
+                 int                  pj )
+{
+   double    *values;
+   int        i, j, m;
+   int        rhs_ilower[2];
+   int        rhs_iupper[2];
+   int        istart, iend, jstart, jend;
+   
+   /* We have one part and one variable. */
+   int part = 0;
+   int var  = 0;
+   
+   /* Add the values from the RHS of the PDE in left-to-right,
+    * bottom-to-top order. Entries associated with DoFs on the boundaries
+    * are not considered so that boundary conditions are not messed up. */
+   
+   values = (double *) malloc( nlx*nly*sizeof(double) );
+   
+   rhs_ilower[0] = ilower[0];
+   rhs_ilower[1] = ilower[1];
+   istart        = 0;
+   iend          = nlx;
+   
+   rhs_iupper[0] = iupper[0];
+   rhs_iupper[1] = iupper[1];
+   jstart        = 0;
+   jend          = nly;
+   
+   /* Adjust box to not include boundary nodes. */
+   
+   /* a) Boundaries y = 0 or y = PI */
+   /*    i) Processors at y = 0 */
+   if( pj == 0 )
+   {
+      rhs_ilower[1] += 1;
+      jstart        += 1;
+   }
+   /*    ii) Processors at y = PI */
+   if( pj == py-1 )
+   {
+      rhs_iupper[1] -= 1;
+      jend          -= 1;
+   }
+   
+   /* b) Boundaries x = 0 or x = PI */
+   /*    i) Processors at x = 0 */
+   if( pi == 0 )
+   {
+      rhs_ilower[0] += 1;
+      istart        += 1;
+   }
+   /*    ii) Processors at x = PI */
+   if( pi == px-1 )
+   {
+      rhs_iupper[0] -= 1;
+      iend          -= 1;
+   }
+   
+   for( m = 0, j = jstart; j < jend; j++ )
+      for( i = istart; i < iend; i++, m++ )
+         values[m] = dt*Ft( (rhs_ilower[0]+i-istart)*dx,
+                            (rhs_ilower[1]+j-jstart)*dy, t, K );
+   
+   HYPRE_SStructVectorAddToBoxValues(b, part, rhs_ilower,
+                                     rhs_iupper, var, values);
+   
+   HYPRE_SStructVectorAssemble( b );
+   free(values);
+}
 
 /* --------------------------------------------------------------------
  * Set up a 2D grid.
@@ -1608,6 +1717,14 @@ my_Phi(braid_App       app,
       HYPRE_SStructVectorGetObject( b, (void **) &sb );
       HYPRE_StructMatrixMatvec( 1, sA, sb, 0, sx );
 
+      if (app->forcing) {
+         /* add RHS of PDE: g_i = dt*b_{i-1}, i > 0 */
+         addForcingToRHS( u->x, tstart, app->K, app->dx, app->dy,
+                          tstop-tstart, app->ilower, app->iupper,
+                          app->nlx, app->nly, app->px, app->py,
+                          app->pi, app->pj );
+      }
+
       /* free memory */
       HYPRE_SStructVectorDestroy( b );
    }
@@ -1616,8 +1733,7 @@ my_Phi(braid_App       app,
        * Set up the right-hand side vector. 
        * The right-hand side is the solution from the previous time 
        * step modified to incorporate the boundary conditions and the 
-       * right-hand side of the PDE (here, we assume a zero RHS of the
-       * PDE).
+       * right-hand side of the PDE 
        * -------------------------------------------------------------- */
       values = (double *) malloc( (nlx)*(nly)*sizeof(double) );
       HYPRE_SStructVectorGather( u->x );
@@ -1632,7 +1748,14 @@ my_Phi(braid_App       app,
       addBoundaryToRHS( b, app->K, dx, dy, tstop-tstart,
                         ilower, iupper, nlx, nly, nx, ny,
                         app->px, app->py, app->pi, app->pj );
-      /* add infos from RHS of PDE here */ 
+      
+      if (app->forcing) {
+         /* add RHS of PDE: g_i = Phi*dt*b_i, i > 0 */
+         addForcingToRHS( b, tstop, app->K, app->dx, app->dy,
+                          tstop-tstart, app->ilower, app->iupper,
+                          app->nlx, app->nly, app->px, app->py,
+                          app->pi, app->pj );
+      }
 
       /* --------------------------------------------------------------
        * Time integration to next time point: Solve the system Ax = b.
@@ -1714,8 +1837,9 @@ my_Init(braid_App     app,
    HYPRE_SStructVectorInitialize( u->x );
 
    /* Set the values in left-to-right, bottom-to-top order. 
-    * Use initial condition at start time and a random initial guess
-    * for all other times. */
+    * Use initial condition at start time and a random (if RHS of PDE is
+    * zero) or zero (if RHS of PDE is non-zero) initial guess for all
+    * other times. */
    values = (double *) malloc( (app->nlx)*(app->nly)*sizeof(double) );
    if( t == app->tstart )
    {
@@ -1733,7 +1857,7 @@ my_Init(braid_App     app,
          if(app->use_rand)
          {  values[m] = ((double)rand())/RAND_MAX;}
          else
-         {  values[m] = 1.42; }
+         {  values[m] = 0.0; }
    }
    HYPRE_SStructVectorSetBoxValues( u->x, part, app->ilower,
                                     app->iupper, var, values ); 
@@ -1965,8 +2089,7 @@ my_Access(braid_App           app,
       m = 0;
       for( j = 0; j < nly; j++ ){
          for( i = 0; i < nlx; i++ ){
-            enorm += pow(values[m++] - 
-                     exp(-2.*t)*sin((ilower[0]+i)*dx)*sin((ilower[1]+j)*dy),2);
+            enorm += pow(values[m++] - U_exact(app, (ilower[0]+i)*dx, (ilower[1]+j)*dy, t), 2);
          }
       }
       free( values );
@@ -2005,7 +2128,7 @@ my_Access(braid_App           app,
          for( j = 0; j < nly; j++ )
             for( i = 0; i < nlx; i++ )
             {
-               values[m] = values[m] - exp(-2.*t)*sin((ilower[0]+i)*dx)*sin((ilower[1]+j)*dy);
+               values[m] = values[m] - U_exact(app, (ilower[0]+i)*dx, (ilower[1]+j)*dy, t);
                m++;
             }
 
@@ -3217,6 +3340,7 @@ int main (int argc, char *argv[])
    double tstart, tstop;
    int nt;
    double dx, dy, dt, cfl;
+   int forcing;
    int ilower[2], iupper[2];
 
    /* We have one part and one variable.
@@ -3259,6 +3383,7 @@ int main (int argc, char *argv[])
    fmg                 = 0;
    nfmg_Vcyc           = 1;
    use_rand            = 1;
+   forcing             = 0;
    scoarsen            = 0;
    num_scoarsenCFL     = 1;
    scoarsenCFL         = (double*) malloc( 1*sizeof(double) );
@@ -3360,6 +3485,10 @@ int main (int argc, char *argv[])
       else if ( strcmp(argv[arg_index], "-use_rand") == 0 ){
          arg_index++;
          use_rand = atoi(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-forcing") == 0 ){
+         arg_index++;
+         forcing = 1;
       }
       else if ( strcmp(argv[arg_index], "-scoarsen") == 0 ){
          arg_index++;
@@ -3468,8 +3597,9 @@ int main (int argc, char *argv[])
       printf("  -tolx <loose_tol tight_tol>      : loose and tight stopping tolerance for PFMG (default: 1e-09 1e-09)\n"); 
       printf("  -tolxc <tol_x>                   : stopping tolerance for PFMG on coarse grids (default: 1e-09)\n");
       printf("  -fmg <nfmg_Vcyc>                 : use FMG cycling, nfmg_Vcyc V-cycles at each fmg level\n");
+      printf("  -forcing                         : consider non-zero RHS b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))\n");
       printf("  -use_rand <bool>                 : if nonzero, then use a uniformly random value to initialize each\n");
-      printf("                                     time step.  if zero, then use the constant value 1.42 to initialize.\n");
+      printf("                                     time step for t>0.  if zero, then use a zero initial guess.\n");
       printf("                                     \n");
       printf("                                     \n");
       printf(" Spatial Coarsening related parameters  \n");
@@ -3696,6 +3826,9 @@ int main (int argc, char *argv[])
    
    /* Store whether we want a random or constant initial guess */
    app->use_rand = use_rand;
+   
+   /* Store whether we use a nonzero forcing term b(x,y,t) */
+   app->forcing = forcing;
    
    /* Store CFl that controls spatial coarsening */
    app->num_scoarsenCFL = num_scoarsenCFL;
