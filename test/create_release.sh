@@ -132,7 +132,7 @@ touch $destination_dir/$archive_name
 
 # Check size of archive greater than 10MB
 ArchiveSize=$(du -k $destination_dir/$archive_name | cut -f 1)
-if [ $ArchiveSize -le 10000 ] ; then 
+if [ $ArchiveSize -le 7000 ] ; then 
     echo "" 1>&2
     echo "Tried creating Braid source archive, but " 1>&2
     echo "$destination_dir/$archive_name is too small" 1>&2
