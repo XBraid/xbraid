@@ -71,10 +71,10 @@ and error in `diffusion2D.out` and `diffusion2D.err`.  The test `diffusion2D.sh`
 if `diffusion2D.err` is empty (nothing is written to standard error).
 
 The strategy for low level scripts like `diffusion2D.sh` is to run a sequence of 
-test drivers such as
+tests such as
       
-      $ mpirun -np 1 ../examples/drive-02 -pgrid 1 1 1 -nt 256
-      $ mpirun -np 4 ../examples/drive-02 -pgrid 1 1 4 -nt 256
+      $ mpirun -np 1 ../examples/ex-02 -pgrid 1 1 1 -nt 256
+      $ mpirun -np 4 ../examples/ex-02 -pgrid 1 1 4 -nt 256
 
 The output from the first mpirun test must then be written to files named
 

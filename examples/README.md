@@ -1,4 +1,4 @@
-## Compiling and running the examples
+## Examples: compiling and running
 <!--
   - Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
   - Produced at the Lawrence Livermore National Laboratory. Written by 
@@ -23,19 +23,20 @@
 
 Type
 
-      drive-0* -help
+      ex-0* -help
 
-for instructions on how to run any driver.
+for instructions on how to run any example.
 
 To run the examples, type
    
-      mpirun -np 4 drive-*  [args]
+      mpirun -np 4 ex-*  [args]
 
 
-1. drive-01 is the simplest example.  It implements a scalar ODE and can be
-  compiled and run with no outside dependencies.
+1. ex-01 is the simplest example.  It implements a scalar ODE and can be
+  compiled and run with no outside dependencies.  See Section (@ref exampleone)
+  for more discussion of this example.
 
-2. drive-02 implements the 2D heat equation on a regular grid.  You must have
+2. ex-02 implements the 2D heat equation on a regular grid.  You must have
    [hypre](https://computation-rnd.llnl.gov/linear_solvers/software.php)
    installed and these variables in examples/Makefile set correctly
     
@@ -43,62 +44,11 @@ To run the examples, type
           HYPRE_FLAGS = -I$(HYPRE_DIR)/include
           HYPRE_LIB = -L$(HYPRE_DIR)/lib -lHYPRE
 
+   Only implicit time stepping (backward Euler) is supported.  See Section
+   (@ref exampletwo) for more discussion of this example.  The driver
 
-3. drive-03 implements the 3D heat equation on a regular grid, and assumes 
-   [hypre](https://computation-rnd.llnl.gov/linear_solvers/software.php) 
-   is installed just like drive-02.
-
-4. drive-05 implements the 2D heat equation on a regular grid, but it
-   uses spatial coarsening.  This allows you to use explicit time stepping
-   on each Braid level, regardless of time step size.  It assumes 
-   [hypre](https://computation-rnd.llnl.gov/linear_solvers/software.php) 
-   is installed just like drive-02.
-
-5. drive-04 is a sophisticated test bed for various PDEs, mostly parabolic.  It relies
-   on the [mfem](https://code.google.com/p/mfem/)
-   package to create general finite element discretizations for the spatial problem.
-   Other packages must be installed in this order.
-     + Unpack and install [Metis](http://glaros.dtc.umn.edu/gkhome/metis/metis/overview)
-     + Unpack and install 
-       [hypre](https://computation-rnd.llnl.gov/linear_solvers/software.php) 
-     + Unpack and install 
-       [mfem.](https://code.google.com/p/mfem/)
-       Make the serial version of mfem first by only typing ``make``.
-       Then make sure to set these variables correctly in the mfem Makefile:
-       
-             USE_METIS_5 = YES
-             HYPRE_DIR  = where_ever_linear_solvers_is/hypre 
+          drivers/drive-02
    
-     + Make [GLVIS](https://code.google.com/p/glvis/), which needs serial mfem.
-       Set these variables in the glvis makefile
-            
-            MFEM_DIR   = mfem_location
-            MFEM_LIB   = -L$(MFEM_DIR) -lmfem
-
-     + Go back to the mfem directory and type
-     
-            make clean
-            make parallel
-
-     + Go to braid/examples and set these Makefile variables, 
-
-            METIS_DIR = ../../metis-5.1.0/lib
-            MFEM_DIR = ../../mfem
-            MFEM_FLAGS = -I$(MFEM_DIR)
-            MFEM_LIB = -L$(MFEM_DIR) -lmfem -L$(METIS_DIR) -lmetis
-       
-       then type
-            
-            make drive-04
-
-     + To run drive-04 and glvis, open two windows.  In one, start a glvis session
-      
-               ./glvis
-  
-         Then, in the other window, run drive-04
-      
-               mpirun -np ... drive-04 [args]
-         
-         Glvis will listen on a port to which drive-04 will dump visualization information.
-
+   is a more sophisticated version of this simple example that supports
+   explicit time stepping and spatial coarsening.
 

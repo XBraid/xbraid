@@ -50,6 +50,7 @@ esac
 # Setup
 share_dir="/usr/casc/hypre/braid/share/braid_manuals/"
 example_dir="../examples"
+driver_dir="../drivers"
 test_dir=`pwd`
 docs_dir=`cd ../docs; pwd`
 output_dir=`pwd`/$scriptname.dir

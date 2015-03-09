@@ -1,44 +1,47 @@
 # Begin Test 0
 
+  my_Access() called, iter= 9, level= 0
   time steps = 256
+  iterations           = 9
   number of levels     = 7
-  iterations           = 10
-spatial problem size       : 16 x 16
+ Fine level spatial problem size  : 17 x 17
 
 # Begin Test 1
 
+  my_Access() called, iter= 9, level= 0
   time steps = 256
+  iterations           = 9
   number of levels     = 7
-  iterations           = 10
-spatial problem size       : 16 x 16
+ Fine level spatial problem size  : 17 x 17
 
 # Begin Test 2
 
+  my_Access() called, iter= 8, level= 0
   time steps = 256
-  number of levels     = 7
   iterations           = 8
-spatial problem size       : 16 x 16
+  number of levels     = 7
+ Fine level spatial problem size  : 17 x 17
 
 # Begin Test 3
 
   my_Access() called, iter= 24, level= 0
   time steps = 128
-  number of levels     = 6
   iterations           = 24
+  number of levels     = 6
  Fine level spatial problem size  : 33 x 33
-  0   |  expl        9.82e-02    9.82e-02    1.45e-03    3.00e-01
-  1   |  expl        1.96e-01    1.96e-01    2.89e-03    1.50e-01
-  2   |  expl        1.96e-01    1.96e-01    5.78e-03    3.00e-01
-  3   |  expl        3.93e-01    3.93e-01    1.16e-02    1.50e-01
-  4   |  expl        3.93e-01    3.93e-01    2.31e-02    3.00e-01
-  5   |  expl        7.85e-01    7.85e-01    4.63e-02    1.50e-01
+  0   |  expl       9.82e-02    9.82e-02    1.45e-03    3.00e-01
+  1   |  expl       1.96e-01    1.96e-01    2.89e-03    1.50e-01
+  2   |  expl       1.96e-01    1.96e-01    5.78e-03    3.00e-01
+  3   |  expl       3.93e-01    3.93e-01    1.16e-02    1.50e-01
+  4   |  expl       3.93e-01    3.93e-01    2.31e-02    3.00e-01
+  5   |  expl       7.85e-01    7.85e-01    4.63e-02    1.50e-01
 
 # Begin Test 4
 
   my_Access() called, iter= 7, level= 0
   time steps = 32
-  number of levels     = 4
   iterations           = 7
+  number of levels     = 4
  Fine level spatial problem size  : 17 x 17
 
 # Begin Test 5
@@ -73,8 +76,8 @@ spatial problem size       : 16 x 16
   my_Access() called, iter= 7, level= 1
   my_Access() called, iter= 7, level= 0
   time steps = 32
-  number of levels     = 4
   iterations           = 7
+  number of levels     = 4
  Fine level spatial problem size  : 17 x 17
 
 # Begin Test 6
@@ -86,16 +89,16 @@ spatial problem size       : 16 x 16
  
   my_Access() called, iter= 7, level= 0
   time steps = 32
-  number of levels     = 4
   iterations           = 7
+  number of levels     = 4
  Fine level spatial problem size  : 17 x 17
 
 # Begin Test 8
  
   my_Access() called, iter= 7, level= 0
   time steps = 32
-  number of levels     = 4
   iterations           = 7
+  number of levels     = 4
  Fine level spatial problem size  : 17 x 17
 
 # Begin Test 9
@@ -259,121 +262,36 @@ Starting braid_TestBuf
    braid_TestBuf:   free(u)
    braid_TestBuf:   free(v)
 Finished braid_TestBuf: all tests passed successfully
-Starting braid_TestCoarsenRefine
-   braid_TestCoarsenRefine:   Starting Test 1
-   braid_TestCoarsenRefine:   u = init(t=0.00e+00)
-   braid_TestCoarsenRefine:   spatialnorm(u) 
-   braid_TestCoarsenRefine:   uc = coarsen(u)
-   braid_TestCoarsenRefine:   access(uc) 
-  my_Access() called, iter= 0, level= 1
-   braid_TestCoarsenRefine:   access(u) 
-  my_Access() called, iter= 0, level= 0
-   braid_TestCoarsenRefine:   actual output:   wrote u and spatially coarsened u 
-   braid_TestCoarsenRefine:   Starting Test 2
-   braid_TestCoarsenRefine:   v = clone(u)
-   braid_TestCoarsenRefine:   vc = coarsen(v)
-   braid_TestCoarsenRefine:   wc = clone(vc)
-   braid_TestCoarsenRefine:   wc = uc - wc 
-   braid_TestCoarsenRefine:   spatialnorm(wc)
-   braid_TestCoarsenRefine:   Test 2 Passed
-   braid_TestCoarsenRefine:   actual output:    spatialnorm(wc) = 0.00e+00 
-   braid_TestCoarsenRefine:   expected output:  spatialnorm(wc) = 0.0 
-   braid_TestCoarsenRefine:   Starting Test 3
-   braid_TestCoarsenRefine:   w = clone(u)
-   braid_TestCoarsenRefine:   free(u)
-   braid_TestCoarsenRefine:   free(v)
-   braid_TestCoarsenRefine:   v = refine(vc)
-   braid_TestCoarsenRefine:   u = refine(uc)
-   braid_TestCoarsenRefine:   v = u - v 
-   braid_TestCoarsenRefine:   spatialnorm(v)
-   braid_TestCoarsenRefine:   Test 3 Passed
-   braid_TestCoarsenRefine:   actual output:    spatialnorm(v) = 0.00e+00 
-   braid_TestCoarsenRefine:   expected output:  spatialnorm(v) = 0.0 
-   braid_TestCoarsenRefine:   Starting Test 4
-   braid_TestCoarsenRefine:   w = w - u 
-   braid_TestCoarsenRefine:   spatialnorm(w)
-   braid_TestCoarsenRefine:   actual output:    spatialnorm(w) = 1.87e-01 
-   braid_TestCoarsenRefine:   expected output:  For simple interpolation formulas
-   braid_TestCoarsenRefine:   free(u)
-   braid_TestCoarsenRefine:   free(v)
-   braid_TestCoarsenRefine:   free(w)
-   braid_TestCoarsenRefine:   free(uc)
-   braid_TestCoarsenRefine:   free(vc)
-   braid_TestCoarsenRefine:   free(wc)
-Finished braid_TestCoarsenRefine: all tests passed successfully
-Starting braid_TestCoarsenRefine
-   braid_TestCoarsenRefine:   Starting Test 1
-   braid_TestCoarsenRefine:   u = init(t=0.00e+00)
-   braid_TestCoarsenRefine:   spatialnorm(u) 
-   braid_TestCoarsenRefine:   uc = coarsen(u)
-   braid_TestCoarsenRefine:   access(uc) 
-  my_Access() called, iter= 0, level= 1
-   braid_TestCoarsenRefine:   access(u) 
-  my_Access() called, iter= 0, level= 0
-   braid_TestCoarsenRefine:   actual output:   wrote u and spatially coarsened u 
-   braid_TestCoarsenRefine:   Starting Test 2
-   braid_TestCoarsenRefine:   v = clone(u)
-   braid_TestCoarsenRefine:   vc = coarsen(v)
-   braid_TestCoarsenRefine:   wc = clone(vc)
-   braid_TestCoarsenRefine:   wc = uc - wc 
-   braid_TestCoarsenRefine:   spatialnorm(wc)
-   braid_TestCoarsenRefine:   Test 2 Passed
-   braid_TestCoarsenRefine:   actual output:    spatialnorm(wc) = 0.00e+00 
-   braid_TestCoarsenRefine:   expected output:  spatialnorm(wc) = 0.0 
-   braid_TestCoarsenRefine:   Starting Test 3
-   braid_TestCoarsenRefine:   w = clone(u)
-   braid_TestCoarsenRefine:   free(u)
-   braid_TestCoarsenRefine:   free(v)
-   braid_TestCoarsenRefine:   v = refine(vc)
-   braid_TestCoarsenRefine:   u = refine(uc)
-   braid_TestCoarsenRefine:   v = u - v 
-   braid_TestCoarsenRefine:   spatialnorm(v)
-   braid_TestCoarsenRefine:   Test 3 Passed
-   braid_TestCoarsenRefine:   actual output:    spatialnorm(v) = 0.00e+00 
-   braid_TestCoarsenRefine:   expected output:  spatialnorm(v) = 0.0 
-   braid_TestCoarsenRefine:   Starting Test 4
-   braid_TestCoarsenRefine:   w = w - u 
-   braid_TestCoarsenRefine:   spatialnorm(w)
-   braid_TestCoarsenRefine:   actual output:    spatialnorm(w) = 4.98e-01 
-   braid_TestCoarsenRefine:   expected output:  For simple interpolation formulas
-   braid_TestCoarsenRefine:   free(u)
-   braid_TestCoarsenRefine:   free(v)
-   braid_TestCoarsenRefine:   free(w)
-   braid_TestCoarsenRefine:   free(uc)
-   braid_TestCoarsenRefine:   free(vc)
-   braid_TestCoarsenRefine:   free(wc)
-Finished braid_TestCoarsenRefine: all tests passed successfully
 
 # Begin Test 10
 
   my_Access() called, iter= 0, level= 0
   time steps = 128
-  number of levels     = 1
   iterations           = 0
+  number of levels     = 1
  Fine level spatial problem size  : 17 x 17
 
 # Begin Test 11
 
   my_Access() called, iter= 8, level= 0
   time steps = 128
-  number of levels     = 2
   iterations           = 8
+  number of levels     = 2
  Fine level spatial problem size  : 17 x 17
 
 # Begin Test 12
 
   my_Access() called, iter= 8, level= 0
   time steps = 128
-  number of levels     = 8
   iterations           = 8
+  number of levels     = 8
  Fine level spatial problem size  : 17 x 17
 
 # Begin Test 13
 
   my_Access() called, iter= 8, level= 0
   time steps = 128
-  number of levels     = 2
   iterations           = 8
+  number of levels     = 2
  Fine level spatial problem size  : 17 x 17
-
 

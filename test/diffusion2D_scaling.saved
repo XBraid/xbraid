@@ -1,126 +1,144 @@
 # Begin Test 0 -- Begin 2-level FCF-relaxation tests
   
+  my_Access() called, iter= 7, level= 0
   time steps = 32
-  number of levels     = 2
   iterations           = 7
-spatial problem size       : 16 x 16
+  number of levels     = 2
+ Fine level spatial problem size  : 17 x 17
 
 # Begin Test 1
   
+  my_Access() called, iter= 7, level= 0
   time steps = 128
+  iterations           = 7
   number of levels     = 2
-  iterations           = 8
-spatial problem size       : 32 x 32
+ Fine level spatial problem size  : 33 x 33
 
 # Begin Test 2
   
+  my_Access() called, iter= 7, level= 0
   time steps = 512
+  iterations           = 7
   number of levels     = 2
-  iterations           = 8
-spatial problem size       : 64 x 64
+ Fine level spatial problem size  : 65 x 65
 
 # Begin Test 3 -- Begin multilvel-level V-cycle FCF-relaxation tests
   
+  my_Access() called, iter= 7, level= 0
   time steps = 32
-  number of levels     = 4
   iterations           = 7
-spatial problem size       : 16 x 16
+  number of levels     = 4
+ Fine level spatial problem size  : 17 x 17
 
 # Begin Test 4
   
+  my_Access() called, iter= 8, level= 0
   time steps = 128
+  iterations           = 8
   number of levels     = 6
-  iterations           = 9
-spatial problem size       : 32 x 32
+ Fine level spatial problem size  : 33 x 33
 
 # Begin Test 5
   
+  my_Access() called, iter= 9, level= 0
   time steps = 512
-  number of levels     = 8
   iterations           = 9
-spatial problem size       : 64 x 64
+  number of levels     = 8
+ Fine level spatial problem size  : 65 x 65
 
 # Begin Test 6 -- Begin multilvel-level F-cycle FCF-relaxation tests
-  
+
+  my_Access() called, iter= 7, level= 0
   time steps = 32
-  number of levels     = 4
   iterations           = 7
-spatial problem size       : 16 x 16
+  number of levels     = 4
+ Fine level spatial problem size  : 17 x 17
 
 # Begin Test 7
   
+  my_Access() called, iter= 7, level= 0
   time steps = 128
+  iterations           = 7
   number of levels     = 6
-  iterations           = 8
-spatial problem size       : 32 x 32
+ Fine level spatial problem size  : 33 x 33
 
 # Begin Test 8
   
+  my_Access() called, iter= 7, level= 0
   time steps = 512
+  iterations           = 7
   number of levels     = 8
-  iterations           = 8
-spatial problem size       : 64 x 64
+ Fine level spatial problem size  : 65 x 65
 
 # Begin Test 9-- Begin 2-level F-relaxation tests
   
+  my_Access() called, iter= 10, level= 0
   time steps = 32
-  number of levels     = 2
   iterations           = 10
-spatial problem size       : 16 x 16
+  number of levels     = 2
+ Fine level spatial problem size  : 17 x 17
 
 # Begin Test 10
   
+  my_Access() called, iter= 10, level= 0
   time steps = 128
+  iterations           = 10
   number of levels     = 2
-  iterations           = 11
-spatial problem size       : 32 x 32
+ Fine level spatial problem size  : 33 x 33
 
 # Begin Test 11
   
+  my_Access() called, iter= 10, level= 0
   time steps = 512
+  iterations           = 10
   number of levels     = 2
-  iterations           = 11
-spatial problem size       : 64 x 64
+ Fine level spatial problem size  : 65 x 65
 
 # Begin Test 12-- Begin multilvel-level V-cycle F-relaxation tests
   
+  my_Access() called, iter= 11, level= 0
   time steps = 32
+  iterations           = 11
   number of levels     = 4
-  iterations           = 12
-spatial problem size       : 16 x 16
+ Fine level spatial problem size  : 17 x 17
 
 # Begin Test 13
   
+  my_Access() called, iter= 17, level= 0
   time steps = 128
+  iterations           = 17
   number of levels     = 6
-  iterations           = 18
-spatial problem size       : 32 x 32
+ Fine level spatial problem size  : 33 x 33
 
 # Begin Test 14
   
+  my_Access() called, iter= 23, level= 0
   time steps = 512
+  iterations           = 23
   number of levels     = 8
-  iterations           = 24
-spatial problem size       : 64 x 64
+ Fine level spatial problem size  : 65 x 65
 
 # Begin Test 15 -- Begin multilvel-level F-cycle F-relaxation tests
-  
+
+  my_Access() called, iter= 10, level= 0
   time steps = 32
-  number of levels     = 4
   iterations           = 10
-spatial problem size       : 16 x 16
+  number of levels     = 4
+ Fine level spatial problem size  : 17 x 17
 
 # Begin Test 16
   
+  my_Access() called, iter= 10, level= 0
   time steps = 128
-  number of levels     = 6
   iterations           = 10
-spatial problem size       : 32 x 32
+  number of levels     = 6
+ Fine level spatial problem size  : 33 x 33
 
 # Begin Test 17
   
+  my_Access() called, iter= 10, level= 0
   time steps = 512
-  number of levels     = 8
   iterations           = 10
-spatial problem size       : 64 x 64
+  number of levels     = 8
+ Fine level spatial problem size  : 65 x 65
 

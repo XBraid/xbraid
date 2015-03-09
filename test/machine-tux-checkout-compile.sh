@@ -49,6 +49,7 @@ esac
 
 # Setup
 example_dir="../examples"
+driver_dir="../drivers"
 test_dir=`pwd`
 source_dir=`cd ..; pwd`
 output_dir=`pwd`/$scriptname.dir

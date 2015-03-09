@@ -56,6 +56,7 @@ mkdir -p $output_dir
 TESTS=( "diffusion2D.sh " \
         "diffusion2D_scaling.sh " \
         "diffusion2D_check_rnorm.sh " \
+        "compare_examples_drivers.sh " \
         "machine-tux-checkout-compile.sh " \
         "docs.sh" \
         "memcheck-tux-jacob.sh ")

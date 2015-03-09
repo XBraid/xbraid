@@ -423,24 +423,28 @@ braid_Destroy(braid_Core  core)
 braid_Int
 braid_PrintStats(braid_Core  core)
 {
-   MPI_Comm      comm_world = _braid_CoreElt(core, comm_world);
-   braid_Real    tstart     = _braid_CoreElt(core, tstart);
-   braid_Real    tstop      = _braid_CoreElt(core, tstop);
-   braid_Int     ntime      = _braid_CoreElt(core, ntime);
-   braid_Int     max_levels = _braid_CoreElt(core, max_levels);
-   braid_Int     min_coarse = _braid_CoreElt(core, min_coarse);
-   braid_Real    tol        = _braid_CoreElt(core, tol);
-   braid_Int     rtol       = _braid_CoreElt(core, rtol);
-   braid_Int    *nrels      = _braid_CoreElt(core, nrels);
-   /*braid_Int    *cfactors   = _braid_CoreElt(core, cfactors);*/
-   braid_Int     max_iter   = _braid_CoreElt(core, max_iter);
-   braid_Int     niter      = _braid_CoreElt(core, niter);
-   braid_Real    rnorm      = _braid_CoreElt(core, rnorm);
-   braid_Int     nlevels    = _braid_CoreElt(core, nlevels);
-   braid_Int     tnorm      = _braid_CoreElt(core, tnorm); 
-   _braid_Grid **grids      = _braid_CoreElt(core, grids);
+   MPI_Comm      comm_world   = _braid_CoreElt(core, comm_world);
+   braid_Real    tstart       = _braid_CoreElt(core, tstart);
+   braid_Real    tstop        = _braid_CoreElt(core, tstop);
+   braid_Int     ntime        = _braid_CoreElt(core, ntime);
+   braid_Int     max_levels   = _braid_CoreElt(core, max_levels);
+   braid_Int     min_coarse   = _braid_CoreElt(core, min_coarse);
+   braid_Real    tol          = _braid_CoreElt(core, tol);
+   braid_Int     rtol         = _braid_CoreElt(core, rtol);
+   braid_Int    *nrels        = _braid_CoreElt(core, nrels);
+   /*braid_Int    *cfactors     = _braid_CoreElt(core, cfactors);*/
+   braid_Int     max_iter     = _braid_CoreElt(core, max_iter);
+   braid_Int     niter        = _braid_CoreElt(core, niter);
+   braid_Real    rnorm        = _braid_CoreElt(core, rnorm);
+   braid_Int     nlevels      = _braid_CoreElt(core, nlevels);
+   braid_Int     tnorm        = _braid_CoreElt(core, tnorm); 
+   braid_Int     fmg          = _braid_CoreElt(core, fmg); 
+   braid_Int     nfmg_Vcyc    = _braid_CoreElt(core, nfmg_Vcyc); 
+   braid_Int     access_level = _braid_CoreElt(core, access_level); 
+   braid_Int     print_level  = _braid_CoreElt(core, print_level); 
+   _braid_Grid **grids        = _braid_CoreElt(core, grids);
 
-   braid_Real    globaltime = _braid_CoreElt(core, globaltime);
+   braid_Real    globaltime   = _braid_CoreElt(core, globaltime);
 
    braid_Int     myid, level;
 
@@ -452,20 +456,26 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  stop time  = %e\n", tstop);
       _braid_printf("  time steps = %d\n", ntime);
       _braid_printf("\n");
-      _braid_printf("  max number of levels = %d\n", max_levels);
-      _braid_printf("  min coarse           = %d\n", min_coarse);
-      _braid_printf("  number of levels     = %d\n", nlevels);
       _braid_printf("  stopping tolerance   = %e\n", tol);
-      _braid_printf("  relative tolerance?  = %d\n", rtol);
+      _braid_printf("  use relative tol?    = %d\n", rtol);
       _braid_printf("  max iterations       = %d\n", max_iter);
       _braid_printf("  iterations           = %d\n", niter);
       _braid_printf("  residual norm        = %e\n", rnorm);
-      if(tnorm == 1)
-      {  _braid_printf("                        --> 1-norm TemporalNorm \n"); }
-      else if(tnorm == 2)
-      {  _braid_printf("                        --> 2-norm TemporalNorm \n"); }
-      else if(tnorm == 3)
-      {  _braid_printf("                        --> Inf-norm TemporalNorm \n"); }
+      if(tnorm == 1){
+         _braid_printf("                        --> 1-norm TemporalNorm \n\n"); 
+      }
+      else if(tnorm == 2){
+         _braid_printf("                        --> 2-norm TemporalNorm \n\n"); 
+      }
+      else if(tnorm == 3){
+         _braid_printf("                        --> Inf-norm TemporalNorm \n\n"); 
+      }
+      _braid_printf("  use fmg?, nfmg_Vcyc  = %d, %d\n", fmg, nfmg_Vcyc);
+      _braid_printf("  access_level         = %d\n", access_level);
+      _braid_printf("  print_level          = %d\n\n", print_level);
+      _braid_printf("  max number of levels = %d\n", max_levels);
+      _braid_printf("  min coarse           = %d\n", min_coarse);
+      _braid_printf("  number of levels     = %d\n", nlevels);
       _braid_printf("\n");
       _braid_printf("  level   time-pts   cfactor   nrelax\n", globaltime);
       for (level = 0; level < nlevels-1; level++)

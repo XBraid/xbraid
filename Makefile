@@ -39,7 +39,7 @@ BRAID_FILES = util.c braid.c _braid.c braid_test.c braid_status.c
 
 BRAID_OBJ = $(BRAID_FILES:.c=.o)
 
-.PHONY: examples
+.PHONY: examples drivers
 .SUFFIXES:
 .SUFFIXES: .c .o
 
@@ -52,11 +52,15 @@ libbraid.a: $(BRAID_HEADERS) $(BRAID_OBJ)
 	ar cruv libbraid.a $(BRAID_OBJ)
 	ranlib libbraid.a
 
-all: libbraid.a examples
+all: libbraid.a examples drivers
 
 examples: libbraid.a
 	cd examples; $(MAKE)
 
+drivers: libbraid.a
+	cd drivers; $(MAKE)
+
 clean:
 	rm -f *.o libbraid.a
 	cd examples; $(MAKE) clean
+	cd drivers; $(MAKE) clean

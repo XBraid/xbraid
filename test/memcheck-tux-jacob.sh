@@ -64,8 +64,8 @@ esac
 
 
 # Setup
-echo "Compiling regression test drivers"
 example_dir="../examples"
+driver_dir="../drivers"
 test_dir=`pwd`
 output_dir=`pwd`/$scriptname.dir
 rm -fr $output_dir
@@ -73,23 +73,27 @@ mkdir -p $output_dir
 
 
 # compile the regression test drivers against valgrind 
+echo "Compiling regression test drivers"
 cd $example_dir
+make clean
+make valgrind=yes
+cd $driver_dir
 make clean
 make valgrind=yes
 cd $test_dir
 
 # Run the following regression tests
 valgrind_opts="--log-fd=1 --leak-check=full"
-TESTS=( "MPIWRAP_DEBUG=quiet $RunString -np 1 valgrind $valgrind_opts $example_dir/drive-05 -pgrid 1 1 1 -nt 64 -ml 15 " \
-        "MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $example_dir/drive-05 -pgrid 2 2 1 -nt 64 -ml 15 " \
-        "MPIWRAP_DEBUG=quiet $RunString -np 1 valgrind $valgrind_opts $example_dir/drive-05 -pgrid 1 1 1 -nt 64 -ml 15 -scoarsen 1" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $example_dir/drive-05 -pgrid 2 2 1 -nt 64 -ml 15 -scoarsen 1" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 2 valgrind $valgrind_opts $example_dir/drive-05 -pgrid 1 1 2 -nt 64 -cf 4 -ml 15 -fmg 1 " \
-        "MPIWRAP_DEBUG=quiet $RunString -np 8 valgrind $valgrind_opts $example_dir/drive-05 -pgrid 2 2 2 -nt 64 -cf 4 -ml 15 -fmg 1 " \
-        "MPIWRAP_DEBUG=quiet $RunString -np 2 valgrind $valgrind_opts $example_dir/drive-05 -pgrid 1 1 2 -nt 64 -cf 4 -ml 15 -fmg 1 -scoarsen 2" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 8 valgrind $valgrind_opts $example_dir/drive-05 -pgrid 2 2 2 -nt 64 -cf 4 -ml 15 -fmg 1 -scoarsen 2" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 2 valgrind $valgrind_opts $example_dir/drive-05 -pgrid 1 1 2 -nt 64 -cf 4 -ml 15 -fmg 1 -access_level 2" )
-        #"MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $example_dir/drive-05 -pgrid 1 1 4 -nt 32 -cf 4 -ml 15 -fmg 1 " )
+TESTS=( "MPIWRAP_DEBUG=quiet $RunString -np 1 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 1 1 1 -nt 64 -ml 15 " \
+        "MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 2 2 1 -nt 64 -ml 15 " \
+        "MPIWRAP_DEBUG=quiet $RunString -np 1 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 1 1 1 -nt 64 -ml 15 -scoarsen 1" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 2 2 1 -nt 64 -ml 15 -scoarsen 1" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 2 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 1 1 2 -nt 64 -cf 4 -ml 15 -fmg 1 " \
+        "MPIWRAP_DEBUG=quiet $RunString -np 8 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 2 2 2 -nt 64 -cf 4 -ml 15 -fmg 1 " \
+        "MPIWRAP_DEBUG=quiet $RunString -np 2 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 1 1 2 -nt 64 -cf 4 -ml 15 -fmg 1 -scoarsen 2" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 8 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 2 2 2 -nt 64 -cf 4 -ml 15 -fmg 1 -scoarsen 2" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 2 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 1 1 2 -nt 64 -cf 4 -ml 15 -fmg 1 -access_level 2" )
+        #"MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 1 1 4 -nt 32 -cf 4 -ml 15 -fmg 1 " )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 

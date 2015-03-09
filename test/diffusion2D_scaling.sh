@@ -69,6 +69,7 @@ esac
 
 # Setup
 example_dir="../examples"
+driver_dir="../drivers"
 test_dir=`pwd`
 output_dir=`pwd`/$scriptname.dir
 rm -fr $output_dir
@@ -80,30 +81,33 @@ echo "Compiling regression test drivers"
 cd $example_dir
 make clean
 make 
+cd $driver_dir
+make clean
+make 
 cd $test_dir
 
 
 # Run the following regression tests
 # These tests run three consecutive refinements for various solver configurations for a mini-scaling
 # study.  These tests mirror Table 1 from the SISC paper.
-TESTS=( "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 32  -nx 16 16 -nu 1 -nu0 1 -ml 2 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 32 32 -nu 1 -nu0 1 -ml 2 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 512 -nx 64 64 -nu 1 -nu0 1 -ml 2 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 32  -nx 16 16 -nu 1 -nu0 1 -ml 15 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 32 32 -nu 1 -nu0 1 -ml 15 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 512 -nx 64 64 -nu 1 -nu0 1 -ml 15 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 32  -nx 16 16 -nu 1 -nu0 1 -ml 15 -fmg" \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 32 32 -nu 1 -nu0 1 -ml 15 -fmg" \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 512 -nx 64 64 -nu 1 -nu0 1 -ml 15 -fmg"\
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 32  -nx 16 16 -nu 0 -nu0 0 -ml 2 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 32 32 -nu 0 -nu0 0 -ml 2 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 512 -nx 64 64 -nu 0 -nu0 0 -ml 2 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 32  -nx 16 16 -nu 0 -nu0 0 -ml 15 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 32 32 -nu 0 -nu0 0 -ml 15 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 512 -nx 64 64 -nu 0 -nu0 0 -ml 15 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 32  -nx 16 16 -nu 0 -nu0 0 -ml 15 -fmg" \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 32 32 -nu 0 -nu0 0 -ml 15 -fmg" \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 512 -nx 64 64 -nu 0 -nu0 0 -ml 15 -fmg" )
+TESTS=( "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 32  -nx 17 17 -nu 1 -nu0 1 -ml 2 " \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 33 33 -nu 1 -nu0 1 -ml 2 " \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 512 -nx 65 65 -nu 1 -nu0 1 -ml 2 " \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 32  -nx 17 17 -nu 1 -nu0 1 -ml 15 " \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 33 33 -nu 1 -nu0 1 -ml 15 " \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 512 -nx 65 65 -nu 1 -nu0 1 -ml 15 " \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 32  -nx 17 17 -nu 1 -nu0 1 -ml 15 -fmg 1" \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 33 33 -nu 1 -nu0 1 -ml 15 -fmg 1" \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 512 -nx 65 65 -nu 1 -nu0 1 -ml 15 -fmg 1"\
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 32  -nx 17 17 -nu 0 -nu0 0 -ml 2 " \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 33 33 -nu 0 -nu0 0 -ml 2 " \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 512 -nx 65 65 -nu 0 -nu0 0 -ml 2 " \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 32  -nx 17 17 -nu 0 -nu0 0 -ml 15 " \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 33 33 -nu 0 -nu0 0 -ml 15 " \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 512 -nx 65 65 -nu 0 -nu0 0 -ml 15 " \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 32  -nx 17 17 -nu 0 -nu0 0 -ml 15 -fmg 1" \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 33 33 -nu 0 -nu0 0 -ml 15 -fmg 1" \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 512 -nx 65 65 -nu 0 -nu0 0 -ml 15 -fmg 1" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 
@@ -118,7 +122,7 @@ TESTS=( "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 32  -nx 16 16 -
 # The unfiltered output is the direct output of the script, whereas std.out.*
 # is filtered by a grep for the lines that are to be checked.  
 #
-lines_to_check="^  time steps.*|^  number of levels.*|^  iterations.*|^spatial problem size.*|.*  expl.*|^  my_Access.*|.*braid_Test.*"
+lines_to_check="^  time steps.*|^  number of levels.*|^  iterations.*|^ Fine level spatial problem size.*|.*  expl.*|^  my_Access.*|.*braid_Test.*"
 #
 # Then, each std.out.num is compared against stored correct output in 
 # $scriptname.saved.num, which is generated by splitting $scriptname.saved

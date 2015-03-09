@@ -40,7 +40,7 @@
 
 ##
 # Set these variables to what you want
-this_version="1.0 beta"
+this_version="1.1 beta"
 destination_dir="/usr/casc/hypre/braid/share/braid_tarballs"
 braid_version_to_checkout='HEAD'
 temp_dir="$HOME/braid_temp"
@@ -81,8 +81,8 @@ touch $destination_dir/$archive_name
    make clean
 
    ##
-   # clean up examples
-   cd examples
+   # clean up drivers
+   cd drivers
    rm -rf hyperdrive
    cd ../
 

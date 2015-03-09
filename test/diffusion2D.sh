@@ -64,6 +64,7 @@ esac
 
 # Setup
 example_dir="../examples"
+driver_dir="../drivers"
 test_dir=`pwd`
 output_dir=`pwd`/$scriptname.dir
 rm -fr $output_dir
@@ -75,24 +76,27 @@ echo "Compiling regression test drivers"
 cd $example_dir
 make clean
 make 
+cd $driver_dir
+make clean
+make 
 cd $test_dir
 
 
 # Run the following regression tests 
-TESTS=( "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 " \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -forcing" \
-        "$RunString -np 4 $example_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -fmg " \
-        "$RunString -np 8 $example_dir/drive-05 -pgrid 1 1 8 -ml 15 -nt 128 -nx 33 33 -mi 100 -expl -scoarsen 1 "\
-        "$RunString -np 2 $example_dir/drive-05 -pgrid 1 1 2 -nt 32 -ml 15 -access_level 1 " \
-        "$RunString -np 2 $example_dir/drive-05 -pgrid 1 1 2 -nt 32 -ml 15 -access_level 2 " \
-        "$RunString -np 2 $example_dir/drive-05 -pgrid 1 1 2 -nt 32 -ml 15 -print_level 0 " \
-        "$RunString -np 2 $example_dir/drive-05 -pgrid 1 1 2 -nt 32 -ml 15 -print_level 1 " \
-        "$RunString -np 2 $example_dir/drive-05 -pgrid 1 1 2 -nt 32 -ml 15 -print_level 1 -fmg 2" \
-        "$RunString -np 1 $example_dir/drive-05 -pgrid 1 1 1 -run_wrapper_tests " \
-        "$RunString -np 4 $example_dir/drive-05 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 65 " \
-        "$RunString -np 4 $example_dir/drive-05 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 64 " \
-        "$RunString -np 4 $example_dir/drive-05 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 1 " \
-        "$RunString -np 4 $example_dir/drive-05 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 4 -cfl 0.30 -nu0 1 -nu 1 -mc 16 " )
+TESTS=( "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 " \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -forcing" \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1" \
+        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -ml 15 -nt 128 -nx 33 33 -mi 100 -expl -scoarsen 1 "\
+        "$RunString -np 2 $driver_dir/drive-02 -pgrid 1 1 2 -nt 32 -ml 15 -access_level 1 " \
+        "$RunString -np 2 $driver_dir/drive-02 -pgrid 1 1 2 -nt 32 -ml 15 -access_level 2 " \
+        "$RunString -np 2 $driver_dir/drive-02 -pgrid 1 1 2 -nt 32 -ml 15 -print_level 0 " \
+        "$RunString -np 2 $driver_dir/drive-02 -pgrid 1 1 2 -nt 32 -ml 15 -print_level 1 " \
+        "$RunString -np 2 $driver_dir/drive-02 -pgrid 1 1 2 -nt 32 -ml 15 -print_level 1 -fmg 2" \
+        "$RunString -np 1 $driver_dir/drive-02 -pgrid 1 1 1 -run_wrapper_tests " \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 65 " \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 64 " \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 1 " \
+        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 4 -cfl 0.30 -nu0 1 -nu 1 -mc 16 " )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 
