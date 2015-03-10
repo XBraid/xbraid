@@ -357,48 +357,53 @@ Finally, to run ex-01, type
 This will run ex-01. See examples/ex-0* for more extensive examples.
 
 
-# Two-Dimensional Heat Equation Example {#exampletwo}
-
-## User Defined Structures and Wrappers
+# Two-Dimensional Heat Equation {#exampletwo}
 
 In this example, we assume familiarity with @ref exampleone and describe the
 major ways in which this example differs.  This example is a full space-time
-parallel example, as opposed to @ref exampleone which implements only a scalar
-ode for one degree-of-freedom in space.  We solve the heat equation
+parallel example, as opposed to @ref exampleone, which implements only a scalar
+ode for one degree-of-freedom in space.  We solve the heat equation in 2D,
 
-\f[ \delta/\delta_t \; u(x,y,t) = \Delta u(x,y,t) + g(x,y,t). \f]
+\f[ \delta/\delta_t \; u(x,y,t) = \Delta\, u(x,y,t) + g(x,y,t). \f]
 
-For the spatial parallelism, we rely on the
-[hypre](https://computation-rnd.llnl.gov/linear_solvers/software.php) package
-where we use the SemiStruct interface to define our spatial discretization
-stencil and form our time stepping matrices, i.e., the backward Euler method.
-Please the hypre manual and examples for more information on the SemiStruct interface,
-although the hypre specific calls have mostly been abstracted away in the code for this 
-example.  
+For spatial parallelism, we rely on the
+[hypre](https://computation.llnl.gov/project/linear_solvers/software.php)
+package where the SemiStruct interface is used to define our spatial
+discretization stencil and form our time stepping scheme, the backward Euler
+method.  The spatial discretization is just the standard 5-point finite
+difference stencil (\f$[-1;-1,4,-1;-1]\f$), scaled by mesh widths, and the PFMG
+solver is used for the solves required by backward Euler.  Please see the hypre
+manual and examples for more information on the SemiStruct interface and PFMG.
+Although, the hypre specific calls have mostly been abstracted away in the code
+for this example, and so it is not necessary to be familiar with the SemiStruct
+interface for the purposes of understanding this example.
 
-This example consists of three files.
+This example consists of three files and two executables.
 
-   - examples/ex-02-serial.c  This file compiles into its own executable
-     ``ex-02-serial`` and represents a simple user application.  This file
+   - examples/ex-02-serial.c:  This file compiles into its own executable
+     ``ex-02-serial`` and represents a simple example user application.  This file
      supports only parallelism in space and represents a basic approach to
      doing efficient sequential time stepping with the backward Euler scheme.
      Note that the hypre solver used (PFMG) to carry out the time stepping is
      highly efficient.
 
-   - examples/ex-02.c  This file compiles into its own executable
-     ``ex-02`` and represents a basic example of wrapping a user application.
-     We will go over the wrappers below.
+   - examples/ex-02.c:  This file compiles into its own executable
+     ``ex-02`` and represents a basic example of wrapping the user application 
+     ``ex-02-serial``.  We will go over the wrappers below.
 
-   - ex-02-lib.c  This file contains shared functions used by the time-serial
+   - ex-02-lib.c:  This file contains shared functions used by the time-serial
      version and the time-parallel version.  This is where most of the hypre
      specific calls reside.  This file provides the basic functionality of this
-     problem.  For instance, ``take_step(u, tstart, tstop, ...)`` provides the
-     time stepping functionality for moving the vector ``u`` from time ``tstart``
-     to time ``tstop`` and ``setUpImplicitMatrix(...)`` constructs the backward
-     Euler time stepper based on the hypre PFMG solver.
+     problem.  For instance, ``take_step(u, tstart, tstop, ...)`` carries out 
+     a step, moving the vector ``u`` from time ``tstart`` to time ``tstop`` 
+     and ``setUpImplicitMatrix(...)`` constructs the backward Euler time stepper 
+     based on the hypre PFMG solver.
+
+
+## User Defined Structures and Wrappers
 
 We now discuss in more detail the important data structures and wrapper
-routines in examples/ex-02.c.  The actual code for this example is quite simple
+routines in ``examples/ex-02.c``.  The actual code for this example is quite simple
 and it is recommended to read through it after this overview.
 
 The two data structures are:
@@ -406,20 +411,20 @@ The two data structures are:
    is passed to every user function.  This structure holds everything that the
    user will need to carry out a simulation.  One important structure contained in
    the ``app`` is the ``simulation_manager``.  This is a structure native to the user
-   code, ex-02-lib.c.  This structure conveniently holds the information needed by
+   code, ``ex-02-lib.c``.  This structure conveniently holds the information needed by
    the user code to carry out a time step.  For instance, 
 
         app->man->A
 
-   is the time stepping matrix
+   is the time stepping matrix,
       
         app->man->solver
 
-   is the hypre PFMG solver obj(one per time level)ect    
+   is the hypre PFMG solver object,
       
         app->man->dt
 
-   is the current time step.  The app is   
+   is the current time step.  The app is defined as 
       
   
       typedef struct _braid_App_struct {
@@ -434,18 +439,18 @@ The two data structures are:
          double               *dt_A;             /* array of time step sizes, size nA, one per level*/
          HYPRE_StructSolver   *solver;           /* array of PFMG solvers, size nA, one per level*/
          int                   use_rand;         /* binary value, use random or zero initial guess */
-         int                  *runtime_max_iter; /* runtime info for number of spatial MG iterations*/
-         int                  *max_iter_x;       /* spatial MG maximum iterations limits */
+         int                  *runtime_max_iter; /* runtime info for number of PFMG iterations*/
+         int                  *max_iter_x;       /* maximum iteration limits for PFMG */
       } my_App;
 
-   The app contains all the information needed to take a time step 
-   with the user code for an arbitrary time step size.  See the Phi function below
+   The app contains all the information needed to take a time step with the
+   user code for an arbitrary time step size.  See the ``Phi`` function below
    for more detail.
 
-2. **Vector**: this defines (roughly) a state vector at a certain time value.  
+2. **Vector**: this defines a state vector at a certain time value.  
   Here, the vector is a structure containing a native hypre datatype, the
-  SStructVector, which describes a vector over the spatial grid. Note that
-  my_Vector is equivalen to braid_Vector.
+  ``SStructVector``, which describes a vector over the spatial grid. Note that
+  ``my_Vector`` is used to define ``braid_Vector``.
 
        typedef struct _braid_Vector_struct {
           HYPRE_SStructVector   x;
@@ -455,25 +460,21 @@ The two data structures are:
 The user must also define a few wrapper routines.  Note, that the app structure
 is the first argument to every function.
 
-The code that is specific to the user's application comes directly from the
-existing serial simulation code.  If you compare ``ex-02-serial.c`` and
-``ex-02.c``, you will see that the code setting up the user's data structures and
-functions are simply lifted from the serial simulation.
-
-
 1. **Phi**: This function tells XBraid how to take a time step, and is the core
-   user routine.  The user must advance the vector ``u`` from time ``tstart`` to time
+   user routine.  This function advances the vector ``u`` from time ``tstart`` to time
    ``tstop``.  A few important things to note are
 
   + The time values are given to the user through the ``status`` structure
-    and associated Get routines.  
+    and associated ``Get`` routines.  
   
   + The basic strategy is to see if a matrix and solver already exist for 
-  this \f$dt\f$ value.  If not, generate a new matrix and solver and store in
-  the ``app`` structure.  If they do already exist, then re-use the data.  The user
-  time stepping routine relies on a few crucial data members ``man->dt``, ``man->A``
-  and ``man-solver`` which we overwrite with the correct information for this step.  
-  Then, we pass ``man`` to the user function ``take_step()`` which evolves a vector.
+  this \f$dt\f$ value.  If not, generate a new matrix and solver and store them in
+  the ``app`` structure.  If they do already exist, then re-use the data.  
+  
+  + To carry out a step, the user routines from ``ex-02-lib.c`` rely on a few
+  crucial data members ``man->dt``, ``man->A`` and ``man-solver``, which we
+  overwrite with the correct information for the step in question.  Then, we
+  pass ``man`` to the user function ``take_step()`` which evolves a vector.
 
   + The forcing term \f$ g_i \f$ is wrapped into the ``take_step``
     function.  Thus, \f$\Phi(u_i) \rightarrow u_{i+1} \f$.  
@@ -529,14 +530,19 @@ functions are simply lifted from the serial simulation.
 2. There are other functions, **Init**, **Clone**, **Free**, **Sum**,
 **SpatialNorm**, **Access**, **BufSize**, **BufPack** and **BufUnpack**,
 which also must be written.  But for this example, they are simple.  
-See ex-02.c.
+See ``ex-02.c``.
 
 ## Running XBraid
 
-To initialize and run XBraid, the procedure is similar to  
-@ref exampleone.  Only here, we have to both initialize the 
-user code and XBraid.  So, looking at the function ``main()`` in ex-02.c,
-we need to initialize the user's simulation manager with code like
+To initialize and run XBraid, the procedure is similar to  @ref exampleone.
+Only here, we have to both initialize the user code and XBraid.  The code that
+is specific to the user's application comes directly from the existing serial
+simulation code.  If you compare ``ex-02-serial.c`` and ``ex-02.c``, you will
+see that most of the code setting up the user's data structures and defining
+the wrapper functions are simply lifted from the serial simulation.
+
+Taking excerpts from the function ``main()`` in ex-02.c,
+we first initialize the user's simulation manager with code like
       
       ...
       app->man->px    = 1;   /* my processor number in the x-direction */
@@ -592,10 +598,10 @@ Finally, to run ex-02, type
 
 As a simple example, try
 
-   mpirun -np 8 ex-02 -pgrid 2 2 2 -nt 256
+    mpirun -np 8 ex-02 -pgrid 2 2 2 -nt 256
 
-For a description of a more comprehensive study using ex-02, see @ref
-#twodheat.
+For a description of a more comprehensive study using ``ex-02``, see 
+@ref twodheat.
 
 
 # Running and Testing XBraid

@@ -246,7 +246,7 @@ simply injects values at C-points from the fine grid to the coarse grid,
 The spacing between each \f$ I \f$ is \f$ m-1 \f$ block rows.  While injection
 is simple, XBraid always does an F-relaxation sweep before the application of \f$R\f$, 
 which is equivalent to using the transpose of harmonic interpolation for restriction 
-(see [Parallel Time Integration with Multigrid](https://computation-rnd.llnl.gov/linear_solvers/pubs/mgritPaper-2013.pdf) ).
+(see [Parallel Time Integration with Multigrid](https://computation.llnl.gov/project/linear_solvers/pubs/mgritPaper-2014.pdf) ).
 
 To define the coarse grid equations, we apply the Full Approximation
 Scheme (FAS) method, which is a nonlinear version of multigrid.  This is to
@@ -478,7 +478,7 @@ done on a level. A few summary points about relaxation are as follows.
   (i.e., *braid_setnrelax(core, 0, 1)* ).  This strategy can work well with F-cycles. 
 - See @ref twodheat  for a case study of relaxation strategies. 
 
-Last, [Parallel Time Integration with Multigrid](https://computation-rnd.llnl.gov/linear_solvers/pubs/mgritPaper-2013.pdf)
+Last, [Parallel Time Integration with Multigrid](https://computation.llnl.gov/project/linear_solvers/pubs/mgritPaper-2014.pdf)
 has a more in depth case study of cycling and relaxation strategies
 
 ## Overlapping communication and computation {#overlapping}
@@ -653,7 +653,7 @@ For explanations of the command line parameters, type
 Regarding the performance, we can say
 - The best speedup is 10x and this would grow if more processors were available.
 - Although not shown, the iteration counts here are about 10-15 XBraid iterations.
-  See [Parallel Time Integration with Multigrid](https://computation-rnd.llnl.gov/linear_solvers/pubs/mgritPaper-2013.pdf)
+  See [Parallel Time Integration with Multigrid](https://computation.llnl.gov/project/linear_solvers/pubs/mgritPaper-2014.pdf)
   for the exact iteration counts.
 - At smaller core counts, serial time stepping is faster.  But at about 256 processors,
   there is a crossover and XBraid is faster.
@@ -666,7 +666,7 @@ Regarding the performance, we can say
   slower coarsening was found to be best on this machine.
 
 Achieving the best speedup can require some tuning, and it is recommended to read
-[Parallel Time Integration with Multigrid](https://computation-rnd.llnl.gov/linear_solvers/pubs/mgritPaper-2013.pdf)
+[Parallel Time Integration with Multigrid](https://computation.llnl.gov/project/linear_solvers/pubs/mgritPaper-2014.pdf)
 where this 2D heat equation example is explored in much more detail.
 
 

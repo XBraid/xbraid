@@ -37,7 +37,7 @@ To run the examples, type
   for more discussion of this example.
 
 2. ex-02 implements the 2D heat equation on a regular grid.  You must have
-   [hypre](https://computation-rnd.llnl.gov/linear_solvers/software.php)
+   [hypre](https://computation.llnl.gov/project/linear_solvers/software.php)
    installed and these variables in examples/Makefile set correctly
     
           HYPRE_DIR = ../../linear_solvers/hypre

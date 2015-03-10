@@ -33,7 +33,7 @@ To run the examples, type
 
 
 1. drive-02 implements the 2D heat equation on a regular grid.  You must have
-   [hypre](https://computation-rnd.llnl.gov/linear_solvers/software.php)
+   [hypre](https://computation.llnl.gov/project/linear_solvers/software.php)
    installed and these variables in examples/Makefile set correctly
     
           HYPRE_DIR = ../../linear_solvers/hypre
@@ -45,7 +45,7 @@ To run the examples, type
    regardless of time step size.  
 
 2. drive-03 implements the 3D heat equation on a regular grid, and assumes 
-   [hypre](https://computation-rnd.llnl.gov/linear_solvers/software.php) 
+   [hypre](https://computation.llnl.gov/project/linear_solvers/software.php)
    is installed just like drive-02.  This driver does not support spatial 
    coarsening, and thus if explicit time stepping is used, the time stepping 
    switchs to implicit on coarse XBraid grids when the CFL condition is violated.
@@ -56,7 +56,7 @@ To run the examples, type
    Other packages must be installed in this order.
      + Unpack and install [Metis](http://glaros.dtc.umn.edu/gkhome/metis/metis/overview)
      + Unpack and install 
-       [hypre](https://computation-rnd.llnl.gov/linear_solvers/software.php) 
+       [hypre](https://computation.llnl.gov/project/linear_solvers/software.php)
      + Unpack and install 
        [mfem.](https://code.google.com/p/mfem/)
        Make the serial version of mfem first by only typing ``make``.
