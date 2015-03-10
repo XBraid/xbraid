@@ -24,10 +24,10 @@
 
 ## User Defined Structures and Wrappers
 
-As mentioned, the user must wrap their existing time stepping routine per the XBraid interface. 
+The user must wrap their existing time stepping routine per the XBraid interface. 
 To do this, the user must define two data structures and some wrapper routines.  To make the 
-idea more concrete, we now give these function definitions from examples/ex-01, which 
-implements a scalar ODE, \f$ u_t = \lambda u \f$.
+idea more concrete, we now give these function definitions from ``examples/ex-01``, which 
+implements a scalar ODE, \f[ u_t = \lambda u. \f]
 
 The two data structures are:
 1. **App**: This holds a wide variety of information and is *global* in that it
@@ -57,19 +57,19 @@ The two data structures are:
       } my_Vector;
 
 
-The user must also define a few wrapper routines.  Note, that the app structure is the 
+The user must also define a few wrapper routines.  Note, that the *app* structure is the 
 first argument to every function.
 1. **Phi**: This function tells XBraid how to take a time step, and is the core user routine. 
    The user must advance the vector *u* from time *tstart* to time *tstop*.
    Note how the time values are given to the user through the *status*
-   structure and associated Get routines.  The *rfactor_ptr* parameter is an
+   structure and associated *Get* routines.  The *rfactor_ptr* parameter is an
    advanced topic not used here.
    
    Here advancing the solution just involves the scalar \f$ \lambda \f$.  
 
    **Importantly,** the \f$ g_i \f$ function (from @ref braidoverview) must be 
-   incorporated into Phi, so that \f$\Phi(u_i) \rightarrow u_{i+1} \f$
-
+   incorporated into *Phi*, so that \f$\Phi(u_i) \rightarrow u_{i+1} \f$
+         
          int
          my_Phi(braid_App       app,
                 braid_Vector    u,
@@ -163,7 +163,7 @@ first argument to every function.
          }
 
 6. **SpatialNorm**: This function tells XBraid how to take the norm 
-   of a braid_Vector and is used for halting. This norm is only over 
+   of a *braid_Vector* and is used for halting. This norm is only over 
    space.  A common norm choice is the standard Euclidean norm, but 
    many other choices are possible, such as an L2-norm based on a 
    finite element space.  The norm choice should be based on what 
@@ -193,7 +193,7 @@ first argument to every function.
    \latexonly \\ \endlatexonly
 
    The frequency of the calls to *access* is controlled through 
-   [braid_SetAccessLevel](@ref braid_SetAccessLevel).  For instance, if access_level is 
+   [braid_SetAccessLevel](@ref braid_SetAccessLevel).  For instance, if *access_level* is 
    set to 2, then *access* is called every XBraid iteration and on every XBraid level.  In 
    this case, querying *astatus* to determine the current XBraid level and iteration will 
    be useful. This scenario allows for even more detailed tracking of the simulation.
@@ -298,7 +298,7 @@ first argument to every function.
 9. **Coarsen**, **Restrict** (optional): These are advanced options that allow for coarsening
   in space while you coarsen in time.  This is useful for maintaining stable
   explicit schemes on coarse time scales and is not needed here.  See for instance
-  drivers/drive-04 and drivers/drive-02 which use these routines.
+  ``drivers/drive-04`` and ``drivers/drive-02`` which use these routines.
 
   These functions allow you vary the spatial mesh size on XBraid levels as depicted here
   where the spatial and temporal grid sizes are halved every level.
@@ -313,9 +313,9 @@ first argument to every function.
 in *Phi* will allow this.
 
 
-## Running XBraid
+## Running XBraid for this Example 
 
-A typical flow of events in the ``main`` function is to first initialize the ``app``
+A typical flow of events in the *main* function is to first initialize the *app*
 structure.
 
     /* set up app structure */
@@ -354,7 +354,7 @@ Finally, to run ex-01, type
 
     ex-01 -ml 5
 
-This will run ex-01. See examples/ex-0* for more extensive examples.
+This will run ``ex-01``. See ``examples/ex-0*`` for more extensive examples.
 
 
 # Two-Dimensional Heat Equation {#exampletwo}
@@ -374,9 +374,9 @@ method.  The spatial discretization is just the standard 5-point finite
 difference stencil (\f$[-1;-1,4,-1;-1]\f$), scaled by mesh widths, and the PFMG
 solver is used for the solves required by backward Euler.  Please see the hypre
 manual and examples for more information on the SemiStruct interface and PFMG.
-Although, the hypre specific calls have mostly been abstracted away in the code
-for this example, and so it is not necessary to be familiar with the SemiStruct
-interface for the purposes of understanding this example.
+Although, the hypre specific calls have mostly been abstracted away for this
+example, and so it is not necessary to be familiar with the SemiStruct
+interface for this example.
 
 This example consists of three files and two executables.
 
@@ -394,11 +394,10 @@ This example consists of three files and two executables.
    - ex-02-lib.c:  This file contains shared functions used by the time-serial
      version and the time-parallel version.  This is where most of the hypre
      specific calls reside.  This file provides the basic functionality of this
-     problem.  For instance, ``take_step(u, tstart, tstop, ...)`` carries out 
-     a step, moving the vector ``u`` from time ``tstart`` to time ``tstop`` 
-     and ``setUpImplicitMatrix(...)`` constructs the backward Euler time stepper 
-     based on the hypre PFMG solver.
-
+     problem.  For instance, *take_step(u, tstart, tstop, ...)* carries out 
+     a step, moving the vector *u* from time *tstart* to time *tstop* 
+     and *setUpImplicitMatrix(...)* constructs the matrix to be inverted by PFMG
+     for the backward Euler method.
 
 ## User Defined Structures and Wrappers
 
@@ -407,11 +406,11 @@ routines in ``examples/ex-02.c``.  The actual code for this example is quite sim
 and it is recommended to read through it after this overview.
 
 The two data structures are:
-1. **App**: This holds a wide variety of information and is ``global`` in that it
+1. **App**: This holds a wide variety of information and is *global* in that it
    is passed to every user function.  This structure holds everything that the
    user will need to carry out a simulation.  One important structure contained in
-   the ``app`` is the ``simulation_manager``.  This is a structure native to the user
-   code, ``ex-02-lib.c``.  This structure conveniently holds the information needed by
+   the *app* is the *simulation_manager*.  This is a structure native to the user
+   code ``ex-02-lib.c``.  This structure conveniently holds the information needed by
    the user code to carry out a time step.  For instance, 
 
         app->man->A
@@ -424,59 +423,60 @@ The two data structures are:
       
         app->man->dt
 
-   is the current time step.  The app is defined as 
+   is the current time step size.  The app is defined as 
       
   
       typedef struct _braid_App_struct {
-         MPI_Comm              comm;             /* global communicator */
-         MPI_Comm              comm_t;           /* communicator for parallelizing in time  */
-         MPI_Comm              comm_x;           /* communicator for parallelizing in space  */
-         int                   pt;               /* number of processors in time  */
-         simulation_manager   *man;              /* user's simulation manager structure */
-         HYPRE_SStructVector   e;                /* temporary vector used for error computations */
-         int                   nA;               /* number of spatial matrices created */
-         HYPRE_SStructMatrix  *A;                /* array of spatial matrices, size nA, one per level*/
-         double               *dt_A;             /* array of time step sizes, size nA, one per level*/
-         HYPRE_StructSolver   *solver;           /* array of PFMG solvers, size nA, one per level*/
-         int                   use_rand;         /* binary value, use random or zero initial guess */
-         int                  *runtime_max_iter; /* runtime info for number of PFMG iterations*/
-         int                  *max_iter_x;       /* maximum iteration limits for PFMG */
+         MPI_Comm             comm;             /* global communicator */
+         MPI_Comm             comm_t;           /* communicator for parallelizing in time  */
+         MPI_Comm             comm_x;           /* communicator for parallelizing in space  */
+         int                  pt;               /* number of processors in time  */
+         simulation_manager  *man;              /* user's simulation manager structure */
+         HYPRE_SStructVector  e;                /* temporary vector used for error computations */
+         int                  nA;               /* number of spatial matrices created */
+         HYPRE_SStructMatrix *A;                /* array of spatial matrices, size nA, one per level*/
+         double              *dt_A;             /* array of time step sizes, size nA, one per level*/
+         HYPRE_StructSolver  *solver;           /* array of PFMG solvers, size nA, one per level*/
+         int                  use_rand;         /* binary value, use random or zero initial guess */
+         int                 *runtime_max_iter; /* runtime info for number of PFMG iterations*/
+         int                 *max_iter_x;       /* maximum iteration limits for PFMG */
       } my_App;
 
    The app contains all the information needed to take a time step with the
-   user code for an arbitrary time step size.  See the ``Phi`` function below
+   user code for an arbitrary time step size.  See the *Phi* function below
    for more detail.
 
 2. **Vector**: this defines a state vector at a certain time value.  
-  Here, the vector is a structure containing a native hypre datatype, the
-  ``SStructVector``, which describes a vector over the spatial grid. Note that
-  ``my_Vector`` is used to define ``braid_Vector``.
+  Here, the vector is a structure containing a native hypre data-type, the
+  *SStructVector*, which describes a vector over the spatial grid. Note that
+  *my_Vector* is used to define *braid_Vector*.
 
        typedef struct _braid_Vector_struct {
           HYPRE_SStructVector   x;
        } my_Vector;
 
 
-The user must also define a few wrapper routines.  Note, that the app structure
+The user must also define a few wrapper routines.  Note, that the ``app`` structure
 is the first argument to every function.
 
 1. **Phi**: This function tells XBraid how to take a time step, and is the core
-   user routine.  This function advances the vector ``u`` from time ``tstart`` to time
-   ``tstop``.  A few important things to note are
+   user routine.  This function advances the vector *u* from time *tstart* to time
+   *tstop*.  A few important things to note are as follows.
 
-  + The time values are given to the user through the ``status`` structure
-    and associated ``Get`` routines.  
+  + The time values are given to the user through the *status* structure
+    and associated *Get* routines.  
   
   + The basic strategy is to see if a matrix and solver already exist for 
   this \f$dt\f$ value.  If not, generate a new matrix and solver and store them in
-  the ``app`` structure.  If they do already exist, then re-use the data.  
+  the *app* structure.  If they do already exist, then re-use the data.  
   
   + To carry out a step, the user routines from ``ex-02-lib.c`` rely on a few
-  crucial data members ``man->dt``, ``man->A`` and ``man-solver``, which we
-  overwrite with the correct information for the step in question.  Then, we
-  pass ``man`` to the user function ``take_step()`` which evolves a vector.
+  crucial data members *man->dt*, *man->A* and *man-solver*.  We overwrite
+  these members with the correct information for the time step size in question.
+  Then, we pass *man* and *u* to the user function *take_step(...)* which
+  evolves *u*.
 
-  + The forcing term \f$ g_i \f$ is wrapped into the ``take_step``
+  + The forcing term \f$ g_i \f$ is wrapped into the *take_step(...)*
     function.  Thus, \f$\Phi(u_i) \rightarrow u_{i+1} \f$.  
 
         int my_Phi(braid_App       app,
@@ -528,11 +528,13 @@ is the first argument to every function.
         }
 
 2. There are other functions, **Init**, **Clone**, **Free**, **Sum**,
-**SpatialNorm**, **Access**, **BufSize**, **BufPack** and **BufUnpack**,
-which also must be written.  But for this example, they are simple.  
-See ``ex-02.c``.
+**SpatialNorm**, **Access**, **BufSize**, **BufPack** and **BufUnpack**, which
+also must be written.  These functions are all simple for this example, as for
+the case of @ref exampleone. All we do here is standard operations on a spatial
+vector such as initialize, clone, take an inner-product, pack, etc... We refer
+the reader to ``ex-02.c``.
 
-## Running XBraid
+## Running XBraid for this Example 
 
 To initialize and run XBraid, the procedure is similar to  @ref exampleone.
 Only here, we have to both initialize the user code and XBraid.  The code that
@@ -541,7 +543,7 @@ simulation code.  If you compare ``ex-02-serial.c`` and ``ex-02.c``, you will
 see that most of the code setting up the user's data structures and defining
 the wrapper functions are simply lifted from the serial simulation.
 
-Taking excerpts from the function ``main()`` in ex-02.c,
+Taking excerpts from the function *main()* in ex-02.c,
 we first initialize the user's simulation manager with code like
       
       ...
@@ -596,12 +598,88 @@ Finally, to run ex-02, type
 
     ex-02 -help
 
-As a simple example, try
+As a simple example, try the following.
 
     mpirun -np 8 ex-02 -pgrid 2 2 2 -nt 256
 
-For a description of a more comprehensive study using ``ex-02``, see 
-@ref twodheat.
+## Scaling Study with this Example {#twodheat_scaling}
+
+Here, we carry out a simple strong scaling study for this example.  The "time
+stepping" data set represents sequential time stepping and was generated using
+``examples/ex-02-serial``.  The time-parallel data set was generated using
+``examples/ex-02``.
+   \latexonly
+   \begin{figure}[!ht] \centering 
+       \subfloat{\includegraphics[width=0.45\textwidth]{../img/heat_results.pdf}}
+       \label{img:heat_results}
+   \end{figure}
+   \endlatexonly
+The problem setup is as follows.
+- Backwards Euler is used as the time stepper.  This is the only time stepper
+supported by ``ex-02``.
+- We used a Linux cluster with 4 cores per node, a Sandybridge Intel chipset, 
+  and a fast Infiniband interconnect.  
+- The space-time problem size was \f$ 129^2 \times 16,192 \f$ over the unit cube 
+  \f$ [0,1] \times [0,1] \times [0,1] \f$ .  
+- The coarsening factor was \f$ m = 16 \f$ on the finest level and \f$ m=2 \f$ 
+  on coarser levels.  
+- Since 16 processors optimized the serial time stepping approach, 16 processors
+  in space are also used for the XBraid experiments.  So for instance 512 processrs in 
+  the plot corresponds to 16 processors in space and 32 processors in time, 
+  \f$ 16*32 = 512 \f$.  Thus, each processor owns a space-time hypercube of
+  \f$ (129^2 / 16) \times (16,192 / 32) \f$.  See @ref decomposition for a depiction
+  of how XBraid breaks the problem up.
+- Various relaxation and V and F cycling strategies are experimented with.  
+  + *V-cycle, FCF* denotes V-cycles and FCF-relaxation on each level.
+  + *V-cycle, F-FCF* denotes V-cycles and F-relaxation on the finest level and
+     FCF-relaxation on all coarser levels.
+  + *F-cycle, F* denotes F-cycles and F-relaxation on each level.
+- The initial guess at time values for \f$ t > 0 \f$ is zero, which is typical.
+- The halting tolerance corresponds to a discrete L2-norm and was 
+  \f[\mbox{tol} = \frac{10^{-8}}{\sqrt{ (h_x)^2 h_t} }, \f]
+  where \f$ h_x \f$ and \f$ h_t \f$ are the spatial and temporal grid spacings, 
+  respectively.
+
+  This corresponds to passing *tol* to [braid_SetAbsTol](@ref braid_SetAbsTol),
+  passing *2* to [braid_SetTemporalNorm](@ref braid_SetTemporalNorm) and
+  defining [braid_PtFcnSpatialNorm](@ref braid_PtFcnSpatialNorm) to be the
+  standard Euclidean 2-norm.  All together, this appropriately scales the
+  space-time residual in way that is relative to the number of space-time grid
+  points (i.e., it approximates the L2-norm).
+
+
+To re-run this scaling study, a sample run string for ex-02 is
+
+      mpirun -np 64 ex-02 -pgrid 4 4 4 -nx 129 129 -nt 16129 -cf0 16 -cf 2 -nu 1 -use_rand 0
+
+To re-run the baseline sequential time stepper, ex-02-serial, try
+
+      mpirun -np 64 ex-02-serial -pgrid 8 8 -nx 129 129 -nt 16129
+
+For explanations of the command line parameters, type
+     
+      ex-02-serial -help
+      ex-02 -help
+
+
+Regarding the performance, we can say
+- The best speedup is 10x and this would grow if more processors were available.
+- Although not shown, the iteration counts here are about 10-15 XBraid iterations.
+  See [Parallel Time Integration with Multigrid](https://computation.llnl.gov/project/linear_solvers/pubs/mgritPaper-2014.pdf)
+  for the exact iteration counts.
+- At smaller core counts, serial time stepping is faster.  But at about 256 processors,
+  there is a crossover and XBraid is faster.
+- You can see the impact of the cycling and relaxation strategies discussed in
+  @ref cyclingrelaxation.  For instance, even though *V-cycle, F-FCF* is a 
+  weaker relaxation strategy than *V-cycle, FCF* (i.e., the XBraid convergence 
+  is slower), *V-cycle, F-FCF* has a faster time to solution than *V-cycle, FCF* 
+  because each cycle is cheaper.
+- In general, one level of aggressive coarsening (here by a factor 16) followed by
+  slower coarsening was found to be best on this machine.
+
+Achieving the best speedup can require some tuning, and it is recommended to read
+[Parallel Time Integration with Multigrid](https://computation.llnl.gov/project/linear_solvers/pubs/mgritPaper-2014.pdf)
+where this 2D heat equation example is explored in much more detail.
 
 
 # Running and Testing XBraid
@@ -615,8 +693,8 @@ is correct (that is, it matches a serial run to within tolerance).
 
 At a lower level, to do sanity checks of your data structures and wrapper routines, there are
 also XBraid test functions, which can be easily run.  The test routines also 
-take as arguments the app structure, spatial communicator comm_x, a stream
-like stdout for test output and a time step size to test dt.  After these arguments,
+take as arguments the *app* structure, spatial communicator *comm_x*, a stream
+like *stdout* for test output and a time step size *dt* to test.  After these arguments,
 function pointers to wrapper routines are the rest of the arguments. Some of the tests
 can return a boolean variable to indicate correctness.
       
