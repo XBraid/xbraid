@@ -415,6 +415,7 @@ int main (int argc, char *argv[])
    int nrelax, nrelax0, cfactor, cfactor0, max_iter, fmg, tnorm;
 
    MPI_Init(&argc, &argv);
+   MPI_Comm_rank( comm, &myid );
 
    /* Default parameters */
    app->man  = (simulation_manager *) malloc(sizeof(simulation_manager));
@@ -627,7 +628,6 @@ int main (int argc, char *argv[])
    }
 
    /* Check the processor grid (px x py x pt = num_procs?). */
-   MPI_Comm_rank( comm, &myid );
    MPI_Comm_size( comm, &num_procs );
    if( ((app->man->px)*(app->man->py)*(app->pt)) != num_procs)
    {
