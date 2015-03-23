@@ -28,6 +28,17 @@ X is the first letter in the Greek work for time, _Chronos_.  The
 algorithm _braids_ together time-grids of different granularity in order to
 create a multigrid method and achieve parallelism in the time dimension.
 
+# Advice to users {#advice}
+
+The field of parallel-in-time methods is in many ways under development, and
+success has been shown primarily for problems with some parabolic character.
+While there are ongoing projects (here and elsewhere) looking at varied
+applications such as hyperbolic problems, computational fluid dynamics, power
+grids, medical applications, and so on, expectations should take this fact into
+account.  That being said, we strongly encourage new users to try our code for
+their application.  Every new application has its own issues to address and
+this will help us to improve both the algorithm and the software.
+
 # Overview of the XBraid Algorithm {#braidoverview}
 
 The goal of XBraid is to solve a problem faster than a traditional time
