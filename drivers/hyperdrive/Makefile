@@ -53,7 +53,7 @@ OBJ1 = hyperdrive-01.o c_array.o bop6g.o c-exact.o c-bdata.o c-twbndry.o c-evale
 all: advect hyperdrive-01 test-gf restrict
 
 advect: $(OBJ5) 
-	$(CC) -o $@ $(OBJ5) $(LFLAGS)
+	$(CC) -o $@ $(OBJ5) $(LFLAGS) $(BRAID_LIB)
 
 hyperdrive-01: $(OBJ1) 
 	$(CC) -o $@ $(OBJ1) $(LFLAGS) $(BRAID_LIB)

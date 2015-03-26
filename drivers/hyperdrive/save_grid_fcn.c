@@ -32,7 +32,7 @@
 int 
 save_grid_fcn(advection_setup *kd_,
               grid_fcn *u_,
-              braidStatus   status)
+              braid_AccessStatus  astatus)
 {
    MPI_Comm   comm   = MPI_COMM_WORLD;
    int        myid, level=-1, done_iterating=-1, iteration=-1;
@@ -51,11 +51,8 @@ save_grid_fcn(advection_setup *kd_,
      if (fabs(t-kd_->tstop)<1e-12)
      {
 /* get more details about about the current level, iteration, etc */
-       braidGetStatusT(status, &t);
-       braidGetStatusIter(status, &iteration);
-       braidGetStatusResidual(status, &residual);
-       braidGetStatusDone(status, &done_iterating);
-       braidGetStatusLevel(status, &level);
+       braid_AccessStatusGetTILD(astatus, &t, &iteration, &level, &done_iterating);
+       braid_AccessStatusGetResidual(astatus, &residual);
 
 /* done_iterating is only well-defined on the finest level */
 /*       done_iterating = (residual < kd_->braidResidualLevel || iteration >= kd_->braidMaxIter); */

@@ -116,7 +116,6 @@ sum_grid_fcn(advection_setup *kd_,
 int
 norm_grid_fcn(advection_setup *kd_,
               grid_fcn *u_,
-              grid_fcn *v_,
               double      *norm_ptr);
 int
 save_grid_fcn(advection_setup *kd_,
