@@ -96,7 +96,7 @@ int main(int argc, char ** argv)
    comm                = MPI_COMM_WORLD;
    comm_t              = comm;
    max_levels          = 2; /* This is where you specify the number of levels in MG */
-   scoarsen            = 0; /* coarsen in space? */
+   scoarsen            = 1; /* coarsen in space? */
    nrelax              = 1;
    nrelax0             = -1;
    tol                 = 1.0e-09; /* relative (or absolute) residual stopping criterion */
@@ -237,7 +237,7 @@ int main(int argc, char ** argv)
       printf("  -order <int>    : spatial order of accuracy (positive, even, <=6) (default 6)\n");
       printf("  -tfinal <float> : end time (default 1.0)\n");
       printf("  -wn <int>       : wave number in exact solution (default 1)\n");
-      printf("  -ad <float>     : artificial dissipation coefficient ( for all grids??) (default 0.0)\n");
+      printf("  -ad <float>     : artificial dissipation coefficient ( for all grids I think) (default 0.0)\n");
       printf("  -tbc <int>      : treatment of bndry forcing at intermediate stages (0,1, or 3) (default 1)\n");
       printf("\n");
 /* MPI_Finalize(); */
@@ -391,6 +391,7 @@ int main(int argc, char ** argv)
       free_grid_fcn( kd_, exact_ );
    }
 
+   return 0;
 }
 
 
