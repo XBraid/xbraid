@@ -1122,16 +1122,17 @@ _braid_FRestrict(braid_Core   core,
       {  
          MPI_Allreduce(&rnorm, &grnorm, 1, MPI_DOUBLE, MPI_SUM, comm);
       }
-      else if(tnorm == 2)     /* two-norm reduction */
-      {  
-         MPI_Allreduce(&rnorm, &grnorm, 1, MPI_DOUBLE, MPI_SUM, comm);
-         grnorm = sqrt(grnorm);
-      }
       else if(tnorm == 3)     /* inf-norm reduction */
       {  
          _braid_Max(tnorm_a, ncpoints, &rnorm); 
          MPI_Allreduce(&rnorm, &grnorm, 1, MPI_DOUBLE, MPI_MAX, comm);
       }
+      else                    /* default two-norm reduction */
+      {  
+         MPI_Allreduce(&rnorm, &grnorm, 1, MPI_DOUBLE, MPI_SUM, comm);
+         grnorm = sqrt(grnorm);
+      }
+
 
       *rnorm_ptr = grnorm;
    }

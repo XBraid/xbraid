@@ -45,7 +45,7 @@ braid_TestInitAccess( braid_App           app,
    
    braid_Vector          u ;
    braid_AccessStatus    astatus = _braid_CTAlloc(_braid_AccessStatus, 1);;
-   braid_Int             myid_x;
+   braid_Int             myid_x = 0;
    
    _braid_AccessStatusInit(t, 0.0, 0, 0, 0, 1, astatus);
    MPI_Comm_rank( comm_x, &myid_x );

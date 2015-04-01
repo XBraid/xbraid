@@ -46,13 +46,16 @@ ifeq ($(findstring tux343,$(HOSTNAME)),tux343)
 	CC = mpicc
 	MPICC = mpicc
 	MPICXX = mpiCC
+   MPIF90 = mpif90
 	LFLAGS = -lm
 	ifeq ($(optlevel),DEBUG)
 		CFLAGS = -g -Wall -lm
 		CXXFLAGS = -g -Wall -Wno-reorder -lm
+      FORTFLAGS = -Og -Wall
 	else
 		CFLAGS = -O -Wall -lm
 		CXXFLAGS = -O -Wall -Wno-reorder -lm
+      FORTFLAGS = -O1 -Wall
 	endif
 	ifeq ($(lvalgrind),YES)
 		LFLAGS += /usr/lib64/valgrind/libmpiwrap-amd64-linux.so 
@@ -61,59 +64,74 @@ else ifeq ($(findstring yorkville,$(HOSTNAME)),yorkville)
   # for Anders' laptop
 	MPICC = openmpicc
 	MPICXX = openmpicxx
+   MPIF90 = mpif90
 	LFLAGS = -lm
 	ifeq ($(optlevel),DEBUG)
 		CFLAGS = -g -Wall
 		CXXFLAGS = -g -Wall
+      FORTFLAGS = -Og -Wall
 	else
 		CFLAGS = -O -Wall
 		CXXFLAGS = -O -Wall
+      FORTFLAGS = -O1 -Wall
 	endif
 else ifeq ($(findstring sierra,$(HOSTNAME)),sierra)
   # for Sierra
 	MPICC = mpiicc
 	MPICXX = mpiicpc
+   MPIF90 = mpif90
 	LFLAGS = -lm
 	ifeq ($(optlevel),DEBUG)
 		CFLAGS = -g -Wall
 		CXXFLAGS = -g -Wall
+      FORTFLAGS = -Og -Wall
 	else
 		CFLAGS = -O -Wall
 		CXXFLAGS = -O -Wall
+      FORTFLAGS = -O1 -Wall
 	endif
 else ifeq ($(findstring cab,$(HOSTNAME)),cab)
   # for Cab
 	MPICC = mpiicc
 	MPICXX = mpiicpc
+   MPIF90 = mpif90
 	LFLAGS = -lm
 	ifeq ($(optlevel),DEBUG)
 		CFLAGS = -g -Wall
 		CXXFLAGS = -g -Wall
+      FORTFLAGS = -Og -Wall
 	else
 		CFLAGS = -O -Wall
 		CXXFLAGS = -O -Wall
+      FORTFLAGS = -O1 -Wall
 	endif   
 else ifeq ($(shell uname -s),Linux)
 	MPICC = mpicc
 	MPICXX = mpiCC
+   MPIF90 = mpif90
 	LFLAGS = -lm
 	ifeq ($(optlevel),DEBUG)
 		CFLAGS = -g -Wall
 		CXXFLAGS = -g -Wall
+      FORTFLAGS = -Og -Wall
 	else
 		CFLAGS = -O -Wall
 		CXXFLAGS = -O -Wall
+      FORTFLAGS = -O1 -Wall
 	endif
 else
 	MPICC = mpicc
 	MPICXX = mpiCC
+   MPIF90 = mpif90
 	LFLAGS = -lm
 	ifeq ($(optlevel),DEBUG)
 		CFLAGS = -g -Wall
 		CXXFLAGS = -g -Wall
+      FORTFLAGS = -Og -Wall
 	else
 		CFLAGS = -O -Wall
 		CXXFLAGS = -O -Wall
+      FORTFLAGS = -O1 -Wall
 	endif
 endif
 

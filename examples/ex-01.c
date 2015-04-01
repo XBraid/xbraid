@@ -113,8 +113,8 @@ my_Init(braid_App     app,
    }
    else
    {
-      /* Random between 0 and 1 */
-      (u->value) = ((double)rand()) / RAND_MAX;
+      /* Initialize all other time points */
+      (u->value) = 0.456;//((double)rand()) / RAND_MAX;
    }
    *u_ptr = u;
 
@@ -261,7 +261,7 @@ int main (int argc, char *argv[])
 
    /* ntime time intervals with spacing 1 */
    comm   = MPI_COMM_WORLD;
-   ntime  = 10;
+   ntime  = 32;
    tstart = 0.0;
    tstop  = tstart + ntime;
    
