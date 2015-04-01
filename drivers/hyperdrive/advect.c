@@ -227,7 +227,7 @@ int main(int argc, char ** argv)
       fprintf(eun,"%e %e %e %e\n", t, li, l2, fabs(ex_vsol(1) - vsol(1)) ); 
 
 /* ! time-stepper from t_n to t_{n+1} starts here */
-      _braid_PhiStatusInit(t, t+kd_->dt_fine, dummy, pstatus);
+      _braid_PhiStatusInit(t, t+kd_->dt_fine, dummy, 0, pstatus);
       explicit_rk4_stepper(kd_, gf_, pstatus);  /* this is my_Phi() */
 
       t = t + kd_->dt_fine;
