@@ -35,7 +35,7 @@ include makefile.inc
 
 BRAID_HEADERS = _braid.h braid.h util.h braid_test.h braid_status.h braid_defs.h
 
-BRAID_FILES = util.c braid.c _braid.c braid_test.c braid_status.c
+BRAID_FILES = util.c braid.c _braid.c braid_test.c braid_status.c braid_F90_iface.c
 
 BRAID_OBJ = $(BRAID_FILES:.c=.o)
 

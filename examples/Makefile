@@ -46,6 +46,7 @@ BRAID_FLAGS = -I..
 BRAID_LIB_FILE = ../libbraid.a
 
 C_NOHYPRE = ex-01
+F_NOHYPRE = ex-01f
 C_EXAMPLES = ex-02 ex-02-serial
 # Note: .cpp examples will be linked with mfem
 #CXX_EXAMPLES = ex-04
@@ -61,6 +62,11 @@ ex-01: ex-01.c $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
 	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
 
+# Rule for building ex-01f
+ex-01f: ex-01f.f90 $(BRAID_LIB_FILE)
+	@echo "Building" $@ "..."
+	$(MPIF90) $(FORTFLAGS) $(@).f90 -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+
 # Rule for compiling .c files
 %: %.c $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
@@ -74,7 +80,7 @@ ex-01: ex-01.c $(BRAID_LIB_FILE)
  $(@).cpp -o $@ $(MFEM_LIB) $(HYPRE_LIB) $(BRAID_LIB_FILE) $(LFLAGS)
 
 clean: cleanout
-	rm -f *.o $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES) *ror_norm* *_err_* *_mesh* *_sol_*
+	rm -f *.o $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES) $(F_EXAMPLES) *ror_norm* *_err_* *_mesh* *_sol_*
 
 cleanout:
 	rm -f ex*.out.*
