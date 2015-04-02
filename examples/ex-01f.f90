@@ -31,6 +31,8 @@ end module braid_types
 
 ! Replace character a with character b
 subroutine replace(s, a, b, length)
+   implicit none
+
    integer :: length, i
    character(len=length) s
    character(1) a, b
@@ -47,6 +49,7 @@ subroutine braid_Init_Vec_F90(app, t, u_ptr)
    
    ! Braid types
    use braid_types
+   implicit none
    type(my_vector), pointer :: u_ptr
    type(my_app)             :: app
    
@@ -71,6 +74,7 @@ subroutine braid_Free_F90(app, u)
    
    ! Braid types
    use braid_types
+   implicit none
    type(my_app)             :: app
    type(my_vector), pointer :: u
    
@@ -83,6 +87,7 @@ subroutine braid_Clone_F90(app, u, v_ptr)
    
    ! Braid types
    use braid_types
+   implicit none
    type(my_vector)          :: u
    type(my_vector), pointer :: v_ptr
    type(my_app)             :: app
@@ -99,6 +104,7 @@ subroutine braid_Sum_F90(app, alpha, x, beta, y)
    
    ! Braid types
    use braid_types
+   implicit none
    type(my_vector)          :: x, y
    type(my_app)             :: app
    
@@ -115,6 +121,7 @@ subroutine braid_SpatialNorm_F90(app, u, norm_ptr)
    
    ! Braid types
    use braid_types
+   implicit none
    type(my_vector)          :: u
    type(my_app)             :: app
    
@@ -131,6 +138,7 @@ subroutine braid_Access_F90(app, u, astatus)
    
    ! Braid types
    use braid_types
+   implicit none
    integer (kind=8) :: astatus
    type(my_vector)  :: u
    type(my_app)     :: app
@@ -185,6 +193,7 @@ subroutine braid_Phi_F90(app, u, pstatus)
    
    ! Braid types
    use braid_types
+   implicit none
    integer (kind=8) :: pstatus
    type(my_vector)  :: u
    type(my_app)     :: app
@@ -213,6 +222,7 @@ subroutine braid_BufSize_F90(app, size_ptr)
    
    ! Braid types
    use braid_types
+   implicit none
    type(my_app)             :: app
    
    ! Other declarations
@@ -227,6 +237,7 @@ subroutine braid_BufPack_F90(app, u, buffer, size_ptr)
    
    ! Braid types
    use braid_types
+   implicit none
    type(my_vector)          :: u
    type(my_app)             :: app
    
@@ -246,6 +257,7 @@ subroutine braid_BufUnPack_F90(app, buffer, u_ptr)
    
    ! Braid types
    use braid_types
+   implicit none
    type(my_vector), pointer :: u_ptr
    type(my_app)             :: app
    
@@ -263,6 +275,7 @@ program ex01_f90
    
    ! Import braid vector and app module
    use braid_types
+   implicit none
    type(my_app), pointer :: app
 
    ! Include the mpi library definitons:
