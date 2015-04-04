@@ -888,19 +888,21 @@ braid_F90_Name(braid_set_access_level_f90, BRAID_SET_ACCESS_LEVEL_F90)(
 /* braid_SplitCommworld( ) */
 braid_Int
 braid_F90_Name(braid_split_commworld_level_f90, BRAID_SPLIT_COMMWORLD_F90)(
-                   braid_F90_Comm  *comm_world,  /**< Global communicator to split */
+                   braid_F90_Comm  *comm_world,    /**< Global communicator to split */
                    braid_F90_Int   *px,            /**< Number of processors parallelizing space for a single time step*/
                    braid_F90_Comm  *comm_x,        /**< Spatial communicator (written as output) */
                    braid_F90_Comm  *comm_t         /**< Temporal communicator (written as output) */
 )
 {
    MPI_Comm Fcommworld = braid_TakeF90_Comm( comm_world);
-   MPI_Comm Fcomm_x = braid_TakeF90_Comm( comm_x);
-   MPI_Comm Fcomm_t = braid_TakeF90_Comm( comm_t);
+   MPI_Comm Fcomm_x, Fcomm_t;
    braid_SplitCommworld(                       &Fcommworld,
                         braid_TakeF90_Int(     px),
                                                &Fcomm_x,
                                                &Fcomm_t);
+   *comm_x = braid_PassF90_Comm( &Fcomm_x );
+   *comm_t = braid_PassF90_Comm( &Fcomm_t );
+
    return 0;
 }
 
