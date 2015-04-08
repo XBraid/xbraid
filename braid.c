@@ -173,8 +173,9 @@ braid_Drive(braid_Core  core)
    braid_Int      print_level = _braid_CoreElt(core, print_level);
    braid_Int      access_level= _braid_CoreElt(core, access_level);
    braid_Int      nfmg_Vcyc   = _braid_CoreElt(core, nfmg_Vcyc); 
+   braid_Int      gupper      = _braid_CoreElt(core, gupper);
 
-   braid_Int      nlevels, iter;
+   braid_Int      nlevels, iter, nprocs;
    braid_Real     rnorm, old_rnorm;
    braid_Real     accuracy;
    braid_Int      ilower, iupper;
@@ -183,8 +184,17 @@ braid_Drive(braid_Core  core)
    _braid_Grid   *grid;
    braid_Real     localtime, globaltime;
 
-   MPI_Comm    comm_world = _braid_CoreElt(core, comm_world);
+   MPI_Comm       comm       = _braid_CoreElt(core, comm);
+   MPI_Comm       comm_world = _braid_CoreElt(core, comm_world);
    braid_Int      myid;
+
+   /* Check that nprocs <= npoints */
+   MPI_Comm_size(comm, &nprocs);
+   if( nprocs > (gupper +1) ){
+      fprintf(stderr, "Error: number of processors > number of points in time.\n");
+      _braid_error_flag = 1;
+      return _braid_error_flag;
+   }
 
    /* Start timer */
    localtime = MPI_Wtime();
