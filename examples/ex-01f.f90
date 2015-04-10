@@ -416,7 +416,7 @@ program ex01_f90
          call braid_set_abs_tol_f90(braid_core, tol)
          call braid_set_cfactor_f90(braid_core, -1, cfactor)
          if (cfactor0 > -1) then
-            call braid_set_nrelax_f90(braid_core,  0, cfactor0)
+            call braid_set_cfactor_f90(braid_core,  0, cfactor0)
          endif
          call braid_set_max_iter_f90(braid_core, max_iter)
          if (fmg == 1) then

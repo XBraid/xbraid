@@ -40,8 +40,7 @@
 extern "C" {
 #endif
 
-/** Turn on Fortran 90 interface manually */
-#define braid_USE_F90_IFACE 0
+/** Turn on Fortran 90 interface options manually */
 #define braid_FMANGLE 1
 #define braid_Fortran_SpatialCoarsen 0
 
