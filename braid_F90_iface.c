@@ -872,6 +872,16 @@ braid_F90_Name(braid_set_print_level_f90, BRAID_SET_PRINT_LEVEL_F90)(
    return 0;
 }
 
+/* braid_SetDefaultPrintFile( ) */
+braid_Int
+braid_F90_Name(braid_set_default_print_file_f90, braid_set_default_print_file_F90)(
+                   braid_F90_ObjPtr  *core           /**< braid_Core (_braid_Core) struct*/
+                   )
+{
+   braid_SetDefaultPrintFile(braid_TakeF90_ObjDeref(braid_Core,  core));
+   return 0;
+}
+
 /* braid_SetAccessLevel( ) */
 braid_Int
 braid_F90_Name(braid_set_access_level_f90, BRAID_SET_ACCESS_LEVEL_F90)(

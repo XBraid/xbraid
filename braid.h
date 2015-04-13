@@ -483,6 +483,15 @@ braid_SetPrintFile(braid_Core     core,             /**< braid_Core (_braid_Core
                    const char    *printfile_name    /**< output file for XBraid runtime output */
                    );
 
+/** Use default filename, *braid_runtime.out* for runtime print messages.  This
+ * function is particularly useful for Fortran codes, where passing filename
+ * strings between C and Fortran is troublesome.  Level of printing is
+ * controlled by @ref braid_SetPrintLevel.
+ **/
+braid_Int
+braid_SetDefaultPrintFile(braid_Core     core       /**< braid_Core (_braid_Core) struct*/
+                          );
+
 /**
  * Set access level for XBraid.  This controls how often the user's
  * access routine is called.
