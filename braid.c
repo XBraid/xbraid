@@ -629,7 +629,7 @@ braid_SetPrintFile(braid_Core     core,
 braid_Int
 braid_SetDefaultPrintFile(braid_Core     core)
 {
-   const char fname[17] = "braid_runtime.out";
+   const char fname[] = "braid_runtime.out";
    braid_SetPrintFile(core, fname); 
    return _braid_error_flag;
 }
