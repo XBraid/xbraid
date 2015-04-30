@@ -81,6 +81,7 @@ ex-01f: ex-01f.f90 $(BRAID_LIB_FILE)
 
 clean: cleanout
 	rm -f *.o $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES) $(F_EXAMPLES) *ror_norm* *_err_* *_mesh* *_sol_*
+	rm -rf *.dSYM
 
 cleanout:
 	rm -f ex*.out.*
