@@ -262,6 +262,42 @@ struct BraidOptions : public OptionsParser
    virtual void SetBraidCoreOptions(BraidCore &core);
 };
 
+// Stores and prints runtime information regarding spatial coarsening.
+class SpaceTimeMeshInfo
+{
+public:
+    
+    // This table is (num Braid levels) x 5 table, where each row is a Braid level
+    // and the columns store, respectively, the spatial level used at that Braid level,
+    // the max mesh width h_max, the min mesh width h_min and the time step size dt, 
+    Array<double> mesh_table;
+    Array<double> mesh_table_global;
+    int           max_levels;
+
+    // Unused rows in the table are -1.0
+    SpaceTimeMeshInfo(int _max_levels) : 
+       mesh_table(4*_max_levels),
+       mesh_table_global(4*_max_levels),
+       max_levels(_max_levels)
+   {
+        mesh_table = -1.0;
+        mesh_table_global = -1.0;
+   }
+   
+   // Reinitialize the arrays
+   void Reinitialize(int _max_levels);
+
+   // Helper function to compute mesh size
+   void ComputeMeshSize( ParMesh *pmesh, double * h_min_ptr, double * h_max_ptr);
+
+   // Fill in a row of the table 
+   void SetRow(int braid_level, int vec_level, ParMesh * pmesh, double dt);
+
+   // Print the table to screen, reducing the entries over comm
+   void Print(MPI_Comm comm);
+};
+
+
 
 // Implementations
 
@@ -859,6 +895,100 @@ void BraidOptions::SetBraidCoreOptions(BraidCore &core)
    {
       core.SetFMG();
       core.SetNFMGVcyc(nfmg_Vcyc);
+   }
+}
+
+void SpaceTimeMeshInfo::Reinitialize(int _max_levels)
+{
+   max_levels = _max_levels;
+   mesh_table.SetSize(4*max_levels);
+   mesh_table_global.SetSize(4*max_levels);
+   mesh_table = -1.0;
+   mesh_table_global = -1.0;
+}
+
+void SpaceTimeMeshInfo::SetRow(int braid_level, int vec_level, ParMesh * pmesh, double dt)
+{
+   // Fill in the level-th row with runtime spatial coarsening information
+   double h_min, h_max;
+   
+   ComputeMeshSize(pmesh, &h_min, &h_max);
+   mesh_table[ braid_level*4 ]     = std::max(mesh_table[ braid_level*4 ], (double) vec_level );
+   mesh_table[ braid_level*4 + 1 ] = std::max(mesh_table[ braid_level*4 + 1 ], h_min);
+   mesh_table[ braid_level*4 + 2 ] = std::max(mesh_table[ braid_level*4 + 2 ], h_max);
+   mesh_table[ braid_level*4 + 3 ] = std::max(mesh_table[ braid_level*4 + 3 ], dt);
+}
+
+void SpaceTimeMeshInfo::ComputeMeshSize( ParMesh *pmesh, double * h_min_ptr, double * h_max_ptr)
+{
+    // Compute the maximum and minimum mesh sizes for a pmesh
+    int i;
+    double h, h_min, h_max;
+    int NumOfElements = pmesh->GetNE();
+    MPI_Comm MyComm = pmesh->GetComm();
+
+    for (i = 0; i < NumOfElements; i++)
+    {
+        h = pmesh->GetElementSize(i);
+        if (i == 0)
+        {
+            h_min = h_max = h;
+        }
+        else
+        {
+            if (h < h_min)  h_min = h;
+            if (h > h_max)  h_max = h;
+        }
+    }
+
+    double gh_min, gh_max;
+    MPI_Reduce(&h_min, &gh_min, 1, MPI_DOUBLE, MPI_MIN, 0, MyComm);
+    MPI_Reduce(&h_max, &gh_max, 1, MPI_DOUBLE, MPI_MAX, 0, MyComm);
+
+    *h_max_ptr = gh_max;
+    *h_min_ptr = gh_min;
+}
+
+// Print the all the rows that are not -1, i.e., that aren't empy 
+void SpaceTimeMeshInfo::Print(MPI_Comm comm)
+{
+   int myid, level;
+   double h_min, h_max, dt;
+
+   MPI_Comm_rank(comm, &myid);
+
+   // Reduce all the table entries over processors
+   for(int i = 0; i < max_levels; i++)
+   {
+      for(int j = 0; j < 4; j++){
+         MPI_Allreduce( &(mesh_table[i*4 + j]), &(mesh_table_global[i*4 + j]), 1, MPI_DOUBLE, MPI_MAX, comm );
+      }
+   }
+
+   if(myid == 0)
+   {
+      std::cout << std::endl;
+      std::cout << " Space-Time Mesh Information Gathered at Run-Time" << std::endl;
+      std::cout << " XBraid level | Spatial level |    h_min    |     h_max   |      dt     |  dt/h_max   | dt/h_max^2 " << std::endl;
+      std::cout << " --------------------------------------------------------------------------------------------------" << std::endl;
+      for(int i = 0; i < max_levels; i++)
+      {
+         level = (int) mesh_table_global[i*4];
+         h_min =  mesh_table_global[i*4 + 1];
+         h_max =  mesh_table_global[i*4 + 2];
+         dt =  mesh_table_global[i*4 + 3];
+
+         std::cout.precision(4);
+         std::cout << std::scientific;
+         std::cout << "    " << std::setw(10) << std::left << i << "|"
+                   << "    " << std::setw(11)  << std::left << level << "|"
+                   << " "    << std::setw(12) << std::left << h_min << "|"
+                   << " "    << std::setw(12) << std::left << h_max << "|"
+                   << " "    << std::setw(12) << std::left << dt << "|"
+                   << " "    << std::setw(12) << std::left << dt/h_max << "|"
+                   << " "    << std::setw(12) << std::left << dt/(h_max*h_max) << std::endl;
+      }
+      std::cout << std::endl;
    }
 }
 

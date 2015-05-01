@@ -109,6 +109,12 @@ protected:
 
 public:
    DGAdvectionApp(DGAdvectionOptions &opts, MPI_Comm comm_t_, ParMesh *pmesh);
+   
+   SpaceTimeMeshInfo MeshInfo;
+
+   // braid_Vector == BraidVector*
+   virtual int Phi(braid_Vector    u_,
+                   BraidPhiStatus &pstatus);
 
    virtual ~DGAdvectionApp();
 };
@@ -184,7 +190,8 @@ int main(int argc, char *argv[])
    opts.SetBraidCoreOptions(core);
 
    core.Drive();
-
+   app.MeshInfo.Print(comm);
+   
    MPI_Finalize();
    return 0;
 }
@@ -267,7 +274,8 @@ DGAdvectionApp::DGAdvectionApp(
      velocity(pmesh->Dimension(), velocity_function),
      inflow(inflow_function),
      u0(u0_function),
-     diff(-opts.diffusion) // diffusion goes in the r.h.s. with a minus
+     diff(-opts.diffusion), // diffusion goes in the r.h.s. with a minus
+     MeshInfo(opts.max_levels)
 {
    problem = opts.problem;
 
@@ -289,6 +297,30 @@ DGAdvectionApp::~DGAdvectionApp()
       delete K[l];
       delete M[l];
    }
+}
+
+
+int DGAdvectionApp::Phi(braid_Vector    u_,
+                        BraidPhiStatus &pstatus)
+{
+   // This contains one small change over the default Phi, we store the Space-Time mesh info
+   
+   // Store Space-Time Mesh Info
+   BraidVector *u = (BraidVector*) u_;
+   int level = u->level;
+   double tstart, tstop, dt;
+   int braid_level;
+   
+   pstatus.GetTstartTstop(&tstart, &tstop);
+   pstatus.GetLevel(&braid_level);
+   dt = tstop - tstart;
+
+   MeshInfo.SetRow(braid_level, level, x[u->level]->ParFESpace()->GetParMesh(), dt);
+   
+   // Call the default Phi
+   MFEMBraidApp::Phi(u_, pstatus);
+   
+   return 0;
 }
 
 // Allocate data structures for the given number of spatial levels. Used by
