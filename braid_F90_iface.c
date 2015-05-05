@@ -603,6 +603,19 @@ braid_F90_Name(braid_phi_status_get_tstart_tstop_f90, BRAID_PHI_STATUS_GET_TSTAR
    return 0;
 }
 
+/* Wrap braid_PhiStatusGetLevel( ) */
+braid_Int
+braid_F90_Name(braid_phi_status_get_level_f90, BRAID_PHI_STATUS_GET_LEVEL_F90)(
+                                  braid_PhiStatus  status,           /**< structure containing current simulation info */
+                                  braid_Int       *level_ptr         /**< output, current level in XBraid */
+                                  )
+{
+   braid_PhiStatusGetLevel( braid_TakeF90_Obj(braid_PhiStatus,  status),
+                            braid_TakeF90_IntPtr(               level_ptr) );
+   return 0;
+}
+
+
 /* Wrap braid_PhiStatusSetRFactor( ) */
 braid_Int
 braid_F90_Name(braid_phi_status_set_rfactor_f90, BRAID_PHI_STATUS_SET_RFACTOR_F90)(
