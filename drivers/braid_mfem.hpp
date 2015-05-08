@@ -113,6 +113,10 @@ protected:
    static const char *vishost_default;
    static const int   visport_default;
 
+   int vis_time_steps;
+   int vis_braid_steps;
+   bool vis_screenshots;
+
    // Return the level index l such that max_dt[l-1] < dt <= max_dt[l],
    // This index corresponds to the finest compatible mesh for given time step
    int ComputeSpaceLevel(double tstart, double tprior, double tstop);
@@ -183,6 +187,14 @@ public:
    void SetExactSolution(Coefficient *exsol) { exact_sol = exsol; }
 
    void SetVisHostAndPort(const char *vh, int vp);
+
+   void SetVisSampling(int time_steps, int braid_steps)
+   {
+      vis_time_steps = time_steps;
+      vis_braid_steps = braid_steps;
+   }
+
+   void SetVisScreenshots(bool ss) { vis_screenshots = ss; }
 
    // Below braid_Vector == BraidVector*
 
@@ -730,9 +742,14 @@ int MFEMBraidApp::Access(braid_Vector       u_,
    double rnorm, t;
    astatus.GetTILD(&t, &iter, &level, &done);
    astatus.GetResidual(&rnorm);
+   int cycle = (int)std::floor((t - tstart) / (tstop - tstart) * ntime + 0.5);
 
-   // if (t == tstart || t == tstop)
-   if ( (t == tstop) && (level == 0) )
+   if ( (level == 0) &&
+
+        ( (vis_time_steps > 0 && cycle % vis_time_steps == 0) ||
+          (cycle == ntime) ) &&
+
+        ( (vis_braid_steps > 0 && iter % vis_braid_steps == 0) || done ) )
    {
       (*x[level]) = *u; // Distribute
 
@@ -771,10 +788,23 @@ int MFEMBraidApp::Access(braid_Vector       u_,
             sol_sock << "keys cmAaa\n";
             sol_sock << "window_title 'comm_t rank: " << comm_t_rank
                      << ", t = " << t << "'\n";
+            if (vis_screenshots)
+            {
+               sol_sock << "pause\n";
+               if (mesh[level]->GetMyRank() == 0)
+                  std::cout << "Visualization paused. Press space (in GLVis) to"
+                               " continue." << std::endl;
+            }
          }
          sol_sock << std::flush;
+         if (vis_screenshots)
+         {
+            sol_sock << "screenshot braid_" << std::setfill('0') << std::setw(2)
+                     << iter << "_" << std::setw(6) << cycle << ".png"
+                     << std::endl;
+         }
          if (mesh[level]->GetMyRank() == 0)
-            std::cout << "Solution updated." << std::flush;
+            std::cout << "Visualization updated." << std::flush;
       }
 
       if (exact_sol)

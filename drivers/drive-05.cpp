@@ -69,10 +69,15 @@ struct DGAdvectionOptions : public BraidOptions
    double diffusion;
    int    order;
    int    ode_solver_type;
+   bool   lump_mass;
    double dt; // derived from t_start, t_final, and num_time_steps
 
    const char *vishost;
    int         visport;
+
+   int vis_time_steps;
+   int vis_braid_steps;
+   bool vis_screenshots;
 
    DGAdvectionOptions(int argc, char *argv[]);
 };
@@ -243,8 +248,12 @@ DGAdvectionOptions::DGAdvectionOptions(int argc, char *argv[])
    diffusion       = 0.0;
    order           = 3;
    ode_solver_type = 4;
+   lump_mass       = false;
    vishost         = "localhost";
    visport         = 19916;
+   vis_time_steps  = 0;
+   vis_braid_steps = 0;
+   vis_screenshots = false;
 
    AddOption(&problem, "-p", "--problem",
              "Problem setup to use. See options in velocity_function().");
@@ -254,10 +263,20 @@ DGAdvectionOptions::DGAdvectionOptions(int argc, char *argv[])
    AddOption(&ode_solver_type, "-s", "--ode-solver",
              "ODE solver: 1 - Forward Euler, 2 - RK2 SSP, 3 - RK3 SSP,"
              " 4 - RK4, 6 - RK6.");
+   AddOption(&lump_mass, "-lump", "--lump-mass-matrix", "-dont-lump",
+             "--dont-lump-mass-matrix", "Enable/disable lumping of the mass"
+             " matrix.");
    AddOption(&vishost, "-vh", "--visualization-host",
              "Set the GLVis host.");
    AddOption(&visport, "-vp", "--visualization-port",
              "Set the GLVis port.");
+   AddOption(&vis_time_steps, "-vts", "--visualize-time-steps",
+             "Visualize every n-th time step (0:final only).");
+   AddOption(&vis_braid_steps, "-vbs", "--visualize-braid-steps",
+             "Visualize every n-th Braid step (0:final only).");
+   AddOption(&vis_screenshots, "-vss", "--vis-screenshots",
+             "-no-vss", "--vis-no-screenshots", "Enable/disable the saving of"
+             " screenshots of the visualized data.");
 
    Parse();
 
@@ -287,6 +306,8 @@ DGAdvectionApp::DGAdvectionApp(
    SetInitialCondition(U);
 
    SetVisHostAndPort(opts.vishost, opts.visport);
+   SetVisSampling(opts.vis_time_steps, opts.vis_braid_steps);
+   SetVisScreenshots(opts.vis_screenshots);
 }
 
 DGAdvectionApp::~DGAdvectionApp()
@@ -347,7 +368,10 @@ void DGAdvectionApp::InitLevel(int l)
    // the mass matrix, M; the advection (+diffusion) matrix, K; and the inflow
    // b.c. vector, B.
    ParBilinearForm *m = new ParBilinearForm(fe_space[l]);
-   m->AddDomainIntegrator(new MassIntegrator);
+   if (!options.lump_mass)
+      m->AddDomainIntegrator(new MassIntegrator);
+   else
+      m->AddDomainIntegrator(new LumpedIntegrator(new MassIntegrator));
    ParBilinearForm *k = new ParBilinearForm(fe_space[l]);
    k->AddDomainIntegrator(new ConvectionIntegrator(velocity, -1.0));
    k->AddInteriorFaceIntegrator(
