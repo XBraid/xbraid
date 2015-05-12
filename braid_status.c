@@ -263,14 +263,14 @@ braid_CoarsenRefStatusGetLevel(braid_CoarsenRefStatus  status,
 }
 
 /*--------------------------------------------------------------------------
- * CoarsenRefStatus Routines
+ * StepStatus Routines
  *--------------------------------------------------------------------------*/
 braid_Int
-_braid_PhiStatusInit(braid_Real       tstart,
-                     braid_Real       tstop,
-                     braid_Real       accuracy,
-                     braid_Int        level,
-                     braid_PhiStatus  status)
+_braid_StepStatusInit(braid_Real       tstart,
+                      braid_Real       tstop,
+                      braid_Real       accuracy,
+                      braid_Int        level,
+                      braid_StepStatus status)
 {
    _braid_StatusElt(status, tstart)   = tstart;
    _braid_StatusElt(status, tstop)    = tstop;
@@ -281,7 +281,7 @@ _braid_PhiStatusInit(braid_Real       tstart,
 }
 
 braid_Int
-_braid_PhiStatusDestroy(braid_PhiStatus  status)
+_braid_StepStatusDestroy(braid_StepStatus  status)
 {
    if (status)
    {
@@ -293,32 +293,32 @@ _braid_PhiStatusDestroy(braid_PhiStatus  status)
 
 
 braid_Int
-braid_PhiStatusGetTstart(braid_PhiStatus  status,
-                         braid_Real      *tstart_ptr)
+braid_StepStatusGetTstart(braid_StepStatus  status,
+                          braid_Real       *tstart_ptr)
 {
    *tstart_ptr = _braid_StatusElt(status, tstart);
    return _braid_error_flag;
 }
 
 braid_Int
-braid_PhiStatusGetTstop(braid_PhiStatus  status,
-                        braid_Real      *tstop_ptr)
+braid_StepStatusGetTstop(braid_StepStatus  status,
+                         braid_Real       *tstop_ptr)
 {
    *tstop_ptr = _braid_StatusElt(status, tstop);
    return _braid_error_flag;
 }
 
 braid_Int
-braid_PhiStatusGetAccuracy(braid_PhiStatus  status,
-                           braid_Real      *accuracy_ptr)
+braid_StepStatusGetAccuracy(braid_StepStatus  status,
+                            braid_Real       *accuracy_ptr)
 {
    *accuracy_ptr = _braid_StatusElt(status, accuracy);
    return _braid_error_flag;
 }
 
 braid_Int
-braid_PhiStatusGetLevel(braid_PhiStatus  status,
-                        braid_Int       *level_ptr
+braid_StepStatusGetLevel(braid_StepStatus  status,
+                         braid_Int        *level_ptr
                         )
 {
    *level_ptr = _braid_StatusElt(status, level);
@@ -327,17 +327,17 @@ braid_PhiStatusGetLevel(braid_PhiStatus  status,
 
 
 braid_Int
-braid_PhiStatusSetRFactor(braid_PhiStatus  status,
-                          braid_Real       rfactor)
+braid_StepStatusSetRFactor(braid_StepStatus  status,
+                           braid_Real        rfactor)
 {
    _braid_StatusElt(status, rfactor) = rfactor;
    return _braid_error_flag;
 }
 
 braid_Int
-braid_PhiStatusGetTstartTstop(braid_PhiStatus  status,
-                              braid_Real       *tstart_ptr,
-                              braid_Real       *tstop_ptr)
+braid_StepStatusGetTstartTstop(braid_StepStatus  status,
+                               braid_Real       *tstart_ptr,
+                               braid_Real       *tstop_ptr)
 {
    *tstart_ptr = _braid_StatusElt(status, tstart);
    *tstop_ptr = _braid_StatusElt(status, tstop);

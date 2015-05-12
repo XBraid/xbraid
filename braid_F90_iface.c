@@ -241,20 +241,30 @@ braid_SpatialNorm_F90_Iface(braid_App      app,                /**< user-defined
 
 
 /**
- * braid_Phi
+ * braid_Step
  *
  * Fortran interface, first we define the prototype for the user-defined function and then we
  * provide the C-wrapper around the user-written Fortran function
  * */
-void braid_F90_Name(braid_phi_f90, BRAID_PHI_F90)(braid_F90_ObjPtr, braid_F90_ObjPtr,  braid_F90_ObjPtr);
+void braid_F90_Name(braid_step_f90, BRAID_STEP_F90)(braid_F90_ObjPtr, braid_F90_ObjPtr, braid_F90_ObjPtr,  braid_F90_Int *, braid_F90_ObjPtr, braid_F90_ObjPtr);
 braid_Int
-braid_Phi_F90_Iface(braid_App       app,           /**< user-defined _braid_App structure */
-                    braid_Vector    u,             /**< output, vector to evolve */
-                    braid_PhiStatus status         /**< query this struct for info about u (e.g., tstart and tstop), allows for steering (e.g., set rfactor) */
-                    )
+braid_Step_F90_Iface(braid_App        app,    /**< user-defined _braid_App structure */
+                     braid_Vector     ustop,  /**< input, u vector at *tstop* */
+                     braid_Vector     fstop,  /**< input, right-hand-side at *tstop* */
+                     braid_Vector     u     , /**< output, u vector at *tstop* */
+                     braid_StepStatus status  /**< query this struct for info about (e.g., tstart and tstop), allows for steering (e.g., set rfactor) */ 
+                     )
 {
-   braid_F90_Name(braid_phi_f90, BRAID_PHI_F90)( 
+   braid_Int fnotzero = 1;
+   if (fstop == NULL)
+   {
+      fnotzero = 0;
+   }
+   braid_F90_Name(braid_step_f90, BRAID_STEP_F90)( 
                             braid_PassF90_Obj(     app),
+                            braid_PassF90_Obj(     ustop),
+                            braid_PassF90_Obj(     fstop),
+                            braid_PassF90_Int(     fnotzero),
                             braid_PassF90_Obj(     u),
                             braid_PassF90_Obj(     status) );
    
@@ -589,29 +599,29 @@ braid_F90_Name(braid_access_status_get_tild_f90, BRAID_ACCESS_STATUS_GET_TILD_F9
    return 0;
 }
 
-/* Wrap braid_PhiStatusGetTstartTstop( ) */
+/* Wrap braid_StepStatusGetTstartTstop( ) */
 braid_Int
-braid_F90_Name(braid_phi_status_get_tstart_tstop_f90, BRAID_PHI_STATUS_GET_TSTART_TSTOP_F90)(
+braid_F90_Name(braid_step_status_get_tstart_tstop_f90, BRAID_STEP_STATUS_GET_TSTART_TSTOP_F90)(
                               braid_F90_ObjPtr    status,        /**< structure containing current simulation info */
                               braid_F90_Real     *tstart_ptr,    /**< output, current time */
                               braid_F90_Real     *tstop_ptr      /**< output, next time value to evolve towards */
                               )
 {
-   braid_PhiStatusGetTstartTstop( braid_TakeF90_Obj(braid_PhiStatus,  status),
-                                  braid_TakeF90_RealPtr(              tstart_ptr),
-                                  braid_TakeF90_RealPtr(              tstop_ptr) );
+   braid_StepStatusGetTstartTstop( braid_TakeF90_Obj(braid_StepStatus, status),
+                                   braid_TakeF90_RealPtr(              tstart_ptr),
+                                   braid_TakeF90_RealPtr(              tstop_ptr) );
    return 0;
 }
 
-/* Wrap braid_PhiStatusSetRFactor( ) */
+/* Wrap braid_StepStatusSetRFactor( ) */
 braid_Int
-braid_F90_Name(braid_phi_status_set_rfactor_f90, BRAID_PHI_STATUS_SET_RFACTOR_F90)(
+braid_F90_Name(braid_step_status_set_rfactor_f90, BRAID_STEP_STATUS_SET_RFACTOR_F90)(
                           braid_F90_ObjPtr    status,         /**< structure containing current simulation info */
                           braid_F90_Int      *rfactor         /**< user-determined desired rfactor */
                           )
 {
-   braid_PhiStatusSetRFactor( braid_TakeF90_Obj(braid_PhiStatus,  status),
-                              braid_TakeF90_Int(                  rfactor));
+   braid_StepStatusSetRFactor( braid_TakeF90_Obj(braid_StepStatus, status),
+                               braid_TakeF90_Int(                  rfactor));
    return 0;
 }
 
@@ -638,7 +648,7 @@ braid_F90_Name(braid_init_f90, BRAID_INIT_F90)(
               braid_TakeF90_Real(              tstop),
               braid_TakeF90_Int(               ntime),
               braid_TakeF90_Obj(braid_App,     app),
-              braid_Phi_F90_Iface, 
+              braid_Step_F90_Iface, 
               braid_Init_Vec_F90_Iface, 
               braid_Clone_F90_Iface,
               braid_Free_F90_Iface,

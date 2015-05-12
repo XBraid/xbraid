@@ -21,7 +21,6 @@
  *
  ***********************************************************************EHEADER*/
  
-
 /** \file braid.h
  * \brief Define headers for user interface routines.
  *
@@ -75,19 +74,26 @@ typedef struct _braid_Vector_struct *braid_Vector;
 
 /**
  * Defines the central time stepping function that the user must write.
- * The user must advance the vector *u* from time *tstart* to time *tstop*.
  *
- * Query the status structure with *braid_PhiStatusGetTstart(status, &tstart)*  
- * and *braid_PhiStatusGetTstop(status, &tstop)* to get *tstart* and
- * *tstop*.  The status structure also allows for steering.  For example,
- * *braid_PhiStatusSetRFactor(...)* allows for setting rfactor, which 
- * tells XBraid to refine this time interval.
+ * The user must advance the vector *u* from time *tstart* to *tstop*.  The time
+ * step is taken assuming the right-hand-side vector *fstop* at time *tstop*.
+ * The vector *ustop* may be the same vector as *u* (in the case where not all
+ * unknowns are stored).  The vector *fstop* is set to NULL to indicate a zero
+ * right-hand-side.
+ *
+ * Query the status structure with *braid_StepStatusGetTstart(status, &tstart)*
+ * and *braid_StepStatusGetTstop(status, &tstop)* to get *tstart* and *tstop*.
+ * The status structure also allows for steering.  For example,
+ * *braid_StepStatusSetRFactor(...)* allows for setting rfactor, which tells
+ * XBraid to refine this time interval.
  **/
 typedef braid_Int
-(*braid_PtFcnPhi)(braid_App       app,           /**< user-defined _braid_App structure */
-                  braid_Vector    u,             /**< output, vector to evolve */
-                  braid_PhiStatus status         /**< query this struct for info about u (e.g., tstart and tstop), allows for steering (e.g., set rfactor) */ 
-                  );
+(*braid_PtFcnStep)(braid_App        app,    /**< user-defined _braid_App structure */
+                   braid_Vector     ustop,  /**< input, u vector at *tstop* */
+                   braid_Vector     fstop,  /**< input, right-hand-side at *tstop* */
+                   braid_Vector     u     , /**< output, u vector at *tstop* */
+                   braid_StepStatus status  /**< query this struct for info about u (e.g., tstart and tstop), allows for steering (e.g., set rfactor) */ 
+                   );
 
 /**
  * Initializes a vector *u_ptr* at time *t*
@@ -196,10 +202,24 @@ typedef braid_Int
                         );
 
 /**
+ * This function (optional) computes the residual *r* at time *tstop* given *u*
+ * at *tstop* and *uprev* at *tstart*. If used, set with braid_SetResidual.
+ *
+ * Query the status structure with *braid_StepStatusGetTstart(status, &tstart)*
+ * and *braid_StepStatusGetTstop(status, &tstop)* to get *tstart* and *tstop*.
+ **/
+typedef braid_Int
+(*braid_PtFcnResidual)(braid_App        app,    /**< user-defined _braid_App structure */
+                       braid_Vector     ustop,  /**< input, u vector at *tstop* */
+                       braid_Vector     r     , /**< output, residual at *tstop* */
+                       braid_StepStatus status  /**< query this struct for info about u (e.g., tstart and tstop) */ 
+                       );
+
+/**
  * Spatial coarsening (optional).  Allows the user to coarsen
  * when going from a fine time grid to a coarse time grid.
  * This function is called on every vector at each level, thus
- * you can coarsem the entire space time domain.  The action of 
+ * you can coarsen the entire space time domain.  The action of 
  * this function should match the @ref braid_PtFcnRefine function.
  *
  * The user should query the status structure at run time with 
@@ -275,7 +295,7 @@ braid_Init(MPI_Comm               comm_world,  /**< Global communicator for spac
            braid_Real             tstop,       /**< End time*/
            braid_Int              ntime,       /**< Initial number of temporal grid values*/
            braid_App              app,         /**< User-defined _braid_App structure */
-           braid_PtFcnPhi         phi,         /**< User time stepping routine to advance a braid_Vector forward one step */
+           braid_PtFcnStep        step,        /**< User time stepping routine to advance a braid_Vector forward one step */
            braid_PtFcnInit        init,        /**< Initialize a braid_Vector on the finest temporal grid*/
            braid_PtFcnClone       clone,       /**< Clone a braid_Vector*/
            braid_PtFcnFree        free,        /**< Free a braid_Vector*/
@@ -439,6 +459,14 @@ braid_SetNFMGVcyc(braid_Core  core,         /**< braid_Core (_braid_Core) struct
                   braid_Int   nfmg_Vcyc     /**< number of V-cycles to do each FMG level */
                   );
 
+
+/**
+ * Set user-defined residual routine.
+ **/
+braid_Int
+braid_SetResidual(braid_Core          core,     /**< braid_Core (_braid_Core) struct*/ 
+                  braid_PtFcnResidual residual  /**< function pointer to residual routine */
+                  );
 
 /**
  * Set spatial coarsening routine with user-defined routine.

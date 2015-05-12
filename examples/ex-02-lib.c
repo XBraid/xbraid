@@ -1485,16 +1485,18 @@ setUpStructSolver( simulation_manager  *man,
 /* --------------------------------------------------------------------
  * Time integration routine
  * -------------------------------------------------------------------- */
-int take_step(simulation_manager * man,         /* manager holding basic sim info */ 
+int take_step(simulation_manager * man,         /* manager holding basic sim info */
+              HYPRE_SStructVector  xstop,       /* approximation at tstop */
+              HYPRE_SStructVector  bstop,       /* additional RHS forcing */
               HYPRE_SStructVector  x,           /* vector to evolve */
               double               tstart,      /* evolve x from tstart to tstop */
               double               tstop, 
               int                 *iters_taken) /* if implicit, returns the number of iters taken */
 {
-   int      iters      = man->max_iter;     /* if implicit, max iters for solve */
-   double   tol        = man->tol;          /* if implicit, solver tolerance */
-   int      explicit   = man->explicit;     /* if true, use explicit, else implicit */
-   int      forcing    = man->forcing;      /* if true, use the nonzero forcing term */
+   int      iters      = man->max_iter; /* if implicit, max iters for solve */
+   double   tol        = man->tol;      /* if implicit, solver tolerance */
+   int      explicit   = man->explicit; /* if true, use explicit, else implicit */
+   int      forcing    = man->forcing;  /* if true, use the nonzero forcing term */
    HYPRE_Int num_iters = 0;
    
    double *values;
@@ -1506,13 +1508,17 @@ int take_step(simulation_manager * man,         /* manager holding basic sim inf
    /* Grab values from x */
    values = (double *) malloc( (man->nlx)*(man->nly)*sizeof(double) );
    HYPRE_SStructVectorGather( x );
-   HYPRE_SStructVectorGetBoxValues( x, 0, man->ilower,
-                                    man->iupper, 0, values );
+   HYPRE_SStructVectorGetBoxValues( x, 0, man->ilower, man->iupper, 0, values );
    initialize_vector(man, &b);
-   HYPRE_SStructVectorSetBoxValues( b, 0, man->ilower,
-                                    man->iupper, 0, values );
+   HYPRE_SStructVectorSetBoxValues( b, 0, man->ilower, man->iupper, 0, values );
    free( values );
-      
+
+   if (bstop != NULL)
+   {
+      /* Add additional forcing to b */
+      HYPRE_SStructAxpy (1.0, bstop, b);
+   }
+
    /* Grab these object pointers for use below */
    HYPRE_SStructMatrixGetObject( man->A, (void **) &sA );
    HYPRE_SStructVectorGetObject( x, (void **) &sx );
@@ -1542,6 +1548,11 @@ int take_step(simulation_manager * man,         /* manager holding basic sim inf
       }
 
       /* Solve system */
+      if (xstop != x)
+      {
+         /* Set initial guess */
+         HYPRE_SStructVectorCopy(xstop, x);
+      }
       HYPRE_StructPFMGSetTol( man->solver, tol );
       HYPRE_StructPFMGSetMaxIter( man->solver, iters);
       HYPRE_StructPFMGSolve( man->solver, sA, sb, sx );
@@ -1627,7 +1638,6 @@ int output_error_file(simulation_manager * man,
                       double               t,
                       double               err_norm,
                       char                *filename)
-
 {
    FILE  *file;
    int   myid;

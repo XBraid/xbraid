@@ -43,7 +43,7 @@ braid_Init(MPI_Comm               comm_world,
            braid_Real             tstop,
            braid_Int              ntime,
            braid_App              app,
-           braid_PtFcnPhi         phi,
+           braid_PtFcnStep        step,
            braid_PtFcnInit        init,
            braid_PtFcnClone       clone,
            braid_PtFcnFree        free,
@@ -83,7 +83,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, ntime)         = ntime;
    _braid_CoreElt(core, app)           = app;
 
-   _braid_CoreElt(core, phi)           = phi;
+   _braid_CoreElt(core, step)           = step;
    _braid_CoreElt(core, init)          = init;
    _braid_CoreElt(core, clone)         = clone;
    _braid_CoreElt(core, free)          = free;
@@ -93,6 +93,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, bufsize)       = bufsize;
    _braid_CoreElt(core, bufpack)       = bufpack;
    _braid_CoreElt(core, bufunpack)     = bufunpack;
+   _braid_CoreElt(core, residual)      = NULL;
    _braid_CoreElt(core, coarsen)       = NULL;
    _braid_CoreElt(core, refine)        = NULL;
 
@@ -122,7 +123,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, nfmg_Vcyc)  = nfmg_Vcyc;
 
    _braid_CoreElt(core, astatus)    = _braid_CTAlloc(_braid_AccessStatus, 1);
-   _braid_CoreElt(core, pstatus)    = _braid_CTAlloc(_braid_PhiStatus, 1);
+   _braid_CoreElt(core, sstatus)    = _braid_CTAlloc(_braid_StepStatus, 1);
    _braid_CoreElt(core, cstatus)    = _braid_CTAlloc(_braid_CoarsenRefStatus, 1);
 
    /* Accuracy for spatial solves for using implicit schemes
@@ -398,7 +399,7 @@ braid_Destroy(braid_Core  core)
       _braid_Grid           **grids      = _braid_CoreElt(core, grids);
       braid_AccessStatus      astatus    = _braid_CoreElt(core, astatus);
       braid_CoarsenRefStatus  cstatus    = _braid_CoreElt(core, cstatus);
-      braid_PhiStatus         pstatus    = _braid_CoreElt(core, pstatus);
+      braid_StepStatus        sstatus    = _braid_CoreElt(core, sstatus);
       braid_Int               level;
 
       _braid_TFree(_braid_CoreElt(core, nrels));
@@ -407,7 +408,7 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
       _braid_AccessStatusDestroy(astatus);
-      _braid_PhiStatusDestroy(pstatus);
+      _braid_StepStatusDestroy(sstatus);
       _braid_CoarsenRefStatusDestroy(cstatus);
       
       for (level = 0; level < nlevels; level++)
@@ -786,6 +787,18 @@ braid_SetNFMGVcyc(braid_Core  core,
                   braid_Int   nfmg_Vcyc)
 {
    _braid_CoreElt(core, nfmg_Vcyc) = nfmg_Vcyc;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetResidual(braid_Core  core, 
+                  braid_PtFcnResidual residual)
+{
+   _braid_CoreElt(core, residual) = residual;
 
    return _braid_error_flag;
 }

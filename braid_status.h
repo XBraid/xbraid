@@ -45,7 +45,7 @@ extern "C" {
  *  \ingroup userinterface
  *  
  *  XBraid status structures are what tell the user the status of the simulation
- *  when their routines (phi, coarsen/refine, access) are called. 
+ *  when their routines (step, coarsen/refine, access) are called. 
  *
  *  @{
  */
@@ -108,29 +108,29 @@ typedef struct _braid_CoarsenRefStatus_struct
 
 
 /*--------------------------------------------------------------------------
- * Define Phi Status Structure
+ * Define Step Status Structure
  *--------------------------------------------------------------------------*/
 
-struct _braid_PhiStatus_struct;
+struct _braid_StepStatus_struct;
 /** 
- * The user's phi routine will receive braid_PhiStatus, which will be a
- * pointer to the actual _braid_PhiStatus_struct
+ * The user's step routine will receive braid_StepStatus, which will be a
+ * pointer to the actual _braid_StepStatus_struct
  **/
-typedef struct _braid_PhiStatus_struct *braid_PhiStatus;
+typedef struct _braid_StepStatus_struct *braid_StepStatus;
 
 /** 
- * The user's phi routine routine will receive a PhiStatus structure, which 
- * defines the status of XBraid at the given instant for phi evaluation on some level 
- * during a run.  The user accesses it through _braid_PhiStatusGet**()_ functions.
+ * The user's step routine routine will receive a StepStatus structure, which 
+ * defines the status of XBraid at the given instant for step evaluation on some level 
+ * during a run.  The user accesses it through _braid_StepStatusGet**()_ functions.
  **/
-typedef struct _braid_PhiStatus_struct
+typedef struct _braid_StepStatus_struct
 {
    braid_Real     tstart;          /**< current time value  */
    braid_Real     tstop;           /**< time value to evolve towards, time value to the right of tstart */
-   braid_Real     accuracy;        /**< advanced option allowing variable accuracy for implicit phi*/
+   braid_Real     accuracy;        /**< advanced option allowing variable accuracy for implicit step*/
    braid_Int      rfactor;         /**< if set by user, allows for subdivision of this interval for bettter time accuracy */
    braid_Int      level;           /**< current level in XBraid*/
-} _braid_PhiStatus;
+} _braid_StepStatus;
 
 
 /*--------------------------------------------------------------------------
@@ -329,58 +329,58 @@ braid_CoarsenRefStatusGetLevel(braid_CoarsenRefStatus  status,        /**< struc
                                );
 
 /*--------------------------------------------------------------------------
- * PhiStatus Prototypes
+ * StepStatus Prototypes
  *--------------------------------------------------------------------------*/
 
 /**
- * Initialize a braid_PhiStatus structure 
+ * Initialize a braid_StepStatus structure 
  **/
 braid_Int
-_braid_PhiStatusInit(braid_Real       tstart,      /**< current time value  */
-                     braid_Real       tstop,       /**< time value to evolve towards, time value to the right of tstart */
-                     braid_Real       accuracy,    /**< advanced option allowing variable accuracy for implicit phi*/
-                     braid_Int        level,       /**< current level in XBraid */
-                     braid_PhiStatus  status       /**< structure to initialize */
-                     );
+_braid_StepStatusInit(braid_Real       tstart,      /**< current time value  */
+                      braid_Real       tstop,       /**< time value to evolve towards, time value to the right of tstart */
+                      braid_Real       accuracy,    /**< advanced option allowing variable accuracy for implicit step*/
+                      braid_Int        level,       /**< current level in XBraid */
+                      braid_StepStatus  status       /**< structure to initialize */
+                      );
 
 /**
- * Destroy a braid_PhiStatus structure
+ * Destroy a braid_StepStatus structure
  **/
 braid_Int
-_braid_PhiStatusDestroy(braid_PhiStatus  status);        /**< structure to be destroyed */
+_braid_StepStatusDestroy(braid_StepStatus  status);        /**< structure to be destroyed */
 
 /**
- * Return the current time value from the PhiStatus structure.
+ * Return the current time value from the StepStatus structure.
  **/
 braid_Int
-braid_PhiStatusGetTstart(braid_PhiStatus  status,         /**< structure containing current simulation info */
-                         braid_Real      *tstart_ptr      /**< output, current time */
-                         );
+braid_StepStatusGetTstart(braid_StepStatus  status,         /**< structure containing current simulation info */
+                          braid_Real      *tstart_ptr      /**< output, current time */
+                          );
 /**
  * Return the time value to the right of the current time value from
- * the PhiStatus structure.
+ * the StepStatus structure.
  **/
 braid_Int
-braid_PhiStatusGetTstop(braid_PhiStatus  status,         /**< structure containing current simulation info */
-                        braid_Real      *tstop_ptr       /**< output, next time value to evolve towards */
-                        );
+braid_StepStatusGetTstop(braid_StepStatus  status,         /**< structure containing current simulation info */
+                         braid_Real      *tstop_ptr       /**< output, next time value to evolve towards */
+                         );
 
 /** 
  * Return the current accuracy value, usually between 0 and 1.0, which can
  * allow for tuning of implicit solve accuracy
  **/
 braid_Int
-braid_PhiStatusGetAccuracy(braid_PhiStatus  status,         /**< structure containing current simulation info */
-                           braid_Real      *accuracy_ptr    /**< output, current accuracy value */
-                           );
+braid_StepStatusGetAccuracy(braid_StepStatus  status,         /**< structure containing current simulation info */
+                            braid_Real      *accuracy_ptr    /**< output, current accuracy value */
+                            );
 
 /**
- * Return the current XBraid level from the PhiStatus structure.
+ * Return the current XBraid level from the StepStatus structure.
  **/
 braid_Int
-braid_PhiStatusGetLevel(braid_PhiStatus  status,           /**< structure containing current simulation info */
-                        braid_Int       *level_ptr         /**< output, current level in XBraid */
-                        );
+braid_StepStatusGetLevel(braid_StepStatus  status,           /**< structure containing current simulation info */
+                         braid_Int       *level_ptr         /**< output, current level in XBraid */
+                         );
 
 /** 
  * Set the rfactor, a desired refinement factor for this interval.  rfactor=1
@@ -388,9 +388,9 @@ braid_PhiStatusGetLevel(braid_PhiStatus  status,           /**< structure contai
  * times. 
  **/
 braid_Int
-braid_PhiStatusSetRFactor(braid_PhiStatus  status,         /**< structure containing current simulation info */
-                          braid_Real       rfactor         /**< user-determined desired rfactor */
-                          );
+braid_StepStatusSetRFactor(braid_StepStatus  status,         /**< structure containing current simulation info */
+                           braid_Real       rfactor         /**< user-determined desired rfactor */
+                           );
 
 /**
  * Return XBraid status for the current simulation. Two values are 
@@ -398,14 +398,14 @@ braid_PhiStatusSetRFactor(braid_PhiStatus  status,         /**< structure contai
  *
  * These values are also available through individual Get routines. 
  * These individual routines are the location of detailed documentation on 
- * each parameter, e.g., see *braid_PhiStatusGetTstart* for more information
+ * each parameter, e.g., see *braid_StepStatusGetTstart* for more information
  * on the *tstart* value.
  **/
 braid_Int
-braid_PhiStatusGetTstartTstop(braid_PhiStatus  status,         /**< structure containing current simulation info */
-                              braid_Real       *tstart_ptr,    /**< output, current time */
-                              braid_Real       *tstop_ptr      /**< output, next time value to evolve towards */
-                              );
+braid_StepStatusGetTstartTstop(braid_StepStatus  status,         /**< structure containing current simulation info */
+                               braid_Real       *tstart_ptr,    /**< output, current time */
+                               braid_Real       *tstop_ptr      /**< output, next time value to evolve towards */
+                               );
 
 
 

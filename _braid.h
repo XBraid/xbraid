@@ -98,7 +98,7 @@ typedef struct
    braid_Vector      *ua;            /**< unknown vectors            (C-points only)*/
    braid_Real        *ta;            /**< time values                (all points) */
    braid_Vector      *va;            /**< restricted unknown vectors (all points, NULL on level 0) */
-   braid_Vector      *wa;            /**< rhs vectors f-v            (all points, NULL on level 0) */
+   braid_Vector      *fa;            /**< rhs vectors f              (all points, NULL on level 0) */
 
    braid_Int          recv_index;    /**<  -1 means no receive */
    braid_Int          send_index;    /**<  -1 means no send */
@@ -108,7 +108,7 @@ typedef struct
    braid_Vector      *ua_alloc;      /**< original memory allocation for ua */
    braid_Real        *ta_alloc;      /**< original memory allocation for ta */
    braid_Vector      *va_alloc;      /**< original memory allocation for va */
-   braid_Vector      *wa_alloc;      /**< original memory allocation for wa */
+   braid_Vector      *fa_alloc;      /**< original memory allocation for fa */
 
 } _braid_Grid;
 
@@ -126,7 +126,7 @@ typedef struct _braid_Core_struct
    braid_Int              ntime;        /**< initial number of time intervals */
    braid_App              app;          /**< application data for the user */
    
-   braid_PtFcnPhi         phi;          /**< apply phi function */
+   braid_PtFcnStep        step;         /**< apply step function */
    braid_PtFcnInit        init;         /**< return an initialized braid_Vector */
    braid_PtFcnClone       clone;        /**< clone a vector */
    braid_PtFcnFree        free;         /**< free up a vector */
@@ -136,6 +136,7 @@ typedef struct _braid_Core_struct
    braid_PtFcnBufSize     bufsize;      /**< return buffer size */
    braid_PtFcnBufPack     bufpack;      /**< pack a buffer */
    braid_PtFcnBufUnpack   bufunpack;    /**< unpack a buffer */
+   braid_PtFcnResidual    residual;     /**< (optional) compute residual */
    braid_PtFcnCoarsen     coarsen;      /**< (optional) return a coarsened vector */
    braid_PtFcnRefine      refine;       /**< (optional) return a refined vector */
 
@@ -160,7 +161,7 @@ typedef struct _braid_Core_struct
 
    braid_AccessStatus     astatus;      /**< status structure passed to user-written Access routine */
    braid_CoarsenRefStatus cstatus;      /**< status structure passed to user-written coarsen/refine routines */
-   braid_PhiStatus        pstatus;      /**< status structure passed to user-written phi routines */
+   braid_StepStatus       sstatus;      /**< status structure passed to user-written step routines */
 
    braid_Int              gupper;       /**< global upper index on the fine grid */
 
@@ -339,9 +340,18 @@ _braid_UGetInterval(braid_Core   core,
                     braid_Int   *ci_ptr);
 
 /**
- * Returns a reference to the local u-vector in *u_ptr* for the grid *level* at 
- * point *index*.  Caveat: if *index* is not a C-point and within my index range, 
- * NULL is returned.
+ * Returns an index into the local u-vector for grid *level* at point *index*.
+ * If the u-vector is not stored, returns -1.
+ */
+braid_Int
+_braid_UGetIndex(braid_Core   core,
+                 braid_Int    level,
+                 braid_Int    index,
+                 braid_Int   *uindex_ptr);
+
+/**
+ * Returns a reference to the local u-vector on grid *level* at point *index*.
+ * If the u-vector is not stored, returns NULL.
  */
 braid_Int
 _braid_UGetVectorRef(braid_Core     core,
@@ -350,9 +360,8 @@ _braid_UGetVectorRef(braid_Core     core,
                      braid_Vector  *u_ptr);
 
 /**
- * Stores a reference to the vector *u* on grid *level* at point *index*.
- * If *index* is not a C-point and within this processor's range of time points, 
- * then nothing is done.
+ * Stores a reference to the local u-vector on grid *level* at point *index*.
+ * If the u-vector is not stored, nothing is done.
  */
 braid_Int
 _braid_USetVectorRef(braid_Core    core,
@@ -361,11 +370,10 @@ _braid_USetVectorRef(braid_Core    core,
                      braid_Vector  u);
 
 /**
- * Returns the u-vector in *u_ptr* on grid *level* at point *index*.  If *index* is my
- * "receive index" (as set by UCommInit(), for example), the u-vector  will be
- * received from a neighbor processor.  If *index* is within my index range and
- * is also a C-point, the saved value of u will be used.  A NULL value is
- * returned otherwise.
+ * Returns a copy of the u-vector on grid *level* at point *index*.  If *index*
+ * is my "receive index" (as set by UCommInit(), for example), the u-vector will
+ * be received from a neighbor processor.  If the u-vector is not stored, NULL
+ * is returned.
  */
 braid_Int
 _braid_UGetVector(braid_Core     core,
@@ -374,16 +382,17 @@ _braid_UGetVector(braid_Core     core,
                   braid_Vector  *u_ptr);
 
 /**
- * Sets the u-vector on grid *level* at point *index*.  If *index* is my "send
- * index" (as set by UCommInit(), for example), a send is initiated to a neighbor 
- * processor.  If *index* is within my index range and is also a C-point, the 
- * value is saved locally.
+ * Stores the u-vector on grid *level* at point *index*.  If *index* is my "send
+ * index", a send is initiated to a neighbor processor.  If *move* is true, the
+ * u-vector is moved into core storage instead of copied.  If the u-vector is
+ * not stored, nothing is done.
  */
 braid_Int
 _braid_USetVector(braid_Core    core,
                   braid_Int     level,
                   braid_Int     index,
-                  braid_Vector  u);
+                  braid_Vector  u,
+                  braid_Int     move);
 
 /** 
  * Call user's access function in order to give access to XBraid and the
@@ -398,25 +407,7 @@ _braid_UAccessVector(braid_Core         core,
                      braid_Vector       u);
 
 /**
- * Apply Phi to the vector *u*
- *
- * This is the vector corresponding to the time step *index* on *level*.
- * *accuracy* is a user set variable to allow for tuning the accuracy of 
- * spatial solvesfor implicit stepping. And, *rfactor* allows the user to
- * subdivide time intervals for accuracy purposes.
- */
-braid_Int
-_braid_Phi(braid_Core     core,
-           braid_Int      level,
-           braid_Int      index,
-           braid_Real     accuracy,
-           braid_Vector   u,
-           braid_Int     *rfactor);
-
-
-/**
  * Integrate one time step at time step *index* to time step *index*+1
- *
  */
 braid_Int
 _braid_Step(braid_Core     core,
@@ -424,6 +415,28 @@ _braid_Step(braid_Core     core,
             braid_Int      index,
             braid_Real     accuracy,
             braid_Vector   u);
+
+/**
+ * Compute residual *r*
+ */
+braid_Int
+_braid_Residual(braid_Core     core,
+                braid_Int      level,
+                braid_Int      index,
+                braid_Real     accuracy,
+                braid_Vector   ustop,
+                braid_Vector   r);
+
+/**
+ * Compute FAS residual = f - residual
+ */
+braid_Int
+_braid_FASResidual(braid_Core     core,
+                   braid_Int      level,
+                   braid_Int      index,
+                   braid_Real     accuracy,
+                   braid_Vector   ustop,
+                   braid_Vector   r);
 
 /**
  * Coarsen in space on *level* by calling the user's coarsen function.
@@ -492,7 +505,7 @@ _braid_FCRelax(braid_Core  core,
  * F-Relax on *level* and then restrict to *level+1*
  * 
  * The output is set in the braid_Grid in core, so that the restricted 
- * vectors *va* and *wa* will be created, representing 
+ * vectors *va* and *fa* will be created, representing 
  * *level+1* versions of the unknown and rhs vectors.
  * 
  * If the user has set spatial coarsening, then this user-defined routine is 

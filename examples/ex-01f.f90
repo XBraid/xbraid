@@ -189,12 +189,15 @@ end subroutine braid_Access_F90
 
 
 ! Timestep with a braid_Vector
-subroutine braid_Phi_F90(app, u, pstatus)
+subroutine braid_Step_F90(app, ustop, fstop, fnotzero, u, pstatus)
    
    ! Braid types
    use braid_types
    implicit none
    integer (kind=8) :: pstatus
+   type(my_vector)  :: ustop
+   type(my_vector)  :: fstop
+   integer          :: fnotzero
    type(my_vector)  :: u
    type(my_app)     :: app
 
@@ -202,19 +205,21 @@ subroutine braid_Phi_F90(app, u, pstatus)
    double precision tstart, tstop, dt
 
    ! query the status structure for tstart and tstop 
-   call braid_phi_status_get_tstart_tstop_f90(pstatus, tstart, tstop)
+   call braid_step_status_get_tstart_tstop_f90(pstatus, tstart, tstop)
    dt = tstop - tstart
 
    ! On the finest grid, each value is half the previous value
    u%val = (0.5**dt)*(u%val)
 
-   ! Zero rhs for now 
-   u%val = u%val + 0.0
+   if (fnotzero .eq. 1) then
+      ! Nonzero rhs
+      u%val = u%val + fstop%val
+   end if
 
    ! no refinement
-   call braid_phi_status_set_rfactor_f90(pstatus, 0)
+   call braid_step_status_set_rfactor_f90(pstatus, 0)
 
-end subroutine braid_Phi_F90
+end subroutine braid_Step_F90
 
 
 ! Return the buffer size (in bytes) for braid_Vector

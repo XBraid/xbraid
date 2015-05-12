@@ -112,17 +112,20 @@ typedef struct _braid_Vector_struct {
  * The return value is that u is set to u_i upon completion
  * -------------------------------------------------------------------- */
 int
-my_Phi(braid_App       app,
-       braid_Vector    u,
-       braid_PhiStatus status)
+my_Step(braid_App        app,
+        braid_Vector     ustop,
+        braid_Vector     fstop,
+        braid_Vector     u,
+        braid_StepStatus status)
 {
    double tstart;             /* current time */
    double tstop;              /* evolve u to this time*/
+   HYPRE_SStructVector  bstop;
    int i, A_idx;
    int iters_taken = -1;
    
    /* Grab status of current time step */
-   braid_PhiStatusGetTstartTstop(status, &tstart, &tstop);
+   braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
 
    /* Check matrix lookup table to see if this matrix already exists*/
    A_idx = -1.0;
@@ -162,13 +165,21 @@ my_Phi(braid_App       app,
       app->man->max_iter = app->max_iter_x[1];
    
    /* Take step */
-   take_step(app->man, u->x, tstart, tstop, &iters_taken);
+   if (fstop == NULL)
+   {
+      bstop = NULL;
+   }
+   else
+   {
+      bstop = fstop->x;
+   }
+   take_step(app->man, ustop->x, bstop, u->x, tstart, tstop, &iters_taken);
 
    /* Store iterations taken */
    app->runtime_max_iter[A_idx] = max_i( (app->runtime_max_iter[A_idx]), iters_taken);
 
    /* Tell XBraid no refinement */
-   braid_PhiStatusSetRFactor(status, 1);
+   braid_StepStatusSetRFactor(status, 1);
 
    return 0;
 }
@@ -723,7 +734,7 @@ int main (int argc, char *argv[])
       
       mystarttime = MPI_Wtime();
       braid_Init(comm, comm_t, app->man->tstart, app->man->tstop, app->man->nt, 
-                 app, my_Phi, my_Init, my_Clone, my_Free, my_Sum, 
+                 app, my_Step, my_Init, my_Clone, my_Free, my_Sum, 
                  my_SpatialNorm, my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
       
       /* Set Braid parameters */
@@ -803,6 +814,7 @@ int main (int argc, char *argv[])
       HYPRE_StructPFMGDestroy( app->solver[i] );
    }
    HYPRE_SStructVectorDestroy( app->e );
+   free( app->man );
    free( app->dt_A );
    free( app->A );
    free( app->solver );

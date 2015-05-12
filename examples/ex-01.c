@@ -78,22 +78,27 @@ typedef struct _braid_Vector_struct
 } my_Vector;
 
 int
-my_Phi(braid_App       app,
-       braid_Vector    u,
-       braid_PhiStatus status)
+my_Step(braid_App        app,
+        braid_Vector     ustop,
+        braid_Vector     fstop,
+        braid_Vector     u,
+        braid_StepStatus status)
 {
    double tstart;             /* current time */
    double tstop;              /* evolve to this time*/
-   braid_PhiStatusGetTstartTstop(status, &tstart, &tstop);
+   braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
 
    /* On the finest grid, each value is half the previous value */
    (u->value) = pow(0.5, tstop-tstart)*(u->value);
 
-   /* Zero rhs for now */
-   (u->value) += 0.0;
+   if (fstop != NULL)
+   {
+      /* Nonzero rhs */
+      (u->value) += (fstop->value);
+   }
 
    /* no refinement */
-   braid_PhiStatusSetRFactor(status, 1);
+   braid_StepStatusSetRFactor(status, 1);
 
    return 0;
 }
@@ -338,7 +343,7 @@ int main (int argc, char *argv[])
    (app->ntime)  = ntime;
 
    braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
-             my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
+             my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
              my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
 
    braid_SetPrintLevel( core, 1);
