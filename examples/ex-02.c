@@ -185,6 +185,54 @@ my_Step(braid_App        app,
 }
 
 /* --------------------------------------------------------------------
+ * -------------------------------------------------------------------- */
+int
+my_Residual(braid_App        app,
+            braid_Vector     ustop,
+            braid_Vector     r,
+            braid_StepStatus status)
+{
+   double tstart;             /* current time */
+   double tstop;              /* evolve u to this time*/
+   int i, A_idx;
+   
+   /* Grab status of current time step */
+   braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+
+   /* Check matrix lookup table to see if this matrix already exists*/
+   A_idx = -1.0;
+   for( i = 0; i < app->nA; i++ ){
+      if( fabs( app->dt_A[i] - (tstop-tstart) )/(tstop-tstart) < 1e-10) { 
+         A_idx = i;
+         break;
+      }
+   }
+
+   /* We need to "trick" the user's manager with the new dt */
+   app->man->dt = tstop - tstart;
+
+   /* Set up a new matrix */
+   if( A_idx == -1.0 ){
+      A_idx = i;
+      app->nA++;
+      app->dt_A[A_idx] = tstop-tstart;
+
+      setUpImplicitMatrix( app->man );
+      app->A[A_idx] = app->man->A;
+      
+      /* Set up the PFMG solver using r->x as dummy vectors. */
+      setUpStructSolver( app->man, r->x, r->x );
+      app->solver[A_idx] = app->man->solver;
+   } 
+
+   /* Compute residual Ax */
+   app->man->A = app->A[A_idx];
+   comp_res(app->man, ustop->x, r->x, tstart, tstop);
+
+   return 0;
+}
+
+/* --------------------------------------------------------------------
  * Create a vector object for a given time point.
  * This function is only called on the finest leve
  * -------------------------------------------------------------------- */
@@ -423,7 +471,7 @@ int main (int argc, char *argv[])
    double tol, mystarttime, myendtime, mytime, maxtime, cfl;
    int run_wrapper_tests, correct1, correct2;
    int print_level, access_level, nA_max, max_levels, min_coarse;
-   int nrelax, nrelax0, cfactor, cfactor0, max_iter, fmg, tnorm;
+   int nrelax, nrelax0, cfactor, cfactor0, max_iter, fmg, res, tnorm;
 
    MPI_Init(&argc, &argv);
    MPI_Comm_rank( comm, &myid );
@@ -461,6 +509,7 @@ int main (int argc, char *argv[])
    cfactor0            = -1;              /* Coarsening factor for only level 0 -- overrides cfactor */
    max_iter            = 100;             /* Maximum number of iterations */
    fmg                 = 0;               /* Boolean, if 1, do FMG cycle.  If 0, use a V cycle */
+   res                 = 0;               /* Boolean, if 1, use my residual*/
    print_level         = 1;               /* Level of XBraid printing to the screen */
    access_level        = 1;               /* Frequency of calls to access routine: 1 is for only after simulation */
    run_wrapper_tests   = 0;               /* Run no simulation, only run wrapper tests */
@@ -550,6 +599,10 @@ int main (int argc, char *argv[])
          arg_index++;
          fmg = 1;
       }
+      else if ( strcmp(argv[arg_index], "-res") == 0 ){
+         arg_index++;
+         res = 1;
+      }
       else if( strcmp(argv[arg_index], "-print_level") == 0 ){
          arg_index++;
          print_level = atoi(argv[arg_index++]);
@@ -611,6 +664,7 @@ int main (int argc, char *argv[])
       printf("  -pfmg_mi <max_iter max_iter_cheap> : maximum number of PFMG iterations (default: 50 50)\n"); 
       printf("  -pfmg_tol  <tol_x>                 : PFMG halting tolerance (default: 1e-09 )\n"); 
       printf("  -fmg                               : use FMG cycling\n");
+      printf("  -res                               : use my residual\n");
       printf("  -forcing                           : consider non-zero RHS b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))\n");
       printf("  -use_rand <bool>                   : if nonzero, then use a uniformly random value to initialize each\n");
       printf("                                       time step for t>0.  if zero, then use a zero initial guess.\n");
@@ -756,6 +810,10 @@ int main (int argc, char *argv[])
       braid_SetMaxIter(core, max_iter);
       if (fmg) {
          braid_SetFMG(core);
+      }
+      if (res)
+      {
+         braid_SetResidual(core, my_Residual);
       }
 
       MPI_Comm_rank( comm, &myid );

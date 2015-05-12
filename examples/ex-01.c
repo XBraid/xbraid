@@ -104,6 +104,22 @@ my_Step(braid_App        app,
 }
 
 int
+my_Residual(braid_App        app,
+            braid_Vector     ustop,
+            braid_Vector     r,
+            braid_StepStatus status)
+{
+   double tstart;             /* current time */
+   double tstop;              /* evolve to this time*/
+   braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+
+   /* On the finest grid, each value is half the previous value */
+   (r->value) = (ustop->value) - pow(0.5, tstop-tstart)*(r->value);
+
+   return 0;
+}
+
+int
 my_Init(braid_App     app,
         double        t,
         braid_Vector *u_ptr)
@@ -258,6 +274,7 @@ int main (int argc, char *argv[])
    int           cfactor    = 2;
    int           max_iter   = 100;
    int           fmg        = 0;
+   int           res        = 0;
 
    int           arg_index;
 
@@ -289,6 +306,7 @@ int main (int argc, char *argv[])
             printf("  -cf  <cfactor>    : set coarsening factor\n");
             printf("  -mi  <max_iter>   : set max iterations\n");
             printf("  -fmg              : use FMG cycling\n");
+            printf("  -res              : use my residual\n");
             printf("\n");
          }
          exit(1);
@@ -328,6 +346,11 @@ int main (int argc, char *argv[])
          arg_index++;
          fmg = 1;
       }
+      else if ( strcmp(argv[arg_index], "-res") == 0 )
+      {
+         arg_index++;
+         res = 1;
+      }
       else
       {
          arg_index++;
@@ -360,6 +383,10 @@ int main (int argc, char *argv[])
    if (fmg)
    {
       braid_SetFMG(core);
+   }
+   if (res)
+   {
+      braid_SetResidual(core, my_Residual);
    }
 
    braid_Drive(core);

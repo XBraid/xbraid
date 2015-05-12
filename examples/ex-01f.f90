@@ -222,6 +222,33 @@ subroutine braid_Step_F90(app, ustop, fstop, fnotzero, u, pstatus)
 end subroutine braid_Step_F90
 
 
+! Residual
+subroutine braid_Residual_F90(app, ustop, r, pstatus)
+   
+   ! Braid types
+   use braid_types
+   implicit none
+   integer (kind=8) :: pstatus
+   type(my_vector)  :: ustop
+   type(my_vector)  :: r
+   type(my_app)     :: app
+
+   ! Other declarations
+   double precision tstart, tstop, dt
+
+   ! query the status structure for tstart and tstop 
+   call braid_step_status_get_tstart_tstop_f90(pstatus, tstart, tstop)
+   dt = tstop - tstart
+
+   ! On the finest grid, each value is half the previous value
+   r%val = (ustop%val) - (0.5**dt)*(r%val)
+
+   ! no refinement
+   call braid_step_status_set_rfactor_f90(pstatus, 0)
+
+end subroutine braid_Residual_F90
+
+
 ! Return the buffer size (in bytes) for braid_Vector
 subroutine braid_BufSize_F90(app, size_ptr)
    

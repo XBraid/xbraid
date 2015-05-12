@@ -452,7 +452,7 @@ addBoundary( simulation_manager  *man,
    free(bvalues);
 
    /* Finalize the vector assembly. */
-   HYPRE_SStructVectorAssemble(b);
+/*   HYPRE_SStructVectorAssemble(b);*/
 }
 
 
@@ -753,7 +753,7 @@ addBoundaryToRHS( simulation_manager  *man,
    free(bvalues);
 
    /* Finalize the vector assembly. */
-   HYPRE_SStructVectorAssemble(b);
+/*   HYPRE_SStructVectorAssemble(b);*/
 }
 
 /* --------------------------------------------------------------------
@@ -833,7 +833,7 @@ addForcingToRHS( simulation_manager *man,
    HYPRE_SStructVectorAddToBoxValues(b, 0, rhs_ilower,
                                      rhs_iupper, 0, values);
    
-   HYPRE_SStructVectorAssemble( b );
+/*   HYPRE_SStructVectorAssemble( b );*/
    free(values);
 }
 
@@ -1499,71 +1499,131 @@ int take_step(simulation_manager * man,         /* manager holding basic sim inf
    int      forcing    = man->forcing;  /* if true, use the nonzero forcing term */
    HYPRE_Int num_iters = 0;
    
-   double *values;
    HYPRE_SStructVector b;
    HYPRE_StructMatrix  sA;
-   HYPRE_StructVector  sb;
-   HYPRE_StructVector  sx; 
+   HYPRE_StructVector  sxstop, sbstop, sx, sb;
    
-   /* Grab values from x */
-   values = (double *) malloc( (man->nlx)*(man->nly)*sizeof(double) );
-   HYPRE_SStructVectorGather( x );
-   HYPRE_SStructVectorGetBoxValues( x, 0, man->ilower, man->iupper, 0, values );
-   initialize_vector(man, &b);
-   HYPRE_SStructVectorSetBoxValues( b, 0, man->ilower, man->iupper, 0, values );
-   free( values );
-
-   if (bstop != NULL)
-   {
-      /* Add additional forcing to b */
-      HYPRE_SStructAxpy (1.0, bstop, b);
-   }
-
    /* Grab these object pointers for use below */
    HYPRE_SStructMatrixGetObject( man->A, (void **) &sA );
+   HYPRE_SStructVectorGetObject( xstop, (void **) &sxstop );
    HYPRE_SStructVectorGetObject( x, (void **) &sx );
-   HYPRE_SStructVectorGetObject( b, (void **) &sb );
 
-   if( explicit ){
+   if( explicit )
+   {
       /* Incorporate the boundary conditions. */    
-      addBoundary( man, b );
+      addBoundary( man, x );
 
       /* Time integration to next time point: Perform MatVec x = Ab. */
-      HYPRE_StructMatrixMatvec( 1, sA, sb, 0, sx );
+      HYPRE_StructMatrixMatvec( 1, sA, sx, 0, sx );
 
       if (forcing) {
          /* add RHS of PDE: g_i = dt*b_{i-1}, i > 0 */
          addForcingToRHS( man, tstop, x );
       }
+      if (bstop != NULL)
+      {
+         /* Add extra forcing from braid */
+         HYPRE_SStructVectorGetObject( bstop, (void **) &sbstop );
+         hypre_StructAxpy(1.0, sbstop, sx);
+      }
    }
-   else{
-       /* Set up the right-hand side vector, which is the solution from 
-        * the previous time step modified to incorporate the boundary 
-        * conditions and the right-hand side of the PDE */ 
+   else
+   {
+      /* Create temporary right-hand-side vector */
+      initialize_vector(man, &b);
+      HYPRE_SStructVectorAssemble(b);
+      HYPRE_SStructVectorGetObject( b, (void **) &sb );
+      HYPRE_StructVectorCopy(sx, sb);
+
+      /* Set up the right-hand side vector, which is the solution from 
+       * the previous time step modified to incorporate the boundary 
+       * conditions and the right-hand side of the PDE */ 
       addBoundaryToRHS( man, b );
       
       if (forcing) {
          /* add RHS of PDE: g_i = Phi*dt*b_i, i > 0 */
          addForcingToRHS( man, tstop, b );
       }
+      if (bstop != NULL)
+      {
+         /* Add extra forcing from braid */
+         HYPRE_SStructVectorGetObject( bstop, (void **) &sbstop );
+         hypre_StructAxpy(1.0, sbstop, sb);
+      }
 
       /* Solve system */
       if (xstop != x)
       {
          /* Set initial guess */
-         HYPRE_SStructVectorCopy(xstop, x);
+         /*HYPRE_StructVectorCopy(sxstop, sx);*/
       }
       HYPRE_StructPFMGSetTol( man->solver, tol );
       HYPRE_StructPFMGSetMaxIter( man->solver, iters);
       HYPRE_StructPFMGSolve( man->solver, sA, sb, sx );
       HYPRE_StructPFMGGetNumIterations( man->solver, &num_iters);
       (*iters_taken) = num_iters;
+
+      /* free memory */
+      HYPRE_SStructVectorDestroy( b );
    }
 
-   /* free memory */
-   HYPRE_SStructVectorDestroy( b );
    return 0;
 }
+
+
+/* --------------------------------------------------------------------
+ * Residual routine
+ * -------------------------------------------------------------------- */
+int comp_res(simulation_manager * man,         /* manager holding basic sim info */
+             HYPRE_SStructVector  xstop,       /* approximation at tstop */
+             HYPRE_SStructVector  r,           /* approximation at tstart */
+             double               tstart,
+             double               tstop)
+{
+   int      explicit   = man->explicit; /* if true, use explicit, else implicit */
+   int      forcing    = man->forcing;  /* if true, use the nonzero forcing term */
+   
+   HYPRE_StructMatrix  sA;
+   HYPRE_StructVector  sxstop, sr; 
+   
+   /* Grab these object pointers for use below */
+   HYPRE_SStructMatrixGetObject( man->A, (void **) &sA );
+   HYPRE_SStructVectorGetObject( xstop, (void **) &sxstop );
+   HYPRE_SStructVectorGetObject( r, (void **) &sr );
+
+   if( explicit )
+   {
+      /* Incorporate the boundary conditions. */    
+      addBoundary( man, r );
+
+      /* Residual r = xstop - A*r - forcing */
+      HYPRE_StructMatrixMatvec( 1, sA, sr, 0, sr );
+      if (forcing) {
+         /* add RHS of PDE: g_i = dt*b_{i-1}, i > 0 */
+         addForcingToRHS( man, tstop, r );
+      }
+      hypre_StructAxpy (-1, sxstop, sr);
+      hypre_StructScale(-1, sr);
+   }
+   else
+   {
+      /* Set up the right-hand side vector, which is the solution from 
+       * the previous time step modified to incorporate the boundary 
+       * conditions and the right-hand side of the PDE */ 
+      addBoundaryToRHS( man, r );
+
+      /* Residual r = A*xstop - r - forcing */
+      if (forcing) {
+         /* add RHS of PDE: g_i = Phi*dt*b_i, i > 0 */
+         addForcingToRHS( man, tstop, r );
+      }
+      HYPRE_StructMatrixMatvec( -1, sA, sxstop, 1, sr );
+      hypre_StructScale(-1, sr);
+   }
+
+   return 0;
+}
+
 
 /* --------------------------------------------------------------------
  * Compute the current error vector, relative to the true continuous 
@@ -1599,6 +1659,7 @@ int compute_error(simulation_manager  *man,
 
    return 0;
 }
+
 
 /* --------------------------------------------------------------------
  * Compute || x ||_2 and return in norm_ptr
