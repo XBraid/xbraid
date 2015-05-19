@@ -636,30 +636,41 @@ _braid_GetUInit(braid_Core     core,
    ii = index-ilower;
 
    _braid_UGetVectorRef(core, level, index, &ustop);
-   if (ustop == NULL)
-   {
-      /* Approximate ustop by u at tstart by default */
-      ustop = u;
-   }
-   /* Override ustop default, depending on settings */
+
+   /* No user-provided residual routine */
    if ( _braid_CoreElt(core, residual) == NULL )
    {
-      /* When there is no user-provided residual routine, we must always
-       * approximate ustop by u at tstart. */
+      /* Here we must always approximate ustop by u at tstart. */
       ustop = u;
    }
+
+   /* User-provided residual routine, store u-vectors only at C-points */
    else if ( _braid_CoreElt(core, storage) == 0 )
    {
-      if (level == 0)
+      if (ustop == NULL)
       {
-         /* On the fine grid, approximate ustop by u at tstart */
-         ustop = u;
+         /* If the u-vector is not stored, use something else for ustop */
+         if (level == 0)
+         {
+            /* On the fine grid, approximate ustop by u */
+            ustop = u;
+         }
+         else if (va[ii] != NULL)
+         {
+            /* On coarse grids, approximate ustop by the restricted fine value.
+             * This ensures a fixed-point iteration. */
+            ustop = va[ii];
+         }
       }
-      else if (va[ii] != NULL)
+   }
+
+   /* User-provided residual routine, store all u-vectors */
+   else
+   {
+      if (ustop == NULL)
       {
-         /* On coarse grids, approximate ustop by the restricted fine value.
-          * This ensures a consistent coarse-grid correction. */
-         ustop = va[ii];
+         /* Approximate ustop by u */
+         ustop = u;
       }
    }
 
