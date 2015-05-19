@@ -1555,7 +1555,7 @@ int take_step(simulation_manager * man,         /* manager holding basic sim inf
       if (xstop != x)
       {
          /* Set initial guess */
-         /*HYPRE_StructVectorCopy(sxstop, sx);*/
+         HYPRE_StructVectorCopy(sxstop, sx);
       }
       HYPRE_StructPFMGSetTol( man->solver, tol );
       HYPRE_StructPFMGSetMaxIter( man->solver, iters);

@@ -426,6 +426,14 @@ braid_Int
 braid_SetFMG(braid_Core  core               /**< braid_Core (_braid_Core) struct*/
              );
 
+/**
+ * Sets the storage properties of the code.
+ **/
+braid_Int
+braid_SetStorage(braid_Core  core,          /**< braid_Core (_braid_Core) struct*/
+                 braid_Int   storage        /**< store C-points (0), all points (1) */
+                );
+
 /** 
  * Sets XBraid temporal norm.
  *

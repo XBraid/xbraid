@@ -94,8 +94,9 @@ typedef struct
    braid_Int          gupper;        /**< global size of the grid */
    braid_Int          cfactor;       /**< coarsening factor */
    braid_Int          ncpoints;      /**< number of C points */
-                  
-   braid_Vector      *ua;            /**< unknown vectors            (C-points only)*/
+
+   braid_Int          nupoints;      /**< number of unknown vector points */
+   braid_Vector      *ua;            /**< unknown vectors            (C-points at least)*/
    braid_Real        *ta;            /**< time values                (all points) */
    braid_Vector      *va;            /**< restricted unknown vectors (all points, NULL on level 0) */
    braid_Vector      *fa;            /**< rhs vectors f              (all points, NULL on level 0) */
@@ -162,6 +163,7 @@ typedef struct _braid_Core_struct
    braid_AccessStatus     astatus;      /**< status structure passed to user-written Access routine */
    braid_CoarsenRefStatus cstatus;      /**< status structure passed to user-written coarsen/refine routines */
    braid_StepStatus       sstatus;      /**< status structure passed to user-written step routines */
+   braid_Int              storage;      /**< storage = 0 (C-points), = 1 (all) */
 
    braid_Int              gupper;       /**< global upper index on the fine grid */
 
@@ -296,50 +298,6 @@ _braid_CommWait(braid_Core          core,
                _braid_CommHandle **handle_ptr);
 
 /**
- * Working on all intervals
- *
- * At *level*, post a receive for the point to the left of ilower (regardless 
- * whether ilower is F or C).  Then, post a send of iupper if iupper is a C 
- * point.
- */
-braid_Int
-_braid_UCommInit(braid_Core  core,
-                 braid_Int   level);
-
-/**
- * Working only on F-pt intervals
- *
- * At *level*, **only** post a receive for the point to the left of ilower 
- * if ilower is an F point.  Then, post a send of iupper if iupper is a C point.
- */
-braid_Int
-_braid_UCommInitF(braid_Core  core,
-                  braid_Int   level);
-
-/**
- * Finish up communication
- *
- * On *level*, wait on both the recv and send handles at this level.
- */
-braid_Int
-_braid_UCommWait(braid_Core  core,
-                 braid_Int   level);
-
-/**
- * Retrieve the time step indices at this *level* which correspond to the FC interval
- * given by *interval_index*.  *ci_ptr* is the time step index for the C point
- * and *flo_ptr* and *fhi_ptr* are the smallest and largest F point indices in this
- * interval.  *flo* = *ci* +1, and *fhi* = *ci* + coarsening_factor - 1
- */
-braid_Int
-_braid_UGetInterval(braid_Core   core,
-                    braid_Int    level,
-                    braid_Int    interval_index,
-                    braid_Int   *flo_ptr,
-                    braid_Int   *fhi_ptr,
-                    braid_Int   *ci_ptr);
-
-/**
  * Returns an index into the local u-vector for grid *level* at point *index*.
  * If the u-vector is not stored, returns -1.
  */
@@ -394,6 +352,50 @@ _braid_USetVector(braid_Core    core,
                   braid_Vector  u,
                   braid_Int     move);
 
+/**
+ * Working on all intervals
+ *
+ * At *level*, post a receive for the point to the left of ilower (regardless 
+ * whether ilower is F or C).  Then, post a send of iupper if iupper is a C 
+ * point.
+ */
+braid_Int
+_braid_UCommInit(braid_Core  core,
+                 braid_Int   level);
+
+/**
+ * Working only on F-pt intervals
+ *
+ * At *level*, **only** post a receive for the point to the left of ilower 
+ * if ilower is an F point.  Then, post a send of iupper if iupper is a C point.
+ */
+braid_Int
+_braid_UCommInitF(braid_Core  core,
+                  braid_Int   level);
+
+/**
+ * Finish up communication
+ *
+ * On *level*, wait on both the recv and send handles at this level.
+ */
+braid_Int
+_braid_UCommWait(braid_Core  core,
+                 braid_Int   level);
+
+/**
+ * Retrieve the time step indices at this *level* which correspond to the FC interval
+ * given by *interval_index*.  *ci_ptr* is the time step index for the C point
+ * and *flo_ptr* and *fhi_ptr* are the smallest and largest F point indices in this
+ * interval.  *flo* = *ci* +1, and *fhi* = *ci* + coarsening_factor - 1
+ */
+braid_Int
+_braid_GetInterval(braid_Core   core,
+                   braid_Int    level,
+                   braid_Int    interval_index,
+                   braid_Int   *flo_ptr,
+                   braid_Int   *fhi_ptr,
+                   braid_Int   *ci_ptr);
+
 /** 
  * Call user's access function in order to give access to XBraid and the
  * current vector.  Most commonly, this lets the user write *u* to screen,
@@ -402,9 +404,9 @@ _braid_USetVector(braid_Core    core,
  * value, etc...
  */
 braid_Int
-_braid_UAccessVector(braid_Core         core,
-                     braid_AccessStatus status,
-                     braid_Vector       u);
+_braid_AccessVector(braid_Core         core,
+                    braid_AccessStatus status,
+                    braid_Vector       u);
 
 /**
  * Integrate one time step at time step *index* to time step *index*+1
@@ -414,6 +416,7 @@ _braid_Step(braid_Core     core,
             braid_Int      level,
             braid_Int      index,
             braid_Real     accuracy,
+            braid_Vector   ustop,
             braid_Vector   u);
 
 /**
@@ -479,6 +482,13 @@ _braid_GridInit(braid_Core     core,
                 braid_Int      ilower,
                 braid_Int      iupper,
                 _braid_Grid  **grid_ptr);
+
+/**
+ * Destroy the vectors on an XBraid *grid*
+ */
+braid_Int
+_braid_GridClean(braid_Core    core,
+                 _braid_Grid  *grid);
 
 /**
  * Destroy an XBraid *grid*

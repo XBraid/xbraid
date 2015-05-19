@@ -145,6 +145,8 @@ braid_Init(MPI_Comm               comm_world,
    accuracy[1].tight_used           = 0;
    _braid_CoreElt(core, accuracy)   = accuracy;
 
+   _braid_CoreElt(core, storage)    = 0;
+
    _braid_CoreElt(core, gupper)     = ntime;
 
    _braid_CoreElt(core, rfactors)   = NULL;
@@ -256,8 +258,6 @@ braid_Drive(braid_Core  core)
                old_rnorm = rnorm;
             }
             _braid_FRestrict(core, level, iter, &rnorm);
-            /* Set initial guess on next coarser level */
-            _braid_InitGuess(core, level+1);
 
             /* Adjust tolerance */
             if ((level == 0) && (iter == 0))
@@ -763,6 +763,18 @@ braid_Int
 braid_SetFMG(braid_Core  core)
 {
    _braid_CoreElt(core, fmg) = 1;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetStorage(braid_Core  core,
+                 braid_Int   storage)
+{
+   _braid_CoreElt(core, storage) = storage;
 
    return _braid_error_flag;
 }
