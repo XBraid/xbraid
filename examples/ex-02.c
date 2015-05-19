@@ -471,7 +471,7 @@ int main (int argc, char *argv[])
    double tol, mystarttime, myendtime, mytime, maxtime, cfl;
    int run_wrapper_tests, correct1, correct2;
    int print_level, access_level, nA_max, max_levels, min_coarse;
-   int nrelax, nrelax0, cfactor, cfactor0, max_iter, fmg, res, storeall, tnorm;
+   int nrelax, nrelax0, cfactor, cfactor0, max_iter, fmg, res, storage, tnorm;
 
    MPI_Init(&argc, &argv);
    MPI_Comm_rank( comm, &myid );
@@ -510,7 +510,7 @@ int main (int argc, char *argv[])
    max_iter            = 100;             /* Maximum number of iterations */
    fmg                 = 0;               /* Boolean, if 1, do FMG cycle.  If 0, use a V cycle */
    res                 = 0;               /* Boolean, if 1, use my residual */
-   storeall            = 0;               /* Boolean, if 1, store all points */
+   storage             = -1;              /* Full storage on levels >= 'storage' */
    print_level         = 1;               /* Level of XBraid printing to the screen */
    access_level        = 1;               /* Frequency of calls to access routine: 1 is for only after simulation */
    run_wrapper_tests   = 0;               /* Run no simulation, only run wrapper tests */
@@ -604,9 +604,9 @@ int main (int argc, char *argv[])
          arg_index++;
          res = 1;
       }
-      else if ( strcmp(argv[arg_index], "-storeall") == 0 ){
+      else if ( strcmp(argv[arg_index], "-storage") == 0 ){
          arg_index++;
-         storeall = 1;
+         storage = atoi(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-print_level") == 0 ){
          arg_index++;
@@ -670,7 +670,7 @@ int main (int argc, char *argv[])
       printf("  -pfmg_tol  <tol_x>                 : PFMG halting tolerance (default: 1e-09 )\n"); 
       printf("  -fmg                               : use FMG cycling\n");
       printf("  -res                               : use my residual\n");
-      printf("  -storeall                          : store all points\n");
+      printf("  -storage <level>                   : full storage on levels >= level\n");
       printf("  -forcing                           : consider non-zero RHS b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))\n");
       printf("  -use_rand <bool>                   : if nonzero, then use a uniformly random value to initialize each\n");
       printf("                                       time step for t>0.  if zero, then use a zero initial guess.\n");
@@ -821,9 +821,9 @@ int main (int argc, char *argv[])
       {
          braid_SetResidual(core, my_Residual);
       }
-      if (storeall)
+      if (storage > -1)
       {
-         braid_SetStorage(core, 1);
+         braid_SetStorage(core, storage);
       }
 
       MPI_Comm_rank( comm, &myid );

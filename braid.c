@@ -145,7 +145,7 @@ braid_Init(MPI_Comm               comm_world,
    accuracy[1].tight_used           = 0;
    _braid_CoreElt(core, accuracy)   = accuracy;
 
-   _braid_CoreElt(core, storage)    = 0;
+   _braid_CoreElt(core, storage)    = -1;            /* only store C-points */
 
    _braid_CoreElt(core, gupper)     = ntime;
 

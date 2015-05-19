@@ -267,7 +267,8 @@ _braid_UGetIndex(braid_Core   core,
    uindex = -1;
    if ((index >= ilower) && (index <= iupper))
    {
-      if ( _braid_CoreElt(core, storage) == 0 )
+      if ( (_braid_CoreElt(core, storage) == -1) ||
+           (level < _braid_CoreElt(core, storage)) )
       {
          if ( _braid_IsCPoint(index, cfactor) )
          {
@@ -645,7 +646,8 @@ _braid_GetUInit(braid_Core     core,
    }
 
    /* User-provided residual routine, store u-vectors only at C-points */
-   else if ( _braid_CoreElt(core, storage) == 0 )
+   else if ( (_braid_CoreElt(core, storage) == -1) ||
+             (level < _braid_CoreElt(core, storage)) )
    {
       if (ustop == NULL)
       {
@@ -1808,7 +1810,8 @@ _braid_InitHierarchy(braid_Core    core,
          _braid_GridElt(grid, fa)       = fa+1;  /* shift */
       }
 
-      if ( _braid_CoreElt(core, storage) == 0 )
+      if ( (_braid_CoreElt(core, storage) == -1) ||
+           (level < _braid_CoreElt(core, storage)) )
       {
          nupoints = _braid_GridElt(grid, ncpoints);   /* only C-points */
       }
