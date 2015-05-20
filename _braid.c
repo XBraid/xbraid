@@ -1027,7 +1027,7 @@ _braid_InitGuess(braid_Core  core,
    braid_Vector  *va      = _braid_GridElt(grids[level], va);
 
    braid_Vector   u;
-   braid_Int      i;
+   braid_Int      i, iu;
 
    if (level == 0)
    {
@@ -1042,7 +1042,12 @@ _braid_InitGuess(braid_Core  core,
    {
       for (i = ilower; i <= iupper; i++)
       {
-         _braid_USetVector(core, level, i, va[i-ilower], 0);
+         _braid_UGetIndex(core, level, i, &iu);
+         if (iu > -1)
+         {
+            _braid_CoreFcn(core, clone)(app, va[i-ilower], &u);
+            _braid_USetVectorRef(core, level, i, u);
+         }
       }
    }
 
