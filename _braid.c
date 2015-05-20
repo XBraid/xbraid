@@ -901,6 +901,8 @@ _braid_GridInit(braid_Core     core,
    _braid_GridElt(grid, level)  = level;
    _braid_GridElt(grid, ilower) = ilower;
    _braid_GridElt(grid, iupper) = iupper;
+   _braid_GridElt(grid, recv_index) = -1;
+   _braid_GridElt(grid, send_index) = -1;
    
    /* Store each processor's time slice, plus one time value to the left 
     * and to the right */
