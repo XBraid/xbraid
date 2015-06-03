@@ -401,6 +401,8 @@ my_Phi(braid_App       app,
     * this accuracy value is controlled, in part, by the -tol_x and -tol_xc command
     * line parameters. */
    app->man->tol = accuracy;
+   
+   /* printf("  Level  %d   Tol  %1.2e   Maxiter  %d\n", A_idx, app->man->tol, app->man->max_iter); */
 
    /* Take step */
    take_step(app->man, u->x, tstart, tstop, &iters_taken);
@@ -1991,9 +1993,9 @@ int main (int argc, char *argv[])
       printf("  -cf  <cfactor>                     : set coarsening factor (default: 2)\n");   
       printf("  -cf0  <cfactor>                    : set coarsening factor for level 0 \n");
       printf("  -mi  <max_iter>                    : set max iterations (default: 100)\n");
-      printf("  -pfmg_mi <max_iter max_iter_cheap> : maximum number of PFMG iterations (default: 50 50)\n"); 
-      printf("  -pfmg_tolx <loose_tol tight_tol>   : loose and tight stopping tolerance for PFMG (default: 1e-09 1e-09)\n"); 
-      printf("  -pfmg_tolxc <tol_x>                : stopping tolerance for PFMG on coarse grids (default: 1e-09)\n");
+      printf("  -pfmg_mi <mi_fine mi_coarse>       : max number of PFMG iters for fine and coarse levels (default: 50 50)\n"); 
+      printf("  -pfmg_tolx <loose_tol tight_tol>   : loose and tight PFMG stopping tol on fine level (default: 1e-09 1e-09)\n"); 
+      printf("  -pfmg_tolxc <tol_x>                : PFMG stopping tol for all coarse levels (default: 1e-09)\n");
       printf("  -fmg <nfmg_Vcyc>                   : use FMG cycling, nfmg_Vcyc V-cycles at each fmg level\n");
       printf("  -forcing                           : consider non-zero RHS b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))\n");
       printf("  -use_rand <bool>                   : if nonzero, then use a uniformly random value to initialize each\n");
@@ -2413,7 +2415,7 @@ int main (int argc, char *argv[])
          printf("-----------------------------------------------------------------\n\n"); 
          printf(" Implicit time stepping solve parameters\n\n");
          printf("   Fine-level loose stopping tol  :  %1.2e    (while ||r|| is large)\n", tol_x[0]);
-         printf("   Fine-level tight stopping tol  :  %1.2e    (while ||r|| is small)\n", tol_x[0]);
+         printf("   Fine-level tight stopping tol  :  %1.2e    (while ||r|| is small)\n", tol_x[1]);
          printf("   Coarse-level stopping tol      :  %1.2e    (for all ||r||) \n", tol_x_coarse);
          printf(" \n"); 
          printf("   Fine-level max iter            :  %d\n", app->max_iter_x[0]);
