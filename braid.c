@@ -474,29 +474,29 @@ braid_Destroy(braid_Core  core)
 braid_Int
 braid_PrintStats(braid_Core  core)
 {
-   MPI_Comm      comm_world   = _braid_CoreElt(core, comm_world);
-   braid_Real    tstart       = _braid_CoreElt(core, tstart);
-   braid_Real    tstop        = _braid_CoreElt(core, tstop);
-   braid_Int     ntime        = _braid_CoreElt(core, ntime);
-   braid_Int     max_levels   = _braid_CoreElt(core, max_levels);
-   braid_Int     min_coarse   = _braid_CoreElt(core, min_coarse);
-   braid_Real    tol          = _braid_CoreElt(core, tol);
-   braid_Int     rtol         = _braid_CoreElt(core, rtol);
-   braid_Int    *nrels        = _braid_CoreElt(core, nrels);
+   MPI_Comm      comm_world    = _braid_CoreElt(core, comm_world);
+   braid_Real    tstart        = _braid_CoreElt(core, tstart);
+   braid_Real    tstop         = _braid_CoreElt(core, tstop);
+   braid_Int     ntime         = _braid_CoreElt(core, ntime);
+   braid_Int     max_levels    = _braid_CoreElt(core, max_levels);
+   braid_Int     min_coarse    = _braid_CoreElt(core, min_coarse);
+   braid_Real    tol           = _braid_CoreElt(core, tol);
+   braid_Int     rtol          = _braid_CoreElt(core, rtol);
+   braid_Int    *nrels         = _braid_CoreElt(core, nrels);
    /*braid_Int    *cfactors     = _braid_CoreElt(core, cfactors);*/
-   braid_Int     max_iter     = _braid_CoreElt(core, max_iter);
-   braid_Int     niter        = _braid_CoreElt(core, niter);
-   braid_Real    rnorm        = _braid_CoreElt(core, rnorm);
-   braid_Real    global_rnorm = _braid_CoreElt(core, global_rnorm);
-   braid_Int     nlevels      = _braid_CoreElt(core, nlevels);
-   braid_Int     tnorm        = _braid_CoreElt(core, tnorm); 
-   braid_Int     fmg          = _braid_CoreElt(core, fmg); 
-   braid_Int     nfmg_Vcyc    = _braid_CoreElt(core, nfmg_Vcyc); 
-   braid_Int     access_level = _braid_CoreElt(core, access_level); 
-   braid_Int     print_level  = _braid_CoreElt(core, print_level); 
-   _braid_Grid **grids        = _braid_CoreElt(core, grids);
-
-   braid_Real    globaltime   = _braid_CoreElt(core, globaltime);
+   braid_Int     max_iter      = _braid_CoreElt(core, max_iter);
+   braid_Int     niter         = _braid_CoreElt(core, niter);
+   braid_Real    rnorm         = _braid_CoreElt(core, rnorm);
+   braid_Real    global_rnorm  = _braid_CoreElt(core, global_rnorm);
+   braid_Int     nlevels       = _braid_CoreElt(core, nlevels);
+   braid_Int     tnorm         = _braid_CoreElt(core, tnorm); 
+   braid_Int     fmg           = _braid_CoreElt(core, fmg); 
+   braid_Int     nfmg_Vcyc     = _braid_CoreElt(core, nfmg_Vcyc); 
+   braid_Int     access_level  = _braid_CoreElt(core, access_level); 
+   braid_Int     print_level   = _braid_CoreElt(core, print_level); 
+   braid_Real    globaltime    = _braid_CoreElt(core, globaltime);
+   braid_PtFcnResidual globres = _braid_CoreElt(core, globresidual);
+   _braid_Grid **grids         = _braid_CoreElt(core, grids);
 
    braid_Int     myid, level;
 

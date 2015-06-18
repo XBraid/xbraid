@@ -1114,7 +1114,7 @@ _braid_GetFullResidual(braid_Core  core,
          /* Update local processor norm. */
          ii = fi-ilower;
          _braid_StepStatusInit(ta[ii-1], ta[ii], accuracy, level, status);
-         _braid_CoreFcn(core, normresidual)(app, u, r, status);
+         _braid_CoreFcn(core, globresidual)(app, u, r, status);
          _braid_CoreFcn(core, spatialnorm)(app, r, &rnorm_temp); 
          if(tnorm == 1)       /* one-norm */ 
          {  
@@ -1148,7 +1148,7 @@ _braid_GetFullResidual(braid_Core  core,
          ii = ci-ilower;
          _braid_StepStatusInit(ta[ii-1], ta[ii], accuracy, level, status);
          _braid_UGetVector(core, level, ci, &r);
-         _braid_CoreFcn(core, normresidual)(app, r, u, status);
+         _braid_CoreFcn(core, globresidual)(app, r, u, status);
          _braid_CoreFcn(core, spatialnorm)(app, u, &rnorm_temp);
 
          if(tnorm == 1)       /* one-norm */ 
