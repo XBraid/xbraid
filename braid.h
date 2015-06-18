@@ -477,6 +477,14 @@ braid_SetResidual(braid_Core          core,     /**< braid_Core (_braid_Core) st
                   );
 
 /**
+ * Set user-defined residual routine for use in computing global temporal norm.
+ **/
+braid_Int
+braid_SetGlobalResidual(braid_Core          core,     /**< braid_Core (_braid_Core) struct*/ 
+                        braid_PtFcnResidual residual  /**< function pointer to residual routine */
+                        );
+
+/**
  * Set spatial coarsening routine with user-defined routine.
  * Default is no spatial refinment or coarsening.
  **/

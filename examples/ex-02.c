@@ -234,7 +234,7 @@ my_Residual(braid_App        app,
 
 /* --------------------------------------------------------------------
  * Create a vector object for a given time point.
- * This function is only called on the finest leve
+ * This function is only called on the finest level.
  * -------------------------------------------------------------------- */
 int
 my_Init(braid_App     app,
@@ -364,6 +364,7 @@ my_Access(braid_App           app,
       index = ((t - tstart) / ((tstop - tstart)/nt) + 0.1);
       compute_disc_err(app->man, u->x, t, app->e, &disc_err);
       if( (t == app->man->tstop) && myid == 0 ) {
+         printf("\n  Discr. error         = %1.5e\n", disc_err);
          printf("\n  Braid:  iter %d,  discr. error at final time:  %1.4e\n", iter, disc_err);
       }
       
@@ -471,7 +472,7 @@ int main (int argc, char *argv[])
    double tol, mystarttime, myendtime, mytime, maxtime, cfl;
    int run_wrapper_tests, correct1, correct2;
    int print_level, access_level, nA_max, max_levels, min_coarse;
-   int nrelax, nrelax0, cfactor, cfactor0, max_iter, fmg, res, storage, tnorm;
+   int nrelax, nrelax0, cfactor, cfactor0, max_iter, fmg, res, storage, tnorm, new_res;
 
    MPI_Init(&argc, &argv);
    MPI_Comm_rank( comm, &myid );
@@ -514,6 +515,7 @@ int main (int argc, char *argv[])
    print_level         = 1;               /* Level of XBraid printing to the screen */
    access_level        = 1;               /* Frequency of calls to access routine: 1 is for only after simulation */
    run_wrapper_tests   = 0;               /* Run no simulation, only run wrapper tests */
+   new_res             = 0;               /* Do not compute global residual from user routine each iteration */
    
    /* Other parameters specific to parallel in time */
    app->use_rand       = 1;               /* If 1, use a random initial guess, else use a zero initial guess */
@@ -629,6 +631,10 @@ int main (int argc, char *argv[])
          app->max_iter_x[0] = atoi(argv[arg_index++]);
          app->max_iter_x[1] = atoi(argv[arg_index++]);
       }
+      else if( strcmp(argv[arg_index], "-new_res") == 0 ){
+         arg_index++;
+         new_res = 1;
+      }
       else if( strcmp(argv[arg_index], "-help") == 0 ){
          print_usage = 1;
          break;
@@ -674,6 +680,8 @@ int main (int argc, char *argv[])
       printf("  -forcing                           : consider non-zero RHS b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))\n");
       printf("  -use_rand <bool>                   : if nonzero, then use a uniformly random value to initialize each\n");
       printf("                                       time step for t>0.  if zero, then use a zero initial guess.\n");
+      printf("  -new_res                           : use user residual routine to compute global residual each iteration\n");
+      printf("                                       on all grid points for stopping criterion.\n");
       printf("                                     \n");
       printf("                                     \n");
       printf(" Output related parameters\n");
@@ -810,6 +818,9 @@ int main (int argc, char *argv[])
          sqrt( (app->man->dx)*(app->man->dy)*(app->man->dt)) );
       braid_SetTemporalNorm(core, tnorm);
       braid_SetCFactor(core, -1, cfactor);
+      if (new_res) {
+        braid_SetGlobalResidual(core, my_Residual);        
+      }
       if( cfactor0 > 0 ) {
          braid_SetCFactor(core,  0, cfactor0);
       }

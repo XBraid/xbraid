@@ -27,7 +27,7 @@
 #include "braid_test.h"
 
 class BraidAccessStatus;
-class BraidPhiStatus;
+class BraidStepStatus;
 class BraidCoarsenRefStatus;
 
 // Wrapper for BRAID's App object. Users should inherit this class and implement
@@ -50,8 +50,14 @@ public:
 
    virtual ~BraidApp() { }
 
-   virtual braid_Int Phi(braid_Vector    _u,
-                         BraidPhiStatus &pstatus) = 0;
+   virtual braid_Int Step(braid_Vector    _u,
+                         braid_Vector    _ustop,
+                         braid_Vector    _fstop,
+                         BraidStepStatus &pstatus) = 0;
+
+   virtual braid_Int Residual(braid_Vector _u,
+                              braid_Vector _r,
+                              BraidStepStatus &pstatus) = 0;
 
    virtual braid_Int Clone(braid_Vector  _u,
                            braid_Vector *v_ptr) = 0;
@@ -129,28 +135,28 @@ class BraidAccessStatus
       ~BraidAccessStatus() { }
 };
 
-// Wrapper for BRAID's PhiStatus object
-class BraidPhiStatus
+// Wrapper for BRAID's StepStatus object
+class BraidStepStatus
 {
    private:
-      braid_PhiStatus pstatus;
+      braid_StepStatus pstatus;
 
    public:
-      BraidPhiStatus(braid_PhiStatus _pstatus)
+      BraidStepStatus(braid_StepStatus _pstatus)
       {
          pstatus = _pstatus;
       }
 
-      void GetTstartTstop(braid_Real *tstart_ptr, braid_Real *tstop_ptr) { braid_PhiStatusGetTstartTstop(pstatus, tstart_ptr, tstop_ptr); }
-      void GetTstart(braid_Real *tstart_ptr)     { braid_PhiStatusGetTstart(pstatus, tstart_ptr); }
-      void GetTstop(braid_Real *tstop_ptr)       { braid_PhiStatusGetTstop(pstatus, tstop_ptr); }
-      void GetAccuracy(braid_Real *accuracy_ptr) { braid_PhiStatusGetAccuracy(pstatus, accuracy_ptr); }
-      void GetLevel(braid_Int *level_ptr)        { braid_PhiStatusGetLevel(pstatus, level_ptr); }
-      void SetRFactor(braid_Int rfactor)         { braid_PhiStatusSetRFactor(pstatus, rfactor); }
+      void GetTstartTstop(braid_Real *tstart_ptr, braid_Real *tstop_ptr) { braid_StepStatusGetTstartTstop(pstatus, tstart_ptr, tstop_ptr); }
+      void GetTstart(braid_Real *tstart_ptr)     { braid_StepStatusGetTstart(pstatus, tstart_ptr); }
+      void GetTstop(braid_Real *tstop_ptr)       { braid_StepStatusGetTstop(pstatus, tstop_ptr); }
+      void GetAccuracy(braid_Real *accuracy_ptr) { braid_StepStatusGetAccuracy(pstatus, accuracy_ptr); }
+      void GetLevel(braid_Int *level_ptr)        { braid_StepStatusGetLevel(pstatus, level_ptr); }
+      void SetRFactor(braid_Int rfactor)         { braid_StepStatusSetRFactor(pstatus, rfactor); }
 
-      // The braid_PhiStatus structure is deallocated inside of Braid
+      // The braid_StepStatus structure is deallocated inside of Braid
       // This class is just to make code consistently look object oriented
-      ~BraidPhiStatus() { }
+      ~BraidStepStatus() { }
 };
 
 // Wrapper for BRAID's CoarsenRefStatus object
@@ -179,13 +185,25 @@ class BraidCoarsenRefStatus
 };
 
 // Static functions passed to Braid, with braid_App == BraidApp*
-static braid_Int _BraidAppPhi(braid_App       _app,
+static braid_Int _BraidAppStep(braid_App       _app,
+                              braid_Vector    _ustop,
+                              braid_Vector    _fstop,
                               braid_Vector    _u,
-                              braid_PhiStatus _pstatus)
+                              braid_StepStatus _pstatus)
 {
    BraidApp *app = (BraidApp*)_app;
-   BraidPhiStatus pstatus = BraidPhiStatus(_pstatus);
-   return app -> Phi(_u, pstatus);
+   BraidStepStatus pstatus = BraidStepStatus(_pstatus);
+   return app -> Step(_u,_ustop, _fstop, pstatus);
+}
+
+static braid_Int _BraidAppResidual(braid_App     _app,
+                              braid_Vector  _ustop,
+                              braid_Vector  _r,
+                              braid_StepStatus _pstatus)
+{
+   BraidApp *app = (BraidApp*)_app;
+   BraidStepStatus pstatus = BraidStepStatus(_pstatus);
+   return app -> Residual(_ustop,_r, pstatus);
 }
 
 static braid_Int _BraidAppClone(braid_App     _app,
@@ -293,7 +311,7 @@ public:
    {
       braid_Init(comm_world,
                  app->comm_t, app->tstart, app->tstop, app->ntime, (braid_App)app,
-                 _BraidAppPhi, _BraidAppInit, _BraidAppClone, _BraidAppFree,
+                 _BraidAppStep, _BraidAppInit, _BraidAppClone, _BraidAppFree,
                  _BraidAppSum, _BraidAppSpatialNorm, _BraidAppAccess,
                  _BraidAppBufSize, _BraidAppBufPack, _BraidAppBufUnpack, &core);
    }
@@ -335,6 +353,8 @@ public:
       braid_SetSpatialRefine(core, _BraidAppRefine);
    }
 
+   void SetResidual() { braid_SetResidual(core, _BraidAppResidual); }
+
    void SetMaxIter(braid_Int max_iter) { braid_SetMaxIter(core, max_iter); }
 
    void SetPrintLevel(braid_Int print_level) { braid_SetPrintLevel(core, print_level); }
@@ -344,6 +364,8 @@ public:
    void SetAccessLevel(braid_Int access_level) { braid_SetAccessLevel(core, access_level); }
 
    void SetFMG() { braid_SetFMG(core); }
+
+   void SetStorage(braid_Int storage) { braid_SetStorage(core, storage); }
 
    void SetNFMGVcyc(braid_Int nfmg_Vcyc) { braid_SetNFMGVcyc(core, nfmg_Vcyc); }
 

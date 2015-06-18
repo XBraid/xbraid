@@ -138,6 +138,7 @@ typedef struct _braid_Core_struct
    braid_PtFcnBufPack     bufpack;      /**< pack a buffer */
    braid_PtFcnBufUnpack   bufunpack;    /**< unpack a buffer */
    braid_PtFcnResidual    residual;     /**< (optional) compute residual */
+   braid_PtFcnResidual    globresidual; /**< (optional) compute residual for global temporal norm */
    braid_PtFcnCoarsen     coarsen;      /**< (optional) return a coarsened vector */
    braid_PtFcnRefine      refine;       /**< (optional) return a refined vector */
 
@@ -154,6 +155,7 @@ typedef struct _braid_Core_struct
    braid_Int              max_iter;     /**< maximum number of multigrid in time iterations */
    braid_Int              niter;        /**< number of iterations */
    braid_Real             rnorm;        /**< residual norm */
+   braid_Real             global_rnorm; /**< new residual norm on all F/C points */
    braid_Int              fmg;          /**< use FMG cycle */
    braid_Int              nfmg_Vcyc;    /**< number of V-cycle calls at each level in FMG */
    braid_Int              tnorm;        /**< choice of temporal norm */
@@ -503,6 +505,15 @@ _braid_GridDestroy(braid_Core    core,
 braid_Int
 _braid_InitGuess(braid_Core  core,
                  braid_Int   level);
+
+/**
+ * Compute global temporal residual with user-provided residual routine. 
+ * Output goes in *return_norm. 
+ */
+braid_Int
+_braid_GetFullResidual(braid_Core  core,
+                       braid_Int   level,
+                       braid_Real *return_norm);
 
 /**
  * Do nu sweeps of F-then-C relaxation on *level*
