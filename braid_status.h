@@ -102,7 +102,7 @@ typedef struct _braid_CoarsenRefStatus_struct
    braid_Real     f_tstop;     /**< time value to the right of tstart  on fine grid */
    braid_Real     c_tprior;    /**< time value to the left of tstart on coarse grid */
    braid_Real     c_tstop;     /**< time value to the right of tstart on coarse grid */
-   braid_Int      level;        /**< current fine level in XBraid*/
+   braid_Int      level;       /**< current fine level in XBraid*/
    
 } _braid_CoarsenRefStatus;
 
@@ -130,6 +130,7 @@ typedef struct _braid_StepStatus_struct
    braid_Real     accuracy;        /**< advanced option allowing variable accuracy for implicit step*/
    braid_Int      rfactor;         /**< if set by user, allows for subdivision of this interval for bettter time accuracy */
    braid_Int      level;           /**< current level in XBraid*/
+   braid_Int      step_type;       /**< Step type, 0: take step for relaxation, 1: for interpolation, 2: for residual, 3: access */
 } _braid_StepStatus;
 
 
@@ -340,7 +341,8 @@ _braid_StepStatusInit(braid_Real       tstart,      /**< current time value  */
                       braid_Real       tstop,       /**< time value to evolve towards, time value to the right of tstart */
                       braid_Real       accuracy,    /**< advanced option allowing variable accuracy for implicit step*/
                       braid_Int        level,       /**< current level in XBraid */
-                      braid_StepStatus  status       /**< structure to initialize */
+                      braid_Int        step_type,   /**< current step type in XBraid (0: relax, 1: interp, 2: residual, 3: access) */
+                      braid_StepStatus status       /**< structure to initialize */
                       );
 
 /**
@@ -354,15 +356,15 @@ _braid_StepStatusDestroy(braid_StepStatus  status);        /**< structure to be 
  **/
 braid_Int
 braid_StepStatusGetTstart(braid_StepStatus  status,         /**< structure containing current simulation info */
-                          braid_Real      *tstart_ptr      /**< output, current time */
+                          braid_Real      *tstart_ptr       /**< output, current time */
                           );
 /**
  * Return the time value to the right of the current time value from
  * the StepStatus structure.
  **/
 braid_Int
-braid_StepStatusGetTstop(braid_StepStatus  status,         /**< structure containing current simulation info */
-                         braid_Real      *tstop_ptr       /**< output, next time value to evolve towards */
+braid_StepStatusGetTstop(braid_StepStatus  status,          /**< structure containing current simulation info */
+                         braid_Real      *tstop_ptr         /**< output, next time value to evolve towards */
                          );
 
 /** 
@@ -371,7 +373,7 @@ braid_StepStatusGetTstop(braid_StepStatus  status,         /**< structure contai
  **/
 braid_Int
 braid_StepStatusGetAccuracy(braid_StepStatus  status,         /**< structure containing current simulation info */
-                            braid_Real      *accuracy_ptr    /**< output, current accuracy value */
+                            braid_Real      *accuracy_ptr     /**< output, current accuracy value */
                             );
 
 /**
@@ -379,8 +381,17 @@ braid_StepStatusGetAccuracy(braid_StepStatus  status,         /**< structure con
  **/
 braid_Int
 braid_StepStatusGetLevel(braid_StepStatus  status,           /**< structure containing current simulation info */
-                         braid_Int       *level_ptr         /**< output, current level in XBraid */
+                         braid_Int       *level_ptr          /**< output, current level in XBraid */
                          );
+
+/**
+ * Return the current step type from the StepStatus structure.
+ **/
+braid_Int
+braid_StepStatusGetStepType(braid_StepStatus  status,        /**< structure containing current simulation info */
+                            braid_Int        *step_type_ptr  /**< output, current step type in XBraid (0: relax, 1: interp, 2: residual, 3: access) */
+                            );
+
 
 /** 
  * Set the rfactor, a desired refinement factor for this interval.  rfactor=1
@@ -389,7 +400,7 @@ braid_StepStatusGetLevel(braid_StepStatus  status,           /**< structure cont
  **/
 braid_Int
 braid_StepStatusSetRFactor(braid_StepStatus  status,         /**< structure containing current simulation info */
-                           braid_Real       rfactor         /**< user-determined desired rfactor */
+                           braid_Real       rfactor          /**< user-determined desired rfactor */
                            );
 
 /**
@@ -402,7 +413,7 @@ braid_StepStatusSetRFactor(braid_StepStatus  status,         /**< structure cont
  * on the *tstart* value.
  **/
 braid_Int
-braid_StepStatusGetTstartTstop(braid_StepStatus  status,         /**< structure containing current simulation info */
+braid_StepStatusGetTstartTstop(braid_StepStatus  status,        /**< structure containing current simulation info */
                                braid_Real       *tstart_ptr,    /**< output, current time */
                                braid_Real       *tstop_ptr      /**< output, next time value to evolve towards */
                                );

@@ -33,7 +33,7 @@ include ../makefile.inc
 # Build exmaples 
 ##################################################################
 
-HYPRE_DIR = ../../hypre
+HYPRE_DIR = ../../linear_solvers/hypre
 HYPRE_FLAGS = -I$(HYPRE_DIR)/include
 HYPRE_LIB = -L$(HYPRE_DIR)/lib -lHYPRE
 

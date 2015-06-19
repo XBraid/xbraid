@@ -416,6 +416,7 @@ _braid_AccessVector(braid_Core         core,
 braid_Int
 _braid_Step(braid_Core     core,
             braid_Int      level,
+            braid_Int      step_type,
             braid_Int      index,
             braid_Real     accuracy,
             braid_Vector   ustop,
