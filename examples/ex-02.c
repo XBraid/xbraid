@@ -121,11 +121,13 @@ my_Step(braid_App        app,
    double tstart;             /* current time */
    double tstop;              /* evolve u to this time*/
    HYPRE_SStructVector  bstop;
-   int i, A_idx;
+   int i, A_idx, step_type, level;
    int iters_taken = -1;
    
    /* Grab status of current time step */
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+   braid_StepStatusGetStepType(status, &step_type);
+   braid_StepStatusGetLevel(status, &level);
 
    /* Check matrix lookup table to see if this matrix already exists*/
    A_idx = -1.0;
@@ -157,13 +159,20 @@ my_Step(braid_App        app,
     * First, "trick" the user's manager with the right matrix and solver */ 
    app->man->A = app->A[A_idx];
    app->man->solver = app->solver[A_idx];
-   
+
+#if 0
    /* Use level specific max_iter */
    if( A_idx == 0 )
+#else
+   /* A step_type of 0 denotes the CF relaxation sweep, so you can use the cheap number of iterations,
+    * Otherwise, the step_type denotes a residual computation, interpolation or access */
+   if( step_type == 0 )
+#endif
       app->man->max_iter = app->max_iter_x[0];
    else
       app->man->max_iter = app->max_iter_x[1];
-   
+   //printf("Step Type %d,  Level %d\n", step_type, level);
+
    /* Take step */
    if (fstop == NULL)
    {
@@ -832,7 +841,7 @@ int main (int argc, char *argv[])
       {
          braid_SetResidual(core, my_Residual);
       }
-      if (storage > -1)
+      if (storage >= -2)
       {
          braid_SetStorage(core, storage);
       }

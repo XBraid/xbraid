@@ -638,8 +638,8 @@ _braid_GetUInit(braid_Core     core,
 
    _braid_UGetVectorRef(core, level, index, &ustop);
 
-   /* No user-provided residual routine */
-   if ( _braid_CoreElt(core, residual) == NULL )
+   /* Run in compatibility mode, mimic the original Braid algorithm */
+   if ( _braid_CoreElt(core, storage) == -2 )
    {
       /* Here we must always approximate ustop by u at tstart. */
       ustop = u;
@@ -666,7 +666,7 @@ _braid_GetUInit(braid_Core     core,
       }
    }
 
-   /* User-provided residual routine, store all u-vectors */
+   /* Utilize storage of all u-vectors (F and C points) at this level */
    else
    {
       if (ustop == NULL)
