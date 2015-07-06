@@ -72,6 +72,7 @@ typedef struct _braid_AccessStatus_struct
    braid_Real    t;            /**< current time */
    braid_Int     iter;         /**< XBraid iteration number */
    braid_Int     level;        /**< current level in XBraid*/
+   braid_Int     nrefine;      /**< number of refinements done */
    braid_Real    rnorm;        /**< residual norm */
    braid_Int     done;         /**< boolean describing whether XBraid has finished */
    braid_Int     wrapper_test; /**< boolean describing whether this call is only a wrapper test */
@@ -97,12 +98,13 @@ typedef struct _braid_CoarsenRefStatus_struct *braid_CoarsenRefStatus;
  **/
 typedef struct _braid_CoarsenRefStatus_struct
 {
-   braid_Real     tstart;      /**< current time value */                          
-   braid_Real     f_tprior;    /**< time value to the left of tstart on fine grid */ 
-   braid_Real     f_tstop;     /**< time value to the right of tstart  on fine grid */
-   braid_Real     c_tprior;    /**< time value to the left of tstart on coarse grid */
-   braid_Real     c_tstop;     /**< time value to the right of tstart on coarse grid */
-   braid_Int      level;        /**< current fine level in XBraid*/
+   braid_Real    tstart;      /**< current time value */                          
+   braid_Real    f_tprior;    /**< time value to the left of tstart on fine grid */ 
+   braid_Real    f_tstop;     /**< time value to the right of tstart  on fine grid */
+   braid_Real    c_tprior;    /**< time value to the left of tstart on coarse grid */
+   braid_Real    c_tstop;     /**< time value to the right of tstart on coarse grid */
+   braid_Int     level;       /**< current fine level in XBraid*/
+   braid_Int     nrefine;     /**< number of refinements done */
    
 } _braid_CoarsenRefStatus;
 
@@ -125,11 +127,13 @@ typedef struct _braid_StepStatus_struct *braid_StepStatus;
  **/
 typedef struct _braid_StepStatus_struct
 {
-   braid_Real     tstart;          /**< current time value  */
-   braid_Real     tstop;           /**< time value to evolve towards, time value to the right of tstart */
-   braid_Real     accuracy;        /**< advanced option allowing variable accuracy for implicit step*/
-   braid_Int      rfactor;         /**< if set by user, allows for subdivision of this interval for bettter time accuracy */
-   braid_Int      level;           /**< current level in XBraid*/
+   braid_Real    tstart;       /**< current time value  */
+   braid_Real    tstop;        /**< time value to evolve towards, time value to the right of tstart */
+   braid_Real    accuracy;     /**< advanced option allowing variable accuracy for implicit step*/
+   braid_Int     rfactor;      /**< if set by user, allows for subdivision of this interval for bettter time accuracy */
+   braid_Int     level;        /**< current level in XBraid*/
+   braid_Int     nrefine;      /**< number of refinements done */
+
 } _braid_StepStatus;
 
 
@@ -155,6 +159,7 @@ _braid_AccessStatusInit(braid_Real          t,           /**< current time */
                         braid_Real          rnorm,       /**< current residual norm in XBraid */
                         braid_Int           iter,        /**< current iteration in XBraid*/
                         braid_Int           level,       /**< current level in XBraid */
+                        braid_Int           nrefine,      /**< number of refinements done */
                         braid_Int           done,        /**< boolean describing whether XBraid has finished */
                         braid_Int           wrapper_test,/**< boolean describing whether this call is only a wrapper test */
                         braid_AccessStatus  status       /**< structure to initialize */
@@ -196,6 +201,14 @@ braid_Int
 braid_AccessStatusGetLevel(braid_AccessStatus  status,        /**< structure containing current simulation info */
                            braid_Int          *level_ptr      /**< output, current level in XBraid */
                            );
+
+/**
+ * Return the number of refinements done.
+ **/
+braid_Int
+braid_AccessStatusGetNRefine(braid_AccessStatus  status,        /**< structure containing current simulation info */
+                             braid_Int          *nrefine_ptr    /**< output, number of refinements done */
+                            );
 
 /**
  * Return whether XBraid is done for the current simulation.
@@ -249,6 +262,7 @@ _braid_CoarsenRefStatusInit(braid_Real              tstart,      /**< time value
                             braid_Real              c_tprior,    /**< time value to the left of tstart on coarse grid */
                             braid_Real              c_tstop,     /**< time value to the right of tstart on coarse grid */
                             braid_Int               level,       /**< current fine level in XBraid */
+                            braid_Int               nrefine,      /**< number of refinements done */
                             braid_CoarsenRefStatus  status       /**< structure to initialize */
                             );
 
@@ -328,6 +342,14 @@ braid_CoarsenRefStatusGetLevel(braid_CoarsenRefStatus  status,        /**< struc
                                braid_Int              *level_ptr      /**< output, current fine level in XBraid */
                                );
 
+/**
+ * Return the number of refinements done.
+ **/
+braid_Int
+braid_CoarsenRefStatusGetNRefine(braid_CoarsenRefStatus  status,        /**< structure containing current simulation info */
+                                 braid_Int              *nrefine_ptr    /**< output, number of refinements done */
+                               );
+
 /*--------------------------------------------------------------------------
  * StepStatus Prototypes
  *--------------------------------------------------------------------------*/
@@ -340,6 +362,7 @@ _braid_StepStatusInit(braid_Real       tstart,      /**< current time value  */
                       braid_Real       tstop,       /**< time value to evolve towards, time value to the right of tstart */
                       braid_Real       accuracy,    /**< advanced option allowing variable accuracy for implicit step*/
                       braid_Int        level,       /**< current level in XBraid */
+                      braid_Int        nrefine,     /**< number of refinements done */
                       braid_StepStatus  status       /**< structure to initialize */
                       );
 
@@ -381,6 +404,14 @@ braid_Int
 braid_StepStatusGetLevel(braid_StepStatus  status,           /**< structure containing current simulation info */
                          braid_Int       *level_ptr         /**< output, current level in XBraid */
                          );
+
+/**
+ * Return the number of refinements done.
+ **/
+braid_Int
+braid_StepStatusGetNRefine(braid_StepStatus  status,           /**< structure containing current simulation info */
+                           braid_Int        *nrefine_ptr       /**< output, number of refinements done */
+                          );
 
 /** 
  * Set the rfactor, a desired refinement factor for this interval.  rfactor=1

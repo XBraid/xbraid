@@ -25,9 +25,9 @@
 /*
    Example 01
 
-   Compile with: make drive-01
+   Compile with: make ex-01
 
-   Sample run:   mpirun -np 2 drive-01
+   Sample run:   mpirun -np 2 ex-01
 
    Description:
 
@@ -209,7 +209,7 @@ my_Access(braid_App          app,
 
    MPI_Comm_rank(comm, &myid);
 
-   sprintf(filename, "%s.%07d.%05d", "drive-01.out", index, myid);
+   sprintf(filename, "%s.%07d.%05d", "ex-01.out", index, myid);
    file = fopen(filename, "w");
    fprintf(file, "%.14e\n", (u->value));
    fflush(file);

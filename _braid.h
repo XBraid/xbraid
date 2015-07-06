@@ -168,6 +168,7 @@ typedef struct _braid_Core_struct
    braid_Int              gupper;       /**< global upper index on the fine grid */
 
    braid_Int             *rfactors;     /**< refinement factors for finest grid (if any) */
+   braid_Int              nrefine;      /**< number of refinements done */
 
    braid_Int              nlevels;      /**< number of temporal grid levels */
    _braid_Grid          **grids;        /**< pointer to temporal grid structures for each level*/
@@ -240,15 +241,41 @@ extern FILE *_braid_printfile;
 #define _braid_IsCPoint(index, cfactor) \
 ( !_braid_IsFPoint(index, cfactor) )
 
+/** 
+ * Returns the index for the next C-point to the right of index (inclusive)
+ **/
+#define _braid_NextCPoint(index, cfactor) \
+( ((braid_Int)((index)+(cfactor)-1)/(cfactor))*(cfactor) )
+
 /*--------------------------------------------------------------------------
  * Prototypes
  *--------------------------------------------------------------------------*/
 
 /**
- * Determine processor distribution.  This must agree with GetProc().
+ * Returns the index interval for *proc* in a blocked data distribution.
+ */
+braid_Int
+_braid_GetBlockDistInterval(braid_Int   npoints,
+                            braid_Int   nprocs,
+                            braid_Int   proc,
+                            braid_Int  *ilower_ptr,
+                            braid_Int  *iupper_ptr);
+
+/**
+ * Returns the processor that owns *index* in a blocked data distribution
+ * (returns -1 if *index* is out of range).
+ */
+braid_Int
+_braid_GetBlockDistProc(braid_Int   npoints,
+                        braid_Int   nprocs,
+                        braid_Int   index,
+                        braid_Int  *proc_ptr);
+
+/**
+ * Returns the index interval for my processor on the finest grid level.
  * For the processor rank calling this function, it returns the smallest
  * and largest time indices ( *ilower_ptr* and *iupper_ptr*) that belong to 
- * that processor (the indices may * be F or C points).
+ * that processor (the indices may be F or C points).
  */
 braid_Int
 _braid_GetDistribution(braid_Core   core,
@@ -256,14 +283,22 @@ _braid_GetDistribution(braid_Core   core,
                        braid_Int   *iupper_ptr);
 
 /**
- * Return the processor number in *proc_ptr* on which the time step *index* 
- * lives for the given *level*.  * Returns -1 if *index* is out of range
+ * Returns the processor number in *proc_ptr* on which the time step *index*
+ * lives for the given *level*.  Returns -1 if *index* is out of range.
  */
 braid_Int
 _braid_GetProc(braid_Core   core,
                braid_Int    level,
                braid_Int    index,
                braid_Int   *proc_ptr);
+
+/**
+ * Returns the coarsening factor to use on grid 'level'.
+ */
+braid_Int
+_braid_GetCFactor(braid_Core   core,
+                  braid_Int    level,
+                  braid_Int   *cfactor_ptr);
 
 /**
  * Initialize a receive to go into *vector_ptr* for the given time *index* on *level*.  
@@ -351,6 +386,16 @@ _braid_USetVector(braid_Core    core,
                   braid_Int     index,
                   braid_Vector  u,
                   braid_Int     move);
+
+/**
+ * Basic communication (from the left, to the right)
+ */
+braid_Int
+_braid_UCommInitBasic(braid_Core  core,
+                      braid_Int   level,
+                      braid_Int   recv_msg,
+                      braid_Int   send_msg,
+                      braid_Int   send_now);
 
 /**
  * Working on all intervals
@@ -456,6 +501,17 @@ _braid_Coarsen(braid_Core     core,
                braid_Vector  *cvector);
 
 /**
+ * Refine in space (basic routine)
+ */
+braid_Int
+_braid_RefineBasic(braid_Core     core,
+                   braid_Int      level,    /* fine level */
+                   braid_Real    *f_ta,     /* pointer into fine time array */
+                   braid_Real    *c_ta,     /* pointer into coarse time array */
+                   braid_Vector   cvector,
+                   braid_Vector  *fvector);
+
+/**
  * Refine in space on *level* by calling the user's refine function.
  * The vector corresponding to the time step index *c_index* on the coarse
  * grid is refined to the time step index *f_index* on the fine grid.
@@ -549,11 +605,11 @@ _braid_FInterp(braid_Core  core,           /**< braid_Core (_braid_Core) struct 
  * Create a new fine grid based on user refinement factor information, then
  * F-relax and interpolate to the new fine grid and create a new multigrid
  * hierarchy.  In general, this will require load re-balancing as well.
- *
- * RDF: Todo, routine is unwritten
  */
 braid_Int
 _braid_FRefine(braid_Core   core,
+               braid_Int    iter,
+               braid_Real   rnorm,
                braid_Int   *refined_ptr);
 
 /** 
@@ -576,7 +632,8 @@ _braid_FAccess(braid_Core     core,
  */
 braid_Int
 _braid_InitHierarchy(braid_Core    core,
-                     _braid_Grid  *fine_grid);
+                     _braid_Grid  *fine_grid,
+                     braid_Int     refined);
 
 
 #ifdef __cplusplus

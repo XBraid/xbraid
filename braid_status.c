@@ -78,6 +78,16 @@ braid_AccessStatusGetLevel(braid_AccessStatus  status,
    return _braid_error_flag;
 }
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_AccessStatusGetNRefine(braid_AccessStatus  status,
+                             braid_Int          *nrefine_ptr)
+{
+   *nrefine_ptr = _braid_StatusElt(status, nrefine);
+   return _braid_error_flag;
+}
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
@@ -142,12 +152,14 @@ _braid_AccessStatusInit(braid_Real           t,
                         braid_Real           rnorm,
                         braid_Int            iter,
                         braid_Int            level,
+                        braid_Int            nrefine,
                         braid_Int            done,
                         braid_Int            wrapper_test,
                         braid_AccessStatus   status)
 {
    _braid_StatusElt(status, t)            = t;
    _braid_StatusElt(status, level)        = level;
+   _braid_StatusElt(status, nrefine)      = nrefine;
    _braid_StatusElt(status, rnorm)        = rnorm;
    _braid_StatusElt(status, done)         = done;
    _braid_StatusElt(status, iter)         = iter; 
@@ -168,14 +180,16 @@ _braid_CoarsenRefStatusInit(braid_Real              tstart,
                             braid_Real              c_tprior,
                             braid_Real              c_tstop,
                             braid_Int               level,
+                            braid_Int               nrefine,
                             braid_CoarsenRefStatus  status)
 {
-   _braid_StatusElt(status, tstart) = tstart;
+   _braid_StatusElt(status, tstart)   = tstart;
    _braid_StatusElt(status, f_tprior) = f_tprior;
    _braid_StatusElt(status, f_tstop)  = f_tstop;
    _braid_StatusElt(status, c_tprior) = c_tprior;
    _braid_StatusElt(status, c_tstop)  = c_tstop;
-   _braid_StatusElt(status, level)  = level;
+   _braid_StatusElt(status, level)    = level;
+   _braid_StatusElt(status, nrefine)  = nrefine;
 
    return _braid_error_flag;
 }
@@ -262,6 +276,15 @@ braid_CoarsenRefStatusGetLevel(braid_CoarsenRefStatus  status,
    return _braid_error_flag;
 }
 
+braid_Int
+braid_CoarsenRefStatusGetNRefine(braid_CoarsenRefStatus  status,
+                                 braid_Int              *nrefine_ptr
+                                )
+{
+   *nrefine_ptr = _braid_StatusElt(status, nrefine);
+   return _braid_error_flag;
+}
+
 /*--------------------------------------------------------------------------
  * StepStatus Routines
  *--------------------------------------------------------------------------*/
@@ -270,12 +293,14 @@ _braid_StepStatusInit(braid_Real       tstart,
                       braid_Real       tstop,
                       braid_Real       accuracy,
                       braid_Int        level,
+                      braid_Int        nrefine,
                       braid_StepStatus status)
 {
    _braid_StatusElt(status, tstart)   = tstart;
    _braid_StatusElt(status, tstop)    = tstop;
    _braid_StatusElt(status, accuracy) = accuracy;
    _braid_StatusElt(status, level)    = level;
+   _braid_StatusElt(status, nrefine)  = nrefine;
 
    return _braid_error_flag;
 }
@@ -325,6 +350,14 @@ braid_StepStatusGetLevel(braid_StepStatus  status,
    return _braid_error_flag;
 }
 
+braid_Int
+braid_StepStatusGetNRefine(braid_StepStatus  status,
+                           braid_Int        *nrefine_ptr
+                          )
+{
+   *nrefine_ptr = _braid_StatusElt(status, nrefine);
+   return _braid_error_flag;
+}
 
 braid_Int
 braid_StepStatusSetRFactor(braid_StepStatus  status,

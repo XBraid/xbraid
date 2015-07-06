@@ -68,9 +68,11 @@ typedef struct _braid_App_struct {
    simulation_manager     *man;              /* user's simulation manager structure */
    HYPRE_SStructVector     e;                /* temporary vector used for error computations */
    int                     nA;               /* number of discr. matrices that have been created */
+   int                     max_nA;           /* max nA value allowed */
    HYPRE_SStructMatrix    *A;                /* nA sized array of discr. matrices (one per time level) */
    double                 *dt_A;             /* nA sized array of time step sizes for each  matrix  */
    HYPRE_StructSolver     *solver;           /* nA sized array of solvers (one per time level) */
+   int                     refine;           /* if 1, refine temporal grid */
    int                     use_rand;         /* binary, use random initial guess (1) or zero initial guess (0) */
    int                    *runtime_max_iter; /* runtime info for the max number of spatial solve iterations at each level */
    int                    *max_iter_x;       /* length 2 array of expensive and cheap max PFMG iters for spatial solves*/
@@ -180,6 +182,63 @@ my_Step(braid_App        app,
 
    /* Tell XBraid no refinement */
    braid_StepStatusSetRFactor(status, 1);
+
+#if 1
+   /* New code to test 3 levels of temporal refinement of variable size.
+    * Refinement factors are determined by a somewhat arbitrary function that
+    * produces rfactors between 1 and 8. */
+   if (app->refine)
+   {
+      int level, nrefine, gnt, index, rfactor;
+      double gtstart, gtstop;
+      braid_StepStatusGetLevel(status, &level);
+      braid_StepStatusGetNRefine(status, &nrefine);
+      if ((level == 0) && (nrefine < 3))
+      {
+         gtstart = app->man->tstart;
+         gtstop  = app->man->tstop;
+         gnt     = app->man->nt;
+         switch (nrefine) /* Assume average refinement of 4 each time */
+         {
+            case 2: gnt *= 4;
+            case 1: gnt *= 4;
+         }
+         index = ((tstop - gtstart) / (gtstop - gtstart))*gnt + 0.1;
+         rfactor = ( (int)((7919*index*index)/71) )%8 + 1;
+         braid_StepStatusSetRFactor(status, rfactor);
+      }
+   }
+#endif
+
+#if 0 /* RDF HACKED TEST */
+   /* New code to test FRefine functionality */
+   if (app->refine)
+   {
+      int level, nrefine, gnt, index, rfactor;
+      double gtstart, gtstop;
+      braid_StepStatusGetLevel(status, &level);
+      braid_StepStatusGetNRefine(status, &nrefine);
+      if ((level == 0) && (nrefine < 1))
+      {
+         gtstart = app->man->tstart;
+         gtstop  = app->man->tstop;
+         gnt     = app->man->nt;
+         index = ((tstop - gtstart) / (gtstop - gtstart))*gnt + 0.1;
+         switch (index)
+         {
+            case 1: rfactor = 1; break;
+            case 2: rfactor = 3; break;
+            case 3: rfactor = 6; break;
+            case 4: rfactor = 4; break;
+            case 5: rfactor = 6; break;
+            case 6: rfactor = 2; break;
+            case 7: rfactor = 1; break;
+            case 8: rfactor = 1; break;
+         }
+         braid_StepStatusSetRFactor(status, rfactor);
+      }
+   }
+#endif
 
    return 0;
 }
@@ -470,7 +529,7 @@ int main (int argc, char *argv[])
    my_App       *app = (my_App *) malloc(sizeof(my_App));
    double tol, mystarttime, myendtime, mytime, maxtime, cfl;
    int run_wrapper_tests, correct1, correct2;
-   int print_level, access_level, nA_max, max_levels, min_coarse;
+   int print_level, access_level, max_nA, nA_max, max_levels, min_coarse;
    int nrelax, nrelax0, cfactor, cfactor0, max_iter, fmg, res, storage, tnorm;
 
    MPI_Init(&argc, &argv);
@@ -517,6 +576,7 @@ int main (int argc, char *argv[])
    
    /* Other parameters specific to parallel in time */
    app->use_rand       = 1;               /* If 1, use a random initial guess, else use a zero initial guess */
+   app->refine         = 0;               /* If 1, refine temporal grid */
    app->pt             = 1;               /* Number of processors in time */
    app->max_iter_x     = (int*) malloc( 2*sizeof(int) );
    app->max_iter_x[0]  = 50;              /* Maximum number of PFMG iters (the spatial solver from hypre) on XBraid level 0 */
@@ -599,6 +659,10 @@ int main (int argc, char *argv[])
       else if ( strcmp(argv[arg_index], "-fmg") == 0 ){
          arg_index++;
          fmg = 1;
+      }
+      else if ( strcmp(argv[arg_index], "-refine") == 0 ){
+         arg_index++;
+         app->refine = 1;
       }
       else if ( strcmp(argv[arg_index], "-res") == 0 ){
          arg_index++;
@@ -751,21 +815,22 @@ int main (int argc, char *argv[])
 
    /* Allocate items of app, especially A and dt_A which are arrays of discretization 
     * matrices which one matrix and corresponding dt value for each XBraid level */
+   max_nA = 100*max_levels; /* use generous value to keep code simple */
    initialize_vector(app->man, &(app->e));
-   app->A = (HYPRE_SStructMatrix*) malloc( max_levels*
-                                           sizeof(HYPRE_SStructMatrix));
-   app->dt_A = (double*) malloc( max_levels*sizeof(double) );
-   for( i = 0; i < max_levels; i++ ) {
+   app->A = (HYPRE_SStructMatrix*) malloc( max_nA*sizeof(HYPRE_SStructMatrix));
+   app->dt_A = (double*) malloc( max_nA*sizeof(double) );
+   for( i = 0; i < max_nA; i++ ) {
       app->dt_A[i] = -1.0;
    }
    app->nA = 0;
+   app->max_nA = max_nA;
 
    /* Allocate memory for array of solvers. */
-   app->solver = (HYPRE_StructSolver*) malloc( max_levels*sizeof(HYPRE_StructSolver));
+   app->solver = (HYPRE_StructSolver*) malloc( max_nA*sizeof(HYPRE_StructSolver));
 
    /* Array for tracking runtime iteration counts of PFMG. */
-   app->runtime_max_iter = (int*) calloc( max_levels,  sizeof(int) );
-   for( i = 0; i < max_levels; i++ )
+   app->runtime_max_iter = (int*) calloc( max_nA,  sizeof(int) );
+   for( i = 0; i < max_nA; i++ )
       app->runtime_max_iter[i] = 0;
 
    if( run_wrapper_tests)
