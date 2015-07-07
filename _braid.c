@@ -766,8 +766,8 @@ _braid_GetUInit(braid_Core     core,
 
    _braid_UGetVectorRef(core, level, index, &ustop);
 
-   /* No user-provided residual routine */
-   if ( _braid_CoreElt(core, residual) == NULL )
+   /* Run in compatibility mode, mimic the original Braid algorithm */
+   if ( _braid_CoreElt(core, storage) == -2 )
    {
       /* Here we must always approximate ustop by u at tstart. */
       ustop = u;
@@ -794,7 +794,7 @@ _braid_GetUInit(braid_Core     core,
       }
    }
 
-   /* User-provided residual routine, store all u-vectors */
+   /* Utilize storage of all u-vectors (F and C points) at this level */
    else
    {
       if (ustop == NULL)
@@ -1203,6 +1203,144 @@ _braid_InitGuess(braid_Core  core,
          }
       }
    }
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+_braid_GetFullResidual(braid_Core  core,
+                       braid_Int   level,
+                       braid_Real *return_norm)
+{
+   MPI_Comm           comm        = _braid_CoreElt(core, comm);
+   braid_App          app         = _braid_CoreElt(core, app);
+   _braid_Grid      **grids       = _braid_CoreElt(core, grids);
+   braid_StepStatus   status      = _braid_CoreElt(core, sstatus);
+   braid_Int          nrefine     = _braid_CoreElt(core, nrefine);
+   braid_Int          ncpoints    = _braid_GridElt(grids[level], ncpoints);
+   braid_Int          tnorm       = _braid_CoreElt(core, tnorm);
+   braid_Real        *ta          = _braid_GridElt(grids[level], ta);
+   braid_Int          ilower      = _braid_GridElt(grids[level], ilower);
+   _braid_CommHandle *send_handle;
+   braid_Int          send_index;
+
+   braid_Int        flo, fhi, fi, ci, ii, interval;
+   braid_Real       accuracy, rnorm_temp, rnorm = 0, global_rnorm = 0;
+   braid_Vector     u, r;
+
+   if ( level == 0 )
+   {     
+      /*accuracy = _braid_CoreElt(core, accuracy[0].value);*/
+      accuracy = _braid_CoreElt(core, accuracy[0].old_value);
+   }
+   else
+   {
+      accuracy = _braid_CoreElt(core, accuracy[1].value);
+   }
+
+   _braid_UCommInit(core, level);
+
+   /* Start from the right-most interval. */
+   for (interval = ncpoints; interval > -1; interval--)
+   {
+      _braid_GetInterval(core, level, interval, &flo, &fhi, &ci);
+      if (flo <= fhi)
+      {
+         _braid_UGetVector(core, level, flo-1, &u);
+      }
+      else if (ci > 0)
+      {
+         _braid_UGetVector(core, level, ci-1, &u);
+      }
+
+      /* Generate F-points and get residual. */
+      for (fi = flo; fi <= fhi; fi++)
+      {
+         _braid_CoreFcn(core, clone)(app, u, &r);
+         _braid_Step(core, level, fi, accuracy, NULL, u);
+
+         /* Update local processor norm. */
+         ii = fi-ilower;
+         _braid_StepStatusInit(ta[ii-1], ta[ii], accuracy, level, nrefine, status);
+         _braid_CoreFcn(core, globresidual)(app, u, r, status);
+         _braid_CoreFcn(core, spatialnorm)(app, r, &rnorm_temp); 
+         if(tnorm == 1)       /* one-norm */ 
+         {  
+            rnorm += rnorm_temp;
+         }
+         else if(tnorm == 3)  /* inf-norm */
+         {  
+            rnorm = (((rnorm_temp) > (rnorm)) ? (rnorm_temp) : (rnorm));
+         }
+         else                 /* default two-norm */
+         {  
+            rnorm += (rnorm_temp*rnorm_temp);
+         }
+
+         /* Communicate w/ neighbor nodes. */
+         send_handle = _braid_GridElt(grids[level], send_handle);
+         send_index  = _braid_GridElt(grids[level], send_index);
+         if (fi == send_index)
+         {
+            /* Post send to neighbor processor */
+            _braid_CommSendInit(core, level, fi, u, &send_handle);
+            _braid_GridElt(grids[level], send_index)  = -1;
+            _braid_GridElt(grids[level], send_handle) = send_handle;
+         }
+         _braid_CoreFcn(core, free)(app, r);
+      }
+      /* Residual from C-point. */
+      if (ci > 0)
+      {
+         /* Update local processor norm. */
+         ii = ci-ilower;
+         _braid_StepStatusInit(ta[ii-1], ta[ii], accuracy, level, nrefine, status);
+         _braid_UGetVector(core, level, ci, &r);
+         _braid_CoreFcn(core, globresidual)(app, r, u, status);
+         _braid_CoreFcn(core, spatialnorm)(app, u, &rnorm_temp);
+
+         if(tnorm == 1)       /* one-norm */ 
+         {  
+            rnorm += rnorm_temp;
+         }
+         else if(tnorm == 3)  /* inf-norm */
+         {  
+            rnorm = (((rnorm_temp) > (rnorm)) ? (rnorm_temp) : (rnorm));
+         }
+         else                 /* default two-norm */
+         {  
+            rnorm += (rnorm_temp*rnorm_temp);
+         }
+         _braid_CoreFcn(core, free)(app, r);
+      }
+
+      if ((flo <= fhi) || (ci > 0))
+      {
+         _braid_CoreFcn(core, free)(app, u);
+      }
+   }
+
+   _braid_UCommWait(core, level);
+
+   /* Compute global residual norm. */
+   if(tnorm == 1)       /* one-norm reduction */
+   {  
+      MPI_Allreduce(&rnorm, &global_rnorm, 1, MPI_DOUBLE, MPI_SUM, comm);
+   }
+   else if(tnorm == 3)  /* inf-norm reduction */
+   {  
+      MPI_Allreduce(&rnorm, &global_rnorm, 1, MPI_DOUBLE, MPI_MAX, comm);
+   }
+   else                 /* default two-norm reduction */
+   {  
+      MPI_Allreduce(&rnorm, &global_rnorm, 1, MPI_DOUBLE, MPI_SUM, comm);
+      global_rnorm = sqrt(global_rnorm);
+   }
+
+   *return_norm = global_rnorm;
 
    return _braid_error_flag;
 }

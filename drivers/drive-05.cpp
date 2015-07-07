@@ -69,10 +69,15 @@ struct DGAdvectionOptions : public BraidOptions
    double diffusion;
    int    order;
    int    ode_solver_type;
+   bool   lump_mass;
    double dt; // derived from t_start, t_final, and num_time_steps
 
    const char *vishost;
    int         visport;
+
+   int vis_time_steps;
+   int vis_braid_steps;
+   bool vis_screenshots;
 
    DGAdvectionOptions(int argc, char *argv[]);
 };
@@ -109,6 +114,12 @@ protected:
 
 public:
    DGAdvectionApp(DGAdvectionOptions &opts, MPI_Comm comm_t_, ParMesh *pmesh);
+   
+   SpaceTimeMeshInfo MeshInfo;
+
+   // braid_Vector == BraidVector*
+   virtual int Phi(braid_Vector    u_,
+                   BraidPhiStatus &pstatus);
 
    virtual ~DGAdvectionApp();
 };
@@ -184,7 +195,8 @@ int main(int argc, char *argv[])
    opts.SetBraidCoreOptions(core);
 
    core.Drive();
-
+   app.MeshInfo.Print(comm);
+   
    MPI_Finalize();
    return 0;
 }
@@ -236,8 +248,12 @@ DGAdvectionOptions::DGAdvectionOptions(int argc, char *argv[])
    diffusion       = 0.0;
    order           = 3;
    ode_solver_type = 4;
+   lump_mass       = false;
    vishost         = "localhost";
    visport         = 19916;
+   vis_time_steps  = 0;
+   vis_braid_steps = 0;
+   vis_screenshots = false;
 
    AddOption(&problem, "-p", "--problem",
              "Problem setup to use. See options in velocity_function().");
@@ -247,10 +263,20 @@ DGAdvectionOptions::DGAdvectionOptions(int argc, char *argv[])
    AddOption(&ode_solver_type, "-s", "--ode-solver",
              "ODE solver: 1 - Forward Euler, 2 - RK2 SSP, 3 - RK3 SSP,"
              " 4 - RK4, 6 - RK6.");
+   AddOption(&lump_mass, "-lump", "--lump-mass-matrix", "-dont-lump",
+             "--dont-lump-mass-matrix", "Enable/disable lumping of the mass"
+             " matrix.");
    AddOption(&vishost, "-vh", "--visualization-host",
              "Set the GLVis host.");
    AddOption(&visport, "-vp", "--visualization-port",
              "Set the GLVis port.");
+   AddOption(&vis_time_steps, "-vts", "--visualize-time-steps",
+             "Visualize every n-th time step (0:final only).");
+   AddOption(&vis_braid_steps, "-vbs", "--visualize-braid-steps",
+             "Visualize every n-th Braid step (0:final only).");
+   AddOption(&vis_screenshots, "-vss", "--vis-screenshots",
+             "-no-vss", "--vis-no-screenshots", "Enable/disable the saving of"
+             " screenshots of the visualized data.");
 
    Parse();
 
@@ -267,7 +293,8 @@ DGAdvectionApp::DGAdvectionApp(
      velocity(pmesh->Dimension(), velocity_function),
      inflow(inflow_function),
      u0(u0_function),
-     diff(-opts.diffusion) // diffusion goes in the r.h.s. with a minus
+     diff(-opts.diffusion), // diffusion goes in the r.h.s. with a minus
+     MeshInfo(opts.max_levels)
 {
    problem = opts.problem;
 
@@ -279,6 +306,8 @@ DGAdvectionApp::DGAdvectionApp(
    SetInitialCondition(U);
 
    SetVisHostAndPort(opts.vishost, opts.visport);
+   SetVisSampling(opts.vis_time_steps, opts.vis_braid_steps);
+   SetVisScreenshots(opts.vis_screenshots);
 }
 
 DGAdvectionApp::~DGAdvectionApp()
@@ -289,6 +318,30 @@ DGAdvectionApp::~DGAdvectionApp()
       delete K[l];
       delete M[l];
    }
+}
+
+
+int DGAdvectionApp::Phi(braid_Vector    u_,
+                        BraidPhiStatus &pstatus)
+{
+   // This contains one small change over the default Phi, we store the Space-Time mesh info
+   
+   // Store Space-Time Mesh Info
+   BraidVector *u = (BraidVector*) u_;
+   int level = u->level;
+   double tstart, tstop, dt;
+   int braid_level;
+   
+   pstatus.GetTstartTstop(&tstart, &tstop);
+   pstatus.GetLevel(&braid_level);
+   dt = tstop - tstart;
+
+   MeshInfo.SetRow(braid_level, level, x[u->level]->ParFESpace()->GetParMesh(), dt);
+   
+   // Call the default Phi
+   MFEMBraidApp::Phi(u_, pstatus);
+   
+   return 0;
 }
 
 // Allocate data structures for the given number of spatial levels. Used by
@@ -315,7 +368,10 @@ void DGAdvectionApp::InitLevel(int l)
    // the mass matrix, M; the advection (+diffusion) matrix, K; and the inflow
    // b.c. vector, B.
    ParBilinearForm *m = new ParBilinearForm(fe_space[l]);
-   m->AddDomainIntegrator(new MassIntegrator);
+   if (!options.lump_mass)
+      m->AddDomainIntegrator(new MassIntegrator);
+   else
+      m->AddDomainIntegrator(new LumpedIntegrator(new MassIntegrator));
    ParBilinearForm *k = new ParBilinearForm(fe_space[l]);
    k->AddDomainIntegrator(new ConvectionIntegrator(velocity, -1.0));
    k->AddInteriorFaceIntegrator(

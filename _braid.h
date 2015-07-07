@@ -176,6 +176,9 @@ typedef struct _braid_Core_struct
    braid_Real             localtime;    /**< local wall time for braid_Drive() */
    braid_Real             globaltime;   /**< global wall time for braid_Drive() */
 
+   braid_PtFcnResidual    globresidual; /**< (optional) compute residual for global temporal norm */
+   braid_Real             global_rnorm; /**< new residual norm on all F/C points */
+
 } _braid_Core;
 
 /*--------------------------------------------------------------------------
@@ -559,6 +562,15 @@ _braid_GridDestroy(braid_Core    core,
 braid_Int
 _braid_InitGuess(braid_Core  core,
                  braid_Int   level);
+
+/**
+ * Compute global temporal residual with user-provided residual routine. 
+ * Output goes in *return_norm. 
+ */
+braid_Int
+_braid_GetFullResidual(braid_Core  core,
+                       braid_Int   level,
+                       braid_Real *return_norm);
 
 /**
  * Do nu sweeps of F-then-C relaxation on *level*
