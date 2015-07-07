@@ -294,13 +294,15 @@ _braid_StepStatusInit(braid_Real       tstart,
                       braid_Real       accuracy,
                       braid_Int        level,
                       braid_Int        nrefine,
+                      braid_Int        step_type,
                       braid_StepStatus status)
 {
-   _braid_StatusElt(status, tstart)   = tstart;
-   _braid_StatusElt(status, tstop)    = tstop;
-   _braid_StatusElt(status, accuracy) = accuracy;
-   _braid_StatusElt(status, level)    = level;
-   _braid_StatusElt(status, nrefine)  = nrefine;
+   _braid_StatusElt(status, tstart)    = tstart;
+   _braid_StatusElt(status, tstop)     = tstop;
+   _braid_StatusElt(status, accuracy)  = accuracy;
+   _braid_StatusElt(status, level)     = level;
+   _braid_StatusElt(status, nrefine)   = nrefine;
+   _braid_StatusElt(status, step_type) = step_type;
 
    return _braid_error_flag;
 }
@@ -356,6 +358,15 @@ braid_StepStatusGetNRefine(braid_StepStatus  status,
                           )
 {
    *nrefine_ptr = _braid_StatusElt(status, nrefine);
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_StepStatusGetStepType(braid_StepStatus  status,
+                            braid_Int        *step_type_ptr
+                           )
+{
+   *step_type_ptr = _braid_StatusElt(status, step_type);
    return _braid_error_flag;
 }
 

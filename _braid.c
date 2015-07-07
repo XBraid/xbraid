@@ -811,11 +811,15 @@ _braid_GetUInit(braid_Core     core,
 
 /*--------------------------------------------------------------------------
  * Integrate one time step
+ *
+ * The value of step_type should be one of the following:
+ *   0 (relaxation), 1 (interpolation), 2 (residual), 3 (access)
  *--------------------------------------------------------------------------*/
 
 braid_Int
 _braid_Step(braid_Core     core,
             braid_Int      level,
+            braid_Int      step_type,
             braid_Int      index,
             braid_Real     accuracy,
             braid_Vector   ustop,
@@ -833,7 +837,7 @@ _braid_Step(braid_Core     core,
    braid_Int        ii;
 
    ii = index-ilower;
-   _braid_StepStatusInit(ta[ii-1], ta[ii], accuracy, level, nrefine, status);
+   _braid_StepStatusInit(ta[ii-1], ta[ii], accuracy, level, nrefine, step_type, status);
 
    /* If ustop is set to NULL, use a default approach for setting it */
    if (ustop == NULL)
@@ -885,7 +889,7 @@ _braid_Residual(braid_Core     core,
    braid_Int        ii;
 
    ii = index-ilower;
-   _braid_StepStatusInit(ta[ii-1], ta[ii], accuracy, level, nrefine, status);
+   _braid_StepStatusInit(ta[ii-1], ta[ii], accuracy, level, nrefine, 2, status);
    if ( _braid_CoreElt(core, residual) == NULL )
    {
       /* By default: r = ustop - \Phi(ustart)*/
@@ -1260,11 +1264,11 @@ _braid_GetFullResidual(braid_Core  core,
       for (fi = flo; fi <= fhi; fi++)
       {
          _braid_CoreFcn(core, clone)(app, u, &r);
-         _braid_Step(core, level, fi, accuracy, NULL, u);
+         _braid_Step(core, level, 2, fi, accuracy, NULL, u);
 
          /* Update local processor norm. */
          ii = fi-ilower;
-         _braid_StepStatusInit(ta[ii-1], ta[ii], accuracy, level, nrefine, status);
+         _braid_StepStatusInit(ta[ii-1], ta[ii], accuracy, level, nrefine, 2, status);
          _braid_CoreFcn(core, globresidual)(app, u, r, status);
          _braid_CoreFcn(core, spatialnorm)(app, r, &rnorm_temp); 
          if(tnorm == 1)       /* one-norm */ 
@@ -1297,7 +1301,7 @@ _braid_GetFullResidual(braid_Core  core,
       {
          /* Update local processor norm. */
          ii = ci-ilower;
-         _braid_StepStatusInit(ta[ii-1], ta[ii], accuracy, level, nrefine, status);
+         _braid_StepStatusInit(ta[ii-1], ta[ii], accuracy, level, nrefine, 2, status);
          _braid_UGetVector(core, level, ci, &r);
          _braid_CoreFcn(core, globresidual)(app, r, u, status);
          _braid_CoreFcn(core, spatialnorm)(app, u, &rnorm_temp);
@@ -1396,14 +1400,14 @@ _braid_FCRelax(braid_Core  core,
          /* F-relaxation */
          for (fi = flo; fi <= fhi; fi++)
          {
-            _braid_Step(core, level, fi, accuracy, NULL, u);
+            _braid_Step(core, level, 0, fi, accuracy, NULL, u);
             _braid_USetVector(core, level, fi, u, 0);
          }
 
          /* C-relaxation */
          if (ci > 0)
          {
-            _braid_Step(core, level, ci, accuracy, NULL, u);
+            _braid_Step(core, level, 0, ci, accuracy, NULL, u);
             _braid_USetVector(core, level, ci, u, 1);
          }
 
@@ -1498,7 +1502,7 @@ _braid_FRestrict(braid_Core   core,
       /* F-relaxation */
       for (fi = flo; fi <= fhi; fi++)
       {
-         _braid_Step(core, level, fi, accuracy, NULL, r);
+         _braid_Step(core, level, 2, fi, accuracy, NULL, r);
          _braid_USetVector(core, level, fi, r, 0);
          
          /* Allow user to process current vector, note that r here is
@@ -1682,7 +1686,7 @@ _braid_FInterp(braid_Core  core,
       }
       for (fi = flo; fi <= fhi; fi++)
       {
-         _braid_Step(core, level, fi, accuracy, NULL, u);
+         _braid_Step(core, level, 1, fi, accuracy, NULL, u);
          _braid_USetVector(core, level, fi, u, 0);
          /* Allow user to process current vector */
          if( (access_level >= 2) )
@@ -2097,7 +2101,7 @@ _braid_FRefine(braid_Core   core,
          _braid_UGetVector(core, 0, flo-1, &u);
          for (fi = flo; fi <= fhi; fi++)
          {
-            _braid_Step(core, 0, fi, accuracy, NULL, u);
+            _braid_Step(core, 0, 1, fi, accuracy, NULL, u);
             _braid_USetVector(core, 0, fi, u, 0); /* needed for communication */
 
             /* Set send_ua */
@@ -2381,7 +2385,7 @@ _braid_FRefine(braid_Core   core,
             for ( ; f_j < f_hi; f_j++)
             {
                _braid_USetVector(core, 0, f_j, u, 0);
-               _braid_Step(core, 0, f_j+1, accuracy, NULL, u);
+               _braid_Step(core, 0, 1, f_j+1, accuracy, NULL, u);
             }
          }
          _braid_USetVector(core, 0, f_j, u, 1);
@@ -2458,7 +2462,7 @@ _braid_FAccess(braid_Core     core,
       }
       for (fi = flo; fi <= fhi; fi++)
       {
-         _braid_Step(core, level, fi, accuracy, NULL, u);
+         _braid_Step(core, level, 3, fi, accuracy, NULL, u);
          _braid_USetVector(core, level, fi, u, 0);
          _braid_AccessStatusInit( ta[fi-ilower], rnorm, iter,
                                   level, nrefine, done, 0, astatus);

@@ -133,6 +133,7 @@ typedef struct _braid_StepStatus_struct
    braid_Int     rfactor;      /**< if set by user, allows for subdivision of this interval for bettter time accuracy */
    braid_Int     level;        /**< current level in XBraid*/
    braid_Int     nrefine;      /**< number of refinements done */
+   braid_Int     step_type;    /**< Step type, 0: take step for relaxation, 1: for interpolation, 2: for residual, 3: access */
 
 } _braid_StepStatus;
 
@@ -358,11 +359,12 @@ braid_CoarsenRefStatusGetNRefine(braid_CoarsenRefStatus  status,        /**< str
  * Initialize a braid_StepStatus structure 
  **/
 braid_Int
-_braid_StepStatusInit(braid_Real       tstart,      /**< current time value  */
-                      braid_Real       tstop,       /**< time value to evolve towards, time value to the right of tstart */
-                      braid_Real       accuracy,    /**< advanced option allowing variable accuracy for implicit step*/
-                      braid_Int        level,       /**< current level in XBraid */
-                      braid_Int        nrefine,     /**< number of refinements done */
+_braid_StepStatusInit(braid_Real        tstart,      /**< current time value  */
+                      braid_Real        tstop,       /**< time value to evolve towards, time value to the right of tstart */
+                      braid_Real        accuracy,    /**< advanced option allowing variable accuracy for implicit step*/
+                      braid_Int         level,       /**< current level in XBraid */
+                      braid_Int         nrefine,     /**< number of refinements done */
+                      braid_Int         step_type,   /**< current step type in XBraid (0: relax, 1: interp, 2: residual, 3: access) */
                       braid_StepStatus  status       /**< structure to initialize */
                       );
 
@@ -413,6 +415,11 @@ braid_StepStatusGetNRefine(braid_StepStatus  status,           /**< structure co
                            braid_Int        *nrefine_ptr       /**< output, number of refinements done */
                           );
 
+braid_Int
+braid_StepStatusGetStepType(braid_StepStatus  status,          /**< structure containing current simulation info */
+                            braid_Int        *step_type_ptr    /**< output, current step type in XBraid (0: relax, 1: interp, 2: residual, 3: access) */
+                           );
+
 /** 
  * Set the rfactor, a desired refinement factor for this interval.  rfactor=1
  * indicates no refinement, otherwise, this inteval is subdivided rfactor
@@ -420,7 +427,7 @@ braid_StepStatusGetNRefine(braid_StepStatus  status,           /**< structure co
  **/
 braid_Int
 braid_StepStatusSetRFactor(braid_StepStatus  status,         /**< structure containing current simulation info */
-                           braid_Real       rfactor          /**< user-determined desired rfactor */
+                           braid_Real        rfactor         /**< user-determined desired rfactor */
                            );
 
 /**
