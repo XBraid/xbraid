@@ -1740,11 +1740,56 @@ _braid_FInterp(braid_Core  core,
 }
 
 /*--------------------------------------------------------------------------
- * Create a new fine grid based on user refinement factor information, then
- * F-relax and interpolate to the new fine grid and create a new multigrid
- * hierarchy.  In general, this will require load re-balancing as well.
+ * Create a new fine grid (level 0) and corresponding grid hierarchy by refining
+ * the current fine grid based on user-provided refinement factors.  Return the
+ * boolean 'refined_ptr' to indicate whether grid refinement was actually done.
+ * To simplify the algorithm, refinement factors are automatically capped to be
+ * no greater than the coarsening factor (for level 0).  The grid data is also
+ * redistributed to achieve good load balance in the temporal dimension.  If the
+ * refinement factor is 1 in each time interval, no refinement is done.
  *
- * RDF TODO - Think about idle proc case
+ * RDF - MORE EXPLANATION HERE
+ *
+ * Here is a sketch of an example with coarsening factor 3:
+ *
+ *   Coarse            |-----------c-----------|-----------|-----------c
+ *    index           29          30          31          32          33
+ * 
+ * rfactors            3           1           2           3           2
+ * 
+ *  Refined ---c---|---|-----------c-----|-----|---c---|---|-----c-----|
+ *    index   57  58  59          60    61    62  63  64  65    66    67
+ * 
+ * r_ilower   57
+ *     r_ca   -1  -1  29          30    -1    31  -1  -1  32    -1    33
+ *     r_ta    *   *   *           *     *     *   *   *   *     *     *
+ *     r_fa           59          60          62          65          67          70
+ *  send_ua            *           *           *           *           *
+ * 
+ * 
+ *     Fine      |-----|---c---|---|-----c-----|---|---c---|-----|-----c
+ *    index     61    62  63  64  65    66    67  68  69  70    71    72
+ *              
+ * f_ilower     61
+ *     f_ca     -1    31  -1  -1  32    -1    33  -1  -1  34    -1    35
+ *  f_first           62
+ *   f_next                                                                       74
+ *  recv_ua            *           *           *           *           *
+ * 
+ * 
+ * When storing C-pts only, data from coarse indices 29 and 34 are not needed,
+ * so we have the following differences from above:
+ *     r_ca   -1  -1  -1          30    -1    31  -1  -1  32    -1    33
+ *  send_ua            0           *           *           *           *
+ *     f_ca     -1    31  -1  -1  32    -1    33  -1  -1  -1    -1    35
+ *  recv_ua            *           *           *           0           *
+ * 
+ * 
+ *     r_ca - index map from fine to coarse on refined grid
+ *     r_ta - time values on refined grid
+ *     r_fa - index map from coarse to fine on refined grid
+ *     f_ca - index map from fine to coarse on fine grid
+ *
  *--------------------------------------------------------------------------*/
 
 braid_Int
@@ -2488,7 +2533,7 @@ _braid_FAccess(braid_Core     core,
 }
 
 /*--------------------------------------------------------------------------
- * Initialize (and re-initialize) hierarchy
+ * Initialize grid hierarchy
  *--------------------------------------------------------------------------*/
 
 braid_Int

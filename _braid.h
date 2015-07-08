@@ -296,7 +296,7 @@ _braid_GetProc(braid_Core   core,
                braid_Int   *proc_ptr);
 
 /**
- * Returns the coarsening factor to use on grid 'level'.
+ * Returns the coarsening factor to use on grid *level*.
  */
 braid_Int
 _braid_GetCFactor(braid_Core   core,
@@ -304,9 +304,9 @@ _braid_GetCFactor(braid_Core   core,
                   braid_Int   *cfactor_ptr);
 
 /**
- * Initialize a receive to go into *vector_ptr* for the given time *index* on *level*.  
- * Also return a comm handle *handle_ptr* for querying later, to see if the receive has 
- * occurred.
+ * Initialize a receive to go into *vector_ptr* for the given time *index* on
+ * *level*.  Also return a comm handle *handle_ptr* for querying later, to see
+ * if the receive has occurred.
  */
 braid_Int
 _braid_CommRecvInit(braid_Core           core,
@@ -391,7 +391,10 @@ _braid_USetVector(braid_Core    core,
                   braid_Int     move);
 
 /**
- * Basic communication (from the left, to the right)
+ * Basic communication (from the left, to the right).  Arguments *recv_msg* and
+ * *send_msg* are booleans that indicate whether or not to initiate a receive
+ * from the left and a send to the right respectively.  Argument *send_now*
+ * indicates that the send should be initiated immediately.
  */
 braid_Int
 _braid_UCommInitBasic(braid_Core  core,
@@ -401,40 +404,41 @@ _braid_UCommInitBasic(braid_Core  core,
                       braid_Int   send_now);
 
 /**
- * Working on all intervals
- *
- * At *level*, post a receive for the point to the left of ilower (regardless 
- * whether ilower is F or C).  Then, post a send of iupper if iupper is a C 
- * point.
+ * This routine initiates communication under the assumption that work will be
+ * done on all intervals (F or C) on *level*.  It posts a receive for the point
+ * to the left of ilower (regardless whether ilower is F or C), and it posts a
+ * send of iupper if iupper is a C point.
  */
 braid_Int
 _braid_UCommInit(braid_Core  core,
                  braid_Int   level);
 
 /**
- * Working only on F-pt intervals
- *
- * At *level*, **only** post a receive for the point to the left of ilower 
- * if ilower is an F point.  Then, post a send of iupper if iupper is a C point.
+ * This routine initiates communication under the assumption that work will be
+ * done on only F-pt intervals on *level*.  It only posts a receive for the
+ * point to the left of ilower if ilower is an F point, and it posts a send of
+ * iupper if iupper is a C point.
  */
 braid_Int
 _braid_UCommInitF(braid_Core  core,
                   braid_Int   level);
 
 /**
- * Finish up communication
- *
- * On *level*, wait on both the recv and send handles at this level.
+ * Finish up communication.  On *level*, wait on both the recv and send handles
+ * at this level.
  */
 braid_Int
 _braid_UCommWait(braid_Core  core,
                  braid_Int   level);
 
 /**
- * Retrieve the time step indices at this *level* which correspond to the FC interval
- * given by *interval_index*.  *ci_ptr* is the time step index for the C point
- * and *flo_ptr* and *fhi_ptr* are the smallest and largest F point indices in this
- * interval.  *flo* = *ci* +1, and *fhi* = *ci* + coarsening_factor - 1
+ * Retrieve the time step indices at this *level* corresponding to a local FC
+ * interval given by *interval_index*.  Argument *ci_ptr* is the time step index
+ * for the C-pt and *flo_ptr* and *fhi_ptr* are the smallest and largest F-pt
+ * indices in this interval.  The C-pt is always to the right of the F-interval,
+ * but neither a C-pt or an F-interval are guaranteed.  If the *ci_ptr* returns
+ * a -1, there is no C-pt.  If the *flo_ptr* is greater than the *fhi_ptr*,
+ * there is no F-interval.
  */
 braid_Int
 _braid_GetInterval(braid_Core   core,
@@ -445,11 +449,10 @@ _braid_GetInterval(braid_Core   core,
                    braid_Int   *ci_ptr);
 
 /** 
- * Call user's access function in order to give access to XBraid and the
- * current vector.  Most commonly, this lets the user write *u* to screen,
- * disk, etc...  The vector *u* corresponds to time step *index* on *level*.
- * *status* holds state information about the current XBraid iteration, time
- * value, etc...
+ * Call user's access function in order to give access to XBraid and the current
+ * vector.  Most commonly, this lets the user write *u* to screen, disk, etc...
+ * The vector *u* corresponds to time step *index* on *level*.  *status* holds
+ * state information about the current XBraid iteration, time value, etc...
  */
 braid_Int
 _braid_AccessVector(braid_Core         core,
@@ -457,7 +460,21 @@ _braid_AccessVector(braid_Core         core,
                     braid_Vector       u);
 
 /**
- * Integrate one time step at time step *index* to time step *index*+1
+ * Return an initial guess in *ustop_ptr* to use in the step routine for
+ * implicit schemes.  The value returned depends on the storage options used.
+ * If the return value is NULL, no initial guess is available.
+ */
+braid_Int
+_braid_GetUInit(braid_Core     core,
+                braid_Int      level,
+                braid_Int      index,
+                braid_Vector   u,
+                braid_Vector  *ustop_ptr);
+
+/**
+ * Integrate one time step at time step *index* to time step *index*+1.
+ * The value of *step_type* should be one of the following: 0 (relaxation),
+ * 1 (interpolation), 2 (residual), 3 (access).
  */
 braid_Int
 _braid_Step(braid_Core     core,
@@ -531,10 +548,9 @@ _braid_Refine(braid_Core     core,
               braid_Vector  *fvector);
 
 /**
- * Create a new grid object *grid_ptr* in core at *level*
- *
- * *ilower* and *iupper* correspond to the lower and upper time index values
- * for this processor on this grid.
+ * Create a new grid object *grid_ptr* with level indicator *level*.  Arguments
+ * *ilower* and *iupper* correspond to the lower and upper time index values for
+ * this processor on this grid.
  */
 braid_Int
 _braid_GridInit(braid_Core     core,
@@ -544,21 +560,22 @@ _braid_GridInit(braid_Core     core,
                 _braid_Grid  **grid_ptr);
 
 /**
- * Destroy the vectors on an XBraid *grid*
+ * Destroy the vectors on *grid*
  */
 braid_Int
 _braid_GridClean(braid_Core    core,
                  _braid_Grid  *grid);
 
 /**
- * Destroy an XBraid *grid*
+ * Destroy *grid*
  */
 braid_Int
 _braid_GridDestroy(braid_Core    core,
                    _braid_Grid  *grid);
 
 /**
- * Set initial guess at C-points on *level*
+ * Set initial guess on *level*.  Only C-pts are initialized on level 0,
+ * otherwise stored values are initialized based on restricted fine-grid values.
  */
 braid_Int
 _braid_InitGuess(braid_Core  core,
@@ -583,11 +600,11 @@ _braid_FCRelax(braid_Core  core,
 /**
  * F-Relax on *level* and then restrict to *level+1*
  * 
- * The output is set in the braid_Grid in core, so that the restricted 
- * vectors *va* and *fa* will be created, representing 
- * *level+1* versions of the unknown and rhs vectors.
+ * The output is set in the braid_Grid in core, so that the restricted vectors
+ * *va* and *fa* will be created, representing *level+1* versions of the unknown
+ * and rhs vectors.
  * 
- * If the user has set spatial coarsening, then this user-defined routine is 
+ * If the user has set spatial coarsening, then this user-defined routine is
  * also called.
  *
  * If *level==0*, then *rnorm_ptr* will contain the residual norm.
@@ -599,25 +616,30 @@ _braid_FRestrict(braid_Core   core,       /**< braid_Core (_braid_Core) struct *
                  braid_Real  *rnorm_ptr   /**< pointer to residual norm (if level 0) */
                  );
 
-/** F-Relax on *level* and interpolate to *level-1*
+/**
+ * F-Relax on *level* and interpolate to *level-1*
  *
- * The output is set in the braid_Grid in core, so that the 
- * vector *u* on *level* is created by interpolating from *level+1*.
+ * The output is set in the braid_Grid in core, so that the vector *u* on
+ * *level* is created by interpolating from *level+1*.
  *
- * If the user has set spatial refinement, then this user-defined routine is 
+ * If the user has set spatial refinement, then this user-defined routine is
  * also called.
  */
 braid_Int
-_braid_FInterp(braid_Core  core,           /**< braid_Core (_braid_Core) struct */  
-               braid_Int   level,          /**< interp from level to level+1 */
-               braid_Int   iter,           /**< current iteration number (for user info) */
-               braid_Real  rnorm           /**< residual norm (if level 0) */
+_braid_FInterp(braid_Core  core,   /**< braid_Core (_braid_Core) struct */  
+               braid_Int   level,  /**< interp from level to level+1 */
+               braid_Int   iter,   /**< current iteration number (for user info) */
+               braid_Real  rnorm   /**< residual norm (if level 0) */
                );
 
 /**
- * Create a new fine grid based on user refinement factor information, then
- * F-relax and interpolate to the new fine grid and create a new multigrid
- * hierarchy.  In general, this will require load re-balancing as well.
+ * Create a new fine grid (level 0) and corresponding grid hierarchy by refining
+ * the current fine grid based on user-provided refinement factors.  Return the
+ * boolean *refined_ptr* to indicate whether grid refinement was actually done.
+ * To simplify the algorithm, refinement factors are automatically capped to be
+ * no greater than the coarsening factor (for level 0).  The grid data is also
+ * redistributed to achieve good load balance in the temporal dimension.  If the
+ * refinement factor is 1 in each time interval, no refinement is done.
  */
 braid_Int
 _braid_FRefine(braid_Core   core,
@@ -626,12 +648,11 @@ _braid_FRefine(braid_Core   core,
                braid_Int   *refined_ptr);
 
 /** 
- * Call the user's access function in order to give access to XBraid and 
- * the current vector at grid *level and iteration *iter*.  Most commonly, 
- * this lets the user write solutions to screen, disk, etc... 
- * The quantity *rnorm* denotes the last computed residual
- * norm, and *done* is a boolean indicating whether XBraid has finished
- * iterating and this is the last Access call. 
+ * Call the user's access function in order to give access to XBraid and the
+ * current vector at grid *level and iteration *iter*.  Most commonly, this lets
+ * the user write solutions to screen, disk, etc...  The quantity *rnorm*
+ * denotes the last computed residual norm, and *done* is a boolean indicating
+ * whether XBraid has finished iterating and this is the last Access call.
  */
 braid_Int
 _braid_FAccess(braid_Core     core,
@@ -641,7 +662,10 @@ _braid_FAccess(braid_Core     core,
                braid_Int      done);
 
 /**
- * Initialize (and re-initialize) hierarchy
+ * Initialize grid hierarchy with *fine_grid* serving as the finest grid.
+ * Boolean *refined* indicates whether *fine_grid* was created by refining a
+ * coarser grid (in the FRefine() routine), which has implications on how to
+ * define CF-intervals.
  */
 braid_Int
 _braid_InitHierarchy(braid_Core    core,

@@ -162,7 +162,7 @@ my_Step(braid_App        app,
    app->man->solver = app->solver[A_idx];
 
    /* Use level specific max_iter */
-   if( A_idx == 0 )
+   if( level == 0 )
       app->man->max_iter = app->max_iter_x[0];
    else
       app->man->max_iter = app->max_iter_x[1];
@@ -190,9 +190,8 @@ my_Step(braid_App        app,
     * produces rfactors between 1 and 8. */
    if (app->refine)
    {
-      int level, nrefine, gnt, index, rfactor;
+      int nrefine, gnt, index, rfactor;
       double gtstart, gtstop;
-      braid_StepStatusGetLevel(status, &level);
       braid_StepStatusGetNRefine(status, &nrefine);
       if ((level == 0) && (nrefine < 3))
       {
@@ -215,9 +214,8 @@ my_Step(braid_App        app,
    /* New code to test FRefine functionality */
    if (app->refine)
    {
-      int level, nrefine, gnt, index, rfactor;
+      int nrefine, gnt, index, rfactor;
       double gtstart, gtstop;
-      braid_StepStatusGetLevel(status, &level);
       braid_StepStatusGetNRefine(status, &nrefine);
       if ((level == 0) && (nrefine < 1))
       {

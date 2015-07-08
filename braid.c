@@ -71,7 +71,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              access_level = 1;      /* Default access level */
    braid_Int              tnorm = 2;             /* Default temporal norm */
    braid_Real             tol = 1.0e-09;         /* Default absolute tolerance */
-   braid_Real             rtol = 1.0e-09;        /* Default relative tolerance */
+   braid_Real             rtol = 1;              /* Use relative tolerance */
 
    core = _braid_CTAlloc(_braid_Core, 1);
 
@@ -762,7 +762,8 @@ braid_Int
 braid_SetAbsTol(braid_Core  core,
                 braid_Real  tol)
 {
-   _braid_CoreElt(core, tol) = tol;
+   _braid_CoreElt(core, tol)  = tol;
+   _braid_CoreElt(core, rtol) = 0;
 
    return _braid_error_flag;
 }
