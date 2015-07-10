@@ -1577,6 +1577,9 @@ _braid_FRestrict(braid_Core   core,
 
    /* Now apply coarse residual to update fa values */
 
+   /* Set initial guess on coarse level */
+   _braid_InitGuess(core, c_level);
+
    /* Initialize update of c_va[-1] boundary */
    if (c_ilower <= c_iupper)
    {
@@ -1604,9 +1607,6 @@ _braid_FRestrict(braid_Core   core,
       }
    }
    _braid_CommWait(core, &send_handle);
-
-   /* Set initial guess on coarse level */
-   _braid_InitGuess(core, c_level);
 
    /* Compute rnorm (only on level 0) */
    if (level == 0)
