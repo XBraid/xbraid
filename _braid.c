@@ -1748,17 +1748,57 @@ _braid_FInterp(braid_Core  core,
  * redistributed to achieve good load balance in the temporal dimension.  If the
  * refinement factor is 1 in each time interval, no refinement is done.
  *
- * RDF - MORE EXPLANATION HERE
+ * This routine is somewhat complex, but an attempt was made to use consistent
+ * terminology throughout.  We refer to the initial level 0 grid as the "coarse"
+ * grid and the new level 0 grid as the "fine" grid.  The routine starts with
+ * the coarse grid and creates an intermediate "refined" grid that is co-located
+ * with the parent coarse grid data distribution.  On this refined grid, a
+ * number of things are constructed: the mapping between the coarse and fine
+ * indexes; the new fine time values; and the injected and (possibly) spatially
+ * refined coarse u-vectors.  This data is then redistributed by first sending
+ * the mapping and time value information to the appropriate processors (the
+ * receiving side polls for arbitrary messages until each fine index is
+ * accounted for).  The u-vector values are communicated in a second phase
+ * (without polling).  Finally, a new hierarchy is created and the fine grid
+ * values are initialized by integrating the communicated u-vector values to the
+ * next C-point to the right.  Note that in the case of C-point storage, some
+ * u-vector values may not need to be communicated.
  *
- * Here is a sketch of an example with coarsening factor 3:
+ * The variable names use certain conventions as well.  No prefix (usually)
+ * indicates a coarse variable, and the prefixes 'r_' and 'f_' indicate data on
+ * the "refined" and "fine" grids, respectively.  Characters 'c', 'f', and 'a'
+ * usually mean "coarse", "fine", and "array".  Indexes 'i', 'r_i', and 'f_i'
+ * refer to global indexes, while 'ii', 'r_ii', and 'f_ii' are local indexes.
+ *
+ * Here are some important variables along with a brief description (they are
+ * illustrated further in the example below):
+ *
+ *   gupper, f_gupper - global upper index for coarse and fine grids
+ *   ilower,   iupper,   npoints   - extents and size of local coarse interval
+ *   r_ilower, r_iupper, r_npoints - extents and size of local refined interval
+ *   f_ilower, f_iupper, f_npoints - extents and size of local fine interval
+ *
+ *   r_ca - index map from fine to coarse on the refined grid  (size 'r_npoints')
+ *   r_ta - time values on the refined grid                    (size 'r_npoints')
+ *   r_fa - index map from coarse to fine on the refined grid  (size 'npoints+1')
+ *          (note the extra value)
+ *   f_ca - index map from fine to coarse on the fine grid     (size 'f_npoints')
+ *
+ *   send_ua - array of u-vectors to send to new processors    (size 'npoints')
+ *   recv_ua - array of u-vectors received from old processors (size 'f_npoints')
+ *
+ * Example: Some processor p owns the coarse interval, ilower = 29, iupper = 33.
+ * The coarsening factor is 3 and 'rfactors' indicates the refinement factor for
+ * the coarse interval to the left.  From this, an intermediate refined grid and
+ * a final fine grid are formed as described above.
  *
  *   Coarse            |-----------c-----------|-----------|-----------c
- *    index           29          30          31          32          33
+ *     Grid           29          30          31          32          33
  * 
  * rfactors            3           1           2           3           2
  * 
  *  Refined ---c---|---|-----------c-----|-----|---c---|---|-----c-----|
- *    index   57  58  59          60    61    62  63  64  65    66    67
+ *     Grid   57  58  59          60    61    62  63  64  65    66    67
  * 
  * r_ilower   57
  *     r_ca   -1  -1  29          30    -1    31  -1  -1  32    -1    33
@@ -1766,30 +1806,22 @@ _braid_FInterp(braid_Core  core,
  *     r_fa           59          60          62          65          67          70
  *  send_ua            *           *           *           *           *
  * 
- * 
  *     Fine      |-----|---c---|---|-----c-----|---|---c---|-----|-----c
- *    index     61    62  63  64  65    66    67  68  69  70    71    72
+ *     Grid     61    62  63  64  65    66    67  68  69  70    71    72
  *              
  * f_ilower     61
  *     f_ca     -1    31  -1  -1  32    -1    33  -1  -1  34    -1    35
  *  f_first           62
  *   f_next                                                                       74
- *  recv_ua            *           *           *           *           *
- * 
+ *  recv_ua      0     *   0   0   *     0     *   0   0   *     0     *
  * 
  * When storing C-pts only, data from coarse indices 29 and 34 are not needed,
  * so we have the following differences from above:
  *     r_ca   -1  -1  -1          30    -1    31  -1  -1  32    -1    33
  *  send_ua            0           *           *           *           *
  *     f_ca     -1    31  -1  -1  32    -1    33  -1  -1  -1    -1    35
- *  recv_ua            *           *           *           0           *
+ *  recv_ua      0     *   0   0   *     0     *   0   0   0     0     *
  * 
- * 
- *     r_ca - index map from fine to coarse on refined grid
- *     r_ta - time values on refined grid
- *     r_fa - index map from coarse to fine on refined grid
- *     f_ca - index map from fine to coarse on fine grid
- *
  *--------------------------------------------------------------------------*/
 
 braid_Int
@@ -1843,9 +1875,10 @@ _braid_FRefine(braid_Core   core,
    iupper  = _braid_GridElt(grids[0], iupper);
    npoints = iupper - ilower + 1;
 
-   /* 1. Compute f_gupper and the extents of the refined grid points in the
-    * interval (ilower-1, iupper].  The refined grid point interval is defined
-    * by r_ilower, r_iupper, and r_npoints. */
+   /*-----------------------------------------------------------------------*/
+   /* 1. Compute f_gupper and the local interval extents for both the refined
+    * and fine grids.  The local refined interval contains the fine grid points
+    * underlying the coarse interval (ilower-1, iupper]. */
 
    /* Compute f_gupper and r_npoints */
    _braid_GetCFactor(core, 0, &cfactor);
@@ -1889,10 +1922,10 @@ _braid_FRefine(braid_Core   core,
    /* Initialize the new fine grid */
    _braid_GridInit(core, 0, f_ilower, f_iupper, &f_grid);
 
-   /* 2. Construct an array of values (fi,ci,ft) to send to other processors */
+   /*-----------------------------------------------------------------------*/
+   /* 2. On the refined grid, compute the mapping between coarse and fine
+    * indexes (r_ca, r_fa) and the fine time values (r_ta). */
 
-   /* Compute r_ca, r_ta, and r_fa arrays.  The array r_fa also serves as a
-    * buffer for communicating r_next and f_next indices. */
    r_ca = _braid_CTAlloc(braid_Int,  r_npoints);
    r_ta = _braid_CTAlloc(braid_Real, r_npoints);
    r_fa = _braid_CTAlloc(braid_Int,  npoints+1);
@@ -1949,8 +1982,8 @@ _braid_FRefine(braid_Core   core,
    _braid_TFree(requests);
    _braid_TFree(statuses);
 
-   /* If storing only C-points on the new fine grid, modify r_ca to mark only
-    * those coarse points that need to be sent to initialize the C-points. */
+   /* If storing only C-points on the fine grid, modify r_ca to mark only those
+    * coarse points that need to be sent to initialize the C-points */
    if (_braid_CoreElt(core, storage) != 0)
    {
       for (ii = 0; ii < npoints; ii++)
@@ -1965,7 +1998,10 @@ _braid_FRefine(braid_Core   core,
       }
    }
 
-   /* 3. Send and receive values (fi,ci,ft) and build ta array and from map */
+   /*-----------------------------------------------------------------------*/
+   /* 3. Send the index mapping and time value information (r_ca, r_ta) to the
+    * appropriate processors to build index mapping and time value information
+    * for the fine grid (f_ca, f_ta).  Also compute f_first and f_next. */
 
    /* Post f_next receive */
    if (f_npoints > 0)
@@ -2114,14 +2150,10 @@ _braid_FRefine(braid_Core   core,
    _braid_TFree(send_buffer);
    _braid_TFree(recv_buffer);
 
-   /* 4. Determine sends and receives for u-vector values and communicate */
-
-   /* Need to build a send_ua array that has C-points and integrated F-points
-    * (both interpolated spatially) to send to other processors.  The length of
-    * this array should be npoints.
-    *
-    * On the receiving side, the recv_ua array should be of length f_npoints to
-    * make it easy to integrate on the fine grid. */
+   /*-----------------------------------------------------------------------*/
+   /* 4. Build u-vectors on the fine grid (send_ua) by first integrating on the
+    * coarse grid, then injecting and refining spatially.  Redistribute these
+    * u-vectors to the fine grid (recv_ua). */
 
    send_ua = _braid_CTAlloc(braid_Vector, npoints);
    send_procs = _braid_CTAlloc(braid_Int, npoints);
@@ -2359,13 +2391,17 @@ _braid_FRefine(braid_Core   core,
       }
    }
 
-   /* 5. Build new hierarchy */
+   /*-----------------------------------------------------------------------*/
+   /* 5. Build the new fine grid hierarchy, then use recv_ua to populate the
+    * initial values on grid level 0.  This is done by integrating values to the
+    * next C-point the right.  Because we require that rfactor <= cfactor, each
+    * C-point either has a corresponding value or has a value in the F-interval
+    * immediately to the left that can be integrated.  Communication from the
+    * left processor may still be needed. */
 
 #if DEBUG
    printf("%d %d: 5\n", FRefine_count, myproc);
 #endif
-
-   /* Use recv_ua to populate the initial values on the new finest grid level */
 
    /* Initialize new hierarchy */
    _braid_CoreElt(core, ntime)   = f_gupper;
@@ -2373,10 +2409,6 @@ _braid_FRefine(braid_Core   core,
    _braid_CoreElt(core, nrefine) += 1;
    /*braid_SetCFactor(core,  0, cfactor);*/ /* RDF HACKED TEST */
    _braid_InitHierarchy(core, f_grid, 1);
-
-   /* Set initial values on fine grid using recv_ua.  Because we require that
-    * rfactor <= cfactor, each C-point either has a value in recv_ua or has a
-    * value in the F-interval immediately to the left that can be integrated. */
 
    /* Initialize communication */
    recv_msg = 0;

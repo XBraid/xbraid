@@ -142,25 +142,26 @@ typedef braid_Int
  * This global norm then controls halting. 
  **/
 typedef braid_Int
-(*braid_PtFcnSpatialNorm)(braid_App      app,                /**< user-defined _braid_App structure */
-                          braid_Vector   u,                  /**< vector to norm */
-                          braid_Real    *norm_ptr            /**< output, norm of braid_Vector (this is a spatial norm) */ 
+(*braid_PtFcnSpatialNorm)(braid_App      app,      /**< user-defined _braid_App structure */
+                          braid_Vector   u,        /**< vector to norm */
+                          braid_Real    *norm_ptr  /**< output, norm of braid_Vector (this is a spatial norm) */ 
                           );
 
 /**
- * Gives user access to XBraid and to the current vector *u* at time *t*.  Most commonly,
- * this lets the user write the vector to screen, file, etc...  The user decides 
- * what is appropriate.  Note how you are told the time value *t* of the 
- * vector *u* and other information in *status*.  This lets you tailor the 
- * output, e.g., for only certain time values at certain XBraid iterations.
- * Querrying status for such information is done through 
+ * Gives user access to XBraid and to the current vector *u* at time *t*.  Most
+ * commonly, this lets the user write the vector to screen, file, etc...  The
+ * user decides what is appropriate.  Note how you are told the time value *t*
+ * of the vector *u* and other information in *status*.  This lets you tailor
+ * the output, e.g., for only certain time values at certain XBraid iterations.
+ * Querrying status for such information is done through
  * _braid_AccessStatusGet**(..)_ routines.
  * 
- * The frequency of XBraid's calls to *access* is controlled through 
- * [braid_SetAccessLevel](@ref braid_SetAccessLevel).  For instance, if access_level is 
- * set to 2, then *access* is called every XBraid iteration and on every XBraid level.  In 
- * this case, querrying *status* to determine the current XBraid level and iteration will 
- * be useful. This scenario allows for even more detailed tracking of the simulation.
+ * The frequency of XBraid's calls to *access* is controlled through
+ * [braid_SetAccessLevel](@ref braid_SetAccessLevel).  For instance, if
+ * access_level is set to 2, then *access* is called every XBraid iteration and
+ * on every XBraid level.  In this case, querrying *status* to determine the
+ * current XBraid level and iteration will be useful. This scenario allows for
+ * even more detailed tracking of the simulation.
  *
  * Eventually, access will be broadened to allow the user to steer XBraid.
  **/
@@ -171,9 +172,9 @@ typedef braid_Int
                      );
 
 /**
- * This routine tells XBraid message sizes by computing an upper bound in bytes for 
- * an arbitrary braid_Vector.  This size must be an upper bound for what BufPack and BufUnPack 
- * will assume.
+ * This routine tells XBraid message sizes by computing an upper bound in bytes
+ * for an arbitrary braid_Vector.  This size must be an upper bound for what
+ * BufPack and BufUnPack will assume.
  **/
 typedef braid_Int
 (*braid_PtFcnBufSize)(braid_App   app,               /**< user-defined _braid_App structure */
@@ -202,8 +203,9 @@ typedef braid_Int
                         );
 
 /**
- * This function (optional) computes the residual *r* at time *tstop* given *u*
- * at *tstop* and *uprev* at *tstart*. If used, set with braid_SetResidual.
+ * This function (optional) computes the residual *r* at time *tstop*.  On
+ * input, *r* holds the value of *u* at *tstart*, and *ustop* is the value of
+ * *u* at *tstop*.  If used, set with @ref braid_SetResidual.
  *
  * Query the status structure with *braid_StepStatusGetTstart(status, &tstart)*
  * and *braid_StepStatusGetTstop(status, &tstop)* to get *tstart* and *tstop*.
