@@ -454,7 +454,7 @@ braid_StepStatusSetOldFineTolx(braid_StepStatus  status,
 
 braid_Int
 braid_StepStatusSetTightFineTolx(braid_StepStatus  status,
-                                 braid_Real        tight_fine_tolx
+                                 braid_Int         tight_fine_tolx
                                  )
 {
    _braid_StatusElt(status, tight_fine_tolx) = tight_fine_tolx;

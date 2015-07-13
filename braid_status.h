@@ -489,7 +489,7 @@ braid_StepStatusSetOldFineTolx(braid_StepStatus  status,             /**< struct
 
 braid_Int
 braid_StepStatusSetTightFineTolx(braid_StepStatus  status,             /**< structure containing current simulation info */
-                                 braid_Real        tight_fine_tolx     /**< input, boolean indicating whether the tight tolx has been used */
+                                 braid_Int         tight_fine_tolx     /**< input, boolean indicating whether the tight tolx has been used */
                                  );
 
 

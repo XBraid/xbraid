@@ -416,7 +416,7 @@ my_Access(braid_App           app,
    braid_AccessStatusGetTILD(astatus, &t, &iter, &level, &done);
    braid_AccessStatusGetResidual(astatus, &rnorm);
 
-   if( (level == 0) )
+   if(level == 0)
    {
       /* Print discretization error to screen for only final time */
       index = ((t - tstart) / ((tstop - tstart)/nt) + 0.1);

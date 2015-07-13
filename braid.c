@@ -136,7 +136,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, rnorms)                                      = _braid_CTAlloc(braid_Real, max_iter);
    _braid_StatusElt( _braid_CoreElt(core, sstatus), rnorms)          = _braid_CoreElt(core, rnorms);
    _braid_StatusElt( _braid_CoreElt(core, sstatus), old_fine_tolx)   = -1.0;
-   _braid_StatusElt( _braid_CoreElt(core, sstatus), tight_fine_tolx) = 0.0;
+   _braid_StatusElt( _braid_CoreElt(core, sstatus), tight_fine_tolx) = 1;
 
    *core_ptr = core;
 
