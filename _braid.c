@@ -2525,7 +2525,6 @@ _braid_InitHierarchy(braid_Core    core,
    MPI_Comm       comm       = _braid_CoreElt(core, comm);
    braid_Int      max_levels = _braid_CoreElt(core, max_levels);
    braid_Int      min_coarse = _braid_CoreElt(core, min_coarse);
-   braid_Real     tol        = _braid_CoreElt(core, tol);
    braid_Int     *nrels      = _braid_CoreElt(core, nrels);
    braid_Int      nrdefault  = _braid_CoreElt(core, nrdefault);
    braid_Int      gupper     = _braid_CoreElt(core, gupper);
@@ -2568,10 +2567,8 @@ _braid_InitHierarchy(braid_Core    core,
 
    grids[0] = fine_grid;
 
-   /* Do sequential time marching if tolerance is not positive, 
-    * or min_coarse is already reached */
-
-   if ((tol <= 0.0) && (max_levels > 1) && (gupper >= min_coarse) )
+   /* Do sequential time marching if min_coarse is already reached */
+   if ( gupper <= min_coarse )
    {
       max_levels = 1;
       _braid_CoreElt(core, max_levels) = max_levels;

@@ -65,7 +65,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              nfmg_Vcyc = 1;         /* Default num V-cycles at each fmg level is 1 */
    braid_Int              max_iter = 100;        /* Default max_iter */
    braid_Int              max_levels = 30;       /* Default max_levels */
-   braid_Int              min_coarse = 3;        /* Default min_coarse */
+   braid_Int              min_coarse = 2;        /* Default min_coarse */
    braid_Int              print_level = 1;       /* Default print level */
    braid_Int              access_level = 1;      /* Default access level */
    braid_Int              tnorm = 2;             /* Default temporal norm */
@@ -218,7 +218,7 @@ braid_Drive(braid_Core  core)
    }
    down = 1;
    done = 0;
-   if ((max_levels <= 1) || (tol <= 0.0))
+   if (max_levels <= 1)
    {
       /* Just do sequential time marching */
       done = 1;
@@ -369,7 +369,6 @@ braid_Drive(braid_Core  core)
                if (globres != NULL)
                {
                   if ( ((global_rnorm < tol) && (_braid_StatusElt( sstatus, tight_fine_tolx) == 1)) || 
-                       (global_rnorm == 0.0) ||
                        (iter == max_iter-1) )
                   {
                      done = 1;
@@ -378,7 +377,6 @@ braid_Drive(braid_Core  core)
                else 
                {
                   if ( ((rnorm < tol) && (_braid_StatusElt( sstatus, tight_fine_tolx) == 1)) || 
-                       (rnorm == 0.0) ||
                        (iter == max_iter-1) )
                   {
                      done = 1;
