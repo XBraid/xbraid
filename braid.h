@@ -332,26 +332,6 @@ braid_PrintStats(braid_Core  core           /**< braid_Core (_braid_Core) struct
                  );
 
 /**
- * Set loose stopping tolerance *loose_tol* for spatial solves on grid
- * *level* (level 0 is the finest grid).
- **/
-braid_Int
-braid_SetLoosexTol(braid_Core  core,        /**< braid_Core (_braid_Core) struct*/
-                   braid_Int   level,       /**< level to set *loose_tol* */
-                   braid_Real  loose_tol    /**< tolerance to set */
-                   );
-
-/**
- * Set tight stopping tolerance *tight_tol* for spatial solves on grid 
- * *level* (level 0 is the finest grid).
- **/
-braid_Int
-braid_SetTightxTol(braid_Core  core,        /**< braid_Core (_braid_Core) struct*/
-                   braid_Int   level,       /**< level to set *tight_tol* */
-                   braid_Real  tight_tol    /**< tolerance to set */
-                   );
-
-/**
  * Set max number of multigrid levels.
  **/
 braid_Int

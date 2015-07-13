@@ -49,18 +49,6 @@ _braid_ProjectInterval( braid_Int   ilower,
                         braid_Int  *piupper );
 
 /**
- * Determine the accuracy used for the spatial solves based on the ratio of
- * the current residual norm and the stopping tolerance. 
- **/
-braid_Int
-_braid_SetAccuracy( braid_Real   rnorm,
-                    braid_Real   loose_tol,
-                    braid_Real   tight_tol,
-                    braid_Real   oldAccuracy,
-                    braid_Real   tol,
-                    braid_Real  *paccuracy );
-
-/**
  * If set, print to @ref _braid_printfile and then flush.  
  * Else print to standard out.\n
  *

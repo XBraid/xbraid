@@ -64,21 +64,6 @@ typedef struct
 } _braid_CommHandle;
 
 /**
- * XBraid Accuracy Handle, used for controlling the accuracy of solves during
- * implicit time stepping.  For instance, to do less accurate solves on coarse
- * time grids
- **/
-typedef struct
-{
-   braid_Int   matchF;
-   braid_Real  value;      /**< accuracy value */
-   braid_Real  old_value;  /**< old accuracy value used in FRestrict */
-   braid_Real  loose;      /**< loose accuracy for spatial solves */
-   braid_Real  tight;      /**< tight accuracy for spatial solves */
-   braid_Int   tight_used; /**< tight accuracy used (1) or not (0) */
-} _braid_AccuracyHandle;
-
-/**
  * XBraid Grid structure for a certain time level
  *
  * Holds all the information for a processor related to the temporal
@@ -158,7 +143,6 @@ typedef struct _braid_Core_struct
    braid_Int              nfmg_Vcyc;    /**< number of V-cycle calls at each level in FMG */
    braid_Int              tnorm;        /**< choice of temporal norm */
    braid_Real            *tnorm_a;      /**< local array of residual norms on a proc's interval, used for inf-norm */
-   _braid_AccuracyHandle *accuracy;     /**< accuracy of spatial solves on different levels */
    braid_Real            *rnorms;       /**< XBraid residual norm history */
 
    braid_AccessStatus     astatus;      /**< status structure passed to user-written Access routine */
@@ -474,15 +458,11 @@ _braid_GetUInit(braid_Core     core,
 
 /**
  * Integrate one time step at time step *index* to time step *index*+1.
- * The value of *step_type* should be one of the following: 0 (relaxation),
- * 1 (interpolation), 2 (residual), 3 (access).
  */
 braid_Int
 _braid_Step(braid_Core     core,
             braid_Int      level,
-            braid_Int      step_type,
             braid_Int      index,
-            braid_Real     accuracy,
             braid_Vector   ustop,
             braid_Vector   u);
 
@@ -493,7 +473,6 @@ braid_Int
 _braid_Residual(braid_Core     core,
                 braid_Int      level,
                 braid_Int      index,
-                braid_Real     accuracy,
                 braid_Vector   ustop,
                 braid_Vector   r);
 
@@ -504,7 +483,6 @@ braid_Int
 _braid_FASResidual(braid_Core     core,
                    braid_Int      level,
                    braid_Int      index,
-                   braid_Real     accuracy,
                    braid_Vector   ustop,
                    braid_Vector   r);
 

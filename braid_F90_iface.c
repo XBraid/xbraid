@@ -694,34 +694,6 @@ braid_F90_Name(braid_print_stats_f90, BRAID_PRINT_STATS_F90)(
    return 0;
 }
 
-/*  braid_SetLoosexTol( ) */
-braid_Int
-braid_F90_Name(braid_set_loosextol_f90, BRAID_SET_LOOSE_XTOL_F90)(
-                   braid_F90_ObjPtr  *core,        /**< braid_Core (_braid_Core) struct*/
-                   braid_F90_Int     *level,       /**< level to set *loose_tol* */
-                   braid_F90_Real    *loose_tol    /**< tolerance to set */
-                   )
-{
-   braid_SetLoosexTol(braid_TakeF90_ObjDeref(braid_Core,  core) ,
-                      braid_TakeF90_Int(                  level),
-                      braid_TakeF90_Real(                 loose_tol) );
-   return 0;
-}
-
-/*  braid_SetTightxTol( ) */
-braid_Int
-braid_F90_Name(braid_set_tight_xtol_f90, BRAID_SET_TIGHT_XTOL_F90)(
-                   braid_F90_ObjPtr  *core,        /**< braid_Core (_braid_Core) struct*/
-                   braid_F90_Int     *level,       /**< level to set *tight_tol* */
-                   braid_F90_Real    *tight_tol    /**< tolerance to set */
-                   )
-{
-   braid_SetTightxTol(braid_TakeF90_ObjDeref(braid_Core,  core) ,
-                      braid_TakeF90_Int(                  level),
-                      braid_TakeF90_Real(                 tight_tol) );
-   return 0;
-}
-
 /*  braid_SetMaxLevels( ) */
 braid_Int
 braid_F90_Name(braid_set_max_levels_f90, BRAID_SET_MAX_LEVELS_F90)(

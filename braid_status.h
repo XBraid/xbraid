@@ -129,16 +129,14 @@ typedef struct _braid_StepStatus_struct
 {
    braid_Real    tstart;          /**< current time value  */
    braid_Real    tstop;           /**< time value to evolve towards, time value to the right of tstart */
-   braid_Real    accuracy;        /**< advanced option allowing variable accuracy for implicit step*/
    braid_Real*   rnorms;          /**< XBraid residual norm history, (points to Core->rnorms object) */ 
    braid_Real    old_fine_tolx;   /**< Allows for storing the previously used fine tolerance from GetSpatialAccuracy */
    braid_Int     tight_fine_tolx; /**< Boolean, indicating whether the tightest fine tolx has been used, condition for halting */
    braid_Real    tol;             /**< Current XBraid stopping tolerance */
    braid_Int     iter;            /**< Current XBraid iteration (also equal to length of rnorms) */
-   braid_Int     rfactor;         /**< if set by user, allows for subdivision of this interval for bettter time accuracy */
+   braid_Int     rfactor;         /**< if set by user, allows for subdivision of this interval for better time accuracy */
    braid_Int     level;           /**< current level in XBraid*/
    braid_Int     nrefine;         /**< number of refinements done */
-   braid_Int     step_type;       /**< Step type, 0: take step for relaxation, 1: for interpolation, 2: for residual, 3: access */
 
 } _braid_StepStatus;
 
@@ -366,12 +364,10 @@ braid_CoarsenRefStatusGetNRefine(braid_CoarsenRefStatus  status,        /**< str
 braid_Int
 _braid_StepStatusInit(braid_Real        tstart,      /**< current time value  */
                       braid_Real        tstop,       /**< time value to evolve towards, time value to the right of tstart */
-                      braid_Real        accuracy,    /**< advanced option allowing variable accuracy for implicit step*/
                       braid_Real        tol,         /**< Current XBraid stopping tolerance */
                       braid_Int         iter,        /**< Current XBraid iteration (also equal to length of rnorms) */
                       braid_Int         level,       /**< current level in XBraid */
                       braid_Int         nrefine,     /**< number of refinements done */
-                      braid_Int         step_type,   /**< current step type in XBraid (0: relax, 1: interp, 2: residual, 3: access) */
                       braid_StepStatus  status       /**< structure to initialize */
                       );
 
@@ -397,15 +393,6 @@ braid_StepStatusGetTstop(braid_StepStatus  status,          /**< structure conta
                          braid_Real      *tstop_ptr         /**< output, next time value to evolve towards */
                          );
 
-/** 
- * Return the current accuracy value, usually between 0 and 1.0, which can
- * allow for tuning of implicit solve accuracy
- **/
-braid_Int
-braid_StepStatusGetAccuracy(braid_StepStatus  status,         /**< structure containing current simulation info */
-                            braid_Real      *accuracy_ptr     /**< output, current accuracy value */
-                            );
-
 /**
  * Return the current XBraid level from the StepStatus structure.
  **/
@@ -421,14 +408,6 @@ braid_Int
 braid_StepStatusGetNRefine(braid_StepStatus  status,           /**< structure containing current simulation info */
                            braid_Int        *nrefine_ptr       /**< output, number of refinements done */
                           );
-
-/**
- * Return the current step type from the StepStatus structure.
- **/
-braid_Int
-braid_StepStatusGetStepType(braid_StepStatus  status,          /**< structure containing current simulation info */
-                            braid_Int        *step_type_ptr    /**< output, current step type in XBraid (0: relax, 1: interp, 2: residual, 3: access) */
-                           );
 
 /** 
  * Set the rfactor, a desired refinement factor for this interval.  rfactor=1

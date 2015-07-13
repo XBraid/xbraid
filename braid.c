@@ -57,7 +57,6 @@ braid_Init(MPI_Comm               comm_world,
            braid_Core            *core_ptr)
 {
    _braid_Core           *core;
-   _braid_AccuracyHandle *accuracy;
 
    /* Braid default values */
    braid_Int              cfdefault = 2;         /* Default coarsening factor */
@@ -121,25 +120,6 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, sstatus)    = _braid_CTAlloc(_braid_StepStatus, 1);
    _braid_CoreElt(core, cstatus)    = _braid_CTAlloc(_braid_CoarsenRefStatus, 1);
 
-   /* Accuracy for spatial solves for using implicit schemes
-    *  - accuracy[0] refers to accuracy on level 0
-    *  - accuracy[1] refers to accuracy on all levels > 0 */
-   accuracy                         = _braid_TAlloc(_braid_AccuracyHandle, 2);
-   accuracy[0].matchF               = 0;
-   accuracy[0].value                = 1.0e-02;
-   accuracy[0].old_value            = 1.0e-02;
-   accuracy[0].loose                = 1.0e-02;
-   accuracy[0].tight                = 1.0e-02;
-   accuracy[0].tight_used           = 0;
-
-   accuracy[1].matchF               = 0;
-   accuracy[1].value                = 1.0e-02;
-   accuracy[1].old_value            = 1.0e-02;
-   accuracy[1].loose                = 1.0e-02;
-   accuracy[1].tight                = 1.0e-02;
-   accuracy[1].tight_used           = 0;
-   _braid_CoreElt(core, accuracy)   = accuracy;
-
    _braid_CoreElt(core, storage)    = -1;            /* only store C-points */
 
    _braid_CoreElt(core, gupper)     = ntime;
@@ -188,7 +168,6 @@ braid_Drive(braid_Core  core)
    braid_Int     *nrels, nrel0;
    braid_Int      nlevels, iter, nprocs;
    braid_Real     rnorm, old_rnorm, global_rnorm, old_globalrnorm;
-   braid_Real     accuracy;
    braid_Int      ilower, iupper;
    braid_Real    *ta;
    braid_Int      level, fmglevel, fmg_Vcyc, down, done, i, refined;
@@ -297,24 +276,6 @@ braid_Drive(braid_Core  core)
                   tol *= rnorm;
                }
                _braid_CoreElt(core, tol) = tol;
-            }
-
-            if (level == 0)
-            {
-               /* Adjust accuracy of spatial solves for level 0 */
-               _braid_SetAccuracy(rnorm, _braid_CoreElt(core, accuracy[0].loose), 
-                               _braid_CoreElt(core, accuracy[0].tight),
-                               _braid_CoreElt(core, accuracy[0].value), tol, &accuracy);
-               _braid_CoreElt(core, accuracy[0].old_value) = _braid_CoreElt(core, accuracy[0].value);
-               _braid_CoreElt(core, accuracy[0].value)     = accuracy;
-               _braid_CoreElt(core, accuracy[0].matchF)    = 1;
-               
-               /* Debug printing only if the accuracy value has changed */
-               if( (print_level >= 2) && (myid == 0) && 
-                   ( _braid_CoreElt(core, accuracy[0].old_value) != _braid_CoreElt(core, accuracy[0].value)) )
-               {
-                  _braid_printf("  Braid:  Accuracy changed to %.2e \n", accuracy);
-               }
             }
 
             level++;
@@ -491,7 +452,6 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, nrels));
       _braid_TFree(_braid_CoreElt(core, rnorms));
       _braid_TFree(_braid_CoreElt(core, cfactors));
-      _braid_TFree(_braid_CoreElt(core, accuracy));
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
       _braid_AccessStatusDestroy(astatus);
@@ -594,63 +554,6 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("\n");
       _braid_printf("  wall time = %f\n", globaltime);
       _braid_printf("\n");
-   }
-
-   return _braid_error_flag;
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-braid_Int
-braid_SetLoosexTol(braid_Core  core,
-                   braid_Int   level,
-                   braid_Real  loose_tol)
-{
-   if (level < 0)
-   {
-      /* Set the loose tolerance on all levels. 
-       * Index 0 corresponds to level 0, index 1 to all levels > 0. */
-      _braid_CoreElt(core, accuracy[0].loose)     = loose_tol;
-      _braid_CoreElt(core, accuracy[1].loose)     = loose_tol;
-
-      /* Initialize the current and old value with loose_tol. */
-      _braid_CoreElt(core, accuracy[0].value)     = loose_tol;
-      _braid_CoreElt(core, accuracy[0].old_value) = loose_tol;
-      
-      _braid_CoreElt(core, accuracy[1].value)     = loose_tol;
-      _braid_CoreElt(core, accuracy[1].old_value) = loose_tol;
-   }
-   else
-   {  
-      /* Set the loose tolerance on level level and initialize
-       * the current and old value for that level with loose_tol. */
-      _braid_CoreElt(core, accuracy[level].loose)     = loose_tol;
-      _braid_CoreElt(core, accuracy[level].value)     = loose_tol;
-      _braid_CoreElt(core, accuracy[level].old_value) = loose_tol;
-   }
-
-   return _braid_error_flag;
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-braid_Int
-braid_SetTightxTol(braid_Core  core,
-                   braid_Int   level,
-                   braid_Real  tight_tol)
-{
-   if (level < 0)
-   {
-      /* Set tight tolerance on all levels. */
-      _braid_CoreElt(core, accuracy[0].tight)     = tight_tol;
-      _braid_CoreElt(core, accuracy[1].tight)     = tight_tol;
-   }
-   else
-   {  
-      /* Set tight tolerance on level level. */
-      _braid_CoreElt(core, accuracy[level].tight) = tight_tol;
    }
 
    return _braid_error_flag;
@@ -1010,12 +913,11 @@ braid_GetSpatialAccuracy( braid_StepStatus  status,
 {
    braid_Int nrequest   = 1;
    braid_Real stol, tol, rnorm, rnorm0, old_fine_tolx;
-   braid_Int level, step_type;
+   braid_Int level;
    braid_Real l_rnorm, l_ltol, l_ttol, l_tol;
    
    braid_StepStatusGetTol(status, &tol);
    braid_StepStatusGetLevel(status, &level);
-   braid_StepStatusGetStepType(status, &step_type);
    braid_StepStatusGetOldFineTolx(status, &old_fine_tolx);
 
    /* Get the first and then the current residual norms */
