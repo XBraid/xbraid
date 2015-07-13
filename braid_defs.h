@@ -31,6 +31,8 @@
 #define braiddefs_HEADER
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -127,13 +127,18 @@ typedef struct _braid_StepStatus_struct *braid_StepStatus;
  **/
 typedef struct _braid_StepStatus_struct
 {
-   braid_Real    tstart;       /**< current time value  */
-   braid_Real    tstop;        /**< time value to evolve towards, time value to the right of tstart */
-   braid_Real    accuracy;     /**< advanced option allowing variable accuracy for implicit step*/
-   braid_Int     rfactor;      /**< if set by user, allows for subdivision of this interval for bettter time accuracy */
-   braid_Int     level;        /**< current level in XBraid*/
-   braid_Int     nrefine;      /**< number of refinements done */
-   braid_Int     step_type;    /**< Step type, 0: take step for relaxation, 1: for interpolation, 2: for residual, 3: access */
+   braid_Real    tstart;          /**< current time value  */
+   braid_Real    tstop;           /**< time value to evolve towards, time value to the right of tstart */
+   braid_Real    accuracy;        /**< advanced option allowing variable accuracy for implicit step*/
+   braid_Real*   rnorms;          /**< XBraid residual norm history, (points to Core->rnorms object) */ 
+   braid_Real    old_fine_tolx;   /**< Allows for storing the previously used fine tolerance from GetSpatialAccuracy */
+   braid_Int     tight_fine_tolx; /**< Boolean, indicating whether the tightest fine tolx has been used, condition for halting */
+   braid_Real    tol;             /**< Current XBraid stopping tolerance */
+   braid_Int     iter;            /**< Current XBraid iteration (also equal to length of rnorms) */
+   braid_Int     rfactor;         /**< if set by user, allows for subdivision of this interval for bettter time accuracy */
+   braid_Int     level;           /**< current level in XBraid*/
+   braid_Int     nrefine;         /**< number of refinements done */
+   braid_Int     step_type;       /**< Step type, 0: take step for relaxation, 1: for interpolation, 2: for residual, 3: access */
 
 } _braid_StepStatus;
 
@@ -362,6 +367,8 @@ braid_Int
 _braid_StepStatusInit(braid_Real        tstart,      /**< current time value  */
                       braid_Real        tstop,       /**< time value to evolve towards, time value to the right of tstart */
                       braid_Real        accuracy,    /**< advanced option allowing variable accuracy for implicit step*/
+                      braid_Real        tol,         /**< Current XBraid stopping tolerance */
+                      braid_Int         iter,        /**< Current XBraid iteration (also equal to length of rnorms) */
                       braid_Int         level,       /**< current level in XBraid */
                       braid_Int         nrefine,     /**< number of refinements done */
                       braid_Int         step_type,   /**< current step type in XBraid (0: relax, 1: interp, 2: residual, 3: access) */
@@ -415,6 +422,9 @@ braid_StepStatusGetNRefine(braid_StepStatus  status,           /**< structure co
                            braid_Int        *nrefine_ptr       /**< output, number of refinements done */
                           );
 
+/**
+ * Return the current step type from the StepStatus structure.
+ **/
 braid_Int
 braid_StepStatusGetStepType(braid_StepStatus  status,          /**< structure containing current simulation info */
                             braid_Int        *step_type_ptr    /**< output, current step type in XBraid (0: relax, 1: interp, 2: residual, 3: access) */
@@ -445,6 +455,63 @@ braid_StepStatusGetTstartTstop(braid_StepStatus  status,        /**< structure c
                                braid_Real       *tstop_ptr      /**< output, next time value to evolve towards */
                                );
 
+/** 
+ * Return the current XBraid stopping tolerance 
+ **/
+braid_Int
+braid_StepStatusGetTol(braid_StepStatus  status,         /**< structure containing current simulation info */
+                       braid_Real       *tol_ptr         /**< output, current XBraid stopping tolerance */
+                       );
+
+/**
+ * Return the current XBraid iteration from the StepStatus structure.
+ **/
+braid_Int
+braid_StepStatusGetIter(braid_StepStatus  status,           /**< structure containing current simulation info */
+                        braid_Int       *iter_ptr           /**< output, current iteration in XBraid */
+                        );
+
+/**
+ * Return the current XBraid residual history.  If *nrequest_ptr* 
+ * is negative, return the last *nrequest_ptr* residual norms.  If 
+ * positive, return the first *nrequest_ptr* residual norms.  Upon
+ * exit, *nrequest_ptr* holds the number of residuals actually 
+ * returned.
+ **/
+braid_Int
+braid_StepStatusGetRnorms(braid_StepStatus  status,           /**< structure containing current simulation info */
+                          braid_Int        *nrequest_ptr,     /**< input/output, input: number of requested residual norms, output: number actually copied */
+                          braid_Real       *rnorms            /**< output, XBraid residual norm history, of length *nrequest_ptr* */
+                          );
+
+/**
+ * Return the previous *old_fine_tolx* set through *braid_StepStatusSetOldFineTolx*
+ * This is used especially by *braid_GetSpatialAccuracy
+ **/
+braid_Int
+braid_StepStatusGetOldFineTolx(braid_StepStatus  status,             /**< structure containing current simulation info */
+                               braid_Real       *old_fine_tolx_ptr   /**< output, previous *old_fine_tolx*, set through *braid_StepStatusSetOldFineTolx* */
+                               );
+
+/**
+ * Set *old_fine_tolx*, available for retrieval through *braid_StepStatusGetOldFineTolx*
+ * This is used especially by *braid_GetSpatialAccuracy
+ **/
+braid_Int
+braid_StepStatusSetOldFineTolx(braid_StepStatus  status,             /**< structure containing current simulation info */
+                               braid_Real        old_fine_tolx_ptr   /**< input, the last used fine_tolx */
+                               );
+
+/**
+ * Set *tight_fine_tolx*, boolean variable indicating whether the tightest 
+ * tolerance has been used for spatial solves (implicit schemes).  This value 
+ * must be 1 in order for XBraid to halt (unless maxiter is reached)
+ **/
+
+braid_Int
+braid_StepStatusSetTightFineTolx(braid_StepStatus  status,             /**< structure containing current simulation info */
+                                 braid_Real        tight_fine_tolx     /**< input, boolean indicating whether the tight tolx has been used */
+                                 );
 
 
 /** @}*/

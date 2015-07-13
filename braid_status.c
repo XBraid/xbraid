@@ -292,6 +292,8 @@ braid_Int
 _braid_StepStatusInit(braid_Real       tstart,
                       braid_Real       tstop,
                       braid_Real       accuracy,
+                      braid_Real       tol,
+                      braid_Int        iter,
                       braid_Int        level,
                       braid_Int        nrefine,
                       braid_Int        step_type,
@@ -300,6 +302,8 @@ _braid_StepStatusInit(braid_Real       tstart,
    _braid_StatusElt(status, tstart)    = tstart;
    _braid_StatusElt(status, tstop)     = tstop;
    _braid_StatusElt(status, accuracy)  = accuracy;
+   _braid_StatusElt(status, tol)       = tol;
+   _braid_StatusElt(status, iter)      = iter;
    _braid_StatusElt(status, level)     = level;
    _braid_StatusElt(status, nrefine)   = nrefine;
    _braid_StatusElt(status, step_type) = step_type;
@@ -389,4 +393,91 @@ braid_StepStatusGetTstartTstop(braid_StepStatus  status,
    return _braid_error_flag;
 }
 
+braid_Int
+braid_StepStatusGetTol(braid_StepStatus  status,
+                       braid_Real       *tol_ptr
+                       )
+{
+   *tol_ptr = _braid_StatusElt(status, tol);
+   return _braid_error_flag;
+}
 
+braid_Int
+braid_StepStatusGetIter(braid_StepStatus  status,
+                        braid_Int        *iter_ptr
+                        )
+{
+   *iter_ptr = _braid_StatusElt(status, iter);
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_StepStatusGetRnorms(braid_StepStatus  status,
+                          braid_Int        *nrequest_ptr,
+                          braid_Real       *rnorms 
+                          )
+{
+   braid_Real     *_rnorms   = _braid_StatusElt(status, rnorms);
+   braid_Int      rnorms_len = _braid_StatusElt(status, iter);
+   braid_Int      n          = (*nrequest_ptr);
+   braid_Int      start;
+   
+   if(n < 0)
+   {
+      /* If negative, copy the last n residual norms */
+      n = -n;
+      if(rnorms_len < n)
+      {
+         n = rnorms_len;
+      }
+      start = rnorms_len - n;
+   }
+   else
+   {
+      /* If positive copy the first n residual norms */
+      if(rnorms_len < n)
+      {
+         n = rnorms_len;
+      }
+      start = 0;
+   }
+
+   if(n > 0)
+   {
+      memcpy(rnorms, &(_rnorms[start]), n*sizeof(braid_Real) );
+   }
+   else
+   {
+      rnorms[0] = -1.0;
+   }
+   (*nrequest_ptr) = n;
+
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_StepStatusGetOldFineTolx(braid_StepStatus  status,
+                               braid_Real       *old_fine_tolx_ptr
+                               )
+{
+   *old_fine_tolx_ptr = _braid_StatusElt(status, old_fine_tolx);
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_StepStatusSetOldFineTolx(braid_StepStatus  status,
+                               braid_Real        old_fine_tolx_ptr
+                               )
+{
+   _braid_StatusElt(status, old_fine_tolx) = old_fine_tolx_ptr;
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_StepStatusSetTightFineTolx(braid_StepStatus  status,
+                                 braid_Real        tight_fine_tolx
+                                 )
+{
+   _braid_StatusElt(status, tight_fine_tolx) = tight_fine_tolx;
+   return _braid_error_flag;
+}

@@ -423,7 +423,8 @@ my_Access(braid_App           app,
       compute_disc_err(app->man, u->x, t, app->e, &disc_err);
       if( (t == app->man->tstop) && myid == 0 ) {
          printf("\n  Discr. error         = %1.5e\n", disc_err);
-         printf("\n  Braid:  iter %d,  discr. error at final time:  %1.4e\n", iter, disc_err);
+         printf("\n  my_Access():  Braid iter %d,  discr. error at final time:  %1.4e\n", iter, disc_err);
+
       }
       
       /* Write the norm of the discretization error to a separate file for each time step */

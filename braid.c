@@ -152,6 +152,12 @@ braid_Init(MPI_Comm               comm_world,
 
    braid_SetMaxLevels(core, max_levels);
 
+   /* Residual history and accuracy tracking for StepStatus*/
+   _braid_CoreElt(core, rnorms)                                      = _braid_CTAlloc(braid_Real, max_iter);
+   _braid_StatusElt( _braid_CoreElt(core, sstatus), rnorms)          = _braid_CoreElt(core, rnorms);
+   _braid_StatusElt( _braid_CoreElt(core, sstatus), old_fine_tolx)   = -1.0;
+   _braid_StatusElt( _braid_CoreElt(core, sstatus), tight_fine_tolx) = 0.0;
+
    *core_ptr = core;
 
    return _braid_error_flag;
@@ -163,22 +169,25 @@ braid_Init(MPI_Comm               comm_world,
 braid_Int
 braid_Drive(braid_Core  core)
 {
-   braid_Real     tstart      = _braid_CoreElt(core, tstart);
-   braid_Real     tstop       = _braid_CoreElt(core, tstop);
-   braid_Int      ntime       = _braid_CoreElt(core, ntime);
-   braid_Real     tol         = _braid_CoreElt(core, tol);
-   braid_Int      rtol        = _braid_CoreElt(core, rtol);
-   braid_Int      fmg         = _braid_CoreElt(core, fmg);
-   braid_Int      max_levels  = _braid_CoreElt(core, max_levels);
-   braid_Int      max_iter    = _braid_CoreElt(core, max_iter);
-   braid_Int      print_level = _braid_CoreElt(core, print_level);
-   braid_Int      access_level= _braid_CoreElt(core, access_level);
-   braid_Int      nfmg_Vcyc   = _braid_CoreElt(core, nfmg_Vcyc); 
+   braid_Real     tstart       = _braid_CoreElt(core, tstart);
+   braid_Real     tstop        = _braid_CoreElt(core, tstop);
+   braid_Int      ntime        = _braid_CoreElt(core, ntime);
+   braid_Real     tol          = _braid_CoreElt(core, tol);
+   braid_Int      rtol         = _braid_CoreElt(core, rtol);
+   braid_Int      fmg          = _braid_CoreElt(core, fmg);
+   braid_Int      max_levels   = _braid_CoreElt(core, max_levels);
+   braid_Int      max_iter     = _braid_CoreElt(core, max_iter);
+   braid_Int      print_level  = _braid_CoreElt(core, print_level);
+   braid_Int      access_level = _braid_CoreElt(core, access_level);
+   braid_Int      nfmg_Vcyc    = _braid_CoreElt(core, nfmg_Vcyc); 
    braid_PtFcnResidual globres = _braid_CoreElt(core, globresidual);
+   braid_Real*    rnorms       = _braid_CoreElt(core, rnorms);
+   braid_StepStatus    sstatus = _braid_CoreElt(core, sstatus);
+
 
    braid_Int     *nrels, nrel0;
    braid_Int      nlevels, iter, nprocs;
-   braid_Real     rnorm, old_rnorm, global_rnorm = 1, old_globalrnorm;
+   braid_Real     rnorm, old_rnorm, global_rnorm, old_globalrnorm;
    braid_Real     accuracy;
    braid_Int      ilower, iupper;
    braid_Real    *ta;
@@ -200,6 +209,8 @@ braid_Drive(braid_Core  core)
 
    level = 0;
    rnorm = -1.0;
+   global_rnorm = -1.0;
+   rnorms[0] = -1.0;
 
    /* Create fine grid */
    _braid_GetDistribution(core, &ilower, &iupper);
@@ -257,7 +268,21 @@ braid_Drive(braid_Core  core)
                }
                old_rnorm = rnorm;                  
             }
-            _braid_FRestrict(core, level, iter, &rnorm);
+            _braid_FRestrict(core, level, &rnorm);
+            
+            /* Store residual history */
+            if (level == 0)
+            {
+               if(globres != NULL)
+               {
+                  rnorms[iter] = global_rnorm;
+               }
+               else
+               {
+                  rnorms[iter] = rnorm;
+               }
+            }
+
 
             /* Adjust tolerance */
             if ((level == 0) && (iter == 0) && (rtol))
@@ -271,6 +296,7 @@ braid_Drive(braid_Core  core)
                {
                   tol *= rnorm;
                }
+               _braid_CoreElt(core, tol) = tol;
             }
 
             if (level == 0)
@@ -322,7 +348,7 @@ braid_Drive(braid_Core  core)
             if (level >= fmglevel)
             {
                /* F-relax then interpolate */
-               _braid_FInterp(core, level, iter+1, rnorm);
+               _braid_FInterp(core, level, rnorm);
                level--;
             }
             else
@@ -362,26 +388,26 @@ braid_Drive(braid_Core  core)
                   {
                      if (globres != NULL)
                      {
-                        _braid_printf("Global res: || r_%d || = %1.6e\n", iter, global_rnorm);
+                        _braid_printf("  Braid: Global || r_%d || = %1.6e\n", iter, global_rnorm);
                      }
-                     _braid_printf(" Braid res: || r_%d || = %1.6e,  wall time = %1.2e\n", 
-                                   iter, rnorm, (MPI_Wtime() - localtime));
+                     _braid_printf("  Braid: || r_%d || = %1.6e,  wall time = %1.2e\n", 
+                        iter, rnorm, (MPI_Wtime() - localtime));
                   }
                   else
                   {
                      if (globres != NULL)
                      {
-                        _braid_printf("Global res: || r_%d || = %1.6e,  conv. factor = %1.2e \n",
+                        _braid_printf("  Braid: Global || r_%d || = %1.6e,  conv. factor = %1.2e \n",
                            iter, global_rnorm, global_rnorm/old_globalrnorm);
                      }
-                     _braid_printf(" Braid res: || r_%d || = %1.6e,  conv. factor = %1.2e, wall time = %1.2e\n",  
-                                   iter, rnorm, rnorm/old_rnorm, (MPI_Wtime() - localtime));
+                     _braid_printf("  Braid: || r_%d || = %1.6e,  conv. factor = %1.2e, wall time = %1.2e\n",  
+                        iter, rnorm, rnorm/old_rnorm, (MPI_Wtime() - localtime));
                   }
                }
                /* Use user provided global residual as stopping criterion? */
                if (globres != NULL)
                {
-                  if ( ((global_rnorm < tol) && (_braid_CoreElt(core, accuracy[0].tight_used) == 1)) || 
+                  if ( ((global_rnorm < tol) && (_braid_StatusElt( sstatus, tight_fine_tolx) == 1)) || 
                        (global_rnorm == 0.0) ||
                        (iter == max_iter-1) )
                   {
@@ -390,7 +416,7 @@ braid_Drive(braid_Core  core)
                }
                else 
                {
-                  if ( ((rnorm < tol) && (_braid_CoreElt(core, accuracy[0].tight_used) == 1)) || 
+                  if ( ((rnorm < tol) && (_braid_StatusElt( sstatus, tight_fine_tolx) == 1)) || 
                        (rnorm == 0.0) ||
                        (iter == max_iter-1) )
                   {
@@ -399,6 +425,7 @@ braid_Drive(braid_Core  core)
                }
 
                iter++;
+              _braid_CoreElt(core, niter) = iter;
                
                if (fmg)
                {
@@ -415,15 +442,16 @@ braid_Drive(braid_Core  core)
    if (globres != NULL)
    {
       _braid_GetFullResidual(core, level, &global_rnorm);
-      /* RDF - Why are these next two lines needed? */
-      _braid_FRestrict(core, level, iter, &rnorm);
+      /* RDF - Why are these next two lines needed? 
+       * JBS - Ben S wanted a final rnorm, we should move this to FAccess to save work*/
+      _braid_FRestrict(core, level, &rnorm);
       _braid_CoreElt(core, rnorm) = rnorm;
    }
 
    /* Allow final access to Braid by carrying out an F-relax to generate points */
    if( access_level >= 1)
    {
-      _braid_FAccess(core, rnorm, iter, 0, 1);
+      _braid_FAccess(core, rnorm, 0, 1);
    }
 
    _braid_CoreElt(core, niter) = iter;
@@ -461,6 +489,7 @@ braid_Destroy(braid_Core  core)
       braid_Int               level;
 
       _braid_TFree(_braid_CoreElt(core, nrels));
+      _braid_TFree(_braid_CoreElt(core, rnorms));
       _braid_TFree(_braid_CoreElt(core, cfactors));
       _braid_TFree(_braid_CoreElt(core, accuracy));
       _braid_TFree(_braid_CoreElt(core, rfactors));
@@ -505,54 +534,52 @@ braid_PrintStats(braid_Core  core)
    braid_Int     max_iter      = _braid_CoreElt(core, max_iter);
    braid_Int     niter         = _braid_CoreElt(core, niter);
    braid_Real    rnorm         = _braid_CoreElt(core, rnorm);
+   braid_Real    global_rnorm  = _braid_CoreElt(core, global_rnorm);
    braid_Int     nlevels       = _braid_CoreElt(core, nlevels);
    braid_Int     tnorm         = _braid_CoreElt(core, tnorm); 
    braid_Int     fmg           = _braid_CoreElt(core, fmg); 
    braid_Int     nfmg_Vcyc     = _braid_CoreElt(core, nfmg_Vcyc); 
    braid_Int     access_level  = _braid_CoreElt(core, access_level); 
    braid_Int     print_level   = _braid_CoreElt(core, print_level); 
-   _braid_Grid **grids         = _braid_CoreElt(core, grids);
    braid_Real    globaltime    = _braid_CoreElt(core, globaltime);
-
    braid_PtFcnResidual globres = _braid_CoreElt(core, globresidual);
-   braid_Real    global_rnorm  = _braid_CoreElt(core, global_rnorm);
+   _braid_Grid **grids         = _braid_CoreElt(core, grids);
 
    braid_Int     myid, level;
 
    MPI_Comm_rank(comm_world, &myid);
    if ( myid == 0 )
    {
-      _braid_printf("  Braid res 2-norm     = %e\n", rnorm);
-      if (globres != NULL)
-      {
-         _braid_printf("  Global res 2-norm    = %e\n", global_rnorm);
-      }
-      _braid_printf("  Number of levels     = %d\n", nlevels);
-      _braid_printf("  Iterations           = %d\n", niter);
-      _braid_printf("  Time steps           = %d\n", ntime);
-      _braid_printf("  Wall time            = %f\n", globaltime);
-
       _braid_printf("\n");
       _braid_printf("  start time = %e\n", tstart);
       _braid_printf("  stop time  = %e\n", tstop);
+      _braid_printf("  time steps = %d\n", ntime);
       _braid_printf("\n");
       _braid_printf("  stopping tolerance   = %e\n", tol);
       _braid_printf("  use relative tol?    = %d\n", rtol);
       _braid_printf("  max iterations       = %d\n", max_iter);
+      _braid_printf("  iterations           = %d\n", niter);
+      _braid_printf("  residual norm        = %e\n", rnorm);
       if(tnorm == 1){
-         _braid_printf("                        --> 1-norm TemporalNorm \n\n"); 
+         _braid_printf("                        --> 1-norm TemporalNorm \n"); 
       }
       else if(tnorm == 2){
-         _braid_printf("                        --> 2-norm TemporalNorm \n\n"); 
+         _braid_printf("                        --> 2-norm TemporalNorm \n"); 
       }
       else if(tnorm == 3){
-         _braid_printf("                        --> Inf-norm TemporalNorm \n\n"); 
+         _braid_printf("                        --> Inf-norm TemporalNorm \n"); 
       }
+      if (globres != NULL) {
+         _braid_printf("  Global res 2-norm    = %e\n", global_rnorm);
+      }
+      _braid_printf("\n");
+
       _braid_printf("  use fmg?, nfmg_Vcyc  = %d, %d\n", fmg, nfmg_Vcyc);
       _braid_printf("  access_level         = %d\n", access_level);
       _braid_printf("  print_level          = %d\n\n", print_level);
       _braid_printf("  max number of levels = %d\n", max_levels);
       _braid_printf("  min coarse           = %d\n", min_coarse);
+      _braid_printf("  number of levels     = %d\n", nlevels);
       _braid_printf("\n");
       _braid_printf("  level   time-pts   cfactor   nrelax\n", globaltime);
       for (level = 0; level < nlevels-1; level++)
@@ -565,6 +592,7 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  % 5d  % 8d  \n",
                       level, _braid_GridElt(grids[level], gupper) );
       _braid_printf("\n");
+      _braid_printf("  wall time = %f\n", globaltime);
       _braid_printf("\n");
    }
 
@@ -971,4 +999,75 @@ braid_GetNLevels(braid_Core  core,
    return _braid_error_flag;
 }
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
 
+braid_Int
+braid_GetSpatialAccuracy( braid_StepStatus  status,
+                          braid_Real        loose_tol,
+                          braid_Real        tight_tol,
+                          braid_Real       *tol_ptr )
+{
+   braid_Int nrequest   = 1;
+   braid_Real stol, tol, rnorm, rnorm0, old_fine_tolx;
+   braid_Int level, step_type;
+   braid_Real l_rnorm, l_ltol, l_ttol, l_tol;
+   
+   braid_StepStatusGetTol(status, &tol);
+   braid_StepStatusGetLevel(status, &level);
+   braid_StepStatusGetStepType(status, &step_type);
+   braid_StepStatusGetOldFineTolx(status, &old_fine_tolx);
+
+   /* Get the first and then the current residual norms */
+   braid_StepStatusGetRnorms(status, &nrequest, &rnorm0);
+   nrequest = -1;
+   braid_StepStatusGetRnorms(status, &nrequest, &rnorm);
+
+   if( (level > 0) || (nrequest == 0) )
+   {
+      /* Always return the loose tolerance, if
+       * (1) On a coarse grid computation
+       * (2) There is no residual history yet (this is the first Braid iteration) */
+      *tol_ptr = loose_tol;
+   }
+   else
+   {
+      /* Else, do a variable tolerance for the fine grid */
+      l_rnorm = -log10(rnorm / rnorm0);
+      l_tol   = -log10(tol / rnorm0);
+      l_ltol  = -log10(loose_tol);
+      l_ttol  = -log10(tight_tol);
+         
+      if ( l_rnorm >= (7.0/8.0)*l_tol )
+      {
+         /* Close to convergence, return tight_tol */
+         *tol_ptr = tight_tol;
+      }
+      else
+      {
+         /* Do linear interpolation between loose_tol and tight_tol (but with respect to log10) */
+         stol = (l_rnorm / l_tol) * (l_ttol - l_ltol) + l_ltol;
+         *tol_ptr = pow(10, -stol);
+
+         /* The fine grid tolerance MUST never decrease */
+         if( ((*tol_ptr) > old_fine_tolx) && (old_fine_tolx > 0) )
+         {
+            *tol_ptr = old_fine_tolx;
+         }
+      }
+   }
+   
+   if(level == 0)
+   {
+      /* Store this fine grid tolerance */
+      braid_StepStatusSetOldFineTolx(status, (*tol_ptr));
+      
+      /* If we've reached the "tight tolerance", then indicate to Braid that we can halt */
+      if( *tol_ptr == tight_tol )
+      {
+        braid_StepStatusSetTightFineTolx(status, 1); 
+      }
+   }
+
+   return _braid_error_flag;
+}

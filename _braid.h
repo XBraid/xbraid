@@ -159,6 +159,7 @@ typedef struct _braid_Core_struct
    braid_Int              tnorm;        /**< choice of temporal norm */
    braid_Real            *tnorm_a;      /**< local array of residual norms on a proc's interval, used for inf-norm */
    _braid_AccuracyHandle *accuracy;     /**< accuracy of spatial solves on different levels */
+   braid_Real            *rnorms;       /**< XBraid residual norm history */
 
    braid_AccessStatus     astatus;      /**< status structure passed to user-written Access routine */
    braid_CoarsenRefStatus cstatus;      /**< status structure passed to user-written coarsen/refine routines */
@@ -612,7 +613,6 @@ _braid_FCRelax(braid_Core  core,
 braid_Int
 _braid_FRestrict(braid_Core   core,       /**< braid_Core (_braid_Core) struct */   
                  braid_Int    level,      /**< restrict from level to level+1 */
-                 braid_Int    iter,       /**< current iteration number (for user info) */
                  braid_Real  *rnorm_ptr   /**< pointer to residual norm (if level 0) */
                  );
 
@@ -628,7 +628,6 @@ _braid_FRestrict(braid_Core   core,       /**< braid_Core (_braid_Core) struct *
 braid_Int
 _braid_FInterp(braid_Core  core,   /**< braid_Core (_braid_Core) struct */  
                braid_Int   level,  /**< interp from level to level+1 */
-               braid_Int   iter,   /**< current iteration number (for user info) */
                braid_Real  rnorm   /**< residual norm (if level 0) */
                );
 
@@ -657,7 +656,6 @@ _braid_FRefine(braid_Core   core,
 braid_Int
 _braid_FAccess(braid_Core     core,
                braid_Real     rnorm,
-               braid_Int      iter,
                braid_Int      level,
                braid_Int      done);
 

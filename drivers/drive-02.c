@@ -172,6 +172,7 @@ typedef struct _spatial_discretization
  *                         is get_coarse_spatial_disc( ).  See it for more documentation.
  *   runtime_scoarsen_info Runtime information on CFL's encountered and spatial 
  *                         discretizations used.
+ *   tol_x[2]              Spatial stopping tolerance limits, (loose, tight), for the fine level
  *   use_rand              binary, use random initial guess (1) or zero initial guess (0)
  *   buffer_size           integer containing the largest possible MPI buffer 
  */
@@ -194,6 +195,7 @@ typedef struct _braid_App_struct {
    double                 *scoarsenCFL;
    spatial_discretization *spatial_lookup_table;
    double                 *runtime_scoarsen_info;
+   double                  tol_x[2];
    int                     use_rand;
    int                     buffer_size;
 } my_App;
@@ -270,16 +272,19 @@ int grab_vec_spatial_info(braid_Vector            u,
  *   u_i = Phi_i(u_{i-1}) + g_i 
  * Note that the first case corresponds to assuming zero Dirichlet BCs
  * and a zero RHS of the PDE.
- * When Phi is called, u is u_{i-1}. At the end of the routine, u is 
+ * When Step is called, u is u_{i-1}. At the end of the routine, u is 
  * set to u_i.
  * -------------------------------------------------------------------- */
 int
-my_Phi(braid_App       app,
-       braid_Vector    u,
-       braid_PhiStatus status)
+my_Step(braid_App        app,
+        braid_Vector     ustop,
+        braid_Vector     fstop,
+        braid_Vector     u,
+        braid_StepStatus status)
 {
    double tstart;             /* current time */
    double tstop;              /* evolve to this time*/
+   HYPRE_SStructVector  bstop;
    double accuracy, cfl_value;
    int i, A_idx, user_explicit;
    int ilower[2], iupper[2], nlx, nly, nx, ny;
@@ -290,9 +295,18 @@ my_Phi(braid_App       app,
                          &nlx, &nly, &nx, &ny, &dx, &dy);
    
    /* Grab status of current time step */
-   braid_PhiStatusGetTstartTstop(status, &tstart, &tstop);
-   braid_PhiStatusGetAccuracy(status, &accuracy);
+   braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
    
+   /* Compute the desired spatial solve accuracy */
+   if(app->tol_x[0] != app->tol_x[1])
+   {
+      braid_GetSpatialAccuracy( status, app->tol_x[0], app->tol_x[1], &accuracy);
+   }
+   else
+   {
+      accuracy = app->tol_x[0];
+   }
+
    int cfl = 0;
    int iters_taken = -1;
 
@@ -405,7 +419,15 @@ my_Phi(braid_App       app,
    /* printf("  Level  %d   Tol  %1.2e   Maxiter  %d\n", A_idx, app->man->tol, app->man->max_iter); */
 
    /* Take step */
-   take_step(app->man, u->x, tstart, tstop, &iters_taken);
+   if (fstop == NULL)
+   {
+      bstop = NULL;
+   }
+   else
+   {
+      bstop = fstop->x;
+   }
+   take_step(app->man, ustop->x, bstop, u->x, tstart, tstop, &iters_taken);
 
    /* Go back to the user's original choice of explicit */
    app->man->explicit = user_explicit;
@@ -414,7 +436,7 @@ my_Phi(braid_App       app,
    app->runtime_max_iter[A_idx] = max_i( (app->runtime_max_iter[A_idx]),
                                             iters_taken);
    /* Tell XBraid no refinement */
-   braid_PhiStatusSetRFactor(status, 1);
+   braid_StepStatusSetRFactor(status, 1);
 
    return 0;
 }
@@ -588,7 +610,7 @@ my_Access(braid_App           app,
    /* Write a file for each time step that contains a single scalar, the l2
     * norm of the discretization error */
    MPI_Comm_rank(app->comm_x, &myid);
-   if( (level == 0) )
+   if( level == 0 )
    {
       /* update manager to correspond to this vector and its time level */
       update_manager_from_vector(app->man, u, app->spatial_lookup_table);
@@ -597,7 +619,7 @@ my_Access(braid_App           app,
       index = ((t - tstart) / ((tstop - tstart)/nt) + 0.1);
       compute_disc_err(app->man, u->x, t, app->e, &disc_err);
       if( (t == app->man->tstop) && myid == 0 ) {
-         printf("\n  Braid:  iter %d,  discr. error at final time:  %1.4e\n", iter, disc_err);
+         printf("\n  my_Access():  Braid iter %d,  discr. error at final time:  %1.4e\n", iter, disc_err);
       }
       
       /* Write the norm of the discretization error to a separate file for each time step */
@@ -1777,7 +1799,7 @@ int main (int argc, char *argv[])
    /* Declare Braid variables -- variables explained when they are set below */
    braid_Core    core;
    my_App       *app;
-   double tol_x[2], tol_x_coarse, tol, *scoarsenCFL;
+   double tol_x[2], tol, *scoarsenCFL;
    double mystarttime, myendtime, mytime, maxtime;
    int run_wrapper_tests, correct, fspatial_disc_idx, max_iter_x[2];
    int print_level, access_level, nA_max, max_levels, min_coarse;
@@ -1828,7 +1850,6 @@ int main (int argc, char *argv[])
    max_iter_x[1]       = 50;
    tol_x[0]            = 1.0e-09;
    tol_x[1]            = 1.0e-09;
-   tol_x_coarse        = 1.0e-09;
    print_level         = 1;
    access_level        = 1;
    run_wrapper_tests   = 0;
@@ -1929,10 +1950,6 @@ int main (int argc, char *argv[])
           tol_x[0] = atof(argv[arg_index++]);
           tol_x[1] = atof(argv[arg_index++]);
       }
-      else if( strcmp(argv[arg_index], "-pfmg_tolxc") == 0 ){
-          arg_index++;
-          tol_x_coarse = atof(argv[arg_index++]);
-      }
       else if( strcmp(argv[arg_index], "-expl") == 0 ){
          arg_index++;
          explicit = 1;
@@ -1995,7 +2012,6 @@ int main (int argc, char *argv[])
       printf("  -mi  <max_iter>                    : set max iterations (default: 100)\n");
       printf("  -pfmg_mi <mi_fine mi_coarse>       : max number of PFMG iters for fine and coarse levels (default: 50 50)\n"); 
       printf("  -pfmg_tolx <loose_tol tight_tol>   : loose and tight PFMG stopping tol on fine level (default: 1e-09 1e-09)\n"); 
-      printf("  -pfmg_tolxc <tol_x>                : PFMG stopping tol for all coarse levels (default: 1e-09)\n");
       printf("  -fmg <nfmg_Vcyc>                   : use FMG cycling, nfmg_Vcyc V-cycles at each fmg level\n");
       printf("  -forcing                           : consider non-zero RHS b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))\n");
       printf("  -use_rand <bool>                   : if nonzero, then use a uniformly random value to initialize each\n");
@@ -2169,7 +2185,7 @@ int main (int argc, char *argv[])
    (app->comm_t)          = comm_t;
    (app->comm_x)          = comm_x;
    (app->max_levels)      = max_levels;
-   (app->buffer_size)         = (1 + nlx*nly)*sizeof(double);
+   (app->buffer_size)     = (1 + nlx*nly)*sizeof(double);
 
 
    /* Set the maximum number of PFMG iterations for expensive (index 0)
@@ -2305,14 +2321,12 @@ int main (int argc, char *argv[])
       /* Start timer. */
       mystarttime = MPI_Wtime();
 
-      braid_Init(comm, comm_t, tstart, tstop, nt, app, my_Phi, my_Init,
+      braid_Init(comm, comm_t, tstart, tstop, nt, app, my_Step, my_Init,
             my_Clone, my_Free, my_Sum, my_SpatialNorm, my_Access, my_BufSize,
             my_BufPack, my_BufUnpack, &core);
 
-      braid_SetLoosexTol( core, 0, tol_x[0] );
-      braid_SetLoosexTol( core, 1, tol_x_coarse );
-
-      braid_SetTightxTol( core, 0, tol_x[1] );
+      app->tol_x[0] = tol_x[0];
+      app->tol_x[1] = tol_x[1];
 
       braid_SetMaxLevels( core, max_levels );
       braid_SetMinCoarse( core, min_coarse );
@@ -2326,8 +2340,6 @@ int main (int argc, char *argv[])
          braid_SetNRelax(core,  0, nrelax0);
       }
 
-      /*braid_SetRelTol(core, tol);*/
-      /*braid_SetAbsTol(core, tol*sqrt(px*nlx*py*nly*(nt+1)) );*/
       braid_SetAbsTol(core, tol/sqrt(dx*dy*dt));
       braid_SetTemporalNorm(core, tnorm);
 
@@ -2344,6 +2356,8 @@ int main (int argc, char *argv[])
          braid_SetNFMGVcyc(core, nfmg_Vcyc);
       }
       
+      braid_SetStorage(core, -2);
+
       if (scoarsen)
       {
          app->scoarsen=1;
@@ -2416,7 +2430,7 @@ int main (int argc, char *argv[])
          printf(" Implicit time stepping solve parameters\n\n");
          printf("   Fine-level loose stopping tol  :  %1.2e    (while ||r|| is large)\n", tol_x[0]);
          printf("   Fine-level tight stopping tol  :  %1.2e    (while ||r|| is small)\n", tol_x[1]);
-         printf("   Coarse-level stopping tol      :  %1.2e    (for all ||r||) \n", tol_x_coarse);
+         printf("   Coarse-level stopping tol      :  %1.2e    (for all ||r||) \n", tol_x[0]);
          printf(" \n"); 
          printf("   Fine-level max iter            :  %d\n", app->max_iter_x[0]);
          printf("   Coarse-level max iter          :  %d\n", app->max_iter_x[1]);

@@ -91,7 +91,7 @@ typedef braid_Int
 (*braid_PtFcnStep)(braid_App        app,    /**< user-defined _braid_App structure */
                    braid_Vector     ustop,  /**< input, u vector at *tstop* */
                    braid_Vector     fstop,  /**< input, right-hand-side at *tstop* */
-                   braid_Vector     u     , /**< output, u vector at *tstop* */
+                   braid_Vector     u     , /**< input/output, initially u vector at *tstart*, upon exit, u vector at *tstop* */
                    braid_StepStatus status  /**< query this struct for info about u (e.g., tstart and tstop), allows for steering (e.g., set rfactor) */ 
                    );
 
@@ -591,6 +591,47 @@ braid_Int
 braid_GetNLevels(braid_Core  core,          /**< braid_Core (_braid_Core) struct*/
                  braid_Int  *nlevels_ptr    /**< output, holds the number of XBraid levels */
                  );
+
+/** Example function to compute a tapered stopping tolerance for implicit time
+ * stepping routines, i.e., a tolerance *tol_ptr* for the spatial solves.  This
+ * tapering only occurs on the fine grid.
+ *
+ * This rule must be followed.  The same tolerance must be returned over all
+ * processors, for a given XBraid and XBraid level.  Different levels may have
+ * different tolerances and the same level may vary its tolerance from 
+ * iteration to iteration, but for the same iteration and level, the tolerance
+ * must be constant.
+ *
+ * This additional rule must be followed.  The fine grid tolerance is never 
+ * reduced (this is important for convergence)
+ *
+ * On the fine level,the spatial stopping tolerance *tol_ptr* is interpolated
+ * from *loose_tol* to *tight_tol* based on the relationship between 
+ *     *rnorm* / *rnorm0* and *tol*.  
+ * Remember when 
+ *     *rnorm* / *rnorm0* < *tol*, 
+ * XBraid halts.  Thus, this function lets us have a loose stopping tolerance
+ * while the Braid residual is still relatively large, and then we transition
+ * to a tight stopping tolerance as the Braid residual is reduced.
+ *
+ * If the user has not defined a residual function, tight_tol is always returned.
+ *
+ * The loose_tol is always used on coarse grids, excepting the above mentioned 
+ * residual computations.
+ *
+ * This function will normally be called from the user's step routine.
+ *
+ * This function is also meant as a guide for users to develop their own 
+ * routine.
+ *
+ **/
+braid_Int
+braid_GetSpatialAccuracy( braid_StepStatus  status,         /**< Current XBraid step status */
+                          braid_Real        loose_tol,      /**< Loosest allowed spatial solve stopping tol on fine grid*/
+                          braid_Real        tight_tol,      /**< Tightest allowed spatial solve stopping tol on fine grid*/
+                          braid_Real       *tol_ptr         /**< output, holds the computed spatial solve stopping tol */
+                         );
+
 /** @}*/
 
 #ifdef __cplusplus
