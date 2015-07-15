@@ -625,6 +625,81 @@ braid_F90_Name(braid_step_status_set_rfactor_f90, BRAID_STEP_STATUS_SET_RFACTOR_
    return 0;
 }
 
+/* Wrap braid_StepStatusGetTol( ) */
+braid_Int
+braid_F90_Name(braid_step_status_get_tol_f90, BRAID_STEP_STATUS_GET_TOL_F90)(
+                              braid_F90_ObjPtr    status,        /**< structure containing current simulation info */
+                              braid_F90_Real      *tol_ptr       /**< output, current XBraid stopping tolerance */
+                              )
+{
+   braid_StepStatusGetTol( braid_TakeF90_Obj(braid_StepStatus, status),
+                           braid_TakeF90_RealPtr(              tol_ptr) );
+   return 0;
+}
+
+/* Wrap braid_StepStatusGetIter( ) */
+braid_Int
+braid_F90_Name(braid_step_status_get_iter_f90, BRAID_STEP_STATUS_GET_ITER_F90)(
+                              braid_F90_ObjPtr    status,        /**< structure containing current simulation info */
+                              braid_F90_Int       *iter_ptr      /**< output, current iteration in XBraid */
+                              )
+{
+   braid_StepStatusGetIter( braid_TakeF90_Obj(braid_StepStatus, status),
+                            braid_TakeF90_IntPtr(               iter_ptr) );
+   return 0;
+}
+
+/* Wrap braid_StepStatusGetRNorms( ) */
+braid_Int
+braid_F90_Name(braid_step_status_get_rnorms_f90, BRAID_STEP_STATUS_GET_RNORMS_F90)(
+                             braid_F90_ObjPtr  status,            /**< structure containing current simulation info */
+                             braid_F90_Int     *nrequest_ptr,     /**< input/output, input: num requested resid norms, output: num actually returned */
+                             braid_F90_Real    *rnorm_ptr         /**< output, holds residual norm history array */
+                             )
+{
+   braid_StepStatusGetRNorms(braid_TakeF90_Obj(braid_StepStatus, status),
+                             braid_TakeF90_IntPtr(               nrequest_ptr),
+                             braid_TakeF90_RealPtr(              rnorm_ptr) );
+   return 0;
+}
+
+
+/* Wrap braid_StepStatusGetOldFineTolx( ) */
+braid_Int
+braid_F90_Name(braid_step_status_get_old_fine_tolx_f90, BRAID_STEP_STATUS_GET_OLD_FINE_TOLX_F90)(
+                              braid_F90_ObjPtr    status,              /**< structure containing current simulation info */
+                              braid_F90_Real      *old_fine_tolx_ptr   /**< output, previous *old_fine_tolx*, set through *braid_StepStatusSetOldFineTolx* */                              
+                              )
+{
+   braid_StepStatusGetOldFineTolx( braid_TakeF90_Obj(braid_StepStatus, status),
+                                   braid_TakeF90_RealPtr(              old_fine_tolx_ptr) );
+   return 0;
+}
+
+/* Wrap braid_StepStatusSetOldFineTolx( ) */
+braid_Int
+braid_F90_Name(braid_step_status_set_old_fine_tolx_f90, BRAID_STEP_STATUS_SET_OLD_FINE_TOLX_F90)(
+                              braid_F90_ObjPtr    status,              /**< structure containing current simulation info */
+                              braid_F90_Real      *old_fine_tolx       /**< input, the last used fine_tolx */                              
+                              )
+{
+   braid_StepStatusSetOldFineTolx( braid_TakeF90_Obj(braid_StepStatus, status),
+                                   braid_TakeF90_Real(                 old_fine_tolx) );
+   return 0;
+}
+
+/* Wrap braid_StepStatusSetTightFineTolx( ) */
+braid_Int
+braid_F90_Name(braid_step_status_set_tight_fine_tolx_f90, BRAID_STEP_STATUS_SET_TIGHT_FINE_TOLX_F90)(
+                              braid_F90_ObjPtr    status,              /**< structure containing current simulation info */
+                              braid_F90_Real      *tight_fine_tolx     /**< input, boolean indicating whether the tight tolx has been used */
+                              )
+{
+   braid_StepStatusSetTightFineTolx( braid_TakeF90_Obj(braid_StepStatus, status),
+                                     braid_TakeF90_Real(                 tight_fine_tolx) );
+   return 0;
+}
+
 
 /*--------------------------------------------------------------------------
  * Wrap XBraid User Interface Functions
@@ -913,7 +988,7 @@ braid_F90_Name(braid_get_num_iter_f90, BRAID_GET_NUM_ITER_F90)(
 
 /* braid_GetRNorms( ) */
 braid_Int
-braid_F90_Name(braid_get_rnorm_f90, BRAID_GET_RNORM_F90)(
+braid_F90_Name(braid_get_rnorms_f90, BRAID_GET_RNORMS_F90)(
                    braid_F90_ObjPtr  *core,         /**< braid_Core (_braid_Core) struct*/
                    braid_F90_Int     *nrequest_ptr, /**< input/output, input: num requested resid norms, output: num actually returned */
                    braid_F90_Real    *rnorm_ptr     /**< output, holds residual norm history array */
@@ -936,6 +1011,24 @@ braid_F90_Name(braid_get_nlevels_f90, BRAID_GET_NLEVELS_F90)(
                     braid_TakeF90_IntPtr(               nlevels_ptr) );
    return 0;
 }
+
+/* braid_GetSpatialAccuracy( ) */
+braid_Int
+braid_F90_Name(braid_get_spatial_accuracy_f90, BRAID_GET_SPATIAL_ACCURACY_F90)(
+               braid_F90_ObjPtr    status,        /**< structure containing current simulation info */
+               braid_F90_Real      *loose_tol,    /**< Loosest allowed spatial solve stopping tol on fine grid*/
+               braid_F90_Real      *tight_tol,    /**< Tightest allowed spatial solve stopping tol on fine grid*/
+               braid_F90_Real      *tol_ptr       /**< output, holds the computed spatial solve stopping tol */
+               )
+{
+   braid_GetSpatialAccuracy(braid_TakeF90_Obj(braid_StepStatus, status),   
+                            braid_TakeF90_Real(                 loose_tol),
+                            braid_TakeF90_Real(                 tight_tol),
+                            braid_TakeF90_RealPtr(              tol_ptr));
+
+   return 0;
+}
+
 
 
 #endif

@@ -459,7 +459,7 @@ braid_StepStatusGetIter(braid_StepStatus  status,           /**< structure conta
  * returned.
  **/
 braid_Int
-braid_StepStatusGetRnorms(braid_StepStatus  status,           /**< structure containing current simulation info */
+braid_StepStatusGetRNorms(braid_StepStatus  status,           /**< structure containing current simulation info */
                           braid_Int        *nrequest_ptr,     /**< input/output, input: number of requested residual norms, output: number actually copied */
                           braid_Real       *rnorms            /**< output, XBraid residual norm history, of length *nrequest_ptr* */
                           );
@@ -479,7 +479,7 @@ braid_StepStatusGetOldFineTolx(braid_StepStatus  status,             /**< struct
  **/
 braid_Int
 braid_StepStatusSetOldFineTolx(braid_StepStatus  status,             /**< structure containing current simulation info */
-                               braid_Real        old_fine_tolx_ptr   /**< input, the last used fine_tolx */
+                               braid_Real        old_fine_tolx       /**< input, the last used fine_tolx */
                                );
 
 /**
