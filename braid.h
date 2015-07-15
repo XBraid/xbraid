@@ -556,13 +556,17 @@ braid_GetNumIter(braid_Core  core,          /**< braid_Core (_braid_Core) struct
                  );
 
 
-/**
- * After Drive() finishes, this returns the last measured residual norm.
+/** 
+ * After Drive() finishes, this returns  XBraid residual history.  If
+ * *nrequest_ptr* is negative, return the last *nrequest_ptr* residual norms.
+ * If positive, return the first *nrequest_ptr* residual norms.  Upon exit,
+ * *nrequest_ptr* holds the number of residuals actually returned.
  **/
 braid_Int
-braid_GetRNorm(braid_Core  core,            /**< braid_Core (_braid_Core) struct*/
-               braid_Real  *rnorm_ptr       /**< output, holds final residual norm */
-               );
+braid_GetRNorms(braid_Core  core,           /**< braid_Core (_braid_Core) struct */
+                braid_Int   *nrequest_ptr,  /**< input/output, input: num requested resid norms, output: num actually returned */
+                braid_Real  *rnorms         /**< output, holds residual norm history array */
+                );
 
 /**
  * After Drive() finishes, this returns the number of XBraid levels

@@ -416,8 +416,6 @@ my_Step(braid_App        app,
     * line parameters. */
    app->man->tol = accuracy;
    
-   /* printf("  Level  %d   Tol  %1.2e   Maxiter  %d\n", A_idx, app->man->tol, app->man->max_iter); */
-
    /* Take step */
    if (fstop == NULL)
    {

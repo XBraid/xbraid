@@ -911,15 +911,17 @@ braid_F90_Name(braid_get_num_iter_f90, BRAID_GET_NUM_ITER_F90)(
    return 0;
 }
 
-/* braid_GetRNorm( ) */
+/* braid_GetRNorms( ) */
 braid_Int
 braid_F90_Name(braid_get_rnorm_f90, BRAID_GET_RNORM_F90)(
-                   braid_F90_ObjPtr  *core,        /**< braid_Core (_braid_Core) struct*/
-                   braid_F90_Real    *rnorm_ptr    /**< output, holds final residual norm */
+                   braid_F90_ObjPtr  *core,         /**< braid_Core (_braid_Core) struct*/
+                   braid_F90_Int     *nrequest_ptr, /**< input/output, input: num requested resid norms, output: num actually returned */
+                   braid_F90_Real    *rnorm_ptr     /**< output, holds residual norm history array */
                    )
 {
-   braid_GetRNorm(braid_TakeF90_ObjDeref(braid_Core,  core) ,
-                  braid_TakeF90_RealPtr(              rnorm_ptr) );
+   braid_GetRNorms(braid_TakeF90_ObjDeref(braid_Core,  core) ,
+                   braid_TakeF90_IntPtr(               nrequest_ptr),
+                   braid_TakeF90_RealPtr(              rnorm_ptr) );
    return 0;
 }
 

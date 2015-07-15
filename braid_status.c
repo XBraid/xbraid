@@ -28,6 +28,9 @@
  */
 
 #include "braid_status.h"
+#include "_braid.h"
+#include "braid_defs.h"
+#include "util.h"
 
 #ifndef DEBUG
 #define DEBUG 0
@@ -397,40 +400,9 @@ braid_StepStatusGetRnorms(braid_StepStatus  status,
                           )
 {
    braid_Real     *_rnorms   = _braid_StatusElt(status, rnorms);
-   braid_Int      rnorms_len = _braid_StatusElt(status, iter);
-   braid_Int      n          = (*nrequest_ptr);
-   braid_Int      start;
+   braid_Int      rnorms_len = *(_braid_StatusElt(status, rnorms_len_ptr));
    
-   if(n < 0)
-   {
-      /* If negative, copy the last n residual norms */
-      n = -n;
-      if(rnorms_len < n)
-      {
-         n = rnorms_len;
-      }
-      start = rnorms_len - n;
-   }
-   else
-   {
-      /* If positive copy the first n residual norms */
-      if(rnorms_len < n)
-      {
-         n = rnorms_len;
-      }
-      start = 0;
-   }
-
-   if(n > 0)
-   {
-      memcpy(rnorms, &(_rnorms[start]), n*sizeof(braid_Real) );
-   }
-   else
-   {
-      rnorms[0] = -1.0;
-   }
-   (*nrequest_ptr) = n;
-
+   _braid_GetNEntries(_rnorms, rnorms_len, nrequest_ptr, rnorms);
    return _braid_error_flag;
 }
 

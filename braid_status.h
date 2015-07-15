@@ -130,6 +130,7 @@ typedef struct _braid_StepStatus_struct
    braid_Real    tstart;          /**< current time value  */
    braid_Real    tstop;           /**< time value to evolve towards, time value to the right of tstart */
    braid_Real*   rnorms;          /**< XBraid residual norm history, (points to Core->rnorms object) */ 
+   braid_Int*    rnorms_len_ptr;  /**< length of the residual norm history (points to Core->rnorm_len) */
    braid_Real    old_fine_tolx;   /**< Allows for storing the previously used fine tolerance from GetSpatialAccuracy */
    braid_Int     tight_fine_tolx; /**< Boolean, indicating whether the tightest fine tolx has been used, condition for halting */
    braid_Real    tol;             /**< Current XBraid stopping tolerance */

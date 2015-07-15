@@ -138,12 +138,12 @@ typedef struct _braid_Core_struct
    braid_Int              cfdefault;    /**< default coarsening factor */
    braid_Int              max_iter;     /**< maximum number of multigrid in time iterations */
    braid_Int              niter;        /**< number of iterations */
-   braid_Real             rnorm;        /**< residual norm */
    braid_Int              fmg;          /**< use FMG cycle */
    braid_Int              nfmg_Vcyc;    /**< number of V-cycle calls at each level in FMG */
    braid_Int              tnorm;        /**< choice of temporal norm */
    braid_Real            *tnorm_a;      /**< local array of residual norms on a proc's interval, used for inf-norm */
    braid_Real            *rnorms;       /**< XBraid residual norm history */
+   braid_Int              rnorms_len;   /**< length of the residual norm history (can be lagged relative to num iter)*/
 
    braid_AccessStatus     astatus;      /**< status structure passed to user-written Access routine */
    braid_CoarsenRefStatus cstatus;      /**< status structure passed to user-written coarsen/refine routines */
@@ -590,8 +590,7 @@ _braid_FCRelax(braid_Core  core,
  */
 braid_Int
 _braid_FRestrict(braid_Core   core,       /**< braid_Core (_braid_Core) struct */   
-                 braid_Int    level,      /**< restrict from level to level+1 */
-                 braid_Real  *rnorm_ptr   /**< pointer to residual norm (if level 0) */
+                 braid_Int    level       /**< restrict from level to level+1 */
                  );
 
 /**
@@ -605,8 +604,7 @@ _braid_FRestrict(braid_Core   core,       /**< braid_Core (_braid_Core) struct *
  */
 braid_Int
 _braid_FInterp(braid_Core  core,   /**< braid_Core (_braid_Core) struct */  
-               braid_Int   level,  /**< interp from level to level+1 */
-               braid_Real  rnorm   /**< residual norm (if level 0) */
+               braid_Int   level   /**< interp from level to level+1 */
                );
 
 /**
@@ -620,8 +618,6 @@ _braid_FInterp(braid_Core  core,   /**< braid_Core (_braid_Core) struct */
  */
 braid_Int
 _braid_FRefine(braid_Core   core,
-               braid_Int    iter,
-               braid_Real   rnorm,
                braid_Int   *refined_ptr);
 
 /** 
@@ -633,7 +629,6 @@ _braid_FRefine(braid_Core   core,
  */
 braid_Int
 _braid_FAccess(braid_Core     core,
-               braid_Real     rnorm,
                braid_Int      level,
                braid_Int      done);
 

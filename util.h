@@ -83,5 +83,21 @@ _braid_Max(braid_Real * array,
            braid_Real * max_val);
 
 
+/**
+ * Copy *k* entries from *_array* into *array*.  If *k*
+ * is negative, return the last *k* entries.  If 
+ * positive, return the first *k* entries.  Upon
+ * exit, *k* holds the number of residuals actually 
+ * returned (in the case that |k| > array_len.)
+ *
+ * If no entries are copied, *k=0*, *array[0] = -1.0*
+ **/
+braid_Int
+_braid_GetNEntries(braid_Real   *_array, 
+                   braid_Int    array_len, 
+                   braid_Int    *k_ptr, 
+                   braid_Real   *array);
+
+
 #endif
 

@@ -131,4 +131,46 @@ _braid_Max(braid_Real  *array,
    return _braid_error_flag;
 }
 
+braid_Int
+_braid_GetNEntries(braid_Real   *_array, 
+                   braid_Int    array_len, 
+                   braid_Int    *k_ptr, 
+                   braid_Real   *array)
+{   
+   braid_Int      start;
+   braid_Int      n = *k_ptr;
+
+   if(n < 0)
+   {
+      /* If negative, copy the last n residual norms */
+      n = -n;
+      if(array_len < n)
+      {
+         n = array_len;
+      }
+      start = array_len - n;
+   }
+   else
+   {
+      /* If positive copy the first n residual norms */
+      if(array_len < n)
+      {
+         n = array_len;
+      }
+      start = 0;
+   }
+
+   if(n > 0)
+   {
+      memcpy(array, &(_array[start]), n*sizeof(braid_Real) );
+   }
+   else
+   {
+      array[0] = -1.0;
+   }
+   (*k_ptr) = n;
+
+   return _braid_error_flag;
+}
+
 
