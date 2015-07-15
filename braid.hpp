@@ -400,8 +400,6 @@ public:
    
    void GetNLevels(braid_Int *nlevels_ptr) { braid_GetNLevels(core, nlevels_ptr); }
    
-   void GetSpatialAccuracy(braid_StepStatus sstatus, braid_Real loose_tol, braid_Real tight_tol, braid_Real *tol_ptr) { braid_GetSpatialAccuracy(sstatus, loose_tol, tight_tol, tol_ptr);}
-
    void Drive() { braid_Drive(core); }
 
    ~BraidCore() { braid_Destroy(core); }
@@ -427,6 +425,13 @@ public:
                        MPI_Comm  *comm_x,
                        MPI_Comm  *comm_t)
    { braid_SplitCommworld(comm_world, px, comm_x, comm_t); }
+
+   // Return an appropriate spatial tolerance
+   void GetSpatialAccuracy(braid_StepStatus  sstatus, 
+                           braid_Real        loose_tol, 
+                           braid_Real        tight_tol, 
+                           braid_Real        *tol_ptr) 
+   { braid_GetSpatialAccuracy(sstatus, loose_tol, tight_tol, tol_ptr); }
 
    // Test Function for Init and Access function
    void TestInitAccess(BraidApp   *app,
