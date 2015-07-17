@@ -335,13 +335,10 @@ my_Step(braid_App        app,
    } 
    
    /* Store information on CFL and spatial coarsening for user output */
-   if( A_idx == -1.0)
-   {
-      (app->runtime_scoarsen_info)[ (5*i) + 1] = dx;
-      (app->runtime_scoarsen_info)[ (5*i) + 2] = dy;
-      (app->runtime_scoarsen_info)[ (5*i) + 3] = (tstop-tstart);
-      (app->runtime_scoarsen_info)[ (5*i) + 4] = cfl_value;
-   }
+   (app->runtime_scoarsen_info)[ (5*i) + 1] = dx;
+   (app->runtime_scoarsen_info)[ (5*i) + 2] = dy;
+   (app->runtime_scoarsen_info)[ (5*i) + 3] = (tstop-tstart);
+   (app->runtime_scoarsen_info)[ (5*i) + 4] = cfl_value;
 
    /* Update manager relative to this vector */
    update_manager_from_vector(app->man, u, app->spatial_lookup_table);
@@ -439,6 +436,75 @@ my_Step(braid_App        app,
    return 0;
 }
 
+/* --------------------------------------------------------------------
+ * -------------------------------------------------------------------- */
+int
+my_Residual(braid_App        app,
+            braid_Vector     ustop,
+            braid_Vector     r,
+            braid_StepStatus status)
+{
+   double tstart;             /* current time */
+   double tstop;              /* evolve u to this time*/
+   int i, A_idx;
+   int ilower[2], iupper[2], nlx, nly, nx, ny;
+   double dx, dy;
+   
+   /* Grab spatial info about u */
+   grab_vec_spatial_info(ustop, app->spatial_lookup_table, ilower, iupper, 
+                         &nlx, &nly, &nx, &ny, &dx, &dy);
+ 
+   /* Grab status of current time step */
+   braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+
+   /* Check matrix lookup table to see if this matrix already exists*/
+   A_idx = -1.0;
+   for( i = 0; i < app->nA; i++ ){
+      if( (fabs( app->dt_A[i] - (tstop-tstart) )/(tstop-tstart) < 1e-10) &&
+          (fabs( app->dx_A[i] - dx )/dx < 1e-10) &&
+          (fabs( app->dy_A[i] - dy )/dy < 1e-10) ) 
+      { 
+         A_idx = i;
+         break;
+      }
+   }
+   
+   /* Update manager relative to this vector */
+   update_manager_from_vector(app->man, ustop, app->spatial_lookup_table);
+   
+   /* We need to "trick" the user's manager with the new dt */
+   app->man->dt = tstop - tstart;
+
+   /* Set up a new matrix */
+   if( A_idx == -1.0 ){
+      A_idx = i;
+      app->nA++;
+      app->dt_A[A_idx] = tstop-tstart;
+      app->dx_A[A_idx] = dx;
+      app->dy_A[A_idx] = dy;
+      
+      /* We need to "trick" the user's data structure into mimicking this
+      * discretization level */
+      app->man->graph = (app->spatial_lookup_table[ustop->spatial_disc_idx]).graph_matrix;
+
+
+      setUpImplicitMatrix( app->man );
+      app->A[A_idx] = app->man->A;
+      
+      /* Set up the PFMG solver using r->x as dummy vectors. */
+      setUpStructSolver( app->man, r->x, r->x );
+      app->solver[A_idx] = app->man->solver;
+
+     /* Store that we used implicit on this level */
+     (app->runtime_scoarsen_info)[ (5*i) ]    = 0;   
+   } 
+
+   /* Compute residual Ax */
+   app->man->A = app->A[A_idx];
+   comp_res(app->man, ustop->x, r->x, tstart, tstop);
+
+   return 0;
+}
 
 /* --------------------------------------------------------------------
  * Create a vector object for a given time point.
@@ -1801,7 +1867,7 @@ int main (int argc, char *argv[])
    double mystarttime, myendtime, mytime, maxtime;
    int run_wrapper_tests, correct, fspatial_disc_idx, max_iter_x[2];
    int print_level, access_level, nA_max, max_levels, min_coarse;
-   int nrelax, nrelax0, cfactor, cfactor0, max_iter;
+   int nrelax, nrelax0, cfactor, cfactor0, max_iter, storage, res, new_res;
    int fmg, tnorm, nfmg_Vcyc, scoarsen, num_scoarsenCFL, use_rand;
 
    /* Initialize MPI */
@@ -1838,6 +1904,9 @@ int main (int argc, char *argv[])
    max_iter            = 100;
    fmg                 = 0;
    nfmg_Vcyc           = 1;
+   res                 = 0;
+   new_res             = 0;
+   storage             = -1;
    use_rand            = 1;
    scoarsen            = 0;
    num_scoarsenCFL     = 1;
@@ -1917,6 +1986,18 @@ int main (int argc, char *argv[])
          arg_index++;
          fmg = 1;
          nfmg_Vcyc = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-storage") == 0 ){
+         arg_index++;
+         storage = atoi(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-new_res") == 0 ){
+         arg_index++;
+         new_res = 1;
+      }
+      else if ( strcmp(argv[arg_index], "-res") == 0 ){
+         arg_index++;
+         res = 1;
       }
       else if ( strcmp(argv[arg_index], "-use_rand") == 0 ){
          arg_index++;
@@ -2011,6 +2092,10 @@ int main (int argc, char *argv[])
       printf("  -pfmg_mi <mi_fine mi_coarse>       : max number of PFMG iters for fine and coarse levels (default: 50 50)\n"); 
       printf("  -pfmg_tolx <loose_tol tight_tol>   : loose and tight PFMG stopping tol on fine level (default: 1e-09 1e-09)\n"); 
       printf("  -fmg <nfmg_Vcyc>                   : use FMG cycling, nfmg_Vcyc V-cycles at each fmg level\n");
+      printf("  -res                               : use my residual\n");
+      printf("  -new_res                           : use user residual routine to compute global residual each iteration\n");
+      printf("                                       on all grid points for stopping criterion.\n");
+      printf("  -storage <level>                   : full storage on levels >= level\n");
       printf("  -forcing                           : consider non-zero RHS b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))\n");
       printf("  -use_rand <bool>                   : if nonzero, then use a uniformly random value to initialize each\n");
       printf("                                       time step for t>0.  if zero, then use a zero initial guess.\n");
@@ -2353,8 +2438,30 @@ int main (int argc, char *argv[])
          braid_SetFMG(core);
          braid_SetNFMGVcyc(core, nfmg_Vcyc);
       }
+      if (res)
+      {
+         
+         if(app->man->explicit) {
+            printf("\nCannot mix -res and -expl.  Option -res designed to make implicit time stepping cheaper. \nIgnoring -res\n\n");
+         }
+         else{
+            braid_SetResidual(core, my_Residual);
+         }
+      }
+      if (new_res) 
+      {
+         if(app->man->explicit) {
+            printf("\nCannot mix -new_res and -expl.  This uses the residual function designed to make implicit\ntime stepping cheaper. \nIgnoring -new_res\n\n");
+         }
+         else{
+            braid_SetGlobalResidual(core, my_Residual);        
+         }
       
-      braid_SetStorage(core, -2);
+      }
+      if (storage >= -2)
+      {
+         braid_SetStorage(core, storage);
+      } 
 
       if (scoarsen)
       {
