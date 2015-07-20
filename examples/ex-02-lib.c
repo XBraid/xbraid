@@ -1508,13 +1508,19 @@ int take_step(simulation_manager * man,         /* manager holding basic sim inf
    HYPRE_SStructVectorGetObject( xstop, (void **) &sxstop );
    HYPRE_SStructVectorGetObject( x, (void **) &sx );
 
+   /* Create temporary vector */
+   initialize_vector(man, &b);
+   HYPRE_SStructVectorAssemble(b);
+   HYPRE_SStructVectorGetObject( b, (void **) &sb );
+   HYPRE_StructVectorCopy(sx, sb);
+
    if( explicit )
    {
       /* Incorporate the boundary conditions. */    
       addBoundary( man, x );
 
       /* Time integration to next time point: Perform MatVec x = Ab. */
-      HYPRE_StructMatrixMatvec( 1, sA, sx, 0, sx );
+      HYPRE_StructMatrixMatvec( 1, sA, sb, 0, sx );
 
       if (forcing) {
          /* add RHS of PDE: g_i = dt*b_{i-1}, i > 0 */
@@ -1529,12 +1535,6 @@ int take_step(simulation_manager * man,         /* manager holding basic sim inf
    }
    else
    {
-      /* Create temporary right-hand-side vector */
-      initialize_vector(man, &b);
-      HYPRE_SStructVectorAssemble(b);
-      HYPRE_SStructVectorGetObject( b, (void **) &sb );
-      HYPRE_StructVectorCopy(sx, sb);
-
       /* Set up the right-hand side vector, which is the solution from 
        * the previous time step modified to incorporate the boundary 
        * conditions and the right-hand side of the PDE */ 
@@ -1563,13 +1563,13 @@ int take_step(simulation_manager * man,         /* manager holding basic sim inf
       HYPRE_StructPFMGGetNumIterations( man->solver, &num_iters);
       (*iters_taken) = num_iters;
 
-      /* free memory */
-      HYPRE_SStructVectorDestroy( b );
    }
+
+   /* free memory */
+   HYPRE_SStructVectorDestroy( b );
 
    return 0;
 }
-
 
 /* --------------------------------------------------------------------
  * Residual routine
