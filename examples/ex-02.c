@@ -894,12 +894,10 @@ int main (int argc, char *argv[])
       if (fmg) {
          braid_SetFMG(core);
       }
-      if (res)
-      {
+      if (res) {
          braid_SetResidual(core, my_Residual);
       }
-      if (storage >= -2)
-      {
+      if (storage >= -2) {
          braid_SetStorage(core, storage);
       }
 

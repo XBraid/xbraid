@@ -332,23 +332,23 @@ braid_Drive(braid_Core  core)
                {
                   if (iter == 0)
                   {
-                     if (globres != NULL)
-                     {
-                        _braid_printf("  Braid: Global || r_%d || = %1.6e\n", iter, global_rnorm);
-                     }
                      _braid_printf("  Braid: || r_%d || = %1.6e,  wall time = %1.2e\n", 
                         iter,  braid_rnorm, (MPI_Wtime() - localtime));
+                     if (globres != NULL)
+                     {
+                        _braid_printf("  Braid: || r_%d || = %1.6e,  GLOBAL\n\n", iter, global_rnorm);
+                     } 
                   }
                   else
                   {
-                     if (globres != NULL)
-                     {
-                        _braid_printf("  Braid: Global || r_%d || = %1.6e,  conv. factor = %1.2e \n",
-                           iter, global_rnorm, global_rnorm/old_globalrnorm);
-                     }
-                     _braid_printf("  Braid: || r_%d || = %1.6e,  conv. factor = %1.2e, wall time = %1.2e\n",  
+                     _braid_printf("  Braid: || r_%d || = %1.6e,  conv. factor = %1.2e,  wall time = %1.2e\n",  
                         iter, braid_rnorm, braid_rnorm/rnorms[ _braid_CoreElt(core, rnorms_len)-2 ], 
                         (MPI_Wtime() - localtime));
+                     if (globres != NULL)
+                     {
+                        _braid_printf("  Braid: || r_%d || = %1.6e,  conv. factor = %1.2e,  GLOBAL\n\n",
+                           iter, global_rnorm, global_rnorm/old_globalrnorm);
+                     }
                   }
                }
                
@@ -906,9 +906,9 @@ braid_GetSpatialAccuracy( braid_StepStatus  status,
    braid_StepStatusGetOldFineTolx(status, &old_fine_tolx);
 
    /* Get the first and then the current residual norms */
-   braid_StepStatusGetRnorms(status, &nrequest, &rnorm0);
+   braid_StepStatusGetRNorms(status, &nrequest, &rnorm0);
    nrequest = -1;
-   braid_StepStatusGetRnorms(status, &nrequest, &rnorm);
+   braid_StepStatusGetRNorms(status, &nrequest, &rnorm);
 
    if( (level > 0) || (nrequest == 0) )
    {

@@ -394,7 +394,7 @@ braid_StepStatusGetIter(braid_StepStatus  status,
 }
 
 braid_Int
-braid_StepStatusGetRnorms(braid_StepStatus  status,
+braid_StepStatusGetRNorms(braid_StepStatus  status,
                           braid_Int        *nrequest_ptr,
                           braid_Real       *rnorms 
                           )
@@ -417,10 +417,10 @@ braid_StepStatusGetOldFineTolx(braid_StepStatus  status,
 
 braid_Int
 braid_StepStatusSetOldFineTolx(braid_StepStatus  status,
-                               braid_Real        old_fine_tolx_ptr
+                               braid_Real        old_fine_tolx    
                                )
 {
-   _braid_StatusElt(status, old_fine_tolx) = old_fine_tolx_ptr;
+   _braid_StatusElt(status, old_fine_tolx) = old_fine_tolx    ;
    return _braid_error_flag;
 }
 

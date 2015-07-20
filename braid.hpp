@@ -150,7 +150,7 @@ class BraidStepStatus
          pstatus = _pstatus;
       }
 
-      void GetRnorms(braid_Int *nrequest_ptr, braid_Real *rnorms) { braid_StepStatusGetRnorms(pstatus, nrequest_ptr, rnorms); }
+      void GetRNorms(braid_Int *nrequest_ptr, braid_Real *rnorms) { braid_StepStatusGetRNorms(pstatus, nrequest_ptr, rnorms); }
       void GetTstartTstop(braid_Real *tstart_ptr, braid_Real *tstop_ptr) { braid_StepStatusGetTstartTstop(pstatus, tstart_ptr, tstop_ptr); }
       void GetTstart(braid_Real *tstart_ptr)             { braid_StepStatusGetTstart(pstatus, tstart_ptr); }
       void GetTstop(braid_Real *tstop_ptr)               { braid_StepStatusGetTstop(pstatus, tstop_ptr); }
@@ -160,9 +160,12 @@ class BraidStepStatus
       void StepStatusGetTol(braid_Real *tol_ptr)         { braid_StepStatusGetTol(pstatus, tol_ptr); }
       void GetIter(braid_Int *iter_ptr)                  { braid_StepStatusGetIter(pstatus, iter_ptr); }
       void GetOldFineTolx(braid_Real *old_fine_tolx_ptr) { braid_StepStatusGetOldFineTolx(pstatus, old_fine_tolx_ptr); }
-      void SetOldFineTolx(braid_Real old_fine_tolx_ptr)  { braid_StepStatusSetOldFineTolx(pstatus, old_fine_tolx_ptr); }
+      void SetOldFineTolx(braid_Real old_fine_tolx)      { braid_StepStatusSetOldFineTolx(pstatus, old_fine_tolx); }
       void SetTightFineTolx(braid_Int tight_fine_tolx)   { braid_StepStatusSetTightFineTolx(pstatus, tight_fine_tolx); }
 
+       // The braid_StepStatus structure is deallocated inside of Braid
+       // This class is just to make code consistently look object oriented
+       ~BraidStepStatus() { }
 };
 
 
@@ -396,7 +399,7 @@ public:
    void GetRNorms(braid_Int *nrequest_ptr, braid_Real *rnorms) { braid_GetRNorms(core, nrequest_ptr, rnorms); }
    
    void GetNLevels(braid_Int *nlevels_ptr) { braid_GetNLevels(core, nlevels_ptr); }
-
+   
    void Drive() { braid_Drive(core); }
 
    ~BraidCore() { braid_Destroy(core); }
@@ -422,6 +425,13 @@ public:
                        MPI_Comm  *comm_x,
                        MPI_Comm  *comm_t)
    { braid_SplitCommworld(comm_world, px, comm_x, comm_t); }
+
+   // Return an appropriate spatial tolerance
+   void GetSpatialAccuracy(braid_StepStatus  sstatus, 
+                           braid_Real        loose_tol, 
+                           braid_Real        tight_tol, 
+                           braid_Real        *tol_ptr) 
+   { braid_GetSpatialAccuracy(sstatus, loose_tol, tight_tol, tol_ptr); }
 
    // Test Function for Init and Access function
    void TestInitAccess(BraidApp   *app,
