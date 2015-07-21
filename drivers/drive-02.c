@@ -2442,7 +2442,7 @@ int main (int argc, char *argv[])
       {
          
          if(app->man->explicit) {
-            printf("\nCannot mix -res and -expl.  Option -res designed to make implicit time stepping cheaper. \nIgnoring -res\n\n");
+            printf("\nCannot mix -res and -expl.  Option -res designed to make the implicit time stepping cheaper. \nIgnoring -res\n\n");
          }
          else{
             braid_SetResidual(core, my_Residual);
@@ -2451,7 +2451,7 @@ int main (int argc, char *argv[])
       if (new_res) 
       {
          if(app->man->explicit) {
-            printf("\nCannot mix -new_res and -expl.  This uses the residual function designed to make implicit\ntime stepping cheaper. \nIgnoring -new_res\n\n");
+            printf("\nCannot mix -new_res and -expl.  This uses the residual function designed to make the implicit\ntime stepping cheaper. \nIgnoring -new_res\n\n");
          }
          else{
             braid_SetGlobalResidual(core, my_Residual);        

@@ -68,7 +68,7 @@ all: $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES)
  $(@).cpp -o $@ $(MFEM_LIB) $(HYPRE_LIB) $(BRAID_LIB_FILE) $(LFLAGS)
 
 clean: cleanout
-	rm -f *.o $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES) *ror_norm* *_err_* *_mesh* *_sol_*
+	rm -f *.o $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES) *ror_norm* *_err_* *_sol_*
 	rm -rf *.dSYM
 
 cleanout:

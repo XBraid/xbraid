@@ -1517,7 +1517,7 @@ int take_step(simulation_manager * man,         /* manager holding basic sim inf
    if( explicit )
    {
       /* Incorporate the boundary conditions. */    
-      addBoundary( man, x );
+      addBoundary( man, b );
 
       /* Time integration to next time point: Perform MatVec x = Ab. */
       HYPRE_StructMatrixMatvec( 1, sA, sb, 0, sx );
@@ -1583,8 +1583,9 @@ int comp_res(simulation_manager * man,         /* manager holding basic sim info
    int      explicit   = man->explicit; /* if true, use explicit, else implicit */
    int      forcing    = man->forcing;  /* if true, use the nonzero forcing term */
    
+   HYPRE_SStructVector b;
    HYPRE_StructMatrix  sA;
-   HYPRE_StructVector  sxstop, sr; 
+   HYPRE_StructVector  sxstop, sr, sb; 
    
    /* Grab these object pointers for use below */
    HYPRE_SStructMatrixGetObject( man->A, (void **) &sA );
@@ -1593,17 +1594,28 @@ int comp_res(simulation_manager * man,         /* manager holding basic sim info
 
    if( explicit )
    {
+   
+      /* Create temporary vector */
+      initialize_vector(man, &b);
+      HYPRE_SStructVectorAssemble(b);
+      HYPRE_SStructVectorGetObject( b, (void **) &sb );
+      HYPRE_StructVectorCopy(sr, sb);
+
       /* Incorporate the boundary conditions. */    
-      addBoundary( man, r );
+      addBoundary( man, b );
 
       /* Residual r = xstop - A*r - forcing */
-      HYPRE_StructMatrixMatvec( 1, sA, sr, 0, sr );
+      HYPRE_StructMatrixMatvec( 1, sA, sb, 0, sr );
       if (forcing) {
          /* add RHS of PDE: g_i = dt*b_{i-1}, i > 0 */
          addForcingToRHS( man, tstop, r );
       }
       hypre_StructAxpy (-1, sxstop, sr);
       hypre_StructScale(-1, sr);
+
+      /* free memory */
+      HYPRE_SStructVectorDestroy( b );
+
    }
    else
    {
