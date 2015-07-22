@@ -49,47 +49,50 @@ using namespace mfem;
 class BraidVector : public BlockVector
 {
 public:
-  // The spatial coarsening level; level 0 is the finest level.
-  int spatial_level;
+    /* The spatial coarsening level; level 0 is the finest level. */
+    int spatial_level;
 
-  /// Construct a BraidVector given a level and a ParFiniteElementSpace.
-  BraidVector(int source_level, const Array<int> &bOffsets)
-     : BlockVector(bOffsets), spatial_level(source_level) { }
+    /// Construct a BraidVector given a level and a ParFiniteElementSpace.
+    BraidVector(int source_level, const Array<int> &bOffsets);
 
-  /** "Copy" constructor: create a BraidVector compatible with source_vector
+    /* "Copy" constructor: create a BraidVector compatible with source_vector
         without copying the data. */
-  BraidVector(const BraidVector &source_vector)
-     : BlockVector(source_vector), spatial_level(source_vector.spatial_level) { }
+    BraidVector(const BraidVector &source_vector);
 
-  /** Construct a BraidVector compatible with source_vector (a BlockVector)
-        and the level set to source_level. */
-  BraidVector(int source_level, const BlockVector &source_vector)
-     : BlockVector(source_vector), spatial_level(source_level) { }
+    /* Construct a BraidVector compatible with source_vector (a BlockVector)
+       and the level set to source_level. */
+    BraidVector(int source_level, const BlockVector &source_vector);
 
-  /// Copy the data from source_vector (a Vector).
-  BraidVector &operator=(const BlockVector &source_vector)
-  { BlockVector::operator=(source_vector); return *this; }
+    /* Returns number of blocks in BlockVector through reference integer. */
+    void GetNumBlocks(int &blocks);
 
-  /// Initialize the Braidvector with a double value.
-  BraidVector &operator=(double value)
-  { BlockVector::operator=(value); return *this; }
+    /* Sets argument of type const int* as pointer to BlockVector blockOffsets. */
+    void GetOffsetsPtr(const int *&address);
 
-  /// Clone function (copy the data as well into the new BraidVector)
-  BraidVector *clone()
-  {
-     BraidVector *y = new BraidVector(*this);
-     *y = *this;
-     return y;
-  }
+    ~BraidVector();
 
-  /* Returns number of blocks in BlockVector through reference integer. */
-  void GetNumBlocks(int &blocks) { blocks = numBlocks; }
 
-  /* Sets argument of type const int* as pointer to BlockVector blockOffsets. */
-  void GetOffsetsPtr(const int *&address)
-  {
-     address = &blockOffsets[0];
-  }
+    /* Copy the data from source_vector (a Vector). */
+    BraidVector &operator=(const BlockVector &source_vector)
+    {
+        BlockVector::operator=(source_vector);
+
+        int *new_Offsets;
+        int buff_size = sizeof(int)*(this->numBlocks+1);
+        new_Offsets = (int *)malloc(buff_size);
+        memcpy(new_Offsets, (this->blockOffsets), buff_size);
+        this->blockOffsets = new_Offsets;
+
+        return *this;
+    }
+
+    /* Clone function (copy the data as well into the new BraidVector) */
+    BraidVector *clone()
+    {
+        BraidVector *y = new BraidVector(*this);
+        *y = *this;
+        return y;
+    }
 
 };
 
@@ -357,6 +360,86 @@ const char *MFEMBraidApp::vishost_default = "localhost";
 const int   MFEMBraidApp::visport_default = 19916;
 
 
+/* -------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------------- */
+
+
+BraidVector::BraidVector(int source_level, const Array<int> &bOffsets)
+    : BlockVector(bOffsets), spatial_level(source_level)
+{
+    // int *new_Offsets = new int[this->numBlocks+1];
+    // for (int i=0; i<=(this->numBlocks); i++) {
+    //     new_Offsets[i] = (this->blockOffsets)[i];
+    // }
+    // this->blockOffsets = new_Offsets;
+
+            int *new_Offsets;
+        int buff_size = sizeof(int)*(this->numBlocks+1);
+        new_Offsets = (int *)malloc(buff_size);
+        memcpy(new_Offsets, (this->blockOffsets), buff_size);
+        this->blockOffsets = new_Offsets;
+
+}
+
+
+BraidVector::BraidVector(const BraidVector &source_vector)
+ : BlockVector(source_vector), spatial_level(source_vector.spatial_level)
+{
+    // int *new_Offsets = new int[this->numBlocks+1];
+    // for (int i=0; i<=(this->numBlocks); i++) {
+    //     new_Offsets[i] = (this->blockOffsets)[i];
+    // }
+    // this->blockOffsets = new_Offsets;
+
+        int *new_Offsets;
+        int buff_size = sizeof(int)*(this->numBlocks+1);
+        new_Offsets = (int *)malloc(buff_size);
+        memcpy(new_Offsets, (this->blockOffsets), buff_size);
+        this->blockOffsets = new_Offsets;
+
+}
+
+
+BraidVector::BraidVector(int source_level, const BlockVector &source_vector)
+ : BlockVector(source_vector), spatial_level(source_level)
+{
+    // int *new_Offsets = new int[this->numBlocks+1];
+    // for (int i=0; i<=(this->numBlocks); i++) {
+    //     new_Offsets[i] = (this->blockOffsets)[i];
+    // }
+    // this->blockOffsets = new_Offsets;
+
+        int *new_Offsets;
+        int buff_size = sizeof(int)*(this->numBlocks+1);
+        new_Offsets = (int *)malloc(buff_size);
+        memcpy(new_Offsets, (this->blockOffsets), buff_size);
+        this->blockOffsets = new_Offsets;
+}
+
+
+void BraidVector::GetNumBlocks(int &blocks)
+{
+    blocks = this->numBlocks;
+}
+
+
+void BraidVector::GetOffsetsPtr(const int *&address)
+{
+    address = &blockOffsets[0];
+}
+
+
+BraidVector::~BraidVector()
+{
+    free( (int *)(this->blockOffsets) );
+}
+
+
+/* -------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------------- */
+
+
+
 // Construct MFEMBraidApp with empty (spatial) multilevel structures
 MFEMBraidApp::MFEMBraidApp(MPI_Comm comm_t_, double tstart_, double tstop_, int ntime_)
 
@@ -432,6 +515,7 @@ MFEMBraidApp::~MFEMBraidApp()
 {
     if (own_data)
     {
+        free( (int *)(X0->blockOffsets) );
         delete X0;
         for (int i = 0; i < mesh.Size(); i++)
         {
@@ -669,7 +753,7 @@ int MFEMBraidApp::BufSize(int *size_ptr)
 int MFEMBraidApp::BufPack(braid_Vector  u_, void *buffer, int *size_ptr)
 {
     BraidVector *u = (BraidVector*) u_;
-    double *dbuf    = (double *) buffer;
+    double *dbuf   = (double *) buffer;
     const int *blockOffsets;
     int numBlocks;
     u->GetNumBlocks(numBlocks);
@@ -692,7 +776,7 @@ int MFEMBraidApp::BufPack(braid_Vector  u_, void *buffer, int *size_ptr)
 
 int MFEMBraidApp::BufUnpack(void *buffer, braid_Vector *u_ptr)
 {
-    double *dbuf = (double *) buffer;
+    double *dbuf      = (double *) buffer;
     int spatial_level = (int) dbuf[0];
     int numBlocks     = (int) dbuf[1];
 
@@ -703,7 +787,7 @@ int MFEMBraidApp::BufUnpack(void *buffer, braid_Vector *u_ptr)
 
     int vecSize  = buff_size[spatial_level] - sizeof(double)*(3 + maxBlocks); 
     BraidVector *u = new BraidVector(spatial_level, offsets);
-    offsets.LoseData();
+    // offsets.LoseData();
     memcpy(u->GetData(), dbuf+3+numBlocks, vecSize);
     *u_ptr = (braid_Vector) u;
     return 0;
@@ -734,7 +818,7 @@ int MFEMBraidApp::Coarsen(braid_Vector fu_, braid_Vector  *cu_ptr, BraidCoarsenR
             blockOffsets[1] = true_size;
             blockOffsets[2] = 2*true_size;
             cu = new BraidVector(lev, blockOffsets);
-            blockOffsets.LoseData();
+            // blockOffsets.LoseData();
 
             // Maps true dofs in 'fu' to local dofs in ParGridFunction x, with
             // the caveat that local dofs that fu does not own are set to 0 in x.
@@ -805,7 +889,7 @@ int MFEMBraidApp::Refine(braid_Vector cu_, braid_Vector  *fu_ptr, BraidCoarsenRe
             blockOffsets[1] = true_size;
             blockOffsets[2] = 2*true_size;
             fu = new BraidVector(lev, blockOffsets);
-            blockOffsets.LoseData();
+            // blockOffsets.LoseData();
 
             // Distribute cu into x, including shared dofs requiring communication
             v[lev+1]->Distribute(cu->GetBlock(0)); 
@@ -949,6 +1033,11 @@ int MFEMBraidApp::Access(braid_Vector u_, BraidAccessStatus &astatus)
 }
 
 
+/* -------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------------- */
+
+
+
 BraidOptions::BraidOptions(int argc, char *argv[])
     : OptionsParser(argc, argv)
 {
@@ -1070,6 +1159,10 @@ void BraidOptions::SetBraidCoreOptions(BraidCore &core)
         core.SetStorage(storage);
     }
 }
+
+
+/* -------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------------- */
 
 
 void SpaceTimeMeshInfo::Reinitialize(int _max_levels)

@@ -222,6 +222,11 @@ int main(int argc, char *argv[])
 	opts.SetBraidCoreOptions(core);
 	core.Drive();
 
+
+   // MPI_Comm_free( &comm );
+   MPI_Comm_free( &comm_x );
+   MPI_Comm_free( &comm_t );
+
 	MPI_Finalize();
 	return 0;
 }
