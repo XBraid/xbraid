@@ -116,7 +116,7 @@ struct MovingOptions: public BraidOptions
    		  order,
 	      ode_solver_type,
 	      x_dim,
-	      max_move_level,
+	      forcing_eqn,
 	      visport,
 	   	  vis_time_steps,
 	   	  vis_braid_steps;
@@ -175,6 +175,9 @@ public:
 /* -------------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------------- */
 
+// Global variable on which forcing funciton to use. 
+int forcing_eqn;
+
 
 int main(int argc, char *argv[]) 
 {
@@ -201,31 +204,34 @@ int main(int argc, char *argv[])
 	{
 		opts.PrintOptions(cout);
 	}
+	forcing_eqn = opts.forcing_eqn;
 
-	// Construct serial mesh on all processors. 
-	Mesh mesh(opts.num_intervals,opts.max_x);
+	// Block scope so that objects are destroyed before MPI_Finalize();
+	{
+		// Construct serial mesh on all processors. 
+		Mesh mesh(opts.num_intervals,opts.max_x);
 
-	// Split global MPI communicator into spatial and temporal communicators.
-	// Define parallel mesh by partitioning serial mesh. Parallel refinement
-	// is done in MFEMBraidApp::InitMultilevelApp(). Once parallel mesh is
-	// formed we can delete serial mesh.
-	BraidUtil util;
-	MPI_Comm comm_x, comm_t;
-	util.SplitCommworld(&comm, opts.num_procs_x, &comm_x, &comm_t);
-	ParMesh *pmesh = new ParMesh(comm_x,mesh);
+		// Split global MPI communicator into spatial and temporal communicators.
+		// Define parallel mesh by partitioning serial mesh. Parallel refinement
+		// is done in MFEMBraidApp::InitMultilevelApp(). Once parallel mesh is
+		// formed we can delete serial mesh.
+		BraidUtil util;
+		MPI_Comm comm_x, comm_t;
+		util.SplitCommworld(&comm, opts.num_procs_x, &comm_x, &comm_t);
+		ParMesh *pmesh = new ParMesh(comm_x,mesh);
 
-	// Create and initialize MovingApp. 
-	MovingApp app(opts, comm_t, pmesh);
+		// Create and initialize MovingApp. 
+		MovingApp app(opts, comm_t, pmesh);
 
-	// Run Braid simulation.
-	BraidCore core(comm, &app);
-	opts.SetBraidCoreOptions(core);
-	core.Drive();
+		// Run Braid simulation.
+		BraidCore core(comm, &app);
+		opts.SetBraidCoreOptions(core);
+		core.Drive();
+	}
 
-
-   // MPI_Comm_free( &comm );
-   MPI_Comm_free( &comm_x );
-   MPI_Comm_free( &comm_t );
+	// MPI_Comm_free( &comm );
+	// MPI_Comm_free( &comm_x );
+	// MPI_Comm_free( &comm_t );
 
 	MPI_Finalize();
 	return 0;
@@ -247,7 +253,7 @@ MovingOptions::MovingOptions(int argc, char *argv[])
 	// Set default values for mesh.
 	ser_ref_levels = 0;
 	par_ref_levels = 0;
-	max_move_level = -2;
+	forcing_eqn = 1;
 	// AddMeshOptions();
 
 	// Set default values for diffusion problem. 
@@ -273,8 +279,8 @@ MovingOptions::MovingOptions(int argc, char *argv[])
 	          "Thermal diffusivity.");
 	AddOption(&tau, "-tau", "--tau",
 	          "Moving mesh speed parameter.");
-	AddOption(&max_move_level, "-move", "--max-level-move-mesh",
-			  "Maximum Braid level to move mesh on; -1 = none, -2 = all.");
+	AddOption(&forcing_eqn, "-forcing", "--forcing-equation",
+			  "Choice of forcing funciton; 0 = none, 1 = moving bump, 2 = five fixed bumps.");
 	AddOption(&order, "-o", "--order",
 	          "Order (degree) of the finite elements.");
 	AddOption(&ode_solver_type, "-s", "--ode-solver",
@@ -297,6 +303,9 @@ MovingOptions::MovingOptions(int argc, char *argv[])
 
 	dt    = (t_final - t_start) / num_time_steps;
 	dzeta = max_x / num_intervals;
+
+	// scale stopping tolerance by grid element size.
+	tol *= (num_intervals*num_time_steps);
 }
 
 
@@ -1012,7 +1021,7 @@ void DiffusionOperator::UpdateMesh(ParMesh *pmesh, Vector &u_curr, int &update_o
 
 DiffusionOperator::~DiffusionOperator()
 {
-	// Setting pointer to NULL removed some Valgrind errors. 
+	delete Amesh_;
 	delete f_;
 	delete alpha_;
 	delete A_;
@@ -1090,33 +1099,37 @@ void Forcing(const Vector &x, double t, Vector &f)
 	for (int i=0; i<dim; i++) {
 		f(i) = 0.0;
 
+	// Gaussian sources moving across spatial domain over time.
+	if (forcing_eqn == 1) {
+		for (int i=0; i<dim; i++) {
+			f(i) = GuassianBlip(x(i), x_cent=(t+0.25)/2, x_width=0.05, x_scale=50.0);
+		}
+	}
 	// Five time-dependent Gaussian sources.
-	#if 0
-		f(i) += GuassianBlip(t,    t_cent=0.1,  t_width=0.05, t_scale=50)*
-				GuassianBlip(x(i), x_cent=0.9,  x_width=0.05, x_scale=30);
-
-		f(i) += GuassianBlip(t,    t_cent=0.25, t_width=0.2,  t_scale=30)*
-				GuassianBlip(x(i), x_cent=0.3,  x_width=0.15, x_scale=30);
-
-		f(i) += GuassianBlip(t,    t_cent=0.6,  t_width=0.1,  t_scale=10)*
-				GuassianBlip(x(i), x_cent=0.5,  x_width=0.3,  x_scale=20);
-
-		f(i) += GuassianBlip(t,    t_cent=0.8,  t_width=0.3,  t_scale=40)*
-				GuassianBlip(x(i), x_cent=0.8,  x_width=0.1,  x_scale=30);
-
-		f(i) += GuassianBlip(t,    t_cent=0.9, t_width=0.1,  t_scale=30)*
-				GuassianBlip(x(i), x_cent=0.3,  x_width=0.2,  x_scale=30);
-	#endif
+	else if (forcing_eqn == 2) {
+		for (int i=0; i<dim; i++) {
+			f(i) = 0.0;
+			f(i) += GuassianBlip(t,    t_cent=0.1,  t_width=0.05, t_scale=50)*
+					GuassianBlip(x(i), x_cent=0.9,  x_width=0.05, x_scale=30);
+			f(i) += GuassianBlip(t,    t_cent=0.25, t_width=0.2,  t_scale=30)*
+					GuassianBlip(x(i), x_cent=0.3,  x_width=0.15, x_scale=30);
+			f(i) += GuassianBlip(t,    t_cent=0.6,  t_width=0.1,  t_scale=10)*
+					GuassianBlip(x(i), x_cent=0.5,  x_width=0.3,  x_scale=20);
+			f(i) += GuassianBlip(t,    t_cent=0.8,  t_width=0.3,  t_scale=40)*
+					GuassianBlip(x(i), x_cent=0.8,  x_width=0.1,  x_scale=30);
+			f(i) += GuassianBlip(t,    t_cent=0.9, t_width=0.1,  t_scale=30)*
+					GuassianBlip(x(i), x_cent=0.3,  x_width=0.2,  x_scale=30);
+		}
+	}
+	else {
+		f = 0.0;
+	}
 
 	// Single Gaussian source in space time. 
 	#if 0
 		f(i) += GuassianBlip(t, t_cent, t_width)*GuassianBlip(x(i),x_cent=(t+0.25)/2,x_width=0.05,);
 	#endif			
 
-	// Moving Gaussian source across spatial domain over time.
-	#if 1
-		f(i) += GuassianBlip(x(i), x_cent=(t+0.25)/2, x_width=0.05, x_scale=50.0);
-	#endif
 
 	}
 

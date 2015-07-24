@@ -787,7 +787,6 @@ int MFEMBraidApp::BufUnpack(void *buffer, braid_Vector *u_ptr)
 
     int vecSize  = buff_size[spatial_level] - sizeof(double)*(3 + maxBlocks); 
     BraidVector *u = new BraidVector(spatial_level, offsets);
-    // offsets.LoseData();
     memcpy(u->GetData(), dbuf+3+numBlocks, vecSize);
     *u_ptr = (braid_Vector) u;
     return 0;
@@ -818,7 +817,6 @@ int MFEMBraidApp::Coarsen(braid_Vector fu_, braid_Vector  *cu_ptr, BraidCoarsenR
             blockOffsets[1] = true_size;
             blockOffsets[2] = 2*true_size;
             cu = new BraidVector(lev, blockOffsets);
-            // blockOffsets.LoseData();
 
             // Maps true dofs in 'fu' to local dofs in ParGridFunction x, with
             // the caveat that local dofs that fu does not own are set to 0 in x.
@@ -889,7 +887,6 @@ int MFEMBraidApp::Refine(braid_Vector cu_, braid_Vector  *fu_ptr, BraidCoarsenRe
             blockOffsets[1] = true_size;
             blockOffsets[2] = 2*true_size;
             fu = new BraidVector(lev, blockOffsets);
-            // blockOffsets.LoseData();
 
             // Distribute cu into x, including shared dofs requiring communication
             v[lev+1]->Distribute(cu->GetBlock(0)); 
@@ -1041,25 +1038,25 @@ int MFEMBraidApp::Access(braid_Vector u_, BraidAccessStatus &astatus)
 BraidOptions::BraidOptions(int argc, char *argv[])
     : OptionsParser(argc, argv)
 {
-    t_start    = 0.0;
-    t_final    = 1.0;
+    t_start         = 0.0;
+    t_final         = 1.0;
     num_time_steps  = 100;
-    num_procs_x  = 1;
-    max_levels     = 10;
-    min_coarse     = 3;
-    nrelax        = 1;
-    nrelax0    = -1;
-    tol      = 1e-9;
-    tnorm            = 2;
-    cfactor    = 2;
-    cfactor0            = -1;
-    max_iter            = 100;
-    nfmg_Vcyc        = 0;
-    spatial_coarsen  = false;
-    access_level      = 1;
-    print_level  = 1;
-    storage    = -1;
-    res      = 0;
+    num_procs_x     = 1;
+    max_levels      = 10;
+    min_coarse      = 3;
+    nrelax          = 1;
+    nrelax0         = -1;
+    tol             = 1e-9;
+    tnorm           = 2;
+    cfactor         = 2;
+    cfactor0        = -1;
+    max_iter        = 100;
+    nfmg_Vcyc       = 0;
+    spatial_coarsen = false;
+    access_level    = 1;
+    print_level     = 1;
+    storage         = -1;
+    res             = 0;
 
     AddOption(&t_start, "-ts", "--t-start", "Start time.");
     AddOption(&t_final, "-tf", "--t-final", "Final time.");
