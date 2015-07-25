@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 	MPI_Init(&argc, &argv);
 	MPI_Comm comm = MPI_COMM_WORLD;
 	MPI_Comm_rank(comm, &myid);
-    MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
+        MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
 
 	// Parse command line for Braid, MFEM and this problem. 
 	MovingOptions opts(argc, argv);
@@ -227,11 +227,11 @@ int main(int argc, char *argv[])
 		BraidCore core(comm, &app);
 		opts.SetBraidCoreOptions(core);
 		core.Drive();
-	}
 
-	// MPI_Comm_free( &comm );
-	// MPI_Comm_free( &comm_x );
-	// MPI_Comm_free( &comm_t );
+                // MPI_Comm_free( &comm );
+                MPI_Comm_free( &comm_x );
+                MPI_Comm_free( &comm_t );
+	}
 
 	MPI_Finalize();
 	return 0;
@@ -905,6 +905,8 @@ void DiffusionOperator::UpdateMeshSolver()
 	// Construct Hypre operators to solve moving mesh equation.
 	M_amg_ = new HypreBoomerAMG(*Amesh_);
 	M_amg_->SetPrintLevel(-1);
+        HYPRE_BoomerAMGSetCycleRelaxType((HYPRE_Solver) *M_amg_, 3, 3);
+        HYPRE_BoomerAMGSetCycleNumSweeps((HYPRE_Solver) *M_amg_, 1, 3);
 	M_pcg_ = new HyprePCG(*Amesh_);
 	M_pcg_->SetTol(1e-14);
 	M_pcg_->SetMaxIter(2000);
