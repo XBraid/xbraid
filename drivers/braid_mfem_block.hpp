@@ -367,53 +367,33 @@ const int   MFEMBraidApp::visport_default = 19916;
 BraidVector::BraidVector(int source_level, const Array<int> &bOffsets)
     : BlockVector(bOffsets), spatial_level(source_level)
 {
-    // int *new_Offsets = new int[this->numBlocks+1];
-    // for (int i=0; i<=(this->numBlocks); i++) {
-    //     new_Offsets[i] = (this->blockOffsets)[i];
-    // }
-    // this->blockOffsets = new_Offsets;
-
-            int *new_Offsets;
-        int buff_size = sizeof(int)*(this->numBlocks+1);
-        new_Offsets = (int *)malloc(buff_size);
-        memcpy(new_Offsets, (this->blockOffsets), buff_size);
-        this->blockOffsets = new_Offsets;
-
+    int *new_Offsets;
+    int buff_size = sizeof(int)*(this->numBlocks+1);
+    new_Offsets = (int *)malloc(buff_size);
+    memcpy(new_Offsets, (this->blockOffsets), buff_size);
+    this->blockOffsets = new_Offsets;
 }
 
 
 BraidVector::BraidVector(const BraidVector &source_vector)
  : BlockVector(source_vector), spatial_level(source_vector.spatial_level)
 {
-    // int *new_Offsets = new int[this->numBlocks+1];
-    // for (int i=0; i<=(this->numBlocks); i++) {
-    //     new_Offsets[i] = (this->blockOffsets)[i];
-    // }
-    // this->blockOffsets = new_Offsets;
-
-        int *new_Offsets;
-        int buff_size = sizeof(int)*(this->numBlocks+1);
-        new_Offsets = (int *)malloc(buff_size);
-        memcpy(new_Offsets, (this->blockOffsets), buff_size);
-        this->blockOffsets = new_Offsets;
-
+    int *new_Offsets;
+    int buff_size = sizeof(int)*(this->numBlocks+1);
+    new_Offsets = (int *)malloc(buff_size);
+    memcpy(new_Offsets, (this->blockOffsets), buff_size);
+    this->blockOffsets = new_Offsets;
 }
 
 
 BraidVector::BraidVector(int source_level, const BlockVector &source_vector)
  : BlockVector(source_vector), spatial_level(source_level)
 {
-    // int *new_Offsets = new int[this->numBlocks+1];
-    // for (int i=0; i<=(this->numBlocks); i++) {
-    //     new_Offsets[i] = (this->blockOffsets)[i];
-    // }
-    // this->blockOffsets = new_Offsets;
-
-        int *new_Offsets;
-        int buff_size = sizeof(int)*(this->numBlocks+1);
-        new_Offsets = (int *)malloc(buff_size);
-        memcpy(new_Offsets, (this->blockOffsets), buff_size);
-        this->blockOffsets = new_Offsets;
+    int *new_Offsets;
+    int buff_size = sizeof(int)*(this->numBlocks+1);
+    new_Offsets = (int *)malloc(buff_size);
+    memcpy(new_Offsets, (this->blockOffsets), buff_size);
+    this->blockOffsets = new_Offsets;
 }
 
 
@@ -515,7 +495,6 @@ MFEMBraidApp::~MFEMBraidApp()
 {
     if (own_data)
     {
-        free( (int *)(X0->blockOffsets) );
         delete X0;
         for (int i = 0; i < mesh.Size(); i++)
         {
