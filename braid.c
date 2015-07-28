@@ -529,7 +529,7 @@ braid_PrintStats(braid_Core  core)
 
       _braid_printf("  use fmg?             = %d\n", fmg);
       if ( fmg ) {
-         _braid_printf("  V-cycles / FMG iter  = %d\n", nfmg_Vcyc);
+         _braid_printf("  V-cycles / FMG level = %d\n", nfmg_Vcyc);
          if ( nfmg != -1 ) {
             _braid_printf("  number fmg cycles    = %d\n", nfmg);                     
          }
