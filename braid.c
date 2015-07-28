@@ -59,18 +59,19 @@ braid_Init(MPI_Comm               comm_world,
    _braid_Core           *core;
 
    /* Braid default values */
-   braid_Int              cfdefault = 2;         /* Default coarsening factor */
-   braid_Int              nrdefault = 1;         /* Default number of FC sweeps on each level */
-   braid_Int              fmg = 0;               /* Default fmg (0 is off) */
-   braid_Int              nfmg_Vcyc = 1;         /* Default num V-cycles at each fmg level is 1 */
-   braid_Int              max_iter = 100;        /* Default max_iter */
-   braid_Int              max_levels = 30;       /* Default max_levels */
-   braid_Int              min_coarse = 2;        /* Default min_coarse */
-   braid_Int              print_level = 1;       /* Default print level */
-   braid_Int              access_level = 1;      /* Default access level */
-   braid_Int              tnorm = 2;             /* Default temporal norm */
-   braid_Real             tol = 1.0e-09;         /* Default absolute tolerance */
-   braid_Real             rtol = 1;              /* Use relative tolerance */
+   braid_Int              cfdefault    = 2;         /* Default coarsening factor */
+   braid_Int              nrdefault    = 1;         /* Default number of FC sweeps on each level */
+   braid_Int              fmg          = 0;         /* Default fmg (0 is off) */
+   braid_Int              nfmg         = -1;        /* Default fmg cycles is -1, indicating all fmg-cycles (if fmg=1) */
+   braid_Int              nfmg_Vcyc    = 1;         /* Default num V-cycles at each fmg level is 1 */
+   braid_Int              max_iter     = 100;       /* Default max_iter */
+   braid_Int              max_levels   = 30;        /* Default max_levels */
+   braid_Int              min_coarse   = 2;         /* Default min_coarse */
+   braid_Int              print_level  = 1;         /* Default print level */
+   braid_Int              access_level = 1;         /* Default access level */
+   braid_Int              tnorm        = 2;         /* Default temporal norm */
+   braid_Real             tol          = 1.0e-09;   /* Default absolute tolerance */
+   braid_Real             rtol         = 1;         /* Use relative tolerance */
 
    core = _braid_CTAlloc(_braid_Core, 1);
 
@@ -113,6 +114,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, max_iter)   = max_iter;
    _braid_CoreElt(core, niter)      = 0;
    _braid_CoreElt(core, fmg)        = fmg;
+   _braid_CoreElt(core, nfmg)       = nfmg;
    _braid_CoreElt(core, nfmg_Vcyc)  = nfmg_Vcyc;
 
    _braid_CoreElt(core, astatus)    = _braid_CTAlloc(_braid_AccessStatus, 1);
@@ -156,6 +158,7 @@ braid_Drive(braid_Core  core)
    braid_Real     tol          = _braid_CoreElt(core, tol);
    braid_Int      rtol         = _braid_CoreElt(core, rtol);
    braid_Int      fmg          = _braid_CoreElt(core, fmg);
+   braid_Int      nfmg         = _braid_CoreElt(core, nfmg);
    braid_Int      max_levels   = _braid_CoreElt(core, max_levels);
    braid_Int      max_iter     = _braid_CoreElt(core, max_iter);
    braid_Int      print_level  = _braid_CoreElt(core, print_level);
@@ -299,7 +302,7 @@ braid_Drive(braid_Core  core)
             }
             else
             {  
-               // Do nfmg_Vcyc number of V-cycles at each level in FMG
+               /* Do nfmg_Vcyc number of V-cycles at each level in FMG */
                fmg_Vcyc += 1;
                if ( fmg_Vcyc == nfmg_Vcyc )
                {
@@ -332,23 +335,23 @@ braid_Drive(braid_Core  core)
                {
                   if (iter == 0)
                   {
-                     _braid_printf("  Braid: || r_%d || = %1.6e,  wall time = %1.2e\n", 
-                        iter,  braid_rnorm, (MPI_Wtime() - localtime));
                      if (globres != NULL)
                      {
-                        _braid_printf("  Braid: || r_%d || = %1.6e,  GLOBAL\n\n", iter, global_rnorm);
-                     } 
+                        _braid_printf("  Braid: Global || r_%d || = %1.6e\n", iter, global_rnorm);
+                     }
+                     _braid_printf("  Braid: || r_%d || = %1.6e,  wall time = %1.2e\n", 
+                        iter,  braid_rnorm, (MPI_Wtime() - localtime));
                   }
                   else
                   {
-                     _braid_printf("  Braid: || r_%d || = %1.6e,  conv. factor = %1.2e,  wall time = %1.2e\n",  
-                        iter, braid_rnorm, braid_rnorm/rnorms[ _braid_CoreElt(core, rnorms_len)-2 ], 
-                        (MPI_Wtime() - localtime));
                      if (globres != NULL)
                      {
-                        _braid_printf("  Braid: || r_%d || = %1.6e,  conv. factor = %1.2e,  GLOBAL\n\n",
+                        _braid_printf("  Braid: Global || r_%d || = %1.6e,  conv. factor = %1.2e \n",
                            iter, global_rnorm, global_rnorm/old_globalrnorm);
                      }
+                     _braid_printf("  Braid: || r_%d || = %1.6e,  conv. factor = %1.2e, wall time = %1.2e\n",  
+                        iter, braid_rnorm, braid_rnorm/rnorms[ _braid_CoreElt(core, rnorms_len)-2 ], 
+                        (MPI_Wtime() - localtime));
                   }
                }
                
@@ -372,9 +375,17 @@ braid_Drive(braid_Core  core)
                iter++;
               _braid_CoreElt(core, niter) = iter;
                
+               /* Check if done doing fmg, if not reset fmglevel. */
                if (fmg)
                {
-                  fmglevel = nlevels-1;
+                  if ( (nfmg-iter) == 0 )
+                  {
+                     fmg = 0;
+                     fmglevel = 0;
+                  }
+                  else {
+                     fmglevel = nlevels-1;                     
+                  }
                }
             }
 
@@ -388,7 +399,7 @@ braid_Drive(braid_Core  core)
    {
       _braid_GetFullResidual(core, level, &global_rnorm);
       /* RDF - Why are these next two lines needed? 
-       * JBS - Ben S wanted a final rnorm, we should move this final residual computation to FAccess to save work*/
+       * JBS - Ben S wanted a final rnorm, we should move this final residual computation to FAccess to save work */
       _braid_FRestrict(core, level);
    }
 
@@ -479,6 +490,7 @@ braid_PrintStats(braid_Core  core)
    braid_Int     nlevels       = _braid_CoreElt(core, nlevels);
    braid_Int     tnorm         = _braid_CoreElt(core, tnorm); 
    braid_Int     fmg           = _braid_CoreElt(core, fmg); 
+   braid_Int     nfmg          = _braid_CoreElt(core, nfmg); 
    braid_Int     nfmg_Vcyc     = _braid_CoreElt(core, nfmg_Vcyc); 
    braid_Int     access_level  = _braid_CoreElt(core, access_level); 
    braid_Int     print_level   = _braid_CoreElt(core, print_level); 
@@ -515,7 +527,16 @@ braid_PrintStats(braid_Core  core)
       }
       _braid_printf("\n");
 
-      _braid_printf("  use fmg?, nfmg_Vcyc  = %d, %d\n", fmg, nfmg_Vcyc);
+      _braid_printf("  use fmg?             = %d\n", fmg);
+      if ( fmg ) {
+         _braid_printf("  V-cycles / FMG iter  = %d\n", nfmg_Vcyc);
+         if ( nfmg != -1 ) {
+            _braid_printf("  number fmg cycles    = %d\n", nfmg);                     
+         }
+         else {
+            _braid_printf("  fmg-cycles for all iteratons\n");         
+         }
+      }
       _braid_printf("  access_level         = %d\n", access_level);
       _braid_printf("  print_level          = %d\n\n", print_level);
       _braid_printf("  max number of levels = %d\n", max_levels);
@@ -768,6 +789,30 @@ braid_SetFMG(braid_Core  core)
  *--------------------------------------------------------------------------*/
 
 braid_Int
+braid_SetNFMGVcyc(braid_Core  core,
+                  braid_Int   nfmg_Vcyc)
+{
+   _braid_CoreElt(core, nfmg_Vcyc) = nfmg_Vcyc;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetNFMG(braid_Core  core,
+              braid_Int   k)
+{
+   _braid_CoreElt(core, nfmg) = k;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
 braid_SetStorage(braid_Core  core,
                  braid_Int   storage)
 {
@@ -784,18 +829,6 @@ braid_SetTemporalNorm(braid_Core  core,
                       braid_Int   tnorm)
 {
    _braid_CoreElt(core, tnorm) = tnorm;
-
-   return _braid_error_flag;
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-braid_Int
-braid_SetNFMGVcyc(braid_Core  core,
-                  braid_Int   nfmg_Vcyc)
-{
-   _braid_CoreElt(core, nfmg_Vcyc) = nfmg_Vcyc;
 
    return _braid_error_flag;
 }
@@ -906,9 +939,9 @@ braid_GetSpatialAccuracy( braid_StepStatus  status,
    braid_StepStatusGetOldFineTolx(status, &old_fine_tolx);
 
    /* Get the first and then the current residual norms */
-   braid_StepStatusGetRNorms(status, &nrequest, &rnorm0);
+   braid_StepStatusGetRnorms(status, &nrequest, &rnorm0);
    nrequest = -1;
-   braid_StepStatusGetRNorms(status, &nrequest, &rnorm);
+   braid_StepStatusGetRnorms(status, &nrequest, &rnorm);
 
    if( (level > 0) || (nrequest == 0) )
    {

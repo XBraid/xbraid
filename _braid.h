@@ -139,6 +139,7 @@ typedef struct _braid_Core_struct
    braid_Int              max_iter;     /**< maximum number of multigrid in time iterations */
    braid_Int              niter;        /**< number of iterations */
    braid_Int              fmg;          /**< use FMG cycle */
+   braid_Int              nfmg;         /**< number of fmg cycles to do initially before switching to V-cycles */
    braid_Int              nfmg_Vcyc;    /**< number of V-cycle calls at each level in FMG */
    braid_Int              tnorm;        /**< choice of temporal norm */
    braid_Real            *tnorm_a;      /**< local array of residual norms on a proc's interval, used for inf-norm */

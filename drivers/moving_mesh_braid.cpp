@@ -228,9 +228,8 @@ int main(int argc, char *argv[])
 		opts.SetBraidCoreOptions(core);
 		core.Drive();
 
-                // MPI_Comm_free( &comm );
-                MPI_Comm_free( &comm_x );
-                MPI_Comm_free( &comm_t );
+		MPI_Comm_free( &comm_x );
+		MPI_Comm_free( &comm_t );
 	}
 
 	MPI_Finalize();
@@ -456,7 +455,7 @@ int MovingApp::Step(braid_Vector u_, braid_Vector ustop_, braid_Vector fstop_,
 
 
 /* Save grid and vector at time t=0 to .csv file w.r.t. braid level and iteration. */
-#if 0
+#if 1
 if (t == 0) {
 	ofstream output_file;
 	ostringstream grid_stream;
@@ -495,7 +494,7 @@ if (t == 0) {
 
 
 /* Save grid and vector to .csv file w.r.t. braid level and iteration. */
-#if 0
+#if 1
 ofstream output_file;
 ostringstream grid_stream;
 grid_stream << "./mesh_data/Grid_lev" << braid_level << "_iter" << braid_iter << ".csv";
@@ -595,15 +594,6 @@ int MovingApp::Init(double        t,
 	if (t > 0) {
 		u->GetBlock(1) = 0.;
 	}
-
-
-// Load C-point vectors from file
-// Vector &values = u->GetBlock(1);
-// Vector &mesh = u->GetBlock(0);
-// LoadVector(values, t, 1);
-// LoadVector(mesh, t, 0);
-
-
 
 	*u_ptr = (braid_Vector) u;
 	u = NULL;
@@ -905,8 +895,6 @@ void DiffusionOperator::UpdateMeshSolver()
 	// Construct Hypre operators to solve moving mesh equation.
 	M_amg_ = new HypreBoomerAMG(*Amesh_);
 	M_amg_->SetPrintLevel(-1);
-        HYPRE_BoomerAMGSetCycleRelaxType((HYPRE_Solver) *M_amg_, 3, 3);
-        HYPRE_BoomerAMGSetCycleNumSweeps((HYPRE_Solver) *M_amg_, 1, 3);
 	M_pcg_ = new HyprePCG(*Amesh_);
 	M_pcg_->SetTol(1e-14);
 	M_pcg_->SetMaxIter(2000);
@@ -1104,7 +1092,10 @@ void Forcing(const Vector &x, double t, Vector &f)
 	// Gaussian sources moving across spatial domain over time.
 	if (forcing_eqn == 1) {
 		for (int i=0; i<dim; i++) {
-			f(i) = GuassianBlip(x(i), x_cent=(t+0.25)/2, x_width=0.05, x_scale=50.0);
+			f(i) = 0.0;
+			if (t <= 1) {
+				f(i) += GuassianBlip(x(i), x_cent=(t+0.25)/1.4, x_width=0.05, x_scale=50.0);				
+			}
 		}
 	}
 	// Five time-dependent Gaussian sources.

@@ -290,6 +290,7 @@ struct BraidOptions : public OptionsParser
     int  cfactor0;
     int  max_iter;
     int  nfmg_Vcyc;
+    int  nfmg;
     bool    spatial_coarsen;
     int  access_level;
     int  print_level;
@@ -1030,6 +1031,7 @@ BraidOptions::BraidOptions(int argc, char *argv[])
     cfactor         = 2;
     cfactor0        = -1;
     max_iter        = 100;
+    nfmg            = -1;
     nfmg_Vcyc       = 0;
     spatial_coarsen = false;
     access_level    = 1;
@@ -1063,6 +1065,8 @@ BraidOptions::BraidOptions(int argc, char *argv[])
                  "Maximum number of iterations.");
     AddOption(&nfmg_Vcyc, "-fmg", "--fmg-v-cycles",
                  "Number of V-cycles to use at each FMG level (0:off).");
+    AddOption(&nfmg, "-nfmg", "--num-fmg-cycles",
+                 "Number of FMG-cycles to do before switching to V-cycles (-1:all FMG).");
     AddOption(&spatial_coarsen, "-sc", "--spatial-coarsen", "-no-sc",
                  "--no-spatial-coarsen", "Enable/disable spatial coarsening.");
     AddOption(&res, "-res", "--residual", 
@@ -1124,6 +1128,7 @@ void BraidOptions::SetBraidCoreOptions(BraidCore &core)
     if (nfmg_Vcyc > 0)
     {
         core.SetFMG();
+        core.SetNFMG(nfmg);
         core.SetNFMGVcyc(nfmg_Vcyc);
     }
     if (res == 1)

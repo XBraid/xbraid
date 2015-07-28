@@ -409,6 +409,23 @@ braid_SetFMG(braid_Core  core               /**< braid_Core (_braid_Core) struct
              );
 
 /**
+ * Once called, XBraid will use FMG (i.e., F-cycles.
+ **/
+braid_Int
+braid_SetNFMG(braid_Core  core,              /**< braid_Core (_braid_Core) struct*/
+              braid_Int   k                  /**< number of FMG cycles to do initially */
+             );                                /* before switching to V-cycles. */
+
+/**
+ * Set number of V-cycles to use at each FMG level (standard is 1)
+ **/
+braid_Int
+braid_SetNFMGVcyc(braid_Core  core,         /**< braid_Core (_braid_Core) struct*/
+                  braid_Int   nfmg_Vcyc     /**< number of V-cycles to do each FMG level */
+                  );
+
+
+/**
  * Sets the storage properties of the code.
  **/
 braid_Int
@@ -439,16 +456,6 @@ braid_Int
 braid_SetTemporalNorm(braid_Core  core,   /**< braid_Core (_braid_Core) struct*/
                       braid_Int   tnorm   /**< choice of temporal norm*/
                       );
-
-
-/**
- * Set number of V-cycles to use at each FMG level (standard is 1)
- **/
-braid_Int
-braid_SetNFMGVcyc(braid_Core  core,         /**< braid_Core (_braid_Core) struct*/
-                  braid_Int   nfmg_Vcyc     /**< number of V-cycles to do each FMG level */
-                  );
-
 
 /**
  * Set user-defined residual routine.
