@@ -413,8 +413,8 @@ braid_SetFMG(braid_Core  core               /**< braid_Core (_braid_Core) struct
  **/
 braid_Int
 braid_SetNFMG(braid_Core  core,              /**< braid_Core (_braid_Core) struct*/
-              braid_Int   k                  /**< number of FMG cycles to do initially */
-             );                                /* before switching to V-cycles. */
+              braid_Int   k                  /**< number of initial F-cycles to do before switching to V-cycles */
+             );
 
 /**
  * Set number of V-cycles to use at each FMG level (standard is 1)

@@ -215,6 +215,10 @@ braid_Drive(braid_Core  core)
    /* Set cycling variables */
    fmglevel = 0;
    fmg_Vcyc = 0;
+   if (nfmg == 0)
+   {
+      fmg = 0;
+   }
    if (fmg)
    {
       fmglevel = nlevels-1;
@@ -231,7 +235,6 @@ braid_Drive(braid_Core  core)
    while (!done)
    {
       /* Down cycle */
-
       if (down)
       {
          if (level < (nlevels-1))
@@ -939,9 +942,9 @@ braid_GetSpatialAccuracy( braid_StepStatus  status,
    braid_StepStatusGetOldFineTolx(status, &old_fine_tolx);
 
    /* Get the first and then the current residual norms */
-   braid_StepStatusGetRnorms(status, &nrequest, &rnorm0);
+   braid_StepStatusGetRNorms(status, &nrequest, &rnorm0);
    nrequest = -1;
-   braid_StepStatusGetRnorms(status, &nrequest, &rnorm);
+   braid_StepStatusGetRNorms(status, &nrequest, &rnorm);
 
    if( (level > 0) || (nrequest == 0) )
    {
