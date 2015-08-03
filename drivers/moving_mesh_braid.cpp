@@ -1,57 +1,29 @@
+#include <fstream>
+#include <iostream>
 #include "mfem.hpp"
 #include "braid_mfem_block.hpp"
 //Extra Hypre Functions
 #include "hypre_extra.hpp"
-
-#include <fstream>
-#include <iostream>
 
 using namespace hypre;
 using namespace std;
 using namespace mfem;
 
 
+/* -------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------------- */
 
-/* Load vector from file. */
-void LoadVector(Vector &data, double t, int type)
-{
-	ostringstream filestream;
-	if (type == 1) {
-		filestream << "./sol/Vector_" << t << ".txt";
-	}
-	else {
-		filestream << "./sol/Mesh_" << t << ".txt";
-	}
 
-	string filename = filestream.str();
-    ifstream input_file;
-    input_file.open(filename.c_str());
-
-    int i=0;
-    if (input_file) {
-    	while(!input_file.eof()) {
-    		input_file >> data(i);
-    		i++;
-    	}
-	}
-
-	if (type == 1) {
-		cout << "Vector at t = " << t << endl;
-	}
-	else {
-		cout << "Mesh at t = " << t << endl;
-	}
-	data.Print();
-}
-
+// Global variables. 
+int forcing_eqn;
+int init_cond;
+int export_data; 
 
 /* Initial conditions of vector. */
 double InitialConditions(Vector &x0);
 
-
 /* Gaussian bump in (x,t) with given center and width in each dimensions. */
 double GuassianBlip(const double &x, const double &c, const double &w, const double &scale);
-
 
 /* Forcing function f(x,t). */
 void Forcing(const Vector &x, double t, Vector &f);
@@ -99,8 +71,6 @@ public:
 
 	DiffusionOperator(ParMesh *pmesh, ParFiniteElementSpace *fespace, BlockVector *&X0,
 					  const double &dzeta, const double &alpha = 1.0, const double &tau = 1.0);
-	void GetResidual(Vector &u_stop, Vector &u_start, Vector &temp, const double &dt,
-					 const double &t, const int &update_ops);
 	void UpdateMesh(ParMesh *pmesh, Vector &u_curr, int &update_ops, int &move_mesh, const double &dt);
 	virtual void Mult(const Vector &x, Vector &y) const;
 	virtual void ImplicitSolve(const double dt, const Vector &x, Vector &k);
@@ -111,26 +81,20 @@ public:
 
 struct MovingOptions: public BraidOptions
 {
-
    int    num_intervals,
    		  order,
 	      ode_solver_type,
 	      x_dim,
 	      forcing_eqn,
-	      visport,
-	   	  vis_time_steps,
-	   	  vis_braid_steps;
-
-   bool	  vis_screenshots,
-		  visualization;
+	      init_cond,
+		  rand_init, 
+		  export_data;
 
    double dt, // derived from t_start, t_final, and num_time_steps
    		  dzeta,
    		  max_x,
    		  alpha, 
    		  tau;
-
-   const char *vishost;
 
    MovingOptions(int argc, char *argv[]);
 
@@ -163,10 +127,7 @@ public:
 	void InterpolateSolution(Vector &u_curr, Vector &old_node, Vector &displace);
 	virtual int Step(braid_Vector u_, braid_Vector ustop_, braid_Vector fstop_,
 					 BraidStepStatus &pstatus);
-	virtual int Residual(braid_Vector u_, braid_Vector r_, BraidStepStatus &pstatus);
 	virtual int Init(double t, braid_Vector *u_ptr);
-	virtual int Sum(double alpha, braid_Vector a_, double beta, braid_Vector b_);
-	virtual int SpatialNorm(braid_Vector u_, double *norm_ptr);
 	virtual ~MovingApp();
 
 };
@@ -174,9 +135,6 @@ public:
 
 /* -------------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------------- */
-
-// Global variable on which forcing funciton to use. 
-int forcing_eqn;
 
 
 int main(int argc, char *argv[]) 
@@ -202,9 +160,11 @@ int main(int argc, char *argv[])
 	}
 	if (myid == 0) 
 	{
-		opts.PrintOptions(cout);
+		// opts.PrintOptions(cout);
 	}
 	forcing_eqn = opts.forcing_eqn;
+	export_data = opts.export_data;
+	init_cond   = opts.init_cond;
 
 	// Block scope so that objects are destroyed before MPI_Finalize();
 	{
@@ -252,8 +212,8 @@ MovingOptions::MovingOptions(int argc, char *argv[])
 	// Set default values for mesh.
 	ser_ref_levels = 0;
 	par_ref_levels = 0;
-	forcing_eqn = 1;
-	// AddMeshOptions();
+	forcing_eqn    = 1;
+	init_cond 	   = 0;
 
 	// Set default values for diffusion problem. 
 	num_intervals	= 10;
@@ -263,15 +223,12 @@ MovingOptions::MovingOptions(int argc, char *argv[])
 	x_dim 			= 1;
 	max_x			= 1.0;
 	tau 			= 1.0;
+	rand_init		= 0;
+	export_data 	= 0;
 
-	// Set default values for visualization.
-	vis_time_steps 	= 10;
-	vis_braid_steps = 1;
-	visualization 	= false;
-	vis_screenshots = false;
-	visport 		= 19916;
-	vishost 		= "localhost";
 
+	AddOption(&rand_init, "-rand","--rand-init-guess",
+				"Random initial guess for t>0.");
 	AddOption(&num_intervals, "-n","--nintervals",
 			  "Numer of spatial intervals.");
 	AddOption(&alpha, "-alpha", "--diffusivity",
@@ -279,32 +236,23 @@ MovingOptions::MovingOptions(int argc, char *argv[])
 	AddOption(&tau, "-tau", "--tau",
 	          "Moving mesh speed parameter.");
 	AddOption(&forcing_eqn, "-forcing", "--forcing-equation",
-			  "Choice of forcing funciton; 0 = none, 1 = moving bump, 2 = five fixed bumps.");
-	AddOption(&order, "-o", "--order",
+			  "Choice of forcing function; 0 = none, 1 = moving bump, 2 = five fixed bumps.");
+	AddOption(&init_cond, "-init", "--initial-condition",
+			  "Choice of initial condition; 0 = none, 1 = sin hump.");
+  	AddOption(&order, "-o", "--order",
 	          "Order (degree) of the finite elements.");
+	AddOption(&export_data, "-export","--export-data",
+				"Save .csv files of iteration values (only w/ 1 node).");
 	AddOption(&ode_solver_type, "-s", "--ode-solver",
 	          "ODE solver: 1 - Backward Euler, 2 - SDIRK2, 3 - SDIRK3,\n\t"
 	          "\t   11 - Forward Euler, 12 - RK2, 13 - RK3 SSP, 14 - RK4.");
-	AddOption(&visualization, "-vis", "--visualization", "-no-vis", "--no-visualization",
-	          "Enable or disable GLVis visualization.");
-	AddOption(&vishost, "-vh", "--visualization-host",
-	         "Set the GLVis host.");
-	AddOption(&visport, "-vp", "--visualization-port",
-	         "Set the GLVis port.");
-	AddOption(&vis_time_steps, "-vts", "--visualize-time-steps",
-	         "Visualize every n-th time step (0:final only).");
-	AddOption(&vis_braid_steps, "-vbs", "--visualize-braid-steps",
-	         "Visualize every n-th Braid step (0:final only).");
-	AddOption(&vis_screenshots, "-vss", "--vis-screenshots",
-	         "-no-vss", "--vis-no-screenshots", "Enable/disable the saving of"
-	         " screenshots of the visualized data.");
 	Parse();
 
 	dt    = (t_final - t_start) / num_time_steps;
 	dzeta = max_x / num_intervals;
 
 	// scale stopping tolerance by grid element size.
-	tol *= (num_intervals*num_time_steps);
+	tol *= sqrt(num_intervals*num_time_steps);
 }
 
 
@@ -382,7 +330,7 @@ void MovingApp::InterpolateSolution(Vector &u_curr, Vector &old_nodes, Vector &d
 
 	// Find j s.t. new_node(i) in [old_node(j),old_node(j+1)]
 	for (int i=1; i<(size-1); i++) {
-		if (abs(displace(i)) < 1e-6) {
+		if (abs(displace(i)) < 1e-12) {
 			temp[i-1] = u_curr(i);
 		}
 		else {
@@ -447,41 +395,39 @@ int MovingApp::Step(braid_Vector u_, braid_Vector ustop_, braid_Vector fstop_,
 	Vector op_mesh_displace;
 	mesh_temp->GetNodes(op_mesh_displace);
 	op_mesh_displace -= u_grid;
-	if ( abs(op_mesh_displace.Max()) > 1e-6 || 
-		 abs(op_mesh_displace.Min()) > 1e-6 ) {	
+	if ( abs(op_mesh_displace.Max()) > 1e-12 || 
+		 abs(op_mesh_displace.Min()) > 1e-12 ) {	
 		update_ops = 1;
 		mesh_temp->SetNodes(u_grid);
 	}
 
+	/* Save grid and vector at time t=0 to .csv file w.r.t. braid level and iteration. */
+	if (export_data) {
+		if (t == 0) {
+			ofstream output_file;
+			ostringstream grid_stream;
+			grid_stream << "./mesh_data/Grid_lev" << braid_level << "_iter" << braid_iter << ".csv";
+			string grid_name = grid_stream.str();
+			output_file.open(grid_name.c_str(), ios::app);
+			output_file << setprecision(6) << t << ",";
+			for (int i=0; i<u_grid.Size(); i++) {
+				output_file << setprecision(14) << u_grid(i) << ",";
+			}
+			output_file << "\n";
+			output_file.close();
 
-/* Save grid and vector at time t=0 to .csv file w.r.t. braid level and iteration. */
-#if 1
-if (t == 0) {
-	ofstream output_file;
-	ostringstream grid_stream;
-	grid_stream << "./mesh_data/Grid_lev" << braid_level << "_iter" << braid_iter << ".csv";
-	string grid_name = grid_stream.str();
-	output_file.open(grid_name.c_str(), ios::app);
-	output_file << setprecision(6) << t << ",";
-	for (int i=0; i<u_grid.Size(); i++) {
-		output_file << setprecision(14) << u_grid(i) << ",";
+			ostringstream vec_stream;
+			vec_stream << "./mesh_data/Vec_lev" << braid_level << "_iter" << braid_iter << ".csv";
+			string vec_name = vec_stream.str();
+			output_file.open(vec_name.c_str(), ios::app);
+			output_file << setprecision(6) << t << ",";
+			for (int i=0; i<u_value.Size(); i++) {
+				output_file << setprecision(14) << u_value(i) << ",";
+			}
+			output_file << "\n";
+			output_file.close();
+		}
 	}
-	output_file << "\n";
-	output_file.close();
-
-	ostringstream vec_stream;
-	vec_stream << "./mesh_data/Vec_lev" << braid_level << "_iter" << braid_iter << ".csv";
-	string vec_name = vec_stream.str();
-	output_file.open(vec_name.c_str(), ios::app);
-	output_file << setprecision(6) << t << ",";
-	for (int i=0; i<u_value.Size(); i++) {
-		output_file << setprecision(14) << u_value(i) << ",";
-	}
-	output_file << "\n";
-	output_file.close();
-}
-#endif
-
 
 	// Move and upate mesh.
 	diff_op->UpdateMesh(mesh_temp, u_value, update_ops, move_mesh, dt);
@@ -492,34 +438,31 @@ if (t == 0) {
 	// Take time step.
 	solver[spatial_level]->Step(u_value, t, dt);
 
+	/* Save grid and vector to .csv file w.r.t. braid level and iteration. */
+	if (export_data) {
+		ofstream output_file;
+		ostringstream grid_stream;
+		grid_stream << "./mesh_data/Grid_lev" << braid_level << "_iter" << braid_iter << ".csv";
+		string grid_name = grid_stream.str();
+		output_file.open(grid_name.c_str(), ios::app);
+		output_file << setprecision(6) << t << ",";
+		for (int i=0; i<u_grid.Size(); i++) {
+			output_file << setprecision(14) << u_grid(i) << ",";
+		}
+		output_file << "\n";
+		output_file.close();
 
-/* Save grid and vector to .csv file w.r.t. braid level and iteration. */
-#if 1
-ofstream output_file;
-ostringstream grid_stream;
-grid_stream << "./mesh_data/Grid_lev" << braid_level << "_iter" << braid_iter << ".csv";
-string grid_name = grid_stream.str();
-output_file.open(grid_name.c_str(), ios::app);
-output_file << setprecision(6) << t << ",";
-for (int i=0; i<u_grid.Size(); i++) {
-	output_file << setprecision(14) << u_grid(i) << ",";
-}
-output_file << "\n";
-output_file.close();
-
-ostringstream vec_stream;
-vec_stream << "./mesh_data/Vec_lev" << braid_level << "_iter" << braid_iter << ".csv";
-string vec_name = vec_stream.str();
-output_file.open(vec_name.c_str(), ios::app);
-output_file << setprecision(6) << t << ",";
-for (int i=0; i<u_value.Size(); i++) {
-	output_file << setprecision(14) << u_value(i) << ",";
-}
-output_file << "\n";
-output_file.close();
-#endif
-
-
+		ostringstream vec_stream;
+		vec_stream << "./mesh_data/Vec_lev" << braid_level << "_iter" << braid_iter << ".csv";
+		string vec_name = vec_stream.str();
+		output_file.open(vec_name.c_str(), ios::app);
+		output_file << setprecision(6) << t << ",";
+		for (int i=0; i<u_value.Size(); i++) {
+			output_file << setprecision(14) << u_value(i) << ",";
+		}
+		output_file << "\n";
+		output_file.close();
+	}
 
 	// no refinement
 	pstatus.SetRFactor(1);
@@ -527,57 +470,6 @@ output_file.close();
 	mesh_temp    = NULL;
 	diff_op 	 = NULL;
 	u 			 = NULL;
-	return 0;
-}
-
-/* Don't think this is correct. */
-int MovingApp::Residual(braid_Vector u_, braid_Vector r_, BraidStepStatus &pstatus)
-{
-	double tstart,
-		   tstop,
-		   dt;
-	pstatus.GetTstartTstop(&tstart, &tstop);
-	dt = tstop - tstart;
-
-	BraidVector *u_stop  = (BraidVector*) u_;
-	BraidVector *u_start = (BraidVector*) r_;
-	Vector &grid_start   = u_start->GetBlock(0);
-	Vector &grid_stop    = u_stop->GetBlock(0);
-	Vector &val_start    = u_start->GetBlock(1);
-	Vector &val_stop     = u_stop->GetBlock(1);
-	
-	Vector temp = grid_stop;
-		   temp -= grid_start;
-
-	// Interpolate u_start to grid associated with u_stop
-	if ( abs(temp.Max()) > 1e-6 || 
-		 abs(temp.Min()) > 1e-6 ) {	   
-		InterpolateSolution(val_start, grid_start, temp);
-		grid_start = grid_stop;
-	}
-
-	int spatial_level = u_stop->spatial_level;
-	DiffusionOperator *diff_op;
-	diff_op = dynamic_cast<DiffusionOperator *>(ode[spatial_level]);
-	ParMesh *mesh_temp = this->mesh[spatial_level];
-
-	// Update mesh in ParMesh to be same as u_stop
-	int update_ops = 0;
-	mesh_temp->GetNodes(temp);
-	temp -= grid_stop;
-	if ( abs(temp.Max()) > 1e-6 || 
-		 abs(temp.Min()) > 1e-6 ) {	
-		update_ops = 1;
-		mesh_temp->SetNodes(grid_stop);
-	}
-
-	// Get residual
-	diff_op->GetResidual(val_stop, val_start, temp, dt, tstop, update_ops);
-
-	mesh_temp    = NULL;
-	diff_op 	 = NULL;
-	u_stop		 = NULL;
-	u_start		 = NULL;
 	return 0;
 }
 
@@ -592,46 +484,19 @@ int MovingApp::Init(double        t,
 
 	// Set initial values equal to zero except on first block.
 	if (t > 0) {
-		u->GetBlock(1) = 0.;
+		if (opts.rand_init) {
+			Vector &temp = u->GetBlock(1);
+			temp.Randomize(t*1000.0);
+			temp(0) = 0.0;
+			temp(opts.num_intervals) = 0.0;
+		}
+		else {
+			u->GetBlock(1) = 0.;			
+		}
 	}
 
 	*u_ptr = (braid_Vector) u;
 	u = NULL;
-	return 0;
-}
-
-
-int MovingApp::SpatialNorm(braid_Vector u_,
-                           double      *norm_ptr)
-{
-	// double dot;
-	BraidVector *u = (BraidVector*) u_;
-	Vector &values = u->GetBlock(1);
-	// dot = InnerProduct(u, u);
-	// *norm_ptr = sqrt(dot);
-	*norm_ptr = values.Norml2(); // Note this may be a serial implementation?
-	return 0;
-}
-
-
-int MovingApp::Sum(double       alpha,
-                   braid_Vector a_,
-                   double       beta,
-                   braid_Vector b_)
-{
-	BraidVector *a  = (BraidVector*) a_;
-	BraidVector *b  = (BraidVector*) b_;
-	Vector &a_grid  = a->GetBlock(0);
-	Vector &b_grid  = b->GetBlock(0);
-	Vector &a_value = a->GetBlock(1);
-	Vector &b_value = b->GetBlock(1);
-
-	// Add vectors. 
-	add(alpha, a_value, beta, b_value, b_value);
-	add(alpha, a_grid, beta, b_grid, b_grid);
-
-	a = NULL;
-	b = NULL;
 	return 0;
 }
 
@@ -780,40 +645,6 @@ void DiffusionOperator::ImplicitSolve(const double dt, const Vector &x, Vector &
 }
 
 
-void DiffusionOperator::GetResidual(Vector &u_stop, Vector &u_start, Vector &temp,
-									const double &dt, const double &t, const int &update_ops)
-{
-
-	// Update operators to correct mesh if needed, update RHS
-	if (update_ops == 1) {	
-		delete A_;
-		delete M_;
-		delete B_;
-
-		a_form_->BilinearForm::operator=(0.0);  // not directly inherited
-		m_form_->BilinearForm::operator=(0.0);  // from BilinearForm
-		a_form_->Assemble(0);
-		m_form_->Assemble(0);
-		a_form_->EliminateEssentialBC(ess_bdr_);
-		m_form_->EliminateEssentialBC(ess_bdr_);
-		a_form_->Finalize(0);
-		m_form_->Finalize(0);
-		A_ = a_form_->ParallelAssemble();
-		M_ = m_form_->ParallelAssemble();
-		B_ = new HypreParMatrix(hypre_ParCSRMatrixAdd(*M_, *A_));
-		UpdateSpatialSolvers(dt);
-	}
-
-	Assemble_b_Vector(t);
-
-	// Compute residual r = b_(i+1) - (M+dtA)u_(i+1) + Mu_i
-	B_->Mult(u_stop, temp);
-	M_->Mult(u_start, u_start);
-	u_start -= temp; 
-	u_start += *b_;
-}
-
-
 void DiffusionOperator::UpdateSpatialSolvers(const double & dt)
 {
 	// If new dt was provided, update class dt. Default dt = -1,
@@ -834,7 +665,7 @@ void DiffusionOperator::UpdateSpatialSolvers(const double & dt)
 	B_pcg_ = new HyprePCG(*B_);
 	B_pcg_->SetTol(1e-14);
 	B_pcg_->SetMaxIter(2000);
-	B_pcg_->SetPrintLevel(0);
+	B_pcg_->SetPrintLevel(-1);
 	B_pcg_->SetPreconditioner(*B_amg_);
 	B_pcg_->SetZeroInintialIterate();
 }
@@ -913,14 +744,14 @@ void DiffusionOperator::InterpolateSolution(Vector &u_curr)
 
 	// Find j s.t. new_node(i) in [old_node(j),old_node(j+1)]
 	for (int i=1; i<(numNodes_-1); i++) {
-		if (abs(mesh_displace_(i)) < 1e-6) {
+		if (abs(mesh_displace_(i)) < 1e-12) {
 			temp[i-1] = u_curr(i);
 		}
 		else {
 			new_node = mesh_nodes_(i) + mesh_displace_(i);
 			if (mesh_displace_(i) < 0) {
 				upper = i;
-				while (mesh_nodes_(upper) > new_node) {
+				while ( (mesh_nodes_(upper) > new_node) && (upper >= 0) ) {
 					upper -= 1;
 				}
 				lower  = upper; 
@@ -928,7 +759,7 @@ void DiffusionOperator::InterpolateSolution(Vector &u_curr)
 			}
 			else {
 				lower = i;
-				while (mesh_nodes_(lower) < new_node) {
+				while ( (mesh_nodes_(lower) < new_node) && (lower <= numNodes_-1) ) {
 					lower += 1;
 				}
 				upper  = lower;
@@ -967,8 +798,8 @@ void DiffusionOperator::UpdateMesh(ParMesh *pmesh, Vector &u_curr, int &update_o
 		M_pcg_->Mult(mesh_nodes_,mesh_displace_);
 		mesh_displace_ -= mesh_nodes_; 
 
-		if ( abs(mesh_displace_.Max()) > 1e-6 || 
-			 abs(mesh_displace_.Min()) > 1e-6 ) {
+		if ( abs(mesh_displace_.Max()) > 1e-12 || 
+			 abs(mesh_displace_.Min()) > 1e-12 ) {
 			update_ops = 1;
 			pmesh->MoveNodes(mesh_displace_);
 			InterpolateSolution(u_curr);
@@ -1043,15 +874,18 @@ double InitialConditions(Vector &x0)
 	double scale = 1.0;
 	switch (dim) {
 		case 1:
-			// if ( x0(0) == 0 || x0(0) == 1) {
-			// 	return 0.;
-			// }
-			// else {
-			// 	return scale*sin(3.14159265359*x0(0));				
-			// }
-			return 0.;
+			if (init_cond == 1) {
+				if ( x0(0) == 0 || x0(0) == 1) {
+					return 0.;
+				}
+				else {
+					return scale*sin(3.14159265359*x0(0));				
+				}
+			}
+			else {
+				return 0.;				
+			}
 		case 2:
-			// return sin(x(0)) + sin(x(1));
 			return 0.;
 		default:
 			return 0.;
@@ -1083,57 +917,36 @@ void Forcing(const Vector &x, double t, Vector &f)
 		   x_cent  = (t+0.25)/2,
 		   x_width = 0.05,
 		   x_scale = 1.0;
-
 	int dim = x.Size();
 
 	for (int i=0; i<dim; i++) {
 		f(i) = 0.0;
 
-	// Gaussian sources moving across spatial domain over time.
-	if (forcing_eqn == 1) {
-		for (int i=0; i<dim; i++) {
-			f(i) = 0.0;
-			if (t <= 1) {
-				f(i) += GuassianBlip(x(i), x_cent=(t+0.25)/1.4, x_width=0.05, x_scale=50.0);				
+		// Gaussian sources moving across spatial domain over time.
+		if (forcing_eqn == 1) {
+			for (int i=0; i<dim; i++) {
+				f(i) = 0.0;
+				if (t <= 1) {
+					f(i) += GuassianBlip(x(i), x_cent=(t+0.25)/1.4, x_width=0.05, x_scale=50.0);				
+				}
+			}
+		}
+		// Five time-dependent Gaussian sources.
+		else if (forcing_eqn == 2) {
+			for (int i=0; i<dim; i++) {
+				f(i) = 0.0;
+				f(i) += GuassianBlip(t,    t_cent=0.1,  t_width=0.05, t_scale=50)*
+						GuassianBlip(x(i), x_cent=0.9,  x_width=0.05, x_scale=30);
+				f(i) += GuassianBlip(t,    t_cent=0.25, t_width=0.2,  t_scale=30)*
+						GuassianBlip(x(i), x_cent=0.3,  x_width=0.15, x_scale=30);
+				f(i) += GuassianBlip(t,    t_cent=0.6,  t_width=0.1,  t_scale=10)*
+						GuassianBlip(x(i), x_cent=0.5,  x_width=0.3,  x_scale=20);
+				f(i) += GuassianBlip(t,    t_cent=0.8,  t_width=0.3,  t_scale=40)*
+						GuassianBlip(x(i), x_cent=0.8,  x_width=0.1,  x_scale=30);
+				f(i) += GuassianBlip(t,    t_cent=0.9, t_width=0.1,  t_scale=30)*
+						GuassianBlip(x(i), x_cent=0.3,  x_width=0.2,  x_scale=30);
 			}
 		}
 	}
-	// Five time-dependent Gaussian sources.
-	else if (forcing_eqn == 2) {
-		for (int i=0; i<dim; i++) {
-			f(i) = 0.0;
-			f(i) += GuassianBlip(t,    t_cent=0.1,  t_width=0.05, t_scale=50)*
-					GuassianBlip(x(i), x_cent=0.9,  x_width=0.05, x_scale=30);
-			f(i) += GuassianBlip(t,    t_cent=0.25, t_width=0.2,  t_scale=30)*
-					GuassianBlip(x(i), x_cent=0.3,  x_width=0.15, x_scale=30);
-			f(i) += GuassianBlip(t,    t_cent=0.6,  t_width=0.1,  t_scale=10)*
-					GuassianBlip(x(i), x_cent=0.5,  x_width=0.3,  x_scale=20);
-			f(i) += GuassianBlip(t,    t_cent=0.8,  t_width=0.3,  t_scale=40)*
-					GuassianBlip(x(i), x_cent=0.8,  x_width=0.1,  x_scale=30);
-			f(i) += GuassianBlip(t,    t_cent=0.9, t_width=0.1,  t_scale=30)*
-					GuassianBlip(x(i), x_cent=0.3,  x_width=0.2,  x_scale=30);
-		}
-	}
-	else {
-		f = 0.0;
-	}
-
-	// Single Gaussian source in space time. 
-	#if 0
-		f(i) += GuassianBlip(t, t_cent, t_width)*GuassianBlip(x(i),x_cent=(t+0.25)/2,x_width=0.05,);
-	#endif			
-
-
-	}
-
-
 }
-
-
-
-/* -------------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------------- */
-
-
-
 
