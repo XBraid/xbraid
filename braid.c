@@ -366,6 +366,14 @@ braid_Drive(braid_Core  core)
                   {
                      done = 1;
                   }
+                  else if ( isnan(global_rnorm) )
+                  {
+                     if (myid == 0)
+                     {
+                        _braid_printf("  Iterations diverged.\n");
+                     }
+                     done = 1; 
+                  }
                }
                else 
                {
@@ -373,6 +381,14 @@ braid_Drive(braid_Core  core)
                   {
                      done = 1;
                   } 
+                  else if ( isnan(braid_rnorm) )
+                  {
+                     if (myid == 0)
+                     {
+                        _braid_printf("  Iterations diverged.\n");
+                     }
+                     done = 1; 
+                  }
                }
 
                iter++;

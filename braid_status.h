@@ -479,7 +479,7 @@ braid_StepStatusGetOldFineTolx(braid_StepStatus  status,             /**< struct
  **/
 braid_Int
 braid_StepStatusSetOldFineTolx(braid_StepStatus  status,             /**< structure containing current simulation info */
-                               braid_Real        old_fine_tolx       /**< input, the last used fine_tolx */
+                               braid_Real        old_fine_tolx_ptr   /**< input, the last used fine_tolx */
                                );
 
 /**

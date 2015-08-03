@@ -104,6 +104,7 @@ class MFEMBraidApp : public BraidApp
 {
 protected:
     // BraidApp defines tstart, tstop, ntime and comm_t
+    int braid_iter;
 
     // Data for multiple spatial levels, level 0 is the finest level
     Array<ParMesh *>                    mesh;
@@ -138,7 +139,6 @@ protected:
     bool vis_screenshots;
 
 
-int braid_iter;
 
     // Return the level index l such that max_dt[l-1] < dt <= max_dt[l],
     // This index corresponds to the finest compatible mesh for given time step
@@ -153,8 +153,7 @@ int braid_iter;
 
     // Construct MFEMBraidApp with empty (spatial) multilevel structures. Can be
     // used in derived classes for basic initialization.
-    MFEMBraidApp(MPI_Comm comm_t_,
-                     double tstart_ = 0.0, double tstop_ = 1.0, int ntime_ = 100);
+    MFEMBraidApp(MPI_Comm comm_t_, double tstart_ = 0.0, double tstop_ = 1.0, int ntime_ = 100);
 
     // This method can be used by derived classes to initialize the multilevel
     // structures: mesh, fe_space, etc. The MFEMBraidApp assumes ownership of the
@@ -192,14 +191,14 @@ public:
 
     /// Construct an MFEMBraidApp with one spatial level.
     MFEMBraidApp(MPI_Comm comm_t_, TimeDependentOperator *ode_, BlockVector *X0_,
-                     ParGridFunction *v_, ParGridFunction *x_, ODESolver *solver_,
-                     double tstart_ = 0.0, double tstop_ = 1.0, int ntime_ = 100);
+                 ParGridFunction *v_, ParGridFunction *x_, ODESolver *solver_,
+                 double tstart_ = 0.0, double tstop_ = 1.0, int ntime_ = 100);
 
     /** Begin the construction of an MFEMBraidApp with multiple spatial levels.
          To complete the construction, call SetSpaceLevel (for all spatial levels)
          and SetInitialCondition. */
-    MFEMBraidApp(MPI_Comm comm_t_, const int num_space_levels,
-                     double tstart_ = 0.0, double tstop_ = 1.0, int ntime_ = 100);
+    MFEMBraidApp(MPI_Comm comm_t_, const int num_space_levels, double tstart_ = 0.0,
+                 double tstop_ = 1.0, int ntime_ = 100);
 
     virtual ~MFEMBraidApp();
 
@@ -223,8 +222,10 @@ public:
 
     void SetVisScreenshots(bool ss) { vis_screenshots = ss; }
 
-    // Below braid_Vector == BraidVector*
+    /* ------------- Below braid_Vector == BraidVector* ------------- */
 
+    /* Currnetly naive step method using zero initial guess in Newton solve. */
+    /* Initial guess set in Step function defined in user derived App class. */
     virtual int Step(braid_Vector     u_,
                      braid_Vector     ustop_,
                      braid_Vector     fstop_,
@@ -261,10 +262,13 @@ public:
     virtual int BufUnpack(void         *buffer,
                           braid_Vector *u_ptr);
 
+    /* Do not know for sure if Coarsen/Refine are bug-free. Applying to MFEM */
+    /* ex10 caused divergence, but it is also a highly nonlinear moving mesh */
+    /* problem...  Should test on easier problem.                            */
     virtual int Coarsen(braid_Vector           fu_,
                         braid_Vector          *cu_ptr,
                         BraidCoarsenRefStatus &status);
-
+    
     virtual int Refine(braid_Vector           cu_,
                        braid_Vector          *fu_ptr,
                        BraidCoarsenRefStatus &status);
@@ -349,12 +353,10 @@ public:
 };
 
 
-// void visualize(std::ostream &out, ParMesh *mesh, ParGridFunction *deformed_nodes,
-//           ParGridFunction *field, const char *field_name = NULL,
-//           bool init_vis = false);
+void visualize(std::ostream &out, ParMesh *mesh, ParGridFunction *deformed_nodes,
+          ParGridFunction *field, const char *field_name = NULL,
+          bool init_vis = false);
 
-
-// Implementations
 
 // Initialize static data members
 const char *MFEMBraidApp::vishost_default = "localhost";
@@ -421,7 +423,6 @@ BraidVector::~BraidVector()
 
 
 
-// Construct MFEMBraidApp with empty (spatial) multilevel structures
 MFEMBraidApp::MFEMBraidApp(MPI_Comm comm_t_, double tstart_, double tstop_, int ntime_)
 
     : BraidApp(comm_t_, tstart_, tstop_, ntime_)
@@ -436,7 +437,6 @@ MFEMBraidApp::MFEMBraidApp(MPI_Comm comm_t_, double tstart_, double tstop_, int 
 }
 
 
-// Construct an MFEMBraidApp with one spatial level
 MFEMBraidApp::MFEMBraidApp( MPI_Comm comm_t_, TimeDependentOperator *ode_, BlockVector *X0_,
                             ParGridFunction *v_, ParGridFunction *x_, ODESolver *solver_,
                             double tstart_, double tstop_, int ntime_)
@@ -463,7 +463,6 @@ MFEMBraidApp::MFEMBraidApp( MPI_Comm comm_t_, TimeDependentOperator *ode_, Block
 }
 
 
-// Begin the construction of an MFEMBriadApp with multiple spatial levels
 MFEMBraidApp::MFEMBraidApp( MPI_Comm comm_t_, const int num_space_levels, double tstart_,
                             double tstop_, int ntime_)
 
@@ -625,8 +624,6 @@ int MFEMBraidApp::ComputeSpaceLevel(double tstart, double tprior, double tstop)
 }
 
 
-// Naive step method using zero initial guess in Newton solve. Initial guess 
-// set in Step function defined in user derived class of MFEMBraidApp.
 int MFEMBraidApp::Step(braid_Vector  u_, braid_Vector ustop_, braid_Vector fstop_, BraidStepStatus &pstatus)
 {
     BraidVector *u    = (BraidVector*) u_;
@@ -672,12 +669,14 @@ int MFEMBraidApp::Init(double t, braid_Vector *u_ptr)
 {
     int spatial_level = 0;
     
-    // Set initial mesh points equal for all time t.
-    // Necessary so that we have a valid mesh as an initial guess.
+    // Set initial guess equal for all time t. Necessary when mesh is
+    // one of the blocks in vector - need a valid mesh. 
     BraidVector *u = new BraidVector(spatial_level, *X0);
 
     // Set block 0 equal to zero except on first block.
-    if (t > 0) u->GetBlock(0) = 0.;
+    if (t > 0) {
+        u->GetBlock(0) = 0.;
+    }
 
     *u_ptr = (braid_Vector) u;
     u = NULL;
@@ -714,11 +713,8 @@ int MFEMBraidApp::Sum(double alpha, braid_Vector a_, double beta, braid_Vector b
 
 int MFEMBraidApp::SpatialNorm(braid_Vector  u_, double *norm_ptr)
 {
-    // double dot;
     BraidVector *u = (BraidVector*) u_;
-    // dot = InnerProduct(u, u);
-    // *norm_ptr = sqrt(dot);
-    *norm_ptr = u->Norml2(); // Note this is a strictly serial implementation?
+    *norm_ptr = u->Norml2(); // Note this is a serial implementation.
     return 0;
 }
 
@@ -920,6 +916,8 @@ int MFEMBraidApp::Access(braid_Vector u_, BraidAccessStatus &astatus)
     astatus.GetResidual(&rnorm);
     int cycle = (int)std::floor((t - tstart) / (tstop - tstart) * ntime + 0.5);
 
+
+#if 0
     // Print final block result.
     if(level == 0 && done == 1 && t == tstop) 
     {
@@ -928,83 +926,87 @@ int MFEMBraidApp::Access(braid_Vector u_, BraidAccessStatus &astatus)
         std::cout << "\nFinal block 2: \n"; 
         (u->GetBlock(1)).Print();
     }
+#endif
 
 
-    // if ( (level == 0) &&
+// Visualization, finicky to get working. 
+#if 0
+    if ( (level == 0) &&
 
-    //    ( (vis_time_steps > 0 && cycle % vis_time_steps == 0) ||
-    //      (cycle == ntime) ) &&
+       ( (vis_time_steps > 0 && cycle % vis_time_steps == 0) ||
+         (cycle == ntime) ) &&
 
-    //    ( (vis_braid_steps > 0 && iter % vis_braid_steps == 0) || done ) )
-    // {
-    //   (*x[level]) = *u; // Distribute
+       ( (vis_braid_steps > 0 && iter % vis_braid_steps == 0) || done ) )
+    {
+      (*x[level]) = *u; // Distribute
 
-    //   // Opening multiple 'parallel' connections to GLVis simultaneously
-    //   // (from different time intervals in this case) may cause incorrect
-    //   // behavior.
+      // Opening multiple 'parallel' connections to GLVis simultaneously
+      // (from different time intervals in this case) may cause incorrect
+      // behavior.
 
-    //   int init_sock = 0;
-    //   if (!sol_sock.is_open())
-    //   {
-    //     sol_sock.open(vishost, visport);
-    //     init_sock = 1;
-    //   }
+      int init_sock = 0;
+      if (!sol_sock.is_open())
+      {
+        sol_sock.open(vishost, visport);
+        init_sock = 1;
+      }
 
-    //   int good, all_good;
-    //   good = sol_sock.good();
-    //   MPI_Allreduce(&good, &all_good, 1, MPI_INT, MPI_LAND,
-    //            mesh[level]->GetComm());
+      int good, all_good;
+      good = sol_sock.good();
+      MPI_Allreduce(&good, &all_good, 1, MPI_INT, MPI_LAND,
+               mesh[level]->GetComm());
 
-    //   if (all_good)
-    //   {
-    //     sol_sock << "parallel " << mesh[level]->GetNRanks()
-    //           << " " << mesh[level]->GetMyRank() << "\n";
-    //     sol_sock << "solution\n";
-    //     sol_sock.precision(8);
-    //     mesh[level]->Print(sol_sock);
-    //     x[level]->Save(sol_sock);
+      if (all_good)
+      {
+        sol_sock << "parallel " << mesh[level]->GetNRanks()
+              << " " << mesh[level]->GetMyRank() << "\n";
+        sol_sock << "solution\n";
+        sol_sock.precision(8);
+        mesh[level]->Print(sol_sock);
+        x[level]->Save(sol_sock);
 
-    //     if (init_sock)
-    //     {
-    //       int comm_t_rank;
-    //       MPI_Comm_rank(comm_t, &comm_t_rank);
+        if (init_sock)
+        {
+          int comm_t_rank;
+          MPI_Comm_rank(comm_t, &comm_t_rank);
 
-    //       // sol_sock << "valuerange 0 1\n";
-    //       // sol_sock << "autoscale off\n";
-    //       sol_sock << "keys cmAaa\n";
-    //       sol_sock << "window_title 'comm_t rank: " << comm_t_rank
-    //             << ", t = " << t << "'\n";
-    //       if (vis_screenshots)
-    //       {
-    //         sol_sock << "pause\n";
-    //         if (mesh[level]->GetMyRank() == 0)
-    //           std::cout << "Visualization paused. Press space (in GLVis) to"
-    //                    " continue." << std::endl;
-    //       }
-    //     }
-    //     sol_sock << std::flush;
-    //     if (vis_screenshots)
-    //     {
-    //       sol_sock << "screenshot braid_" << std::setfill('0') << std::setw(2)
-    //             << iter << "_" << std::setw(6) << cycle << ".png"
-    //             << std::endl;
-    //     }
-    //     if (mesh[level]->GetMyRank() == 0)
-    //       std::cout << "Visualization updated." << std::flush;
-    //   }
+          // sol_sock << "valuerange 0 1\n";
+          // sol_sock << "autoscale off\n";
+          sol_sock << "keys cmAaa\n";
+          sol_sock << "window_title 'comm_t rank: " << comm_t_rank
+                << ", t = " << t << "'\n";
+          if (vis_screenshots)
+          {
+            sol_sock << "pause\n";
+            if (mesh[level]->GetMyRank() == 0)
+              std::cout << "Visualization paused. Press space (in GLVis) to"
+                       " continue." << std::endl;
+          }
+        }
+        sol_sock << std::flush;
+        if (vis_screenshots)
+        {
+          sol_sock << "screenshot braid_" << std::setfill('0') << std::setw(2)
+                << iter << "_" << std::setw(6) << cycle << ".png"
+                << std::endl;
+        }
+        if (mesh[level]->GetMyRank() == 0)
+          std::cout << "Visualization updated." << std::flush;
+      }
 
-    //   if (exact_sol)
-    //   {
-    //     exact_sol->SetTime(t);
+      if (exact_sol)
+      {
+        exact_sol->SetTime(t);
 
-    //     double err = x[level]->ComputeL2Error(*exact_sol);
+        double err = x[level]->ComputeL2Error(*exact_sol);
 
-    //     if (mesh[level]->GetMyRank() == 0)
-    //       std::cout << " L2 norm of the error = " << err << std::endl;
-    //   }
-    //   else if (mesh[level]->GetMyRank() == 0)
-    //     std::cout << std::endl;
-    // }
+        if (mesh[level]->GetMyRank() == 0)
+          std::cout << " L2 norm of the error = " << err << std::endl;
+      }
+      else if (mesh[level]->GetMyRank() == 0)
+        std::cout << std::endl;
+    }
+#endif
 
     return 0;
 }
