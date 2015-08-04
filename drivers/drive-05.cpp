@@ -118,8 +118,10 @@ public:
    SpaceTimeMeshInfo MeshInfo;
 
    // braid_Vector == BraidVector*
-   virtual int Phi(braid_Vector    u_,
-                   BraidPhiStatus &pstatus);
+   virtual int Step(braid_Vector    u_,
+                    braid_Vector    u_stop_,
+                    braid_Vector    fstop_,
+                    BraidStepStatus &pstatus);
 
    virtual ~DGAdvectionApp();
 };
@@ -321,10 +323,12 @@ DGAdvectionApp::~DGAdvectionApp()
 }
 
 
-int DGAdvectionApp::Phi(braid_Vector    u_,
-                        BraidPhiStatus &pstatus)
+int DGAdvectionApp::Step(braid_Vector    u_,
+                         braid_Vector    ustop_,
+                         braid_Vector    fstop_,
+                        BraidStepStatus &pstatus)
 {
-   // This contains one small change over the default Phi, we store the Space-Time mesh info
+   // This contains one small change over the default Step, we store the Space-Time mesh info
    
    // Store Space-Time Mesh Info
    BraidVector *u = (BraidVector*) u_;
@@ -338,8 +342,8 @@ int DGAdvectionApp::Phi(braid_Vector    u_,
 
    MeshInfo.SetRow(braid_level, level, x[u->level]->ParFESpace()->GetParMesh(), dt);
    
-   // Call the default Phi
-   MFEMBraidApp::Phi(u_, pstatus);
+   // Call the default Step
+   MFEMBraidApp::Step(u_,ustop_,fstop_, pstatus);
    
    return 0;
 }
