@@ -389,6 +389,10 @@ BeamOptions::BeamOptions(int argc, char *argv[])
 	
 	AddOption(&order, "-o", "--order",
 			  "Order (degree) of the finite elements.");
+	AddOption(&ser_ref_levels, "-sr", "--serial-refinement",
+			  "Number of serial refinements.");
+	AddOption(&par_ref_levels, "-pr", "--parallel-refinement",
+			  "Number of parallel refinements (needed for spatial coarsening).");
 	AddOption(&ode_solver_type, "-s", "--ode-solver",
 			  "ODE solver: 1 - Backward Euler, 2 - SDIRK2, 3 - SDIRK3,\n\t"
 			  "\t	11 - Forward Euler, 12 - RK2, 13 - RK3 SSP, 14 - RK4.");
