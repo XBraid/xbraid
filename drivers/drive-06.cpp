@@ -22,7 +22,7 @@
 /* Drive 06: 2D nonlinear p-laplacian equation. Requires MFEM, Hpyre, Metis and GlVis
    
    Interface: MFEM 
-
+f
    Compile with: make drive-06 -- Modify Makefile to point to metis, mfem and hypre libraries
 
    Help with:    drive-06 -help
@@ -330,15 +330,13 @@ struct NonlinearOptions : public BraidOptions
    int nl_print_level; //Nonlinear print level
    int sc_print_level; //Spatial coarsening print level
    
-   int step_type;   //Type of step being completed
    int braid_level; //Current temporal level of braid
    int braid_iter;  //Current braid Iteration
    
    double kap, tau; //Exact Solution parameters    
    double power;    //P in p-laplacian 
    double dt;       //time step on the finest grid.
-   double dx;       //Space step on fine grid.
-   double cg_dt;    //Coarse grid time step;
+
    //Visualization Options
    const char *vishost;  
    int         visport;
@@ -378,8 +376,8 @@ private:
    HyprePCG *pcg;
    HyprePCG *B_pcg;
 	HypreBoomerAMG *B_amg;	
-   int braid_iter, step_type;
-   int v,newt;
+   int braid_iter;
+
 public:
 	NonlinearSystemODE(int              l,
                       ParBilinearForm *_a,
@@ -501,11 +499,7 @@ int main (int argc, char *argv[])
    //Init braid App
 	NonlinearApp app(&opts, comm_t, pmesh);
    //Run braid
-   //
-   double dx = 1/pow(2,opts.ser_ref_levels + opts.par_ref_levels);
-   
-   opts.tol = opts.tol/(opts.dt*dx*dx);
-   opts.dx = dx;
+
    pmesh->PrintInfo();
    BraidCore core(comm, &app);
    opts.SetBraidCoreOptions(core);
@@ -655,7 +649,7 @@ NonlinearOptions::NonlinearOptions(int argc, char *argv[])
    nl_print_level = 0;
    sc_print_level = 0;
 	ode_solver_type = -1;
-   no_down = 1;
+  
    vishost         = "localhost";
    visport         = 19916;
    vis_time_steps  = 0;
@@ -703,14 +697,7 @@ NonlinearOptions::NonlinearOptions(int argc, char *argv[])
       prob = new Problem(t_start, kap, tau, power, 1);
    
    dt = (t_final - t_start) / num_time_steps;
-   double nt = num_time_steps;
-   double l = 0;
-   while (nt/cfactor > min_coarse && l < max_levels)
-   { 
-      nt = nt/cfactor;
-      l = l+1;
-   }
-   cg_dt = (t_final-t_start)/nt;
+
 }  
 
 
@@ -761,7 +748,6 @@ NonlinearSystemODE::NonlinearSystemODE(int             l,
         W = new HypreParVector(*A);
         Z = new HypreParVector(*A);
 		  *V = 0.0;
-        newt = 0; v = 0;
 }
 
 void NonlinearSystemODE::AssembleDiffusionMatrix() const
@@ -808,7 +794,7 @@ void NonlinearSystemODE::ImplicitSolve(const double dt, const Vector &x, Vector 
         double resid = 1;
         double tol;
         int max_it;
-        
+    
         if (opts->braid_level == 0)
         {
             tol = opts->tol_fine;
@@ -855,9 +841,11 @@ void NonlinearSystemODE::ImplicitSolve(const double dt, const Vector &x, Vector 
        B_pcg->Mult(*Z, *Y);
 
        UpdateResidual(dt, resid); 
+       
        double resid_start = resid;
-       int temp;
-       B_pcg->GetNumIterations(temp);
+       int v, temp;
+       B_pcg->GetNumIterations(v);
+       
        delete B_pcg;
        delete B_amg;
        //Newton Iteration -- Makes sure we always reduce the residual
@@ -881,6 +869,7 @@ void NonlinearSystemODE::ImplicitSolve(const double dt, const Vector &x, Vector 
 
             *U = 0.0; // Set initial condition for the linear solver 
             B_pcg->Mult(*W, *U); //W is the RHS calculated in Update residual
+            
             B_pcg->GetNumIterations(temp);
             v+= temp;
             *Y -= *U;         
@@ -890,10 +879,9 @@ void NonlinearSystemODE::ImplicitSolve(const double dt, const Vector &x, Vector 
        }  
 
        braid_iter = opts->braid_iter;
-       newt += iter;
-        if (opts->nl_print_level)
+       if (opts->nl_print_level)
            cout << "NonLinear Solver:" << dt << " , " << setw(10) << t << " , "  << setw(10)
-           << newt << " , " << setw(10) << braid_iter << " , " 
+           << iter << " , " << setw(10) << braid_iter << " , " 
            << setw(10) << v << endl;
 }
 
@@ -906,7 +894,7 @@ void NonlinearSystemODE::UpdateResidual(double dt, double &resid)
       M->Mult(*Y,*W);			 //b = Mk(j)
       *W -= *U;
       *W -= *b;  // = Mk(j) - A(x+dt*k(j)) - Source vector
-      resid = opts->dx*sqrt(InnerProduct(W,W));
+      resid = sqrt(InnerProduct(W,W));
     
 }
 
@@ -1045,11 +1033,6 @@ void NonlinearApp::InitLevel(int l)
     ODESolver *ode_solver = NULL;
     switch (opts->ode_solver_type)
     {
-       case 1: ode_solver = new ForwardEulerSolver; break;
-       case 2: ode_solver = new RK2Solver(1.0); break;
-       case 3: ode_solver = new RK3SSPSolver; break;
-       case 4: ode_solver = new RK4Solver; break;
-       case 6: ode_solver = new RK6Solver; break;
        case -1: ode_solver = new BackwardEulerSolver; break;
        case -2: ode_solver = new SDIRK23Solver(2); break;
        case -3: ode_solver = new SDIRK33Solver; break;
