@@ -632,7 +632,7 @@ NonlinearOptions::NonlinearOptions(int argc, char *argv[])
    t_final = 4.0;
    double a = 1;
 	//Set defualts for the mesh/refinement inherited options
-	mesh_file			= "/g/g90/oneill10/Programs/mfem/data/inline-quad.mesh";
+	mesh_file			= "../../mfem/data/inline-quad.mesh";
 	ser_ref_levels = 1;
 	par_ref_levels = 1;
 	AddMeshOptions();
