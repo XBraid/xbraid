@@ -212,6 +212,11 @@ int grab_manager_spatial_info(simulation_manager     *man,
    (*dx)  = man->dx;
    (*dy)  = man->dy;
 
+   (*px)  = man->px;
+   (*py)  = man->py;
+   (*pi)  = man->pi;
+   (*pj)  = man->pj;
+
    ilower[0] = man->ilower[0];
    ilower[1] = man->ilower[1];
    iupper[0] = man->iupper[0];
