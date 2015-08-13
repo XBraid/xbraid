@@ -71,6 +71,7 @@ struct DGAdvectionOptions : public BraidOptions
    int    ode_solver_type;
    bool   lump_mass;
    double dt; // derived from t_start, t_final, and num_time_steps
+   bool   krylov_coarse;
 
    const char *vishost;
    int         visport;
@@ -251,6 +252,7 @@ DGAdvectionOptions::DGAdvectionOptions(int argc, char *argv[])
    order           = 3;
    ode_solver_type = 4;
    lump_mass       = false;
+   krylov_coarse   = false;
    vishost         = "localhost";
    visport         = 19916;
    vis_time_steps  = 0;
@@ -268,6 +270,9 @@ DGAdvectionOptions::DGAdvectionOptions(int argc, char *argv[])
    AddOption(&lump_mass, "-lump", "--lump-mass-matrix", "-dont-lump",
              "--dont-lump-mass-matrix", "Enable/disable lumping of the mass"
              " matrix.");
+   AddOption(&krylov_coarse, "-kc", "--krylov-coarse", "-dont-kc",
+             "--dont-krylov-coarse", "Enable/disable use of Arnoldi-based coarse-grid"
+             " time-stepping.");
    AddOption(&vishost, "-vh", "--visualization-host",
              "Set the GLVis host.");
    AddOption(&visport, "-vp", "--visualization-port",
@@ -326,7 +331,7 @@ DGAdvectionApp::~DGAdvectionApp()
 int DGAdvectionApp::Step(braid_Vector    u_,
                          braid_Vector    ustop_,
                          braid_Vector    fstop_,
-                        BraidStepStatus &pstatus)
+                         BraidStepStatus &pstatus)
 {
    // This contains one small change over the default Step, we store the Space-Time mesh info
    
@@ -342,9 +347,20 @@ int DGAdvectionApp::Step(braid_Vector    u_,
 
    MeshInfo.SetRow(braid_level, level, x[u->level]->ParFESpace()->GetParMesh(), dt);
    
-   // Call the default Step
-   MFEMBraidApp::Step(u_,ustop_,fstop_, pstatus);
-   
+   if((braid_level == 0) || (opts.krylov_coarse == false) )
+   {
+       // Call the default Step
+       MFEMBraidApp::Step(u_,ustop_,fstop_, pstatus);
+   }
+   else
+   {
+       solver[level]->Step(*u, t, dt);
+      
+       // no refinement
+       pstatus.SetRFactor(1);
+
+   }
+
    return 0;
 }
 
