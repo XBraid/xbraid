@@ -8,7 +8,7 @@ using namespace mfem;
 class DenseMatrixTimeDependentOperator : public TimeDependentOperator
 {
     public:
-        DenseMatrixTimeDependentOperator(DenseMatrix & A_) : A(A_) {}
+        DenseMatrixTimeDependentOperator(DenseMatrix & A_) : TimeDependentOperator(A_.Width()), A(A_) {}
         
         virtual void Mult(const Vector &x, Vector &y) const
         {
