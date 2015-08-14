@@ -62,18 +62,19 @@ ifeq ($(findstring tux343,$(HOSTNAME)),tux343)
    endif
 else ifeq ($(findstring yorkville,$(HOSTNAME)),yorkville)
   # for Anders' laptop
-	MPICC = openmpicc
-	MPICXX = openmpicxx
-   MPIF90 = mpif90
+	CC = mpicc
+	MPICC = mpicc
+	MPICXX = mpicxx
+        MPIF90 = mpif90
 	LFLAGS = -lm
 	ifeq ($(optlevel),DEBUG)
 		CFLAGS = -g -Wall
 		CXXFLAGS = -g -Wall
-      FORTFLAGS = -Og -Wall
+                FORTFLAGS = -Og -Wall
 	else
 		CFLAGS = -O -Wall
 		CXXFLAGS = -O -Wall
-      FORTFLAGS = -O1 -Wall
+                FORTFLAGS = -O1 -Wall
 	endif
 else ifeq ($(findstring sierra,$(HOSTNAME)),sierra)
   # for Sierra

@@ -48,21 +48,21 @@ OBJ1 = hyperdrive-01.o c_array.o bop6g.o c-exact.o c-bdata.o c-twbndry.o c-evale
        dwdx.o dwdt.o c-twforce.o advect_data.o explicit_rk4_stepper.o save_grid_fcn.o
 
 .c.o:
-	$(CC) -c $(CFLAGS) $(BRAID_FLAGS) $<
+	$(MPICC) -c $(CFLAGS) $(BRAID_FLAGS) $<
 
 all: advect hyperdrive-01 test-gf restrict
 
 advect: $(OBJ5) 
-	$(CC) -o $@ $(OBJ5) $(LFLAGS) $(BRAID_LIB)
+	$(MPICC) -o $@ $(OBJ5) $(LFLAGS) $(BRAID_LIB)
 
 hyperdrive-01: $(OBJ1) 
-	$(CC) -o $@ $(OBJ1) $(LFLAGS) $(BRAID_LIB)
+	$(MPICC) -o $@ $(OBJ1) $(LFLAGS) $(BRAID_LIB)
 
 restrict: $(OBJR) 
-	$(CC) -o $@ $(OBJR) $(LFLAGS) $(BRAID_LIB)
+	$(MPICC) -o $@ $(OBJR) $(LFLAGS) $(BRAID_LIB)
 
 test-gf: $(OBJT) 
-	$(CC) -o $@ $(OBJT) $(LFLAGS) $(BRAID_LIB)
+	$(MPICC) -o $@ $(OBJT) $(LFLAGS) $(BRAID_LIB)
 
 clean:
 	rm -f *.o *.a

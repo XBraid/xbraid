@@ -28,7 +28,7 @@
 #include "c_array.h"
 #include "braid.h"
 
-#define MY_EPS 1e-12
+#define MY_EPS 2e-12
 
 /* define HD_DEBUG to get printouts from various user defined functions*/
 /* #define HD_DEBUG */

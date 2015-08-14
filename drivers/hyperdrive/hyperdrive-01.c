@@ -43,10 +43,10 @@ int main(int argc, char ** argv)
    double amp, ph, om;
    double wave_speed, viscosity, restr_coeff=0.0, ad_coeff=0.0;
    
-   int nstepsset, tfinalset, arg_index, print_usage=0, myid=0;
+   int nstepsset, arg_index, print_usage=0, myid=0, nx;
    int wave_no = 1, spatial_order=6;
 
-   FILE *eun, *fp;
+   FILE *fp;
    
    advection_setup *kd_ = NULL;
    grid_fcn *gf_ = NULL, *exact_=NULL;
@@ -68,7 +68,7 @@ int main(int argc, char ** argv)
    MPI_Comm    comm, comm_t; /* no spatial MPI decomposition */
    int         num_procs;
    /* int         xcolor, tcolor; */
-   double      mystarttime, myendtime, mytime;
+   double      mystarttime, myendtime; 
 
    /* We consider a 2D problem. */
    /* int ndim = 2; */
@@ -78,16 +78,11 @@ int main(int argc, char ** argv)
 
    /* int nx, ny, nlx, nly; */
    /* int nt;  nt = nsteps  */
-   double c;
+/*   double c; */
 
    int pt; /* AP: what is this? */
 
-   int n_pre, n_post;
-   int rap, skip;
-   
    double tol_x[2], tol_x_coarse;
-
-   int write, vis;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -96,46 +91,47 @@ int main(int argc, char ** argv)
    comm                = MPI_COMM_WORLD;
    comm_t              = comm;
    max_levels          = 2; /* This is where you specify the number of levels in MG */
-   scoarsen            = 1; /* coarsen in space? */
+   scoarsen            = 1; /* enable spatial coarsening? */
    nrelax              = 1;
    nrelax0             = -1;
    tol                 = 1.0e-09; /* relative (or absolute) residual stopping criterion */
    cfactor             = 2;
    cfactor0            = -1;
-   max_iter            = 50;
+   max_iter            = 100; /* max number of Braid iterations */
    fmg                 = 0;
    /* K                   = 1.0; */
    /* nt                  = 32; */
-   c                   = 0.15;
+/*   c                   = 0.15; */
    /* sym                 = 0; */
    /* px                  = 1; */
    /* py                  = 1; */
    pt                  = 1;
-   n_pre               = 1;
-   n_post              = 1;
-   rap                 = 1;
+/*   int n_pre               = 1; */
+/*   int n_post              = 1; */
+/*   int rap                 = 1; */
    /* relax               = 3; */
-   skip                = 1;
+/*   int skip                = 1; */
    tol_x[0]            = 1.0e-09;
    tol_x[1]            = 1.0e-09;
    tol_x_coarse        = 1.0e-09;
-   write               = 0;
-   vis                 = 0;
+/*   int write               = 0; */
+/*   int vis                 = 0; */
 
    MPI_Comm_rank( comm, &myid );
    MPI_Comm_size( comm, &num_procs );
 
 /* Default problem parameters */
-   L = 1.0; /* Domain length*/
+//   L = 1.0; /* Domain length*/
+   L = 2*M_PI; /* Domain length to match theory*/
    wave_speed = 1.0; /* wave speed */
    viscosity = 0.0;  /* viscosity */
    
 /*!**  Twilight testing parameters*/
    amp  = 0.8;
    ph   = 0.17;
-   wave_no = 1;
+   wave_no = 1; /* wave number of exact solution */
    
-   om   = wave_no*2.0*M_PI; /* wave_no is the number of wave lengths in the domain */
+   om   = wave_no*2.0*M_PI/L; /* wave_no is the number of wave lengths in the domain */
    
 /*!** exact solution
 ! pnr == 1:
@@ -153,7 +149,7 @@ int main(int argc, char ** argv)
    tfinal = 1.0;
 
    nstepsset = 0;
-   tfinalset = 0;
+/*   int tfinalset = 0; */
 
 /*! time-dependent boundary data
 ! taylorbc = 0: assign exact boundary data at intermediate stages
@@ -169,6 +165,11 @@ int main(int argc, char ** argv)
          if( strcmp(argv[arg_index], "-dx") == 0 ){
             arg_index++;
             h = atof(argv[arg_index++]);
+         }
+         else if( strcmp(argv[arg_index], "-nx") == 0 ){
+            arg_index++;
+            nx = atoi(argv[arg_index++]);
+            h = L/nx;
          }
          else if( strcmp(argv[arg_index], "-cfl") == 0 ){
             arg_index++;
@@ -230,7 +231,8 @@ int main(int argc, char ** argv)
       printf(" du/dt + du/dx = nu d^2u/dx^2 + f(x,t), 0<x<1, t>0,\n u(0,t)=g(t),\n u(x,0)=h(x).\n");
       printf("\nUsage: %s [<options>]\n", argv[0]);
       printf("\n");
-      printf("  -dx  <float>    : grid size (default 0.01)\n");
+      printf("  -dx  <float>    : grid size (default 0.01), rounds nx = L/dx to nearest integer\n");
+      printf("  -nx  <float>    : number of (unique) grid points => dx=L/h\n");
       printf("  -cfl <float>    : cfl-number (default 0.5)\n");
       printf("  -nu  <float>    : viscosity (>=0, default 0.0)\n");
       printf("  -nsteps <int>   : number of time steps (positive) (default tfinal/dt)\n");
@@ -251,7 +253,7 @@ int main(int argc, char ** argv)
    }
       
 /* open file for saving solution error data */
-   eun = fopen("err.dat","w");
+/*   FILE *eun = fopen("err.dat","w"); */
 
 /* setup solver meta-data */
    kd_ = malloc(sizeof(advection_setup));
@@ -333,13 +335,13 @@ int main(int argc, char ** argv)
    
    /* control how often my save_grid_fcn routine is called. */
 /* 0 is never, 1 is at convergence for the finest level, 2 is after every iteration on every level */
-   braid_SetAccessLevel(core, 2);
+   braid_SetAccessLevel(core, 1);
 
    braid_Drive(core);
 
    /* Stop timer. */
    myendtime = MPI_Wtime();
-   mytime    = myendtime - mystarttime;
+/*   double mytime    = myendtime - mystarttime; */
 
    braid_PrintStats(core);
 

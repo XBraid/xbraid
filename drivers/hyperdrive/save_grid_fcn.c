@@ -46,12 +46,12 @@ save_grid_fcn(advection_setup *kd_,
    {
      MPI_Comm_rank(comm, &myid);
    
+     braid_AccessStatusGetTILD(astatus, &t, &iteration, &level, &done_iterating);
      /* printf("Inside save_grid_fcn, myRank=%i, t=%e\n", myid, t); */
 
      if (fabs(t-kd_->tstop)<1e-12)
      {
 /* get more details about about the current level, iteration, etc */
-       braid_AccessStatusGetTILD(astatus, &t, &iteration, &level, &done_iterating);
        braid_AccessStatusGetResidual(astatus, &residual);
 
 /* done_iterating is only well-defined on the finest level */

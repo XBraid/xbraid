@@ -86,8 +86,8 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
                       double braidResidualLevel, double restr_coeff, double ad_coeff, int spatial_order,
                       advection_setup *kd_)
 {
-   double mxeg, p1, beta, pi=M_PI, omL2pi;
-   int n;
+   double mxeg, p1, beta, pi=M_PI, omL2pi, om1;
+   int n, k_near;
 /* # ghost points */
    const int o = 1;
 
@@ -98,6 +98,7 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
       h  = L/(n-o);
       printf("NOTE: dx changed to %e\n", h);
    }
+   printf("Number of unique spatial grid points Nx=%i\n", n-o);
 
    kd_->n_fine = n;
    kd_->h_fine = h;
@@ -108,12 +109,14 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
    if (bcLeft==Periodic || bcRight== Periodic)
    {
       omL2pi = om*L/2.0/pi;
-//      om = 2*pi/L;
-      printf("NOTE: Periodic bc, om*L/(2*pi)=%e, must be integer\n", omL2pi);      
+      k_near = (int) (omL2pi + 0.5);
+      om1 = k_near*2.0*pi/L;
+      if (fabs(om1-om) > 1e-8)
+         printf("NOTE: Periodic bc, changed omega from %e to %e\n", om, om1);      
    }
-   kd_->om = om;
+   kd_->om = om1;
 // scaled wave number
-   printf("Scaled wave number om*h/pi = %e\n", om*h/pi);
+   printf("Scaled wave number of exact solution om*L/(2*pi) = %e\n", om1*L/(2*pi));
 
    kd_->taylorbc = taylorbc;
    kd_->L = L;
@@ -233,7 +236,7 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
 /* always save solution for now...*/
    kd_->write=1;
 /* save final solution at this level */
-   kd_->copy_level=1; /* level=0 is the finest, level=1 is coarser, and so on */
+   kd_->copy_level=0; /* level=0 is the finest, level=1 is coarser, and so on */
 /* keep track of braid convergence criteria */
    kd_->braidMaxIter = braidMaxIter;
    kd_->braidResidualLevel = braidResidualLevel;
@@ -496,7 +499,7 @@ gridfcn_Coarsen(advection_setup *kd_,
 /* can we deal with the requested coarsening? */
    if (fabs(dt_c/dt_f - 2.0) > MY_EPS)
    {
-      printf("The requested coarsening factor dt_c/dt_f=%e is not implemented\n", dt_c/dt_f);
+      printf("The requested coarsening factor dt_c/dt_f=%e is not implemented, err=%e\n", dt_c/dt_f,fabs(dt_c/dt_f - 2.0));
       return 1;
    }
 
@@ -638,7 +641,7 @@ gridfcn_Refine(advection_setup * kd_,
       gf_->sol[0] = gf_->sol[nc-1];
       gf_->sol[nc+1] = gf_->sol[2];
 
-/* fourth order interpolation */
+/* fourth order (cubic) interpolation */
       for (ig=1; ig<=nc-1; ig++)
       {
          ifine = 2*ig; /* this is the index on the fine mesh between ig and ig+1 */
