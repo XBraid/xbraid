@@ -522,7 +522,7 @@ int MFEMBraidApp::Step(braid_Vector    u_,
 {
    BraidVector *u = (BraidVector*) u_;
    int level = u->level;
-   double tstart, tstop, accuracy, t, dt;
+   double tstart, tstop, t, dt;
    int braid_level;
 
    // Get time step information

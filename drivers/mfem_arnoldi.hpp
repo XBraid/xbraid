@@ -3,7 +3,7 @@
 
 #include "mfem.hpp"
 
-using mfem;
+using namespace mfem;
 
 class DenseMatrixTimeDependentOperator : public TimeDependentOperator
 {
@@ -37,7 +37,7 @@ class Arnoldi
         void SetOperator(Operator &A_)
         {
             A = &A_;
-            int n = A.Width();
+            int n = A->Width();
 
             for(int i = 0; i < k_max; i++)
             {
@@ -73,7 +73,7 @@ class Arnoldi
             return Hop;
         }
 
-        GenKrylovSpace(const Vector & u)
+        void GenKrylovSpace(const Vector & u)
         {
             int k;
             double max_norm = 0.0;
@@ -92,7 +92,7 @@ class Arnoldi
 
             for(k = 0; k < k_max-1; k++)
             {
-                A.Mult(V[k], V[k+1]);
+                A->Mult(V[k], V[k+1]);
 
                 for(int m = 0; m <=k; m++)
                 {
@@ -102,7 +102,7 @@ class Arnoldi
 
                 F(k+1,k) = sqrt( Dot(V[k+1], V[k+1]) );
 
-                max_norm = max(F(k+1,k), max_norm);
+                max_norm = std::max(F(k+1,k), max_norm);
                 if (F(k+1,k) <= tol*max_norm)
                 {
                     break;
