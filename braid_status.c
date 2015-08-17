@@ -306,6 +306,7 @@ _braid_StepStatusInit(braid_Real       tstart,
    _braid_StatusElt(status, iter)      = iter;
    _braid_StatusElt(status, level)     = level;
    _braid_StatusElt(status, nrefine)   = nrefine;
+   _braid_StatusElt(status, rfactor)   = 1;
 
    return _braid_error_flag;
 }

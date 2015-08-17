@@ -877,6 +877,7 @@ _braid_Residual(braid_Core     core,
    braid_App        app      = _braid_CoreElt(core, app);
    braid_Real       tol      = _braid_CoreElt(core, tol);
    braid_Int        iter     = _braid_CoreElt(core, niter);
+   braid_Int       *rfactors = _braid_CoreElt(core, rfactors);
    _braid_Grid    **grids    = _braid_CoreElt(core, grids);
    braid_StepStatus status   = _braid_CoreElt(core, sstatus);
    braid_Int        nrefine  = _braid_CoreElt(core, nrefine);
@@ -894,6 +895,10 @@ _braid_Residual(braid_Core     core,
       _braid_GetUInit(core, level, index, r, &rstop);
       _braid_CoreFcn(core, step)(app, rstop, NULL, r, status);
       _braid_CoreFcn(core, sum)(app, 1.0, ustop, -1.0, r);
+      if (level == 0)
+      {
+         rfactors[ii] = _braid_StatusElt(status, rfactor);
+      }
    }
    else
    {
@@ -2590,7 +2595,13 @@ _braid_InitHierarchy(braid_Core    core,
    ilower = _braid_GridElt(grids[0], ilower);
    iupper = _braid_GridElt(grids[0], iupper);
    rfactors = _braid_CTAlloc(braid_Int, iupper-ilower+2); /* Ensures non-NULL */
-   rfactors[0] = 1; /* Ensures rfactor of 1 for global index 0 */
+   for(i = 0; i < iupper-ilower+2; i++)
+   {
+      /* We need to ensure an rfactor of 1 for global index 0, and for
+       * the case of a user-defined residual function and F-relaxation,
+       * a default rfactor value at F-points */
+      rfactors[i] = 1; 
+   }
    _braid_CoreElt(core, rfactors) = rfactors;
 
    /* Set up nrels array */
