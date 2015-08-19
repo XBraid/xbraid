@@ -51,30 +51,27 @@ To run the examples, type
    switchs to implicit on coarse XBraid grids when the CFL condition is violated.
 
 3. drive-04 is a sophisticated test bed for various PDEs, mostly parabolic.  It relies
-   on the [mfem](https://code.google.com/p/mfem/)
+   on the [mfem](http://mfem.org)
    package to create general finite element discretizations for the spatial problem.
    Other packages must be installed in this order.
      + Unpack and install [Metis](http://glaros.dtc.umn.edu/gkhome/metis/metis/overview)
      + Unpack and install 
        [hypre](https://computation.llnl.gov/project/linear_solvers/software.php)
-     + Unpack and install 
-       [mfem.](https://code.google.com/p/mfem/)
-       Make the serial version of mfem first by only typing ``make``.
+     + Unpack [mfem.](http://mfem.org)
        Then make sure to set these variables correctly in the mfem Makefile:
        
              USE_METIS_5 = YES
-             HYPRE_DIR  = where_ever_linear_solvers_is/hypre 
+             HYPRE_DIR   = where_ever_linear_solvers_is/hypre 
    
-     + Make [GLVIS](https://code.google.com/p/glvis/), which needs serial mfem.
+     + Make the parallel version of mfem first by typing
+
+            make parallel
+
+     + Make [GLVIS](http://glvis.org).
        Set these variables in the glvis makefile
             
             MFEM_DIR   = mfem_location
             MFEM_LIB   = -L$(MFEM_DIR) -lmfem
-
-     + Go back to the mfem directory and type
-     
-            make clean
-            make parallel
 
      + Go to braid/examples and set these Makefile variables, 
 
