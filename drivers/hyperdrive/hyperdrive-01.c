@@ -304,11 +304,11 @@ int main(int argc, char ** argv)
    }
 
    /*braid_SetAbsTol(core, tol*sqrt(px*nlx*py*nly*(nt+1)) );*/
-   /* braid_SetAbsTol(core, tol/sqrt(dx*dy*dt)); */
+   braid_SetAbsTol(core, tol/sqrt(kd_->h_fine*kd_->dt_fine));
 
    /* braid_SetAbsTol(core, tol); */
 
-   braid_SetRelTol(core, tol);
+   /* braid_SetRelTol(core, tol); */
 
 /* AP: this is probably related to grid coarsening in time */
    braid_SetCFactor(core, -1, cfactor);
