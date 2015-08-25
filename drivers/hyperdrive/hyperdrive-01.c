@@ -44,7 +44,7 @@ int main(int argc, char ** argv)
    double wave_speed, viscosity, restr_coeff=0.0, ad_coeff=0.0;
    
    int nstepsset, arg_index, print_usage=0, myid=0, nx;
-   int wave_no = 1, spatial_order=6;
+   int wave_no = 1, spatial_order=4;
 
    FILE *fp;
    
@@ -236,7 +236,7 @@ int main(int argc, char ** argv)
       printf("  -cfl <float>    : cfl-number (default 0.5)\n");
       printf("  -nu  <float>    : viscosity (>=0, default 0.0)\n");
       printf("  -nsteps <int>   : number of time steps (positive) (default tfinal/dt)\n");
-      printf("  -order <int>    : spatial order of accuracy (positive, even, <=6) (default 6)\n");
+      printf("  -order <int>    : spatial order of accuracy (positive, even, <=6) (default 4)\n");
       printf("  -tfinal <float> : end time (default 1.0)\n");
       printf("  -wn <int>       : wave number in exact solution (default 1)\n");
       printf("  -ad <float>     : artificial dissipation coefficient ( for all grids I think) (default 0.0)\n");

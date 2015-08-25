@@ -60,9 +60,9 @@ ifeq ($(findstring tux343,$(HOSTNAME)),tux343)
 	ifeq ($(lvalgrind),YES)
 		LFLAGS += /usr/lib64/valgrind/libmpiwrap-amd64-linux.so 
    endif
-else ifeq ($(findstring yorkville,$(HOSTNAME)),yorkville)
+else ifeq ($(findstring fourier,$(HOSTNAME)),fourier)
   # for Anders' laptop
-	CC = mpicc
+	CC = gcc
 	MPICC = mpicc
 	MPICXX = mpicxx
         MPIF90 = mpif90
