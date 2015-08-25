@@ -1314,7 +1314,7 @@ int main(int argc, char *argv[])
          correct = util.TestSpatialNorm( &app, comm_x, stdout, test_t);
          correct = util.TestBuf( &app, comm_x, stdout, test_t);
          correct = util.TestCoarsenRefine(&app, comm_x, stdout,
-                                     2*test_dt, test_dt, test_dt/2);
+                                     2*test_dt, test_dt/2, test_dt);
 
          if(correct == 0)
          {

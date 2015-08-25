@@ -106,6 +106,21 @@ else ifeq ($(findstring cab,$(HOSTNAME)),cab)
 		CXXFLAGS = -O -Wall
       FORTFLAGS = -O1 -Wall
 	endif   
+else ifeq ($(findstring vulcan,$(HOSTNAME)),vulcan)
+  # for Vulcan
+	MPICC = mpixlc
+	MPICXX = mpixlcxx
+   MPIF90 = mpixlf90
+	LFLAGS = -lm
+	ifeq ($(optlevel),DEBUG)
+		CFLAGS = -g -Wall
+		CXXFLAGS = -g -Wall
+      FORTFLAGS = -Og -Wall
+	else
+		CFLAGS = -O -Wall
+		CXXFLAGS = -O -Wall
+      FORTFLAGS = -O1 -Wall
+	endif
 else ifeq ($(shell uname -s),Linux)
 	MPICC = mpicc
 	MPICXX = mpiCC
