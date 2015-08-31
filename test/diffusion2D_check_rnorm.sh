@@ -91,38 +91,38 @@ cd $test_dir
 # Run the following regression tests 
 # These tests run 5 different processor configurations in time and make sure that the exact same residual
 # norm is returned in all cases.  The three different temporal norm options are all tested.  
-TESTS=( "$RunString -np 1  $driver_dir/drive-02 -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 " \
-        "$RunString -np 2  $driver_dir/drive-02 -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 " \
-        "$RunString -np 3  $driver_dir/drive-02 -pgrid 1 1 3 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 " \
-        "$RunString -np 4  $driver_dir/drive-02 -pgrid 1 1 4 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 " \
-        "$RunString -np 5  $driver_dir/drive-02 -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 " \
-        "$RunString -np 2  $driver_dir/drive-02 -pgrid 2 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -use_rand 0" \
-        "$RunString -np 4  $driver_dir/drive-02 -pgrid 2 2 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -use_rand 0" \
-        "$RunString -np 6  $driver_dir/drive-02 -pgrid 3 2 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -use_rand 0" \
-        "$RunString -np 9  $driver_dir/drive-02 -pgrid 3 3 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -use_rand 0" \
-        "$RunString -np 8  $driver_dir/drive-02 -pgrid 2 2 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -use_rand 0" \
-        "$RunString -np 18 $driver_dir/drive-02 -pgrid 3 3 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -use_rand 0" \
-        "$RunString -np 1  $driver_dir/drive-02 -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1" \
-        "$RunString -np 2  $driver_dir/drive-02 -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1" \
-        "$RunString -np 3  $driver_dir/drive-02 -pgrid 1 1 3 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1" \
-        "$RunString -np 4  $driver_dir/drive-02 -pgrid 1 1 4 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1" \
-        "$RunString -np 5  $driver_dir/drive-02 -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1" \
-        "$RunString -np 2  $driver_dir/drive-02 -pgrid 2 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1 -use_rand 0 -scoarsen 1" \
-        "$RunString -np 4  $driver_dir/drive-02 -pgrid 2 2 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1 -use_rand 0 -scoarsen 1" \
-        "$RunString -np 6  $driver_dir/drive-02 -pgrid 3 2 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1 -use_rand 0 -scoarsen 1" \
-        "$RunString -np 9  $driver_dir/drive-02 -pgrid 3 3 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1 -use_rand 0 -scoarsen 1" \
-        "$RunString -np 8  $driver_dir/drive-02 -pgrid 2 2 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1 -use_rand 0 -scoarsen 1" \
-        "$RunString -np 18 $driver_dir/drive-02 -pgrid 3 3 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1 -use_rand 0 -scoarsen 1" \
-        "$RunString -np 2  $driver_dir/drive-02 -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3" \
-        "$RunString -np 3  $driver_dir/drive-02 -pgrid 1 1 3 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3" \
-        "$RunString -np 4  $driver_dir/drive-02 -pgrid 1 1 4 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3" \
-        "$RunString -np 5  $driver_dir/drive-02 -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3" \
-        "$RunString -np 2  $driver_dir/drive-02 -pgrid 2 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -use_rand 0 -scoarsen 2" \
-        "$RunString -np 4  $driver_dir/drive-02 -pgrid 2 2 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -use_rand 0 -scoarsen 2" \
-        "$RunString -np 6  $driver_dir/drive-02 -pgrid 3 2 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -use_rand 0 -scoarsen 2" \
-        "$RunString -np 9  $driver_dir/drive-02 -pgrid 3 3 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -use_rand 0 -scoarsen 2" \
-        "$RunString -np 8  $driver_dir/drive-02 -pgrid 2 2 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -use_rand 0 -scoarsen 2" \
-        "$RunString -np 18 $driver_dir/drive-02 -pgrid 3 3 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -use_rand 0 -scoarsen 2" )
+TESTS=( "$RunString -np 1  $driver_dir/drive-02 -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2  -storage -2" \
+        "$RunString -np 2  $driver_dir/drive-02 -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2  -storage -2" \
+        "$RunString -np 3  $driver_dir/drive-02 -pgrid 1 1 3 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2  -storage -2" \
+        "$RunString -np 4  $driver_dir/drive-02 -pgrid 1 1 4 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2  -storage -2" \
+        "$RunString -np 5  $driver_dir/drive-02 -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2  -storage -2" \
+        "$RunString -np 2  $driver_dir/drive-02 -pgrid 2 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -use_rand 0 -storage -2" \
+        "$RunString -np 4  $driver_dir/drive-02 -pgrid 2 2 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -use_rand 0 -storage -2" \
+        "$RunString -np 6  $driver_dir/drive-02 -pgrid 3 2 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -use_rand 0 -storage -2" \
+        "$RunString -np 9  $driver_dir/drive-02 -pgrid 3 3 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -use_rand 0 -storage -2" \
+        "$RunString -np 8  $driver_dir/drive-02 -pgrid 2 2 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -use_rand 0 -storage -2" \
+        "$RunString -np 18 $driver_dir/drive-02 -pgrid 3 3 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -use_rand 0 -storage -2" \
+        "$RunString -np 1  $driver_dir/drive-02 -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1 -storage -2" \
+        "$RunString -np 2  $driver_dir/drive-02 -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1 -storage -2" \
+        "$RunString -np 3  $driver_dir/drive-02 -pgrid 1 1 3 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1 -storage -2" \
+        "$RunString -np 4  $driver_dir/drive-02 -pgrid 1 1 4 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1 -storage -2" \
+        "$RunString -np 5  $driver_dir/drive-02 -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1 -storage -2" \
+        "$RunString -np 2  $driver_dir/drive-02 -pgrid 2 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1 -use_rand 0 -scoarsen 1 -storage -2" \
+        "$RunString -np 4  $driver_dir/drive-02 -pgrid 2 2 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1 -use_rand 0 -scoarsen 1 -storage -2" \
+        "$RunString -np 6  $driver_dir/drive-02 -pgrid 3 2 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1 -use_rand 0 -scoarsen 1 -storage -2" \
+        "$RunString -np 9  $driver_dir/drive-02 -pgrid 3 3 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1 -use_rand 0 -scoarsen 1 -storage -2" \
+        "$RunString -np 8  $driver_dir/drive-02 -pgrid 2 2 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1 -use_rand 0 -scoarsen 1 -storage -2" \
+        "$RunString -np 18 $driver_dir/drive-02 -pgrid 3 3 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 1 -use_rand 0 -scoarsen 1 -storage -2" \
+        "$RunString -np 2  $driver_dir/drive-02 -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -storage -2" \
+        "$RunString -np 3  $driver_dir/drive-02 -pgrid 1 1 3 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -storage -2" \
+        "$RunString -np 4  $driver_dir/drive-02 -pgrid 1 1 4 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -storage -2" \
+        "$RunString -np 5  $driver_dir/drive-02 -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -storage -2" \
+        "$RunString -np 2  $driver_dir/drive-02 -pgrid 2 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -use_rand 0 -scoarsen 2 -storage -2" \
+        "$RunString -np 4  $driver_dir/drive-02 -pgrid 2 2 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -use_rand 0 -scoarsen 2 -storage -2" \
+        "$RunString -np 6  $driver_dir/drive-02 -pgrid 3 2 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -use_rand 0 -scoarsen 2 -storage -2" \
+        "$RunString -np 9  $driver_dir/drive-02 -pgrid 3 3 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -use_rand 0 -scoarsen 2 -storage -2" \
+        "$RunString -np 8  $driver_dir/drive-02 -pgrid 2 2 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -use_rand 0 -scoarsen 2 -storage -2" \
+        "$RunString -np 18 $driver_dir/drive-02 -pgrid 3 3 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -use_rand 0 -scoarsen 2 -storage -2" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 

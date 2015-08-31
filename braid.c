@@ -436,7 +436,7 @@ braid_Drive(braid_Core  core)
    _braid_CoreElt(core, global_rnorm) = global_rnorm;
 
    /* Print statistics for this run */
-   if( (print_level >= 0) && (myid == 0) )
+   if( (print_level > 0) && (myid == 0) )
    {
       braid_PrintStats(core);
    }

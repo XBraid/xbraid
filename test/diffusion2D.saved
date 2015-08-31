@@ -85,6 +85,7 @@
   my_Access() called, iter= 7, level= 0
  Fine level spatial problem size  : 17 x 17
 
+
 # Begin Test 7
  
   my_Access() called, iter= 7, level= 0
@@ -265,9 +266,9 @@ Finished braid_TestBuf: all tests passed successfully
 
 # Begin Test 10
 
-  my_Access() called, iter= 0, level= 0
+  my_Access() called, iter= 1, level= 0
   time steps = 128
-  iterations           = 0
+  iterations           = 1
   number of levels     = 1
  Fine level spatial problem size  : 17 x 17
 

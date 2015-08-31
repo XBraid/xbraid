@@ -630,18 +630,17 @@ NonlinearOptions::NonlinearOptions(int argc, char *argv[])
 	num_time_steps = 32;
    t_start = 0.0;
    t_final = 4.0;
-   double a = 1;
-	//Set defualts for the mesh/refinement inherited options
-	mesh_file			= "../../mfem/data/inline-quad.mesh";
-	ser_ref_levels = 1;
-	par_ref_levels = 1;
-	AddMeshOptions();
+   //Set defualts for the mesh/refinement inherited options
+   mesh_file			= "../../mfem/data/inline-quad.mesh";
+   ser_ref_levels = 1;
+   par_ref_levels = 1;
+   AddMeshOptions();
 
 	//Set defualts for the NonlinearOptions specific options
    mi_fine = 100;
-	mi_coarse = 100;
-	tol_fine = 0.0000001;
-	tol_coarse = tol_fine; 
+   mi_coarse = 100;
+   tol_fine = 0.0000001;
+   tol_coarse = tol_fine; 
    kap = M_PI;
    tau = (2 + 1./6.)*M_PI; 
    power = 2;

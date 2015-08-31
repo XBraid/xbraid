@@ -47,7 +47,7 @@ BRAID_LIB_FILE = ../libbraid.a
 
 C_EXAMPLES = drive-02 #drive-03
 # Note: .cpp examples will be linked with mfem
-CXX_EXAMPLES = drive-04 drive-05 drive-06 drive-07
+CXX_EXAMPLES = drive-04 #drive-05 drive-06 drive-07
 
 .SUFFIXES:
 .SUFFIXES: .c .cpp

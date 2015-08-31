@@ -643,7 +643,6 @@ int DiffusionApp::Step(braid_Vector    u_,
    BraidVector *ustop = (BraidVector*) ustop_;
    
    int braid_level;
-   int step_type;
    int braid_iter;
 
    pstatus.GetLevel(&braid_level);
