@@ -189,12 +189,15 @@ end subroutine braid_Access_F90
 
 
 ! Timestep with a braid_Vector
-subroutine braid_Phi_F90(app, u, pstatus)
+subroutine braid_Step_F90(app, ustop, fstop, fnotzero, u, pstatus)
    
    ! Braid types
    use braid_types
    implicit none
    integer (kind=8) :: pstatus
+   type(my_vector)  :: ustop
+   type(my_vector)  :: fstop
+   integer          :: fnotzero
    type(my_vector)  :: u
    type(my_app)     :: app
 
@@ -202,19 +205,48 @@ subroutine braid_Phi_F90(app, u, pstatus)
    double precision tstart, tstop, dt
 
    ! query the status structure for tstart and tstop 
-   call braid_phi_status_get_tstart_tstop_f90(pstatus, tstart, tstop)
+   call braid_step_status_get_tstart_tstop_f90(pstatus, tstart, tstop)
    dt = tstop - tstart
 
    ! On the finest grid, each value is half the previous value
    u%val = (0.5**dt)*(u%val)
 
-   ! Zero rhs for now 
-   u%val = u%val + 0.0
+   if (fnotzero .eq. 1) then
+      ! Nonzero rhs
+      u%val = u%val + fstop%val
+   end if
 
    ! no refinement
-   call braid_phi_status_set_rfactor_f90(pstatus, 0)
+   call braid_step_status_set_rfactor_f90(pstatus, 1)
 
-end subroutine braid_Phi_F90
+end subroutine braid_Step_F90
+
+
+! Residual
+subroutine braid_Residual_F90(app, ustop, r, pstatus)
+   
+   ! Braid types
+   use braid_types
+   implicit none
+   integer (kind=8) :: pstatus
+   type(my_vector)  :: ustop
+   type(my_vector)  :: r
+   type(my_app)     :: app
+
+   ! Other declarations
+   double precision tstart, tstop, dt
+
+   ! query the status structure for tstart and tstop 
+   call braid_step_status_get_tstart_tstop_f90(pstatus, tstart, tstop)
+   dt = tstop - tstart
+
+   ! On the finest grid, each value is half the previous value
+   r%val = (ustop%val) - (0.5**dt)*(r%val)
+
+   ! no refinement
+   call braid_step_status_set_rfactor_f90(pstatus, 1)
+
+end subroutine braid_Residual_F90
 
 
 ! Return the buffer size (in bytes) for braid_Vector
@@ -285,7 +317,7 @@ program ex01_f90
    double precision t, tol
    integer ierr, rc, max_levels, nrelax, nrelax0, cfactor, cfactor0
    integer max_iter, fmg, wrapper_tests, print_help, i, numarg
-   integer min_coarse, print_level, access_level, nfmg_Vcyc
+   integer min_coarse, print_level, access_level, nfmg_Vcyc, res
    character (len = 255) arg
    
    ! Seed random number generator
@@ -314,6 +346,7 @@ program ex01_f90
    max_iter      = 100
    fmg           = 0
    nfmg_Vcyc     = 1
+   res           = 0
    print_help    = 0
    wrapper_tests = 0
    min_coarse    = 3
@@ -357,6 +390,9 @@ program ex01_f90
          i = i+1; call getarg ( i, arg); i = i+1
          read(arg,*) nfmg_Vcyc
          fmg = 1
+      else if (arg == '-res') then
+         i = i+1; call getarg ( i, arg); i = i+1
+         res = 1
       else if (arg == '-print_level') then
          i = i+1; call getarg ( i, arg); i = i+1
          read(arg,*) print_level
@@ -379,6 +415,8 @@ program ex01_f90
          print *, "  -cf0  <cfactor>     : set coarsening factor for level 0 "
          print *, "  -mi  <max_iter>     : set max iterations"
          print *, "  -fmg <nfmg_Vcyc>    : use FMG cycling, nfmg_Vcyc  V-cycles at each fmg level"
+         print *, "  -res                : use user-defined residual computation function"
+         print *, "                        must compile with correct option in braid.h "
          print *, "  -print_level <l>    : sets the print_level (default: 1) "
          print *, "                        0 - no output to standard out "
          print *, "                        1 - Basic convergence information and hierarchy statistics\n"
@@ -422,6 +460,9 @@ program ex01_f90
          if (fmg == 1) then
             call braid_set_fmg_f90(braid_core)
             call braid_set_nfmg_vcyc_f90(braid_core, nfmg_Vcyc)
+         endif
+         if (res == 1) then
+            call braid_set_residual_f90(braid_core)
          endif
          call braid_set_min_coarse_f90(braid_core, min_coarse)
          call braid_set_print_level_f90( braid_core, print_level)

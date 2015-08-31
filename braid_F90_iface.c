@@ -241,20 +241,30 @@ braid_SpatialNorm_F90_Iface(braid_App      app,                /**< user-defined
 
 
 /**
- * braid_Phi
+ * braid_Step
  *
  * Fortran interface, first we define the prototype for the user-defined function and then we
  * provide the C-wrapper around the user-written Fortran function
  * */
-void braid_F90_Name(braid_phi_f90, BRAID_PHI_F90)(braid_F90_ObjPtr, braid_F90_ObjPtr,  braid_F90_ObjPtr);
+void braid_F90_Name(braid_step_f90, BRAID_STEP_F90)(braid_F90_ObjPtr, braid_F90_ObjPtr, braid_F90_ObjPtr,  braid_F90_Int *, braid_F90_ObjPtr, braid_F90_ObjPtr);
 braid_Int
-braid_Phi_F90_Iface(braid_App       app,           /**< user-defined _braid_App structure */
-                    braid_Vector    u,             /**< output, vector to evolve */
-                    braid_PhiStatus status         /**< query this struct for info about u (e.g., tstart and tstop), allows for steering (e.g., set rfactor) */
-                    )
+braid_Step_F90_Iface(braid_App        app,    /**< user-defined _braid_App structure */
+                     braid_Vector     ustop,  /**< input, u vector at *tstop* */
+                     braid_Vector     fstop,  /**< input, right-hand-side at *tstop* */
+                     braid_Vector     u     , /**< output, u vector at *tstop* */
+                     braid_StepStatus status  /**< query this struct for info about (e.g., tstart and tstop), allows for steering (e.g., set rfactor) */ 
+                     )
 {
-   braid_F90_Name(braid_phi_f90, BRAID_PHI_F90)( 
+   braid_Int fnotzero = 1;
+   if (fstop == NULL)
+   {
+      fnotzero = 0;
+   }
+   braid_F90_Name(braid_step_f90, BRAID_STEP_F90)( 
                             braid_PassF90_Obj(     app),
+                            braid_PassF90_Obj(     ustop),
+                            braid_PassF90_Obj(     fstop),
+                            braid_PassF90_Int(     fnotzero),
                             braid_PassF90_Obj(     u),
                             braid_PassF90_Obj(     status) );
    
@@ -323,6 +333,32 @@ braid_BufUnpack_F90_Iface(braid_App      app,          /**< user-defined _braid_
                             braid_PassF90_ObjRef(  u_ptr) );
    return 0;
 }
+
+#if (braid_Fortran_Residual == 1)
+
+/**
+ * braid_Residual
+ *
+ * Fortran interface, first we define the prototype for the user-defined function and then we
+ * provide the C-wrapper around the user-written Fortran function
+ * */
+void braid_F90_Name(braid_residual_f90, BRAID_RESIDUAL_F90)(braid_F90_ObjPtr, braid_F90_ObjPtr, braid_F90_ObjPtr, braid_F90_ObjPtr);
+braid_Int
+braid_Residual_F90_Iface(braid_App               app,        /**< user-defined _braid_App structure */
+                         braid_Vector            ustop,      /**< braid_Vector to compute residual with*/                       
+                         braid_Vector            r,          /**< output, residual vector */   
+                         braid_StepStatus        status      /**< query this struct for info about the current status, like tstop and tstart */
+                         )
+{
+   braid_F90_Name(braid_residual_f90, BRAID_RESIDUAL_F90)( 
+                            braid_PassF90_Obj(   app),
+                            braid_PassF90_Obj(   ustop),
+                            braid_PassF90_Obj(   r),
+                            braid_PassF90_Obj(   status) );
+   return 0;
+}
+
+#endif
 
 #if (braid_Fortran_SpatialCoarsen == 1)
 
@@ -589,42 +625,117 @@ braid_F90_Name(braid_access_status_get_tild_f90, BRAID_ACCESS_STATUS_GET_TILD_F9
    return 0;
 }
 
-/* Wrap braid_PhiStatusGetTstartTstop( ) */
+/* Wrap braid_StepStatusGetTstartTstop( ) */
 braid_Int
-braid_F90_Name(braid_phi_status_get_tstart_tstop_f90, BRAID_PHI_STATUS_GET_TSTART_TSTOP_F90)(
+braid_F90_Name(braid_step_status_get_tstart_tstop_f90, BRAID_STEP_STATUS_GET_TSTART_TSTOP_F90)(
                               braid_F90_ObjPtr    status,        /**< structure containing current simulation info */
                               braid_F90_Real     *tstart_ptr,    /**< output, current time */
                               braid_F90_Real     *tstop_ptr      /**< output, next time value to evolve towards */
                               )
 {
-   braid_PhiStatusGetTstartTstop( braid_TakeF90_Obj(braid_PhiStatus,  status),
-                                  braid_TakeF90_RealPtr(              tstart_ptr),
-                                  braid_TakeF90_RealPtr(              tstop_ptr) );
+   braid_StepStatusGetTstartTstop( braid_TakeF90_Obj(braid_StepStatus, status),
+                                   braid_TakeF90_RealPtr(              tstart_ptr),
+                                   braid_TakeF90_RealPtr(              tstop_ptr) );
    return 0;
 }
 
-/* Wrap braid_PhiStatusGetLevel( ) */
+/* Wrap braid_StepStatusGetLevel( ) */
 braid_Int
-braid_F90_Name(braid_phi_status_get_level_f90, BRAID_PHI_STATUS_GET_LEVEL_F90)(
-                                  braid_PhiStatus  status,           /**< structure containing current simulation info */
-                                  braid_Int       *level_ptr         /**< output, current level in XBraid */
+braid_F90_Name(braid_step_status_get_level_f90, BRAID_STEP_STATUS_GET_LEVEL_F90)(
+                                  braid_F90_ObjPtr    status,        /**< structure containing current simulation info */
+                                  braid_F90_Int      *level_ptr      /**< output, current level in XBraid */
                                   )
 {
-   braid_PhiStatusGetLevel( braid_TakeF90_Obj(braid_PhiStatus,  status),
-                            braid_TakeF90_IntPtr(               level_ptr) );
+   braid_StepStatusGetLevel( braid_TakeF90_Obj(braid_StepStatus,  status),
+                             braid_TakeF90_IntPtr(                level_ptr) );
    return 0;
 }
 
 
-/* Wrap braid_PhiStatusSetRFactor( ) */
+/* Wrap braid_StepStatusSetRFactor( ) */
 braid_Int
-braid_F90_Name(braid_phi_status_set_rfactor_f90, BRAID_PHI_STATUS_SET_RFACTOR_F90)(
+braid_F90_Name(braid_step_status_set_rfactor_f90, BRAID_STEP_STATUS_SET_RFACTOR_F90)(
                           braid_F90_ObjPtr    status,         /**< structure containing current simulation info */
                           braid_F90_Int      *rfactor         /**< user-determined desired rfactor */
                           )
 {
-   braid_PhiStatusSetRFactor( braid_TakeF90_Obj(braid_PhiStatus,  status),
-                              braid_TakeF90_Int(                  rfactor));
+   braid_StepStatusSetRFactor( braid_TakeF90_Obj(braid_StepStatus, status),
+                               braid_TakeF90_Int(                  rfactor));
+   return 0;
+}
+
+/* Wrap braid_StepStatusGetTol( ) */
+braid_Int
+braid_F90_Name(braid_step_status_get_tol_f90, BRAID_STEP_STATUS_GET_TOL_F90)(
+                              braid_F90_ObjPtr    status,        /**< structure containing current simulation info */
+                              braid_F90_Real      *tol_ptr       /**< output, current XBraid stopping tolerance */
+                              )
+{
+   braid_StepStatusGetTol( braid_TakeF90_Obj(braid_StepStatus, status),
+                           braid_TakeF90_RealPtr(              tol_ptr) );
+   return 0;
+}
+
+/* Wrap braid_StepStatusGetIter( ) */
+braid_Int
+braid_F90_Name(braid_step_status_get_iter_f90, BRAID_STEP_STATUS_GET_ITER_F90)(
+                              braid_F90_ObjPtr    status,        /**< structure containing current simulation info */
+                              braid_F90_Int       *iter_ptr      /**< output, current iteration in XBraid */
+                              )
+{
+   braid_StepStatusGetIter( braid_TakeF90_Obj(braid_StepStatus, status),
+                            braid_TakeF90_IntPtr(               iter_ptr) );
+   return 0;
+}
+
+/* Wrap braid_StepStatusGetRNorms( ) */
+braid_Int
+braid_F90_Name(braid_step_status_get_rnorms_f90, BRAID_STEP_STATUS_GET_RNORMS_F90)(
+                             braid_F90_ObjPtr  status,            /**< structure containing current simulation info */
+                             braid_F90_Int     *nrequest_ptr,     /**< input/output, input: num requested resid norms, output: num actually returned */
+                             braid_F90_Real    *rnorm_ptr         /**< output, holds residual norm history array */
+                             )
+{
+   braid_StepStatusGetRNorms(braid_TakeF90_Obj(braid_StepStatus, status),
+                             braid_TakeF90_IntPtr(               nrequest_ptr),
+                             braid_TakeF90_RealPtr(              rnorm_ptr) );
+   return 0;
+}
+
+
+/* Wrap braid_StepStatusGetOldFineTolx( ) */
+braid_Int
+braid_F90_Name(braid_step_status_get_old_fine_tolx_f90, BRAID_STEP_STATUS_GET_OLD_FINE_TOLX_F90)(
+                              braid_F90_ObjPtr    status,              /**< structure containing current simulation info */
+                              braid_F90_Real      *old_fine_tolx_ptr   /**< output, previous *old_fine_tolx*, set through *braid_StepStatusSetOldFineTolx* */                              
+                              )
+{
+   braid_StepStatusGetOldFineTolx( braid_TakeF90_Obj(braid_StepStatus, status),
+                                   braid_TakeF90_RealPtr(              old_fine_tolx_ptr) );
+   return 0;
+}
+
+/* Wrap braid_StepStatusSetOldFineTolx( ) */
+braid_Int
+braid_F90_Name(braid_step_status_set_old_fine_tolx_f90, BRAID_STEP_STATUS_SET_OLD_FINE_TOLX_F90)(
+                              braid_F90_ObjPtr    status,              /**< structure containing current simulation info */
+                              braid_F90_Real      *old_fine_tolx       /**< input, the last used fine_tolx */                              
+                              )
+{
+   braid_StepStatusSetOldFineTolx( braid_TakeF90_Obj(braid_StepStatus, status),
+                                   braid_TakeF90_Real(                 old_fine_tolx) );
+   return 0;
+}
+
+/* Wrap braid_StepStatusSetTightFineTolx( ) */
+braid_Int
+braid_F90_Name(braid_step_status_set_tight_fine_tolx_f90, BRAID_STEP_STATUS_SET_TIGHT_FINE_TOLX_F90)(
+                              braid_F90_ObjPtr    status,              /**< structure containing current simulation info */
+                              braid_F90_Real      *tight_fine_tolx     /**< input, boolean indicating whether the tight tolx has been used */
+                              )
+{
+   braid_StepStatusSetTightFineTolx( braid_TakeF90_Obj(braid_StepStatus, status),
+                                     braid_TakeF90_Real(                 tight_fine_tolx) );
    return 0;
 }
 
@@ -651,7 +762,7 @@ braid_F90_Name(braid_init_f90, BRAID_INIT_F90)(
               braid_TakeF90_Real(              tstop),
               braid_TakeF90_Int(               ntime),
               braid_TakeF90_Obj(braid_App,     app),
-              braid_Phi_F90_Iface, 
+              braid_Step_F90_Iface, 
               braid_Init_Vec_F90_Iface, 
               braid_Clone_F90_Iface,
               braid_Free_F90_Iface,
@@ -694,34 +805,6 @@ braid_F90_Name(braid_print_stats_f90, BRAID_PRINT_STATS_F90)(
                    )
 {
    braid_PrintStats( braid_TakeF90_ObjDeref(braid_Core,     core) );
-   return 0;
-}
-
-/*  braid_SetLoosexTol( ) */
-braid_Int
-braid_F90_Name(braid_set_loosextol_f90, BRAID_SET_LOOSE_XTOL_F90)(
-                   braid_F90_ObjPtr  *core,        /**< braid_Core (_braid_Core) struct*/
-                   braid_F90_Int     *level,       /**< level to set *loose_tol* */
-                   braid_F90_Real    *loose_tol    /**< tolerance to set */
-                   )
-{
-   braid_SetLoosexTol(braid_TakeF90_ObjDeref(braid_Core,  core) ,
-                      braid_TakeF90_Int(                  level),
-                      braid_TakeF90_Real(                 loose_tol) );
-   return 0;
-}
-
-/*  braid_SetTightxTol( ) */
-braid_Int
-braid_F90_Name(braid_set_tight_xtol_f90, BRAID_SET_TIGHT_XTOL_F90)(
-                   braid_F90_ObjPtr  *core,        /**< braid_Core (_braid_Core) struct*/
-                   braid_F90_Int     *level,       /**< level to set *tight_tol* */
-                   braid_F90_Real    *tight_tol    /**< tolerance to set */
-                   )
-{
-   braid_SetTightxTol(braid_TakeF90_ObjDeref(braid_Core,  core) ,
-                      braid_TakeF90_Int(                  level),
-                      braid_TakeF90_Real(                 tight_tol) );
    return 0;
 }
 
@@ -847,6 +930,33 @@ braid_F90_Name(braid_set_nfmg_vcyc_f90, BRAID_SET_NFMG_VCYC_F90)(
    return 0;
 }
 
+/* braid_SetStorage( ) */
+braid_Int
+braid_F90_Name(braid_set_storage_f90, BRAID_SET_STORAGE_F90)(
+                   braid_F90_ObjPtr  *core,        /**< braid_Core (_braid_Core) struct*/
+                   braid_F90_Int     *storage      /**< store C-points (0), all points (1) */
+                   )
+{
+   braid_SetStorage(braid_TakeF90_ObjDeref(braid_Core,  core) ,
+                    braid_TakeF90_Int(                  storage) );
+   return 0;
+}
+
+#if (braid_Fortran_Residual == 1)
+
+/* braid_SetResidual( ) */
+braid_Int
+braid_F90_Name(braid_set_residual_f90, BRAID_SET_RESIDUAL_F90)(
+                   braid_F90_ObjPtr   *core         /**< braid_Core (_braid_Core) struct*/
+                   )
+{
+   braid_SetResidual(braid_TakeF90_ObjDeref(braid_Core,  core) ,
+                     braid_F90_Name(braid_residual_f90,  BRAID_RESIDUAL_F90) );
+   return 0;
+}
+
+#endif
+
 #if (braid_Fortran_SpatialCoarsen == 1)
 
 /* braid_SetSpatialCoarsen( ) */
@@ -942,15 +1052,17 @@ braid_F90_Name(braid_get_num_iter_f90, BRAID_GET_NUM_ITER_F90)(
    return 0;
 }
 
-/* braid_GetRNorm( ) */
+/* braid_GetRNorms( ) */
 braid_Int
-braid_F90_Name(braid_get_rnorm_f90, BRAID_GET_RNORM_F90)(
-                   braid_F90_ObjPtr  *core,        /**< braid_Core (_braid_Core) struct*/
-                   braid_F90_Real    *rnorm_ptr    /**< output, holds final residual norm */
+braid_F90_Name(braid_get_rnorms_f90, BRAID_GET_RNORMS_F90)(
+                   braid_F90_ObjPtr  *core,         /**< braid_Core (_braid_Core) struct*/
+                   braid_F90_Int     *nrequest_ptr, /**< input/output, input: num requested resid norms, output: num actually returned */
+                   braid_F90_Real    *rnorm_ptr     /**< output, holds residual norm history array */
                    )
 {
-   braid_GetRNorm(braid_TakeF90_ObjDeref(braid_Core,  core) ,
-                  braid_TakeF90_RealPtr(              rnorm_ptr) );
+   braid_GetRNorms(braid_TakeF90_ObjDeref(braid_Core,  core) ,
+                   braid_TakeF90_IntPtr(               nrequest_ptr),
+                   braid_TakeF90_RealPtr(              rnorm_ptr) );
    return 0;
 }
 
@@ -965,6 +1077,24 @@ braid_F90_Name(braid_get_nlevels_f90, BRAID_GET_NLEVELS_F90)(
                     braid_TakeF90_IntPtr(               nlevels_ptr) );
    return 0;
 }
+
+/* braid_GetSpatialAccuracy( ) */
+braid_Int
+braid_F90_Name(braid_get_spatial_accuracy_f90, BRAID_GET_SPATIAL_ACCURACY_F90)(
+               braid_F90_ObjPtr    status,        /**< structure containing current simulation info */
+               braid_F90_Real      *loose_tol,    /**< Loosest allowed spatial solve stopping tol on fine grid*/
+               braid_F90_Real      *tight_tol,    /**< Tightest allowed spatial solve stopping tol on fine grid*/
+               braid_F90_Real      *tol_ptr       /**< output, holds the computed spatial solve stopping tol */
+               )
+{
+   braid_GetSpatialAccuracy(braid_TakeF90_Obj(braid_StepStatus, status),   
+                            braid_TakeF90_Real(                 loose_tol),
+                            braid_TakeF90_Real(                 tight_tol),
+                            braid_TakeF90_RealPtr(              tol_ptr));
+
+   return 0;
+}
+
 
 
 #endif

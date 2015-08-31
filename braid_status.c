@@ -28,6 +28,9 @@
  */
 
 #include "braid_status.h"
+#include "_braid.h"
+#include "braid_defs.h"
+#include "util.h"
 
 #ifndef DEBUG
 #define DEBUG 0
@@ -78,6 +81,16 @@ braid_AccessStatusGetLevel(braid_AccessStatus  status,
    return _braid_error_flag;
 }
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_AccessStatusGetNRefine(braid_AccessStatus  status,
+                             braid_Int          *nrefine_ptr)
+{
+   *nrefine_ptr = _braid_StatusElt(status, nrefine);
+   return _braid_error_flag;
+}
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
@@ -142,12 +155,14 @@ _braid_AccessStatusInit(braid_Real           t,
                         braid_Real           rnorm,
                         braid_Int            iter,
                         braid_Int            level,
+                        braid_Int            nrefine,
                         braid_Int            done,
                         braid_Int            wrapper_test,
                         braid_AccessStatus   status)
 {
    _braid_StatusElt(status, t)            = t;
    _braid_StatusElt(status, level)        = level;
+   _braid_StatusElt(status, nrefine)      = nrefine;
    _braid_StatusElt(status, rnorm)        = rnorm;
    _braid_StatusElt(status, done)         = done;
    _braid_StatusElt(status, iter)         = iter; 
@@ -168,14 +183,16 @@ _braid_CoarsenRefStatusInit(braid_Real              tstart,
                             braid_Real              c_tprior,
                             braid_Real              c_tstop,
                             braid_Int               level,
+                            braid_Int               nrefine,
                             braid_CoarsenRefStatus  status)
 {
-   _braid_StatusElt(status, tstart) = tstart;
+   _braid_StatusElt(status, tstart)   = tstart;
    _braid_StatusElt(status, f_tprior) = f_tprior;
    _braid_StatusElt(status, f_tstop)  = f_tstop;
    _braid_StatusElt(status, c_tprior) = c_tprior;
    _braid_StatusElt(status, c_tstop)  = c_tstop;
-   _braid_StatusElt(status, level)  = level;
+   _braid_StatusElt(status, level)    = level;
+   _braid_StatusElt(status, nrefine)  = nrefine;
 
    return _braid_error_flag;
 }
@@ -262,26 +279,40 @@ braid_CoarsenRefStatusGetLevel(braid_CoarsenRefStatus  status,
    return _braid_error_flag;
 }
 
+braid_Int
+braid_CoarsenRefStatusGetNRefine(braid_CoarsenRefStatus  status,
+                                 braid_Int              *nrefine_ptr
+                                )
+{
+   *nrefine_ptr = _braid_StatusElt(status, nrefine);
+   return _braid_error_flag;
+}
+
 /*--------------------------------------------------------------------------
- * CoarsenRefStatus Routines
+ * StepStatus Routines
  *--------------------------------------------------------------------------*/
 braid_Int
-_braid_PhiStatusInit(braid_Real       tstart,
-                     braid_Real       tstop,
-                     braid_Real       accuracy,
-                     braid_Int        level,
-                     braid_PhiStatus  status)
+_braid_StepStatusInit(braid_Real       tstart,
+                      braid_Real       tstop,
+                      braid_Real       tol,
+                      braid_Int        iter,
+                      braid_Int        level,
+                      braid_Int        nrefine,
+                      braid_StepStatus status)
 {
-   _braid_StatusElt(status, tstart)   = tstart;
-   _braid_StatusElt(status, tstop)    = tstop;
-   _braid_StatusElt(status, accuracy) = accuracy;
-   _braid_StatusElt(status, level)    = level;
+   _braid_StatusElt(status, tstart)    = tstart;
+   _braid_StatusElt(status, tstop)     = tstop;
+   _braid_StatusElt(status, tol)       = tol;
+   _braid_StatusElt(status, iter)      = iter;
+   _braid_StatusElt(status, level)     = level;
+   _braid_StatusElt(status, nrefine)   = nrefine;
+   _braid_StatusElt(status, rfactor)   = 1;
 
    return _braid_error_flag;
 }
 
 braid_Int
-_braid_PhiStatusDestroy(braid_PhiStatus  status)
+_braid_StepStatusDestroy(braid_StepStatus  status)
 {
    if (status)
    {
@@ -293,51 +324,51 @@ _braid_PhiStatusDestroy(braid_PhiStatus  status)
 
 
 braid_Int
-braid_PhiStatusGetTstart(braid_PhiStatus  status,
-                         braid_Real      *tstart_ptr)
+braid_StepStatusGetTstart(braid_StepStatus  status,
+                          braid_Real       *tstart_ptr)
 {
    *tstart_ptr = _braid_StatusElt(status, tstart);
    return _braid_error_flag;
 }
 
 braid_Int
-braid_PhiStatusGetTstop(braid_PhiStatus  status,
-                        braid_Real      *tstop_ptr)
+braid_StepStatusGetTstop(braid_StepStatus  status,
+                         braid_Real       *tstop_ptr)
 {
    *tstop_ptr = _braid_StatusElt(status, tstop);
    return _braid_error_flag;
 }
 
 braid_Int
-braid_PhiStatusGetAccuracy(braid_PhiStatus  status,
-                           braid_Real      *accuracy_ptr)
-{
-   *accuracy_ptr = _braid_StatusElt(status, accuracy);
-   return _braid_error_flag;
-}
-
-braid_Int
-braid_PhiStatusGetLevel(braid_PhiStatus  status,
-                        braid_Int       *level_ptr
+braid_StepStatusGetLevel(braid_StepStatus  status,
+                         braid_Int        *level_ptr
                         )
 {
    *level_ptr = _braid_StatusElt(status, level);
    return _braid_error_flag;
 }
 
+braid_Int
+braid_StepStatusGetNRefine(braid_StepStatus  status,
+                           braid_Int        *nrefine_ptr
+                          )
+{
+   *nrefine_ptr = _braid_StatusElt(status, nrefine);
+   return _braid_error_flag;
+}
 
 braid_Int
-braid_PhiStatusSetRFactor(braid_PhiStatus  status,
-                          braid_Real       rfactor)
+braid_StepStatusSetRFactor(braid_StepStatus  status,
+                           braid_Real        rfactor)
 {
    _braid_StatusElt(status, rfactor) = rfactor;
    return _braid_error_flag;
 }
 
 braid_Int
-braid_PhiStatusGetTstartTstop(braid_PhiStatus  status,
-                              braid_Real       *tstart_ptr,
-                              braid_Real       *tstop_ptr)
+braid_StepStatusGetTstartTstop(braid_StepStatus  status,
+                               braid_Real       *tstart_ptr,
+                               braid_Real       *tstop_ptr)
 {
    *tstart_ptr = _braid_StatusElt(status, tstart);
    *tstop_ptr = _braid_StatusElt(status, tstop);
@@ -345,4 +376,60 @@ braid_PhiStatusGetTstartTstop(braid_PhiStatus  status,
    return _braid_error_flag;
 }
 
+braid_Int
+braid_StepStatusGetTol(braid_StepStatus  status,
+                       braid_Real       *tol_ptr
+                       )
+{
+   *tol_ptr = _braid_StatusElt(status, tol);
+   return _braid_error_flag;
+}
 
+braid_Int
+braid_StepStatusGetIter(braid_StepStatus  status,
+                        braid_Int        *iter_ptr
+                        )
+{
+   *iter_ptr = _braid_StatusElt(status, iter);
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_StepStatusGetRNorms(braid_StepStatus  status,
+                          braid_Int        *nrequest_ptr,
+                          braid_Real       *rnorms 
+                          )
+{
+   braid_Real     *_rnorms   = _braid_StatusElt(status, rnorms);
+   braid_Int      rnorms_len = *(_braid_StatusElt(status, rnorms_len_ptr));
+   
+   _braid_GetNEntries(_rnorms, rnorms_len, nrequest_ptr, rnorms);
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_StepStatusGetOldFineTolx(braid_StepStatus  status,
+                               braid_Real       *old_fine_tolx_ptr
+                               )
+{
+   *old_fine_tolx_ptr = _braid_StatusElt(status, old_fine_tolx);
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_StepStatusSetOldFineTolx(braid_StepStatus  status,
+                               braid_Real        old_fine_tolx_ptr
+                               )
+{
+   _braid_StatusElt(status, old_fine_tolx) = old_fine_tolx_ptr;
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_StepStatusSetTightFineTolx(braid_StepStatus  status,
+                                 braid_Int         tight_fine_tolx
+                                 )
+{
+   _braid_StatusElt(status, tight_fine_tolx) = tight_fine_tolx;
+   return _braid_error_flag;
+}

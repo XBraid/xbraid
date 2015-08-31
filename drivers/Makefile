@@ -45,9 +45,9 @@ MFEM_LIB = -L$(MFEM_DIR) -lmfem -L$(METIS_DIR) -lmetis
 BRAID_FLAGS = -I..
 BRAID_LIB_FILE = ../libbraid.a
 
-C_EXAMPLES = drive-02 drive-03
+C_EXAMPLES = drive-02 #drive-03
 # Note: .cpp examples will be linked with mfem
-CXX_EXAMPLES = drive-04 drive-05
+CXX_EXAMPLES = drive-04 drive-05 drive-06 drive-07
 
 .SUFFIXES:
 .SUFFIXES: .c .cpp
@@ -68,7 +68,7 @@ all: $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES)
  $(@).cpp -o $@ $(MFEM_LIB) $(HYPRE_LIB) $(BRAID_LIB_FILE) $(LFLAGS)
 
 clean: cleanout
-	rm -f *.o $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES) *ror_norm* *_err_* *_mesh* *_sol_*
+	rm -f *.o $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES) *ror_norm* *_err_* *_sol_*
 	rm -rf *.dSYM
 
 cleanout:

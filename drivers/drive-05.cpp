@@ -20,6 +20,7 @@
 //
 
 #include "braid_mfem.hpp"
+#include "mfem_arnoldi.hpp"
 #include <fstream>
 #include <iostream>
 
@@ -71,6 +72,8 @@ struct DGAdvectionOptions : public BraidOptions
    int    ode_solver_type;
    bool   lump_mass;
    double dt; // derived from t_start, t_final, and num_time_steps
+   bool   krylov_coarse;
+   int    krylov_size;
 
    const char *vishost;
    int         visport;
@@ -118,8 +121,10 @@ public:
    SpaceTimeMeshInfo MeshInfo;
 
    // braid_Vector == BraidVector*
-   virtual int Phi(braid_Vector    u_,
-                   BraidPhiStatus &pstatus);
+   virtual int Step(braid_Vector    u_,
+                    braid_Vector    u_stop_,
+                    braid_Vector    fstop_,
+                    BraidStepStatus &pstatus);
 
    virtual ~DGAdvectionApp();
 };
@@ -249,6 +254,8 @@ DGAdvectionOptions::DGAdvectionOptions(int argc, char *argv[])
    order           = 3;
    ode_solver_type = 4;
    lump_mass       = false;
+   krylov_coarse   = false;
+   krylov_size     = 4;
    vishost         = "localhost";
    visport         = 19916;
    vis_time_steps  = 0;
@@ -266,6 +273,11 @@ DGAdvectionOptions::DGAdvectionOptions(int argc, char *argv[])
    AddOption(&lump_mass, "-lump", "--lump-mass-matrix", "-dont-lump",
              "--dont-lump-mass-matrix", "Enable/disable lumping of the mass"
              " matrix.");
+   AddOption(&krylov_coarse, "-kc", "--krylov-coarse", "-dont-kc",
+             "--dont-krylov-coarse", "Enable/disable use of Arnoldi-based coarse-grid"
+             " time-stepping.");
+   AddOption(&krylov_size, "-ks", "--krylov-size", "Set size of the Krylov space for the"
+                           " Arnoldi-based coarse-grid time-stepping.");
    AddOption(&vishost, "-vh", "--visualization-host",
              "Set the GLVis host.");
    AddOption(&visport, "-vp", "--visualization-port",
@@ -321,10 +333,12 @@ DGAdvectionApp::~DGAdvectionApp()
 }
 
 
-int DGAdvectionApp::Phi(braid_Vector    u_,
-                        BraidPhiStatus &pstatus)
+int DGAdvectionApp::Step(braid_Vector    u_,
+                         braid_Vector    ustop_,
+                         braid_Vector    fstop_,
+                         BraidStepStatus &pstatus)
 {
-   // This contains one small change over the default Phi, we store the Space-Time mesh info
+   // This contains one small change over the default Step, we store the Space-Time mesh info
    
    // Store Space-Time Mesh Info
    BraidVector *u = (BraidVector*) u_;
@@ -338,9 +352,67 @@ int DGAdvectionApp::Phi(braid_Vector    u_,
 
    MeshInfo.SetRow(braid_level, level, x[u->level]->ParFESpace()->GetParMesh(), dt);
    
-   // Call the default Phi
-   MFEMBraidApp::Phi(u_, pstatus);
-   
+   if((braid_level == 0) || (options.krylov_coarse == false) )
+   {
+       // Call the default Step
+       MFEMBraidApp::Step(u_,ustop_,fstop_, pstatus);
+   }
+   else
+   {
+       double norm_u_sq = InnerProduct(u, u);
+       
+       if(norm_u_sq > 0.0)
+       {
+           // Generate Krylov Space
+           Arnoldi arn(options.krylov_size, mesh[0]->GetComm());
+           arn.SetOperator(*ode[0]);
+           arn.GenKrylovSpace(*u);
+           Vector ubar;
+           arn.ApplyVT(*u, ubar);
+           
+           // Setup the ODE solver
+           ODESolver *ode_solver = NULL;
+           switch (options.ode_solver_type)
+           {
+              case 1: ode_solver = new ForwardEulerSolver; break;
+              case 2: ode_solver = new RK2Solver(1.0); break;
+              case 3: ode_solver = new RK3SSPSolver; break;
+              case 4: ode_solver = new RK4Solver; break;
+              case 6: ode_solver = new RK6Solver; break;
+           
+              default: ode_solver = new RK4Solver; break;
+           }
+           ode_solver->Init(arn.GetH());
+           
+           // Do time-stepping
+           int m;
+           if( options.cfactor0 == -1)
+           {
+               m = pow(options.cfactor, braid_level);
+           }
+           else
+           {
+               m = options.cfactor0*pow(options.cfactor, braid_level-1);
+           }
+           
+           double dt_fine = dt / ( (double) m);
+           for(int k = 0; k < m; k++)
+           {
+               // Step() advances tstart by dt_fine
+               ode_solver->Step(ubar, tstart, dt_fine);
+           }
+           
+           // Convert ubar back to full space
+           arn.ApplyV(ubar, *u);
+           
+           delete ode_solver;
+       }
+
+       // no refinement
+       pstatus.SetRFactor(1);
+       
+   }
+
    return 0;
 }
 

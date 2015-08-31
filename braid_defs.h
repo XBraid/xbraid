@@ -31,6 +31,8 @@
 #define braiddefs_HEADER
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,6 +52,12 @@ typedef int    braid_Int;
  **/
 typedef double braid_Real;
 
+/*--------------------------------------------------------------------------
+ * MPI stuff
+ *--------------------------------------------------------------------------*/
+
+#define braid_MPI_REAL  MPI_DOUBLE
+#define braid_MPI_INT   MPI_INT
 
 /*--------------------------------------------------------------------------
  * Error handling
@@ -88,6 +96,17 @@ extern braid_Int _braid_error_flag;
  **/
 #define _braid_TFree(ptr) \
 ( free((char *)ptr), ptr = NULL )
+
+/*--------------------------------------------------------------------------
+ * Miscellaneous macros (RDF - Is this the right file location?)
+ *--------------------------------------------------------------------------*/
+
+#ifndef _braid_max
+#define _braid_max(a,b)  (((a)<(b)) ? (b) : (a))
+#endif
+#ifndef _braid_min
+#define _braid_min(a,b)  (((a)<(b)) ? (a) : (b))
+#endif
 
 
 #ifdef __cplusplus

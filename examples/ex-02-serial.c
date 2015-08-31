@@ -281,7 +281,7 @@ int main (int argc, char *argv[])
       }
       
       /* Take Step */
-      take_step(man, u, tstart, tstop, &iters_taken);
+      take_step(man, u, NULL, u, tstart, tstop, &iters_taken);
       if( i < man->nt-1){
          tstart = tstop;
          tstop = tstop + dt;

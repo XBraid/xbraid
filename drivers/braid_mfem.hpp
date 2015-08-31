@@ -198,8 +198,10 @@ public:
 
    // Below braid_Vector == BraidVector*
 
-   virtual int Phi(braid_Vector    u_,
-                   BraidPhiStatus &pstatus);
+   virtual int Step(braid_Vector    u_,
+                    braid_Vector    ustop_,
+                    braid_Vector    fstop_,
+                    BraidStepStatus &pstatus);
 
    virtual int Clone(braid_Vector  u_,
                      braid_Vector *v_ptr);
@@ -236,6 +238,11 @@ public:
 
    virtual int Access(braid_Vector       u_,
                       BraidAccessStatus &astatus);
+
+   virtual int Residual(braid_Vector _u,
+                              braid_Vector _r,
+                              BraidStepStatus &pstatus){return 0;} ;
+   
 };
 
 
@@ -251,6 +258,7 @@ struct BraidOptions : public OptionsParser
    int    nrelax0;
    double tol;
    int    tnorm;
+   int    storage;
    int    cfactor;
    int    cfactor0;
    int    max_iter;
@@ -507,17 +515,18 @@ int MFEMBraidApp::ComputeSpaceLevel(double tstart, double tprior, double tstop)
    return level;
 }
 
-int MFEMBraidApp::Phi(braid_Vector    u_,
-                      BraidPhiStatus &pstatus)
+int MFEMBraidApp::Step(braid_Vector    u_,
+                       braid_Vector    ustop_,
+                       braid_Vector    fstop_,
+                       BraidStepStatus &pstatus)
 {
    BraidVector *u = (BraidVector*) u_;
    int level = u->level;
-   double tstart, tstop, accuracy, t, dt;
+   double tstart, tstop, t, dt;
    int braid_level;
 
    // Get time step information
    pstatus.GetTstartTstop(&tstart, &tstop);
-   pstatus.GetAccuracy(&accuracy);
    pstatus.GetLevel(&braid_level);
 
    t = tstart;
@@ -641,7 +650,7 @@ int MFEMBraidApp::Coarsen(braid_Vector   fu_,
          TrueDofsToLDofs(*fu, *x[lev-1]);
 
          // Rescale before restriction
-         // *x[lev-1] *= 1./4;
+          *x[lev-1] *= 1./4;
 
          // Apply local restriction (no communication)
          R[lev-1]->Mult(*x[lev-1], *x[lev]);
@@ -836,6 +845,7 @@ BraidOptions::BraidOptions(int argc, char *argv[])
    nrelax0          = -1;
    tol              = 1e-9;
    tnorm            = 2;
+   storage          = -2;
    cfactor          = 2;
    cfactor0         = -1;
    max_iter         = 100;
@@ -864,6 +874,8 @@ BraidOptions::BraidOptions(int argc, char *argv[])
              "3:max-norm.");
    AddOption(&cfactor, "-cf", "--coarsen-factor",
              "Coarsening factor.");
+   AddOption(&storage, "-store", "--storage-option ,",
+             "Storage to use: 0:store C points, 1:store all points.");          
    AddOption(&cfactor0, "-cf0", "--agg-coarsen-factor",
              "Aggressive coarsening factor, -1:off.");
    AddOption(&max_iter, "-mi", "--max-iter",
@@ -916,6 +928,7 @@ void BraidOptions::SetBraidCoreOptions(BraidCore &core)
    core.SetCFactor(-1, cfactor);
    core.SetAggCFactor(cfactor0);
    core.SetMaxIter(max_iter);
+   core.SetStorage(storage);
    core.SetTemporalNorm(tnorm);
    if (spatial_coarsen)
    {
@@ -1007,7 +1020,9 @@ void SpaceTimeMeshInfo::Print(MPI_Comm comm)
          h_min =  mesh_table_global[i*4 + 1];
          h_max =  mesh_table_global[i*4 + 2];
          dt =  mesh_table_global[i*4 + 3];
-
+         if (dt < 0)
+            break;
+         
          std::cout.precision(4);
          std::cout << std::scientific;
          std::cout << "    " << std::setw(10) << std::left << i << "|"

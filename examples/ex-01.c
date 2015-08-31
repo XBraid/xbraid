@@ -25,9 +25,9 @@
 /*
    Example 01
 
-   Compile with: make drive-01
+   Compile with: make ex-01
 
-   Sample run:   mpirun -np 2 drive-01
+   Sample run:   mpirun -np 2 ex-01
 
    Description:
 
@@ -78,22 +78,43 @@ typedef struct _braid_Vector_struct
 } my_Vector;
 
 int
-my_Phi(braid_App       app,
-       braid_Vector    u,
-       braid_PhiStatus status)
+my_Step(braid_App        app,
+        braid_Vector     ustop,
+        braid_Vector     fstop,
+        braid_Vector     u,
+        braid_StepStatus status)
 {
    double tstart;             /* current time */
    double tstop;              /* evolve to this time*/
-   braid_PhiStatusGetTstartTstop(status, &tstart, &tstop);
+   braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
 
    /* On the finest grid, each value is half the previous value */
    (u->value) = pow(0.5, tstop-tstart)*(u->value);
 
-   /* Zero rhs for now */
-   (u->value) += 0.0;
+   if (fstop != NULL)
+   {
+      /* Nonzero rhs */
+      (u->value) += (fstop->value);
+   }
 
    /* no refinement */
-   braid_PhiStatusSetRFactor(status, 1);
+   braid_StepStatusSetRFactor(status, 1);
+
+   return 0;
+}
+
+int
+my_Residual(braid_App        app,
+            braid_Vector     ustop,
+            braid_Vector     r,
+            braid_StepStatus status)
+{
+   double tstart;             /* current time */
+   double tstop;              /* evolve to this time*/
+   braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+
+   /* On the finest grid, each value is half the previous value */
+   (r->value) = (ustop->value) - pow(0.5, tstop-tstart)*(r->value);
 
    return 0;
 }
@@ -188,7 +209,7 @@ my_Access(braid_App          app,
 
    MPI_Comm_rank(comm, &myid);
 
-   sprintf(filename, "%s.%07d.%05d", "drive-01.out", index, myid);
+   sprintf(filename, "%s.%07d.%05d", "ex-01.out", index, myid);
    file = fopen(filename, "w");
    fprintf(file, "%.14e\n", (u->value));
    fflush(file);
@@ -253,6 +274,7 @@ int main (int argc, char *argv[])
    int           cfactor    = 2;
    int           max_iter   = 100;
    int           fmg        = 0;
+   int           res        = 0;
 
    int           arg_index;
 
@@ -284,6 +306,7 @@ int main (int argc, char *argv[])
             printf("  -cf  <cfactor>    : set coarsening factor\n");
             printf("  -mi  <max_iter>   : set max iterations\n");
             printf("  -fmg              : use FMG cycling\n");
+            printf("  -res              : use my residual\n");
             printf("\n");
          }
          exit(1);
@@ -323,6 +346,11 @@ int main (int argc, char *argv[])
          arg_index++;
          fmg = 1;
       }
+      else if ( strcmp(argv[arg_index], "-res") == 0 )
+      {
+         arg_index++;
+         res = 1;
+      }
       else
       {
          arg_index++;
@@ -338,7 +366,7 @@ int main (int argc, char *argv[])
    (app->ntime)  = ntime;
 
    braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
-             my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
+             my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
              my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
 
    braid_SetPrintLevel( core, 1);
@@ -355,6 +383,10 @@ int main (int argc, char *argv[])
    if (fmg)
    {
       braid_SetFMG(core);
+   }
+   if (res)
+   {
+      braid_SetResidual(core, my_Residual);
    }
 
    braid_Drive(core);

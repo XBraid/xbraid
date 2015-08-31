@@ -21,7 +21,6 @@
  *
  ***********************************************************************EHEADER*/
  
-
 /** \file braid.h
  * \brief Define headers for user interface routines.
  *
@@ -43,6 +42,7 @@ extern "C" {
 /** Turn on Fortran 90 interface options manually */
 #define braid_FMANGLE 1
 #define braid_Fortran_SpatialCoarsen 0
+#define braid_Fortran_Residual 0
 
 /*--------------------------------------------------------------------------
  * User-written routines
@@ -75,19 +75,26 @@ typedef struct _braid_Vector_struct *braid_Vector;
 
 /**
  * Defines the central time stepping function that the user must write.
- * The user must advance the vector *u* from time *tstart* to time *tstop*.
  *
- * Query the status structure with *braid_PhiStatusGetTstart(status, &tstart)*  
- * and *braid_PhiStatusGetTstop(status, &tstop)* to get *tstart* and
- * *tstop*.  The status structure also allows for steering.  For example,
- * *braid_PhiStatusSetRFactor(...)* allows for setting rfactor, which 
- * tells XBraid to refine this time interval.
+ * The user must advance the vector *u* from time *tstart* to *tstop*.  The time
+ * step is taken assuming the right-hand-side vector *fstop* at time *tstop*.
+ * The vector *ustop* may be the same vector as *u* (in the case where not all
+ * unknowns are stored).  The vector *fstop* is set to NULL to indicate a zero
+ * right-hand-side.
+ *
+ * Query the status structure with *braid_StepStatusGetTstart(status, &tstart)*
+ * and *braid_StepStatusGetTstop(status, &tstop)* to get *tstart* and *tstop*.
+ * The status structure also allows for steering.  For example,
+ * *braid_StepStatusSetRFactor(...)* allows for setting rfactor, which tells
+ * XBraid to refine this time interval.
  **/
 typedef braid_Int
-(*braid_PtFcnPhi)(braid_App       app,           /**< user-defined _braid_App structure */
-                  braid_Vector    u,             /**< output, vector to evolve */
-                  braid_PhiStatus status         /**< query this struct for info about u (e.g., tstart and tstop), allows for steering (e.g., set rfactor) */ 
-                  );
+(*braid_PtFcnStep)(braid_App        app,    /**< user-defined _braid_App structure */
+                   braid_Vector     ustop,  /**< input, u vector at *tstop* */
+                   braid_Vector     fstop,  /**< input, right-hand-side at *tstop* */
+                   braid_Vector     u     , /**< input/output, initially u vector at *tstart*, upon exit, u vector at *tstop* */
+                   braid_StepStatus status  /**< query this struct for info about u (e.g., tstart and tstop), allows for steering (e.g., set rfactor) */ 
+                   );
 
 /**
  * Initializes a vector *u_ptr* at time *t*
@@ -136,25 +143,26 @@ typedef braid_Int
  * This global norm then controls halting. 
  **/
 typedef braid_Int
-(*braid_PtFcnSpatialNorm)(braid_App      app,                /**< user-defined _braid_App structure */
-                          braid_Vector   u,                  /**< vector to norm */
-                          braid_Real    *norm_ptr            /**< output, norm of braid_Vector (this is a spatial norm) */ 
+(*braid_PtFcnSpatialNorm)(braid_App      app,      /**< user-defined _braid_App structure */
+                          braid_Vector   u,        /**< vector to norm */
+                          braid_Real    *norm_ptr  /**< output, norm of braid_Vector (this is a spatial norm) */ 
                           );
 
 /**
- * Gives user access to XBraid and to the current vector *u* at time *t*.  Most commonly,
- * this lets the user write the vector to screen, file, etc...  The user decides 
- * what is appropriate.  Note how you are told the time value *t* of the 
- * vector *u* and other information in *status*.  This lets you tailor the 
- * output, e.g., for only certain time values at certain XBraid iterations.
- * Querrying status for such information is done through 
+ * Gives user access to XBraid and to the current vector *u* at time *t*.  Most
+ * commonly, this lets the user write the vector to screen, file, etc...  The
+ * user decides what is appropriate.  Note how you are told the time value *t*
+ * of the vector *u* and other information in *status*.  This lets you tailor
+ * the output, e.g., for only certain time values at certain XBraid iterations.
+ * Querrying status for such information is done through
  * _braid_AccessStatusGet**(..)_ routines.
  * 
- * The frequency of XBraid's calls to *access* is controlled through 
- * [braid_SetAccessLevel](@ref braid_SetAccessLevel).  For instance, if access_level is 
- * set to 2, then *access* is called every XBraid iteration and on every XBraid level.  In 
- * this case, querrying *status* to determine the current XBraid level and iteration will 
- * be useful. This scenario allows for even more detailed tracking of the simulation.
+ * The frequency of XBraid's calls to *access* is controlled through
+ * [braid_SetAccessLevel](@ref braid_SetAccessLevel).  For instance, if
+ * access_level is set to 2, then *access* is called every XBraid iteration and
+ * on every XBraid level.  In this case, querrying *status* to determine the
+ * current XBraid level and iteration will be useful. This scenario allows for
+ * even more detailed tracking of the simulation.
  *
  * Eventually, access will be broadened to allow the user to steer XBraid.
  **/
@@ -165,9 +173,9 @@ typedef braid_Int
                      );
 
 /**
- * This routine tells XBraid message sizes by computing an upper bound in bytes for 
- * an arbitrary braid_Vector.  This size must be an upper bound for what BufPack and BufUnPack 
- * will assume.
+ * This routine tells XBraid message sizes by computing an upper bound in bytes
+ * for an arbitrary braid_Vector.  This size must be an upper bound for what
+ * BufPack and BufUnPack will assume.
  **/
 typedef braid_Int
 (*braid_PtFcnBufSize)(braid_App   app,               /**< user-defined _braid_App structure */
@@ -196,10 +204,25 @@ typedef braid_Int
                         );
 
 /**
+ * This function (optional) computes the residual *r* at time *tstop*.  On
+ * input, *r* holds the value of *u* at *tstart*, and *ustop* is the value of
+ * *u* at *tstop*.  If used, set with @ref braid_SetResidual.
+ *
+ * Query the status structure with *braid_StepStatusGetTstart(status, &tstart)*
+ * and *braid_StepStatusGetTstop(status, &tstop)* to get *tstart* and *tstop*.
+ **/
+typedef braid_Int
+(*braid_PtFcnResidual)(braid_App        app,    /**< user-defined _braid_App structure */
+                       braid_Vector     ustop,  /**< input, u vector at *tstop* */
+                       braid_Vector     r     , /**< output, residual at *tstop* */
+                       braid_StepStatus status  /**< query this struct for info about u (e.g., tstart and tstop) */ 
+                       );
+
+/**
  * Spatial coarsening (optional).  Allows the user to coarsen
  * when going from a fine time grid to a coarse time grid.
  * This function is called on every vector at each level, thus
- * you can coarsem the entire space time domain.  The action of 
+ * you can coarsen the entire space time domain.  The action of 
  * this function should match the @ref braid_PtFcnRefine function.
  *
  * The user should query the status structure at run time with 
@@ -275,7 +298,7 @@ braid_Init(MPI_Comm               comm_world,  /**< Global communicator for spac
            braid_Real             tstop,       /**< End time*/
            braid_Int              ntime,       /**< Initial number of temporal grid values*/
            braid_App              app,         /**< User-defined _braid_App structure */
-           braid_PtFcnPhi         phi,         /**< User time stepping routine to advance a braid_Vector forward one step */
+           braid_PtFcnStep        step,        /**< User time stepping routine to advance a braid_Vector forward one step */
            braid_PtFcnInit        init,        /**< Initialize a braid_Vector on the finest temporal grid*/
            braid_PtFcnClone       clone,       /**< Clone a braid_Vector*/
            braid_PtFcnFree        free,        /**< Free a braid_Vector*/
@@ -308,26 +331,6 @@ braid_Destroy(braid_Core  core              /**< braid_Core (_braid_Core) struct
 braid_Int
 braid_PrintStats(braid_Core  core           /**< braid_Core (_braid_Core) struct*/
                  );
-
-/**
- * Set loose stopping tolerance *loose_tol* for spatial solves on grid
- * *level* (level 0 is the finest grid).
- **/
-braid_Int
-braid_SetLoosexTol(braid_Core  core,        /**< braid_Core (_braid_Core) struct*/
-                   braid_Int   level,       /**< level to set *loose_tol* */
-                   braid_Real  loose_tol    /**< tolerance to set */
-                   );
-
-/**
- * Set tight stopping tolerance *tight_tol* for spatial solves on grid 
- * *level* (level 0 is the finest grid).
- **/
-braid_Int
-braid_SetTightxTol(braid_Core  core,        /**< braid_Core (_braid_Core) struct*/
-                   braid_Int   level,       /**< level to set *tight_tol* */
-                   braid_Real  tight_tol    /**< tolerance to set */
-                   );
 
 /**
  * Set max number of multigrid levels.
@@ -406,6 +409,31 @@ braid_Int
 braid_SetFMG(braid_Core  core               /**< braid_Core (_braid_Core) struct*/
              );
 
+/**
+ * Once called, XBraid will use FMG (i.e., F-cycles.
+ **/
+braid_Int
+braid_SetNFMG(braid_Core  core,              /**< braid_Core (_braid_Core) struct*/
+              braid_Int   k                  /**< number of initial F-cycles to do before switching to V-cycles */
+             );
+
+/**
+ * Set number of V-cycles to use at each FMG level (standard is 1)
+ **/
+braid_Int
+braid_SetNFMGVcyc(braid_Core  core,         /**< braid_Core (_braid_Core) struct*/
+                  braid_Int   nfmg_Vcyc     /**< number of V-cycles to do each FMG level */
+                  );
+
+
+/**
+ * Sets the storage properties of the code.
+ **/
+braid_Int
+braid_SetStorage(braid_Core  core,          /**< braid_Core (_braid_Core) struct*/
+                 braid_Int   storage        /**< store C-points (0), all points (1) */
+                );
+
 /** 
  * Sets XBraid temporal norm.
  *
@@ -430,15 +458,21 @@ braid_SetTemporalNorm(braid_Core  core,   /**< braid_Core (_braid_Core) struct*/
                       braid_Int   tnorm   /**< choice of temporal norm*/
                       );
 
-
 /**
- * Set number of V-cycles to use at each FMG level (standard is 1)
+ * Set user-defined residual routine.
  **/
 braid_Int
-braid_SetNFMGVcyc(braid_Core  core,         /**< braid_Core (_braid_Core) struct*/
-                  braid_Int   nfmg_Vcyc     /**< number of V-cycles to do each FMG level */
+braid_SetResidual(braid_Core          core,     /**< braid_Core (_braid_Core) struct*/ 
+                  braid_PtFcnResidual residual  /**< function pointer to residual routine */
                   );
 
+/**
+ * Set user-defined residual routine for use in computing global temporal norm.
+ **/
+braid_Int
+braid_SetGlobalResidual(braid_Core          core,     /**< braid_Core (_braid_Core) struct*/ 
+                        braid_PtFcnResidual residual  /**< function pointer to residual routine */
+                        );
 
 /**
  * Set spatial coarsening routine with user-defined routine.
@@ -530,13 +564,17 @@ braid_GetNumIter(braid_Core  core,          /**< braid_Core (_braid_Core) struct
                  );
 
 
-/**
- * After Drive() finishes, this returns the last measured residual norm.
+/** 
+ * After Drive() finishes, this returns  XBraid residual history.  If
+ * *nrequest_ptr* is negative, return the last *nrequest_ptr* residual norms.
+ * If positive, return the first *nrequest_ptr* residual norms.  Upon exit,
+ * *nrequest_ptr* holds the number of residuals actually returned.
  **/
 braid_Int
-braid_GetRNorm(braid_Core  core,            /**< braid_Core (_braid_Core) struct*/
-               braid_Real  *rnorm_ptr       /**< output, holds final residual norm */
-               );
+braid_GetRNorms(braid_Core  core,           /**< braid_Core (_braid_Core) struct */
+                braid_Int   *nrequest_ptr,  /**< input/output, input: num requested resid norms, output: num actually returned */
+                braid_Real  *rnorms         /**< output, holds residual norm history array */
+                );
 
 /**
  * After Drive() finishes, this returns the number of XBraid levels
@@ -545,6 +583,47 @@ braid_Int
 braid_GetNLevels(braid_Core  core,          /**< braid_Core (_braid_Core) struct*/
                  braid_Int  *nlevels_ptr    /**< output, holds the number of XBraid levels */
                  );
+
+/** Example function to compute a tapered stopping tolerance for implicit time
+ * stepping routines, i.e., a tolerance *tol_ptr* for the spatial solves.  This
+ * tapering only occurs on the fine grid.
+ *
+ * This rule must be followed.  The same tolerance must be returned over all
+ * processors, for a given XBraid and XBraid level.  Different levels may have
+ * different tolerances and the same level may vary its tolerance from 
+ * iteration to iteration, but for the same iteration and level, the tolerance
+ * must be constant.
+ *
+ * This additional rule must be followed.  The fine grid tolerance is never 
+ * reduced (this is important for convergence)
+ *
+ * On the fine level,the spatial stopping tolerance *tol_ptr* is interpolated
+ * from *loose_tol* to *tight_tol* based on the relationship between 
+ *     *rnorm* / *rnorm0* and *tol*.  
+ * Remember when 
+ *     *rnorm* / *rnorm0* < *tol*, 
+ * XBraid halts.  Thus, this function lets us have a loose stopping tolerance
+ * while the Braid residual is still relatively large, and then we transition
+ * to a tight stopping tolerance as the Braid residual is reduced.
+ *
+ * If the user has not defined a residual function, tight_tol is always returned.
+ *
+ * The loose_tol is always used on coarse grids, excepting the above mentioned 
+ * residual computations.
+ *
+ * This function will normally be called from the user's step routine.
+ *
+ * This function is also meant as a guide for users to develop their own 
+ * routine.
+ *
+ **/
+braid_Int
+braid_GetSpatialAccuracy( braid_StepStatus  status,         /**< Current XBraid step status */
+                          braid_Real        loose_tol,      /**< Loosest allowed spatial solve stopping tol on fine grid*/
+                          braid_Real        tight_tol,      /**< Tightest allowed spatial solve stopping tol on fine grid*/
+                          braid_Real       *tol_ptr         /**< output, holds the computed spatial solve stopping tol */
+                         );
+
 /** @}*/
 
 #ifdef __cplusplus

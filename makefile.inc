@@ -129,7 +129,7 @@ else ifeq ($(shell uname -s),Linux)
 	ifeq ($(optlevel),DEBUG)
 		CFLAGS = -g -Wall
 		CXXFLAGS = -g -Wall
-      FORTFLAGS = -Og -Wall
+      FORTFLAGS = -O -Wall
 	else
 		CFLAGS = -O -Wall
 		CXXFLAGS = -O -Wall
@@ -143,7 +143,7 @@ else
 	ifeq ($(optlevel),DEBUG)
 		CFLAGS = -g -Wall
 		CXXFLAGS = -g -Wall
-      FORTFLAGS = -Og -Wall
+      FORTFLAGS = -g -Wall
 	else
 		CFLAGS = -O -Wall
 		CXXFLAGS = -O -Wall
@@ -152,10 +152,7 @@ else
 endif
 
 # Rob's flags for running against a memory checker
-#
-# MPICC = insure -g
-# CFLAGS = -I/home/falgout/codes/mpich2-1.4.1-install/include
-#
+
 # MPICC = insure -g
 # CFLAGS = -I/home/falgout/codes/mpich2-1.4.1-install/include
 # LFLAGS = -L/home/falgout/codes/mpich2-1.4.1-install/lib -Wl,-rpath,/home/falgout/codes/mpich2-1.4.1-install/lib -lmpich -lopa -lmpl -lrt -lpthread  -lstdc++ -lm
