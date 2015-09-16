@@ -22,7 +22,6 @@
 #
 #EHEADER**********************************************************************
 
-
 # Was DEBUG specified? 
 ifeq ($(debug),no)
    optlevel = OPTIMIZE
@@ -43,117 +42,118 @@ endif
 HOSTNAME := $(shell hostname)
 
 ifeq ($(findstring tux343,$(HOSTNAME)),tux343)
-	CC = mpicc
-	MPICC = mpicc
-	MPICXX = mpiCC
+   CC = mpicc
+   MPICC = mpicc
+   MPICXX = mpiCC
    MPIF90 = mpif90
-	LFLAGS = -lm
-	ifeq ($(optlevel),DEBUG)
-		CFLAGS = -g -Wall -lm
-		CXXFLAGS = -g -Wall -Wno-reorder -lm
+   LFLAGS = -lm
+   ifeq ($(optlevel),DEBUG)
+      CFLAGS = -g -Wall -lm
+      CXXFLAGS = -g -Wall -Wno-reorder -lm
       FORTFLAGS = -Og -Wall
-	else
-		CFLAGS = -O -Wall -lm
-		CXXFLAGS = -O -Wall -Wno-reorder -lm
+   else
+      CFLAGS = -O -Wall -lm
+      CXXFLAGS = -O -Wall -Wno-reorder -lm
       FORTFLAGS = -O1 -Wall
-	endif
-	ifeq ($(lvalgrind),YES)
-		LFLAGS += /usr/lib64/valgrind/libmpiwrap-amd64-linux.so 
+   endif
+   ifeq ($(lvalgrind),YES)
+      LFLAGS += /usr/lib64/valgrind/libmpiwrap-amd64-linux.so 
    endif
 else ifeq ($(findstring fourier,$(HOSTNAME)),fourier)
-  # for Anders' laptop
-	CC = gcc
-	MPICC = mpicc
-	MPICXX = mpicxx
-        MPIF90 = mpif90
-	LFLAGS = -lm
-	ifeq ($(optlevel),DEBUG)
-		CFLAGS = -g -Wall
-		CXXFLAGS = -g -Wall
-                FORTFLAGS = -Og -Wall
-	else
-		CFLAGS = -O -Wall
-		CXXFLAGS = -O -Wall
-                FORTFLAGS = -O1 -Wall
-	endif
+   # for Anders' laptop
+   CC = gcc
+   MPICC = mpicc
+   MPICXX = mpicxx
+   MPIF90 = mpif90
+   LFLAGS = -lm
+   ifeq ($(optlevel),DEBUG)
+      CFLAGS = -g -Wall
+      CXXFLAGS = -g -Wall
+      FORTFLAGS = -Og -Wall
+   else
+      CFLAGS = -O -Wall
+      CXXFLAGS = -O -Wall
+      FORTFLAGS = -O1 -Wall
+   endif
 else ifeq ($(findstring sierra,$(HOSTNAME)),sierra)
-  # for Sierra
-	MPICC = mpiicc
-	MPICXX = mpiicpc
+   # for Sierra
+   MPICC = mpiicc
+   MPICXX = mpiicpc
    MPIF90 = mpif90
-	LFLAGS = -lm
-	ifeq ($(optlevel),DEBUG)
-		CFLAGS = -g -Wall
-		CXXFLAGS = -g -Wall
+   LFLAGS = -lm
+   ifeq ($(optlevel),DEBUG)
+      CFLAGS = -g -Wall
+      CXXFLAGS = -g -Wall
       FORTFLAGS = -Og -Wall
-	else
-		CFLAGS = -O -Wall
-		CXXFLAGS = -O -Wall
+   else
+      CFLAGS = -O -Wall
+      CXXFLAGS = -O -Wall
       FORTFLAGS = -O1 -Wall
-	endif
+   endif
 else ifeq ($(findstring cab,$(HOSTNAME)),cab)
-  # for Cab
-	MPICC = mpiicc
-	MPICXX = mpiicpc
+   # for Cab
+   MPICC = mpiicc
+   MPICXX = mpiicpc
    MPIF90 = mpif90
-	LFLAGS = -lm
-	ifeq ($(optlevel),DEBUG)
-		CFLAGS = -g -Wall
-		CXXFLAGS = -g -Wall
+   LFLAGS = -lm
+   ifeq ($(optlevel),DEBUG)
+      CFLAGS = -g -Wall
+      CXXFLAGS = -g -Wall
       FORTFLAGS = -Og -Wall
-	else
-		CFLAGS = -O -Wall
-		CXXFLAGS = -O -Wall
+   else
+      CFLAGS = -O -Wall
+      CXXFLAGS = -O -Wall
       FORTFLAGS = -O1 -Wall
-	endif   
+   endif   
 else ifeq ($(findstring vulcan,$(HOSTNAME)),vulcan)
-  # for Vulcan
-	MPICC = mpixlc
-	MPICXX = mpixlcxx
+   # for Vulcan
+   MPICC = mpixlc
+   MPICXX = mpixlcxx
    MPIF90 = mpixlf90
-	LFLAGS = -lm
-	ifeq ($(optlevel),DEBUG)
-		CFLAGS = -g -Wall
-		CXXFLAGS = -g -Wall
+   LFLAGS = -lm
+   ifeq ($(optlevel),DEBUG)
+      CFLAGS = -g -Wall
+      CXXFLAGS = -g -Wall
       FORTFLAGS = -Og -Wall
-	else
-		CFLAGS = -O -Wall
-		CXXFLAGS = -O -Wall
+   else
+      CFLAGS = -O -Wall
+      CXXFLAGS = -O -Wall
       FORTFLAGS = -O1 -Wall
-	endif
+   endif
 else ifeq ($(shell uname -s),Linux)
-	MPICC = mpicc
-	MPICXX = mpiCC
+   MPICC = mpicc
+   MPICXX = mpiCC
    MPIF90 = mpif90
-	LFLAGS = -lm
-	ifeq ($(optlevel),DEBUG)
-		CFLAGS = -g -Wall
-		CXXFLAGS = -g -Wall
-      FORTFLAGS = -O -Wall
-	else
-		CFLAGS = -O -Wall
-		CXXFLAGS = -O -Wall
-      FORTFLAGS = -O1 -Wall
-	endif
-else
-	MPICC = mpicc
-	MPICXX = mpiCC
-   MPIF90 = mpif90
-	LFLAGS = -lm
-	ifeq ($(optlevel),DEBUG)
-		CFLAGS = -g -Wall
-		CXXFLAGS = -g -Wall
+   LFLAGS = -lm
+   ifeq ($(optlevel),DEBUG)
+      CFLAGS = -g -Wall
+      CXXFLAGS = -g -Wall
       FORTFLAGS = -g -Wall
-	else
-		CFLAGS = -O -Wall
-		CXXFLAGS = -O -Wall
+   else
+      CFLAGS = -O -Wall
+      CXXFLAGS = -O -Wall
       FORTFLAGS = -O1 -Wall
-	endif
+   endif
+else
+   MPICC = mpicc
+   MPICXX = mpiCC
+   MPIF90 = mpif90
+   LFLAGS = -lm
+   ifeq ($(optlevel),DEBUG)
+      CFLAGS = -g -Wall
+      CXXFLAGS = -g -Wall
+      FORTFLAGS = -g -Wall
+   else
+      CFLAGS = -O -Wall
+      CXXFLAGS = -O -Wall
+      FORTFLAGS = -O1 -Wall
+   endif
 endif
 
 # Rob's flags for running against a memory checker
 
-# MPICC = insure -g
-# CFLAGS = -I/home/falgout/codes/mpich2-1.4.1-install/include
-# LFLAGS = -L/home/falgout/codes/mpich2-1.4.1-install/lib -Wl,-rpath,/home/falgout/codes/mpich2-1.4.1-install/lib -lmpich -lopa -lmpl -lrt -lpthread  -lstdc++ -lm
-
+# MPICC    = insure -g
+# MPICXX   = insure -g
+# CFLAGS   = -I/home/falgout/codes/mpich2-1.4.1-install/include
+# CXXFLAGS = -I/home/falgout/codes/mpich2-1.4.1-install/include
+# LFLAGS   = -L/home/falgout/codes/mpich2-1.4.1-install/lib -Wl,-rpath,/home/falgout/codes/mpich2-1.4.1-install/lib -lmpich -lopa -lmpl -lrt -lpthread  -lstdc++ -lm
