@@ -1506,6 +1506,8 @@ _braid_FRestrict(braid_Core   core,
          if (level == 0)
          {
             _braid_CoreFcn(core, spatialnorm)(app, r, &rnorm_temp);
+            tnorm_a[interval] = rnorm_temp;       /* inf-norm uses tnorm_a */
+            _braid_printf("  Braiddd:  time step: %6d, rnorm: %1.2e\n", ci, tnorm_a[interval] );
             if(tnorm == 1) 
             {  
                rnorm += rnorm_temp;               /* one-norm combination */ 
@@ -1513,17 +1515,6 @@ _braid_FRestrict(braid_Core   core,
             else if(tnorm == 2)
             {  
                rnorm += (rnorm_temp*rnorm_temp);  /* two-norm combination */
-            }
-            else if(tnorm == 3)
-            {  
-               tnorm_a[interval] = rnorm_temp;    /* inf-norm combination */
-            }
-            
-            /* If debug printing, print out rnorm_temp for this interval. rnorm_temp
-             * should show the serial propagation of the exact solution */
-            if (print_level >= 2)
-            {
-               _braid_printf("  Braid:  time step: %6d, rnorm: %1.2e\n", fhi, rnorm_temp);
             }
          }
 
@@ -1545,6 +1536,13 @@ _braid_FRestrict(braid_Core   core,
       }
    }
    _braid_UCommWait(core, level);
+
+   /* If debug printing, print out tnorm_a for this interval. This
+    * should show the serial propagation of the exact solution */
+   if ((print_level >= 2) && (level == 0) )
+   {
+      _braid_PrintSpatialNorms(core, tnorm_a, ncpoints);
+   }
 
    /* Compute rnorm (only on level 0) */
    if (level == 0)
@@ -2795,3 +2793,81 @@ _braid_InitHierarchy(braid_Core    core,
 
    return _braid_error_flag;
 }
+
+
+/*--------------------------------------------------------------------------
+ * Print the residual norm at ever C-point for debugging purposes 
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+_braid_PrintSpatialNorms(braid_Core    core,
+                         braid_Real   *rnorms,     /* This processor's local residual norms at C-points */
+                         braid_Int     n)          /* Length of the rnorms array */
+{
+   MPI_Comm       comm       = _braid_CoreElt(core, comm);
+   MPI_Comm       comm_world = _braid_CoreElt(core, comm_world);
+   _braid_Grid  **grids      = _braid_CoreElt(core, grids);
+   braid_Int      cfactor    = _braid_GridElt(grids[0], cfactor);
+   braid_Int      gupper     = _braid_CoreElt(core, gupper);
+
+   braid_Int      g_ncpoints = ceil( ((braid_Real) gupper) / ((braid_Real) cfactor ));
+   
+   braid_Real    *recvbuf;
+   braid_Int     *recvcounts;
+   braid_Int     *displs;
+   braid_Int      i, p, myid_t, myid_world, my_root_global_rank;
+
+   MPI_Comm_size(comm, &p);
+   MPI_Comm_rank(comm_world, &myid_world);
+   MPI_Comm_rank(comm, &myid_t);
+
+   /* We need to know all the processor's belonging to the temporal
+    * communicator of global rank 0.  It is only these processors that are
+    * involved with printing output. */
+   my_root_global_rank = myid_world;
+   MPI_Bcast(&my_root_global_rank, 1, braid_MPI_INT, 0, comm);
+
+   if(my_root_global_rank == 0)
+   {
+      if(myid_t == 0)
+      {
+         recvbuf = _braid_CTAlloc(braid_Real, g_ncpoints);
+         recvcounts = _braid_CTAlloc(braid_Int, p);
+         displs = _braid_CTAlloc(braid_Int, p);
+      }
+
+      /* Rank 0 gather's every processor's number of C-points, which forms the
+       * displacements (displs) for the Gatherv call below */ 
+      MPI_Gather(&n, 1, braid_MPI_INT, recvcounts, 1, braid_MPI_INT, 0, comm);
+
+      if(myid_t == 0)
+      {
+         displs[0] = 0;
+         for(i = 1; i < p; i++)
+         {
+            displs[i] = displs[i-1] + recvcounts[i-1];
+         }
+      }
+
+      /* Gather over comm */
+      MPI_Gatherv(rnorms, n, braid_MPI_REAL, recvbuf, recvcounts, displs,
+                  braid_MPI_REAL, 0, comm);
+
+      if(myid_t == 0)
+      {
+         for(i = 0; i < g_ncpoints; i++){
+            _braid_printf("  Braid:  time step: %6d, rnorm: %1.2e\n", i*cfactor, recvbuf[i]);
+         }
+      }
+
+      if(myid_t == 0)
+      {
+         _braid_TFree(recvbuf);
+         _braid_TFree(recvcounts);
+         _braid_TFree(displs);
+      }
+   }
+
+   return _braid_error_flag;
+}
+

@@ -646,6 +646,15 @@ _braid_InitHierarchy(braid_Core    core,
                      _braid_Grid  *fine_grid,
                      braid_Int     refined);
 
+/**
+ * Print out the residual norm for every C-point.
+ * Processor 0 gathers all the rnorms and prints them
+ * in order through a gatherv operator
+ */
+braid_Int
+_braid_PrintSpatialNorms(braid_Core    core,
+                         braid_Real   *rnorms,
+                         braid_Int     n);
 
 #ifdef __cplusplus
 }
