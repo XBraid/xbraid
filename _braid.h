@@ -106,64 +106,66 @@ typedef struct
 typedef struct _braid_Core_struct
 {
    MPI_Comm               comm_world;
-   MPI_Comm               comm;         /**< communicator for the time dimension */
-   braid_Real             tstart;       /**< start time */
-   braid_Real             tstop;        /**< stop time */
-   braid_Int              ntime;        /**< initial number of time intervals */
-   braid_App              app;          /**< application data for the user */
-   
-   braid_PtFcnStep        step;         /**< apply step function */
-   braid_PtFcnInit        init;         /**< return an initialized braid_Vector */
-   braid_PtFcnClone       clone;        /**< clone a vector */
-   braid_PtFcnFree        free;         /**< free up a vector */
-   braid_PtFcnSum         sum;          /**< vector sum */
-   braid_PtFcnSpatialNorm spatialnorm;  /**< Compute norm of a braid_Vector, this is a norm only over space */
-   braid_PtFcnAccess      access;       /**< user access function to XBraid and current vector */
-   braid_PtFcnBufSize     bufsize;      /**< return buffer size */
-   braid_PtFcnBufPack     bufpack;      /**< pack a buffer */
-   braid_PtFcnBufUnpack   bufunpack;    /**< unpack a buffer */
-   braid_PtFcnResidual    residual;     /**< (optional) compute residual */
-   braid_PtFcnCoarsen     coarsen;      /**< (optional) return a coarsened vector */
-   braid_PtFcnRefine      refine;       /**< (optional) return a refined vector */
+   MPI_Comm               comm;             /**< communicator for the time dimension */
+   braid_Real             tstart;           /**< start time */
+   braid_Real             tstop;            /**< stop time */
+   braid_Int              ntime;            /**< initial number of time intervals */
+   braid_App              app;              /**< application data for the user */
 
-   braid_Int              access_level; /**< determines how often to call the user's access routine */ 
-   braid_Int              print_level;  /**< determines amount of output printed to screem (0,1,2) */ 
-   braid_Int              max_levels;   /**< maximum number of temporal grid levels */
-   braid_Int              min_coarse;   /**< minimum possible coarse grid size */
-   braid_Real             tol;          /**< stopping tolerance */
-   braid_Int              rtol;         /**< use relative tolerance */
-   braid_Int             *nrels;        /**< number of pre-relaxations on each level */
-   braid_Int              nrdefault;    /**< default number of pre-relaxations */
-   braid_Int             *cfactors;     /**< coarsening factors */
-   braid_Int              cfdefault;    /**< default coarsening factor */
-   braid_Int              max_iter;     /**< maximum number of multigrid in time iterations */
-   braid_Int              niter;        /**< number of iterations */
-   braid_Int              fmg;          /**< use FMG cycle */
-   braid_Int              nfmg;         /**< number of fmg cycles to do initially before switching to V-cycles */
-   braid_Int              nfmg_Vcyc;    /**< number of V-cycle calls at each level in FMG */
-   braid_Int              tnorm;        /**< choice of temporal norm */
-   braid_Real            *tnorm_a;      /**< local array of residual norms on a proc's interval, used for inf-norm */
-   braid_Real            *rnorms;       /**< XBraid residual norm history */
-   braid_Int              rnorms_len;   /**< length of the residual norm history (can be lagged relative to num iter)*/
+   braid_PtFcnStep        step;             /**< apply step function */
+   braid_PtFcnInit        init;             /**< return an initialized braid_Vector */
+   braid_PtFcnClone       clone;            /**< clone a vector */
+   braid_PtFcnFree        free;             /**< free up a vector */
+   braid_PtFcnSum         sum;              /**< vector sum */
+   braid_PtFcnSpatialNorm spatialnorm;      /**< Compute norm of a braid_Vector, this is a norm only over space */
+   braid_PtFcnAccess      access;           /**< user access function to XBraid and current vector */
+   braid_PtFcnBufSize     bufsize;          /**< return buffer size */
+   braid_PtFcnBufPack     bufpack;          /**< pack a buffer */
+   braid_PtFcnBufUnpack   bufunpack;        /**< unpack a buffer */
+   braid_PtFcnResidual    residual;         /**< (optional) compute residual */
+   braid_PtFcnCoarsen     coarsen;          /**< (optional) return a coarsened vector */
+   braid_PtFcnRefine      refine;           /**< (optional) return a refined vector */
 
-   braid_AccessStatus     astatus;      /**< status structure passed to user-written Access routine */
-   braid_CoarsenRefStatus cstatus;      /**< status structure passed to user-written coarsen/refine routines */
-   braid_StepStatus       sstatus;      /**< status structure passed to user-written step routines */
-   braid_Int              storage;      /**< storage = 0 (C-points), = 1 (all) */
+   braid_Int              access_level;     /**< determines how often to call the user's access routine */ 
+   braid_Int              print_level;      /**< determines amount of output printed to screem (0,1,2) */ 
+   braid_Int              max_levels;       /**< maximum number of temporal grid levels */
+   braid_Int              min_coarse;       /**< minimum possible coarse grid size */
+   braid_Real             tol;              /**< stopping tolerance */
+   braid_Int              rtol;             /**< use relative tolerance */
+   braid_Int             *nrels;            /**< number of pre-relaxations on each level */
+   braid_Int              nrdefault;        /**< default number of pre-relaxations */
+   braid_Int             *cfactors;         /**< coarsening factors */
+   braid_Int              cfdefault;        /**< default coarsening factor */
+   braid_Int              max_iter;         /**< maximum number of multigrid in time iterations */
+   braid_Int              niter;            /**< number of iterations */
+   braid_Int              fmg;              /**< use FMG cycle */
+   braid_Int              nfmg;             /**< number of fmg cycles to do initially before switching to V-cycles */
+   braid_Int              nfmg_Vcyc;        /**< number of V-cycle calls at each level in FMG */
+   braid_Int              tnorm;            /**< choice of temporal norm */
+   braid_Real            *tnorm_a;          /**< local array of residual norms on a proc's interval, used for inf-norm */
+   braid_Real            *rnorms;           /**< XBraid residual norm history */
+   braid_Int              rnorms_len;       /**< length of the residual norm history (can be lagged relative to num iter)*/
 
-   braid_Int              gupper;       /**< global upper index on the fine grid */
+   braid_AccessStatus     astatus;          /**< status structure passed to user-written Access routine */
+   braid_CoarsenRefStatus cstatus;          /**< status structure passed to user-written coarsen/refine routines */
+   braid_StepStatus       sstatus;          /**< status structure passed to user-written step routines */
+   braid_Int              storage;          /**< storage = 0 (C-points), = 1 (all) */
 
-   braid_Int             *rfactors;     /**< refinement factors for finest grid (if any) */
-   braid_Int              nrefine;      /**< number of refinements done */
+   braid_Int              gupper;           /**< global upper index on the fine grid */
 
-   braid_Int              nlevels;      /**< number of temporal grid levels */
-   _braid_Grid          **grids;        /**< pointer to temporal grid structures for each level*/
+   braid_Int             *rfactors;         /**< refinement factors for finest grid (if any) */
+   braid_Int              nrefine;          /**< number of refinements done */
+   braid_Int              max_refinements;  /**< maximum number of refinements */
+   braid_Int              tpoints_cutoff;   /**< refinements halt after the number of time steps exceed this value */
 
-   braid_Real             localtime;    /**< local wall time for braid_Drive() */
-   braid_Real             globaltime;   /**< global wall time for braid_Drive() */
+   braid_Int              nlevels;          /**< number of temporal grid levels */
+   _braid_Grid          **grids;            /**< pointer to temporal grid structures for each level*/
 
-   braid_PtFcnResidual    globresidual; /**< (optional) compute residual for global temporal norm */
-   braid_Real             global_rnorm; /**< new residual norm on all F/C points */
+   braid_Real             localtime;        /**< local wall time for braid_Drive() */
+   braid_Real             globaltime;       /**< global wall time for braid_Drive() */
+
+   braid_PtFcnResidual    globresidual;     /**< (optional) compute residual for global temporal norm */
+   braid_Real             global_rnorm;     /**< new residual norm on all F/C points */
 
 } _braid_Core;
 

@@ -341,6 +341,22 @@ braid_SetMaxLevels(braid_Core  core,        /**< braid_Core (_braid_Core) struct
                    );
 
 /**
+ * Set the max number of refinements.
+ **/
+braid_Int
+braid_SetMaxRefinements(braid_Core  core,             /**< braid_Core (_braid_Core) struct*/
+                        braid_Int   max_refinements   /**< maximum levels to allow */
+                       );
+/**
+ * Set the number of time steps, beyond with refinements stop.
+ * If num(tpoints) > tpoints_cutoff, then stop doing refinements.
+ **/
+braid_Int
+braid_SetTPointsCutoff(braid_Core  core,                /**< braid_Core (_braid_Core) struct*/
+                       braid_Int   tpoints_cutoff       /**< cutoff for stopping refinements */
+                      );
+
+/**
  * Set minimum allowed coarse grid size. XBraid stops coarsening whenever
  * creating the next coarser grid will result in a grid smaller than
  * min_coarse.  The maximum possible coarse grid size will be

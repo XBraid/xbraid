@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,6 +47,8 @@ extern "C" {
  * Defines integer type
  **/
 typedef int    braid_Int;
+#define braid_Int_Max INT_MAX;
+#define braid_Int_Min INT_MIN;
 
 /**
  * Defines floating point type
