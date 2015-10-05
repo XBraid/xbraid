@@ -39,6 +39,10 @@ account.  That being said, we strongly encourage new users to try our code for
 their application.  Every new application has its own issues to address and
 this will help us to improve both the algorithm and the software.
 
+For support, please email `xbraid-support@llnl.gov`.  This email address
+automically interfaces with our issue tracker and notifies all developers of the
+pending support request.
+
 # Overview of the XBraid Algorithm {#braidoverview}
 
 The goal of XBraid is to solve a problem faster than a traditional time
