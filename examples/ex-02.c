@@ -322,7 +322,7 @@ my_Init(braid_App     app,
 }
 
 /* --------------------------------------------------------------------
- * Create a a copy of a vector object.
+ * Create a copy of a vector object.
  * -------------------------------------------------------------------- */
 int
 my_Clone(braid_App     app,
@@ -530,7 +530,7 @@ int main (int argc, char *argv[])
    my_App       *app = (my_App *) malloc(sizeof(my_App));
    double tol, mystarttime, myendtime, mytime, maxtime, cfl;
    int run_wrapper_tests, correct1, correct2;
-   int print_level, access_level, max_nA, nA_max, max_levels, min_coarse;
+   int print_level, access_level, max_nA, nA_max, max_levels, skip, min_coarse;
    int nrelax, nrelax0, cfactor, cfactor0, max_iter, fmg, res, storage, tnorm;
    int new_res;
 
@@ -561,6 +561,7 @@ int main (int argc, char *argv[])
    
    /* Default XBraid parameters */
    max_levels          = 15;              /* Max levels for XBraid solver */
+   skip                = 1;               /* Boolean, whether to skip all work on first down cycle */
    min_coarse          = 3;               /* Minimum possible coarse grid size */
    nrelax              = 1;               /* Number of CF relaxation sweeps on all levels */
    nrelax0             = -1;              /* Number of CF relaxations only for level 0 -- overrides nrelax */
@@ -626,6 +627,10 @@ int main (int argc, char *argv[])
       else if( strcmp(argv[arg_index], "-ml") == 0 ){
           arg_index++;
           max_levels = atoi(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-skip") == 0 ){
+          arg_index++;
+          skip = atoi(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-mc") == 0 ){
           arg_index++;
@@ -726,6 +731,7 @@ int main (int argc, char *argv[])
       printf("  -cfl <cfl>                         : CFL number to run, note that 2*CFL = dt/(dx^2) (default: 0.30)\n"); 
       printf("                                       CFL < 0.5 for explicit forward Euler\n");
       printf("  -ml  <max_levels>                  : set max number of time levels (default: 15)\n");
+      printf("  -skip <skip>                       : boolean, whether to skip all work on first down cycle (default: 1\n");
       printf("  -mc  <min_coarse>                  : set min possible coarse level size (default: 3)\n");
       printf("  -nu  <nrelax>                      : set num F-C relaxations (default: 1)\n");
       printf("  -nu0 <nrelax>                      : set num F-C relaxations on level 0\n");
@@ -872,6 +878,7 @@ int main (int argc, char *argv[])
                  my_SpatialNorm, my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
       
       /* Set Braid parameters */
+      braid_SetSkip( core, skip );
       braid_SetMaxLevels( core, max_levels );
       braid_SetMinCoarse( core, min_coarse );
       braid_SetPrintLevel( core, print_level);

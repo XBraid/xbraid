@@ -1866,7 +1866,7 @@ int main (int argc, char *argv[])
    double tol_x[2], tol, *scoarsenCFL;
    double mystarttime, myendtime, mytime, maxtime;
    int run_wrapper_tests, correct, fspatial_disc_idx, max_iter_x[2];
-   int print_level, access_level, nA_max, max_levels, min_coarse;
+   int print_level, access_level, nA_max, max_levels, min_coarse, skip;
    int nrelax, nrelax0, cfactor, cfactor0, max_iter, storage, res, new_res;
    int fmg, tnorm, nfmg_Vcyc, scoarsen, num_scoarsenCFL, use_rand;
 
@@ -1949,6 +1949,10 @@ int main (int argc, char *argv[])
       else if( strcmp(argv[arg_index], "-ml") == 0 ){
           arg_index++;
           max_levels = atoi(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-skip") == 0 ){
+          arg_index++;
+          skip = atoi(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-mc") == 0 ){
           arg_index++;
@@ -2078,6 +2082,7 @@ int main (int argc, char *argv[])
       printf("  -cfl <cfl>                         : CFL number to run, note that 2*CFL = dt/(dx^2) (default: 0.30)\n"); 
       printf("                                       CFL < 0.5 for explicit forward Euler\n");
       printf("  -ml  <max_levels>                  : set max number of time levels (default: 15)\n");
+      printf("  -skip <skip>                       : boolean, whether to skip all work on first down cycle (default: 1\n");
       printf("  -mc  <min_coarse>                  : set min possible coarse level size (default: 3)\n");
       printf("  -nu  <nrelax>                      : set num F-C relaxations (default: 1)\n");
       printf("  -nu0 <nrelax>                      : set num F-C relaxations on level 0\n");
@@ -2411,6 +2416,7 @@ int main (int argc, char *argv[])
       app->tol_x[0] = tol_x[0];
       app->tol_x[1] = tol_x[1];
 
+      braid_SetSkip( core, skip );
       braid_SetMaxLevels( core, max_levels );
       braid_SetMinCoarse( core, min_coarse );
 

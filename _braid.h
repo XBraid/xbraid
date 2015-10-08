@@ -158,6 +158,8 @@ typedef struct _braid_Core_struct
    braid_Int              max_refinements;  /**< maximum number of refinements */
    braid_Int              tpoints_cutoff;   /**< refinements halt after the number of time steps exceed this value */
 
+   braid_Int              skip;             /**< boolean, controls skipping any work on first down-cycle */
+
    braid_Int              nlevels;          /**< number of temporal grid levels */
    _braid_Grid          **grids;            /**< pointer to temporal grid structures for each level*/
 
@@ -655,6 +657,45 @@ braid_Int
 _braid_PrintSpatialNorms(braid_Core    core,
                          braid_Real   *rnorms,
                          braid_Int     n);
+
+/** 
+ * Copy the initialized C-points on the fine grid, to all coarse levels.  For
+ * instance, if a point k on level m corresponds to point p on level 0, then
+ * they are equivalent after this function.  The only exception is any spatial
+ * coarsening the user decides to do.  This function allows XBraid to skip all
+ * work on the first down cycle and start in FMG style on the coarsest level.
+ * Assumes level 0 C-points are initialized.
+ */
+braid_Int
+_braid_CopyFineToCoarse(braid_Core  core);
+
+/**
+ *  Set a new residual norm in the rnorms array, paying attention to special
+ *  rules, such as if skip is being used or maintaining a dummy -1.0 value 
+ *  until the first real residual norm is generated.
+ */
+braid_Int
+_braid_AppendResidual(braid_Core  core,
+                      braid_Real  res );
+
+/**
+ *  Get the k-th residual. 
+ *  For negative indices, start from the end of the array.
+ *  k = -1 means grab the most recent residual.
+ *  k = -2 means grab the second most recent residual and so on.
+ *  If a residual entry is requested that doesn't exist, 
+ *  then -1.0 is returned by default
+ */
+braid_Int
+_braid_GetRNorm(braid_Core  core,
+                braid_Int   k,
+                braid_Real  *res);
+
+/**
+ *  Delete the last residual, for use if F-Refinement is done. 
+ */
+braid_Int
+_braid_DeleteLastResidual(braid_Core  core);
 
 #ifdef __cplusplus
 }

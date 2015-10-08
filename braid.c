@@ -84,7 +84,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, ntime)           = ntime;
    _braid_CoreElt(core, app)             = app;
 
-   _braid_CoreElt(core, step)             = step;
+   _braid_CoreElt(core, step)            = step;
    _braid_CoreElt(core, init)            = init;
    _braid_CoreElt(core, clone)           = clone;
    _braid_CoreElt(core, free)            = free;
@@ -135,6 +135,8 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, nlevels)         = 0;
    _braid_CoreElt(core, grids)           = NULL; /* Set with SetMaxLevels() below */
 
+   _braid_CoreElt(core, skip)            = 1;
+
    /* Residual history and accuracy tracking for StepStatus*/
    _braid_CoreElt(core, rnorms)                       = NULL; /* Set with SetMaxIter() below */
    _braid_StatusElt(
@@ -163,6 +165,7 @@ braid_Drive(braid_Core  core)
    braid_Real     tstop            = _braid_CoreElt(core, tstop);
    braid_Int      ntime            = _braid_CoreElt(core, ntime);
    braid_Real     tol              = _braid_CoreElt(core, tol);
+   braid_Int      skip             = _braid_CoreElt(core, skip);
    braid_Int      rtol             = _braid_CoreElt(core, rtol);
    braid_Int      fmg              = _braid_CoreElt(core, fmg);
    braid_Int      nfmg             = _braid_CoreElt(core, nfmg);
@@ -171,24 +174,24 @@ braid_Drive(braid_Core  core)
    braid_Int      max_refinements  = _braid_CoreElt(core, max_refinements);
    braid_Int      tpoints_cutoff   = _braid_CoreElt(core, tpoints_cutoff);
    braid_Int      gupper           = _braid_CoreElt(core, gupper);
-   braid_Int      rnorms_len       = _braid_CoreElt(core, rnorms_len);
    braid_Int      print_level      = _braid_CoreElt(core, print_level);
    braid_Int      access_level     = _braid_CoreElt(core, access_level);
    braid_Int      nfmg_Vcyc        = _braid_CoreElt(core, nfmg_Vcyc); 
    braid_PtFcnResidual globres     = _braid_CoreElt(core, globresidual);
-   braid_Real*    rnorms           = _braid_CoreElt(core, rnorms);
    braid_StepStatus    sstatus     = _braid_CoreElt(core, sstatus);
 
 
    braid_Int     *nrels, nrel0;
    braid_Int      nlevels, iter, nprocs, tight_fine_tolx, nrefine;
    braid_Int      refinements_exhausted;
-   braid_Real     global_rnorm, old_globalrnorm, braid_rnorm;
+   braid_Real     global_rnorm, old_globalrnorm, braid_rnorm, old_braid_rnorm;
    braid_Int      ilower, iupper;
    braid_Real    *ta;
    braid_Int      level, fmglevel, fmg_Vcyc, down, done, i, refined;
    _braid_Grid   *grid;
    braid_Real     localtime, globaltime;
+
+   char           prepend[28] = "";
 
    MPI_Comm       comm       = _braid_CoreElt(core, comm);
    MPI_Comm       comm_world = _braid_CoreElt(core, comm_world);
@@ -202,9 +205,8 @@ braid_Drive(braid_Core  core)
 
    MPI_Comm_rank(comm_world, &myid);
 
-   level = 0;
    global_rnorm = -1.0;
-   rnorms[0] = -1.0;
+   braid_rnorm = -1.0;
 
    /* Create fine grid */
    _braid_GetDistribution(core, &ilower, &iupper);
@@ -235,7 +237,7 @@ braid_Drive(braid_Core  core)
    {
       fmglevel = nlevels-1;
    }
-   down = 1;
+   
    done = 0;
    if (max_levels <= 1)
    {
@@ -249,6 +251,20 @@ braid_Drive(braid_Core  core)
    { 
       _braid_printf("  Braid: Beginning simulation, %d time steps on level 0\n\n", _braid_CoreElt(core, gupper));
    }
+
+   /* Do a standard cycle, or skip work on first down cycle in FMG fashion */
+   if(skip == 0)
+   {
+      down = 1;
+      level = 0;
+   }
+   else
+   {
+      down = 0;
+      level = nlevels-1;
+      _braid_CopyFineToCoarse(core);
+   }
+
 
    iter = 0;
    while (!done)
@@ -268,13 +284,14 @@ braid_Drive(braid_Core  core)
                _braid_GetFullResidual(core, level, &global_rnorm);
             }
             
-            /* F-relax then restrict
-             * Note that FRestrict computes a new rnorm */
+            /* F-relax then restrict.
+             * Note that FRestrict computes a new rnorm. */
             _braid_FRestrict(core, level);
-            braid_rnorm = rnorms[ _braid_CoreElt(core, rnorms_len)-1 ];
+            _braid_GetRNorm(core, -1, &braid_rnorm);
             
-            /* Adjust tolerance */
-            if ((level == 0) && (iter == 0) && (rtol))
+            /* Adjust tolerance, 
+             * Note that if option skip is turned on, then we don't have a "real" residual norm until iteration 1*/
+            if ((level == 0) && (rtol) && ( ((iter == 0) && (skip == 0)) || ((iter == 1) && (skip == 1)) ))
             {
                /* Check to use user provided global residual */
                if(globres != NULL)
@@ -311,7 +328,6 @@ braid_Drive(braid_Core  core)
       }
 
       /* Up cycle */
-
       if (!down)
       {
          if (level > 0)
@@ -350,85 +366,76 @@ braid_Drive(braid_Core  core)
                _braid_printf("  Braid: Temporal refinement limits reached, %d time steps, %d refinements done\n", _braid_CoreElt(core, gupper), nrefine);
                _braid_printf("  Braid: Temporal refinement limits: time step cutoff = %d,  max refinements = %d\n\n", tpoints_cutoff, max_refinements);
                refinements_exhausted  = 1;
-            }            
+            }
 
+
+            /* Print convergence information, noting all the different cases */
+            strncpy(prepend, "", sizeof(prepend));
             if (refined)
             {
                nlevels = _braid_CoreElt(core, nlevels);
-
                if(myid == 0)
                {
                   _braid_printf("  Braid: Temporal refinement ocurred, %d time steps on level 0\n", _braid_CoreElt(core, gupper));
-
-                  /* Print Intermediate residual */
-                  if( print_level >= 1 )
-                  {
-                     if (iter == 0)
-                     {
-                        if (globres != NULL)
-                        {
-                           _braid_printf("  Braid: Before temporal refinement, Global || r_%d || = %1.6e\n", iter, global_rnorm);
-                        }
-                        _braid_printf("  Braid: Before temporal refinement, || r_%d || = %1.6e,  wall time = %1.2e\n\n",
-                           iter,  braid_rnorm, (MPI_Wtime() - localtime));
-                     }
-                     else
-                     {
-                        if (globres != NULL)
-                        {
-                           _braid_printf("  Braid: Before temporal refinement, Global || r_%d || = %1.6e,  conv. factor = %1.2e \n",
-                              iter, global_rnorm, global_rnorm/old_globalrnorm);
-                        }
-                        _braid_printf("  Braid: Before temporal refinement, || r_%d || = %1.6e,  conv. factor = %1.2e, wall time = %1.2e\n\n",
-                           iter, braid_rnorm, braid_rnorm/rnorms[ _braid_CoreElt(core, rnorms_len)-2 ],
-                           (MPI_Wtime() - localtime));
-                     }
-                  }
+                  strncpy(prepend, "Before temporal refinement,", sizeof(prepend));
                }
+            }
+            else if (nlevels == 1)
+            {
+               _braid_AppendResidual(core, 0.0);
+               braid_rnorm = 0.0;
+            }
+            if((myid == 0) && (print_level >=1))
+            {
+               /* No residual information available because of skip option */
+               if( (iter == 0) && (skip == 1) )
+               {
+                  if (globres != NULL)
+                  {
+                        _braid_printf("  Braid: %s Global || r_%d || is not applicable due to the skip option.\n",prepend);
+                  }
+                  _braid_printf("  Braid: %s || r_%d || is not applicable due to the skip option,  wall time = %1.2e\n", 
+                        prepend, iter,  (MPI_Wtime() - localtime));
+               }
+               else if( ((iter == 0) && (skip == 0)) || ((iter == 1) && (skip == 1)) )
+               {
+                  /* Only the first residual is available */
+                  if (globres != NULL)
+                  {
+                     _braid_printf("  Braid: %s Global || r_%d || = %1.6e\n", prepend, iter, global_rnorm);
+                  }
+                  _braid_printf("  Braid: %s || r_%d || = %1.6e,  wall time = %1.2e\n", 
+                        prepend, iter,  braid_rnorm, (MPI_Wtime() - localtime));
+               }
+               else 
+               {
+                  /* Multiple iterations of residual information available */ 
+                  if (globres != NULL)
+                  {
+                     _braid_printf("  Braid: %s Global || r_%d || = %1.6e,  conv. factor = %1.2e \n",
+                        prepend, iter, global_rnorm, global_rnorm/old_globalrnorm);
+                  }
+                  _braid_GetRNorm(core, -2, &old_braid_rnorm);
+                  _braid_printf("  Braid: %s || r_%d || = %1.6e,  conv. factor = %1.2e, wall time = %1.2e\n",
+                     prepend, iter, braid_rnorm, braid_rnorm/old_braid_rnorm, (MPI_Wtime() - localtime));
+               }
+            }
 
-               /* The previously computed residual is not for a "full" iteration.  So, we print it to screen above,
-                * but set rnorms_len so that the residual value is overwritten during the next iteraiton */
-               rnorms_len -= 1;
 
+            /* If not doing refinement, check for convergence */
+            if (refined)
+            {
+               /* The previously computed residual is not for a "full" iteration.  So, we print that residual 
+                * to screen with the above printf's. But, we delete from the rnorms array. */
+               _braid_DeleteLastResidual(core);
             }
             else
             {
-               if (nlevels == 1)
-               {
-                  rnorms[0] = 0.0;
-                  _braid_CoreElt(core, rnorms_len) = 1;
-               }
-
-               /* Note that this residual is based on an earlier iterate */
-               if( (print_level >= 1) && (myid == 0) )
-               {
-                  if (iter == 0)
-                  {
-                     if (globres != NULL)
-                     {
-                        _braid_printf("  Braid: Global || r_%d || = %1.6e\n", iter, global_rnorm);
-                     }
-                     _braid_printf("  Braid: || r_%d || = %1.6e,  wall time = %1.2e\n",
-                        iter,  braid_rnorm, (MPI_Wtime() - localtime));
-                  }
-                  else
-                  {
-                     if (globres != NULL)
-                     {
-                        _braid_printf("  Braid: Global || r_%d || = %1.6e,  conv. factor = %1.2e \n",
-                           iter, global_rnorm, global_rnorm/old_globalrnorm);
-                     }
-                     _braid_printf("  Braid: || r_%d || = %1.6e,  conv. factor = %1.2e, wall time = %1.2e\n",
-                        iter, braid_rnorm, braid_rnorm/rnorms[ _braid_CoreElt(core, rnorms_len)-2 ],
-                        (MPI_Wtime() - localtime));
-                  }
-               }
-               
                /* Use user provided global residual as stopping criterion? */
                tight_fine_tolx = _braid_StatusElt( sstatus, tight_fine_tolx);
                if (globres != NULL)
                {
-                  if ( ((global_rnorm < tol) && (tight_fine_tolx == 1))  ||  (iter == max_iter-1) )
+                  if (( (global_rnorm < tol) && (tight_fine_tolx == 1) && (( iter > 0 ) || (skip == 0)) )  ||  (iter == max_iter-1) )
                   {
                      done = 1;
                   }
@@ -443,7 +450,7 @@ braid_Drive(braid_Core  core)
                }
                else 
                {
-                  if ( ((braid_rnorm < tol) && (tight_fine_tolx == 1))  ||  (iter == max_iter-1) )
+                  if (( (braid_rnorm < tol) && (tight_fine_tolx == 1) && (( iter > 0 ) || (skip == 0)) )  ||  (iter == max_iter-1) )
                   {
                      done = 1;
                   } 
@@ -570,8 +577,6 @@ braid_PrintStats(braid_Core  core)
    braid_Int     max_iter      = _braid_CoreElt(core, max_iter);
    braid_Int     nrefine       = _braid_CoreElt(core, nrefine);
    braid_Int     niter         = _braid_CoreElt(core, niter);
-   braid_Real*   rnorms        = _braid_CoreElt(core, rnorms);
-   braid_Int     rnorms_len    = _braid_CoreElt(core, rnorms_len);
    braid_Real    global_rnorm  = _braid_CoreElt(core, global_rnorm);
    braid_Int     nlevels       = _braid_CoreElt(core, nlevels);
    braid_Int     tnorm         = _braid_CoreElt(core, tnorm); 
@@ -580,12 +585,16 @@ braid_PrintStats(braid_Core  core)
    braid_Int     nfmg_Vcyc     = _braid_CoreElt(core, nfmg_Vcyc); 
    braid_Int     access_level  = _braid_CoreElt(core, access_level); 
    braid_Int     print_level   = _braid_CoreElt(core, print_level); 
+   braid_Int     skip          = _braid_CoreElt(core, skip); 
    braid_Real    globaltime    = _braid_CoreElt(core, globaltime);
    braid_PtFcnResidual globres = _braid_CoreElt(core, globresidual);
    _braid_Grid **grids         = _braid_CoreElt(core, grids);
 
+   braid_Real    rnorm;
    braid_Int     myid, level;
 
+   _braid_GetRNorm(core, -1, &rnorm);
+   
    MPI_Comm_rank(comm_world, &myid);
    if ( myid == 0 )
    {
@@ -598,7 +607,7 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  use relative tol?     = %d\n", rtol);
       _braid_printf("  max iterations        = %d\n", max_iter);
       _braid_printf("  iterations            = %d\n", niter);
-      _braid_printf("  residual norm         = %e\n", rnorms[rnorms_len-1]);
+      _braid_printf("  residual norm         = %e\n", rnorm);
       if(tnorm == 1){
          _braid_printf("                         --> 1-norm TemporalNorm \n");
       }
@@ -628,6 +637,7 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  max number of levels  = %d\n", max_levels);
       _braid_printf("  min coarse            = %d\n", min_coarse);
       _braid_printf("  number of levels      = %d\n", nlevels);
+      _braid_printf("  skip down cycle       = %d\n", skip);
       _braid_printf("  number of refinements = %d\n", nrefine);
       _braid_printf("\n");
       _braid_printf("  level   time-pts   cfactor   nrelax\n", globaltime);
@@ -678,6 +688,19 @@ braid_SetMaxLevels(braid_Core  core,
 
    return _braid_error_flag;
 }
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetSkip(braid_Core  core,
+              braid_Int   skip)
+{
+   _braid_CoreElt(core, skip) = skip;
+
+   return _braid_error_flag;
+}
+
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/

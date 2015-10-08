@@ -343,6 +343,8 @@ public:
    }
 
    void SetMaxLevels(braid_Int max_levels) { braid_SetMaxLevels(core, max_levels); }
+   
+   void SetSkip(braid_Int skip) { braid_SetSkip(core, skip); }
 
    void SetMinCoarse(braid_Int min_coarse) { braid_SetMinCoarse(core, min_coarse); }
 
