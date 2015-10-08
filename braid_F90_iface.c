@@ -820,6 +820,18 @@ braid_F90_Name(braid_set_max_levels_f90, BRAID_SET_MAX_LEVELS_F90)(
    return 0;
 }
 
+/*  braid_SetSkip( ) */
+braid_Int
+braid_F90_Name(braid_set_skip_f90, BRAID_SET_SKIP_F90)(
+                   braid_F90_ObjPtr  *core,        /**< braid_Core (_braid_Core) struct*/
+                   braid_F90_Int     *skip         /**< boolean, whether to skip work on down cycle */
+                   )
+{
+   braid_SetSkip(braid_TakeF90_ObjDeref(braid_Core,  core) ,
+                 braid_TakeF90_Int(                  skip) );
+   return 0;
+}
+
 /*  braid_SetMinCoarse( ) */
 braid_Int
 braid_F90_Name(braid_set_min_coarse_f90, BRAID_SET_MIN_COARSE_F90)(
