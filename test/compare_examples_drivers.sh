@@ -89,45 +89,45 @@ cd $test_dir
 # error after only 2 iterations, so that we can test various XBraid options.
 # This way the printed discretization error is printed before convergence and
 # hence `unique' to this particular option combination. 
-TESTS=( "$RunString -np 1 $driver_dir/drive-02 -pgrid 1 1 1 -nt 128 -nx 17 17 -cfl 0.5 -mi 20 -storage -2" \
-        "$RunString -np 1 $example_dir/ex-02   -pgrid 1 1 1 -nt 128 -nx 17 17 -cfl 0.5 -mi 20 -storage -2" \
-        "$RunString -np 1 $example_dir/ex-02-serial -pgrid 1 1 -nt 128 -nx 17 17 -cfl 0.5 -storage -2" \
-        "$RunString -np 1 $driver_dir/drive-02 -pgrid 1 1 1 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2" \
-        "$RunString -np 1 $example_dir/ex-02   -pgrid 1 1 1 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2" \
-        "$RunString -np 2 $driver_dir/drive-02 -pgrid 1 1 2 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2" \
-        "$RunString -np 2 $example_dir/ex-02   -pgrid 1 1 2 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2" \
-        "$RunString -np 3 $driver_dir/drive-02 -pgrid 1 1 3 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2" \
-        "$RunString -np 3 $example_dir/ex-02   -pgrid 1 1 3 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2" \
-        "$RunString -np 12 $driver_dir/drive-02 -pgrid 2 2 3 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2" \
-        "$RunString -np 12 $example_dir/ex-02   -pgrid 2 2 3 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -cfl 1.5 -mi 2 -storage -2" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -cfl 1.5 -mi 2 -storage -2" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -ml 2 -mi 2 -storage -2" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -ml 2 -mi 2 -storage -2" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -mc 30 -mi 2 -storage -2" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -mc 30 -mi 2 -storage -2" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -nu 5 -mi 2 -storage -2" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -nu 5 -mi 2 -storage -2" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -nu0 5 -mi 2 -storage -2" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -nu0 5 -mi 2 -storage -2" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -tol 1e-2 -storage -2" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -tol 1e-2 -storage -2" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -tol 1e-2 -tnorm 0 -storage -2" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -tol 1e-2 -tnorm 0 -storage -2" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -tol 1e-2 -tnorm 3 -storage -2" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -tol 1e-2 -tnorm 3 -storage -2" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -cf 32 -mi 2 -storage -2" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -cf 32 -mi 2 -storage -2" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -cf0 32 -mi 2 -storage -2" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -cf0 32 -mi 2 -storage -2" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -pfmg_mi 3 2 -mi 2 -storage -2" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -pfmg_mi 3 2 -mi 2 -storage -2" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -forcing -mi 2 -storage -2" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -forcing -mi 2 -storage -2" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -use_rand 0 -mi 2 -storage -2" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -use_rand 0 -mi 2 -storage -2" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg 1 -mi 2 -storage -2" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg -mi 2 -storage -2" )
+TESTS=( "$RunString -np 1 $driver_dir/drive-02 -pgrid 1 1 1 -nt 128 -nx 17 17 -cfl 0.5 -mi 20 -storage -2 -skip 0" \
+        "$RunString -np 1 $example_dir/ex-02   -pgrid 1 1 1 -nt 128 -nx 17 17 -cfl 0.5 -mi 20 -storage -2 -skip 0" \
+        "$RunString -np 1 $example_dir/ex-02-serial -pgrid 1 1 -nt 128 -nx 17 17 -cfl 0.5 -storage -2 -skip 0" \
+        "$RunString -np 1 $driver_dir/drive-02 -pgrid 1 1 1 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 1 $example_dir/ex-02   -pgrid 1 1 1 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 2 $driver_dir/drive-02 -pgrid 1 1 2 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 2 $example_dir/ex-02   -pgrid 1 1 2 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 3 $driver_dir/drive-02 -pgrid 1 1 3 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 3 $example_dir/ex-02   -pgrid 1 1 3 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 12 $driver_dir/drive-02 -pgrid 2 2 3 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 12 $example_dir/ex-02   -pgrid 2 2 3 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -cfl 1.5 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -cfl 1.5 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -ml 2 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -ml 2 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -mc 30 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -mc 30 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -nu 5 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -nu 5 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -nu0 5 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -nu0 5 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -tol 1e-2 -storage -2 -skip 0" \
+        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -tol 1e-2 -storage -2 -skip 0" \
+        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -tol 1e-2 -tnorm 1 -storage -2 -skip 0" \
+        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -tol 1e-2 -tnorm 1 -storage -2 -skip 0" \
+        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -tol 1e-2 -tnorm 3 -storage -2 -skip 0" \
+        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -tol 1e-2 -tnorm 3 -storage -2 -skip 0" \
+        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -cf 32 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -cf 32 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -cf0 32 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -cf0 32 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -pfmg_mi 3 2 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -pfmg_mi 3 2 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -forcing -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -forcing -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -use_rand 0 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -use_rand 0 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg 1 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg -mi 2 -storage -2 -skip 0" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 

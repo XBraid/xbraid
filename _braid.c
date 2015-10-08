@@ -932,7 +932,14 @@ _braid_FASResidual(braid_Core     core,
    else
    {
       ii = index-ilower;
-      _braid_CoreFcn(core, sum)(app, 1.0, fa[ii], -1.0, r);
+      if(fa[ii] == NULL)
+      {
+         _braid_CoreFcn(core, sum)(app, 0.0, r, -1.0, r);
+      }
+      else
+      {
+         _braid_CoreFcn(core, sum)(app, 1.0, fa[ii], -1.0, r);
+      }
    }
 
    return _braid_error_flag;
@@ -2872,10 +2879,11 @@ _braid_PrintSpatialNorms(braid_Core    core,
 braid_Int
 _braid_CopyFineToCoarse(braid_Core  core)
 {
+   braid_App      app     = _braid_CoreElt(core, app);
    _braid_Grid  **grids   = _braid_CoreElt(core, grids);
    braid_Int      nlevels = _braid_CoreElt(core, nlevels);
    
-   braid_Int      f_index, index, level, cfactor, f_cfactor;
+   braid_Int      f_index, index, is_stored, level, f_cfactor;
    braid_Int      ilower, iupper;
    braid_Vector   u, *va;
 
@@ -2885,7 +2893,6 @@ _braid_CopyFineToCoarse(braid_Core  core)
       f_cfactor = _braid_GridElt(grids[level-1], cfactor);
       iupper    = _braid_GridElt(grids[level], iupper);
       ilower    = _braid_GridElt(grids[level], ilower);
-      cfactor   = _braid_GridElt(grids[level], cfactor);
       va        = _braid_GridElt(grids[level], va);
 
       /* Loop over all points belonging to this processor, and if a C-point,
@@ -2895,7 +2902,16 @@ _braid_CopyFineToCoarse(braid_Core  core)
          _braid_MapCoarseToFine(index, f_cfactor, f_index);
          _braid_UGetVector(core, level-1, f_index, &u);
          _braid_Coarsen(core, level, f_index, index, u, &va[index-ilower]);
+         
+         _braid_CoreFcn(core, free)(app, u);
+         _braid_CoreFcn(core, clone)(app, va[index-ilower], &u);
          _braid_USetVectorRef(core, level, index, u);
+         _braid_UGetIndex(core, level, index, &is_stored);
+         if (is_stored <= -1)
+         {
+            _braid_CoreFcn(core, free)(app, u);
+         }
+ 
       }
    }
 

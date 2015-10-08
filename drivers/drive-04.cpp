@@ -584,9 +584,6 @@ public:
          cout << "LinearSystemODE::ImplicitSolve : resid = "
               << resid << endl;
       }
-
-      cout << "LinearSystemODE::ImplicitSolve : number of iterations = "
-           << i << endl;
    }
 
    virtual ~LinearSystemODE()
@@ -877,6 +874,7 @@ int main(int argc, char *argv[])
    int    nrelax0     = -1;
    double tol         = 1e-9;
    int    tnorm       = 2;
+   int    skip        = 1;
    int    cfactor     = 2;
    int    cfactor0    = -1;
    int    max_iter    = 100;
@@ -996,6 +994,10 @@ int main(int argc, char *argv[])
           arg_index++;
           tnorm = atoi(argv[arg_index++]);
       }
+      else if( strcmp(argv[arg_index], "-skip") == 0 ){
+          arg_index++;
+          skip = atoi(argv[arg_index++]);
+      }
       else if (strcmp(argv[arg_index], "-cf") == 0)
       {
          cfactor = atoi(argv[++arg_index]);
@@ -1111,6 +1113,7 @@ int main(int argc, char *argv[])
          "                      1 - One-norm \n"
          "                      2 - Two-norm (default) \n"
          "                      3 - Infinity-norm \n"
+         "  -skip <skip>      : set skip, if true do no work on the first down cycle (default 1)\n"
          "  -cf  <cfactor>    : set coarsening factor (default: 2)\n"
          "  -cf0 <cfactor0>   : set aggressive coarsening (default: off)\n"
          "  -mi  <max_iter>   : set max iterations (default: 100)\n"
@@ -1340,6 +1343,7 @@ int main(int argc, char *argv[])
          core.SetAggCFactor(cfactor0);
          core.SetMaxIter(max_iter);
          core.SetTemporalNorm(tnorm);
+         core.SetSkip(skip);
          if (fmg)
          {
             core.SetFMG();

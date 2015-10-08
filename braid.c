@@ -72,6 +72,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              tnorm           = 2;              /* Default temporal norm */
    braid_Real             tol             = 1.0e-09;        /* Default absolute tolerance */
    braid_Real             rtol            = 1;              /* Use relative tolerance */
+   braid_Int              skip            = 1;              /* Default skip value, skips all work on first down-cycle */
    braid_Int              max_refinements = 200;            /* Maximum number of F-refinements */
    braid_Int              tpoints_cutoff  = braid_Int_Max;  /* Maximum number of time steps, controls FRefine()*/ 
 
@@ -135,7 +136,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, nlevels)         = 0;
    _braid_CoreElt(core, grids)           = NULL; /* Set with SetMaxLevels() below */
 
-   _braid_CoreElt(core, skip)            = 1;
+   _braid_CoreElt(core, skip)            = skip;
 
    /* Residual history and accuracy tracking for StepStatus*/
    _braid_CoreElt(core, rnorms)                       = NULL; /* Set with SetMaxIter() below */

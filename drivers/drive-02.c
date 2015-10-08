@@ -286,10 +286,13 @@ my_Step(braid_App        app,
    double tstop;              /* evolve to this time*/
    HYPRE_SStructVector  bstop;
    double accuracy, cfl_value;
-   int i, A_idx, user_explicit;
+   int i, A_idx, user_explicit, level;
    int ilower[2], iupper[2], nlx, nly, nx, ny;
    double dx, dy;
    
+   /* Grab level */
+   braid_StepStatusGetLevel(status, &level);
+
    /* Grab spatial info about u */
    grab_vec_spatial_info(u, app->spatial_lookup_table, ilower, iupper, 
                          &nlx, &nly, &nx, &ny, &dx, &dy);
@@ -335,10 +338,10 @@ my_Step(braid_App        app,
    } 
    
    /* Store information on CFL and spatial coarsening for user output */
-   (app->runtime_scoarsen_info)[ (5*i) + 1] = dx;
-   (app->runtime_scoarsen_info)[ (5*i) + 2] = dy;
-   (app->runtime_scoarsen_info)[ (5*i) + 3] = (tstop-tstart);
-   (app->runtime_scoarsen_info)[ (5*i) + 4] = cfl_value;
+   (app->runtime_scoarsen_info)[ (5*level) + 1] = dx;
+   (app->runtime_scoarsen_info)[ (5*level) + 2] = dy;
+   (app->runtime_scoarsen_info)[ (5*level) + 3] = (tstop-tstart);
+   (app->runtime_scoarsen_info)[ (5*level) + 4] = cfl_value;
 
    /* Update manager relative to this vector */
    update_manager_from_vector(app->man, u, app->spatial_lookup_table);
@@ -1890,7 +1893,7 @@ int main (int argc, char *argv[])
    explicit            = 0;       /* Boolean, if 1 use explicit forward Euler, else use backward Euler */
    output_files        = 0;       /* Boolean, if 1 output the norm of the discretization error to a file for each time step */
    output_vis          = 0;       /* Boolean, if 1 output GLVIS files of error, solution and true solution */
- 
+   skip                = 1;       /* Boolean, if 1 do no work on the first down cycle, if 0 do work on the first down cycle */
    
    /* Default XBraid parameters */
    max_levels          = 15;  /* Must be two, in order for coarsen and refine wrapper tests to run */

@@ -252,6 +252,7 @@ struct BraidOptions : public OptionsParser
    double t_final;
    int    num_time_steps;
    int    num_procs_x;
+   int    skip;
    int    max_levels;
    int    min_coarse;
    int    nrelax;
@@ -839,6 +840,7 @@ BraidOptions::BraidOptions(int argc, char *argv[])
    t_final          = 1.0;
    num_time_steps   = 100;
    num_procs_x      = 1;
+   skip             = 1;
    max_levels       = 10;
    min_coarse       = 3;
    nrelax           = 1;
@@ -888,6 +890,9 @@ BraidOptions::BraidOptions(int argc, char *argv[])
              "Set the access level.");
    AddOption(&print_level, "-print", "--print-level",
              "Set the print level.");
+   AddOption(&skip, "-skip", "--skip-work-on-first-down-cycle",
+             "If True, skip all work on the first down cycle (0:False, 1:True)");
+
 }
 
 void BraidOptions::AddMeshOptions()
@@ -930,6 +935,7 @@ void BraidOptions::SetBraidCoreOptions(BraidCore &core)
    core.SetMaxIter(max_iter);
    core.SetStorage(storage);
    core.SetTemporalNorm(tnorm);
+   core.SetSkip(skip);
    if (spatial_coarsen)
    {
       core.SetSpatialCoarsenAndRefine();
