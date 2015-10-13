@@ -49,113 +49,166 @@
 
   residual norm        = 2.146943e-02
                         --> 2-norm TemporalNorm 
-                        
-# Begin Test 11 -- begin 1-norm tests over np=1 to np=5, residual norms should all agree
+
+# Begin Test 11 -- begin 2-norm tests over np=1 to np=5, with cf0=1, residual norms should all agree
   
-  residual norm        = 1.616449e-01
-                        --> 1-norm TemporalNorm 
+  residual norm        = 6.500312e-02
+                        --> 2-norm TemporalNorm 
 
 # Begin Test 12
   
-  residual norm        = 1.616449e-01
-                        --> 1-norm TemporalNorm 
-
+  residual norm        = 6.500312e-02
+                        --> 2-norm TemporalNorm 
 # Begin Test 13
   
-  residual norm        = 1.616449e-01
-                        --> 1-norm TemporalNorm 
-
+  residual norm        = 6.500312e-02
+                        --> 2-norm TemporalNorm 
 # Begin Test 14
   
-  residual norm        = 1.616449e-01
-                        --> 1-norm TemporalNorm 
-
+  residual norm        = 6.500312e-02
+                        --> 2-norm TemporalNorm 
 # Begin Test 15
 
-  residual norm        = 1.616449e-01
-                        --> 1-norm TemporalNorm 
-
+  residual norm        = 6.500312e-02
+                        --> 2-norm TemporalNorm 
+                        
 # Begin Test 16 -- here we stop using a random initial guess, so the resid norm changes
 
-  residual norm        = 4.078268e-01
-                        --> 1-norm TemporalNorm 
-
+  residual norm        = 1.066077e-02
+                        --> 2-norm TemporalNorm 
+                        
 # Begin Test 17
 
-  residual norm        = 4.078268e-01
-                        --> 1-norm TemporalNorm 
-
+  residual norm        = 1.066077e-02
+                        --> 2-norm TemporalNorm 
+                        
 # Begin Test 18
 
-  residual norm        = 4.078268e-01
-                        --> 1-norm TemporalNorm 
-
+  residual norm        = 1.066077e-02
+                        --> 2-norm TemporalNorm 
+                        
 # Begin Test 19
 
-  residual norm        = 4.078268e-01
-                        --> 1-norm TemporalNorm 
-
+  residual norm        = 1.066077e-02
+                        --> 2-norm TemporalNorm 
+                        
 # Begin Test 20
 
-  residual norm        = 4.078268e-01
-                        --> 1-norm TemporalNorm 
-
+  residual norm        = 1.066077e-02
+                        --> 2-norm TemporalNorm 
+                        
 # Begin Test 21
 
-  residual norm        = 4.078268e-01
-                        --> 1-norm TemporalNorm 
+  residual norm        = 1.066077e-02
+                        --> 2-norm TemporalNorm 
 
-# Begin Test 22 -- begin Inf-norm tests over np=1 to np=5, residual norms should all agree
+                        
+# Begin Test 22 -- begin 1-norm tests over np=1 to np=5, residual norms should all agree
   
-  residual norm        = 4.553268e-02
-                        --> Inf-norm TemporalNorm 
+  residual norm        = 1.616449e-01
+                        --> 1-norm TemporalNorm 
 
 # Begin Test 23
   
-  residual norm        = 4.553268e-02
-                        --> Inf-norm TemporalNorm 
+  residual norm        = 1.616449e-01
+                        --> 1-norm TemporalNorm 
 
 # Begin Test 24
   
-  residual norm        = 4.553268e-02
-                        --> Inf-norm TemporalNorm 
+  residual norm        = 1.616449e-01
+                        --> 1-norm TemporalNorm 
 
 # Begin Test 25
+  
+  residual norm        = 1.616449e-01
+                        --> 1-norm TemporalNorm 
+
+# Begin Test 26
+
+  residual norm        = 1.616449e-01
+                        --> 1-norm TemporalNorm 
+
+# Begin Test 27 -- here we stop using a random initial guess, so the resid norm changes
+
+  residual norm        = 4.078268e-01
+                        --> 1-norm TemporalNorm 
+
+# Begin Test 28
+
+  residual norm        = 4.078268e-01
+                        --> 1-norm TemporalNorm 
+
+# Begin Test 29
+
+  residual norm        = 4.078268e-01
+                        --> 1-norm TemporalNorm 
+
+# Begin Test 30
+
+  residual norm        = 4.078268e-01
+                        --> 1-norm TemporalNorm 
+
+# Begin Test 31
+
+  residual norm        = 4.078268e-01
+                        --> 1-norm TemporalNorm 
+
+# Begin Test 32
+
+  residual norm        = 4.078268e-01
+                        --> 1-norm TemporalNorm 
+
+# Begin Test 33 -- begin Inf-norm tests over np=1 to np=5, residual norms should all agree
   
   residual norm        = 4.553268e-02
                         --> Inf-norm TemporalNorm 
 
-# Begin Test 26 -- here we stop using a random initial guess, so the resid norm changes
+# Begin Test 34
+  
+  residual norm        = 4.553268e-02
+                        --> Inf-norm TemporalNorm 
+
+# Begin Test 35
+  
+  residual norm        = 4.553268e-02
+                        --> Inf-norm TemporalNorm 
+
+# Begin Test 36
+  
+  residual norm        = 4.553268e-02
+                        --> Inf-norm TemporalNorm 
+
+# Begin Test 37 -- here we stop using a random initial guess, so the resid norm changes
 
   residual norm        = 3.885386e-01
                         --> Inf-norm TemporalNorm 
 
-# Begin Test 27
+# Begin Test 38
 
   residual norm        = 3.885386e-01
                         --> Inf-norm TemporalNorm 
 
-# Begin Test 28
+# Begin Test 39
 
   residual norm        = 3.885386e-01
                         --> Inf-norm TemporalNorm 
 
-# Begin Test 29
+# Begin Test 40
 
   residual norm        = 3.885386e-01
                         --> Inf-norm TemporalNorm 
 
-# Begin Test 30
+# Begin Test 41
 
   residual norm        = 3.885386e-01
                         --> Inf-norm TemporalNorm 
 
-# Begin Test 31
+# Begin Test 42
 
   residual norm        = 3.885386e-01
                         --> Inf-norm TemporalNorm 
 
-# Begin Test 32
+# Begin Test 43
 
   residual norm        = 3.885386e-01
                         --> Inf-norm TemporalNorm 

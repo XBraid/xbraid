@@ -86,6 +86,7 @@ cd $test_dir
 valgrind_opts="--log-fd=1 --leak-check=full"
 TESTS=( "MPIWRAP_DEBUG=quiet $RunString -np 1 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 1 1 1 -nt 64 -ml 15 -skip 0" \
         "MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 2 2 1 -nt 64 -ml 15 -skip 0" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 8 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 2 2 2 -nt 64 -ml 15 -skip 0 -cf0 1" \
         "MPIWRAP_DEBUG=quiet $RunString -np 1 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 1 1 1 -nt 64 -ml 15 -scoarsen 1 -skip 0" \
         "MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 2 2 1 -nt 64 -ml 15 -scoarsen 1 -skip 0" \
         "MPIWRAP_DEBUG=quiet $RunString -np 2 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 1 1 2 -nt 64 -cf 4 -ml 15 -fmg 1 -skip 0" \

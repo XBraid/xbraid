@@ -153,4 +153,12 @@
 # Begin Test 38
 
   my_Access():  Braid iter 2,  discr. error at final time:  5.0693e-03
+
+# Begin Test 39
+
+  my_Access():  Braid iter 2,  discr. error at final time:  4.7462e-03
+
+# Begin Test 40
+
+  my_Access():  Braid iter 2,  discr. error at final time:  4.7462e-03
   

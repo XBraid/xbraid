@@ -580,6 +580,9 @@ _braid_UCommInit(braid_Core  core,
    _braid_CommHandle   *recv_handle = NULL;
    _braid_CommHandle   *send_handle = NULL;
    braid_Int            iu;
+   
+   /* Note that this routine works for the case of all points being C-points, 
+    * i.e., cfactor = 1.  A send and receive are always posted. */
 
    if (ilower <= iupper)
    {
@@ -636,8 +639,11 @@ _braid_UCommInitF(braid_Core  core,
          recv_index = ilower-1;
       }
 
-      /* Only post send if iupper is a C-point, otherwise compute and send later */
-      if ( _braid_IsCPoint(iupper, cfactor) )
+      /* Only post send if iupper is a C-point and iupper+1 is an F-point.  This
+       * check allows for the case of cfactor=1, i.e., all C-points.  Otherwise, 
+       * if iupper+1 is an F-point, set send_index, so that when that point is 
+       * computed later, it is sent. */
+      if ( _braid_IsCPoint(iupper, cfactor) && _braid_IsFPoint(iupper+1, cfactor))
       {
          _braid_UGetIndex(core, level, iupper, &iu);
          _braid_CommSendInit(core, level, iupper, ua[iu], &send_handle);

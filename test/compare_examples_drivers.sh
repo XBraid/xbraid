@@ -127,7 +127,9 @@ TESTS=( "$RunString -np 1 $driver_dir/drive-02 -pgrid 1 1 1 -nt 128 -nx 17 17 -c
         "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -use_rand 0 -mi 2 -storage -2 -skip 0" \
         "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -use_rand 0 -mi 2 -storage -2 -skip 0" \
         "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg 1 -mi 2 -storage -2 -skip 0" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg -mi 2 -storage -2 -skip 0" )
+        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg 1 -mi 2 -storage -2 -skip 0 -cf0 1" \
+        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg -mi 2 -storage -2 -skip 0 -cf0 1" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 

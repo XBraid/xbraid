@@ -15,8 +15,8 @@
 # Begin Test 2, check iterations to make sure test ran to completion
 
   time steps = 64
-  iterations           = 32
-  number of levels     = 5
+  iterations           = 7
+  number of levels     = 6
  Fine level spatial problem size  : 17 x 17
 
 # Begin Test 3, check iterations to make sure test ran to completion
@@ -26,13 +26,13 @@
   number of levels     = 5
  Fine level spatial problem size  : 17 x 17
 
-
-# Begin Test 4, check iterations to make sure test ran to completion, and note the two Braid lines for a phantom "memory leak" detected by valgrind.
+# Begin Test 4, check iterations to make sure test ran to completion
 
   time steps = 64
-  iterations           = 7
-  number of levels     = 3
+  iterations           = 32
+  number of levels     = 5
  Fine level spatial problem size  : 17 x 17
+
 
 # Begin Test 5, check iterations to make sure test ran to completion, and note the two Braid lines for a phantom "memory leak" detected by valgrind.
 
@@ -44,25 +44,32 @@
 # Begin Test 6, check iterations to make sure test ran to completion, and note the two Braid lines for a phantom "memory leak" detected by valgrind.
 
   time steps = 64
-  iterations           = 15
+  iterations           = 7
   number of levels     = 3
  Fine level spatial problem size  : 17 x 17
 
 # Begin Test 7, check iterations to make sure test ran to completion, and note the two Braid lines for a phantom "memory leak" detected by valgrind.
 
   time steps = 64
-  iterations           = 16
+  iterations           = 15
   number of levels     = 3
  Fine level spatial problem size  : 17 x 17
 
 # Begin Test 8, check iterations to make sure test ran to completion, and note the two Braid lines for a phantom "memory leak" detected by valgrind.
 
   time steps = 64
-  iterations           = 7
+  iterations           = 16
   number of levels     = 3
  Fine level spatial problem size  : 17 x 17
 
 # Begin Test 9, check iterations to make sure test ran to completion, and note the two Braid lines for a phantom "memory leak" detected by valgrind.
+
+  time steps = 64
+  iterations           = 7
+  number of levels     = 3
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 10, check iterations to make sure test ran to completion, and note the two Braid lines for a phantom "memory leak" detected by valgrind.
 
   time steps = 32
   iterations           = 5
