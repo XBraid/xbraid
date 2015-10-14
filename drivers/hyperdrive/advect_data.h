@@ -28,7 +28,7 @@
 #include "c_array.h"
 #include "braid.h"
 
-#define MY_EPS 2e-12
+#define MY_EPS 1e-11
 
 /* define HD_DEBUG to get printouts from various user defined functions*/
 /* #define HD_DEBUG */
@@ -73,6 +73,8 @@ typedef struct _braid_App_struct
    int_array_1d *bcnr_;    /* boundary coefficient number */
    double_array_1d *alpha_, *beta_; /* RK-4 coefficients */
    int spatial_order;      /* spatial order of accuracy */
+   int dissipation_type;      /* standard or mixed 4/6th dissipation? */
+   int restriction_type;      /* injection or scaled P^T*/
 
 /* braid specific stuff */
    int braidMaxIter;
@@ -96,9 +98,11 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
                       double L, double cfl, int nstepsset, int nsteps, double tfinal, 
                       double wave_speed, double viscosity, int bcLeft, int bcRight, int braidMaxIter, 
                       double braidResidualLevel, double restr_coeff, double ad_coeff, int spatial_order,
+                      int dissipation_type, int restriction_type,
                       advection_setup *kd_);
+
 int
-explicit_rk4_stepper(advection_setup *kd_, grid_fcn *gf_, braid_PhiStatus status);
+explicit_rk4_stepper(advection_setup *kd_, grid_fcn *ustop_, grid_fcn *fstop_, grid_fcn *gf_, braid_StepStatus status);
 
 int
 copy_grid_fcn(advection_setup    *kd_,

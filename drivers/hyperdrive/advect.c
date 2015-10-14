@@ -259,6 +259,7 @@ int main(int argc, char ** argv)
 /* free tmp storage */
    free_grid_fcn(kd_, exact_);
 
+   return 0;
 }
 
 

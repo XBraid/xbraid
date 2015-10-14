@@ -84,6 +84,7 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
                       double L, double cfl, int nstepsset, int nsteps, double tfinal, 
                       double wave_speed, double viscosity, int bcLeft, int bcRight, int braidMaxIter, 
                       double braidResidualLevel, double restr_coeff, double ad_coeff, int spatial_order,
+                      int dissipation_type, int restriction_type,
                       advection_setup *kd_)
 {
    double mxeg, p1, beta, pi=M_PI, omL2pi, om1;
@@ -93,6 +94,12 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
 
    n = (int) rint(L/h) + o;
    
+   if ((n-o)%2 != 0)
+   {
+      printf("Adding one spatial grid point to make it even\n");
+      n++;
+   }
+
    if( fabs( L/(n-o) - h ) > 1e-10 )
    {
       h  = L/(n-o);
@@ -137,7 +144,13 @@ init_advection_solver(double h, double amp, double ph, double om, int pnr, int t
 
 /* spatial order of accuracy */
    kd_->spatial_order = spatial_order;
-   
+
+   /* type of dissipation */
+   kd_->dissipation_type = dissipation_type;
+
+   /* type of restriction */
+   kd_->restriction_type = restriction_type;
+
 /* ! compute time step */
    if (kd_->c_coeff <= 4.0*kd_->nu_coeff / h)
    {
@@ -469,7 +482,7 @@ gridfcn_Coarsen(advection_setup *kd_,
                 braid_CoarsenRefStatus status)
 {
    grid_fcn * u_;
-   int i, nf, nc, ifine;
+   int i, nf, nc;
    double dt_f, dt_c;
    double  tstart, f_tprior, f_tstop, c_tprior, c_tstop;
    braid_CoarsenRefStatusGetTstart(status, &tstart);
@@ -510,7 +523,7 @@ gridfcn_Coarsen(advection_setup *kd_,
    
 /* should make sure the kd_ and gf_ are not NULL */
    nf = gf_->n;
-   nc = u_->n = (nf-1)/2 + 1;
+   nc = u_->n = (nf-1)/2 + 1; // nf is assumed to be odd
    u_->h     = gf_->h * 2.0;
    u_->sol   = malloc((u_->n+2)*sizeof(double));
    u_->vsol_ = create_double_array_1d(3);
@@ -526,14 +539,41 @@ gridfcn_Coarsen(advection_setup *kd_,
       gf_->sol[nf+1] = gf_->sol[2];
    }
 
-/* inject the fine grid solution into coarse grid */
-   for (i=1; i<=nc; i++)
+   if (kd_->restriction_type == 0)
    {
-      ifine = 2*i-1;
-/* add 2nd undivided difference term here... */
-      u_->sol[i] = gf_->sol[2*i-1] + kd_->restr_coeff*(gf_->sol[ifine-1] - 2.0*gf_->sol[ifine] + gf_->sol[ifine+1]);
+/* inject the fine grid solution into coarse grid */
+      for (i=1; i<=nc; i++)
+      {
+/* add 2nd undivided difference term if restr_coeff > 0... */
+         u_->sol[i] = gf_->sol[2*i-1] + kd_->restr_coeff*(gf_->sol[2*i-2] - 2.0*gf_->sol[2*i-1] + gf_->sol[2*i]);
+      }
    }
-
+   else if (kd_->restriction_type == 1)
+   {
+/* R = r_scale P^T. Only implemented for P = {cubic interpolation}  */
+/* 64/105 = 0.6095... */
+/* a slightly larger value sometimes gives faster convergence (0.7)*/
+      double r_scale=64.0/105.0;
+   
+      for (i=3; i<=nc-1; i++)
+      {
+         // R = r_scale P^T
+         u_->sol[i] = r_scale * (gf_->sol[2*i-1] + 9.0/16.0*(gf_->sol[2*i-2] + gf_->sol[2*i]) - 1.0/16.0*(gf_->sol[2*i-4] + gf_->sol[2*i+2]));
+      }
+// near bndry
+      i=1;
+      u_->sol[i] = r_scale * (gf_->sol[2*i-1] + 9.0/16.0*(gf_->sol[nf-1] + gf_->sol[2*i]) - 1.0/16.0*(gf_->sol[nf-3] + gf_->sol[2*i+2]));
+      i=2;
+      u_->sol[i] = r_scale * (gf_->sol[2*i-1] + 9.0/16.0*(gf_->sol[2*i-2] + gf_->sol[2*i]) - 1.0/16.0*(gf_->sol[nf-1] + gf_->sol[2*i+2]));
+      i=nc;
+      u_->sol[i] = r_scale * (gf_->sol[2*i-1] + 9.0/16.0*(gf_->sol[2*i-2] + gf_->sol[2*i]) - 1.0/16.0*(gf_->sol[2*i-4] + gf_->sol[2]));
+   }
+   else
+   {
+      printf("ERROR: gridfcn_Coarsen(). Unknown restriction_type=%i\n", kd_->restriction_type);
+      return 1;
+   }   
+   
 /* enforce boundary conditions */
 /* is this really necessary? */
 

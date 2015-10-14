@@ -295,7 +295,7 @@ adterm( grid_fcn *w, grid_fcn *dpwdxp, advection_setup *kd_ )
 /* dpwdxp: output grid function with ghost points. Only 1 <= i <= n are assigned (undivided differences)*/
    
 #define bcnr(i)  compute_index_1d(kd_->bcnr_, i)
-   double du, d60, d61, d62, d63;
+   double du, du4, du6, d60, d61, d62, d63, d40, d41, d42, d43;
    int n=w->n;
    const int off=2; /* number of extra ghost points */
    double *wpad;
@@ -310,11 +310,16 @@ adterm( grid_fcn *w, grid_fcn *dpwdxp, advection_setup *kd_ )
    }
    else if (kd_->spatial_order == 4)
    {
-/* coefficients for centered 4th order art. dissipation -(D+D-)^2 */
-      d60 =-6.0;
-      d61 = 4.0;
-      d62 =-1.0;
-      d63 = 0.0;
+/* coefficients for centered 4th order art. dissipation -(D+D-)^2 NOTE -sign*/
+      d40 =-6.0;
+      d41 = 4.0;
+      d42 =-1.0;
+      d43 = 0.0;
+/* 6th order (D+D-)^3 */
+      d60 =-20.0;
+      d61 = 15.0;
+      d62 =-6.0;
+      d63 = 1.0;      
    }
    else if (kd_->spatial_order == 2)
    {
@@ -347,12 +352,45 @@ adterm( grid_fcn *w, grid_fcn *dpwdxp, advection_setup *kd_ )
       wpad[n+2+off] = w->sol[3];
       wpad[n+3+off] = w->sol[4];
 /* centered formula for all points */
-      for (i=1; i<=n; i++)
+
+      if (kd_->spatial_order == 2)
       {
-         du = d60*wpad[i+off] + d61*(wpad[i-1+off] + wpad[i+1+off]) + d62*(wpad[i-2+off] + wpad[i+2+off])
-            + d63*(wpad[i-3+off] + wpad[i+3+off]);
-         dpwdxp->sol[i] = du;
+         for (i=1; i<=n; i++)
+         {
+            du = d60*wpad[i+off] + d61*(wpad[i-1+off] + wpad[i+1+off]) + d62*(wpad[i-2+off] + wpad[i+2+off])
+               + d63*(wpad[i-3+off] + wpad[i+3+off]);
+            dpwdxp->sol[i] = du;
+         }
       }
+      else if (kd_->spatial_order == 4) 
+      {
+         if (kd_->dissipation_type == 0) // standard 4th order dissipation
+         {
+            for (i=1; i<=n; i++)
+            {
+               du4 = d40*wpad[i+off] + d41*(wpad[i-1+off] + wpad[i+1+off]) + d42*(wpad[i-2+off] + wpad[i+2+off])
+                  + d43*(wpad[i-3+off] + wpad[i+3+off]);
+               dpwdxp->sol[i] = du4;
+            }
+         }
+         else if (kd_->dissipation_type == 1) // NEW: mix 4th and 6th order dissipations
+         {
+            for (i=1; i<=n; i++)
+            {
+               du4 = d40*wpad[i+off] + d41*(wpad[i-1+off] + wpad[i+1+off]) + d42*(wpad[i-2+off] + wpad[i+2+off])
+                  + d43*(wpad[i-3+off] + wpad[i+3+off]);
+               du6 = d60*wpad[i+off] + d61*(wpad[i-1+off] + wpad[i+1+off]) + d62*(wpad[i-2+off] + wpad[i+2+off])
+                  + d63*(wpad[i-3+off] + wpad[i+3+off]);
+               dpwdxp->sol[i] = 3.0*(du4 - du6/6.0);
+            }
+         }
+         else
+         {
+            printf("ERROR: adterm: Unknown value of dissipation_type=%i\n", kd_->dissipation_type);
+            exit(-1);
+         }
+      }
+
 /* free tmp space */
       free(wpad);
    }

@@ -45,6 +45,7 @@ int main(int argc, char ** argv)
    
    int nstepsset, arg_index, print_usage=0, myid=0, nx;
    int wave_no = 1, spatial_order=4;
+   int dissipation_type = 0, restriction_type = 0;
 
    FILE *fp;
    
@@ -68,7 +69,7 @@ int main(int argc, char ** argv)
    MPI_Comm    comm, comm_t; /* no spatial MPI decomposition */
    int         num_procs;
    /* int         xcolor, tcolor; */
-   double      mystarttime, myendtime; 
+   /* double      mystarttime, myendtime;  */
 
    /* We consider a 2D problem. */
    /* int ndim = 2; */
@@ -81,8 +82,6 @@ int main(int argc, char ** argv)
 /*   double c; */
 
    int pt; /* AP: what is this? */
-
-   double tol_x[2], tol_x_coarse;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -97,7 +96,7 @@ int main(int argc, char ** argv)
    tol                 = 1.0e-09; /* relative (or absolute) residual stopping criterion */
    cfactor             = 2;
    cfactor0            = -1;
-   max_iter            = 100; /* max number of Braid iterations */
+   max_iter            = 250; /* max number of Braid iterations */
    fmg                 = 0;
    /* K                   = 1.0; */
    /* nt                  = 32; */
@@ -111,9 +110,6 @@ int main(int argc, char ** argv)
 /*   int rap                 = 1; */
    /* relax               = 3; */
 /*   int skip                = 1; */
-   tol_x[0]            = 1.0e-09;
-   tol_x[1]            = 1.0e-09;
-   tol_x_coarse        = 1.0e-09;
 /*   int write               = 0; */
 /*   int vis                 = 0; */
 
@@ -201,13 +197,17 @@ int main(int argc, char ** argv)
             arg_index++;
             ad_coeff = atof(argv[arg_index++]);
          }
-         /* else if( strcmp(argv[arg_index], "-rc") == 0 ){ */
-         /*    arg_index++; */
-         /*    restr_coeff = atof(argv[arg_index++]); */
-         /* } */
          else if( strcmp(argv[arg_index], "-tbc") == 0 ){
             arg_index++;
             taylorbc = atoi(argv[arg_index++]);
+         }
+         else if( strcmp(argv[arg_index], "-dtype") == 0 ){
+            arg_index++;
+            dissipation_type = atoi(argv[arg_index++]);
+         }
+         else if( strcmp(argv[arg_index], "-rtype") == 0 ){
+            arg_index++;
+            restriction_type = atoi(argv[arg_index++]);
          }
          else if( strcmp(argv[arg_index], "-help") == 0 || strcmp(argv[arg_index], "--help") == 0 || 
                   strcmp(argv[arg_index], "-h") == 0)
@@ -232,7 +232,7 @@ int main(int argc, char ** argv)
       printf("\nUsage: %s [<options>]\n", argv[0]);
       printf("\n");
       printf("  -dx  <float>    : grid size (default 0.01), rounds nx = L/dx to nearest integer\n");
-      printf("  -nx  <float>    : number of (unique) grid points => dx=L/h\n");
+      printf("  -nx  <float>    : number of (unique) grid points => dx=L/nx\n");
       printf("  -cfl <float>    : cfl-number (default 0.5)\n");
       printf("  -nu  <float>    : viscosity (>=0, default 0.0)\n");
       printf("  -nsteps <int>   : number of time steps (positive) (default tfinal/dt)\n");
@@ -241,6 +241,8 @@ int main(int argc, char ** argv)
       printf("  -wn <int>       : wave number in exact solution (default 1)\n");
       printf("  -ad <float>     : artificial dissipation coefficient ( for all grids I think) (default 0.0)\n");
       printf("  -tbc <int>      : treatment of bndry forcing at intermediate stages (0,1, or 3) (default 1)\n");
+      printf("  -dtype <int>  : dissipation type (0=standard, 1=mixed 4th and 6th) (default 0)\n");
+      printf("  -rtype <int>   : restriction type (0=injection, 1=scaled P^T) (default 0)\n");
       printf("\n");
 /* MPI_Finalize(); */
       return(0);
@@ -259,6 +261,7 @@ int main(int argc, char ** argv)
    kd_ = malloc(sizeof(advection_setup));
    init_advection_solver(h, amp, ph, om, pnr, taylorbc, L, cfl, nstepsset, nsteps, tfinal, wave_speed,
                          viscosity, bcLeft, bcRight, max_iter, tol, restr_coeff, ad_coeff, spatial_order,
+                         dissipation_type, restriction_type,
                          kd_);
    
 #define bcnr(i) compute_index_1d(kd_->bcnr_, i)    
@@ -274,11 +277,12 @@ int main(int argc, char ** argv)
    printf("Finest grid has spacing h=%e with n=%i grid points\n", kd_->h_fine, kd_->n_fine);
    printf("Artificial damping coefficient for coarse grids %e\n", kd_->ad_coeff);
    printf("Spatial order of accuracy: %i\n", kd_->spatial_order);
-   /* printf("Restriction coefficient for 2nd undivided difference %e\n", kd_->restr_coeff); */
+   printf("Restriction type (4th order only): %s\n", (kd_->restriction_type==0)? "Injection": "Scaled P^T"); 
+   printf("Dissipation type (4th order only): %s\n", (kd_->dissipation_type==0)? "Standard": "Mixed 4/6th"); 
    printf("------------------------------\n");
 
 /* Start timer. */
-   mystarttime = MPI_Wtime();
+   /* mystarttime = MPI_Wtime(); */
 
 /* seed the random number generator */
    srand(1);
@@ -289,11 +293,6 @@ int main(int argc, char ** argv)
              save_grid_fcn, gridfcn_BufSize, gridfcn_BufPack, gridfcn_BufUnpack,
              &core);
 
-   braid_SetLoosexTol( core, 0, tol_x[0] );
-   braid_SetLoosexTol( core, 1, tol_x_coarse );
-
-   braid_SetTightxTol( core, 0, tol_x[1] );
-
 /* set max number of MG levels */
    braid_SetMaxLevels( core, max_levels );
 
@@ -303,14 +302,13 @@ int main(int argc, char ** argv)
       braid_SetNRelax(core,  0, nrelax0);
    }
 
-   /*braid_SetAbsTol(core, tol*sqrt(px*nlx*py*nly*(nt+1)) );*/
-   braid_SetAbsTol(core, tol/sqrt(kd_->h_fine*kd_->dt_fine));
+// absolute tolerance scaled by 1/sqrt(dx*dt)
+//   braid_SetAbsTol(core, tol/sqrt(kd_->h_fine*kd_->dt_fine));
 
-   /* braid_SetAbsTol(core, tol); */
+// relative tolerance
+   braid_SetRelTol(core, tol);
 
-   /* braid_SetRelTol(core, tol); */
-
-/* AP: this is probably related to grid coarsening in time */
+/* AP: this is related to grid coarsening in time */
    braid_SetCFactor(core, -1, cfactor);
    if( cfactor0 > -1 ){
       /* Use cfactor0 on all levels until there are < cfactor0 points
@@ -340,7 +338,7 @@ int main(int argc, char ** argv)
    braid_Drive(core);
 
    /* Stop timer. */
-   myendtime = MPI_Wtime();
+   /* myendtime = MPI_Wtime(); */
 /*   double mytime    = myendtime - mystarttime; */
 
    braid_PrintStats(core);
