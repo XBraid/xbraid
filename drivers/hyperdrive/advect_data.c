@@ -53,7 +53,7 @@ init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle)
    if (fabs(t - kd_->tstart) < MY_EPS)
    {
 #ifdef HD_DEBUG
-      printf("Init: assigning initial data at t=tstart=%e\n", t);
+      printf("Init: assigning exact initial data at t=tstart=%e\n", t);
 #endif
       exact1( u_, t, kd_ );
       bdata( u_, t, kd_);
@@ -61,7 +61,7 @@ init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle)
    else /* set the grid function to zero, but could assign random values instead */
    {
 #ifdef HD_DEBUG
-      printf("Init: assigning zero grid function at t=%e\n", t);
+      printf("Init: assigning random grid function at t=%e\n", t);
 #endif
       for (i=0; i< u_->n+2; i++)
          u_->sol[i] = ((double)rand())/RAND_MAX;
@@ -484,18 +484,28 @@ gridfcn_Coarsen(advection_setup *kd_,
    grid_fcn * u_;
    int i, nf, nc;
    double dt_f, dt_c;
-   double  tstart, f_tprior, f_tstop, c_tprior, c_tstop;
+   double  tstart;
+
+#ifndef TEST_GF
+   double f_tprior, f_tstop, c_tprior, c_tstop;
    braid_CoarsenRefStatusGetTstart(status, &tstart);
    braid_CoarsenRefStatusGetCTstop(status, &c_tstop);
    braid_CoarsenRefStatusGetCTprior(status, &c_tprior);
    braid_CoarsenRefStatusGetFTstop(status, &f_tstop);
    braid_CoarsenRefStatusGetFTprior(status, &f_tprior);
+   
+   dt_f = MAX(f_tstop - tstart, tstart - f_tprior);
+   dt_c = MAX(c_tstop - tstart, tstart - c_tprior);
+#else
+/* get the time from the kd structure as braid is not used in this test */
+   tstart = kd_->tstart;
+   dt_f = 0.5;
+   dt_c = 1.0;
+#endif
+   
 
 #define bcnr(i) compute_index_1d(kd_->bcnr_, i)   
 
-   dt_f = MAX(f_tstop - tstart, tstart - f_tprior);
-   dt_c = MAX(c_tstop - tstart, tstart - c_tprior);
-   
 #ifdef HD_DEBUG
    printf("Coarsen: tstart=%e, dt_f = %e, dt_c=%e, grid pts (fine)=%i\n", 
           tstart, dt_f, dt_c, gf_->n);
@@ -615,22 +625,41 @@ gridfcn_Refine(advection_setup * kd_,
    grid_fcn *u_;
    int i, nc, nf, ifine, ig;   
    double dt_f, dt_c;
-   double  tstart, f_tprior, f_tstop, c_tprior, c_tstop;
+   double  tstart;
+
+#ifndef TEST_GF
+   double f_tprior, f_tstop, c_tprior, c_tstop;
    braid_CoarsenRefStatusGetTstart(status, &tstart);
    braid_CoarsenRefStatusGetCTstop(status, &c_tstop);
    braid_CoarsenRefStatusGetCTprior(status, &c_tprior);
    braid_CoarsenRefStatusGetFTstop(status, &f_tstop);
    braid_CoarsenRefStatusGetFTprior(status, &f_tprior);
 
-
-#define bcnr(i) compute_index_1d(kd_->bcnr_, i)   
-
    dt_f = MAX(f_tstop - tstart, tstart - f_tprior);
    dt_c = MAX(c_tstop - tstart, tstart - c_tprior);
+#else
+/* get the time from the kd structure as braid is not used in this test */
+   tstart = kd_->tstart;
+   dt_f = 0.5;
+   dt_c = 1.0;
+#endif
+
+#define bcnr(i) compute_index_1d(kd_->bcnr_, i)   
    
 #ifdef HD_DEBUG
    printf("Refine: tstart=%e, dt_f = %e, dt_c=%e, grid pts (coarse)=%i\n", 
           tstart, dt_f, dt_c, gf_->n);
+#endif
+#ifdef TEST_GF
+/* ! evaluate solution error */
+   grid_fcn *exact_;
+   copy_grid_fcn( kd_, gf_, &exact_ );
+   exact1( exact_,  tstart, kd_ );
+/* get exact bndry data */
+   bdata( exact_, tstart, kd_);
+   double l2, li;
+   evaldiff( gf_, exact_, &l2, &li );
+   printf("gridfcn_Refine: tstart=%e, coarse(input) l2-sol-err: %e\n", tstart, l2);
 #endif
 
 /* are the time steps the same??? */
@@ -670,30 +699,44 @@ gridfcn_Refine(advection_setup * kd_,
    {
       u_->sol[2*i-1] = gf_->sol[i];
    }
-/* for now, do linear interpolation to define the intermediate fine grid points */
-   /* for (i=2; i<=nf-1; i+=2) */
-   /* { */
-   /*    u_->sol[i] = 0.5*(u_->sol[i-1] + u_->sol[i+1]); */
-   /* } */
 
    if (bcnr(1) == Periodic)
    {
       gf_->sol[0] = gf_->sol[nc-1];
       gf_->sol[nc+1] = gf_->sol[2];
 
-/* fourth order (cubic) interpolation */
-      for (ig=1; ig<=nc-1; ig++)
+      if (kd_->spatial_order == 2)
       {
-         ifine = 2*ig; /* this is the index on the fine mesh between ig and ig+1 */
-         u_->sol[ifine] = ( -gf_->sol[ig-1] - gf_->sol[ig+2] + 9.*gf_->sol[ig] + 9.*gf_->sol[ig+1] )/16.0;
+/* linear interpolation to define the intermediate fine grid points */
+         for (ig=1; ig<=nc-1; ig++)
+         {
+            u_->sol[2*ig] = 0.5*(gf_->sol[ig] + gf_->sol[ig+1]);
+         }
       }
-
+      else if (kd_->spatial_order == 4)
+      {
+/* fourth order (cubic) interpolation */
+         for (ig=1; ig<=nc-1; ig++)
+         {
+            ifine = 2*ig; /* this is the index on the fine mesh between ig and ig+1 */
+            u_->sol[ifine] = ( -gf_->sol[ig-1] - gf_->sol[ig+2] + 9.*gf_->sol[ig] + 9.*gf_->sol[ig+1] )/16.0;
+         }
+      }
+      
 /* periodic fine grid function */
       u_->sol[0] = u_->sol[nf-1];
       u_->sol[nf+1] = u_->sol[2];
    }
    else
    {
+/* Non-periodic case (not been tested for some time...) */
+
+/* linear interpolation to define the intermediate fine grid points */
+   /* for (i=2; i<=nf-1; i+=2) */
+   /* { */
+   /*    u_->sol[i] = 0.5*(u_->sol[i-1] + u_->sol[i+1]); */
+   /* } */
+
 /* fourth order interpolation */
       for (ig=2; ig<=nc-2; ig++)
       {
@@ -727,6 +770,18 @@ gridfcn_Refine(advection_setup * kd_,
       uvsol(i) = cvsol(i);
 #undef uvsol
 #undef cvsol
+
+#ifdef TEST_GF
+/* ! evaluate solution error in interpolated grid function*/
+   copy_grid_fcn( kd_, u_, &exact_ );
+   exact1( exact_,  tstart, kd_ );
+/* get exact bndry data */
+   bdata( exact_, tstart, kd_);
+
+   evaldiff( u_, exact_, &l2, &li );
+
+   printf("gridfcn_Refine: tstart=%e, fine(output) l2-sol-err: %e\n", tstart, l2);
+#endif
    
 /* make the fine grid function useful outside this routine */   
    *fu_handle = u_;

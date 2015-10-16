@@ -32,9 +32,10 @@ explicit_rk4_stepper(advection_setup *kd_, grid_fcn *ustop_, grid_fcn *fstop_, g
 /* currently not using rfact_ */
    
    int i, stage;
-   double tstage, tbc, bdata[2], dt;   
+   double tstage, tbc, b_data[2], dt;   
    double t, tend; 
    grid_fcn *eval_, *current_, *dwdt_;
+   int level;
 
 #define vsol(i) compute_index_1d(gf_->vsol_, i)   
 #define vcur(i) compute_index_1d(current_->vsol_, i)   
@@ -46,13 +47,27 @@ explicit_rk4_stepper(advection_setup *kd_, grid_fcn *ustop_, grid_fcn *fstop_, g
 #define bcnr(i) compute_index_1d(kd_->bcnr_, i)   
 
 /* get the time-step from tend and t */
+#ifndef TEST_GF
    braid_StepStatusGetTstart(status, &t);
    braid_StepStatusGetTstop(status, &tend);
-
+   braid_StepStatusGetLevel(status, &level);
+#else
+   t = kd_->tstart;
+   tend = t + kd_->dt_fine;
+   level = 0;
+#endif
+   
    dt = tend - t;
    
 #ifdef HD_DEBUG
-   printf("Explict RK4 stepper: t=%e, dt=%e, h=%e, n=%i\n", t, dt, gf_->h, gf_->n);
+   grid_fcn *exact_;
+   double l2, li;
+   copy_grid_fcn( kd_, gf_, &exact_ );
+   
+   exact1( exact_,  t, kd_ );
+   evaldiff( gf_, exact_, &l2, &li );
+
+   printf("Explict RK4 stepper: tstart=%e, level=%d, dt=%e, h=%e, n=%i, l2-sol-err=%e\n", t, level, dt, gf_->h, gf_->n,l2);
 #endif
 
 /* allocate & initialize eval, current, dwdt, and force grid functions by copying from input gf_ */
@@ -68,22 +83,22 @@ explicit_rk4_stepper(advection_setup *kd_, grid_fcn *ustop_, grid_fcn *fstop_, g
       if (kd_->taylorbc == 1)
       {
          tbc = t;
-         twbndry1( &(bdata[0]), &(bdata[1]), stage, tbc, dt, kd_ );
+         twbndry1( &(b_data[0]), &(b_data[1]), stage, tbc, dt, kd_ );
       }
       else if (kd_->taylorbc == 0)
       {
 /* evaluate exact boundary data for the stage */
 /* set stage==1 to evaluate boundary data at t=tstage */
-         twbndry1( &(bdata[0]), &(bdata[1]), 1, tstage, dt, kd_ );
+         twbndry1( &(b_data[0]), &(b_data[1]), 1, tstage, dt, kd_ );
       }
       else if (kd_->taylorbc == 3)
       {
 /* get the boundary data from integrating an ODE system */
-         bdata[0] = veval(1);
+         b_data[0] = veval(1);
       }
 
 /* evaluate dwdt, tstage is for evaluating forcing */
-      dwdt( eval_, dwdt_, tstage, bdata, kd_ );
+      dwdt( eval_, dwdt_, tstage, b_data, kd_ );
 
 /* evaluate boundary ODE */
       dvdtbndry(eval_, dwdt_, tstage, kd_);
@@ -115,6 +130,16 @@ explicit_rk4_stepper(advection_setup *kd_, grid_fcn *ustop_, grid_fcn *fstop_, g
       }
 
    }/* end stage */
+
+#ifdef HD_DEBUG
+   exact1( exact_,  tend, kd_ );
+   evaldiff( gf_, exact_, &l2, &li );
+
+   printf("Explict RK4 stepper: tend=%e, level=%d, dt=%e, h=%e, n=%i, l2-sol-err=%e\n", tend, level, dt, gf_->h, gf_->n, l2);
+   free_grid_fcn(kd_, exact_);
+   
+#endif
+   
 
 /* free tmp storage */
    free_grid_fcn(kd_, current_);

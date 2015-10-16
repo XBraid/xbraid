@@ -244,7 +244,7 @@ int main(int argc, char ** argv)
       printf("  -dtype <int>  : dissipation type (0=standard, 1=mixed 4th and 6th) (default 0)\n");
       printf("  -rtype <int>   : restriction type (0=injection, 1=scaled P^T) (default 0)\n");
       printf("\n");
-/* MPI_Finalize(); */
+      MPI_Finalize(); 
       return(0);
    }
 
@@ -292,6 +292,9 @@ int main(int argc, char ** argv)
              explicit_rk4_stepper, init_grid_fcn, copy_grid_fcn, free_grid_fcn, sum_grid_fcn, norm_grid_fcn, 
              save_grid_fcn, gridfcn_BufSize, gridfcn_BufPack, gridfcn_BufUnpack,
              &core);
+
+/* do work on the first down-cycle? */
+   braid_SetSkip(core, 1);
 
 /* set max number of MG levels */
    braid_SetMaxLevels( core, max_levels );

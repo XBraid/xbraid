@@ -32,14 +32,19 @@ include ../../makefile.inc
 .SUFFIXES: .c .o 
 
 
+#BRAID_FLAGS = -I../.. -DHD_DEBUG
 BRAID_FLAGS = -I../..
+
+# TEST_GF should only be used for compiling test-gf
+#GFTEST_FLAGS = -DTEST_GF
+
 BRAID_LIB = ../../libbraid.a
 
 OBJ5 = advect.o c_array.o bop6g.o c-exact.o c-bdata.o c-twbndry.o c-evalerr.o assign_gp.o \
        dwdx.o dwdt.o advect_data.o explicit_rk4_stepper.o
 
 OBJT = test-gf.o c_array.o bop6g.o c-exact.o c-bdata.o c-twbndry.o c-evalerr.o assign_gp.o \
-       dwdx.o dwdt.o advect_data.o
+       dwdx.o dwdt.o advect_data.o explicit_rk4_stepper.o save_grid_fcn.o
 
 OBJR = restrict.o c_array.o bop6g.o c-exact.o c-bdata.o c-twbndry.o c-evalerr.o assign_gp.o \
        dwdx.o dwdt.o advect_data.o explicit_rk4_stepper.o
@@ -48,7 +53,7 @@ OBJ1 = hyperdrive-01.o c_array.o bop6g.o c-exact.o c-bdata.o c-twbndry.o c-evale
        dwdx.o dwdt.o c-twforce.o advect_data.o explicit_rk4_stepper.o save_grid_fcn.o
 
 .c.o:
-	$(MPICC) -c $(CFLAGS) $(BRAID_FLAGS) $<
+	$(MPICC) -c $(CFLAGS) $(BRAID_FLAGS) $(GFTEST_FLAGS) $<
 
 all: advect hyperdrive-01 test-gf restrict
 
