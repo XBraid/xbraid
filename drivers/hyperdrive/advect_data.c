@@ -53,7 +53,7 @@ init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle)
    if (fabs(t - kd_->tstart) < MY_EPS)
    {
 #ifdef HD_DEBUG
-      printf("Init: assigning exact initial data at t=tstart=%e\n", t);
+      printf("Init: assigning exact initial data at t=tstart=%e, l2-sol-err=0\n", t);
 #endif
       exact1( u_, t, kd_ );
       bdata( u_, t, kd_);
@@ -61,11 +61,21 @@ init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle)
    else /* set the grid function to zero, but could assign random values instead */
    {
 #ifdef HD_DEBUG
-      printf("Init: assigning random grid function at t=%e\n", t);
+      printf("Init: assigning random grid function at t=%e", t);
 #endif
       for (i=0; i< u_->n+2; i++)
          u_->sol[i] = ((double)rand())/RAND_MAX;
 
+#ifdef HD_DEBUG
+/* ! evaluate solution error */
+      grid_fcn *exact_;
+      copy_grid_fcn( kd_, u_, &exact_ );
+      exact1( exact_,  t, kd_ );
+      double l2, li;
+      evaldiff( u_, exact_, &l2, &li );
+      printf(" l2-sol-err=%e\n", l2);
+#endif
+      
 /* then the 3 values in the bndry ode */
 #define uvsol(i) compute_index_1d(u_->vsol_, i)
       for (i=1; i<=3; i++)
@@ -507,8 +517,17 @@ gridfcn_Coarsen(advection_setup *kd_,
 #define bcnr(i) compute_index_1d(kd_->bcnr_, i)   
 
 #ifdef HD_DEBUG
-   printf("Coarsen: tstart=%e, dt_f = %e, dt_c=%e, grid pts (fine)=%i\n", 
-          tstart, dt_f, dt_c, gf_->n);
+   printf("Coarsen: tstart=%e, grid pts (fine)=%i", tstart, gf_->n);
+/* ! evaluate solution error */
+   grid_fcn *exact_;
+   copy_grid_fcn( kd_, gf_, &exact_ );
+   exact1( exact_,  tstart, kd_ );
+/* get exact bndry data */
+   bdata( exact_, tstart, kd_);
+   double l2, li;
+   evaldiff( gf_, exact_, &l2, &li );
+   printf(" l2-sol-err: %e\n", l2);
+   free_grid_fcn(kd_, exact_);
 #endif
    
 /* are the time steps the same??? */
@@ -608,6 +627,17 @@ gridfcn_Coarsen(advection_setup *kd_,
       uvsol(i) = fvsol(i);
 #undef uvsol
 #undef fvsol
+
+#ifdef HD_DEBUG
+/* ! evaluate solution error in interpolated grid function*/
+   copy_grid_fcn( kd_, u_, &exact_ );
+   exact1( exact_,  tstart, kd_ );
+
+   evaldiff( u_, exact_, &l2, &li );
+
+   printf("Coarsen: tstart=%e, grid pts (coarse)= %i, l2-sol-err: %e\n", tstart, u_->n, l2);
+   free_grid_fcn(kd_, exact_);
+#endif
    
 /* make the grid function useful outside this routine */   
    *cu_handle = u_;
@@ -647,19 +677,15 @@ gridfcn_Refine(advection_setup * kd_,
 #define bcnr(i) compute_index_1d(kd_->bcnr_, i)   
    
 #ifdef HD_DEBUG
-   printf("Refine: tstart=%e, dt_f = %e, dt_c=%e, grid pts (coarse)=%i\n", 
-          tstart, dt_f, dt_c, gf_->n);
-#endif
-#ifdef TEST_GF
+   printf("Refine: tstart=%e, grid pts (coarse)=%i", tstart, gf_->n);
 /* ! evaluate solution error */
    grid_fcn *exact_;
    copy_grid_fcn( kd_, gf_, &exact_ );
    exact1( exact_,  tstart, kd_ );
-/* get exact bndry data */
-   bdata( exact_, tstart, kd_);
    double l2, li;
    evaldiff( gf_, exact_, &l2, &li );
-   printf("gridfcn_Refine: tstart=%e, coarse(input) l2-sol-err: %e\n", tstart, l2);
+   printf(" l2-sol-err: %e\n", l2);
+   free_grid_fcn(kd_, exact_);
 #endif
 
 /* are the time steps the same??? */
@@ -771,16 +797,13 @@ gridfcn_Refine(advection_setup * kd_,
 #undef uvsol
 #undef cvsol
 
-#ifdef TEST_GF
+#ifdef HD_DEBUG
 /* ! evaluate solution error in interpolated grid function*/
    copy_grid_fcn( kd_, u_, &exact_ );
    exact1( exact_,  tstart, kd_ );
-/* get exact bndry data */
-   bdata( exact_, tstart, kd_);
-
    evaldiff( u_, exact_, &l2, &li );
-
-   printf("gridfcn_Refine: tstart=%e, fine(output) l2-sol-err: %e\n", tstart, l2);
+   printf("Refine: tstart=%e, grid pts (fine)= %i l2-sol-err: %e\n", tstart, u_->n, l2);
+   free_grid_fcn(kd_, exact_);
 #endif
    
 /* make the fine grid function useful outside this routine */   
