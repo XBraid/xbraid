@@ -109,7 +109,7 @@ int main(int argc, char ** argv)
 /*   int n_post              = 1; */
 /*   int rap                 = 1; */
    /* relax               = 3; */
-/*   int skip                = 1; */
+   int skip                = 1;
 /*   int write               = 0; */
 /*   int vis                 = 0; */
 
@@ -178,7 +178,7 @@ int main(int argc, char ** argv)
          else if( strcmp(argv[arg_index], "-wn") == 0 ){
             arg_index++;
             wave_no = atoi(argv[arg_index++]);
-            om = wave_no*2.0*M_PI;
+            om = wave_no*2.0*M_PI/L;
          }
          else if( strcmp(argv[arg_index], "-nsteps") == 0 ){
             arg_index++;
@@ -294,7 +294,7 @@ int main(int argc, char ** argv)
              &core);
 
 /* do work on the first down-cycle? */
-   braid_SetSkip(core, 1);
+   braid_SetSkip(core, skip);
 
 /* set max number of MG levels */
    braid_SetMaxLevels( core, max_levels );

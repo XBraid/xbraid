@@ -32,8 +32,8 @@ include ../../makefile.inc
 .SUFFIXES: .c .o 
 
 
-BRAID_FLAGS = -I../.. -DHD_DEBUG
-#BRAID_FLAGS = -I../..
+#BRAID_FLAGS = -I../.. -DHD_DEBUG
+BRAID_FLAGS = -I../..
 
 # TEST_GF should only be used for compiling test-gf
 #GFTEST_FLAGS = -DTEST_GF

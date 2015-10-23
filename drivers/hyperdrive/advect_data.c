@@ -65,6 +65,7 @@ init_grid_fcn(advection_setup *kd_, double t, grid_fcn **u_handle)
 #endif
       for (i=0; i< u_->n+2; i++)
          u_->sol[i] = ((double)rand())/RAND_MAX;
+         /* u_->sol[i] = 0.0; */
 
 #ifdef HD_DEBUG
 /* ! evaluate solution error */
