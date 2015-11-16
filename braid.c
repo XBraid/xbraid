@@ -440,7 +440,7 @@ braid_Drive(braid_Core  core)
                   {
                      done = 1;
                   }
-                  else if ( isnan(global_rnorm) )
+                  else if ( braid_isnan(global_rnorm) )
                   {
                      if (myid == 0)
                      {
@@ -455,7 +455,7 @@ braid_Drive(braid_Core  core)
                   {
                      done = 1;
                   } 
-                  else if ( isnan(braid_rnorm) )
+                  else if ( braid_isnan(braid_rnorm) )
                   {
                      if (myid == 0)
                      {
