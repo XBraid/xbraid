@@ -35,6 +35,486 @@
 #endif
 
 /*--------------------------------------------------------------------------
+ * Cycle state structure
+ *--------------------------------------------------------------------------*/
+
+typedef struct
+{
+   braid_Int  down;
+   braid_Int  try_refine;
+   braid_Int  fmglevel;
+   braid_Int  fmg_Vcyc;
+   FILE      *outfile;
+
+} _braid_CycleState;
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+_braid_DriveInitCycle(braid_Core          core,
+                      _braid_CycleState  *cycle_ptr)
+{
+   braid_Int  myid       = _braid_CoreElt(core, myid_world);
+   braid_Int  fmg        = _braid_CoreElt(core, fmg);
+   braid_Int  nfmg       = _braid_CoreElt(core, nfmg);
+   braid_Int  nlevels    = _braid_CoreElt(core, nlevels);
+
+   _braid_CycleState  cycle;
+
+   cycle.down       = 1;
+   cycle.try_refine = 0;
+   cycle.fmglevel   = 0;
+   cycle.fmg_Vcyc   = 0;
+
+   if (fmg && (nfmg != 0))
+   {
+      cycle.fmglevel = nlevels-1;
+   }
+
+   /* Open cycle output file */
+   if (myid == 0)
+   {
+      cycle.outfile = fopen("braid.out.cycle", "w");
+   }
+
+   *cycle_ptr = cycle;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ * This routine determines the cycle direction (down or up) based on the current
+ * grid level, iteration number, and cycle state.  The resulting cycle direction
+ * is expected to produce three basic actions as follows:
+ *
+ *   Direction   Level                 Expected Action
+ *   down        0...(nlevels-2)       relaxation/restriction
+ *   up          1...(nlevels-1)       interpolation
+ *   up          0                     refine or check convergence
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+_braid_DriveUpdateCycle(braid_Core          core,
+                        braid_Int           level,
+                        braid_Int           iter,
+                        _braid_CycleState  *cycle_ptr)
+{
+   braid_Int      myid      = _braid_CoreElt(core, myid_world);
+   braid_Int      fmg       = _braid_CoreElt(core, fmg);
+   braid_Int      nfmg      = _braid_CoreElt(core, nfmg);
+   braid_Int      nfmg_Vcyc = _braid_CoreElt(core, nfmg_Vcyc); 
+   braid_Int      nlevels   = _braid_CoreElt(core, nlevels);
+
+   _braid_CycleState  cycle = *cycle_ptr;
+
+   if (cycle.down)
+   {
+      /* Down cycle */
+
+      /* If we are on the coarsest grid, go up */
+      if (level == (nlevels-1))
+      {
+         cycle.down = 0;
+      }
+   }
+
+   if (!cycle.down)
+   {
+      /* Up cycle */
+
+      if (level > 0)
+      {
+         /* If we are not on the finest grid and we are doing F-cycles, make
+          * sure we do nfmg_Vcyc V-cycles at each grid level */
+         if (level < cycle.fmglevel)
+         {  
+            cycle.fmg_Vcyc++;
+            if ( cycle.fmg_Vcyc == nfmg_Vcyc )
+            {
+               cycle.fmg_Vcyc = 0;
+               cycle.fmglevel--;
+            }
+               
+            cycle.down = 1;
+         }
+      }
+      else
+      {
+         /* If we are on the finest grid, first try to refine, then go down */
+         if (!cycle.try_refine)
+         {
+            cycle.try_refine = 1;
+         }
+         else
+         {
+            /* Reset fmglevel if not done doing fmg */
+            if (fmg && (nfmg != iter))
+            {
+               cycle.fmglevel = nlevels-1;                     
+            }
+
+            cycle.try_refine = 0;
+            cycle.down = 1;
+         }
+      }
+   }
+
+   /* Print to cycle output file */
+   if (myid == 0)
+   {
+      braid_Int  nrefine = _braid_CoreElt(core, nrefine);
+      braid_Int  ntime   = _braid_CoreElt(core, ntime);
+
+      _braid_ParFprintfFlush(cycle.outfile, myid, "%d %d %d %d\n",
+                             level, nrefine, iter, ntime);
+   }
+
+   *cycle_ptr = cycle;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+_braid_DriveEndCycle(braid_Core          core,
+                     _braid_CycleState  *cycle_ptr)
+{
+   braid_Int  myid = _braid_CoreElt(core, myid_world);
+
+   _braid_CycleState  cycle = *cycle_ptr;
+
+   /* Close cycle output file */
+   if (myid == 0)
+   {
+      fclose(cycle.outfile);
+   }
+
+   *cycle_ptr = cycle;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+_braid_DriveCheckConvergence(braid_Core  core,
+                             braid_Int   iter,
+                             braid_Int  *done_ptr)
+{
+   braid_Int            myid            = _braid_CoreElt(core, myid_world);
+   braid_Real           tol             = _braid_CoreElt(core, tol);
+   braid_Int            rtol            = _braid_CoreElt(core, rtol);
+   braid_Int            max_iter        = _braid_CoreElt(core, max_iter);
+   braid_StepStatus     sstatus         = _braid_CoreElt(core, sstatus);
+   braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
+   braid_Int            tight_fine_tolx = _braid_StatusElt(sstatus, tight_fine_tolx);
+   braid_Real           rnorm, rnorm0;
+
+   braid_Int            done = *done_ptr;
+
+   /* Use the full rnorm, if provided */
+   if(fullres != NULL)
+   {
+      _braid_GetFullRNorm(core, -1, &rnorm);
+      rnorm0 = _braid_CoreElt(core, full_rnorm0);
+   }
+   else
+   {
+      _braid_GetRNorm(core, -1, &rnorm);
+      rnorm0 = _braid_CoreElt(core, rnorm0);
+   }
+
+   /* If using a relative tolerance, adjust tol */
+   if (rtol)
+   {
+      tol *= rnorm0;
+   }
+
+   if ( (rnorm != braid_INVALID_RNORM) && (rnorm < tol) && (tight_fine_tolx == 1) )
+   {
+      done = 1;
+   } 
+   else if (iter == max_iter-1)
+   {
+      done = 1;
+   } 
+   else if ( isnan(rnorm) )
+   {
+      if (myid == 0)
+      {
+         _braid_printf("  Iterations diverged.\n");
+      }
+      done = 1; 
+   }
+
+   *done_ptr = done;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+_braid_DrivePrintStatus(braid_Core  core,
+                        braid_Int   level,
+                        braid_Int   iter,
+                        braid_Int   refined,
+                        braid_Real  localtime)
+{
+   braid_Int            myid            = _braid_CoreElt(core, myid_world);
+   braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
+   braid_Int            rstopped        = _braid_CoreElt(core, rstopped);
+   braid_Int            print_level     = _braid_CoreElt(core, print_level);
+   braid_Real           rnorm, rnorm_prev, cfactor, wtime;
+
+   /* If my processor is not 0, or if print_level is not set high enough, return */
+   if ((myid != 0) || (print_level < 1))
+   {
+      return _braid_error_flag;
+   }
+
+   wtime = MPI_Wtime() - localtime;
+
+   _braid_GetRNorm(core, -1, &rnorm);
+   _braid_GetRNorm(core, -2, &rnorm_prev);
+   cfactor = 1.0;
+   if (rnorm_prev != braid_INVALID_RNORM)
+   {
+      cfactor = rnorm / rnorm_prev;
+   }
+   if (rnorm != braid_INVALID_RNORM)
+   {
+      _braid_printf("  Braid: || r_%d || = %1.6e, conv factor = %1.2e, wall time = %1.2e\n",
+                    iter, rnorm, cfactor, wtime);
+   }
+   else
+   {
+      _braid_printf("  Braid: || r_%d || not available, wall time = %1.2e\n", iter, wtime);
+   }
+
+   if (fullres != NULL)
+   {
+      _braid_GetFullRNorm(core, -1, &rnorm);
+      _braid_GetFullRNorm(core, -2, &rnorm_prev);
+      cfactor = 1.0;
+      if (rnorm_prev != braid_INVALID_RNORM)
+      {
+         cfactor = rnorm / rnorm_prev;
+      }
+      if (rnorm != braid_INVALID_RNORM)
+      {
+         _braid_printf("  Braid: Full || r_%d || = %1.6e, conv factor = %1.2e\n",
+                       iter, rnorm, cfactor);
+      }
+   }
+
+   if (refined)
+   {
+      _braid_printf("  Braid: Temporal refinement occurred, %d time steps\n",
+                    _braid_CoreElt(core, gupper));
+   }
+
+   if ((rstopped > -1) && (rstopped == iter))
+   {
+      _braid_printf("  Braid: Temporal refinement stopped, %d time steps, %d refinements done\n",
+                    _braid_CoreElt(core, gupper),
+                    _braid_CoreElt(core, nrefine));
+      _braid_printf("  Braid: Temporal refinement limits: time steps = %d, refinements = %d\n",
+                    _braid_CoreElt(core, tpoints_cutoff),
+                    _braid_CoreElt(core, max_refinements));
+   }
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_Drive(braid_Core  core)
+{
+   MPI_Comm             comm_world      = _braid_CoreElt(core, comm_world);
+   braid_Int            myid            = _braid_CoreElt(core, myid_world);
+   braid_Real           tstart          = _braid_CoreElt(core, tstart);
+   braid_Real           tstop           = _braid_CoreElt(core, tstop);
+   braid_Int            ntime           = _braid_CoreElt(core, ntime);
+   braid_Int            skip            = _braid_CoreElt(core, skip);
+   braid_Int            max_levels      = _braid_CoreElt(core, max_levels);
+   braid_Int            print_level     = _braid_CoreElt(core, print_level);
+   braid_Int            access_level    = _braid_CoreElt(core, access_level);
+   braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
+
+   braid_Int     *nrels, nrel0;
+   braid_Int      nlevels;
+   braid_Int      ilower, iupper, i;
+   braid_Real    *ta;
+   _braid_Grid   *grid;
+   braid_Real     localtime, globaltime;
+
+   /* Cycle state variables */
+   _braid_CycleState  cycle;
+   braid_Int          iter, level, done, refined;
+
+   if (myid == 0)
+   { 
+      _braid_printf("  Braid: Begin simulation, %d time steps\n\n",
+                    _braid_CoreElt(core, gupper));
+   }
+
+   /* Start timer */
+   localtime = MPI_Wtime();
+
+   /* Create fine grid */
+   _braid_GetDistribution(core, &ilower, &iupper);
+   _braid_GridInit(core, 0, ilower, iupper, &grid);
+
+   /* Set t values */
+   ta = _braid_GridElt(grid, ta);
+   for (i = ilower; i <= iupper; i++)
+   {
+      ta[i-ilower] = tstart + (((braid_Real)i)/ntime)*(tstop-tstart);
+   }
+
+   /* Create a grid hierarchy */
+   _braid_InitHierarchy(core, grid, 0);
+   nlevels = _braid_CoreElt(core, nlevels);
+
+   /* Set initial values */
+   _braid_InitGuess(core, 0);
+
+   /* Initialize cycle state */
+   _braid_DriveInitCycle(core, &cycle);
+   
+   done  = 0;
+   if (max_levels <= 1)
+   {
+      /* Just do sequential time marching */
+      done = 1;
+   }
+
+   level = 0;
+   if (skip)
+   {
+      /* Skip work on first down cycle */
+      level = nlevels-1;
+      _braid_CopyFineToCoarse(core);
+   }
+
+   iter = 0;
+   _braid_CoreElt(core, niter) = iter;
+   while (!done)
+   {
+      /* When there is just one grid level, do sequential time marching */
+      /* RDF: Can this be done more efficiently?  It looks like this is needed
+       * only to get the 'refine' factors, then the solve is recomputed in
+       * either FRefine() or FAccess(). */
+      if (nlevels == 1)
+      {
+         nrels = _braid_CoreElt(core, nrels);
+         nrel0 = nrels[0];
+         nrels[0] = 1;
+         _braid_FCRelax(core, 0);
+         nrels[0] = nrel0;
+         _braid_SetRNorm(core, -1, 0.0);
+      }
+
+      /* Update cycle state and direction based on level and iter */
+      _braid_DriveUpdateCycle(core, level, iter, &cycle);
+
+      if (cycle.down)
+      {
+         /* Down cycle */
+
+         /* CF-relaxation */
+         _braid_FCRelax(core, level);
+
+         /* F-relax then restrict (note that FRestrict computes a new rnorm) */
+         _braid_FRestrict(core, level);
+            
+         /* Compute full residual norm if requested */
+         if( (level == 0) &&  (fullres != NULL) )
+         {
+            braid_Real  full_rnorm;
+            _braid_ComputeFullRNorm(core, level, &full_rnorm);
+            _braid_SetFullRNorm(core, -1, full_rnorm);
+         }
+
+         level++;
+      }
+      else
+      {
+         /* Up cycle */
+
+         if (level > 0)
+         {
+            /* F-relax then interpolate */
+            _braid_FInterp(core, level);
+
+            level--;
+         }
+         else
+         {
+            /* Finest grid - refine grid if desired, else check convergence */
+            _braid_FRefine(core, &refined);
+            nlevels = _braid_CoreElt(core, nlevels);
+
+            /* Print current status */
+            _braid_DrivePrintStatus(core, level, iter, refined, localtime);
+
+            /* If no refinement was done, check for convergence */
+            if (!refined)
+            {
+               /* Check convergence */
+               _braid_DriveCheckConvergence(core, iter, &done);
+
+               iter++;
+              _braid_CoreElt(core, niter) = iter;
+            }
+         }
+      }
+   }
+
+   /* Get final residual norms */
+   if (fullres != NULL)
+   {
+      braid_Real  full_rnorm;
+      _braid_ComputeFullRNorm(core, level, &full_rnorm);
+      _braid_SetFullRNorm(core, -1, full_rnorm);
+      /* JBS: Ben S wanted a final rnorm, we should move this final residual
+       * computation to FAccess to save work */
+      _braid_FRestrict(core, level);
+   }
+
+   /* Allow final access to Braid by carrying out an F-relax to generate points */
+   if( access_level >= 1)
+   {
+      _braid_FAccess(core, 0, 1);
+   }
+
+   /* End cycle */
+   _braid_DriveEndCycle(core, &cycle);
+
+   /* Stop timer */
+   localtime = MPI_Wtime() - localtime;
+   MPI_Allreduce(&localtime, &globaltime, 1, braid_MPI_REAL, MPI_MAX, comm_world);
+   _braid_CoreElt(core, localtime)  = localtime;
+   _braid_CoreElt(core, globaltime) = globaltime;
+
+   /* Print statistics for this run */
+   if( (print_level > 0) && (myid == 0) )
+   {
+      braid_PrintStats(core);
+   }
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 
 braid_Int
@@ -76,10 +556,17 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              max_refinements = 200;            /* Maximum number of F-refinements */
    braid_Int              tpoints_cutoff  = braid_Int_Max;  /* Maximum number of time steps, controls FRefine()*/ 
 
+   braid_Int              myid_world,  myid;
+
+   MPI_Comm_rank(comm_world, &myid_world);
+   MPI_Comm_rank(comm, &myid);
+
    core = _braid_CTAlloc(_braid_Core, 1);
 
    _braid_CoreElt(core, comm_world)      = comm_world;
    _braid_CoreElt(core, comm)            = comm;
+   _braid_CoreElt(core, myid_world)      = myid_world;
+   _braid_CoreElt(core, myid)            = myid;
    _braid_CoreElt(core, tstart)          = tstart;
    _braid_CoreElt(core, tstop)           = tstop;
    _braid_CoreElt(core, ntime)           = ntime;
@@ -96,9 +583,8 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, bufpack)         = bufpack;
    _braid_CoreElt(core, bufunpack)       = bufunpack;
    _braid_CoreElt(core, residual)        = NULL;
-   _braid_CoreElt(core, globresidual)    = NULL;
-   _braid_CoreElt(core, coarsen)         = NULL;
-   _braid_CoreElt(core, refine)          = NULL;
+   _braid_CoreElt(core, scoarsen)        = NULL;
+   _braid_CoreElt(core, srefine)         = NULL;
 
    _braid_CoreElt(core, access_level)    = access_level;
    _braid_CoreElt(core, tnorm)           = tnorm;
@@ -128,7 +614,9 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, gupper)          = ntime;
 
+   _braid_CoreElt(core, refine)          = 0;  /* Time refinement off by default */
    _braid_CoreElt(core, rfactors)        = NULL;
+   _braid_CoreElt(core, rstopped)        = -1;
    _braid_CoreElt(core, nrefine)         = 0;
    _braid_CoreElt(core, max_refinements) = max_refinements;
    _braid_CoreElt(core, tpoints_cutoff)  = tpoints_cutoff;
@@ -139,12 +627,13 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, skip)            = skip;
 
    /* Residual history and accuracy tracking for StepStatus*/
-   _braid_CoreElt(core, rnorms)                       = NULL; /* Set with SetMaxIter() below */
+   _braid_CoreElt(core, rnorm0)              = braid_INVALID_RNORM;
+   _braid_CoreElt(core, rnorms)              = NULL; /* Set with SetMaxIter() below */
    _braid_StatusElt(
-      _braid_CoreElt(core, sstatus), rnorms)          = NULL; /* Set with SetMaxIter() below */
-   _braid_StatusElt(
-      _braid_CoreElt(core, sstatus), rnorms_len_ptr)  = &(_braid_CoreElt(core, rnorms_len));
-   _braid_CoreElt(core, rnorms_len)                                  = 0;
+      _braid_CoreElt(core, sstatus), rnorms) = NULL; /* Set with SetMaxIter() below */
+   _braid_CoreElt(core, full_rnorm_res)      = NULL;
+   _braid_CoreElt(core, full_rnorm0)         = braid_INVALID_RNORM;
+   _braid_CoreElt(core, full_rnorms)         = NULL; /* Set with SetMaxIter() below */
    _braid_StatusElt( _braid_CoreElt(core, sstatus), old_fine_tolx)   = -1.0;
    _braid_StatusElt( _braid_CoreElt(core, sstatus), tight_fine_tolx) = 1;
 
@@ -152,368 +641,6 @@ braid_Init(MPI_Comm               comm_world,
    braid_SetMaxIter(core, max_iter);
 
    *core_ptr = core;
-
-   return _braid_error_flag;
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-braid_Int
-braid_Drive(braid_Core  core)
-{
-   braid_Real     tstart           = _braid_CoreElt(core, tstart);
-   braid_Real     tstop            = _braid_CoreElt(core, tstop);
-   braid_Int      ntime            = _braid_CoreElt(core, ntime);
-   braid_Real     tol              = _braid_CoreElt(core, tol);
-   braid_Int      skip             = _braid_CoreElt(core, skip);
-   braid_Int      rtol             = _braid_CoreElt(core, rtol);
-   braid_Int      fmg              = _braid_CoreElt(core, fmg);
-   braid_Int      nfmg             = _braid_CoreElt(core, nfmg);
-   braid_Int      max_levels       = _braid_CoreElt(core, max_levels);
-   braid_Int      max_iter         = _braid_CoreElt(core, max_iter);
-   braid_Int      max_refinements  = _braid_CoreElt(core, max_refinements);
-   braid_Int      tpoints_cutoff   = _braid_CoreElt(core, tpoints_cutoff);
-   braid_Int      gupper           = _braid_CoreElt(core, gupper);
-   braid_Int      print_level      = _braid_CoreElt(core, print_level);
-   braid_Int      access_level     = _braid_CoreElt(core, access_level);
-   braid_Int      nfmg_Vcyc        = _braid_CoreElt(core, nfmg_Vcyc); 
-   braid_PtFcnResidual globres     = _braid_CoreElt(core, globresidual);
-   braid_StepStatus    sstatus     = _braid_CoreElt(core, sstatus);
-
-
-   braid_Int     *nrels, nrel0;
-   braid_Int      nlevels, iter, nprocs, tight_fine_tolx, nrefine;
-   braid_Int      refinements_exhausted;
-   braid_Real     global_rnorm, old_globalrnorm, braid_rnorm, old_braid_rnorm;
-   braid_Int      ilower, iupper;
-   braid_Real    *ta;
-   braid_Int      level, fmglevel, fmg_Vcyc, down, done, i, refined;
-   _braid_Grid   *grid;
-   braid_Real     localtime, globaltime;
-
-   char           prepend[28] = "";
-
-   MPI_Comm       comm       = _braid_CoreElt(core, comm);
-   MPI_Comm       comm_world = _braid_CoreElt(core, comm_world);
-   braid_Int      myid;
-
-   /* Check that nprocs <= npoints */
-   MPI_Comm_size(comm, &nprocs);
-
-   /* Start timer */
-   localtime = MPI_Wtime();
-
-   MPI_Comm_rank(comm_world, &myid);
-
-   global_rnorm = -1.0;
-   braid_rnorm = -1.0;
-
-   /* Create fine grid */
-   _braid_GetDistribution(core, &ilower, &iupper);
-   _braid_GridInit(core, 0, ilower, iupper, &grid);
-
-   /* Set t values */
-   ta = _braid_GridElt(grid, ta);
-   for (i = ilower; i <= iupper; i++)
-   {
-      ta[i-ilower] = tstart + (((braid_Real)i)/ntime)*(tstop-tstart);
-   }
-
-   /* Create a grid hierarchy */
-   _braid_InitHierarchy(core, grid, 0);
-   nlevels = _braid_CoreElt(core, nlevels);
-
-   /* Set initial values */
-   _braid_InitGuess(core, 0);
-
-   /* Set cycling variables */
-   fmglevel = 0;
-   fmg_Vcyc = 0;
-   if (nfmg == 0)
-   {
-      fmg = 0;
-   }
-   if (fmg)
-   {
-      fmglevel = nlevels-1;
-   }
-   
-   done = 0;
-   if (max_levels <= 1)
-   {
-      /* Just do sequential time marching */
-      done = 1;
-   }
-
-   /* Tracking number of time steps during simulation is useful for FRefine */
-   refinements_exhausted = 0;
-   if(myid == 0)
-   { 
-      _braid_printf("  Braid: Beginning simulation, %d time steps on level 0\n\n", _braid_CoreElt(core, gupper));
-   }
-
-   /* Do a standard cycle, or skip work on first down cycle in FMG fashion */
-   if(skip == 0)
-   {
-      down = 1;
-      level = 0;
-   }
-   else
-   {
-      down = 0;
-      level = nlevels-1;
-      _braid_CopyFineToCoarse(core);
-   }
-
-
-   iter = 0;
-   while (!done)
-   {
-      /* Down cycle */
-      if (down)
-      {
-         if (level < (nlevels-1))
-         {
-            /* CF-relaxation */
-            _braid_FCRelax(core, level);
-
-            /* Check to use user provided global residual */
-            if( (level == 0) &&  (globres != NULL) )
-            {
-               old_globalrnorm = global_rnorm;
-               _braid_GetFullResidual(core, level, &global_rnorm);
-            }
-            
-            /* F-relax then restrict.
-             * Note that FRestrict computes a new rnorm. */
-            _braid_FRestrict(core, level);
-            _braid_GetRNorm(core, -1, &braid_rnorm);
-            
-            /* Adjust tolerance, 
-             * Note that if option skip is turned on, then we don't have a "real" residual norm until iteration 1*/
-            if ((level == 0) && (rtol) && ( ((iter == 0) && (skip == 0)) || ((iter == 1) && (skip == 1)) ))
-            {
-               /* Check to use user provided global residual */
-               if(globres != NULL)
-               {
-                  tol *= global_rnorm; 
-               }
-               else
-               {
-                  tol *= braid_rnorm;
-               }
-               _braid_CoreElt(core, tol) = tol;
-            }
-
-            level++;
-         }
-         else
-         {
-            if (nlevels == 1)
-            {
-               /* Do sequential time marching - refine on the up-cycle */
-               nrels = _braid_CoreElt(core, nrels);
-               nrel0 = nrels[0];
-               nrels[0] = 1;
-               _braid_FCRelax(core, 0);
-               nrels[0] = nrel0;
-               down = 0;
-            }
-            else
-            {
-               /* Coarsest grid - solve on the up-cycle */
-               down = 0;
-            }
-         }
-      }
-
-      /* Up cycle */
-      if (!down)
-      {
-         if (level > 0)
-         {
-            if (level >= fmglevel)
-            {
-               /* F-relax then interpolate */
-               _braid_FInterp(core, level);
-               level--;
-            }
-            else
-            {  
-               /* Do nfmg_Vcyc number of V-cycles at each level in FMG */
-               fmg_Vcyc += 1;
-               if ( fmg_Vcyc == nfmg_Vcyc )
-               {
-                  fmg_Vcyc = 0;
-                  fmglevel--;
-               }
-               
-               down = 1;
-            }
-         }
-         else
-         {
-            /* Finest grid - refine grid if desired, else check convergence */
-            refined = 0;
-            nrefine = _braid_CoreElt(core, nrefine);
-            gupper  = _braid_CoreElt(core, gupper);
-            if( (nrefine < max_refinements) && (gupper < tpoints_cutoff) )
-            {
-               _braid_FRefine(core, &refined);
-            }
-            else if( (myid == 0) && (refinements_exhausted == 0) && ((nrefine > 0) || (gupper >= tpoints_cutoff)) )
-            { 
-               _braid_printf("  Braid: Temporal refinement limits reached, %d time steps, %d refinements done\n", _braid_CoreElt(core, gupper), nrefine);
-               _braid_printf("  Braid: Temporal refinement limits: time step cutoff = %d,  max refinements = %d\n\n", tpoints_cutoff, max_refinements);
-               refinements_exhausted  = 1;
-            }
-
-
-            /* Print convergence information, noting all the different cases */
-            strncpy(prepend, "", sizeof(prepend));
-            if (refined)
-            {
-               nlevels = _braid_CoreElt(core, nlevels);
-               if(myid == 0)
-               {
-                  _braid_printf("  Braid: Temporal refinement ocurred, %d time steps on level 0\n", _braid_CoreElt(core, gupper));
-                  strncpy(prepend, "Before temporal refinement,", sizeof(prepend));
-               }
-            }
-            else if (nlevels == 1)
-            {
-               _braid_AppendResidual(core, 0.0);
-               braid_rnorm = 0.0;
-            }
-            if((myid == 0) && (print_level >=1))
-            {
-               /* No residual information available because of skip option */
-               if( (iter == 0) && (skip == 1) )
-               {
-                  if (globres != NULL)
-                  {
-                        _braid_printf("  Braid: %s Global || r_%d || is not applicable due to the skip option.\n",prepend);
-                  }
-                  _braid_printf("  Braid: %s || r_%d || is not applicable due to the skip option,  wall time = %1.2e\n", 
-                        prepend, iter,  (MPI_Wtime() - localtime));
-               }
-               else if( ((iter == 0) && (skip == 0)) || ((iter == 1) && (skip == 1)) )
-               {
-                  /* Only the first residual is available */
-                  if (globres != NULL)
-                  {
-                     _braid_printf("  Braid: %s Global || r_%d || = %1.6e\n", prepend, iter, global_rnorm);
-                  }
-                  _braid_printf("  Braid: %s || r_%d || = %1.6e,  wall time = %1.2e\n", 
-                        prepend, iter,  braid_rnorm, (MPI_Wtime() - localtime));
-               }
-               else 
-               {
-                  /* Multiple iterations of residual information available */ 
-                  if (globres != NULL)
-                  {
-                     _braid_printf("  Braid: %s Global || r_%d || = %1.6e,  conv. factor = %1.2e \n",
-                        prepend, iter, global_rnorm, global_rnorm/old_globalrnorm);
-                  }
-                  _braid_GetRNorm(core, -2, &old_braid_rnorm);
-                  _braid_printf("  Braid: %s || r_%d || = %1.6e,  conv. factor = %1.2e, wall time = %1.2e\n",
-                     prepend, iter, braid_rnorm, braid_rnorm/old_braid_rnorm, (MPI_Wtime() - localtime));
-               }
-            }
-
-
-            /* If not doing refinement, check for convergence */
-            if (refined)
-            {
-               /* The previously computed residual is not for a "full" iteration.  So, we print that residual 
-                * to screen with the above printf's. But, we delete from the rnorms array. */
-               _braid_DeleteLastResidual(core);
-            }
-            else
-            {
-               /* Use user provided global residual as stopping criterion? */
-               tight_fine_tolx = _braid_StatusElt( sstatus, tight_fine_tolx);
-               if (globres != NULL)
-               {
-                  if (( (global_rnorm < tol) && (tight_fine_tolx == 1) && (( iter > 0 ) || (skip == 0)) )  ||  (iter == max_iter-1) )
-                  {
-                     done = 1;
-                  }
-                  else if ( isnan(global_rnorm) )
-                  {
-                     if (myid == 0)
-                     {
-                        _braid_printf("  Iterations diverged.\n");
-                     }
-                     done = 1; 
-                  }
-               }
-               else 
-               {
-                  if (( (braid_rnorm < tol) && (tight_fine_tolx == 1) && (( iter > 0 ) || (skip == 0)) )  ||  (iter == max_iter-1) )
-                  {
-                     done = 1;
-                  } 
-                  else if ( isnan(braid_rnorm) )
-                  {
-                     if (myid == 0)
-                     {
-                        _braid_printf("  Iterations diverged.\n");
-                     }
-                     done = 1; 
-                  }
-               }
-
-               iter++;
-              _braid_CoreElt(core, niter) = iter;
-               
-               /* Check if done doing fmg, if not reset fmglevel. */
-               if (fmg)
-               {
-                  if ( (nfmg-iter) == 0 )
-                  {
-                     fmg = 0;
-                     fmglevel = 0;
-                  }
-                  else {
-                     fmglevel = nlevels-1;                     
-                  }
-               }
-            }
-
-            down = 1;
-         }
-      }
-   }
-
-   /* Get final residual */
-   if (globres != NULL)
-   {
-      _braid_GetFullResidual(core, level, &global_rnorm);
-      /* RDF - Why are these next two lines needed? 
-       * JBS - Ben S wanted a final rnorm, we should move this final residual computation to FAccess to save work */
-      _braid_FRestrict(core, level);
-   }
-
-   /* Allow final access to Braid by carrying out an F-relax to generate points */
-   if( access_level >= 1)
-   {
-      _braid_FAccess(core, 0, 1);
-   }
-
-   /* Stop timer */
-   localtime = MPI_Wtime() - localtime;
-   MPI_Allreduce(&localtime, &globaltime, 1, braid_MPI_REAL, MPI_MAX, comm_world);
-   _braid_CoreElt(core, localtime)  = localtime;
-   _braid_CoreElt(core, globaltime) = globaltime;
-   _braid_CoreElt(core, global_rnorm) = global_rnorm;
-
-   /* Print statistics for this run */
-   if( (print_level > 0) && (myid == 0) )
-   {
-      braid_PrintStats(core);
-   }
 
    return _braid_error_flag;
 }
@@ -535,6 +662,7 @@ braid_Destroy(braid_Core  core)
 
       _braid_TFree(_braid_CoreElt(core, nrels));
       _braid_TFree(_braid_CoreElt(core, rnorms));
+      _braid_TFree(_braid_CoreElt(core, full_rnorms));
       _braid_TFree(_braid_CoreElt(core, cfactors));
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
@@ -565,7 +693,7 @@ braid_Destroy(braid_Core  core)
 braid_Int
 braid_PrintStats(braid_Core  core)
 {
-   MPI_Comm      comm_world    = _braid_CoreElt(core, comm_world);
+   braid_Int     myid          = _braid_CoreElt(core, myid_world);
    braid_Real    tstart        = _braid_CoreElt(core, tstart);
    braid_Real    tstop         = _braid_CoreElt(core, tstop);
    braid_Int     ntime         = _braid_CoreElt(core, ntime);
@@ -578,7 +706,6 @@ braid_PrintStats(braid_Core  core)
    braid_Int     max_iter      = _braid_CoreElt(core, max_iter);
    braid_Int     nrefine       = _braid_CoreElt(core, nrefine);
    braid_Int     niter         = _braid_CoreElt(core, niter);
-   braid_Real    global_rnorm  = _braid_CoreElt(core, global_rnorm);
    braid_Int     nlevels       = _braid_CoreElt(core, nlevels);
    braid_Int     tnorm         = _braid_CoreElt(core, tnorm); 
    braid_Int     fmg           = _braid_CoreElt(core, fmg); 
@@ -588,15 +715,14 @@ braid_PrintStats(braid_Core  core)
    braid_Int     print_level   = _braid_CoreElt(core, print_level); 
    braid_Int     skip          = _braid_CoreElt(core, skip); 
    braid_Real    globaltime    = _braid_CoreElt(core, globaltime);
-   braid_PtFcnResidual globres = _braid_CoreElt(core, globresidual);
+   braid_PtFcnResidual fullres = _braid_CoreElt(core, full_rnorm_res);
    _braid_Grid **grids         = _braid_CoreElt(core, grids);
 
    braid_Real    rnorm;
-   braid_Int     myid, level;
+   braid_Int     level;
 
    _braid_GetRNorm(core, -1, &rnorm);
    
-   MPI_Comm_rank(comm_world, &myid);
    if ( myid == 0 )
    {
       _braid_printf("\n");
@@ -618,8 +744,9 @@ braid_PrintStats(braid_Core  core)
       else if(tnorm == 3){
          _braid_printf("                         --> Inf-norm TemporalNorm \n");
       }
-      if (globres != NULL) {
-         _braid_printf("  Global res 2-norm     = %e\n", global_rnorm);
+      if (fullres != NULL) {
+         _braid_GetFullRNorm(core, -1, &rnorm);
+         _braid_printf("  Global res 2-norm     = %e\n", rnorm);
       }
       _braid_printf("\n");
 
@@ -735,10 +862,7 @@ braid_Int
 braid_SetPrintFile(braid_Core     core,
                    const char    *printfile_name)
 {
-   MPI_Comm   comm_world = _braid_CoreElt(core, comm_world);
-   braid_Int     myid;
-   
-   MPI_Comm_rank(comm_world, &myid);
+   braid_Int  myid = _braid_CoreElt(core, myid_world);
    
    if(myid == 0)
    {
@@ -880,14 +1004,47 @@ braid_Int
 braid_SetMaxIter(braid_Core  core,
                  braid_Int   max_iter)
 {
-   braid_Real*  rnorms = _braid_CoreElt(core, rnorms);
+   braid_Real  *rnorms      = _braid_CoreElt(core, rnorms);
+   braid_Real  *full_rnorms = _braid_CoreElt(core, full_rnorms);
+   braid_Int    next_iter   = _braid_CoreElt(core, niter) + 1;
+   braid_Int    i;
+
+   /* If rnorms has never been allocated, make sure all entries are initialized */
+   if (rnorms == NULL)
+   {
+      next_iter = 0;
+   }
 
    _braid_CoreElt(core, max_iter) = max_iter;
 
    rnorms = _braid_TReAlloc(rnorms, braid_Real, max_iter);
+   for (i = next_iter; i < max_iter; i++)
+   {
+      rnorms[i] = braid_INVALID_RNORM;
+   }
+
+   /* Allocate even if not using full rnorms (simplifies intialization) */
+   full_rnorms = _braid_TReAlloc(full_rnorms, braid_Real, max_iter);
+   for (i = next_iter; i < max_iter; i++)
+   {
+      full_rnorms[i] = braid_INVALID_RNORM;
+   }
 
    _braid_CoreElt(core, rnorms) = rnorms;
-   _braid_StatusElt( _braid_CoreElt(core, sstatus), rnorms) = rnorms;
+   _braid_StatusElt(_braid_CoreElt(core, sstatus), rnorms) = rnorms;
+   _braid_CoreElt(core, full_rnorms) = full_rnorms;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetRefine(braid_Core  core,
+                braid_Int   refine)
+{
+   _braid_CoreElt(core, refine) = refine;
 
    return _braid_error_flag;
 }
@@ -979,7 +1136,7 @@ braid_SetTemporalNorm(braid_Core  core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_SetResidual(braid_Core  core, 
+braid_SetResidual(braid_Core          core, 
                   braid_PtFcnResidual residual)
 {
    _braid_CoreElt(core, residual) = residual;
@@ -991,10 +1148,10 @@ braid_SetResidual(braid_Core  core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_SetGlobalResidual(braid_Core  core, 
-                        braid_PtFcnResidual residual)
+braid_SetFullRNormRes(braid_Core          core, 
+                      braid_PtFcnResidual residual)
 {
-   _braid_CoreElt(core, globresidual) = residual;
+   _braid_CoreElt(core, full_rnorm_res) = residual;
 
    return _braid_error_flag;
 }
@@ -1003,10 +1160,10 @@ braid_SetGlobalResidual(braid_Core  core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_SetSpatialCoarsen(braid_Core  core, 
-                        braid_PtFcnCoarsen coarsen)
+braid_SetSpatialCoarsen(braid_Core          core, 
+                        braid_PtFcnSCoarsen scoarsen)
 {
-   _braid_CoreElt(core, coarsen) = coarsen;
+   _braid_CoreElt(core, scoarsen) = scoarsen;
 
    return _braid_error_flag;
 }
@@ -1015,10 +1172,10 @@ braid_SetSpatialCoarsen(braid_Core  core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_SetSpatialRefine(braid_Core  core,
-                    braid_PtFcnRefine refine)
+braid_SetSpatialRefine(braid_Core         core,
+                       braid_PtFcnSRefine srefine)
 {
-   _braid_CoreElt(core, refine) = refine;
+   _braid_CoreElt(core, srefine) = srefine;
 
    return _braid_error_flag;
 }
@@ -1027,8 +1184,8 @@ braid_SetSpatialRefine(braid_Core  core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_GetNumIter(braid_Core  core,
-              braid_Int   *niter_ptr)
+braid_GetNumIter(braid_Core   core,
+                 braid_Int   *niter_ptr)
 {
    *niter_ptr =  _braid_CoreElt(core, niter);
    return _braid_error_flag;
@@ -1038,15 +1195,14 @@ braid_GetNumIter(braid_Core  core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_GetRNorms(braid_Core  core,
+braid_GetRNorms(braid_Core   core,
                 braid_Int   *nrequest_ptr,
                 braid_Real  *rnorms)
-
 {
-   braid_Real     *_rnorms   = _braid_CoreElt(core, rnorms);
-   braid_Int      rnorms_len = _braid_CoreElt(core, rnorms_len);
+   braid_Real  *rnorms_all = _braid_CoreElt(core, rnorms);
+   braid_Int    rnorms_len = _braid_CoreElt(core, niter) + 1;
    
-   _braid_GetNEntries(_rnorms, rnorms_len, nrequest_ptr, rnorms);
+   _braid_GetNEntries(rnorms_all, rnorms_len, nrequest_ptr, rnorms);
    return _braid_error_flag;
 } 
 

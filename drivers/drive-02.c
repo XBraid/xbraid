@@ -2101,7 +2101,7 @@ int main (int argc, char *argv[])
       printf("  -pfmg_tolx <loose_tol tight_tol>   : loose and tight PFMG stopping tol (default: 1e-09 1e-09)\n"); 
       printf("  -fmg <nfmg_Vcyc>                   : use FMG cycling, nfmg_Vcyc V-cycles at each fmg level\n");
       printf("  -res                               : use my residual\n");
-      printf("  -new_res                           : use user residual routine to compute global residual each iteration\n");
+      printf("  -new_res                           : use user residual routine to compute full residual each iteration\n");
       printf("                                       on all grid points for stopping criterion.\n");
       printf("  -storage <level>                   : full storage on levels >= level\n");
       printf("  -forcing                           : consider non-zero RHS b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))\n");
@@ -2464,7 +2464,7 @@ int main (int argc, char *argv[])
             printf("\nCannot mix -new_res and -expl.  This uses the residual function designed to make the implicit\ntime stepping cheaper. \nIgnoring -new_res\n\n");
          }
          else{
-            braid_SetGlobalResidual(core, my_Residual);        
+            braid_SetFullRNormRes(core, my_Residual);        
          }
       
       }

@@ -168,8 +168,8 @@ braid_TestCoarsenRefine( braid_App                app,         /**< User defined
                          braid_PtFcnClone         clone,       /**< Clone a braid_Vector */
                          braid_PtFcnSum           sum,         /**< Compute vector sum of two braid_Vectors */
                          braid_PtFcnSpatialNorm   spatialnorm, /**< Compute norm of a braid_Vector, this is a norm only over space */
-                         braid_PtFcnCoarsen       coarsen,     /**< Spatially coarsen a vector */
-                         braid_PtFcnRefine        refine       /**< Spatially refine a vector */
+                         braid_PtFcnSCoarsen      coarsen,     /**< Spatially coarsen a vector */
+                         braid_PtFcnSRefine       refine       /**< Spatially refine a vector */
                          );
 
 /**
@@ -194,8 +194,8 @@ braid_TestAll( braid_App                app,         /**< User defined App struc
                braid_PtFcnBufSize       bufsize,     /**< Computes size in bytes for one braid_Vector MPI buffer */
                braid_PtFcnBufPack       bufpack,     /**< Packs MPI buffer to contain one braid_Vector */
                braid_PtFcnBufUnpack     bufunpack,   /**< Unpacks MPI buffer into a braid_Vector */
-               braid_PtFcnCoarsen       coarsen,     /**< Spatially coarsen a vector. If NULL, test is skipped.*/
-               braid_PtFcnRefine        refine       /**< Spatially refine a vector. If NULL, test is skipped.*/
+               braid_PtFcnSCoarsen      coarsen,     /**< Spatially coarsen a vector. If NULL, test is skipped.*/
+               braid_PtFcnSRefine       refine       /**< Spatially refine a vector. If NULL, test is skipped.*/
                );
 
 /** @}*/

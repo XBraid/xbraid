@@ -401,7 +401,7 @@ braid_StepStatusGetRNorms(braid_StepStatus  status,
                           )
 {
    braid_Real     *_rnorms   = _braid_StatusElt(status, rnorms);
-   braid_Int      rnorms_len = *(_braid_StatusElt(status, rnorms_len_ptr));
+   braid_Int      rnorms_len = _braid_StatusElt(status, iter) + 1;
    
    _braid_GetNEntries(_rnorms, rnorms_len, nrequest_ptr, rnorms);
    return _braid_error_flag;

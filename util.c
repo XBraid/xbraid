@@ -88,21 +88,18 @@ _braid_printf( const char *format, ...)
 }
 
 braid_Int
-_braid_ParFprintfFlush(FILE * file, 
-                       braid_Int myid,
-                       char * message, 
+_braid_ParFprintfFlush(FILE       *file, 
+                       braid_Int   myid,
+                       const char *format,
                        ...)
 {
-
+   /* Print to file */
    if (myid == 0)
    {
-      // Print message to file
       va_list   ap;
       
-      va_start(ap, message);
-      vfprintf(file, message, ap);
-      fflush(file);
-
+      va_start(ap, format);
+      vfprintf(file, format, ap);
       va_end(ap);
       fflush(file);
    }

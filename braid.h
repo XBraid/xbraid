@@ -44,6 +44,9 @@ extern "C" {
 #define braid_Fortran_SpatialCoarsen 0
 #define braid_Fortran_Residual 0
 
+/** Value used to represent an invalid residual norm */
+#define braid_INVALID_RNORM -1
+
 /*--------------------------------------------------------------------------
  * User-written routines
  *--------------------------------------------------------------------------*/
@@ -223,7 +226,7 @@ typedef braid_Int
  * when going from a fine time grid to a coarse time grid.
  * This function is called on every vector at each level, thus
  * you can coarsen the entire space time domain.  The action of 
- * this function should match the @ref braid_PtFcnRefine function.
+ * this function should match the @ref braid_PtFcnSRefine function.
  *
  * The user should query the status structure at run time with 
  * _braid_CoarsenRefGet**()_ calls in order to determine how to coarsen.  
@@ -231,18 +234,18 @@ typedef braid_Int
  * what the time step sizes on the fine and coarse levels are.
  **/
 typedef braid_Int
-(*braid_PtFcnCoarsen)(braid_App               app,         /**< user-defined _braid_App structure */
-                      braid_Vector            fu,          /**< braid_Vector to refine*/                       
-                      braid_Vector           *cu_ptr,      /**< output, refined vector */   
-                      braid_CoarsenRefStatus  status       /**< query this struct for info about fu and cu (e.g., where in time fu and cu are)  */ 
-                      );
+(*braid_PtFcnSCoarsen)(braid_App               app,    /**< user-defined _braid_App structure */
+                       braid_Vector            fu,     /**< braid_Vector to refine*/
+                       braid_Vector           *cu_ptr, /**< output, refined vector */   
+                       braid_CoarsenRefStatus  status  /**< query this struct for info about fu and cu (e.g., where in time fu and cu are)  */ 
+                       );
 
 /**
  * Spatial refinement (optional). Allows the user to refine 
  * when going from a coarse time grid to a fine time grid.  
  * This function is called on every vector at each level, thus
  * you can refine the entire space time domain. The action of 
- * this function should match the @ref braid_PtFcnCoarsen function.
+ * this function should match the @ref braid_PtFcnSCoarsen function.
  *
  * The user should query the status structure at run time with 
  * _braid_CoarsenRefGet**()_ calls in order to determine how to coarsen.  
@@ -250,11 +253,11 @@ typedef braid_Int
  * what the time step sizes on the fine and coarse levels are.
  **/
 typedef braid_Int
-(*braid_PtFcnRefine)(braid_App               app,    /**< user-defined _braid_App structure */
-                     braid_Vector            cu,     /**< braid_Vector to refine*/                       
-                     braid_Vector           *fu_ptr, /**< output, refined vector */       
-                     braid_CoarsenRefStatus  status  /**< query this struct for info about fu and cu (e.g., where in time fu and cu are)  */ 
-                     );
+(*braid_PtFcnSRefine)(braid_App               app,    /**< user-defined _braid_App structure */
+                      braid_Vector            cu,     /**< braid_Vector to refine*/
+                      braid_Vector           *fu_ptr, /**< output, refined vector */       
+                      braid_CoarsenRefStatus  status  /**< query this struct for info about fu and cu (e.g., where in time fu and cu are)  */ 
+                      );
 /** @}*/
 
 /*--------------------------------------------------------------------------
@@ -348,6 +351,13 @@ braid_SetSkip(braid_Core  core,        /**< braid_Core (_braid_Core) struct*/
               braid_Int   skip         /**< boolean, whether to skip all work on first down-cycle */
               );
 
+/**
+ * Turn time refinement on (refine = 1) or off (refine = 0).
+ **/
+braid_Int
+braid_SetRefine(braid_Core  core,    /**< braid_Core (_braid_Core) struct*/
+                braid_Int   refine   /**< boolean, refine in time or not */
+                );
 /**
  * Set the max number of refinements.
  **/
@@ -491,20 +501,20 @@ braid_SetResidual(braid_Core          core,     /**< braid_Core (_braid_Core) st
                   );
 
 /**
- * Set user-defined residual routine for use in computing global temporal norm.
+ * Set user-defined residual routine for computing full residual norm (all C/F points).
  **/
 braid_Int
-braid_SetGlobalResidual(braid_Core          core,     /**< braid_Core (_braid_Core) struct*/ 
-                        braid_PtFcnResidual residual  /**< function pointer to residual routine */
-                        );
+braid_SetFullRNormRes(braid_Core          core,     /**< braid_Core (_braid_Core) struct*/ 
+                      braid_PtFcnResidual residual  /**< function pointer to residual routine */
+                      );
 
 /**
  * Set spatial coarsening routine with user-defined routine.
  * Default is no spatial refinment or coarsening.
  **/
 braid_Int
-braid_SetSpatialCoarsen(braid_Core  core,            /**< braid_Core (_braid_Core) struct*/ 
-                        braid_PtFcnCoarsen coarsen   /**< function pointer to spatial coarsening routine */
+braid_SetSpatialCoarsen(braid_Core          core,    /**< braid_Core (_braid_Core) struct*/ 
+                        braid_PtFcnSCoarsen scoarsen /**< function pointer to spatial coarsening routine */
                         );
 
 /**
@@ -512,8 +522,8 @@ braid_SetSpatialCoarsen(braid_Core  core,            /**< braid_Core (_braid_Cor
  * Default is no spatial refinment or coarsening.
  **/
 braid_Int
-braid_SetSpatialRefine(braid_Core  core,             /**< braid_Core (_braid_Core) struct*/
-                       braid_PtFcnRefine refine      /**< function pointer to spatial refinement routine */
+braid_SetSpatialRefine(braid_Core         core,   /**< braid_Core (_braid_Core) struct*/
+                       braid_PtFcnSRefine srefine /**< function pointer to spatial refinement routine */
                        );
 
 /**

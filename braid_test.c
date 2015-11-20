@@ -468,8 +468,8 @@ braid_TestCoarsenRefine( braid_App           app,
                       braid_PtFcnClone       clone,
                       braid_PtFcnSum         sum,
                       braid_PtFcnSpatialNorm spatialnorm, 
-                      braid_PtFcnCoarsen     coarsen,
-                      braid_PtFcnRefine      refine)
+                      braid_PtFcnSCoarsen    coarsen,
+                      braid_PtFcnSRefine     refine)
  {   
    braid_Vector            u, v, w, uc, vc, wc;
    braid_Real              result1;
@@ -648,8 +648,8 @@ braid_TestAll( braid_App            app,
             braid_PtFcnBufSize      bufsize,
             braid_PtFcnBufPack      bufpack,
             braid_PtFcnBufUnpack    bufunpack,
-            braid_PtFcnCoarsen      coarsen,
-            braid_PtFcnRefine       refine)
+            braid_PtFcnSCoarsen     coarsen,
+            braid_PtFcnSRefine      refine)
 {
    braid_Int    myid_x, flag = 0, correct = 1;
    
