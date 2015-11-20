@@ -110,6 +110,9 @@ extern braid_Int _braid_error_flag;
 #ifndef _braid_min
 #define _braid_min(a,b)  (((a)<(b)) ? (a) : (b))
 #endif
+#ifndef braid_isnan
+#define braid_isnan(a) (a != a)
+#endif
 
 
 #ifdef __cplusplus

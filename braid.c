@@ -242,7 +242,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
    {
       done = 1;
    } 
-   else if ( isnan(rnorm) )
+   else if ( braid_isnan(rnorm) )
    {
       if (myid == 0)
       {
