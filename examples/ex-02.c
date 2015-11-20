@@ -197,7 +197,7 @@ my_Step(braid_App        app,
       {
          gtstart = app->man->tstart;
          gtstop  = app->man->tstop;
-         gnt     = app->man->nt;
+         braid_StepStatusGetNTPoints(status, &gnt);
          switch (nrefine) /* Assume average refinement of 4 each time */
          {
             case 2: gnt *= 4;
@@ -221,7 +221,7 @@ my_Step(braid_App        app,
       {
          gtstart = app->man->tstart;
          gtstop  = app->man->tstop;
-         gnt     = app->man->nt;
+         braid_StepStatusGetNTPoints(status, &gnt);
          index = ((tstop - gtstart) / (gtstop - gtstart))*gnt + 0.1;
          switch (index)
          {

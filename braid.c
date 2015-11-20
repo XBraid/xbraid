@@ -164,10 +164,10 @@ _braid_DriveUpdateCycle(braid_Core          core,
    if (myid == 0)
    {
       braid_Int  nrefine = _braid_CoreElt(core, nrefine);
-      braid_Int  ntime   = _braid_CoreElt(core, ntime);
+      braid_Int  gupper  = _braid_CoreElt(core, gupper);
 
       _braid_ParFprintfFlush(cycle.outfile, myid, "%d %d %d %d\n",
-                             level, nrefine, iter, ntime);
+                             level, nrefine, iter, gupper);
    }
 
    *cycle_ptr = cycle;
@@ -217,7 +217,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
    braid_Int            done = *done_ptr;
 
    /* Use the full rnorm, if provided */
-   if(fullres != NULL)
+   if (fullres != NULL)
    {
       _braid_GetFullRNorm(core, -1, &rnorm);
       rnorm0 = _braid_CoreElt(core, full_rnorm0);
@@ -437,7 +437,7 @@ braid_Drive(braid_Core  core)
          _braid_FRestrict(core, level);
             
          /* Compute full residual norm if requested */
-         if( (level == 0) &&  (fullres != NULL) )
+         if ( (level == 0) &&  (fullres != NULL) )
          {
             braid_Real  full_rnorm;
             _braid_ComputeFullRNorm(core, level, &full_rnorm);
@@ -491,7 +491,7 @@ braid_Drive(braid_Core  core)
    }
 
    /* Allow final access to Braid by carrying out an F-relax to generate points */
-   if( access_level >= 1)
+   if (access_level >= 1)
    {
       _braid_FAccess(core, 0, 1);
    }
@@ -506,7 +506,7 @@ braid_Drive(braid_Core  core)
    _braid_CoreElt(core, globaltime) = globaltime;
 
    /* Print statistics for this run */
-   if( (print_level > 0) && (myid == 0) )
+   if ( (print_level > 0) && (myid == 0) )
    {
       braid_PrintStats(core);
    }
@@ -696,7 +696,7 @@ braid_PrintStats(braid_Core  core)
    braid_Int     myid          = _braid_CoreElt(core, myid_world);
    braid_Real    tstart        = _braid_CoreElt(core, tstart);
    braid_Real    tstop         = _braid_CoreElt(core, tstop);
-   braid_Int     ntime         = _braid_CoreElt(core, ntime);
+   braid_Int     gupper        = _braid_CoreElt(core, gupper);
    braid_Int     max_levels    = _braid_CoreElt(core, max_levels);
    braid_Int     min_coarse    = _braid_CoreElt(core, min_coarse);
    braid_Real    tol           = _braid_CoreElt(core, tol);
@@ -728,35 +728,42 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("\n");
       _braid_printf("  start time = %e\n", tstart);
       _braid_printf("  stop time  = %e\n", tstop);
-      _braid_printf("  time steps = %d\n", ntime);
+      _braid_printf("  time steps = %d\n", gupper);
       _braid_printf("\n");
       _braid_printf("  stopping tolerance    = %e\n", tol);
       _braid_printf("  use relative tol?     = %d\n", rtol);
       _braid_printf("  max iterations        = %d\n", max_iter);
       _braid_printf("  iterations            = %d\n", niter);
       _braid_printf("  residual norm         = %e\n", rnorm);
-      if(tnorm == 1){
+      if (tnorm == 1)
+      {
          _braid_printf("                         --> 1-norm TemporalNorm \n");
       }
-      else if(tnorm == 2){
+      else if (tnorm == 2)
+      {
          _braid_printf("                         --> 2-norm TemporalNorm \n");
       }
-      else if(tnorm == 3){
+      else if (tnorm == 3)
+      {
          _braid_printf("                         --> Inf-norm TemporalNorm \n");
       }
-      if (fullres != NULL) {
+      if (fullres != NULL)
+      {
          _braid_GetFullRNorm(core, -1, &rnorm);
          _braid_printf("  Global res 2-norm     = %e\n", rnorm);
       }
       _braid_printf("\n");
 
       _braid_printf("  use fmg?              = %d\n", fmg);
-      if ( fmg ) {
+      if ( fmg )
+      {
          _braid_printf("  V-cycles / FMG level  = %d\n", nfmg_Vcyc);
-         if ( nfmg != -1 ) {
+         if ( nfmg != -1 )
+         {
             _braid_printf("  number fmg cycles     = %d\n", nfmg);
          }
-         else {
+         else
+         {
             _braid_printf("  fmg-cycles for all iteratons\n");         
          }
       }
@@ -864,7 +871,7 @@ braid_SetPrintFile(braid_Core     core,
 {
    braid_Int  myid = _braid_CoreElt(core, myid_world);
    
-   if(myid == 0)
+   if (myid == 0)
    {
       if ((_braid_printfile = fopen(printfile_name, "w")) == NULL)
       {
@@ -1241,7 +1248,7 @@ braid_GetSpatialAccuracy( braid_StepStatus  status,
    nrequest = -1;
    braid_StepStatusGetRNorms(status, &nrequest, &rnorm);
 
-   if( (level > 0) || (nrequest == 0) )
+   if ( (level > 0) || (nrequest == 0) )
    {
       /* Always return the loose tolerance, if
        * (1) On a coarse grid computation
@@ -1268,20 +1275,20 @@ braid_GetSpatialAccuracy( braid_StepStatus  status,
          *tol_ptr = pow(10, -stol);
 
          /* The fine grid tolerance MUST never decrease */
-         if( ((*tol_ptr) > old_fine_tolx) && (old_fine_tolx > 0) )
+         if ( ((*tol_ptr) > old_fine_tolx) && (old_fine_tolx > 0) )
          {
             *tol_ptr = old_fine_tolx;
          }
       }
    }
    
-   if(level == 0)
+   if (level == 0)
    {
       /* Store this fine grid tolerance */
       braid_StepStatusSetOldFineTolx(status, (*tol_ptr));
       
       /* If we've reached the "tight tolerance", then indicate to Braid that we can halt */
-      if( *tol_ptr == tight_tol )
+      if ( *tol_ptr == tight_tol )
       {
         braid_StepStatusSetTightFineTolx(status, 1); 
       }

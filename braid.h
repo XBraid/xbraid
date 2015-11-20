@@ -48,6 +48,15 @@ extern "C" {
 #define braid_INVALID_RNORM -1
 
 /*--------------------------------------------------------------------------
+ * Error codes
+ *--------------------------------------------------------------------------*/
+
+#define braid_ERROR_GENERIC         1   /* generic error */
+#define braid_ERROR_MEMORY          2   /* unable to allocate memory */
+#define braid_ERROR_ARG             4   /* argument error */
+/* bits 4-8 are reserved for the index of the argument error */
+
+/*--------------------------------------------------------------------------
  * User-written routines
  *--------------------------------------------------------------------------*/
 /** \defgroup userwritten User-written routines

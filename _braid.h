@@ -157,7 +157,7 @@ typedef struct _braid_Core_struct
    braid_StepStatus       sstatus;          /**< status structure passed to user-written step routines */
    braid_Int              storage;          /**< storage = 0 (C-points), = 1 (all) */
 
-   braid_Int              gupper;           /**< global upper index on the fine grid */
+   braid_Int              gupper;           /**< global size of the fine grid */
 
    braid_Int              refine;           /**< refine in time (refine = 1) */
    braid_Int             *rfactors;         /**< refinement factors for finest grid (if any) */

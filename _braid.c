@@ -827,6 +827,7 @@ _braid_Step(braid_Core     core,
    _braid_Grid    **grids    = _braid_CoreElt(core, grids);
    braid_StepStatus status   = _braid_CoreElt(core, sstatus);
    braid_Int        nrefine  = _braid_CoreElt(core, nrefine);
+   braid_Int        gupper   = _braid_CoreElt(core, gupper);
    braid_Int        ilower   = _braid_GridElt(grids[level], ilower);
    braid_Real      *ta       = _braid_GridElt(grids[level], ta);
    braid_Vector    *fa       = _braid_GridElt(grids[level], fa);
@@ -834,7 +835,7 @@ _braid_Step(braid_Core     core,
    braid_Int        ii;
 
    ii = index-ilower;
-   _braid_StepStatusInit(ta[ii-1], ta[ii], tol, iter, level, nrefine, status);
+   _braid_StepStatusInit(ta[ii-1], ta[ii], tol, iter, level, nrefine, gupper, status);
 
    /* If ustop is set to NULL, use a default approach for setting it */
    if (ustop == NULL)
@@ -884,6 +885,7 @@ _braid_Residual(braid_Core     core,
    _braid_Grid    **grids    = _braid_CoreElt(core, grids);
    braid_StepStatus status   = _braid_CoreElt(core, sstatus);
    braid_Int        nrefine  = _braid_CoreElt(core, nrefine);
+   braid_Int        gupper   = _braid_CoreElt(core, gupper);
    braid_Int        ilower   = _braid_GridElt(grids[level], ilower);
    braid_Real      *ta       = _braid_GridElt(grids[level], ta);
 
@@ -891,7 +893,7 @@ _braid_Residual(braid_Core     core,
    braid_Int        ii;
 
    ii = index-ilower;
-   _braid_StepStatusInit(ta[ii-1], ta[ii], tol, iter, level, nrefine, status);
+   _braid_StepStatusInit(ta[ii-1], ta[ii], tol, iter, level, nrefine, gupper, status);
    if ( _braid_CoreElt(core, residual) == NULL )
    {
       /* By default: r = ustop - \Phi(ustart)*/
@@ -967,6 +969,7 @@ _braid_Coarsen(braid_Core     core,
    _braid_Grid  **grids           = _braid_CoreElt(core, grids);
    braid_CoarsenRefStatus cstatus = _braid_CoreElt(core, cstatus);
    braid_Int      nrefine         = _braid_CoreElt(core, nrefine);
+   braid_Int      gupper          = _braid_CoreElt(core, gupper);
    braid_Int      c_ilower        = _braid_GridElt(grids[level], ilower);
    braid_Int      f_ilower        = _braid_GridElt(grids[level-1], ilower);
    braid_Real    *c_ta            = _braid_GridElt(grids[level], ta);
@@ -985,7 +988,7 @@ _braid_Coarsen(braid_Core     core,
       /* Call the user's coarsening routine */
       _braid_CoarsenRefStatusInit(f_ta[f_ii], f_ta[f_ii-1], f_ta[f_ii+1], 
                                   c_ta[c_ii-1], c_ta[c_ii+1],
-                                  level-1, nrefine, cstatus);
+                                  level-1, nrefine, gupper, cstatus);
       _braid_CoreFcn(core, scoarsen)(app, fvector, cvector, cstatus);
    }
    return _braid_error_flag;
@@ -1006,6 +1009,7 @@ _braid_RefineBasic(braid_Core     core,
    braid_App              app     = _braid_CoreElt(core, app);
    braid_CoarsenRefStatus cstatus = _braid_CoreElt(core, cstatus);
    braid_Int              nrefine = _braid_CoreElt(core, nrefine);
+   braid_Int              gupper  = _braid_CoreElt(core, gupper);
 
    if ( _braid_CoreElt(core, scoarsen) == NULL )
    {
@@ -1016,7 +1020,7 @@ _braid_RefineBasic(braid_Core     core,
    {
       /* Call the user's refinement routine */
       _braid_CoarsenRefStatusInit(f_ta[0], f_ta[-1], f_ta[+1], c_ta[-1], c_ta[+1],
-                                  level, nrefine, cstatus);
+                                  level, nrefine, gupper, cstatus);
       _braid_CoreFcn(core, srefine)(app, cvector, fvector, cstatus);
    }
 
@@ -1238,6 +1242,7 @@ _braid_ComputeFullRNorm(braid_Core  core,
    _braid_Grid      **grids       = _braid_CoreElt(core, grids);
    braid_StepStatus   status      = _braid_CoreElt(core, sstatus);
    braid_Int          nrefine     = _braid_CoreElt(core, nrefine);
+   braid_Int          gupper      = _braid_CoreElt(core, gupper);
    braid_Int          ncpoints    = _braid_GridElt(grids[level], ncpoints);
    braid_Int          tnorm       = _braid_CoreElt(core, tnorm);
    braid_Real        *ta          = _braid_GridElt(grids[level], ta);
@@ -1272,7 +1277,7 @@ _braid_ComputeFullRNorm(braid_Core  core,
 
          /* Update local processor norm. */
          ii = fi-ilower;
-         _braid_StepStatusInit(ta[ii-1], ta[ii], tol, iter, level, nrefine, status);
+         _braid_StepStatusInit(ta[ii-1], ta[ii], tol, iter, level, nrefine, gupper, status);
          _braid_CoreFcn(core, full_rnorm_res)(app, u, r, status);
          _braid_CoreFcn(core, spatialnorm)(app, r, &rnorm_temp); 
          if(tnorm == 1)       /* one-norm */ 
@@ -1305,7 +1310,7 @@ _braid_ComputeFullRNorm(braid_Core  core,
       {
          /* Update local processor norm. */
          ii = ci-ilower;
-         _braid_StepStatusInit(ta[ii-1], ta[ii], tol, iter, level, nrefine, status);
+         _braid_StepStatusInit(ta[ii-1], ta[ii], tol, iter, level, nrefine, gupper, status);
          _braid_UGetVector(core, level, ci, &r);
          _braid_CoreFcn(core, full_rnorm_res)(app, r, u, status);
          _braid_CoreFcn(core, spatialnorm)(app, u, &rnorm_temp);
@@ -1434,6 +1439,7 @@ _braid_FRestrict(braid_Core   core,
    braid_Int            tnorm       = _braid_CoreElt(core, tnorm);
    braid_Real          *tnorm_a     = _braid_CoreElt(core, tnorm_a);
    braid_Int            nrefine     = _braid_CoreElt(core, nrefine);
+   braid_Int            gupper      = _braid_CoreElt(core, gupper);
    braid_Int            cfactor     = _braid_GridElt(grids[level], cfactor);
    braid_Int            ncpoints    = _braid_GridElt(grids[level], ncpoints);
    braid_Real          *ta          = _braid_GridElt(grids[level], ta);
@@ -1487,7 +1493,8 @@ _braid_FRestrict(braid_Core   core,
           * temporarily holding the state vector */
          if( (access_level >= 2) && (level == 0) )
          {
-            _braid_AccessStatusInit(ta[fi-f_ilower], rnm, iter, level, nrefine, 0, 0, astatus);
+            _braid_AccessStatusInit(ta[fi-f_ilower], rnm, iter, level, nrefine, gupper,
+                                    0, 0, astatus);
             _braid_AccessVector(core, astatus, r);
          }
       }
@@ -1496,7 +1503,8 @@ _braid_FRestrict(braid_Core   core,
       if( (access_level>= 2) && (level == 0) && (ci > -1) )
       {
          _braid_UGetVectorRef(core, level, ci, &u);
-         _braid_AccessStatusInit(ta[ci-f_ilower], rnm, iter, level, nrefine, 0, 0, astatus);
+         _braid_AccessStatusInit(ta[ci-f_ilower], rnm, iter, level, nrefine, gupper,
+                                 0, 0, astatus);
          _braid_AccessVector(core, astatus, u);
       }
       
@@ -1620,6 +1628,7 @@ _braid_FInterp(braid_Core  core,
    braid_Int          iter         = _braid_CoreElt(core, niter);
    braid_Int          access_level = _braid_CoreElt(core, access_level);
    braid_Int          nrefine      = _braid_CoreElt(core, nrefine);
+   braid_Int          gupper       = _braid_CoreElt(core, gupper);
    braid_Int          ilower       = _braid_GridElt(grids[level], ilower);
    braid_Int          ncpoints     = _braid_GridElt(grids[level], ncpoints);
    braid_Vector      *va           = _braid_GridElt(grids[level], va);
@@ -1665,8 +1674,8 @@ _braid_FInterp(braid_Core  core,
           * We consider this iter+1, because we are on an up-cycle.*/
          if( (access_level >= 2) )
          {
-            _braid_AccessStatusInit(ta[fi-ilower], rnorm, iter+1,
-                                    level, nrefine, 0, 0, astatus);
+            _braid_AccessStatusInit(ta[fi-ilower], rnorm, iter+1, level, nrefine, gupper,
+                                    0, 0, astatus);
             _braid_AccessVector(core, astatus, u);
          }
          e = va[fi-ilower];
@@ -1691,8 +1700,8 @@ _braid_FInterp(braid_Core  core,
           * We consider this iter+1, because we are on an up-cycle.*/
          if( (access_level >= 2) )
          {
-            _braid_AccessStatusInit(ta[ci-ilower], rnorm, iter+1,
-                                    level, nrefine, 0, 0, astatus);
+            _braid_AccessStatusInit(ta[ci-ilower], rnorm, iter+1, level, nrefine, gupper,
+                                    0, 0, astatus);
             _braid_AccessVector(core, astatus, u);
          }
          e = va[ci-ilower];
@@ -1880,6 +1889,11 @@ _braid_FRefine(braid_Core   core,
    {
       /* First modify rfactor to be no greater than cfactor (required) */
       ii = i - ilower;
+      if (rfactors[ii] < 1)
+      {
+         _braid_Error(braid_ERROR_GENERIC, "Refinement factor smaller than one");
+         rfactors[ii] = 1;
+      }
       rfactors[ii] = _braid_min(rfactors[ii], cfactor);
       r_npoints += rfactors[i-ilower];
    }
@@ -2187,7 +2201,7 @@ _braid_FRefine(braid_Core   core,
             /* Allow user to process current vector */
             if( (access_level >= 2) )
             {
-               _braid_AccessStatusInit(ta[ii], rnorm, iter, 0, nrefine, 0, 0, astatus);
+               _braid_AccessStatusInit(ta[ii], rnorm, iter, 0, nrefine, gupper, 0, 0, astatus);
                _braid_AccessVector(core, astatus, u);
             }
          }
@@ -2210,7 +2224,7 @@ _braid_FRefine(braid_Core   core,
          /* Allow user to process current vector */
          if( (access_level >= 2) )
          {
-            _braid_AccessStatusInit(ta[ii], rnorm, iter, 0, nrefine, 0, 0, astatus);
+            _braid_AccessStatusInit(ta[ii], rnorm, iter, 0, nrefine, gupper, 0, 0, astatus);
             _braid_AccessVector(core, astatus, u);
          }
       }
@@ -2397,7 +2411,6 @@ _braid_FRefine(braid_Core   core,
 #endif
 
    /* Initialize new hierarchy */
-   _braid_CoreElt(core, ntime)   = f_gupper;
    _braid_CoreElt(core, gupper)  = f_gupper;
    _braid_CoreElt(core, nrefine) += 1;
    /*braid_SetCFactor(core,  0, cfactor);*/ /* RDF HACKED TEST */
@@ -2499,6 +2512,7 @@ _braid_FAccess(braid_Core     core,
    braid_AccessStatus  astatus     = _braid_CoreElt(core, astatus);
    braid_Int           iter        = _braid_CoreElt(core, niter);
    braid_Int           nrefine     = _braid_CoreElt(core, nrefine);
+   braid_Int           gupper      = _braid_CoreElt(core, gupper);
    braid_Int           ncpoints    = _braid_GridElt(grids[level], ncpoints);
    braid_Real          *ta         = _braid_GridElt(grids[level], ta);
    braid_Int           ilower      = _braid_GridElt(grids[level], ilower);
@@ -2525,8 +2539,8 @@ _braid_FAccess(braid_Core     core,
       {
          _braid_Step(core, level, fi, NULL, u);
          _braid_USetVector(core, level, fi, u, 0);
-         _braid_AccessStatusInit( ta[fi-ilower], rnorm, iter,
-                                  level, nrefine, done, 0, astatus);
+         _braid_AccessStatusInit( ta[fi-ilower], rnorm, iter, level, nrefine, gupper,
+                                  done, 0, astatus);
          _braid_AccessVector(core, astatus, u);
       }
       if (flo <= fhi)
@@ -2538,8 +2552,8 @@ _braid_FAccess(braid_Core     core,
       if (ci > -1)
       {
          _braid_UGetVectorRef(core, level, ci, &u);
-         _braid_AccessStatusInit( ta[ci-ilower], rnorm, iter,
-                                  level, nrefine, done, 0, astatus);
+         _braid_AccessStatusInit( ta[ci-ilower], rnorm, iter, level, nrefine, gupper,
+                                  done, 0, astatus);
          _braid_AccessVector(core, astatus, u);
       }
    }
@@ -3079,5 +3093,31 @@ _braid_GetFullRNorm(braid_Core  core,
    }
 
    return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
+ * Process the error with code ierr raised at the given line and source file
+ *----------------------------------------------------------------------------*/
+
+void
+_braid_ErrorHandler(const char *filename,
+                    braid_Int   line,
+                    braid_Int   ierr,
+                    const char *msg)
+{
+   _braid_error_flag |= ierr;
+
+#ifdef braid_PRINT_ERRORS
+   if (msg)
+   {
+      _braid_printf("braid error in file \"%s\", line %d, error code = %d - %s\n",
+                    filename, line, ierr, msg);
+   }
+   else
+   {
+      _braid_printf("braid error in file \"%s\", line %d, error code = %d\n",
+                    filename, line, ierr);
+   }
+#endif
 }
 
