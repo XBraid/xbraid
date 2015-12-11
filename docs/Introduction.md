@@ -24,7 +24,7 @@
 # Meaning of the name {#braidname}
 
 We chose the package name XBraid to stand for _Time-Braid_, where
-X is the first letter in the Greek work for time, _Chronos_.  The
+X is the first letter in the Greek word for time, _Chronos_.  The
 algorithm _braids_ together time-grids of different granularity in order to
 create a multigrid method and achieve parallelism in the time dimension.
 
