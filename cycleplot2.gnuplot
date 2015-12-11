@@ -8,4 +8,5 @@ set offsets 0, 0, 1, 1
 set y2range [0:]
 set y2tics
 plot 'braid.out.cycle' using ($1-$2) with linespoints pt 5 axes x1y1 title 'Effective cycles', 'braid.out.cycle' u 4 axes x1y2 title '# points on fine grid'
-pause -1 "Hit 'a' to update plot, 'q' and enter to quit"
+v=system('waitfile.sh braid.out.cycle 2>/dev/null')
+if (v ne '') reread
