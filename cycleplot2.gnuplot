@@ -1,7 +1,9 @@
 #
 # Type the following command in the run directory (e.g., in 'examples'):
-#   gnuplot ../cycleplot2.gnuplot
-#
+#   gnuplot -noraise ../cycleplot2.gnuplot
+#   The script waitfile.sh MUST be in your PATH variable
+#   or you have to modify this file to put an absolute path to the script instead
+
 set yrange [:] reverse
 set ytics nomirror
 set offsets 0, 0, 1, 1
