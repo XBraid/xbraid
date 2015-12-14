@@ -364,15 +364,18 @@ public:
        on each processor. */
    void SetAggCFactor(braid_Int cfactor0)
    {
-      BraidApp *app = (BraidApp *) core->app;
-      braid_Int nt = app->ntime, pt;
-      MPI_Comm_size(app->comm_t, &pt);
       if (cfactor0 > -1)
-      {
-         braid_Int level = (braid_Int) (log10((nt + 1) / pt) / log10(cfactor0));
-         for (braid_Int i = 0; i < level; i++)
-            braid_SetCFactor(core, i, cfactor0);
-      }
+         braid_SetCFactor(core, 0, cfactor0);
+      
+    //BraidApp *app = (BraidApp *) core->app;
+    //braid_Int nt = app->ntime, pt;
+    //MPI_Comm_size(app->comm_t, &pt);
+    //if (cfactor0 > -1)
+    //{
+    //   braid_Int level = (braid_Int) (log10((nt + 1) / pt) / log10(cfactor0));
+    //   for (braid_Int i = 0; i < level; i++)
+    //      braid_SetCFactor(core, i, cfactor0);
+    //}
    }
 
    void SetSpatialCoarsenAndRefine()
