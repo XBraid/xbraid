@@ -468,6 +468,7 @@ int main (int argc, char *argv[])
 
    MPI_Comm comm = MPI_COMM_WORLD;
    int myid, myid_x, num_levels, num_iter;
+   double hmin, hmax;
    MPI_Comm_rank(comm, &myid);
    
    //Parse Command Line
@@ -517,6 +518,11 @@ int main (int argc, char *argv[])
 
    pmesh->PrintInfo();
    BraidCore core(comm, &app);
+   // Not sure why this doesn't work here...so we assume that the hmin and hmax
+   // are based on inline-quad.mesh which has a characteristic size of 0.25
+   //app.MeshInfo.ComputeMeshSize(pmesh, &hmin, &hmax);
+   hmax = hmin = 0.25 / pow(2.0, (opts.par_ref_levels+opts.ser_ref_levels));
+   opts.tol = opts.tol / (sqrt(opts.dt)*hmax);
    opts.SetBraidCoreOptions(core);
    core.Drive();
    
