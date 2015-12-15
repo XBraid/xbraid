@@ -1114,12 +1114,21 @@ void NonlinearApp::InitLevel(int l)
 	 solver[l]->Init(*ode[l]);
 
 	// Set max_dt[l] -- the maximum time step allowed on this level
-   // This choice for max_dt forces Braid to use spatially coarse levels from the bottom-up
    if ( l == 0 && opts->spatial_coarsen)
    {        
       for (int i = opts->par_ref_levels; i >= 0; i--)
       {
+         // Comment in one of these choices
+         // This choice for max_dt forces Braid to use spatially coarse levels from the bottom-up
          max_dt[i] = (opts->t_final - opts->t_start)/(opts->min_coarse + 1 ) / pow(opts->cfactor, opts->par_ref_levels - i);
+         //
+         // This choice for max_dt starts spatial coarsening from the bottom up
+       //if (i == opts->par_ref_levels)
+       //   max_dt[i] = 0.99*(opts->t_final - opts->t_start)/opts->min_coarse;
+       //else if(opts->cfactor0 != -1)
+       //   max_dt[i] = 1.01 * ((opts->t_final - opts->t_start)/ntime) * opts->cfactor0 * pow(opts->cfactor, i-1);
+       //else
+       //   max_dt[i] = 1.01 * ((opts->t_final - opts->t_start)/ntime) * pow(opts->cfactor, i);
       }
    }   
 }
