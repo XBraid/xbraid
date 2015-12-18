@@ -389,6 +389,8 @@ public:
    void SetMaxIter(braid_Int max_iter) { braid_SetMaxIter(core, max_iter); }
 
    void SetPrintLevel(braid_Int print_level) { braid_SetPrintLevel(core, print_level); }
+   
+   void SetSeqSoln(braid_Int use_seq_soln) { braid_SetSeqSoln(core, use_seq_soln); }
 
    void SetPrintFile(const char *printfile_name) { braid_SetPrintFile(core, printfile_name); }
 

@@ -67,6 +67,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              max_iter        = 100;            /* Default max_iter */
    braid_Int              max_levels      = 30;             /* Default max_levels */
    braid_Int              min_coarse      = 2;              /* Default min_coarse */
+   braid_Int              seq_soln        = 0;              /* Default initial guess is from user's Init() function */
    braid_Int              print_level     = 1;              /* Default print level */
    braid_Int              access_level    = 1;              /* Default access level */
    braid_Int              tnorm           = 2;              /* Default temporal norm */
@@ -102,6 +103,7 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, access_level)    = access_level;
    _braid_CoreElt(core, tnorm)           = tnorm;
+   _braid_CoreElt(core, seq_soln)        = seq_soln;
    _braid_CoreElt(core, print_level)     = print_level;
    _braid_CoreElt(core, max_levels)      = 0; /* Set with SetMaxLevels() below */
    _braid_CoreElt(core, min_coarse)      = min_coarse;
@@ -1138,3 +1140,16 @@ braid_GetSpatialAccuracy( braid_StepStatus  status,
     /* printf( "lev: %d, accuracy: %1.2e, nreq: %d, rnorm: %1.2e, rnorm0: %1.2e, loose: %1.2e, tight: %1.2e, old: %1.2e, braid_tol: %1.2e \n", level, *tol_ptr, nrequest, rnorm, rnorm0, loose_tol, tight_tol, old_fine_tolx, tol); */
    return _braid_error_flag;
 }
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetSeqSoln(braid_Core  core,
+                 braid_Int   seq_soln)
+{
+   _braid_CoreElt(core, seq_soln) = seq_soln;
+
+   return _braid_error_flag;
+}
+

@@ -133,7 +133,12 @@ TESTS=( "$RunString -np 1  $driver_dir/drive-02 -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 
         "$RunString -np 6  $driver_dir/drive-02 -pgrid 3 2 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -use_rand 0 -scoarsen 2 -storage -2 -skip 0" \
         "$RunString -np 9  $driver_dir/drive-02 -pgrid 3 3 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -use_rand 0 -scoarsen 2 -storage -2 -skip 0" \
         "$RunString -np 8  $driver_dir/drive-02 -pgrid 2 2 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -use_rand 0 -scoarsen 2 -storage -2 -skip 0" \
-        "$RunString -np 18 $driver_dir/drive-02 -pgrid 3 3 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -use_rand 0 -scoarsen 2 -storage -2 -skip 0" )
+        "$RunString -np 18 $driver_dir/drive-02 -pgrid 3 3 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -use_rand 0 -scoarsen 2 -storage -2 -skip 0" \
+        "$RunString -np 2 $example_dir/ex-02 -pgrid 1 1 2 -ml 3 -nt 16 -storage -2 -mi 3 -tol -1.0 -skip 0 -nu 0 -pfmg_tol 1e-18 -use_seq_soln 1" \
+        "$RunString -np 2 $example_dir/ex-02 -pgrid 1 1 2 -ml 3 -nt 16 -storage -1 -mi 3 -tol -1.0 -skip 0 -nu 0 -pfmg_tol 1e-18 -use_seq_soln 1" \
+        "$RunString -np 2 $example_dir/ex-02 -pgrid 1 1 2 -ml 3 -nt 16 -storage -1 -mi 3 -tol -1.0 -skip 0 -nu 0 -pfmg_tol 1e-8 -use_seq_soln 1" \
+        "$RunString -np 2 $example_dir/ex-02 -pgrid 1 1 2 -ml 3 -nt 16 -storage  0 -mi 3 -tol -1.0 -skip 0 -nu 0 -pfmg_tol 1e-18 -use_seq_soln 1" \
+        "$RunString -np 2 $example_dir/ex-02 -pgrid 1 1 2 -ml 3 -nt 16 -storage  0 -mi 3 -tol -1.0 -skip 0 -nu 0 -pfmg_tol 1e-8 -use_seq_soln 1" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 

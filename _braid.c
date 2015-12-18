@@ -343,7 +343,8 @@ _braid_UGetIndex(braid_Core   core,
    uindex = -1;
    if ((index >= ilower) && (index <= iupper))
    {
-      if ( (_braid_CoreElt(core, storage) == -1) ||
+      // If on level that only stores C-points
+      if ( (_braid_CoreElt(core, storage) < 0) ||
            (level < _braid_CoreElt(core, storage)) )
       {
          if ( _braid_IsCPoint(index, cfactor) )
@@ -763,6 +764,7 @@ _braid_GetUInit(braid_Core     core,
 {
    _braid_Grid    **grids    = _braid_CoreElt(core, grids);
    braid_Int        ilower   = _braid_GridElt(grids[level], ilower);
+   braid_Int        storage  = _braid_CoreElt(core, storage);
    braid_Vector    *va       = _braid_GridElt(grids[level], va);
 
    braid_Vector     ustop = *ustop_ptr;
@@ -772,35 +774,24 @@ _braid_GetUInit(braid_Core     core,
 
    _braid_UGetVectorRef(core, level, index, &ustop);
 
-   /* Run in compatibility mode, mimic the original Braid algorithm */
-   if ( _braid_CoreElt(core, storage) == -2 )
+   /* If ustop is NULL, then storage is only at C-points on this level and this
+    * is an F-point.  See the comment block around FRestrict() for the fixed-point
+    * logic behind our choices in ustop. */
+   if( ustop == NULL)
    {
-      /* Here we must always approximate ustop by u at tstart. */
-      ustop = u;
-   }
-
-   /* User-provided residual routine, store u-vectors only at C-points */
-   else if ( (_braid_CoreElt(core, storage) == -1) ||
-             (level < _braid_CoreElt(core, storage)) )
-   {
-      /* If the u-vector is not stored, use something else for ustop */
-      if (level == 0)
+      if( (level == 0) || ( storage == -2 ) )
       {
-         /* On the fine grid, approximate ustop by u */
          ustop = u;
       }
-      else if (va[ii] != NULL)
-      {
-         /* On coarse grids, approximate ustop by the restricted fine value.
-          * This ensures a fixed-point iteration. */
+      else
+      {   
          ustop = va[ii];
       }
    }
 
-   /* Utilize storage of all u-vectors (F and C points) at this level */
-   else
+   /* If you have storage at this point, use it, unless you're in compatibility mode (-2). */
+   else if( storage == -2 )
    {
-      /* Approximate ustop by u */
       ustop = u;
    }
 
@@ -1185,22 +1176,52 @@ braid_Int
 _braid_InitGuess(braid_Core  core,
                  braid_Int   level)
 {
-   braid_App      app     = _braid_CoreElt(core, app);
-   _braid_Grid  **grids   = _braid_CoreElt(core, grids);
-   braid_Int      ilower  = _braid_GridElt(grids[level], ilower);
-   braid_Int      iupper  = _braid_GridElt(grids[level], iupper);
-   braid_Int      clower  = _braid_GridElt(grids[level], clower);
-   braid_Int      cupper  = _braid_GridElt(grids[level], cupper);
-   braid_Int      cfactor = _braid_GridElt(grids[level], cfactor);
-   braid_Real    *ta      = _braid_GridElt(grids[level], ta);
-   braid_Vector  *va      = _braid_GridElt(grids[level], va);
+   braid_App      app      = _braid_CoreElt(core, app);
+   braid_Int      seq_soln = _braid_CoreElt(core, seq_soln);   
+   _braid_Grid  **grids    = _braid_CoreElt(core, grids);
+   braid_Int      ilower   = _braid_GridElt(grids[level], ilower);
+   braid_Int      iupper   = _braid_GridElt(grids[level], iupper);
+   braid_Int      clower   = _braid_GridElt(grids[level], clower);
+   braid_Int      cupper   = _braid_GridElt(grids[level], cupper);
+   braid_Int      cfactor  = _braid_GridElt(grids[level], cfactor);
+   braid_Real    *ta       = _braid_GridElt(grids[level], ta);
+   braid_Vector  *va       = _braid_GridElt(grids[level], va);
 
    braid_Vector   u;
    braid_Int      i, iu;
 
-   if (level == 0)
+   if ( (level == 0) && (seq_soln == 1) )
    {
-      /* Only need to initialize the C-points on the finest grid */
+      /* If first processor, grab initial condition */
+      if(ilower == 0)
+      {
+         _braid_CoreFcn(core, init)(app, ta[0], &u);
+         _braid_USetVector(core, 0, 0, u, 0);
+         ilower += 1;
+      }
+      /* Else, receive point to the left */
+      else
+      {
+         _braid_UCommInitBasic(core, 0, 1, 0, 0);     /* Post receive to the left*/
+         _braid_UGetVector(core, 0, ilower-1, &u);    /* Wait on receive */
+      }
+
+      /* Set Flag so that USetVector initiates send when iupper is available */
+      _braid_GridElt(grids[level], send_index)  = iupper;
+
+      /* Initialize all points on the finest grid with sequential time marching */
+      for(i = ilower; i <= iupper; i++)
+      {
+         _braid_Step(core, 0, i, NULL, u);       /* Step forward */
+         _braid_USetVector(core, 0, i, u, 0);    /* Store: copy u into core,
+                                                    sending to left if needed */
+      }
+
+      _braid_UCommWait(core, 0);                 /* Wait on comm to finish */
+   }
+   else if (level == 0)
+   {
+      /* Only initialize the C-points on the finest grid */
       for (i = clower; i <= cupper; i += cfactor)
       {
          _braid_CoreFcn(core, init)(app, ta[i-ilower], &u);
@@ -1418,6 +1439,42 @@ _braid_FCRelax(braid_Core  core,
 
 /*--------------------------------------------------------------------------
  * F-Relax on level and restrict to level+1
+ *
+ * At the bottom of FRestrict(), the coarse-grid right-hand side is computed
+ * and stored in c_fa[].  The result stored in c_fa[] must be considered 
+ * carefully to maintain a fixed point nature of the algorithm.  The FAS 
+ * coarse-grid equation is
+ *   
+ *   A_c(u_c) = R(f - A(u)) + A_c(R(u))
+ 
+ * where R() is restriction, and A() and A_c() are the fine and coarse
+ * operators.  We desire our algorithm to be a fixed-point method, in that the
+ * exact solution (from sequential time stepping) should yield a zero initial
+ * residual and that the residual should stay zero as Braid iterates.  This is
+ * actually a subtle point.  In this case, the solution u_c should be equivalent 
+ * to the solution u.  Since R(f - A(u)) = 0, this implies that 
+ *
+ *   A_c(u_c) = A_c(R(u))
+ *
+ * This further implies that the initial guess provided to the implicit
+ * solve routines in A_c() must be consistent on the right an left hand sides.
+ *
+ * The function (@ref _braid_GetUInit()) provides this functionality by
+ * encapsulating all decisions about how to set this initial guess (called
+ * ustop) The ustop values for A_c(R(u)) are set in (@ _braid_Residual) and for
+ * A_c(u_c), they are set in (@ _braid_step).
+ *
+ * storage == -2 implies that (@ref _braid_GetUInit()) will always use the previous
+ * time step value as the initial guess, even if you have better information, which 
+ * is the case at C-points on the fine grid, and at all points on coarse-levels.
+ *
+ * storage == -1 implies that (@ref _braid_GetUInit()) will always use the best
+ * information.  The value at the previous time step is used as the initial
+ * guess only at F-points on the fine-grid.  The va[] values provide all
+ * initial guess at F- and C-points on coarse-grids.
+ *
+ * storage == 0 is the same as -1, except that storage also exists at fine-grid
+ * F-points.
  *--------------------------------------------------------------------------*/
 
 braid_Int
@@ -2718,7 +2775,8 @@ _braid_InitHierarchy(braid_Core    core,
          _braid_GridElt(grid, fa)       = fa+1;  /* shift */
       }
 
-      if ( (_braid_CoreElt(core, storage) == -1) ||
+      // If on level that only stores C-points
+      if ( (_braid_CoreElt(core, storage) < 0) ||
            (level < _braid_CoreElt(core, storage)) )
       {
          nupoints = _braid_GridElt(grid, ncpoints);   /* only C-points */

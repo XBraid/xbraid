@@ -648,6 +648,26 @@ braid_GetSpatialAccuracy( braid_StepStatus  status,         /**< Current XBraid 
                           braid_Real       *tol_ptr         /**< output, holds the computed spatial solve stopping tol */
                          );
 
+/**
+ * Set the initial guess to XBraid as the sequential time stepping
+ * solution.  This is primarily for debugging.  When used with 
+ * storage=-2, the initial residual should evaluate to exactly 0.  
+ * The residual can also be 0 for other storage options if the 
+ * time stepping is *exact*, e.g., the implicit solve in Step is 
+ * done to full precision. 
+ *
+ * The value *seq_soln* is a Boolean
+ * - 0: The user's Init() function initializes the state vector
+ *      (default)
+ * - 1: Sequential time stepping, with the user's initial condition
+ *   from Init(t=0) initializes the state vector
+ * 
+ * Default is 0.
+ **/
+braid_Int
+braid_SetSeqSoln(braid_Core  core,          /**< braid_Core (_braid_Core) struct*/
+                 braid_Int   seq_soln       /**< 1: Init with sequential time stepping soln, 0: Use user's Init()*/
+                 );
 /** @}*/
 
 #ifdef __cplusplus
