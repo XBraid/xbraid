@@ -167,7 +167,7 @@ first argument to every function.
    space.  A common norm choice is the standard Euclidean norm, but 
    many other choices are possible, such as an L2-norm based on a 
    finite element space.  The norm choice should be based on what 
-   makes sense for you problem.  How to accumulate spatial norm values
+   makes sense for your problem.  How to accumulate spatial norm values
    to obtain a global space-time residual norm for halting decisions is 
    controlled by [braid_SetTemporalNorm](@ref braid_SetTemporalNorm).
 

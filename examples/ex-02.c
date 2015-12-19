@@ -532,7 +532,7 @@ int main (int argc, char *argv[])
    int run_wrapper_tests, correct1, correct2;
    int print_level, access_level, max_nA, nA_max, max_levels, skip, min_coarse;
    int nrelax, nrelax0, cfactor, cfactor0, max_iter, fmg, res, storage, tnorm;
-   int fullrnorm;
+   int fullrnorm, use_seq_soln;
 
    MPI_Init(&argc, &argv);
    MPI_Comm_rank( comm, &myid );
@@ -577,7 +577,8 @@ int main (int argc, char *argv[])
    access_level        = 1;               /* Frequency of calls to access routine: 1 is for only after simulation */
    run_wrapper_tests   = 0;               /* Run no simulation, only run wrapper tests */
    fullrnorm           = 0;               /* Do not compute full residual from user routine each iteration */
-   
+   use_seq_soln        = 0;               /* Use the solution from sequential time stepping as the initial guess */
+
    /* Other parameters specific to parallel in time */
    app->use_rand       = 1;               /* If 1, use a random initial guess, else use a zero initial guess */
    app->refine         = 0;               /* If 1, refine temporal grid */
@@ -615,6 +616,10 @@ int main (int argc, char *argv[])
       else if( strcmp(argv[arg_index], "-pfmg_tol") == 0 ){
           arg_index++;
           app->man->tol = atof(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-use_seq_soln") == 0 ){
+          arg_index++;
+          use_seq_soln = atoi(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-output_files") == 0 ){
          arg_index++;
@@ -885,6 +890,7 @@ int main (int argc, char *argv[])
       braid_SetPrintLevel( core, print_level);
       braid_SetAccessLevel( core, access_level);
       braid_SetNRelax(core, -1, nrelax);
+      braid_SetSeqSoln(core, use_seq_soln);
       if (nrelax0 > -1) {
          braid_SetNRelax(core,  0, nrelax0);
       }

@@ -208,8 +208,28 @@
   residual norm        = 3.885386e-01
                         --> Inf-norm TemporalNorm 
 
-# Begin Test 43
+# Begin Test 44 -- Use the sequential time stepping solution (should be 0.0 in many cases) 
 
-  residual norm        = 3.885386e-01
-                        --> Inf-norm TemporalNorm 
+  residual norm         = 0.000000e+00
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 45
+
+  residual norm         = 0.000000e+00
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 46
+
+  residual norm         = 1.723838e-10
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 47
+
+  residual norm         = 0.000000e+00
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 48
+
+  residual norm         = 3.216824e-10
+                         --> 2-norm TemporalNorm 
 

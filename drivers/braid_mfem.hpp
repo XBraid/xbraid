@@ -267,6 +267,7 @@ struct BraidOptions : public OptionsParser
    bool   spatial_coarsen;
    int    access_level;
    int    print_level;
+   int    use_seq_soln;
 
    // (optional) mesh and refinement options
    const char *mesh_file;
@@ -855,6 +856,7 @@ BraidOptions::BraidOptions(int argc, char *argv[])
    spatial_coarsen  = false;
    access_level     = 1;
    print_level      = 1;
+   use_seq_soln     = 0;
 
    AddOption(&t_start, "-ts", "--t-start", "Start time.");
    AddOption(&t_final, "-tf", "--t-final", "Final time.");
@@ -890,6 +892,8 @@ BraidOptions::BraidOptions(int argc, char *argv[])
              "Set the access level.");
    AddOption(&print_level, "-print", "--print-level",
              "Set the print level.");
+   AddOption(&use_seq_soln, "-seq_soln", "--use-sequential-solution",
+             "If 1, use the sequential time stepping solution as the initial guess.");
    AddOption(&skip, "-skip", "--skip-work-on-first-down-cycle",
              "If True, skip all work on the first down cycle (0:False, 1:True)");
 
@@ -924,6 +928,7 @@ void BraidOptions::SetBraidCoreOptions(BraidCore &core)
 {
    core.SetAccessLevel(access_level);
    core.SetPrintLevel(print_level);
+   core.SetSeqSoln(use_seq_soln);
    core.SetMaxLevels(max_levels);
    core.SetMinCoarse(min_coarse);
    core.SetNRelax(-1, nrelax);

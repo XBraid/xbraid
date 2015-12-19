@@ -323,16 +323,24 @@ Struct to hold all command line and defualt options */
 struct NonlinearOptions : public BraidOptions
 {  
 
-	int mi_fine, mi_coarse;    //Max nonlinear iterations on f/c grids
+	int mi_fine, mi_coarse;      //Max nonlinear iterations on f/c grids
 	double tol_fine, tol_coarse; //Nonlinear tolerance on f/c grids 
    int ode_solver_type;         //What type of ode solver to use
-	
-   int nl_print_level; //Nonlinear print level
+	int cheap_first_iters;       //(bool) Make the first two iterations of Braid use
+                                //   sqrt(tol) as the fine-grid Newton tolerance
+   int scale_coarse_newt_tol;   //(bool) Scale the coarse-grid Newton tolerance
+                                //   by min( (4**lvl)*tol, 0.001)
+
    int sc_print_level; //Spatial coarsening print level
    
    int braid_level; //Current temporal level of braid
    int braid_iter;  //Current braid Iteration
    
+   int boomer_mi_fine;   // Max inner-inner BoomerAMG iterations on fine grid
+   int boomer_mi_coarse; // Max inner-inner BoomerAMG iterations on all coarse grids
+   int boomer_mi;        // Actual value used to set max BoomerAMG iterations 
+                         // (alternates between fine and coarse, set int Step())
+
    double kap, tau; //Exact Solution parameters    
    double power;    //P in p-laplacian 
    double dt;       //time step on the finest grid.
@@ -406,6 +414,9 @@ public:
     //Set the hypre parameters
     void SetHypre(const double dt,const double tol);
 
+    //Store the number of iterations taken during the last time-step
+    int num_iter;
+
     virtual ~NonlinearSystemODE(); 
 };
 
@@ -431,7 +442,8 @@ protected:
 	virtual void InitLevel(int l);            
 
 public:
-   SpaceTimeMeshInfo MeshInfo;	
+   SpaceTimeMeshInfo MeshInfo;
+   Array<double> NewtonItersMax, NewtonItersMin, NewtonItersSum, NewtonItersCount;
    
    NonlinearApp(NonlinearOptions *opts, MPI_Comm comm_t_, ParMesh *pmesh);
 	
@@ -441,6 +453,8 @@ public:
                    braid_Vector    fstop_,
                    BraidStepStatus &pstatus);  
 
+   void PrintNewtonInfo(int num_levels, int max_levels, int num_iter, int skip, int myid_x);
+   
    virtual ~NonlinearApp();
 
 };
@@ -453,7 +467,8 @@ int main (int argc, char *argv[])
    MPI_Init(&argc, &argv);
 
    MPI_Comm comm = MPI_COMM_WORLD;
-   int myid;
+   int myid, myid_x, num_levels, num_iter;
+   double hmin, hmax;
    MPI_Comm_rank(comm, &myid);
    
    //Parse Command Line
@@ -493,6 +508,7 @@ int main (int argc, char *argv[])
    util.SplitCommworld(&comm, opts.num_procs_x, &comm_x, &comm_t);
 
    // Partition the mesh accross the spatial communicator
+   MPI_Comm_rank(comm_x, &myid_x);
    ParMesh *pmesh = new ParMesh(comm_x, *mesh);
    delete mesh;
 
@@ -502,12 +518,20 @@ int main (int argc, char *argv[])
 
    pmesh->PrintInfo();
    BraidCore core(comm, &app);
+   // Not sure why this doesn't work here...so we assume that the hmin and hmax
+   // are based on inline-quad.mesh which has a characteristic size of 0.25
+   //app.MeshInfo.ComputeMeshSize(pmesh, &hmin, &hmax);
+   hmax = hmin = 0.25 / pow(2.0, (opts.par_ref_levels+opts.ser_ref_levels));
+   opts.tol = opts.tol / (sqrt(opts.dt)*hmax);
    opts.SetBraidCoreOptions(core);
-   core.Drive();   
+   core.Drive();
    
-   if (opts.sc_print_level && myid == 0)
+   core.GetNLevels(&num_levels);
+   core.GetNumIter(&num_iter);
+   app.PrintNewtonInfo(num_levels, opts.max_levels, num_iter, opts.skip, myid_x);
+   if (opts.sc_print_level)
       app.MeshInfo.Print(comm);
- 
+   
    MPI_Finalize();
    return 0;
 }	
@@ -622,7 +646,7 @@ Problem::~Problem()
    }
 }
 /*************************************************************************************
-Implimentation::NonlinearOptions */
+Implementation::NonlinearOptions */
 NonlinearOptions::NonlinearOptions(int argc, char *argv[])
             : BraidOptions(argc, argv)
 {
@@ -639,13 +663,17 @@ NonlinearOptions::NonlinearOptions(int argc, char *argv[])
 	//Set defualts for the NonlinearOptions specific options
    mi_fine = 100;
    mi_coarse = 100;
+   cheap_first_iters = 0;
+   scale_coarse_newt_tol = 0;
+   boomer_mi_fine = 2000;
+   boomer_mi_coarse = 2000;
+   boomer_mi = 2000;
    tol_fine = 0.0000001;
    tol_coarse = tol_fine; 
    kap = M_PI;
    tau = (2 + 1./6.)*M_PI; 
    power = 2;
    
-   nl_print_level = 0;
    sc_print_level = 0;
 	ode_solver_type = -1;
   
@@ -656,33 +684,39 @@ NonlinearOptions::NonlinearOptions(int argc, char *argv[])
    vis_screenshots = false;
 
    //Parse Command Line
-   AddOption(&mi_fine, "-mif", "--max-iter-fine ,",
-             "Max Newton iterations on the fine grid");
-   AddOption(&mi_coarse, "-mic", "--max-iter-coarse ,",
-             "Max Newton iterations on the coarse grids ");
-   AddOption(&tol_fine, "-rtf", "--resid-tol-fine ,",
-             "Nonlinear Residual tolerance on the fine grid ");
-   AddOption(&tol_coarse, "-rtc", "--resid-tol-coarse ,",
-             "Nonlinear Residual tolerance on the coarse grid");
-   AddOption(&sc_print_level, "-scprint", "--spatial-coarsening-print_level ,",
-             "Print level for spatial coarseing"); 
-   AddOption(&nl_print_level, "-nlprint", "--nonlinear-print_level ,",
-             "Print level for nonlinear sovler");    
-   AddOption(&ode_solver_type, "-s", "--ode-solver ,",
+   AddOption(&mi_fine, "-mif", "--max-iter-fine",
+             "Max Newton iterations on the fine grid.");
+   AddOption(&mi_coarse, "-mic", "--max-iter-coarse",
+             "Max Newton iterations on the coarse grids.");
+   AddOption(&boomer_mi_fine, "-boomer_mif", "--boomer-max-iter-fine",
+             "Max BoomerAMG iterations per Newton iteration on the fine grid.");
+   AddOption(&boomer_mi_coarse, "-boomer_mic", "--boomer-max-iter-coarse",
+             "Max BoomerAMG iterations per Newton iterations on the coarse grids.");
+   AddOption(&tol_fine, "-rtf", "--resid-tol-fine",
+             "Nonlinear Residual tolerance on the fine grid.");
+   AddOption(&tol_coarse, "-rtc", "--resid-tol-coarse",
+             "Nonlinear Residual tolerance on the coarse grid.");
+   AddOption(&cheap_first_iters, "-cfi", "--cheap-first-iter",
+             "(0 or 1) Make the first two iterations of Braid use sqrt(tol_fine) as the fine-grid Newton tolerance.");
+   AddOption(&scale_coarse_newt_tol, "-scnt", "--scale-coarse-newt-tol",
+             "(0 or 1) Scale the coarse-grid Newton tolerance by min( (4**lvl)*tol, 0.001).");
+   AddOption(&sc_print_level, "-scprint", "--spatial-coarsening-print_level",
+             "Print level for spatial coarseing."); 
+   AddOption(&ode_solver_type, "-s", "--ode-solver",
              "ODE solver: 1 - Forward Euler, 2 - RK2 SSP, 3 - RK3 SSP,"
              " 4 - RK4, 6 - RK6, -1 - Backward Euler, -2 - SDIRK22 "
              " -3 - SDIRK33 -4 -SDIRK23, -5 - SDIRK34.");
-   AddOption(&power, "-pow", "--p-laplacian ,",
-             "Value of p in the p-laplacian");
-   AddOption(&vishost, "-vh", "--visualization-host ,",
+   AddOption(&power, "-pow", "--p-laplacian",
+             "Value of p in the p-laplacian.");
+   AddOption(&vishost, "-vh", "--visualization-host",
              "Set the GLVis host."); 
-   AddOption(&visport, "-vp", "--visualization-port ,",
+   AddOption(&visport, "-vp", "--visualization-port",
              "Set the GLVis port.");
-   AddOption(&vis_time_steps, "-vts", "--visualize-time-steps ,",
+   AddOption(&vis_time_steps, "-vts", "--visualize-time-steps",
              "Visualize every n-th time step (0:final only).");
-   AddOption(&vis_braid_steps, "-vbs", "--visualize-braid-steps ,",
+   AddOption(&vis_braid_steps, "-vbs", "--visualize-braid-steps",
              "Visualize every n-th Braid step (0:final only).");
-   AddOption(&vis_screenshots, "-vss", "--vis-screenshots , 1 ,",
+   AddOption(&vis_screenshots, "-vss", "--vis-screenshots , 1",
              "-no-vss", "--vis-no-screenshots, 0", "Enable/disable the saving of"
              " screenshots of the visualized data.");
           
@@ -706,7 +740,7 @@ NonlinearOptions::~NonlinearOptions()
 }
 
 /*************************************************************************************
-Implimentation::NonlinearSystemODE */
+Implementation::NonlinearSystemODE */
 NonlinearSystemODE::NonlinearSystemODE(int             l,
                                        ParBilinearForm *_a,
 							                  HypreParMatrix  *_M,
@@ -720,6 +754,7 @@ NonlinearSystemODE::NonlinearSystemODE(int             l,
         A = a->ParallelAssemble();
         width = A->Width();
         height = A->Height();
+        num_iter = -1;
 
         double tmp; // workaround to avoid memory leak
         X = new HypreParVector(A->GetComm(), A->GetGlobalNumCols(), &tmp,
@@ -732,7 +767,7 @@ NonlinearSystemODE::NonlinearSystemODE(int             l,
         amg->SetPrintLevel(-1);
         pcg = new HyprePCG(*M);
         pcg->SetTol(1e-15);
-        pcg->SetMaxIter(2000);
+        pcg->SetMaxIter(opts->boomer_mi_fine);
         pcg->SetPrintLevel(0);
         pcg->SetPreconditioner(*amg);
         pcg->SetZeroInintialIterate();
@@ -789,11 +824,13 @@ void NonlinearSystemODE::ImplicitSolve(const double dt, const Vector &x, Vector 
 {
 
         //Set the nonlinear options
-        int iter = 1;
+        num_iter = 1;
         double resid = 1;
         double tol;
         int max_it;
-    
+        int cheap_first_iters = opts->cheap_first_iters;
+        int scale_coarse_newt_tol = opts->scale_coarse_newt_tol;
+
         if (opts->braid_level == 0)
         {
             tol = opts->tol_fine;
@@ -802,8 +839,19 @@ void NonlinearSystemODE::ImplicitSolve(const double dt, const Vector &x, Vector 
         else
         {
             tol = opts->tol_coarse;
-            max_it = opts->mi_coarse;   
+            max_it = opts->mi_coarse;  
         }  
+
+        // If using cheap first iters, use everywhere.
+        // Else, (if enabled) scale only the coarse-grid tolerances
+        if(cheap_first_iters && (opts->braid_iter < 2))
+        {
+           tol = sqrt(tol);
+        }
+        else if(scale_coarse_newt_tol)
+        {
+           tol = std::min( pow(4.0, opts->braid_level)*tol, 0.001);
+        }
 
         //Wrap the data (X == x, Y == k)
         X->SetData(x.GetData());
@@ -829,7 +877,7 @@ void NonlinearSystemODE::ImplicitSolve(const double dt, const Vector &x, Vector 
        B_amg->SetPrintLevel(-1); 
        B_pcg = new HyprePCG(*B);
        B_pcg->SetTol(tol/100);
-       B_pcg->SetMaxIter(2000);
+       B_pcg->SetMaxIter(opts->boomer_mi);
        B_pcg->SetPrintLevel(0);
        B_pcg->SetPreconditioner(*B_amg); 
 
@@ -848,9 +896,9 @@ void NonlinearSystemODE::ImplicitSolve(const double dt, const Vector &x, Vector 
        delete B_pcg;
        delete B_amg;
        //Newton Iteration -- Makes sure we always reduce the residual
-		 while ((iter < max_it && resid > tol) || resid >= resid_start )
+		 while ((num_iter < max_it && resid > tol) || resid >= resid_start )
 		 {  
-            iter+=1;
+            num_iter+=1;
 			   nl_coeff->SetGridFunction(*Z, 1.0,1.0);
 			   AssembleDiffusionMatrix();  //A = Newton Linearization Matrix
             
@@ -862,7 +910,7 @@ void NonlinearSystemODE::ImplicitSolve(const double dt, const Vector &x, Vector 
             B_amg->SetPrintLevel(-1); 
             B_pcg = new HyprePCG(*B);
             B_pcg->SetTol(tol);
-            B_pcg->SetMaxIter(2000);
+            B_pcg->SetMaxIter(opts->boomer_mi);
             B_pcg->SetPrintLevel(0);
             B_pcg->SetPreconditioner(*B_amg); 
 
@@ -878,10 +926,6 @@ void NonlinearSystemODE::ImplicitSolve(const double dt, const Vector &x, Vector 
        }  
 
        braid_iter = opts->braid_iter;
-       if (opts->nl_print_level)
-           cout << "NonLinear Solver:" << dt << " , " << setw(10) << t << " , "  << setw(10)
-           << iter << " , " << setw(10) << braid_iter << " , " 
-           << setw(10) << v << endl;
 }
 
 void NonlinearSystemODE::UpdateResidual(double dt, double &resid)
@@ -934,7 +978,7 @@ NonlinearSystemODE::~NonlinearSystemODE()
 
 
 /*************************************************************************************
-Implimentation::NonlinearApp */
+Implementation::NonlinearApp */
 NonlinearApp::NonlinearApp(
 			NonlinearOptions *_opts, MPI_Comm comm_t_, ParMesh *pmesh)
 		: MFEMBraidApp(comm_t_, _opts->t_start, _opts->t_final, _opts->num_time_steps),
@@ -955,6 +999,12 @@ NonlinearApp::NonlinearApp(
    SetVisHostAndPort(opts->vishost, opts->visport);
    SetVisSampling(opts->vis_time_steps, opts->vis_braid_steps);
    SetVisScreenshots(opts->vis_screenshots);  
+
+   //Set the array size for Newton iteration counters
+   NewtonItersMax.SetSize(opts->max_levels*(opts->max_iter+1), 0);
+   NewtonItersMin.SetSize(opts->max_levels*(opts->max_iter+1), 100000);
+   NewtonItersSum.SetSize(opts->max_levels*(opts->max_iter+1), 0);
+   NewtonItersCount.SetSize(opts->max_levels*(opts->max_iter+1), 0);
 }
 
 int NonlinearApp::Step(braid_Vector    u_,
@@ -968,8 +1018,11 @@ int NonlinearApp::Step(braid_Vector    u_,
    BraidVector *u = (BraidVector*) u_;
    BraidVector *ustop = (BraidVector*) ustop_;
  
+   int level = u->level;
    int braid_level; 
-   int braid_iter;
+   int braid_iter, index;
+   double iters_taken;
+
    pstatus.GetLevel(&braid_level);
    pstatus.GetIter(&braid_iter);
 
@@ -983,10 +1036,26 @@ int NonlinearApp::Step(braid_Vector    u_,
    //Store run-time mesh info
    if (opts->sc_print_level)
         MeshInfo.SetRow(braid_level, u->level, x[u->level]->ParFESpace()->GetParMesh(), dt);
-
+   
+   if(braid_level == 0)
+   {
+      opts->boomer_mi = opts->boomer_mi_fine;
+   }
+   else
+   {
+      opts->boomer_mi = opts->boomer_mi_coarse;
+   }
    opts->u = ustop; 
    MFEMBraidApp::Step(u_,ustop_, fstop_, pstatus);       
-
+   
+   //Store Number of Newton Iterations
+   iters_taken = ((NonlinearSystemODE *)(ode[level]))->num_iter;
+   index = opts->max_levels*braid_iter + braid_level;
+   NewtonItersMax[index] =  std::max(iters_taken, NewtonItersMax[index]);
+   NewtonItersMin[index] =  std::min(iters_taken, NewtonItersMin[index]);
+   NewtonItersSum[index] += iters_taken; 
+   NewtonItersCount[index] +=  1;
+   
    // no refinement
    pstatus.SetRFactor(1);
    return 0;
@@ -1025,7 +1094,7 @@ void NonlinearApp::InitLevel(int l)
     HypreParMatrix *M = m->ParallelAssemble();
     delete m;
 
-    //Create a nonlinearsystem to be solved on this level
+    //Create a nonlinear system to be solved on this level
     ode[l] = new NonlinearSystemODE(l, a, M, b, opts );
 
     //Set ODESolver and inititialize with ode[l]
@@ -1049,9 +1118,117 @@ void NonlinearApp::InitLevel(int l)
    {        
       for (int i = opts->par_ref_levels; i >= 0; i--)
       {
-         max_dt[i] = (opts->t_final-opts->t_start)/(opts->min_coarse + 1 ) / pow(opts->cfactor, opts->par_ref_levels - i);
+         // Comment in one of these choices
+         // This choice for max_dt forces Braid to use spatially coarse levels from the bottom-up
+         max_dt[i] = (opts->t_final - opts->t_start)/(opts->min_coarse + 1 ) / pow(opts->cfactor, opts->par_ref_levels - i);
+         //
+         // This choice for max_dt starts spatial coarsening from the bottom up
+       //if (i == opts->par_ref_levels)
+       //   max_dt[i] = 0.99*(opts->t_final - opts->t_start)/opts->min_coarse;
+       //else if(opts->cfactor0 != -1)
+       //   max_dt[i] = 1.01 * ((opts->t_final - opts->t_start)/ntime) * opts->cfactor0 * pow(opts->cfactor, i-1);
+       //else
+       //   max_dt[i] = 1.01 * ((opts->t_final - opts->t_start)/ntime) * pow(opts->cfactor, i);
       }
    }   
+}
+
+void NonlinearApp::PrintNewtonInfo(int num_levels, int max_levels, int num_iter, int skip, int myid_x)
+{
+  int myid_global, index;
+  double maxg, ming, sumg, countg;
+
+  MPI_Comm_rank(MPI_COMM_WORLD, &myid_global);
+  
+  std::cout.precision(2);
+  std::cout << std::scientific;
+  
+  // The data is replicated across each spatial communicator, so only have the first process
+  // in each comm_x participate is computing global values.  Note, that each comm_t corresponds
+  // to processors with the same myid_x value.
+  if(myid_x == 0)
+  {
+     for(int i=0; i < num_iter; i++)
+     {
+        for(int j=0; j < num_levels; j++)
+        {
+           index = i*max_levels + j;
+           MPI_Allreduce(&(NewtonItersMax[index]), &maxg, 1, MPI_DOUBLE, MPI_MAX, comm_t);
+           NewtonItersMax[index] = maxg;
+           MPI_Allreduce(&(NewtonItersMin[index]), &ming, 1, MPI_DOUBLE, MPI_MIN, comm_t);
+           NewtonItersMin[index] = ming;
+           MPI_Allreduce(&(NewtonItersSum[index]), &sumg, 1, MPI_DOUBLE, MPI_SUM, comm_t);
+           NewtonItersSum[index] = sumg;
+           MPI_Allreduce(&(NewtonItersCount[index]), &countg, 1, MPI_DOUBLE, MPI_SUM, comm_t);
+           NewtonItersCount[index] = countg;
+        }
+     }
+  }
+  
+  if(skip == 1)
+  {
+     NewtonItersMax[0] = -1;
+     NewtonItersMin[0] = -1;
+     NewtonItersSum[0] = -1;
+     NewtonItersCount[0] = 1;
+  }
+
+  if(myid_global == 0)
+  {
+     std::cout << "MAX Newton Iterations Gathered at Run-Time" << std::endl;
+     std::cout << " Iteration |";
+     for(int i=0; i<num_levels; i++) cout << " Level = " << i << " |";
+     std::cout << "\n------------";
+     for(int i=0; i<num_levels; i++) cout << "------------";
+     std::cout << "\n";
+     for(int i=0; i < num_iter; i++)
+     {
+        std::cout << std::setw(10) << i << " |";
+        for(int j=0; j < num_levels; j++)
+        {
+           std::cout << std::setw(10) << NewtonItersMax[i*max_levels + j] << " |";
+        }
+        std::cout << '\n';
+     }
+     
+     std::cout << "\n";
+     std::cout << "MIN Newton Iterations Gathered at Run-Time" << std::endl;
+     std::cout << " Iteration |";
+     for(int i=0; i<num_levels; i++) cout << " Level = " << i << " |";
+     std::cout << "\n------------";
+     for(int i=0; i<num_levels; i++) cout << "------------";
+     std::cout << "\n";
+     for(int i=0; i < num_iter; i++)
+     {
+        std::cout << std::setw(10) << i << " |";
+        for(int j=0; j < num_levels; j++)
+        {
+           std::cout << std::setw(10) << NewtonItersMin[i*max_levels + j] << " |";
+        }
+        std::cout << '\n';
+     }
+     
+     std::cout << "\n";
+     std::cout << "AVG Newton Iterations Gathered at Run-Time" << std::endl;
+     std::cout << " Iteration |";
+     for(int i=0; i<num_levels; i++) cout << " Level = " << i << " |";
+     std::cout << "\n------------";
+     for(int i=0; i<num_levels; i++) cout << "------------";
+     std::cout << "\n";
+     for(int i=0; i < num_iter; i++)
+     {
+        std::cout << std::setw(10) << i << " |";
+        for(int j=0; j < num_levels; j++)
+        {
+           std::cout << std::setw(10) << NewtonItersSum[i*max_levels + j]/NewtonItersCount[i*max_levels + j] << " |";
+        }
+        std::cout << '\n';
+     }
+     std::cout << "\n";
+
+  }
+
+
 }
 
 NonlinearApp:: ~NonlinearApp()
