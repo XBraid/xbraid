@@ -516,10 +516,7 @@ int main (int argc, char *argv[])
 	NonlinearApp app(&opts, comm_t, pmesh);
    //Run braid
 
-   if (myid == 0)
-   {
-      pmesh->PrintInfo();
-   }
+   //pmesh->PrintInfo();
    BraidCore core(comm, &app);
    // Not sure why this doesn't work here...so we assume that the hmin and hmax
    // are based on inline-quad.mesh which has a characteristic size of 0.25
