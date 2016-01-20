@@ -575,7 +575,9 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, step)            = step;
    _braid_CoreElt(core, init)            = init;
+   _braid_CoreElt(core, sinit)           = NULL;
    _braid_CoreElt(core, clone)           = clone;
+   _braid_CoreElt(core, sclone)          = NULL;
    _braid_CoreElt(core, free)            = free;
    _braid_CoreElt(core, sum)             = sum;
    _braid_CoreElt(core, spatialnorm)     = spatialnorm;
@@ -1185,6 +1187,30 @@ braid_SetSpatialRefine(braid_Core         core,
                        braid_PtFcnSRefine srefine)
 {
    _braid_CoreElt(core, srefine) = srefine;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetShellInit(braid_Core          core, 
+		   braid_PtFcnSInit sinit)
+{
+   _braid_CoreElt(core, sinit) = sinit;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetShellClone(braid_Core          core, 
+		    braid_PtFcnSClone sclone)
+{
+   _braid_CoreElt(core, sclone) = sclone;
 
    return _braid_error_flag;
 }

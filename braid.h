@@ -267,6 +267,23 @@ typedef braid_Int
                       braid_Vector           *fu_ptr, /**< output, refined vector */       
                       braid_CoarsenRefStatus  status  /**< query this struct for info about fu and cu (e.g., where in time fu and cu are)  */ 
                       );
+/**
+ * Shell initialization (optional)
+ **/
+typedef braid_Int
+(*braid_PtFcnSInit)(braid_App      app,           /**< user-defined _braid_App structure */
+                   braid_Real     t,             /**< time value for *u_ptr* */
+                   braid_Vector  *u_ptr          /**< output, newly allocated and initialized vector */
+                   );
+
+/**
+ * Shell clone (optional)
+ **/
+typedef braid_Int
+(*braid_PtFcnSClone)(braid_App      app,          /**< user-defined _braid_App structure */
+                    braid_Vector   u,            /**< vector to clone */ 
+                    braid_Vector  *v_ptr         /**< output, newly allocated and cloned vector */
+                    );
 /** @}*/
 
 /*--------------------------------------------------------------------------
@@ -597,6 +614,14 @@ braid_SplitCommworld(const MPI_Comm  *comm_world,  /**< Global communicator to s
                      MPI_Comm        *comm_x,      /**< Spatial communicator (written as output) */
                      MPI_Comm        *comm_t       /**< Temporal communicator (written as output) */
                      );
+
+braid_Int
+braid_SetShellInit(braid_Core          core, 
+		   braid_PtFcnSInit sinit);
+braid_Int
+braid_SetShellClone(braid_Core          core, 
+		    braid_PtFcnSClone sclone);
+
 
 /**
  * After Drive() finishes, this returns the number of iterations taken.
