@@ -615,6 +615,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, cstatus)         = _braid_CTAlloc(_braid_CoarsenRefStatus, 1);
 
    _braid_CoreElt(core, storage)         = -1;            /* only store C-points */
+   _braid_CoreElt(core, useshell)         = 0;
 
    _braid_CoreElt(core, gupper)          = ntime;
 
@@ -1195,22 +1196,15 @@ braid_SetSpatialRefine(braid_Core         core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_SetShellInit(braid_Core          core, 
-		   braid_PtFcnSInit sinit)
+braid_SetShell(braid_Core          core,
+	       braid_PtFcnSInit    sinit,
+	       braid_PtFcnSClone   sclone,
+	       braid_PtFcnSFree    sfree)
 {
    _braid_CoreElt(core, sinit) = sinit;
-
-   return _braid_error_flag;
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-braid_Int
-braid_SetShellClone(braid_Core          core, 
-		    braid_PtFcnSClone sclone)
-{
    _braid_CoreElt(core, sclone) = sclone;
+   _braid_CoreElt(core, sfree) = sfree;
+   _braid_CoreElt(core, useshell) = 1;
 
    return _braid_error_flag;
 }

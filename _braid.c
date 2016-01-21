@@ -340,23 +340,40 @@ _braid_UGetIndex(braid_Core   core,
    braid_Int            cfactor     = _braid_GridElt(grids[level], cfactor);
    braid_Int            uindex, ic, iclo;
 
-   uindex = -1;
+   uindex = -2;
    if ((index >= ilower) && (index <= iupper))
    {
-      // If on level that only stores C-points
-      if ( (_braid_CoreElt(core, storage) < 0) ||
-           (level < _braid_CoreElt(core, storage)) )
+      if ( _braid_CoreElt(core, useshell) == 1)
       {
-         if ( _braid_IsCPoint(index, cfactor) )
-         {
-            _braid_MapFineToCoarse(index, cfactor, ic);
-            _braid_MapFineToCoarse(clower, cfactor, iclo);
-            uindex = ic-iclo;
-         }
+	 uindex = index-ilower;
+	 // If we are not on a fully-stored point
+	 // then we only have a shell, we return -1
+	 if ( (_braid_CoreElt(core, storage) < 0) ||
+	      (level < _braid_CoreElt(core, storage)) )
+	 {
+	    if ( !_braid_IsCPoint(index, cfactor) )
+	    {
+	       uindex = -1;
+	    }
+	 }
       }
       else
       {
-         uindex = index-ilower;
+	 // If on level that only stores C-points
+	 if ( (_braid_CoreElt(core, storage) < 0) ||
+	      (level < _braid_CoreElt(core, storage)) )
+	 {
+	    if ( _braid_IsCPoint(index, cfactor) )
+	    {
+	       _braid_MapFineToCoarse(index, cfactor, ic);
+	       _braid_MapFineToCoarse(clower, cfactor, iclo);
+	       uindex = ic-iclo;
+	    }
+	 }
+	 else
+	 {
+	    uindex = index-ilower;
+	 }
       }
    }
 
@@ -386,6 +403,11 @@ _braid_UGetVectorRef(braid_Core     core,
    {
       u = ua[iu];
    }
+   else if (iu == -1)
+   {
+      braid_Int ilower = _braid_GridElt(grids[level], ilower);
+      u = ua[index-ilower];
+   }
 
    *u_ptr = u;
 
@@ -411,6 +433,14 @@ _braid_USetVectorRef(braid_Core    core,
    if (iu > -1)
    {
       ua[iu] = u;
+   }
+   else if (iu == -1)
+   {
+      braid_App    app = _braid_CoreElt(core, app);
+      braid_Int ilower = _braid_GridElt(grids[level], ilower);
+      // TODO free the data in u /!/
+      _braid_CoreFcn(core, sfree)(app, u);
+      ua[index-ilower] = u;
    }
 
    return _braid_error_flag;
@@ -454,6 +484,12 @@ _braid_UGetVector(braid_Core     core,
       if (iu > -1)
       {
          _braid_CoreFcn(core, clone)(app, ua[iu], &u);
+      }
+      else if (iu == -1)
+      {
+	 braid_Int ilower = _braid_GridElt(grids[level], ilower);
+	 // In this case, sclone != NULL
+	 _braid_CoreFcn(core, sclone)(app, ua[index-ilower], &u);
       }
    }
 
@@ -507,6 +543,24 @@ _braid_USetVector(braid_Core    core,
          _braid_CoreFcn(core, clone)(app, u, &ua[iu]); /* copy the vector */
       }
    }
+   else if (iu == -1)
+   {
+      braid_Int ilower = _braid_GridElt(grids[level], ilower);
+      if (ua[index-ilower] != NULL)
+      {
+         _braid_CoreFcn(core, free)(app, ua[index-ilower]);
+      }
+      if (move)
+      {
+	 // TODO free the data in u /!/
+	 _braid_CoreFcn(core, sfree)(app, u);
+         ua[index-ilower] = u;                                   /* move the vector */
+      }
+      else
+      {
+         _braid_CoreFcn(core, sclone)(app, u, &ua[index-ilower]); /* copy the vector */
+      }
+   }
    else if (move)
    {
       _braid_CoreFcn(core, free)(app, u);              /* free the vector */
@@ -550,6 +604,10 @@ _braid_UCommInitBasic(braid_Core  core,
       if (send_now)
       {
          _braid_UGetIndex(core, level, send_index, &iu);
+	 if (iu < 0)
+	   {
+	     abort();
+	   }
          _braid_CommSendInit(core, level, send_index, ua[iu], &send_handle);
          send_index = -1;
       }
@@ -753,6 +811,7 @@ _braid_AccessVector(braid_Core          core,
 
 /*----------------------------------------------------------------------------
  * Get an initial guess for ustop to use in the step routine (implicit schemes)
+ * This vector may just be a shell. User should be able to deal with it
  *----------------------------------------------------------------------------*/
 
 braid_Int
@@ -792,6 +851,10 @@ _braid_GetUInit(braid_Core     core,
    /* If you have storage at this point, use it, unless you're in compatibility mode (-2). */
    else if( storage == -2 )
    {
+      if ( _braid_CoreElt(core, useshell) == 1)
+      {
+         abort();
+      }
       ustop = u;
    }
 
@@ -1225,11 +1288,31 @@ _braid_InitGuess(braid_Core  core,
    }
    else if (level == 0)
    {
-      /* Only initialize the C-points on the finest grid */
-      for (i = clower; i <= cupper; i += cfactor)
+      if (_braid_CoreElt(core, useshell)==1)
       {
-         _braid_CoreFcn(core, init)(app, ta[i-ilower], &u);
-         _braid_USetVectorRef(core, level, i, u);
+	 for (i = ilower; i <=iupper; i++)
+	 {
+	    if ( (i-clower) % cfactor == 0)
+	    {
+	       // We are on a C-point, init full vector
+	       _braid_CoreFcn(core, init)(app, ta[i-ilower], &u);
+	    }
+	    else
+	    {
+	       // We are on a F-point, init shell only
+	       _braid_CoreFcn(core, sinit)(app, ta[i-ilower], &u);
+	    }
+	    _braid_USetVectorRef(core, level, i, u);
+	 }
+      }
+      else
+      {
+         /* Only initialize the C-points on the finest grid */
+         for (i = clower; i <= cupper; i += cfactor)
+	 {
+	    _braid_CoreFcn(core, init)(app, ta[i-ilower], &u);
+	    _braid_USetVectorRef(core, level, i, u);
+	 }
       }
    }
    else
@@ -1242,6 +1325,11 @@ _braid_InitGuess(braid_Core  core,
             _braid_CoreFcn(core, clone)(app, va[i-ilower], &u);
             _braid_USetVectorRef(core, level, i, u);
          }
+	 else if (iu == -1)
+	 {
+	    _braid_CoreFcn(core, sclone)(app, va[i-ilower], &u);
+	    _braid_USetVectorRef(core, level, i, u);
+	 }
       }
    }
 
@@ -2806,8 +2894,9 @@ _braid_InitHierarchy(braid_Core    core,
       }
 
       // If on level that only stores C-points
-      if ( (_braid_CoreElt(core, storage) < 0) ||
-           (level < _braid_CoreElt(core, storage)) )
+      if ( ((_braid_CoreElt(core, storage) < 0) ||
+	    (level < _braid_CoreElt(core, storage))) &&
+	    (_braid_CoreElt(core, useshell)!=1) )
       {
          nupoints = _braid_GridElt(grid, ncpoints);   /* only C-points */
       }
@@ -2999,10 +3088,15 @@ _braid_CopyFineToCoarse(braid_Core  core)
          _braid_CoreFcn(core, clone)(app, va[index-ilower], &u);
          _braid_USetVectorRef(core, level, index, u);
          _braid_UGetIndex(core, level, index, &is_stored);
-         if (is_stored <= -1)
+         if (is_stored < -1)
          {
+	   // TODO free the data in u if is_stored == -1 /!/
             _braid_CoreFcn(core, free)(app, u);
          }
+	 else if (is_stored == -1)
+	 {
+	    _braid_CoreFcn(core, sfree)(app, u);
+	 }
  
       }
    }

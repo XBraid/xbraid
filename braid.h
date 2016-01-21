@@ -284,6 +284,15 @@ typedef braid_Int
                     braid_Vector   u,            /**< vector to clone */ 
                     braid_Vector  *v_ptr         /**< output, newly allocated and cloned vector */
                     );
+
+/**
+ * Free the data of *u*, keep its shell (optional)
+ **/
+typedef braid_Int
+(*braid_PtFcnSFree)(braid_App     app,            /**< user-defined _braid_App structure */
+		    braid_Vector  u               /**< vector to free */
+		    );
+
 /** @}*/
 
 /*--------------------------------------------------------------------------
@@ -616,12 +625,10 @@ braid_SplitCommworld(const MPI_Comm  *comm_world,  /**< Global communicator to s
                      );
 
 braid_Int
-braid_SetShellInit(braid_Core          core, 
-		   braid_PtFcnSInit sinit);
-braid_Int
-braid_SetShellClone(braid_Core          core, 
-		    braid_PtFcnSClone sclone);
-
+braid_SetShell(braid_Core          core, 
+	       braid_PtFcnSInit    sinit,
+	       braid_PtFcnSClone   sclone,
+	       braid_PtFcnSFree    sfree);
 
 /**
  * After Drive() finishes, this returns the number of iterations taken.
