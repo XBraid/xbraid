@@ -2137,7 +2137,7 @@ _braid_FRefine(braid_Core   core,
 
    /* If storing only C-points on the fine grid, modify r_ca to mark only those
     * coarse points that need to be sent to initialize the C-points */
-   if (_braid_CoreElt(core, storage) != 0)
+   if (_braid_CoreElt(core, storage) != 0 && _braid_CoreElt(core, useshell) != 1)
    {
       for (ii = 0; ii < npoints; ii++)
       {
@@ -2321,7 +2321,16 @@ _braid_FRefine(braid_Core   core,
    _braid_GetRNorm(core, -1, &rnorm);
 
    _braid_UCommInitF(core, 0);
-
+   /*
+   FILE *fp=fopen("blabla.dat","a+");
+   int TMP;
+   for (TMP = ilower; TMP< iupper; TMP ++)
+     {
+       fprintf(fp,"%11.9f ",ta[TMP]);
+     }
+   fprintf(fp,"\n");
+   fclose(fp);
+   */
    /* Start from the right-most interval */
    for (interval = ncpoints; interval > -1; interval--)
    {
