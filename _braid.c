@@ -1909,7 +1909,7 @@ _braid_FInterp(braid_Core  core,
  *   f_ilower, f_iupper, f_npoints - extents and size of local fine interval
  *
  *   r_ca - index map from fine to coarse on the refined grid  (size 'r_npoints')
- *   r_ta - time values on the refined grid                    (size 'r_npoints')
+ *   r_ta - time values on the refined grid                    (size 'r_npoints+2')
  *   r_fa - index map from coarse to fine on the refined grid  (size 'npoints+1')
  *          (note the extra value)
  *   f_ca - index map from fine to coarse on the fine grid     (size 'f_npoints')
@@ -1980,7 +1980,7 @@ _braid_FRefine(braid_Core   core,
    braid_Int      r_npoints, r_ilower, r_iupper, r_i, r_ii;
    braid_Int      f_npoints, f_ilower, f_iupper, f_gupper, f_i, f_j, f_ii;
    braid_Int     *r_ca, *r_fa, *f_ca, f_first, f_next, next;
-   braid_Real    *ta, *r_ta, *f_ta;
+   braid_Real    *ta, *r_ta_alloc, *r_ta, *f_ta;
 
    braid_Vector  *send_ua, *recv_ua, u;
    braid_Int     *send_procs, *recv_procs, *send_unums, *recv_unums, *iptr;
@@ -2080,9 +2080,12 @@ _braid_FRefine(braid_Core   core,
     * indexes (r_ca, r_fa) and the fine time values (r_ta). */
 
    r_ca = _braid_CTAlloc(braid_Int,  r_npoints);
-   r_ta = _braid_CTAlloc(braid_Real, r_npoints);
+   r_ta_alloc = _braid_CTAlloc(braid_Real, r_npoints+2);
+   r_ta = &r_ta_alloc[1];
    r_fa = _braid_CTAlloc(braid_Int,  npoints+1);
    ta = _braid_GridElt(grids[0], ta);
+
+   r_ta[-1]=ta[-1];
    r_ii = 0;
    for (i = (ilower-1); i < iupper; i++)
    {
@@ -2115,11 +2118,14 @@ _braid_FRefine(braid_Core   core,
    ncomms = 0;
    if (npoints > 0)
    {
+      braid_Real send_buf[2], recv_buf[2];
+      send_buf[0]=r_fa[0];
+      send_buf[1]=r_ta[0];     
       /* Post r_fa receive */
       r_fa[npoints] = f_gupper+1;
       if (iupper < gupper)
       {
-         MPI_Irecv(&r_fa[npoints], 1, braid_MPI_INT, MPI_ANY_SOURCE, 2, comm,
+	MPI_Irecv(recv_buf, 2, braid_MPI_REAL, MPI_ANY_SOURCE, 2, comm,
                    &requests[ncomms++]);
       }
 
@@ -2127,11 +2133,13 @@ _braid_FRefine(braid_Core   core,
       if (ilower > 0)
       {
          _braid_GetBlockDistProc((gupper+1), nprocs, (ilower-1), &prevproc);
-         MPI_Isend(&r_fa[0], 1, braid_MPI_INT, prevproc, 2, comm,
+         MPI_Isend(send_buf, 2, braid_MPI_REAL, prevproc, 2, comm,
                    &requests[ncomms++]);
       }
+      MPI_Waitall(ncomms, requests, statuses);
+      r_fa[npoints]=recv_buf[0];
+      r_ta[r_npoints]=recv_buf[1];
    }
-   MPI_Waitall(ncomms, requests, statuses);
    _braid_TFree(requests);
    _braid_TFree(statuses);
 
@@ -2322,11 +2330,14 @@ _braid_FRefine(braid_Core   core,
 
    _braid_UCommInitF(core, 0);
    /*
-   FILE *fp=fopen("blabla.dat","a+");
+   char strfile[255];int myid_t;
+   MPI_Comm_rank(_braid_CoreElt(core, comm), &myid_t);
+   sprintf(strfile,"%s%d%s","grid_",myid_t,".dat");
+   FILE *fp=fopen(strfile,"a+");
    int TMP;
-   for (TMP = ilower; TMP< iupper; TMP ++)
+   for (TMP = ilower; TMP <= iupper; TMP ++)
      {
-       fprintf(fp,"%11.9f ",ta[TMP]);
+       fprintf(fp,"%11.9f ",ta[TMP-ilower]);
      }
    fprintf(fp,"\n");
    fclose(fp);
@@ -2349,9 +2360,9 @@ _braid_FRefine(braid_Core   core,
             ii = fi - ilower;
             r_ii = r_fa[ii] - r_ilower;
             if (r_ca[r_ii] > -1)
-            {
-               _braid_RefineBasic(core, -1, &r_ta[r_ii], &ta[ii], u, &send_ua[ii]);
-            }
+	      {
+		 _braid_RefineBasic(core, -1, &r_ta[r_ii], &ta[ii], u, &send_ua[ii]);
+	      }
 
             /* Allow user to process current vector */
             if( (access_level >= 2) )
@@ -2539,7 +2550,7 @@ _braid_FRefine(braid_Core   core,
    _braid_TFree(requests);
    _braid_TFree(statuses);
    _braid_TFree(r_ca);
-   _braid_TFree(r_ta);
+   _braid_TFree(r_ta_alloc);
    _braid_TFree(r_fa);
    _braid_TFree(f_ca);
    {
@@ -2775,7 +2786,7 @@ _braid_InitHierarchy(braid_Core    core,
    if ( gupper <= min_coarse )
    {
       max_levels = 1;
-      _braid_CoreElt(core, max_levels) = max_levels;
+      //_braid_CoreElt(core, max_levels) = max_levels;
    }
 
    /* Allocate space for rfactors (and initialize to zero) */
