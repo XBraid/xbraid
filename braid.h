@@ -31,7 +31,15 @@
 #ifndef braid_HEADER
 #define braid_HEADER
 
+#define braid_SEQUENTIAL
+
+#ifdef braid_SEQUENTIAL
+typedef int MPI_Comm;
+#include "mpistubs.h"
+#else
 #include "mpi.h"
+#endif
+
 #include "braid_defs.h"
 #include "braid_status.h"
 
