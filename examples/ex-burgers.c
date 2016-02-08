@@ -53,6 +53,9 @@ typedef struct _braid_App_struct
    double    tstart;
    double    tstop;
    int       ntime;
+   double    xstart;
+   double    xstop;
+   int       nspace;
 
 } my_App;
 
@@ -75,6 +78,7 @@ my_Step(braid_App        app,
    double tstop;              /* evolve to this time*/
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
 
+#if 0
    /* On the finest grid, each value is half the previous value */
    (u->value) = pow(0.5, tstop-tstart)*(u->value);
 
@@ -83,6 +87,7 @@ my_Step(braid_App        app,
       /* Nonzero rhs */
       (u->value) += (fstop->value);
    }
+#endif
 
    /* no refinement */
    braid_StepStatusSetRFactor(status, 1);
@@ -100,8 +105,6 @@ my_Residual(braid_App        app,
    double tstop;              /* evolve to this time*/
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
 
-   /* On the finest grid, each value is half the previous value */
-   (r->value) = (ustop->value) - pow(0.5, tstop-tstart)*(r->value);
 
    return 0;
 }
@@ -112,18 +115,36 @@ my_Init(braid_App     app,
         braid_Vector *u_ptr)
 {
    my_Vector *u;
-
+   int    i, nspace = (app->nspace);
+   double xstart, xstop, x1, x2, x;
+   
    u = (my_Vector *) malloc(sizeof(my_Vector));
-   if (t == 0.0)
+   (u->size)   = nspace;
+   (u->values) = (double *) malloc(nspace*sizeof(double));
+
+   xstart = (app->xstart);
+   xstop  = (app->xstop);
+   x1     = -1.0;
+   x2     =  0.0;
+
+   /* Initial guess */
+   for (i = 0; i < nspace; i++)
    {
-      /* Initial guess */
-      (u->value) = 1.0;
+      x = xstart + ((double)(i/nspace))*(xstop - xstart);
+      if (x < x1)
+      {
+         (u->values)[i] = 1.0;
+      }
+      else if (x < x2)
+      {
+         (u->values)[i] = 1.0 - (x - x1);
+      }
+      else
+      {
+         (u->values)[i] = 0.0;
+      }
    }
-   else
-   {
-      /* Initialize all other time points */
-      (u->value) = 0.456;//((double)rand()) / RAND_MAX;
-   }
+
    *u_ptr = u;
 
    return 0;
@@ -135,9 +156,15 @@ my_Clone(braid_App     app,
          braid_Vector *v_ptr)
 {
    my_Vector *v;
+   int i, size = (u->size);
 
    v = (my_Vector *) malloc(sizeof(my_Vector));
-   (v->value) = (u->value);
+   (v->size)   = size;
+   (v->values) = (double *) malloc(size*sizeof(double));
+   for (i = 0; i < size; i++)
+   {
+      (v->values)[i] = (u->values)[i];
+   }
    *v_ptr = v;
 
    return 0;
@@ -147,6 +174,7 @@ int
 my_Free(braid_App    app,
         braid_Vector u)
 {
+   free(u->values);
    free(u);
 
    return 0;
@@ -159,7 +187,12 @@ my_Sum(braid_App     app,
        double        beta,
        braid_Vector  y)
 {
-   (y->value) = alpha*(x->value) + beta*(y->value);
+   int i, size = (y->size);
+
+   for (i = 0; i < size; i++)
+   {
+      (y->values)[i] = alpha*(x->values)[i] + beta*(y->values)[i];
+   }
 
    return 0;
 }
@@ -169,9 +202,13 @@ my_SpatialNorm(braid_App     app,
                braid_Vector  u,
                double       *norm_ptr)
 {
-   double dot;
+   int    i, size = (u->size);
+   double dot = 0.0;
 
-   dot = (u->value)*(u->value);
+   for (i = 0; i < size; i++)
+   {
+      dot += (u->values)[i]*(u->values)[i];
+   }
    *norm_ptr = sqrt(dot);
 
    return 0;
@@ -186,7 +223,8 @@ my_Access(braid_App          app,
    double     tstart = (app->tstart);
    double     tstop  = (app->tstop);
    int        ntime  = (app->ntime);
-   int        index, myid;
+   int        size = (u->size);
+   int        i, index, myid;
    char       filename[255];
    FILE      *file;
    double     t;
@@ -196,9 +234,12 @@ my_Access(braid_App          app,
 
    MPI_Comm_rank(comm, &myid);
 
-   sprintf(filename, "%s.%07d.%05d", "ex-01.out", index, myid);
+   sprintf(filename, "%s.%07d.%05d", "ex-burgers.out", index, myid);
    file = fopen(filename, "w");
-   fprintf(file, "%.14e\n", (u->value));
+   for (i = 0; i < size; i++)
+   {
+      fprintf(file, "%.14e\n", (u->values)[i]);
+   }
    fflush(file);
    fclose(file);
 
@@ -209,7 +250,8 @@ int
 my_BufSize(braid_App  app,
            int       *size_ptr)
 {
-   *size_ptr = sizeof(double);
+   int size = (app->nspace);
+   *size_ptr = size*sizeof(double) + 1;
    return 0;
 }
 
@@ -220,9 +262,15 @@ my_BufPack(braid_App     app,
            braid_Int    *size_ptr)
 {
    double *dbuffer = buffer;
+   int i, size = (u->size);
+   
+   dbuffer[0] = size;
+   for (i = 0; i < size; i++)
+   {
+      dbuffer[i+1] = (u->values)[i];
+   }
 
-   dbuffer[0] = (u->value);
-   *size_ptr = sizeof(double);
+   *size_ptr = size*sizeof(double);
 
    return 0;
 }
@@ -232,11 +280,19 @@ my_BufUnpack(braid_App     app,
              void         *buffer,
              braid_Vector *u_ptr)
 {
-   double    *dbuffer = buffer;
    my_Vector *u;
+   double    *dbuffer = buffer;
+   int        i, size;
 
+   size = dbuffer[0];
+   
    u = (my_Vector *) malloc(sizeof(my_Vector));
-   (u->value) = dbuffer[0];
+   (u->size)   = size;
+   (u->values) = (double *) malloc(size*sizeof(double));
+   for (i = 0; i < size; i++)
+   {
+      (u->values)[i] = dbuffer[i+1];
+   }
    *u_ptr = u;
 
    return 0;
@@ -253,6 +309,8 @@ int main (int argc, char *argv[])
    MPI_Comm      comm;
    double        tstart, tstop;
    int           ntime;
+   double        xstart, xstop;
+   int           nspace;
 
    int           max_levels = 1;
    int           nrelax     = 1;
@@ -268,11 +326,14 @@ int main (int argc, char *argv[])
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
 
-   /* ntime time intervals with spacing 1 */
+   /* dt = dx = 0.1 by default */
    comm   = MPI_COMM_WORLD;
-   ntime  = 32;
-   tstart = 0.0;
-   tstop  = tstart + ntime;
+   tstart =  0.0;
+   tstop  =  2.0;
+   ntime  =  20;
+   xstart = -2.0;
+   xstop  =  1.0;
+   nspace =  30;
    
    /* Parse command line */
 
@@ -351,6 +412,9 @@ int main (int argc, char *argv[])
    (app->tstart) = tstart;
    (app->tstop)  = tstop;
    (app->ntime)  = ntime;
+   (app->xstart) = xstart;
+   (app->xstop)  = xstop;
+   (app->nspace) = nspace;
 
    braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
              my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 

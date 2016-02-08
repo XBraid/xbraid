@@ -58,6 +58,11 @@ C_EXAMPLES = ex-02 ex-02-serial
 all: $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES)
 
 # Rule for building ex-01
+ex-burgers: ex-burgers.c $(BRAID_LIB_FILE)
+	@echo "Building" $@ "..."
+	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+
+# Rule for building ex-01
 ex-01: ex-01.c $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
 	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
