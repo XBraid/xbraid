@@ -45,7 +45,7 @@ MFEM_LIB = -L$(MFEM_DIR) -lmfem -L$(METIS_DIR) -lmetis
 BRAID_FLAGS = -I..
 BRAID_LIB_FILE = ../libbraid.a
 
-C_NOHYPRE = ex-01
+C_NOHYPRE = ex-01 ex-burgers
 F_NOHYPRE = ex-01f
 C_EXAMPLES = ex-02 ex-02-serial
 # Note: .cpp examples will be linked with mfem
