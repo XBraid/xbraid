@@ -74,20 +74,59 @@ my_Step(braid_App        app,
         braid_Vector     u,
         braid_StepStatus status)
 {
+   int k;
    double tstart;             /* current time */
    double tstop;              /* evolve to this time*/
+   double deltaT, fstar_plus, fstar_minus, uk, uk_minus, uk_plus;
+   double *u_old;
+   double deltaX = (app->xstop - app->xstart) / (u->size - 1.0);
+   
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+   deltaT = tstop - tstart;
+   
+   /* copy u */
+   u_old = (double *) malloc(sizeof(double)*u->size);
+   for(k = 0; k < u->size; k++)
+      u_old[k] = u->values[k];
 
-#if 0
-   /* On the finest grid, each value is half the previous value */
-   (u->value) = pow(0.5, tstop-tstart)*(u->value);
-
-   if (fstop != NULL)
+   /* update interior of domain */
+   for(k = 1; k < u->size; k++)
    {
-      /* Nonzero rhs */
-      (u->value) += (fstop->value);
+      uk = u_old[k];
+      uk_minus = u_old[k-1];
+      uk_plus = u_old[k+1];
+
+      fstar_plus = 0.5*(uk_plus*uk_plus + uk*uk)    - 0.5*fabs(0.5*(uk + uk_plus))*(uk_plus - uk);
+      fstar_minus = 0.5*(uk*uk + uk_minus*uk_minus) - 0.5*fabs(0.5*(uk_minus + uk))*(uk - uk_minus);
+      
+      u->values[k] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus);
    }
-#endif
+
+   /* update left boundary point (periodic) */
+   uk = u_old[0];
+   uk_minus = u_old[u->size-1];
+   uk_plus = u_old[1];
+
+   fstar_plus = 0.5*(uk_plus*uk_plus + uk*uk)    - 0.5*fabs(0.5*(uk + uk_plus))*(uk_plus - uk);
+   fstar_minus = 0.5*(uk*uk + uk_minus*uk_minus) - 0.5*fabs(0.5*(uk_minus + uk))*(uk - uk_minus);
+   
+   u->values[0] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus);
+
+   
+   /* update right boundary point (periodic) */
+   uk = u_old[u->size-1];
+   uk_minus = u_old[u->size-2];
+   uk_plus = u_old[0];
+
+   fstar_plus = 0.5*(uk_plus*uk_plus + uk*uk)    - 0.5*fabs(0.5*(uk + uk_plus))*(uk_plus - uk);
+   fstar_minus = 0.5*(uk*uk + uk_minus*uk_minus) - 0.5*fabs(0.5*(uk_minus + uk))*(uk - uk_minus);
+   
+   u->values[u->size] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus);
+
+
+   /* Free up */
+   free(u_old);
+
 
    /* no refinement */
    braid_StepStatusSetRFactor(status, 1);
