@@ -121,7 +121,7 @@ my_Step(braid_App        app,
    fstar_plus = 0.5*(uk_plus*uk_plus + uk*uk)    - 0.5*fabs(0.5*(uk + uk_plus))*(uk_plus - uk);
    fstar_minus = 0.5*(uk*uk + uk_minus*uk_minus) - 0.5*fabs(0.5*(uk_minus + uk))*(uk - uk_minus);
    
-   u->values[u->size] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus);
+   u->values[u->size-1] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus);
 
 
    /* Free up */
