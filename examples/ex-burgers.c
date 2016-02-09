@@ -158,8 +158,8 @@ my_Init(braid_App     app,
    double xstart, xstop, x1, x2, x;
    
    u = (my_Vector *) malloc(sizeof(my_Vector));
-   (u->size)   = nspace;
-   (u->values) = (double *) malloc(nspace*sizeof(double));
+   (u->size)   = nspace+1;
+   (u->values) = (double *) malloc((u->size)*sizeof(double));
 
    xstart = (app->xstart);
    xstop  = (app->xstop);
@@ -167,9 +167,9 @@ my_Init(braid_App     app,
    x2     =  0.0;
 
    /* Initial guess */
-   for (i = 0; i < nspace; i++)
+   for (i = 0; i <= nspace; i++)
    {
-      x = xstart + ((double)(i/nspace))*(xstop - xstart);
+      x = xstart + ((double)i/nspace)*(xstop - xstart);
       if (x < x1)
       {
          (u->values)[i] = 1.0;
@@ -289,7 +289,7 @@ int
 my_BufSize(braid_App  app,
            int       *size_ptr)
 {
-   int size = (app->nspace);
+   int size = (app->nspace)+1;
    *size_ptr = size*sizeof(double) + 1;
    return 0;
 }
