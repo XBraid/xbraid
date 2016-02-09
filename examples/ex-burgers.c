@@ -90,7 +90,7 @@ my_Step(braid_App        app,
       u_old[k] = u->values[k];
 
    /* update interior of domain */
-   for(k = 1; k < u->size; k++)
+   for(k = 1; k < u->size-1; k++)
    {
       uk = u_old[k];
       uk_minus = u_old[k-1];
@@ -290,7 +290,7 @@ my_BufSize(braid_App  app,
            int       *size_ptr)
 {
    int size = (app->nspace)+1;
-   *size_ptr = size*sizeof(double) + 1;
+   *size_ptr = (size+1)*sizeof(double);
    return 0;
 }
 
@@ -309,7 +309,7 @@ my_BufPack(braid_App     app,
       dbuffer[i+1] = (u->values)[i];
    }
 
-   *size_ptr = size*sizeof(double);
+   *size_ptr = (size+1)*sizeof(double);
 
    return 0;
 }
@@ -369,7 +369,7 @@ int main (int argc, char *argv[])
    comm   = MPI_COMM_WORLD;
    tstart =  0.0;
    tstop  =  2.0;
-   ntime  =  20;
+   ntime  =  40;
    xstart = -2.0;
    xstop  =  1.0;
    nspace =  30;
