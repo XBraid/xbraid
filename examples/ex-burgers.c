@@ -55,6 +55,8 @@ typedef struct _braid_App_struct
    int       ntime;
    double    xstart;
    double    xstop;
+   double    xLeft;        /* this is the value of x on the left part of the domain for the initial condition, 
+                              this is also the Dirichlet boundary condition on the left */
    int       nspace;
 
 } my_App;
@@ -104,7 +106,7 @@ my_Step(braid_App        app,
 
    /* update left boundary point (Dirichlet 0.0) */
    uk = u_old[0];
-   uk_minus = 1.0;
+   uk_minus = app->xLeft;
    uk_plus = u_old[1];
 
    fstar_plus = 0.5*(uk_plus*uk_plus + uk*uk)    - 0.5*fabs(0.5*(2*uk + 2*uk_plus))* (uk_plus - uk);
@@ -172,11 +174,11 @@ my_Init(braid_App     app,
       x = xstart + ((double)i/nspace)*(xstop - xstart);
       if (x < x1)
       {
-         (u->values)[i] = 1.0;
+         (u->values)[i] = app->xLeft;
       }
       else if (x < x2)
       {
-         (u->values)[i] = 1.0 - (x - x1);
+         (u->values)[i] = app->xLeft - (x - x1)*app->xLeft;
       }
       else
       {
@@ -275,6 +277,7 @@ my_Access(braid_App          app,
 
    sprintf(filename, "%s.%07d.%05d", "ex-burgers.out", index, myid);
    file = fopen(filename, "w");
+   fprintf(file, "%d\n", ntime);
    for (i = 0; i < size; i++)
    {
       fprintf(file, "%.14e\n", (u->values)[i]);
@@ -348,7 +351,7 @@ int main (int argc, char *argv[])
    MPI_Comm      comm;
    double        tstart, tstop;
    int           ntime;
-   double        xstart, xstop;
+   double        xstart, xstop, xLeft;
    int           nspace;
 
    int           max_levels = 1;
@@ -373,6 +376,7 @@ int main (int argc, char *argv[])
    xstart = -2.0;
    xstop  =  1.0;
    nspace =  30;
+   xLeft = 1.0;
    
    /* Parse command line */
 
@@ -390,6 +394,7 @@ int main (int argc, char *argv[])
             printf("  -nu  <nrelax>     : set num F-C relaxations\n");
             printf("  -nx  <nspace>     : set num points in space\n");
             printf("  -nt  <ntime>      : set num points in time\n");
+            printf("  -xL  <xLeft>      : set the x-value on the left part of the domain\n");
             printf("  -nu0 <nrelax>     : set num F-C relaxations on level 0\n");
             printf("  -tol <tol>        : set stopping tolerance\n");
             printf("  -cf  <cfactor>    : set coarsening factor\n");
@@ -419,6 +424,11 @@ int main (int argc, char *argv[])
       {
          arg_index++;
          nspace = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-xL") == 0 )
+      {
+         arg_index++;
+         xLeft = atoi(argv[arg_index++]);
       }
       else if ( strcmp(argv[arg_index], "-nu0") == 0 )
       {
@@ -466,6 +476,7 @@ int main (int argc, char *argv[])
    (app->xstart) = xstart;
    (app->xstop)  = xstop;
    (app->nspace) = nspace;
+   (app->xLeft)  = xLeft;
 
    braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
              my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
