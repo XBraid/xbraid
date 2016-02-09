@@ -96,8 +96,8 @@ my_Step(braid_App        app,
       uk_minus = u_old[k-1];
       uk_plus = u_old[k+1];
 
-      fstar_plus = 0.5*(uk_plus*uk_plus + uk*uk)    - 0.5*fabs(0.5*(uk + uk_plus))*(uk_plus - uk);
-      fstar_minus = 0.5*(uk*uk + uk_minus*uk_minus) - 0.5*fabs(0.5*(uk_minus + uk))*(uk - uk_minus);
+      fstar_plus = 0.5*( 0.5*uk_plus*uk_plus +  0.5*uk*uk)    - 0.5*fabs(0.5*(uk + uk_plus))*(uk_plus - uk);
+      fstar_minus = 0.5*( 0.5*uk*uk +  0.5*uk_minus*uk_minus) - 0.5*fabs(0.5*(uk_minus + uk))*(uk - uk_minus);
       
       u->values[k] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus);
    }
@@ -369,7 +369,7 @@ int main (int argc, char *argv[])
    comm   = MPI_COMM_WORLD;
    tstart =  0.0;
    tstop  =  2.0;
-   ntime  =  40;
+   ntime  =  60;
    xstart = -2.0;
    xstop  =  1.0;
    nspace =  30;
@@ -388,6 +388,8 @@ int main (int argc, char *argv[])
             printf("\n");
             printf("  -ml  <max_levels> : set max levels\n");
             printf("  -nu  <nrelax>     : set num F-C relaxations\n");
+            printf("  -nx  <nspace>     : set num points in space\n");
+            printf("  -nt  <ntime>      : set num points in time\n");
             printf("  -nu0 <nrelax>     : set num F-C relaxations on level 0\n");
             printf("  -tol <tol>        : set stopping tolerance\n");
             printf("  -cf  <cfactor>    : set coarsening factor\n");
@@ -407,6 +409,16 @@ int main (int argc, char *argv[])
       {
          arg_index++;
          nrelax = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-nt") == 0 )
+      {
+         arg_index++;
+         ntime = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-nx") == 0 )
+      {
+         arg_index++;
+         nspace = atoi(argv[arg_index++]);
       }
       else if ( strcmp(argv[arg_index], "-nu0") == 0 )
       {
