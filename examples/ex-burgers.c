@@ -104,7 +104,7 @@ my_Step(braid_App        app,
 
    /* update left boundary point (Dirichlet 0.0) */
    uk = u_old[0];
-   uk_minus = 0.0;
+   uk_minus = 1.0;
    uk_plus = u_old[1];
 
    fstar_plus = 0.5*(uk_plus*uk_plus + uk*uk)    - 0.5*fabs(0.5*(2*uk + 2*uk_plus))* (uk_plus - uk);
@@ -116,7 +116,7 @@ my_Step(braid_App        app,
    /* update right boundary point (Dirichlet 1.0) */ 
    uk = u_old[u->size-1];
    uk_minus = u_old[u->size-2];
-   uk_plus = 1.0;
+   uk_plus = 0.0;
 
    fstar_plus = 0.5*(uk_plus*uk_plus + uk*uk)    - 0.5*fabs(0.5*(uk + uk_plus))*(uk_plus - uk);
    fstar_minus = 0.5*(uk*uk + uk_minus*uk_minus) - 0.5*fabs(0.5*(uk_minus + uk))*(uk - uk_minus);
