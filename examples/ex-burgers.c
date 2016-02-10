@@ -446,7 +446,7 @@ int main (int argc, char *argv[])
    ntime  =  60;
    xstart = -2.0;
    xstop  =  1.0;
-   nspace =  17;
+   nspace =  16;
    xLeft = 1.0;
    
    /* Parse command line */
@@ -470,7 +470,7 @@ int main (int argc, char *argv[])
             printf("  -tol <tol>        : set stopping tolerance\n");
             printf("  -cf  <cfactor>    : set coarsening factor\n");
             printf("  -mi  <max_iter>   : set max iterations\n");
-            printf("  -sc  <scoarsen>   : use spatial coarsening by factor of 2 each level; must use (2^k + 1) sized grids, 1: bilinear, 2: ...\n");
+            printf("  -sc  <scoarsen>   : use spatial coarsening by factor of 2 each level; must use 2^k sized grids, 1: bilinear, 2: ...\n");
             printf("  -fmg              : use FMG cycling\n");
             printf("  -res              : use my residual\n");
             printf("\n");
