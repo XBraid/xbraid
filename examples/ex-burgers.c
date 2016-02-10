@@ -70,6 +70,12 @@ typedef struct _braid_Vector_struct
 
 } my_Vector;
 
+/* helper function for my_Step */
+double compute_fstar(double uk_plus, double uk)
+{
+   return 0.5*( 0.5*uk_plus*uk_plus +  0.5*uk*uk) - 0.5*(fabs(0.5*uk) + fabs(0.5*uk_plus))  *(uk_plus - uk);
+}
+
 int
 my_Step(braid_App        app,
         braid_Vector     ustop,
@@ -99,8 +105,8 @@ my_Step(braid_App        app,
       uk_minus = u_old[k-1];
       uk_plus = u_old[k+1];
 
-      fstar_plus = 0.5*( 0.5*uk_plus*uk_plus +  0.5*uk*uk)    - 0.5*(fabs(0.5*uk)       + fabs(0.5*uk_plus))  *(uk_plus - uk);
-      fstar_minus = 0.5*( 0.5*uk*uk +  0.5*uk_minus*uk_minus) - 0.5*(fabs(0.5*uk_minus) + fabs(0.5*uk))       *(uk - uk_minus);
+      fstar_plus = compute_fstar(uk_plus, uk);
+      fstar_minus = compute_fstar(uk, uk_minus); 
       
       u->values[k] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus);
    }
@@ -110,8 +116,8 @@ my_Step(braid_App        app,
    uk_minus = app->xLeft;
    uk_plus = u_old[1];
 
-   fstar_plus = 0.5*( 0.5*uk_plus*uk_plus +  0.5*uk*uk)    - 0.5*(fabs(0.5*uk)       + fabs(0.5*uk_plus))  *(uk_plus - uk);
-   fstar_minus = 0.5*( 0.5*uk*uk +  0.5*uk_minus*uk_minus) - 0.5*(fabs(0.5*uk_minus) + fabs(0.5*uk))       *(uk - uk_minus);
+   fstar_plus = compute_fstar(uk_plus, uk);
+   fstar_minus = compute_fstar(uk, uk_minus); 
    
    u->values[0] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus);
 
@@ -121,8 +127,8 @@ my_Step(braid_App        app,
    uk_minus = u_old[u->size-2];
    uk_plus = 0.0;
 
-   fstar_plus = 0.5*( 0.5*uk_plus*uk_plus +  0.5*uk*uk)    - 0.5*(fabs(0.5*uk)       + fabs(0.5*uk_plus))  *(uk_plus - uk);
-   fstar_minus = 0.5*( 0.5*uk*uk +  0.5*uk_minus*uk_minus) - 0.5*(fabs(0.5*uk_minus) + fabs(0.5*uk))       *(uk - uk_minus);
+   fstar_plus = compute_fstar(uk_plus, uk);
+   fstar_minus = compute_fstar(uk, uk_minus); 
    
    u->values[u->size-1] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus);
 
@@ -581,6 +587,13 @@ int main (int argc, char *argv[])
    }
    if (scoarsen)
    {
+      if( fabs(pow(2.0, round(log2((double) nspace))) - nspace) > 0.5 )
+      {
+         printf("ABORTING: when using spatial coarsening, grid size must be a power of two.  Grid size = %d.\n",nspace);
+         MPI_Finalize();
+         return (0);
+      }
+      
       if (scoarsen == 1)
       {
          braid_SetSpatialCoarsen(core, my_CoarsenBilinear);
