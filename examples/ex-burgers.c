@@ -41,6 +41,7 @@
 #include <string.h>
 
 #include "braid.h"
+#include "braid_test.h"
 
 /*--------------------------------------------------------------------------
  * My integration routines
@@ -98,8 +99,8 @@ my_Step(braid_App        app,
       uk_minus = u_old[k-1];
       uk_plus = u_old[k+1];
 
-      fstar_plus = 0.5*( 0.5*uk_plus*uk_plus +  0.5*uk*uk)    - 0.5*fabs(0.5*(uk + uk_plus))*(uk_plus - uk);
-      fstar_minus = 0.5*( 0.5*uk*uk +  0.5*uk_minus*uk_minus) - 0.5*fabs(0.5*(uk_minus + uk))*(uk - uk_minus);
+      fstar_plus = 0.5*( 0.5*uk_plus*uk_plus +  0.5*uk*uk)    - 0.5*(fabs(0.5*uk)       + fabs(0.5*uk_plus))  *(uk_plus - uk);
+      fstar_minus = 0.5*( 0.5*uk*uk +  0.5*uk_minus*uk_minus) - 0.5*(fabs(0.5*uk_minus) + fabs(0.5*uk))       *(uk - uk_minus);
       
       u->values[k] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus);
    }
@@ -109,8 +110,8 @@ my_Step(braid_App        app,
    uk_minus = app->xLeft;
    uk_plus = u_old[1];
 
-   fstar_plus = 0.5*(uk_plus*uk_plus + uk*uk)    - 0.5*fabs(0.5*(2*uk + 2*uk_plus))* (uk_plus - uk);
-   fstar_minus = 0.5*(uk*uk + uk_minus*uk_minus) - 0.5*fabs(0.5*(2*uk_minus + 2*uk))*(uk - uk_minus);
+   fstar_plus = 0.5*( 0.5*uk_plus*uk_plus +  0.5*uk*uk)    - 0.5*(fabs(0.5*uk)       + fabs(0.5*uk_plus))  *(uk_plus - uk);
+   fstar_minus = 0.5*( 0.5*uk*uk +  0.5*uk_minus*uk_minus) - 0.5*(fabs(0.5*uk_minus) + fabs(0.5*uk))       *(uk - uk_minus);
    
    u->values[0] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus);
 
@@ -120,8 +121,8 @@ my_Step(braid_App        app,
    uk_minus = u_old[u->size-2];
    uk_plus = 0.0;
 
-   fstar_plus = 0.5*(uk_plus*uk_plus + uk*uk)    - 0.5*fabs(0.5*(uk + uk_plus))*(uk_plus - uk);
-   fstar_minus = 0.5*(uk*uk + uk_minus*uk_minus) - 0.5*fabs(0.5*(uk_minus + uk))*(uk - uk_minus);
+   fstar_plus = 0.5*( 0.5*uk_plus*uk_plus +  0.5*uk*uk)    - 0.5*(fabs(0.5*uk)       + fabs(0.5*uk_plus))  *(uk_plus - uk);
+   fstar_minus = 0.5*( 0.5*uk*uk +  0.5*uk_minus*uk_minus) - 0.5*(fabs(0.5*uk_minus) + fabs(0.5*uk))       *(uk - uk_minus);
    
    u->values[u->size-1] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus);
 
@@ -340,6 +341,75 @@ my_BufUnpack(braid_App     app,
    return 0;
 }
 
+
+int
+my_CoarsenBilinear(braid_App              app,           
+                   braid_Vector           fu,
+                   braid_Vector          *cu_ptr,
+                   braid_CoarsenRefStatus status)
+{
+
+   int i, csize, fidx, level;
+   double *fvals = fu->values;
+   my_Vector *v;
+   
+   csize = (fu->size - 1)/2 + 1;
+   braid_CoarsenRefStatusGetLevel(status, &level);
+   if(fu->size == 3)
+      printf("Warning, coarsening in space down to 1 point on level %d!!\n", level);
+
+   v = (my_Vector *) malloc(sizeof(my_Vector));
+   (v->size)   = csize;
+   (v->values) = (double *) malloc(csize*sizeof(double));
+   for (i = 1; i < csize-1; i++)
+   {
+      fidx = 2*i;
+      (v->values)[i] = 0.5*fvals[fidx] + 0.25*fvals[fidx+1] + 0.25*fvals[fidx-1];
+   }
+
+   /* Boundary Conditions */
+   (v->values)[0] = 0.5*fvals[0] + 0.25*fvals[1];
+   (v->values)[csize-1] = 0.5*fvals[fu->size-1] + 0.25*fvals[fu->size-2];
+
+   *cu_ptr = v;
+   
+   return 0;
+}
+
+int
+my_InterpBilinear(braid_App              app,           
+                  braid_Vector           cu,
+                  braid_Vector          *fu_ptr,
+                  braid_CoarsenRefStatus status)
+{
+
+   int i, fsize;
+   double *cvals = cu->values;
+   my_Vector *v;
+   
+   fsize = (cu->size - 1)*2 + 1;
+
+   v = (my_Vector *) malloc(sizeof(my_Vector));
+   (v->size)   = fsize;
+   (v->values) = (double *) malloc(fsize*sizeof(double));
+   for (i = 1; i < fsize-1; i++)
+   {
+      if(i%2 == 1)
+         (v->values)[i] = 0.5*cvals[i/2] + 0.5*cvals[(i+1)/2];
+      else
+         (v->values)[i] = cvals[i/2];
+   }
+
+   /* Boundary Conditions */
+   (v->values)[0] = cvals[0];
+   (v->values)[fsize-1] = cvals[cu->size-1];
+
+   *fu_ptr = v;
+   
+   return 0;
+}
+
+
 /*--------------------------------------------------------------------------
  * Main driver
  *--------------------------------------------------------------------------*/
@@ -359,8 +429,9 @@ int main (int argc, char *argv[])
    int           nrelax0    = -1;
    double        tol        = 1.0e-06;
    int           cfactor    = 2;
-   int           max_iter   = 100;
+   int           max_iter   = 30;
    int           fmg        = 0;
+   int           scoarsen   = 0;
    int           res        = 0;
 
    int           arg_index;
@@ -375,7 +446,7 @@ int main (int argc, char *argv[])
    ntime  =  60;
    xstart = -2.0;
    xstop  =  1.0;
-   nspace =  30;
+   nspace =  17;
    xLeft = 1.0;
    
    /* Parse command line */
@@ -399,6 +470,7 @@ int main (int argc, char *argv[])
             printf("  -tol <tol>        : set stopping tolerance\n");
             printf("  -cf  <cfactor>    : set coarsening factor\n");
             printf("  -mi  <max_iter>   : set max iterations\n");
+            printf("  -sc  <scoarsen>   : use spatial coarsening by factor of 2 each level; must use (2^k + 1) sized grids, 1: bilinear, 2: ...\n");
             printf("  -fmg              : use FMG cycling\n");
             printf("  -res              : use my residual\n");
             printf("\n");
@@ -455,6 +527,12 @@ int main (int argc, char *argv[])
          arg_index++;
          fmg = 1;
       }
+      else if ( strcmp(argv[arg_index], "-sc") == 0 )
+      {
+         arg_index++;
+         scoarsen  = atoi(argv[arg_index++]);
+      }
+
       else if ( strcmp(argv[arg_index], "-res") == 0 )
       {
          arg_index++;
@@ -501,6 +579,23 @@ int main (int argc, char *argv[])
    {
       braid_SetResidual(core, my_Residual);
    }
+   if (scoarsen)
+   {
+      if (scoarsen == 1)
+      {
+         braid_SetSpatialCoarsen(core, my_CoarsenBilinear);
+         braid_SetSpatialRefine(core,  my_InterpBilinear);
+      }
+      else
+      {
+         printf("Invalid scoarsen choice.  Ignoring this parameter\n");
+      }
+
+   }
+
+   //braid_TestCoarsenRefine(app, 0, stdout, 0.0, 0.1, 0.2, my_Init,
+   //      my_Access, my_Free, my_Clone, my_Sum, my_SpatialNorm, my_CoarsenBilinear, 
+   //      my_InterpBilinear);
 
    braid_Drive(core);
 
