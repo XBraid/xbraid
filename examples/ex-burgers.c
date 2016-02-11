@@ -58,6 +58,7 @@ typedef struct _braid_App_struct
    double    xstop;
    double    xLeft;        /* this is the value of x on the left part of the domain for the initial condition, 
                               this is also the Dirichlet boundary condition on the left */
+   double    xRight;       /* likewise, this is the value of x on the right */
    int       nspace;
 
 } my_App;
@@ -125,7 +126,7 @@ my_Step(braid_App        app,
    /* update right boundary point (Dirichlet 1.0) */ 
    uk = u_old[u->size-1];
    uk_minus = u_old[u->size-2];
-   uk_plus = 0.0;
+   uk_plus = app->xRight;
 
    fstar_plus = compute_fstar(uk_plus, uk);
    fstar_minus = compute_fstar(uk, uk_minus); 
@@ -185,11 +186,11 @@ my_Init(braid_App     app,
       }
       else if (x < x2)
       {
-         (u->values)[i] = app->xLeft - (x - x1)*app->xLeft;
+         (u->values)[i] = app->xLeft - (x - x1)*(app->xLeft - app->xRight);
       }
       else
       {
-         (u->values)[i] = 0.0;
+         (u->values)[i] = app->xRight;
       }
    }
 
@@ -383,6 +384,41 @@ my_CoarsenBilinear(braid_App              app,
 }
 
 int
+my_CoarsenOneSided(braid_App              app,           
+                   braid_Vector           fu,
+                   braid_Vector          *cu_ptr,
+                   braid_CoarsenRefStatus status)
+{
+
+   int i, csize, fidx, level;
+   double *fvals = fu->values;
+   my_Vector *v;
+   
+   csize = (fu->size - 1)/2 + 1;
+   braid_CoarsenRefStatusGetLevel(status, &level);
+   if(fu->size == 3)
+      printf("Warning, coarsening in space down to 1 point on level %d!!\n", level);
+   
+   /* Do averaging (assuming positive wave-speed) */
+   v = (my_Vector *) malloc(sizeof(my_Vector));
+   (v->size)   = csize;
+   (v->values) = (double *) malloc(csize*sizeof(double));
+   for (i = 1; i < csize-1; i++)
+   {
+      fidx = 2*i;
+      (v->values)[i] = 0.5*fvals[fidx] + 0.5*fvals[fidx-1];
+   }
+
+   /* Boundary Conditions */
+   (v->values)[0] = 0.5*fvals[0];
+   (v->values)[csize-1] = 0.5*fvals[fu->size-1] + 0.5*fvals[fu->size-2];
+
+   *cu_ptr = v;
+   
+   return 0;
+}
+
+int
 my_InterpBilinear(braid_App              app,           
                   braid_Vector           cu,
                   braid_Vector          *fu_ptr,
@@ -415,6 +451,35 @@ my_InterpBilinear(braid_App              app,
    return 0;
 }
 
+int
+my_InterpOneSided(braid_App              app,           
+                  braid_Vector           cu,
+                  braid_Vector          *fu_ptr,
+                  braid_CoarsenRefStatus status)
+{
+
+   int i, fsize;
+   double *cvals = cu->values;
+   my_Vector *v;
+   
+   fsize = (cu->size - 1)*2 + 1;
+
+   /* Inject values to fine grid */
+   v = (my_Vector *) malloc(sizeof(my_Vector));
+   (v->size)   = fsize;
+   (v->values) = (double *) malloc(fsize*sizeof(double));
+   for (i = 1; i < fsize-1; i++)
+       (v->values)[i] = cvals[i/2];
+
+   /* Boundary Conditions */
+   (v->values)[0] = cvals[0];
+   (v->values)[fsize-1] = cvals[cu->size-1];
+
+   *fu_ptr = v;
+   
+   return 0;
+}
+
 
 /*--------------------------------------------------------------------------
  * Main driver
@@ -427,7 +492,7 @@ int main (int argc, char *argv[])
    MPI_Comm      comm;
    double        tstart, tstop;
    int           ntime;
-   double        xstart, xstop, xLeft;
+   double        xstart, xstop, xLeft, xRight;
    int           nspace;
 
    int           max_levels = 1;
@@ -451,9 +516,10 @@ int main (int argc, char *argv[])
    tstop  =  2.0;
    ntime  =  60;
    xstart = -2.0;
-   xstop  =  1.0;
+   xstop  =  3.0;
    nspace =  16;
    xLeft = 1.0;
+   xRight = 0.0;
    
    /* Parse command line */
 
@@ -471,12 +537,13 @@ int main (int argc, char *argv[])
             printf("  -nu  <nrelax>     : set num F-C relaxations\n");
             printf("  -nx  <nspace>     : set num points in space\n");
             printf("  -nt  <ntime>      : set num points in time\n");
-            printf("  -xL  <xLeft>      : set the x-value on the left part of the domain\n");
+            printf("  -xL  <xLeft>      : set the left x-value (both as boundary condition and as initial condition)\n");
+            printf("  -xR  <xRight>     : set the right x-value (both as boundary condition and as initial condition)\n");
             printf("  -nu0 <nrelax>     : set num F-C relaxations on level 0\n");
             printf("  -tol <tol>        : set stopping tolerance\n");
             printf("  -cf  <cfactor>    : set coarsening factor\n");
             printf("  -mi  <max_iter>   : set max iterations\n");
-            printf("  -sc  <scoarsen>   : use spatial coarsening by factor of 2 each level; must use 2^k sized grids, 1: bilinear, 2: ...\n");
+            printf("  -sc  <scoarsen>   : use spatial coarsening by factor of 2 each level; must use 2^k sized grids, 1: bilinear, 2: one-sided, 3: ...\n");
             printf("  -fmg              : use FMG cycling\n");
             printf("  -res              : use my residual\n");
             printf("\n");
@@ -507,6 +574,11 @@ int main (int argc, char *argv[])
       {
          arg_index++;
          xLeft = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-xR") == 0 )
+      {
+         arg_index++;
+         xRight = atoi(argv[arg_index++]);
       }
       else if ( strcmp(argv[arg_index], "-nu0") == 0 )
       {
@@ -561,6 +633,7 @@ int main (int argc, char *argv[])
    (app->xstop)  = xstop;
    (app->nspace) = nspace;
    (app->xLeft)  = xLeft;
+   (app->xRight) = xRight;
 
    braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
              my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
@@ -598,6 +671,11 @@ int main (int argc, char *argv[])
       {
          braid_SetSpatialCoarsen(core, my_CoarsenBilinear);
          braid_SetSpatialRefine(core,  my_InterpBilinear);
+      }
+      if (scoarsen == 2)
+      {
+         braid_SetSpatialCoarsen(core, my_CoarsenOneSided);
+         braid_SetSpatialRefine(core,  my_InterpOneSided);
       }
       else
       {
