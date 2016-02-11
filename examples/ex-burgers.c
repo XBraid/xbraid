@@ -285,7 +285,12 @@ my_Access(braid_App          app,
 
    sprintf(filename, "%s.%07d.%05d", "ex-burgers.out", index, myid);
    file = fopen(filename, "w");
-   fprintf(file, "%d\n", ntime);
+   fprintf(file, "%d\n", ntime+1);
+   fprintf(file, "%.14e\n", app->tstart);
+   fprintf(file, "%.14e\n", app->tstop);
+   fprintf(file, "%d\n", app->nspace+1);
+   fprintf(file, "%.14e\n", app->xstart);
+   fprintf(file, "%.14e\n", app->xstop);
    for (i = 0; i < size; i++)
    {
       fprintf(file, "%.14e\n", (u->values)[i]);
@@ -377,7 +382,7 @@ my_CoarsenBilinear(braid_App              app,
    /* Boundary Conditions */
    (v->values)[0] = 0.5*fvals[0] + 0.25*fvals[1];
    (v->values)[csize-1] = 0.5*fvals[fu->size-1] + 0.25*fvals[fu->size-2];
-
+   
    *cu_ptr = v;
    
    return 0;
