@@ -56,9 +56,11 @@ typedef struct _braid_App_struct
    int       ntime;
    double    xstart;
    double    xstop;
-   double    xLeft;        /* this is the value of x on the left part of the domain for the initial condition, 
-                              this is also the Dirichlet boundary condition on the left */
-   double    xRight;       /* likewise, this is the value of x on the right */
+   double    xLeft;         /* this is the value of x on the left part of the domain for the initial condition, 
+                               this is also the Dirichlet boundary condition on the left */
+   double    xRight;        /* likewise, this is the value of x on the right */
+   double    epsilon;       /* Diffusion coefficient for viscous Burgers*/
+   int       max_iter_x[2]; /* length 2 array of max Newton iterations on fine and coarse grids */
    int       nspace;
 
 } my_App;
@@ -71,24 +73,205 @@ typedef struct _braid_Vector_struct
 
 } my_Vector;
 
-/* helper function for my_Step */
+/* Helper function for tridiagonal solver */
+double dabs(double x)
+{
+   if (x < 0.0)
+   {
+      return -1.0;
+   }
+   else if (x > 0.0)
+   {
+      return 1.0;
+   }
+   else
+   {
+      return 0.0;
+   }
+}
+
+
+/* Helper function for Step: Tridiagonal system solver */
+void 
+solve_tridiag(double * x,
+	      int N, 
+	      double * a,
+	      double * b, 
+	      double * c) 
+{
+    /*
+     solves Ax = v where A is a tridiagonal matrix consisting of vectors a, b, c
+     x - initially contains v, returns solution x. indexed from 0 to N - 1
+     N - length of vector x
+     a - subdiagonal, indexed from 1 to N - 1
+     b - main diagonal, indexed from 0 to N - 1
+     c - superdiagonal, indexed from 0 to N - 2
+     
+     Note: contents of c will be modified
+     */
+
+    int ix;
+    double m;
+        
+    c[0] = c[0] / b[0];
+    x[0] = x[0] / b[0];
+    
+    /* loop from 1 to N - 2 inclusive, performing the forward sweep */
+    for (ix = 1; ix < N - 1; ix++) 
+    {
+        m = 1.0 / (b[ix] - a[ix] * c[ix - 1]);
+        c[ix] = c[ix] * m;
+        x[ix] = (x[ix] - a[ix] * x[ix - 1]) * m;
+    }
+
+    x[N - 1] = (x[N - 1] - a[N - 1] * x[N - 2]) / (b[N - 1] - a[N - 1] * c[N - 2]);
+    
+    /* loop from N - 2 to 0 inclusive to perform the back substitution */
+    for (ix = N - 2; ix >= 0; ix--)
+        x[ix] = x[ix] - c[ix] * x[ix + 1];
+}
+
+/* helper function for my_Step*/
 double compute_fstar(double uk_plus, double uk)
 {
    return 0.5*( 0.5*uk_plus*uk_plus +  0.5*uk*uk) - 0.5*(fabs(0.5*uk) + fabs(0.5*uk_plus))  *(uk_plus - uk);
 }
 
+int my_StepBE(braid_App        app,
+              braid_Vector     ustop,
+              braid_Vector     fstop,
+              braid_Vector     u,
+              braid_StepStatus status)
+{
+   int k, j, num_iter, level;
+   double tstart;             /* current time */
+   double tstop;              /* evolve to this time*/
+   double deltaT, fstar_plus, fstar_minus, uk, uk_minus, uk_plus;
+   double *u_old, *v, *a, *b, *c;
+   double epsilon = app->epsilon;
+   double deltaX = (app->xstop - app->xstart) / (u->size - 1.0);
+
+   braid_StepStatusGetLevel(status, &level);
+   if(level == 0) {
+      num_iter = app->max_iter_x[0];
+   }
+   else{
+      num_iter = app->max_iter_x[1];
+   }
+   braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+   deltaT = tstop - tstart;
+
+   /* allocate memory for vectors */
+   v = (double *) malloc(sizeof(double)*u->size);
+   a = (double *) malloc(sizeof(double)*u->size);
+   b = (double *) malloc(sizeof(double)*u->size);
+   c = (double *) malloc(sizeof(double)*u->size);
+   
+   /* copy u */
+   u_old = (double *) malloc(sizeof(double)*u->size);
+   for(k = 0; k < u->size; k++)
+      u_old[k] = u->values[k];
+
+   /* Newton Solver Loop */
+   for(j = 0; j < num_iter; j++)
+   {
+      /* Create RHS vector */
+
+      uk_minus = app->xLeft;
+      uk = u->values[0];
+      uk_plus = u->values[1];
+
+      fstar_plus = compute_fstar(uk_plus, uk);
+      fstar_minus = compute_fstar(uk, uk_minus); 
+
+      v[0] = uk - u_old[0] + (deltaT/deltaX)*(fstar_plus - fstar_minus) - 
+            epsilon*(deltaT/(deltaX*deltaX))*(uk_plus - 2*uk + uk_minus);
+
+      for(k = 1; k < u->size-1; k++)
+      {
+          uk_minus = u->values[k-1];
+          uk = u->values[k];
+          uk_plus = u->values[k+1];
+
+          fstar_plus = compute_fstar(uk_plus, uk);
+          fstar_minus = compute_fstar(uk, uk_minus);
+
+          v[k] = uk - u_old[k] + (deltaT/deltaX)*(fstar_plus - fstar_minus) - 
+               epsilon*(deltaT/(deltaX*deltaX))*(uk_plus - 2*uk + uk_minus);
+      }
+
+      uk_minus = u->values[u->size-2];
+      uk = u->values[u->size-1];
+      uk_plus = app->xRight;
+
+      fstar_plus = compute_fstar(uk_plus, uk);
+      fstar_minus = compute_fstar(uk, uk_minus); 
+
+      v[u->size-1] = uk - u_old[u->size-1] + (deltaT/deltaX)*(fstar_plus - fstar_minus) - 
+            epsilon*(deltaT/(deltaX*deltaX))*(uk_plus - 2*uk + uk_minus);
+
+      /* Create Jacobian - tridiag(a,b,c) */
+
+      uk_minus = app->xLeft;
+      uk = u->values[0];
+      uk_plus = u->values[1];
+
+      b[0] = 1 + 0.25*(deltaT/deltaX)*(-dabs(uk)*(uk_plus - 2*uk + uk_minus) + fabs(uk_plus) + 2*fabs(uk) + fabs(uk_minus)) + 2*epsilon*(deltaT/(deltaX*deltaX));
+      c[0] = (deltaT/deltaX)*(0.5*uk_plus - 0.25*dabs(uk_plus)*(uk_plus - uk) - 0.25*(fabs(uk_plus) + fabs(uk))) - epsilon*(deltaT/(deltaX*deltaX));
+    
+      for(k = 1; k < u->size-1; k++)
+      {
+          uk_minus = u->values[k-1];
+          uk = u->values[k];
+          uk_plus = u->values[k+1];
+
+          a[k] = (deltaT/deltaX)*(-0.5*uk_minus + 0.25*dabs(uk_minus)*(uk - uk_minus) - 0.25*(fabs(uk) + fabs(uk_minus))) - epsilon*(deltaT/(deltaX*deltaX));
+          b[k] = 1 + 0.25*(deltaT/deltaX)*(-dabs(uk)*(uk_plus - 2*uk + uk_minus) + fabs(uk_plus) + 2*fabs(uk) + fabs(uk_minus)) + 2*epsilon*(deltaT/(deltaX*deltaX));
+          c[k] = (deltaT/deltaX)*(0.5*uk_plus - 0.25*dabs(uk_plus)*(uk_plus - uk) - 0.25*(fabs(uk_plus) + fabs(uk))) - epsilon*(deltaT/(deltaX*deltaX));
+      }
+
+      uk_minus = u->values[u->size-2];
+      uk = u->values[u->size-1];
+      uk_plus = app->xRight;
+
+      a[u->size-1] = (deltaT/deltaX)*(-0.5*uk_minus + 0.25*dabs(uk_minus)*(uk - uk_minus) - 0.25*(fabs(uk) + fabs(uk_minus))) - epsilon*(deltaT/(deltaX*deltaX));
+      b[u->size-1] = 1 + 0.25*(deltaT/deltaX)*(-dabs(uk)*(uk_plus - 2*uk + uk_minus) + fabs(uk_plus) + 2*fabs(uk) + fabs(uk_minus)) + 2*epsilon*(deltaT/(deltaX*deltaX));
+
+      solve_tridiag(v, u->size, a, b, c);
+      for(k = 0; k < u->size; k++)
+      {
+         u->values[k] = u->values[k] - v[k];
+      }
+      
+   }
+
+   /* Free up */
+   free(u_old);
+   free(v);
+   free(a);
+   free(b);
+   free(c);
+
+   /* no refinement */
+   braid_StepStatusSetRFactor(status, 1);
+
+   return 0;
+}
+
+
 int
-my_Step(braid_App        app,
-        braid_Vector     ustop,
-        braid_Vector     fstop,
-        braid_Vector     u,
-        braid_StepStatus status)
+my_StepFE(braid_App        app,
+          braid_Vector     ustop,
+          braid_Vector     fstop,
+          braid_Vector     u,
+          braid_StepStatus status)
 {
    int k;
    double tstart;             /* current time */
    double tstop;              /* evolve to this time*/
    double deltaT, fstar_plus, fstar_minus, uk, uk_minus, uk_plus;
    double *u_old;
+   double epsilon = app->epsilon;
    double deltaX = (app->xstop - app->xstart) / (u->size - 1.0);
    
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
@@ -109,7 +292,8 @@ my_Step(braid_App        app,
       fstar_plus = compute_fstar(uk_plus, uk);
       fstar_minus = compute_fstar(uk, uk_minus); 
       
-      u->values[k] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus);
+      u->values[k] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus) + 
+               epsilon*(deltaT/(deltaX*deltaX))*(uk_plus - 2*uk + uk_minus);
    }
 
    /* update left boundary point (Dirichlet 0.0) */
@@ -120,7 +304,9 @@ my_Step(braid_App        app,
    fstar_plus = compute_fstar(uk_plus, uk);
    fstar_minus = compute_fstar(uk, uk_minus); 
    
-   u->values[0] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus);
+   u->values[0] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus) + 
+               epsilon*(deltaT/(deltaX*deltaX))*(uk_plus - 2*uk + uk_minus);
+
 
    
    /* update right boundary point (Dirichlet 1.0) */ 
@@ -131,12 +317,12 @@ my_Step(braid_App        app,
    fstar_plus = compute_fstar(uk_plus, uk);
    fstar_minus = compute_fstar(uk, uk_minus); 
    
-   u->values[u->size-1] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus);
+   u->values[u->size-1] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus) + 
+               epsilon*(deltaT/(deltaX*deltaX))*(uk_plus - 2*uk + uk_minus);
 
 
    /* Free up */
    free(u_old);
-
 
    /* no refinement */
    braid_StepStatusSetRFactor(status, 1);
@@ -355,7 +541,7 @@ my_BufUnpack(braid_App     app,
 
 
 int
-my_CoarsenBilinear(braid_App              app,           
+my_CoarsenLinear(braid_App              app,           
                    braid_Vector           fu,
                    braid_Vector          *cu_ptr,
                    braid_CoarsenRefStatus status)
@@ -380,8 +566,8 @@ my_CoarsenBilinear(braid_App              app,
    }
 
    /* Boundary Conditions */
-   (v->values)[0] = 0.5*fvals[0] + 0.25*fvals[1];
-   (v->values)[csize-1] = 0.5*fvals[fu->size-1] + 0.25*fvals[fu->size-2];
+   (v->values)[0] = (4./3.)*0.5*fvals[0] + (4./3.)*0.25*fvals[1];
+   (v->values)[csize-1] = (4./3.)*0.5*fvals[fu->size-1] + (4./3.)*0.25*fvals[fu->size-2];
    
    *cu_ptr = v;
    
@@ -424,7 +610,7 @@ my_CoarsenOneSided(braid_App              app,
 }
 
 int
-my_InterpBilinear(braid_App              app,           
+my_InterpLinear(braid_App              app,           
                   braid_Vector           cu,
                   braid_Vector          *fu_ptr,
                   braid_CoarsenRefStatus status)
@@ -462,7 +648,6 @@ my_InterpOneSided(braid_App              app,
                   braid_Vector          *fu_ptr,
                   braid_CoarsenRefStatus status)
 {
-
    int i, fsize;
    double *cvals = cu->values;
    my_Vector *v;
@@ -495,7 +680,7 @@ int main (int argc, char *argv[])
    braid_Core    core;
    my_App       *app;
    MPI_Comm      comm;
-   double        tstart, tstop;
+   double        tstart, tstop, epsilon;
    int           ntime;
    double        xstart, xstop, xLeft, xRight;
    int           nspace;
@@ -509,6 +694,8 @@ int main (int argc, char *argv[])
    int           fmg        = 0;
    int           scoarsen   = 0;
    int           res        = 0;
+   int           stepper    = 0;
+   int           max_iter_x[2];
 
    int           arg_index;
 
@@ -525,6 +712,9 @@ int main (int argc, char *argv[])
    nspace =  16;
    xLeft = 1.0;
    xRight = 0.0;
+   epsilon = 0.0;
+   max_iter_x[0] = 10;
+   max_iter_x[1] = 10;
    
    /* Parse command line */
 
@@ -544,10 +734,13 @@ int main (int argc, char *argv[])
             printf("  -nt  <ntime>      : set num points in time\n");
             printf("  -xL  <xLeft>      : set the left x-value (both as boundary condition and as initial condition)\n");
             printf("  -xR  <xRight>     : set the right x-value (both as boundary condition and as initial condition)\n");
+            printf("  -eps <epsilon>    : set the diffusion coefficient for viscous Burgers' equation\n");
+            printf("  -st  <stepper>    : set the time stepper, 0: forward Euler, 1: backward Euler\n");
             printf("  -nu0 <nrelax>     : set num F-C relaxations on level 0\n");
             printf("  -tol <tol>        : set stopping tolerance\n");
             printf("  -cf  <cfactor>    : set coarsening factor\n");
             printf("  -mi  <max_iter>   : set max iterations\n");
+            printf("  -mix <mif  mic>   : set max Newton iterations on fine (mif) and all coarse levels (mic)\n");
             printf("  -sc  <scoarsen>   : use spatial coarsening by factor of 2 each level; must use 2^k sized grids, 1: bilinear, 2: one-sided, 3: ...\n");
             printf("  -fmg              : use FMG cycling\n");
             printf("  -res              : use my residual\n");
@@ -585,6 +778,16 @@ int main (int argc, char *argv[])
          arg_index++;
          xRight = atoi(argv[arg_index++]);
       }
+      else if ( strcmp(argv[arg_index], "-eps") == 0 )
+      {
+         arg_index++;
+         epsilon = atof(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-st") == 0 )
+      {
+         arg_index++;
+         stepper = atoi(argv[arg_index++]);
+      }
       else if ( strcmp(argv[arg_index], "-nu0") == 0 )
       {
          arg_index++;
@@ -605,6 +808,12 @@ int main (int argc, char *argv[])
          arg_index++;
          max_iter = atoi(argv[arg_index++]);
       }
+      else if ( strcmp(argv[arg_index], "-mix") == 0 )
+      {
+         arg_index++;
+         max_iter_x[0] = atoi(argv[arg_index++]);
+         max_iter_x[1] = atoi(argv[arg_index++]);
+      }
       else if ( strcmp(argv[arg_index], "-fmg") == 0 )
       {
          arg_index++;
@@ -623,26 +832,47 @@ int main (int argc, char *argv[])
       }
       else
       {
-         arg_index++;
-         /*break;*/
+         printf("ABORTING: incorrect command line parameter %s\n", argv[arg_index]);
+         MPI_Finalize();
+         return (0);
+
       }
    }
 
    /* set up app structure */
    app = (my_App *) malloc(sizeof(my_App));
-   (app->comm)   = comm;
-   (app->tstart) = tstart;
-   (app->tstop)  = tstop;
-   (app->ntime)  = ntime;
-   (app->xstart) = xstart;
-   (app->xstop)  = xstop;
-   (app->nspace) = nspace;
-   (app->xLeft)  = xLeft;
-   (app->xRight) = xRight;
+   (app->comm)          = comm;
+   (app->tstart)        = tstart;
+   (app->tstop)         = tstop;
+   (app->ntime)         = ntime;
+   (app->xstart)        = xstart;
+   (app->xstop)         = xstop;
+   (app->nspace)        = nspace;
+   (app->xLeft)         = xLeft;
+   (app->xRight)        = xRight;
+   (app->epsilon)       = epsilon;
+   (app->max_iter_x[0]) = max_iter_x[0];
+   (app->max_iter_x[1]) = max_iter_x[1];
 
-   braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
-             my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
+   if(stepper == 0)
+   {
+      braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
+             my_StepFE, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
              my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
+   }
+   else if(stepper == 1)
+   {
+      braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
+             my_StepBE, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
+             my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
+   }
+   else
+   {
+         printf("ABORTING: incorrect choice of stepper parameter 'st'\n");
+         MPI_Finalize();
+         return (0);
+   }
+
 
    braid_SetPrintLevel( core, 1);
    braid_SetMaxLevels(core, max_levels);
@@ -674,8 +904,8 @@ int main (int argc, char *argv[])
       
       if (scoarsen == 1)
       {
-         braid_SetSpatialCoarsen(core, my_CoarsenBilinear);
-         braid_SetSpatialRefine(core,  my_InterpBilinear);
+         braid_SetSpatialCoarsen(core, my_CoarsenLinear);
+         braid_SetSpatialRefine(core,  my_InterpLinear);
       }
       if (scoarsen == 2)
       {
