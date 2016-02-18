@@ -62,6 +62,8 @@ typedef struct _braid_App_struct
    double    epsilon;       /* Diffusion coefficient for viscous Burgers*/
    int       max_iter_x[2]; /* length 2 array of max Newton iterations on fine and coarse grids */
    int       nspace;
+   int       problem;       /* test problem, 0: linear advection, 1: Burger's equation */
+   double    a;             /* if is_linear == 1, then use this as the linear advection constant */
 
 } my_App;
 
@@ -137,6 +139,14 @@ double compute_fstar(double uk_plus, double uk)
    return 0.5*( 0.5*uk_plus*uk_plus +  0.5*uk*uk) - 0.5*(fabs(0.5*uk) + fabs(0.5*uk_plus))  *(uk_plus - uk);
 }
 
+/* helper function for my_Step*/
+double compute_fstar_linear(double uk_plus, double uk, double a)
+{
+   return 0.5*( a*uk_plus +  a*uk) - 0.5*fabs(a)*(uk_plus - uk);
+}
+
+
+
 int my_StepBE(braid_App        app,
               braid_Vector     ustop,
               braid_Vector     fstop,
@@ -146,7 +156,7 @@ int my_StepBE(braid_App        app,
    int k, j, num_iter, level;
    double tstart;             /* current time */
    double tstop;              /* evolve to this time*/
-   double deltaT, fstar_plus, fstar_minus, uk, uk_minus, uk_plus;
+   double deltaT, fstar_plus = 0.0, fstar_minus = 0.0, uk, uk_minus, uk_plus;
    double *u_old, *v, *a, *b, *c;
    double epsilon = app->epsilon;
    double deltaX = (app->xstop - app->xstart) / (u->size - 1.0);
@@ -181,8 +191,16 @@ int my_StepBE(braid_App        app,
       uk = u->values[0];
       uk_plus = u->values[1];
 
-      fstar_plus = compute_fstar(uk_plus, uk);
-      fstar_minus = compute_fstar(uk, uk_minus); 
+      if(app->problem == 0)
+      {
+         fstar_plus = compute_fstar_linear(uk_plus, uk, app->a);
+         fstar_minus = compute_fstar_linear(uk, uk_minus, app->a);
+      }
+      else if(app->problem == 1)
+      {
+         fstar_plus = compute_fstar(uk_plus, uk);
+         fstar_minus = compute_fstar(uk, uk_minus); 
+      }
 
       v[0] = uk - u_old[0] + (deltaT/deltaX)*(fstar_plus - fstar_minus) - 
             epsilon*(deltaT/(deltaX*deltaX))*(uk_plus - 2*uk + uk_minus);
@@ -193,8 +211,16 @@ int my_StepBE(braid_App        app,
           uk = u->values[k];
           uk_plus = u->values[k+1];
 
-          fstar_plus = compute_fstar(uk_plus, uk);
-          fstar_minus = compute_fstar(uk, uk_minus);
+          if(app->problem == 0)
+          {
+             fstar_plus = compute_fstar_linear(uk_plus, uk, app->a);
+             fstar_minus = compute_fstar_linear(uk, uk_minus, app->a);
+          }
+          else if(app->problem == 1)
+          {
+             fstar_plus = compute_fstar(uk_plus, uk);
+             fstar_minus = compute_fstar(uk, uk_minus); 
+          }
 
           v[k] = uk - u_old[k] + (deltaT/deltaX)*(fstar_plus - fstar_minus) - 
                epsilon*(deltaT/(deltaX*deltaX))*(uk_plus - 2*uk + uk_minus);
@@ -204,38 +230,77 @@ int my_StepBE(braid_App        app,
       uk = u->values[u->size-1];
       uk_plus = app->xRight;
 
-      fstar_plus = compute_fstar(uk_plus, uk);
-      fstar_minus = compute_fstar(uk, uk_minus); 
+      if(app->problem == 0)
+      {
+         fstar_plus = compute_fstar_linear(uk_plus, uk, app->a);
+         fstar_minus = compute_fstar_linear(uk, uk_minus, app->a);
+      }
+      else if(app->problem == 1)
+      {
+         fstar_plus = compute_fstar(uk_plus, uk);
+         fstar_minus = compute_fstar(uk, uk_minus); 
+      }
 
       v[u->size-1] = uk - u_old[u->size-1] + (deltaT/deltaX)*(fstar_plus - fstar_minus) - 
             epsilon*(deltaT/(deltaX*deltaX))*(uk_plus - 2*uk + uk_minus);
 
       /* Create Jacobian - tridiag(a,b,c) */
 
-      uk_minus = app->xLeft;
-      uk = u->values[0];
-      uk_plus = u->values[1];
-
-      b[0] = 1 + 0.25*(deltaT/deltaX)*(-dabs(uk)*(uk_plus - 2*uk + uk_minus) + fabs(uk_plus) + 2*fabs(uk) + fabs(uk_minus)) + 2*epsilon*(deltaT/(deltaX*deltaX));
-      c[0] = (deltaT/deltaX)*(0.5*uk_plus - 0.25*dabs(uk_plus)*(uk_plus - uk) - 0.25*(fabs(uk_plus) + fabs(uk))) - epsilon*(deltaT/(deltaX*deltaX));
-    
-      for(k = 1; k < u->size-1; k++)
+      if(app->problem == 0)
       {
-          uk_minus = u->values[k-1];
-          uk = u->values[k];
-          uk_plus = u->values[k+1];
+          uk_minus = app->xLeft;
+          uk = u->values[0];
+          uk_plus = u->values[1];
 
-          a[k] = (deltaT/deltaX)*(-0.5*uk_minus + 0.25*dabs(uk_minus)*(uk - uk_minus) - 0.25*(fabs(uk) + fabs(uk_minus))) - epsilon*(deltaT/(deltaX*deltaX));
-          b[k] = 1 + 0.25*(deltaT/deltaX)*(-dabs(uk)*(uk_plus - 2*uk + uk_minus) + fabs(uk_plus) + 2*fabs(uk) + fabs(uk_minus)) + 2*epsilon*(deltaT/(deltaX*deltaX));
-          c[k] = (deltaT/deltaX)*(0.5*uk_plus - 0.25*dabs(uk_plus)*(uk_plus - uk) - 0.25*(fabs(uk_plus) + fabs(uk))) - epsilon*(deltaT/(deltaX*deltaX));
+          b[0] = 1 + fabs(app->a)*(deltaT/deltaX) + 2*epsilon*(deltaT/(deltaX*deltaX));
+          c[0] = 0.5*(app->a-fabs(app->a))*(deltaT/deltaX) - epsilon*(deltaT/(deltaX*deltaX));
+
+    
+          for(k = 1; k < u->size-1; k++)
+          {
+              uk_minus = u->values[k-1];
+              uk = u->values[k];
+              uk_plus = u->values[k+1];
+
+              a[k] = -0.5*(app->a+fabs(app->a))*(deltaT/deltaX) - epsilon*(deltaT/(deltaX*deltaX));
+              b[k] = 1 + fabs(app->a)*(deltaT/deltaX) + 2*epsilon*(deltaT/(deltaX*deltaX));
+              c[k] =  0.5*(app->a-fabs(app->a))*(deltaT/deltaX) - epsilon*(deltaT/(deltaX*deltaX));
+          }
+
+          uk_minus = u->values[u->size-2];
+          uk = u->values[u->size-1];
+          uk_plus = app->xRight;
+
+          a[u->size-1] = -0.5*(app->a+fabs(app->a))*(deltaT/deltaX) - epsilon*(deltaT/(deltaX*deltaX));
+          b[u->size-1] = 1 + fabs(app->a)*(deltaT/deltaX) + 2*epsilon*(deltaT/(deltaX*deltaX));
       }
+      else if(app->problem == 1)
+      {
+          uk_minus = app->xLeft;
+          uk = u->values[0];
+          uk_plus = u->values[1];
 
-      uk_minus = u->values[u->size-2];
-      uk = u->values[u->size-1];
-      uk_plus = app->xRight;
+          b[0] = 1 + 0.25*(deltaT/deltaX)*(-dabs(uk)*(uk_plus - 2*uk + uk_minus) + fabs(uk_plus) + 2*fabs(uk) + fabs(uk_minus)) + 2*epsilon*(deltaT/(deltaX*deltaX));
+          c[0] = (deltaT/deltaX)*(0.5*uk_plus - 0.25*dabs(uk_plus)*(uk_plus - uk) - 0.25*(fabs(uk_plus) + fabs(uk))) - epsilon*(deltaT/(deltaX*deltaX));
+    
+          for(k = 1; k < u->size-1; k++)
+          {
+              uk_minus = u->values[k-1];
+              uk = u->values[k];
+              uk_plus = u->values[k+1];
 
-      a[u->size-1] = (deltaT/deltaX)*(-0.5*uk_minus + 0.25*dabs(uk_minus)*(uk - uk_minus) - 0.25*(fabs(uk) + fabs(uk_minus))) - epsilon*(deltaT/(deltaX*deltaX));
-      b[u->size-1] = 1 + 0.25*(deltaT/deltaX)*(-dabs(uk)*(uk_plus - 2*uk + uk_minus) + fabs(uk_plus) + 2*fabs(uk) + fabs(uk_minus)) + 2*epsilon*(deltaT/(deltaX*deltaX));
+              a[k] = (deltaT/deltaX)*(-0.5*uk_minus + 0.25*dabs(uk_minus)*(uk - uk_minus) - 0.25*(fabs(uk) + fabs(uk_minus))) - epsilon*(deltaT/(deltaX*deltaX));
+              b[k] = 1 + 0.25*(deltaT/deltaX)*(-dabs(uk)*(uk_plus - 2*uk + uk_minus) + fabs(uk_plus) + 2*fabs(uk) + fabs(uk_minus)) + 2*epsilon*(deltaT/(deltaX*deltaX));
+              c[k] = (deltaT/deltaX)*(0.5*uk_plus - 0.25*dabs(uk_plus)*(uk_plus - uk) - 0.25*(fabs(uk_plus) + fabs(uk))) - epsilon*(deltaT/(deltaX*deltaX));
+          }
+
+          uk_minus = u->values[u->size-2];
+          uk = u->values[u->size-1];
+          uk_plus = app->xRight;
+
+          a[u->size-1] = (deltaT/deltaX)*(-0.5*uk_minus + 0.25*dabs(uk_minus)*(uk - uk_minus) - 0.25*(fabs(uk) + fabs(uk_minus))) - epsilon*(deltaT/(deltaX*deltaX));
+          b[u->size-1] = 1 + 0.25*(deltaT/deltaX)*(-dabs(uk)*(uk_plus - 2*uk + uk_minus) + fabs(uk_plus) + 2*fabs(uk) + fabs(uk_minus)) + 2*epsilon*(deltaT/(deltaX*deltaX)); 
+      }
 
       solve_tridiag(v, u->size, a, b, c);
       for(k = 0; k < u->size; k++)
@@ -269,7 +334,7 @@ my_StepFE(braid_App        app,
    int k;
    double tstart;             /* current time */
    double tstop;              /* evolve to this time*/
-   double deltaT, fstar_plus, fstar_minus, uk, uk_minus, uk_plus;
+   double deltaT, fstar_plus = 0.0, fstar_minus = 0.0, uk, uk_minus, uk_plus;
    double *u_old;
    double epsilon = app->epsilon;
    double deltaX = (app->xstop - app->xstart) / (u->size - 1.0);
@@ -288,10 +353,18 @@ my_StepFE(braid_App        app,
       uk = u_old[k];
       uk_minus = u_old[k-1];
       uk_plus = u_old[k+1];
-
-      fstar_plus = compute_fstar(uk_plus, uk);
-      fstar_minus = compute_fstar(uk, uk_minus); 
       
+      if(app->problem == 0)
+      {
+         fstar_plus = compute_fstar_linear(uk_plus, uk, app->a);
+         fstar_minus = compute_fstar_linear(uk, uk_minus, app->a);
+      }
+      else if(app->problem == 1)
+      {
+         fstar_plus = compute_fstar(uk_plus, uk);
+         fstar_minus = compute_fstar(uk, uk_minus); 
+      }
+
       u->values[k] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus) + 
                epsilon*(deltaT/(deltaX*deltaX))*(uk_plus - 2*uk + uk_minus);
    }
@@ -301,8 +374,16 @@ my_StepFE(braid_App        app,
    uk_minus = app->xLeft;
    uk_plus = u_old[1];
 
-   fstar_plus = compute_fstar(uk_plus, uk);
-   fstar_minus = compute_fstar(uk, uk_minus); 
+   if(app->problem == 0)
+   {
+      fstar_plus = compute_fstar_linear(uk_plus, uk, app->a);
+      fstar_minus = compute_fstar_linear(uk, uk_minus, app->a);
+   }
+   else if(app->problem == 1)
+   {
+      fstar_plus = compute_fstar(uk_plus, uk);
+      fstar_minus = compute_fstar(uk, uk_minus); 
+   }
    
    u->values[0] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus) + 
                epsilon*(deltaT/(deltaX*deltaX))*(uk_plus - 2*uk + uk_minus);
@@ -314,8 +395,16 @@ my_StepFE(braid_App        app,
    uk_minus = u_old[u->size-2];
    uk_plus = app->xRight;
 
-   fstar_plus = compute_fstar(uk_plus, uk);
-   fstar_minus = compute_fstar(uk, uk_minus); 
+   if(app->problem == 0)
+   {
+      fstar_plus = compute_fstar_linear(uk_plus, uk, app->a);
+      fstar_minus = compute_fstar_linear(uk, uk_minus, app->a);
+   }
+   else if(app->problem == 1)
+   {
+      fstar_plus = compute_fstar(uk_plus, uk);
+      fstar_minus = compute_fstar(uk, uk_minus); 
+   }
    
    u->values[u->size-1] = uk - (deltaT/deltaX)*(fstar_plus - fstar_minus) + 
                epsilon*(deltaT/(deltaX*deltaX))*(uk_plus - 2*uk + uk_minus);
@@ -680,15 +769,15 @@ int main (int argc, char *argv[])
    braid_Core    core;
    my_App       *app;
    MPI_Comm      comm;
-   double        tstart, tstop, epsilon;
+   double        tstart, tstop, epsilon, a;
    int           ntime;
    double        xstart, xstop, xLeft, xRight;
-   int           nspace;
+   int           nspace, problem;
 
    int           max_levels = 1;
    int           nrelax     = 1;
    int           nrelax0    = -1;
-   double        tol        = 1.0e-06;
+   double        tol        = 1.0e-07;
    int           cfactor    = 2;
    int           max_iter   = 30;
    int           fmg        = 0;
@@ -710,6 +799,8 @@ int main (int argc, char *argv[])
    xstart = -2.0;
    xstop  =  3.0;
    nspace =  16;
+   problem = 1;
+   a = 1.0;
    xLeft = 1.0;
    xRight = 0.0;
    epsilon = 0.0;
@@ -728,20 +819,22 @@ int main (int argc, char *argv[])
          if ( myid == 0 )
          {
             printf("\n");
-            printf("  -ml  <max_levels> : set max levels\n");
-            printf("  -nu  <nrelax>     : set num F-C relaxations\n");
-            printf("  -nx  <nspace>     : set num points in space\n");
-            printf("  -nt  <ntime>      : set num points in time\n");
-            printf("  -xL  <xLeft>      : set the left x-value (both as boundary condition and as initial condition)\n");
-            printf("  -xR  <xRight>     : set the right x-value (both as boundary condition and as initial condition)\n");
-            printf("  -eps <epsilon>    : set the diffusion coefficient for viscous Burgers' equation\n");
-            printf("  -st  <stepper>    : set the time stepper, 0: forward Euler, 1: backward Euler\n");
-            printf("  -nu0 <nrelax>     : set num F-C relaxations on level 0\n");
-            printf("  -tol <tol>        : set stopping tolerance\n");
-            printf("  -cf  <cfactor>    : set coarsening factor\n");
-            printf("  -mi  <max_iter>   : set max iterations\n");
-            printf("  -mix <mif  mic>   : set max Newton iterations on fine (mif) and all coarse levels (mic)\n");
-            printf("  -sc  <scoarsen>   : use spatial coarsening by factor of 2 each level; must use 2^k sized grids, 1: bilinear, 2: one-sided, 3: ...\n");
+            printf("  -ml   <max_levels> : set max levels\n");
+            printf("  -nu   <nrelax>     : set num F-C relaxations\n");
+            printf("  -nx   <nspace>     : set num points in space\n");
+            printf("  -nt   <ntime>      : set num points in time\n");
+            printf("  -xL   <xLeft>      : set the left x-value (both as boundary condition and as initial condition)\n");
+            printf("  -xR   <xRight>     : set the right x-value (both as boundary condition and as initial condition)\n");
+            printf("  -eps  <epsilon>    : set the diffusion coefficient for a viscous problem \n");
+            printf("  -prob <problem>    : set problem, problem 0 is linear advection, problem 1 is Burger's equation\n");
+            printf("  -a    <a>          : set the speed of the linear advection problem (not used if problem is 1)\n");
+            printf("  -st   <stepper>    : set the time stepper, 0: forward Euler, 1: backward Euler\n");
+            printf("  -nu0  <nrelax>     : set num F-C relaxations on level 0\n");
+            printf("  -tol  <tol>        : set stopping tolerance (scaled by sqrt(dt) sqrt(dx))\n");
+            printf("  -cf   <cfactor>    : set coarsening factor\n");
+            printf("  -mi   <max_iter>   : set max iterations\n");
+            printf("  -mix  <mif  mic>   : set max Newton iterations on fine (mif) and all coarse levels (mic)\n");
+            printf("  -sc   <scoarsen>   : use spatial coarsening by factor of 2 each level; must use 2^k sized grids, 1: bilinear, 2: one-sided, 3: ...\n");
             printf("  -fmg              : use FMG cycling\n");
             printf("  -res              : use my residual\n");
             printf("\n");
@@ -767,6 +860,16 @@ int main (int argc, char *argv[])
       {
          arg_index++;
          nspace = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-prob") == 0 )
+      {
+         arg_index++;
+         problem = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-a") == 0 )
+      {
+         arg_index++;
+         a = atof(argv[arg_index++]);
       }
       else if ( strcmp(argv[arg_index], "-xL") == 0 )
       {
@@ -853,6 +956,8 @@ int main (int argc, char *argv[])
    (app->epsilon)       = epsilon;
    (app->max_iter_x[0]) = max_iter_x[0];
    (app->max_iter_x[1]) = max_iter_x[1];
+   (app->problem)       = problem;
+   (app->a)             = a;
 
    if(stepper == 0)
    {
@@ -873,6 +978,8 @@ int main (int argc, char *argv[])
          return (0);
    }
 
+   /* Scale tol by domain */
+   tol = tol/( sqrt((tstop - tstart)/(ntime-1))*sqrt((xstop - xstart)/(nspace-1)) );
 
    braid_SetPrintLevel( core, 1);
    braid_SetMaxLevels(core, max_levels);
