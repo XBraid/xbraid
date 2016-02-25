@@ -31,7 +31,7 @@
 #ifndef braid_HEADER
 #define braid_HEADER
 
-#define braid_SEQUENTIAL
+//#define braid_SEQUENTIAL
 
 #ifdef braid_SEQUENTIAL
 typedef int MPI_Comm;

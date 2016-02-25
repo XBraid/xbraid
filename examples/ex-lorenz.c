@@ -122,6 +122,7 @@ RK4(double  tstart,
    Vec     k[4], y;
    int     i, j;
 
+   VecSet(y, 0);
    (*func)(tstart, ystart, k[0]);
    for (i = 1; i < s; i++)
    {
@@ -232,7 +233,7 @@ my_Clone(braid_App     app,
 {
    my_Vector *v;
 
-   v = (my_Vector *) malloc(sizeof(my_Vector));
+   v = (my_Vector *) calloc(1, sizeof(my_Vector));
    VecAxpy(1, (u->values), 0, (v->values));
    *v_ptr = v;
 
@@ -532,6 +533,7 @@ int main (int argc, char *argv[])
          }
          fprintf(file, "\n");
       }
+      free(solution);
       fclose(file);
    }
 
