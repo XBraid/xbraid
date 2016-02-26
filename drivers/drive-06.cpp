@@ -1120,7 +1120,7 @@ void NonlinearApp::InitLevel(int l)
       {
          // Comment in one of these choices
          // This choice for max_dt forces Braid to use spatially coarse levels from the bottom-up
-         max_dt[i] = (opts->t_final - opts->t_start)/(opts->min_coarse + 1 ) / pow(opts->cfactor, opts->par_ref_levels - i);
+         max_dt[i] = 1.01*( (opts->t_final - opts->t_start)/(opts->min_coarse + 1 ) / pow(opts->cfactor, opts->par_ref_levels - i) );
          //
          // This choice for max_dt starts spatial coarsening from the bottom up
        //if (i == opts->par_ref_levels)
@@ -1140,6 +1140,12 @@ void NonlinearApp::PrintNewtonInfo(int num_levels, int max_levels, int num_iter,
 
   MPI_Comm_rank(MPI_COMM_WORLD, &myid_global);
   
+  if(num_levels == 1)
+  {
+     num_iter = 1;
+     skip = 0;
+  }
+
   std::cout.precision(2);
   std::cout << std::scientific;
   

@@ -252,10 +252,12 @@ BeamApp::BeamApp(BeamOptions &options, MPI_Comm comm_t, ParMesh *pmesh)
 	// vector vx, on the unique parallel degrees of freedom, with offsets given by
 	// array true_offset.
 
-	int glob_size = (fe_space[0])->GlobalTrueVSize(),
-		true_size = (fe_space[0])->TrueVSize();
-	// if (myid == 0)
-	// 	cout << "Number of velocity/deformation unknowns: " << glob_size << endl;
+	int true_size = (fe_space[0])->TrueVSize();
+   //if (myid == 0)
+   //{
+   //   int glob_size = (fe_space[0])->GlobalTrueVSize();
+   //   cout << "Number of velocity/deformation unknowns: " << glob_size << endl;
+   //}
 
 	Array<int> true_offset(3);
 	true_offset[0] = 0;
@@ -342,9 +344,8 @@ int BeamApp::Step(braid_Vector	 u_,
 {
 	BraidVector *u	  = (BraidVector*) u_;
 	BraidVector *ustop = (BraidVector*) ustop_;
-	BraidVector *fstop = (BraidVector*) fstop_;
 	int spatial_level = u->spatial_level;
-	double tstart, tstop, accuracy, t, dt;
+	double tstart, tstop, t, dt;
 	int braid_level;
 
 	// Get time step information
@@ -378,7 +379,7 @@ BeamOptions::BeamOptions(int argc, char *argv[])
 	num_time_steps = 100;
 
 	// Set default values for mesh.
-	mesh_file = "../data/beam-quad.mesh";
+	mesh_file = "../../mfem/data/beam-quad.mesh";
 	ser_ref_levels = 2;
 	par_ref_levels = 0;
 

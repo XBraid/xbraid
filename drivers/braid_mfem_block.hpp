@@ -284,6 +284,7 @@ struct BraidOptions : public OptionsParser
     double t_final;
     int  num_time_steps;
     int  num_procs_x;
+    int  skip;
     int  max_levels;
     int  min_coarse;
     int  nrelax;
@@ -627,8 +628,8 @@ int MFEMBraidApp::ComputeSpaceLevel(double tstart, double tprior, double tstop)
 int MFEMBraidApp::Step(braid_Vector  u_, braid_Vector ustop_, braid_Vector fstop_, BraidStepStatus &pstatus)
 {
     BraidVector *u    = (BraidVector*) u_;
-    BraidVector *ustop = (BraidVector*) ustop_;
-    BraidVector *fstop = (BraidVector*) fstop_;
+    //BraidVector *ustop = (BraidVector*) ustop_;
+    //BraidVector *fstop = (BraidVector*) fstop_;
     int spatial_level = u->spatial_level;
     double tstart, tstop, t, dt;
     int braid_level;
@@ -905,7 +906,6 @@ int MFEMBraidApp::Refine(braid_Vector cu_, braid_Vector  *fu_ptr, BraidCoarsenRe
 
 int MFEMBraidApp::Access(braid_Vector u_, BraidAccessStatus &astatus)
 {
-    BraidVector *u = (BraidVector*) u_;
 
     astatus.GetIter(&braid_iter);
 
@@ -914,10 +914,10 @@ int MFEMBraidApp::Access(braid_Vector u_, BraidAccessStatus &astatus)
     double rnorm, t;
     astatus.GetTILD(&t, &iter, &level, &done);
     astatus.GetResidual(&rnorm);
-    int cycle = (int)std::floor((t - tstart) / (tstop - tstart) * ntime + 0.5);
 
 
 #if 0
+    BraidVector *u = (BraidVector*) u_;
     // Print final block result.
     if(level == 0 && done == 1 && t == tstop) 
     {
@@ -931,6 +931,7 @@ int MFEMBraidApp::Access(braid_Vector u_, BraidAccessStatus &astatus)
 
 // Visualization, finicky to get working. 
 #if 0
+    int cycle = (int)std::floor((t - tstart) / (tstop - tstart) * ntime + 0.5);
     if ( (level == 0) &&
 
        ( (vis_time_steps > 0 && cycle % vis_time_steps == 0) ||
@@ -1024,6 +1025,7 @@ BraidOptions::BraidOptions(int argc, char *argv[])
     t_final         = 1.0;
     num_time_steps  = 100;
     num_procs_x     = 1;
+    skip            = 1;
     max_levels      = 10;
     min_coarse      = 3;
     nrelax          = 1;
@@ -1079,6 +1081,8 @@ BraidOptions::BraidOptions(int argc, char *argv[])
                  "Set the access level.");
     AddOption(&print_level, "-print", "--print-level",
                  "Set the print level.");
+    AddOption(&skip, "-skip", "--skip-work-on-first-down-cycle",
+                 "If True, skip all work on the first down cycle (0:False, 1:True)");
 }
 
 
@@ -1123,6 +1127,7 @@ void BraidOptions::SetBraidCoreOptions(BraidCore &core)
     core.SetAggCFactor(cfactor0);
     core.SetMaxIter(max_iter);
     core.SetTemporalNorm(tnorm);
+    core.SetSkip(skip);
     if (spatial_coarsen)
     {
         core.SetSpatialCoarsenAndRefine();

@@ -367,6 +367,9 @@ int MovingApp::Step(braid_Vector u_, braid_Vector ustop_, braid_Vector fstop_,
                     BraidStepStatus &pstatus)
 {
 	BraidVector *u  = (BraidVector*) u_;
+	//BraidVector *ustop  = (BraidVector*) ustop_;
+	//Vector &ustop_grid = ustop->GetBlock(0);
+	//Vector &ustop_value = ustop->GetBlock(1);
 	Vector &u_grid	= u->GetBlock(0);
 	Vector &u_value = u->GetBlock(1);
 

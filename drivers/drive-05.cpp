@@ -341,14 +341,32 @@ int DGAdvectionApp::Step(braid_Vector    u_,
    // This contains one small change over the default Step, we store the Space-Time mesh info
    
    // Store Space-Time Mesh Info
-   BraidVector *u = (BraidVector*) u_;
+   BraidVector *u     = (BraidVector*) u_;
+   
+ //BraidVector *start  = new BraidVector(0, *X0);
+ //braid_Vector start2 = (braid_Vector) start;
+
    int level = u->level;
    double tstart, tstop, dt;
-   int braid_level;
+   int braid_level, iter;
    
    pstatus.GetTstartTstop(&tstart, &tstop);
    pstatus.GetLevel(&braid_level);
+   pstatus.GetIter(&iter);
    dt = tstop - tstart;
+ 
+ // This causes some kind of bug sometimes...
+ //if(iter > 2)
+ //{
+ //   *start = 0.0;
+ //   Sum(1.0, ustop_, 0.0, start2);
+ //   Sum(iter*(1 - 0.1), u_, iter*0.1, start2);
+ //}
+ //else
+ //{
+ //   *start = 0.0;
+ //   Sum(1.0, u_, 0.0, start2);
+ //}
 
    MeshInfo.SetRow(braid_level, level, x[u->level]->ParFESpace()->GetParMesh(), dt);
    
@@ -364,7 +382,8 @@ int DGAdvectionApp::Step(braid_Vector    u_,
        if(norm_u_sq > 0.0)
        {
            // Generate Krylov Space
-           Arnoldi arn(options.krylov_size, mesh[0]->GetComm());
+           Arnoldi arn(options.krylov_size*braid_level, mesh[0]->GetComm());
+           //Arnoldi arn(options.krylov_size, mesh[0]->GetComm());
            arn.SetOperator(*ode[0]);
            arn.GenKrylovSpace(*u);
            Vector ubar;
@@ -510,7 +529,8 @@ void DGAdvectionApp::InitLevel(int l)
    solver[l]->Init(*ode[l]);
 
    // Set max_dt[l] = 1.01*dt[0]*(2^l)
-   max_dt[l] = 1.01 * options.dt * (1 << l);
+   max_dt[l] = 1.01 * options.dt * (1 << (l+1));
+  //max_dt[l] = 1.01 * options.dt * (1 << l);
 }
 
 

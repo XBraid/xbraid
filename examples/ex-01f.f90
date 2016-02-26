@@ -461,9 +461,6 @@ program ex01_f90
             call braid_set_fmg_f90(braid_core)
             call braid_set_nfmg_vcyc_f90(braid_core, nfmg_Vcyc)
          endif
-         if (res == 1) then
-            call braid_set_residual_f90(braid_core)
-         endif
          call braid_set_min_coarse_f90(braid_core, min_coarse)
          call braid_set_print_level_f90( braid_core, print_level)
          call braid_set_access_level_f90( braid_core, access_level)
