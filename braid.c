@@ -28,7 +28,7 @@
 
 #include "_braid.h"
 #include "braid_defs.h"
-#include "util.h"
+#include "_util.h"
 
 #ifndef DEBUG
 #define DEBUG 0
@@ -479,7 +479,14 @@ braid_Drive(braid_Core  core)
       }
    }
 
-   /* Get final residual norms */
+   /* By default, set the final residual norm to be the same as the previous */
+   {
+      braid_Real  rnorm;
+      _braid_GetRNorm(core, -2, &rnorm);
+      _braid_SetRNorm(core, -1, rnorm);
+   }
+   
+   /* Compute final full residual norms if requested */
    if (fullres != NULL)
    {
       braid_Real  full_rnorm;
@@ -1030,15 +1037,15 @@ braid_SetMaxIter(braid_Core  core,
 
    _braid_CoreElt(core, max_iter) = max_iter;
 
-   rnorms = _braid_TReAlloc(rnorms, braid_Real, max_iter);
-   for (i = next_iter; i < max_iter; i++)
+   rnorms = _braid_TReAlloc(rnorms, braid_Real, max_iter+1);
+   for (i = next_iter; i <= max_iter; i++)
    {
       rnorms[i] = braid_INVALID_RNORM;
    }
 
    /* Allocate even if not using full rnorms (simplifies intialization) */
-   full_rnorms = _braid_TReAlloc(full_rnorms, braid_Real, max_iter);
-   for (i = next_iter; i < max_iter; i++)
+   full_rnorms = _braid_TReAlloc(full_rnorms, braid_Real, max_iter+1);
+   for (i = next_iter; i <= max_iter; i++)
    {
       full_rnorms[i] = braid_INVALID_RNORM;
    }

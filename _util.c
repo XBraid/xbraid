@@ -22,8 +22,8 @@
  ***********************************************************************EHEADER*/
  
 
-/** \file util.c
- * \brief Source code for utility routines. See util.h for more documentation.
+/** \file _util.c
+ * \brief Source code for utility routines. See _util.h for more documentation.
  *
  */
 

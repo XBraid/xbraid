@@ -28,7 +28,7 @@
 
 #include "_braid.h"
 #include "braid_defs.h"
-#include "util.h"
+#include "_util.h"
 
 #define DEBUG 0
 
@@ -3144,7 +3144,7 @@ _braid_SetRNorm(braid_Core  core,
       k = _braid_CoreElt(core, niter) + 1 + iter;
    }
 
-   if ((k > -1) && (k < max_iter)) 
+   if ((k > -1) && (k <= max_iter)) 
    {
       rnorms[k] = rnorm;
 
@@ -3184,7 +3184,7 @@ _braid_GetRNorm(braid_Core  core,
       k = _braid_CoreElt(core, niter) + 1 + iter;
    }
 
-   if ((k > -1) && (k < max_iter)) 
+   if ((k > -1) && (k <= max_iter)) 
    {
       *rnorm_ptr = rnorms[k];
    }
@@ -3216,7 +3216,7 @@ _braid_SetFullRNorm(braid_Core  core,
       k = _braid_CoreElt(core, niter) + 1 + iter;
    }
 
-   if ((k > -1) && (k < max_iter)) 
+   if ((k > -1) && (k <= max_iter)) 
    {
       rnorms[k] = rnorm;
 
@@ -3260,7 +3260,7 @@ _braid_GetFullRNorm(braid_Core  core,
       k = _braid_CoreElt(core, niter) + 1 + iter;
    }
 
-   if ((k > -1) && (k < max_iter)) 
+   if ((k > -1) && (k <= max_iter)) 
    {
       *rnorm_ptr = rnorms[k];
    }
