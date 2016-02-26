@@ -22,6 +22,9 @@
 #
 #EHEADER**********************************************************************
 
+# Uncomment the next line if compiling without MPI (or use 'make sequential=yes [target]')
+# sequential = yes
+
 # Was DEBUG specified? 
 ifeq ($(debug),no)
    optlevel = OPTIMIZE
@@ -147,6 +150,23 @@ else
       CFLAGS = -O -Wall
       CXXFLAGS = -O -Wall
       FORTFLAGS = -O1 -Wall
+   endif
+endif
+
+# Compiler options when compiling without MPI
+ifdef sequential
+   MPICC = gcc
+   MPICXX = g++
+   MPIF90 = gfortran
+   LFLAGS = -lm
+   ifeq ($(optlevel),DEBUG)
+      CFLAGS = -g -Wall -D braid_SEQUENTIAL
+      CXXFLAGS = -g -Wall -D braid_SEQUENTIAL
+      FORTFLAGS = -g -Wall -D braid_SEQUENTIAL
+   else
+      CFLAGS = -O -Wall -D braid_SEQUENTIAL
+      CXXFLAGS = -O -Wall -D braid_SEQUENTIAL
+      FORTFLAGS = -O1 -Wall -D braid_SEQUENTIAL
    endif
 endif
 
