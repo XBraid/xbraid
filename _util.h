@@ -22,7 +22,7 @@
  ***********************************************************************EHEADER*/
  
 
-/** \file util.h
+/** \file _util.h
  * \brief Define headers for utility routines.
  *
  * This file contains the headers for utility routines. Essentially,

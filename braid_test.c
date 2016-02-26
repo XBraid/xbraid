@@ -28,7 +28,7 @@
 
 #include "braid.h"
 #include "_braid.h"
-#include "util.h"
+#include "_util.h"
 
 /*--------------------------------------------------------------------------
  * Some simple tests on the init, access and free routines 
