@@ -107,6 +107,8 @@ typedef struct _braid_Core_struct
 {
    MPI_Comm               comm_world;
    MPI_Comm               comm;             /**< communicator for the time dimension */
+   braid_Int              myid_world;       /**< my rank in the world communicator */
+   braid_Int              myid;             /**< my rank in the time communicator */
    braid_Real             tstart;           /**< start time */
    braid_Real             tstop;            /**< stop time */
    braid_Int              ntime;            /**< initial number of time intervals */
@@ -123,8 +125,8 @@ typedef struct _braid_Core_struct
    braid_PtFcnBufPack     bufpack;          /**< pack a buffer */
    braid_PtFcnBufUnpack   bufunpack;        /**< unpack a buffer */
    braid_PtFcnResidual    residual;         /**< (optional) compute residual */
-   braid_PtFcnCoarsen     coarsen;          /**< (optional) return a coarsened vector */
-   braid_PtFcnRefine      refine;           /**< (optional) return a refined vector */
+   braid_PtFcnSCoarsen    scoarsen;         /**< (optional) return a spatially coarsened vector */
+   braid_PtFcnSRefine     srefine;          /**< (optional) return a spatially refined vector */
 
    braid_Int              access_level;     /**< determines how often to call the user's access routine */ 
    braid_Int              print_level;      /**< determines amount of output printed to screem (0,1,2) */ 
@@ -144,17 +146,23 @@ typedef struct _braid_Core_struct
    braid_Int              nfmg_Vcyc;        /**< number of V-cycle calls at each level in FMG */
    braid_Int              tnorm;            /**< choice of temporal norm */
    braid_Real            *tnorm_a;          /**< local array of residual norms on a proc's interval, used for inf-norm */
-   braid_Real            *rnorms;           /**< XBraid residual norm history */
-   braid_Int              rnorms_len;       /**< length of the residual norm history (can be lagged relative to num iter)*/
+   braid_Real             rnorm0;           /**< initial residual norm */
+   braid_Real            *rnorms;           /**< residual norm history */
+   braid_PtFcnResidual    full_rnorm_res;   /**< (optional) used to compute full residual norm */
+   braid_Real             full_rnorm0;      /**< (optional) initial full residual norm */
+   braid_Real            *full_rnorms;      /**< (optional) full residual norm history */
+
 
    braid_AccessStatus     astatus;          /**< status structure passed to user-written Access routine */
    braid_CoarsenRefStatus cstatus;          /**< status structure passed to user-written coarsen/refine routines */
    braid_StepStatus       sstatus;          /**< status structure passed to user-written step routines */
    braid_Int              storage;          /**< storage = 0 (C-points), = 1 (all) */
 
-   braid_Int              gupper;           /**< global upper index on the fine grid */
+   braid_Int              gupper;           /**< global size of the fine grid */
 
+   braid_Int              refine;           /**< refine in time (refine = 1) */
    braid_Int             *rfactors;         /**< refinement factors for finest grid (if any) */
+   braid_Int              rstopped;         /**< refinement stopped at iteration rstopped */
    braid_Int              nrefine;          /**< number of refinements done */
    braid_Int              max_refinements;  /**< maximum number of refinements */
    braid_Int              tpoints_cutoff;   /**< refinements halt after the number of time steps exceed this value */
@@ -166,9 +174,6 @@ typedef struct _braid_Core_struct
 
    braid_Real             localtime;        /**< local wall time for braid_Drive() */
    braid_Real             globaltime;       /**< global wall time for braid_Drive() */
-
-   braid_PtFcnResidual    globresidual;     /**< (optional) compute residual for global temporal norm */
-   braid_Real             global_rnorm;     /**< new residual norm on all F/C points */
 
 } _braid_Core;
 
@@ -567,13 +572,13 @@ _braid_InitGuess(braid_Core  core,
                  braid_Int   level);
 
 /**
- * Compute global temporal residual with user-provided residual routine. 
- * Output goes in *return_norm. 
+ * Compute full temporal residual norm with user-provided residual routine. 
+ * Output goes in *return_rnorm. 
  */
 braid_Int
-_braid_GetFullResidual(braid_Core  core,
-                       braid_Int   level,
-                       braid_Real *return_norm);
+_braid_ComputeFullRNorm(braid_Core  core,
+                        braid_Int   level,
+                        braid_Real *return_rnorm);
 
 /**
  * Do nu sweeps of F-then-C relaxation on *level*
@@ -671,26 +676,38 @@ braid_Int
 _braid_CopyFineToCoarse(braid_Core  core);
 
 /**
- *  Set a new residual norm in the rnorms array, paying attention to special
- *  rules, such as if skip is being used or maintaining a dummy -1.0 value 
- *  until the first real residual norm is generated.
+ * Set the residual norm for iteration iter.  If iter < 0, set the rnorm for the
+ * last iteration minus |iter|-1.  Also set the initial residual norm.
  */
 braid_Int
-_braid_AppendResidual(braid_Core  core,
-                      braid_Real  res );
+_braid_SetRNorm(braid_Core  core,
+                braid_Int   iter,
+                braid_Real  rnorm);
 
 /**
- *  Get the k-th residual. 
- *  For negative indices, start from the end of the array.
- *  k = -1 means grab the most recent residual.
- *  k = -2 means grab the second most recent residual and so on.
- *  If a residual entry is requested that doesn't exist, 
- *  then -1.0 is returned by default
+ * Get the residual norm for iteration iter.  If iter < 0, get the rnorm for the
+ * last iteration minus |iter|-1.
  */
 braid_Int
 _braid_GetRNorm(braid_Core  core,
-                braid_Int   k,
-                braid_Real  *res);
+                braid_Int   iter,
+                braid_Real *rnorm_ptr);
+
+/**
+ * Same as SetRNorm, but sets full residual norm.
+ */
+braid_Int
+_braid_SetFullRNorm(braid_Core  core,
+                    braid_Int   iter,
+                    braid_Real  rnorm);
+
+/**
+ * Same as GetRNorm, but gets full residual norm.
+ */
+braid_Int
+_braid_GetFullRNorm(braid_Core  core,
+                    braid_Int   iter,
+                    braid_Real *rnorm_ptr);
 
 /**
  *  Delete the last residual, for use if F-Refinement is done. 

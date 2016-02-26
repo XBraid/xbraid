@@ -366,7 +366,7 @@ public:
    {
       if (cfactor0 > -1)
          braid_SetCFactor(core, 0, cfactor0);
-      
+
     //BraidApp *app = (BraidApp *) core->app;
     //braid_Int nt = app->ntime, pt;
     //MPI_Comm_size(app->comm_t, &pt);
@@ -389,7 +389,7 @@ public:
    void SetMaxIter(braid_Int max_iter) { braid_SetMaxIter(core, max_iter); }
 
    void SetPrintLevel(braid_Int print_level) { braid_SetPrintLevel(core, print_level); }
-   
+
    void SetSeqSoln(braid_Int use_seq_soln) { braid_SetSeqSoln(core, use_seq_soln); }
 
    void SetPrintFile(const char *printfile_name) { braid_SetPrintFile(core, printfile_name); }

@@ -72,6 +72,10 @@ typedef double braid_Real;
  **/
 extern braid_Int _braid_error_flag;
 
+void _braid_ErrorHandler(const char *filename, braid_Int line, braid_Int ierr, const char *msg);
+#define _braid_Error(IERR, msg)       _braid_ErrorHandler(__FILE__, __LINE__, IERR, msg)
+#define _braid_ErrorInArg(IARG, msg)  _braid_Error(HYPRE_ERROR_ARG | IARG<<3, msg)
+
 /*--------------------------------------------------------------------------
  * Memory allocation macros
  *--------------------------------------------------------------------------*/

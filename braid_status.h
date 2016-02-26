@@ -73,6 +73,7 @@ typedef struct _braid_AccessStatus_struct
    braid_Int     iter;         /**< XBraid iteration number */
    braid_Int     level;        /**< current level in XBraid*/
    braid_Int     nrefine;      /**< number of refinements done */
+   braid_Int     gupper;       /**< global size of the fine grid */
    braid_Real    rnorm;        /**< residual norm */
    braid_Int     done;         /**< boolean describing whether XBraid has finished */
    braid_Int     wrapper_test; /**< boolean describing whether this call is only a wrapper test */
@@ -105,6 +106,7 @@ typedef struct _braid_CoarsenRefStatus_struct
    braid_Real    c_tstop;     /**< time value to the right of tstart on coarse grid */
    braid_Int     level;       /**< current fine level in XBraid*/
    braid_Int     nrefine;     /**< number of refinements done */
+   braid_Int     gupper;      /**< global size of the fine grid */
    
 } _braid_CoarsenRefStatus;
 
@@ -129,15 +131,15 @@ typedef struct _braid_StepStatus_struct
 {
    braid_Real    tstart;          /**< current time value  */
    braid_Real    tstop;           /**< time value to evolve towards, time value to the right of tstart */
-   braid_Real*   rnorms;          /**< XBraid residual norm history, (points to Core->rnorms object) */ 
-   braid_Int*    rnorms_len_ptr;  /**< length of the residual norm history (points to Core->rnorm_len) */
+   braid_Real*   rnorms;          /**< residual norm history, (points to Core->rnorms object) */ 
    braid_Real    old_fine_tolx;   /**< Allows for storing the previously used fine tolerance from GetSpatialAccuracy */
    braid_Int     tight_fine_tolx; /**< Boolean, indicating whether the tightest fine tolx has been used, condition for halting */
-   braid_Real    tol;             /**< Current XBraid stopping tolerance */
-   braid_Int     iter;            /**< Current XBraid iteration (also equal to length of rnorms) */
+   braid_Real    tol;             /**< Current stopping tolerance */
+   braid_Int     iter;            /**< Current iteration (also equal to length of rnorms) */
    braid_Int     rfactor;         /**< if set by user, allows for subdivision of this interval for better time accuracy */
-   braid_Int     level;           /**< current level in XBraid*/
+   braid_Int     level;           /**< current grid level */
    braid_Int     nrefine;         /**< number of refinements done */
+   braid_Int     gupper;          /**< global size of the fine grid */
 
 } _braid_StepStatus;
 
@@ -164,7 +166,8 @@ _braid_AccessStatusInit(braid_Real          t,           /**< current time */
                         braid_Real          rnorm,       /**< current residual norm in XBraid */
                         braid_Int           iter,        /**< current iteration in XBraid*/
                         braid_Int           level,       /**< current level in XBraid */
-                        braid_Int           nrefine,      /**< number of refinements done */
+                        braid_Int           nrefine,     /**< number of refinements done */
+                        braid_Int           gupper,      /**< global size of the fine grid */
                         braid_Int           done,        /**< boolean describing whether XBraid has finished */
                         braid_Int           wrapper_test,/**< boolean describing whether this call is only a wrapper test */
                         braid_AccessStatus  status       /**< structure to initialize */
@@ -214,6 +217,14 @@ braid_Int
 braid_AccessStatusGetNRefine(braid_AccessStatus  status,        /**< structure containing current simulation info */
                              braid_Int          *nrefine_ptr    /**< output, number of refinements done */
                             );
+
+/**
+ * Return the global number of time points on the fine grid.
+ **/
+braid_Int
+braid_AccessStatusGetNTPoints(braid_AccessStatus  status,       /**< structure containing current simulation info */
+                              braid_Int          *ntpoints_ptr  /**< output, number of time points on the fine grid */
+                              );
 
 /**
  * Return whether XBraid is done for the current simulation.
@@ -267,7 +278,8 @@ _braid_CoarsenRefStatusInit(braid_Real              tstart,      /**< time value
                             braid_Real              c_tprior,    /**< time value to the left of tstart on coarse grid */
                             braid_Real              c_tstop,     /**< time value to the right of tstart on coarse grid */
                             braid_Int               level,       /**< current fine level in XBraid */
-                            braid_Int               nrefine,      /**< number of refinements done */
+                            braid_Int               nrefine,     /**< number of refinements done */
+                            braid_Int               gupper,      /**< global size of the fine grid */
                             braid_CoarsenRefStatus  status       /**< structure to initialize */
                             );
 
@@ -355,6 +367,14 @@ braid_CoarsenRefStatusGetNRefine(braid_CoarsenRefStatus  status,        /**< str
                                  braid_Int              *nrefine_ptr    /**< output, number of refinements done */
                                );
 
+/**
+ * Return the global number of time points on the fine grid.
+ **/
+braid_Int
+braid_CoarsenRefStatusGetNTPoints(braid_CoarsenRefStatus  status,       /**< structure containing current simulation info */
+                                  braid_Int              *ntpoints_ptr  /**< output, number of time points on the fine grid */
+                                  );
+
 /*--------------------------------------------------------------------------
  * StepStatus Prototypes
  *--------------------------------------------------------------------------*/
@@ -369,6 +389,7 @@ _braid_StepStatusInit(braid_Real        tstart,      /**< current time value  */
                       braid_Int         iter,        /**< Current XBraid iteration (also equal to length of rnorms) */
                       braid_Int         level,       /**< current level in XBraid */
                       braid_Int         nrefine,     /**< number of refinements done */
+                      braid_Int         gupper,      /**< global size of the fine grid */
                       braid_StepStatus  status       /**< structure to initialize */
                       );
 
@@ -409,6 +430,14 @@ braid_Int
 braid_StepStatusGetNRefine(braid_StepStatus  status,           /**< structure containing current simulation info */
                            braid_Int        *nrefine_ptr       /**< output, number of refinements done */
                           );
+
+/**
+ * Return the global number of time points on the fine grid.
+ **/
+braid_Int
+braid_StepStatusGetNTPoints(braid_StepStatus  status,       /**< structure containing current simulation info */
+                            braid_Int        *ntpoints_ptr  /**< output, number of time points on the fine grid */
+                            );
 
 /** 
  * Set the rfactor, a desired refinement factor for this interval.  rfactor=1

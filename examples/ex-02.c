@@ -197,7 +197,7 @@ my_Step(braid_App        app,
       {
          gtstart = app->man->tstart;
          gtstop  = app->man->tstop;
-         gnt     = app->man->nt;
+         braid_StepStatusGetNTPoints(status, &gnt);
          switch (nrefine) /* Assume average refinement of 4 each time */
          {
             case 2: gnt *= 4;
@@ -221,7 +221,7 @@ my_Step(braid_App        app,
       {
          gtstart = app->man->tstart;
          gtstop  = app->man->tstop;
-         gnt     = app->man->nt;
+         braid_StepStatusGetNTPoints(status, &gnt);
          index = ((tstop - gtstart) / (gtstop - gtstart))*gnt + 0.1;
          switch (index)
          {
@@ -532,7 +532,7 @@ int main (int argc, char *argv[])
    int run_wrapper_tests, correct1, correct2;
    int print_level, access_level, max_nA, nA_max, max_levels, skip, min_coarse;
    int nrelax, nrelax0, cfactor, cfactor0, max_iter, fmg, res, storage, tnorm;
-   int new_res, use_seq_soln;
+   int fullrnorm, use_seq_soln;
 
    MPI_Init(&argc, &argv);
    MPI_Comm_rank( comm, &myid );
@@ -576,7 +576,7 @@ int main (int argc, char *argv[])
    print_level         = 1;               /* Level of XBraid printing to the screen */
    access_level        = 1;               /* Frequency of calls to access routine: 1 is for only after simulation */
    run_wrapper_tests   = 0;               /* Run no simulation, only run wrapper tests */
-   new_res             = 0;               /* Do not compute global residual from user routine each iteration */
+   fullrnorm           = 0;               /* Do not compute full residual from user routine each iteration */
    use_seq_soln        = 0;               /* Use the solution from sequential time stepping as the initial guess */
 
    /* Other parameters specific to parallel in time */
@@ -706,9 +706,9 @@ int main (int argc, char *argv[])
          app->max_iter_x[0] = atoi(argv[arg_index++]);
          app->max_iter_x[1] = atoi(argv[arg_index++]);
       }
-      else if( strcmp(argv[arg_index], "-new_res") == 0 ){
+      else if( strcmp(argv[arg_index], "-fullrnorm") == 0 ){
          arg_index++;
-         new_res = 1;
+         fullrnorm = 1;
       }
       else if( strcmp(argv[arg_index], "-help") == 0 ){
          print_usage = 1;
@@ -751,12 +751,13 @@ int main (int argc, char *argv[])
       printf("  -pfmg_mi <max_iter max_iter_cheap> : maximum number of PFMG iterations (default: 50 50)\n"); 
       printf("  -pfmg_tol  <tol_x>                 : PFMG halting tolerance (default: 1e-09 )\n"); 
       printf("  -fmg                               : use FMG cycling\n");
+      printf("  -refine                            : refine in time\n");
       printf("  -res                               : use my residual\n");
       printf("  -storage <level>                   : full storage on levels >= level\n");
       printf("  -forcing                           : consider non-zero RHS b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))\n");
       printf("  -use_rand <bool>                   : if nonzero, then use a uniformly random value to initialize each\n");
       printf("                                       time step for t>0.  if zero, then use a zero initial guess.\n");
-      printf("  -new_res                           : use user residual routine to compute global residual each iteration\n");
+      printf("  -fullrnorm                         : use user residual routine to compute full residual each iteration\n");
       printf("                                       on all grid points for stopping criterion.\n");
       printf("                                     \n");
       printf("                                     \n");
@@ -897,8 +898,8 @@ int main (int argc, char *argv[])
          sqrt( (app->man->dx)*(app->man->dy)*(app->man->dt)) );
       braid_SetTemporalNorm(core, tnorm);
       braid_SetCFactor(core, -1, cfactor);
-      if (new_res) {
-        braid_SetGlobalResidual(core, my_Residual);        
+      if (fullrnorm) {
+        braid_SetFullRNormRes(core, my_Residual);        
       }
       if( cfactor0 > 0 ) {
          braid_SetCFactor(core,  0, cfactor0);
@@ -912,6 +913,9 @@ int main (int argc, char *argv[])
       }
       if (storage >= -2) {
          braid_SetStorage(core, storage);
+      }
+      if (app->refine > 0) {
+         braid_SetRefine(core, 1);
       }
 
       MPI_Comm_rank( comm, &myid );

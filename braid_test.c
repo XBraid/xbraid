@@ -47,7 +47,7 @@ braid_TestInitAccess( braid_App           app,
    braid_AccessStatus    astatus = _braid_CTAlloc(_braid_AccessStatus, 1);;
    braid_Int             myid_x = 0;
    
-   _braid_AccessStatusInit(t, 0.0, 0, 0, 0, 0, 1, astatus);
+   _braid_AccessStatusInit(t, 0.0, 0, 0, 0, 0, 0, 1, astatus);
    MPI_Comm_rank( comm_x, &myid_x );
 
    /* Print intro */
@@ -91,7 +91,7 @@ braid_TestClone( braid_App        app,
    braid_AccessStatus  astatus = _braid_CTAlloc(_braid_AccessStatus, 1);;
    braid_Int           myid_x;
    
-   _braid_AccessStatusInit(t, 0.0, 0, 0, 0, 0, 1, astatus);
+   _braid_AccessStatusInit(t, 0.0, 0, 0, 0, 0, 0, 1, astatus);
    MPI_Comm_rank( comm_x, &myid_x );
 
    /* Print intro */
@@ -149,7 +149,7 @@ braid_TestSum( braid_App        app,
    braid_AccessStatus  astatus = _braid_CTAlloc(_braid_AccessStatus, 1);;
    braid_Int           myid_x;
    
-   _braid_AccessStatusInit(t, 0.0, 0, 0, 0, 0, 1, astatus);
+   _braid_AccessStatusInit(t, 0.0, 0, 0, 0, 0, 0, 1, astatus);
    MPI_Comm_rank( comm_x, &myid_x );
 
    /* Print intro */
@@ -468,8 +468,8 @@ braid_TestCoarsenRefine( braid_App           app,
                       braid_PtFcnClone       clone,
                       braid_PtFcnSum         sum,
                       braid_PtFcnSpatialNorm spatialnorm, 
-                      braid_PtFcnCoarsen     coarsen,
-                      braid_PtFcnRefine      refine)
+                      braid_PtFcnSCoarsen    coarsen,
+                      braid_PtFcnSRefine     refine)
  {   
    braid_Vector            u, v, w, uc, vc, wc;
    braid_Real              result1;
@@ -477,7 +477,7 @@ braid_TestCoarsenRefine( braid_App           app,
    braid_AccessStatus      astatus = _braid_CTAlloc(_braid_AccessStatus, 1);;
    braid_CoarsenRefStatus  cstatus = _braid_CTAlloc(_braid_CoarsenRefStatus, 1);;
    
-   _braid_CoarsenRefStatusInit(t, t-fdt, t+fdt, t-cdt, t+cdt, 0, 0, cstatus);
+   _braid_CoarsenRefStatusInit(t, t-fdt, t+fdt, t-cdt, t+cdt, 0, 0, 0, cstatus);
    MPI_Comm_rank( comm_x, &myid_x );
 
    /* Initialize the correct flag */
@@ -510,12 +510,12 @@ braid_TestCoarsenRefine( braid_App           app,
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   access(uc) \n");
       level = 1;
-      _braid_AccessStatusInit(t, 0.0, 0, level, 0, 0, 1, astatus);
+      _braid_AccessStatusInit(t, 0.0, 0, level, 0, 0, 0, 1, astatus);
       access(app, uc, astatus);
 
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   access(u) \n");
       level = 0;
-      _braid_AccessStatusInit(t, 0.0, 0, level, 0, 0, 1, astatus);
+      _braid_AccessStatusInit(t, 0.0, 0, level, 0, 0, 0, 1, astatus);
       access(app, u, astatus);
    }
 
@@ -648,8 +648,8 @@ braid_TestAll( braid_App            app,
             braid_PtFcnBufSize      bufsize,
             braid_PtFcnBufPack      bufpack,
             braid_PtFcnBufUnpack    bufunpack,
-            braid_PtFcnCoarsen      coarsen,
-            braid_PtFcnRefine       refine)
+            braid_PtFcnSCoarsen     coarsen,
+            braid_PtFcnSRefine      refine)
 {
    braid_Int    myid_x, flag = 0, correct = 1;
    
