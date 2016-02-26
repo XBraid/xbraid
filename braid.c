@@ -579,6 +579,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, clone)           = clone;
    _braid_CoreElt(core, sclone)          = NULL;
    _braid_CoreElt(core, free)            = free;
+   _braid_CoreElt(core, sfree)           = NULL;
    _braid_CoreElt(core, sum)             = sum;
    _braid_CoreElt(core, spatialnorm)     = spatialnorm;
    _braid_CoreElt(core, access)          = access;
