@@ -138,9 +138,9 @@ else ifeq ($(shell uname -s),Linux)
       FORTFLAGS = -O1 -Wall
    endif
 else
-   MPICC = gcc
-   MPICXX = g++
-   MPIF90 = gfortran
+   MPICC = mpicc
+   MPICXX = mpiCC
+   MPIF90 = mpif90
    LFLAGS = -lm
    ifeq ($(optlevel),DEBUG)
       CFLAGS = -g -Wall
