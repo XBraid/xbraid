@@ -1,21 +1,12 @@
-from scipy import loadtxt, array, zeros, sqrt, arange, log10
+from scipy import loadtxt, array, zeros, sqrt, arange, log10, setdiff1d
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from sys import argv, exit
 import time
 
 ##
-# For some reason, Python doesn't want to do the plots interactively...stupid Python
-# It may be the version of Matplotlib on JBS tuxbox
-interactive = False
-
-##
 # Helper routine for setting the plotting parameters just the way we want them
-def return_rcparams(fig_width_pt=700.0, fig_height_pt=700.0, fontsize=28, fontfamily='sans-serif'):
-    inches_per_pt = 1.0/72.27                  # Convert pt to inch
-    fig_width = fig_width_pt*inches_per_pt     # width in inches
-    fig_height = fig_height_pt*inches_per_pt   # height in inches
-    fig_size =  [fig_width,fig_height]
+def return_rcparams(fig_width=5, fig_height=5, fontsize=28, fontfamily='sans-serif'):
 
     params = {'backend': 'ps',
               'font.family'       : fontfamily,    # can specify many more font and math font
@@ -28,7 +19,7 @@ def return_rcparams(fig_width_pt=700.0, fig_height_pt=700.0, fontsize=28, fontfa
               'xtick.labelsize'   : fontsize,
               'ytick.labelsize'   : fontsize,
               'text.usetex'       : True,
-              'figure.figsize'    : fig_size,
+              'figure.figsize'    : [fig_width,fig_height],
               'lines.linewidth'   : 2,
               'lines.markersize'  : 14,
               'xtick.major.size'  :  14, 
@@ -41,8 +32,7 @@ def return_rcparams(fig_width_pt=700.0, fig_height_pt=700.0, fontsize=28, fontfa
 # Plot the data
 if __name__ == "__main__":
    
-   if( len(argv) == 2 ):
-      if argv[1] == '-help' or argv[1] == '--help' or argv[1] == 'help':
+   if( (len(argv) == 2)  and (argv[1] == '-help' or argv[1] == '--help' or argv[1] == 'help')):
          print ''' 
                Cycle plotting visualization for XBraid
 
@@ -60,14 +50,23 @@ if __name__ == "__main__":
                
                Simultaneously runs your braid_driver and plots how braid
                traverses the levels in your cycle. 
-
-
+               
+               
                Usage 3
                -------
                $$ mpirun -np # braid_driver
-               $$ python cycleplot.py <niter>  <nlevel>
+               $$ python cycleplot.py <interactive>
                
-               Same as Usage 2, only the plot is scaled to accommodate niter iteration
+               Same as Usage 2, only if interactive is > 0, then the plot will refresh every
+               so <interactive> number of seconds.
+
+
+               Usage 4
+               -------
+               $$ mpirun -np # braid_driver
+               $$ python cycleplot.py <interactive> <niter>  <nlevel>
+               
+               Same as Usage 3, only the plot is scaled to accommodate niter iterations
                and nlevel levels.  This is nice so that your plot isn't always resized. 
                By default, niter=12, and nlevels=5.
 
@@ -79,10 +78,16 @@ if __name__ == "__main__":
                
                '''
          exit()
-   elif( len(argv) == 3 ):
-      niter_max = int(argv[1])
-      nlevel_max = int(argv[2])
+   elif( len(argv) == 2 ):
+      interactive = float(argv[1])
+      niter_max = 12
+      nlevel_max = 5
+   elif( len(argv) == 4 ):
+      interactive = float(argv[1])
+      niter_max = int(argv[2])
+      nlevel_max = int(argv[3])
    else:
+      interactive = 0
       niter_max = 12
       nlevel_max = 5
 
@@ -90,19 +95,21 @@ if __name__ == "__main__":
    # Outer loop that halts once a residual is read that meets the tolerance
    rnorm = 1; tol = 0;
    while(rnorm > tol):
-   
+      plt.close()
+
       ##
       #                             0       1       2      3      4     5
       # The data has the columns: level, nrefine, iter, gupper, ||r||, tol
       try:
          fname = "braid.out.cycle"
          data = loadtxt(fname)
+         a = data[0,5]
       except:
          raise ValueError("Your cycling output file " + fname + " has not been created yet!")
       
       ##
       # For halting purposes, find the current rnorm and tol
-      if interactive == True:
+      if interactive > 0:
          rnorm = data[:,4]
          rnorm = rnorm[rnorm >= 0].min()
          tol = data[:,5]
@@ -118,7 +125,7 @@ if __name__ == "__main__":
       #     number of levels     <= nlevels
       # then the plot window shouldn't change size.  Thus, you may want to adjust the minimum sizes
       # of niter and nlevels below for your simulation
-      if interactive == True:
+      if interactive > 0:
          niter   = max(niter_max, data[:,2].max())
          nlevels = max(nlevel_max, data[:,0].max() - data[:,0].min())
       else:
@@ -126,7 +133,7 @@ if __name__ == "__main__":
          nlevels = data[:,0].max() - data[:,0].min()
 
       fontsize = 28
-      params = return_rcparams(fig_width_pt=niter*110, fig_height_pt=nlevels*90., fontfamily='serif', fontsize=fontsize)
+      params = return_rcparams(fig_width=niter*2.7, fig_height=nlevels*2., fontfamily='serif', fontsize=fontsize)
       for key,entry in params.items():
           mpl.rcParams[key] = entry
 
@@ -157,10 +164,9 @@ if __name__ == "__main__":
       r[r == -1] = 0
       if r.max() > 0:
          dr = r[:-1] - r[1:]
-         r_indices = (dr < 0).nonzero()[0]  # x-locations to print
-         r_to_print = -dr[r_indices]
+         r_indices = setdiff1d((dr != 0).nonzero()[0], (r==0).nonzero()[0]-1)  # x-locations to print
+         r_to_print = abs(dr[r_indices])
          r_level = level[r_indices]         # corresponding level numbers
-         import pdb; pdb.set_trace()
          ax2 = plt.twinx()
          ax2.semilogy(r_indices, r_to_print,'-bo')
          plt.ylabel('$\| r_k \|$', color='b')
@@ -184,15 +190,15 @@ if __name__ == "__main__":
       new_iterations = (ddlevel == -1).nonzero()[0] + 1
       xticks = arange( level.shape[0] )[new_iterations]
       plt.xticks(xticks, ["%d"%(k+1) for k in range(xticks.shape[0])])
-      plt.xlim(0, (2*nlevels+1)*niter)
-
+      plt.xlim(0, max((2*nlevels+2)*niter, len(level)) )
 
       plt.title('XBraid Cycling')
-      plt.gcf().subplots_adjust(bottom=0.15)
-      plt.gcf().subplots_adjust(right=0.82)
+      plt.tight_layout()
+      #plt.gcf().subplots_adjust(bottom=0.15)
+      #plt.gcf().subplots_adjust(right=0.81)
 
       plt.show(block=False)
-      time.sleep(1)
+      time.sleep(interactive)
    
    ##
    # Force the user to close the plotting window 
