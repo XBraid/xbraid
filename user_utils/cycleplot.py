@@ -19,12 +19,12 @@ def return_rcparams(fig_width=5, fig_height=5, fontsize=28, fontfamily='sans-ser
               'xtick.labelsize'   : fontsize,
               'ytick.labelsize'   : fontsize,
               'text.usetex'       : True,
-              'figure.figsize'    : [fig_width,fig_height],
+              #'figure.figsize'    : [fig_width,fig_height],
               'lines.linewidth'   : 2,
-              'lines.markersize'  : 14,
-              'xtick.major.size'  :  14, 
+              'lines.markersize'  : 10,
+              'xtick.major.size'  :  12, 
               'xtick.minor.size'  : 0,
-              'ytick.major.size'  :  14, 
+              'ytick.major.size'  :  12, 
               'ytick.minor.size'  : 0}
     return params
 
@@ -93,9 +93,9 @@ if __name__ == "__main__":
 
    ##
    # Outer loop that halts once a residual is read that meets the tolerance
-   rnorm = 1; tol = 0;
-   while(rnorm > tol):
-      plt.close()
+   rnorm = 1; tol = 0; counter = -1; current_lvl = -1
+   while(rnorm > tol or current_lvl != 0 ):
+      counter += 1
 
       ##
       #                             0       1       2      3      4     5
@@ -103,18 +103,20 @@ if __name__ == "__main__":
       try:
          fname = "braid.out.cycle"
          data = loadtxt(fname)
-         a = data[0,5]
+         a = data[:,4].min()
       except:
          raise ValueError("Your cycling output file " + fname + " has not been created yet!")
       
       ##
-      # For halting purposes, find the current rnorm and tol
+      # For halting purposes, find the current rnorm, tol and current_lvl 
       if interactive > 0:
          rnorm = data[:,4]
          rnorm = rnorm[rnorm >= 0].min()
          tol = data[:,5]
          tol = tol[tol >= 0].min()
+         current_lvl = data[-1,0]
       else:
+         current_lvl = 0
          rnorm = -1
 
       ##
@@ -132,8 +134,15 @@ if __name__ == "__main__":
          niter   = data[:,2].max()
          nlevels = data[:,0].max() - data[:,0].min()
 
-      fontsize = 28
-      params = return_rcparams(fig_width=niter*2.7, fig_height=nlevels*2., fontfamily='serif', fontsize=fontsize)
+      fontsize = 22
+      fig_size = [niter*1.7, nlevels*1.0]
+      if counter == 0:
+         fig, ax = plt.subplots(1,1, figsize=fig_size)
+      ## For some reason, these functions don't work
+      #fig.set_figwidth(fig_size[0])
+      #fig.set_figheight(fig_size[1])
+      #fig.tight_layout()
+      params = return_rcparams(fig_width=fig_size[0], fig_height=fig_size[1], fontfamily='serif', fontsize=fontsize)
       for key,entry in params.items():
           mpl.rcParams[key] = entry
 
@@ -146,17 +155,27 @@ if __name__ == "__main__":
       # Plot levels, noting that level 0 is the finest and level k is a coarse level.
       # So, plot (-levels) and adjust the y-ticks accordingly
       level = -level
-      plt.plot(level, '-ko')
       maxl = max(level)
-      minl = maxl - nlevels 
-      plt.ylim([minl-1, maxl+1])
+      minl = maxl - nlevels
+      ax.set_ylim([minl-1, maxl+1])
+      
+      ##
+      # Print xticks only when the iteration changes
+      new_iterations = (level == maxl).nonzero()[0]
+      new_iterations = new_iterations[ ((new_iterations[1:] - new_iterations[:-1]) != 1).nonzero()[0] ]
+      xticks = arange( level.shape[0] )[new_iterations]
+      ax.set_xticks(xticks)
+      ax.set_xticklabels(["%d"%(k+1) for k in range(xticks.shape[0])])
+      ax.set_xlim(0, max((2*nlevels+2)*niter, len(level)) )
+      ax.plot(level, '-ko')
 
       ##
       # yticks (on the left) are just the level
       yticks = range(int(min(level)), int(max(level)+1))
-      plt.yticks(yticks, ["%d"%(-k) for k in yticks])
-      plt.ylabel('Level', color='k')
-      plt.xlabel('Iteration')
+      ax.set_yticks(yticks, ["%d"%(-k) for k in yticks])
+      ax.set_ylabel('Level', color='k')
+      ax.set_xlabel('Iteration')
+      ax.figure.canvas.draw()
       
       ##
       # Do a second plot of the residual norms, if we have any residuals available 
@@ -165,11 +184,12 @@ if __name__ == "__main__":
       if r.max() > 0:
          dr = r[:-1] - r[1:]
          r_indices = setdiff1d((dr != 0).nonzero()[0], (r==0).nonzero()[0]-1)  # x-locations to print
-         r_to_print = abs(dr[r_indices])
+         r_to_print = r[r_indices+1]
          r_level = level[r_indices]         # corresponding level numbers
-         ax2 = plt.twinx()
+         ax2 = ax.twinx()
+         ax2.set_xlim(0, max((2*nlevels+2)*niter, len(level)) )
          ax2.semilogy(r_indices, r_to_print,'-bo')
-         plt.ylabel('$\| r_k \|$', color='b')
+         ax2.set_ylabel('$\| r_k \|$', color='b')
          
          ##
          # Plot 4 y-ticks on the right for ||r||
@@ -177,27 +197,17 @@ if __name__ == "__main__":
          mi = min( tols[tols>0].min()/500., r_to_print.min())
          ma = r_to_print.max()
          yticks = [ma, 10**((log10(mi)+log10(ma))*1./3.), 10**((log10(mi)+log10(ma))*2./3.), mi ]
-         plt.yticks(yticks, ["%1.1e"%tick for tick in yticks])
+         ax2.set_yticks(yticks, ["%1.1e"%tick for tick in yticks])
          for tl in ax2.get_yticklabels():
             tl.set_color('b')
+         ##
+         ax2.figure.canvas.draw()
 
 
-      ##
-      # Print xticks only when the iteration changes
-      dlevel = level[:-1] - level[1:]
-      dlevel[dlevel == -1] = 0
-      ddlevel = dlevel[:-1] - dlevel[1:]
-      new_iterations = (ddlevel == -1).nonzero()[0] + 1
-      xticks = arange( level.shape[0] )[new_iterations]
-      plt.xticks(xticks, ["%d"%(k+1) for k in range(xticks.shape[0])])
-      plt.xlim(0, max((2*nlevels+2)*niter, len(level)) )
-
-      plt.title('XBraid Cycling')
-      plt.tight_layout()
-      #plt.gcf().subplots_adjust(bottom=0.15)
-      #plt.gcf().subplots_adjust(right=0.81)
-
-      plt.show(block=False)
+      if counter == 0:
+         plt.title('XBraid Cycling')
+         plt.show(block=False)
+      
       time.sleep(interactive)
    
    ##
