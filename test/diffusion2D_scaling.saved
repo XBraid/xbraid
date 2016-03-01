@@ -142,3 +142,27 @@
   number of levels     = 8
  Fine level spatial problem size  : 65 x 65
 
+# Begin Test 18 -- Begin multilvel-level V-cycle, FCF-relaxation Skip=1 tests
+
+  my_Access() called, iter= 5, level= 0
+  time steps = 32
+  iterations           = 5
+  number of levels     = 4
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 19
+  
+  my_Access() called, iter= 5, level= 0
+  time steps = 128
+  iterations           = 5
+  number of levels     = 6
+ Fine level spatial problem size  : 33 x 33
+
+# Begin Test 20
+  
+  my_Access() called, iter= 4, level= 0
+  time steps = 512
+  iterations           = 4
+  number of levels     = 8
+ Fine level spatial problem size  : 65 x 65
+
