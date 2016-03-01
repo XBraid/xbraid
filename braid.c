@@ -49,6 +49,8 @@ typedef struct
 } _braid_CycleState;
 
 /*--------------------------------------------------------------------------
+ * This is a locally scoped helper function for braid_Drive(), not a user 
+ * function.
  *--------------------------------------------------------------------------*/
 
 braid_Int
@@ -84,6 +86,9 @@ _braid_DriveInitCycle(braid_Core          core,
 }
 
 /*--------------------------------------------------------------------------
+ * This is a locally scoped helper function for braid_Drive(), not a user 
+ * function.
+ * 
  * This routine determines the cycle direction (down or up) based on the current
  * grid level, iteration number, and cycle state.  The resulting cycle direction
  * is expected to produce three basic actions as follows:
@@ -195,6 +200,8 @@ _braid_DriveUpdateCycle(braid_Core          core,
 }
 
 /*--------------------------------------------------------------------------
+ * This is a locally scoped helper function for braid_Drive(), not a user 
+ * function.
  *--------------------------------------------------------------------------*/
 
 braid_Int
@@ -217,6 +224,8 @@ _braid_DriveEndCycle(braid_Core          core,
 }
 
 /*--------------------------------------------------------------------------
+ * This is a locally scoped helper function for braid_Drive(), not a user 
+ * function.
  *--------------------------------------------------------------------------*/
 
 braid_Int
@@ -276,6 +285,8 @@ _braid_DriveCheckConvergence(braid_Core  core,
 }
 
 /*--------------------------------------------------------------------------
+ * This is a locally scoped helper function for braid_Drive(), not a user 
+ * function.
  *--------------------------------------------------------------------------*/
 
 braid_Int
