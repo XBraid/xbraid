@@ -1262,25 +1262,40 @@ braid_GetSpatialAccuracy( braid_StepStatus  status,
                           braid_Real        tight_tol,
                           braid_Real       *tol_ptr )
 {
-   braid_Int nrequest   = 1;
+   braid_Int nrequest   = 2;
    braid_Real stol, tol, rnorm, rnorm0, old_fine_tolx;
    braid_Int level;
    braid_Real l_rnorm, l_ltol, l_ttol, l_tol;
+   braid_Real *rnorms = (braid_Real *) malloc( 2*sizeof(braid_Real) ); 
    
    braid_StepStatusGetTol(status, &tol);
    braid_StepStatusGetLevel(status, &level);
    braid_StepStatusGetOldFineTolx(status, &old_fine_tolx);
 
    /* Get the first and then the current residual norms */
-   braid_StepStatusGetRNorms(status, &nrequest, &rnorm0);
-   nrequest = -1;
-   braid_StepStatusGetRNorms(status, &nrequest, &rnorm);
+   rnorms[0] = -1.0; rnorms[1] = -1.0;
+   braid_StepStatusGetRNorms(status, &nrequest, rnorms);
+   if((rnorms[0] == -1.0) && (rnorms[1] != -1.0)){
+      rnorm0 = rnorms[1];
+   }
+   else{
+      rnorm0 = rnorms[0];
+   }
+   nrequest = -2;
+   braid_StepStatusGetRNorms(status, &nrequest, rnorms);
+   if((rnorms[1] == -1.0) && (rnorms[0] != -1.0)){
+      rnorm = rnorms[0];
+   }
+   else{
+      rnorm = rnorms[1];
+   }
+ 
 
-   if ( (level > 0) || (nrequest == 0) )
+   if ( (level > 0) || (nrequest == 0) || (rnorm0 == -1.0) )
    {
       /* Always return the loose tolerance, if
        * (1) On a coarse grid computation
-       * (2) There is no residual history yet (this is the first Braid iteration) */
+       * (2) There is no residual history yet (this is the first Braid iteration with skip turned on) */
       *tol_ptr = loose_tol;
    }
    else
@@ -1326,6 +1341,7 @@ braid_GetSpatialAccuracy( braid_StepStatus  status,
       }
    }
 
+   free(rnorms);
     /* printf( "lev: %d, accuracy: %1.2e, nreq: %d, rnorm: %1.2e, rnorm0: %1.2e, loose: %1.2e, tight: %1.2e, old: %1.2e, braid_tol: %1.2e \n", level, *tol_ptr, nrequest, rnorm, rnorm0, loose_tol, tight_tol, old_fine_tolx, tol); */
    return _braid_error_flag;
 }

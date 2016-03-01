@@ -1,81 +1,128 @@
 # Begin Test 0, check iterations to make sure test ran to completion
 
-  time steps = 64
-  iterations           = 8
-  number of levels     = 5
- Fine level spatial problem size  : 17 x 17
+  time steps = 30
+  iterations            = 7
+  number of levels      = 4
+  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 1, check iterations to make sure test ran to completion
+# Begin Test 1
 
-  time steps = 64
-  iterations           = 8
-  number of levels     = 5
- Fine level spatial problem size  : 17 x 17
+  time steps = 30
+  iterations            = 4
+  number of levels      = 4
+  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 2, check iterations to make sure test ran to completion
+# Begin Test 2
 
-  time steps = 64
-  iterations           = 7
-  number of levels     = 6
- Fine level spatial problem size  : 17 x 17
+  time steps = 30
+  iterations            = 4
+  number of levels      = 4
+  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 3, check iterations to make sure test ran to completion
+# Begin Test 3
 
-  time steps = 64
-  iterations           = 32
-  number of levels     = 5
- Fine level spatial problem size  : 17 x 17
+  time steps = 30
+  iterations            = 7
+  number of levels      = 4
+  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 4, check iterations to make sure test ran to completion
+# Begin Test 4
 
-  time steps = 64
-  iterations           = 32
-  number of levels     = 5
- Fine level spatial problem size  : 17 x 17
+  time steps = 30
+  iterations            = 6
+  number of levels      = 5
+  Fine level spatial problem size  : 17 x 17
 
-
-# Begin Test 5, check iterations to make sure test ran to completion, and note the two Braid lines for a phantom "memory leak" detected by valgrind.
-
-  time steps = 64
-  iterations           = 7
-  number of levels     = 3
- Fine level spatial problem size  : 17 x 17
-
-# Begin Test 6, check iterations to make sure test ran to completion, and note the two Braid lines for a phantom "memory leak" detected by valgrind.
-
-  time steps = 64
-  iterations           = 7
-  number of levels     = 3
- Fine level spatial problem size  : 17 x 17
-
-# Begin Test 7, check iterations to make sure test ran to completion, and note the two Braid lines for a phantom "memory leak" detected by valgrind.
-
-  time steps = 64
-  iterations           = 15
-  number of levels     = 3
- Fine level spatial problem size  : 17 x 17
-
-# Begin Test 8, check iterations to make sure test ran to completion, and note the two Braid lines for a phantom "memory leak" detected by valgrind.
-
-  time steps = 64
-  iterations           = 16
-  number of levels     = 3
- Fine level spatial problem size  : 17 x 17
-
-# Begin Test 9, check iterations to make sure test ran to completion, and note the two Braid lines for a phantom "memory leak" detected by valgrind.
-
-  time steps = 64
-  iterations           = 7
-  number of levels     = 3
- Fine level spatial problem size  : 17 x 17
-
-# Begin Test 10, check iterations to make sure test ran to completion, and note the two Braid lines for a phantom "memory leak" detected by valgrind.
+# Begin Test 5
 
   time steps = 32
-  iterations           = 5
-  number of levels     = 3
+  iterations            = 16
+  number of levels      = 4
+  Fine level spatial problem size  : 17 x 17
+
+# Begin Test 6
+
+  time steps = 32
+  iterations            = 17
+  number of levels      = 4
+  Fine level spatial problem size  : 17 x 17
+
+# Begin Test 7
+
+  time steps = 32
+  iterations            = 17
+  number of levels      = 4
+  Fine level spatial problem size  : 17 x 17
+
+# Begin Test 8
+
+  time steps = 32
+  iterations            = 17
+  number of levels      = 4
+  Fine level spatial problem size  : 17 x 17
+
+# Begin Test 9
+
+  time steps = 32
+  iterations            = 5
+  number of levels      = 2
+  Fine level spatial problem size  : 17 x 17
+
+# Begin Test 10
+
+  time steps = 33
+  iterations            = 4
+  number of levels      = 2
+  Fine level spatial problem size  : 17 x 17
+
+
+# Begin Test 11
+
+  time steps = 33
+  iterations            = 5
+  number of levels      = 2
  Fine level spatial problem size  : 17 x 17
- _braid_CommSendInit
- _braid_FRestrict 
- braid_Drive 
+
+# Begin Test 12
+
+  time steps = 33
+  iterations            = 5
+  number of levels      = 2
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 13
+
+  time steps = 33
+  iterations            = 8
+  number of levels      = 2
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 14
+
+  time steps = 33
+  iterations            = 9
+  number of levels      = 2
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 15
+
+  time steps = 33
+  iterations            = 8
+  number of levels      = 2
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 16
+
+  time steps = 33
+  iterations            = 9
+  number of levels      = 2
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 17
+
+  time steps = 33
+  iterations            = 5
+  number of levels      = 2
+ Fine level spatial problem size  : 17 x 17
+
 

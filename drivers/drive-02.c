@@ -175,6 +175,7 @@ typedef struct _spatial_discretization
  *   tol_x[2]              Spatial stopping tolerance limits, (loose, tight), for the fine level
  *   use_rand              binary, use random initial guess (1) or zero initial guess (0)
  *   buffer_size           integer containing the largest possible MPI buffer 
+ *   print_level           user-desired print level, print level 2 does lots of debug output in Step()
  */
 typedef struct _braid_App_struct {
    MPI_Comm                comm_t;
@@ -198,6 +199,7 @@ typedef struct _braid_App_struct {
    double                  tol_x[2];
    int                     use_rand;
    int                     buffer_size;
+   int                     print_level;
 } my_App;
 
 /* struct my_Vector contains local information specific to one time point
@@ -289,7 +291,31 @@ my_Step(braid_App        app,
    int i, A_idx, user_explicit, level;
    int ilower[2], iupper[2], nlx, nly, nx, ny;
    double dx, dy;
+   int print_level      = app->print_level;
+   double temp_double;
+   int temp_int;
    
+   /* This debug output is mostly for regression testing */
+   if(print_level == 2)
+   {
+      braid_GetSpatialAccuracy( status, 1e-2, 1e-9, &temp_double);
+      printf("  braid_GetSpatialAccuracy:  %1.2e\n", temp_double);
+
+      braid_StepStatusGetTol(status, &temp_double);
+      printf("  braid_StepStatusGetTol:  %1.2e\n", temp_double);
+
+      braid_StepStatusGetIter(status, &temp_int);
+      printf("  braid_StepStatusGetIter:  %d\n", temp_int);
+      
+      temp_int = -1;
+      braid_StepStatusGetRNorms(status, &temp_int, &temp_double);
+      printf("  braid_StepStatusGetRNorms[-1]:  %1.2e\n", temp_double);
+
+      temp_int = 1;
+      braid_StepStatusGetRNorms(status, &temp_int, &temp_double);
+      printf("  braid_StepStatusGetRNorms[0]:  %1.2e\n", temp_double);
+   }
+
    /* Grab level */
    braid_StepStatusGetLevel(status, &level);
 
@@ -2295,6 +2321,10 @@ int main (int argc, char *argv[])
    /* Store whether we want a random or constant initial guess */
    app->use_rand = use_rand;
    
+   /* Store print-level (controls debug output) */
+   app->print_level = print_level;
+
+
    /* Store CFl that controls spatial coarsening */
    app->num_scoarsenCFL = num_scoarsenCFL;
    app->scoarsenCFL = scoarsenCFL;
@@ -2503,6 +2533,35 @@ int main (int argc, char *argv[])
       }
       
       braid_Drive(core);
+      
+      /* Debug level printing for regression testing */
+      if(print_level == 2)
+      {
+         int nrequest, num_iter, num_iter2;
+         braid_GetNumIter(core, &num_iter);
+         double *rnorms_array = (double*) malloc( (num_iter+1)*sizeof(double) ); 
+         
+         nrequest = 1;
+         braid_GetRNorms(core, &nrequest, rnorms_array);
+         printf("  braid_GetRNorms[0] = %1.2e\n", rnorms_array[0]);
+         nrequest = -1;
+         braid_GetRNorms(core, &nrequest, rnorms_array);
+         printf("  braid_GetRNorms[-1] = %1.2e\n", rnorms_array[0]);
+         
+         braid_GetRNorms(core, &num_iter, rnorms_array);
+         for(i=0; i < num_iter; i++) {
+            printf("  braid_GetRNorms[%d] = %1.2e\n", i, rnorms_array[i]);
+         }
+         
+         num_iter2 = -num_iter - 1;
+         braid_GetRNorms(core, &num_iter2, rnorms_array);
+         for(i=0; i <= num_iter; i++) {
+            printf("  braid_GetRNorms[%d] = %1.2e\n", i, rnorms_array[i]);
+         }
+
+         printf("\n");
+         free(rnorms_array);  
+      }
 
       /* Stop timer. */
       myendtime = MPI_Wtime();
