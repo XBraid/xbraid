@@ -857,6 +857,7 @@ int main(int argc, char *argv[])
    diff_term = -1;
 
    // double cfl         = 1.0;
+   int    fe_degree   = 1;
    int    ode_solver  = -1;
 
    int heat_equation = 1;
@@ -965,6 +966,10 @@ int main(int argc, char *argv[])
          else
             if (myid == 0)
                cerr << "Unknown -ode parameter: " << argv[arg_index] << endl;
+      }
+      else if (strcmp(argv[arg_index], "-fe") == 0)
+      {
+         fe_degree = atoi(argv[++arg_index]);
       }
       else if (strcmp(argv[arg_index], "-odesolver") == 0)
       {
@@ -1079,6 +1084,7 @@ int main(int argc, char *argv[])
          "  -ode <name>       : ODE to solve, the options are:\n"
          "                         heat - Heat equation (default)\n"
          "                         scalar <id> - predefined scalar ODE\n"
+         "  -fe <degree>      : FE degree/order (default: 1)\n"
          "  -odesolver <id>   : ODE solver id\n"
          "                      explicit methods:\n"
          "                         1 - Forward Euler\n"
@@ -1157,6 +1163,11 @@ int main(int argc, char *argv[])
    for (int l = 0; l < sref; l++)
       mesh->UniformRefinement();
 
+   if (mesh->NURBSext)
+   {
+      mesh->SetCurvature(fe_degree);
+   }
+
    // Define a parallel mesh by a partitioning of the serial mesh. Refine this
    // mesh further in parallel to increase the resolution.
    ParMesh *pmesh = new ParMesh(comm_x, *mesh);
@@ -1174,10 +1185,14 @@ int main(int argc, char *argv[])
    // Define a parallel finite element space on the parallel mesh. We use the
    // finite elements coming from the mesh nodes (linear by default).
    FiniteElementCollection *fec;
+#if 0
    if (pmesh->GetNodes())
       fec = pmesh->GetNodes()->OwnFEC();
    else
       fec = new LinearFECollection;
+#else
+   fec = new H1_FECollection(fe_degree, dim);
+#endif
    ParFiniteElementSpace *fespace = new ParFiniteElementSpace(pmesh, fec);
    int size = fespace->GlobalTrueVSize();
    if (myid == 0)
