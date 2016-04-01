@@ -47,7 +47,7 @@ HOSTNAME := $(shell hostname)
 ifeq ($(findstring tux343,$(HOSTNAME)),tux343)
    CC = mpicc
    MPICC = mpicc
-   MPICXX = mpiCC
+   MPICXX = mpicxx
    MPIF90 = mpif90
    LFLAGS = -lm
    ifeq ($(optlevel),DEBUG)
@@ -60,7 +60,7 @@ ifeq ($(findstring tux343,$(HOSTNAME)),tux343)
       FORTFLAGS = -O1 -Wall
    endif
    ifeq ($(lvalgrind),YES)
-      LFLAGS += /usr/lib64/valgrind/libmpiwrap-amd64-linux.so 
+      #only needed for openmpi: LFLAGS += /usr/lib64/valgrind/libmpiwrap-amd64-linux.so 
    endif
 else ifeq ($(findstring fourier,$(HOSTNAME)),fourier)
    # for Anders' laptop
