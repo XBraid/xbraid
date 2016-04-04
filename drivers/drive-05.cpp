@@ -529,8 +529,8 @@ void DGAdvectionApp::InitLevel(int l)
    solver[l]->Init(*ode[l]);
 
    // Set max_dt[l] = 1.01*dt[0]*(2^l)
-   max_dt[l] = 1.01 * options.dt * (1 << (l+1));
-  //max_dt[l] = 1.01 * options.dt * (1 << l);
+   //max_dt[l] = 1.01 * options.dt * (1 << (l+1));            // start coarsening on level 2
+   max_dt[l] = 1.01 * options.dt * pow(options.cfactor, l);   // start coarsening on level 1
 }
 
 
