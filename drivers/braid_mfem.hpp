@@ -26,20 +26,6 @@
 #include "mfem.hpp"
 #include <fstream>
 
-namespace mfem
-{
-
-void TrueDofsToLDofs(const HypreParVector &u, ParGridFunction &v)
-{
-   for (int i = 0; i < v.Size(); i++)
-   {
-      int k = v.ParFESpace()->GetLocalTDofNumber(i);
-      v(i) = (k < 0) ? 0.0 : u(k);
-   }
-}
-
-} // namespace mfem
-
 using namespace mfem;
 
 
@@ -239,10 +225,9 @@ public:
    virtual int Access(braid_Vector       u_,
                       BraidAccessStatus &astatus);
 
-   virtual int Residual(braid_Vector _u,
-                              braid_Vector _r,
-                              BraidStepStatus &pstatus){return 0;} ;
-   
+   virtual int Residual(braid_Vector     u_,
+                        braid_Vector     r_,
+                        BraidStepStatus &pstatus) { return 0; }
 };
 
 
@@ -288,31 +273,31 @@ struct BraidOptions : public OptionsParser
 class SpaceTimeMeshInfo
 {
 public:
-    
-    // This table is (num Braid levels) x 5 table, where each row is a Braid level
-    // and the columns store, respectively, the spatial level used at that Braid level,
-    // the max mesh width h_max, the min mesh width h_min and the time step size dt, 
-    Array<double> mesh_table;
-    Array<double> mesh_table_global;
-    int           max_levels;
 
-    // Unused rows in the table are -1.0
-    SpaceTimeMeshInfo(int _max_levels) : 
-       mesh_table(4*_max_levels),
-       mesh_table_global(4*_max_levels),
-       max_levels(_max_levels)
+   // This table is (num Braid levels) x 5 table, where each row is a Braid level
+   // and the columns store, respectively, the spatial level used at that Braid level,
+   // the max mesh width h_max, the min mesh width h_min and the time step size dt,
+   Array<double> mesh_table;
+   Array<double> mesh_table_global;
+   int           max_levels;
+
+   // Unused rows in the table are -1.0
+   SpaceTimeMeshInfo(int _max_levels) :
+      mesh_table(4*_max_levels),
+      mesh_table_global(4*_max_levels),
+      max_levels(_max_levels)
    {
-        mesh_table = -1.0;
-        mesh_table_global = -1.0;
+      mesh_table = -1.0;
+      mesh_table_global = -1.0;
    }
-   
+
    // Reinitialize the arrays
    void Reinitialize(int _max_levels);
 
    // Helper function to compute mesh size
    void ComputeMeshSize( ParMesh *pmesh, double * h_min_ptr, double * h_max_ptr);
 
-   // Fill in a row of the table 
+   // Fill in a row of the table
    void SetRow(int braid_level, int vec_level, ParMesh * pmesh, double dt);
 
    // Print the table to screen, reducing the entries over comm
@@ -656,7 +641,7 @@ int MFEMBraidApp::Coarsen(braid_Vector   fu_,
          // Maps true dofs in 'fu' to local dofs in ParGridFunction x,
          // with the caveat that local dofs that fu does not own are set to 0
          // in x.
-         TrueDofsToLDofs(*fu, *x[lev-1]);
+         fe_space[lev-1]->GetRestrictionMatrix()->MultTranspose(*fu, *x[lev-1]);
 
          // Rescale before restriction
           *x[lev-1] *= 1./4;
@@ -886,7 +871,7 @@ BraidOptions::BraidOptions(int argc, char *argv[])
    AddOption(&cfactor, "-cf", "--coarsen-factor",
              "Coarsening factor.");
    AddOption(&storage, "-store", "--storage-option ,",
-             "Storage to use: 0:store C points, 1:store all points.");          
+             "Storage to use: 0:store C points, 1:store all points.");
    AddOption(&cfactor0, "-cf0", "--agg-coarsen-factor",
              "Aggressive coarsening factor, -1:off.");
    AddOption(&max_iter, "-mi", "--max-iter",
@@ -972,7 +957,7 @@ void SpaceTimeMeshInfo::SetRow(int braid_level, int vec_level, ParMesh * pmesh, 
 {
    // Fill in the level-th row with runtime spatial coarsening information
    double h_min, h_max;
-   
+
    ComputeMeshSize(pmesh, &h_min, &h_max);
    mesh_table[ braid_level*4 ]     = std::max(mesh_table[ braid_level*4 ], (double) vec_level );
    mesh_table[ braid_level*4 + 1 ] = std::max(mesh_table[ braid_level*4 + 1 ], h_min);
@@ -1010,7 +995,7 @@ void SpaceTimeMeshInfo::ComputeMeshSize( ParMesh *pmesh, double * h_min_ptr, dou
     *h_min_ptr = gh_min;
 }
 
-// Print the all the rows that are not -1, i.e., that aren't empy 
+// Print the all the rows that are not -1, i.e., that aren't empy
 void SpaceTimeMeshInfo::Print(MPI_Comm comm)
 {
    int myid, level;
@@ -1040,7 +1025,7 @@ void SpaceTimeMeshInfo::Print(MPI_Comm comm)
          dt =  mesh_table_global[i*4 + 3];
          if (dt < 0)
             break;
-         
+
          std::cout.precision(4);
          std::cout << std::scientific;
          std::cout << "    " << std::setw(10) << std::left << i << "|"

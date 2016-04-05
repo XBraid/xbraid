@@ -814,7 +814,7 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  skip down cycle       = %d\n", skip);
       _braid_printf("  number of refinements = %d\n", nrefine);
       _braid_printf("\n");
-      _braid_printf("  level   time-pts   cfactor   nrelax\n", globaltime);
+      _braid_printf("  level   time-pts   cfactor   nrelax\n");
       for (level = 0; level < nlevels-1; level++)
       {
          _braid_printf("  % 5d  % 8d  % 7d   % 6d\n",

@@ -175,12 +175,7 @@ int main(int argc, char *argv[])
    // If the mesh is NURBS, convert it to curved mesh
    if (mesh->NURBSext)
    {
-      int dim = mesh->Dimension();
-      int mesh_order = std::max(opts.order, 1);
-      FiniteElementCollection *mfec = new H1_FECollection(mesh_order, dim);
-      FiniteElementSpace *mfes = new FiniteElementSpace(mesh, mfec, dim);
-      mesh->SetNodalFESpace(mfes);
-      mesh->GetNodes()->MakeOwner(mfec);
+      mesh->SetCurvature(std::max(opts.order, 1));
    }
 
    // Split comm (MPI_COMM_WORLD) into spatial and temporal communicators
