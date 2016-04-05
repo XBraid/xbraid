@@ -374,7 +374,6 @@ braid_Drive(braid_Core  core)
    braid_Real           tstop           = _braid_CoreElt(core, tstop);
    braid_Int            ntime           = _braid_CoreElt(core, ntime);
    braid_Int            skip            = _braid_CoreElt(core, skip);
-   braid_Int            max_levels      = _braid_CoreElt(core, max_levels);
    braid_Int            print_level     = _braid_CoreElt(core, print_level);
    braid_Int            access_level    = _braid_CoreElt(core, access_level);
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
@@ -421,11 +420,6 @@ braid_Drive(braid_Core  core)
    _braid_DriveInitCycle(core, &cycle);
    
    done  = 0;
-   if (max_levels <= 1)
-   {
-      /* Just do sequential time marching */
-      done = 1;
-   }
 
    level = 0;
    if (skip)
@@ -451,6 +445,7 @@ braid_Drive(braid_Core  core)
          _braid_FCRelax(core, 0);
          nrels[0] = nrel0;
          _braid_SetRNorm(core, -1, 0.0);
+         break;
       }
 
       /* Update cycle state and direction based on level and iter */
