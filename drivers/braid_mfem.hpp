@@ -441,12 +441,18 @@ void MFEMBraidApp::InitMultilevelApp(ParMesh *pmesh, int pref, bool scoarsen)
    InitLevel(0); // initialize ode[0], solver[0], and max_dt[0]
    buff_size[0] = EvalBufSize(fe_space[0]->TrueVSize());
    
-   // Print size of finest mesh
+   // Print mesh info
+   int myid_t;
+   MPI_Comm_rank(comm_t, &myid_t);
+   if(myid_t == 0)
+      pmesh->PrintInfo();
+   
+   // Print size of finest-grid spatial matrix
    int myid, size;
    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
    size = fe_space[0]->GlobalTrueVSize();
    if (myid == 0)
-      std::cout << std::endl << "Number of spatial unknowns: " << size << "\n\n"; 
+      std::cout << std::endl << "Number of spatial unknowns on finest-grid: " << size << "\n\n"; 
    
    own_data = true;
 }
