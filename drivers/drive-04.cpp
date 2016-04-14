@@ -693,11 +693,12 @@ int main(int argc, char *argv[])
 
 
    // BRAID default parameters:
-   int    max_levels  = 10;
-   int    min_coarse  = 3;
+   int    max_levels  = 30;
+   int    min_coarse  = 2;
    int    nrelax      = 1;
    int    nrelax0     = -1;
    double tol         = 1e-9;
+   int    rtol        = 1;
    int    tnorm       = 2;
    int    skip        = 1;
    int    cfactor     = 2;
@@ -708,6 +709,9 @@ int main(int argc, char *argv[])
    int    access_level= 1;
    bool   wrapper_tests = false;
    bool   one_wrapper_test = false;
+
+   // Use random initial vectors.
+   int    init_rand   = 0;
 
    /* Parse command line */
    int print_usage = 0;
@@ -799,6 +803,10 @@ int main(int argc, char *argv[])
       {
          tol = atof(argv[++arg_index]);
       }
+      else if( strcmp(argv[arg_index], "-rtol") == 0 )
+      {
+          rtol = atoi(argv[++arg_index]);
+      }
       else if( strcmp(argv[arg_index], "-tnorm") == 0 )
       {
           tnorm = atoi(argv[++arg_index]);
@@ -823,6 +831,10 @@ int main(int argc, char *argv[])
       {
          fmg = 1;
          nfmg_Vcyc = atoi(argv[++arg_index]);
+      }
+      else if (strcmp(argv[arg_index], "-rand") == 0)
+      {
+         init_rand = atoi(argv[++arg_index]);
       }
       else if (strcmp(argv[arg_index], "-wrapper_tests") == 0)
       {
@@ -910,6 +922,7 @@ int main(int argc, char *argv[])
          "  -nu  <nrelax>     : set num F-C relaxations (default: 1)\n"
          "  -nu0 <nrelax>     : set num F-C relaxations on level 0\n"
          "  -tol <tol>        : set stopping tolerance (default: 1e-9)\n"
+         "  -rtol <0/1>       : use relative or absolute stopping tolerance (default: 1)\n"
          "  -tnorm <tnorm>    : set temporal norm \n"
          "                      1 - One-norm \n"
          "                      2 - Two-norm (default) \n"
@@ -919,6 +932,7 @@ int main(int argc, char *argv[])
          "  -cf0 <cfactor0>   : set aggressive coarsening (default: off)\n"
          "  -mi  <max_iter>   : set max iterations (default: 100)\n"
          "  -fmg <nfmg_Vcyc>  : use FMG cycling with nfmg_Vcyc V-cycles at each fmg level\n"
+         "  -rand <0/1>       : use random initial vectors (default: 0)\n"
          "  -access  <a>      : set access_level (default: 1) \n"
          "  -vishost <vh>     : set glvis visualisation host (default: 'localhost') \n"
          "  -visport <vp>     : set glvis visualisation port (default: 19916) \n"
@@ -1071,6 +1085,8 @@ int main(int argc, char *argv[])
    else
    {
       DiffBraidApp app(comm_t, diff_ode, X0, &x0, solver, tstart, tstop, ntime);
+      if (init_rand)
+         app.SetRandomInitVectors(285136749 + myid);
       app.SetVisHostAndPort(vishost, visport);
 
       if (wrapper_tests)
@@ -1121,7 +1137,7 @@ int main(int argc, char *argv[])
          core.SetNRelax(-1, nrelax);
          if (nrelax0 > -1)
             core.SetNRelax(0, nrelax0);
-         core.SetAbsTol(tol);
+         rtol ? core.SetRelTol(tol) : core.SetAbsTol(tol);
          core.SetCFactor(-1, cfactor);
          core.SetAggCFactor(cfactor0);
          core.SetMaxIter(max_iter);
