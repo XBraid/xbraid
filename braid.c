@@ -585,7 +585,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              access_level    = 1;              /* Default access level */
    braid_Int              tnorm           = 2;              /* Default temporal norm */
    braid_Real             tol             = 1.0e-09;        /* Default absolute tolerance */
-   braid_Real             rtol            = 1;              /* Use relative tolerance */
+   braid_Int              rtol            = 1;              /* Use relative tolerance */
    braid_Int              skip            = 1;              /* Default skip value, skips all work on first down-cycle */
    braid_Int              max_refinements = 200;            /* Maximum number of F-refinements */
    braid_Int              tpoints_cutoff  = braid_Int_Max;  /* Maximum number of time steps, controls FRefine()*/ 

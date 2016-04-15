@@ -25,6 +25,7 @@
 #include "braid.hpp"
 #include "mfem.hpp"
 #include <fstream>
+#include <cstdlib> // rand, srand
 
 using namespace mfem;
 
@@ -84,6 +85,9 @@ protected:
    Array<double>             max_dt; // maximal safe dt on each spatial mesh
 
    HypreParVector *X0;    // Initial condition (at the finest level 0)
+   bool init_rand;     /* If true, use std::rand() to initialize BraidVectors in
+                          the Init() method. The default value is false:
+                          initialize with 0.0. */
 
    // ownership of mesh, fe_space, x, R, ode, solver, and X0
    bool own_data;
@@ -170,6 +174,12 @@ public:
 
    void SetInitialCondition(HypreParVector *_X0) { X0 = _X0; }
 
+   void SetRandomInitVectors(unsigned seed)
+   {
+      init_rand = true;
+      std::srand(seed);
+   }
+
    void SetExactSolution(Coefficient *exsol) { exact_sol = exsol; }
 
    void SetVisHostAndPort(const char *vh, int vp);
@@ -243,6 +253,7 @@ struct BraidOptions : public OptionsParser
    int    nrelax;
    int    nrelax0;
    double tol;
+   bool   rtol;
    int    tnorm;
    int    storage;
    int    cfactor;
@@ -319,6 +330,7 @@ MFEMBraidApp::MFEMBraidApp(
    : BraidApp(comm_t_, tstart_, tstop_, ntime_)
 {
    X0 = NULL;
+   init_rand = false;
    own_data = false;
 
    exact_sol = NULL;
@@ -335,7 +347,7 @@ MFEMBraidApp::MFEMBraidApp(
 
    : BraidApp(comm_t_, tstart_, tstop_, ntime_),
      mesh(1), fe_space(1), x(1), ode(1), solver(1), buff_size(1), max_dt(1),
-     X0(X0_)
+     X0(X0_), init_rand(false)
 {
    x[0] = x_;
    fe_space[0] = x[0]->ParFESpace();
@@ -374,6 +386,7 @@ MFEMBraidApp::MFEMBraidApp(
    max_dt = 0.0;
 
    X0 = NULL;
+   init_rand = false;
    own_data = false;
    exact_sol = NULL;
 
@@ -555,8 +568,17 @@ int MFEMBraidApp::Init(double        t,
    BraidVector *u = new BraidVector(level, *X0);
    if (t != tstart)
    {
-      // u->Randomize(2142);
-      *u = 0.0;
+      if (init_rand)
+      {
+         const int s = u->Size();
+         double *data = u->GetData();
+         for (int i = 0; i < s; i++)
+         {
+            data[i] = double(std::rand())/(RAND_MAX);
+         }
+      }
+      else
+         *u = 0.0;
    }
    else
       *u = *X0;
@@ -839,19 +861,23 @@ BraidOptions::BraidOptions(int argc, char *argv[])
    t_final          = 1.0;
    num_time_steps   = 100;
    num_procs_x      = 1;
+
+   // For the braid defaults, see braid_Init() in braid.c
+   // The values below should match the braid defaults.
    skip             = 1;
-   max_levels       = 10;
-   min_coarse       = 3;
+   max_levels       = 30;
+   min_coarse       = 2;
    nrelax           = 1;
-   nrelax0          = -1;
+   nrelax0          = -1;    // if > -1, use as nrelax for level 0
    tol              = 1e-9;
+   rtol             = true;
    tnorm            = 2;
-   storage          = -2;
+   storage          = -1;
    cfactor          = 2;
-   cfactor0         = -1;
+   cfactor0         = -1;    // if > -1, use as cfactor for level 0
    max_iter         = 100;
-   nfmg_Vcyc        = 0;
-   spatial_coarsen  = false;
+   nfmg_Vcyc        = 0;     // if > 0, enable FMG and use as nfmg_Vcyc
+   spatial_coarsen  = false; // if true, enable spatial coarsening
    access_level     = 1;
    print_level      = 1;
    use_seq_soln     = 0;
@@ -871,6 +897,9 @@ BraidOptions::BraidOptions(int argc, char *argv[])
    AddOption(&nrelax0, "-nu0", "--num-fc-relax-level-0",
              "Number of F-C relaxations on level 0.");
    AddOption(&tol, "-tol", "--tolerance", "Stopping tolerance.");
+   AddOption(&rtol, "-reltol", "--relative-tolerance", "-abstol",
+             "--absolute-tolerance",
+             "Use relative or absolute stopping tolerance.");
    AddOption(&tnorm, "-tnorm", "--temporal-norm",
              "Temporal norm to use: 1:one-norm, 2:two-norm, or "
              "3:max-norm.");
@@ -932,7 +961,7 @@ void BraidOptions::SetBraidCoreOptions(BraidCore &core)
    core.SetNRelax(-1, nrelax);
    if (nrelax0 > -1)
       core.SetNRelax(0, nrelax0);
-   core.SetAbsTol(tol);
+   rtol ? core.SetRelTol(tol) : core.SetAbsTol(tol);
    core.SetCFactor(-1, cfactor);
    core.SetAggCFactor(cfactor0);
    core.SetMaxIter(max_iter);
