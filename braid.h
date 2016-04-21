@@ -179,7 +179,7 @@ typedef braid_Int
  * 
  * The frequency of XBraid's calls to *access* is controlled through
  * [braid_SetAccessLevel](@ref braid_SetAccessLevel).  For instance, if
- * access_level is set to 2, then *access* is called every XBraid iteration and
+ * access_level is set to 3, then *access* is called every XBraid iteration and
  * on every XBraid level.  In this case, querrying *status* to determine the
  * current XBraid level and iteration will be useful. This scenario allows for
  * even more detailed tracking of the simulation.

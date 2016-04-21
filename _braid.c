@@ -1637,20 +1637,20 @@ _braid_FRestrict(braid_Core   core,
          
          /* Allow user to process current vector, note that r here is
           * temporarily holding the state vector */
-         if( (access_level >= 2) && (level == 0) )
+         if( (access_level >= 3) )
          {
             _braid_AccessStatusInit(ta[fi-f_ilower], rnm, iter, level, nrefine, gupper,
-                                    0, 0, astatus);
+                                    0, 0, braid_ASCaller_FRestrict, astatus);
             _braid_AccessVector(core, astatus, r);
          }
       }
 
       /* Allow user to process current C-point */
-      if( (access_level>= 2) && (level == 0) && (ci > -1) )
+      if( (access_level>= 3) && (ci > -1) )
       {
          _braid_UGetVectorRef(core, level, ci, &u);
          _braid_AccessStatusInit(ta[ci-f_ilower], rnm, iter, level, nrefine, gupper,
-                                 0, 0, astatus);
+                                 0, 0, braid_ASCaller_FRestrict, astatus);
          _braid_AccessVector(core, astatus, u);
       }
       
@@ -1818,10 +1818,10 @@ _braid_FInterp(braid_Core  core,
          _braid_USetVector(core, level, fi, u, 0);
          /* Allow user to process current vector 
           * We consider this iter+1, because we are on an up-cycle.*/
-         if( (access_level >= 2) )
+         if( (access_level >= 3) )
          {
             _braid_AccessStatusInit(ta[fi-ilower], rnorm, iter+1, level, nrefine, gupper,
-                                    0, 0, astatus);
+                                    0, 0, braid_ASCaller_FInterp, astatus);
             _braid_AccessVector(core, astatus, u);
          }
          e = va[fi-ilower];
@@ -1844,10 +1844,10 @@ _braid_FInterp(braid_Core  core,
          _braid_UGetVectorRef(core, level, ci, &u);
          /* Allow user to process current C-point
           * We consider this iter+1, because we are on an up-cycle.*/
-         if( (access_level >= 2) )
+         if( (access_level >= 3) )
          {
             _braid_AccessStatusInit(ta[ci-ilower], rnorm, iter+1, level, nrefine, gupper,
-                                    0, 0, astatus);
+                                    0, 0, braid_ASCaller_FInterp, astatus);
             _braid_AccessVector(core, astatus, u);
          }
          e = va[ci-ilower];
@@ -2365,9 +2365,10 @@ _braid_FRefine(braid_Core   core,
 	      }
 
             /* Allow user to process current vector */
-            if( (access_level >= 2) )
+            if( (access_level >= 3) )
             {
-               _braid_AccessStatusInit(ta[ii], rnorm, iter, 0, nrefine, gupper, 0, 0, astatus);
+               _braid_AccessStatusInit(ta[ii], rnorm, iter, 0, nrefine, gupper,
+                                       0, 0, braid_ASCaller_FRefine, astatus);
                _braid_AccessVector(core, astatus, u);
             }
          }
@@ -2388,9 +2389,10 @@ _braid_FRefine(braid_Core   core,
          }
 
          /* Allow user to process current vector */
-         if( (access_level >= 2) )
+         if( (access_level >= 3) )
          {
-            _braid_AccessStatusInit(ta[ii], rnorm, iter, 0, nrefine, gupper, 0, 0, astatus);
+            _braid_AccessStatusInit(ta[ii], rnorm, iter, 0, nrefine, gupper,
+       	                            0, 0, braid_ASCaller_FRefine, astatus);
             _braid_AccessVector(core, astatus, u);
          }
       }
@@ -2706,7 +2708,7 @@ _braid_FAccess(braid_Core     core,
          _braid_Step(core, level, fi, NULL, u);
          _braid_USetVector(core, level, fi, u, 0);
          _braid_AccessStatusInit( ta[fi-ilower], rnorm, iter, level, nrefine, gupper,
-                                  done, 0, astatus);
+                                  done, 0, braid_ASCaller_FAccess, astatus);
          _braid_AccessVector(core, astatus, u);
       }
       if (flo <= fhi)
@@ -2719,7 +2721,7 @@ _braid_FAccess(braid_Core     core,
       {
          _braid_UGetVectorRef(core, level, ci, &u);
          _braid_AccessStatusInit( ta[ci-ilower], rnorm, iter, level, nrefine, gupper,
-                                  done, 0, astatus);
+                                  done, 0, braid_ASCaller_FAccess, astatus);
          _braid_AccessVector(core, astatus, u);
       }
    }

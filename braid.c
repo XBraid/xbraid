@@ -459,6 +459,32 @@ braid_Drive(braid_Core  core)
          }
          else
          {
+
+	   // Output the solution at the end of each cycle
+	   // Copy the rfactors because the call to FAccess will modify them
+	   if (access_level >= 2)
+	     {
+	       _braid_Grid **grids = _braid_CoreElt(core, grids);
+	       ilower = _braid_GridElt(grids[0], ilower);
+	       iupper = _braid_GridElt(grids[0], iupper);
+	       braid_Int *saved_rfactors = _braid_CTAlloc(braid_Int,iupper-ilower+2);
+	       braid_Int *rfactors       = _braid_CoreElt(core, rfactors);
+	       int ii,i;
+	       for (i=ilower; i<=iupper+1; i++)
+		 {
+		   ii=i-ilower;
+		   saved_rfactors[ii]=rfactors[ii];
+		 }
+	       _braid_FAccess(core, 0, 0);
+	       for (i=ilower; i<=iupper+1; i++)
+		 {
+		   ii=i-ilower;
+		   rfactors[ii]=saved_rfactors[ii];
+		 }
+	       _braid_TFree(saved_rfactors);
+	     }
+
+
             /* Finest grid - refine grid if desired, else check convergence */
             _braid_FRefine(core, &refined);
             nlevels = _braid_CoreElt(core, nlevels);
