@@ -208,28 +208,128 @@
   residual norm        = 3.885386e-01
                         --> Inf-norm TemporalNorm 
 
-# Begin Test 44 -- Use the sequential time stepping solution (should be 0.0 in many cases) 
+# Begin Test 43 -- Use the sequential time stepping solution (should be 0.0 in many cases) 
+
+  residual norm         = 0.000000e+00
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 44
 
   residual norm         = 0.000000e+00
                          --> 2-norm TemporalNorm 
 
 # Begin Test 45
 
-  residual norm         = 0.000000e+00
+  residual norm         = 1.723838e-10
                          --> 2-norm TemporalNorm 
 
 # Begin Test 46
 
-  residual norm         = 1.723838e-10
+  residual norm         = 0.000000e+00
                          --> 2-norm TemporalNorm 
 
 # Begin Test 47
 
-  residual norm         = 0.000000e+00
+  residual norm         = 3.216824e-10
+                         --> 2-norm TemporalNorm 
+# Begin Test 48 -- Use Skip 1
+
+  residual norm         = 4.234270e-02
+                         --> 2-norm TemporalNorm 
+# Begin Test 49
+
+  residual norm         = 4.234270e-02
                          --> 2-norm TemporalNorm 
 
-# Begin Test 48
+# Begin Test 50
 
-  residual norm         = 3.216824e-10
+  residual norm         = 4.234270e-02
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 51
+
+  residual norm         = 4.234270e-02
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 52
+
+  residual norm         = 4.234270e-02
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 53 -- Use user residual routine
+
+  residual norm         = 4.427659e-02
+                         --> 2-norm TemporalNorm 
+# Begin Test 54
+
+  residual norm         = 4.427659e-02
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 55
+
+  residual norm         = 4.427659e-02
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 56
+
+  residual norm         = 4.427659e-02
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 57
+
+  residual norm         = 4.427659e-02
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 58 -- Use full residual with user routine
+
+  Braid: Full || r_1 || = 4.427659e-02, conv factor = 1.00e+00
+  residual norm         = 3.552895e-04
+                         --> 2-norm TemporalNorm 
+# Begin Test 59
+
+  Braid: Full || r_1 || = 4.427659e-02, conv factor = 1.00e+00
+  residual norm         = 3.552895e-04
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 60
+
+  Braid: Full || r_1 || = 4.427659e-02, conv factor = 1.00e+00
+  residual norm         = 3.552895e-04
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 61
+
+  Braid: Full || r_1 || = 4.427659e-02, conv factor = 1.00e+00
+  residual norm         = 3.552895e-04
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 62
+
+  Braid: Full || r_1 || = 4.427659e-02, conv factor = 1.00e+00
+  residual norm         = 3.552895e-04
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 63 -- Use Frefine 
+
+  residual norm         = 1.033821e-03
+                         --> 2-norm TemporalNorm 
+# Begin Test 64
+
+  residual norm         = 1.033821e-03
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 65
+
+  residual norm         = 1.033821e-03
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 66
+
+  residual norm         = 1.033821e-03
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 67
+
+  residual norm         = 1.033821e-03
                          --> 2-norm TemporalNorm 
 

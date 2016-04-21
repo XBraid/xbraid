@@ -24,21 +24,79 @@
 
 # Begin Test 3
 
-  my_Access() called, iter= 9, level= 0
+  my_Access() called, iter= 7, level= 0
   time steps = 256
-  iterations           = 9
-  number of levels     = 8
+  iterations           = 7
+  number of levels     = 7
  Fine level spatial problem size  : 17 x 17
 
 # Begin Test 4
 
+  my_Access() called, iter= 6, level= 0
+  time steps = 256
+  iterations           = 6
+  number of levels     = 7
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 5
+
+  my_Access() called, iter= 4, level= 0
+  time steps = 256
+  iterations           = 4
+  number of levels     = 7
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 6
+
+  my_Access() called, iter= 11, level= 0
+  time steps = 256
+  iterations           = 11
+  number of levels     = 7
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 7
+
+  my_Access() called, iter= 10, level= 0
+  time steps = 256
+  iterations           = 10
+  number of levels     = 7
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 8
+
+  Braid: Temporal refinement occurred, 486 time steps
+  Braid: Temporal refinement occurred, 737 time steps
+  Braid: Temporal refinement occurred, 1078 time steps
+  time steps = 1078
+  iterations            = 7
+  number of levels      = 9
+
+# Begin Test 9
+
+  Braid: Temporal refinement occurred, 486 time steps
+  Braid: Temporal refinement occurred, 737 time steps
+  Braid: Temporal refinement occurred, 1078 time steps
+  time steps = 1078
+  iterations            = 5
+  number of levels      = 9
+
+# Begin Test 10
+
   my_Access() called, iter= 9, level= 0
   time steps = 256
   iterations           = 9
   number of levels     = 8
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 5
+# Begin Test 11
+
+  my_Access() called, iter= 9, level= 0
+  time steps = 256
+  iterations           = 9
+  number of levels     = 8
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 12
 
   my_Access() called, iter= 5, level= 0
   time steps = 256
@@ -47,7 +105,7 @@
  Fine level spatial problem size  : 17 x 17
 
 
-# Begin Test 6
+# Begin Test 13
 
   my_Access() called, iter= 24, level= 0
   time steps = 128
@@ -61,7 +119,7 @@
   4   |  expl       3.93e-01    3.93e-01    2.31e-02    3.00e-01
   5   |  expl       7.85e-01    7.85e-01    4.63e-02    1.50e-01
 
-# Begin Test 7
+# Begin Test 14
 
   my_Access() called, iter= 7, level= 0
   time steps = 32
@@ -69,7 +127,7 @@
   number of levels     = 4
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 8
+# Begin Test 15
 
   my_Access() called, iter= 0, level= 0
   my_Access() called, iter= 1, level= 3
@@ -105,13 +163,13 @@
   number of levels     = 4
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 9
+# Begin Test 16
 
   my_Access() called, iter= 7, level= 0
  Fine level spatial problem size  : 17 x 17
 
 
-# Begin Test 10
+# Begin Test 17
  
   my_Access() called, iter= 7, level= 0
   time steps = 32
@@ -119,7 +177,326 @@
   number of levels     = 4
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 11
+# Begin Test 18
+ 
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  0
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  0
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  0
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  0
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  1
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  1
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  1
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  1
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  1
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  1
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  1
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  1
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  1
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  1
+  braid_StepStatusGetRNorms[-1]:  1.96e-03
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  1
+  braid_StepStatusGetRNorms[-1]:  1.96e-03
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  1
+  braid_StepStatusGetRNorms[-1]:  1.96e-03
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  1
+  braid_StepStatusGetRNorms[-1]:  1.96e-03
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  1
+  braid_StepStatusGetRNorms[-1]:  1.96e-03
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  1
+  braid_StepStatusGetRNorms[-1]:  1.96e-03
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  1
+  braid_StepStatusGetRNorms[-1]:  1.96e-03
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  1
+  braid_StepStatusGetRNorms[-1]:  1.96e-03
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  4.66e-07
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  4.66e-07
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  4.66e-07
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  4.66e-07
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  4.66e-07
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  4.66e-07
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  4.66e-07
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  4.66e-07
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  2.09e-08
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  3
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  2.09e-08
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  3
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  2.09e-08
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  3
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  2.09e-08
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  3
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  2.09e-08
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  3
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  2.09e-08
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  3
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  2.09e-08
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  3
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  2.09e-08
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  3
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  2.09e-08
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  3
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  3
+  braid_StepStatusGetRNorms[-1]:  6.69e-11
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  3
+  braid_StepStatusGetRNorms[-1]:  6.69e-11
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  3
+  braid_StepStatusGetRNorms[-1]:  6.69e-11
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  3
+  braid_StepStatusGetRNorms[-1]:  6.69e-11
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  3
+  braid_StepStatusGetRNorms[-1]:  6.69e-11
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  3
+  braid_StepStatusGetRNorms[-1]:  6.69e-11
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  3
+  braid_StepStatusGetRNorms[-1]:  6.69e-11
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  3
+  braid_StepStatusGetRNorms[-1]:  6.69e-11
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-09
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  4
+  braid_StepStatusGetRNorms[-1]:  6.69e-11
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  my_Access() called, iter= 4, level= 0
+  braid_GetSpatialAccuracy:  1.00e-09
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  4
+  braid_StepStatusGetRNorms[-1]:  6.69e-11
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-09
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  4
+  braid_StepStatusGetRNorms[-1]:  6.69e-11
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-09
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  4
+  braid_StepStatusGetRNorms[-1]:  6.69e-11
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-09
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  4
+  braid_StepStatusGetRNorms[-1]:  6.69e-11
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  time steps = 9
+  iterations            = 4
+  number of levels      = 2
+  braid_GetRNorms[0] = -1.00e+00
+  braid_GetRNorms[-1] = 6.69e-11
+  braid_GetRNorms[0] = -1.00e+00
+  braid_GetRNorms[1] = 1.96e-03
+  braid_GetRNorms[2] = 4.66e-07
+  braid_GetRNorms[3] = 6.69e-11
+  braid_GetRNorms[0] = -1.00e+00
+  braid_GetRNorms[1] = 1.96e-03
+  braid_GetRNorms[2] = 4.66e-07
+  braid_GetRNorms[3] = 6.69e-11
+  braid_GetRNorms[4] = 6.69e-11
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 19
  
   my_Access() called, iter= 7, level= 0
   time steps = 32
@@ -127,7 +504,7 @@
   number of levels     = 4
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 12
+# Begin Test 20
 
 Starting braid_TestInitAccess
    braid_TestInitAccess:   Starting Test 1
@@ -289,7 +666,7 @@ Starting braid_TestBuf
    braid_TestBuf:   free(v)
 Finished braid_TestBuf: all tests passed successfully
 
-# Begin Test 13
+# Begin Test 21
 
   my_Access() called, iter= 1, level= 0
   time steps = 128
@@ -297,7 +674,7 @@ Finished braid_TestBuf: all tests passed successfully
   number of levels     = 1
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 14
+# Begin Test 22
 
   my_Access() called, iter= 8, level= 0
   time steps = 128
@@ -305,7 +682,7 @@ Finished braid_TestBuf: all tests passed successfully
   number of levels     = 2
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 15
+# Begin Test 23
 
   my_Access() called, iter= 8, level= 0
   time steps = 128
@@ -313,7 +690,7 @@ Finished braid_TestBuf: all tests passed successfully
   number of levels     = 8
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 16
+# Begin Test 24
 
   my_Access() called, iter= 8, level= 0
   time steps = 128

@@ -49,6 +49,8 @@ typedef struct
 } _braid_CycleState;
 
 /*--------------------------------------------------------------------------
+ * This is a locally scoped helper function for braid_Drive(), not a user 
+ * function.
  *--------------------------------------------------------------------------*/
 
 braid_Int
@@ -84,6 +86,9 @@ _braid_DriveInitCycle(braid_Core          core,
 }
 
 /*--------------------------------------------------------------------------
+ * This is a locally scoped helper function for braid_Drive(), not a user 
+ * function.
+ * 
  * This routine determines the cycle direction (down or up) based on the current
  * grid level, iteration number, and cycle state.  The resulting cycle direction
  * is expected to produce three basic actions as follows:
@@ -105,8 +110,10 @@ _braid_DriveUpdateCycle(braid_Core          core,
    braid_Int      nfmg      = _braid_CoreElt(core, nfmg);
    braid_Int      nfmg_Vcyc = _braid_CoreElt(core, nfmg_Vcyc); 
    braid_Int      nlevels   = _braid_CoreElt(core, nlevels);
-
    _braid_CycleState  cycle = *cycle_ptr;
+   braid_Real     rnorm;     
+
+   _braid_GetRNorm(core, -1, &rnorm);
 
    if (cycle.down)
    {
@@ -163,11 +170,28 @@ _braid_DriveUpdateCycle(braid_Core          core,
    /* Print to cycle output file */
    if (myid == 0)
    {
-      braid_Int  nrefine = _braid_CoreElt(core, nrefine);
-      braid_Int  gupper  = _braid_CoreElt(core, gupper);
+      braid_Int            nrefine = _braid_CoreElt(core, nrefine);
+      braid_Int            gupper  = _braid_CoreElt(core, gupper);
+      braid_Real           tol     = _braid_CoreElt(core, tol);
+      braid_Int            rtol    = _braid_CoreElt(core, rtol);
+      braid_PtFcnResidual  fullres = _braid_CoreElt(core, full_rnorm_res);
+      braid_Real           rnorm0;
+      
+      /* If using a relative tolerance, adjust tol */
+      if (rtol)
+      {
+         if (fullres != NULL) {
+            rnorm0 = _braid_CoreElt(core, full_rnorm0);
+         }
+         else {
+            rnorm0 = _braid_CoreElt(core, rnorm0);
+         }
+         tol *= rnorm0;
+      }
 
-      _braid_ParFprintfFlush(cycle.outfile, myid, "%d %d %d %d\n",
-                             level, nrefine, iter, gupper);
+
+      _braid_ParFprintfFlush(cycle.outfile, myid, "%d %d %d %d %1.15e %1.15e\n",
+                             level, nrefine, iter, gupper, rnorm, tol);
    }
 
    *cycle_ptr = cycle;
@@ -176,6 +200,8 @@ _braid_DriveUpdateCycle(braid_Core          core,
 }
 
 /*--------------------------------------------------------------------------
+ * This is a locally scoped helper function for braid_Drive(), not a user 
+ * function.
  *--------------------------------------------------------------------------*/
 
 braid_Int
@@ -198,6 +224,8 @@ _braid_DriveEndCycle(braid_Core          core,
 }
 
 /*--------------------------------------------------------------------------
+ * This is a locally scoped helper function for braid_Drive(), not a user 
+ * function.
  *--------------------------------------------------------------------------*/
 
 braid_Int
@@ -257,6 +285,8 @@ _braid_DriveCheckConvergence(braid_Core  core,
 }
 
 /*--------------------------------------------------------------------------
+ * This is a locally scoped helper function for braid_Drive(), not a user 
+ * function.
  *--------------------------------------------------------------------------*/
 
 braid_Int
@@ -346,7 +376,6 @@ braid_Drive(braid_Core  core)
    braid_Int            skip            = _braid_CoreElt(core, skip);
    braid_Int            max_levels      = _braid_CoreElt(core, max_levels);
    braid_Int            print_level     = _braid_CoreElt(core, print_level);
-   braid_Int            access_level    = _braid_CoreElt(core, access_level);
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
 
    braid_Int     *nrels, nrel0;
@@ -524,10 +553,7 @@ braid_Drive(braid_Core  core)
    }
 
    /* Allow final access to Braid by carrying out an F-relax to generate points */
-   if (access_level >= 1)
-   {
-      _braid_FAccess(core, 0, 1);
-   }
+   _braid_FAccess(core, 0, 1);
 
    /* End cycle */
    _braid_DriveEndCycle(core, &cycle);
@@ -585,7 +611,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              access_level    = 1;              /* Default access level */
    braid_Int              tnorm           = 2;              /* Default temporal norm */
    braid_Real             tol             = 1.0e-09;        /* Default absolute tolerance */
-   braid_Real             rtol            = 1;              /* Use relative tolerance */
+   braid_Int              rtol            = 1;              /* Use relative tolerance */
    braid_Int              skip            = 1;              /* Default skip value, skips all work on first down-cycle */
    braid_Int              max_refinements = 200;            /* Maximum number of F-refinements */
    braid_Int              tpoints_cutoff  = braid_Int_Max;  /* Maximum number of time steps, controls FRefine()*/ 
@@ -814,7 +840,7 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  skip down cycle       = %d\n", skip);
       _braid_printf("  number of refinements = %d\n", nrefine);
       _braid_printf("\n");
-      _braid_printf("  level   time-pts   cfactor   nrelax\n", globaltime);
+      _braid_printf("  level   time-pts   cfactor   nrelax\n");
       for (level = 0; level < nlevels-1; level++)
       {
          _braid_printf("  % 5d  % 8d  % 7d   % 6d\n",
@@ -1290,25 +1316,40 @@ braid_GetSpatialAccuracy( braid_StepStatus  status,
                           braid_Real        tight_tol,
                           braid_Real       *tol_ptr )
 {
-   braid_Int nrequest   = 1;
+   braid_Int nrequest   = 2;
    braid_Real stol, tol, rnorm, rnorm0, old_fine_tolx;
    braid_Int level;
    braid_Real l_rnorm, l_ltol, l_ttol, l_tol;
+   braid_Real *rnorms = (braid_Real *) malloc( 2*sizeof(braid_Real) ); 
    
    braid_StepStatusGetTol(status, &tol);
    braid_StepStatusGetLevel(status, &level);
    braid_StepStatusGetOldFineTolx(status, &old_fine_tolx);
 
    /* Get the first and then the current residual norms */
-   braid_StepStatusGetRNorms(status, &nrequest, &rnorm0);
-   nrequest = -1;
-   braid_StepStatusGetRNorms(status, &nrequest, &rnorm);
+   rnorms[0] = -1.0; rnorms[1] = -1.0;
+   braid_StepStatusGetRNorms(status, &nrequest, rnorms);
+   if((rnorms[0] == -1.0) && (rnorms[1] != -1.0)){
+      rnorm0 = rnorms[1];
+   }
+   else{
+      rnorm0 = rnorms[0];
+   }
+   nrequest = -2;
+   braid_StepStatusGetRNorms(status, &nrequest, rnorms);
+   if((rnorms[1] == -1.0) && (rnorms[0] != -1.0)){
+      rnorm = rnorms[0];
+   }
+   else{
+      rnorm = rnorms[1];
+   }
+ 
 
-   if ( (level > 0) || (nrequest == 0) )
+   if ( (level > 0) || (nrequest == 0) || (rnorm0 == -1.0) )
    {
       /* Always return the loose tolerance, if
        * (1) On a coarse grid computation
-       * (2) There is no residual history yet (this is the first Braid iteration) */
+       * (2) There is no residual history yet (this is the first Braid iteration with skip turned on) */
       *tol_ptr = loose_tol;
    }
    else
@@ -1354,6 +1395,7 @@ braid_GetSpatialAccuracy( braid_StepStatus  status,
       }
    }
 
+   free(rnorms);
     /* printf( "lev: %d, accuracy: %1.2e, nreq: %d, rnorm: %1.2e, rnorm0: %1.2e, loose: %1.2e, tight: %1.2e, old: %1.2e, braid_tol: %1.2e \n", level, *tol_ptr, nrequest, rnorm, rnorm0, loose_tol, tight_tol, old_fine_tolx, tol); */
    return _braid_error_flag;
 }

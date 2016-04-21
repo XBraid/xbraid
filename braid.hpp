@@ -94,7 +94,8 @@ public:
                              braid_Vector          *cu_ptr,
                              BraidCoarsenRefStatus &status)
    {
-      fprintf(stderr, "Braid C++ Wrapper Warning: turn off spatial coarsening until Coarsen and Refine have been user implemented\n");
+      fprintf(stderr, "Braid C++ Wrapper Warning: turn off spatial coarsening "
+                      "until Coarsen and Refine have been user implemented\n");
       Clone(_fu, cu_ptr);
       return 0;
    }
@@ -103,7 +104,8 @@ public:
                             braid_Vector          *fu_ptr,
                             BraidCoarsenRefStatus &status)
    {
-      fprintf(stderr, "Braid C++ Wrapper Warning: turn off spatial coarsening until Coarsen and Refine have been user implemented\n");
+      fprintf(stderr, "Braid C++ Wrapper Warning: turn off spatial coarsening "
+                      "until Coarsen and Refine have been user implemented\n");
       Clone(_cu, fu_ptr);
       return 0;
    }
@@ -123,7 +125,11 @@ class BraidAccessStatus
          astatus = _astatus;
       }
 
-      void GetTILD(braid_Real *t_ptr, braid_Int *iter_ptr, braid_Int *level_ptr, braid_Int *done_ptr) { braid_AccessStatusGetTILD(astatus, t_ptr, iter_ptr, level_ptr, done_ptr); }
+      void GetTILD(braid_Real *t_ptr,
+                   braid_Int  *iter_ptr,
+                   braid_Int  *level_ptr,
+                   braid_Int  *done_ptr)
+      { braid_AccessStatusGetTILD(astatus, t_ptr, iter_ptr, level_ptr, done_ptr); }
       void GetT(braid_Real *t_ptr)              { braid_AccessStatusGetT(astatus, t_ptr); }
       void GetDone(braid_Int *done_ptr)         { braid_AccessStatusGetDone(astatus, done_ptr); }
       void GetLevel(braid_Int *level_ptr)       { braid_AccessStatusGetLevel(astatus, level_ptr); }
@@ -150,8 +156,10 @@ class BraidStepStatus
          pstatus = _pstatus;
       }
 
-      void GetRNorms(braid_Int *nrequest_ptr, braid_Real *rnorms) { braid_StepStatusGetRNorms(pstatus, nrequest_ptr, rnorms); }
-      void GetTstartTstop(braid_Real *tstart_ptr, braid_Real *tstop_ptr) { braid_StepStatusGetTstartTstop(pstatus, tstart_ptr, tstop_ptr); }
+      void GetRNorms(braid_Int *nrequest_ptr, braid_Real *rnorms)
+      { braid_StepStatusGetRNorms(pstatus, nrequest_ptr, rnorms); }
+      void GetTstartTstop(braid_Real *tstart_ptr, braid_Real *tstop_ptr)
+      { braid_StepStatusGetTstartTstop(pstatus, tstart_ptr, tstop_ptr); }
       void GetTstart(braid_Real *tstart_ptr)             { braid_StepStatusGetTstart(pstatus, tstart_ptr); }
       void GetTstop(braid_Real *tstop_ptr)               { braid_StepStatusGetTstop(pstatus, tstop_ptr); }
       void GetLevel(braid_Int *level_ptr)                { braid_StepStatusGetLevel(pstatus, level_ptr); }
@@ -182,7 +190,16 @@ class BraidCoarsenRefStatus
          cstatus = _cstatus;
       }
 
-      void GetTpriorTstop(braid_Real *tstart_ptr, braid_Real *f_tprior_ptr, braid_Real *f_tstop_ptr, braid_Real *c_tprior_ptr, braid_Real *c_tstop_ptr) { braid_CoarsenRefStatusGetTpriorTstop(cstatus, tstart_ptr, f_tprior_ptr, f_tstop_ptr, c_tprior_ptr, c_tstop_ptr); }
+      void GetTpriorTstop(braid_Real *tstart_ptr,
+                          braid_Real *f_tprior_ptr,
+                          braid_Real *f_tstop_ptr,
+                          braid_Real *c_tprior_ptr,
+                          braid_Real *c_tstop_ptr)
+      {
+         braid_CoarsenRefStatusGetTpriorTstop(
+            cstatus, tstart_ptr, f_tprior_ptr, f_tstop_ptr,
+            c_tprior_ptr, c_tstop_ptr);
+      }
       void GetTstart(braid_Real *tstart_ptr)    { braid_CoarsenRefStatusGetTstart(cstatus, tstart_ptr); }
       void GetFTstop(braid_Real *f_tstop_ptr)   { braid_CoarsenRefStatusGetFTstop(cstatus, f_tstop_ptr); }
       void GetFTprior(braid_Real *f_tprior_ptr) { braid_CoarsenRefStatusGetFTprior(cstatus, f_tprior_ptr); }
@@ -205,7 +222,7 @@ static braid_Int _BraidAppStep(braid_App       _app,
                               braid_StepStatus _pstatus)
 {
    BraidApp *app = (BraidApp*)_app;
-   BraidStepStatus pstatus = BraidStepStatus(_pstatus);
+   BraidStepStatus pstatus(_pstatus);
    return app -> Step(_u,_ustop, _fstop, pstatus);
 }
 
@@ -216,7 +233,7 @@ static braid_Int _BraidAppResidual(braid_App     _app,
                               braid_StepStatus _pstatus)
 {
    BraidApp *app = (BraidApp*)_app;
-   BraidStepStatus pstatus = BraidStepStatus(_pstatus);
+   BraidStepStatus pstatus(_pstatus);
    return app -> Residual(_ustop,_r, pstatus);
 }
 
@@ -272,7 +289,7 @@ static braid_Int _BraidAppAccess(braid_App          _app,
                                  braid_AccessStatus _astatus)
 {
    BraidApp *app = (BraidApp*)_app;
-   BraidAccessStatus astatus = BraidAccessStatus(_astatus);
+   BraidAccessStatus astatus(_astatus);
    return app -> Access(_u, astatus);
 }
 
@@ -310,7 +327,7 @@ static braid_Int _BraidAppCoarsen(braid_App               _app,
                                   braid_CoarsenRefStatus  _cstatus)
 {
    BraidApp *app = (BraidApp*)_app;
-   BraidCoarsenRefStatus cstatus = BraidCoarsenRefStatus(_cstatus);
+   BraidCoarsenRefStatus cstatus(_cstatus);
    return app -> Coarsen(_fu, cu_ptr, cstatus);
 }
 
@@ -321,7 +338,7 @@ static braid_Int _BraidAppRefine(braid_App               _app,
                                  braid_CoarsenRefStatus  _cstatus)
 {
    BraidApp *app = (BraidApp*)_app;
-   BraidCoarsenRefStatus cstatus = BraidCoarsenRefStatus(_cstatus);
+   BraidCoarsenRefStatus cstatus(_cstatus);
    return app -> Refine(_fu, cu_ptr, cstatus);
 }
 
@@ -360,13 +377,14 @@ public:
    void SetCFactor(braid_Int level, braid_Int cfactor)
    { braid_SetCFactor(core, level, cfactor); }
 
-   /** Use cfactor0 on all levels until there are < cfactor0 points
-       on each processor. */
+   /// If cfactor0 > -1, set the cfactor for level 0 to cfactor0.
    void SetAggCFactor(braid_Int cfactor0)
    {
       if (cfactor0 > -1)
          braid_SetCFactor(core, 0, cfactor0);
 
+    /* Use cfactor0 on all levels until there are < cfactor0 points
+       on each processor. */
     //BraidApp *app = (BraidApp *) core->app;
     //braid_Int nt = app->ntime, pt;
     //MPI_Comm_size(app->comm_t, &pt);

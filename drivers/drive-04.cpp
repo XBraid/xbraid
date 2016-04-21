@@ -224,69 +224,6 @@ namespace hypre
 using namespace hypre;
 
 
-class FuncDepGridFuncCoefficient : public Coefficient
-{
-protected:
-   ParGridFunction *gfunc;
-   double power;
-   Vector grad;
-public:
-
-   FuncDepGridFuncCoefficient(ParGridFunction *vd, double _power)
-   {
-      gfunc = vd;
-      power = _power;
-   }
-
-   void SetGridFunction(HypreParVector *X)
-   {
-      *gfunc = *X; // distribute (communication)
-   }
-
-   void SetPower(double _power) { power = _power; }
-
-   double Eval(ElementTransformation &T, const IntegrationPoint &ip)
-   {
-      gfunc->GetGradient(T, grad);
-      return -pow(grad * grad, power/2);
-   }
-
-   virtual void Read(istream &in) { }
-};
-
-
-// All variables required for a nonlinear solve with variable tolerance.
-class NonlinearOptions
-{
-   // timeint = tstart-tstop, tolf and tolc are fine and coarse grid nonlinear
-   // solve tolerances and ntime is the number of time steps
-protected:
-   int    max_it, ntime;
-   double timeint, tolf, tolc;
-
-public:
-   NonlinearOptions(int _maxit=100, int _ntime=32, double _timeint=1,
-                    double _tolf=0.001, double _tolc=0.001)
-   {
-      tolf = _tolf;
-      tolc = _tolc;
-      max_it = _maxit;
-      ntime = _ntime;
-      timeint = _timeint;
-   }
-
-   double GetMaxIteration() {return max_it;}
-
-   double GetTolerance(double dt = 0)
-   {
-      if (dt - timeint/ntime < 0.000001)
-         return tolf;
-      else
-         return tolc;
-   }
-};
-
-
 // Right-hand side for the set of scalar ODEs du_i/dt = f(u_i,t)
 class ScalarODE : public TimeDependentOperator
 {
@@ -353,24 +290,53 @@ public:
 class LinearSystemODE : public TimeDependentOperator
 {
 private:
-   HypreParMatrix *M, *B; // B = M - dt A, for ImplicitSolve
+   HypreParMatrix *M;
    mutable HypreParMatrix *A;
    HypreParVector *X, *Y, *Z;
-   HypreParVector *W, *H, *D;
    mutable HypreParVector *b;
    ParLinearForm *b_form;
    mutable ParBilinearForm *aform;
    Coefficient *b_coeff;
    VectorCoefficient *b_vcoeff;
-   MatrixCoefficient *mcoeff;
-   FuncDepGridFuncCoefficient *gcoeff;
    HypreBoomerAMG *amg;
    HyprePCG *pcg;
-   double current_dt; // dt used in B
-   HypreBoomerAMG *B_amg;
-   HyprePCG *B_pcg;
-   NonlinearOptions *NLO;
-   int timedep_A; // Is 'a' time-dependent or nonlinear?
+   mutable Array<double> dts;
+   mutable Array<HypreParMatrix*> B; // B = M - dt A, for ImplicitSolve
+   mutable Array<HypreBoomerAMG*> B_amg;
+   mutable Array<CGSolver*> B_pcg;
+   int timedep_A; // Is 'a' time-dependent?
+
+   int GetDtIndex(double dt) const
+   {
+      for (int i = 0; i < dts.Size(); i++)
+      {
+         if (std::abs(dts[i]-dt) < 1e-10*dt)
+         {
+            if (timedep_A)
+            {
+               MFEM_ABORT("TODO");
+            }
+            return i;
+         }
+      }
+      dts.Append(dt);
+      B.Append(new HypreParMatrix(hypre_ParCSRMatrixAdd(*M, *A)));
+      hypre_ParCSRMatrixSetConstantValues(*B.Last(), 0.0);
+      hypre_ParCSRMatrixSum(*B.Last(), 1.0, *M);
+      hypre_ParCSRMatrixSum(*B.Last(), -dt, *A);
+
+      B_amg.Append(new HypreBoomerAMG);
+      B_amg.Last()->SetPrintLevel(-1);
+
+      B_pcg.Append(new CGSolver(B.Last()->GetComm()));
+      B_pcg.Last()->SetRelTol(1e-12);
+      B_pcg.Last()->SetMaxIter(200);
+      B_pcg.Last()->SetPrintLevel(0);
+      B_pcg.Last()->SetPreconditioner(*B_amg.Last());
+      B_pcg.Last()->SetOperator(*B.Last());
+      B_pcg.Last()->iterative_mode = false;
+      return dts.Size()-1;
+   }
 
 public:
    LinearSystemODE(ParBilinearForm *_aform,
@@ -378,13 +344,9 @@ public:
                    HypreParMatrix *_M = NULL,
                    ParLinearForm *_b_form = NULL,
                    Coefficient *_b_coeff = NULL,
-                   VectorCoefficient *_b_vcoeff = NULL,
-                   MatrixCoefficient *_mcoeff = NULL,
-                   FuncDepGridFuncCoefficient *_gcoeff = NULL,
-                   NonlinearOptions *_NLO = NULL)
+                   VectorCoefficient *_b_vcoeff = NULL)
       : M(_M), b_form(_b_form), aform(_aform), b_coeff(_b_coeff),
-        b_vcoeff(_b_vcoeff), mcoeff(_mcoeff), gcoeff(_gcoeff), NLO(_NLO),
-        timedep_A(_timedep_A)
+        b_vcoeff(_b_vcoeff), timedep_A(_timedep_A)
    {
       // Inital Assembly of Stiffness Matrix
       aform->Assemble();
@@ -403,7 +365,7 @@ public:
       {
          amg = NULL;
          pcg = NULL;
-         Z = W = H = D = NULL;
+         Z = NULL;
       }
       else
       {
@@ -418,16 +380,9 @@ public:
          pcg->SetZeroInintialIterate();
 
          Z = new HypreParVector(*A);
-         W = new HypreParVector(*A);
-         H = new HypreParVector(*A);
-         D = new HypreParVector(*A);
       }
 
       b = NULL;
-      B = NULL; // Allocated in ImplicitSolve if needed
-      current_dt = -1.;
-      B_amg = NULL;
-      B_pcg = NULL;
    }
 
    void AssembleDiffMatrix() const
@@ -435,9 +390,6 @@ public:
       if (timedep_A)
       {
          delete A;
-
-         if (mcoeff)
-            mcoeff->SetTime(GetTime());
 
          aform->Update();
          aform->Assemble();
@@ -472,8 +424,6 @@ public:
 
       // Assemble
       AssembleBVector();
-      if (gcoeff)
-         gcoeff->SetGridFunction(X);
       AssembleDiffMatrix();
 
       // Solve
@@ -485,112 +435,56 @@ public:
       }
       else
       {
-         A->Mult(*X, *Z); // M^{-1} A X
+         A->Mult(*X, *Z); // Z = A X
          if (b)
-            *Z += *b; // M^{-1} (A X + b)
+            *Z += *b; // Z = (A X + b)
 
-         pcg->Mult(*Z, *Y);
+         pcg->Mult(*Z, *Y); // Y = M^{-1} Z
       }
    }
 
    /** Solve for k in the equation: M k = A(x + dt k, t) + b(t).
-       In the nonlinear case we solve using a fixed point iteration for the
-       equation written as:
-       *     k = [M - dt*AA(x + dt*k, t)]^{-1} [AA(x + dt*k, t)*x + b(t)],
-       where AA(z,t) is the matrix assembled using the grid function z in the
-       coefficient of the bilinear form, so that the nonlinear operator A(z,t)
-       can be written as A(z,t) = AA(z,t)*z.
        This method is needed for backward Euler and other DIRK methods. */
    virtual void ImplicitSolve(const double dt, const Vector &x, Vector &k)
    {
-      double resid = 100;
-      int i = 0;
-      int iteration = 0;
-      double tol = 1;
-
-      if (NLO)
-      {
-         iteration = NLO->GetMaxIteration();
-         tol = NLO->GetTolerance(dt);
-      }
-
       // Wrap the Data
       X->SetData(x.GetData());
       Y->SetData(k.GetData());
 
       // Assemble
       AssembleBVector();
-      if (gcoeff)
-         gcoeff->SetGridFunction(X);
       AssembleDiffMatrix();
 
-      while (resid >= tol)
-      {
-         if (!M)
-         {
-            cerr << "Not implemented!" << endl;
-            abort();
-         }
+      // 1) Form the matrix: B = M - dt A
+      int i = GetDtIndex(dt);
 
-         // 1) Form the matrix: B = M - dt A
-         if (!B)
-            B = new HypreParMatrix(hypre_ParCSRMatrixAdd(*M, *A));
-         if (timedep_A || current_dt != dt)
-         {
-            hypre_ParCSRMatrixSetConstantValues(*B, 0.0);
-            hypre_ParCSRMatrixSum(*B, 1.0, *M);
-            hypre_ParCSRMatrixSum(*B, -dt, *A);
+      // 2) Form the rhs: A x + b
+      A->Mult(*X, *Z);
+      if (b)
+         *Z += *b;
 
-            delete B_amg;
-            B_amg = new HypreBoomerAMG(*B);
-            B_amg->SetPrintLevel(-1);
+      // 3) Solve the system B Y = Z
+      B_pcg[i]->Mult(*Z, *Y);
+   }
 
-            delete B_pcg;
-            B_pcg = new HyprePCG(*B);
-            B_pcg->SetTol(1e-12);
-            B_pcg->SetMaxIter(200);
-            B_pcg->SetPrintLevel(0);
-            B_pcg->SetPreconditioner(*B_amg);
-            B_pcg->SetZeroInintialIterate();
+   double InnerProduct(const Vector &x, const Vector &y) const
+   {
+         // Wrap the Data
+         X->SetData(x.GetData());
+         Y->SetData(y.GetData());
 
-            current_dt = dt;
-         }
-
-         // 2) Form the rhs: A x + b
-         A->Mult(*X, *Z);
-         if (b)
-            *Z += *b;
-
-         // 3) Solve the system B Y = Z
-         B_pcg->Mult(*Z, *Y);
-
-         if (++i >= iteration)
-            break;
-
-         // Update the matrix for the next iteration and calculate the residual;
-         add(*X, dt, *Y, *D); // D = X + k*dt
-         if (gcoeff)
-         {
-            gcoeff->SetGridFunction(D);
-            AssembleDiffMatrix();
-         }
-
-         A->Mult(*D, *H);
-         *H += *b;   // H = A(x + k dt) + b(t)
-         M->Mult(*Y, *W);
-         *W -= *H;   // W = M k - A(x + k*dt) - b(t)
-         resid = sqrt(InnerProduct(W, W));
-
-         cout << "LinearSystemODE::ImplicitSolve : resid = "
-              << resid << endl;
-      }
+         M->Mult(*X, *Z, 1.0, 0.0);
+         return mfem::InnerProduct(*Z, *Y);
    }
 
    virtual ~LinearSystemODE()
    {
-      delete B_pcg;
-      delete B_amg;
-      delete B;
+      for (int i = dts.Size()-1; i >= 0; i--)
+      {
+         delete B_pcg[i];
+         delete B_amg[i];
+         delete B[i];
+      }
       delete b;
       delete A;
       delete Z;
@@ -598,9 +492,30 @@ public:
       delete amg;
       delete Y;
       delete X;
-      delete W;
-      delete H;
-      delete D;
+   }
+};
+
+
+class DiffBraidApp : public MFEMBraidApp
+{
+protected:
+   LinearSystemODE *ode;
+
+public:
+   DiffBraidApp(MPI_Comm comm_t_, LinearSystemODE *ode_,
+                HypreParVector *X0_, ParGridFunction *x_, ODESolver *solver_,
+                double tstart_, double tstop_, int ntime_)
+      : MFEMBraidApp(comm_t_, ode_, X0_, x_, solver_,
+                     tstart_, tstop_, ntime_),
+        ode(ode_)
+   { }
+
+   virtual int SpatialNorm(braid_Vector  u_,
+                           double       *norm_ptr)
+   {
+      BraidVector *u = (BraidVector*) u_;
+      *norm_ptr = sqrt(ode->InnerProduct(*u, *u));
+      return 0;
    }
 };
 
@@ -686,12 +601,6 @@ void SolveODE(TimeDependentOperator *ode, HypreParVector *X0,
 const double tau = (2.+1./6.)*M_PI;
 double kap;
 
-//Flagterms
-double diff_term;
-double tfinal;
-double power;
-
-
 // Exact solution
 double ExSol(Vector &p, double t)
 {
@@ -701,53 +610,6 @@ double ExSol(Vector &p, double t)
       return sin(kap*p(0))*sin(kap*p(1))*sin(tau*t);
    else
       return sin(kap*p(0))*sin(kap*p(1))*sin(kap*p(2))*sin(tau*t);
-}
-
-double DiffFunction(double t)
-{
-   if (diff_term < 10)
-      return diff_term;
-   else if (diff_term == 10)
-      return cos(M_PI/2*t/(tfinal+ 0.01));
-   else if (diff_term == 11)
-      return t/tfinal + 0.001;
-   else if (diff_term == 12)
-   {
-      if (t <= tfinal/4)
-         return 0.001;
-      else if (t > tfinal/4 && t <= tfinal/2)
-         return 1;
-      else if (t > tfinal/2 && t <= 3*tfinal/4)
-         return 0.001;
-      else
-         return 1;
-   }
-   else
-      return 1;
-}
-
-// matrix diffusion coefficient term
-void Diff(const Vector &p, double t, DenseMatrix &m)
-{
-   int dim = p.Size();
-   if (dim == 2)
-   {
-      double aa[4]={-1,0,0,-DiffFunction(t)};
-      m = aa;
-   }
-   else
-   {
-      double aa[9] = {-1,0,0,0,-1,0,0,0,-DiffFunction(t)};
-      m = aa;
-   }
-}
-
-int timedep()
-{
-   if (diff_term < 10)
-      return 0;
-   else
-      return 1;
 }
 
 // Initial condition
@@ -762,60 +624,33 @@ double IC(Vector &x)
 void NBC(const Vector &p, double t, Vector &v)
 {
    int dim = p.Size();
-   if (diff_term > 20)
-   {
-      double Ux, Uy;
-      Ux = kap*cos(kap*p(0))*sin(kap*p(1))*sin(tau*t);
-      Uy = kap*sin(kap*p(0))*cos(kap*p(1))*sin(tau*t);
-      v(0) = pow(Ux*Ux + Uy*Uy,power/2)*Ux;
-      v(1) = pow(Ux*Ux + Uy*Uy,power/2)*Uy;
-      return;
-   }
-   else if (diff_term <= 0)
-   {
-      v(0) = -diff_term*kap*cos(kap*p(0))*sin(kap*p(1))*sin(tau*t);
-      v(1) = -diff_term*kap*sin(kap*p(0))*cos(kap*p(1))*sin(tau*t);
-      return;
-   }
-   else if (dim == 2)
+   if (dim == 2)
    {
       v(0) = kap*cos(kap*p(0))*sin(kap*p(1))*sin(tau*t);
-      v(1) = DiffFunction(t)*kap*sin(kap*p(0))*cos(kap*p(1))*sin(tau*t);
-      return;
+      v(1) = kap*sin(kap*p(0))*cos(kap*p(1))*sin(tau*t);
    }
-   // 3D if only implimented for the matrix case and not the nonlinear case.
-   v(0) = kap*cos(kap*p(0))*sin(kap*p(1))*sin(kap*p(2))*sin(tau*t);
-   v(1) = kap*sin(kap*p(0))*cos(kap*p(1))*sin(kap*p(2))*sin(tau*t);
-   v(2) = DiffFunction(t)*kap*sin(kap*p(0))*sin(kap*p(1))*cos(kap*p(2))*sin(tau*t);
+   else
+   {
+      v(0) = kap*cos(kap*p(0))*sin(kap*p(1))*sin(kap*p(2))*sin(tau*t);
+      v(1) = kap*sin(kap*p(0))*cos(kap*p(1))*sin(kap*p(2))*sin(tau*t);
+      v(2) = kap*sin(kap*p(0))*sin(kap*p(1))*cos(kap*p(2))*sin(tau*t);
+   }
 }
 
 // Source term
 double ST(Vector &p, double t)
 {
    int dim = p.Size();
-   if (diff_term > 20)
+   if (dim == 2)
    {
-      double Ut,Ux,Uxx,Uy,Uxy;
-      Ut = tau*sin(kap*p(0))*sin(kap*p(1))*cos(tau*t);
-      Ux = kap*cos(kap*p(0))*sin(kap*p(1))*sin(tau*t);
-      Uy = kap*sin(kap*p(0))*cos(kap*p(1))*sin(tau*t);
-      Uxx = -kap*kap*sin(kap*p(0))*sin(kap*p(1))*sin(tau*t);
-      Uxy =  kap*kap*cos(kap*p(0))*cos(kap*p(1))*sin(tau*t);
-      if (power == 0)
-         return  Ut-(power+2)*pow((Ux*Ux +Uy*Uy),power/2)*Uxx; //
-      else
-         return (Ut-(power+2)*pow((Ux*Ux +Uy*Uy),power/2)*Uxx -
-                 2*power*(Ux*Uy*Uxy)*pow(Ux*Ux+Uy*Uy,power/2-1));
+      return ((tau*cos(tau*t) + 2*kap*kap*sin(tau*t))*
+              sin(kap*p(0))*sin(kap*p(1)));
    }
-   else if (diff_term <= 0)
-      return ((tau*cos(tau*t) -(2*diff_term)*kap*kap*sin(tau*t))*
-              sin(kap*p(0))*sin(kap*p(1)));
-   else if (dim == 2)
-      return ((tau*cos(tau*t) +(1+DiffFunction(t))*kap*kap*sin(tau*t))*
-              sin(kap*p(0))*sin(kap*p(1)));
    else
-      return ((tau*cos(tau*t) + (2+DiffFunction(t))*kap*kap*sin(tau*t))*
+   {
+      return ((tau*cos(tau*t) + 3*kap*kap*sin(tau*t))*
               sin(kap*p(0))*sin(kap*p(1))*sin(kap*p(2)));
+   }
 }
 
 int main(int argc, char *argv[])
@@ -842,21 +677,11 @@ int main(int argc, char *argv[])
    double tstart        = 0.0;
    double tstop         = 1.0;
    int    ntime         = 32;
-   int    picard        = 5;
-   double tolf          = 0.0001;
-   double tolc          = tolf;
-
-
-   extern double diff_term;
-   extern double tfinal;
-   extern double power;
-   extern double kap;
 
    kap = M_PI;
-   power = 0;
-   diff_term = -1;
 
    // double cfl         = 1.0;
+   int    fe_degree   = 1;
    int    ode_solver  = -1;
 
    int heat_equation = 1;
@@ -868,11 +693,12 @@ int main(int argc, char *argv[])
 
 
    // BRAID default parameters:
-   int    max_levels  = 10;
-   int    min_coarse  = 3;
+   int    max_levels  = 30;
+   int    min_coarse  = 2;
    int    nrelax      = 1;
    int    nrelax0     = -1;
    double tol         = 1e-9;
+   int    rtol        = 1;
    int    tnorm       = 2;
    int    skip        = 1;
    int    cfactor     = 2;
@@ -883,6 +709,9 @@ int main(int argc, char *argv[])
    int    access_level= 1;
    bool   wrapper_tests = false;
    bool   one_wrapper_test = false;
+
+   // Use random initial vectors.
+   int    init_rand   = 0;
 
    /* Parse command line */
    int print_usage = 0;
@@ -896,18 +725,6 @@ int main(int argc, char *argv[])
       else if (strcmp(argv[arg_index], "-sref") == 0)
       {
          sref = atoi(argv[++arg_index]);
-      }
-      else if (strcmp(argv[arg_index], "-picard") == 0)
-      {
-         picard = atoi(argv[++arg_index]);
-      }
-      else if (strcmp(argv[arg_index], "-tolf") == 0)
-      {
-         tolf = atof(argv[++arg_index]);
-      }
-      else if (strcmp(argv[arg_index], "-tolc") == 0)
-      {
-         tolc = atof(argv[++arg_index]);
       }
       else if (strcmp(argv[arg_index], "-pref") == 0)
       {
@@ -937,14 +754,6 @@ int main(int argc, char *argv[])
       {
          ntime = atoi(argv[++arg_index]);
       }
-      else if (strcmp(argv[arg_index], "-dt") == 0)
-      {
-         diff_term = atof(argv[++arg_index]);
-      }
-      else if (strcmp(argv[arg_index], "-pow") == 0)
-      {
-         power = atof(argv[++arg_index]);
-      }
       else if (strcmp(argv[arg_index], "-ode") == 0)
       {
          arg_index++;
@@ -965,6 +774,10 @@ int main(int argc, char *argv[])
          else
             if (myid == 0)
                cerr << "Unknown -ode parameter: " << argv[arg_index] << endl;
+      }
+      else if (strcmp(argv[arg_index], "-fe") == 0)
+      {
+         fe_degree = atoi(argv[++arg_index]);
       }
       else if (strcmp(argv[arg_index], "-odesolver") == 0)
       {
@@ -990,13 +803,17 @@ int main(int argc, char *argv[])
       {
          tol = atof(argv[++arg_index]);
       }
-      else if( strcmp(argv[arg_index], "-tnorm") == 0 ){
-          arg_index++;
-          tnorm = atoi(argv[arg_index++]);
+      else if( strcmp(argv[arg_index], "-rtol") == 0 )
+      {
+          rtol = atoi(argv[++arg_index]);
       }
-      else if( strcmp(argv[arg_index], "-skip") == 0 ){
-          arg_index++;
-          skip = atoi(argv[arg_index++]);
+      else if( strcmp(argv[arg_index], "-tnorm") == 0 )
+      {
+          tnorm = atoi(argv[++arg_index]);
+      }
+      else if( strcmp(argv[arg_index], "-skip") == 0 )
+      {
+          skip = atoi(argv[++arg_index]);
       }
       else if (strcmp(argv[arg_index], "-cf") == 0)
       {
@@ -1014,6 +831,10 @@ int main(int argc, char *argv[])
       {
          fmg = 1;
          nfmg_Vcyc = atoi(argv[++arg_index]);
+      }
+      else if (strcmp(argv[arg_index], "-rand") == 0)
+      {
+         init_rand = atoi(argv[++arg_index]);
       }
       else if (strcmp(argv[arg_index], "-wrapper_tests") == 0)
       {
@@ -1044,6 +865,8 @@ int main(int argc, char *argv[])
       {
          if (myid == 0)
             cerr << "Unknown parameter: " << argv[arg_index] << endl;
+         MPI_Finalize();
+         return 1;
       }
       arg_index++;
    }
@@ -1079,6 +902,7 @@ int main(int argc, char *argv[])
          "  -ode <name>       : ODE to solve, the options are:\n"
          "                         heat - Heat equation (default)\n"
          "                         scalar <id> - predefined scalar ODE\n"
+         "  -fe <degree>      : FE degree/order (default: 1)\n"
          "  -odesolver <id>   : ODE solver id\n"
          "                      explicit methods:\n"
          "                         1 - Forward Euler\n"
@@ -1092,23 +916,13 @@ int main(int argc, char *argv[])
          "                        -21 - Implicit midpoint\n"
          "                        -31 - SDIRK(2,3)\n"
          "                        -41 - SDIRK(3,4)\n"
-         "  -dt <diff_term>           :   -dt<0 - constant coefficient with value = dt \n "
-         "                    : set D(t) = [1 0 ; 0 f(t)], the diffusion tensor \n"
-         "                         0<dt<10 f(t) = dt\n"
-         "                         10 - f(t) = cos(pi*t/(2*tstop))+0.001\n"
-         "                         11 - f(t) = t/tstop + 0.001 \n"
-         "                         12 - f(t) = jump function \n"
-         "                         21 - nonlinear coefficient a = |grad(u)|^p\n"
-         "  -pow <power>      : set the value of the power in nonlinear equation (dt = 21)\n"
-         "  -kap <kap>        : set the frequency of the exact solution sin wave\n"
-         "  -picard <picard>      : set maximum number of picard iterations for each nonlinear solve\n"
-         "  -tolf <tolf>      : set the nonlinear solve tolerance for the fine grid (default 0.001)\n"
-         "  -tolc <tolc>      : set the nonlinear solve tolerance for the coarse grids (default 0.001)\n"
+         "  -kap <kap>        : set the frequency of the exact solution sin wave (default: pi)\n"
          "  -ml  <max_levels> : set max number of time levels (default: 10)\n"
          "  -mc  <min_coarse> : set minimum possible coarse level size (default: 3)\n"
          "  -nu  <nrelax>     : set num F-C relaxations (default: 1)\n"
          "  -nu0 <nrelax>     : set num F-C relaxations on level 0\n"
          "  -tol <tol>        : set stopping tolerance (default: 1e-9)\n"
+         "  -rtol <0/1>       : use relative or absolute stopping tolerance (default: 1)\n"
          "  -tnorm <tnorm>    : set temporal norm \n"
          "                      1 - One-norm \n"
          "                      2 - Two-norm (default) \n"
@@ -1118,6 +932,7 @@ int main(int argc, char *argv[])
          "  -cf0 <cfactor0>   : set aggressive coarsening (default: off)\n"
          "  -mi  <max_iter>   : set max iterations (default: 100)\n"
          "  -fmg <nfmg_Vcyc>  : use FMG cycling with nfmg_Vcyc V-cycles at each fmg level\n"
+         "  -rand <0/1>       : use random initial vectors (default: 0)\n"
          "  -access  <a>      : set access_level (default: 1) \n"
          "  -vishost <vh>     : set glvis visualisation host (default: 'localhost') \n"
          "  -visport <vp>     : set glvis visualisation port (default: 19916) \n"
@@ -1157,6 +972,11 @@ int main(int argc, char *argv[])
    for (int l = 0; l < sref; l++)
       mesh->UniformRefinement();
 
+   if (mesh->NURBSext)
+   {
+      mesh->SetCurvature(fe_degree);
+   }
+
    // Define a parallel mesh by a partitioning of the serial mesh. Refine this
    // mesh further in parallel to increase the resolution.
    ParMesh *pmesh = new ParMesh(comm_x, *mesh);
@@ -1174,10 +994,7 @@ int main(int argc, char *argv[])
    // Define a parallel finite element space on the parallel mesh. We use the
    // finite elements coming from the mesh nodes (linear by default).
    FiniteElementCollection *fec;
-   if (pmesh->GetNodes())
-      fec = pmesh->GetNodes()->OwnFEC();
-   else
-      fec = new LinearFECollection;
+   fec = new H1_FECollection(fe_degree, dim);
    ParFiniteElementSpace *fespace = new ParFiniteElementSpace(pmesh, fec);
    int size = fespace->GlobalTrueVSize();
    if (myid == 0)
@@ -1193,19 +1010,13 @@ int main(int argc, char *argv[])
    // Set up the stiffness and mass parallel bilinear forms a(.,.) and m(.,.),
    // assemble and extract the corresponding parallel matrices.
    ConstantCoefficient one(1.0);
-   ConstantCoefficient minus(diff_term);
+   ConstantCoefficient minus_one(-1.0);
    FunctionCoefficient source(&ST);
    VectorFunctionCoefficient nbc(dim, &NBC);
    FunctionCoefficient exact_sol(&ExSol);
-   MatrixFunctionCoefficient dc(dim, &Diff);
-   FuncDepGridFuncCoefficient gfc(&x0, power);
    ParBilinearForm *a = new ParBilinearForm(fespace);
    ParBilinearForm *m = new ParBilinearForm(fespace);
    ParLinearForm   *b = new ParLinearForm(fespace);
-   NonlinearOptions *NLO = new NonlinearOptions(picard, ntime, tstop - tstart,
-                                                tolf, tolc);
-
-   tfinal = tstop;
 
    m->AddDomainIntegrator(new MassIntegrator(one));
    b->AddDomainIntegrator(new DomainLFIntegrator(source));
@@ -1220,27 +1031,13 @@ int main(int argc, char *argv[])
    delete m;
    // Define the righ-hand side of the ODE and call MFEM or BRAID to solve it.
    TimeDependentOperator *ode;
+   LinearSystemODE *diff_ode = NULL;
    if (heat_equation)
    {
-      if (diff_term <= 0)
-      {
-         // constant diffusion coefficient = (-diff_term)
-         a->AddDomainIntegrator(new DiffusionIntegrator(minus));
-         ode = new LinearSystemODE(a, 0, M, b, &source, &nbc);
-      }
-      else if (diff_term < 20)
-      {
-         // matrix diffusion coefficient (possibly time dependent)
-         a->AddDomainIntegrator(new DiffusionIntegrator(dc));
-         ode = new LinearSystemODE(a, timedep(), M, b, &source, &nbc, &dc);
-      }
-      else
-      {
-         // nonlinear diffusion coefficient = |grad(u)|^p
-         a->AddDomainIntegrator(new DiffusionIntegrator(gfc));
-         ode = new LinearSystemODE(a, timedep(), M, b, &source, &nbc, NULL,
-                                   &gfc, NLO);
-      }
+      a->AddDomainIntegrator(new DiffusionIntegrator(minus_one));
+      const int timedep_a = 0;
+      diff_ode = new LinearSystemODE(a, timedep_a, M, b, &source, &nbc);
+      ode = diff_ode;
    }
    else
    {
@@ -1287,7 +1084,9 @@ int main(int argc, char *argv[])
    }
    else
    {
-      MFEMBraidApp app(comm_t, ode, X0, &x0, solver, tstart, tstop, ntime);
+      DiffBraidApp app(comm_t, diff_ode, X0, &x0, solver, tstart, tstop, ntime);
+      if (init_rand)
+         app.SetRandomInitVectors(285136749 + myid);
       app.SetVisHostAndPort(vishost, visport);
 
       if (wrapper_tests)
@@ -1338,7 +1137,7 @@ int main(int argc, char *argv[])
          core.SetNRelax(-1, nrelax);
          if (nrelax0 > -1)
             core.SetNRelax(0, nrelax0);
-         core.SetAbsTol(tol);
+         rtol ? core.SetRelTol(tol) : core.SetAbsTol(tol);
          core.SetCFactor(-1, cfactor);
          core.SetAggCFactor(cfactor0);
          core.SetMaxIter(max_iter);
@@ -1363,8 +1162,7 @@ int main(int argc, char *argv[])
    delete a;
 
    delete fespace;
-   if (!pmesh->GetNodes())
-      delete fec;
+   delete fec;
    delete pmesh;
 
    MPI_Comm_free(&comm_x);

@@ -27,7 +27,7 @@ extern "C" {
  *****************************************************************************/
 
 /* These types have associated creation and destruction routines */
-typedef int MPI_Comm;
+//typedef int MPI_Comm;
 typedef int MPI_Group;
 typedef int MPI_Request;
 typedef int MPI_Datatype;

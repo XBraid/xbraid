@@ -22,6 +22,9 @@
 #
 #EHEADER**********************************************************************
 
+# Uncomment the next line if compiling without MPI (or use 'make sequential=yes [target]')
+# sequential = yes
+
 # Was DEBUG specified? 
 ifeq ($(debug),no)
    optlevel = OPTIMIZE
@@ -44,7 +47,7 @@ HOSTNAME := $(shell hostname)
 ifeq ($(findstring tux343,$(HOSTNAME)),tux343)
    CC = mpicc
    MPICC = mpicc
-   MPICXX = mpiCC
+   MPICXX = mpicxx
    MPIF90 = mpif90
    LFLAGS = -lm
    ifeq ($(optlevel),DEBUG)
@@ -57,7 +60,7 @@ ifeq ($(findstring tux343,$(HOSTNAME)),tux343)
       FORTFLAGS = -O1 -Wall
    endif
    ifeq ($(lvalgrind),YES)
-      LFLAGS += /usr/lib64/valgrind/libmpiwrap-amd64-linux.so 
+      #only needed for openmpi: LFLAGS += /usr/lib64/valgrind/libmpiwrap-amd64-linux.so 
    endif
 else ifeq ($(findstring fourier,$(HOSTNAME)),fourier)
    # for Anders' laptop
@@ -135,9 +138,9 @@ else ifeq ($(shell uname -s),Linux)
       FORTFLAGS = -O1 -Wall
    endif
 else
-   MPICC = gcc
-   MPICXX = g++
-   MPIF90 = gfortran
+   MPICC = mpicc
+   MPICXX = mpiCC
+   MPIF90 = mpif90
    LFLAGS = -lm
    ifeq ($(optlevel),DEBUG)
       CFLAGS = -g -Wall
@@ -147,6 +150,23 @@ else
       CFLAGS = -O -Wall
       CXXFLAGS = -O -Wall
       FORTFLAGS = -O1 -Wall
+   endif
+endif
+
+# Compiler options when compiling without MPI
+ifdef sequential
+   MPICC = gcc
+   MPICXX = g++
+   MPIF90 = gfortran
+   LFLAGS = -lm
+   ifeq ($(optlevel),DEBUG)
+      CFLAGS = -g -Wall -D braid_SEQUENTIAL
+      CXXFLAGS = -g -Wall -D braid_SEQUENTIAL
+      FORTFLAGS = -g -Wall -D braid_SEQUENTIAL
+   else
+      CFLAGS = -O -Wall -D braid_SEQUENTIAL
+      CXXFLAGS = -O -Wall -D braid_SEQUENTIAL
+      FORTFLAGS = -O1 -Wall -D braid_SEQUENTIAL
    endif
 endif
 

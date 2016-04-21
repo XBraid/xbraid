@@ -2681,6 +2681,7 @@ _braid_FAccess(braid_Core     core,
    braid_Int           iter        = _braid_CoreElt(core, niter);
    braid_Int           nrefine     = _braid_CoreElt(core, nrefine);
    braid_Int           gupper      = _braid_CoreElt(core, gupper);
+   braid_Int           access_level= _braid_CoreElt(core, access_level);
    braid_Int           ncpoints    = _braid_GridElt(grids[level], ncpoints);
    braid_Real          *ta         = _braid_GridElt(grids[level], ta);
    braid_Int           ilower      = _braid_GridElt(grids[level], ilower);
@@ -2707,9 +2708,13 @@ _braid_FAccess(braid_Core     core,
       {
          _braid_Step(core, level, fi, NULL, u);
          _braid_USetVector(core, level, fi, u, 0);
-         _braid_AccessStatusInit( ta[fi-ilower], rnorm, iter, level, nrefine, gupper,
-                                  done, 0, braid_ASCaller_FAccess, astatus);
-         _braid_AccessVector(core, astatus, u);
+
+         if (access_level >= 1)
+         {
+            _braid_AccessStatusInit( ta[fi-ilower], rnorm, iter, level, nrefine, gupper,
+                                     done, 0, braid_ASCaller_FAccess, astatus);
+            _braid_AccessVector(core, astatus, u);
+         }
       }
       if (flo <= fhi)
       {
@@ -2717,7 +2722,7 @@ _braid_FAccess(braid_Core     core,
       }
 
       /* Give access at C-points */
-      if (ci > -1)
+      if ((ci > -1) && (access_level >= 1))
       {
          _braid_UGetVectorRef(core, level, ci, &u);
          _braid_AccessStatusInit( ta[ci-ilower], rnorm, iter, level, nrefine, gupper,
