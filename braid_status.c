@@ -163,8 +163,8 @@ braid_AccessStatusGetWrapperTest(braid_AccessStatus  status,
  *--------------------------------------------------------------------------*/
 braid_Int
 braid_AccessStatusGetCaller(braid_AccessStatus  status,
-			    braid_Int          *caller
-			    )
+                            braid_Int          *caller
+                            )
 {
    *caller = _braid_StatusElt(status, caller);
    return _braid_error_flag;
@@ -182,7 +182,7 @@ _braid_AccessStatusInit(braid_Real           t,
                         braid_Int            gupper,
                         braid_Int            done,
                         braid_Int            wrapper_test,
-			braid_Int            caller,
+                        braid_Int            caller,
                         braid_AccessStatus   status)
 {
    _braid_StatusElt(status, t)            = t;

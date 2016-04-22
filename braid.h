@@ -298,8 +298,8 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnSFree)(braid_App     app,            /**< user-defined _braid_App structure */
-		    braid_Vector  u               /**< vector to free */
-		    );
+                    braid_Vector  u               /**< vector to free */
+                    );
 
 /** @}*/
 
@@ -634,9 +634,10 @@ braid_SplitCommworld(const MPI_Comm  *comm_world,  /**< Global communicator to s
 
 braid_Int
 braid_SetShell(braid_Core          core, 
-	       braid_PtFcnSInit    sinit,
-	       braid_PtFcnSClone   sclone,
-	       braid_PtFcnSFree    sfree);
+               braid_PtFcnSInit    sinit,
+               braid_PtFcnSClone   sclone,
+               braid_PtFcnSFree    sfree
+               );
 
 /**
  * After Drive() finishes, this returns the number of iterations taken.

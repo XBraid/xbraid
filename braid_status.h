@@ -175,7 +175,7 @@ _braid_AccessStatusInit(braid_Real          t,           /**< current time */
                         braid_Int           gupper,      /**< global size of the fine grid */
                         braid_Int           done,        /**< boolean describing whether XBraid has finished */
                         braid_Int           wrapper_test,/**< boolean describing whether this call is only a wrapper test */
-			braid_Int           caller,      /**< from which function are we accessing the vector */
+                        braid_Int           caller,      /**< from which function are we accessing the vector */
                         braid_AccessStatus  status       /**< structure to initialize */
                         );
 
@@ -256,8 +256,8 @@ braid_AccessStatusGetWrapperTest(braid_AccessStatus  status,      /**< structure
  **/
 braid_Int
 braid_AccessStatusGetCaller(braid_AccessStatus  status,      /**< structure containing current simulation info */
-			    braid_Int          *caller       /**< output, function number (0=FInterp, 1=FRestrict, 2=FRefine, 3=FAccess) */
-			    );
+                            braid_Int          *caller       /**< output, function number (0=FInterp, 1=FRestrict, 2=FRefine, 3=FAccess) */
+                            );
 
 /**
  * Return XBraid status for the current simulation. Four values are 
