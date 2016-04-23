@@ -324,7 +324,8 @@ _braid_CommWait(braid_Core          core,
 
 /*----------------------------------------------------------------------------
  * Returns an index into the local u-vector for grid 'level' at point 'index'.
- * If the u-vector is not stored, returns -1.
+ * If the u-vector is not stored, returns a negative index: -1 if using
+ * shellvector feature, -2 otherwise.
  *----------------------------------------------------------------------------*/
 
 braid_Int
@@ -384,7 +385,8 @@ _braid_UGetIndex(braid_Core   core,
 
 /*----------------------------------------------------------------------------
  * Returns a reference to the local u-vector on grid 'level' at point 'index'.
- * If the u-vector is not stored, returns NULL.
+ * If the u-vector is not stored, returns NULL. The referred u-vector might
+ * just be a shell if that feature is used.
  *----------------------------------------------------------------------------*/
 
 braid_Int
@@ -416,7 +418,9 @@ _braid_UGetVectorRef(braid_Core     core,
 
 /*----------------------------------------------------------------------------
  * Stores a reference to the local u-vector on grid 'level' at point 'index'.
- * If the u-vector is not stored, nothing is done.
+ * If the shellvector feature is used, the u-vector might be emptied so that
+ * only the shell is stored. Otherwise, if the u-vector is not stored, nothing
+ * is done.
  *----------------------------------------------------------------------------*/
 
 braid_Int
@@ -438,7 +442,6 @@ _braid_USetVectorRef(braid_Core    core,
    {
       braid_App    app = _braid_CoreElt(core, app);
       braid_Int ilower = _braid_GridElt(grids[level], ilower);
-      // TODO free the data in u /!/
       _braid_CoreFcn(core, sfree)(app, u);
       ua[index-ilower] = u;
    }
@@ -450,7 +453,7 @@ _braid_USetVectorRef(braid_Core    core,
  * Returns a copy of the u-vector on grid 'level' at point 'index'.  If 'index'
  * is my "receive index" (as set by UCommInit(), for example), the u-vector will
  * be received from a neighbor processor.  If the u-vector is not stored, NULL
- * is returned.
+ * is returned. The copy might just be a shell if this feature is used.
  *----------------------------------------------------------------------------*/
 
 braid_Int
@@ -502,7 +505,8 @@ _braid_UGetVector(braid_Core     core,
  * Stores the u-vector on grid 'level' at point 'index'.  If 'index' is my "send
  * index", a send is initiated to a neighbor processor.  If 'move' is true, the
  * u-vector is moved into core storage instead of copied.  If the u-vector is
- * not stored, nothing is done.
+ * not stored, nothing is done or only the shell is copied/moved when the shellvector
+ * feature is used.
  *----------------------------------------------------------------------------*/
 
 braid_Int
@@ -606,6 +610,7 @@ _braid_UCommInitBasic(braid_Core  core,
          _braid_UGetIndex(core, level, send_index, &iu);
          if (iu < 0)
          {
+            // We should never get here : we do not communicate shells...
             abort();
          }
          _braid_CommSendInit(core, level, send_index, ua[iu], &send_handle);
@@ -853,6 +858,7 @@ _braid_GetUInit(braid_Core     core,
    {
       if ( _braid_CoreElt(core, useshell) == 1)
       {
+         // Should not happen, ustop is never NULL with useshell option
          abort();
       }
       ustop = u;
@@ -1236,7 +1242,8 @@ _braid_GridDestroy(braid_Core    core,
 }
 
 /*----------------------------------------------------------------------------
- * Set initial guess at C-points
+ * Set initial guess at C-points, and initialize shell at F-points when using
+ * shell vectors.
  *----------------------------------------------------------------------------*/
 
 braid_Int
@@ -2143,8 +2150,9 @@ _braid_FRefine(braid_Core   core,
    _braid_TFree(requests);
    _braid_TFree(statuses);
 
-   /* If storing only C-points on the fine grid, modify r_ca to mark only those
-    * coarse points that need to be sent to initialize the C-points */
+   /* If storing only C-points on the fine grid (and NOT using shell vectors),
+    *  modify r_ca to mark only those coarse points that need to be sent to
+    * initialize the C-points */
    if (_braid_CoreElt(core, storage) != 0 && _braid_CoreElt(core, useshell) != 1)
    {
       for (ii = 0; ii < npoints; ii++)
@@ -2329,19 +2337,7 @@ _braid_FRefine(braid_Core   core,
    _braid_GetRNorm(core, -1, &rnorm);
 
    _braid_UCommInitF(core, 0);
-   /*
-     char strfile[255];int myid_t;
-     MPI_Comm_rank(_braid_CoreElt(core, comm), &myid_t);
-     sprintf(strfile,"%s%d%s","grid_",myid_t,".dat");
-     FILE *fp=fopen(strfile,"a+");
-     int TMP;
-     for (TMP = ilower; TMP <= iupper; TMP ++)
-     {
-     fprintf(fp,"%11.9f ",ta[TMP-ilower]);
-     }
-     fprintf(fp,"\n");
-     fclose(fp);
-   */
+
    /* Start from the right-most interval */
    for (interval = ncpoints; interval > -1; interval--)
    {
@@ -2920,7 +2916,7 @@ _braid_InitHierarchy(braid_Core    core,
          _braid_GridElt(grid, fa)       = fa+1;  /* shift */
       }
 
-      // If on level that only stores C-points
+      // If on level that only stores C-points and not using the shell vector feature
       if ( ((_braid_CoreElt(core, storage) < 0) ||
             (level < _braid_CoreElt(core, storage))) &&
            (_braid_CoreElt(core, useshell)!=1) )
@@ -3115,12 +3111,12 @@ _braid_CopyFineToCoarse(braid_Core  core)
          _braid_CoreFcn(core, clone)(app, va[index-ilower], &u);
          _braid_USetVectorRef(core, level, index, u);
          _braid_UGetIndex(core, level, index, &is_stored);
-         if (is_stored < -1)
+         if (is_stored < -1) /* Case where F-points are not stored, and we are not using shell vectors */
          {
             // TODO free the data in u if is_stored == -1 /!/
             _braid_CoreFcn(core, free)(app, u);
          }
-         else if (is_stored == -1)
+         else if (is_stored == -1) /* This is a shell vector */
          {
             _braid_CoreFcn(core, sfree)(app, u);
          }

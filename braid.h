@@ -631,7 +631,12 @@ braid_SplitCommworld(const MPI_Comm  *comm_world,  /**< Global communicator to s
                      MPI_Comm        *comm_x,      /**< Spatial communicator (written as output) */
                      MPI_Comm        *comm_t       /**< Temporal communicator (written as output) */
                      );
-
+/**
+ * Activate the shell vector feature, and set the various functions that are required :
+ * - sinit  : create a shell vector
+ * - sclone : clone the shell of a vector
+ * - sfree  : free the data of a vector, keeping its shell
+ **/
 braid_Int
 braid_SetShell(braid_Core          core, 
                braid_PtFcnSInit    sinit,

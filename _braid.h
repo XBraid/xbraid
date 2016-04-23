@@ -118,9 +118,9 @@ typedef struct _braid_Core_struct
    braid_PtFcnInit        init;             /**< return an initialized braid_Vector */
    braid_PtFcnSInit       sinit;            /**< (optional) return an initialized shell of braid_Vector */
    braid_PtFcnClone       clone;            /**< clone a vector */
-   braid_PtFcnSClone      sclone;           /**< (optional) clone a shell of a vector */
+   braid_PtFcnSClone      sclone;           /**< (optional) clone the shell of a vector */
    braid_PtFcnFree        free;             /**< free up a vector */
-   braid_PtFcnSFree       sfree;            /**< free up the data of a vector, keep the shell */
+   braid_PtFcnSFree       sfree;            /**< (optional) free up the data of a vector, keep the shell */
    braid_PtFcnSum         sum;              /**< vector sum */
    braid_PtFcnSpatialNorm spatialnorm;      /**< Compute norm of a braid_Vector, this is a norm only over space */
    braid_PtFcnAccess      access;           /**< user access function to XBraid and current vector */
