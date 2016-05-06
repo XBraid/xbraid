@@ -70,11 +70,13 @@ int main (int argc, char *argv[])
    int object_type = HYPRE_STRUCT;
    int i, arg_index, myid, num_procs, iters_taken, max_iters_taken;
    int ndim, nx, ny, nlx, nly, nt, forcing, ilower[2], iupper[2];
-   double K, tstart, tstop, dx, dy, dt, cfl, tol;
+   double K, tstart, tstop, dx, dy, dt, cfl;
    double myendtime, mystarttime, mytime, maxtime;
    double disc_err, max_disc_err, max_disc_err_time;
-   int max_iter, px, py, pi, pj, output_files, vis, max_disc_err_iter;
+   int px, py, pi, pj, output_files, vis, max_disc_err_iter;
    char filename[255], filename_mesh[255], filename_err[255], filename_sol[255];
+   int pfmg_maxiter;
+   double pfmg_tol;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -93,8 +95,8 @@ int main (int argc, char *argv[])
    cfl                 = 0.30;    /* CFL ratio of dt/dx^2 to use */
    px                  = 1;       /* my processor number in the x-direction, px*py=num procs in space */
    py                  = 1;       /* my processor number in the y-direction, px*py=num procs in space */
-   max_iter            = 50;      /* Maximum number of iterations to use inside of PFMG */
-   tol                 = 1.0e-09; /* PFMG halting tolerance */
+   pfmg_maxiter        = 50;      /* Maximum number of iterations to use inside of PFMG */
+   pfmg_tol            = 1.0e-09; /* PFMG halting tolerance */
    output_files        = 0;       /* Boolean, if 1 output the norm of the discretization error to a file for each time step */
    vis                 = 0;       /* Boolean, if 1 output GLVIS files of error, solution and true solution */
 
@@ -128,11 +130,11 @@ int main (int argc, char *argv[])
       }
       else if( strcmp(argv[arg_index], "-pfmg_mi") == 0 ){
          arg_index++;
-         max_iter = atoi(argv[arg_index++]);
+         pfmg_maxiter = atoi(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-pfmg_tol") == 0 ){
           arg_index++;
-          tol = atof(argv[arg_index++]);
+          pfmg_tol = atof(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-output_files") == 0 ){
          arg_index++;
@@ -238,8 +240,8 @@ int main (int argc, char *argv[])
    man->iupper[0]    = iupper[0];
    man->iupper[1]    = iupper[1];
    man->object_type  = object_type;
-   man->max_iter     = max_iter;
-   man->tol          = tol;
+   man->pfmg_maxiter = pfmg_maxiter;
+   man->pfmg_tol     = pfmg_tol;
    man->output_vis   = vis;
    man->output_files = output_files;
    man->explicit     = 0;

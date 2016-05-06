@@ -84,6 +84,8 @@
                   time step.
 */
 
+#define DEBUG 0
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -194,6 +196,8 @@ typedef struct _braid_App_struct {
    int                     scoarsen;
    int                     num_scoarsenCFL;
    double                 *scoarsenCFL;
+   int                     stmg;
+   int                    *coarsen_in_space;
    spatial_discretization *spatial_lookup_table;
    double                 *runtime_scoarsen_info;
    double                  tol_x[2];
@@ -402,6 +406,13 @@ my_Step(braid_App        app,
       else{
          setUpImplicitMatrix( app->man );
          app->A[A_idx] = app->man->A;
+#if DEBUG
+{
+   char  filename[255];
+   hypre_sprintf(filename, "drive-02.out.A%02d", level);
+   HYPRE_SStructMatrixPrint(filename, app->A[A_idx], 0);
+}
+#endif
       
          /* Set up the PFMG solver using u->x as dummy vectors. */
          setUpStructSolver( app->man, u->x, u->x );
@@ -425,10 +436,10 @@ my_Step(braid_App        app,
    app->man->solver = app->solver[A_idx];
    
    /* Use level specific max_iter by "tricking" the user's data structure*/
-   if( A_idx == 0 )
-      app->man->max_iter = app->max_iter_x[0];
+   if( level == 0 )
+      app->man->pfmg_maxiter = app->max_iter_x[0];
    else
-      app->man->max_iter = app->max_iter_x[1];
+      app->man->pfmg_maxiter = app->max_iter_x[1];
    
    /* Use level specific time stepper by "tricking" the user's data structure*/
    user_explicit = app->man->explicit;
@@ -440,7 +451,7 @@ my_Step(braid_App        app,
    /* Use level specific tol by "tricking" the user's data structure.  Note that
     * this accuracy value is controlled, in part, by the -tol_x and -tol_xc command
     * line parameters. */
-   app->man->tol = accuracy;
+   app->man->pfmg_tol = accuracy;
    
    /* Take step */
    if (fstop == NULL)
@@ -478,6 +489,9 @@ my_Residual(braid_App        app,
    int i, A_idx;
    int ilower[2], iupper[2], nlx, nly, nx, ny;
    double dx, dy;
+
+   int   level;
+   braid_StepStatusGetLevel(status, &level);
    
    /* Grab spatial info about u */
    grab_vec_spatial_info(ustop, app->spatial_lookup_table, ilower, iupper, 
@@ -519,6 +533,13 @@ my_Residual(braid_App        app,
 
       setUpImplicitMatrix( app->man );
       app->A[A_idx] = app->man->A;
+#if DEBUG
+{
+   char  filename[255];
+   hypre_sprintf(filename, "drive-02.out.A%02d", level);
+   HYPRE_SStructMatrixPrint(filename, app->A[A_idx], 0);
+}
+#endif
       
       /* Set up the PFMG solver using r->x as dummy vectors. */
       setUpStructSolver( app->man, r->x, r->x );
@@ -870,7 +891,7 @@ int my_ComputeNumCoarsenings(double dt,
    int ncoarsen1 = ceil( (log2( K*dt*(dx*dx + dy*dy)/(dx*dx*dy*dy) ) - log2(scoarsenCFL))/2.0 );
    int ncoarsen2 = ceil( (log2( K*0.999999999*dt*(dx*dx + dy*dy)/(dx*dx*dy*dy) ) - log2(scoarsenCFL))/2.0 );
    int ncoarsen3 = ceil( (log2( K*1.000000001*dt*(dx*dx + dy*dy)/(dx*dx*dy*dy) ) - log2(scoarsenCFL))/2.0 );
-   
+
    /* Due to floating point arithmetic, this is our hack to make this the same
     * across processors.  dt is the only value that will vary across processors, so we try a couple
     * different tweaks up there on the order of the 10th digit. */
@@ -930,6 +951,7 @@ void get_coarse_spatial_disc( braid_App app,
                               double    fdx,
                               double    fdy,
                               double    scoarsenCFL,
+                              int       coarsen_in_space,
                               int       fnx,
                               int       fny,
                               int       fspatial_disc_idx,
@@ -978,7 +1000,11 @@ void get_coarse_spatial_disc( braid_App app,
     */
    
    /* Determine New sizes */
-   ncoarsen = my_ComputeNumCoarsenings(cdt, fdx, fdy, app->man->K, fnx, fny, scoarsenCFL); 
+   ncoarsen = 0;
+   if (coarsen_in_space)
+   {
+      ncoarsen = my_ComputeNumCoarsenings(cdt, fdx, fdy, app->man->K, fnx, fny, scoarsenCFL);
+   }
    for(k = 1; k <= max_i(ncoarsen,1); k++)
    {
       if(ncoarsen == 0)
@@ -1709,8 +1735,8 @@ my_CoarsenBilinear(braid_App              app,
     * This could be the same as the fine spatial discretization */ 
    braid_CoarsenRefStatusGetLevel(status, &level);
    scoarsenCFL = app->scoarsenCFL[min_i(app->num_scoarsenCFL-1, level)];
-   get_coarse_spatial_disc( app, cdt, fdt, fdx, fdy, scoarsenCFL, fnx, fny, 
-                            fspatial_disc_idx, filower, fiupper, &spatial_disc_idx);
+   get_coarse_spatial_disc( app, cdt, fdt, fdx, fdy, scoarsenCFL, (app->coarsen_in_space[level]),
+                            fnx, fny, fspatial_disc_idx, filower, fiupper, &spatial_disc_idx);
    ncoarsen = (app->spatial_lookup_table[spatial_disc_idx]).ncoarsen;
          
    /* If no coarsening, then just clone.
@@ -1802,8 +1828,8 @@ my_CoarsenInjection(braid_App              app,
     * This could be the same as the fine spatial discretization */ 
    braid_CoarsenRefStatusGetLevel(status, &level);
    scoarsenCFL = app->scoarsenCFL[min_i(app->num_scoarsenCFL-1, level)];
-   get_coarse_spatial_disc( app, cdt, fdt, fdx, fdy, scoarsenCFL, fnx, fny, 
-                            fspatial_disc_idx, filower, fiupper, &spatial_disc_idx);
+   get_coarse_spatial_disc( app, cdt, fdt, fdx, fdy, scoarsenCFL, (app->coarsen_in_space[level]),
+                            fnx, fny, fspatial_disc_idx, filower, fiupper, &spatial_disc_idx);
    ncoarsen = (app->spatial_lookup_table[spatial_disc_idx]).ncoarsen;
    cnlx     = (app->spatial_lookup_table[spatial_disc_idx]).nlx;
    cnly     = (app->spatial_lookup_table[spatial_disc_idx]).nly;
@@ -1882,7 +1908,7 @@ int main (int argc, char *argv[])
    int *runtime_max_iter_global    = NULL;
    double *runtime_scoarsen_info_global  = NULL;
    
-   int i, arg_index, myid, num_procs;
+   int i, l, arg_index, myid, num_procs;
    MPI_Comm comm, comm_x, comm_t;
    int ndim, nx, ny, nlx, nly, nt, forcing, ilower[2], iupper[2];
    double K, tstart, tstop, dx, dy, dt, cfl;
@@ -1892,12 +1918,12 @@ int main (int argc, char *argv[])
    /* Declare Braid variables -- variables explained when they are set below */
    braid_Core    core;
    my_App       *app;
-   double tol_x[2], tol, *scoarsenCFL;
+   double tol, tol_x[2], *scoarsenCFL;
    double mystarttime, myendtime, mytime, maxtime;
-   int run_wrapper_tests, correct, fspatial_disc_idx, max_iter_x[2];
+   int run_wrapper_tests, correct, fspatial_disc_idx, max_iter, max_iter_x[2], pfmg_maxlev;
    int print_level, access_level, nA_max, max_levels, min_coarse, skip;
-   int nrelax, nrelax0, cfactor, cfactor0, max_iter, storage, res, new_res;
-   int fmg, tnorm, nfmg_Vcyc, scoarsen, num_scoarsenCFL, use_rand;
+   int nrelax, nrelax0, cfactor, cfactor0, storage, res, new_res;
+   int fmg, tnorm, nfmg_Vcyc, scoarsen, num_scoarsenCFL, use_rand, stmg;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -1941,11 +1967,13 @@ int main (int argc, char *argv[])
    num_scoarsenCFL     = 1;
    scoarsenCFL         = (double*) malloc( 1*sizeof(double) );
    scoarsenCFL[0]      = 0.5;
+   stmg                = 0;
    pt                  = 1;  
-   max_iter_x[0]       = 50;
-   max_iter_x[1]       = 50;
    tol_x[0]            = 1.0e-09;
    tol_x[1]            = 1.0e-09;
+   max_iter_x[0]       = 50;
+   max_iter_x[1]       = 50;
+   pfmg_maxlev         = 20;
    print_level         = 1;
    access_level        = 1;
    run_wrapper_tests   = 0;
@@ -2052,15 +2080,23 @@ int main (int argc, char *argv[])
          for (i = 0; i < num_scoarsenCFL; i++)
             scoarsenCFL[i] = atof(argv[arg_index++]);
       }
-      else if( strcmp(argv[arg_index], "-pfmg_mi") == 0 ){
+      else if ( strcmp(argv[arg_index], "-stmg") == 0 ){
          arg_index++;
-         max_iter_x[0] = atoi(argv[arg_index++]);
-         max_iter_x[1] = atoi(argv[arg_index++]);
+         stmg = 1;
       }
       else if( strcmp(argv[arg_index], "-pfmg_tolx") == 0 ){
           arg_index++;
           tol_x[0] = atof(argv[arg_index++]);
           tol_x[1] = atof(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-pfmg_mi") == 0 ){
+         arg_index++;
+         max_iter_x[0] = atoi(argv[arg_index++]);
+         max_iter_x[1] = atoi(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-pfmg_ml") == 0 ){
+         arg_index++;
+         pfmg_maxlev = atoi(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-expl") == 0 ){
          arg_index++;
@@ -2123,8 +2159,9 @@ int main (int argc, char *argv[])
       printf("  -cf  <cfactor>                     : set coarsening factor (default: 2)\n");   
       printf("  -cf0  <cfactor>                    : set coarsening factor for level 0 \n");
       printf("  -mi  <max_iter>                    : set max iterations (default: 100)\n");
-      printf("  -pfmg_mi <mi_fine mi_coarse>       : max number of PFMG iters for fine and coarse levels (default: 50 50)\n"); 
       printf("  -pfmg_tolx <loose_tol tight_tol>   : loose and tight PFMG stopping tol (default: 1e-09 1e-09)\n"); 
+      printf("  -pfmg_mi <mi_fine mi_coarse>       : max number of PFMG iters for fine and coarse levels (default: 50 50)\n"); 
+      printf("  -pfmg_ml <max_levels>              : max number of PFMG grid levels\n"); 
       printf("  -fmg <nfmg_Vcyc>                   : use FMG cycling, nfmg_Vcyc V-cycles at each fmg level\n");
       printf("  -res                               : use my residual\n");
       printf("  -new_res                           : use user residual routine to compute full residual each iteration\n");
@@ -2282,8 +2319,9 @@ int main (int argc, char *argv[])
    (app->man->iupper[0])       = iupper[0];
    (app->man->iupper[1])       = iupper[1];
    (app->man->object_type)     = object_type;
-   (app->man->max_iter)        = max_iter;
-   (app->man->tol)             = tol;
+   (app->man->pfmg_tol)        = tol_x[0];
+   (app->man->pfmg_maxiter)    = max_iter_x[0];
+   (app->man->pfmg_maxlev)     = pfmg_maxlev;
    (app->man->explicit)        = explicit;
    (app->man->output_vis)      = output_vis;
    (app->man->output_files)    = output_files;
@@ -2328,6 +2366,11 @@ int main (int argc, char *argv[])
    /* Store CFl that controls spatial coarsening */
    app->num_scoarsenCFL = num_scoarsenCFL;
    app->scoarsenCFL = scoarsenCFL;
+   app->coarsen_in_space = (int*) malloc( (app->max_levels)*sizeof(int) );
+   for (l = 0; l < max_levels; l++)
+   {
+      app->coarsen_in_space[l] = 0;
+   }
    
    /* Allocate error vector */
    initialize_vector(app->man, &(app->e));
@@ -2506,6 +2549,10 @@ int main (int argc, char *argv[])
       if (scoarsen)
       {
          app->scoarsen=1;
+         for (l = 0; l < max_levels; l++)
+         {
+            app->coarsen_in_space[l] = 1;
+         }
          if (scoarsen == 1)
          {
             braid_SetSpatialCoarsen(core, my_CoarsenInjection);
@@ -2519,6 +2566,35 @@ int main (int argc, char *argv[])
             printf("Invalid scoarsen choice.  Ignoring this parameter\n");
          }
          braid_SetSpatialRefine(core, my_Refine);
+
+         if (stmg)
+         {
+            double  lamcrit = scoarsenCFL[0] / 2;
+            double  cx = 1, ct = 1;
+            for (l = 0; l < max_levels; l++)
+            {
+               if ( (ct*dt)/(cx*cx*dx*dx) > lamcrit )
+               {
+                  /* coarsen in space only */
+                  app->coarsen_in_space[l] = 1;
+                  braid_SetCFactor(core, l, 1);
+                  cx *= 2;
+               }
+               else
+               {
+                  /* coarsen in time only */
+                  app->coarsen_in_space[l] = 0;
+                  if ((l == 0) && (cfactor0 > 0))
+                  {
+                     ct *= cfactor0;
+                  }
+                  else
+                  {
+                     ct *= cfactor;
+                  }
+               }
+            }
+         }
       }
 
       /* Print some additional statistics */
@@ -2656,6 +2732,7 @@ int main (int argc, char *argv[])
    free( app->dx_A );
    free( app->dy_A );
    free( app->scoarsenCFL);
+   free( app->coarsen_in_space);
    for( i = 0; i < app->nA; i++ )
    {
       HYPRE_SStructMatrixDestroy( app->A[i] );

@@ -98,8 +98,9 @@
  *                       local space interval upper bounds
  *   object_type         object type of vector to access different hypre solvers 
  *   solver              hypre solver (for implicit time stepping)
- *   max_iter            maximum number of spatial MG iterations
- *   tol                 stopping tolerance for spatial MG
+ *   pfmg_tol            stopping tolerance for spatial MG
+ *   pfmg_maxiter        maximum number of spatial MG iterations
+ *   pfmg_maxlev         maximum number of spatial MG grid levels
  *   explicit            use explicit discretization (1) or not (0)
  *   output_vis            save the error for GLVis visualization
  *   output_files        save the solution/error/error norm to files
@@ -126,8 +127,9 @@ typedef struct _simulation_manager_struct {
    int                     ilower[2], iupper[2];
    int                     object_type;
    HYPRE_StructSolver      solver;
-   int                     max_iter;
-   double                  tol;
+   double                  pfmg_tol;
+   int                     pfmg_maxiter;
+   int                     pfmg_maxlev;
    int                     explicit;
    int                     output_vis;
    int                     output_files;
@@ -161,9 +163,10 @@ print_simulation_manager(simulation_manager *man)
    printf("myid:  %d,  ilower[1]     %d\n", myid, man->ilower[1]);
    printf("myid:  %d,  iupper[0]     %d\n", myid, man->iupper[0]);
    printf("myid:  %d,  iupper[1]     %d\n", myid, man->iupper[1]);
-   printf("myid:  %d,  max_iter:     %d\n", myid, man->max_iter);
+   printf("myid:  %d,  pfmg_tol:     %1.2e\n", myid, man->pfmg_tol);
+   printf("myid:  %d,  pfmg_maxiter: %d\n", myid, man->pfmg_maxiter);
+   printf("myid:  %d,  pfmg_maxlev:  %d\n", myid, man->pfmg_maxlev);
    printf("myid:  %d,  object_type:  %d\n", myid, man->object_type);
-   printf("myid:  %d,  tol:          %1.2e\n", myid, man->tol);
    printf("myid:  %d,  explicit:     %d\n", myid, man->explicit);
    printf("myid:  %d,  output_vis:   %d\n", myid, man->output_vis);
    printf("myid:  %d,  output_files: %d\n", myid, man->output_files);
@@ -1439,8 +1442,8 @@ setUpStructSolver( simulation_manager  *man,
 {
    MPI_Comm            comm     = man->comm;
    HYPRE_SStructMatrix A        = man->A;
-   int                 max_iter = man->max_iter;
-   double              tol      = man->tol;
+   double              tol      = man->pfmg_tol;
+   int                 maxlev   = man->pfmg_maxlev;
    
    /* hard coded PFMG parameters */
    int n_pre               = 1;       /* number of PFMG presmoothing steps */
@@ -1455,8 +1458,6 @@ setUpStructSolver( simulation_manager  *man,
                                          2 - R/B Gauss-Seidel (default)
                                          3 - R/B Gauss-Seidel (nonsymmetric) */
    int skip                = 1;       /* PFMG solver option (see print usage block) */
-
-
 
    HYPRE_StructSolver  solver;
    HYPRE_StructMatrix  sA;
@@ -1476,12 +1477,12 @@ setUpStructSolver( simulation_manager  *man,
    HYPRE_StructPFMGSetNumPreRelax( solver, n_pre );
    HYPRE_StructPFMGSetNumPostRelax( solver, n_post );
    HYPRE_StructPFMGSetSkipRelax( solver, skip );
+   HYPRE_StructPFMGSetMaxLevels( solver, maxlev );
    HYPRE_StructPFMGSetPrintLevel( solver, 1 );
    HYPRE_StructPFMGSetLogging( solver, 1 );
 
    /* Set up PFMG solver. */
    HYPRE_StructPFMGSetup( solver, sA, sb, sx );
-   HYPRE_StructPFMGSetMaxIter( solver, max_iter );
 
    man->solver = solver;
 }
@@ -1498,11 +1499,10 @@ int take_step(simulation_manager * man,         /* manager holding basic sim inf
               double               tstop, 
               int                 *iters_taken) /* if implicit, returns the number of iters taken */
 {
-   int      iters      = man->max_iter; /* if implicit, max iters for solve */
-   double   tol        = man->tol;      /* if implicit, solver tolerance */
-   int      explicit   = man->explicit; /* if true, use explicit, else implicit */
-   int      forcing    = man->forcing;  /* if true, use the nonzero forcing term */
-   HYPRE_Int num_iters = 0;
+   double   pfmg_tol     = man->pfmg_tol;     /* if implicit, solver tolerance */
+   int      pfmg_maxiter = man->pfmg_maxiter; /* if implicit, max iters for solve */
+   int      explicit     = man->explicit; /* if true, use explicit, else implicit */
+   int      forcing      = man->forcing;  /* if true, use the nonzero forcing term */
    
    HYPRE_SStructVector b;
    HYPRE_StructMatrix  sA;
@@ -1562,12 +1562,11 @@ int take_step(simulation_manager * man,         /* manager holding basic sim inf
          /* Set initial guess */
          HYPRE_StructVectorCopy(sxstop, sx);
       }
-      HYPRE_StructPFMGSetTol( man->solver, tol );
-      HYPRE_StructPFMGSetMaxIter( man->solver, iters);
+      HYPRE_StructPFMGSetTol( man->solver, pfmg_tol );
+      HYPRE_StructPFMGSetMaxIter( man->solver, pfmg_maxiter);
       HYPRE_StructPFMGSolve( man->solver, sA, sb, sx );
-      HYPRE_StructPFMGGetNumIterations( man->solver, &num_iters);
-      (*iters_taken) = num_iters;
 
+      HYPRE_StructPFMGGetNumIterations( man->solver, iters_taken);
    }
 
    /* free memory */

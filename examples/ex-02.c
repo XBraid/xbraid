@@ -163,9 +163,9 @@ my_Step(braid_App        app,
 
    /* Use level specific max_iter */
    if( level == 0 )
-      app->man->max_iter = app->max_iter_x[0];
+      app->man->pfmg_maxiter = app->max_iter_x[0];
    else
-      app->man->max_iter = app->max_iter_x[1];
+      app->man->pfmg_maxiter = app->max_iter_x[1];
 
    /* Take step */
    if (fstop == NULL)
@@ -545,7 +545,8 @@ int main (int argc, char *argv[])
    app->man->ny              = 17;            /* number of points in the y-dim */
    app->man->nt              = 32;            /* number of time steps */
    app->man->forcing         = 0;             /* Boolean, if 1 use a nonzero forcing term, if 0 use a 0 forcing term */
-   app->man->tol             = 1.0e-09;       /* PFMG halting tolerance */
+   app->man->pfmg_tol        = 1.0e-09;       /* PFMG halting tolerance */
+   app->man->pfmg_maxlev     = 20;            /* PFMG max levels */
    app->man->output_files    = 0;             /* Boolean, if 1 output the norm of the discretization error to a file for each time step */
    app->man->output_vis      = 0;             /* Boolean, if 1 output GLVIS files of error, solution and true solution */
    app->man->dim_x           = 2;             /* Two dimensional problem */
@@ -614,8 +615,17 @@ int main (int argc, char *argv[])
          app->man->forcing = 1;
       }
       else if( strcmp(argv[arg_index], "-pfmg_tol") == 0 ){
-          arg_index++;
-          app->man->tol = atof(argv[arg_index++]);
+         arg_index++;
+         app->man->pfmg_tol = atof(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-pfmg_mi") == 0 ){
+         arg_index++;
+         app->max_iter_x[0] = atoi(argv[arg_index++]);
+         app->max_iter_x[1] = atoi(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-pfmg_ml") == 0 ){
+         arg_index++;
+         app->man->pfmg_maxlev = atoi(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-use_seq_soln") == 0 ){
           arg_index++;
@@ -701,11 +711,6 @@ int main (int argc, char *argv[])
          arg_index++;
          app->use_rand = atoi(argv[arg_index++]);
       }
-      else if( strcmp(argv[arg_index], "-pfmg_mi") == 0 ){
-         arg_index++;
-         app->max_iter_x[0] = atoi(argv[arg_index++]);
-         app->max_iter_x[1] = atoi(argv[arg_index++]);
-      }
       else if( strcmp(argv[arg_index], "-fullrnorm") == 0 ){
          arg_index++;
          fullrnorm = 1;
@@ -748,8 +753,9 @@ int main (int argc, char *argv[])
       printf("  -cf  <cfactor>                     : set coarsening factor (default: 2)\n");   
       printf("  -cf0  <cfactor>                    : set coarsening factor for level 0 \n");
       printf("  -mi  <max_iter>                    : set max iterations (default: 100)\n");
-      printf("  -pfmg_mi <max_iter max_iter_cheap> : maximum number of PFMG iterations (default: 50 50)\n"); 
       printf("  -pfmg_tol  <tol_x>                 : PFMG halting tolerance (default: 1e-09 )\n"); 
+      printf("  -pfmg_mi <max_iter max_iter_cheap> : maximum number of PFMG iterations (default: 50 50)\n"); 
+      printf("  -pfmg_ml <max_levels>              : maximum number of PFMG grid levels\n"); 
       printf("  -fmg                               : use FMG cycling\n");
       printf("  -refine                            : refine in time\n");
       printf("  -res                               : use my residual\n");

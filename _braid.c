@@ -1391,6 +1391,7 @@ _braid_FCRelax(braid_Core  core,
    braid_Int      *nrels    = _braid_CoreElt(core, nrels);
    _braid_Grid   **grids    = _braid_CoreElt(core, grids);
    braid_Int       ncpoints = _braid_GridElt(grids[level], ncpoints);
+   braid_Int       cfactor  = _braid_GridElt(grids[level], cfactor);
 
    braid_Vector    u;
    braid_Int       flo, fhi, fi, ci;
@@ -1402,6 +1403,8 @@ _braid_FCRelax(braid_Core  core,
    {
       _braid_UCommInit(core, level);
 
+      if (cfactor > 1)
+      {
       /* Start from the right-most interval */
       for (interval = ncpoints; interval > -1; interval--)
       {
@@ -1434,6 +1437,39 @@ _braid_FCRelax(braid_Core  core,
          if ((flo <= fhi) && !(ci > 0))
          {
             _braid_CoreFcn(core, free)(app, u);
+         }
+      }
+      }
+      else
+      {
+         braid_Int  clower  = _braid_GridElt(grids[level], clower);
+         braid_Int  cupper  = _braid_GridElt(grids[level], cupper);
+         braid_Int  cstart_odd, cstart_evn;
+         if (clower == 0)
+         {
+            clower = 1; /* Don't compute the initial condition */
+         }
+         if (clower%2 > 0)
+         {
+            cstart_odd = clower;
+            cstart_evn = clower+1;
+         }
+         else
+         {
+            cstart_odd = clower+1;
+            cstart_evn = clower;
+         }
+         for (ci = cstart_odd; ci <= cupper; ci += 2)
+         {
+            _braid_UGetVector(core, level, ci-1, &u);
+            _braid_Step(core, level, ci, NULL, u);
+            _braid_USetVector(core, level, ci, u, 1);
+         }
+         for (ci = cstart_evn; ci <= cupper; ci += 2)
+         {
+            _braid_UGetVector(core, level, ci-1, &u);
+            _braid_Step(core, level, ci, NULL, u);
+            _braid_USetVector(core, level, ci, u, 1);
          }
       }
       _braid_UCommWait(core, level);
