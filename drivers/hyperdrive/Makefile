@@ -26,19 +26,20 @@
 # Import machine specific compilers, options, flags, etc.. 
 ##################################################################
 
-include ../../makefile.inc
+BRAID_DIR=../..
+include $(BRAID_DIR)/makefile.inc
 
 .SUFFIXES:
 .SUFFIXES: .c .o 
 
 
-#BRAID_FLAGS = -I../.. -DHD_DEBUG
-BRAID_FLAGS = -I../..
+#BRAID_FLAGS = -I$(BRAID_DIR) -DHD_DEBUG
+BRAID_FLAGS = -I$(BRAID_DIR)
 
 # TEST_GF should only be used for compiling test-gf
 #GFTEST_FLAGS = -DTEST_GF
 
-BRAID_LIB = ../../libbraid.a
+BRAID_LIB = $(BRAID_DIR)/libbraid.a
 
 OBJ5 = advect.o c_array.o bop6g.o c-exact.o c-bdata.o c-twbndry.o c-evalerr.o assign_gp.o \
        dwdx.o dwdt.o advect_data.o explicit_rk4_stepper.o
