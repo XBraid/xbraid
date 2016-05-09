@@ -453,7 +453,7 @@ void MFEMBraidApp::InitMultilevelApp(ParMesh *pmesh, int pref, bool scoarsen)
    x[0] = new ParGridFunction(fe_space[0]);
    InitLevel(0); // initialize ode[0], solver[0], and max_dt[0]
    buff_size[0] = EvalBufSize(fe_space[0]->TrueVSize());
-   
+
    // Print mesh info
    int myid_t;
    MPI_Comm_rank(comm_t, &myid_t);
@@ -465,8 +465,9 @@ void MFEMBraidApp::InitMultilevelApp(ParMesh *pmesh, int pref, bool scoarsen)
    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
    size = fe_space[0]->GlobalTrueVSize();
    if (myid == 0)
-      std::cout << std::endl << "Number of spatial unknowns on finest-grid: " << size << "\n\n"; 
-   
+      std::cout << "\nNumber of spatial unknowns on finest-grid: "
+                << size << "\n\n";
+
    own_data = true;
 }
 
@@ -655,7 +656,7 @@ int MFEMBraidApp::Coarsen(braid_Vector   fu_,
    BraidVector *fu = (BraidVector *) fu_;
    int flevel      = fu->level;
    int clevel      = ComputeSpaceLevel(tstart, c_tprior, c_tstop);
-   BraidVector *cu;
+   BraidVector *cu = NULL;
 
    MFEM_VERIFY(flevel == ComputeSpaceLevel(tstart, f_tprior, f_tstop),
                "ComputeSpaceLevel returned incorrect level for fine vector");
@@ -717,7 +718,7 @@ int MFEMBraidApp::Refine(braid_Vector   cu_,
    BraidVector *cu = (BraidVector *) cu_;
    int clevel      = cu->level;
    int flevel      = ComputeSpaceLevel(tstart, f_tprior, f_tstop);
-   BraidVector *fu;
+   BraidVector *fu = NULL;
 
    MFEM_VERIFY(clevel == ComputeSpaceLevel(tstart, c_tprior, c_tstop),
                "ComputeSpaceLevel returned incorrect level for coarse vector");
@@ -905,7 +906,7 @@ BraidOptions::BraidOptions(int argc, char *argv[])
              "3:max-norm.");
    AddOption(&cfactor, "-cf", "--coarsen-factor",
              "Coarsening factor.");
-   AddOption(&storage, "-store", "--storage-option ,",
+   AddOption(&storage, "-store", "--storage-option",
              "Storage to use: 0:store C points, 1:store all points.");
    AddOption(&cfactor0, "-cf0", "--agg-coarsen-factor",
              "Aggressive coarsening factor, -1:off.");
@@ -916,9 +917,9 @@ BraidOptions::BraidOptions(int argc, char *argv[])
    AddOption(&spatial_coarsen, "-sc", "--spatial-coarsen", "-no-sc",
              "--no-spatial-coarsen", "Enable/disable spatial coarsening.");
    AddOption(&access_level, "-access", "--access-level",
-             "Set the access level.");
+             "Set the access level."); // TODO: what are the options?
    AddOption(&print_level, "-print", "--print-level",
-             "Set the print level.");
+             "Set the print level."); // TODO: what are the options?
    AddOption(&use_seq_soln, "-seq_soln", "--use-sequential-solution",
              "If 1, use the sequential time stepping solution as the initial guess.");
    AddOption(&skip, "-skip", "--skip-work-on-first-down-cycle",
@@ -1064,7 +1065,7 @@ void SpaceTimeMeshInfo::Print(MPI_Comm comm)
          std::cout.precision(4);
          std::cout << std::scientific;
          std::cout << "    " << std::setw(10) << std::left << i << "|"
-                   << "    " << std::setw(11)  << std::left << level << "|"
+                   << "    " << std::setw(11) << std::left << level << "|"
                    << " "    << std::setw(12) << std::left << h_min << "|"
                    << " "    << std::setw(12) << std::left << h_max << "|"
                    << " "    << std::setw(12) << std::left << dt << "|"
