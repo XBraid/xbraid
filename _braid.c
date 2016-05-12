@@ -307,7 +307,6 @@ _braid_CommWait(braid_Core          core,
       if (request_type == 1) /* recv type */
       {
          braid_Vector  *vector_ptr = _braid_CommHandleElt(handle, vector_ptr);
-         
          _braid_CoreFcn(core, bufunpack)(app, buffer, vector_ptr);
       }
       
@@ -838,6 +837,7 @@ _braid_Step(braid_Core     core,
    {
       _braid_CoreFcn(core, step)(app, ustop, NULL, u, status);
       rfactors[ii] = _braid_StatusElt(status, rfactor);
+      _braid_CoreElt(core, r_space) += _braid_StatusElt(status, r_space);
    }
    else
    {
@@ -894,6 +894,7 @@ _braid_Residual(braid_Core     core,
       if (level == 0)
       {
          rfactors[ii] = _braid_StatusElt(status, rfactor);
+         _braid_CoreElt(core, r_space) += _braid_StatusElt(status, r_space);   
       }
    }
    else
@@ -1782,6 +1783,74 @@ _braid_FInterp(braid_Core  core,
 }
 
 /*----------------------------------------------------------------------------
+ * Refine in Space at every point on processor if r_space is set
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_FSpace_Refine(braid_Core   core,
+               braid_Int   *refined_ptr)
+{
+
+   MPI_Comm           comm            = _braid_CoreElt(core, comm);
+   _braid_Grid      **grids           = _braid_CoreElt(core, grids);   
+   
+   braid_Int          r_space         = _braid_CoreElt(core, r_space);
+   braid_Int ilower  = _braid_GridElt(grids[0], ilower);
+   braid_Int iupper  = _braid_GridElt(grids[0], iupper);
+   braid_Real *ta = _braid_GridElt(grids[0], ta); 
+
+   braid_Int global_r_space;
+   braid_Int i, ii;
+   braid_Vector c_vec, f_vec;  
+
+   if ( _braid_CoreElt(core, scoarsen) != NULL)
+   {
+       
+      if ( r_space > 0 )  
+      {         
+         for ( i = ilower; i <= iupper; i++ )
+	      {
+             ii = i-ilower;
+	         _braid_UGetVectorRef(core, 0, i , &c_vec);
+	     
+            if ( c_vec != NULL )
+            {
+			        _braid_RefineBasic(core, -1, &ta[ii], &ta[ii], c_vec, &f_vec);
+          	     _braid_USetVectorRef(core, 0, i, f_vec);
+            }
+		   }			 
+ 	    }
+    
+       /* Check if any refinment was completed globally. If true then refine the 
+          initial time point if not done already, increase nrefine, and return 2 */
+       MPI_Allreduce(&r_space, &global_r_space, 1, braid_MPI_INT, MPI_MAX, comm);
+       if (global_r_space > 0)
+       {	
+	        /* Need to make sure to refine the first point. If it is the lone C point
+              on a processor r_space will never be set */ 
+           if ( ilower == 0 && r_space == 0 )
+	        {
+		        _braid_UGetVectorRef(core, 0, 0, &c_vec);
+              _braid_RefineBasic(core, -1, &ta[0], &ta[0], c_vec, &f_vec);
+              _braid_USetVectorRef(core, 0, 0, f_vec);	 
+	        }	 
+	        
+           *refined_ptr = 2;
+	        _braid_CoreElt(core, nrefine) += 1;
+       }
+       else
+	       *refined_ptr = 0;
+    }
+    else
+         *refined_ptr = 0;
+    
+    /* Reset r_space */
+    _braid_CoreElt(core, r_space) = 0;
+    return _braid_error_flag;
+}
+
+
+/*----------------------------------------------------------------------------
  * Create a new fine grid (level 0) and corresponding grid hierarchy by refining
  * the current fine grid based on user-provided refinement factors.  Return the
  * boolean 'refined_ptr' to indicate whether grid refinement was actually done.
@@ -1925,8 +1994,8 @@ _braid_FRefine(braid_Core   core,
    iupper  = _braid_GridElt(grids[0], iupper);
    npoints = iupper - ilower + 1;
 
-   /* If reached max refinements or have too many time points, stop refining */
-   if( !((nrefine < max_refinements) && (gupper < tpoints_cutoff)) )
+   /* If reached max refinements stop refining */
+   if( !((nrefine < max_refinements)) )
    {
       _braid_CoreElt(core, refine)   = 0;
       _braid_CoreElt(core, rstopped) = iter;
@@ -1934,6 +2003,12 @@ _braid_FRefine(braid_Core   core,
       *refined_ptr = 0;
       return _braid_error_flag;
    }
+   /* If reached max number of time points complete spatial refinment ( if requested ) */
+   else if ( !(gupper < tpoints_cutoff) )
+   {
+       _braid_FSpace_Refine(core, refined_ptr);
+       return _braid_error_flag;
+   }    
 
    /*-----------------------------------------------------------------------*/
    /* 1. Compute f_gupper and the local interval extents for both the refined
@@ -1969,7 +2044,7 @@ _braid_FRefine(braid_Core   core,
    /* Check to see if we need to refine, and return if not */
    if (f_gupper == gupper)
    {
-      *refined_ptr = 0;
+      _braid_FSpace_Refine(core, refined_ptr);
       return _braid_error_flag;
    }
 

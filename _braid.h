@@ -162,6 +162,7 @@ typedef struct _braid_Core_struct
 
    braid_Int              refine;           /**< refine in time (refine = 1) */
    braid_Int             *rfactors;         /**< refinement factors for finest grid (if any) */
+   braid_Int              r_space;          /**< spatial refinment flag */
    braid_Int              rstopped;         /**< refinement stopped at iteration rstopped */
    braid_Int              nrefine;          /**< number of refinements done */
    braid_Int              max_refinements;  /**< maximum number of refinements */
@@ -617,6 +618,15 @@ braid_Int
 _braid_FInterp(braid_Core  core,   /**< braid_Core (_braid_Core) struct */  
                braid_Int   level   /**< interp from level to level+1 */
                );
+
+/** 
+ * Call spatial refinment on all local time steps, if r_space has been set on the
+ * local processor. Returns refined_ptr == 2 if refinment was completed at any point
+ * globally, otherwise returns 0
+ */
+braid_Int
+_braid_FSpace_Refine(braid_Core   core,
+               braid_Int   *refined_ptr);
 
 /**
  * Create a new fine grid (level 0) and corresponding grid hierarchy by refining

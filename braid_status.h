@@ -137,6 +137,7 @@ typedef struct _braid_StepStatus_struct
    braid_Real    tol;             /**< Current stopping tolerance */
    braid_Int     iter;            /**< Current iteration (also equal to length of rnorms) */
    braid_Int     rfactor;         /**< if set by user, allows for subdivision of this interval for better time accuracy */
+   braid_Int     r_space;         /**< if set by the user, spatial coarsening function will be called following the vcycle */
    braid_Int     level;           /**< current grid level */
    braid_Int     nrefine;         /**< number of refinements done */
    braid_Int     gupper;          /**< global size of the fine grid */
@@ -448,6 +449,17 @@ braid_Int
 braid_StepStatusSetRFactor(braid_StepStatus  status,         /**< structure containing current simulation info */
                            braid_Real        rfactor         /**< user-determined desired rfactor */
                            );
+
+/**
+ * Set the r_space flag. When set = 1, spatial coarsening will be called,
+ * for all local time points, following the  completion of the current
+ * iteration, provided rfactors are not set at any global time point. This
+ * allows for spatial refinment without temporal refinment
+ **/
+braid_Int
+braid_StepStatusSetRSpace(braid_StepStatus  status,
+                          braid_Int         r_space
+                         );
 
 /**
  * Return XBraid status for the current simulation. Two values are 
