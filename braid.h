@@ -204,7 +204,9 @@ typedef braid_Int
 
 /**
  * This allows XBraid to send messages containing braid_Vectors.  This routine
- * packs a vector _u_ into a _void \*  buffer_ for MPI.
+ * packs a vector _u_ into a _void \*  buffer_ for MPI. @entry size_ptr = 0 if
+ * message will be used for a time step calculation, or size_ptr = 1 if message
+ * will be used for load balencing ( during FRefine ) 
  **/
 typedef braid_Int
 (*braid_PtFcnBufPack)(braid_App      app,            /**< user-defined _braid_App structure */

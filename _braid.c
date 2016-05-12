@@ -264,7 +264,9 @@ _braid_CommSendInit(braid_Core           core,
       /* Allocate buffer through user routine */
       _braid_CoreFcn(core, bufsize)(app, &size);
       buffer = malloc(size);
+      
       /* Note that bufpack may return a size smaller than bufsize */
+      size = 0;
       _braid_CoreFcn(core, bufpack)(app, vector, buffer, &size);
 
       num_requests = 1;
@@ -1826,8 +1828,8 @@ _braid_FSpace_Refine(braid_Core   core,
        MPI_Allreduce(&r_space, &global_r_space, 1, braid_MPI_INT, MPI_MAX, comm);
        if (global_r_space > 0)
        {	
-	        /* Need to make sure to refine the first point. If it is the lone C point
-              on a processor r_space will never be set */ 
+	        /* Need to make sure to refine the first point. If it is a lone C point
+              on a processor r_space then can never be set for that processor */ 
            if ( ilower == 0 && r_space == 0 )
 	        {
 		        _braid_UGetVectorRef(core, 0, 0, &c_vec);
@@ -2047,7 +2049,9 @@ _braid_FRefine(braid_Core   core,
       _braid_FSpace_Refine(core, refined_ptr);
       return _braid_error_flag;
    }
-
+   else
+      _braid_CoreElt(core, r_space) = 0;
+      
    /* Compute r_ilower and r_iupper */
    MPI_Scan(&r_npoints, &r_iupper, 1, braid_MPI_INT, MPI_SUM, comm);
    r_ilower = r_iupper - r_npoints;
@@ -2444,6 +2448,7 @@ _braid_FRefine(braid_Core   core,
          {
             /* Pack u into buffer, adjust size, and put size into buffer */
             buffer = &bptr[1];
+            size = 1;
             _braid_CoreFcn(core, bufpack)(app, send_ua[ii], buffer, &size);
             _braid_CoreFcn(core, free)(app, send_ua[ii]);
             _braid_NBytesToNReals(size, size);
