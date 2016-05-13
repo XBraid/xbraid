@@ -442,11 +442,21 @@ void MFEMBraidApp::InitMultilevelApp(ParMesh *pmesh, int pref, bool scoarsen)
       InitLevel(l); // initialize ode[l], solver[l], and max_dt[l]
       buff_size[l] = EvalBufSize(fe_space[l]->TrueVSize());
 
+#if 0 // pre-rebalance-dev version
       pmesh->UseTwoLevelState(1);
       pmesh->UniformRefinement();
       pfes->Update();
       R[l-1] = pfes->GlobalRestrictionMatrix(fe_space[l], 0);
       pmesh->SetState(Mesh::NORMAL);
+#else
+      pmesh->UniformRefinement();
+      pfes->Update();
+      const SparseMatrix* P =
+         dynamic_cast<const SparseMatrix*>(pfes->GetUpdateOperator());
+      MFEM_ASSERT(P != NULL, "");
+      R[l-1] = Transpose(*P);
+      pfes->UpdatesFinished();
+#endif
    }
    mesh[0] = pmesh;
    fe_space[0] = pfes;
@@ -459,7 +469,7 @@ void MFEMBraidApp::InitMultilevelApp(ParMesh *pmesh, int pref, bool scoarsen)
    MPI_Comm_rank(comm_t, &myid_t);
    if(myid_t == 0)
       pmesh->PrintInfo();
-   
+
    // Print size of finest-grid spatial matrix
    int myid, size;
    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
