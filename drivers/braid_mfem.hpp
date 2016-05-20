@@ -77,8 +77,8 @@ protected:
    // Data for multiple spatial levels, level 0 is the finest level
    Array<ParMesh *>               mesh;
    Array<ParFiniteElementSpace *> fe_space;
-   Array<ParGridFunction *>  x;  // auxiliary ParGridFunctions
-   Array<SparseMatrix *>     R;  // local restriction matrices, l --> l+1
+   Array<ParGridFunction *>       x;  // auxiliary ParGridFunctions
+   Array<const SparseMatrix *>    P;  // local prolongation matrices, l+1 --> l
    Array<TimeDependentOperator *> ode;
    Array<ODESolver *>        solver;
    Array<int>                buff_size;
@@ -170,7 +170,7 @@ public:
 
    void SetSpaceLevel(int l, TimeDependentOperator *ode_l,
                       ODESolver *solver_l, ParGridFunction *x_l,
-                      SparseMatrix *R_l, double max_dt_l);
+                      SparseMatrix *P_l, double max_dt_l);
 
    void SetInitialCondition(HypreParVector *_X0) { X0 = _X0; }
 
@@ -372,14 +372,14 @@ MFEMBraidApp::MFEMBraidApp(
 
    : BraidApp(comm_t_, tstart_, tstop_, ntime_),
      mesh(num_space_levels), fe_space(num_space_levels), x(num_space_levels),
-     R(num_space_levels - 1), ode(num_space_levels), solver(num_space_levels),
+     P(num_space_levels - 1), ode(num_space_levels), solver(num_space_levels),
      buff_size(num_space_levels), max_dt(num_space_levels)
 {
    // initialize the arrays element-wise
    mesh = NULL;
    fe_space = NULL;
    x = NULL;
-   R = NULL;
+   P = NULL;
    ode = NULL;
    solver = NULL;
    buff_size = 0;
@@ -403,7 +403,7 @@ MFEMBraidApp::~MFEMBraidApp()
       {
          delete solver[i];
          delete ode[i];
-         if (i < R.Size()) delete R[i];
+         if (i < P.Size()) delete P[i];
          delete x[i];
          delete fe_space[i];
          delete mesh[i];
@@ -426,7 +426,7 @@ void MFEMBraidApp::InitMultilevelApp(ParMesh *pmesh, int pref, bool scoarsen)
    mesh.SetSize(num_levels);
    fe_space.SetSize(num_levels);
    x.SetSize(num_levels);
-   R.SetSize(num_levels-1);
+   P.SetSize(num_levels-1);
    ode.SetSize(num_levels);
    solver.SetSize(num_levels);
    buff_size.SetSize(num_levels);
@@ -442,11 +442,20 @@ void MFEMBraidApp::InitMultilevelApp(ParMesh *pmesh, int pref, bool scoarsen)
       InitLevel(l); // initialize ode[l], solver[l], and max_dt[l]
       buff_size[l] = EvalBufSize(fe_space[l]->TrueVSize());
 
+#if 0 // pre-rebalance-dev version
       pmesh->UseTwoLevelState(1);
       pmesh->UniformRefinement();
       pfes->Update();
       R[l-1] = pfes->GlobalRestrictionMatrix(fe_space[l], 0);
       pmesh->SetState(Mesh::NORMAL);
+#else
+      pmesh->UniformRefinement();
+      pfes->Update();
+      P[l-1] = dynamic_cast<const SparseMatrix*>(pfes->GetUpdateOperator());
+      MFEM_VERIFY(P[l-1] != NULL, "update operator is not a SparseMatrix");
+      pfes->SetUpdateOperatorOwner(false);
+      pfes->UpdatesFinished();
+#endif
    }
    mesh[0] = pmesh;
    fe_space[0] = pfes;
@@ -459,7 +468,7 @@ void MFEMBraidApp::InitMultilevelApp(ParMesh *pmesh, int pref, bool scoarsen)
    MPI_Comm_rank(comm_t, &myid_t);
    if(myid_t == 0)
       pmesh->PrintInfo();
-   
+
    // Print size of finest-grid spatial matrix
    int myid, size;
    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
@@ -486,7 +495,7 @@ void MFEMBraidApp::InitLevel(int l)
 
 void MFEMBraidApp::SetSpaceLevel(int l, TimeDependentOperator *ode_l,
                                  ODESolver *solver_l, ParGridFunction *x_l,
-                                 SparseMatrix *R_l, double max_dt_l)
+                                 SparseMatrix *P_l, double max_dt_l)
 {
    x[l] = x_l;
    fe_space[l] = x[l]->ParFESpace();
@@ -497,7 +506,7 @@ void MFEMBraidApp::SetSpaceLevel(int l, TimeDependentOperator *ode_l,
    buff_size[l] = EvalBufSize(fe_space[l]->TrueVSize());
    solver[l]->Init(*ode[l]);
    if (l < GetNumSpaceLevels() - 1)
-      R[l] = R_l;
+      P[l] = P_l;
 }
 
 void MFEMBraidApp::SetVisHostAndPort(const char *vh, int vp)
@@ -675,8 +684,8 @@ int MFEMBraidApp::Coarsen(braid_Vector   fu_,
          // Rescale before restriction
           *x[lev-1] *= 1./4;
 
-         // Apply local restriction (no communication)
-         R[lev-1]->Mult(*x[lev-1], *x[lev]);
+         // Apply local restriction, P^T (no communication)
+         P[lev-1]->MultTranspose(*x[lev-1], *x[lev]);
 
          // Assemble x by condensing it into the HypreParVector
          x[lev]->ParallelAssemble(*cu);
@@ -733,7 +742,7 @@ int MFEMBraidApp::Refine(braid_Vector   cu_,
          x[lev+1]->Distribute(cu);
 
          // Apply local interpolation (no communication)
-         R[lev]->MultTranspose(*x[lev+1], *x[lev]);
+         P[lev]->Mult(*x[lev+1], *x[lev]);
 
          // Map only the true dofs from x into fu
          x[lev]->GetTrueDofs(*fu);
