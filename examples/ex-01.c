@@ -129,7 +129,7 @@ my_Init(braid_App     app,
    u = (my_Vector *) malloc(sizeof(my_Vector));
    if (t == 0.0)
    {
-      /* Initial guess */
+      /* Initial condition */
       (u->value) = 1.0;
    }
    else

@@ -30,68 +30,79 @@ idea more concrete, we now give these function definitions from ``examples/ex-01
 implements a scalar ODE, \f[ u_t = \lambda u. \f]
 
 The two data structures are:
+
 1. **App**: This holds a wide variety of information and is *global* in that it
-  is passed to every function.  This structure holds everything that the user will need 
-  to carry out a simulation.  Here, this is just the global MPI communicator and few values
-  describing the temporal domain.
-      
-      typedef struct _braid_App_struct
-      {
-         MPI_Comm  comm;
-         double    tstart;
-         double    tstop;
-         int       ntime;
-       
-      } my_App;
+   is passed to every function.  This structure holds everything that the user
+   will need to carry out a simulation.  Here, this is just the global MPI
+   communicator and few values describing the temporal domain.
+   
+        typedef struct _braid_App_struct
+        {
+           MPI_Comm  comm;
+           double    tstart;
+           double    tstop;
+           int       ntime;
+         
+        } my_App;
 
-
-2. **Vector**: this defines (roughly) a state vector at a certain time value.  
-  It could also contain any other information related to this vector which is 
-  needed to evolve the vector to the next time value, like mesh information.
-  Here, the vector is just a scalar double.    
-
-      typedef struct _braid_Vector_struct
-      {
-         double value;
-      
-      } my_Vector;
-
+2. **Vector**: this defines (roughly) a state vector at a certain time value.
+   It could also contain any other information related to this vector which is
+   needed to evolve the vector to the next time value, like mesh information.
+   Here, the vector is just a scalar double.
+  
+        typedef struct _braid_Vector_struct
+        {
+           double value;
+        
+        } my_Vector;
 
 The user must also define a few wrapper routines.  Note, that the *app* structure is the 
 first argument to every function.
-1. **Phi**: This function tells XBraid how to take a time step, and is the core user routine. 
-   The user must advance the vector *u* from time *tstart* to time *tstop*.
-   Note how the time values are given to the user through the *status*
-   structure and associated *Get* routines.  The *rfactor_ptr* parameter is an
-   advanced topic not used here.
-   
-   Here advancing the solution just involves the scalar \f$ \lambda \f$.  
 
-   **Importantly,** the \f$ g_i \f$ function (from @ref braidoverview) must be 
-   incorporated into *Phi*, so that \f$\Phi(u_i) \rightarrow u_{i+1} \f$
+1. **Step**: This function tells XBraid how to take a time step, and is the core
+   user routine.  The user must advance the vector *u* from time *tstart* to
+   time *tstop*.  Note how the time values are given to the user through the
+   *status* structure and associated *Get* routine.  The *ustop* parameter
+   serves as an approximation to the solution at time *tstop* and is not needed
+   here.  It can be useful for implicit schemes that require an initial guess
+   for a linear or nonlinear solver.  The *fstop* parameter is the right-hand
+   side of the nonlinear problem on the given time grid.  It is only needed when
+   providing a residual with [braid_SetResidual](@ref braid_SetResidual).  More
+   information on how to use this optional feature is given below.  Also see the
+   full code listing for this example in ``examples/ex-01``.
+   \latexonly \\ \endlatexonly
+   
+   Here advancing the solution just involves the scalar \f$ \lambda \f$.
+   **Important note:** the \f$ g_i \f$ function from @ref braidoverview must be
+   incorporated into *Step*.
          
          int
-         my_Phi(braid_App       app,
-                braid_Vector    u,
-                braid_PhiStatus status)
+         my_Step(braid_App        app,
+                 braid_Vector     ustop,
+                 braid_Vector     fstop,
+                 braid_Vector     u,
+                 braid_StepStatus status)
          {
             double tstart;             /* current time */
             double tstop;              /* evolve to this time*/
-            braid_PhiStatusGetTstartTstop(status, &tstart, &tstop);
-      
+            braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+         
             /* On the finest grid, each value is half the previous value */
             (u->value) = pow(0.5, tstop-tstart)*(u->value);
-      
-            /* Zero rhs for now */
-            (u->value) += 0.0;
-      
+         
+            if (fstop != NULL)
+            {
+               /* Nonzero rhs */
+               (u->value) += (fstop->value);
+            }
+         
             /* no refinement */
-            braid_PhiStatusSetRFactor(status, 1);
-      
+            braid_StepStatusSetRFactor(status, 1);
+         
             return 0;
          }
 
-2. **Init**: This function tells XBraid how to initialize a vector at time *t*.  
+2. **Init**: This function tells XBraid how to initialize a vector at time *t*.
    Here that is just allocating and setting a scalar on the heap.
 
          int
@@ -104,19 +115,18 @@ first argument to every function.
             u = (my_Vector *) malloc(sizeof(my_Vector));
             if (t == 0.0)
             {
-               /* Initial guess */
+               /* Initial condition */
                (u->value) = 1.0;
             }
             else
             {
-               /* Random between 0 and 1 */
-               (u->value) = ((double)rand()) / RAND_MAX;
+               /* Initialize all other time points */
+               (u->value) = 0.456;
             }
             *u_ptr = u;
 
             return 0;
          }
-
 
 3. **Clone**: This function tells XBraid how to clone a vector 
    into a new vector.
@@ -135,8 +145,7 @@ first argument to every function.
             return 0;
          }
 
-4. **Free**: This function tells XBraid how to free 
-   a vector.
+4. **Free**: This function tells XBraid how to free a vector.
 
          int
          my_Free(braid_App    app,
@@ -147,14 +156,13 @@ first argument to every function.
             return 0;
          }
 
-5. **Sum**: This function tells XBraid how to sum two 
-   vectors (AXPY operation).
+5. **Sum**: This function tells XBraid how to sum two vectors (AXPY operation).
 
          int
          my_Sum(braid_App    app,
-                double    alpha,
+                double       alpha,
                 braid_Vector x,
-                double    beta,
+                double       beta,
                 braid_Vector y)
          {
             (y->value) = alpha*(x->value) + beta*(y->value);
@@ -202,10 +210,10 @@ first argument to every function.
    Eventually, this routine will allow for broader access to XBraid and computational steering.
    \latexonly \\ \endlatexonly
    
-   See examples/ex-02 and drivers/drive-04 for more advanced uses of the *access* function.  
-   Drive-04 uses *access* to write solution vectors to a GLVIS visualization port, and 
-   examples/ex-02 uses *access* to write to .vtu files.
-   \latexonly \\ \endlatexonly
+   See ``examples/ex-02`` and ``drivers/drive-04`` for more advanced uses of the
+   *access* function.  In ``drive-04``, *access* is used to write solution
+   vectors to a GLVIS visualization port, and ``ex-02`` uses *access* to write
+   to .vtu files.
 
          int
          my_Access(braid_App          app,
@@ -235,11 +243,10 @@ first argument to every function.
             return 0;
          }
 
-
-8. **BufSize**, **BufPack**, **BufUnpack**: These three routines tell XBraid how to 
-   communicate vectors between processors.  *BufPack* packs a vector 
-   into a ``void *`` buffer for MPI and then *BufUnPack* unpacks it from ``void *`` 
-   to vector.  Here doing that for a scalar is trivial.  *BufSize* computes the 
+8. **BufSize**, **BufPack**, **BufUnpack**: These three routines tell XBraid how
+   to communicate vectors between processors.  *BufPack* packs a vector into a
+   ``void *`` buffer for MPI and then *BufUnPack* unpacks it from ``void *`` to
+   vector.  Here doing that for a scalar is trivial.  *BufSize* computes the
    upper bound for the size of an arbitrary vector.
    \latexonly \\ \endlatexonly
 
@@ -254,7 +261,6 @@ first argument to every function.
    In general, the buffer should be self-contained.  The receiving processor
    should be able to pull all necessary information from the buffer in order to
    properly interpret and unpack the buffer.
-   \latexonly \\ \endlatexonly
 
          int
          my_BufSize(braid_App  app,
@@ -293,25 +299,68 @@ first argument to every function.
             return 0;
          }
 
+9. **SCoarsen**, **SRestrict** (optional): These are advanced options that allow
+   for coarsening in space while you coarsen in time.  This is useful for
+   maintaining stable explicit schemes on coarse time scales and is not needed
+   here.  See for instance ``drivers/drive-04`` and ``drivers/drive-02`` which
+   use these routines.
+   \latexonly \\ \endlatexonly
 
-
-9. **Coarsen**, **Restrict** (optional): These are advanced options that allow for coarsening
-  in space while you coarsen in time.  This is useful for maintaining stable
-  explicit schemes on coarse time scales and is not needed here.  See for instance
-  ``drivers/drive-04`` and ``drivers/drive-02`` which use these routines.
-
-  These functions allow you vary the spatial mesh size on XBraid levels as depicted here
-  where the spatial and temporal grid sizes are halved every level.
-  \latexonly
+   These functions allow you vary the spatial mesh size on XBraid levels as depicted here
+   where the spatial and temporal grid sizes are halved every level.
+   \latexonly
    \begin{figure}[!ht] \centering 
        \subfloat{\includegraphics[width=0.25\textwidth]{../img/spatial_coarsening.pdf}}
        \label{img:heat_results}
    \end{figure}
    \endlatexonly
 
-10. Adaptive and variable time stepping is in the works to be implemented.  The *rfactor* parameter
-in *Phi* will allow this.
+10. **Residual** (optional): A user-defined residual can be provided with the
+    function [braid_SetResidual](@ref braid_SetResidual).  *Residual* defines
+    the nonlinear equation to solve at each time step with the *Step* routine.
+    Because XBraid assumes a one-step method, the equation to solve on each grid
+    level has the form
 
+    \f[ A(u_i, u_{i-1}) = f_i, \f]
+
+    where \f$ A() \f$ is the *Residual* function and \f$ f_i = 0 \f$ on the
+    finest grid level.  The nonzero right-hand-side on each coarse grid is
+    needed to implement the FAS algorithm.  The *Step* function provides an
+    approximation to the solution \f$ u_i \f$ of this equation.  That is,
+
+    \f[ u_i \approx \Phi(u_{i-1}, f_i), \f]
+
+    where \f$ \Phi() \f$ is the *Step* function.  When *Residual* is provided,
+    *Step* does not need to produce an accurate time step, especially when all
+    time points are stored (see [braid_SetStorage](@ref braid_SetStorage)).
+    Users should write the *Residual* and *Step* routines such that the
+    following holds:
+    
+    \f[ A( \Phi(u_{i-1}, f_i), u_{i-1} ) \approx f_i. \f]
+
+    Note that when *Residual* is not provided, XBraid defines the residual in
+    terms of the *Step* function as follows:
+
+    \f[ A(u_i, u_{i-1}) = u_i - \Phi(u_{i-1}) = 0. \f]
+
+    In this case, we have exact equality above (i.e., \f$ \approx \f$ becomes
+    \f$ = \f$).  In addition, the nonzero right-hand-side needed on coarse grids
+    to do FAS does not need to be provided to the user because the solution to
+    the non-homogeneous equation is simply \f$ u_i = \Phi(u_{i-1}) + f_i \f$,
+    and this can easily be computed internally in XBraid.  Also note that here
+    *Step* must always be an accurate time step on the finest grid level.
+
+11. Adaptive and variable time stepping are available by first calling the
+    function [braid_SetRefine](@ref braid_SetRefine) in the main driver and then
+    using [braid_StepStatusSetRFactor](@ref braid_StepStatusSetRFactor) in the
+    *Step* routine to set a refinement factor for interval [*tstart*, *tstop*].
+    In this example, no refinement is being done (factor = 1).  Currently, each
+    refinement factor is constrained to be no larger than the coarsening factor.
+    The final time grid is constructed adaptively in an FMG-like cycle by
+    refining the initial grid according to the requested refinement factors.
+    Refinement stops when the requested factors are all one or when various
+    upper bounds are reached such as the max number of time points or max number
+    of time grid refinement levels allowed.
 
 ## Running XBraid for this Example 
 
@@ -330,8 +379,8 @@ The core structure is used by XBraid for internal data structures.
 
     braid_Core  core;
     braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
-            my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
-            my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
+               my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
+               my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
 
 Then, XBraid options are set.
 
@@ -443,7 +492,7 @@ The two data structures are:
       } my_App;
 
    The app contains all the information needed to take a time step with the
-   user code for an arbitrary time step size.  See the *Phi* function below
+   user code for an arbitrary time step size.  See the *Step* function below
    for more detail.
 
 2. **Vector**: this defines a state vector at a certain time value.  
@@ -459,7 +508,7 @@ The two data structures are:
 The user must also define a few wrapper routines.  Note, that the ``app`` structure
 is the first argument to every function.
 
-1. **Phi**: This function tells XBraid how to take a time step, and is the core
+1. **Step**: This function tells XBraid how to take a time step, and is the core
    user routine.  This function advances the vector *u* from time *tstart* to time
    *tstop*.  A few important things to note are as follows.
 
@@ -479,9 +528,9 @@ is the first argument to every function.
   + The forcing term \f$ g_i \f$ is wrapped into the *take_step(...)*
     function.  Thus, \f$\Phi(u_i) \rightarrow u_{i+1} \f$.  
 
-        int my_Phi(braid_App       app,
-                   braid_Vector    u,
-                   braid_PhiStatus status)
+        int my_Step(braid_App        app,
+                    braid_Vector     u,
+                    braid_StepStatus status)
         {
            double tstart;             /* current time */
            double tstop;              /* evolve u to this time*/
@@ -489,7 +538,7 @@ is the first argument to every function.
            int iters_taken = -1;
            
            /* Grab status of current time step */
-           braid_PhiStatusGetTstartTstop(status, &tstart, &tstop);
+           braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
      
            /* Check matrix lookup table to see if this matrix already exists*/
            A_idx = -1.0;
@@ -575,7 +624,7 @@ Then, the data structure definitions and wrapper routines are passed to XBraid.
 
     braid_Core  core;
     braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
-            my_Phi, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
+            my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
             my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
 
 Then, XBraid options are set with calls like

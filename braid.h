@@ -105,8 +105,8 @@ typedef struct _braid_Vector_struct *braid_Vector;
  * Query the status structure with *braid_StepStatusGetTstart(status, &tstart)*
  * and *braid_StepStatusGetTstop(status, &tstop)* to get *tstart* and *tstop*.
  * The status structure also allows for steering.  For example,
- * *braid_StepStatusSetRFactor(...)* allows for setting rfactor, which tells
- * XBraid to refine this time interval.
+ * *braid_StepStatusSetRFactor(...)* allows for setting a refinement factor,
+ * which tells XBraid to refine this time interval.
  **/
 typedef braid_Int
 (*braid_PtFcnStep)(braid_App        app,    /**< user-defined _braid_App structure */
@@ -361,7 +361,7 @@ braid_SetMaxLevels(braid_Core  core,        /**< braid_Core (_braid_Core) struct
                    );
 
 /**
- * Set max number of multigrid levels.
+ * Set whether to skip all work on the first down cycle (skip = 1).  On by default.
  **/
 braid_Int
 braid_SetSkip(braid_Core  core,        /**< braid_Core (_braid_Core) struct*/
@@ -376,11 +376,11 @@ braid_SetRefine(braid_Core  core,    /**< braid_Core (_braid_Core) struct*/
                 braid_Int   refine   /**< boolean, refine in time or not */
                 );
 /**
- * Set the max number of refinements.
+ * Set the max number of time grid refinement levels allowed.
  **/
 braid_Int
 braid_SetMaxRefinements(braid_Core  core,             /**< braid_Core (_braid_Core) struct*/
-                        braid_Int   max_refinements   /**< maximum levels to allow */
+                        braid_Int   max_refinements   /**< maximum refinement levels allowed */
                        );
 /**
  * Set the number of time steps, beyond with refinements stop.
