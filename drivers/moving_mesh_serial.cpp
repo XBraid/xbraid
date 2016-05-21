@@ -2,6 +2,7 @@
 
 //Extra Hypre Functions
 #include "hypre_extra.hpp"
+#include <fstream>
 
 using namespace hypre;
 using namespace std;

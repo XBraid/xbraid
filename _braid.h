@@ -129,7 +129,7 @@ typedef struct _braid_Core_struct
    braid_PtFcnSRefine     srefine;          /**< (optional) return a spatially refined vector */
 
    braid_Int              access_level;     /**< determines how often to call the user's access routine */ 
-   braid_Int              print_level;      /**< determines amount of output printed to screem (0,1,2) */ 
+   braid_Int              print_level;      /**< determines amount of output printed to screen (0,1,2) */
    braid_Int              seq_soln;         /**< boolean, controls if the initial guess is from sequential time stepping*/
    braid_Int              max_levels;       /**< maximum number of temporal grid levels */
    braid_Int              min_coarse;       /**< minimum possible coarse grid size */

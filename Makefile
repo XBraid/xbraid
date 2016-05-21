@@ -26,6 +26,7 @@
 # Import machine specific compilers, options, flags, etc.. 
 ##################################################################
 
+BRAID_DIR=.
 include makefile.inc
 
 
@@ -39,7 +40,7 @@ BRAID_FILES = _util.c braid.c _braid.c braid_test.c braid_status.c braid_F90_ifa
 
 BRAID_OBJ = $(BRAID_FILES:.c=.o)
 
-.PHONY: examples drivers
+.PHONY: all examples drivers clean info
 .SUFFIXES:
 .SUFFIXES: .c .o
 
@@ -64,3 +65,12 @@ clean:
 	rm -f *.o libbraid.a
 	cd examples; $(MAKE) clean
 	cd drivers; $(MAKE) clean
+
+info:
+	@echo "MPICC     = `which $(MPICC)`"
+	@echo "MPICXX    = `which $(MPICXX)`"
+	@echo "MPIF90    = `which $(MPIF90)`"
+	@echo "CFLAGS    = $(CFLAGS)"
+	@echo "CXXFLAGS  = $(CXXFLAGS)"
+	@echo "FORTFLAGS = $(FORTFLAGS)"
+	@echo "LFLAGS    = $(LFLAGS)"
