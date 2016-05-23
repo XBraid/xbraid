@@ -118,7 +118,7 @@ touch $destination_dir/$archive_name
    chgrp hypre $destination_dir/$archive_name
    chmod g+rw $destination_dir/$archive_name
    rm -rf $temp_dir
-)
+) 1>> /dev/null 2>> /dev/null
 
 # Check size of archive greater than 5MB
 ArchiveSize=$(du -k $destination_dir/$archive_name | cut -f 1)
