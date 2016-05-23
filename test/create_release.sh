@@ -24,24 +24,10 @@
 #EHEADER**********************************************************************
 
 ##
-# To test that the archive works, do something like
-# $ mkdir braid_temp
-# $ tar -xvf braid-2014.09.16.tar.gz -C ./braid_temp
-# $ cd braid_temp/braid
-# $ gvim examples/Makefile
-# 
-# Change,
-#  MFEM_DIR = ../../../mfem
-#  METIS_DIR = ../../../metis-4.0
-
-#  HYPRE_DIR = ../../../linear_solvers/hypre
-#
-# Then, make and do autotests
-
-##
 # Set these variables to what you want
 this_version="2.0.0"
 destination_dir="/usr/casc/hypre/braid/share/braid_tarballs"
+docs_destination_dir="/usr/casc/hypre/braid/share/braid_manuals/"
 braid_version_to_checkout='HEAD'
 temp_dir="$HOME/braid_temp"
 date="`date +%Y.%m.%d` at `date +%H.%M`"
@@ -108,6 +94,10 @@ touch $destination_dir/$archive_name
    rm *.tex
    rm *.sty
    rm Makefile
+   cp user_manual.pdf $docs_destination_dir
+   cp developer_manual.pdf $docs_destination_dir
+   rm user_manual.pdf
+   rm developer_manual.pdf
    cd ../
 
    ##
@@ -128,11 +118,11 @@ touch $destination_dir/$archive_name
    chgrp hypre $destination_dir/$archive_name
    chmod g+rw $destination_dir/$archive_name
    rm -rf $temp_dir
-) 1>> /dev/null 2>> /dev/null
+)
 
 # Check size of archive greater than 5MB
 ArchiveSize=$(du -k $destination_dir/$archive_name | cut -f 1)
-if [ $ArchiveSize -le 5000 ] ; then 
+if [ $ArchiveSize -le 200 ] ; then 
     echo "" 1>&2
     echo "Tried creating Braid source archive, but " 1>&2
     echo "$destination_dir/$archive_name is too small" 1>&2
