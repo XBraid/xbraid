@@ -321,17 +321,17 @@ first argument to every function.
    \endlatexonly
 
 10. **Residual** (optional): A user-defined residual can be provided with the
-    function [braid_SetResidual](@ref braid_SetResidual), which can result
-    in the substantial computational savings explained below.  *Residual* defines
+    function [braid_SetResidual](@ref braid_SetResidual) and can result
+    in substantial computational savings, as explained below.  *Residual* defines
     the nonlinear equation at each time step, i.e., it evaluates one block-row of the global
     space-time operator \f$A\f$ with a right-hand side (a residual computation).  
     It defines the equation which *Step* must solve.
     Because XBraid assumes a one-step method, the equation to solve on each grid
     level has the form
 
-    \f[ \hat{A}(u_i, u_{i-1}) = f_i, \f]
+    \f[ A_i(u_i, u_{i-1}) = f_i, \f]
 
-    where \f$ \hat{A}() \f$ is the *Residual* function and \f$ f_i = 0 \f$ on the
+    where \f$ A_i() \f$ is the *Residual* function and \f$ f_i = 0 \f$ on the
     finest grid level.  The nonzero right-hand-side on each coarse grid is
     needed to implement the FAS algorithm.  The *Step* function provides an
     approximation to the solution \f$ u_i \f$ of this equation.  That is,
@@ -351,35 +351,39 @@ first argument to every function.
     Users should write the *Residual* and *Step* routines such that the
     following holds:
     
-    \f[ \hat{A}( \Phi(u_{i-1}, f_i), u_{i-1} ) \approx f_i. \f]
+    \f[ A_i( \Phi(u_{i-1}, f_i), u_{i-1} ) \approx f_i. \f]
 
     Note that when *Residual* is not provided, XBraid defines the residual in
     terms of the *Step* function as follows:
 
-    \f[ \hat{A}(u_i, u_{i-1}) = u_i - \Phi(u_{i-1}) = 0. \f]
+    \f[ A_i(u_i, u_{i-1}) = u_i - \Phi(u_{i-1}) = 0. \f]
 
     In this case, we have exact equality above (i.e., \f$ \approx \f$ becomes
-    \f$ = \f$).  In addition, the nonzero right-hand-side needed on coarse grids
+    \f$ = \f$).  In addition, the nonzero right-hand-side *fstop* needed on coarse grids
     to do FAS does not need to be provided to the user because the solution to
     the non-homogeneous equation is simply \f$ u_i = \Phi(u_{i-1}) + f_i \f$,
     and this can easily be computed internally in XBraid.  
     In other words, the *fstop* parameter for *Step* is always zero by default.  
-    Also note that here *Step* must always be an accurate time step on the finest grid level.
+    Also note that in this default setting, *Step* must always be an accurate 
+    time step on the finest grid level so that residual computations are accurate.
 
 11. Adaptive and variable time stepping are available by first calling the
-    function [braid_SetRefine](@ref braid_SetRefine) in the main driver and then
-    using [braid_StepStatusSetRFactor](@ref braid_StepStatusSetRFactor) in the
-    *Step* routine to set a refinement factor for interval [*tstart*, *tstop*].
-    In this way, user-defined criteria can subdivide intervals on the fly and adaptively
-    refine in time.
+   function [braid_SetRefine](@ref braid_SetRefine) in the main driver and then
+   using [braid_StepStatusSetRFactor](@ref braid_StepStatusSetRFactor) in the
+   *Step* routine to set a refinement factor for interval [*tstart*, *tstop*].
+   In this way, user-defined criteria can subdivide intervals on the fly and adaptively
+   refine in time.  For instance, returning a refinement factor of 4 in *Step* 
+   will tell XBraid to subdivide that interval into 4 evenly spaced smaller intervals
+   for the next iteration.  Refinement can only be done on the finest XBraid level.
+   \latexonly \\ \endlatexonly
 
-    In this example, no refinement is being done (factor = 1).  Currently, each
-    refinement factor is constrained to be no larger than the coarsening factor.
-    The final time grid is constructed adaptively in an FMG-like cycle by
-    refining the initial grid according to the requested refinement factors.
-    Refinement stops when the requested factors are all one or when various
-    upper bounds are reached such as the max number of time points or max number
-    of time grid refinement levels allowed.
+   In this example, no refinement is being done (factor = 1).  Currently, each
+   refinement factor is constrained to be no larger than the coarsening factor.
+   The final time grid is constructed adaptively in an FMG-like cycle by
+   refining the initial grid according to the requested refinement factors.
+   Refinement stops when the requested factors are all one or when various
+   upper bounds are reached such as the max number of time points or max number
+   of time grid refinement levels allowed.
 
 ## Running XBraid for this Example 
 

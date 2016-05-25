@@ -50,8 +50,8 @@ To run the examples, type
    coarsening, and thus if explicit time stepping is used, the time stepping 
    switchs to implicit on coarse XBraid grids when the CFL condition is violated.
 
-3. drive-04 is a sophisticated test bed for various PDEs, mostly parabolic.  It relies
-   on the [mfem](http://mfem.org)
+3. drive-04 is a sophisticated test bed for finite element discretizations of the 
+   heat equation. It relies on the [mfem](http://mfem.org)
    package to create general finite element discretizations for the spatial problem.
    Other packages must be installed in this order.
      + Unpack and install [Metis](http://glaros.dtc.umn.edu/gkhome/metis/metis/overview)
@@ -94,4 +94,10 @@ To run the examples, type
          
          Glvis will listen on a port to which drive-04 will dump visualization information.
 
+4. drive-05, 6, 7 and 10 are additional mfem examples compiled like drive-04.
+     + drive-05 implements advection(-diffusion) with a discontinuous Galerkin
+       discretization.
+     + drive-06 implements nonlinear diffusion, i.e., the \f$p\f$-Laplacian.
+     + drive-07 is under development.
+     + drive-10 is under development.
 
