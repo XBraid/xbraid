@@ -62,19 +62,22 @@ first argument to every function.
 1. **Step**: This function tells XBraid how to take a time step, and is the core
    user routine.  The user must advance the vector *u* from time *tstart* to
    time *tstop*.  Note how the time values are given to the user through the
-   *status* structure and associated *Get* routine.  The *ustop* parameter
+   *status* structure and associated *Get* routine.  **Important note:** 
+   the \f$ g_i \f$ function from @ref braidoverview must be incorporated into 
+   *Step*, so that the following equation is solved by default. 
+   \f[ \Phi(u_i) = 0. \f]
+   The *ustop* parameter
    serves as an approximation to the solution at time *tstop* and is not needed
    here.  It can be useful for implicit schemes that require an initial guess
-   for a linear or nonlinear solver.  The *fstop* parameter is the right-hand
-   side of the nonlinear problem on the given time grid.  It is only needed when
+   for a linear or nonlinear solver.  The use of *fstop* is an advanced parameter 
+   (not required) and forms the the right-hand
+   side of the nonlinear problem on the given time grid.  This value is only nonzero when
    providing a residual with [braid_SetResidual](@ref braid_SetResidual).  More
    information on how to use this optional feature is given below.  Also see the
    full code listing for this example in ``examples/ex-01``.
    \latexonly \\ \endlatexonly
    
    Here advancing the solution just involves the scalar \f$ \lambda \f$.
-   **Important note:** the \f$ g_i \f$ function from @ref braidoverview must be
-   incorporated into *Step*.
          
          int
          my_Step(braid_App        app,
@@ -205,6 +208,8 @@ first argument to every function.
    set to 2, then *access* is called every XBraid iteration and on every XBraid level.  In 
    this case, querying *astatus* to determine the current XBraid level and iteration will 
    be useful. This scenario allows for even more detailed tracking of the simulation.
+   The default *access_level* is 1 and gives the user access only after the simulation ends
+   and only on the finest time-grid.
    \latexonly \\ \endlatexonly
 
    Eventually, this routine will allow for broader access to XBraid and computational steering.
@@ -316,44 +321,58 @@ first argument to every function.
    \endlatexonly
 
 10. **Residual** (optional): A user-defined residual can be provided with the
-    function [braid_SetResidual](@ref braid_SetResidual).  *Residual* defines
-    the nonlinear equation to solve at each time step with the *Step* routine.
+    function [braid_SetResidual](@ref braid_SetResidual), which can result
+    in the substantial computational savings explained below.  *Residual* defines
+    the nonlinear equation at each time step, i.e., it evaluates one block-row of the global
+    space-time operator \f$A\f$ with a right-hand side (a residual computation).  
+    It defines the equation which *Step* must solve.
     Because XBraid assumes a one-step method, the equation to solve on each grid
     level has the form
 
-    \f[ A(u_i, u_{i-1}) = f_i, \f]
+    \f[ \hat{A}(u_i, u_{i-1}) = f_i, \f]
 
-    where \f$ A() \f$ is the *Residual* function and \f$ f_i = 0 \f$ on the
+    where \f$ \hat{A}() \f$ is the *Residual* function and \f$ f_i = 0 \f$ on the
     finest grid level.  The nonzero right-hand-side on each coarse grid is
     needed to implement the FAS algorithm.  The *Step* function provides an
     approximation to the solution \f$ u_i \f$ of this equation.  That is,
 
     \f[ u_i \approx \Phi(u_{i-1}, f_i), \f]
 
-    where \f$ \Phi() \f$ is the *Step* function.  When *Residual* is provided,
+    where \f$ \Phi(u,f) \f$ is the *Step* function augmented with a right-hand side
+    term.  When *Residual* is provided,
     *Step* does not need to produce an accurate time step, especially when all
     time points are stored (see [braid_SetStorage](@ref braid_SetStorage)).
+    In this case, substantial computational savings are possible because one
+    application of *Step* becomes much cheaper than a step for sequential 
+    time-stepping.  For example if *Step* were backward Euler for a linear problem,
+    *Residual* would essentially be a matrix-vector product, while *Step* would
+    be an inaccurate solve of the corresponding linear system.
+    
     Users should write the *Residual* and *Step* routines such that the
     following holds:
     
-    \f[ A( \Phi(u_{i-1}, f_i), u_{i-1} ) \approx f_i. \f]
+    \f[ \hat{A}( \Phi(u_{i-1}, f_i), u_{i-1} ) \approx f_i. \f]
 
     Note that when *Residual* is not provided, XBraid defines the residual in
     terms of the *Step* function as follows:
 
-    \f[ A(u_i, u_{i-1}) = u_i - \Phi(u_{i-1}) = 0. \f]
+    \f[ \hat{A}(u_i, u_{i-1}) = u_i - \Phi(u_{i-1}) = 0. \f]
 
     In this case, we have exact equality above (i.e., \f$ \approx \f$ becomes
     \f$ = \f$).  In addition, the nonzero right-hand-side needed on coarse grids
     to do FAS does not need to be provided to the user because the solution to
     the non-homogeneous equation is simply \f$ u_i = \Phi(u_{i-1}) + f_i \f$,
-    and this can easily be computed internally in XBraid.  Also note that here
-    *Step* must always be an accurate time step on the finest grid level.
+    and this can easily be computed internally in XBraid.  
+    In other words, the *fstop* parameter for *Step* is always zero by default.  
+    Also note that here *Step* must always be an accurate time step on the finest grid level.
 
 11. Adaptive and variable time stepping are available by first calling the
     function [braid_SetRefine](@ref braid_SetRefine) in the main driver and then
     using [braid_StepStatusSetRFactor](@ref braid_StepStatusSetRFactor) in the
     *Step* routine to set a refinement factor for interval [*tstart*, *tstop*].
+    In this way, user-defined criteria can subdivide intervals on the fly and adaptively
+    refine in time.
+
     In this example, no refinement is being done (factor = 1).  Currently, each
     refinement factor is constrained to be no larger than the coarsening factor.
     The final time grid is constructed adaptively in an FMG-like cycle by
@@ -411,7 +430,7 @@ This will run ``ex-01``. See ``examples/ex-0*`` for more extensive examples.
 In this example, we assume familiarity with @ref exampleone and describe the
 major ways in which this example differs.  This example is a full space-time
 parallel example, as opposed to @ref exampleone, which implements only a scalar
-ode for one degree-of-freedom in space.  We solve the heat equation in 2D,
+ODE for one degree-of-freedom in space.  We solve the heat equation in 2D,
 
 \f[ \delta/\delta_t \; u(x,y,t) = \Delta\, u(x,y,t) + g(x,y,t). \f]
 
@@ -771,4 +790,13 @@ can return a boolean variable to indicate correctness.
     correct = braid_TestCoarsenRefine(app, comm_x, stdout, 0.0, dt, 2*dt, my_Init,
                           my_Access, my_Free, my_Clone, my_Sum, my_SpatialNorm, 
                           my_CoarsenBilinear, my_Refine);
+
+# More Complicated Examples
+
+We have Fortran90 and C++ interfaces.  See ``examples/ex-01f.f90``, ``braid.hpp``
+and the various C++ examples in ``drivers/drive-**.cpp``.  For discussion of
+more complex problems please see our project
+[publications website](http://computation.llnl.gov/projects/parallel-time-integration-multigrid/publications)
+for our recent publications concerning some of these varied applications. 
+
 
