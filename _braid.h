@@ -156,6 +156,8 @@ typedef struct _braid_Core_struct
    braid_AccessStatus     astatus;          /**< status structure passed to user-written Access routine */
    braid_CoarsenRefStatus cstatus;          /**< status structure passed to user-written coarsen/refine routines */
    braid_StepStatus       sstatus;          /**< status structure passed to user-written step routines */
+   braid_BufferStatus     bstatus;          /**< status structure passed to user-written buffer routines */
+
    braid_Int              storage;          /**< storage = 0 (C-points), = 1 (all) */
 
    braid_Int              gupper;           /**< global size of the fine grid */

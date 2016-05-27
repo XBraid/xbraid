@@ -146,6 +146,28 @@ typedef struct _braid_StepStatus_struct
 
 
 /*--------------------------------------------------------------------------
+ * Define Buffer Status Structure
+ *--------------------------------------------------------------------------*/
+
+struct _braid_BufferStatus_struct;
+/** 
+ * The user's step routine will receive braid_StepStatus, which will be a
+ * pointer to the actual _braid_StepStatus_struct
+ **/
+typedef struct _braid_BufferStatus_struct *braid_BufferStatus;
+
+/** 
+ * The user's bufpack, bufunpack and bufsize routines will receive a BufferStatus structure, which 
+ * defines the status of XBraid at a given buff (un)pack instance.  The user accesses it 
+ * through _braid_BufferStatusGet**()_ functions.
+ **/
+typedef struct _braid_BufferStatus_struct
+{
+   braid_Int    frefine;          /**< if true, buffer will be used for load balencing  */
+
+} _braid_BufferStatus;
+
+/*--------------------------------------------------------------------------
  * Accessor macros 
  *--------------------------------------------------------------------------*/
 
@@ -534,6 +556,33 @@ braid_StepStatusSetTightFineTolx(braid_StepStatus  status,             /**< stru
                                  braid_Int         tight_fine_tolx     /**< input, boolean indicating whether the tight tolx has been used */
                                  );
 
+
+
+/*--------------------------------------------------------------------------
+ * BufferStatus Prototypes
+ *--------------------------------------------------------------------------*/
+
+/**
+ * Initialize a braid_BufferStatus structure 
+ **/
+braid_Int
+_braid_BufferStatusInit(braid_Int           frefine,      /**< frefine == 1 if buffer will be used during FRefine */ 
+                        braid_BufferStatus  status        /**< structure to initialize */
+                            );
+
+/**
+ * Destroy a braid_BufferStatus structure
+ **/
+braid_Int
+_braid_BufferStatusDestroy(braid_BufferStatus  status);        /**< structure to be destroyed */
+
+/**
+ * Return the current frefine value from the BufferStatus structure.
+ **/
+braid_Int
+braid_BufferStatusGetFRefine(braid_BufferStatus  status,         /**< structure containing current simulation info */
+                             braid_Int           *frefine        /**< output, type of buffer requied  */
+                                );
 
 /** @}*/
 

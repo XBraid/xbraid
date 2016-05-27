@@ -475,3 +475,39 @@ braid_StepStatusSetTightFineTolx(braid_StepStatus  status,
    _braid_StatusElt(status, tight_fine_tolx) = tight_fine_tolx;
    return _braid_error_flag;
 }
+
+
+/*--------------------------------------------------------------------------
+ * BufferStatus Routines
+ *--------------------------------------------------------------------------*/
+
+
+braid_Int
+_braid_BufferStatusInit(braid_Int        frefine,
+                        braid_BufferStatus status)
+{
+   _braid_StatusElt(status, frefine)    = frefine;
+   return _braid_error_flag;
+}
+
+braid_Int
+_braid_BufferStatusDestroy(braid_BufferStatus  status)
+{
+   if (status)
+   {
+      _braid_TFree(status);
+   }
+
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_BufferStatusGetFrefine(braid_BufferStatus  status,
+                           braid_Int         *frefine_ptr)
+{
+   *frefine_ptr = _braid_StatusElt(status, frefine);
+   return _braid_error_flag;
+}
+
+
+

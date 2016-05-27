@@ -29,6 +29,7 @@
 class BraidAccessStatus;
 class BraidStepStatus;
 class BraidCoarsenRefStatus;
+class BraidBufferStatus;
 
 // Wrapper for BRAID's App object. Users should inherit this class and implement
 // the purely virtual functions (see braid.h for descriptions).
@@ -78,14 +79,17 @@ public:
    virtual braid_Int Access(braid_Vector       _u,
                             BraidAccessStatus &astatus) = 0;
 
-   virtual braid_Int BufSize(braid_Int *size_ptr) = 0;
+   virtual braid_Int BufSize(braid_Int          *size_ptr,
+                             BraidBufferStatus  &bstatus) = 0;
 
    virtual braid_Int BufPack(braid_Vector  _u,
-                             void         *buffer,
-                             braid_Int    *size_ptr) = 0;
+                             void              *buffer,
+                             braid_Int         *size_ptr,
+                             BraidBufferStatus  &bstatus) = 0;
 
-   virtual braid_Int BufUnpack(void         *buffer,
-                               braid_Vector *u_ptr) = 0;
+   virtual braid_Int BufUnpack(void              *buffer,
+                               braid_Vector      *u_ptr,
+                               BraidBufferStatus &bstatus) = 0;
 
    // These two functions may be optionally defined by the user, if spatial
    // coarsening is desired (see documentation for more details).  To turn on
@@ -214,6 +218,21 @@ class BraidCoarsenRefStatus
       ~BraidCoarsenRefStatus() { }
 };
 
+class BraidBufferStatus
+{
+   private:
+      braid_BufferStatus bstatus;
+   
+   public:
+      BraidBufferStatus( braid_BufferStatus _bstatus );
+      {
+         bstatus = _bstatus;
+      }
+
+      void GetFRefine( braid_Int *frefine_ptr ) { braid_CoarsenRefStatusGetFRefine( bstatus, frefine_ptr); }
+      
+      ~BraidBufferStatus() {} 
+}      
 
 // Static functions passed to Braid, with braid_App == BraidApp*
 static braid_Int _BraidAppStep(braid_App       _app,
@@ -296,29 +315,35 @@ static braid_Int _BraidAppAccess(braid_App          _app,
 
 
 static braid_Int _BraidAppBufSize(braid_App  _app,
-                                  braid_Int *size_ptr)
+                                  braid_Int *size_ptr,
+                                  braid_BufferStatus _bstatus)
 {
    BraidApp *app = (BraidApp*)_app;
-   return app -> BufSize(size_ptr);
+   BraidBufferStatus bstatus( _bstatus );
+   return app -> BufSize(size_ptr, bstatus);
 }
 
 
 static braid_Int _BraidAppBufPack(braid_App     _app,
                                   braid_Vector  _u,
                                   void         *buffer,
-                                  braid_Int    *size_ptr)
+                                  braid_Int    *size_ptr,
+                                  braid_BufferStatus  status)
 {
    BraidApp *app = (BraidApp*)_app;
-   return app -> BufPack(_u, buffer, size_ptr);
+   BraidBufferStatus bstatus( _bstatus );
+   return app -> BufPack(_u, buffer, size_ptr, bstatus);
 }
 
 
 static braid_Int _BraidAppBufUnpack(braid_App     _app,
                                     void         *buffer,
-                                    braid_Vector *u_ptr)
+                                    braid_Vector *u_ptr,
+                                    braid_BufferStatus _bstatus)
 {
    BraidApp *app = (BraidApp*)_app;
-   return app -> BufUnpack(buffer, u_ptr);
+   BraidBufferStatus bstatus( _bstatus );
+   return app -> BufUnpack(buffer, u_ptr, bstatus);
 }
 
 

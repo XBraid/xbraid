@@ -199,7 +199,8 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnBufSize)(braid_App   app,               /**< user-defined _braid_App structure */
-                      braid_Int  *size_ptr           /**< upper bound on vector size in bytes */
+                      braid_Int  *size_ptr,           /**< upper bound on vector size in bytes */
+                      braid_BufferStatus  status     /**< can be querried for info on the message type */
                       );      
 
 /**
@@ -209,10 +210,11 @@ typedef braid_Int
  * will be used for load balencing ( during FRefine ) 
  **/
 typedef braid_Int
-(*braid_PtFcnBufPack)(braid_App      app,            /**< user-defined _braid_App structure */
-                      braid_Vector   u,              /**< vector to back into buffer */
-                      void          *buffer,         /**< output, MPI buffer containing u */
-                      braid_Int     *size_ptr        /**< output, number of bytes packed, must be less than or equal to value returned by BufSize */
+(*braid_PtFcnBufPack)(braid_App           app,            /**< user-defined _braid_App structure */
+                      braid_Vector        u,              /**< vector to back into buffer */
+                      void               *buffer,         /**< output, MPI buffer containing u */
+                      braid_Int          *size_ptr,        /**< output, number of bytes packed, must be less than or equal to value returned by BufSize */
+                      braid_BufferStatus  status          /**< can be queeried for info on the message type required */
                       );
 
 /**
@@ -220,9 +222,10 @@ typedef braid_Int
  * unpacks a _void * buffer_ from MPI into a braid_Vector.
  **/
 typedef braid_Int
-(*braid_PtFcnBufUnpack)(braid_App      app,          /**< user-defined _braid_App structure */
-                        void          *buffer,       /**< MPI Buffer to unpack and place in u_ptr */
-                        braid_Vector  *u_ptr         /**< output, braid_Vector containing buffer's data */
+(*braid_PtFcnBufUnpack)(braid_App            app,           /**< user-defined _braid_App structure */
+                        void                *buffer,        /**< MPI Buffer to unpack and place in u_ptr */
+                        braid_Vector        *u_ptr,         /**< output, braid_Vector containing buffer's data */
+                        braid_BufferStatus   status         /**< can be querried for info on the current message type */
                         );
 
 /**

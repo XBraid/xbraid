@@ -210,6 +210,8 @@ _braid_CommRecvInit(braid_Core           core,
    MPI_Request        *requests;
    MPI_Status         *status;
    braid_Int           proc, size, num_requests;
+   braid_BufferStatus bstatus = _braid_CoreElt( core, bstatus );
+   _braid_BufferStatusInit( 0, bstatus );
 
    _braid_GetProc(core, level, index, &proc);
    if (proc > -1)
@@ -217,7 +219,7 @@ _braid_CommRecvInit(braid_Core           core,
       handle = _braid_TAlloc(_braid_CommHandle, 1);
 
       /* Allocate buffer through user routine */
-      _braid_CoreFcn(core, bufsize)(app, &size);
+      _braid_CoreFcn(core, bufsize)(app, &size, bstatus);
       buffer = malloc(size);
 
       num_requests = 1;
@@ -255,6 +257,8 @@ _braid_CommSendInit(braid_Core           core,
    MPI_Request        *requests;
    MPI_Status         *status;
    braid_Int           proc, size, num_requests;
+   braid_BufferStatus  bstatus   = _braid_CoreElt(core, bstatus);
+   
 
    _braid_GetProc(core, level, index+1, &proc);
    if (proc > -1)
@@ -262,12 +266,13 @@ _braid_CommSendInit(braid_Core           core,
       handle = _braid_TAlloc(_braid_CommHandle, 1);
 
       /* Allocate buffer through user routine */
-      _braid_CoreFcn(core, bufsize)(app, &size);
+      _braid_BufferStatusInit( 0, bstatus );
+      _braid_CoreFcn(core, bufsize)(app, &size, bstatus);
       buffer = malloc(size);
       
       /* Note that bufpack may return a size smaller than bufsize */
-      size = 0;
-      _braid_CoreFcn(core, bufpack)(app, vector, buffer, &size);
+      
+      _braid_CoreFcn(core, bufpack)(app, vector, buffer, &size, bstatus);
 
       num_requests = 1;
       requests = _braid_CTAlloc(MPI_Request, num_requests);
@@ -303,13 +308,15 @@ _braid_CommWait(braid_Core          core,
       MPI_Request   *requests     = _braid_CommHandleElt(handle, requests);
       MPI_Status    *status       = _braid_CommHandleElt(handle, status);
       void          *buffer       = _braid_CommHandleElt(handle, buffer);
+      braid_BufferStatus bstatus  = _braid_CoreElt(core, bstatus); 
 
       MPI_Waitall(num_requests, requests, status);
       
       if (request_type == 1) /* recv type */
       {
+         _braid_BufferStatusInit( 0, bstatus );
          braid_Vector  *vector_ptr = _braid_CommHandleElt(handle, vector_ptr);
-         _braid_CoreFcn(core, bufunpack)(app, buffer, vector_ptr);
+         _braid_CoreFcn(core, bufunpack)(app, buffer, vector_ptr, bstatus);
       }
       
       _braid_TFree(requests);
@@ -1950,6 +1957,7 @@ _braid_FRefine(braid_Core   core,
    braid_Int          max_refinements = _braid_CoreElt(core, max_refinements);
    braid_Int          tpoints_cutoff  = _braid_CoreElt(core, tpoints_cutoff);
    braid_AccessStatus astatus         = _braid_CoreElt(core, astatus);
+   braid_BufferStatus bstatus         = _braid_CoreElt(core, bstatus);
    braid_Int          access_level    = _braid_CoreElt(core, access_level);
    _braid_Grid      **grids           = _braid_CoreElt(core, grids);
    braid_Int          ncpoints        = _braid_GridElt(grids[0], ncpoints);
@@ -2414,7 +2422,8 @@ _braid_FRefine(braid_Core   core,
    requests = _braid_CTAlloc(MPI_Request, (nsends+nrecvs));
    statuses = _braid_CTAlloc(MPI_Status,  (nsends+nrecvs));
 
-   _braid_CoreFcn(core, bufsize)(app, &max_usize); /* max buffer size */
+   _braid_BufferStatusInit( 1, bstatus ); 
+   _braid_CoreFcn(core, bufsize)(app, &max_usize, bstatus); /* max buffer size */
    _braid_NBytesToNReals(max_usize, max_usize);
 
    /* Post u-vector receives */
@@ -2432,7 +2441,7 @@ _braid_FRefine(braid_Core   core,
              FRefine_count, myproc, m, proc, unum, recv_size);
 #endif
    }
-
+  
    /* Post u-vector sends */
    ii = 0;
    for (m = 0; m < nsends; m++)
@@ -2449,7 +2458,7 @@ _braid_FRefine(braid_Core   core,
             /* Pack u into buffer, adjust size, and put size into buffer */
             buffer = &bptr[1];
             size = 1;
-            _braid_CoreFcn(core, bufpack)(app, send_ua[ii], buffer, &size);
+            _braid_CoreFcn(core, bufpack)(app, send_ua[ii], buffer, &size, bstatus);
             _braid_CoreFcn(core, free)(app, send_ua[ii]);
             _braid_NBytesToNReals(size, size);
             bptr[0] = (braid_Int) size; /* insert size at the beginning */
@@ -2494,7 +2503,7 @@ _braid_FRefine(braid_Core   core,
          {
             /* Unpack buffer into u-vector */
             buffer = &bptr[1];
-            _braid_CoreFcn(core, bufunpack)(app, buffer, &recv_ua[f_ii]);
+            _braid_CoreFcn(core, bufunpack)(app, buffer, &recv_ua[f_ii], bstatus);
             size = (braid_Int) bptr[0];
             bptr += (1+size);
             unum--;
