@@ -846,8 +846,9 @@ _braid_Step(braid_Core     core,
    {
       _braid_CoreFcn(core, step)(app, ustop, NULL, u, status);
       rfactors[ii] = _braid_StatusElt(status, rfactor);
-      _braid_CoreElt(core, r_space) += _braid_StatusElt(status, r_space);
-   }
+      if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
+            _braid_CoreElt(core, r_space) = 1;
+   }     
    else
    {
       if ( _braid_CoreElt(core, residual) == NULL )
@@ -903,7 +904,8 @@ _braid_Residual(braid_Core     core,
       if (level == 0)
       {
          rfactors[ii] = _braid_StatusElt(status, rfactor);
-         _braid_CoreElt(core, r_space) += _braid_StatusElt(status, r_space);   
+         if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
+               _braid_CoreElt(core, r_space) = 1;
       }
    }
    else
@@ -2003,22 +2005,15 @@ _braid_FRefine(braid_Core   core,
    ilower  = _braid_GridElt(grids[0], ilower);
    iupper  = _braid_GridElt(grids[0], iupper);
    npoints = iupper - ilower + 1;
-
-   /* If reached max refinements stop refining */
-   if( !((nrefine < max_refinements)) )
+   
+   /* If reached max refinements or have too many time points, stop refining */
+   if( !((nrefine < max_refinements) && (gupper < tpoints_cutoff)) )
    {
       _braid_CoreElt(core, refine)   = 0;
       _braid_CoreElt(core, rstopped) = iter;
-
-      *refined_ptr = 0;
+      _braid_FSpace_Refine(core, refined_ptr);
       return _braid_error_flag;
    }
-   /* If reached max number of time points complete spatial refinment ( if requested ) */
-   else if ( !(gupper < tpoints_cutoff) )
-   {
-       _braid_FSpace_Refine(core, refined_ptr);
-       return _braid_error_flag;
-   }    
 
    /*-----------------------------------------------------------------------*/
    /* 1. Compute f_gupper and the local interval extents for both the refined
