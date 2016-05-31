@@ -164,6 +164,7 @@ typedef struct _braid_BufferStatus_struct *braid_BufferStatus;
 typedef struct _braid_BufferStatus_struct
 {
    braid_Int    frefine;          /**< if true, buffer will be used for load balencing  */
+   braid_Int    size;             /**< if set by user, send buffer will be "size" bytes in length */
 
 } _braid_BufferStatus;
 
@@ -567,6 +568,7 @@ braid_StepStatusSetTightFineTolx(braid_StepStatus  status,             /**< stru
  **/
 braid_Int
 _braid_BufferStatusInit(braid_Int           frefine,      /**< frefine == 1 if buffer will be used during FRefine */ 
+                        braid_Int           size,         /**< if set by user, size of send buffer is "size" bytes */
                         braid_BufferStatus  status        /**< structure to initialize */
                             );
 
@@ -583,6 +585,14 @@ braid_Int
 braid_BufferStatusGetFRefine(braid_BufferStatus  status,         /**< structure containing current simulation info */
                              braid_Int           *frefine        /**< output, type of buffer requied  */
                                 );
+/**
+ * Set the size of the buffer. If set by user, the send buffer will
+   be "size" bytes in length. If not, BufSize is used. 
+ **/
+braid_Int
+braid_BufferStatusSetSize(braid_BufferStatus  status,           /**< structure containing current sumulation info */
+                          braid_Int           size              /**< input, size of the send buffer */
+                              );
 
 /** @}*/
 

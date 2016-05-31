@@ -299,12 +299,11 @@ braid_BufSize_F90_Iface(braid_App           app,              /**< user-defined 
  * Fortran interface, first we define the prototype for the user-defined function and then we
  * provide the C-wrapper around the user-written Fortran function
  * */
-void braid_F90_Name(braid_bufpack_f90, BRAID_BUFPACK_F90)(braid_F90_ObjPtr, braid_F90_ObjPtr, braid_F90_Void *, braid_F90_Real *, braid_F90_ObjPtr);
+void braid_F90_Name(braid_bufpack_f90, BRAID_BUFPACK_F90)(braid_F90_ObjPtr, braid_F90_ObjPtr, braid_F90_Void *, braid_F90_ObjPtr);
 braid_Int
 braid_BufPack_F90_Iface(braid_App      app,            /**< user-defined _braid_App structure */
                         braid_Vector   u,              /**< vector to back into buffer */
                         void          *buffer,         /**< output, MPI buffer containing u */
-                        braid_Int     *size_ptr,        /**< output, number of bytes packed, must be less than or equal to value returned by BufSize */
                         braid_BufferStatus status      /**< querry this struct for info on the message type */
                         )
 {
@@ -312,7 +311,6 @@ braid_BufPack_F90_Iface(braid_App      app,            /**< user-defined _braid_
                             braid_PassF90_Obj(     app),
                             braid_PassF90_Obj(     u),
                             braid_PassF90_VoidPtr( buffer),
-                            braid_PassF90_RealPtr( size_ptr),
                             braid_PassF90_Obj(     status) );
    return 0;
 }

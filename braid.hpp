@@ -84,7 +84,6 @@ public:
 
    virtual braid_Int BufPack(braid_Vector  _u,
                              void              *buffer,
-                             braid_Int         *size_ptr,
                              BraidBufferStatus  &bstatus) = 0;
 
    virtual braid_Int BufUnpack(void              *buffer,
@@ -230,7 +229,7 @@ class BraidBufferStatus
       }
 
       void GetFRefine( braid_Int *frefine_ptr ) { braid_CoarsenRefStatusGetFRefine( bstatus, frefine_ptr); }
-      
+      void SetSize( braid_Int size ) { braid_BufferStatusSetSize( bstatus, size ); }
       ~BraidBufferStatus() {} 
 }      
 
@@ -327,12 +326,11 @@ static braid_Int _BraidAppBufSize(braid_App  _app,
 static braid_Int _BraidAppBufPack(braid_App     _app,
                                   braid_Vector  _u,
                                   void         *buffer,
-                                  braid_Int    *size_ptr,
                                   braid_BufferStatus  status)
 {
    BraidApp *app = (BraidApp*)_app;
    BraidBufferStatus bstatus( _bstatus );
-   return app -> BufPack(_u, buffer, size_ptr, bstatus);
+   return app -> BufPack(_u, buffer, bstatus);
 }
 
 

@@ -205,21 +205,22 @@ typedef braid_Int
 
 /**
  * This allows XBraid to send messages containing braid_Vectors.  This routine
- * packs a vector _u_ into a _void \*  buffer_ for MPI. @entry size_ptr = 0 if
- * message will be used for a time step calculation, or size_ptr = 1 if message
- * will be used for load balencing ( during FRefine ) 
+ * packs a vector _u_ into a _void \*  buffer_ for MPI. The status structure holds
+ * information regarding the message. This is accessed through the _braid_BufferStatusGet**(..)_ 
+ * routines. Optionally, the user can set the message size through the status structure. 
  **/
 typedef braid_Int
 (*braid_PtFcnBufPack)(braid_App           app,            /**< user-defined _braid_App structure */
                       braid_Vector        u,              /**< vector to back into buffer */
                       void               *buffer,         /**< output, MPI buffer containing u */
-                      braid_Int          *size_ptr,        /**< output, number of bytes packed, must be less than or equal to value returned by BufSize */
                       braid_BufferStatus  status          /**< can be queeried for info on the message type required */
                       );
 
 /**
  * This allows XBraid to receive messages containing braid_Vectors.  This routine
- * unpacks a _void * buffer_ from MPI into a braid_Vector.
+ * unpacks a _void * buffer_ from MPI into a braid_Vector. The status structure, contains
+ * information conveying the type of message inside the buffer. This can be accessed through 
+ * the _braid_BufferStatusGet**(..)_ routines. 
  **/
 typedef braid_Int
 (*braid_PtFcnBufUnpack)(braid_App            app,           /**< user-defined _braid_App structure */

@@ -389,7 +389,7 @@ braid_TestBuf( braid_App              app,
    
    
    braid_BufferStatus      bstatus = _braid_CTAlloc(_braid_BufferStatus, 1);
-   _braid_BufferStatusInit( 0, bstatus );
+   _braid_BufferStatusInit( 0, 0, bstatus );
    /* Initialize the correct flag */
    correct = 1;
 
@@ -420,7 +420,9 @@ braid_TestBuf( braid_App              app,
    buffer = malloc(size);
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   buffer = bufpack(u, buffer))\n");
-   bufpack(app, u, buffer, &dummy_size, bstatus);
+   
+   _braid_StatusElt( bstatus, size ) = size;   
+   bufpack(app, u, buffer, bstatus);
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   v = bufunpack(buffer)\n");
    bufunpack(app, buffer, &v, bstatus);

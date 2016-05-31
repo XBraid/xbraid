@@ -484,9 +484,11 @@ braid_StepStatusSetTightFineTolx(braid_StepStatus  status,
 
 braid_Int
 _braid_BufferStatusInit(braid_Int        frefine,
+                        braid_Int        size,
                         braid_BufferStatus status)
 {
    _braid_StatusElt(status, frefine)    = frefine;
+   _braid_StatusElt(status, size)       = size;
    return _braid_error_flag;
 }
 
@@ -509,5 +511,11 @@ braid_BufferStatusGetFrefine(braid_BufferStatus  status,
    return _braid_error_flag;
 }
 
-
+braid_Int
+braid_BufferStatusSetSize(braid_BufferStatus  status,
+                          braid_Int           size)
+{
+   _braid_StatusElt(status, size ) = size; 
+   return _braid_error_flag;
+}
 
