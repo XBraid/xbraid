@@ -1799,68 +1799,71 @@ _braid_FInterp(braid_Core  core,
  *----------------------------------------------------------------------------*/
 
 braid_Int
-_braid_FSpace_Refine(braid_Core   core,
-               braid_Int   *refined_ptr)
+_braid_FRefineSpace(braid_Core   core,
+                    braid_Int   *refined_ptr)
 {
 
-   MPI_Comm           comm            = _braid_CoreElt(core, comm);
-   _braid_Grid      **grids           = _braid_CoreElt(core, grids);   
+   MPI_Comm      comm    = _braid_CoreElt(core, comm);
+   _braid_Grid **grids   = _braid_CoreElt(core, grids);   
    
-   braid_Int          r_space         = _braid_CoreElt(core, r_space);
-   braid_Int ilower  = _braid_GridElt(grids[0], ilower);
-   braid_Int iupper  = _braid_GridElt(grids[0], iupper);
-   braid_Real *ta = _braid_GridElt(grids[0], ta); 
+   braid_Int     r_space = _braid_CoreElt(core, r_space);
+   braid_Int     ilower  = _braid_GridElt(grids[0], ilower);
+   braid_Int     iupper  = _braid_GridElt(grids[0], iupper);
+   braid_Real   *ta      = _braid_GridElt(grids[0], ta); 
 
-   braid_Int global_r_space;
-   braid_Int i, ii;
-   braid_Vector c_vec, f_vec;  
+   braid_Int     global_r_space;
+   braid_Int     i, ii;
+   braid_Vector  c_vec, f_vec;  
 
-   if ( _braid_CoreElt(core, scoarsen) != NULL)
+   if ( _braid_CoreElt(core, scoarsen) != NULL )
    {
        
       if ( r_space > 0 )  
       {         
          for ( i = ilower; i <= iupper; i++ )
-	      {
-             ii = i-ilower;
-	         _braid_UGetVectorRef(core, 0, i , &c_vec);
-	     
+         {
+            ii = i-ilower;
+            _braid_UGetVectorRef(core, 0, i , &c_vec);
+             
             if ( c_vec != NULL )
             {
-			        _braid_RefineBasic(core, -1, &ta[ii], &ta[ii], c_vec, &f_vec);
-          	     _braid_USetVectorRef(core, 0, i, f_vec);
+               _braid_RefineBasic(core, -1, &ta[ii], &ta[ii], c_vec, &f_vec);
+               _braid_USetVectorRef(core, 0, i, f_vec);
             }
-		   }			 
- 	    }
+         }                       
+      }
     
-       /* Check if any refinment was completed globally. If true then refine the 
-          initial time point if not done already, increase nrefine, and return 2 */
-       MPI_Allreduce(&r_space, &global_r_space, 1, braid_MPI_INT, MPI_MAX, comm);
-       if (global_r_space > 0)
-       {	
-	        /* Need to make sure to refine the first point. If it is a lone C point
-              on a processor r_space then can never be set for that processor */ 
-           if ( ilower == 0 && r_space == 0 )
-	        {
-		        _braid_UGetVectorRef(core, 0, 0, &c_vec);
-              _braid_RefineBasic(core, -1, &ta[0], &ta[0], c_vec, &f_vec);
-              _braid_USetVectorRef(core, 0, 0, f_vec);	 
-	        }	 
-	        
-           *refined_ptr = 2;
-	        _braid_CoreElt(core, nrefine) += 1;
-       }
-       else
-	       *refined_ptr = 0;
-    }
-    else
+      /* Check if any refinment was completed globally. If true then refine the 
+         initial time point if not done already, increase nrefine, and return 2 */
+      MPI_Allreduce(&r_space, &global_r_space, 1, braid_MPI_INT, MPI_MAX, comm);
+      if (global_r_space > 0)
+      { 
+         /* Need to make sure to refine the first point. If it is a lone C point
+            on a processor r_space then can never be set for that processor */ 
+         if ( ilower == 0 && r_space == 0 )
+         {
+            _braid_UGetVectorRef(core, 0, 0, &c_vec);
+            _braid_RefineBasic(core, -1, &ta[0], &ta[0], c_vec, &f_vec);
+            _braid_USetVectorRef(core, 0, 0, f_vec);     
+         }       
+                
+         *refined_ptr = 2;
+         _braid_CoreElt(core, nrefine) += 1;
+      }
+      else
+      {
          *refined_ptr = 0;
+      }
+   }
+   else
+   {
+      *refined_ptr = 0;
+   }
     
-    /* Reset r_space */
-    _braid_CoreElt(core, r_space) = 0;
-    return _braid_error_flag;
+   /* Reset r_space */
+   _braid_CoreElt(core, r_space) = 0;
+   return _braid_error_flag;
 }
-
 
 /*----------------------------------------------------------------------------
  * Create a new fine grid (level 0) and corresponding grid hierarchy by refining
@@ -2012,7 +2015,7 @@ _braid_FRefine(braid_Core   core,
    {
       _braid_CoreElt(core, refine)   = 0;
       _braid_CoreElt(core, rstopped) = iter;
-      _braid_FSpace_Refine(core, refined_ptr);
+      _braid_FRefineSpace(core, refined_ptr);
       return _braid_error_flag;
    }
 
@@ -2050,11 +2053,13 @@ _braid_FRefine(braid_Core   core,
    /* Check to see if we need to refine, and return if not */
    if (f_gupper == gupper)
    {
-      _braid_FSpace_Refine(core, refined_ptr);
+      _braid_FRefineSpace(core, refined_ptr);
       return _braid_error_flag;
    }
    else
+   {
       _braid_CoreElt(core, r_space) = 0;
+   }
       
    /* Compute r_ilower and r_iupper */
    MPI_Scan(&r_npoints, &r_iupper, 1, braid_MPI_INT, MPI_SUM, comm);
@@ -2418,7 +2423,7 @@ _braid_FRefine(braid_Core   core,
    requests = _braid_CTAlloc(MPI_Request, (nsends+nrecvs));
    statuses = _braid_CTAlloc(MPI_Status,  (nsends+nrecvs));
 
-   _braid_BufferStatusInit( 1, 0, bstatus ); 
+   _braid_BufferStatusInit( 1, 0, bstatus );
    _braid_CoreFcn(core, bufsize)(app, &max_usize, bstatus); /* max buffer size */
    _braid_NBytesToNReals(max_usize, max_usize);
 

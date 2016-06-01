@@ -622,13 +622,14 @@ _braid_FInterp(braid_Core  core,   /**< braid_Core (_braid_Core) struct */
                );
 
 /** 
- * Call spatial refinment on all local time steps, if r_space has been set on the
- * local processor. Returns refined_ptr == 2 if refinment was completed at any point
- * globally, otherwise returns 0
+ * Call spatial refinement on all local time steps if r_space has been set on
+ * the local processor.  Returns refined_ptr == 2 if refinment was completed at
+ * any point globally, otherwise returns 0.  This is a helper function for
+ * _braid_FRefine().
  */
 braid_Int
-_braid_FSpace_Refine(braid_Core   core,
-               braid_Int   *refined_ptr);
+_braid_FRefineSpace(braid_Core   core,
+                    braid_Int   *refined_ptr);
 
 /**
  * Create a new fine grid (level 0) and corresponding grid hierarchy by refining
