@@ -253,14 +253,18 @@ public:
     virtual int SpatialNorm(braid_Vector u_,
                             double      *norm_ptr);
 
-    virtual int BufSize(int *size_ptr);
+   virtual int BufSize(int *size_ptr,
+                       BraidBufferStatus  &status);
 
-    virtual int BufPack(braid_Vector  u_,
-                        void         *buffer,
-                        int          *size_ptr);
+   virtual int BufPack(braid_Vector  u_,
+                       void         *buffer,
+                       BraidBufferStatus  &status);
 
-    virtual int BufUnpack(void         *buffer,
-                          braid_Vector *u_ptr);
+   virtual int BufUnpack(void         *buffer,
+                         braid_Vector *u_ptr,
+                         BraidBufferStatus  &status);
+
+
 
     /* Do not know for sure if Coarsen/Refine are bug-free. Applying to MFEM */
     /* ex10 caused divergence, but it is also a highly nonlinear moving mesh */
@@ -720,14 +724,17 @@ int MFEMBraidApp::SpatialNorm(braid_Vector  u_, double *norm_ptr)
 }
 
 
-int MFEMBraidApp::BufSize(int *size_ptr)
+int MFEMBraidApp::BufSize(int                *size_ptr,
+                          BraidBufferStatus  &status)
 {
     *size_ptr = buff_size[0];
     return 0;
 }
 
 
-int MFEMBraidApp::BufPack(braid_Vector  u_, void *buffer, int *size_ptr)
+int MFEMBraidApp::BufPack(braid_Vector        u_, 
+                          void               *buffer, 
+                          BraidBufferStatus  &status)
 {
     BraidVector *u = (BraidVector*) u_;
     double *dbuf   = (double *) buffer;
@@ -746,12 +753,14 @@ int MFEMBraidApp::BufPack(braid_Vector  u_, void *buffer, int *size_ptr)
 
     int vecSize = buff_size[u->spatial_level] - sizeof(double)*(3 + maxBlocks); 
     memcpy(dbuf+3+numBlocks, u->GetData(), vecSize);
-    *size_ptr = buff_size[u->spatial_level] - sizeof(double)*(maxBlocks-numBlocks);
+    status->SetSize( buff_size[u->spatial_level] - sizeof(double)*(maxBlocks-numBlocks)v);
     return 0;
 }
 
 
-int MFEMBraidApp::BufUnpack(void *buffer, braid_Vector *u_ptr)
+int MFEMBraidApp::BufUnpack(void              *buffer,
+                            braid_Vector      *u_ptr,
+                            BraidBufferStatus &status)
 {
     double *dbuf      = (double *) buffer;
     int spatial_level = (int) dbuf[0];

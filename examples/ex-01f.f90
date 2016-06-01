@@ -250,11 +250,12 @@ end subroutine braid_Residual_F90
 
 
 ! Return the buffer size (in bytes) for braid_Vector
-subroutine braid_BufSize_F90(app, size_ptr)
+subroutine braid_BufSize_F90(app, size_ptr, bstatus)
    
    ! Braid types
    use braid_types
    implicit none
+   integer (kind=8)         :: bstatus
    type(my_app)             :: app
    
    ! Other declarations
@@ -265,11 +266,12 @@ end subroutine braid_BufSize_F90
 
 
 ! Pack an mpi buffer with a braid_Vector
-subroutine braid_BufPack_F90(app, u, buffer, size_ptr)
+subroutine braid_BufPack_F90(app, u, buffer, bstatus)
    
    ! Braid types
    use braid_types
    implicit none
+   integer (kind=8)         :: bstatus
    type(my_vector)          :: u
    type(my_app)             :: app
    
@@ -279,7 +281,7 @@ subroutine braid_BufPack_F90(app, u, buffer, size_ptr)
    
    ! Pack buffer
    buffer(1) = u%val
-   size_ptr = app%bufsize*sizeof_double
+   call braid_buffer_status_set_size_f90(bstatus, app%bufsize*sizeof_double)
 
 end subroutine braid_BufPack_F90
 

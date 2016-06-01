@@ -381,7 +381,7 @@ braid_TestBuf( braid_App              app,
 {   
    braid_Vector  u, v;
    braid_Real    result1;
-   braid_Int     myid_x, size, correct, dummy_size;
+   braid_Int     myid_x, size, correct;
    void      *buffer;
    double     wiggle = 1e-12;
    
