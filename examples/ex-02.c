@@ -490,7 +490,7 @@ my_BufPack(braid_App           app,
                           app->man->iupper, 0, &(dbuffer[0]) );
 
    /* Return the number of bytes actually packed */
-   braid_BufferStatusSetSize( bstatus, (app->man->nlx)*(app->man->nly)*sizeof(double) );
+   braid_BufferStatusSetSize( status, (app->man->nlx)*(app->man->nly)*sizeof(double) );
    return 0;
 }
 

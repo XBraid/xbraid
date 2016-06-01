@@ -151,7 +151,7 @@ typedef struct _braid_StepStatus_struct
 
 struct _braid_BufferStatus_struct;
 /** 
- * The user's step routine will receive braid_StepStatus, which will be a
+ * The user's biffer routines will receive a braid_BufferStatus, which will be a
  * pointer to the actual _braid_StepStatus_struct
  **/
 typedef struct _braid_BufferStatus_struct *braid_BufferStatus;

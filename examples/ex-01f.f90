@@ -287,11 +287,12 @@ end subroutine braid_BufPack_F90
 
 
 ! Pack an mpi buffer with a braid_Vector
-subroutine braid_BufUnPack_F90(app, buffer, u_ptr)
+subroutine braid_BufUnPack_F90(app, buffer, u_ptr, bstatus)
    
    ! Braid types
    use braid_types
    implicit none
+   integer (kind=8)         :: bstatus
    type(my_vector), pointer :: u_ptr
    type(my_app)             :: app
    
