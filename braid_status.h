@@ -163,8 +163,8 @@ typedef struct _braid_BufferStatus_struct *braid_BufferStatus;
  **/
 typedef struct _braid_BufferStatus_struct
 {
-   braid_Int    frefine;          /**< if true, buffer will be used for load balencing  */
-   braid_Int    size;             /**< if set by user, send buffer will be "size" bytes in length */
+   braid_Int    messagetype;         /**< if true, buffer will be used for load balencing  */
+   braid_Int    size;                /**< if set by user, send buffer will be "size" bytes in length */
 
 } _braid_BufferStatus;
 
@@ -567,7 +567,7 @@ braid_StepStatusSetTightFineTolx(braid_StepStatus  status,             /**< stru
  * Initialize a braid_BufferStatus structure 
  **/
 braid_Int
-_braid_BufferStatusInit(braid_Int           frefine,      /**< frefine == 1 if buffer will be used during FRefine */ 
+_braid_BufferStatusInit(braid_Int           messagetype,  /**< messagetype == 1 if buffer will be used for load balancing */ 
                         braid_Int           size,         /**< if set by user, size of send buffer is "size" bytes */
                         braid_BufferStatus  status        /**< structure to initialize */
                             );
@@ -579,12 +579,11 @@ braid_Int
 _braid_BufferStatusDestroy(braid_BufferStatus  status);        /**< structure to be destroyed */
 
 /**
- * Return the current frefine value from the BufferStatus structure.
+ * Return the current message type from the BufferStatus structure.
  **/
 braid_Int
-braid_BufferStatusGetFRefine(braid_BufferStatus  status,         /**< structure containing current simulation info */
-                             braid_Int           *frefine        /**< output, type of buffer requied  */
-                                );
+braid_BufferStatusGetMessageType(braid_BufferStatus  status,         /**< structure containing current simulation info */
+                                 braid_Int           *messagetype    /**< output, type of buffer requied  */                                    );
 /**
  * Set the size of the buffer. If set by user, the send buffer will
    be "size" bytes in length. If not, BufSize is used. 

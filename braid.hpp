@@ -228,7 +228,7 @@ class BraidBufferStatus
          bstatus = _bstatus;
       }
 
-      void GetFRefine( braid_Int *frefine_ptr ) { braid_CoarsenRefStatusGetFRefine( bstatus, frefine_ptr); }
+      void GetMessageType( braid_Int *messagetype_ptr ) { braid_CoarsenRefStatusGetMessageType( bstatus, messagetype_ptr); }
       void SetSize( braid_Int size ) { braid_BufferStatusSetSize( bstatus, size ); }
       ~BraidBufferStatus() {} 
 }      

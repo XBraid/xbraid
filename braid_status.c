@@ -483,12 +483,12 @@ braid_StepStatusSetTightFineTolx(braid_StepStatus  status,
 
 
 braid_Int
-_braid_BufferStatusInit(braid_Int        frefine,
+_braid_BufferStatusInit(braid_Int        messagetype,
                         braid_Int        size,
                         braid_BufferStatus status)
 {
-   _braid_StatusElt(status, frefine)    = frefine;
-   _braid_StatusElt(status, size)       = size;
+   _braid_StatusElt(status, messagetype)    = messagetype;
+   _braid_StatusElt(status, size)           = size;
    return _braid_error_flag;
 }
 
@@ -504,10 +504,10 @@ _braid_BufferStatusDestroy(braid_BufferStatus  status)
 }
 
 braid_Int
-braid_BufferStatusGetFrefine(braid_BufferStatus  status,
-                           braid_Int         *frefine_ptr)
+braid_BufferStatusGetMessageType(braid_BufferStatus  status,
+                                 braid_Int           *messagetype_ptr)
 {
-   *frefine_ptr = _braid_StatusElt(status, frefine);
+   *messagetype_ptr = _braid_StatusElt(status, messagetype);
    return _braid_error_flag;
 }
 

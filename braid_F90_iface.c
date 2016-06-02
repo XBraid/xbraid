@@ -743,19 +743,19 @@ braid_F90_Name(braid_step_status_set_tight_fine_tolx_f90, BRAID_STEP_STATUS_SET_
    return 0;
 }
 
-/* Wrap braid_BufferStatusGetFRefine( ) */
+/* Wrap braid_BufferStatusGetMessageType( ) */
 braid_Int
-braid_F90_Name(braid_buffer_status_get_frefine_f90, BRAID_BUFFER_STATUS_GET_FREFINE_F90)(
+braid_F90_Name(braid_buffer_status_get_message_type_f90, BRAID_BUFFER_STATUS_GET_message_type_F90)(
                               braid_F90_ObjPtr     status,            /**< structure containing current simulation info */
-                              braid_F90_Int        *frefine_ptr       /**< output, current message type */
+                              braid_F90_Int        *messagetype_ptr       /**< output, current message type */
                               )
 {
-   braid_BufferStatusGetFRefine(braid_TakeF90_Obj( braid_BufferStatus, status),
-                                braid_TakeF90_IntPtr(                frefine_ptr) );
+   braid_BufferStatusGetMessageType(braid_TakeF90_Obj( braid_BufferStatus, status),
+                                braid_TakeF90_IntPtr(                      messagetype_ptr) );
    return 0;
 }
 
-/* Wrap braid_BufferStatusGetFRefine( ) */
+/* Wrap braid_BufferStatusGetSetSize( ) */
 braid_Int
 braid_F90_Name(braid_buffer_status_set_size_f90, BRAID_BUFFER_STATUS_SET_SIZE_F90)(
                               braid_F90_ObjPtr     status,            /**< structure containing current simulation info */
