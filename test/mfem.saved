@@ -1,0 +1,72 @@
+# Begin Test 0 -- begin drive-04 tests
+  
+  residual norm        = 1.883438e-01
+                        --> 2-norm TemporalNorm 
+
+# Begin Test 1
+  
+  residual norm        = 4.681397e-03
+                        --> 2-norm TemporalNorm 
+# Begin Test 2
+  
+  residual norm        = 3.625431e-03
+                        --> 2-norm TemporalNorm 
+# Begin Test 3
+  
+  residual norm        = 1.308094e-02
+                        --> 2-norm TemporalNorm 
+
+# Begin Test 4 -- begin drive-05 tests
+  
+  residual norm        = 2.893465e-09
+                        --> 2-norm TemporalNorm 
+
+# Begin Test 5
+  
+  residual norm        = 8.063392e-09
+                        --> 2-norm TemporalNorm 
+# Begin Test 6
+  
+  residual norm        = 5.510044e-02
+                        --> 2-norm TemporalNorm 
+# Begin Test 7
+  
+  residual norm        = 1.780673e-01
+                        --> 2-norm TemporalNorm 
+
+# Begin Test 8 -- begin drive-06 tests
+  
+  residual norm        = 1.276562e+00
+                        --> 2-norm TemporalNorm 
+
+# Begin Test 9
+  
+  residual norm        = 1.934515e-04
+                        --> 2-norm TemporalNorm 
+# Begin Test 10
+  
+  residual norm        = 1.311035e+01
+                        --> 2-norm TemporalNorm 
+# Begin Test 11
+  
+  residual norm        = 1.340509e+01
+                        --> 2-norm TemporalNorm 
+
+# Begin Test 12 -- begin drive-07 tests
+  
+  residual norm        = 1.719625e+00
+                        --> 2-norm TemporalNorm 
+
+# Begin Test 13
+  
+  residual norm        = 2.742507e-01
+                        --> 2-norm TemporalNorm 
+# Begin Test 14
+  
+  residual norm        = 6.126119e-01
+                        --> 2-norm TemporalNorm 
+# Begin Test 15
+  
+  residual norm        = 1.121219e+00
+                        --> 2-norm TemporalNorm 
+
