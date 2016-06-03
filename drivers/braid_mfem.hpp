@@ -215,14 +215,16 @@ public:
    virtual int SpatialNorm(braid_Vector  u_,
                            double       *norm_ptr);
 
-   virtual int BufSize(int *size_ptr);
+   virtual int BufSize(int *size_ptr,
+                       BraidBufferStatus  &status);
 
    virtual int BufPack(braid_Vector  u_,
                        void         *buffer,
-                       int          *size_ptr);
+                       BraidBufferStatus  &status);
 
    virtual int BufUnpack(void         *buffer,
-                         braid_Vector *u_ptr);
+                         braid_Vector *u_ptr,
+                         BraidBufferStatus  &status);
 
    virtual int Coarsen(braid_Vector   fu_,
                        braid_Vector  *cu_ptr,
@@ -625,27 +627,29 @@ int MFEMBraidApp::SpatialNorm(braid_Vector  u_,
    return 0;
 }
 
-int MFEMBraidApp::BufSize(int *size_ptr)
+int MFEMBraidApp::BufSize(int                *size_ptr,
+                          BraidBufferStatus  &status)                           
 {
    *size_ptr = buff_size[0];
    return 0;
 }
 
-int MFEMBraidApp::BufPack(braid_Vector  u_,
-                          void         *buffer,
-                          int          *size_ptr)
+int MFEMBraidApp::BufPack(braid_Vector       u_,
+                          void               *buffer,
+                          BraidBufferStatus  &status);
 {
    BraidVector *u = (BraidVector*) u_;
    double *dbuf = (double *) buffer;
 
    dbuf[0] = (double) u->level;
    memcpy(dbuf + 1, u->GetData(), buff_size[u->level] - sizeof(double));
-   *size_ptr = buff_size[u->level];
+   status->SetSize( buff_size[u->level] );
    return 0;
 }
 
-int MFEMBraidApp::BufUnpack(void         *buffer,
-                            braid_Vector *u_ptr)
+int MFEMBraidApp::BufUnpack(void              *buffer,
+                            braid_Vector      *u_ptr,
+                            BraidBufferStatus &status)
 {
    double *dbuf = (double *) buffer;
    int level = (int) dbuf[0];

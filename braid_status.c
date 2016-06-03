@@ -332,6 +332,7 @@ _braid_StepStatusInit(braid_Real       tstart,
    _braid_StatusElt(status, nrefine)   = nrefine;
    _braid_StatusElt(status, gupper)    = gupper;
    _braid_StatusElt(status, rfactor)   = 1;
+   _braid_StatusElt(status, r_space)   = 0;
 
    return _braid_error_flag;
 }
@@ -397,6 +398,14 @@ braid_StepStatusSetRFactor(braid_StepStatus  status,
    _braid_StatusElt(status, rfactor) = rfactor;
    return _braid_error_flag;
 }
+
+braid_Int
+braid_StepStatusSetRSpace(braid_StepStatus  status,
+                          braid_Int         r_space)
+{
+   _braid_StatusElt(status, r_space) = r_space;
+   return _braid_error_flag;
+}   
 
 braid_Int
 braid_StepStatusGetTstartTstop(braid_StepStatus  status,
@@ -466,3 +475,47 @@ braid_StepStatusSetTightFineTolx(braid_StepStatus  status,
    _braid_StatusElt(status, tight_fine_tolx) = tight_fine_tolx;
    return _braid_error_flag;
 }
+
+
+/*--------------------------------------------------------------------------
+ * BufferStatus Routines
+ *--------------------------------------------------------------------------*/
+
+
+braid_Int
+_braid_BufferStatusInit(braid_Int        messagetype,
+                        braid_Int        size,
+                        braid_BufferStatus status)
+{
+   _braid_StatusElt(status, messagetype)    = messagetype;
+   _braid_StatusElt(status, size)           = size;
+   return _braid_error_flag;
+}
+
+braid_Int
+_braid_BufferStatusDestroy(braid_BufferStatus  status)
+{
+   if (status)
+   {
+      _braid_TFree(status);
+   }
+
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_BufferStatusGetMessageType(braid_BufferStatus  status,
+                                 braid_Int           *messagetype_ptr)
+{
+   *messagetype_ptr = _braid_StatusElt(status, messagetype);
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_BufferStatusSetSize(braid_BufferStatus  status,
+                          braid_Int           size)
+{
+   _braid_StatusElt(status, size ) = size; 
+   return _braid_error_flag;
+}
+

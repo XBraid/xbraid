@@ -343,10 +343,15 @@ _braid_DrivePrintStatus(braid_Core  core,
       }
    }
 
-   if (refined)
+   if (refined == 1)
    {
       _braid_printf("  Braid: Temporal refinement occurred, %d time steps\n",
                     _braid_CoreElt(core, gupper));
+   }
+   else if (refined == 2)
+   {
+      _braid_printf(" Braid: Spatial refinement occured, %d time steps\n",
+            _braid_CoreElt(core, gupper));
    }
 
    if ((rstopped > -1) && (rstopped == iter))
@@ -651,6 +656,7 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, refine)          = 0;  /* Time refinement off by default */
    _braid_CoreElt(core, rfactors)        = NULL;
+   _braid_CoreElt(core, r_space)         = 0;
    _braid_CoreElt(core, rstopped)        = -1;
    _braid_CoreElt(core, nrefine)         = 0;
    _braid_CoreElt(core, max_refinements) = max_refinements;

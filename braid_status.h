@@ -137,12 +137,35 @@ typedef struct _braid_StepStatus_struct
    braid_Real    tol;             /**< Current stopping tolerance */
    braid_Int     iter;            /**< Current iteration (also equal to length of rnorms) */
    braid_Int     rfactor;         /**< if set by user, allows for subdivision of this interval for better time accuracy */
+   braid_Int     r_space;         /**< if set by the user, spatial coarsening function will be called following the vcycle */
    braid_Int     level;           /**< current grid level */
    braid_Int     nrefine;         /**< number of refinements done */
    braid_Int     gupper;          /**< global size of the fine grid */
 
 } _braid_StepStatus;
 
+
+/*--------------------------------------------------------------------------
+ * Define Buffer Status Structure
+ *--------------------------------------------------------------------------*/
+
+struct _braid_BufferStatus_struct;
+/** 
+ * The user's biffer routines will receive a braid_BufferStatus, which will be a
+ * pointer to the actual _braid_StepStatus_struct
+ **/
+typedef struct _braid_BufferStatus_struct *braid_BufferStatus;
+
+/** 
+ * The user's bufpack, bufunpack and bufsize routines will receive a BufferStatus structure, which 
+ * defines the status of XBraid at a given buff (un)pack instance.  The user accesses it 
+ * through _braid_BufferStatusGet**()_ functions.
+ **/
+typedef struct _braid_BufferStatus_struct
+{
+   braid_Int    messagetype;         /**< message type, 0: for Step(), 1: for load balancing */
+   braid_Int    size;                /**< if set by user, send buffer will be "size" bytes in length */
+} _braid_BufferStatus;
 
 /*--------------------------------------------------------------------------
  * Accessor macros 
@@ -450,6 +473,17 @@ braid_StepStatusSetRFactor(braid_StepStatus  status,         /**< structure cont
                            );
 
 /**
+ * Set the r_space flag. When set = 1, spatial coarsening will be called,
+ * for all local time points, following the  completion of the current
+ * iteration, provided rfactors are not set at any global time point. This
+ * allows for spatial refinment without temporal refinment
+ **/
+braid_Int
+braid_StepStatusSetRSpace(braid_StepStatus  status,
+                          braid_Int         r_space
+                         );
+
+/**
  * Return XBraid status for the current simulation. Two values are 
  * returned, tstart and tstop. 
  *
@@ -522,6 +556,41 @@ braid_StepStatusSetTightFineTolx(braid_StepStatus  status,             /**< stru
                                  braid_Int         tight_fine_tolx     /**< input, boolean indicating whether the tight tolx has been used */
                                  );
 
+
+
+/*--------------------------------------------------------------------------
+ * BufferStatus Prototypes
+ *--------------------------------------------------------------------------*/
+
+/**
+ * Initialize a braid_BufferStatus structure 
+ **/
+braid_Int
+_braid_BufferStatusInit(braid_Int           messagetype,  /**< message type, 0: for Step(), 1: for load balancing */
+                        braid_Int           size,         /**< if set by user, size of send buffer is "size" bytes */
+                        braid_BufferStatus  status        /**< structure to initialize */
+                            );
+
+/**
+ * Destroy a braid_BufferStatus structure
+ **/
+braid_Int
+_braid_BufferStatusDestroy(braid_BufferStatus  status);        /**< structure to be destroyed */
+
+/**
+ * Return the current message type from the BufferStatus structure.
+ **/
+braid_Int
+braid_BufferStatusGetMessageType(braid_BufferStatus  status,         /**< structure containing current simulation info */
+                                 braid_Int           *messagetype    /**< output, type of message, 0: for Step(), 1: for load balancing */                                   );
+/**
+ * Set the size of the buffer. If set by user, the send buffer will
+   be "size" bytes in length. If not, BufSize is used. 
+ **/
+braid_Int
+braid_BufferStatusSetSize(braid_BufferStatus  status,           /**< structure containing current sumulation info */
+                          braid_Int           size              /**< input, size of the send buffer */
+                              );
 
 /** @}*/
 
