@@ -238,17 +238,19 @@ first argument to every function.
 
 8. **BufSize**, **BufPack**, **BufUnpack**: These three routines tell XBraid how to 
    communicate vectors between processors.  *BufPack* packs a vector 
-   into a ``void *`` buffer for MPI and then *BufUnPack* unpacks it from ``void *`` 
-   to vector.  Here doing that for a scalar is trivial.  *BufSize* computes the 
+   into a ``void *`` buffer for MPI and then *BufUnPack* unpacks the ``void *`` buffer
+   into a vector.  Here doing that for a scalar is trivial.  *BufSize* computes the 
    upper bound for the size of an arbitrary vector.
    \latexonly \\ \endlatexonly
 
-   Note how *BufPack* also returns a size pointer.  This size pointer should be
-   the exact number of bytes packed, while *BufSize* should provide only an
-   upper-bound on a possible buffer size.  This flexibility allows for variable
-   spatial grid sizes to result in smaller messages sent when appropriate. **To
-   avoid MPI issues, it is very important that BufSize be pessimistic, provide 
-   an upper bound, and return the same value across processors.**
+   Note how *BufPack* also sets the size in *bstatus*.  This value is optional,
+   but if set it should be the exact number of bytes packed, while *BufSize*
+   should provide only an upper-bound on a possible buffer size.  This
+   flexibility allows for the buffer to be allocated the fewest possible times,
+   but smaller messages to be sent when needed.  For instance, this occurs when
+   using variable spatial grid sizes.  **To avoid MPI issues, it is very
+   important that BufSize be pessimistic, provide an upper bound, and return
+   the same value across processors.**
    \latexonly \\ \endlatexonly
 
    In general, the buffer should be self-contained.  The receiving processor
@@ -257,42 +259,43 @@ first argument to every function.
    \latexonly \\ \endlatexonly
 
          int
-         my_BufSize(braid_App  app,
-                    int    *size_ptr)
+         my_BufSize(braid_App          app,
+                    int                *size_ptr,
+                    braid_BufferStatus bstatus)
          {
             *size_ptr = sizeof(double);
             return 0;
          }
-
+      
          int
-         my_BufPack(braid_App     app,
-                    braid_Vector  u,
-                    void         *buffer,
-                    braid_Int    *size_ptr)
+         my_BufPack(braid_App          app,
+                    braid_Vector       u,
+                    void               *buffer,
+                    braid_BufferStatus bstatus)
          {
             double *dbuffer = buffer;
       
             dbuffer[0] = (u->value);
-            *size_ptr = sizeof(double);
+            braid_BufferStatusSetSize( bstatus, sizeof(double) );
       
             return 0;
          }
-
+      
          int
-         my_BufUnpack(braid_App     app,
-                      void      *buffer,
-                      braid_Vector *u_ptr)
+         my_BufUnpack(braid_App          app,
+                      void               *buffer,
+                      braid_Vector       *u_ptr,
+                      braid_BufferStatus bstatus)
          {
             double    *dbuffer = buffer;
             my_Vector *u;
-
+      
             u = (my_Vector *) malloc(sizeof(my_Vector));
             (u->value) = dbuffer[0];
             *u_ptr = u;
-
+      
             return 0;
          }
-
 
 
 9. **Coarsen**, **Restrict** (optional): These are advanced options that allow for coarsening

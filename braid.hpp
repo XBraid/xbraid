@@ -223,15 +223,15 @@ class BraidBufferStatus
       braid_BufferStatus bstatus;
    
    public:
-      BraidBufferStatus( braid_BufferStatus _bstatus );
+      BraidBufferStatus( braid_BufferStatus _bstatus )
       {
          bstatus = _bstatus;
       }
 
-      void GetMessageType( braid_Int *messagetype_ptr ) { braid_CoarsenRefStatusGetMessageType( bstatus, messagetype_ptr); }
+      void GetMessageType( braid_Int *messagetype_ptr ) { braid_BufferStatusGetMessageType( bstatus, messagetype_ptr); }
       void SetSize( braid_Int size ) { braid_BufferStatusSetSize( bstatus, size ); }
       ~BraidBufferStatus() {} 
-}      
+};
 
 // Static functions passed to Braid, with braid_App == BraidApp*
 static braid_Int _BraidAppStep(braid_App       _app,
@@ -326,7 +326,7 @@ static braid_Int _BraidAppBufSize(braid_App  _app,
 static braid_Int _BraidAppBufPack(braid_App     _app,
                                   braid_Vector  _u,
                                   void         *buffer,
-                                  braid_BufferStatus  status)
+                                  braid_BufferStatus  _bstatus)
 {
    BraidApp *app = (BraidApp*)_app;
    BraidBufferStatus bstatus( _bstatus );

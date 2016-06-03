@@ -163,9 +163,8 @@ typedef struct _braid_BufferStatus_struct *braid_BufferStatus;
  **/
 typedef struct _braid_BufferStatus_struct
 {
-   braid_Int    messagetype;         /**< if true, buffer will be used for load balencing  */
+   braid_Int    messagetype;         /**< message type, 0: for Step(), 1: for load balancing */
    braid_Int    size;                /**< if set by user, send buffer will be "size" bytes in length */
-
 } _braid_BufferStatus;
 
 /*--------------------------------------------------------------------------
@@ -567,7 +566,7 @@ braid_StepStatusSetTightFineTolx(braid_StepStatus  status,             /**< stru
  * Initialize a braid_BufferStatus structure 
  **/
 braid_Int
-_braid_BufferStatusInit(braid_Int           messagetype,  /**< messagetype == 1 if buffer will be used for load balancing */ 
+_braid_BufferStatusInit(braid_Int           messagetype,  /**< message type, 0: for Step(), 1: for load balancing */
                         braid_Int           size,         /**< if set by user, size of send buffer is "size" bytes */
                         braid_BufferStatus  status        /**< structure to initialize */
                             );
@@ -583,7 +582,7 @@ _braid_BufferStatusDestroy(braid_BufferStatus  status);        /**< structure to
  **/
 braid_Int
 braid_BufferStatusGetMessageType(braid_BufferStatus  status,         /**< structure containing current simulation info */
-                                 braid_Int           *messagetype    /**< output, type of buffer requied  */                                    );
+                                 braid_Int           *messagetype    /**< output, type of message, 0: for Step(), 1: for load balancing */                                   );
 /**
  * Set the size of the buffer. If set by user, the send buffer will
    be "size" bytes in length. If not, BufSize is used. 
