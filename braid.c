@@ -149,7 +149,7 @@ _braid_DriveUpdateCycle(braid_Core          core,
       else
       {
          /* If we are on the finest grid, first try to refine, then go down */
-         if (!cycle.try_refine)
+         if (!cycle.try_refine || nlevels == 1)
          {
             cycle.try_refine = 1;
          }
