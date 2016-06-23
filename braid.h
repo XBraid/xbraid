@@ -381,6 +381,15 @@ braid_Int
 braid_SetRefine(braid_Core  core,    /**< braid_Core (_braid_Core) struct*/
                 braid_Int   refine   /**< boolean, refine in time or not */
                 );
+
+/**
+ * Turn time refinement on (refine = 1) or off (refine = 0).
+ **/
+braid_Int
+braid_SetLoadBalance(braid_Core  core,      /**< braid_Core (_braid_Core) struct*/
+                     braid_Int   lbalence   /**< boolean, load balence in time or not */
+                );
+
 /**
  * Set the max number of time grid refinement levels allowed.
  **/

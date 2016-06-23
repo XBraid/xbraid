@@ -332,6 +332,7 @@ _braid_StepStatusInit(braid_Real       tstart,
    _braid_StatusElt(status, nrefine)   = nrefine;
    _braid_StatusElt(status, gupper)    = gupper;
    _braid_StatusElt(status, rfactor)   = 1;
+   _braid_StatusElt(status, wfactor)   = 1;
    _braid_StatusElt(status, r_space)   = 0;
 
    return _braid_error_flag;
@@ -399,6 +400,13 @@ braid_StepStatusSetRFactor(braid_StepStatus  status,
    return _braid_error_flag;
 }
 
+braid_Int
+braid_StepStatusSetWFactor(braid_StepStatus  status,
+                           braid_Int         wfactor)
+{
+   _braid_StatusElt(status, wfactor) = wfactor;
+   return _braid_error_flag;
+}
 braid_Int
 braid_StepStatusSetRSpace(braid_StepStatus  status,
                           braid_Int         r_space)

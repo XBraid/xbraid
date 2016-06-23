@@ -163,7 +163,9 @@ typedef struct _braid_Core_struct
    braid_Int              gupper;           /**< global size of the fine grid */
 
    braid_Int              refine;           /**< refine in time (refine = 1) */
+   braid_Int              lbalence;         /**< load baence in time ( lbalence = 1 ) */ 
    braid_Int             *rfactors;         /**< refinement factors for finest grid (if any) */
+   braid_Int             *wfactors;         /**< load balencing wieghts for finest */
    braid_Int              r_space;          /**< spatial refinment flag */
    braid_Int              rstopped;         /**< refinement stopped at iteration rstopped */
    braid_Int              nrefine;          /**< number of refinements done */

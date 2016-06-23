@@ -656,6 +656,7 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, refine)          = 0;  /* Time refinement off by default */
    _braid_CoreElt(core, rfactors)        = NULL;
+   _braid_CoreElt(core, wfactors)        = NULL;
    _braid_CoreElt(core, r_space)         = 0;
    _braid_CoreElt(core, rstopped)        = -1;
    _braid_CoreElt(core, nrefine)         = 0;
@@ -706,6 +707,7 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, full_rnorms));
       _braid_TFree(_braid_CoreElt(core, cfactors));
       _braid_TFree(_braid_CoreElt(core, rfactors));
+      _braid_TFree(_braid_CoreElt(core, wfactors));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
       _braid_AccessStatusDestroy(astatus);
       _braid_StepStatusDestroy(sstatus);
@@ -1095,6 +1097,20 @@ braid_SetRefine(braid_Core  core,
    _braid_CoreElt(core, refine) = refine;
 
    return _braid_error_flag;
+}
+
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetLoadBalance(braid_Core  core,      /**< braid_Core (_braid_Core) struct*/
+                     braid_Int   lbalence   /**< boolean, load balence in time or not */
+                )
+{ 
+     _braid_CoreElt(core, lbalence) = lbalence; 
+
+     return _braid_error_flag; 
 }
 
 /*--------------------------------------------------------------------------
