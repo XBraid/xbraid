@@ -649,6 +649,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, astatus)         = _braid_CTAlloc(_braid_AccessStatus, 1);
    _braid_CoreElt(core, sstatus)         = _braid_CTAlloc(_braid_StepStatus, 1);
    _braid_CoreElt(core, cstatus)         = _braid_CTAlloc(_braid_CoarsenRefStatus, 1);
+   _braid_CoreElt(core, bstatus)         = _braid_CTAlloc(_braid_BufferStatus, 1);
 
    _braid_CoreElt(core, storage)         = -1;            /* only store C-points */
 
