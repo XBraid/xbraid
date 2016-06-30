@@ -53,7 +53,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-
+#include <time.h>
 #include "braid.h"
 
 /*--------------------------------------------------------------------------
@@ -99,6 +99,10 @@ my_Step(braid_App        app,
 
    /* no refinement */
    braid_StepStatusSetRFactor(status, 1);
+   
+
+   int wfactor = (rand() %1000) + 1;
+   braid_StepStatusSetWFactor(status, wfactor );
 
    return 0;
 }
@@ -282,10 +286,9 @@ int main (int argc, char *argv[])
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
-
    /* ntime time intervals with spacing 1 */
    comm   = MPI_COMM_WORLD;
-   ntime  = 32;
+   ntime  = 16;
    tstart = 0.0;
    tstop  = tstart + ntime;
    
@@ -390,7 +393,9 @@ int main (int argc, char *argv[])
    {
       braid_SetResidual(core, my_Residual);
    }
-
+   int myid;
+   MPI_Comm_rank( comm, &myid );
+   srand( (unsigned int) time(NULL)*myid );
    braid_Drive(core);
 
    braid_Destroy(core);

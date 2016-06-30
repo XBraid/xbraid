@@ -88,6 +88,9 @@ typedef struct
 
    braid_Int          recv_index;    /**<  -1 means no receive */
    braid_Int          send_index;    /**<  -1 means no send */
+   braid_Int          recv_proc;     /**<  -1 means no recieve */
+   braid_Int          send_proc;     /**<  -1 means no send */
+
    _braid_CommHandle *recv_handle;   /**<  Handle for nonblocking receives of braid_Vectors */
    _braid_CommHandle *send_handle;   /**<  Handle for nonblocking sends of braid_Vectors */
 
@@ -163,7 +166,7 @@ typedef struct _braid_Core_struct
    braid_Int              gupper;           /**< global size of the fine grid */
 
    braid_Int              refine;           /**< refine in time (refine = 1) */
-   braid_Int              lbalence;         /**< load baence in time ( lbalence = 1 ) */ 
+   braid_Int              lbalence;         /**< load balance in time ( lbalence = 1 ) */ 
    braid_Int             *rfactors;         /**< refinement factors for finest grid (if any) */
    braid_Int             *wfactors;         /**< load balencing wieghts for finest */
    braid_Int              r_space;          /**< spatial refinment flag */
@@ -667,7 +670,9 @@ _braid_FAccess(braid_Core     core,
 braid_Int
 _braid_InitHierarchy(braid_Core    core,
                      _braid_Grid  *fine_grid,
-                     braid_Int     refined);
+                     braid_Int     refined,
+                     braid_Int     *recv_procs,
+                     braid_Int     *send_procs);
 
 /**
  * Print out the residual norm for every C-point.
@@ -730,6 +735,46 @@ _braid_GetFullRNorm(braid_Core  core,
 braid_Int
 _braid_DeleteLastResidual(braid_Core  core);
 
+
+/** 
+ * Gather weights and calculate my new ilower and iupper 
+ */
+braid_Int
+_braid_LoadBalence(braid_Core  core,
+                   braid_Int   *weights, 
+                   braid_Int   curr_ilower,
+                   braid_Int   curr_iupper,
+                   braid_Int   ngupper,
+                   braid_Int   *nilower, 
+                   braid_Int   *niupper );
+
+braid_Int
+_braid_GetPartition(braid_Core core,
+                    braid_Int *assumed_ilower,
+                    braid_Int *assumed_iupper, 
+                    braid_Int *new_ilower,
+                    braid_Int *new_iupper,
+                    braid_Int *new_gupper,
+                    braid_Int *owners 
+      );
+braid_Int _braid_assume_partition( braid_Core core,
+                                   braid_Int  nlevels,
+                                   braid_Int  *old_ilower,
+                                   braid_Int  *old_iupper,
+                                   braid_Int  *new_ilower,
+                                   braid_Int  *new_iupper,
+                                   braid_Int  *new_gupper,
+                                   braid_Int   **send_procs,
+                                   braid_Int   **recv_procs,
+                                   braid_Int   **refine_map_s,
+                                   braid_Int   **refine_map_r);
+
+
+braid_Int
+_braid_GetProc_LeftOrRight( braid_Core  core,
+                            braid_Int   level,
+                            braid_Int   direction,
+                            braid_Int   *proc_ptr);
 #ifdef __cplusplus
 }
 #endif

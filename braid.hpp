@@ -174,6 +174,8 @@ class BraidStepStatus
       void GetOldFineTolx(braid_Real *old_fine_tolx_ptr) { braid_StepStatusGetOldFineTolx(pstatus, old_fine_tolx_ptr); }
       void SetOldFineTolx(braid_Real old_fine_tolx)      { braid_StepStatusSetOldFineTolx(pstatus, old_fine_tolx); }
       void SetTightFineTolx(braid_Int tight_fine_tolx)   { braid_StepStatusSetTightFineTolx(pstatus, tight_fine_tolx); }
+      void SetSFactor( braid_Int  f ) {}
+      void SetWFactor( braid_Int  wfactor)               {braid_StepStatusSetWFactor( pstatus, wfactor ); }
 
       // The braid_StepStatus structure is deallocated inside of Braid
       // This class is just to make code consistently look object oriented
@@ -452,6 +454,10 @@ public:
    
    void GetNLevels(braid_Int *nlevels_ptr) { braid_GetNLevels(core, nlevels_ptr); }
 
+   void SetRefine( braid_Int refine ) { braid_SetRefine( core, refine ); }
+
+   void SetTRefine(){}
+   void SetCycleFile( const char *filename, braid_Int len ) {} 
    void Drive() { braid_Drive(core); }
 
    ~BraidCore() { braid_Destroy(core); }

@@ -415,7 +415,7 @@ braid_Drive(braid_Core  core)
    }
 
    /* Create a grid hierarchy */
-   _braid_InitHierarchy(core, grid, 0);
+   _braid_InitHierarchy(core, grid, 0, NULL, NULL);
    nlevels = _braid_CoreElt(core, nlevels);
 
    /* Set initial values */
@@ -494,12 +494,39 @@ braid_Drive(braid_Core  core)
          else
          {
             /* Finest grid - refine grid if desired, else check convergence */
-            _braid_FRefine(core, &refined);
+             _braid_FRefine(core, &refined);
             nlevels = _braid_CoreElt(core, nlevels);
+            
+            braid_Int new_ilower, new_iupper; 
+            braid_Int *wfactors = _braid_CoreElt( core, wfactors );
+           _braid_Grid **grids = _braid_CoreElt( core, grids );
+            braid_Int ilower = _braid_CoreElt( grids[0], ilower );
+            braid_Int iupper = _braid_CoreElt( grids[0], iupper );
+            braid_Int gupper = _braid_CoreElt( grids[0], gupper );
+            _braid_LoadBalence ( core, wfactors, ilower, iupper, gupper, &new_ilower, &new_iupper );
 
-            /* Print current status */
+            //Debug stuff -- This will be in Frefine eventually! 
+           braid_Int *index_map_send = _braid_CTAlloc( braid_Int , iupper - ilower + 1 );
+           braid_Int *index_map_recv = _braid_CTAlloc( braid_Int , new_iupper - new_ilower + 1 );
+           braid_Int nlevels = _braid_CoreElt( core, nlevels );
+           braid_Int *recv_procs = _braid_CTAlloc( braid_Int, nlevels );
+           braid_Int *send_procs = _braid_CTAlloc( braid_Int, nlevels );           
+
+           _braid_assume_partition( core, nlevels, &ilower, &iupper, &new_ilower, &new_iupper, &gupper, 
+                                    &send_procs, &recv_procs, &index_map_send, &index_map_recv );
+          
+         /*  printf( " %d : %d %d ----> %d %d \n " , myid, ilower,iupper, new_ilower,new_iupper);
+           for ( i = ilower; i<=iupper;i++)
+               printf( " %d will send %d to %d \n ", myid, i, index_map_send[i-ilower] );
+
+           for ( i = new_ilower; i<=new_iupper;i++)
+               printf( " %d will recv %d from %d \n ", myid, i, index_map_recv[i-new_ilower] );
+
+            printf( " %d ------------------------------------ \n " , myid );
+         */
+
+           /* Print current status */
             _braid_DrivePrintStatus(core, level, iter, refined, localtime);
-
             /* If no refinement was done, check for convergence */
             if (!refined)
             {
@@ -649,9 +676,9 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, astatus)         = _braid_CTAlloc(_braid_AccessStatus, 1);
    _braid_CoreElt(core, sstatus)         = _braid_CTAlloc(_braid_StepStatus, 1);
    _braid_CoreElt(core, cstatus)         = _braid_CTAlloc(_braid_CoarsenRefStatus, 1);
+   _braid_CoreElt(core, bstatus)         = _braid_CTAlloc(_braid_BufferStatus, 1);
 
    _braid_CoreElt(core, storage)         = -1;            /* only store C-points */
-
    _braid_CoreElt(core, gupper)          = ntime;
 
    _braid_CoreElt(core, refine)          = 0;  /* Time refinement off by default */

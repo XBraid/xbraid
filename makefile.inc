@@ -129,13 +129,13 @@ else ifeq ($(shell uname -s),Linux)
    MPIF90 = mpif90
    LFLAGS = -lm
    ifeq ($(optlevel),DEBUG)
-      CFLAGS = -g -Wall
-      CXXFLAGS = -g -Wall
+      CFLAGS = -g -fPIC -Wall
+      CXXFLAGS = -g -fPIC -Wall
       FORTFLAGS = -g -Wall
    else
-      CFLAGS = -O -Wall
-      CXXFLAGS = -O -Wall
-      FORTFLAGS = -O1 -Wall
+      CFLAGS = -O -fPIC -Wall
+      CXXFLAGS = -O -fPIC -Wall
+      FORTFLAGS = -O1 -fPIC -Wall
    endif
 else
    MPICC = mpicc
