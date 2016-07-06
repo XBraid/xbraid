@@ -101,9 +101,10 @@ my_Step(braid_App        app,
    braid_StepStatusSetRFactor(status, 1);
    
 
-   int wfactor = (rand() %1000) + 1;
+   int wfactor = ( rand() % 1000) + 1;
+   int rfactor = ( rand() % 10 ) + 1; 
    braid_StepStatusSetWFactor(status, wfactor );
-
+   braid_StepStatusSetRFactor(status, rfactor );
    return 0;
 }
 
@@ -211,13 +212,13 @@ my_Access(braid_App          app,
    braid_AccessStatusGetT(astatus, &t);
    index = ((t-tstart) / ((tstop-tstart)/ntime) + 0.1);
 
-   MPI_Comm_rank(comm, &myid);
+   //MPI_Comm_rank(comm, &myid);
 
-   sprintf(filename, "%s.%07d.%05d", "ex-01.out", index, myid);
-   file = fopen(filename, "w");
-   fprintf(file, "%.14e\n", (u->value));
-   fflush(file);
-   fclose(file);
+   //sprintf(filename, "%s.%07d.%05d", "ex-01.out", index, myid);
+   //file = fopen(filename, "w");
+   //fprintf(file, "%.14e\n", (u->value));
+   //fflush(file);
+   //fclose(file);
 
    return 0;
 }
@@ -281,7 +282,8 @@ int main (int argc, char *argv[])
    int           max_iter   = 100;
    int           fmg        = 0;
    int           res        = 0;
-
+   int           lbalence   = 0;
+   int           refine_time = 0; 
    int           arg_index;
 
    /* Initialize MPI */
@@ -311,6 +313,8 @@ int main (int argc, char *argv[])
             printf("  -cf  <cfactor>    : set coarsening factor\n");
             printf("  -mi  <max_iter>   : set max iterations\n");
             printf("  -fmg              : use FMG cycling\n");
+            printf("  -lb               : use load balencing\n");
+            printf("  -rt               : use temporal refinment\n");
             printf("  -res              : use my residual\n");
             printf("\n");
          }
@@ -355,6 +359,16 @@ int main (int argc, char *argv[])
       {
          arg_index++;
          res = 1;
+      } 
+      else if ( strcmp(argv[arg_index], "-lb") == 0 )
+      {
+         arg_index++;
+         lbalence = 1;
+      }
+      else if ( strcmp(argv[arg_index], "-rt") == 0 )
+      {
+         arg_index++;
+         refine_time = 1;
       }
       else
       {
@@ -393,6 +407,16 @@ int main (int argc, char *argv[])
    {
       braid_SetResidual(core, my_Residual);
    }
+   if (lbalence)
+   {
+      braid_SetLoadBalance( core, lbalence);
+   }  
+   if (refine_time)
+   {
+      braid_SetRefine( core, 1 );
+      braid_SetTPointsCutoff( core, 10000); 
+   }
+   
    int myid;
    MPI_Comm_rank( comm, &myid );
    srand( (unsigned int) time(NULL)*myid );

@@ -750,24 +750,24 @@ _braid_LoadBalence(braid_Core  core,
 
 braid_Int
 _braid_GetPartition(braid_Core core,
-                    braid_Int *assumed_ilower,
-                    braid_Int *assumed_iupper, 
-                    braid_Int *new_ilower,
-                    braid_Int *new_iupper,
-                    braid_Int *new_gupper,
+                    braid_Int assumed_ilower,
+                    braid_Int assumed_iupper, 
+                    braid_Int new_ilower,
+                    braid_Int new_iupper,
+                    braid_Int new_gupper,
                     braid_Int *owners 
       );
-braid_Int _braid_assume_partition( braid_Core core,
-                                   braid_Int  nlevels,
-                                   braid_Int  *old_ilower,
-                                   braid_Int  *old_iupper,
-                                   braid_Int  *new_ilower,
-                                   braid_Int  *new_iupper,
-                                   braid_Int  *new_gupper,
+braid_Int _braid_assume_partition( braid_Core  core, 
+                                   braid_Int   old_ilower,
+                                   braid_Int   old_iupper,
+                                   braid_Int   new_ilower,
+                                   braid_Int   new_iupper,
+                                   braid_Int   new_gupper,
                                    braid_Int   **send_procs,
                                    braid_Int   **recv_procs,
                                    braid_Int   **refine_map_s,
-                                   braid_Int   **refine_map_r);
+                                   braid_Int   **refine_map_r,
+                                   braid_Int   *rilower_m1 );
 
 
 braid_Int
@@ -775,6 +775,31 @@ _braid_GetProc_LeftOrRight( braid_Core  core,
                             braid_Int   level,
                             braid_Int   direction,
                             braid_Int   *proc_ptr);
+
+
+braid_Int
+_braid_DEV_GetDistribution(braid_Core   core,
+                           braid_Int    *wfactors, 
+                           braid_Int    old_ilower,
+                           braid_Int    old_iupper,
+                           braid_Int    new_gupper,
+                           braid_Int   *new_ilower_ptr,
+                           braid_Int   *new_iupper_ptr);
+
+braid_Int
+_braid_DEV1_GetDistribution(braid_Core   core,
+                           braid_Int    *refine_in_time, 
+                           braid_Int    *wfactors, 
+                           braid_Int    npoints,
+                           braid_Int    *old_ilower,
+                           braid_Int    *old_iupper,
+                           braid_Int    *new_gupper,
+                           braid_Int    *new_ilower_ptr,
+                           braid_Int    *new_iupper_ptr);
+
+void Mpi_ReducFunction(int *in, int *inout, int *len, MPI_Datatype *datatype);
+
+
 #ifdef __cplusplus
 }
 #endif
