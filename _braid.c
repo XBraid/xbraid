@@ -2449,7 +2449,10 @@ _braid_FRefine(braid_Core   core,
         if (f_ca[f_ii] > -1)
         {
             i = f_ca[f_ii];
-            proc = index_map_recv[f_ii];
+            if ( _braid_CoreElt( core, lbalence ))
+                proc = index_map_recv[f_ii];
+            else
+                _braid_GetBlockDistProc((gupper+1), nprocs, i, &proc);
 
             if (proc != prevproc)
             {
@@ -3669,8 +3672,6 @@ braid_Int _braid_assume_partition( braid_Core  core,
             _braid_GetBlockDistProc( gupper[0] + 1, comm_size, index, &need_procs[num_needs] );
             need_indices[num_needs++] = index;
         }
-        
-        recv_indices[num_recvs] = -1; 
         index = ilower[i] - 1;
         if ( index >= 0 && iupper[i] >= ilower[i] )
         {
@@ -3686,25 +3687,25 @@ braid_Int _braid_assume_partition( braid_Core  core,
     if (  !_braid_CoreElt( core, lbalence ) )
     {
         braid_Int *send_m = *send_map;
-        braid_Int *recv_m = *recv_map;
         braid_Int *recv_p = *left_procs;
         braid_Int *send_p = *right_procs;
-        
+       
         for ( i = 0; i < nlevels; i++ )
         {
-           send_p[i] = -1;
-           recv_p[i] = -1;
+            send_p[i] = -1;
+            recv_p[i] = -1;
         }
         for ( i = 0; i < num_needs; i++ )
             _braid_GetBlockDistProc( new_gupper + 1, comm_size, need_indices[i], &send_p[i]);
         for ( i = 0; i < num_recvs; i++ )
             _braid_GetBlockDistProc( new_gupper + 1, comm_size, recv_indices[i], &recv_p[i]);
-        
         for ( i = old_ilower; i <= old_iupper ; i++ )
             _braid_GetBlockDistProc( new_gupper + 1, comm_size, i, &send_m[i-old_ilower]) ;
-        for ( i = new_ilower; i <= new_iupper; i++ )
-            _braid_GetBlockDistProc( new_gupper + 1, comm_size, i, &recv_m[i-new_ilower]) ;
+         
         _braid_GetBlockDistProc( new_gupper + 1, comm_size, old_ilower - 1 , rilower_m1 );
+        // Note -- recv_map returns empty for this case. Its way easier to get the recieve 
+        // data inside FRefine once we calculate the f_ca array. For that reason, when load
+        // balencing is not completed. Infact, I might just get rid of it all together.  
 
         _braid_TFree( recv_indices );
         _braid_TFree( gupper );
