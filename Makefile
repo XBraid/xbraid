@@ -34,9 +34,9 @@ include makefile.inc
 # Targets
 ##################################################################
 
-BRAID_HEADERS = _braid.h braid.h _util.h braid_test.h braid_status.h braid_defs.h mpistubs.h
+BRAID_HEADERS = _braid.h braid.h _util.h braid_test.h braid_status.h braid_defs.h mpistubs.h blockdist.h weighteddist.h
 
-BRAID_FILES = _util.c braid.c _braid.c braid_test.c braid_status.c mpistubs.c
+BRAID_FILES = _util.c braid.c _braid.c braid_test.c braid_status.c mpistubs.c blockdist.c weighteddist.c
 
 BRAID_OBJ = $(BRAID_FILES:.c=.o)
 

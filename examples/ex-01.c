@@ -54,7 +54,7 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
-#include "braid.h"
+#include "../braid.h"
 
 /*--------------------------------------------------------------------------
  * My integration routines
@@ -200,13 +200,10 @@ my_Access(braid_App          app,
           braid_Vector       u,
           braid_AccessStatus astatus)
 {
-   MPI_Comm   comm   = (app->comm);
    double     tstart = (app->tstart);
    double     tstop  = (app->tstop);
    int        ntime  = (app->ntime);
-   int        index, myid;
-   char       filename[255];
-   FILE      *file;
+   int        index;
    double     t;
    
    braid_AccessStatusGetT(astatus, &t);
@@ -265,6 +262,18 @@ my_BufUnpack(braid_App          app,
 /*--------------------------------------------------------------------------
  * Main driver
  *--------------------------------------------------------------------------*/
+#include <execinfo.h>
+
+void err_fn(MPI_Comm *communicator, int *error_code, ...) {
+    
+    size_t i;
+    printf ( "ERRRRRRR %d \n", 1 );
+
+    for (i = 0; i >=0 ; i++)
+       printf ("Waiting here forever ");
+
+     exit(1);
+}
 
 int main (int argc, char *argv[])
 {
@@ -293,7 +302,9 @@ int main (int argc, char *argv[])
    ntime  = 16;
    tstart = 0.0;
    tstop  = tstart + ntime;
-   
+   MPI_Errhandler err_handle;
+   MPI_Comm_create_errhandler( (MPI_Comm_errhandler_function*) err_fn , &err_handle);
+   MPI_Comm_set_errhandler( comm, err_handle );
    /* Parse command line */
 
    arg_index = 1;
@@ -376,7 +387,7 @@ int main (int argc, char *argv[])
          /*break;*/
       }
    }
-
+   
    /* set up app structure */
    app = (my_App *) malloc(sizeof(my_App));
    (app->comm)   = comm;
@@ -419,11 +430,11 @@ int main (int argc, char *argv[])
    
    int myid;
    MPI_Comm_rank( comm, &myid );
-   srand( (unsigned int) time(NULL)*myid );
+   srand( (unsigned int) time(NULL)*( myid + 1 ) );
    braid_Drive(core);
 
    braid_Destroy(core);
-
+   free( app );
    /* Finalize MPI */
    MPI_Finalize();
 

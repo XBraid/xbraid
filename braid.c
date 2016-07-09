@@ -404,8 +404,7 @@ braid_Drive(braid_Core  core)
    localtime = MPI_Wtime();
 
    /* Create fine grid */
-   //TODO Make this a getblockdist to start 
-   _braid_GetDistribution(core, &ilower, &iupper);
+   _braid_GetInitDistribution(core, &ilower, &iupper);
    _braid_GridInit(core, 0, ilower, iupper, &grid);
 
    /* Set t values */
@@ -415,7 +414,9 @@ braid_Drive(braid_Core  core)
       ta[i-ilower] = tstart + (((braid_Real)i)/ntime)*(tstop-tstart);
    }
 
-   /* Create a grid hierarchy */
+   /* Create a grid hierarchy. NULL pointers indicate
+    * that the default distrobution will be used to calculate the 
+    * nearest neighbours on each level. */
    _braid_InitHierarchy(core, grid, 0, NULL, NULL);
    nlevels = _braid_CoreElt(core, nlevels);
 
@@ -546,7 +547,7 @@ braid_Drive(braid_Core  core)
    _braid_CoreElt(core, globaltime) = globaltime;
 
    /* Print statistics for this run */
-   if ( (print_level > 0) && (myid == 0) )
+   if ( (print_level > 0)  )
    {
       braid_PrintStats(core);
    }
@@ -702,6 +703,8 @@ braid_Destroy(braid_Core  core)
       braid_AccessStatus      astatus    = _braid_CoreElt(core, astatus);
       braid_CoarsenRefStatus  cstatus    = _braid_CoreElt(core, cstatus);
       braid_StepStatus        sstatus    = _braid_CoreElt(core, sstatus);
+      braid_BufferStatus      bstatus    = _braid_CoreElt(core, bstatus);
+
       braid_Int               level;
 
       _braid_TFree(_braid_CoreElt(core, nrels));
@@ -714,7 +717,8 @@ braid_Destroy(braid_Core  core)
       _braid_AccessStatusDestroy(astatus);
       _braid_StepStatusDestroy(sstatus);
       _braid_CoarsenRefStatusDestroy(cstatus);
-      
+      _braid_BufferStatusDestroy(bstatus);
+
       for (level = 0; level < nlevels; level++)
       {
          _braid_GridDestroy(core, grids[level]);
@@ -767,7 +771,7 @@ braid_PrintStats(braid_Core  core)
    braid_Int     level;
 
    _braid_GetRNorm(core, -1, &rnorm);
-   
+    
    if ( myid == 0 )
    {
       _braid_printf("\n");
