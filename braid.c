@@ -1111,10 +1111,10 @@ braid_SetRefine(braid_Core  core,
 
 braid_Int
 braid_SetLoadBalance(braid_Core  core,      /**< braid_Core (_braid_Core) struct*/
-                     braid_Int   lbalence   /**< boolean, load balence in time or not */
+                     braid_Int   lbalance   /**< boolean, load balance in time or not */
                 )
 { 
-     _braid_CoreElt(core, lbalence) = lbalence; 
+     _braid_CoreElt(core, lbalance) = lbalance; 
 
      return _braid_error_flag; 
 }

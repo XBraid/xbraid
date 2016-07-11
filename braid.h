@@ -387,7 +387,7 @@ braid_SetRefine(braid_Core  core,    /**< braid_Core (_braid_Core) struct*/
  **/
 braid_Int
 braid_SetLoadBalance(braid_Core  core,      /**< braid_Core (_braid_Core) struct*/
-                     braid_Int   lbalence   /**< boolean, load balence in time or not */
+                     braid_Int   lbalance   /**< boolean, load balance in time or not */
                 );
 
 /**
