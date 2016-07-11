@@ -636,14 +636,14 @@ int MFEMBraidApp::BufSize(int                *size_ptr,
 
 int MFEMBraidApp::BufPack(braid_Vector       u_,
                           void               *buffer,
-                          BraidBufferStatus  &status);
+                          BraidBufferStatus  &status)
 {
    BraidVector *u = (BraidVector*) u_;
    double *dbuf = (double *) buffer;
 
    dbuf[0] = (double) u->level;
    memcpy(dbuf + 1, u->GetData(), buff_size[u->level] - sizeof(double));
-   status->SetSize( buff_size[u->level] );
+   status.SetSize( buff_size[u->level] );
    return 0;
 }
 
