@@ -2157,6 +2157,7 @@ _braid_FRefine(braid_Core   core,
     * for the fine grid (f_ca, f_ta).  Also compute f_first and f_next. */
 
    /* Post f_next receive */
+   f_next = -1;
    if (f_npoints > 0)
    {
       f_next = f_gupper+1;
