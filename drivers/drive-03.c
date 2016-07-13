@@ -2408,9 +2408,11 @@ setUpStructSolver( MPI_Comm             comm,
  * set to u_i.
  * -------------------------------------------------------------------- */
 int
-my_Phi(braid_App       app,
-       braid_Vector    u,
-       braid_PhiStatus status)
+my_Step(braid_App        app,
+        braid_Vector     ustop,
+        braid_Vector     fstop,
+        braid_Vector     u,
+        braid_StepStatus status)
 {
    double tstart;             /* current time */
    double tstop;              /* evolve to this time*/
@@ -2895,8 +2897,9 @@ my_Access(braid_App           app,
  * of grid points.
  * -------------------------------------------------------------------- */
 int
-my_BufSize(braid_App  app,
-           int       *size_ptr)
+my_BufSize(braid_App           app,
+           int                *size_ptr,
+           braid_BufferStatus  bstatus)
 {
    *size_ptr = (app->nlx)*(app->nly)*(app->nlz)*sizeof(double);
    return 0;
@@ -2907,10 +2910,10 @@ my_BufSize(braid_App  app,
  * Pack a vector object in a buffer.
  * -------------------------------------------------------------------- */
 int
-my_BufPack(braid_App     app,
-           braid_Vector  u,
-           void         *buffer,
-           braid_Int    *size_ptr)
+my_BufPack(braid_App           app,
+           braid_Vector        u,
+           void               *buffer,
+           braid_BufferStatus  bstatus)
 {
    double *dbuffer = buffer;
 
@@ -2922,7 +2925,7 @@ my_BufPack(braid_App     app,
    HYPRE_SStructVectorGetBoxValues( u->x, part, app->ilower_x,
                                     app->iupper_x, var, dbuffer );
 
-   *size_ptr = (app->nlx)*(app->nly)*(app->nlz)*sizeof(double);
+   braid_BufferStatusSetSize( bstatus, (app->nlx)*(app->nly)*(app->nlz)*sizeof(double));
    
    return 0;
 }
@@ -2932,9 +2935,10 @@ my_BufPack(braid_App     app,
  * Unpack a vector object from a buffer.
  * -------------------------------------------------------------------- */
 int
-my_BufUnpack(braid_App     app,
-             void         *buffer,
-             braid_Vector *u_ptr)
+my_BufUnpack(braid_App           app,
+             void                *buffer,
+             braid_Vector        *u_ptr,
+             braid_BufferStatus  bstatus)
 {
    double    *dbuffer = buffer;
    my_Vector *u;
@@ -3378,7 +3382,7 @@ int main (int argc, char *argv[])
    /* Start timer. */
    mystarttime = MPI_Wtime();
 
-   braid_Init(comm, comm_t, tstart, tstop, nt, app, my_Phi, my_Init, my_Clone,
+   braid_Init(comm, comm_t, tstart, tstop, nt, app, my_Step, my_Init, my_Clone,
          my_Free, my_Sum, my_SpatialNorm, my_Access, my_BufSize, my_BufPack,
          my_BufUnpack, &core);
 

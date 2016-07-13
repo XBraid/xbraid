@@ -177,3 +177,5 @@ endif
 # CFLAGS   = -I/home/falgout/codes/mpich2-1.4.1-install/include
 # CXXFLAGS = -I/home/falgout/codes/mpich2-1.4.1-install/include
 # LFLAGS   = -L/home/falgout/codes/mpich2-1.4.1-install/lib -Wl,-rpath,/home/falgout/codes/mpich2-1.4.1-install/lib -lmpich -lopa -lmpl -lrt -lpthread  -lstdc++ -lm
+
+-include $(BRAID_DIR)/makefile.user

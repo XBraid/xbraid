@@ -35,7 +35,11 @@ success has been shown primarily for problems with some parabolic character.
 While there are ongoing projects (here and elsewhere) looking at varied
 applications such as hyperbolic problems, computational fluid dynamics, power
 grids, medical applications, and so on, expectations should take this fact into
-account.  That being said, we strongly encourage new users to try our code for
+account.  Please see our project
+[publications website](http://computation.llnl.gov/projects/parallel-time-integration-multigrid/publications)
+for our recent publications concerning some of these varied applications. 
+
+That being said, we strongly encourage new users to try our code for
 their application.  Every new application has its own issues to address and
 this will help us to improve both the algorithm and the software.
 
@@ -81,7 +85,7 @@ a wave, and this wave propagates sequentially across space as time increases.
 XBraid instead begins with a solution guess over all of space-time, which for demonstration, 
 we let be random. An XBraid iteration does
 
-1. Relaxation on the fine grid, i.e., the grid that contains all of the desired time values
+1. Relaxation on the fine grid, i.e., the grid that contains all of the desired time values.
    Relaxation is just a local application of the time stepping scheme, e.g., backward Euler.
 2. Restriction to the first coarse grid, i.e., interpolate the problem to a grid that 
    contains fewer time values, say every second or every third time value.
@@ -110,8 +114,7 @@ There are a few important points to make.
   Therefore if enough processors are available to parallelize XBraid, we can see a speedup
   over traditional time stepping (more on this later).
 - This is a simple example, with evenly space time steps.  XBraid is structured 
-   to handle variable time step sizes and adaptive time step sizes, and these 
-   features will be coming. 
+  to handle variable time step sizes and adaptive time step sizes. 
 
 To firm up our understanding, let`s do a little math.  Assume that you
 have a general system of ordinary differential equations (ODEs), 
@@ -262,6 +265,9 @@ The spacing between each \f$ I \f$ is \f$ m-1 \f$ block rows.  While injection
 is simple, XBraid always does an F-relaxation sweep before the application of \f$R\f$, 
 which is equivalent to using the transpose of harmonic interpolation for restriction 
 (see [Parallel Time Integration with Multigrid](https://computation.llnl.gov/project/linear_solvers/pubs/mgritPaper-2014.pdf) ).
+Another interpretation is that the F-relaxation compresses the residual into the 
+C-points, i.e., the residual at all F-points after an F-relaxation is 0.  Thus, 
+it makes sense for restriction to be injection.
 
 To define the coarse grid equations, we apply the Full Approximation
 Scheme (FAS) method, which is a nonlinear version of multigrid.  This is to
@@ -270,7 +276,7 @@ the solution guess and residual (i.e., \f$ \mathbf{u}, \mathbf{g} - A
 \mathbf{u}\f$) are restricted.  This is in contrast to linear multigrid which
 typically restricts only the residual equation to the coarse grid.  This
 algorithmic change allows for the solution of general nonlinear problems.  For more
-details, see 
+details, see this
 [PDF](http://computation.llnl.gov/casc/people/henson/postscript/UCRL_JC_150259.pdf)
 by Van Henson for a good introduction to FAS.  However, FAS was originally invented 
 by Achi Brandt.
@@ -283,7 +289,9 @@ coarse time step size \f$ \Delta T = m \delta t \f$.  For example, if \f$ \Phi
 = (I - \delta t A)^{-1} \f$ for some backward Euler scheme, then \f$
 \Phi_{\Delta} = (I - m \delta t A)^{-1} \f$ would be one choice.
 
-With a \f$ \Phi_{\Delta} \f$ defined, the coarse grid equation
+With this \f$ \Phi_{\Delta} \f$ and letting \f$ \mathbf{u}_{\Delta} \f$ be the 
+restricted fine grid solution and \f$ \mathbf{r}_{\Delta} \f$ be the restricted
+fine grid residual, the coarse grid equation
    \f[
    A_{\Delta}(\mathbf{v}_{\Delta})  = A_{\Delta}(\mathbf{u}_{\Delta}) + \mathbf{r}_{\Delta} 
    \f]
@@ -371,7 +379,7 @@ In summary, a few points are
   figure, a 3 level hierarchy is shown.  Three levels are chosen because there are
   six time points, \f$m = 2\f$ and \f$ m^2 < 6 \le m^3 \f$.
   If the coarsening rate had been \f$m = 4\f$ then there would only be two
-  levels because, there would be no more points to coarsen!
+  levels because there would be no more points to coarsen!
    \latexonly
    \begin{figure}[!ht] \centering 
        \subfloat{\includegraphics[width=0.6\textwidth]{../img/3_levels.pdf}}
@@ -381,7 +389,7 @@ In summary, a few points are
    
    By default, XBraid will subdivide the time domain into evenly sized time
    steps.  XBraid is structured to handle variable time step sizes and adaptive
-   time step sizes, and these features are coming. 
+   time step sizes. 
 
 # Overview of the XBraid Code {#codeoverview}
 
@@ -436,13 +444,19 @@ XBraid
     (say _k_ time steps) as you have available memory for.  Then move on to
     the next _k_ time steps.
 
-  + Second, XBraid only stores the C-points.  Whenever an F-point is
-    needed, it is generated by F-relaxation.  More precisely, we only store
-    the red C-point time values in the previous figure.  Coarsening is
-    usually aggressive with \f$ m = 8, 16, 32, ... \f$, so the storage
-    requirements of XBraid are significantly reduced when compared to
-    storing all of the time values.
+  + Second, XBraid provides support for storing only C-points.  Whenever an
+    F-point is needed, it is generated by F-relaxation.  More precisely, only
+    the red C-point time values in the previous figure are stored.  Coarsening
+    is usually aggressive with \f$ m = 8, 16, 32, ... \f$, so the storage
+    requirements of XBraid are significantly reduced when compared to storing
+    all of the time values.
 
+  Overall, the memory multiplier per processor when using XBraid is \f$ O(1)
+  \f$ if space-time coarsening (see @ref exampleone) is used and \f$ O(\log_m N)
+  \f$ for time-only coarsening.  The time-only coarsening option is the default
+  and requires no user-written spatial interpolation/restriction routines
+  (which is the case for space-time coasrening).  We note that the base of the
+  logarithm is \f$ m \f$, which can be quite large.
 
 ## Cycling and relaxation strategies {#cyclingrelaxation}
 
@@ -477,20 +491,24 @@ Next, we make a few points about F- versus V-cycles.
 - But, F-cycles often converge more quickly.  For some test cases, this difference can be 
   quite large.  The cycle choice for the best time to solution will be problem
   dependent.  See @ref twodheat_scaling for a case study of cycling strategies. 
+- For exceptionally strong F-cycles, the option [braid_SetNFMGVcyc](@ref braid_SetNFMGVcyc)
+  can be set to use multiple V-cycles as relaxation.  This has proven useful
+  for some problems with a strongly advective nature.
 
 The number of FC relaxation sweeps is another important algorithmic setting.
 Note that at least one F-relaxation sweep is always 
 done on a level. A few summary points about relaxation are as follows.
-- Using FCF (or even FCFCF, FCFCFCF) relaxation, corresponding to passing
-  *braid_SetNRelax* a value of 1, 2 or 3 respectively, will result in an XBraid cycle
-  that converges more quickly as the number of relaxations grows.
-- But as the number of relaxations grows, each XBraid cycle becomes more expensive.  The optimal
-  relaxation strategy for the best time to solution
-  will be problem dependent.
+- Using FCF, FCFCF, or FCFCFCF relaxation corresponds to passing
+  *braid_SetNRelax* a value of 1, 2 or 3 respectively, and will result in an
+  XBraid cycle that converges more quickly as the number of relaxations grows.
+- But as the number of relaxations grows, each XBraid cycle becomes more
+  expensive.  The optimal relaxation strategy for the best time to solution will
+  be problem dependent.
 - However, a good first step is to try FCF on all levels (i.e., *braid_SetNRelax(core, -1, 1)* ).
 - A common optimization is to first set FCF on all levels (i.e., *braid_setnrelax(core, -1, 1)* ), 
   but then overwrite the FCF option on level 0 so that only F-relaxation is done on level 0, 
-  (i.e., *braid_setnrelax(core, 0, 1)* ).  This strategy can work well with F-cycles. 
+  (i.e., *braid_setnrelax(core, 0, 1)* ).  Another strategy is to use F-relaxation on all levels
+  together with F-cycles. 
 - See @ref twodheat_scaling  for a case study of relaxation strategies. 
 
 Last, [Parallel Time Integration with Multigrid](https://computation.llnl.gov/project/linear_solvers/pubs/mgritPaper-2014.pdf)
@@ -545,7 +563,7 @@ Setting a tolerance involves these three XBraid options:
    obtain a global norm over space and time.  It is this global norm that
    then controls halting. 
 
-   There are three options for setting the *tnorm* value passed to 
+   There are three *tnorm* options supported by
    [braid_SetTemporalNorm](@ref braid_SetTemporalNorm). We let the summation
    index *i* be over all C-point values on the fine time grid, *k* refer to the
    current XBraid iteration, *r* be residual values, *space_time* norms be a

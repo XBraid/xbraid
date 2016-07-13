@@ -759,8 +759,9 @@ my_SpatialNorm(braid_App     app,
  * of grid points.
  * -------------------------------------------------------------------- */
 int
-my_BufSize(braid_App  app,
-           int       *size_ptr)
+my_BufSize(braid_App           app,
+           int                 *size_ptr,
+           braid_BufferStatus  bstatus)
 {
     /* A vector needs to contain 1 extra doubles for the coarsening rule */ 
     *size_ptr = (app->buffer_size);
@@ -772,10 +773,10 @@ my_BufSize(braid_App  app,
  * Pack a vector object in a buffer.
  * -------------------------------------------------------------------- */
 int
-my_BufPack(braid_App     app,
-           braid_Vector  u,
-           void         *buffer,
-           braid_Int    *size_ptr)
+my_BufPack(braid_App           app,
+           braid_Vector        u,
+           void               *buffer,
+           braid_BufferStatus  bstatus)
 {
    double *dbuffer = buffer;
    
@@ -794,7 +795,7 @@ my_BufPack(braid_App     app,
                                     iupper, 0, &(dbuffer[1]) );
 
    /* Determine number of bytes actually packed */
-   *size_ptr = (nlx*nly + 1)*sizeof(double);
+   braid_BufferStatusSetSize( bstatus, (nlx*nly + 1)*sizeof(double));
    
    return 0;
 }
@@ -804,9 +805,10 @@ my_BufPack(braid_App     app,
  * Unpack a vector object from a buffer.
  * -------------------------------------------------------------------- */
 int
-my_BufUnpack(braid_App     app,
-             void         *buffer,
-             braid_Vector *u_ptr)
+my_BufUnpack(braid_App           app,
+             void               *buffer,
+             braid_Vector       *u_ptr,
+             braid_BufferStatus  bstatus)
 {
    int ilower[2], iupper[2], nlx, nly, nx, ny;
    double dx, dy;

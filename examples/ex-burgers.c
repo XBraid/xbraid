@@ -577,8 +577,9 @@ my_Access(braid_App          app,
 }
 
 int
-my_BufSize(braid_App  app,
-           int       *size_ptr)
+my_BufSize(braid_App           app,
+           int                 *size_ptr,
+           braid_BufferStatus  bstatus)
 {
    int size = (app->nspace)+1;
    *size_ptr = (size+1)*sizeof(double);
@@ -586,10 +587,10 @@ my_BufSize(braid_App  app,
 }
 
 int
-my_BufPack(braid_App     app,
-           braid_Vector  u,
-           void         *buffer,
-           braid_Int    *size_ptr)
+my_BufPack(braid_App           app,
+           braid_Vector        u,
+           void               *buffer,
+           braid_BufferStatus  bstatus)
 {
    double *dbuffer = buffer;
    int i, size = (u->size);
@@ -600,15 +601,16 @@ my_BufPack(braid_App     app,
       dbuffer[i+1] = (u->values)[i];
    }
 
-   *size_ptr = (size+1)*sizeof(double);
+   braid_BufferStatusSetSize( bstatus,  (size+1)*sizeof(double));
 
    return 0;
 }
 
 int
-my_BufUnpack(braid_App     app,
-             void         *buffer,
-             braid_Vector *u_ptr)
+my_BufUnpack(braid_App           app,
+             void               *buffer,
+             braid_Vector       *u_ptr,
+             braid_BufferStatus  bstatus)
 {
    my_Vector *u;
    double    *dbuffer = buffer;

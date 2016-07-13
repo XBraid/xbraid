@@ -381,12 +381,15 @@ braid_TestBuf( braid_App              app,
 {   
    braid_Vector  u, v;
    braid_Real    result1;
-   braid_Int     myid_x, size, correct, dummy_size;
+   braid_Int     myid_x, size, correct;
    void      *buffer;
    double     wiggle = 1e-12;
    
    MPI_Comm_rank( comm_x, &myid_x );
-
+   
+   
+   braid_BufferStatus      bstatus = _braid_CTAlloc(_braid_BufferStatus, 1);
+   _braid_BufferStatusInit( 0, 0, bstatus );
    /* Initialize the correct flag */
    correct = 1;
 
@@ -411,16 +414,18 @@ braid_TestBuf( braid_App              app,
    }
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   size = bufsize()\n");
-   bufsize(app, &size);
+   bufsize(app, &size, bstatus);
    
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   buffer = malloc(size)\n");
    buffer = malloc(size);
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   buffer = bufpack(u, buffer))\n");
-   bufpack(app, u, buffer, &dummy_size);
+   
+   _braid_StatusElt( bstatus, size ) = size;   
+   bufpack(app, u, buffer, bstatus);
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   v = bufunpack(buffer)\n");
-   bufunpack(app, buffer, &v);
+   bufunpack(app, buffer, &v, bstatus);
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   v = u - v \n");
    sum(app, 1.0, u, -1.0, v); 
@@ -452,6 +457,7 @@ braid_TestBuf( braid_App              app,
    else      
       _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestBuf: some tests failed\n");
 
+   _braid_BufferStatusDestroy(bstatus);
    return correct;
 }
 
@@ -652,7 +658,6 @@ braid_TestAll( braid_App            app,
             braid_PtFcnSRefine      refine)
 {
    braid_Int    myid_x, flag = 0, correct = 1;
-   
    MPI_Comm_rank( comm_x, &myid_x );
    
    /** 
