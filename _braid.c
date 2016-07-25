@@ -868,6 +868,7 @@ _braid_GetUInit(braid_Core     core,
       if ( _braid_CoreElt(core, useshell) == 1)
       {
          // Should not happen, ustop is never NULL with useshell option
+         // unless there are inconsistent options (i.e. useshell && storage==-2)
          abort();
       }
       ustop = u;
