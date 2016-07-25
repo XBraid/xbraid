@@ -116,8 +116,11 @@ typedef struct _braid_Core_struct
 
    braid_PtFcnStep        step;             /**< apply step function */
    braid_PtFcnInit        init;             /**< return an initialized braid_Vector */
+   braid_PtFcnSInit       sinit;            /**< (optional) return an initialized shell of braid_Vector */
    braid_PtFcnClone       clone;            /**< clone a vector */
+   braid_PtFcnSClone      sclone;           /**< (optional) clone the shell of a vector */
    braid_PtFcnFree        free;             /**< free up a vector */
+   braid_PtFcnSFree       sfree;            /**< (optional) free up the data of a vector, keep the shell */
    braid_PtFcnSum         sum;              /**< vector sum */
    braid_PtFcnSpatialNorm spatialnorm;      /**< Compute norm of a braid_Vector, this is a norm only over space */
    braid_PtFcnAccess      access;           /**< user access function to XBraid and current vector */
@@ -159,6 +162,7 @@ typedef struct _braid_Core_struct
    braid_BufferStatus     bstatus;          /**< status structure passed to user-written buffer routines */
 
    braid_Int              storage;          /**< storage = 0 (C-points), = 1 (all) */
+   braid_Int              useshell;         /**< activate the shell structure of vectors */
 
    braid_Int              gupper;           /**< global size of the fine grid */
 

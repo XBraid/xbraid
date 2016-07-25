@@ -333,7 +333,8 @@ _braid_CommWait(braid_Core          core,
 
 /*----------------------------------------------------------------------------
  * Returns an index into the local u-vector for grid 'level' at point 'index'.
- * If the u-vector is not stored, returns -1.
+ * If the u-vector is not stored, returns a negative index: -1 if using
+ * shellvector feature, -2 otherwise.
  *----------------------------------------------------------------------------*/
 
 braid_Int
@@ -349,23 +350,40 @@ _braid_UGetIndex(braid_Core   core,
    braid_Int            cfactor     = _braid_GridElt(grids[level], cfactor);
    braid_Int            uindex, ic, iclo;
 
-   uindex = -1;
+   uindex = -2;
    if ((index >= ilower) && (index <= iupper))
    {
-      // If on level that only stores C-points
-      if ( (_braid_CoreElt(core, storage) < 0) ||
-           (level < _braid_CoreElt(core, storage)) )
+      if ( _braid_CoreElt(core, useshell) == 1)
       {
-         if ( _braid_IsCPoint(index, cfactor) )
+         uindex = index-ilower;
+         // If we are not on a fully-stored point
+         // then we only have a shell, we return -1
+         if ( (_braid_CoreElt(core, storage) < 0) ||
+              (level < _braid_CoreElt(core, storage)) )
          {
-            _braid_MapFineToCoarse(index, cfactor, ic);
-            _braid_MapFineToCoarse(clower, cfactor, iclo);
-            uindex = ic-iclo;
+            if ( !_braid_IsCPoint(index, cfactor) )
+            {
+               uindex = -1;
+            }
          }
       }
       else
       {
-         uindex = index-ilower;
+         // If on level that only stores C-points
+         if ( (_braid_CoreElt(core, storage) < 0) ||
+              (level < _braid_CoreElt(core, storage)) )
+         {
+            if ( _braid_IsCPoint(index, cfactor) )
+            {
+               _braid_MapFineToCoarse(index, cfactor, ic);
+               _braid_MapFineToCoarse(clower, cfactor, iclo);
+               uindex = ic-iclo;
+            }
+         }
+         else
+         {
+            uindex = index-ilower;
+         }
       }
    }
 
@@ -376,7 +394,8 @@ _braid_UGetIndex(braid_Core   core,
 
 /*----------------------------------------------------------------------------
  * Returns a reference to the local u-vector on grid 'level' at point 'index'.
- * If the u-vector is not stored, returns NULL.
+ * If the u-vector is not stored, returns NULL. The referred u-vector might
+ * just be a shell if that feature is used.
  *----------------------------------------------------------------------------*/
 
 braid_Int
@@ -395,6 +414,11 @@ _braid_UGetVectorRef(braid_Core     core,
    {
       u = ua[iu];
    }
+   else if (iu == -1)
+   {
+      braid_Int ilower = _braid_GridElt(grids[level], ilower);
+      u = ua[index-ilower];
+   }
 
    *u_ptr = u;
 
@@ -403,7 +427,9 @@ _braid_UGetVectorRef(braid_Core     core,
 
 /*----------------------------------------------------------------------------
  * Stores a reference to the local u-vector on grid 'level' at point 'index'.
- * If the u-vector is not stored, nothing is done.
+ * If the shellvector feature is used, the u-vector might be emptied so that
+ * only the shell is stored. Otherwise, if the u-vector is not stored, nothing
+ * is done.
  *----------------------------------------------------------------------------*/
 
 braid_Int
@@ -421,6 +447,13 @@ _braid_USetVectorRef(braid_Core    core,
    {
       ua[iu] = u;
    }
+   else if (iu == -1)
+   {
+      braid_App    app = _braid_CoreElt(core, app);
+      braid_Int ilower = _braid_GridElt(grids[level], ilower);
+      _braid_CoreFcn(core, sfree)(app, u);
+      ua[index-ilower] = u;
+   }
 
    return _braid_error_flag;
 }
@@ -429,7 +462,7 @@ _braid_USetVectorRef(braid_Core    core,
  * Returns a copy of the u-vector on grid 'level' at point 'index'.  If 'index'
  * is my "receive index" (as set by UCommInit(), for example), the u-vector will
  * be received from a neighbor processor.  If the u-vector is not stored, NULL
- * is returned.
+ * is returned. The copy might just be a shell if this feature is used.
  *----------------------------------------------------------------------------*/
 
 braid_Int
@@ -464,6 +497,12 @@ _braid_UGetVector(braid_Core     core,
       {
          _braid_CoreFcn(core, clone)(app, ua[iu], &u);
       }
+      else if (iu == -1)
+      {
+         braid_Int ilower = _braid_GridElt(grids[level], ilower);
+         // In this case, sclone != NULL
+         _braid_CoreFcn(core, sclone)(app, ua[index-ilower], &u);
+      }
    }
 
    *u_ptr = u;
@@ -475,7 +514,8 @@ _braid_UGetVector(braid_Core     core,
  * Stores the u-vector on grid 'level' at point 'index'.  If 'index' is my "send
  * index", a send is initiated to a neighbor processor.  If 'move' is true, the
  * u-vector is moved into core storage instead of copied.  If the u-vector is
- * not stored, nothing is done.
+ * not stored, nothing is done or only the shell is copied/moved when the shellvector
+ * feature is used.
  *----------------------------------------------------------------------------*/
 
 braid_Int
@@ -514,6 +554,24 @@ _braid_USetVector(braid_Core    core,
       else
       {
          _braid_CoreFcn(core, clone)(app, u, &ua[iu]); /* copy the vector */
+      }
+   }
+   else if (iu == -1)
+   {
+      braid_Int ilower = _braid_GridElt(grids[level], ilower);
+      if (ua[index-ilower] != NULL)
+      {
+         _braid_CoreFcn(core, free)(app, ua[index-ilower]);
+      }
+      if (move)
+      {
+         // TODO free the data in u /!/
+         _braid_CoreFcn(core, sfree)(app, u);
+         ua[index-ilower] = u;                                   /* move the vector */
+      }
+      else
+      {
+         _braid_CoreFcn(core, sclone)(app, u, &ua[index-ilower]); /* copy the vector */
       }
    }
    else if (move)
@@ -559,6 +617,11 @@ _braid_UCommInitBasic(braid_Core  core,
       if (send_now)
       {
          _braid_UGetIndex(core, level, send_index, &iu);
+         if (iu < 0)
+         {
+            // We should never get here : we do not communicate shells...
+            abort();
+         }
          _braid_CommSendInit(core, level, send_index, ua[iu], &send_handle);
          send_index = -1;
       }
@@ -762,6 +825,7 @@ _braid_AccessVector(braid_Core          core,
 
 /*----------------------------------------------------------------------------
  * Get an initial guess for ustop to use in the step routine (implicit schemes)
+ * This vector may just be a shell. User should be able to deal with it
  *----------------------------------------------------------------------------*/
 
 braid_Int
@@ -801,6 +865,11 @@ _braid_GetUInit(braid_Core     core,
    /* If you have storage at this point, use it, unless you're in compatibility mode (-2). */
    else if( storage == -2 )
    {
+      if ( _braid_CoreElt(core, useshell) == 1)
+      {
+         // Should not happen, ustop is never NULL with useshell option
+         abort();
+      }
       ustop = u;
    }
 
@@ -1186,7 +1255,8 @@ _braid_GridDestroy(braid_Core    core,
 }
 
 /*----------------------------------------------------------------------------
- * Set initial guess at C-points
+ * Set initial guess at C-points, and initialize shell at F-points when using
+ * shell vectors.
  *----------------------------------------------------------------------------*/
 
 braid_Int
@@ -1238,11 +1308,31 @@ _braid_InitGuess(braid_Core  core,
    }
    else if (level == 0)
    {
-      /* Only initialize the C-points on the finest grid */
-      for (i = clower; i <= cupper; i += cfactor)
+      if (_braid_CoreElt(core, useshell)==1)
       {
-         _braid_CoreFcn(core, init)(app, ta[i-ilower], &u);
-         _braid_USetVectorRef(core, level, i, u);
+         for (i = ilower; i <=iupper; i++)
+         {
+            if ( (i-clower) % cfactor == 0)
+            {
+               // We are on a C-point, init full vector
+               _braid_CoreFcn(core, init)(app, ta[i-ilower], &u);
+            }
+            else
+            {
+               // We are on a F-point, init shell only
+               _braid_CoreFcn(core, sinit)(app, ta[i-ilower], &u);
+            }
+            _braid_USetVectorRef(core, level, i, u);
+         }
+      }
+      else
+      {
+         /* Only initialize the C-points on the finest grid */
+         for (i = clower; i <= cupper; i += cfactor)
+         {
+            _braid_CoreFcn(core, init)(app, ta[i-ilower], &u);
+            _braid_USetVectorRef(core, level, i, u);
+         }
       }
    }
    else
@@ -1253,6 +1343,11 @@ _braid_InitGuess(braid_Core  core,
          if (iu > -1)
          {
             _braid_CoreFcn(core, clone)(app, va[i-ilower], &u);
+            _braid_USetVectorRef(core, level, i, u);
+         }
+         else if (iu == -1)
+         {
+            _braid_CoreFcn(core, sclone)(app, va[i-ilower], &u);
             _braid_USetVectorRef(core, level, i, u);
          }
       }
@@ -1562,20 +1657,20 @@ _braid_FRestrict(braid_Core   core,
          
          /* Allow user to process current vector, note that r here is
           * temporarily holding the state vector */
-         if( (access_level >= 2) && (level == 0) )
+         if( (access_level >= 3) )
          {
             _braid_AccessStatusInit(ta[fi-f_ilower], rnm, iter, level, nrefine, gupper,
-                                    0, 0, astatus);
+                                    0, 0, braid_ASCaller_FRestrict, astatus);
             _braid_AccessVector(core, astatus, r);
          }
       }
 
       /* Allow user to process current C-point */
-      if( (access_level>= 2) && (level == 0) && (ci > -1) )
+      if( (access_level>= 3) && (ci > -1) )
       {
          _braid_UGetVectorRef(core, level, ci, &u);
          _braid_AccessStatusInit(ta[ci-f_ilower], rnm, iter, level, nrefine, gupper,
-                                 0, 0, astatus);
+                                 0, 0, braid_ASCaller_FRestrict, astatus);
          _braid_AccessVector(core, astatus, u);
       }
       
@@ -1658,9 +1753,9 @@ _braid_FRestrict(braid_Core   core,
    if (c_ilower <= c_iupper)
    {
       _braid_CommRecvInit(core, c_level, c_ilower-1, &c_va[-1],
-                         &recv_handle);
+                          &recv_handle);
       _braid_CommSendInit(core, c_level, c_iupper, c_va[c_iupper-c_ilower],
-                         &send_handle);
+                          &send_handle);
    }
 
    /* Start with rightmost point */
@@ -1743,10 +1838,10 @@ _braid_FInterp(braid_Core  core,
          _braid_USetVector(core, level, fi, u, 0);
          /* Allow user to process current vector 
           * We consider this iter+1, because we are on an up-cycle.*/
-         if( (access_level >= 2) )
+         if( (access_level >= 3) )
          {
             _braid_AccessStatusInit(ta[fi-ilower], rnorm, iter+1, level, nrefine, gupper,
-                                    0, 0, astatus);
+                                    0, 0, braid_ASCaller_FInterp, astatus);
             _braid_AccessVector(core, astatus, u);
          }
          e = va[fi-ilower];
@@ -1769,10 +1864,10 @@ _braid_FInterp(braid_Core  core,
          _braid_UGetVectorRef(core, level, ci, &u);
          /* Allow user to process current C-point
           * We consider this iter+1, because we are on an up-cycle.*/
-         if( (access_level >= 2) )
+         if( (access_level >= 3) )
          {
             _braid_AccessStatusInit(ta[ci-ilower], rnorm, iter+1, level, nrefine, gupper,
-                                    0, 0, astatus);
+                                    0, 0, braid_ASCaller_FInterp, astatus);
             _braid_AccessVector(core, astatus, u);
          }
          e = va[ci-ilower];
@@ -1905,7 +2000,7 @@ _braid_FRefineSpace(braid_Core   core,
  *   f_ilower, f_iupper, f_npoints - extents and size of local fine interval
  *
  *   r_ca - index map from fine to coarse on the refined grid  (size 'r_npoints')
- *   r_ta - time values on the refined grid                    (size 'r_npoints')
+ *   r_ta - time values on the refined grid                    (size 'r_npoints+2')
  *   r_fa - index map from coarse to fine on the refined grid  (size 'npoints+1')
  *          (note the extra value)
  *   f_ca - index map from fine to coarse on the fine grid     (size 'f_npoints')
@@ -1977,7 +2072,7 @@ _braid_FRefine(braid_Core   core,
    braid_Int      r_npoints, r_ilower, r_iupper, r_i, r_ii;
    braid_Int      f_npoints, f_ilower, f_iupper, f_gupper, f_i, f_j, f_ii;
    braid_Int     *r_ca, *r_fa, *f_ca, f_first, f_next, next;
-   braid_Real    *ta, *r_ta, *f_ta;
+   braid_Real    *ta, *r_ta_alloc, *r_ta, *f_ta;
 
    braid_Vector  *send_ua, *recv_ua, u;
    braid_Int     *send_procs, *recv_procs, *send_unums, *recv_unums, *iptr;
@@ -2080,9 +2175,12 @@ _braid_FRefine(braid_Core   core,
     * indexes (r_ca, r_fa) and the fine time values (r_ta). */
 
    r_ca = _braid_CTAlloc(braid_Int,  r_npoints);
-   r_ta = _braid_CTAlloc(braid_Real, r_npoints);
+   r_ta_alloc = _braid_CTAlloc(braid_Real, r_npoints+2);
+   r_ta = &r_ta_alloc[1];
    r_fa = _braid_CTAlloc(braid_Int,  npoints+1);
    ta = _braid_GridElt(grids[0], ta);
+
+   r_ta[-1]=ta[-1];
    r_ii = 0;
    for (i = (ilower-1); i < iupper; i++)
    {
@@ -2115,11 +2213,14 @@ _braid_FRefine(braid_Core   core,
    ncomms = 0;
    if (npoints > 0)
    {
+      braid_Real send_buf[2], recv_buf[2];
+      send_buf[0]=r_fa[0];
+      send_buf[1]=r_ta[0];     
       /* Post r_fa receive */
       r_fa[npoints] = f_gupper+1;
       if (iupper < gupper)
       {
-         MPI_Irecv(&r_fa[npoints], 1, braid_MPI_INT, MPI_ANY_SOURCE, 2, comm,
+         MPI_Irecv(recv_buf, 2, braid_MPI_REAL, MPI_ANY_SOURCE, 2, comm,
                    &requests[ncomms++]);
       }
 
@@ -2127,17 +2228,20 @@ _braid_FRefine(braid_Core   core,
       if (ilower > 0)
       {
          _braid_GetBlockDistProc((gupper+1), nprocs, (ilower-1), &prevproc);
-         MPI_Isend(&r_fa[0], 1, braid_MPI_INT, prevproc, 2, comm,
+         MPI_Isend(send_buf, 2, braid_MPI_REAL, prevproc, 2, comm,
                    &requests[ncomms++]);
       }
+      MPI_Waitall(ncomms, requests, statuses);
+      r_fa[npoints]=recv_buf[0];
+      r_ta[r_npoints]=recv_buf[1];
    }
-   MPI_Waitall(ncomms, requests, statuses);
    _braid_TFree(requests);
    _braid_TFree(statuses);
 
-   /* If storing only C-points on the fine grid, modify r_ca to mark only those
-    * coarse points that need to be sent to initialize the C-points */
-   if (_braid_CoreElt(core, storage) != 0)
+   /* If storing only C-points on the fine grid (and NOT using shell vectors),
+    *  modify r_ca to mark only those coarse points that need to be sent to
+    * initialize the C-points */
+   if (_braid_CoreElt(core, storage) != 0 && _braid_CoreElt(core, useshell) != 1)
    {
       for (ii = 0; ii < npoints; ii++)
       {
@@ -2346,9 +2450,10 @@ _braid_FRefine(braid_Core   core,
             }
 
             /* Allow user to process current vector */
-            if( (access_level >= 2) )
+            if( (access_level >= 3) )
             {
-               _braid_AccessStatusInit(ta[ii], rnorm, iter, 0, nrefine, gupper, 0, 0, astatus);
+               _braid_AccessStatusInit(ta[ii], rnorm, iter, 0, nrefine, gupper,
+                                       0, 0, braid_ASCaller_FRefine, astatus);
                _braid_AccessVector(core, astatus, u);
             }
          }
@@ -2369,9 +2474,10 @@ _braid_FRefine(braid_Core   core,
          }
 
          /* Allow user to process current vector */
-         if( (access_level >= 2) )
+         if( (access_level >= 3) )
          {
-            _braid_AccessStatusInit(ta[ii], rnorm, iter, 0, nrefine, gupper, 0, 0, astatus);
+            _braid_AccessStatusInit(ta[ii], rnorm, iter, 0, nrefine, gupper,
+                                    0, 0, braid_ASCaller_FRefine, astatus);
             _braid_AccessVector(core, astatus, u);
          }
       }
@@ -2535,7 +2641,7 @@ _braid_FRefine(braid_Core   core,
    _braid_TFree(requests);
    _braid_TFree(statuses);
    _braid_TFree(r_ca);
-   _braid_TFree(r_ta);
+   _braid_TFree(r_ta_alloc);
    _braid_TFree(r_fa);
    _braid_TFree(f_ca);
    {
@@ -2695,7 +2801,7 @@ _braid_FAccess(braid_Core     core,
          if (access_level >= 1)
          {
             _braid_AccessStatusInit( ta[fi-ilower], rnorm, iter, level, nrefine, gupper,
-                                     done, 0, astatus);
+                                     done, 0, braid_ASCaller_FAccess, astatus);
             _braid_AccessVector(core, astatus, u);
          }
       }
@@ -2709,7 +2815,7 @@ _braid_FAccess(braid_Core     core,
       {
          _braid_UGetVectorRef(core, level, ci, &u);
          _braid_AccessStatusInit( ta[ci-ilower], rnorm, iter, level, nrefine, gupper,
-                                  done, 0, astatus);
+                                  done, 0, braid_ASCaller_FAccess, astatus);
          _braid_AccessVector(core, astatus, u);
       }
    }
@@ -2776,7 +2882,7 @@ _braid_InitHierarchy(braid_Core    core,
    if ( gupper <= min_coarse )
    {
       max_levels = 1;
-      _braid_CoreElt(core, max_levels) = max_levels;
+      //_braid_CoreElt(core, max_levels) = max_levels;
    }
 
    /* Allocate space for rfactors (and initialize to zero) */
@@ -2903,9 +3009,10 @@ _braid_InitHierarchy(braid_Core    core,
          _braid_GridElt(grid, fa)       = fa+1;  /* shift */
       }
 
-      // If on level that only stores C-points
-      if ( (_braid_CoreElt(core, storage) < 0) ||
-           (level < _braid_CoreElt(core, storage)) )
+      // If on level that only stores C-points and not using the shell vector feature
+      if ( ((_braid_CoreElt(core, storage) < 0) ||
+            (level < _braid_CoreElt(core, storage))) &&
+           (_braid_CoreElt(core, useshell)!=1) )
       {
          nupoints = _braid_GridElt(grid, ncpoints);   /* only C-points */
       }
@@ -2940,22 +3047,22 @@ _braid_InitHierarchy(braid_Core    core,
          }
          else
          {
-             /* Place a repeat value to indicate the start of the time-line for this level */
-             ta[-1] = ta[0]; 
+            /* Place a repeat value to indicate the start of the time-line for this level */
+            ta[-1] = ta[0]; 
          }
          /* Post receive to set ta[iupper-ilower+1] on each processor */
          if ( _braid_CoreElt(core, scoarsen) != NULL )
          {
-             if (right_proc > -1)
-             {
-                MPI_Irecv(&ta[iupper-ilower+1], sizeof(braid_Real), MPI_BYTE,
-                          right_proc, 1, comm, &request2);
-             }
-             else
-             {
-                 /* Place a repeat value to indicate the end the time-line for this level */
-                 ta[iupper-ilower+1] = ta[iupper-ilower];
-             }
+            if (right_proc > -1)
+            {
+               MPI_Irecv(&ta[iupper-ilower+1], sizeof(braid_Real), MPI_BYTE,
+                         right_proc, 1, comm, &request2);
+            }
+            else
+            {
+               /* Place a repeat value to indicate the end the time-line for this level */
+               ta[iupper-ilower+1] = ta[iupper-ilower];
+            }
          }
 
          /* Post send that sets ta[-1] on each processor */
@@ -3097,9 +3204,14 @@ _braid_CopyFineToCoarse(braid_Core  core)
          _braid_CoreFcn(core, clone)(app, va[index-ilower], &u);
          _braid_USetVectorRef(core, level, index, u);
          _braid_UGetIndex(core, level, index, &is_stored);
-         if (is_stored <= -1)
+         if (is_stored < -1) /* Case where F-points are not stored, and we are not using shell vectors */
          {
+            // TODO free the data in u if is_stored == -1 /!/
             _braid_CoreFcn(core, free)(app, u);
+         }
+         else if (is_stored == -1) /* This is a shell vector */
+         {
+            _braid_CoreFcn(core, sfree)(app, u);
          }
  
       }
