@@ -700,6 +700,7 @@ braid_Destroy(braid_Core  core)
       braid_AccessStatus      astatus    = _braid_CoreElt(core, astatus);
       braid_CoarsenRefStatus  cstatus    = _braid_CoreElt(core, cstatus);
       braid_StepStatus        sstatus    = _braid_CoreElt(core, sstatus);
+      braid_BufferStatus      bstatus    = _braid_CoreElt(core, bstatus);
       braid_Int               level;
 
       _braid_TFree(_braid_CoreElt(core, nrels));
@@ -711,6 +712,7 @@ braid_Destroy(braid_Core  core)
       _braid_AccessStatusDestroy(astatus);
       _braid_StepStatusDestroy(sstatus);
       _braid_CoarsenRefStatusDestroy(cstatus);
+      _braid_BufferStatusDestroy(bstatus);
       
       for (level = 0; level < nlevels; level++)
       {
@@ -741,6 +743,8 @@ braid_PrintStats(braid_Core  core)
    braid_Int     gupper        = _braid_CoreElt(core, gupper);
    braid_Int     max_levels    = _braid_CoreElt(core, max_levels);
    braid_Int     min_coarse    = _braid_CoreElt(core, min_coarse);
+   braid_Int     seq_soln      = _braid_CoreElt(core, seq_soln);
+   braid_Int     storage       = _braid_CoreElt(core, storage);
    braid_Real    tol           = _braid_CoreElt(core, tol);
    braid_Int     rtol          = _braid_CoreElt(core, rtol);
    braid_Int    *nrels         = _braid_CoreElt(core, nrels);
@@ -771,6 +775,9 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  start time = %e\n", tstart);
       _braid_printf("  stop time  = %e\n", tstop);
       _braid_printf("  time steps = %d\n", gupper);
+      _braid_printf("\n");
+      _braid_printf("  use seq soln?         = %d\n", seq_soln);
+      _braid_printf("  storage               = %d\n", storage);
       _braid_printf("\n");
       _braid_printf("  stopping tolerance    = %e\n", tol);
       _braid_printf("  use relative tol?     = %d\n", rtol);
