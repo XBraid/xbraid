@@ -48,6 +48,7 @@ typedef struct _braid_Vector_struct
 } my_Vector;
 
 double lambda=-1.0;
+int number_of_access=0;
 
 int
 BDF2_Expo1D(double  t0,
@@ -234,7 +235,7 @@ my_Access(braid_App          app,
       fprintf(app->file,"%d %.14e %.14e\n%d %.14e %.14e\n",idx,u->tprev[1],u->yprev[1],idx+1,u->tprev[0],u->yprev[0]);
       fflush(app->file);
    }
-
+   number_of_access++;
    return 0;
 }
 
@@ -293,7 +294,7 @@ int main (int argc, char *argv[])
 
    /* Default values of parameters */
    double tstart,tstop,tol;
-   int ntime,max_levels,max_iter,cfactor,fmg;
+   int ntime,max_levels,max_iter,cfactor,access_level,fmg;
    tstart=0;
    tstop=5;
    ntime=1000;
@@ -301,6 +302,7 @@ int main (int argc, char *argv[])
    max_iter=100;
    cfactor=2;
    tol=1e-10;
+   access_level=1;
    fmg=1;
 
    int arg_index=1;
@@ -317,6 +319,7 @@ int main (int argc, char *argv[])
             printf("  -tol <tol>        : set stopping tolerance (default %g)\n",tol);
             printf("  -cf  <cfactor>    : set coarsening factor (default %d)\n",cfactor);
             printf("  -mi  <max_iter>   : set max iterations (default %d)\n",max_iter);
+            printf("  -ac  <access_lvl> : set the access level (default %d)\n",access_level);
             printf("  -fmg              : use FMG cycling (default %d)\n",fmg);
             printf("\n");
          }
@@ -352,6 +355,11 @@ int main (int argc, char *argv[])
          arg_index++;
          max_iter = atoi(argv[arg_index++]);
       }
+      else if ( strcmp(argv[arg_index], "-ac") == 0 )
+      {
+         arg_index++;
+         access_level = atoi(argv[arg_index++]);
+      }
       else if ( strcmp(argv[arg_index], "-fmg") == 0 )
       {
          arg_index++;
@@ -386,6 +394,7 @@ int main (int argc, char *argv[])
    braid_SetAbsTol(core, tol);
    braid_SetCFactor(core, -1, cfactor);
    braid_SetMaxIter(core, max_iter);
+   braid_SetAccessLevel(core,access_level);
    if (fmg)
       braid_SetFMG(core);
 
@@ -395,6 +404,12 @@ int main (int argc, char *argv[])
    braid_Drive(core);
    braid_Destroy(core);
 
+   int total_number_of_access;
+   MPI_Reduce(&number_of_access,&total_number_of_access,1,MPI_INT,MPI_SUM,0,comm);
+   if (mpi_rank==0)
+   {
+      printf("Number of calls to my_Access: %d\n",total_number_of_access);
+   }
    fclose(app->file);
    free(app);
 
