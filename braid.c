@@ -731,6 +731,7 @@ braid_Destroy(braid_Core  core)
       braid_AccessStatus      astatus    = _braid_CoreElt(core, astatus);
       braid_CoarsenRefStatus  cstatus    = _braid_CoreElt(core, cstatus);
       braid_StepStatus        sstatus    = _braid_CoreElt(core, sstatus);
+      braid_BufferStatus      bstatus    = _braid_CoreElt(core, bstatus);
       braid_Int               level;
 
       _braid_TFree(_braid_CoreElt(core, nrels));
@@ -742,6 +743,7 @@ braid_Destroy(braid_Core  core)
       _braid_AccessStatusDestroy(astatus);
       _braid_StepStatusDestroy(sstatus);
       _braid_CoarsenRefStatusDestroy(cstatus);
+      _braid_BufferStatusDestroy(bstatus);
       
       for (level = 0; level < nlevels; level++)
       {
