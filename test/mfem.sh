@@ -23,6 +23,7 @@
 #
 #EHEADER**********************************************************************
 
+
 # scriptname holds the script name, with the .sh removed
 scriptname=`basename $0 .sh`
 
@@ -38,6 +39,11 @@ case $1 in
    This script runs basic tests of Braid for a constant coefficient 2D heat 
    equation. The output is written to $scriptname.out, $scriptname.err and 
    $scriptname.dir. This test passes if $scriptname.err is empty.
+
+   The focus of these tests is guaranteeing that the same XBraid result is
+   achieved as the processor configuration is changed.  The choice of temporal
+   norm is also tested against stored norm values to guarantee the precise same
+   result is achieved.
 
    Example usage: ./test.sh $0 
 
@@ -79,35 +85,31 @@ make
 cd $driver_dir
 make clean
 make 
+make drive-06
+make drive-07
 cd $test_dir
 
 
 # Run the following regression tests 
-TESTS=( "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15  -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -forcing -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1 -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15  -storage -2 -skip 1" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -forcing -storage -2 -skip 1" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1 -storage -2 -skip 1" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15  -storage -2 -skip 0 -res " \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1 -storage -2 -skip 0 -res" \
-        "$RunString -np 4 $example_dir/ex-02   -pgrid 1 1 4 -nt 256 -ml 15  -storage -2 -skip 0 -refine " \
-        "$RunString -np 4 $example_dir/ex-02   -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1 -storage -2 -skip 0 -refine" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15  -storage -2 -skip 0 -cf0 1" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -forcing -storage -2 -skip 0 -cf0 1" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1 -storage -2 -skip 0 -cf0 1" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -ml 15 -nt 128 -nx 33 33 -mi 100 -expl -scoarsen 1 -skip 0"\
-        "$RunString -np 2 $driver_dir/drive-02 -pgrid 1 1 2 -nt 32 -ml 15 -access_level 1  -storage -2 -skip 0" \
-        "$RunString -np 2 $driver_dir/drive-02 -pgrid 1 1 2 -nt 32 -ml 15 -access_level 2  -storage -2 -skip 0" \
-        "$RunString -np 2 $driver_dir/drive-02 -pgrid 1 1 2 -nt 32 -ml 15 -print_level 0  -storage -2 -skip 0" \
-        "$RunString -np 2 $driver_dir/drive-02 -pgrid 1 1 2 -nt 32 -ml 15 -print_level 1  -storage -2 -skip 0" \
-        "$RunString -np 1 $driver_dir/drive-02 -pgrid 1 1 1 -nt 9  -ml 2  -print_level 2  -storage -2 -skip 1 -mc 1 -nu 0 -mc 1 -mi 4 2" \
-        "$RunString -np 2 $driver_dir/drive-02 -pgrid 1 1 2 -nt 32 -ml 15 -print_level 1 -fmg 2 -storage -2 -skip 0" \
-        "$RunString -np 1 $driver_dir/drive-02 -pgrid 1 1 1 -run_wrapper_tests  -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 65  -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 64  -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 1  -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 4 -cfl 0.30 -nu0 1 -nu 1 -mc 16  -storage -2 -skip 0" )
+# These tests run 5 different processor configurations in time and make sure that the exact same residual
+# norm is returned in all cases.  The three different temporal norm options are all tested.  
+TESTS=( "$RunString -np 1  $driver_dir/drive-04 -nt 32 -mi 2 -sref 1 -pref 1 -px 1 -fe 1 -odesolver -1 -nu0 0  -skip 0"\ 
+        "$RunString -np 2  $driver_dir/drive-04 -nt 32 -mi 2 -sref 1 -pref 1 -px 1 -fe 2 -odesolver -2 -nu0 1  -skip 0"\ 
+        "$RunString -np 3  $driver_dir/drive-04 -nt 32 -mi 2 -sref 1 -pref 1 -px 1 -fe 1 -odesolver -3 -nu0 0  -skip 1 -fmg 1"\ 
+        "$RunString -np 4  $driver_dir/drive-04 -nt 32 -mi 2 -sref 1 -pref 1 -px 2 -fe 2 -odesolver -41 -nu 0  -skip 1 -fmg 2"\
+        "$RunString -np 1  $driver_dir/drive-05 -nt 32 -mi 2 -rs 1   -rp 1   -px 1 -o  1 -s         -11 -nu0 0 -skip 0 -tf 0.01"\ 
+        "$RunString -np 2  $driver_dir/drive-05 -nt 32 -mi 2 -rs 1   -rp 1   -px 1 -o  2 -s         -12 -nu0 1 -skip 0 -tf 0.01"\ 
+        "$RunString -np 3  $driver_dir/drive-05 -nt 32 -mi 2 -rs 1   -rp 1   -px 1 -o  1 -s         -13 -nu0 0 -skip 1 -fmg 1 -tf 0.01 -sc"\ 
+        "$RunString -np 4  $driver_dir/drive-05 -nt 32 -mi 2 -rs 1   -rp 1   -px 2 -o  2 -s         -13 -nu 0  -skip 1 -fmg 2 -tf 0.01 -sc"\
+        "$RunString -np 1  $driver_dir/drive-06 -nt 32 -mi 2 -rs 1   -rp 1   -px 1       -s         -11 -nu0 0 -skip 0"\ 
+        "$RunString -np 2  $driver_dir/drive-06 -nt 32 -mi 2 -rs 1   -rp 1   -px 1       -s         -12 -nu0 1 -skip 0"\ 
+        "$RunString -np 3  $driver_dir/drive-06 -nt 32 -mi 2 -rs 1   -rp 1   -px 1       -s         -13 -nu0 0 -skip 1 -fmg 1 -sc"\ 
+        "$RunString -np 4  $driver_dir/drive-06 -nt 32 -mi 2 -rs 1   -rp 1   -px 2       -s         -13 -nu 0  -skip 1 -fmg 2 -sc"\
+        "$RunString -np 1  $driver_dir/drive-07 -nt 32 -mi 2 -rs 1   -rp 1   -px 1       -s         -11 -nu0 0 -skip 0"\ 
+        "$RunString -np 2  $driver_dir/drive-07 -nt 32 -mi 2 -rs 1   -rp 1   -px 1       -s         -12 -nu0 1 -skip 0"\ 
+        "$RunString -np 3  $driver_dir/drive-07 -nt 32 -mi 2 -rs 1   -rp 1   -px 1       -s         -13 -nu0 0 -skip 1 -fmg 1 -sc"\ 
+        "$RunString -np 4  $driver_dir/drive-07 -nt 32 -mi 2 -rs 1   -rp 1   -px 2       -s         -13 -nu 0  -skip 1 -fmg 2 -sc")
+
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 
@@ -122,7 +124,7 @@ TESTS=( "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15  -sto
 # The unfiltered output is the direct output of the script, whereas std.out.*
 # is filtered by a grep for the lines that are to be checked.  
 #
-lines_to_check="^  time steps.*|^  number of levels.*|^  iterations.*|^spatial problem size.*|^ Fine level spatial problem size.*|.*  expl.*|^  my_Access\(\) called.*|.*braid_Test.*|.*Braid: Temporal refinement occurred.*|.*braid_.*"
+lines_to_check=".*TemporalNorm.*|.*residual norm.*|.*Braid: Full.*"
 #
 # Then, each std.out.num is compared against stored correct output in 
 # $scriptname.saved.num, which is generated by splitting $scriptname.saved
@@ -163,3 +165,4 @@ done
 if [ -n $MACHINES_FILE ] ; then
    rm $MACHINES_FILE
 fi
+

@@ -21,10 +21,12 @@
 
 #include "braid_mfem.hpp"
 #include "mfem_arnoldi.hpp"
+#include "hypre_extra.hpp"
 #include <fstream>
 #include <iostream>
 
 using namespace std;
+using namespace hypre;
 
 // Choice for the problem setup. The fluid velocity, initial condition and
 // inflow boundary condition are chosen based on this parameter.
@@ -53,14 +55,35 @@ private:
    HypreSmoother M_prec;
    CGSolver M_solver;
 
-   mutable Vector z;
+   mutable Array<double> dts;
+   mutable Array<HypreParMatrix*> B; // B = M - dt*K, for ImplicitSolve
+   mutable Array<Operator*> B_prec;
+   mutable Array<Solver*> B_solver;
+   int prec_type;
+
+   mutable Vector z; // auxiliary vector
+
+   int GetDtIndex(double dt) const;
 
 public:
    FE_Evolution(HypreParMatrix &_M, HypreParMatrix &_K, const Vector &_b);
 
+   /** 0 - HypreParaSails, 1 - HypreBoomerAMG, 2 - UMFPackSolver */
+   void SetPreconditionerType(int type) { prec_type = type; }
+
    virtual void Mult(const Vector &x, Vector &y) const;
 
-   virtual ~FE_Evolution() { }
+   /** Solve the equation: k = f(x + dt*k, t), for the unknown k.
+       For this class the equation becomes:
+          k = f(x + dt*k, t) = M^{-1} (K (x + dt*k) + b),
+       or
+          k = (M - dt*K)^{-1} (K x + b). */
+   virtual void ImplicitSolve(const double dt, const Vector &x, Vector &k);
+
+   /// Compute the M-inner product of x and y: y^t.M.x
+   double InnerProduct(const Vector &x, const Vector &y) const;
+
+   virtual ~FE_Evolution();
 };
 
 
@@ -70,10 +93,14 @@ struct DGAdvectionOptions : public BraidOptions
    double diffusion;
    int    order;
    int    ode_solver_type;
+   int    basis_type;
    bool   lump_mass;
    double dt; // derived from t_start, t_final, and num_time_steps
    bool   krylov_coarse;
    int    krylov_size;
+   bool   init_rand;
+   int    prec_type; // passed down to FE_Evolution
+   int    diss_oper_type;
 
    const char *vishost;
    int         visport;
@@ -81,6 +108,8 @@ struct DGAdvectionOptions : public BraidOptions
    int vis_time_steps;
    int vis_braid_steps;
    bool vis_screenshots;
+
+   bool write_matrices;
 
    DGAdvectionOptions(int argc, char *argv[]);
 };
@@ -96,12 +125,14 @@ protected:
    VectorFunctionCoefficient velocity;
    FunctionCoefficient inflow;
    FunctionCoefficient u0;
-   ConstantCoefficient diff;
+   // ConstantCoefficient diff;
 
    // Data for all discretization levels
    Array<HypreParMatrix *> M; // mass matrices
    Array<HypreParMatrix *> K; // advection matrices
    Array<HypreParVector *> B; // r.h.s. vectors
+
+   int Step_calls_counter, Norm_calls_counter;
 
    // Allocate data structures for the given number of spatial levels. Used by
    // InitMultilevelApp.
@@ -126,7 +157,12 @@ public:
                     braid_Vector    fstop_,
                     BraidStepStatus &pstatus);
 
+   virtual int SpatialNorm(braid_Vector  u_,
+                           double       *norm_ptr);
+
    virtual ~DGAdvectionApp();
+
+   void PrintStats(MPI_Comm comm);
 };
 
 
@@ -175,12 +211,7 @@ int main(int argc, char *argv[])
    // If the mesh is NURBS, convert it to curved mesh
    if (mesh->NURBSext)
    {
-      int dim = mesh->Dimension();
-      int mesh_order = std::max(opts.order, 1);
-      FiniteElementCollection *mfec = new H1_FECollection(mesh_order, dim);
-      FiniteElementSpace *mfes = new FiniteElementSpace(mesh, mfec, dim);
-      mesh->SetNodalFESpace(mfes);
-      mesh->GetNodes()->MakeOwner(mfec);
+      mesh->SetCurvature(std::max(opts.order, 1));
    }
 
    // Split comm (MPI_COMM_WORLD) into spatial and temporal communicators
@@ -200,7 +231,7 @@ int main(int argc, char *argv[])
    opts.SetBraidCoreOptions(core);
 
    core.Drive();
-   app.MeshInfo.Print(comm);
+   app.PrintStats(comm);
    
    MPI_Finalize();
    return 0;
@@ -224,12 +255,108 @@ FE_Evolution::FE_Evolution(HypreParMatrix &_M, HypreParMatrix &_K,
    M_solver.SetPrintLevel(0);
 }
 
+FE_Evolution::~FE_Evolution()
+{
+   for (int i = dts.Size()-1; i >= 0; i--)
+   {
+      delete B_solver[i];
+      delete B_prec[i];
+      delete B[i];
+   }
+}
+
+int FE_Evolution::GetDtIndex(double dt) const
+{
+   for (int i = 0; i < dts.Size(); i++)
+   {
+      if (std::abs(dts[i]-dt) < 1e-10*dt)
+      {
+         return i;
+      }
+   }
+   // cout << "\nConstructing (M - dt K) and solver for dt = " << dt << endl;
+   dts.Append(dt);
+   B.Append(new HypreParMatrix(hypre_ParCSRMatrixAdd(M, K)));
+   HypreParMatrix &B_new = *B.Last();
+   hypre_ParCSRMatrixSetConstantValues(B_new, 0.0);
+   hypre_ParCSRMatrixSum(B_new, 1.0, M);
+   hypre_ParCSRMatrixSum(B_new, -dt, K);
+
+   HypreSolver *B_hs = NULL;
+   Solver *B_prec_new = NULL;
+   Solver *B_solver_new = NULL;
+   if (prec_type == 0)
+   {
+      HypreParaSails *prec = new HypreParaSails(B_new);
+      HYPRE_ParaSailsSetLogging(*prec, 0);
+      B_prec_new = B_hs = prec;
+   }
+   else if (prec_type == 1)
+   {
+      HypreBoomerAMG *prec = new HypreBoomerAMG(B_new);
+      prec->SetPrintLevel(0);
+      B_prec_new = B_hs = prec;
+   }
+   else
+   {
+#ifdef MFEM_USE_SUITESPARSE
+      SparseMatrix B_new_diag;
+      B_new.GetDiag(B_new_diag); // B_new_diag is just a wrapper for the data
+      SparseMatrix *diag_copy = new SparseMatrix(B_new_diag);
+      diag_copy->SortColumnIndices();
+      B_prec.Append(diag_copy);
+      UMFPackSolver *solver = new UMFPackSolver(*diag_copy);
+      B_solver_new = solver;
+#else
+      MFEM_ABORT("MFEM was not compiled with SuiteSparse support!");
+#endif
+   }
+   if (B_prec_new) { B_prec.Append(B_prec_new); }
+
+   if (!B_solver_new)
+   {
+      HypreGMRES *solver = new HypreGMRES(B_new);
+      solver->SetTol(1e-12);
+      solver->SetMaxIter(1000);
+      solver->SetPrintLevel(0);
+      solver->SetPreconditioner(*B_hs);
+      solver->iterative_mode = false;
+      B_solver_new = solver;
+   }
+   B_solver.Append(B_solver_new);
+
+   return dts.Size()-1;
+}
+
 void FE_Evolution::Mult(const Vector &x, Vector &y) const
 {
    // y = M^{-1} (K x + b)
    K.Mult(x, z);
    z += b;
    M_solver.Mult(z, y);
+}
+
+void FE_Evolution::ImplicitSolve(const double dt, const Vector &x, Vector &k)
+{
+   // k = (M - dt*K)^{-1} (K x + b)
+   int i = GetDtIndex(dt);
+   K.Mult(x, z);
+   z += b;
+   B_solver[i]->Mult(z, k);
+   if (HYPRE_GetError())
+   {
+      MFEM_WARNING("HYPRE error = " << HYPRE_GetError());
+      HYPRE_ClearAllErrors();
+   }
+   // cout << "proc[" << K.GetComm() << "]: " << _MFEM_FUNC_NAME << endl;
+}
+
+double FE_Evolution::InnerProduct(const Vector &x, const Vector &y) const
+{
+   M.Mult(x, z);
+   double local_dot = (y * z), global_dot;
+   MPI_Allreduce(&local_dot, &global_dot, 1, MPI_DOUBLE, MPI_SUM, M.GetComm());
+   return global_dot;
 }
 
 
@@ -251,25 +378,36 @@ DGAdvectionOptions::DGAdvectionOptions(int argc, char *argv[])
    // set defaults for the DGAdvection-specific options
    problem         = 0;
    diffusion       = 0.0;
+   diss_oper_type  = 0; // 0 - diffusion (S), 1 - diffusion squared (S^2)
    order           = 3;
    ode_solver_type = 4;
+   basis_type      = 0;
    lump_mass       = false;
    krylov_coarse   = false;
    krylov_size     = 4;
+   init_rand       = false;
+   prec_type       = 0; // see FE_Evolution::SetPreconditionerType()
    vishost         = "localhost";
    visport         = 19916;
    vis_time_steps  = 0;
    vis_braid_steps = 0;
    vis_screenshots = false;
+   write_matrices  = false;
 
    AddOption(&problem, "-p", "--problem",
              "Problem setup to use. See options in velocity_function().");
    AddOption(&diffusion, "-diff", "--diffusion", "Diffusion coefficient.");
+   AddOption(&diss_oper_type, "-diss", "--dissipation-type",
+             "Dissipation operator type: 0 - diffusion, 1 - diffusion squared");
    AddOption(&order, "-o", "--order",
              "Order (degree) of the finite elements.");
    AddOption(&ode_solver_type, "-s", "--ode-solver",
              "ODE solver: 1 - Forward Euler, 2 - RK2 SSP, 3 - RK3 SSP,"
-             " 4 - RK4, 6 - RK6.");
+             " 4 - RK4, 6 - RK6,\n"
+             "\t11 - Backward Euler, 12 - SDIRK-2, 13 - SDIRK-3");
+   AddOption(&basis_type, "-b", "--basis-type",
+             "DG basis type: 0 - Nodal Gauss-Legendre, 1 - Nodal Gauss-Lobatto,"
+             " 2 - Positive");
    AddOption(&lump_mass, "-lump", "--lump-mass-matrix", "-dont-lump",
              "--dont-lump-mass-matrix", "Enable/disable lumping of the mass"
              " matrix.");
@@ -278,6 +416,11 @@ DGAdvectionOptions::DGAdvectionOptions(int argc, char *argv[])
              " time-stepping.");
    AddOption(&krylov_size, "-ks", "--krylov-size", "Set size of the Krylov space for the"
                            " Arnoldi-based coarse-grid time-stepping.");
+   AddOption(&init_rand, "-rand", "--random-init", "-zero", "--zero-init",
+             "How to initialize vectors: with random numbers or zeros");
+   AddOption(&prec_type, "-prec", "--preconditioner",
+             "Preconditioner type (for implicit time stepping):\n\t"
+             "0 - HypreParaSails, 1 - HypreBoomerAMG, 2 - UMFPACK (px=1)");
    AddOption(&vishost, "-vh", "--visualization-host",
              "Set the GLVis host.");
    AddOption(&visport, "-vp", "--visualization-port",
@@ -289,6 +432,9 @@ DGAdvectionOptions::DGAdvectionOptions(int argc, char *argv[])
    AddOption(&vis_screenshots, "-vss", "--vis-screenshots",
              "-no-vss", "--vis-no-screenshots", "Enable/disable the saving of"
              " screenshots of the visualized data.");
+   AddOption(&write_matrices, "-wm", "--write-matrices",
+             "-dont-wm", "--dont-write-matrices", "Enable/disable the saving of"
+             " the fine level mass (M) and advection (K) matrices.");
 
    Parse();
 
@@ -301,14 +447,15 @@ DGAdvectionApp::DGAdvectionApp(
 
    : MFEMBraidApp(comm_t_, opts.t_start, opts.t_final, opts.num_time_steps),
      options(opts),
-     fe_coll(opts.order, pmesh->Dimension()),
+     fe_coll(opts.order, pmesh->Dimension(), opts.basis_type),
      velocity(pmesh->Dimension(), velocity_function),
      inflow(inflow_function),
      u0(u0_function),
-     diff(-opts.diffusion), // diffusion goes in the r.h.s. with a minus
+     // diff(-opts.diffusion), // diffusion goes in the r.h.s. with a minus
      MeshInfo(opts.max_levels)
 {
    problem = opts.problem;
+   Step_calls_counter = Norm_calls_counter = 0;
 
    InitMultilevelApp(pmesh, opts.par_ref_levels, opts.spatial_coarsen);
 
@@ -316,6 +463,14 @@ DGAdvectionApp::DGAdvectionApp(
    x[0]->ProjectCoefficient(u0);
    HypreParVector *U = x[0]->GetTrueDofs();
    SetInitialCondition(U);
+   if (opts.init_rand)
+   {
+      int rank_t, rank_x = pmesh->GetMyRank(), glob_id;
+      MPI_Comm_rank(comm_t, &rank_t);
+      glob_id = rank_x + pmesh->GetNRanks()*rank_t;
+      unsigned seed = 285136749 + glob_id;
+      SetRandomInitVectors(seed);
+   }
 
    SetVisHostAndPort(opts.vishost, opts.visport);
    SetVisSampling(opts.vis_time_steps, opts.vis_braid_steps);
@@ -339,12 +494,12 @@ int DGAdvectionApp::Step(braid_Vector    u_,
                          BraidStepStatus &pstatus)
 {
    // This contains one small change over the default Step, we store the Space-Time mesh info
-   
+
    // Store Space-Time Mesh Info
    BraidVector *u     = (BraidVector*) u_;
-   
- //BraidVector *start  = new BraidVector(0, *X0);
- //braid_Vector start2 = (braid_Vector) start;
+
+   // BraidVector *start  = new BraidVector(0, *X0);
+   // braid_Vector start2 = (braid_Vector) start;
 
    int level = u->level;
    double tstart, tstop, dt;
@@ -354,84 +509,111 @@ int DGAdvectionApp::Step(braid_Vector    u_,
    pstatus.GetLevel(&braid_level);
    pstatus.GetIter(&iter);
    dt = tstop - tstart;
- 
- // This causes some kind of bug sometimes...
- //if(iter > 2)
- //{
- //   *start = 0.0;
- //   Sum(1.0, ustop_, 0.0, start2);
- //   Sum(iter*(1 - 0.1), u_, iter*0.1, start2);
- //}
- //else
- //{
- //   *start = 0.0;
- //   Sum(1.0, u_, 0.0, start2);
- //}
+
+   Step_calls_counter++;
+   // Keep this for debugging:
+#if 0
+   cout << "\rStep #: " << setw(6) << Step_calls_counter
+        << ", tstart: " << setw(12) << tstart
+        << ", tstop: " << setw(12) << tstop
+        << ", dt: " << setw(12) << dt
+        << ", iter: " << setw(2) << iter
+        << ", braid level: " << setw(2) << braid_level
+        << flush;
+#endif
+
+   // This causes some kind of bug sometimes...
+   // if (iter > 2)
+   // {
+   //    *start = 0.0;
+   //    Sum(1.0, ustop_, 0.0, start2);
+   //    Sum(iter*(1 - 0.1), u_, iter*0.1, start2);
+   // }
+   // else
+   // {
+   //    *start = 0.0;
+   //    Sum(1.0, u_, 0.0, start2);
+   // }
 
    MeshInfo.SetRow(braid_level, level, x[u->level]->ParFESpace()->GetParMesh(), dt);
-   
-   if((braid_level == 0) || (options.krylov_coarse == false) )
+
+   if ((braid_level == 0) || (options.krylov_coarse == false))
    {
        // Call the default Step
        MFEMBraidApp::Step(u_,ustop_,fstop_, pstatus);
    }
    else
    {
-       double norm_u_sq = InnerProduct(u, u);
+      double norm_u_sq = InnerProduct(u, u);
        
-       if(norm_u_sq > 0.0)
-       {
-           // Generate Krylov Space
-           Arnoldi arn(options.krylov_size*braid_level, mesh[0]->GetComm());
-           //Arnoldi arn(options.krylov_size, mesh[0]->GetComm());
-           arn.SetOperator(*ode[0]);
-           arn.GenKrylovSpace(*u);
-           Vector ubar;
-           arn.ApplyVT(*u, ubar);
-           
-           // Setup the ODE solver
-           ODESolver *ode_solver = NULL;
-           switch (options.ode_solver_type)
-           {
-              case 1: ode_solver = new ForwardEulerSolver; break;
-              case 2: ode_solver = new RK2Solver(1.0); break;
-              case 3: ode_solver = new RK3SSPSolver; break;
-              case 4: ode_solver = new RK4Solver; break;
-              case 6: ode_solver = new RK6Solver; break;
-           
-              default: ode_solver = new RK4Solver; break;
-           }
-           ode_solver->Init(arn.GetH());
-           
-           // Do time-stepping
-           int m;
-           if( options.cfactor0 == -1)
-           {
-               m = pow(options.cfactor, braid_level);
-           }
-           else
-           {
-               m = options.cfactor0*pow(options.cfactor, braid_level-1);
-           }
-           
-           double dt_fine = dt / ( (double) m);
-           for(int k = 0; k < m; k++)
-           {
-               // Step() advances tstart by dt_fine
-               ode_solver->Step(ubar, tstart, dt_fine);
-           }
-           
-           // Convert ubar back to full space
-           arn.ApplyV(ubar, *u);
-           
-           delete ode_solver;
-       }
+      if(norm_u_sq > 0.0)
+      {
+         // Generate Krylov Space
+         Arnoldi arn(options.krylov_size*braid_level, mesh[0]->GetComm());
+         // Arnoldi arn(options.krylov_size, mesh[0]->GetComm());
+         arn.SetOperator(*ode[0]);
+         arn.GenKrylovSpace(*u);
+         Vector ubar;
+         arn.ApplyVT(*u, ubar);
 
-       // no refinement
-       pstatus.SetRFactor(1);
-       
+         // Setup the ODE solver
+         ODESolver *ode_solver = NULL;
+         switch (options.ode_solver_type)
+         {
+            case 1: ode_solver = new ForwardEulerSolver; break;
+            case 2: ode_solver = new RK2Solver(1.0); break;
+            case 3: ode_solver = new RK3SSPSolver; break;
+            case 4: ode_solver = new RK4Solver; break;
+            case 6: ode_solver = new RK6Solver; break;
+
+            case 11: ode_solver = new BackwardEulerSolver; break;
+            case 12: ode_solver = new SDIRK23Solver(2); break;
+            case 13: ode_solver = new SDIRK33Solver; break;
+
+            default: ode_solver = new RK4Solver; break;
+         }
+         ode_solver->Init(arn.GetH());
+
+         // Do time-stepping
+         int m;
+         if( options.cfactor0 == -1)
+         {
+            m = pow(options.cfactor, braid_level);
+         }
+         else
+         {
+            m = options.cfactor0*pow(options.cfactor, braid_level-1);
+         }
+
+         double dt_fine = dt / ( (double) m);
+         for(int k = 0; k < m; k++)
+         {
+            // Step() advances tstart by dt_fine
+            ode_solver->Step(ubar, tstart, dt_fine);
+         }
+
+         // Convert ubar back to full space
+         arn.ApplyV(ubar, *u);
+
+         delete ode_solver;
+      }
+
+      // no refinement
+      pstatus.SetRFactor(1);
+
    }
 
+   return 0;
+}
+
+int DGAdvectionApp::SpatialNorm(braid_Vector  u_,
+                                double       *norm_ptr)
+{
+   BraidVector  *u  = (BraidVector*) u_;
+   FE_Evolution *ev = dynamic_cast<FE_Evolution*>(ode[u->level]);
+   MFEM_ASSERT(ev, "expected object of type FE_Evolution");
+   *norm_ptr = std::sqrt(ev->InnerProduct(*u, *u));
+   Norm_calls_counter++;
    return 0;
 }
 
@@ -469,9 +651,11 @@ void DGAdvectionApp::InitLevel(int l)
       new TransposeIntegrator(new DGTraceIntegrator(velocity, 1.0, -0.5)));
    k->AddBdrFaceIntegrator(
       new TransposeIntegrator(new DGTraceIntegrator(velocity, 1.0, -0.5)));
+   HypreParMatrix *S = NULL;
    if (options.diffusion > 0.0)
    {
       double sigma, kappa;
+      ParBilinearForm *s = new ParBilinearForm(fe_space[l]);
       if (1)
       {
          // IP method
@@ -484,9 +668,41 @@ void DGAdvectionApp::InitLevel(int l)
          sigma = 1.0;
          kappa = 1.0;
       }
-      k->AddDomainIntegrator(new DiffusionIntegrator(diff));
-      k->AddInteriorFaceIntegrator(
-         new DGDiffusionIntegrator(diff, sigma, kappa));
+      // S has coefficient one, we multiply by the "diffusion" coefficient,
+      // options.diffusion, later.
+      ConstantCoefficient one(1.0);
+      s->AddDomainIntegrator(new DiffusionIntegrator(one));
+      s->AddInteriorFaceIntegrator(
+         new DGDiffusionIntegrator(one, sigma, kappa));
+      const int skip_zeros = 0;
+      s->Assemble(skip_zeros);
+      s->Finalize(skip_zeros);
+      S = s->ParallelAssemble();
+      delete s;
+      if (options.diss_oper_type)
+      {
+         // S := S M^{-1} S
+         // a) assemble M^{-1}
+         HypreParMatrix *Mi;
+         {
+            ParBilinearForm mi(fe_space[l]);
+            if (!options.lump_mass)
+               mi.AddDomainIntegrator(
+                  new InverseIntegrator(new MassIntegrator));
+            else
+               mi.AddDomainIntegrator(
+                  new InverseIntegrator(
+                     new LumpedIntegrator(new MassIntegrator)));
+            mi.Assemble();
+            mi.Finalize();
+            Mi = mi.ParallelAssemble();
+         }
+         HypreParMatrix *MiS = mfem::ParMult(Mi, S);
+         delete Mi;
+         HypreParMatrix *SMiS = mfem::ParMult(S, MiS);
+         delete S;
+         S = SMiS;
+      }
    }
 
    ParLinearForm *b = new ParLinearForm(fe_space[l]);
@@ -495,7 +711,7 @@ void DGAdvectionApp::InitLevel(int l)
 
    m->Assemble();
    m->Finalize();
-   int skip_zeros = 0;
+   const int skip_zeros = 0;
    k->Assemble(skip_zeros);
    k->Finalize(skip_zeros);
    b->Assemble();
@@ -508,8 +724,27 @@ void DGAdvectionApp::InitLevel(int l)
    delete k;
    delete m;
 
+   if (S)
+   {
+      // K[l] := K[l] - diff*S
+      *S *= (-options.diffusion);
+      hypre_ParCSRMatrixSum(*S, 1.0, *K[l]);
+      delete K[l];
+      K[l] = S;
+   }
+
+   if (l == 0 && options.write_matrices)
+   {
+      cout << "\nWritting the mass and advection matrices, M and K, for"
+              " level 0.\n" << endl;
+      M[l]->Print("drive-05-M");
+      K[l]->Print("drive-05-K");
+   }
+
    // Create the time-dependent operator, ode[l]
-   ode[l] = new FE_Evolution(*M[l], *K[l], *B[l]);
+   FE_Evolution *fe_ev = new FE_Evolution(*M[l], *K[l], *B[l]);
+   fe_ev->SetPreconditionerType(options.prec_type);
+   ode[l] = fe_ev;
 
    // Setup the ODE solver, solver[l]
    ODESolver *ode_solver = NULL;
@@ -521,6 +756,10 @@ void DGAdvectionApp::InitLevel(int l)
       case 4: ode_solver = new RK4Solver; break;
       case 6: ode_solver = new RK6Solver; break;
 
+      case 11: ode_solver = new BackwardEulerSolver; break;
+      case 12: ode_solver = new SDIRK23Solver(2); break;
+      case 13: ode_solver = new SDIRK33Solver; break;
+
       default: ode_solver = new RK4Solver; break;
    }
    solver[l] = ode_solver;
@@ -529,8 +768,29 @@ void DGAdvectionApp::InitLevel(int l)
    solver[l]->Init(*ode[l]);
 
    // Set max_dt[l] = 1.01*dt[0]*(2^l)
-   max_dt[l] = 1.01 * options.dt * (1 << (l+1));
-  //max_dt[l] = 1.01 * options.dt * (1 << l);
+   //max_dt[l] = 1.01 * options.dt * (1 << (l+1));// start coarsening on level 2
+   max_dt[l] = 1.01 * options.dt * (1 << l);      // start coarsening on level 1
+}
+
+void DGAdvectionApp::PrintStats(MPI_Comm comm)
+{
+   if (mesh[0]->GetMyRank() == 0)
+   {
+      int loc_calls[2], tot_calls[2]; // 0 - Step, 1 - Norm
+      loc_calls[0] = Step_calls_counter;
+      loc_calls[1] = Norm_calls_counter;
+      MPI_Reduce(loc_calls, tot_calls, 2, MPI_INT, MPI_SUM, 0, comm_t);
+
+      int my_rank_t;
+      MPI_Comm_rank(comm_t, &my_rank_t);
+      if (my_rank_t == 0)
+      {
+         cout << "\n Total number of 'Step' calls = " << tot_calls[0]
+              << "\n Total number of 'Norm' calls = " << tot_calls[1] << '\n';
+      }
+   }
+
+   MeshInfo.Print(comm);
 }
 
 

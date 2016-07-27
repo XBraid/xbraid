@@ -52,3 +52,10 @@ To run the examples, type
    is a more sophisticated version of this simple example that supports
    explicit time stepping and spatial coarsening.
 
+3. ex-burgers implements Burger's equation in one spatial dimension, 
+   supports spatial coarsening and forward and backward Euler.  It is
+   under developement, but a fun example.  See also *viz-burgers.py*
+   for visualizing the output.
+
+4. ex-lorenz implements the Lorenz equation and is under development. 
+   See also *viz-lorenz.py* for visualizing the output.

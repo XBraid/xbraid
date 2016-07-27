@@ -25,20 +25,7 @@
 #include "braid.hpp"
 #include "mfem.hpp"
 #include <fstream>
-
-namespace mfem
-{
-
-void TrueDofsToLDofs(const HypreParVector &u, ParGridFunction &v)
-{
-   for (int i = 0; i < v.Size(); i++)
-   {
-      int k = v.ParFESpace()->GetLocalTDofNumber(i);
-      v(i) = (k < 0) ? 0.0 : u(k);
-   }
-}
-
-} // namespace mfem
+#include <cstdlib> // rand, srand
 
 using namespace mfem;
 
@@ -90,14 +77,17 @@ protected:
    // Data for multiple spatial levels, level 0 is the finest level
    Array<ParMesh *>               mesh;
    Array<ParFiniteElementSpace *> fe_space;
-   Array<ParGridFunction *>  x;  // auxiliary ParGridFunctions
-   Array<SparseMatrix *>     R;  // local restriction matrices, l --> l+1
+   Array<ParGridFunction *>       x;  // auxiliary ParGridFunctions
+   Array<const SparseMatrix *>    P;  // local prolongation matrices, l+1 --> l
    Array<TimeDependentOperator *> ode;
    Array<ODESolver *>        solver;
    Array<int>                buff_size;
    Array<double>             max_dt; // maximal safe dt on each spatial mesh
 
    HypreParVector *X0;    // Initial condition (at the finest level 0)
+   bool init_rand;     /* If true, use std::rand() to initialize BraidVectors in
+                          the Init() method. The default value is false:
+                          initialize with 0.0. */
 
    // ownership of mesh, fe_space, x, R, ode, solver, and X0
    bool own_data;
@@ -180,9 +170,15 @@ public:
 
    void SetSpaceLevel(int l, TimeDependentOperator *ode_l,
                       ODESolver *solver_l, ParGridFunction *x_l,
-                      SparseMatrix *R_l, double max_dt_l);
+                      SparseMatrix *P_l, double max_dt_l);
 
    void SetInitialCondition(HypreParVector *_X0) { X0 = _X0; }
+
+   void SetRandomInitVectors(unsigned seed)
+   {
+      init_rand = true;
+      std::srand(seed);
+   }
 
    void SetExactSolution(Coefficient *exsol) { exact_sol = exsol; }
 
@@ -219,14 +215,16 @@ public:
    virtual int SpatialNorm(braid_Vector  u_,
                            double       *norm_ptr);
 
-   virtual int BufSize(int *size_ptr);
+   virtual int BufSize(int *size_ptr,
+                       BraidBufferStatus  &status);
 
    virtual int BufPack(braid_Vector  u_,
                        void         *buffer,
-                       int          *size_ptr);
+                       BraidBufferStatus  &status);
 
    virtual int BufUnpack(void         *buffer,
-                         braid_Vector *u_ptr);
+                         braid_Vector *u_ptr,
+                         BraidBufferStatus  &status);
 
    virtual int Coarsen(braid_Vector   fu_,
                        braid_Vector  *cu_ptr,
@@ -239,10 +237,9 @@ public:
    virtual int Access(braid_Vector       u_,
                       BraidAccessStatus &astatus);
 
-   virtual int Residual(braid_Vector _u,
-                              braid_Vector _r,
-                              BraidStepStatus &pstatus){return 0;} ;
-   
+   virtual int Residual(braid_Vector     u_,
+                        braid_Vector     r_,
+                        BraidStepStatus &pstatus) { return 0; }
 };
 
 
@@ -258,6 +255,7 @@ struct BraidOptions : public OptionsParser
    int    nrelax;
    int    nrelax0;
    double tol;
+   bool   rtol;
    int    tnorm;
    int    storage;
    int    cfactor;
@@ -288,31 +286,31 @@ struct BraidOptions : public OptionsParser
 class SpaceTimeMeshInfo
 {
 public:
-    
-    // This table is (num Braid levels) x 5 table, where each row is a Braid level
-    // and the columns store, respectively, the spatial level used at that Braid level,
-    // the max mesh width h_max, the min mesh width h_min and the time step size dt, 
-    Array<double> mesh_table;
-    Array<double> mesh_table_global;
-    int           max_levels;
 
-    // Unused rows in the table are -1.0
-    SpaceTimeMeshInfo(int _max_levels) : 
-       mesh_table(4*_max_levels),
-       mesh_table_global(4*_max_levels),
-       max_levels(_max_levels)
+   // This table is (num Braid levels) x 5 table, where each row is a Braid level
+   // and the columns store, respectively, the spatial level used at that Braid level,
+   // the max mesh width h_max, the min mesh width h_min and the time step size dt,
+   Array<double> mesh_table;
+   Array<double> mesh_table_global;
+   int           max_levels;
+
+   // Unused rows in the table are -1.0
+   SpaceTimeMeshInfo(int _max_levels) :
+      mesh_table(4*_max_levels),
+      mesh_table_global(4*_max_levels),
+      max_levels(_max_levels)
    {
-        mesh_table = -1.0;
-        mesh_table_global = -1.0;
+      mesh_table = -1.0;
+      mesh_table_global = -1.0;
    }
-   
+
    // Reinitialize the arrays
    void Reinitialize(int _max_levels);
 
    // Helper function to compute mesh size
    void ComputeMeshSize( ParMesh *pmesh, double * h_min_ptr, double * h_max_ptr);
 
-   // Fill in a row of the table 
+   // Fill in a row of the table
    void SetRow(int braid_level, int vec_level, ParMesh * pmesh, double dt);
 
    // Print the table to screen, reducing the entries over comm
@@ -334,6 +332,7 @@ MFEMBraidApp::MFEMBraidApp(
    : BraidApp(comm_t_, tstart_, tstop_, ntime_)
 {
    X0 = NULL;
+   init_rand = false;
    own_data = false;
 
    exact_sol = NULL;
@@ -350,7 +349,7 @@ MFEMBraidApp::MFEMBraidApp(
 
    : BraidApp(comm_t_, tstart_, tstop_, ntime_),
      mesh(1), fe_space(1), x(1), ode(1), solver(1), buff_size(1), max_dt(1),
-     X0(X0_)
+     X0(X0_), init_rand(false)
 {
    x[0] = x_;
    fe_space[0] = x[0]->ParFESpace();
@@ -375,20 +374,21 @@ MFEMBraidApp::MFEMBraidApp(
 
    : BraidApp(comm_t_, tstart_, tstop_, ntime_),
      mesh(num_space_levels), fe_space(num_space_levels), x(num_space_levels),
-     R(num_space_levels - 1), ode(num_space_levels), solver(num_space_levels),
+     P(num_space_levels - 1), ode(num_space_levels), solver(num_space_levels),
      buff_size(num_space_levels), max_dt(num_space_levels)
 {
    // initialize the arrays element-wise
    mesh = NULL;
    fe_space = NULL;
    x = NULL;
-   R = NULL;
+   P = NULL;
    ode = NULL;
    solver = NULL;
    buff_size = 0;
    max_dt = 0.0;
 
    X0 = NULL;
+   init_rand = false;
    own_data = false;
    exact_sol = NULL;
 
@@ -405,7 +405,7 @@ MFEMBraidApp::~MFEMBraidApp()
       {
          delete solver[i];
          delete ode[i];
-         if (i < R.Size()) delete R[i];
+         if (i < P.Size()) delete P[i];
          delete x[i];
          delete fe_space[i];
          delete mesh[i];
@@ -428,7 +428,7 @@ void MFEMBraidApp::InitMultilevelApp(ParMesh *pmesh, int pref, bool scoarsen)
    mesh.SetSize(num_levels);
    fe_space.SetSize(num_levels);
    x.SetSize(num_levels);
-   R.SetSize(num_levels-1);
+   P.SetSize(num_levels-1);
    ode.SetSize(num_levels);
    solver.SetSize(num_levels);
    buff_size.SetSize(num_levels);
@@ -444,17 +444,40 @@ void MFEMBraidApp::InitMultilevelApp(ParMesh *pmesh, int pref, bool scoarsen)
       InitLevel(l); // initialize ode[l], solver[l], and max_dt[l]
       buff_size[l] = EvalBufSize(fe_space[l]->TrueVSize());
 
+#if 0 // pre-rebalance-dev version
       pmesh->UseTwoLevelState(1);
       pmesh->UniformRefinement();
       pfes->Update();
       R[l-1] = pfes->GlobalRestrictionMatrix(fe_space[l], 0);
       pmesh->SetState(Mesh::NORMAL);
+#else
+      pmesh->UniformRefinement();
+      pfes->Update();
+      P[l-1] = dynamic_cast<const SparseMatrix*>(pfes->GetUpdateOperator());
+      MFEM_VERIFY(P[l-1] != NULL, "update operator is not a SparseMatrix");
+      pfes->SetUpdateOperatorOwner(false);
+      pfes->UpdatesFinished();
+#endif
    }
    mesh[0] = pmesh;
    fe_space[0] = pfes;
    x[0] = new ParGridFunction(fe_space[0]);
    InitLevel(0); // initialize ode[0], solver[0], and max_dt[0]
    buff_size[0] = EvalBufSize(fe_space[0]->TrueVSize());
+
+   // Print mesh info
+   int myid_t;
+   MPI_Comm_rank(comm_t, &myid_t);
+   if(myid_t == 0)
+      pmesh->PrintInfo();
+
+   // Print size of finest-grid spatial matrix
+   int myid, size;
+   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+   size = fe_space[0]->GlobalTrueVSize();
+   if (myid == 0)
+      std::cout << "\nNumber of spatial unknowns on finest-grid: "
+                << size << "\n\n";
 
    own_data = true;
 }
@@ -474,7 +497,7 @@ void MFEMBraidApp::InitLevel(int l)
 
 void MFEMBraidApp::SetSpaceLevel(int l, TimeDependentOperator *ode_l,
                                  ODESolver *solver_l, ParGridFunction *x_l,
-                                 SparseMatrix *R_l, double max_dt_l)
+                                 SparseMatrix *P_l, double max_dt_l)
 {
    x[l] = x_l;
    fe_space[l] = x[l]->ParFESpace();
@@ -485,7 +508,7 @@ void MFEMBraidApp::SetSpaceLevel(int l, TimeDependentOperator *ode_l,
    buff_size[l] = EvalBufSize(fe_space[l]->TrueVSize());
    solver[l]->Init(*ode[l]);
    if (l < GetNumSpaceLevels() - 1)
-      R[l] = R_l;
+      P[l] = P_l;
 }
 
 void MFEMBraidApp::SetVisHostAndPort(const char *vh, int vp)
@@ -557,8 +580,17 @@ int MFEMBraidApp::Init(double        t,
    BraidVector *u = new BraidVector(level, *X0);
    if (t != tstart)
    {
-      // u->Randomize(2142);
-      *u = 0.0;
+      if (init_rand)
+      {
+         const int s = u->Size();
+         double *data = u->GetData();
+         for (int i = 0; i < s; i++)
+         {
+            data[i] = double(std::rand())/(RAND_MAX);
+         }
+      }
+      else
+         *u = 0.0;
    }
    else
       *u = *X0;
@@ -595,27 +627,29 @@ int MFEMBraidApp::SpatialNorm(braid_Vector  u_,
    return 0;
 }
 
-int MFEMBraidApp::BufSize(int *size_ptr)
+int MFEMBraidApp::BufSize(int                *size_ptr,
+                          BraidBufferStatus  &status)                           
 {
    *size_ptr = buff_size[0];
    return 0;
 }
 
-int MFEMBraidApp::BufPack(braid_Vector  u_,
-                          void         *buffer,
-                          int          *size_ptr)
+int MFEMBraidApp::BufPack(braid_Vector       u_,
+                          void               *buffer,
+                          BraidBufferStatus  &status)
 {
    BraidVector *u = (BraidVector*) u_;
    double *dbuf = (double *) buffer;
 
    dbuf[0] = (double) u->level;
    memcpy(dbuf + 1, u->GetData(), buff_size[u->level] - sizeof(double));
-   *size_ptr = buff_size[u->level];
+   status.SetSize( buff_size[u->level] );
    return 0;
 }
 
-int MFEMBraidApp::BufUnpack(void         *buffer,
-                            braid_Vector *u_ptr)
+int MFEMBraidApp::BufUnpack(void              *buffer,
+                            braid_Vector      *u_ptr,
+                            BraidBufferStatus &status)
 {
    double *dbuf = (double *) buffer;
    int level = (int) dbuf[0];
@@ -635,7 +669,7 @@ int MFEMBraidApp::Coarsen(braid_Vector   fu_,
    BraidVector *fu = (BraidVector *) fu_;
    int flevel      = fu->level;
    int clevel      = ComputeSpaceLevel(tstart, c_tprior, c_tstop);
-   BraidVector *cu;
+   BraidVector *cu = NULL;
 
    MFEM_VERIFY(flevel == ComputeSpaceLevel(tstart, f_tprior, f_tstop),
                "ComputeSpaceLevel returned incorrect level for fine vector");
@@ -649,13 +683,13 @@ int MFEMBraidApp::Coarsen(braid_Vector   fu_,
          // Maps true dofs in 'fu' to local dofs in ParGridFunction x,
          // with the caveat that local dofs that fu does not own are set to 0
          // in x.
-         TrueDofsToLDofs(*fu, *x[lev-1]);
+         fe_space[lev-1]->GetRestrictionMatrix()->MultTranspose(*fu, *x[lev-1]);
 
          // Rescale before restriction
           *x[lev-1] *= 1./4;
 
-         // Apply local restriction (no communication)
-         R[lev-1]->Mult(*x[lev-1], *x[lev]);
+         // Apply local restriction, P^T (no communication)
+         P[lev-1]->MultTranspose(*x[lev-1], *x[lev]);
 
          // Assemble x by condensing it into the HypreParVector
          x[lev]->ParallelAssemble(*cu);
@@ -697,7 +731,7 @@ int MFEMBraidApp::Refine(braid_Vector   cu_,
    BraidVector *cu = (BraidVector *) cu_;
    int clevel      = cu->level;
    int flevel      = ComputeSpaceLevel(tstart, f_tprior, f_tstop);
-   BraidVector *fu;
+   BraidVector *fu = NULL;
 
    MFEM_VERIFY(clevel == ComputeSpaceLevel(tstart, c_tprior, c_tstop),
                "ComputeSpaceLevel returned incorrect level for coarse vector");
@@ -712,7 +746,7 @@ int MFEMBraidApp::Refine(braid_Vector   cu_,
          x[lev+1]->Distribute(cu);
 
          // Apply local interpolation (no communication)
-         R[lev]->MultTranspose(*x[lev+1], *x[lev]);
+         P[lev]->Mult(*x[lev+1], *x[lev]);
 
          // Map only the true dofs from x into fu
          x[lev]->GetTrueDofs(*fu);
@@ -841,19 +875,23 @@ BraidOptions::BraidOptions(int argc, char *argv[])
    t_final          = 1.0;
    num_time_steps   = 100;
    num_procs_x      = 1;
+
+   // For the braid defaults, see braid_Init() in braid.c
+   // The values below should match the braid defaults.
    skip             = 1;
-   max_levels       = 10;
-   min_coarse       = 3;
+   max_levels       = 30;
+   min_coarse       = 2;
    nrelax           = 1;
-   nrelax0          = -1;
+   nrelax0          = -1;    // if > -1, use as nrelax for level 0
    tol              = 1e-9;
+   rtol             = true;
    tnorm            = 2;
-   storage          = -2;
+   storage          = -1;
    cfactor          = 2;
-   cfactor0         = -1;
+   cfactor0         = -1;    // if > -1, use as cfactor for level 0
    max_iter         = 100;
-   nfmg_Vcyc        = 0;
-   spatial_coarsen  = false;
+   nfmg_Vcyc        = 0;     // if > 0, enable FMG and use as nfmg_Vcyc
+   spatial_coarsen  = false; // if true, enable spatial coarsening
    access_level     = 1;
    print_level      = 1;
    use_seq_soln     = 0;
@@ -873,13 +911,16 @@ BraidOptions::BraidOptions(int argc, char *argv[])
    AddOption(&nrelax0, "-nu0", "--num-fc-relax-level-0",
              "Number of F-C relaxations on level 0.");
    AddOption(&tol, "-tol", "--tolerance", "Stopping tolerance.");
+   AddOption(&rtol, "-reltol", "--relative-tolerance", "-abstol",
+             "--absolute-tolerance",
+             "Use relative or absolute stopping tolerance.");
    AddOption(&tnorm, "-tnorm", "--temporal-norm",
              "Temporal norm to use: 1:one-norm, 2:two-norm, or "
              "3:max-norm.");
    AddOption(&cfactor, "-cf", "--coarsen-factor",
              "Coarsening factor.");
-   AddOption(&storage, "-store", "--storage-option ,",
-             "Storage to use: 0:store C points, 1:store all points.");          
+   AddOption(&storage, "-store", "--storage-option",
+             "Storage to use: 0:store C points, 1:store all points.");
    AddOption(&cfactor0, "-cf0", "--agg-coarsen-factor",
              "Aggressive coarsening factor, -1:off.");
    AddOption(&max_iter, "-mi", "--max-iter",
@@ -889,9 +930,9 @@ BraidOptions::BraidOptions(int argc, char *argv[])
    AddOption(&spatial_coarsen, "-sc", "--spatial-coarsen", "-no-sc",
              "--no-spatial-coarsen", "Enable/disable spatial coarsening.");
    AddOption(&access_level, "-access", "--access-level",
-             "Set the access level.");
+             "Set the access level."); // TODO: what are the options?
    AddOption(&print_level, "-print", "--print-level",
-             "Set the print level.");
+             "Set the print level."); // TODO: what are the options?
    AddOption(&use_seq_soln, "-seq_soln", "--use-sequential-solution",
              "If 1, use the sequential time stepping solution as the initial guess.");
    AddOption(&skip, "-skip", "--skip-work-on-first-down-cycle",
@@ -934,7 +975,7 @@ void BraidOptions::SetBraidCoreOptions(BraidCore &core)
    core.SetNRelax(-1, nrelax);
    if (nrelax0 > -1)
       core.SetNRelax(0, nrelax0);
-   core.SetAbsTol(tol);
+   rtol ? core.SetRelTol(tol) : core.SetAbsTol(tol);
    core.SetCFactor(-1, cfactor);
    core.SetAggCFactor(cfactor0);
    core.SetMaxIter(max_iter);
@@ -965,7 +1006,7 @@ void SpaceTimeMeshInfo::SetRow(int braid_level, int vec_level, ParMesh * pmesh, 
 {
    // Fill in the level-th row with runtime spatial coarsening information
    double h_min, h_max;
-   
+
    ComputeMeshSize(pmesh, &h_min, &h_max);
    mesh_table[ braid_level*4 ]     = std::max(mesh_table[ braid_level*4 ], (double) vec_level );
    mesh_table[ braid_level*4 + 1 ] = std::max(mesh_table[ braid_level*4 + 1 ], h_min);
@@ -1003,7 +1044,7 @@ void SpaceTimeMeshInfo::ComputeMeshSize( ParMesh *pmesh, double * h_min_ptr, dou
     *h_min_ptr = gh_min;
 }
 
-// Print the all the rows that are not -1, i.e., that aren't empy 
+// Print the all the rows that are not -1, i.e., that aren't empy
 void SpaceTimeMeshInfo::Print(MPI_Comm comm)
 {
    int myid, level;
@@ -1033,11 +1074,11 @@ void SpaceTimeMeshInfo::Print(MPI_Comm comm)
          dt =  mesh_table_global[i*4 + 3];
          if (dt < 0)
             break;
-         
+
          std::cout.precision(4);
          std::cout << std::scientific;
          std::cout << "    " << std::setw(10) << std::left << i << "|"
-                   << "    " << std::setw(11)  << std::left << level << "|"
+                   << "    " << std::setw(11) << std::left << level << "|"
                    << " "    << std::setw(12) << std::left << h_min << "|"
                    << " "    << std::setw(12) << std::left << h_max << "|"
                    << " "    << std::setw(12) << std::left << dt << "|"

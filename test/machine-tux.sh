@@ -61,6 +61,7 @@ TESTS=( "diffusion2D.sh " \
         "diffusion2D_check_rnorm_storage.sh " \
         "compare_examples_drivers.sh " \
         "compare_examples_drivers_storage.sh " \
+        "mfem.sh" \
         "machine-tux-checkout-compile.sh " \
         "docs.sh" \
         "memcheck-tux-jacob.sh ")

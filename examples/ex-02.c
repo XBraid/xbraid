@@ -465,8 +465,9 @@ my_SpatialNorm(braid_App     app,
  * size is the number of grid points.
  * -------------------------------------------------------------------- */
 int
-my_BufSize(braid_App  app,
-           int       *size_ptr)
+my_BufSize(braid_App           app,
+           int                 *size_ptr,
+           braid_BufferStatus  status)
 {
     *size_ptr = (app->man->nlx)*(app->man->nly)*sizeof(double);
     return 0;
@@ -476,10 +477,10 @@ my_BufSize(braid_App  app,
  * Pack a braid_Vector into a buffer.
  * -------------------------------------------------------------------- */
 int
-my_BufPack(braid_App     app,
-           braid_Vector  u,
-           void         *buffer,
-           braid_Int    *size_ptr)
+my_BufPack(braid_App           app,
+           braid_Vector        u,
+           void                *buffer,
+           braid_BufferStatus  status)
 {
    double *dbuffer = buffer;
    
@@ -489,7 +490,7 @@ my_BufPack(braid_App     app,
                           app->man->iupper, 0, &(dbuffer[0]) );
 
    /* Return the number of bytes actually packed */
-   *size_ptr = (app->man->nlx)*(app->man->nly)*sizeof(double);
+   braid_BufferStatusSetSize( status, (app->man->nlx)*(app->man->nly)*sizeof(double) );
    return 0;
 }
 
@@ -497,9 +498,10 @@ my_BufPack(braid_App     app,
  * Unpack a buffer and place into a braid_Vector
  * -------------------------------------------------------------------- */
 int
-my_BufUnpack(braid_App     app,
-             void         *buffer,
-             braid_Vector *u_ptr)
+my_BufUnpack(braid_App           app,
+             void                *buffer,
+             braid_Vector        *u_ptr,
+             braid_BufferStatus  status)
 {
    double    *dbuffer = buffer;
    my_Vector *u       = (my_Vector *) malloc( sizeof(my_Vector) );

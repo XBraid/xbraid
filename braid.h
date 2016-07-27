@@ -105,8 +105,8 @@ typedef struct _braid_Vector_struct *braid_Vector;
  * Query the status structure with *braid_StepStatusGetTstart(status, &tstart)*
  * and *braid_StepStatusGetTstop(status, &tstop)* to get *tstart* and *tstop*.
  * The status structure also allows for steering.  For example,
- * *braid_StepStatusSetRFactor(...)* allows for setting rfactor, which tells
- * XBraid to refine this time interval.
+ * *braid_StepStatusSetRFactor(...)* allows for setting a refinement factor,
+ * which tells XBraid to refine this time interval.
  **/
 typedef braid_Int
 (*braid_PtFcnStep)(braid_App        app,    /**< user-defined _braid_App structure */
@@ -199,28 +199,34 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnBufSize)(braid_App   app,               /**< user-defined _braid_App structure */
-                      braid_Int  *size_ptr           /**< upper bound on vector size in bytes */
+                      braid_Int  *size_ptr,           /**< upper bound on vector size in bytes */
+                      braid_BufferStatus  status     /**< can be querried for info on the message type */
                       );      
 
 /**
  * This allows XBraid to send messages containing braid_Vectors.  This routine
- * packs a vector _u_ into a _void \*  buffer_ for MPI.
+ * packs a vector _u_ into a _void \*  buffer_ for MPI. The status structure holds
+ * information regarding the message. This is accessed through the _braid_BufferStatusGet**(..)_ 
+ * routines. Optionally, the user can set the message size through the status structure. 
  **/
 typedef braid_Int
-(*braid_PtFcnBufPack)(braid_App      app,            /**< user-defined _braid_App structure */
-                      braid_Vector   u,              /**< vector to back into buffer */
-                      void          *buffer,         /**< output, MPI buffer containing u */
-                      braid_Int     *size_ptr        /**< output, number of bytes packed, must be less than or equal to value returned by BufSize */
+(*braid_PtFcnBufPack)(braid_App           app,            /**< user-defined _braid_App structure */
+                      braid_Vector        u,              /**< vector to back into buffer */
+                      void               *buffer,         /**< output, MPI buffer containing u */
+                      braid_BufferStatus  status          /**< can be queeried for info on the message type required */
                       );
 
 /**
  * This allows XBraid to receive messages containing braid_Vectors.  This routine
- * unpacks a _void * buffer_ from MPI into a braid_Vector.
+ * unpacks a _void * buffer_ from MPI into a braid_Vector. The status structure, contains
+ * information conveying the type of message inside the buffer. This can be accessed through 
+ * the _braid_BufferStatusGet**(..)_ routines. 
  **/
 typedef braid_Int
-(*braid_PtFcnBufUnpack)(braid_App      app,          /**< user-defined _braid_App structure */
-                        void          *buffer,       /**< MPI Buffer to unpack and place in u_ptr */
-                        braid_Vector  *u_ptr         /**< output, braid_Vector containing buffer's data */
+(*braid_PtFcnBufUnpack)(braid_App            app,           /**< user-defined _braid_App structure */
+                        void                *buffer,        /**< MPI Buffer to unpack and place in u_ptr */
+                        braid_Vector        *u_ptr,         /**< output, braid_Vector containing buffer's data */
+                        braid_BufferStatus   status         /**< can be querried for info on the current message type */
                         );
 
 /**
@@ -361,7 +367,7 @@ braid_SetMaxLevels(braid_Core  core,        /**< braid_Core (_braid_Core) struct
                    );
 
 /**
- * Set max number of multigrid levels.
+ * Set whether to skip all work on the first down cycle (skip = 1).  On by default.
  **/
 braid_Int
 braid_SetSkip(braid_Core  core,        /**< braid_Core (_braid_Core) struct*/
@@ -376,11 +382,11 @@ braid_SetRefine(braid_Core  core,    /**< braid_Core (_braid_Core) struct*/
                 braid_Int   refine   /**< boolean, refine in time or not */
                 );
 /**
- * Set the max number of refinements.
+ * Set the max number of time grid refinement levels allowed.
  **/
 braid_Int
 braid_SetMaxRefinements(braid_Core  core,             /**< braid_Core (_braid_Core) struct*/
-                        braid_Int   max_refinements   /**< maximum levels to allow */
+                        braid_Int   max_refinements   /**< maximum refinement levels allowed */
                        );
 /**
  * Set the number of time steps, beyond with refinements stop.

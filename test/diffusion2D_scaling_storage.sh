@@ -59,7 +59,7 @@ case $HOST in
       if [ ! -f $MACHINES_FILE ] ; then
          hostname > $MACHINES_FILE
       fi
-      RunString="mpirun -mca btl ^openib -machinefile $MACHINES_FILE $*"
+      RunString="mpirun -machinefile $MACHINES_FILE $*"
       ;;
       *) 
          RunString="mpirun"

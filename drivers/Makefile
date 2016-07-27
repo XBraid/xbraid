@@ -26,28 +26,34 @@
 # Import machine specific compilers, options, flags, etc.. 
 ##################################################################
 
-include ../makefile.inc
+BRAID_DIR=..
+include $(BRAID_DIR)/makefile.inc
 
 
 ##################################################################
 # Build exmaples 
 ##################################################################
 
-HYPRE_DIR = ../../linear_solvers/src/hypre
+HYPRE_DIR = $(BRAID_DIR)/../linear_solvers/src/hypre
 HYPRE_FLAGS = -I$(HYPRE_DIR)/include
 HYPRE_LIB = -L$(HYPRE_DIR)/lib -lHYPRE
 
-MFEM_DIR = ../../mfem
-METIS_DIR = ../../metis-4.0
-MFEM_FLAGS = -I$(MFEM_DIR)
-MFEM_LIB = -L$(MFEM_DIR) -lmfem -L$(METIS_DIR) -lmetis
+MFEM_DIR = $(BRAID_DIR)/../mfem
+MFEM_CONFIG_MK = $(MFEM_DIR)/config/config.mk
+MFEM_LIB_FILE = mfem_is_not_built
+-include $(MFEM_CONFIG_MK)
 
-BRAID_FLAGS = -I..
-BRAID_LIB_FILE = ../libbraid.a
+BRAID_FLAGS = -I$(BRAID_DIR)
+BRAID_LIB_FILE = $(BRAID_DIR)/libbraid.a
 
 C_EXAMPLES = drive-02 #drive-03
 # Note: .cpp examples will be linked with mfem
-CXX_EXAMPLES = drive-04 #drive-05 drive-06 drive-07
+CXX_EXAMPLES = drive-04 drive-05 # drive-06 drive-07
+# clean all possible
+ALL_EXAMPLES := $(patsubst %.cpp,%,$(wildcard *.c *.cpp))
+ALL_EXAMPLES := $(patsubst %.c,%,$(ALL_EXAMPLES))
+
+.PHONY: all clean cleanout
 
 .SUFFIXES:
 .SUFFIXES: .c .cpp
@@ -58,17 +64,21 @@ all: $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES)
 # Rule for compiling .c files
 %: %.c $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
-	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(HYPRE_FLAGS) $(@).c -o $@\
+	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(HYPRE_FLAGS) $< -o $@\
  $(BRAID_LIB_FILE) $(HYPRE_LIB) $(LFLAGS)
 
 # Rule for compiling .cpp files; links with mfem
-%: %.cpp $(BRAID_LIB_FILE)
+%: %.cpp $(BRAID_LIB_FILE) $(MFEM_LIB_FILE) $(MFEM_CONFIG_MK)
 	@echo "Building" $@ "..."
-	$(MPICXX) $(CXXFLAGS) $(BRAID_FLAGS) $(HYPRE_FLAGS) $(MFEM_FLAGS)\
- $(@).cpp -o $@ $(MFEM_LIB) $(HYPRE_LIB) $(BRAID_LIB_FILE) $(LFLAGS)
+	$(MPICXX) $(CXXFLAGS) $(BRAID_FLAGS) $(MFEM_FLAGS) \
+	$< -o $@ $(MFEM_LIBS) $(BRAID_LIB_FILE) $(LFLAGS)
+
+# Generate an error message if the MFEM library is not built and exit
+$(MFEM_LIB_FILE):
+	$(error The MFEM library is not built)
 
 clean: cleanout
-	rm -f *.o $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES) *ror_norm* *_err_* *_sol_*
+	rm -f *.o $(ALL_EXAMPLES) *ror_norm* *_err_* *_sol_*
 	rm -rf *.dSYM
 
 cleanout:

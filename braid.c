@@ -149,7 +149,7 @@ _braid_DriveUpdateCycle(braid_Core          core,
       else
       {
          /* If we are on the finest grid, first try to refine, then go down */
-         if (!cycle.try_refine)
+         if (!cycle.try_refine || nlevels == 1)
          {
             cycle.try_refine = 1;
          }
@@ -343,10 +343,15 @@ _braid_DrivePrintStatus(braid_Core  core,
       }
    }
 
-   if (refined)
+   if (refined == 1)
    {
       _braid_printf("  Braid: Temporal refinement occurred, %d time steps\n",
                     _braid_CoreElt(core, gupper));
+   }
+   else if (refined == 2)
+   {
+      _braid_printf(" Braid: Spatial refinement occured, %d time steps\n",
+            _braid_CoreElt(core, gupper));
    }
 
    if ((rstopped > -1) && (rstopped == iter))
@@ -376,7 +381,6 @@ braid_Drive(braid_Core  core)
    braid_Int            skip            = _braid_CoreElt(core, skip);
    braid_Int            max_levels      = _braid_CoreElt(core, max_levels);
    braid_Int            print_level     = _braid_CoreElt(core, print_level);
-   braid_Int            access_level    = _braid_CoreElt(core, access_level);
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
 
    braid_Int     *nrels, nrel0;
@@ -528,10 +532,7 @@ braid_Drive(braid_Core  core)
    }
 
    /* Allow final access to Braid by carrying out an F-relax to generate points */
-   if (access_level >= 1)
-   {
-      _braid_FAccess(core, 0, 1);
-   }
+   _braid_FAccess(core, 0, 1);
 
    /* End cycle */
    _braid_DriveEndCycle(core, &cycle);
@@ -589,7 +590,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              access_level    = 1;              /* Default access level */
    braid_Int              tnorm           = 2;              /* Default temporal norm */
    braid_Real             tol             = 1.0e-09;        /* Default absolute tolerance */
-   braid_Real             rtol            = 1;              /* Use relative tolerance */
+   braid_Int              rtol            = 1;              /* Use relative tolerance */
    braid_Int              skip            = 1;              /* Default skip value, skips all work on first down-cycle */
    braid_Int              max_refinements = 200;            /* Maximum number of F-refinements */
    braid_Int              tpoints_cutoff  = braid_Int_Max;  /* Maximum number of time steps, controls FRefine()*/ 
@@ -648,6 +649,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, astatus)         = _braid_CTAlloc(_braid_AccessStatus, 1);
    _braid_CoreElt(core, sstatus)         = _braid_CTAlloc(_braid_StepStatus, 1);
    _braid_CoreElt(core, cstatus)         = _braid_CTAlloc(_braid_CoarsenRefStatus, 1);
+   _braid_CoreElt(core, bstatus)         = _braid_CTAlloc(_braid_BufferStatus, 1);
 
    _braid_CoreElt(core, storage)         = -1;            /* only store C-points */
 
@@ -655,6 +657,7 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, refine)          = 0;  /* Time refinement off by default */
    _braid_CoreElt(core, rfactors)        = NULL;
+   _braid_CoreElt(core, r_space)         = 0;
    _braid_CoreElt(core, rstopped)        = -1;
    _braid_CoreElt(core, nrefine)         = 0;
    _braid_CoreElt(core, max_refinements) = max_refinements;
@@ -697,6 +700,7 @@ braid_Destroy(braid_Core  core)
       braid_AccessStatus      astatus    = _braid_CoreElt(core, astatus);
       braid_CoarsenRefStatus  cstatus    = _braid_CoreElt(core, cstatus);
       braid_StepStatus        sstatus    = _braid_CoreElt(core, sstatus);
+      braid_BufferStatus      bstatus    = _braid_CoreElt(core, bstatus);
       braid_Int               level;
 
       _braid_TFree(_braid_CoreElt(core, nrels));
@@ -708,6 +712,7 @@ braid_Destroy(braid_Core  core)
       _braid_AccessStatusDestroy(astatus);
       _braid_StepStatusDestroy(sstatus);
       _braid_CoarsenRefStatusDestroy(cstatus);
+      _braid_BufferStatusDestroy(bstatus);
       
       for (level = 0; level < nlevels; level++)
       {
@@ -814,7 +819,7 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  skip down cycle       = %d\n", skip);
       _braid_printf("  number of refinements = %d\n", nrefine);
       _braid_printf("\n");
-      _braid_printf("  level   time-pts   cfactor   nrelax\n", globaltime);
+      _braid_printf("  level   time-pts   cfactor   nrelax\n");
       for (level = 0; level < nlevels-1; level++)
       {
          _braid_printf("  % 5d  % 8d  % 7d   % 6d\n",

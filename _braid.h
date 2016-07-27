@@ -129,7 +129,7 @@ typedef struct _braid_Core_struct
    braid_PtFcnSRefine     srefine;          /**< (optional) return a spatially refined vector */
 
    braid_Int              access_level;     /**< determines how often to call the user's access routine */ 
-   braid_Int              print_level;      /**< determines amount of output printed to screem (0,1,2) */ 
+   braid_Int              print_level;      /**< determines amount of output printed to screen (0,1,2) */
    braid_Int              seq_soln;         /**< boolean, controls if the initial guess is from sequential time stepping*/
    braid_Int              max_levels;       /**< maximum number of temporal grid levels */
    braid_Int              min_coarse;       /**< minimum possible coarse grid size */
@@ -156,12 +156,15 @@ typedef struct _braid_Core_struct
    braid_AccessStatus     astatus;          /**< status structure passed to user-written Access routine */
    braid_CoarsenRefStatus cstatus;          /**< status structure passed to user-written coarsen/refine routines */
    braid_StepStatus       sstatus;          /**< status structure passed to user-written step routines */
+   braid_BufferStatus     bstatus;          /**< status structure passed to user-written buffer routines */
+
    braid_Int              storage;          /**< storage = 0 (C-points), = 1 (all) */
 
    braid_Int              gupper;           /**< global size of the fine grid */
 
    braid_Int              refine;           /**< refine in time (refine = 1) */
    braid_Int             *rfactors;         /**< refinement factors for finest grid (if any) */
+   braid_Int              r_space;          /**< spatial refinment flag */
    braid_Int              rstopped;         /**< refinement stopped at iteration rstopped */
    braid_Int              nrefine;          /**< number of refinements done */
    braid_Int              max_refinements;  /**< maximum number of refinements */
@@ -617,6 +620,16 @@ braid_Int
 _braid_FInterp(braid_Core  core,   /**< braid_Core (_braid_Core) struct */  
                braid_Int   level   /**< interp from level to level+1 */
                );
+
+/** 
+ * Call spatial refinement on all local time steps if r_space has been set on
+ * the local processor.  Returns refined_ptr == 2 if refinment was completed at
+ * any point globally, otherwise returns 0.  This is a helper function for
+ * _braid_FRefine().
+ */
+braid_Int
+_braid_FRefineSpace(braid_Core   core,
+                    braid_Int   *refined_ptr);
 
 /**
  * Create a new fine grid (level 0) and corresponding grid hierarchy by refining

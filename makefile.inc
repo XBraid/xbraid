@@ -47,7 +47,7 @@ HOSTNAME := $(shell hostname)
 ifeq ($(findstring tux343,$(HOSTNAME)),tux343)
    CC = mpicc
    MPICC = mpicc
-   MPICXX = mpiCC
+   MPICXX = mpicxx
    MPIF90 = mpif90
    LFLAGS = -lm
    ifeq ($(optlevel),DEBUG)
@@ -60,7 +60,7 @@ ifeq ($(findstring tux343,$(HOSTNAME)),tux343)
       FORTFLAGS = -O1 -Wall
    endif
    ifeq ($(lvalgrind),YES)
-      LFLAGS += /usr/lib64/valgrind/libmpiwrap-amd64-linux.so 
+      #only needed for openmpi: LFLAGS += /usr/lib64/valgrind/libmpiwrap-amd64-linux.so 
    endif
 else ifeq ($(findstring fourier,$(HOSTNAME)),fourier)
    # for Anders' laptop
@@ -177,3 +177,5 @@ endif
 # CFLAGS   = -I/home/falgout/codes/mpich2-1.4.1-install/include
 # CXXFLAGS = -I/home/falgout/codes/mpich2-1.4.1-install/include
 # LFLAGS   = -L/home/falgout/codes/mpich2-1.4.1-install/lib -Wl,-rpath,/home/falgout/codes/mpich2-1.4.1-install/lib -lmpich -lopa -lmpl -lrt -lpthread  -lstdc++ -lm
+
+-include $(BRAID_DIR)/makefile.user
