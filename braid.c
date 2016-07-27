@@ -382,6 +382,7 @@ braid_Drive(braid_Core  core)
    braid_Int            max_levels      = _braid_CoreElt(core, max_levels);
    braid_Int            print_level     = _braid_CoreElt(core, print_level);
    braid_Int            access_level    = _braid_CoreElt(core, access_level);
+   braid_App            app             = _braid_CoreElt(core, app);
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
 
    braid_Int     *nrels, nrel0;
@@ -410,9 +411,17 @@ braid_Drive(braid_Core  core)
 
    /* Set t values */
    ta = _braid_GridElt(grid, ta);
-   for (i = ilower; i <= iupper; i++)
+   if ( _braid_CoreElt(core, tgrid) != NULL )
    {
-      ta[i-ilower] = tstart + (((braid_Real)i)/ntime)*(tstop-tstart);
+      /* Call the user's time grid routine */
+      _braid_CoreFcn(core, tgrid)(app, ta, ilower, iupper);
+   }
+   else
+   {
+      for (i = ilower; i <= iupper; i++)
+      {
+         ta[i-ilower] = tstart + (((braid_Real)i)/ntime)*(tstop-tstart);
+      }
    }
 
    /* Create a grid hierarchy */
@@ -1240,6 +1249,19 @@ braid_SetFullRNormRes(braid_Core          core,
 {
    _braid_CoreElt(core, full_rnorm_res) = residual;
 
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetTimeGrid(braid_Core          core,
+                  braid_PtFcnTimeGrid tgrid
+                  )
+{
+   _braid_CoreElt(core, tgrid) = tgrid;
+   
    return _braid_error_flag;
 }
 

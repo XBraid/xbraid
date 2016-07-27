@@ -52,6 +52,17 @@ braid_AccessStatusGetT(braid_AccessStatus  status,
  *--------------------------------------------------------------------------*/
 
 braid_Int
+braid_AccessStatusGetIstop(braid_AccessStatus  status,
+                           braid_Int          *istop_ptr)
+{
+   *istop_ptr = _braid_StatusElt(status, istop);
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
 braid_AccessStatusGetResidual(braid_AccessStatus  status,
                               braid_Real         *rnorm_ptr)
 {
@@ -175,6 +186,7 @@ braid_AccessStatusGetCaller(braid_AccessStatus  status,
  *--------------------------------------------------------------------------*/
 braid_Int
 _braid_AccessStatusInit(braid_Real           t,
+                        braid_Int            istop,
                         braid_Real           rnorm,
                         braid_Int            iter,
                         braid_Int            level,
@@ -186,6 +198,7 @@ _braid_AccessStatusInit(braid_Real           t,
                         braid_AccessStatus   status)
 {
    _braid_StatusElt(status, t)            = t;
+   _braid_StatusElt(status, istop)        = istop;
    _braid_StatusElt(status, level)        = level;
    _braid_StatusElt(status, nrefine)      = nrefine;
    _braid_StatusElt(status, gupper)       = gupper;
@@ -331,6 +344,7 @@ braid_CoarsenRefStatusGetNTPoints(braid_CoarsenRefStatus  status,
 braid_Int
 _braid_StepStatusInit(braid_Real       tstart,
                       braid_Real       tstop,
+                      braid_Int        istop,
                       braid_Real       tol,
                       braid_Int        iter,
                       braid_Int        level,
@@ -340,6 +354,7 @@ _braid_StepStatusInit(braid_Real       tstart,
 {
    _braid_StatusElt(status, tstart)    = tstart;
    _braid_StatusElt(status, tstop)     = tstop;
+   _braid_StatusElt(status, istop)     = istop;
    _braid_StatusElt(status, tol)       = tol;
    _braid_StatusElt(status, iter)      = iter;
    _braid_StatusElt(status, level)     = level;
@@ -376,6 +391,15 @@ braid_StepStatusGetTstop(braid_StepStatus  status,
                          braid_Real       *tstop_ptr)
 {
    *tstop_ptr = _braid_StatusElt(status, tstop);
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_StepStatusGetIstop(braid_StepStatus  status,
+                         braid_Int        *istop_ptr
+                        )
+{
+   *istop_ptr = _braid_StatusElt(status, istop);
    return _braid_error_flag;
 }
 
