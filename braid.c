@@ -414,7 +414,7 @@ braid_Drive(braid_Core  core)
    if ( _braid_CoreElt(core, tgrid) != NULL )
    {
       /* Call the user's time grid routine */
-      _braid_CoreFcn(core, tgrid)(app, ta, ilower, iupper);
+      _braid_CoreFcn(core, tgrid)(app, ta, &ilower, &iupper);
    }
    else
    {
@@ -663,6 +663,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, residual)        = NULL;
    _braid_CoreElt(core, scoarsen)        = NULL;
    _braid_CoreElt(core, srefine)         = NULL;
+   _braid_CoreElt(core, tgrid)           = NULL;
 
    _braid_CoreElt(core, access_level)    = access_level;
    _braid_CoreElt(core, tnorm)           = tnorm;

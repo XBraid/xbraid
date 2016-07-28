@@ -90,7 +90,7 @@ init_TimeSteps(braid_App  app)
    int i;
    (app->dt) = (double*) malloc(app->ntime*sizeof(double));
    
-   /* example on varying time step size */
+   /* example of varying time step size */
    if (app->mydt == 2)
    {
       for (i = 0; i < ntime*0.5; i++)
@@ -161,20 +161,23 @@ my_Residual(braid_App        app,
 int
 print_my_timegrid(braid_App        app,
                   braid_Real      *ta,
-                  braid_Int        ilower,
-                  braid_Int        iupper)
+                  braid_Int       *ilower,
+                  braid_Int       *iupper)
 {
-   int   i;
+   int   i, lower, upper;
    char  filename[255];
    FILE *file;
+   
+   lower = *ilower;
+   upper = *iupper;
 
    /* filename could be anything that helps you track the current time grid */
    sprintf(filename, "timegrid.%d.%d.info", app->rank_t, app->rank_x);
    file = fopen(filename, "w");
    if (file != NULL) {
-      for (i = ilower; i <= iupper; i++)
+      for (i = lower; i <= upper; i++)
       {
-         fprintf(file, "%d %f\n", i, ta[i-ilower]);
+         fprintf(file, "%d %f\n", i, ta[i-lower]);
       }
    }
    else
@@ -189,28 +192,28 @@ print_my_timegrid(braid_App        app,
 int
 my_timegrid(braid_App        app,
             braid_Real      *ta,
-            braid_Int        ilower,
-            braid_Int        iupper)
+            braid_Int       *ilower,
+            braid_Int       *iupper)
 {
    double tstart;             /* time corresponding to ilower, i.e. lower time index value for this processor */
-   int i;
+   int i, lower, upper;
+   
+   lower = *ilower;
+   upper = *iupper;
    
    /* Start from the global tstart to compute the local tstart */
    tstart = app->tstart;
-//   printf("tstart = %f\n", tstart);
-   for (i = 0; i < ilower; i++)
+   for (i = 0; i < lower; i++)
    {
       tstart += app->dt[i];
-//      printf("tstart = %f\n", tstart);
    }
-   /* Assign time point values for local time point index values ilower:iupper */
-   for (i = ilower; i <= iupper; i++)
+   /* Assign time point values for local time point index values lower:upper */
+   for (i = lower; i <= upper; i++)
    {
-      ta[i-ilower]  = tstart;
-//      printf("ta[%d] = %f\n", i-ilower, tstart);
+      ta[i-lower]  = tstart;
       tstart       += app->dt[i];
    }
-   print_my_timegrid(app, ta, ilower, iupper);
+   print_my_timegrid(app, ta, &lower, &upper);
 
    return 0;
 }

@@ -364,6 +364,36 @@ braid_Residual_F90_Iface(braid_App               app,        /**< user-defined _
 
 #endif
 
+#if (braid_Fortran_TimeGrid == 1)
+
+/**
+ * braid_TimeGrid
+ *
+ * Fortran interface, first we define the prototype for the user-defined function and then we
+ * provide the C-wrapper around the user-written Fortran function
+ * */
+void braid_F90_Name(braid_timegrid_f90, BRAID_TIMEGRID_F90)(braid_F90_ObjPtr, braid_F90_Real *, braid_F90_Int *, braid_F90_Int *);
+braid_Int
+braid_TimeGrid_F90_Iface(braid_App               app,       /**< user-defined _braid_App structure */
+                         braid_Real             *ta,        /**< temporal grid on level 0 (slice per processor) */
+                         braid_Int              *ilower,    /**< lower time index value for this processor */
+                         braid_Int              *iupper     /**< upper time index value for this processor */
+                         )
+{
+   /* Temporary scalars so that the calling function's ilower and iupper are not overwritten */
+   braid_Int ilower2 = *ilower;
+   braid_Int iupper2 = *iupper;
+   /* \todo need to figure out appropriate macros for passing ta, ilower2, iupper2 below */
+   braid_F90_Name(braid_timegrid_f90, BRAID_TIMEGRID_F90)( 
+                            braid_PassF90_Obj(      app),
+                                                    ta,
+                                                   &ilower2,
+                                                   &iupper2 );
+   return 0;
+}
+
+#endif
+
 #if (braid_Fortran_SpatialCoarsen == 1)
 
 /**
@@ -1003,6 +1033,21 @@ braid_F90_Name(braid_set_residual_f90, BRAID_SET_RESIDUAL_F90)(
 {
    braid_SetResidual(braid_TakeF90_ObjDeref(braid_Core,  core) ,
                      braid_F90_Name(braid_residual_f90,  BRAID_RESIDUAL_F90) );
+   return 0;
+}
+
+#endif
+
+#if (braid_Fortran_TimeGrid == 1)
+
+/* braid_SetTimeGrid( ) */
+braid_Int
+braid_F90_Name(braid_set_timegrid_f90, BRAID_SET_TIMEGRID_F90)(
+                   braid_F90_ObjPtr   *core         /**< braid_Core (_braid_Core) struct*/
+                   )
+{
+   braid_SetTimeGrid(braid_TakeF90_ObjDeref(braid_Core,  core) ,
+                     braid_F90_Name(braid_timegrid_f90, BRAID_TIMEGRID_F90) );
    return 0;
 }
 
