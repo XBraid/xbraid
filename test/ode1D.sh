@@ -61,8 +61,6 @@ case $HOST in
          ;;
 esac
 
-RunString="/home/hessenthaler/Software/cheart/workspace-cheart/cheartextras/Linux-x86_64-64-4.8/bin/mpirun"
-
 # Setup
 example_dir="../examples"
 driver_dir="../drivers"

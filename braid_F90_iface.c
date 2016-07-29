@@ -685,6 +685,18 @@ braid_F90_Name(braid_step_status_get_tstart_tstop_f90, BRAID_STEP_STATUS_GET_TST
    return 0;
 }
 
+/* Wrap braid_StepStatusGetIstop( ) */
+braid_Int
+braid_F90_Name(braid_step_status_get_istop_f90, BRAID_STEP_STATUS_GET_ISTOP_F90)(
+                              braid_F90_ObjPtr    status,        /**< structure containing current simulation info */
+                              braid_F90_Int      *istop_ptr      /**< output, global index value corresponding to next time value to evolve towards */
+                              )
+{
+   braid_StepStatusGetIstop( braid_TakeF90_Obj(braid_StepStatus, status),
+                               braid_TakeF90_IntPtr(             istop_ptr) );
+   return 0;
+}
+
 /* Wrap braid_StepStatusGetLevel( ) */
 braid_Int
 braid_F90_Name(braid_step_status_get_level_f90, BRAID_STEP_STATUS_GET_LEVEL_F90)(
