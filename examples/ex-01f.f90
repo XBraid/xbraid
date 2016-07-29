@@ -88,10 +88,10 @@ subroutine print_timegrid(app, ta, ilower, iupper)
    double precision, dimension(app%ntime+1) :: ta
    integer                                  :: ilower, iupper
    integer                                  :: i, out_unit
-   character(len=25):: fname = "timegrid"
-   character(len=8) :: fname_short = "timegrid"
-   character(len=5) :: rank_t_string, rank_x_string
-   character(len=1) :: dot = "."
+   character(len=25) :: fname = "timegrid"
+   character(len=8)  :: fname_short = "timegrid"
+   character(len=5)  :: rank_t_string, rank_x_string
+   character(len=1)  :: dot = "."
 
    write(rank_t_string, "(I5)")  app%rank_t
    write(rank_x_string, "(I5)")  app%rank_x
@@ -101,7 +101,7 @@ subroutine print_timegrid(app, ta, ilower, iupper)
    out_unit = 11
    open (unit=out_unit, file=fname, action="write", status="replace")
    do i = ilower,iupper
-      write (out_unit,*) ta(i-ilower+1)
+      write(out_unit,*) ta(i-ilower+1)
    enddo
    close (out_unit)
 
@@ -240,10 +240,11 @@ subroutine braid_Access_F90(app, u, astatus)
    character(len=7) :: step_string
    character(len=5) :: rank_string
    character(len=1) :: dot = "."
-   character(len=20) :: val_string
+   character(len=21) :: val_string
    
-   call braid_access_status_get_tild_f90(astatus,t,iter,level,done)
-   step = int( ((t - app%tstart) / ((app%tstop - app%tstart)/(app%ntime)) ) + 0.1)
+   call braid_access_status_get_tild_f90(astatus, t, iter, level, done)
+   call braid_access_status_get_istop_f90(astatus, step);
+!   step = int( ((t - app%tstart) / ((app%tstop - app%tstart)/(app%ntime)) ) + 0.1)
 
    ! Print my rank 
    call mpi_comm_size(app%comm, numprocs, ierr)
@@ -266,7 +267,7 @@ subroutine braid_Access_F90(app, u, astatus)
    call replace(step_string, ' ', '0', 7)
    write(rank_string, "(I5)")  rank
    call replace(rank_string, ' ', '0', 5)
-   write(val_string, "(E15.9)")  u%val
+   write(val_string, "(E21.15)")  u%val
    fname = fname_short // dot // step_string // dot // rank_string
 
    out_unit = 11

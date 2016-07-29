@@ -1,0 +1,67 @@
+# Begin Test 0
+  time steps = 32
+  iterations            = 0
+  residual norm         = -1.000000e+00
+  number of levels      = 1
+# Begin Test 1
+  time steps = 32
+  iterations            = 0
+  residual norm         = -1.000000e+00
+  number of levels      = 1
+# Begin Test 2
+Finished braid_TestAll: all tests passed successfully
+# Begin Test 3
+  time steps = 32
+  iterations            = 2
+  residual norm         = 0.000000e+00
+  number of levels      = 2
+# Begin Test 4
+  time steps = 32
+  iterations            = 2
+  residual norm         = 0.000000e+00
+  number of levels      = 2
+# Begin Test 5
+  time steps = 32
+  iterations            = 2
+  residual norm         = 0.000000e+00
+  number of levels      = 2
+# Begin Test 6
+  time steps = 32
+  iterations            = 2
+  residual norm         = 0.000000e+00
+  number of levels      = 2
+# Begin Test 7
+  time steps = 32
+  iterations            = 0
+  residual norm         = -1.000000e+00
+  number of levels      = 1
+# Begin Test 8
+  time steps = 32
+  iterations            = 0
+  residual norm         = -1.000000e+00
+  number of levels      = 1
+# Begin Test 9
+  time steps = 32
+  iterations            = 0
+  residual norm         = -1.000000e+00
+  number of levels      = 1
+# Begin Test 10
+  time steps = 32
+  iterations            = 2
+  residual norm         = 0.000000e+00
+  number of levels      = 2
+# Begin Test 11
+  time steps = 32
+  iterations            = 2
+  residual norm         = 0.000000e+00
+  number of levels      = 3
+# Begin Test 12
+  time steps = 32
+  iterations            = 2
+  residual norm         = 0.000000e+00
+  number of levels      = 2
+# Begin Test 13
+  time steps = 32
+  iterations            = 2
+  residual norm         = 0.000000e+00
+  number of levels      = 3
