@@ -718,7 +718,7 @@ braid_Destroy(braid_Core  core)
       _braid_StepStatusDestroy(sstatus);
       _braid_CoarsenRefStatusDestroy(cstatus);
       _braid_BufferStatusDestroy(bstatus);
-
+      
       for (level = 0; level < nlevels; level++)
       {
          _braid_GridDestroy(core, grids[level]);
