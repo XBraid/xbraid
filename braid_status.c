@@ -402,7 +402,7 @@ braid_StepStatusSetRFactor(braid_StepStatus  status,
 
 braid_Int
 braid_StepStatusSetWFactor(braid_StepStatus  status,
-                           braid_Int         wfactor)
+                           braid_Real         wfactor)
 {
    _braid_StatusElt(status, wfactor) = wfactor;
    return _braid_error_flag;

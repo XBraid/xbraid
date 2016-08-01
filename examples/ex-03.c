@@ -25,9 +25,9 @@
 /*
    Example 01_a
 
-   Compile with: make ex-01
+   Compile with: make ex-03
 
-   Sample run:   mpirun -np 2 ex-01
+   Sample run:   mpirun -np 2 ex-03
 
    Description:
 
@@ -77,7 +77,7 @@ my_Step(braid_App        app,
    /* Solution is a linear line with slope 3 */
    (u->value) = (u->value) + 3.0*(tstop - tstart) ;
   
-   int wfactor = ( rand() % 1000) + 1;
+   double wfactor = ( rand()/( (double) RAND_MAX) )*100 + 1;
    int rfactor = ( rand() % 10 ) + 1; 
    braid_StepStatusSetWFactor(status, wfactor );
    braid_StepStatusSetRFactor(status, rfactor );

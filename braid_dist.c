@@ -203,7 +203,7 @@ _braid_WeightedStructDestroy( _braid_WeightedStruct *wstruct )
 braid_Int
 _braid_WeightedDist(braid_Core            core,
                     braid_Int             *done,
-                    braid_Int             *wfactors,
+                    braid_Real             *wfactors,
                     braid_Int              npoints,
                     _braid_BalanceStruct  *bstruct )
 {
@@ -214,9 +214,9 @@ _braid_WeightedDist(braid_Core            core,
 
     /* Get the local sum, min, and max; */
     braid_Int i;
-    braid_Int local_max = 0;
-    braid_Int local_sum = 0;
-    braid_Int local_min = braid_Int_Max;
+    braid_Real local_max = 0;
+    braid_Real local_sum = 0;
+    braid_Real local_min = 1e100;
     braid_Int refined_gupper = 0;
     for ( i = 0; i < npoints; i++ )
     {
@@ -228,18 +228,18 @@ _braid_WeightedDist(braid_Core            core,
     }
 
     /* Do the allreduce */
-    braid_Int *mpi_send = _braid_CTAlloc( braid_Int, 4 );
-    braid_Int *mpi_recv = _braid_CTAlloc( braid_Int, 4 );
-    mpi_send[0] = npoints;
+    braid_Real *mpi_send = _braid_CTAlloc( braid_Real, 4 );
+    braid_Real *mpi_recv = _braid_CTAlloc( braid_Real, 4 );
+    mpi_send[0] = (braid_Real) npoints;
     mpi_send[1] = local_sum;
     mpi_send[2] = local_max;
     mpi_send[3] = local_min;
 
     MPI_Op sum_sum_max_min;
     MPI_Op_create( (MPI_User_function*) SumSumMaxMin , 1 , &sum_sum_max_min );
-    MPI_Allreduce(mpi_send, mpi_recv, 4, braid_MPI_INT, sum_sum_max_min, comm);
+    MPI_Allreduce(mpi_send, mpi_recv, 4, braid_MPI_REAL, sum_sum_max_min, comm);
     MPI_Op_free( &sum_sum_max_min );
-    refined_gupper = mpi_recv[0];
+    refined_gupper = (braid_Int) mpi_recv[0];
     (refined_gupper)--;
 
     /* Save the information */
@@ -252,7 +252,7 @@ _braid_WeightedDist(braid_Core            core,
     _braid_BalanceElt( bstruct, refined_gupper ) = refined_gupper;
 
     /* Do the scan */
-    braid_Int lbal = mpi_recv[3] - mpi_recv[2];
+    braid_Real lbal = mpi_recv[3] - mpi_recv[2];
     braid_Int refine = _braid_BalanceElt( bstruct, refine );
     braid_Int coarse_gupper = _braid_BalanceElt( bstruct, coarse_gupper );
     braid_Int ref = refined_gupper - coarse_gupper ;
@@ -261,8 +261,8 @@ _braid_WeightedDist(braid_Core            core,
     /* Refine in time and do a weigted load balance */
     if ( refine && lbal != 0 && ref != 0 )
     {
-        MPI_Scan(mpi_send, mpi_recv, 2, braid_MPI_INT, MPI_SUM, comm);
-        refined_iupper = mpi_recv[0];
+        MPI_Scan(mpi_send, mpi_recv, 2, braid_MPI_REAL, MPI_SUM, comm);
+        refined_iupper = (braid_Int) mpi_recv[0];
 
         _braid_BalanceElt( bstruct, refined_gupper ) = refined_gupper;
         _braid_BalanceElt( bstruct, refined_ilower ) = refined_iupper - npoints;
@@ -283,7 +283,7 @@ _braid_WeightedDist(braid_Core            core,
         *done = 0;
     }
 
-    //3 No refine in time
+    //No refine in time
     else if ( !refine || ref == 0 )
     {
         /*No load balance and no refine so just return */
@@ -295,8 +295,8 @@ _braid_WeightedDist(braid_Core            core,
         }
         else
         {
-            braid_Int c_sum_begin, c_sum_end;
-            MPI_Scan(&local_sum, &c_sum_end, 1, braid_MPI_INT, MPI_SUM, comm );
+            braid_Real c_sum_begin, c_sum_end;
+            MPI_Scan(&local_sum, &c_sum_end, 1, braid_MPI_REAL, MPI_SUM, comm );
             c_sum_begin = c_sum_end - local_sum;
             _braid_BalanceElt( bstruct, refined_gupper ) = _braid_BalanceElt( bstruct, coarse_gupper );
             _braid_BalanceElt( bstruct, refined_ilower ) = _braid_BalanceElt( bstruct, coarse_ilower );
@@ -330,7 +330,7 @@ _braid_WeightedDist(braid_Core            core,
 
 braid_Int
 _braid_GetWeightedInterval(braid_Core core,
-                           braid_Int  *wfactors,
+                           braid_Real  *wfactors,
                            _braid_WeightedStruct *wstruct,
                            _braid_BalanceStruct *bstruct )
 {
@@ -351,12 +351,12 @@ _braid_GetWeightedInterval(braid_Core core,
     braid_Int refined_gupper = _braid_BalanceElt( bstruct, refined_gupper );
     braid_Int refined_ilower = _braid_BalanceElt( bstruct, refined_ilower );
 
-    braid_Real global_sum =  (braid_Real) _braid_WeightedElt( wstruct, global_sum );
-    braid_Real global_max =  (braid_Real) _braid_WeightedElt( wstruct, global_max );
-    braid_Real global_min =  (braid_Real) _braid_WeightedElt( wstruct, global_min );
-    braid_Real local_sum =   (braid_Real) _braid_WeightedElt( wstruct, local_sum );
-    braid_Real c_sum_begin = (braid_Real) _braid_WeightedElt( wstruct, local_start );
-    braid_Real c_sum_end =   (braid_Real) _braid_WeightedElt( wstruct, local_stop );
+    braid_Real global_sum =   _braid_WeightedElt( wstruct, global_sum );
+    braid_Real global_max =   _braid_WeightedElt( wstruct, global_max );
+    braid_Real global_min =   _braid_WeightedElt( wstruct, global_min );
+    braid_Real local_sum =    _braid_WeightedElt( wstruct, local_sum );
+    braid_Real c_sum_begin =  _braid_WeightedElt( wstruct, local_start );
+    braid_Real c_sum_end =    _braid_WeightedElt( wstruct, local_stop );
 
     /* calculate the goal load on each processor and the number of processors to use */
     goal_load = global_sum / _braid_min( comm_size, refined_gupper + 1 );
@@ -445,7 +445,7 @@ _braid_GetWeightedInterval(braid_Core core,
  * Used in the weighted data distribution all reduce call, this function combines all neccesary
  * reductions into a single call. Note that length of the in and out buffers must be 4 */
 
-void SumSumMaxMin(braid_Int *in, braid_Int *inout, braid_Int *len, MPI_Datatype *datatype)
+void SumSumMaxMin(braid_Real *in, braid_Real *inout, braid_Int *len, MPI_Datatype *datatype)
 {
     inout[0] = in[0] + inout[0];
     inout[1] = in[1] + inout[1];

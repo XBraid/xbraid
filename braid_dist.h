@@ -97,14 +97,14 @@ _braid_GetBlockDistProc(braid_Int   npoints,
 
 typedef struct
 {
-    braid_Int local_max;   /* local max of the weights */
-    braid_Int local_min;   /* local min of the weights */
-    braid_Int local_sum;   /* local sum of the weights */
-    braid_Int global_max;  /* global max of the weights */
-    braid_Int global_min;  /* global min of the weights */
-    braid_Int global_sum;  /* global sum of the weights */
-    braid_Int local_start; /* cumulative sum of the weights exclusive */
-    braid_Int local_stop;  /* cumulative sum of the weights inclusive */
+    braid_Real local_max;   /* local max of the weights */
+    braid_Real local_min;   /* local min of the weights */
+    braid_Real local_sum;   /* local sum of the weights */
+    braid_Real global_max;  /* global max of the weights */
+    braid_Real global_min;  /* global min of the weights */
+    braid_Real global_sum;  /* global sum of the weights */
+    braid_Real local_start; /* cumulative sum of the weights exclusive */
+    braid_Real local_stop;  /* cumulative sum of the weights inclusive */
 
 } _braid_WeightedStruct;
 
@@ -135,7 +135,7 @@ _braid_WeightedStructDestroy( _braid_WeightedStruct *wstruct );
 braid_Int
 _braid_WeightedDist(braid_Core            core,
                     braid_Int             *done,
-                    braid_Int             *wfactors,
+                    braid_Real             *wfactors,
                     braid_Int              npoints,
                     _braid_BalanceStruct  *bstruct );
 
@@ -147,7 +147,7 @@ _braid_WeightedDist(braid_Core            core,
 
 braid_Int
 _braid_GetWeightedInterval(braid_Core core,
-                           braid_Int  *wfactors,
+                           braid_Real  *wfactors,
                            _braid_WeightedStruct *wstruct,
                            _braid_BalanceStruct *bstruct );
 
@@ -158,6 +158,6 @@ _braid_GetWeightedInterval(braid_Core core,
  * and the min of the fourth elements.
  */
 
-void SumSumMaxMin(braid_Int *in, braid_Int *inout, braid_Int *len, MPI_Datatype *datatype);
+void SumSumMaxMin(braid_Real *in, braid_Real *inout, braid_Int *len, MPI_Datatype *datatype);
 
 #endif

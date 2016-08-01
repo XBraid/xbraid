@@ -138,7 +138,7 @@ typedef struct _braid_StepStatus_struct
    braid_Int     iter;            /**< Current iteration (also equal to length of rnorms) */
    braid_Int     rfactor;         /**< if set by user, allows for subdivision of this interval for better time accuracy */
    braid_Int     r_space;         /**< if set by the user, spatial coarsening function will be called following the vcycle */
-   braid_Int     wfactor;         /**< if set by the user, load balencing will be completed using this weight on this interval */
+   braid_Real     wfactor;         /**< if set by the user, load balencing will be completed using this weight on this interval */
    braid_Int     level;           /**< current grid level */
    braid_Int     nrefine;         /**< number of refinements done */
    braid_Int     gupper;          /**< global size of the fine grid */
@@ -480,7 +480,7 @@ braid_StepStatusSetRFactor(braid_StepStatus  status,         /**< structure cont
  **/
 braid_Int
 braid_StepStatusSetWFactor(braid_StepStatus  status,         /**< structure containing current simulation info */
-                           braid_Int         wfactor         /**< user-determined desired wfactor */
+                           braid_Real         wfactor         /**< user-determined desired wfactor */
                            );
 
 /**

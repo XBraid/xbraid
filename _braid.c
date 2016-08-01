@@ -74,7 +74,7 @@ _braid_GetInitDistribution(braid_Core   core,
 /*------------------------------------------------------------------------------
  * Calculate and set the nearest neighbours on the initial grid. These are updated
  * during FRefine when any load balanceing or temporal refinement takes place.
- * ----------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_SetInitNeighbours( braid_Core   core,
@@ -795,7 +795,7 @@ _braid_Step(braid_Core     core,
     braid_Real       tol      = _braid_CoreElt(core, tol);
     braid_Int        iter     = _braid_CoreElt(core, niter);
     braid_Int       *rfactors = _braid_CoreElt(core, rfactors);
-    braid_Int       *wfactors = _braid_CoreElt(core, wfactors);
+    braid_Real       *wfactors = _braid_CoreElt(core, wfactors);
     _braid_Grid    **grids    = _braid_CoreElt(core, grids);
     braid_StepStatus status   = _braid_CoreElt(core, sstatus);
     braid_Int        nrefine  = _braid_CoreElt(core, nrefine);
@@ -857,7 +857,7 @@ _braid_Residual(braid_Core     core,
     braid_Real       tol      = _braid_CoreElt(core, tol);
     braid_Int        iter     = _braid_CoreElt(core, niter);
     braid_Int       *rfactors = _braid_CoreElt(core, rfactors);
-    braid_Int       *wfactors = _braid_CoreElt(core, wfactors);
+    braid_Real       *wfactors = _braid_CoreElt(core, wfactors);
     _braid_Grid    **grids    = _braid_CoreElt(core, grids);
     braid_StepStatus status   = _braid_CoreElt(core, sstatus);
     braid_Int        nrefine  = _braid_CoreElt(core, nrefine);
@@ -1933,7 +1933,7 @@ _braid_FRefine(braid_Core   core,
     braid_App          app             = _braid_CoreElt(core, app);
     braid_Int          iter            = _braid_CoreElt(core, niter);
     braid_Int         *rfactors        = _braid_CoreElt(core, rfactors);
-    braid_Int         *wfactors        = _braid_CoreElt(core, wfactors);
+    braid_Real         *wfactors        = _braid_CoreElt(core, wfactors);
     braid_Int          nrefine         = _braid_CoreElt(core, nrefine);
     braid_Int          max_refinements = _braid_CoreElt(core, max_refinements);
     braid_Int          tpoints_cutoff  = _braid_CoreElt(core, tpoints_cutoff);
@@ -1957,6 +1957,7 @@ _braid_FRefine(braid_Core   core,
 
     braid_Vector  *send_ua, *recv_ua, u;
     braid_Int     *send_procs, *send_unums, *iptr;
+    braid_Int     *recv_procs, *recv_unums, *recv_map;
     braid_Real    *send_buffer, *recv_buffer, **send_buffers, **recv_buffers, *bptr;
     void          *buffer;
     braid_Int      send_size, recv_size, *send_sizes, size, isize, max_usize;
@@ -2003,7 +2004,7 @@ _braid_FRefine(braid_Core   core,
 
     r_npoints = 0;
     _braid_GetCFactor(core, 0, &cfactor);
-    braid_Int *new_wfactors = _braid_CTAlloc( braid_Int , ( iupper - ilower + 1 )*cfactor );
+    braid_Real *new_wfactors = _braid_CTAlloc( braid_Real , ( iupper - ilower + 1 )*cfactor );
     if ( _braid_BalanceElt( bstruct, refine ) )
     {
         for (i = ilower; i <= iupper; i++)
@@ -2055,7 +2056,9 @@ _braid_FRefine(braid_Core   core,
     left_procs  = _braid_BalanceElt( bstruct, left_procs );
     right_procs = _braid_BalanceElt( bstruct, right_procs );
     refine      = _braid_BalanceElt(bstruct, refine );
-
+    braid_Int  rank;
+    MPI_Comm_rank(comm, &rank);
+    printf( " %d %d %d %d \n " , rank, f_ilower, f_iupper, f_iupper-f_ilower+1 );
     /* 2. On the refined grid, compute the mapping between coarse and fine
      * indexes (r_ca, r_fa) and the fine time values (r_ta). */
     r_ca = _braid_CTAlloc(braid_Int,  r_npoints);
@@ -2234,6 +2237,7 @@ _braid_FRefine(braid_Core   core,
     /* Post receives */
     recv_size = f_npoints*(1+isize+1); /* max receive size */
     recv_buffer = _braid_CTAlloc(braid_Real, recv_size);
+    recv_map = _braid_CTAlloc( braid_Int, f_npoints);
     f_ca = _braid_CTAlloc(braid_Int,  f_npoints);
     f_ta = _braid_GridElt(f_grid, ta);
     nreceived = 0;
@@ -2251,6 +2255,7 @@ _braid_FRefine(braid_Core   core,
             iptr = (braid_Int *) bptr;
             f_i = iptr[0];
             f_ii = f_i - f_ilower;
+            recv_map[f_ii] = status.MPI_SOURCE;
             f_ca[f_ii] = iptr[1];
             bptr += isize;
             f_ta[f_ii] = bptr[0];
@@ -2310,6 +2315,8 @@ _braid_FRefine(braid_Core   core,
     send_buffers = _braid_CTAlloc(braid_Real *, npoints);
 
     recv_ua = _braid_CTAlloc(braid_Vector, f_npoints);
+    recv_procs = _braid_CTAlloc(braid_Int, f_npoints);
+    recv_unums = _braid_CTAlloc(braid_Int, f_npoints);
     recv_buffers = _braid_CTAlloc(braid_Real *, f_npoints);
 
     _braid_GetRNorm(core, -1, &rnorm);
@@ -2372,7 +2379,6 @@ _braid_FRefine(braid_Core   core,
 
     _braid_UCommWait(core, 0);
 
-
     /* Compute nsends, send_procs, and send_unums from send_ua array */
     nsends = -1;
     prevproc = -1;
@@ -2394,92 +2400,100 @@ _braid_FRefine(braid_Core   core,
     }
     nsends++;
 
-    /* Compute nrecvs, recv_procs, and recv_unums from f_ca array */
-    nrecvs = 0;
+ /* Compute nrecvs, recv_procs, and recv_unums from f_ca array */
+    nrecvs = -1;
+    prevproc = -1;
     for (f_ii = 0; f_ii < f_npoints; f_ii++)
     {
         if (f_ca[f_ii] > -1)
-            nrecvs++;
+        {
+            i = f_ca[f_ii];
+            proc = recv_map[f_ii];
+            if (proc != prevproc)
+            {
+                nrecvs++;
+                recv_procs[nrecvs] = proc;
+                recv_unums[nrecvs] = 0;
+                prevproc = proc;
+            }
+            recv_unums[nrecvs]++;
+        }
     }
-
+    nrecvs++;
+    _braid_TFree( recv_map );
     requests = _braid_CTAlloc(MPI_Request, (nsends+nrecvs));
     statuses = _braid_CTAlloc(MPI_Status,  (nsends+nrecvs));
 
     _braid_BufferStatusInit( 1, 0, bstatus );
     _braid_CoreFcn(core, bufsize)(app, &max_usize, bstatus); /* max buffer size */
     _braid_NBytesToNReals(max_usize, max_usize);
+   
+    /* Post u-vector receives */
+    for (m = 0; m < nrecvs; m++)
+    {
+        unum = recv_unums[m]; /* Number of u-vectors being received */
+        recv_size = unum*(1 + max_usize);
+        recv_buffers[m] = _braid_CTAlloc(braid_Real, recv_size);
+        MPI_Irecv(recv_buffers[m], recv_size, braid_MPI_REAL, recv_procs[m], 5, comm,
+                  &requests[m]);
+    }
 
     /* Post u-vector sends */
     ii = 0;
     for (m = 0; m < nsends; m++)
     {
         unum = send_unums[m]; /* Number of u-vectors being sent */
-        send_size = 1 + unum*(2 + max_usize);
+        send_size = unum*(1 + max_usize);
         send_buffers[m] = _braid_CTAlloc(braid_Real, send_size);
-        send_size = 1; /* Recompute send_size and realloc buffer */
-        send_buffers[m][0] = unum;
-        bptr = &(send_buffers[m][1]);
+        send_size = 0; /* Recompute send_size and realloc buffer */
+        bptr = send_buffers[m];
         while (unum > 0)
         {
             if (send_ua[ii] != NULL)
             {
                 /* Pack u into buffer, adjust size, and put size into buffer */
-                buffer = &bptr[2];
+                buffer = &bptr[1];
                 _braid_CoreFcn(core, bufsize)(app, &size, bstatus);
                 _braid_StatusElt( bstatus, size ) = size;
                 _braid_CoreFcn(core, bufpack)(app, send_ua[ii], buffer, bstatus);
                 size = _braid_StatusElt(bstatus, size);
                 _braid_CoreFcn(core, free)(app, send_ua[ii]);
                 _braid_NBytesToNReals(size, size);
-                bptr[0] = (braid_Int) size;        /* insert size at the beginning */
-                bptr[1] = (braid_Int) r_fa[ii];    /* insert the index this is for */
-                bptr += (2+size);
-                send_size += (2+size);
+                bptr[0] = (braid_Int) size; /* insert size at the beginning */
+                bptr += (1+size);
+                send_size += (1+size);
                 unum--;
             }
             ii++;
         }
         send_buffers[m] = _braid_TReAlloc(send_buffers[m], braid_Real, send_size);
         MPI_Isend(send_buffers[m], send_size, braid_MPI_REAL, send_procs[m], 5, comm,
-                  &requests[m]);
+                  &requests[m + nrecvs]);
 
     }
 
-    /* Post u-vector receives. This is the major change in the FRefine function. We can no longer
-     * calculate the processor the we will recieve the index from, so instead it sits here polling on the
-     * recvs until enough messages arrive. Another options would be to make a recv_map that contains
-     * the processor that will send me each index but that requires more communication so i am not
-     * sure how much it really saves. */
-    braid_Int recvs = 0;
-    MPI_Status mstatus;
-    while ( nrecvs > 0 )
-    {
-        recv_size = 1 + ( f_iupper - f_ilower + 1 )*(2 + max_usize);
-        recv_buffers[recvs] = _braid_CTAlloc(braid_Real, recv_size);
-        MPI_Recv(recv_buffers[recvs], recv_size, braid_MPI_REAL, MPI_ANY_SOURCE, 5, comm, &mstatus);
-        nrecvs -= recv_buffers[recvs][0];
-        recvs++;
-    }
-    /* Finish communication */
-    MPI_Waitall(nsends, requests, statuses);
+    MPI_Waitall((nsends+nrecvs), requests, statuses);
 
     /* Unpack u-vectors */
-    braid_Int ind = 0;
-    for (m = 0; m < recvs; m++)
+    f_ii = 0;
+    for (m = 0; m < nrecvs; m++)
     {
-        unum = recv_buffers[m][0];
-        bptr = &recv_buffers[m][1];
+        unum = recv_unums[m];
+        bptr = recv_buffers[m];
         while (unum > 0)
         {
-            size = (braid_Int) bptr[0];
-            ind = (braid_Int) bptr[1];
-            buffer = &bptr[2];
-            _braid_CoreFcn(core, bufunpack)(app, buffer, &recv_ua[ind-f_ilower], bstatus);
-            bptr += (2+size);
-            unum--;
+            if (f_ca[f_ii] > -1)
+            {
+                /* Unpack buffer into u-vector */
+                buffer = &bptr[1];
+                _braid_CoreFcn(core, bufunpack)(app, buffer, &recv_ua[f_ii], bstatus);
+                size = (braid_Int) bptr[0];
+                bptr += (1+size);
+                unum--;
+            }
+            f_ii++;
         }
     }
-
     /* Free up some memory */
     _braid_TFree(send_ua);
     _braid_TFree(send_procs);
@@ -2489,7 +2503,9 @@ _braid_FRefine(braid_Core   core,
         _braid_TFree(send_buffers[m]);
     }
     _braid_TFree(send_buffers);
-    for (m = 0; m < recvs; m++)
+    _braid_TFree(recv_procs);
+    _braid_TFree(recv_unums);
+    for (m = 0; m < nrecvs; m++)
     {
         _braid_TFree(recv_buffers[m]);
     }
@@ -2500,7 +2516,6 @@ _braid_FRefine(braid_Core   core,
     _braid_TFree(r_ta);
     _braid_TFree(r_fa);
     _braid_TFree(f_ca);
-
     {
         braid_Int  level, nlevels = _braid_CoreElt(core, nlevels);
         _braid_TFree(_braid_CoreElt(core, rfactors));
@@ -2719,7 +2734,7 @@ _braid_InitHierarchy(braid_Core    core,
     braid_Int      nrdefault  = _braid_CoreElt(core, nrdefault);
     braid_Int      gupper     = _braid_CoreElt(core, gupper);
     braid_Int     *rfactors   = _braid_CoreElt(core, rfactors);
-    braid_Int     *wfactors   = _braid_CoreElt(core, wfactors);
+    braid_Real     *wfactors   = _braid_CoreElt(core, wfactors);
     braid_Int      nlevels    = _braid_CoreElt(core, nlevels);
     _braid_Grid  **grids      = _braid_CoreElt(core, grids);
 
@@ -2769,7 +2784,7 @@ _braid_InitHierarchy(braid_Core    core,
     ilower = _braid_GridElt(grids[0], ilower);
     iupper = _braid_GridElt(grids[0], iupper);
     rfactors = _braid_CTAlloc(braid_Int, iupper-ilower+2); /* Ensures non-NULL */
-    wfactors = _braid_CTAlloc(braid_Int, iupper-ilower+2); /* Ensures non-NULL */
+    wfactors = _braid_CTAlloc(braid_Real, iupper-ilower+2); /* Ensures non-NULL */
     for(i = 0; i < iupper-ilower+2; i++)
     {
         /* We need to ensure an rfactor of 1 for global index 0, and for
@@ -3339,7 +3354,7 @@ _braid_DestroyBalanceStruct( _braid_BalanceStruct *bstruct )
 braid_Int
 _braid_GetRefinedDistribution(braid_Core            core,
                               braid_Int            *done,
-                              braid_Int            *wfactors,
+                              braid_Real            *wfactors,
                               braid_Int             npoints,
                               _braid_BalanceStruct *bstruct)
 {
@@ -3637,6 +3652,8 @@ braid_Int _braid_BuildCommunicationMap( braid_Core  core,
     _braid_TFree ( need_indices );
 
     /* Recieve all messages and respond as needed. */
+    /* TODO Not sure how to do this with non blocking recieves. We dont know how many messages
+       we will receive from any one processor. */ 
     i = 0;
     recv_buffer = _braid_CTAlloc( braid_Int, 11 + nlevels + assumed_iupper - assumed_ilower  );
     resp_buffer_1 = _braid_CTAlloc( braid_Int, 11 + nlevels + assumed_iupper - assumed_ilower );
@@ -3659,6 +3676,8 @@ braid_Int _braid_BuildCommunicationMap( braid_Core  core,
                 resp_buffer_1[ i + resp_buffer_1[0]  + 2 ] = owners[ recv_buffer[ 3 + resp_buffer_1[0] + i] -assumed_ilower] ;
             }
             j = 3 + resp_buffer_1[0] + resp_buffer_1[1+resp_buffer_1[0]];
+            /* TODO Could make this non blocking ? but i know a non blocking receive is 
+               already waiting ( it was set when the mesage was sent ) so does it matter? */
             MPI_Send( resp_buffer_1, j, braid_MPI_INT, status.MPI_SOURCE, 13, comm );
         }
     }
@@ -3720,7 +3739,6 @@ braid_Int _braid_BuildCommunicationMap( braid_Core  core,
         else
             right_procs[i] = -1;
     }
-
     for ( i = 0; i < nlevels; i++ )
     {
         if ( iupper[i] - ilower[i] + 1 > 0 && rank > 0 )
