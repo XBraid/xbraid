@@ -565,7 +565,7 @@ _braid_USetVector(braid_Core    core,
       }
       if (move)
       {
-         // TODO free the data in u /!/
+         // We are on an F-point, with shellvector option. We only keep the shell.
          _braid_CoreFcn(core, sfree)(app, u);
          ua[index-ilower] = u;                                   /* move the vector */
       }

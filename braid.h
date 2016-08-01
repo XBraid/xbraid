@@ -285,9 +285,9 @@ typedef braid_Int
  * Shell initialization (optional)
  **/
 typedef braid_Int
-(*braid_PtFcnSInit)(braid_App      app,           /**< user-defined _braid_App structure */
+(*braid_PtFcnSInit)(braid_App     app,           /**< user-defined _braid_App structure */
                    braid_Real     t,             /**< time value for *u_ptr* */
-                   braid_Vector  *u_ptr          /**< output, newly allocated and initialized vector */
+                   braid_Vector  *u_ptr          /**< output, newly allocated and initialized vector shell */
                    );
 
 /**
@@ -296,7 +296,7 @@ typedef braid_Int
 typedef braid_Int
 (*braid_PtFcnSClone)(braid_App      app,          /**< user-defined _braid_App structure */
                     braid_Vector   u,            /**< vector to clone */ 
-                    braid_Vector  *v_ptr         /**< output, newly allocated and cloned vector */
+                    braid_Vector  *v_ptr         /**< output, newly allocated and cloned vector shell */
                     );
 
 /**
@@ -304,7 +304,7 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnSFree)(braid_App     app,            /**< user-defined _braid_App structure */
-                    braid_Vector  u               /**< vector to free */
+                    braid_Vector  u               /**< vector to free (keeping the shell) */
                     );
 
 /** @}*/
@@ -642,6 +642,9 @@ braid_SplitCommworld(const MPI_Comm  *comm_world,  /**< Global communicator to s
  * - sinit  : create a shell vector
  * - sclone : clone the shell of a vector
  * - sfree  : free the data of a vector, keeping its shell
+ * This feature should be used with storage option = -1. It allows the used to keep metadata
+ * on all points (including F-points) without storing the all vector everywhere. With these options,
+ * the vectors are fully stored on C-points, but only the vector shell is kept on F-points.
  **/
 braid_Int
 braid_SetShell(braid_Core          core, 

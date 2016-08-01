@@ -162,11 +162,11 @@ braid_AccessStatusGetWrapperTest(braid_AccessStatus  status,
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 braid_Int
-braid_AccessStatusGetCaller(braid_AccessStatus  status,
-                            braid_Int          *caller
-                            )
+braid_AccessStatusGetCallingFunction(braid_AccessStatus  status,
+                                     braid_Int          *calling_function
+                                     )
 {
-   *caller = _braid_StatusElt(status, caller);
+   *calling_function = _braid_StatusElt(status, calling_function);
    return _braid_error_flag;
 }
 
@@ -182,18 +182,18 @@ _braid_AccessStatusInit(braid_Real           t,
                         braid_Int            gupper,
                         braid_Int            done,
                         braid_Int            wrapper_test,
-                        braid_Int            caller,
+                        braid_Int            calling_function,
                         braid_AccessStatus   status)
 {
-   _braid_StatusElt(status, t)            = t;
-   _braid_StatusElt(status, level)        = level;
-   _braid_StatusElt(status, nrefine)      = nrefine;
-   _braid_StatusElt(status, gupper)       = gupper;
-   _braid_StatusElt(status, rnorm)        = rnorm;
-   _braid_StatusElt(status, done)         = done;
-   _braid_StatusElt(status, iter)         = iter; 
-   _braid_StatusElt(status, wrapper_test) = wrapper_test;
-   _braid_StatusElt(status, caller) = caller;
+   _braid_StatusElt(status, t)                = t;
+   _braid_StatusElt(status, level)            = level;
+   _braid_StatusElt(status, nrefine)          = nrefine;
+   _braid_StatusElt(status, gupper)           = gupper;
+   _braid_StatusElt(status, rnorm)            = rnorm;
+   _braid_StatusElt(status, done)             = done;
+   _braid_StatusElt(status, iter)             = iter; 
+   _braid_StatusElt(status, wrapper_test)     = wrapper_test;
+   _braid_StatusElt(status, calling_function) = calling_function;
 
    return _braid_error_flag;
 }
