@@ -341,29 +341,32 @@ braid_Int
 _braid_UGetIndex(braid_Core   core,
                  braid_Int    level,
                  braid_Int    index,
-                 braid_Int   *uindex_ptr)
+                 braid_Int   *uindex_ptr,
+                 braid_Int   *store_flag_ptr)
 {
    _braid_Grid        **grids       = _braid_CoreElt(core, grids);
    braid_Int            ilower      = _braid_GridElt(grids[level], ilower);
    braid_Int            iupper      = _braid_GridElt(grids[level], iupper);
    braid_Int            clower      = _braid_GridElt(grids[level], clower);
    braid_Int            cfactor     = _braid_GridElt(grids[level], cfactor);
-   braid_Int            uindex, ic, iclo;
+   braid_Int            uindex, ic, iclo, store_flag;
 
-   uindex = -2;
+   uindex = -1;
+   store_flag = -2;
    if ((index >= ilower) && (index <= iupper))
    {
       if ( _braid_CoreElt(core, useshell) == 1)
       {
          uindex = index-ilower;
+         store_flag = 0;
          // If we are not on a fully-stored point
-         // then we only have a shell, we return -1
+         // then we only have a shell, the store_flag should be -1
          if ( (_braid_CoreElt(core, storage) < 0) ||
               (level < _braid_CoreElt(core, storage)) )
          {
             if ( !_braid_IsCPoint(index, cfactor) )
             {
-               uindex = -1;
+               store_flag = -1;
             }
          }
       }
@@ -378,16 +381,19 @@ _braid_UGetIndex(braid_Core   core,
                _braid_MapFineToCoarse(index, cfactor, ic);
                _braid_MapFineToCoarse(clower, cfactor, iclo);
                uindex = ic-iclo;
+               store_flag = 0;
             }
          }
          else
          {
             uindex = index-ilower;
+            store_flag = 0;
          }
       }
    }
 
    *uindex_ptr = uindex;
+   *store_flag_ptr = store_flag;
 
    return _braid_error_flag;
 }
@@ -406,18 +412,13 @@ _braid_UGetVectorRef(braid_Core     core,
 {
    _braid_Grid        **grids = _braid_CoreElt(core, grids);
    braid_Vector        *ua    = _braid_GridElt(grids[level], ua);
-   braid_Int            iu;
+   braid_Int            iu, sflag;
    braid_Vector         u = NULL;
 
-   _braid_UGetIndex(core, level, index, &iu);
-   if (iu > -1)
+   _braid_UGetIndex(core, level, index, &iu, &sflag);
+   if (sflag>-2) // We have a full point or a shell (iu>=0)
    {
       u = ua[iu];
-   }
-   else if (iu == -1)
-   {
-      braid_Int ilower = _braid_GridElt(grids[level], ilower);
-      u = ua[index-ilower];
    }
 
    *u_ptr = u;
@@ -440,19 +441,19 @@ _braid_USetVectorRef(braid_Core    core,
 {
    _braid_Grid        **grids = _braid_CoreElt(core, grids);
    braid_Vector        *ua    = _braid_GridElt(grids[level], ua);
-   braid_Int            iu;
+   braid_Int            iu, sflag;
 
-   _braid_UGetIndex(core, level, index, &iu);
-   if (iu > -1)
+   _braid_UGetIndex(core, level, index, &iu, &sflag);
+   // If sflag ==0, we have a full point, if sflag == -1, we have a shell
+   if (sflag == 0)
    {
       ua[iu] = u;
    }
-   else if (iu == -1)
+   else if (sflag == -1)
    {
       braid_App    app = _braid_CoreElt(core, app);
-      braid_Int ilower = _braid_GridElt(grids[level], ilower);
       _braid_CoreFcn(core, sfree)(app, u);
-      ua[index-ilower] = u;
+      ua[iu] = u;
    }
 
    return _braid_error_flag;
@@ -477,7 +478,7 @@ _braid_UGetVector(braid_Core     core,
    braid_Int            recv_index  = _braid_GridElt(grids[level], recv_index);
    _braid_CommHandle   *recv_handle = _braid_GridElt(grids[level], recv_handle);
    braid_Vector         u = NULL;
-   braid_Int            iu;
+   braid_Int            iu, sflag;
 
    if (index == recv_index)
    {
@@ -492,16 +493,15 @@ _braid_UGetVector(braid_Core     core,
    }
    else
    {
-      _braid_UGetIndex(core, level, index, &iu);
-      if (iu > -1)
+      _braid_UGetIndex(core, level, index, &iu, &sflag);
+      if (sflag == 0)
       {
          _braid_CoreFcn(core, clone)(app, ua[iu], &u);
       }
-      else if (iu == -1)
+      else if (sflag == -1)
       {
-         braid_Int ilower = _braid_GridElt(grids[level], ilower);
          // In this case, sclone != NULL
-         _braid_CoreFcn(core, sclone)(app, ua[index-ilower], &u);
+         _braid_CoreFcn(core, sclone)(app, ua[iu], &u);
       }
    }
 
@@ -530,7 +530,7 @@ _braid_USetVector(braid_Core    core,
    braid_Vector        *ua          = _braid_GridElt(grids[level], ua);
    braid_Int            send_index  = _braid_GridElt(grids[level], send_index);
    _braid_CommHandle   *send_handle = _braid_GridElt(grids[level], send_handle);
-   braid_Int            iu;
+   braid_Int            iu, sflag;
 
    if (index == send_index)
    {
@@ -540,8 +540,8 @@ _braid_USetVector(braid_Core    core,
       _braid_GridElt(grids[level], send_handle) = send_handle;
    }
 
-   _braid_UGetIndex(core, level, index, &iu);
-   if (iu > -1)
+   _braid_UGetIndex(core, level, index, &iu, &sflag);
+   if (sflag == 0) // We have a full point
    {
       if (ua[iu] != NULL)
       {
@@ -556,25 +556,24 @@ _braid_USetVector(braid_Core    core,
          _braid_CoreFcn(core, clone)(app, u, &ua[iu]); /* copy the vector */
       }
    }
-   else if (iu == -1)
+   else if (sflag == -1) // We have a shell
    {
-      braid_Int ilower = _braid_GridElt(grids[level], ilower);
-      if (ua[index-ilower] != NULL)
+      if (ua[iu] != NULL)
       {
-         _braid_CoreFcn(core, free)(app, ua[index-ilower]);
+         _braid_CoreFcn(core, free)(app, ua[iu]);
       }
       if (move)
       {
          // We are on an F-point, with shellvector option. We only keep the shell.
          _braid_CoreFcn(core, sfree)(app, u);
-         ua[index-ilower] = u;                                   /* move the vector */
+         ua[iu] = u;                                   /* move the vector */
       }
       else
       {
-         _braid_CoreFcn(core, sclone)(app, u, &ua[index-ilower]); /* copy the vector */
+         _braid_CoreFcn(core, sclone)(app, u, &ua[iu]); /* copy the vector */
       }
    }
-   else if (move)
+   else if (move) // We store nothing
    {
       _braid_CoreFcn(core, free)(app, u);              /* free the vector */
    }
@@ -601,7 +600,7 @@ _braid_UCommInitBasic(braid_Core  core,
    braid_Int            send_index  = -1;
    _braid_CommHandle   *recv_handle = NULL;
    _braid_CommHandle   *send_handle = NULL;
-   braid_Int            iu;
+   braid_Int            iu, sflag;
 
    /* Post receive */
    if (recv_msg)
@@ -616,8 +615,8 @@ _braid_UCommInitBasic(braid_Core  core,
       send_index = iupper;
       if (send_now)
       {
-         _braid_UGetIndex(core, level, send_index, &iu);
-         if (iu < 0)
+         _braid_UGetIndex(core, level, send_index, &iu, &sflag);
+         if (sflag < 0)
          {
             // We should never get here : we do not communicate shells...
             abort();
@@ -652,7 +651,7 @@ _braid_UCommInit(braid_Core  core,
    braid_Int            send_index  = -1;
    _braid_CommHandle   *recv_handle = NULL;
    _braid_CommHandle   *send_handle = NULL;
-   braid_Int            iu;
+   braid_Int            iu, sflag;
    
    /* Note that this routine works for the case of all points being C-points, 
     * i.e., cfactor = 1.  A send and receive are always posted. */
@@ -666,7 +665,7 @@ _braid_UCommInit(braid_Core  core,
       /* Only post send if iupper is a C-point, otherwise compute and send later */
       if ( _braid_IsCPoint(iupper, cfactor) )
       {
-         _braid_UGetIndex(core, level, iupper, &iu);
+         _braid_UGetIndex(core, level, iupper, &iu, &sflag);
          _braid_CommSendInit(core, level, iupper, ua[iu], &send_handle);
          send_index = -1;
       }
@@ -701,7 +700,7 @@ _braid_UCommInitF(braid_Core  core,
    braid_Int            send_index  = -1;
    _braid_CommHandle   *recv_handle = NULL;
    _braid_CommHandle   *send_handle = NULL;
-   braid_Int            iu;
+   braid_Int            iu, sflag;
 
    if (ilower <= iupper)
    {
@@ -718,7 +717,7 @@ _braid_UCommInitF(braid_Core  core,
        * computed later, it is sent. */
       if ( _braid_IsCPoint(iupper, cfactor) && _braid_IsFPoint(iupper+1, cfactor))
       {
-         _braid_UGetIndex(core, level, iupper, &iu);
+         _braid_UGetIndex(core, level, iupper, &iu, &sflag);
          _braid_CommSendInit(core, level, iupper, ua[iu], &send_handle);
          send_index = -1;
       }
@@ -1276,7 +1275,7 @@ _braid_InitGuess(braid_Core  core,
    braid_Vector  *va       = _braid_GridElt(grids[level], va);
 
    braid_Vector   u;
-   braid_Int      i, iu;
+   braid_Int      i, iu, sflag;
 
    if ( (level == 0) && (seq_soln == 1) )
    {
@@ -1340,13 +1339,13 @@ _braid_InitGuess(braid_Core  core,
    {
       for (i = ilower; i <= iupper; i++)
       {
-         _braid_UGetIndex(core, level, i, &iu);
-         if (iu > -1)
+         _braid_UGetIndex(core, level, i, &iu, &sflag);
+         if (sflag == 0) // Full point
          {
             _braid_CoreFcn(core, clone)(app, va[i-ilower], &u);
             _braid_USetVectorRef(core, level, i, u);
          }
-         else if (iu == -1)
+         else if (sflag == -1) // Shell
          {
             _braid_CoreFcn(core, sclone)(app, va[i-ilower], &u);
             _braid_USetVectorRef(core, level, i, u);
@@ -3181,7 +3180,7 @@ _braid_CopyFineToCoarse(braid_Core  core)
    _braid_Grid  **grids   = _braid_CoreElt(core, grids);
    braid_Int      nlevels = _braid_CoreElt(core, nlevels);
    
-   braid_Int      f_index, index, is_stored, level, f_cfactor;
+   braid_Int      f_index, index, iu, is_stored, level, f_cfactor;
    braid_Int      ilower, iupper;
    braid_Vector   u, *va;
 
@@ -3204,14 +3203,14 @@ _braid_CopyFineToCoarse(braid_Core  core)
          _braid_CoreFcn(core, free)(app, u);
          _braid_CoreFcn(core, clone)(app, va[index-ilower], &u);
          _braid_USetVectorRef(core, level, index, u);
-         _braid_UGetIndex(core, level, index, &is_stored);
-         if (is_stored < -1) /* Case where F-points are not stored, and we are not using shell vectors */
+         _braid_UGetIndex(core, level, index, &iu, &is_stored);
+         if (is_stored == -2) /* Case where F-points are not stored, and we are not using shell vectors */
          {
-            // TODO free the data in u if is_stored == -1 /!/
             _braid_CoreFcn(core, free)(app, u);
          }
          else if (is_stored == -1) /* This is a shell vector */
          {
+            // We free the data in u, keeping the shell
             _braid_CoreFcn(core, sfree)(app, u);
          }
  
