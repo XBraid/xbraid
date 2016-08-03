@@ -1947,7 +1947,7 @@ _braid_FRefine(braid_Core   core,
 
     /* Use prefix 'r_' for the refined version of the current grid level 0, and
      * use prefix 'f_' for the fine grid in the new distribution. */
-    braid_Int      refine, lbalance;
+    braid_Int      refine, lbalance, done;
     braid_Int      npoints, ilower, iupper, gupper, i, j, ii;
     braid_Int      r_npoints, r_ilower, r_iupper, r_i, r_ii;
     braid_Int      f_npoints, f_ilower, f_iupper, f_gupper, f_i, f_j, f_ii;
@@ -1965,9 +1965,11 @@ _braid_FRefine(braid_Core   core,
     braid_Int      unum, send_msg, recv_msg;
     MPI_Request   *requests, request;
     MPI_Status    *statuses, status;
+    braid_Real    *new_wfactors;
 
     _braid_Grid   *f_grid;
     braid_Int      cfactor, rfactor, m, interval, flo, fhi, fi, ci, f_hi, f_ci;
+    _braid_BalanceStruct *bstruct;
 
 #if DEBUG
     braid_Int  myproc;
@@ -1985,7 +1987,6 @@ _braid_FRefine(braid_Core   core,
     npoints = iupper - ilower + 1;
 
     /* Init the Balance structure for load balancing and refineing */
-    _braid_BalanceStruct *bstruct = NULL;
     bstruct = _braid_CTAlloc( _braid_BalanceStruct , 1 );
     _braid_InitBalanceStruct( bstruct, refine, lbalance, ilower, iupper, gupper );
 
@@ -2004,7 +2005,7 @@ _braid_FRefine(braid_Core   core,
 
     r_npoints = 0;
     _braid_GetCFactor(core, 0, &cfactor);
-    braid_Real *new_wfactors = _braid_CTAlloc( braid_Real , ( iupper - ilower + 1 )*cfactor );
+    new_wfactors = _braid_CTAlloc( braid_Real , ( iupper - ilower + 1 )*cfactor );
     if ( _braid_BalanceElt( bstruct, refine ) )
     {
         for (i = ilower; i <= iupper; i++)
@@ -2033,7 +2034,7 @@ _braid_FRefine(braid_Core   core,
     }
 
     /* Get the new refined, balanced , distribution */
-    braid_Int done = 1;
+    done = 1;
     if ( _braid_BalanceElt( bstruct, lbalance ) || _braid_BalanceElt( bstruct, refine ) )
         _braid_GetRefinedDistribution( core, &done,  new_wfactors, r_npoints, bstruct);
     _braid_TFree( new_wfactors );
@@ -2056,9 +2057,7 @@ _braid_FRefine(braid_Core   core,
     left_procs  = _braid_BalanceElt( bstruct, left_procs );
     right_procs = _braid_BalanceElt( bstruct, right_procs );
     refine      = _braid_BalanceElt(bstruct, refine );
-    braid_Int  rank;
-    MPI_Comm_rank(comm, &rank);
-    printf( " %d %d %d %d \n " , rank, f_ilower, f_iupper, f_iupper-f_ilower+1 );
+    
     /* 2. On the refined grid, compute the mapping between coarse and fine
      * indexes (r_ca, r_fa) and the fine time values (r_ta). */
     r_ca = _braid_CTAlloc(braid_Int,  r_npoints);
@@ -2628,8 +2627,7 @@ _braid_FRefine(braid_Core   core,
 #endif
 
     /* If load balancing occurs, but not temporal refinement, then need to 
-       know if we did spatial refinment to force another V cycle . */
-    
+       know if we did spatial refinment to force another V cycle . */    
     if ( !refine )
     {
        braid_Int r_space = _braid_CoreElt( core, r_space );
@@ -3300,12 +3298,12 @@ _braid_ErrorHandler(const char *filename,
  *-------------------------------------------------------------------------------*/
 
 braid_Int
-_braid_InitBalanceStruct( _braid_BalanceStruct *bstruct,
-                          braid_Int             refine,
-                          braid_Int             lbalance,
-                          braid_Int             coarse_ilower,
-                          braid_Int             coarse_iupper,
-                          braid_Int             coarse_gupper)
+_braid_InitBalanceStruct(_braid_BalanceStruct *bstruct,
+                          braid_Int            refine,
+                          braid_Int            lbalance,
+                          braid_Int            coarse_ilower,
+                          braid_Int            coarse_iupper,
+                          braid_Int            coarse_gupper)
 
 {
     _braid_BalanceElt( bstruct , refine )         = refine;
@@ -3354,7 +3352,7 @@ _braid_DestroyBalanceStruct( _braid_BalanceStruct *bstruct )
 braid_Int
 _braid_GetRefinedDistribution(braid_Core            core,
                               braid_Int            *done,
-                              braid_Real            *wfactors,
+                              braid_Real           *wfactors,
                               braid_Int             npoints,
                               _braid_BalanceStruct *bstruct)
 {
@@ -3385,13 +3383,20 @@ braid_Int _braid_BuildCommunicationMap( braid_Core  core,
     braid_Int cf, max_levels, min_coarse, g_lower, g_upper, nlevels;
     braid_Int rank, comm_size, i ,j, k, index, level;
     braid_Int haves, needs, bals, sends, response, low, high, sent;
-    braid_Int  num_old_inds, assumed_ilower, assumed_iupper;
-    braid_Int num_messages, num_needs, num_haves, curr_proc, new_proc;
+    braid_Int  num_old_inds, assumed_ilower, assumed_iupper, rilower_m1;
+    braid_Int num_messages, num_needs, num_haves, curr_proc, new_proc, num_recvs;
 
     braid_Int *gupper, *cfactor, *iupper, *ilower, *owners;
     braid_Int *need_procs, *need_indices,  *have_procs, *have_indices,  *load_sends;
-    braid_Int *send_buffer_1, *recv_buffer, *resp_buffer_1;
+    braid_Int *send_buffer_1, *recv_buffer, *resp_buffer_1, *recv_indices;
+    braid_Int *left_procs, *right_procs, *send_map_alloc, *send_map; 
     braid_Int **send_buffer, **resp_buffer;
+    
+    braid_Int new_gupper = _braid_BalanceElt( bstruct, fine_gupper );
+    braid_Int new_ilower = _braid_BalanceElt( bstruct, fine_ilower );
+    braid_Int new_iupper = _braid_BalanceElt( bstruct, fine_iupper );
+    braid_Int old_iupper = _braid_BalanceElt( bstruct, refined_iupper );
+    braid_Int old_ilower = _braid_BalanceElt( bstruct, refined_ilower );
 
     MPI_Request *send_requests, *resp_requests, request;
     MPI_Status status;
@@ -3399,12 +3404,6 @@ braid_Int _braid_BuildCommunicationMap( braid_Core  core,
     MPI_Comm_size( comm, &comm_size );
     MPI_Comm_rank( comm, &rank );
 
-    /* Extract the information */
-    braid_Int new_gupper = _braid_BalanceElt( bstruct, fine_gupper );
-    braid_Int new_ilower = _braid_BalanceElt( bstruct, fine_ilower );
-    braid_Int new_iupper = _braid_BalanceElt( bstruct, fine_iupper );
-    braid_Int old_iupper = _braid_BalanceElt( bstruct, refined_iupper );
-    braid_Int old_ilower = _braid_BalanceElt( bstruct, refined_ilower );
 
     /* Get the number of levels on the new fine grid */
     max_levels = _braid_CoreElt( core, max_levels );
@@ -3425,10 +3424,10 @@ braid_Int _braid_BuildCommunicationMap( braid_Core  core,
     nlevels++;
 
     /* Allocate the communication maps inside the structure */
-    braid_Int *right_procs = _braid_CTAlloc(  braid_Int , nlevels );
-    braid_Int *left_procs = _braid_CTAlloc(  braid_Int , nlevels );
-    braid_Int *send_map_alloc = _braid_CTAlloc( braid_Int, old_iupper - old_ilower + 2 );
-    braid_Int *send_map = send_map_alloc + 1;
+    right_procs = _braid_CTAlloc(  braid_Int , nlevels );
+    left_procs = _braid_CTAlloc(  braid_Int , nlevels );
+    send_map_alloc = _braid_CTAlloc( braid_Int, old_iupper - old_ilower + 2 );
+    send_map = send_map_alloc + 1;    
     _braid_BalanceElt( bstruct, right_procs ) = right_procs;
     _braid_BalanceElt( bstruct, left_procs ) = left_procs;
     _braid_BalanceElt( bstruct, send_map_alloc ) = send_map_alloc;
@@ -3453,23 +3452,24 @@ braid_Int _braid_BuildCommunicationMap( braid_Core  core,
         _braid_GetCFactor(core, i, &cfactor[i] );
     }
 
-
     /* Get a list of indices that are my neigbours on each level */
     /* need_indices are the indexes to the right that are needed. */
     /* Recv indices are the indexes to the left, but are only used if
      * no weighted load balancing takes place */
     need_indices = _braid_CTAlloc( braid_Int, nlevels );
     need_procs = _braid_CTAlloc( braid_Int, nlevels + 1 );
-    braid_Int *recv_indices = _braid_CTAlloc( braid_Int, nlevels );
+    recv_indices = _braid_CTAlloc( braid_Int, nlevels );
     num_needs = 0;
-    braid_Int num_recvs = 0;
+    num_recvs = 0;
     for ( i = 0; i < nlevels; i++ )
     {
         index = iupper[i] + 1;
         if ( index <= gupper[i] && iupper[i] >= ilower[i])
         {
             for ( j = i; j > 0; j-- )
-                _braid_MapCoarseToFine( index, cfactor[j-1], index );
+            {
+               _braid_MapCoarseToFine( index, cfactor[j-1], index );
+            }
             _braid_GetBlockDistProc( gupper[0] + 1, comm_size, index, &need_procs[num_needs] );
             need_indices[num_needs++] = index;
         }
@@ -3479,7 +3479,9 @@ braid_Int _braid_BuildCommunicationMap( braid_Core  core,
             if ( index >= 0 && iupper[i] >= ilower[i] )
             {
                 for ( j = i; j > 0; j--)
-                    _braid_MapCoarseToFine( index, cfactor[j-1], index );
+                {
+                   _braid_MapCoarseToFine( index, cfactor[j-1], index );
+                }
                 recv_indices[num_recvs++] = index;
             }
 
@@ -3494,13 +3496,17 @@ braid_Int _braid_BuildCommunicationMap( braid_Core  core,
             right_procs[i] = -1;
         }
         for ( i = 0; i < num_needs; i++ )
-            _braid_GetBlockDistProc( new_gupper + 1, comm_size, need_indices[i], &right_procs[i]);
+        {
+           _braid_GetBlockDistProc( new_gupper + 1, comm_size, need_indices[i], &right_procs[i]);
+        }
         for ( i = 0; i < num_recvs; i++ )
-            _braid_GetBlockDistProc( new_gupper + 1, comm_size, recv_indices[i], &left_procs[i]);
+        {
+           _braid_GetBlockDistProc( new_gupper + 1, comm_size, recv_indices[i], &left_procs[i]);
+        }
         for ( i = old_ilower; i <= old_iupper ; i++ )
-            _braid_GetBlockDistProc( new_gupper + 1, comm_size, i, &send_map[i-old_ilower]) ;
-
-        braid_Int rilower_m1;
+        {
+           _braid_GetBlockDistProc( new_gupper + 1, comm_size, i, &send_map[i-old_ilower]) ;
+        }
         _braid_GetBlockDistProc( new_gupper + 1, comm_size, old_ilower - 1 , &rilower_m1 );
         send_map[-1] = rilower_m1;
 
@@ -3543,9 +3549,11 @@ braid_Int _braid_BuildCommunicationMap( braid_Core  core,
 
     /* Get a list of proceesors to ask about for the location of the fine points */
     num_old_inds = old_iupper - old_ilower + 1 ;
-    load_sends = _braid_CTAlloc( braid_Int, num_old_inds + 1); //6
+    load_sends = _braid_CTAlloc( braid_Int, num_old_inds + 1); 
     for ( i = old_ilower; i <= old_iupper; i++ )
-        _braid_GetBlockDistProc( gupper[0] + 1, comm_size, i , &load_sends[i - old_ilower] );
+    {
+       _braid_GetBlockDistProc( gupper[0] + 1, comm_size, i , &load_sends[i - old_ilower] );
+    }
     load_sends[num_old_inds] = -1;
 
     /* Get a list of indices that have to be asked about, but do not require a response */
@@ -3594,7 +3602,7 @@ braid_Int _braid_BuildCommunicationMap( braid_Core  core,
         high = _braid_max( load_sends[num_old_inds -1], high );
     }
 
-    //Build the send buffer, send it, and post a recv for the response if needed
+    /* Build the send buffer, send it, and post a recv for the response if needed */
     haves = 0;
     needs = 0;
     bals  = 0;
@@ -3613,7 +3621,7 @@ braid_Int _braid_BuildCommunicationMap( braid_Core  core,
         if ( sent )
         {
             sends++;
-            send_buffer[sends] = _braid_CTAlloc( braid_Int, 11 + nlevels + num_old_inds  ); //10 + sends
+            send_buffer[sends] = _braid_CTAlloc( braid_Int, 11 + nlevels + num_old_inds  ); 
             sent = 0;
         }
         if ( i == have_procs[haves] )
@@ -3640,8 +3648,8 @@ braid_Int _braid_BuildCommunicationMap( braid_Core  core,
             MPI_Isend( send_buffer[sends] , j , braid_MPI_INT, i, 14, comm, &send_requests[sends] );
             if (send_buffer[sends][1] > 0 || send_buffer[sends][2 + send_buffer[sends][1]] > 0 )
             {
-                resp_buffer[response] = _braid_CTAlloc( braid_Int, 11 + nlevels + num_old_inds );
-                MPI_Irecv( resp_buffer[response] , 11 + nlevels + num_old_inds, braid_MPI_INT, i, 13, comm, &resp_requests[response] );
+                resp_buffer[response] = _braid_CTAlloc( braid_Int, 10 + nlevels + num_old_inds );
+                MPI_Irecv( resp_buffer[response] , 10 + nlevels + num_old_inds, braid_MPI_INT, i, 13, comm, &resp_requests[response] );
                 response++;
             }
         }
@@ -3655,11 +3663,11 @@ braid_Int _braid_BuildCommunicationMap( braid_Core  core,
     /* TODO Not sure how to do this with non blocking recieves. We dont know how many messages
        we will receive from any one processor. */ 
     i = 0;
-    recv_buffer = _braid_CTAlloc( braid_Int, 11 + nlevels + assumed_iupper - assumed_ilower  );
-    resp_buffer_1 = _braid_CTAlloc( braid_Int, 11 + nlevels + assumed_iupper - assumed_ilower );
+    recv_buffer = _braid_CTAlloc( braid_Int, 10 + nlevels + assumed_iupper - assumed_ilower  );
+    resp_buffer_1 = _braid_CTAlloc( braid_Int, 10 + nlevels + assumed_iupper - assumed_ilower );
     while (num_messages > 0 )
     {
-        MPI_Recv( recv_buffer, 11 + nlevels + assumed_iupper - assumed_ilower, braid_MPI_INT, MPI_ANY_SOURCE, 14, comm, &status );
+        MPI_Recv( recv_buffer, 10 + nlevels + assumed_iupper - assumed_ilower, braid_MPI_INT, MPI_ANY_SOURCE, 14, comm, &status );
         num_messages -= (recv_buffer[0] + recv_buffer[1] + recv_buffer[ 2 + recv_buffer[1] ]);
         if ( recv_buffer[1] > 0 || recv_buffer[ 2 + recv_buffer[1] ] > 0 )
         {
@@ -3710,7 +3718,7 @@ braid_Int _braid_BuildCommunicationMap( braid_Core  core,
 
     for ( i = 0; i < response; i++ )
         _braid_TFree( resp_buffer[i] );
-    _braid_TFree( resp_buffer ); // 2
+    _braid_TFree( resp_buffer );
 
     /* MPI sends to get my neighbouring processor on each level. These two arrays hold
     the send and recieve information on each level of the heiraachy. On level l the
@@ -3719,14 +3727,14 @@ braid_Int _braid_BuildCommunicationMap( braid_Core  core,
 
     send_buffer_1 = _braid_CTAlloc( braid_Int, nlevels );
     send_requests = _braid_CTAlloc( MPI_Request, nlevels );
-    sends = 0;
-
+   
     for( i = 0; i < nlevels; i++ )
     {
         right_procs[i] = -1;
         left_procs[i] = -1;
     }
 
+    sends = 0;
     for ( i = 0; i < k; i++ )
     {
         if ( need_procs[i] > 0 && rank < comm_size - 1 && ilower[0] <= iupper[0] )
@@ -3739,6 +3747,7 @@ braid_Int _braid_BuildCommunicationMap( braid_Core  core,
         else
             right_procs[i] = -1;
     }
+    
     for ( i = 0; i < nlevels; i++ )
     {
         if ( iupper[i] - ilower[i] + 1 > 0 && rank > 0 )
@@ -3756,7 +3765,7 @@ braid_Int _braid_BuildCommunicationMap( braid_Core  core,
 
     /* Get the processor that owns rilower-1 on the new fine grid. We need this to get the
     f next informarion for the FRefine function. */
-    braid_Int rilower_m1 = -1;
+    rilower_m1 = -1;
     if ( old_ilower > 0 && old_ilower <= old_iupper)
     {
         _braid_GetProcLeftOrRight( core, 0, -1 , &curr_proc );
@@ -3777,7 +3786,7 @@ braid_Int _braid_BuildCommunicationMap( braid_Core  core,
     _braid_TFree( ilower );
     _braid_TFree( cfactor );
 
-    /* Fill in the send and recv info for load balencing -- returns. These are the processors that
+    /* Fill in the send map load balencing -- returns. These are the processors that
        index ii on the new coarse grid must be sent to and recved from. FRefine chooses which of these are sent
        and which are not sent based on the old grid and the rfactors. */
 
@@ -3854,7 +3863,7 @@ _braid_GetPartition(braid_Core core,
 
     /* Wait for messages from other processors claiming to own points in my assumed partition */
     num_messages = *assumed_iupper - *assumed_ilower + 1 ;
-    recv_buffer = _braid_CTAlloc( braid_Int, num_messages + 2 );
+    recv_buffer = _braid_CTAlloc( braid_Int, num_messages + 1 );
     while ( num_messages > 0 )
     {
         MPI_Recv( recv_buffer, num_messages + 1, braid_MPI_INT, MPI_ANY_SOURCE, 18, comm, &recv_status);

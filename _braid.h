@@ -799,10 +799,10 @@ _braid_GetPartition(braid_Core core,
  * npoints, giving the weights for load balanceing.
  */
 braid_Int
-_braid_GetRefinedDistribution(braid_Core   core,
-                              braid_Int    *done,
-                              braid_Real    *wfactors,
-                              braid_Int    npoints,
+_braid_GetRefinedDistribution(braid_Core            core,
+                              braid_Int            *done,
+                              braid_Real           *wfactors,
+                              braid_Int             npoints,
                               _braid_BalanceStruct *bstruct );
 
 /**

@@ -115,14 +115,14 @@ typedef struct
 #define _braid_WeightedElt( weighted, elt)  ( (weighted) -> elt )
 
 /**
- * Init the weighted struct class
+ * Init a _braid_WeightedStruct structure
  */
 braid_Int
 _braid_WeightedStructInit( _braid_WeightedStruct *wstruct );
 
 
 /**
- * Destroy the _braid_WeightedStruct structure
+ * Destroy a _braid_WeightedStruct structure
  */
 braid_Int
 _braid_WeightedStructDestroy( _braid_WeightedStruct *wstruct );
@@ -133,9 +133,9 @@ _braid_WeightedStructDestroy( _braid_WeightedStruct *wstruct );
  */
 
 braid_Int
-_braid_WeightedDist(braid_Core            core,
+_braid_WeightedDist(braid_Core             core,
                     braid_Int             *done,
-                    braid_Real             *wfactors,
+                    braid_Real            *wfactors,
                     braid_Int              npoints,
                     _braid_BalanceStruct  *bstruct );
 
@@ -146,10 +146,10 @@ _braid_WeightedDist(braid_Core            core,
  */
 
 braid_Int
-_braid_GetWeightedInterval(braid_Core core,
-                           braid_Real  *wfactors,
+_braid_GetWeightedInterval( braid_Core            core,
+                            braid_Real           *wfactors,
                            _braid_WeightedStruct *wstruct,
-                           _braid_BalanceStruct *bstruct );
+                           _braid_BalanceStruct  *bstruct );
 
 /**
  * MPI User function, used to combine 4 all reduce commands into a single call.

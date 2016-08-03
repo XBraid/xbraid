@@ -33,7 +33,7 @@
  *----------------------------------------------------------------------------*/
 
 braid_Int
-_braid_BlockDist(braid_Core            core,
+_braid_BlockDist(braid_Core             core,
                  braid_Int             *done,
                  braid_Int              npoints,
                  _braid_BalanceStruct  *bstruct )
@@ -62,7 +62,8 @@ _braid_BlockDist(braid_Core            core,
     {
         //Do a scan to get refined_ilower and refined_iupper
         _braid_CoreElt(core, r_space) = 0;
-        MPI_Scan(&npoints, &refined_iupper, 1, braid_MPI_INT, MPI_SUM, comm);
+         MPI_Scan(&npoints, &refined_iupper, 1, braid_MPI_INT, MPI_SUM, comm);
+        
         _braid_BalanceElt( bstruct, refined_ilower ) = refined_iupper - npoints;
         _braid_BalanceElt( bstruct, refined_iupper ) = refined_iupper - 1;
         _braid_BalanceElt( bstruct, refined_gupper ) = refined_gupper;
@@ -75,7 +76,7 @@ _braid_BlockDist(braid_Core            core,
 }
 
 /*----------------------------------------------------------------------------
- * Returns the index interval for 'proc' in a blocked data distribution
+ * Sets the local index interval in a blocked data distribution
  *----------------------------------------------------------------------------*/
 braid_Int
 _braid_GetBlockDistInterval(braid_Core core,
@@ -88,6 +89,7 @@ _braid_GetBlockDistInterval(braid_Core core,
     MPI_Comm_size(comm, &nprocs);
     MPI_Comm_rank(comm, &proc);
 
+    /* Get and set ilower and iupper */
     _braid_GetBlockDistInterval_basic( npoints, nprocs, proc, &new_ilower, &new_iupper );
     _braid_BalanceElt( bstruct, fine_ilower ) = new_ilower;
     _braid_BalanceElt( bstruct, fine_iupper )  = new_iupper;
@@ -171,11 +173,11 @@ braid_Int
 _braid_WeightedStructInit( _braid_WeightedStruct *wstruct )
 {
     _braid_WeightedElt( wstruct, local_sum ) = 0;
-    _braid_WeightedElt( wstruct, local_min ) = braid_Int_Max;
+    _braid_WeightedElt( wstruct, local_min ) = braid_Real_Max;
     _braid_WeightedElt( wstruct, local_max ) = -1;
     _braid_WeightedElt( wstruct, global_max ) = -1;
-    _braid_WeightedElt( wstruct, global_min) = braid_Int_Max;
-    _braid_WeightedElt( wstruct, global_sum ) = -1;
+    _braid_WeightedElt( wstruct, global_min) = braid_Real_Max;
+    _braid_WeightedElt( wstruct, global_sum ) = 0;
     _braid_WeightedElt( wstruct, local_start ) = -1;
     _braid_WeightedElt( wstruct, local_stop ) = -1;
 
@@ -197,86 +199,90 @@ _braid_WeightedStructDestroy( _braid_WeightedStruct *wstruct )
 
 /*----------------------------------------------------------------------------
  * Completes the Balance structure needed by FRefine to complete load balancing
- * and temporal refinement, using the weighted data distribution.
+ * and temporal refinement, using a weighted data distribution.
  *----------------------------------------------------------------------------*/
 
 braid_Int
-_braid_WeightedDist(braid_Core            core,
+_braid_WeightedDist(braid_Core             core,
                     braid_Int             *done,
-                    braid_Real             *wfactors,
+                    braid_Real            *wfactors,
                     braid_Int              npoints,
                     _braid_BalanceStruct  *bstruct )
 {
     MPI_Comm comm = _braid_CoreElt( core, comm );
-
+    braid_Int i, refined_gupper, refined_iupper, refine, lbal ; 
+    braid_Real local_sum, local_max, local_min, csum, *send_data, *recv_data; 
     _braid_WeightedStruct wstruct;
-    _braid_WeightedStructInit( &wstruct );
 
+    /* Init the weighted structure */    
+    _braid_WeightedStructInit( &wstruct );
+    
     /* Get the local sum, min, and max; */
-    braid_Int i;
-    braid_Real local_max = 0;
-    braid_Real local_sum = 0;
-    braid_Real local_min = 1e100;
-    braid_Int refined_gupper = 0;
+    local_max = 0;
+    local_sum = 0;
+    local_min = braid_Real_Max;
+    refined_gupper = 0;
     for ( i = 0; i < npoints; i++ )
     {
         if ( local_max < wfactors[i] )
-            local_max = wfactors[i];
+        {
+           local_max = wfactors[i];
+        }
         if ( local_min > wfactors[i] && wfactors[i] > 0  )
-            local_min = wfactors[i];
+        {
+           local_min = wfactors[i];
+        }
         local_sum += wfactors[i];
     }
 
     /* Do the allreduce */
-    braid_Real *mpi_send = _braid_CTAlloc( braid_Real, 4 );
-    braid_Real *mpi_recv = _braid_CTAlloc( braid_Real, 4 );
-    mpi_send[0] = (braid_Real) npoints;
-    mpi_send[1] = local_sum;
-    mpi_send[2] = local_max;
-    mpi_send[3] = local_min;
+    send_data = _braid_CTAlloc( braid_Real, 4 );
+    recv_data = _braid_CTAlloc( braid_Real, 4 );
+    send_data[0] = (braid_Real) npoints;
+    send_data[1] = local_sum;
+    send_data[2] = local_max;
+    send_data[3] = local_min;
 
     MPI_Op sum_sum_max_min;
     MPI_Op_create( (MPI_User_function*) SumSumMaxMin , 1 , &sum_sum_max_min );
-    MPI_Allreduce(mpi_send, mpi_recv, 4, braid_MPI_REAL, sum_sum_max_min, comm);
+    MPI_Allreduce(send_data, recv_data, 4, braid_MPI_REAL, sum_sum_max_min, comm);
     MPI_Op_free( &sum_sum_max_min );
-    refined_gupper = (braid_Int) mpi_recv[0];
+    refined_gupper = (braid_Int) recv_data[0];
     (refined_gupper)--;
 
     /* Save the information */
     _braid_WeightedElt( &wstruct, local_sum ) = local_sum;
     _braid_WeightedElt( &wstruct, local_max ) = local_max;
     _braid_WeightedElt( &wstruct, local_min ) = local_min;
-    _braid_WeightedElt( &wstruct, global_sum ) = mpi_recv[1];
-    _braid_WeightedElt( &wstruct, global_max ) = mpi_recv[2];
-    _braid_WeightedElt( &wstruct, global_min ) = mpi_recv[3];
+    _braid_WeightedElt( &wstruct, global_sum ) = recv_data[1];
+    _braid_WeightedElt( &wstruct, global_max ) = recv_data[2];
+    _braid_WeightedElt( &wstruct, global_min ) = recv_data[3];
     _braid_BalanceElt( bstruct, refined_gupper ) = refined_gupper;
 
-    /* Do the scan */
-    braid_Real lbal = mpi_recv[3] - mpi_recv[2];
-    braid_Int refine = _braid_BalanceElt( bstruct, refine );
-    braid_Int coarse_gupper = _braid_BalanceElt( bstruct, coarse_gupper );
-    braid_Int ref = refined_gupper - coarse_gupper ;
-    braid_Int refined_iupper;
-
+    /* Only do weighted load balance if max weight != min weight */ 
+    lbal = recv_data[3] - recv_data[2];
+    
+    /* Only refine in time if we actaully added a time step somewhere */
+    refine = refined_gupper - _braid_BalanceElt( bstruct, coarse_gupper ) ;
+    refine = _braid_min( _braid_BalanceElt( bstruct, refine ), refine );
+    
     /* Refine in time and do a weigted load balance */
-    if ( refine && lbal != 0 && ref != 0 )
+    if ( refine > 0 && lbal != 0 )
     {
-        MPI_Scan(mpi_send, mpi_recv, 2, braid_MPI_REAL, MPI_SUM, comm);
-        refined_iupper = (braid_Int) mpi_recv[0];
+        MPI_Scan(send_data, recv_data, 2, braid_MPI_REAL, MPI_SUM, comm);
+        refined_iupper = (braid_Int) recv_data[0];
 
-        _braid_BalanceElt( bstruct, refined_gupper ) = refined_gupper;
         _braid_BalanceElt( bstruct, refined_ilower ) = refined_iupper - npoints;
         _braid_BalanceElt( bstruct, refined_iupper ) = refined_iupper - 1;
-        _braid_WeightedElt( &wstruct, local_start )    = mpi_recv[1] - local_sum;
-        _braid_WeightedElt( &wstruct, local_stop ) = mpi_recv[1];
+        _braid_WeightedElt( &wstruct, local_start )  = recv_data[1] - local_sum;
+        _braid_WeightedElt( &wstruct, local_stop )   = recv_data[1];
         *done = 0;
     }
 
     /* 2 Refine in time and dont use a weighted load balence because all weights are the same */
-    else if ( refine && ref != 0 && lbal == 0 )
+    else if ( refine > 0 && lbal == 0 )
     {
         MPI_Scan(&npoints, &refined_iupper, 1, braid_MPI_INT, MPI_SUM, comm);
-        _braid_BalanceElt( bstruct, refined_gupper ) = refined_gupper;
         _braid_BalanceElt( bstruct, refined_ilower ) = refined_iupper - npoints;
         _braid_BalanceElt( bstruct, refined_iupper ) = refined_iupper - 1;
         _braid_BalanceElt( bstruct, lbalance ) = 0;
@@ -284,7 +290,7 @@ _braid_WeightedDist(braid_Core            core,
     }
 
     //No refine in time
-    else if ( !refine || ref == 0 )
+    else if ( refine < 0 )
     {
         /*No load balance and no refine so just return */
         if ( lbal == 0  )
@@ -295,22 +301,19 @@ _braid_WeightedDist(braid_Core            core,
         }
         else
         {
-            braid_Real c_sum_begin, c_sum_end;
-            MPI_Scan(&local_sum, &c_sum_end, 1, braid_MPI_REAL, MPI_SUM, comm );
-            c_sum_begin = c_sum_end - local_sum;
+             MPI_Scan(&local_sum, &csum, 1, braid_MPI_REAL, MPI_SUM, comm );
             _braid_BalanceElt( bstruct, refined_gupper ) = _braid_BalanceElt( bstruct, coarse_gupper );
             _braid_BalanceElt( bstruct, refined_ilower ) = _braid_BalanceElt( bstruct, coarse_ilower );
             _braid_BalanceElt( bstruct, refined_iupper ) = _braid_BalanceElt( bstruct, coarse_iupper );
-            _braid_WeightedElt( &wstruct, local_start )    = c_sum_begin;
-            _braid_WeightedElt( &wstruct, local_stop )     = c_sum_end;
+            _braid_WeightedElt( &wstruct, local_start )    = csum - local_sum;
+            _braid_WeightedElt( &wstruct, local_stop )     = csum;
             _braid_BalanceElt( bstruct, refine ) = 0;
             *done = 0;
         }
-
     }
 
-    _braid_TFree( mpi_recv );
-    _braid_TFree( mpi_send );
+    _braid_TFree( recv_data );
+    _braid_TFree( send_data );
 
     if ( !(*done) )
     {
@@ -329,28 +332,24 @@ _braid_WeightedDist(braid_Core            core,
  *************************************************************************************/
 
 braid_Int
-_braid_GetWeightedInterval(braid_Core core,
-                           braid_Real  *wfactors,
+_braid_GetWeightedInterval( braid_Core            core,
+                            braid_Real           *wfactors,
                            _braid_WeightedStruct *wstruct,
-                           _braid_BalanceStruct *bstruct )
+                           _braid_BalanceStruct  *bstruct )
 {
 
-    braid_Int rank, comm_size;
-    braid_Int i ,j;
+    braid_Int rank, comm_size, i, j;
     braid_Real goal_load;
     braid_Int *send_buffer_ilower, *send_buffer_iupper, num_recvs, num_sends;
-    braid_Int partition_low, partition_high, num_partitions;
+    braid_Int partition_low, partition_high, num_partitions, fine_iupper, fine_ilower;
 
     MPI_Comm comm = _braid_CoreElt( core, comm );
-    MPI_Request *send_requests, *recv_requests;
     MPI_Comm_rank( comm, &rank );
     MPI_Comm_size( comm, &comm_size );
+    MPI_Request *send_requests, *recv_requests;
 
-    /* Extract information needed from the structures */
-    braid_Int fine_ilower, fine_iupper;
     braid_Int refined_gupper = _braid_BalanceElt( bstruct, refined_gupper );
     braid_Int refined_ilower = _braid_BalanceElt( bstruct, refined_ilower );
-
     braid_Real global_sum =   _braid_WeightedElt( wstruct, global_sum );
     braid_Real global_max =   _braid_WeightedElt( wstruct, global_max );
     braid_Real global_min =   _braid_WeightedElt( wstruct, global_min );
@@ -359,28 +358,24 @@ _braid_GetWeightedInterval(braid_Core core,
     braid_Real c_sum_end =    _braid_WeightedElt( wstruct, local_stop );
 
     /* calculate the goal load on each processor and the number of processors to use */
-    goal_load = global_sum / _braid_min( comm_size, refined_gupper + 1 );
-    if ( goal_load >= global_max)
-        num_partitions = (braid_Int) (floor( global_sum/goal_load + global_min/10000. ) - 1);
-    else
-    {
-        goal_load  = global_max;
-        num_partitions = (braid_Int) ( floor( global_sum/global_max + global_min/10000. ) - 1) ;
-    }
+    goal_load = _braid_max( global_max, global_sum / _braid_min( comm_size, refined_gupper + 1 ) );
+    num_partitions = (braid_Int) (floor( global_sum/goal_load + global_min/10. ) - 1);
 
     //Post recvs for ilower and iupper
     num_recvs = 0;
     recv_requests = _braid_CTAlloc( MPI_Request, 2 );
     if ( rank <= num_partitions )
     {
+        fine_ilower = 0;
+        fine_iupper = refined_gupper;
         if ( rank < num_partitions )
-            MPI_Irecv( &fine_iupper, 1, MPI_INT, MPI_ANY_SOURCE, 18, comm, &recv_requests[num_recvs++] );
-        else
-            fine_iupper = refined_gupper;
+        {
+           MPI_Irecv( &fine_iupper, 1, MPI_INT, MPI_ANY_SOURCE, 18, comm, &recv_requests[num_recvs++] );
+        }
         if ( rank > 0 )
-            MPI_Irecv( &fine_ilower, 1, MPI_INT, MPI_ANY_SOURCE, 17, comm, &recv_requests[num_recvs++] );
-        else
-            fine_ilower = 0;
+        {
+           MPI_Irecv( &fine_ilower, 1, MPI_INT, MPI_ANY_SOURCE, 17, comm, &recv_requests[num_recvs++] );
+        }
     }
     else
     {
@@ -392,25 +387,28 @@ _braid_GetWeightedInterval(braid_Core core,
        the ilower and iupper information to the corresponding processors.  */
     num_sends = 0;
     j = 0;
-
     if ( local_sum > 0 )
     {
-        partition_low = (braid_Int) ceil(c_sum_begin/goal_load );
-        /* Account for round off errors */
+        partition_low = (braid_Int) ceil( c_sum_begin/goal_load );
+        partition_high = _braid_min( num_partitions , (braid_Int) floor(c_sum_end/goal_load ) );
+      
+        /* If a parttion boundary is an integer make sure it only gets accounted for by one processor  */
         if ( partition_low == 0 || fabs( ceil(c_sum_begin/goal_load) - floor(c_sum_begin/goal_load)) < 1e-13 )
-            partition_low++;
-
-        partition_high = (braid_Int) floor(c_sum_end/goal_load );
-        partition_high = _braid_min( partition_high, num_partitions );
+        {
+           partition_low++;
+        }
 
         send_buffer_ilower  = _braid_CTAlloc( braid_Int , (partition_high - partition_low + 1) );
         send_buffer_iupper  = _braid_CTAlloc( braid_Int , (partition_high - partition_low + 1) );
         send_requests = _braid_CTAlloc( MPI_Request, 2*(partition_high-partition_low + 1) ) ;
 
+        /* Send the ilower and iupper information */
         for ( i = partition_low; i <= partition_high; i++ )
         {
             while ( c_sum_begin < goal_load*i )
-                c_sum_begin += wfactors[j++];
+            {
+               c_sum_begin += wfactors[j++];
+            }
             send_buffer_ilower[(i-partition_low)] = j + refined_ilower;
             send_buffer_iupper[(i-partition_low)] = j-1 + refined_ilower;
 
@@ -421,10 +419,20 @@ _braid_GetWeightedInterval(braid_Core core,
 
     /* Complete communication */
     if ( num_recvs > 0 )
-        MPI_Waitall( num_recvs , recv_requests , MPI_STATUS_IGNORE);
+    {
+       MPI_Waitall( num_recvs , recv_requests , MPI_STATUS_IGNORE);
+    }
     if ( num_sends > 0 )
+    {
         MPI_Waitall( num_sends , send_requests , MPI_STATUS_IGNORE);
+    }
 
+    /* Set the fine grid information */
+    _braid_BalanceElt( bstruct, fine_ilower ) = fine_ilower;
+    _braid_BalanceElt( bstruct, fine_iupper ) = fine_iupper;
+    _braid_BalanceElt( bstruct, fine_gupper ) = refined_gupper;
+
+    /* Free mallocs */
     if ( local_sum > 0 )
     {
         _braid_TFree( send_requests );
@@ -433,10 +441,7 @@ _braid_GetWeightedInterval(braid_Core core,
     }
     _braid_TFree( recv_requests );
 
-    _braid_BalanceElt( bstruct, fine_ilower ) = fine_ilower;
-    _braid_BalanceElt( bstruct, fine_iupper ) = fine_iupper;
-    _braid_BalanceElt( bstruct, fine_gupper ) = refined_gupper;
-
+    /* Syncronize and return */
     MPI_Barrier ( comm );
     return _braid_error_flag;
 }
@@ -447,8 +452,11 @@ _braid_GetWeightedInterval(braid_Core core,
 
 void SumSumMaxMin(braid_Real *in, braid_Real *inout, braid_Int *len, MPI_Datatype *datatype)
 {
+    /* Sum, Sum, Max, Min */
     inout[0] = in[0] + inout[0];
     inout[1] = in[1] + inout[1];
     inout[2] = _braid_max( in[2] , inout[2] );
     inout[3] = _braid_min( in[3] , inout[3] );
+
+    return;
 }

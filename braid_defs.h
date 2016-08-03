@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include <float.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,7 +55,8 @@ typedef int    braid_Int;
  * Defines floating point type
  **/
 typedef double braid_Real;
-
+#define braid_Real_Max DBL_MAX
+#define braid_Real_Min DBL_MIN
 /*--------------------------------------------------------------------------
  * MPI stuff
  *--------------------------------------------------------------------------*/
