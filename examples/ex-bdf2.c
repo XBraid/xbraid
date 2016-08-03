@@ -21,6 +21,27 @@
  *
  ***********************************************************************EHEADER*/
 
+/* Example BDF2: 1D linear problem with constant coefficient using BDF 2 time integrator
+
+   Compile with: make ex-bdf2
+
+   Help with:    ex-bdf2 -help
+
+   Sample run:   mpirun -np 4 -ntime 10000 -cf 10 -tol 1e-10
+
+   Uses: shellvector features
+
+   Description: This code solves the simple 1D problem
+
+                               y_t=lambda*y, y(0)=1
+
+                where lambda=-1. It serves as a demonstration code
+                of a multistep integration in XBraid using the
+                shellvector feature to store time values information
+                at all points in time. The BDF 2 time stepping is an
+                implicit scheme so the solve is hard-coded for this
+                specific equation.
+ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -72,8 +93,6 @@ my_Step(braid_App        app,
         braid_Vector     u,
         braid_StepStatus status)
 {
-   //printf("Call my_Step u->tprev= %.4f %.4f,     ustop->tprev= %.4f %.4f,     (diff=%.4f)\n",u->tprev[1],u->tprev[0],ustop->tprev[1],ustop->tprev[0], ustop->tprev[1]-u->tprev[1]);
-
    double new_y2, new_y1;
    /* Here, we use the fact that ustop is at least a shell containing
       the time values of the targeted time step. */

@@ -333,8 +333,6 @@ _braid_CommWait(braid_Core          core,
 
 /*----------------------------------------------------------------------------
  * Returns an index into the local u-vector for grid 'level' at point 'index'.
- * If the u-vector is not stored, returns a negative index: -1 if using
- * shellvector feature, -2 otherwise.
  *----------------------------------------------------------------------------*/
 
 braid_Int
@@ -1312,7 +1310,7 @@ _braid_InitGuess(braid_Core  core,
       {
          for (i = ilower; i <=iupper; i++)
          {
-            if ( (i-clower) % cfactor == 0)
+            if (_braid_IsCPoint(i,cfactor))
             {
                // We are on a C-point, init full vector
                _braid_CoreFcn(core, init)(app, ta[i-ilower], &u);
@@ -2882,7 +2880,6 @@ _braid_InitHierarchy(braid_Core    core,
    if ( gupper <= min_coarse )
    {
       max_levels = 1;
-      //_braid_CoreElt(core, max_levels) = max_levels;
    }
 
    /* Allocate space for rfactors (and initialize to zero) */
