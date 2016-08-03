@@ -34,9 +34,9 @@ include makefile.inc
 # Targets
 ##################################################################
 
-BRAID_HEADERS = _braid.h braid.h _util.h braid_test.h braid_status.h braid_defs.h mpistubs.h braid_dist.h
+BRAID_HEADERS = _braid.h braid.h _util.h braid_test.h braid_status.h braid_defs.h braid_dist.h mpistubs.h
 
-BRAID_FILES = _util.c braid.c _braid.c braid_test.c braid_status.c mpistubs.c braid_dist.c
+BRAID_FILES = _util.c braid.c _braid.c braid_test.c braid_status.c braid_dist.c braid_F90_iface.c mpistubs.c
 
 BRAID_OBJ = $(BRAID_FILES:.c=.o)
 
@@ -62,7 +62,7 @@ drivers: libbraid.a
 	cd drivers; $(MAKE)
 
 clean:
-	rm -f *.o libbraid.a libbraid.so
+	rm -f *.o libbraid.a
 	cd examples; $(MAKE) clean
 	cd drivers; $(MAKE) clean
 
@@ -74,7 +74,3 @@ info:
 	@echo "CXXFLAGS  = $(CXXFLAGS)"
 	@echo "FORTFLAGS = $(FORTFLAGS)"
 	@echo "LFLAGS    = $(LFLAGS)"
-
-shared: libbraid.a
-	$(MPICC) -shared -fPIC -o libbraid.so *.o
-   
