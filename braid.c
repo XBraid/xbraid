@@ -381,6 +381,7 @@ braid_Drive(braid_Core  core)
    braid_Int            skip            = _braid_CoreElt(core, skip);
    braid_Int            max_levels      = _braid_CoreElt(core, max_levels);
    braid_Int            print_level     = _braid_CoreElt(core, print_level);
+   braid_Int            access_level    = _braid_CoreElt(core, access_level);
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
 
    braid_Int     *nrels, nrel0;
@@ -493,6 +494,32 @@ braid_Drive(braid_Core  core)
          }
          else
          {
+
+            // Output the solution at the end of each cycle
+            // Copy the rfactors because the call to FAccess will modify them
+            if (access_level >= 2)
+            {
+               _braid_Grid **grids = _braid_CoreElt(core, grids);
+               ilower = _braid_GridElt(grids[0], ilower);
+               iupper = _braid_GridElt(grids[0], iupper);
+               braid_Int *saved_rfactors = _braid_CTAlloc(braid_Int,iupper-ilower+2);
+               braid_Int *rfactors       = _braid_CoreElt(core, rfactors);
+               int ii,i;
+               for (i=ilower; i<=iupper+1; i++)
+               {
+                  ii=i-ilower;
+                  saved_rfactors[ii]=rfactors[ii];
+               }
+               _braid_FAccess(core, 0, 0);
+               for (i=ilower; i<=iupper+1; i++)
+               {
+                  ii=i-ilower;
+                  rfactors[ii]=saved_rfactors[ii];
+               }
+               _braid_TFree(saved_rfactors);
+            }
+
+
             /* Finest grid - refine grid if desired, else check convergence */
             _braid_FRefine(core, &refined);
             nlevels = _braid_CoreElt(core, nlevels);
@@ -507,7 +534,7 @@ braid_Drive(braid_Core  core)
                _braid_DriveCheckConvergence(core, iter, &done);
 
                iter++;
-              _braid_CoreElt(core, niter) = iter;
+               _braid_CoreElt(core, niter) = iter;
             }
          }
       }
@@ -613,8 +640,11 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, step)            = step;
    _braid_CoreElt(core, init)            = init;
+   _braid_CoreElt(core, sinit)           = NULL;
    _braid_CoreElt(core, clone)           = clone;
+   _braid_CoreElt(core, sclone)          = NULL;
    _braid_CoreElt(core, free)            = free;
+   _braid_CoreElt(core, sfree)           = NULL;
    _braid_CoreElt(core, sum)             = sum;
    _braid_CoreElt(core, spatialnorm)     = spatialnorm;
    _braid_CoreElt(core, access)          = access;
@@ -652,6 +682,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, bstatus)         = _braid_CTAlloc(_braid_BufferStatus, 1);
 
    _braid_CoreElt(core, storage)         = -1;            /* only store C-points */
+   _braid_CoreElt(core, useshell)         = 0;
 
    _braid_CoreElt(core, gupper)          = ntime;
 
@@ -1227,6 +1258,23 @@ braid_SetSpatialRefine(braid_Core         core,
                        braid_PtFcnSRefine srefine)
 {
    _braid_CoreElt(core, srefine) = srefine;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetShell(braid_Core          core,
+               braid_PtFcnSInit    sinit,
+               braid_PtFcnSClone   sclone,
+               braid_PtFcnSFree    sfree)
+{
+   _braid_CoreElt(core, sinit) = sinit;
+   _braid_CoreElt(core, sclone) = sclone;
+   _braid_CoreElt(core, sfree) = sfree;
+   _braid_CoreElt(core, useshell) = 1;
 
    return _braid_error_flag;
 }
