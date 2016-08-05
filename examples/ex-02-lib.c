@@ -62,6 +62,7 @@
    #define PI 3.14159265358979
 #endif
 
+double taddforcing;
 
 /* --------------------------------------------------------------------
  * Simulation manager structure.  
@@ -101,6 +102,8 @@
  *   pfmg_tol            stopping tolerance for spatial MG
  *   pfmg_maxiter        maximum number of spatial MG iterations
  *   pfmg_maxlev         maximum number of spatial MG grid levels
+ *   pfmg_pre            number of pre-smoothing iterations of spatial MG
+ *   pfmg_post           number of post-smoothing iterations of spatial MG
  *   explicit            use explicit discretization (1) or not (0)
  *   output_vis            save the error for GLVis visualization
  *   output_files        save the solution/error/error norm to files
@@ -130,6 +133,8 @@ typedef struct _simulation_manager_struct {
    double                  pfmg_tol;
    int                     pfmg_maxiter;
    int                     pfmg_maxlev;
+   int                     pfmg_pre;
+   int                     pfmg_post;
    int                     explicit;
    int                     output_vis;
    int                     output_files;
@@ -283,7 +288,8 @@ double B0(double x, double y){
  * Forcing term: b(x,y,t) = -sin(x)*sin(y)*( sin(t) - 2*K*cos(t) )
  * -------------------------------------------------------------------- */
 double Ft(double x, double y, double t, double K){
-   return (-1.0)*sin(x)*sin(y)*( sin(t) - 2.0*K*cos(t) );
+   /*return (-1.0)*sin(x)*sin(y)*( sin(t) - 2.0*K*cos(t) );*/
+   return -1.0;
 }
 
 /* --------------------------------------------------------------------
@@ -1504,6 +1510,8 @@ int take_step(simulation_manager * man,         /* manager holding basic sim inf
    int      explicit     = man->explicit; /* if true, use explicit, else implicit */
    int      forcing      = man->forcing;  /* if true, use the nonzero forcing term */
    
+   double mystarttime, mystoptime;
+   
    HYPRE_SStructVector b;
    HYPRE_StructMatrix  sA;
    HYPRE_StructVector  sxstop, sbstop, sx, sb;
@@ -1528,8 +1536,11 @@ int take_step(simulation_manager * man,         /* manager holding basic sim inf
       HYPRE_StructMatrixMatvec( 1, sA, sb, 0, sx );
 
       if (forcing) {
+         mystarttime = MPI_Wtime();
          /* add RHS of PDE: g_i = dt*b_{i-1}, i > 0 */
          addForcingToRHS( man, tstop, x );
+         mystoptime = MPI_Wtime();
+         taddforcing += (mystoptime - mystarttime);
       }
       if (bstop != NULL)
       {
@@ -1546,8 +1557,11 @@ int take_step(simulation_manager * man,         /* manager holding basic sim inf
       addBoundaryToRHS( man, b );
       
       if (forcing) {
+         mystarttime = MPI_Wtime();
          /* add RHS of PDE: g_i = Phi*dt*b_i, i > 0 */
          addForcingToRHS( man, tstop, b );
+         mystoptime = MPI_Wtime();
+         taddforcing += (mystoptime - mystarttime);
       }
       if (bstop != NULL)
       {
@@ -1595,6 +1609,8 @@ int comp_res(simulation_manager * man,         /* manager holding basic sim info
    HYPRE_SStructMatrixGetObject( man->A, (void **) &sA );
    HYPRE_SStructVectorGetObject( xstop, (void **) &sxstop );
    HYPRE_SStructVectorGetObject( r, (void **) &sr );
+   
+   double mystarttime, mystoptime;
 
    if( explicit )
    {
@@ -1611,8 +1627,11 @@ int comp_res(simulation_manager * man,         /* manager holding basic sim info
       /* Residual r = xstop - A*r - forcing */
       HYPRE_StructMatrixMatvec( 1, sA, sb, 0, sr );
       if (forcing) {
+         mystarttime = MPI_Wtime();
          /* add RHS of PDE: g_i = dt*b_{i-1}, i > 0 */
          addForcingToRHS( man, tstop, r );
+         mystoptime = MPI_Wtime();
+         taddforcing += (mystoptime - mystarttime);
       }
       hypre_StructAxpy (-1, sxstop, sr);
       hypre_StructScale(-1, sr);
@@ -1630,8 +1649,11 @@ int comp_res(simulation_manager * man,         /* manager holding basic sim info
 
       /* Residual r = A*xstop - r - forcing */
       if (forcing) {
-         /* add RHS of PDE: g_i = Phi*dt*b_i, i > 0 */
+         mystarttime = MPI_Wtime();
+         /* add RHS of PDE: g_i = dt*b_i, i > 0 */
          addForcingToRHS( man, tstop, r );
+         mystoptime = MPI_Wtime();
+         taddforcing += (mystoptime - mystarttime);
       }
       HYPRE_StructMatrixMatvec( -1, sA, sxstop, 1, sr );
       hypre_StructScale(-1, sr);

@@ -86,6 +86,8 @@
 
 #define DEBUG 0
 
+#define BRAID_TIMING 1
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -97,6 +99,7 @@
 #include "braid_test.h"
 
 #include "../examples/ex-02-lib.c"
+
 
 /* 
  * This will store the spatial discretization information for interpolating to and 
@@ -204,6 +207,13 @@ typedef struct _braid_App_struct {
    int                     use_rand;
    int                     buffer_size;
    int                     print_level;
+   
+   /*
+    * spatial solver info
+    */
+   int                    *solver_calls;
+   int                    *solver_iters;
+   double                 *solver_time;
 } my_App;
 
 /* struct my_Vector contains local information specific to one time point
@@ -298,6 +308,7 @@ my_Step(braid_App        app,
    int print_level      = app->print_level;
    double temp_double;
    int temp_int;
+   double tsolverstart, tsolverstop;
    
    /* This debug output is mostly for regression testing */
    if(print_level == 2)
@@ -454,6 +465,8 @@ my_Step(braid_App        app,
    app->man->pfmg_tol = accuracy;
    
    /* Take step */
+   tsolverstart = MPI_Wtime();
+   
    if (fstop == NULL)
    {
       bstop = NULL;
@@ -463,6 +476,8 @@ my_Step(braid_App        app,
       bstop = fstop->x;
    }
    take_step(app->man, ustop->x, bstop, u->x, tstart, tstop, &iters_taken);
+   
+   tsolverstop = MPI_Wtime();
 
    /* Go back to the user's original choice of explicit */
    app->man->explicit = user_explicit;
@@ -472,6 +487,13 @@ my_Step(braid_App        app,
                                             iters_taken);
    /* Tell XBraid no refinement */
    braid_StepStatusSetRFactor(status, 1);
+   
+   /*
+    * update spatial solver info
+    */
+   app->solver_iters[level] += iters_taken;
+   app->solver_calls[level]++;
+   app->solver_time[level]  += (tsolverstop - tsolverstart);
 
    return 0;
 }
@@ -1922,10 +1944,20 @@ int main (int argc, char *argv[])
    my_App       *app;
    double tol, tol_x[2], *scoarsenCFL;
    double mystarttime, myendtime, mytime, maxtime;
-   int run_wrapper_tests, correct, fspatial_disc_idx, max_iter, max_iter_x[2], pfmg_maxlev;
+   int run_wrapper_tests, correct, fspatial_disc_idx;
+   int max_iter, max_iter_x[2], pfmg_maxlev, pfmg_pre, pfmg_post;
    int print_level, access_level, nA_max, max_levels, min_coarse, skip;
    int nrelax, nrelax0, cfactor, cfactor0, storage, res, new_res;
    int fmg, tnorm, nfmg_Vcyc, scoarsen, num_scoarsenCFL, use_rand, stmg;
+   
+   /*
+    * Spatial solver info
+    */
+   int    *solver_calls_global = NULL;
+   int    *solver_iters_global = NULL;
+   double *solver_time_global  = NULL;
+   double  solver_time_total   = 0.0;
+   double taddforcing_global;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -1976,6 +2008,8 @@ int main (int argc, char *argv[])
    max_iter_x[0]       = 50;
    max_iter_x[1]       = 50;
    pfmg_maxlev         = 20;
+   pfmg_pre            = 1;
+   pfmg_post           = 1;
    print_level         = 1;
    access_level        = 1;
    run_wrapper_tests   = 0;
@@ -2100,6 +2134,11 @@ int main (int argc, char *argv[])
          arg_index++;
          pfmg_maxlev = atoi(argv[arg_index++]);
       }
+      else if( strcmp(argv[arg_index], "-pfmg_nu") == 0 ){
+         arg_index++;
+         pfmg_pre = atoi(argv[arg_index++]);
+         pfmg_post = atoi(argv[arg_index++]);
+      }
       else if( strcmp(argv[arg_index], "-expl") == 0 ){
          arg_index++;
          explicit = 1;
@@ -2163,7 +2202,8 @@ int main (int argc, char *argv[])
       printf("  -mi  <max_iter>                    : set max iterations (default: 100)\n");
       printf("  -pfmg_tolx <loose_tol tight_tol>   : loose and tight PFMG stopping tol (default: 1e-09 1e-09)\n"); 
       printf("  -pfmg_mi <mi_fine mi_coarse>       : max number of PFMG iters for fine and coarse levels (default: 50 50)\n"); 
-      printf("  -pfmg_ml <max_levels>              : max number of PFMG grid levels\n"); 
+      printf("  -pfmg_ml <max_levels>              : max number of PFMG grid levels\n");
+      printf("  -pfmg_nu <nu_pre nu_post>          : number of pre- and post-smoothing steps for PFMG\n");
       printf("  -fmg <nfmg_Vcyc>                   : use FMG cycling, nfmg_Vcyc V-cycles at each fmg level\n");
       printf("  -res                               : use my residual\n");
       printf("  -new_res                           : use user residual routine to compute full residual each iteration\n");
@@ -2324,6 +2364,8 @@ int main (int argc, char *argv[])
    (app->man->pfmg_tol)        = tol_x[0];
    (app->man->pfmg_maxiter)    = max_iter_x[0];
    (app->man->pfmg_maxlev)     = pfmg_maxlev;
+   (app->man->pfmg_pre)        = pfmg_pre;
+   (app->man->pfmg_post)       = pfmg_post;
    (app->man->explicit)        = explicit;
    (app->man->output_vis)      = output_vis;
    (app->man->output_files)    = output_files;
@@ -2400,6 +2442,20 @@ int main (int argc, char *argv[])
    app->runtime_max_iter = (int*) calloc( (app->max_levels),  sizeof(int) );
    for( i = 0; i < app->max_levels; i++ )
       app->runtime_max_iter[i] = 0;
+   
+   /*
+    * Allocate memory for spatial solver info.
+    */
+   app->solver_calls = (int*) calloc( (app->max_levels), sizeof(int) );
+   app->solver_iters = (int*) calloc( (app->max_levels), sizeof(int) );
+   app->solver_time  = (double*) calloc( (app->max_levels), sizeof(double) );
+   for( i = 0; i < app->max_levels; i++ )
+   {
+      app->solver_calls[i] = 0;
+      app->solver_iters[i] = 0;
+      app->solver_time[i]  = 0.0;
+   }
+   
 
    /* Setup the lookup table that records how grids are coarsened (refined)
     * spatially.  
@@ -2486,6 +2542,8 @@ int main (int argc, char *argv[])
       /* Run a Braid simulation */
       /* Start timer. */
       mystarttime = MPI_Wtime();
+      
+      taddforcing = 0.0;
 
       braid_Init(comm, comm_t, tstart, tstop, nt, app, my_Step, my_Init,
             my_Clone, my_Free, my_Sum, my_SpatialNorm, my_Access, my_BufSize,
@@ -2653,7 +2711,17 @@ int main (int argc, char *argv[])
        * (if implicit used) */
       MPI_Allreduce( &(app->nA), &nA_max, 1, MPI_INT, MPI_MAX, comm ); 
       runtime_max_iter_global = (int*) malloc( nA_max*sizeof(int) );
-      runtime_scoarsen_info_global = (double*) malloc( 5*nA_max*sizeof(double) ); 
+      runtime_scoarsen_info_global = (double*) malloc( 5*nA_max*sizeof(double) );
+      
+      /*
+       * Spatial solver info
+       */
+      solver_calls_global = (int*) malloc (nA_max*sizeof(int) );
+      solver_iters_global = (int*) malloc (nA_max*sizeof(int) );
+      solver_time_global  = (double*) malloc (nA_max*sizeof(double) );
+      MPI_Allreduce( &taddforcing,
+                    &taddforcing_global, 1, MPI_DOUBLE, MPI_MAX, comm );
+      
       for( i = 0; i < nA_max; i++ ){
          /* Grab max num interations information */
          MPI_Allreduce( &(app->runtime_max_iter[i]), 
@@ -2669,8 +2737,18 @@ int main (int argc, char *argv[])
          MPI_Allreduce( &(app->runtime_scoarsen_info)[i*5+3],
                &runtime_scoarsen_info_global[i*5+3], 1, MPI_DOUBLE, MPI_MAX, comm ); 
          MPI_Allreduce( &(app->runtime_scoarsen_info)[i*5+4],
-               &runtime_scoarsen_info_global[i*5+4], 1, MPI_DOUBLE, MPI_MAX, comm ); 
-      
+               &runtime_scoarsen_info_global[i*5+4], 1, MPI_DOUBLE, MPI_MAX, comm );
+         
+         /*
+          * Grab solver info
+          */
+         MPI_Allreduce( &(app->solver_calls[i]),
+                        &solver_calls_global[i], 1, MPI_INT, MPI_MAX, comm );
+         MPI_Allreduce( &(app->solver_iters[i]),
+                        &solver_iters_global[i], 1, MPI_INT, MPI_MAX, comm );
+         MPI_Allreduce( &(app->solver_time[i]),
+                        &solver_time_global[i], 1, MPI_DOUBLE, MPI_MAX, comm );
+         solver_time_total += solver_time_global[i];
       }
 
       if( myid == 0 )
@@ -2715,6 +2793,22 @@ int main (int argc, char *argv[])
             }
          }
 
+         printf( "\n" );
+         
+         printf(" Spatial solver information\n");
+         printf(" Total time for spatial solver on all levels: %.5lfs\n", solver_time_total);
+         if (forcing)
+         {
+            printf(" Time for adding forcing info: %.5lfs\n", taddforcing_global);
+         }
+         printf("level   calls      iters        time\n");
+         printf("-----------------------------------------------------------------\n");
+         for( i = 0; i < nA_max; i++)
+         {
+            printf(" %2d   | %5d      %5d      %4.5lfs\n",
+                      i, solver_calls_global[i], solver_iters_global[i], solver_time_global[i]);
+         }
+         
          printf( "\n" );
       }
 
