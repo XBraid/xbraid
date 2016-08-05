@@ -116,8 +116,11 @@ typedef struct _braid_Core_struct
 
    braid_PtFcnStep        step;             /**< apply step function */
    braid_PtFcnInit        init;             /**< return an initialized braid_Vector */
+   braid_PtFcnSInit       sinit;            /**< (optional) return an initialized shell of braid_Vector */
    braid_PtFcnClone       clone;            /**< clone a vector */
+   braid_PtFcnSClone      sclone;           /**< (optional) clone the shell of a vector */
    braid_PtFcnFree        free;             /**< free up a vector */
+   braid_PtFcnSFree       sfree;            /**< (optional) free up the data of a vector, keep the shell */
    braid_PtFcnSum         sum;              /**< vector sum */
    braid_PtFcnSpatialNorm spatialnorm;      /**< Compute norm of a braid_Vector, this is a norm only over space */
    braid_PtFcnAccess      access;           /**< user access function to XBraid and current vector */
@@ -159,6 +162,7 @@ typedef struct _braid_Core_struct
    braid_BufferStatus     bstatus;          /**< status structure passed to user-written buffer routines */
 
    braid_Int              storage;          /**< storage = 0 (C-points), = 1 (all) */
+   braid_Int              useshell;         /**< activate the shell structure of vectors */
 
    braid_Int              gupper;           /**< global size of the fine grid */
 
@@ -335,14 +339,17 @@ _braid_CommWait(braid_Core          core,
                _braid_CommHandle **handle_ptr);
 
 /**
- * Returns an index into the local u-vector for grid *level* at point *index*.
- * If the u-vector is not stored, returns -1.
+ * Returns an index into the local u-vector for grid *level* at point *index*, 
+ * and information on the storage status of the point. If nothing is stored at
+ * that point, uindex = -1 and store_flag = -2. If only the shell is stored
+ * store_flag = -1, and if the whole u-vector is stored, store_flag = 0.
  */
 braid_Int
 _braid_UGetIndex(braid_Core   core,
                  braid_Int    level,
                  braid_Int    index,
-                 braid_Int   *uindex_ptr);
+                 braid_Int   *uindex_ptr,
+                 braid_Int   *store_flag_ptr);
 
 /**
  * Returns a reference to the local u-vector on grid *level* at point *index*.
