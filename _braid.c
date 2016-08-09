@@ -2228,8 +2228,11 @@ _braid_FRefine(braid_Core   core,
                    &requests[ncomms++]);
       }
       MPI_Waitall(ncomms, requests, statuses);
-      r_fa[npoints]=recv_buf[0];
-      r_ta[r_npoints]=recv_buf[1];
+      if ( iupper < gupper )
+      {
+         r_fa[npoints]=recv_buf[0];
+         r_ta[r_npoints]=recv_buf[1];
+      }
    }
    _braid_TFree(requests);
    _braid_TFree(statuses);
