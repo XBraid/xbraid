@@ -179,7 +179,7 @@ typedef braid_Int
  * 
  * The frequency of XBraid's calls to *access* is controlled through
  * [braid_SetAccessLevel](@ref braid_SetAccessLevel).  For instance, if
- * access_level is set to 2, then *access* is called every XBraid iteration and
+ * access_level is set to 3, then *access* is called every XBraid iteration and
  * on every XBraid level.  In this case, querrying *status* to determine the
  * current XBraid level and iteration will be useful. This scenario allows for
  * even more detailed tracking of the simulation.
@@ -199,7 +199,7 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnBufSize)(braid_App   app,               /**< user-defined _braid_App structure */
-                      braid_Int  *size_ptr,           /**< upper bound on vector size in bytes */
+                      braid_Int  *size_ptr,          /**< upper bound on vector size in bytes */
                       braid_BufferStatus  status     /**< can be querried for info on the message type */
                       );      
 
@@ -281,6 +281,32 @@ typedef braid_Int
                       braid_Vector           *fu_ptr, /**< output, refined vector */       
                       braid_CoarsenRefStatus  status  /**< query this struct for info about fu and cu (e.g., where in time fu and cu are)  */ 
                       );
+/**
+ * Shell initialization (optional)
+ **/
+typedef braid_Int
+(*braid_PtFcnSInit)(braid_App     app,           /**< user-defined _braid_App structure */
+                   braid_Real     t,             /**< time value for *u_ptr* */
+                   braid_Vector  *u_ptr          /**< output, newly allocated and initialized vector shell */
+                   );
+
+/**
+ * Shell clone (optional)
+ **/
+typedef braid_Int
+(*braid_PtFcnSClone)(braid_App      app,          /**< user-defined _braid_App structure */
+                    braid_Vector   u,            /**< vector to clone */ 
+                    braid_Vector  *v_ptr         /**< output, newly allocated and cloned vector shell */
+                    );
+
+/**
+ * Free the data of *u*, keep its shell (optional)
+ **/
+typedef braid_Int
+(*braid_PtFcnSFree)(braid_App     app,            /**< user-defined _braid_App structure */
+                    braid_Vector  u               /**< vector to free (keeping the shell) */
+                    );
+
 /** @}*/
 
 /*--------------------------------------------------------------------------
@@ -620,6 +646,21 @@ braid_SplitCommworld(const MPI_Comm  *comm_world,  /**< Global communicator to s
                      MPI_Comm        *comm_x,      /**< Spatial communicator (written as output) */
                      MPI_Comm        *comm_t       /**< Temporal communicator (written as output) */
                      );
+/**
+ * Activate the shell vector feature, and set the various functions that are required :
+ * - sinit  : create a shell vector
+ * - sclone : clone the shell of a vector
+ * - sfree  : free the data of a vector, keeping its shell
+ * This feature should be used with storage option = -1. It allows the used to keep metadata
+ * on all points (including F-points) without storing the all vector everywhere. With these options,
+ * the vectors are fully stored on C-points, but only the vector shell is kept on F-points.
+ **/
+braid_Int
+braid_SetShell(braid_Core          core, 
+               braid_PtFcnSInit    sinit,
+               braid_PtFcnSClone   sclone,
+               braid_PtFcnSFree    sfree
+               );
 
 /**
  * After Drive() finishes, this returns the number of iterations taken.

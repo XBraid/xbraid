@@ -110,79 +110,84 @@ typedef struct
  **/
 typedef struct _braid_Core_struct
 {
-    MPI_Comm               comm_world;
-    MPI_Comm               comm;             /**< communicator for the time dimension */
-    braid_Int              myid_world;       /**< my rank in the world communicator */
-    braid_Int              myid;             /**< my rank in the time communicator */
-    braid_Real             tstart;           /**< start time */
-    braid_Real             tstop;            /**< stop time */
-    braid_Int              ntime;            /**< initial number of time intervals */
-    braid_App              app;              /**< application data for the user */
+   MPI_Comm               comm_world;
+   MPI_Comm               comm;             /**< communicator for the time dimension */
+   braid_Int              myid_world;       /**< my rank in the world communicator */
+   braid_Int              myid;             /**< my rank in the time communicator */
+   braid_Real             tstart;           /**< start time */
+   braid_Real             tstop;            /**< stop time */
+   braid_Int              ntime;            /**< initial number of time intervals */
+   braid_App              app;              /**< application data for the user */
 
-    braid_PtFcnStep        step;             /**< apply step function */
-    braid_PtFcnInit        init;             /**< return an initialized braid_Vector */
-    braid_PtFcnClone       clone;            /**< clone a vector */
-    braid_PtFcnFree        free;             /**< free up a vector */
-    braid_PtFcnSum         sum;              /**< vector sum */
-    braid_PtFcnSpatialNorm spatialnorm;      /**< Compute norm of a braid_Vector, this is a norm only over space */
-    braid_PtFcnAccess      access;           /**< user access function to XBraid and current vector */
-    braid_PtFcnBufSize     bufsize;          /**< return buffer size */
-    braid_PtFcnBufPack     bufpack;          /**< pack a buffer */
-    braid_PtFcnBufUnpack   bufunpack;        /**< unpack a buffer */
-    braid_PtFcnResidual    residual;         /**< (optional) compute residual */
-    braid_PtFcnSCoarsen    scoarsen;         /**< (optional) return a spatially coarsened vector */
-    braid_PtFcnSRefine     srefine;          /**< (optional) return a spatially refined vector */
+   braid_PtFcnStep        step;             /**< apply step function */
+   braid_PtFcnInit        init;             /**< return an initialized braid_Vector */
+   braid_PtFcnSInit       sinit;            /**< (optional) return an initialized shell of braid_Vector */
+   braid_PtFcnClone       clone;            /**< clone a vector */
+   braid_PtFcnSClone      sclone;           /**< (optional) clone the shell of a vector */
+   braid_PtFcnFree        free;             /**< free up a vector */
+   braid_PtFcnSFree       sfree;            /**< (optional) free up the data of a vector, keep the shell */
+   braid_PtFcnSum         sum;              /**< vector sum */
+   braid_PtFcnSpatialNorm spatialnorm;      /**< Compute norm of a braid_Vector, this is a norm only over space */
+   braid_PtFcnAccess      access;           /**< user access function to XBraid and current vector */
+   braid_PtFcnBufSize     bufsize;          /**< return buffer size */
+   braid_PtFcnBufPack     bufpack;          /**< pack a buffer */
+   braid_PtFcnBufUnpack   bufunpack;        /**< unpack a buffer */
+   braid_PtFcnResidual    residual;         /**< (optional) compute residual */
+   braid_PtFcnSCoarsen    scoarsen;         /**< (optional) return a spatially coarsened vector */
+   braid_PtFcnSRefine     srefine;          /**< (optional) return a spatially refined vector */
 
-    braid_Int              access_level;     /**< determines how often to call the user's access routine */
-    braid_Int              print_level;      /**< determines amount of output printed to screen (0,1,2) */
-    braid_Int              seq_soln;         /**< boolean, controls if the initial guess is from sequential time stepping*/
-    braid_Int              max_levels;       /**< maximum number of temporal grid levels */
-    braid_Int              min_coarse;       /**< minimum possible coarse grid size */
-    braid_Real             tol;              /**< stopping tolerance */
-    braid_Int              rtol;             /**< use relative tolerance */
-    braid_Int             *nrels;            /**< number of pre-relaxations on each level */
-    braid_Int              nrdefault;        /**< default number of pre-relaxations */
-    braid_Int             *cfactors;         /**< coarsening factors */
-    braid_Int              cfdefault;        /**< default coarsening factor */
-    braid_Int              max_iter;         /**< maximum number of multigrid in time iterations */
-    braid_Int              niter;            /**< number of iterations */
-    braid_Int              fmg;              /**< use FMG cycle */
-    braid_Int              nfmg;             /**< number of fmg cycles to do initially before switching to V-cycles */
-    braid_Int              nfmg_Vcyc;        /**< number of V-cycle calls at each level in FMG */
-    braid_Int              tnorm;            /**< choice of temporal norm */
-    braid_Real            *tnorm_a;          /**< local array of residual norms on a proc's interval, used for inf-norm */
-    braid_Real             rnorm0;           /**< initial residual norm */
-    braid_Real            *rnorms;           /**< residual norm history */
-    braid_PtFcnResidual    full_rnorm_res;   /**< (optional) used to compute full residual norm */
-    braid_Real             full_rnorm0;      /**< (optional) initial full residual norm */
-    braid_Real            *full_rnorms;      /**< (optional) full residual norm history */
+   braid_Int              access_level;     /**< determines how often to call the user's access routine */ 
+   braid_Int              print_level;      /**< determines amount of output printed to screen (0,1,2) */
+   braid_Int              seq_soln;         /**< boolean, controls if the initial guess is from sequential time stepping*/
+   braid_Int              max_levels;       /**< maximum number of temporal grid levels */
+   braid_Int              min_coarse;       /**< minimum possible coarse grid size */
+   braid_Real             tol;              /**< stopping tolerance */
+   braid_Int              rtol;             /**< use relative tolerance */
+   braid_Int             *nrels;            /**< number of pre-relaxations on each level */
+   braid_Int              nrdefault;        /**< default number of pre-relaxations */
+   braid_Int             *cfactors;         /**< coarsening factors */
+   braid_Int              cfdefault;        /**< default coarsening factor */
+   braid_Int              max_iter;         /**< maximum number of multigrid in time iterations */
+   braid_Int              niter;            /**< number of iterations */
+   braid_Int              fmg;              /**< use FMG cycle */
+   braid_Int              nfmg;             /**< number of fmg cycles to do initially before switching to V-cycles */
+   braid_Int              nfmg_Vcyc;        /**< number of V-cycle calls at each level in FMG */
+   braid_Int              tnorm;            /**< choice of temporal norm */
+   braid_Real            *tnorm_a;          /**< local array of residual norms on a proc's interval, used for inf-norm */
+   braid_Real             rnorm0;           /**< initial residual norm */
+   braid_Real            *rnorms;           /**< residual norm history */
+   braid_PtFcnResidual    full_rnorm_res;   /**< (optional) used to compute full residual norm */
+   braid_Real             full_rnorm0;      /**< (optional) initial full residual norm */
+   braid_Real            *full_rnorms;      /**< (optional) full residual norm history */
 
 
-    braid_AccessStatus     astatus;          /**< status structure passed to user-written Access routine */
-    braid_CoarsenRefStatus cstatus;          /**< status structure passed to user-written coarsen/refine routines */
-    braid_StepStatus       sstatus;          /**< status structure passed to user-written step routines */
-    braid_BufferStatus     bstatus;          /**< status structure passed to user-written buffer routines */
+   braid_AccessStatus     astatus;          /**< status structure passed to user-written Access routine */
+   braid_CoarsenRefStatus cstatus;          /**< status structure passed to user-written coarsen/refine routines */
+   braid_StepStatus       sstatus;          /**< status structure passed to user-written step routines */
+   braid_BufferStatus     bstatus;          /**< status structure passed to user-written buffer routines */
 
-    braid_Int              storage;          /**< storage = 0 (C-points), = 1 (all) */
+   braid_Int              storage;          /**< storage = 0 (C-points), = 1 (all) */
+   braid_Int              useshell;         /**< activate the shell structure of vectors */
 
-    braid_Int              gupper;           /**< global size of the fine grid */
+   braid_Int              gupper;           /**< global size of the fine grid */
 
-    braid_Int              refine;           /**< refine in time (refine = 1) */
-    braid_Int              lbalance;         /**< load balance in time ( lbalance = 1 ) */
-    braid_Int             *rfactors;         /**< refinement factors for finest grid (if any) */
-    braid_Real             *wfactors;         /**< load balencing wieghts for finest */
-    braid_Int              r_space;          /**< spatial refinment flag */
-    braid_Int              rstopped;         /**< refinement stopped at iteration rstopped */
-    braid_Int              nrefine;          /**< number of refinements done */
-    braid_Int              max_refinements;  /**< maximum number of refinements */
-    braid_Int              tpoints_cutoff;   /**< refinements halt after the number of time steps exceed this value */
+   braid_Int              refine;           /**< refine in time (refine = 1) */
+   braid_Int              lbalance;         /**< load balance in time ( lbalance = 1 ) */
+   braid_Int             *rfactors;         /**< refinement factors for finest grid (if any) */
+   braid_Real            *wfactors;         /**< load balencing wieghts for finest */
+   braid_Int              r_space;          /**< spatial refinment flag */
+   braid_Int              rstopped;         /**< refinement stopped at iteration rstopped */
+   braid_Int              nrefine;          /**< number of refinements done */
+   braid_Int              max_refinements;  /**< maximum number of refinements */
+   braid_Int              tpoints_cutoff;   /**< refinements halt after the number of time steps exceed this value */
 
-    braid_Int              skip;             /**< boolean, controls skipping any work on first down-cycle */
+   braid_Int              skip;             /**< boolean, controls skipping any work on first down-cycle */
 
-    braid_Int              nlevels;          /**< number of temporal grid levels */
-    _braid_Grid          **grids;            /**< pointer to temporal grid structures for each level*/
-    braid_Real             localtime;        /**< local wall time for braid_Drive() */
-    braid_Real             globaltime;       /**< global wall time for braid_Drive() */
+   braid_Int              nlevels;          /**< number of temporal grid levels */
+   _braid_Grid          **grids;            /**< pointer to temporal grid structures for each level*/
+
+   braid_Real             localtime;        /**< local wall time for braid_Drive() */
+   braid_Real             globaltime;       /**< global wall time for braid_Drive() */
 
 } _braid_Core;
 
@@ -282,10 +287,10 @@ _braid_GetInitDistribution(braid_Core   core,
  * BlockDist functions.
  */
 braid_Int
-_braid_SetInitNeighbours( braid_Core   core,
-                          braid_Int    nlevels,
-                          braid_Int    gupper,
-                          _braid_Grid  **grids);
+_braid_SetInitNeighbours(braid_Core     core,
+                         braid_Int      nlevels,
+                         braid_Int      gupper,
+                         _braid_Grid  **grids);
 
 /**
  * Returns the processor number in *proc_ptr* that owns the index to
@@ -293,10 +298,10 @@ _braid_SetInitNeighbours( braid_Core   core,
  * Returns -1 if no communication is needed on level l.
  */
 braid_Int
-_braid_GetProcLeftOrRight( braid_Core  core,
-                           braid_Int   level,
-                           braid_Int   direction,
-                           braid_Int   *proc_ptr);
+_braid_GetProcLeftOrRight(braid_Core  core,
+                          braid_Int   level,
+                          braid_Int   direction,
+                          braid_Int   *proc_ptr);
 
 /**
  * Returns the coarsening factor to use on grid *level*.
@@ -339,14 +344,17 @@ _braid_CommWait(braid_Core          core,
                 _braid_CommHandle **handle_ptr);
 
 /**
- * Returns an index into the local u-vector for grid *level* at point *index*.
- * If the u-vector is not stored, returns -1.
+ * Returns an index into the local u-vector for grid *level* at point *index*, 
+ * and information on the storage status of the point. If nothing is stored at
+ * that point, uindex = -1 and store_flag = -2. If only the shell is stored
+ * store_flag = -1, and if the whole u-vector is stored, store_flag = 0.
  */
 braid_Int
 _braid_UGetIndex(braid_Core   core,
                  braid_Int    level,
                  braid_Int    index,
-                 braid_Int   *uindex_ptr);
+                 braid_Int   *uindex_ptr,
+                 braid_Int   *store_flag_ptr);
 
 /**
  * Returns a reference to the local u-vector on grid *level* at point *index*.
@@ -667,9 +675,9 @@ _braid_FAccess(braid_Core     core,
  * define CF-intervals.
  */
 braid_Int
-_braid_InitHierarchy(braid_Core    core,
+_braid_InitHierarchy(braid_Core     core,
                      _braid_Grid  *fine_grid,
-                     braid_Int     refined,
+                     braid_Int      refined,
                      braid_Int     *recv_procs,
                      braid_Int     *send_procs);
 
@@ -740,21 +748,21 @@ _braid_DeleteLastResidual(braid_Core  core);
  */
 typedef struct
 {
-    braid_Int refine;          /* bool -- refinment in time */
-    braid_Int lbalance;        /* bool -- weigted load balance */
-    braid_Int coarse_ilower;   /* coarse grid ilower */
-    braid_Int coarse_iupper;   /* coarse grid iupper */
-    braid_Int coarse_gupper;   /* coarse grid gupper */
-    braid_Int refined_ilower;  /* refined grid ilower */
-    braid_Int refined_iupper;  /* refined grid iupper */
-    braid_Int refined_gupper;  /* refined grid gupper */
-    braid_Int fine_ilower;     /* fine grid ilower */
-    braid_Int fine_iupper;     /* fine grid iupper */
-    braid_Int fine_gupper;     /* fine grid igupper */
-    braid_Int *right_procs;    /* maps to processor owning ilower -1 on lvel l. */
-    braid_Int *left_procs;     /* maps to processor owning iupper +1 on lvel l */
-    braid_Int *send_map_alloc; /* send_map allocation. Send map is a r_ilower -1, r_iupper */
-    braid_Int *send_map;       /* load balancing map rilower --> riupper + r_ilower - 1 */
+    braid_Int  refine;          /* bool -- refinment in time */
+    braid_Int  lbalance;        /* bool -- weigted load balance */
+    braid_Int  coarse_ilower;   /* coarse grid ilower */
+    braid_Int  coarse_iupper;   /* coarse grid iupper */
+    braid_Int  coarse_gupper;   /* coarse grid gupper */
+    braid_Int  refined_ilower;  /* refined grid ilower */
+    braid_Int  refined_iupper;  /* refined grid iupper */
+    braid_Int  refined_gupper;  /* refined grid gupper */
+    braid_Int  fine_ilower;     /* fine grid ilower */
+    braid_Int  fine_iupper;     /* fine grid iupper */
+    braid_Int  fine_gupper;     /* fine grid igupper */
+    braid_Int  *right_procs;    /* maps to processor owning ilower -1 on lvel l. */
+    braid_Int  *left_procs;     /* maps to processor owning iupper +1 on lvel l */
+    braid_Int  *send_map_alloc; /* send_map allocation. Send map is a r_ilower -1, r_iupper */
+    braid_Int  *send_map;       /* load balancing map rilower --> riupper + r_ilower - 1 */
 
 } _braid_BalanceStruct;
 
@@ -762,19 +770,19 @@ typedef struct
  * Initialize the Balance structure
  */
 braid_Int
-_braid_InitBalanceStruct( _braid_BalanceStruct *bstruct,
-                          braid_Int  refine,
-                          braid_Int  lbalance,
-                          braid_Int  coarse_ilower,
-                          braid_Int  coarse_iupper,
-                          braid_Int  coarse_gupper);
+_braid_InitBalanceStruct(_braid_BalanceStruct *bstruct,
+                         braid_Int             refine,
+                         braid_Int             lbalance,
+                         braid_Int             coarse_ilower,
+                         braid_Int             coarse_iupper,
+                         braid_Int             coarse_gupper);
 
 /**
  * Destroy the Balance structure
  */
 
 braid_Int
-_braid_DestroyBalanceStruct( _braid_BalanceStruct *bstruct );
+_braid_DestroyBalanceStruct(_braid_BalanceStruct *bstruct);
 
 
 /**
@@ -783,14 +791,13 @@ _braid_DestroyBalanceStruct( _braid_BalanceStruct *bstruct );
  * corresponding indicies in the assumed partition.
  */
 braid_Int
-_braid_GetPartition(braid_Core core,
-                    braid_Int ilower,
-                    braid_Int iupper,
-                    braid_Int gupper,
-                    braid_Int *assumed_ilower,
-                    braid_Int *assumed_iupper,
-                    braid_Int **owners
-                   );
+_braid_GetPartition(braid_Core    core,
+                    braid_Int     ilower,
+                    braid_Int     iupper,
+                    braid_Int     gupper,
+                    braid_Int    *assumed_ilower,
+                    braid_Int    *assumed_iupper,
+                    braid_Int   **owners);
 
 
 /**
@@ -811,8 +818,8 @@ _braid_GetRefinedDistribution(braid_Core            core,
  * Balance structure.
  */
 braid_Int
-_braid_BuildCommunicationMap( braid_Core  core,
-                              _braid_BalanceStruct *bstruct);
+_braid_BuildCommunicationMap(braid_Core            core,
+                             _braid_BalanceStruct *bstruct);
 
 #ifdef __cplusplus
 }
