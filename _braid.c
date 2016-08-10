@@ -2041,7 +2041,10 @@ _braid_FRefine(braid_Core  core,
    braid_Int      r_npoints, r_ilower, r_iupper, r_i, r_ii;
    braid_Int      f_npoints, f_ilower, f_iupper, f_gupper, f_i, f_j, f_ii;
    braid_Int     *r_ca, *r_fa, *f_ca, f_first, f_next, next;
+<<<<<<< HEAD
    braid_Int     *send_map, *left_procs, *right_procs;
+=======
+>>>>>>> master
    braid_Real    *ta, *r_ta_alloc, *r_ta, *f_ta;
 
    braid_Vector  *send_ua, *recv_ua, u;
@@ -2215,7 +2218,11 @@ _braid_FRefine(braid_Core  core,
       /* Post r_fa send */
       if (ilower > 0)
       {
+<<<<<<< HEAD
          _braid_GetProcLeftOrRight( core, 0, -1 , &prevproc);
+=======
+         _braid_GetBlockDistProc((gupper+1), nprocs, (ilower-1), &prevproc);
+>>>>>>> master
          MPI_Isend(send_buf, 2, braid_MPI_REAL, prevproc, 2, comm,
                    &requests[ncomms++]);
       }

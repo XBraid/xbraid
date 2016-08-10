@@ -685,6 +685,7 @@ my_Access(braid_App           app,
    int        iter, level, done;
    int        index, myid;
    static int previous_level = -5;
+   static int previous_iter = -5;
    char       filename[255], filename_mesh[255], filename_err[255], filename_sol[255];
   
    /* Retrieve current time from Status Object */
@@ -694,9 +695,10 @@ my_Access(braid_App           app,
    MPI_Comm_rank(comm, &myid);
    braid_AccessStatusGetTILD(astatus, &t, &iter, &level, &done);
    braid_AccessStatusGetResidual(astatus, &rnorm);
-   if( (myid == 0) && (level != previous_level) )
+   if( (myid == 0) && ((level != previous_level) || (iter != previous_iter)) )
    {
       previous_level = level;
+      previous_iter = iter;
       printf("  my_Access() called, iter= %d, level= %d\n", iter, level);
    }
 

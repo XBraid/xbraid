@@ -1,0 +1,32 @@
+# Begin Test 0
+
+  time steps = 50
+  iterations            = 3
+  residual norm         = 8.623462e-07
+  number of levels      = 5
+Number of calls to my_Access: 0
+
+# Begin Test 1
+
+  time steps = 50
+  iterations            = 5
+  residual norm         = 1.315838e-12
+  number of levels      = 5
+Number of calls to my_Access: 51
+
+# Begin Test 2
+
+  time steps = 5000
+  iterations            = 2
+  residual norm         = 6.086906e-06
+  number of levels      = 4
+Number of calls to my_Access: 15003
+
+# Begin Test 3
+
+  time steps = 5000
+  iterations            = 3
+  residual norm         = 2.912302e-11
+  number of levels      = 4
+Number of calls to my_Access: 34764
+
