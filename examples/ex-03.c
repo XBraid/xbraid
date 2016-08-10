@@ -78,7 +78,7 @@ my_Step(braid_App        app,
    (u->value) = (u->value) + 3.0*(tstop - tstart) ;
   
    double wfactor = ( rand()/( (double) RAND_MAX) )*100 + 1;
-   int rfactor = ( rand() % 10 ) + 1; 
+   int rfactor = 2;// ( rand() % 10 ) + 1; 
    braid_StepStatusSetWFactor(status, wfactor );
    braid_StepStatusSetRFactor(status, rfactor );
    return 0;
