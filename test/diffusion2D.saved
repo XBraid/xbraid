@@ -130,33 +130,12 @@
 # Begin Test 15
 
   my_Access() called, iter= 0, level= 0
-  my_Access() called, iter= 1, level= 3
-  my_Access() called, iter= 1, level= 2
-  my_Access() called, iter= 1, level= 1
   my_Access() called, iter= 1, level= 0
-  my_Access() called, iter= 2, level= 3
-  my_Access() called, iter= 2, level= 2
-  my_Access() called, iter= 2, level= 1
   my_Access() called, iter= 2, level= 0
-  my_Access() called, iter= 3, level= 3
-  my_Access() called, iter= 3, level= 2
-  my_Access() called, iter= 3, level= 1
   my_Access() called, iter= 3, level= 0
-  my_Access() called, iter= 4, level= 3
-  my_Access() called, iter= 4, level= 2
-  my_Access() called, iter= 4, level= 1
   my_Access() called, iter= 4, level= 0
-  my_Access() called, iter= 5, level= 3
-  my_Access() called, iter= 5, level= 2
-  my_Access() called, iter= 5, level= 1
   my_Access() called, iter= 5, level= 0
-  my_Access() called, iter= 6, level= 3
-  my_Access() called, iter= 6, level= 2
-  my_Access() called, iter= 6, level= 1
   my_Access() called, iter= 6, level= 0
-  my_Access() called, iter= 7, level= 3
-  my_Access() called, iter= 7, level= 2
-  my_Access() called, iter= 7, level= 1
   my_Access() called, iter= 7, level= 0
   time steps = 32
   iterations           = 7
@@ -164,12 +143,69 @@
  Fine level spatial problem size  : 17 x 17
 
 # Begin Test 16
+  my_Access() called, iter= 0, level= 0
+  my_Access() called, iter= 0, level= 1
+  my_Access() called, iter= 0, level= 2
+  my_Access() called, iter= 0, level= 3
+  my_Access() called, iter= 0, level= 2
+  my_Access() called, iter= 0, level= 1
+  my_Access() called, iter= 0, level= 0
+  my_Access() called, iter= 1, level= 0
+  my_Access() called, iter= 1, level= 1
+  my_Access() called, iter= 1, level= 2
+  my_Access() called, iter= 1, level= 3
+  my_Access() called, iter= 1, level= 2
+  my_Access() called, iter= 1, level= 1
+  my_Access() called, iter= 1, level= 0
+  my_Access() called, iter= 2, level= 0
+  my_Access() called, iter= 2, level= 1
+  my_Access() called, iter= 2, level= 2
+  my_Access() called, iter= 2, level= 3
+  my_Access() called, iter= 2, level= 2
+  my_Access() called, iter= 2, level= 1
+  my_Access() called, iter= 2, level= 0
+  my_Access() called, iter= 3, level= 0
+  my_Access() called, iter= 3, level= 1
+  my_Access() called, iter= 3, level= 2
+  my_Access() called, iter= 3, level= 3
+  my_Access() called, iter= 3, level= 2
+  my_Access() called, iter= 3, level= 1
+  my_Access() called, iter= 3, level= 0
+  my_Access() called, iter= 4, level= 0
+  my_Access() called, iter= 4, level= 1
+  my_Access() called, iter= 4, level= 2
+  my_Access() called, iter= 4, level= 3
+  my_Access() called, iter= 4, level= 2
+  my_Access() called, iter= 4, level= 1
+  my_Access() called, iter= 4, level= 0
+  my_Access() called, iter= 5, level= 0
+  my_Access() called, iter= 5, level= 1
+  my_Access() called, iter= 5, level= 2
+  my_Access() called, iter= 5, level= 3
+  my_Access() called, iter= 5, level= 2
+  my_Access() called, iter= 5, level= 1
+  my_Access() called, iter= 5, level= 0
+  my_Access() called, iter= 6, level= 0
+  my_Access() called, iter= 6, level= 1
+  my_Access() called, iter= 6, level= 2
+  my_Access() called, iter= 6, level= 3
+  my_Access() called, iter= 6, level= 2
+  my_Access() called, iter= 6, level= 1
+  my_Access() called, iter= 6, level= 0
+  my_Access() called, iter= 7, level= 0
+  time steps = 32
+  iterations           = 7
+  number of levels     = 4
+ Fine level spatial problem size  : 17 x 17
+
+
+# Begin Test 17
 
   my_Access() called, iter= 7, level= 0
  Fine level spatial problem size  : 17 x 17
 
 
-# Begin Test 17
+# Begin Test 18
  
   my_Access() called, iter= 7, level= 0
   time steps = 32
@@ -177,7 +213,7 @@
   number of levels     = 4
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 18
+# Begin Test 19
  
   braid_GetSpatialAccuracy:  1.00e-02
   braid_StepStatusGetTol:  6.70e-08
@@ -496,7 +532,7 @@
   braid_GetRNorms[4] = 6.69e-11
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 19
+# Begin Test 20
  
   my_Access() called, iter= 7, level= 0
   time steps = 32
@@ -504,7 +540,7 @@
   number of levels     = 4
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 20
+# Begin Test 21
 
 Starting braid_TestInitAccess
    braid_TestInitAccess:   Starting Test 1
@@ -666,7 +702,7 @@ Starting braid_TestBuf
    braid_TestBuf:   free(v)
 Finished braid_TestBuf: all tests passed successfully
 
-# Begin Test 21
+# Begin Test 22
 
   my_Access() called, iter= 1, level= 0
   time steps = 128
@@ -674,7 +710,7 @@ Finished braid_TestBuf: all tests passed successfully
   number of levels     = 1
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 22
+# Begin Test 23
 
   my_Access() called, iter= 8, level= 0
   time steps = 128
@@ -682,7 +718,7 @@ Finished braid_TestBuf: all tests passed successfully
   number of levels     = 2
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 23
+# Begin Test 24
 
   my_Access() called, iter= 8, level= 0
   time steps = 128
@@ -690,7 +726,7 @@ Finished braid_TestBuf: all tests passed successfully
   number of levels     = 8
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 24
+# Begin Test 25
 
   my_Access() called, iter= 8, level= 0
   time steps = 128

@@ -340,14 +340,17 @@ _braid_CommWait(braid_Core          core,
                _braid_CommHandle **handle_ptr);
 
 /**
- * Returns an index into the local u-vector for grid *level* at point *index*.
- * If the u-vector is not stored, returns -1.
+ * Returns an index into the local u-vector for grid *level* at point *index*, 
+ * and information on the storage status of the point. If nothing is stored at
+ * that point, uindex = -1 and store_flag = -2. If only the shell is stored
+ * store_flag = -1, and if the whole u-vector is stored, store_flag = 0.
  */
 braid_Int
 _braid_UGetIndex(braid_Core   core,
                  braid_Int    level,
                  braid_Int    index,
-                 braid_Int   *uindex_ptr);
+                 braid_Int   *uindex_ptr,
+                 braid_Int   *store_flag_ptr);
 
 /**
  * Returns a reference to the local u-vector on grid *level* at point *index*.

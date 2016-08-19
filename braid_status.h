@@ -73,17 +73,16 @@ typedef struct _braid_AccessStatus_struct *braid_AccessStatus;
 #define braid_ASCaller_FAccess   3
 typedef struct _braid_AccessStatus_struct
 {
-   braid_Real    t;            /**< current time */
-   braid_Int     istop;        /**< time point index value corresponding to t on the global time grid */
-   braid_Int     iter;         /**< XBraid iteration number */
-   braid_Int     level;        /**< current level in XBraid*/
-   braid_Int     nrefine;      /**< number of refinements done */
-   braid_Int     gupper;       /**< global size of the fine grid */
-   braid_Real    rnorm;        /**< residual norm */
-   braid_Int     done;         /**< boolean describing whether XBraid has finished */
-   braid_Int     wrapper_test; /**< boolean describing whether this call is only a wrapper test */
-   braid_Int     caller;       /**< from which function are we accessing the vector */
-
+   braid_Real    t;                /**< current time */
+   braid_Int     istop;            /**< time point index value corresponding to t on the global time grid */
+   braid_Int     iter;             /**< XBraid iteration number */
+   braid_Int     level;            /**< current level in XBraid*/
+   braid_Int     nrefine;          /**< number of refinements done */
+   braid_Int     gupper;           /**< global size of the fine grid */
+   braid_Real    rnorm;            /**< residual norm */
+   braid_Int     done;             /**< boolean describing whether XBraid has finished */
+   braid_Int     wrapper_test;     /**< boolean describing whether this call is only a wrapper test */
+   braid_Int     calling_function; /**< from which function are we accessing the vector */
 } _braid_AccessStatus;
 
 
@@ -192,17 +191,17 @@ typedef struct _braid_BufferStatus_struct
  * Initialize a braid_AccessStatus structure  
  **/
 braid_Int
-_braid_AccessStatusInit(braid_Real          t,           /**< current time */
-                        braid_Int           istop,       /**< time point index value corresponding to t on the global time grid */
-                        braid_Real          rnorm,       /**< current residual norm in XBraid */
-                        braid_Int           iter,        /**< current iteration in XBraid*/
-                        braid_Int           level,       /**< current level in XBraid */
-                        braid_Int           nrefine,     /**< number of refinements done */
-                        braid_Int           gupper,      /**< global size of the fine grid */
-                        braid_Int           done,        /**< boolean describing whether XBraid has finished */
-                        braid_Int           wrapper_test,/**< boolean describing whether this call is only a wrapper test */
-                        braid_Int           caller,      /**< from which function are we accessing the vector */
-                        braid_AccessStatus  status       /**< structure to initialize */
+_braid_AccessStatusInit(braid_Real          t,                /**< current time */
+                        braid_Int           istop,            /**< time point index value corresponding to t on the global time grid */
+                        braid_Real          rnorm,            /**< current residual norm in XBraid */
+                        braid_Int           iter,             /**< current iteration in XBraid*/
+                        braid_Int           level,            /**< current level in XBraid */
+                        braid_Int           nrefine,          /**< number of refinements done */
+                        braid_Int           gupper,           /**< global size of the fine grid */
+                        braid_Int           done,             /**< boolean describing whether XBraid has finished */
+                        braid_Int           wrapper_test,     /**< boolean describing whether this call is only a wrapper test */
+                        braid_Int           calling_function, /**< from which function are we accessing the vector */
+                        braid_AccessStatus  status            /**< structure to initialize */
                         );
 
 /**
@@ -286,12 +285,12 @@ braid_AccessStatusGetWrapperTest(braid_AccessStatus  status,      /**< structure
                                  );
 
 /**
- * Return from which function the vector is accessed
+ * Return flag indicating from which function the vector is accessed
  **/
 braid_Int
-braid_AccessStatusGetCaller(braid_AccessStatus  status,      /**< structure containing current simulation info */
-                            braid_Int          *caller       /**< output, function number (0=FInterp, 1=FRestrict, 2=FRefine, 3=FAccess) */
-                            );
+braid_AccessStatusGetCallingFunction(braid_AccessStatus  status,           /**< structure containing current simulation info */
+                                     braid_Int          *calling_function  /**< output, function number (0=FInterp, 1=FRestrict, 2=FRefine, 3=FAccess) */
+                                     );
 
 /**
  * Return XBraid status for the current simulation. Four values are 
