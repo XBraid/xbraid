@@ -301,9 +301,7 @@ my_Access(braid_App          app,
    int        index;
    char       filename[255];
    FILE      *file;
-   double     t;
    
-   braid_AccessStatusGetT(astatus,     &t);
    braid_AccessStatusGetIstop(astatus, &index);
 
    sprintf(filename, "%s.%07d.%05d", "ex-01.out", index, app->rank);

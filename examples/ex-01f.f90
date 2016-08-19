@@ -413,18 +413,6 @@ program ex01_f90
    integer min_coarse, print_level, access_level, nfmg_Vcyc, res
    character (len = 255) arg
    
-   interface
-      subroutine braid_timegrid_f90(app, ta, ilower, iupper)
-         use braid_types
-         implicit none
-         type(my_app)                             :: app
-         double precision, dimension(app%ntime+1) :: ta
-         integer                                  :: ilower, iupper
-         integer                                  :: i, ntime
-         double precision                         :: tstart
-      end subroutine braid_timegrid_f90
-   end interface
-   
    ! Seed random number generator
    call random_seed()
 

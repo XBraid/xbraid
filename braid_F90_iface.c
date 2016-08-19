@@ -383,12 +383,11 @@ braid_TimeGrid_F90_Iface(braid_App               app,       /**< user-defined _b
    /* Temporary scalars so that the calling function's ilower and iupper are not overwritten */
    braid_Int ilower2 = *ilower;
    braid_Int iupper2 = *iupper;
-   /* \todo need to figure out appropriate macros for passing ta, ilower2, iupper2 below */
    braid_F90_Name(braid_timegrid_f90, BRAID_TIMEGRID_F90)( 
                             braid_PassF90_Obj(      app),
-                                                    ta,
-                                                   &ilower2,
-                                                   &iupper2 );
+                            braid_PassF90_RealPtr(  ta),
+                            braid_PassF90_Int(      ilower2),
+                            braid_PassF90_Int(      iupper2) );
    return 0;
 }
 
