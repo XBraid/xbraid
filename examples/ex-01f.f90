@@ -13,11 +13,10 @@ module braid_types
       double precision, allocatable :: dt(:)
       integer                       :: mydt
       integer                       :: ntime
-      integer                       :: comm, comm_t, comm_x
+      integer                       :: comm
       integer                       :: bufsize
-      integer                       :: ptx, pt, px
-      integer                       :: rank, rank_t, rank_x
-      integer                       :: group_t, group_x
+      integer                       :: pt
+      integer                       :: rank
    end type my_app
    
    ! Many Fortran compilers have a sizeof( ) function but its not part of the
@@ -88,16 +87,14 @@ subroutine print_timegrid(app, ta, ilower, iupper)
    double precision, dimension(app%ntime+1) :: ta
    integer                                  :: ilower, iupper
    integer                                  :: i, out_unit
+   character(len=5)  :: rank_string
    character(len=25) :: fname = "timegrid"
    character(len=8)  :: fname_short = "timegrid"
-   character(len=5)  :: rank_t_string, rank_x_string
    character(len=1)  :: dot = "."
 
-   write(rank_t_string, "(I5)")  app%rank_t
-   write(rank_x_string, "(I5)")  app%rank_x
-   call replace(rank_t_string, ' ', '0', 5)
-   call replace(rank_x_string, ' ', '0', 5)
-   fname = fname_short // dot // rank_t_string // dot // rank_x_string
+   write(rank_string, "(I5)")  app%rank
+   call replace(rank_string, ' ', '0', 5)
+   fname = fname_short // dot // rank_string
    out_unit = 11
    open (unit=out_unit, file=fname, action="write", status="replace")
    do i = ilower,iupper
@@ -398,14 +395,16 @@ program ex01_f90
    
    ! Import braid vector and app module
    use braid_types
-   use mpi ! use this for f90 code; for f77 code "include 'mpif.h'" after "implicit none"
-           ! use of "include 'mpif.h'" with f90 compilers may result in "invalid communicator"-type errors
-   use iso_c_binding, only : c_funptr, c_f_procpointer
+   
+   !MPI module for newer f90 compilers. For f77 code, comment in the "include 'mpif.h'" option after "implicit none"  
+   !use of "include 'mpif.h'" with f90 compilers may result in "invalid communicator"-type errors
+   !use mpi 
+
    implicit none
    type(my_app), pointer :: app
 
-   ! Include the mpi library definitons:
-!   include 'mpif.h' ! use this for f77 code; for f90 code "use mpi" at beginning of "program ex01_f90"
+   ! MPI module for older (f77) compilers; for f90 code "use mpi" at beginning of "program ex01_f90"
+   include 'mpif.h'
    
    ! Declare variables
    double precision t, tol
@@ -426,9 +425,6 @@ program ex01_f90
       end subroutine braid_timegrid_f90
    end interface
    
-   procedure(braid_timegrid_f90), pointer :: braid_timegrid_ptr => NULL()
-   type(c_funptr)                         :: braid_timegrid_c_ptr
-   
    ! Seed random number generator
    call random_seed()
 
@@ -447,12 +443,6 @@ program ex01_f90
    app%mydt      = 0
    app%bufsize   = 1
    app%comm      = mpi_comm_world
-   app%ptx       = 1
-   app%pt        = 1
-   app%px        = 1
-   app%rank      = 0
-   app%rank_t    = 0
-   app%rank_x    = 0
    max_levels    = 1
    nrelax        = 1
    nrelax0       = -1
@@ -469,7 +459,7 @@ program ex01_f90
    print_level   = 1
    access_level  = 1
    
-   call mpi_comm_size(app%comm, app%ptx,  ierr)
+   call mpi_comm_size(app%comm, app%pt,  ierr)
    call mpi_comm_rank(app%comm, app%rank, ierr)
 
    ! Parse command line
@@ -478,12 +468,7 @@ program ex01_f90
    i = 0
    do while (i <= numarg)
       call getarg ( i, arg)
-      if (arg == '-pgrid') then
-         i = i+1; call getarg ( i, arg); i = i+1
-         read(arg,*) app%pt
-         call getarg ( i, arg); i = i+1
-         read(arg,*) app%px
-      else if (arg == '-nt') then
+      if (arg == '-nt') then
          i = i+1; call getarg ( i, arg); i = i+1
          read(arg,*) app%ntime
       else if (arg == '-ml') then
@@ -523,7 +508,7 @@ program ex01_f90
       else if (arg == '-access_level') then
          i = i+1; call getarg ( i, arg); i = i+1
          read(arg,*) access_level
-      else if (arg == '-dt') then
+      else if (arg == '-tg') then
          i = i+1; call getarg ( i, arg); i = i+1
          read(arg,*) app%mydt
       else if (arg == '-wrapper_tests') then
@@ -532,7 +517,6 @@ program ex01_f90
       else if (arg == '-help') then
          i = i+1
          print *, " " 
-         print *, "  -pgrid  <pt px>     : set number of processors to be used in time and space (default: 1 1)"
          print *, "  -nt  <n>            : number of time steps (default: 32)"
          print *, "  -ml  <max_levels>   : set max levels"
          print *, "  -mc  <min_coarse>   : set min possible coarse level size (default: 3)"
@@ -545,10 +529,9 @@ program ex01_f90
          print *, "  -fmg <nfmg_Vcyc>    : use FMG cycling, nfmg_Vcyc  V-cycles at each fmg level"
          print *, "  -res                : use user-defined residual computation function"
          print *, "                        must compile with correct option in braid.h "
-         print *, "  -dt <mydt>          : if specified, user supplied time grid is used as global fine grid"
-         print *, "                        options in this example are"
-         print *, "                          1 - constant time step size dt"
-         print *, "                          2 - dt*0.5 for n = 1, ..., nt/2; dt*1.5 for n = nt/2+1, ..., nt"
+         print *, "  -tg <mydt>          : use user-specified time grid as global fine time grid, options are"
+         print *, "                        1 - uniform time grid"
+         print *, "                        2 - nonuniform time grid, dt*0.5 for n = 1, ..., nt/2; dt*1.5 for n = nt/2+1, ..., nt"
          print *, "  -print_level <l>    : sets the print_level (default: 1) "
          print *, "                        0 - no output to standard out "
          print *, "                        1 - Basic convergence information and hierarchy statistics"
@@ -573,23 +556,11 @@ program ex01_f90
          call braid_test_all_f90(app, mpi_comm_world, t, t, t)
       else
 
-         ! split the global communicator into communicators for space and time
-         call braid_split_commworld_f90(app%comm, app%px, app%comm_x, app%comm_t)
          ! get rank for local communicators
-         call mpi_comm_rank(app%comm_t, app%rank_t, ierr)
-         call mpi_comm_rank(app%comm_x, app%rank_x, ierr)
-         ! get group for local communicators
-         call mpi_comm_group(app%comm_t, app%group_t, ierr)
-         call mpi_comm_group(app%comm_x, app%group_x, ierr)
-         if ((app%px*app%pt) /= app%ptx) then
-            if (app%rank == 0) then
-               write(*,*) "Error: px(",app%px,") x pt(",app%pt,") does not equal the number of processors ptx(",app%ptx,")!"
-               call mpi_abort(app%comm, rc, ierr)
-            endif
-         endif
+         call mpi_comm_rank(app%comm, app%rank, ierr)
 
          ! Initialize braid
-         call braid_init_f90(app%comm, app%comm_t, app%tstart, app%tstop, &
+         call braid_init_f90(app%comm, app%comm, app%tstart, app%tstop, &
               app%ntime, app, braid_core)
 
          ! Set the various command line options for braid
@@ -615,9 +586,7 @@ program ex01_f90
          ! Define the initial fine time grid using a user supplied function
          if (app%mydt > 0) then
             call init_timesteps(app)
-            braid_timegrid_ptr => braid_timegrid_f90
-            call c_f_procpointer(braid_timegrid_c_ptr, braid_timegrid_ptr)
-            call braid_set_timegrid_f90(braid_core, braid_timegrid_c_ptr)
+            call braid_set_timegrid_f90(braid_core)
          endif
          
          ! Run braid and clean up

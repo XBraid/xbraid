@@ -63,14 +63,14 @@
 /* can put anything in my app and name it anything as well */
 typedef struct _braid_App_struct
 {
-   MPI_Comm  comm, comm_t, comm_x;
+   MPI_Comm  comm;
    double    tstart;
    double    tstop;
    double   *dt;
    int       mydt;
    int       ntime;
-   int       ptx, pt, px;
-   int       rank, rank_t, rank_x;
+   int       pt;
+   int       rank;
 
 } my_App;
 
@@ -81,6 +81,9 @@ typedef struct _braid_Vector_struct
 
 } my_Vector;
 
+/* helper function for my_timegrid, that generates the time-step sizes. Called
+ * before braid_init.  Alternatively, this function could read time step sizes
+ * from a file */
 int
 init_TimeSteps(braid_App  app)
 {
@@ -172,7 +175,7 @@ print_my_timegrid(braid_App        app,
    upper = *iupper;
 
    /* filename could be anything that helps you track the current time grid */
-   sprintf(filename, "timegrid.%d.%d.info", app->rank_t, app->rank_x);
+   sprintf(filename, "timegrid.%d.info", app->rank);
    file = fopen(filename, "w");
    if (file != NULL) {
       for (i = lower; i <= upper; i++)
@@ -189,6 +192,7 @@ print_my_timegrid(braid_App        app,
    return 0;
 }
 
+/* function passed to XBraid that initializes time-grid */
 int
 my_timegrid(braid_App        app,
             braid_Real      *ta,
@@ -294,17 +298,15 @@ my_Access(braid_App          app,
           braid_Vector       u,
           braid_AccessStatus astatus)
 {
-   MPI_Comm   comm   = (app->comm);
-   int        index, rank;
+   int        index;
    char       filename[255];
    FILE      *file;
    double     t;
    
    braid_AccessStatusGetT(astatus,     &t);
    braid_AccessStatusGetIstop(astatus, &index);
-   MPI_Comm_rank(comm, &rank);
 
-   sprintf(filename, "%s.%07d.%05d", "ex-01.out", index, rank);
+   sprintf(filename, "%s.%07d.%05d", "ex-01.out", index, app->rank);
    file = fopen(filename, "w");
    fprintf(file, "%.14e\n", (u->value));
    fflush(file);
@@ -360,7 +362,7 @@ int main (int argc, char *argv[])
 {
    braid_Core    core;
    my_App       *app;
-   MPI_Comm      comm, comm_t, comm_x;
+   MPI_Comm      comm;
    double        tstart, tstop;
    int           ntime;
 
@@ -375,14 +377,11 @@ int main (int argc, char *argv[])
    int           mydt       = 0;
 
    int           arg_index;
-   int           ptx, pt, px;
-   int           rank, rank_t, rank_x;
+   int           pt;
+   int           rank;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
-
-   /* default to 1 processor in space and time */
-   ptx = pt = px = 1;
 
    /* ntime time intervals with spacing 1 */
    comm   = MPI_COMM_WORLD;
@@ -392,7 +391,6 @@ int main (int argc, char *argv[])
    tstop  = tstart + ntime;
    
    /* Parse command line */
-
    arg_index = 1;
    while (arg_index < argc)
    {
@@ -401,7 +399,6 @@ int main (int argc, char *argv[])
          if ( rank == 0 )
          {
             printf("\n");
-            printf("  -pgrid  <pt px>   : set number of processors to be used in time and space\n");
             printf("  -ml  <max_levels> : set max levels\n");
             printf("  -nu  <nrelax>     : set num F-C relaxations\n");
             printf("  -nu0 <nrelax>     : set num F-C relaxations on level 0\n");
@@ -410,18 +407,13 @@ int main (int argc, char *argv[])
             printf("  -mi  <max_iter>   : set max iterations\n");
             printf("  -fmg              : use FMG cycling\n");
             printf("  -res              : use my residual\n");
-            printf("  -dt <mydt>        : if specified, user supplied time grid is used as global fine grid, options in this example are\n");
-            printf("                      1 - constant time step size dt\n");
-            printf("                      2 - dt*0.5 for n = 1, ..., nt/2; dt*1.5 for n = nt/2+1, ..., nt\n");
+            printf("  -tg <mydt>        : use user-specified time grid as global fine time grid, options are\n");
+            printf("                      1 - uniform time grid\n");
+            printf("                      2 - nonuniform time grid, where dt*0.5 for n = 1, ..., nt/2; dt*1.5 for n = nt/2+1, ..., nt\n");
             printf("\n");
          }
          exit(1);
-      }
-      else if ( strcmp(argv[arg_index], "-pgrid") == 0 ){
-         arg_index++;
-         pt = atoi(argv[arg_index++]);
-         px = atoi(argv[arg_index++]);
-      }
+      } 
       else if ( strcmp(argv[arg_index], "-ml") == 0 )
       {
          arg_index++;
@@ -462,7 +454,7 @@ int main (int argc, char *argv[])
          arg_index++;
          res = 1;
       }
-      else if ( strcmp(argv[arg_index], "-dt") == 0 )
+      else if ( strcmp(argv[arg_index], "-tg") == 0 )
       {
          arg_index++;
          mydt = atoi(argv[arg_index++]);
@@ -474,38 +466,19 @@ int main (int argc, char *argv[])
       }
    }
 
-   /* Check the processor grid (px x pt = ptx?). */
-   MPI_Comm_size( comm, &ptx );
-   if( (px*pt) != ptx )
-   {
-       if( rank == 0 )
-           printf("Error: px(%d) x pt(%d) does not equal the number of processors ptx(%d)!\n", px, pt, ptx);
-       MPI_Finalize();
-       return (0);
-   }
-
-   /* Create communicators for the time and space dimensions */
-   braid_SplitCommworld(&comm, px, &comm_x, &comm_t);
-   MPI_Comm_rank(comm_t, &rank_t);
-   MPI_Comm_rank(comm_x, &rank_x);
    /* set up app structure */
    app = (my_App *) malloc(sizeof(my_App));
+   MPI_Comm_size( comm, &pt );
    (app->dt)     = NULL;
    (app->mydt)   = mydt;
    (app->comm)   = comm;
-   (app->comm_t) = comm_t;
-   (app->comm_x) = comm_x;
-   (app->ptx)    = ptx;
    (app->pt)     = pt;
-   (app->px)     = px;
    (app->tstart) = tstart;
    (app->tstop)  = tstop;
    (app->ntime)  = ntime;
    (app->rank)   = rank;
-   (app->rank_t) = rank_t;
-   (app->rank_x) = rank_x;
 
-   braid_Init(comm, comm_t, tstart, tstop, ntime, app,
+   braid_Init(comm, comm, tstart, tstop, ntime, app,
              my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
              my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
 
@@ -537,8 +510,6 @@ int main (int argc, char *argv[])
    braid_Drive(core);
 
    braid_Destroy(core);
-   MPI_Comm_free( &comm_x );
-   MPI_Comm_free( &comm_t );
 
    /* Finalize MPI */
    MPI_Finalize();
