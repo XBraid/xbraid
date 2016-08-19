@@ -23,7 +23,7 @@
 
 
 /*
-   Example 01_a
+   Example 01
 
    Compile with: make ex-01
 
@@ -31,7 +31,21 @@
 
    Description:
 
-   Simple linear example. Solution is u = 3.0*t 
+   Blah...
+
+   When run with the default 10 time steps, the solution is as follows:
+
+      1.00000000000000e+00
+      5.00000000000000e-01
+      2.50000000000000e-01
+      1.25000000000000e-01
+      6.25000000000000e-02
+      3.12500000000000e-02
+      1.56250000000000e-02
+      7.81250000000000e-03
+      3.90625000000000e-03
+      1.95312500000000e-03
+      9.76562500000000e-04
 
 */
 
@@ -39,7 +53,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-#include <time.h>
+
 #include "braid.h"
 
 /*--------------------------------------------------------------------------
@@ -74,13 +88,34 @@ my_Step(braid_App        app,
    double tstop;              /* evolve to this time*/
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
 
-   /* Solution is a linear line with slope 3 */
-   (u->value) = (u->value) + 3.0*(tstop - tstart) ;
-  
-   int wfactor = ( rand() % 1000) + 1;
-   int rfactor = ( rand() % 10 ) + 1; 
-   braid_StepStatusSetWFactor(status, wfactor );
-   braid_StepStatusSetRFactor(status, rfactor );
+   /* On the finest grid, each value is half the previous value */
+   (u->value) = pow(0.5, tstop-tstart)*(u->value);
+
+   if (fstop != NULL)
+   {
+      /* Nonzero rhs */
+      (u->value) += (fstop->value);
+   }
+
+   /* no refinement */
+   braid_StepStatusSetRFactor(status, 1);
+
+   return 0;
+}
+
+int
+my_Residual(braid_App        app,
+            braid_Vector     ustop,
+            braid_Vector     r,
+            braid_StepStatus status)
+{
+   double tstart;             /* current time */
+   double tstop;              /* evolve to this time*/
+   braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+
+   /* On the finest grid, each value is half the previous value */
+   (r->value) = (ustop->value) - pow(0.5, tstop-tstart)*(r->value);
+
    return 0;
 }
 
@@ -95,12 +130,12 @@ my_Init(braid_App     app,
    if (t == 0.0)
    {
       /* Initial condition */
-      (u->value) = 0.0;
+      (u->value) = 1.0;
    }
    else
    {
       /* Initialize all other time points */
-      (u->value) = 0.456;
+      (u->value) = 0.456;//((double)rand()) / RAND_MAX;
    }
    *u_ptr = u;
 
@@ -160,18 +195,25 @@ my_Access(braid_App          app,
           braid_Vector       u,
           braid_AccessStatus astatus)
 {
+   MPI_Comm   comm   = (app->comm);
    double     tstart = (app->tstart);
    double     tstop  = (app->tstop);
    int        ntime  = (app->ntime);
-   int        index;
+   int        index, myid;
+   char       filename[255];
+   FILE      *file;
    double     t;
    
    braid_AccessStatusGetT(astatus, &t);
    index = ((t-tstart) / ((tstop-tstart)/ntime) + 0.1);
 
-   MPI_Comm_rank( MPI_COMM_WORLD, &index );
-  // if ( fabs( 3.0*t - (u->value) ) > 1e-10 )
-    //  printf( " %d :  %.14f  \n ",index ,  3.0*t - (u->value));
+   MPI_Comm_rank(comm, &myid);
+
+   sprintf(filename, "%s.%07d.%05d", "ex-01.out", index, myid);
+   file = fopen(filename, "w");
+   fprintf(file, "%.14e\n", (u->value));
+   fflush(file);
+   fclose(file);
 
    return 0;
 }
@@ -218,7 +260,6 @@ my_BufUnpack(braid_App          app,
 /*--------------------------------------------------------------------------
  * Main driver
  *--------------------------------------------------------------------------*/
-#include <execinfo.h>
 
 int main (int argc, char *argv[])
 {
@@ -227,22 +268,24 @@ int main (int argc, char *argv[])
    MPI_Comm      comm;
    double        tstart, tstop;
    int           ntime;
-   int           tpts       = 10000;
+
    int           max_levels = 1;
    int           nrelax     = 1;
    int           nrelax0    = -1;
    double        tol        = 1.0e-06;
    int           cfactor    = 2;
    int           max_iter   = 100;
-   int           lbalance   = 0;
-   int           refine_time = 0; 
+   int           fmg        = 0;
+   int           res        = 0;
+
    int           arg_index;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
+
    /* ntime time intervals with spacing 1 */
    comm   = MPI_COMM_WORLD;
-   ntime  = 16;
+   ntime  = 32;
    tstart = 0.0;
    tstop  = tstart + ntime;
    
@@ -264,11 +307,8 @@ int main (int argc, char *argv[])
             printf("  -tol <tol>        : set stopping tolerance\n");
             printf("  -cf  <cfactor>    : set coarsening factor\n");
             printf("  -mi  <max_iter>   : set max iterations\n");
-            printf("  -lb               : use load balencing\n");
-            printf("  -rt               : use temporal refinment\n");
-            printf("  -tpts <tpts>      : cutoff for time refinement\n");
-            printf("  -nt <ntime>       : number of time points\n");
-
+            printf("  -fmg              : use FMG cycling\n");
+            printf("  -res              : use my residual\n");
             printf("\n");
          }
          exit(1);
@@ -298,30 +338,20 @@ int main (int argc, char *argv[])
          arg_index++;
          cfactor = atoi(argv[arg_index++]);
       }
-      else if ( strcmp(argv[arg_index], "-tpts") == 0 )
-      {
-         arg_index++;
-         tpts = atoi(argv[arg_index++]);
-      }
-      else if ( strcmp(argv[arg_index], "-nt") == 0 )
-      {
-         arg_index++;
-         ntime = atoi(argv[arg_index++]);
-      }
       else if ( strcmp(argv[arg_index], "-mi") == 0 )
       {
          arg_index++;
          max_iter = atoi(argv[arg_index++]);
       }
-      else if ( strcmp(argv[arg_index], "-lb") == 0 )
+      else if ( strcmp(argv[arg_index], "-fmg") == 0 )
       {
          arg_index++;
-         lbalance = 1;
+         fmg = 1;
       }
-      else if ( strcmp(argv[arg_index], "-rt") == 0 )
+      else if ( strcmp(argv[arg_index], "-res") == 0 )
       {
          arg_index++;
-         refine_time = 1;
+         res = 1;
       }
       else
       {
@@ -329,7 +359,7 @@ int main (int argc, char *argv[])
          /*break;*/
       }
    }
-   
+
    /* set up app structure */
    app = (my_App *) malloc(sizeof(my_App));
    (app->comm)   = comm;
@@ -352,24 +382,19 @@ int main (int argc, char *argv[])
    braid_SetCFactor(core, -1, cfactor);
    /*braid_SetCFactor(core,  0, 10);*/
    braid_SetMaxIter(core, max_iter);
-   
-   if (lbalance)
+   if (fmg)
    {
-      braid_SetLoadBalance( core, lbalance);
-   }  
-   if (refine_time)
-   {
-      braid_SetRefine( core, 1 );
-      braid_SetTPointsCutoff( core, tpts); 
+      braid_SetFMG(core);
    }
-   
-   int myid;
-   MPI_Comm_rank( comm, &myid );
-   srand( (unsigned int) time(NULL)*( myid + 1 ) );
+   if (res)
+   {
+      braid_SetResidual(core, my_Residual);
+   }
+
    braid_Drive(core);
 
    braid_Destroy(core);
-   free( app );
+
    /* Finalize MPI */
    MPI_Finalize();
 

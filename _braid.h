@@ -1,26 +1,26 @@
 /*BHEADER**********************************************************************
- * Copyright (c) 2013, Lawrence Livermore National Security, LLC.
- * Produced at the Lawrence Livermore National Laboratory. Written by
- * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin
+ * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
+ * Produced at the Lawrence Livermore National Laboratory. Written by 
+ * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
  * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
- *
+ * 
  * This file is part of XBraid. Email xbraid-support@llnl.gov for support.
- *
+ * 
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License (as published by the Free Software
  * Foundation) version 2.1 dated February 1999.
- *
+ * 
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE. See the terms and conditions of the GNU General Public
  * License for more details.
- *
+ * 
  * You should have received a copy of the GNU Lesser General Public License along
  * with this program; if not, write to the Free Software Foundation, Inc., 59
  * Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  ***********************************************************************EHEADER*/
-
+ 
 
 /** \file _braid.h
  * \brief Define headers for developer routines.
@@ -46,23 +46,21 @@ extern "C" {
  * Main data structures and accessor macros
  *--------------------------------------------------------------------------*/
 
-
-
 /**
-* XBraid comm handle structure
-*
-* Used for initiating and completing nonblocking communication to pass
-* braid_Vectors between processors.
-**/
+ * XBraid comm handle structure
+ *
+ * Used for initiating and completing nonblocking communication to pass
+ * braid_Vectors between processors.
+ **/
 typedef struct
 {
-    braid_Int       request_type;    /**< two values: recv type = 1, and send type = 0 */
-    braid_Int       num_requests;    /**< number of active requests for this handle, usually 1 */
-    MPI_Request    *requests;        /**< MPI request structure */
-    MPI_Status     *status;          /**< MPI status */
-    void           *buffer;          /**< Buffer for message */
-    braid_Vector   *vector_ptr;      /**< braid_vector being sent/received */
-
+   braid_Int       request_type;    /**< two values: recv type = 1, and send type = 0 */
+   braid_Int       num_requests;    /**< number of active requests for this handle, usually 1 */
+   MPI_Request    *requests;        /**< MPI request structure */
+   MPI_Status     *status;          /**< MPI status */
+   void           *buffer;          /**< Buffer for message */
+   braid_Vector   *vector_ptr;      /**< braid_vector being sent/received */
+   
 } _braid_CommHandle;
 
 /**
@@ -73,39 +71,38 @@ typedef struct
  **/
 typedef struct
 {
-    braid_Int          level;         /**< Level that grid is on */
-    braid_Int          ilower;        /**< smallest time index at this level*/
-    braid_Int          iupper;        /**< largest time index at this level*/
-    braid_Int          clower;        /**< smallest C point index */
-    braid_Int          cupper;        /**< largest C point index */
-    braid_Int          gupper;        /**< global size of the grid */
-    braid_Int          cfactor;       /**< coarsening factor */
-    braid_Int          ncpoints;      /**< number of C points */
+   braid_Int          level;         /**< Level that grid is on */
+   braid_Int          ilower;        /**< smallest time index at this level*/
+   braid_Int          iupper;        /**< largest time index at this level*/
+   braid_Int          clower;        /**< smallest C point index */
+   braid_Int          cupper;        /**< largest C point index */
+   braid_Int          gupper;        /**< global size of the grid */
+   braid_Int          cfactor;       /**< coarsening factor */
+   braid_Int          ncpoints;      /**< number of C points */
 
-    braid_Int          nupoints;      /**< number of unknown vector points */
-    braid_Vector      *ua;            /**< unknown vectors            (C-points at least)*/
-    braid_Real        *ta;            /**< time values                (all points) */
-    braid_Vector      *va;            /**< restricted unknown vectors (all points, NULL on level 0) */
-    braid_Vector      *fa;            /**< rhs vectors f              (all points, NULL on level 0) */
+   braid_Int          nupoints;      /**< number of unknown vector points */
+   braid_Vector      *ua;            /**< unknown vectors            (C-points at least)*/
+   braid_Real        *ta;            /**< time values                (all points) */
+   braid_Vector      *va;            /**< restricted unknown vectors (all points, NULL on level 0) */
+   braid_Vector      *fa;            /**< rhs vectors f              (all points, NULL on level 0) */
 
-    braid_Int          recv_index;    /**<  -1 means no receive */
-    braid_Int          send_index;    /**<  -1 means no send */
-    braid_Int          left_proc;     /**<  -1 means no recv on this level */
-    braid_Int          right_proc;     /**<  -1 means no send on this level */
+   braid_Int          recv_index;    /**<  -1 means no receive */
+   braid_Int          send_index;    /**<  -1 means no send */
+   _braid_CommHandle *recv_handle;   /**<  Handle for nonblocking receives of braid_Vectors */
+   _braid_CommHandle *send_handle;   /**<  Handle for nonblocking sends of braid_Vectors */
+   braid_Int          left_proc;     /**<  -1 means no recv on this level */
+   braid_Int          right_proc;     /**<  -1 means no send on this level */
 
-    _braid_CommHandle *recv_handle;   /**<  Handle for nonblocking receives of braid_Vectors */
-    _braid_CommHandle *send_handle;   /**<  Handle for nonblocking sends of braid_Vectors */
-
-    braid_Vector      *ua_alloc;      /**< original memory allocation for ua */
-    braid_Real        *ta_alloc;      /**< original memory allocation for ta */
-    braid_Vector      *va_alloc;      /**< original memory allocation for va */
-    braid_Vector      *fa_alloc;      /**< original memory allocation for fa */
+   braid_Vector      *ua_alloc;      /**< original memory allocation for ua */
+   braid_Real        *ta_alloc;      /**< original memory allocation for ta */
+   braid_Vector      *va_alloc;      /**< original memory allocation for va */
+   braid_Vector      *fa_alloc;      /**< original memory allocation for fa */
 
 } _braid_Grid;
 
 /**
- * The typedef _braid_Core struct is a **critical** part of XBraid and
- * is passed to *each* routine in XBraid.  It thus allows each routine access
+ * The typedef _braid_Core struct is a **critical** part of XBraid and 
+ * is passed to *each* routine in XBraid.  It thus allows each routine access 
  * to XBraid attributes.
  **/
 typedef struct _braid_Core_struct
@@ -192,26 +189,26 @@ typedef struct _braid_Core_struct
 } _braid_Core;
 
 /*--------------------------------------------------------------------------
- * Accessor macros
+ * Accessor macros 
  *--------------------------------------------------------------------------*/
 
-/**
- * Accessor for _braid_CommHandle attributes
+/** 
+ * Accessor for _braid_CommHandle attributes 
  **/
 #define _braid_CommHandleElt(handle, elt)  ((handle) -> elt)
 
 /**
- * Accessor for _braid_Grid attributes
+ * Accessor for _braid_Grid attributes 
  **/
 #define _braid_GridElt(grid, elt)  ((grid) -> elt)
 
-/**
- * Accessor for _braid_Core attributes
+/** 
+ * Accessor for _braid_Core attributes 
  **/
 #define _braid_CoreElt(core, elt)     (  (core)  -> elt )
 
-/**
- * Accessor for _braid_Core functions
+/** 
+ * Accessor for _braid_Core functions 
  **/
 #define _braid_CoreFcn(core, fcn)     (*((core)  -> fcn))
 
@@ -224,7 +221,7 @@ typedef struct _braid_Core_struct
  * Print file for redirecting stdout when needed
  *--------------------------------------------------------------------------*/
 
-/**
+/** 
  * This is the print file for redirecting stdout for all XBraid screen output
  **/
 extern FILE *_braid_printfile;
@@ -233,33 +230,33 @@ extern FILE *_braid_printfile;
  * Coarsening macros
  *--------------------------------------------------------------------------*/
 
-/**
+/** 
  * Map a fine time index to a coarse time index, assumes a uniform coarsening
  * factor.
  **/
 #define _braid_MapFineToCoarse(findex, cfactor, cindex) \
 ( cindex = (findex)/(cfactor) )
 
-/**
+/** 
  * Map a coarse time index to a fine time index, assumes a uniform coarsening
  * factor.
  **/
 #define _braid_MapCoarseToFine(cindex, cfactor, findex) \
 ( findex = (cindex)*(cfactor) )
 
-/**
+/** 
  * Boolean, returns whether a time index is an F-point
  **/
 #define _braid_IsFPoint(index, cfactor) \
 ( (index)%(cfactor) )
 
-/**
+/** 
  * Boolean, returns whether a time index is an C-point
  **/
 #define _braid_IsCPoint(index, cfactor) \
 ( !_braid_IsFPoint(index, cfactor) )
 
-/**
+/** 
  * Returns the index for the next C-point to the right of index (inclusive)
  **/
 #define _braid_NextCPoint(index, cfactor) \
@@ -298,9 +295,9 @@ _braid_SetInitNeighbours(braid_Core     core,
  * Returns -1 if no communication is needed on level l.
  */
 braid_Int
-_braid_GetProcLeftOrRight(braid_Core  core,
-                          braid_Int   level,
-                          braid_Int   direction,
+_braid_GetProcLeftOrRight(braid_Core   core,
+                          braid_Int    level,
+                          braid_Int    direction,
                           braid_Int   *proc_ptr);
 
 /**
@@ -324,8 +321,8 @@ _braid_CommRecvInit(braid_Core           core,
                     _braid_CommHandle  **handle_ptr);
 
 /**
- * Initialize a send of *vector* for the given time *index* on *level*.
- * Also return a comm handle *handle_ptr* for querying later, to see if the
+ * Initialize a send of *vector* for the given time *index* on *level*.  
+ * Also return a comm handle *handle_ptr* for querying later, to see if the 
  * send has occurred.
  */
 braid_Int
@@ -341,7 +338,7 @@ _braid_CommSendInit(braid_Core           core,
  */
 braid_Int
 _braid_CommWait(braid_Core          core,
-                _braid_CommHandle **handle_ptr);
+               _braid_CommHandle **handle_ptr);
 
 /**
  * Returns an index into the local u-vector for grid *level* at point *index*, 
@@ -459,7 +456,7 @@ _braid_GetInterval(braid_Core   core,
                    braid_Int   *fhi_ptr,
                    braid_Int   *ci_ptr);
 
-/**
+/** 
  * Call user's access function in order to give access to XBraid and the current
  * vector.  Most commonly, this lets the user write *u* to screen, disk, etc...
  * The vector *u* corresponds to time step *index* on *level*.  *status* holds
@@ -514,7 +511,7 @@ _braid_FASResidual(braid_Core     core,
 
 /**
  * Coarsen in space on *level* by calling the user's coarsen function.
- * The vector corresponding to the time step index *f_index* on the fine
+ * The vector corresponding to the time step index *f_index* on the fine 
  * grid is coarsened to the time step index *c_index* on the coarse grid.
  * The output goes in *cvector* and the input vector is *fvector*.
  */
@@ -587,8 +584,8 @@ _braid_InitGuess(braid_Core  core,
                  braid_Int   level);
 
 /**
- * Compute full temporal residual norm with user-provided residual routine.
- * Output goes in *return_rnorm.
+ * Compute full temporal residual norm with user-provided residual routine. 
+ * Output goes in *return_rnorm. 
  */
 braid_Int
 _braid_ComputeFullRNorm(braid_Core  core,
@@ -604,20 +601,20 @@ _braid_FCRelax(braid_Core  core,
 
 /**
  * F-Relax on *level* and then restrict to *level+1*
- *
+ * 
  * The output is set in the braid_Grid in core, so that the restricted vectors
  * *va* and *fa* will be created, representing *level+1* versions of the unknown
  * and rhs vectors.
- *
+ * 
  * If the user has set spatial coarsening, then this user-defined routine is
  * also called.
  *
  * If *level==0*, then *rnorm_ptr* will contain the residual norm.
  */
 braid_Int
-_braid_FRestrict(braid_Core   core,       /**< braid_Core (_braid_Core) struct */
+_braid_FRestrict(braid_Core   core,       /**< braid_Core (_braid_Core) struct */   
                  braid_Int    level       /**< restrict from level to level+1 */
-                );
+                 );
 
 /**
  * F-Relax on *level* and interpolate to *level-1*
@@ -629,11 +626,11 @@ _braid_FRestrict(braid_Core   core,       /**< braid_Core (_braid_Core) struct *
  * also called.
  */
 braid_Int
-_braid_FInterp(braid_Core  core,   /**< braid_Core (_braid_Core) struct */
+_braid_FInterp(braid_Core  core,   /**< braid_Core (_braid_Core) struct */  
                braid_Int   level   /**< interp from level to level+1 */
-              );
+               );
 
-/**
+/** 
  * Call spatial refinement on all local time steps if r_space has been set on
  * the local processor.  Returns refined_ptr == 2 if refinment was completed at
  * any point globally, otherwise returns 0.  This is a helper function for
@@ -656,7 +653,7 @@ braid_Int
 _braid_FRefine(braid_Core   core,
                braid_Int   *refined_ptr);
 
-/**
+/** 
  * Call the user's access function in order to give access to XBraid and the
  * current vector at grid *level and iteration *iter*.  Most commonly, this lets
  * the user write solutions to screen, disk, etc...  The quantity *rnorm*
@@ -675,9 +672,9 @@ _braid_FAccess(braid_Core     core,
  * define CF-intervals.
  */
 braid_Int
-_braid_InitHierarchy(braid_Core     core,
+_braid_InitHierarchy(braid_Core    core,
                      _braid_Grid  *fine_grid,
-                     braid_Int      refined,
+                     braid_Int     refined,
                      braid_Int     *recv_procs,
                      braid_Int     *send_procs);
 
@@ -691,7 +688,7 @@ _braid_PrintSpatialNorms(braid_Core    core,
                          braid_Real   *rnorms,
                          braid_Int     n);
 
-/**
+/** 
  * Copy the initialized C-points on the fine grid, to all coarse levels.  For
  * instance, if a point k on level m corresponds to point p on level 0, then
  * they are equivalent after this function.  The only exception is any spatial
@@ -737,7 +734,7 @@ _braid_GetFullRNorm(braid_Core  core,
                     braid_Real *rnorm_ptr);
 
 /**
- *  Delete the last residual, for use if F-Refinement is done.
+ *  Delete the last residual, for use if F-Refinement is done. 
  */
 braid_Int
 _braid_DeleteLastResidual(braid_Core  core);
@@ -826,3 +823,4 @@ _braid_BuildCommunicationMap(braid_Core            core,
 #endif
 
 #endif
+

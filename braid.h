@@ -199,7 +199,7 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnBufSize)(braid_App   app,               /**< user-defined _braid_App structure */
-                      braid_Int  *size_ptr,          /**< upper bound on vector size in bytes */
+                      braid_Int  *size_ptr,           /**< upper bound on vector size in bytes */
                       braid_BufferStatus  status     /**< can be querried for info on the message type */
                       );      
 
