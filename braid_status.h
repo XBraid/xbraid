@@ -74,6 +74,7 @@ typedef struct _braid_AccessStatus_struct *braid_AccessStatus;
 typedef struct _braid_AccessStatus_struct
 {
    braid_Real    t;                /**< current time */
+   braid_Int     istop;            /**< time point index value corresponding to t on the global time grid */
    braid_Int     iter;             /**< XBraid iteration number */
    braid_Int     level;            /**< current level in XBraid*/
    braid_Int     nrefine;          /**< number of refinements done */
@@ -82,7 +83,6 @@ typedef struct _braid_AccessStatus_struct
    braid_Int     done;             /**< boolean describing whether XBraid has finished */
    braid_Int     wrapper_test;     /**< boolean describing whether this call is only a wrapper test */
    braid_Int     calling_function; /**< from which function are we accessing the vector */
-
 } _braid_AccessStatus;
 
 
@@ -136,6 +136,7 @@ typedef struct _braid_StepStatus_struct
 {
    braid_Real    tstart;          /**< current time value  */
    braid_Real    tstop;           /**< time value to evolve towards, time value to the right of tstart */
+   braid_Int     istop;           /**< time point index value corresponding to tstop on the global time grid */
    braid_Real*   rnorms;          /**< residual norm history, (points to Core->rnorms object) */ 
    braid_Real    old_fine_tolx;   /**< Allows for storing the previously used fine tolerance from GetSpatialAccuracy */
    braid_Int     tight_fine_tolx; /**< Boolean, indicating whether the tightest fine tolx has been used, condition for halting */
@@ -191,6 +192,7 @@ typedef struct _braid_BufferStatus_struct
  **/
 braid_Int
 _braid_AccessStatusInit(braid_Real          t,                /**< current time */
+                        braid_Int           istop,            /**< time point index value corresponding to t on the global time grid */
                         braid_Real          rnorm,            /**< current residual norm in XBraid */
                         braid_Int           iter,             /**< current iteration in XBraid*/
                         braid_Int           level,            /**< current level in XBraid */
@@ -215,6 +217,14 @@ braid_Int
 braid_AccessStatusGetT(braid_AccessStatus  status,     /**< structure containing current simulation info */
                        braid_Real         *t_ptr       /**< output, current time */
                        );
+/**
+ * Return the index value corresponding to the current time value
+ * from the AccessStatus structure.
+ **/
+braid_Int
+braid_AccessStatusGetIstop(braid_AccessStatus  status,       /**< structure containing current simulation info */
+                           braid_Int          *istop_ptr     /**< output, global index value corresponding to current time value */
+                           );
 /**
  * Return the current residual norm from the AccessStatus structure.
  **/
@@ -422,6 +432,7 @@ braid_CoarsenRefStatusGetNTPoints(braid_CoarsenRefStatus  status,       /**< str
 braid_Int
 _braid_StepStatusInit(braid_Real        tstart,      /**< current time value  */
                       braid_Real        tstop,       /**< time value to evolve towards, time value to the right of tstart */
+                      braid_Int         istop,       /**< time point index value corresponding to tstop on the global time grid */
                       braid_Real        tol,         /**< Current XBraid stopping tolerance */
                       braid_Int         iter,        /**< Current XBraid iteration (also equal to length of rnorms) */
                       braid_Int         level,       /**< current level in XBraid */
@@ -450,6 +461,14 @@ braid_StepStatusGetTstart(braid_StepStatus  status,         /**< structure conta
 braid_Int
 braid_StepStatusGetTstop(braid_StepStatus  status,          /**< structure containing current simulation info */
                          braid_Real      *tstop_ptr         /**< output, next time value to evolve towards */
+                         );
+/**
+ * Return the index value corresponding to the time value to the right of the current time value from
+ * the StepStatus structure.
+ **/
+braid_Int
+braid_StepStatusGetIstop(braid_StepStatus  status,          /**< structure containing current simulation info */
+                         braid_Int        *istop_ptr        /**< output, global index value corresponding to next time value to evolve towards */
                          );
 
 /**

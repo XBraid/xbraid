@@ -364,6 +364,35 @@ braid_Residual_F90_Iface(braid_App               app,        /**< user-defined _
 
 #endif
 
+#if (braid_Fortran_TimeGrid == 1)
+
+/**
+ * braid_TimeGrid
+ *
+ * Fortran interface, first we define the prototype for the user-defined function and then we
+ * provide the C-wrapper around the user-written Fortran function
+ * */
+void braid_F90_Name(braid_timegrid_f90, BRAID_TIMEGRID_F90)(braid_F90_ObjPtr, braid_F90_Real *, braid_F90_Int *, braid_F90_Int *);
+braid_Int
+braid_TimeGrid_F90_Iface(braid_App               app,       /**< user-defined _braid_App structure */
+                         braid_Real             *ta,        /**< temporal grid on level 0 (slice per processor) */
+                         braid_Int              *ilower,    /**< lower time index value for this processor */
+                         braid_Int              *iupper     /**< upper time index value for this processor */
+                         )
+{
+   /* Temporary scalars so that the calling function's ilower and iupper are not overwritten */
+   braid_Int ilower2 = *ilower;
+   braid_Int iupper2 = *iupper;
+   braid_F90_Name(braid_timegrid_f90, BRAID_TIMEGRID_F90)( 
+                            braid_PassF90_Obj(      app),
+                            braid_PassF90_RealPtr(  ta),
+                            braid_PassF90_Int(      ilower2),
+                            braid_PassF90_Int(      iupper2) );
+   return 0;
+}
+
+#endif
+
 #if (braid_Fortran_SpatialCoarsen == 1)
 
 /**
@@ -629,6 +658,18 @@ braid_F90_Name(braid_access_status_get_tild_f90, BRAID_ACCESS_STATUS_GET_TILD_F9
    return 0;
 }
 
+/* Wrap braid_AccessStatusGetIstop( ) */
+braid_Int
+braid_F90_Name(braid_access_status_get_istop_f90, BRAID_ACCESS_STATUS_GET_ISTOP_F90)(
+                              braid_F90_ObjPtr    status,        /**< structure containing current simulation info */
+                              braid_F90_Int      *istop_ptr      /**< output, global index value corresponding to next time value to evolve towards */
+                              )
+{
+   braid_AccessStatusGetIstop( braid_TakeF90_Obj(braid_AccessStatus, status),
+                               braid_TakeF90_IntPtr(                 istop_ptr) );
+   return 0;
+}
+
 /* Wrap braid_StepStatusGetTstartTstop( ) */
 braid_Int
 braid_F90_Name(braid_step_status_get_tstart_tstop_f90, BRAID_STEP_STATUS_GET_TSTART_TSTOP_F90)(
@@ -640,6 +681,18 @@ braid_F90_Name(braid_step_status_get_tstart_tstop_f90, BRAID_STEP_STATUS_GET_TST
    braid_StepStatusGetTstartTstop( braid_TakeF90_Obj(braid_StepStatus, status),
                                    braid_TakeF90_RealPtr(              tstart_ptr),
                                    braid_TakeF90_RealPtr(              tstop_ptr) );
+   return 0;
+}
+
+/* Wrap braid_StepStatusGetIstop( ) */
+braid_Int
+braid_F90_Name(braid_step_status_get_istop_f90, BRAID_STEP_STATUS_GET_ISTOP_F90)(
+                              braid_F90_ObjPtr    status,        /**< structure containing current simulation info */
+                              braid_F90_Int      *istop_ptr      /**< output, global index value corresponding to next time value to evolve towards */
+                              )
+{
+   braid_StepStatusGetIstop( braid_TakeF90_Obj(braid_StepStatus, status),
+                               braid_TakeF90_IntPtr(             istop_ptr) );
    return 0;
 }
 
@@ -937,11 +990,23 @@ braid_F90_Name(braid_set_max_iter_f90, BRAID_SET_MAX_ITER_F90)(
 
 /*  braid_SetFMG( ) */
 braid_Int
-braid_F90_Name(braid_set_fmg_f90, BRAID_FMG_F90)(
+braid_F90_Name(braid_set_fmg_f90, BRAID_SET_FMG_F90)(
                    braid_F90_ObjPtr   *core         /**< braid_Core (_braid_Core) struct*/
                    )
 {
    braid_SetFMG(braid_TakeF90_ObjDeref(braid_Core,  core) );
+   return 0;
+}
+
+/*  braid_SetNFMG( ) */
+braid_Int
+braid_F90_Name(braid_set_nfmg_f90, BRAID_SET_NFMG_F90)(
+                   braid_F90_ObjPtr   *core,         /**< braid_Core (_braid_Core) struct*/
+                   braid_F90_Int      *nfmg          /**< number of initial F-cycles to do before switching to V-cycles */
+                   )
+{
+   braid_SetNFMG(braid_TakeF90_ObjDeref(braid_Core,  core) ,
+                     braid_TakeF90_Int(                  nfmg) );
    return 0;
 }
 
@@ -991,6 +1056,21 @@ braid_F90_Name(braid_set_residual_f90, BRAID_SET_RESIDUAL_F90)(
 {
    braid_SetResidual(braid_TakeF90_ObjDeref(braid_Core,  core) ,
                      braid_F90_Name(braid_residual_f90,  BRAID_RESIDUAL_F90) );
+   return 0;
+}
+
+#endif
+
+#if (braid_Fortran_TimeGrid == 1)
+
+/* braid_SetTimeGrid( ) */
+braid_Int
+braid_F90_Name(braid_set_timegrid_f90, BRAID_SET_TIMEGRID_F90)(
+                   braid_F90_ObjPtr   *core         /**< braid_Core (_braid_Core) struct*/
+                   )
+{
+   braid_SetTimeGrid(braid_TakeF90_ObjDeref(braid_Core,  core) ,
+                     braid_F90_Name(braid_timegrid_f90, BRAID_TIMEGRID_F90) );
    return 0;
 }
 
@@ -1059,7 +1139,7 @@ braid_F90_Name(braid_set_access_level_f90, BRAID_SET_ACCESS_LEVEL_F90)(
 
 /* braid_SplitCommworld( ) */
 braid_Int
-braid_F90_Name(braid_split_commworld_level_f90, BRAID_SPLIT_COMMWORLD_F90)(
+braid_F90_Name(braid_split_commworld_f90, BRAID_SPLIT_COMMWORLD_F90)(
                    braid_F90_Comm  *comm_world,    /**< Global communicator to split */
                    braid_F90_Int   *px,            /**< Number of processors parallelizing space for a single time step*/
                    braid_F90_Comm  *comm_x,        /**< Spatial communicator (written as output) */
@@ -1131,6 +1211,18 @@ braid_F90_Name(braid_get_spatial_accuracy_f90, BRAID_GET_SPATIAL_ACCURACY_F90)(
                             braid_TakeF90_Real(                 tight_tol),
                             braid_TakeF90_RealPtr(              tol_ptr));
 
+   return 0;
+}
+
+/* braid_SetSeqSoln( ) */
+braid_Int
+braid_F90_Name(braid_set_seq_soln_f90, BRAID_SET_SEQ_SOLN_F90)(
+                                  braid_F90_ObjPtr      *core_ptr,     /**< braid_Core (_braid_Core) struct*/
+                                  braid_F90_Int         *use_ptr       /**< 1: Init with sequential time stepping soln, 0: Use user's Init()*/
+                                  )
+{
+   braid_SetSeqSoln(braid_TakeF90_ObjDeref(braid_Core, core_ptr),
+                    braid_TakeF90_Int(                 use_ptr) );
    return 0;
 }
 

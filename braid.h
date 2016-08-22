@@ -51,6 +51,7 @@ extern "C" {
 #define braid_FMANGLE 1
 #define braid_Fortran_SpatialCoarsen 0
 #define braid_Fortran_Residual 0
+#define braid_Fortran_TimeGrid 0
 
 /** Value used to represent an invalid residual norm */
 #define braid_INVALID_RNORM -1
@@ -307,6 +308,16 @@ typedef braid_Int
                     braid_Vector  u               /**< vector to free (keeping the shell) */
                     );
 
+/**
+ * Set time values for temporal grid on level 0 (time slice per processor)
+ **/
+typedef braid_Int
+(*braid_PtFcnTimeGrid)(braid_App         app,       /**< user-defined _braid_App structure */
+                       braid_Real       *ta,        /**< temporal grid on level 0 (slice per processor) */
+                       braid_Int        *ilower,    /**< lower time index value for this processor */
+                       braid_Int        *iupper     /**< upper time index value for this processor */
+                       );
+
 /** @}*/
 
 /*--------------------------------------------------------------------------
@@ -556,6 +567,14 @@ braid_Int
 braid_SetFullRNormRes(braid_Core          core,     /**< braid_Core (_braid_Core) struct*/ 
                       braid_PtFcnResidual residual  /**< function pointer to residual routine */
                       );
+
+/**
+ * Set user-defined time points on finest grid
+ **/
+braid_Int
+braid_SetTimeGrid(braid_Core          core,  /**< braid_Core (_braid_Core) struct*/
+                  braid_PtFcnTimeGrid tgrid  /**< function pointer to time grid routine */
+                  );
 
 /**
  * Set spatial coarsening routine with user-defined routine.
