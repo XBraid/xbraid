@@ -51,7 +51,7 @@ extern "C" {
 #define braid_FMANGLE 1
 #define braid_Fortran_SpatialCoarsen 0
 #define braid_Fortran_Residual 0
-#define braid_Fortran_TimeGrid 0
+#define braid_Fortran_TimeGrid 1
 
 /** Value used to represent an invalid residual norm */
 #define braid_INVALID_RNORM -1
