@@ -71,10 +71,13 @@ mkdir -p $output_dir
 
 
 # compile the regression test drivers 
+# note that there are a lot of unavoidable Fortran warnings about 
+# unused app structures, hence we ignore those for ex-01f
 echo "Compiling regression test drivers"
 cd $example_dir
 make clean
-make ex-01 ex-01f
+make ex-01 
+make ex-01f &> /dev/null
 cd $test_dir
 
 
