@@ -31,6 +31,7 @@
 #include "_util.h"
 
 #define DEBUG 0
+#define STMG_DEBUG 0
 
 #if DEBUG
 braid_Int  FRefine_count = 0;
@@ -884,6 +885,7 @@ braid_Int
 _braid_Step(braid_Core     core,
             braid_Int      level,
             braid_Int      index,
+            braid_Int      calling_function,
             braid_Vector   ustop,
             braid_Vector   u)
 {
@@ -902,7 +904,8 @@ _braid_Step(braid_Core     core,
    braid_Int        ii;
 
    ii = index-ilower;
-   _braid_StepStatusInit(ta[ii-1], ta[ii], tol, iter, level, nrefine, gupper, status);
+   _braid_StepStatusInit(ta[ii-1], ta[ii], tol, iter, level, nrefine, gupper,
+                         calling_function, status);
 
    /* If ustop is set to NULL, use a default approach for setting it */
    if (ustop == NULL)
@@ -962,7 +965,7 @@ _braid_Residual(braid_Core     core,
    braid_Int        ii;
 
    ii = index-ilower;
-   _braid_StepStatusInit(ta[ii-1], ta[ii], tol, iter, level, nrefine, gupper, status);
+   _braid_StepStatusInit(ta[ii-1], ta[ii], tol, iter, level, nrefine, gupper, -1, status);
    if ( _braid_CoreElt(core, residual) == NULL )
    {
       /* By default: r = ustop - \Phi(ustart)*/
@@ -1297,7 +1300,7 @@ _braid_InitGuess(braid_Core  core,
       /* Initialize all points on the finest grid with sequential time marching */
       for(i = ilower; i <= iupper; i++)
       {
-         _braid_Step(core, 0, i, NULL, u);       /* Step forward */
+         _braid_Step(core, 0, i, -1, NULL, u);       /* Step forward */
          _braid_USetVector(core, 0, i, u, 0);    /* Store: copy u into core,
                                                     sending to left if needed */
       }
@@ -1400,11 +1403,11 @@ _braid_ComputeFullRNorm(braid_Core  core,
       for (fi = flo; fi <= fhi; fi++)
       {
          _braid_CoreFcn(core, clone)(app, u, &r);
-         _braid_Step(core, level, fi, NULL, u);
+         _braid_Step(core, level, fi, -1, NULL, u);
 
          /* Update local processor norm. */
          ii = fi-ilower;
-         _braid_StepStatusInit(ta[ii-1], ta[ii], tol, iter, level, nrefine, gupper, status);
+         _braid_StepStatusInit(ta[ii-1], ta[ii], tol, iter, level, nrefine, gupper, -1, status);
          _braid_CoreFcn(core, full_rnorm_res)(app, u, r, status);
          _braid_CoreFcn(core, spatialnorm)(app, r, &rnorm_temp); 
          if(tnorm == 1)       /* one-norm */ 
@@ -1437,7 +1440,7 @@ _braid_ComputeFullRNorm(braid_Core  core,
       {
          /* Update local processor norm. */
          ii = ci-ilower;
-         _braid_StepStatusInit(ta[ii-1], ta[ii], tol, iter, level, nrefine, gupper, status);
+         _braid_StepStatusInit(ta[ii-1], ta[ii], tol, iter, level, nrefine, gupper, -1, status);
          _braid_UGetVector(core, level, ci, &r);
          _braid_CoreFcn(core, full_rnorm_res)(app, r, u, status);
          _braid_CoreFcn(core, spatialnorm)(app, u, &rnorm_temp);
@@ -1502,6 +1505,10 @@ _braid_FCRelax(braid_Core  core,
    braid_Vector    u;
    braid_Int       flo, fhi, fi, ci;
    braid_Int       nu, nrelax, interval;
+   
+#if STMG_DEBUG
+      braid_Int myid = _braid_CoreElt(core, myid_world);
+#endif
 
    nrelax  = nrels[level];
 
@@ -1514,6 +1521,7 @@ _braid_FCRelax(braid_Core  core,
       /* Start from the right-most interval */
       for (interval = ncpoints; interval > -1; interval--)
       {
+         /*_braid_printf("\nFCRelax(): interval %d\n", interval);*/
          _braid_GetInterval(core, level, interval, &flo, &fhi, &ci);
 
          if (flo <= fhi)
@@ -1525,17 +1533,28 @@ _braid_FCRelax(braid_Core  core,
             _braid_UGetVector(core, level, ci-1, &u);
          }
 
+#if STMG_DEBUG
+   _braid_printf("\nFCRelax(), processor %d: F-relax on points in [%d, %d]\n", myid, flo, fhi);
+#endif
          /* F-relaxation */
          for (fi = flo; fi <= fhi; fi++)
          {
-            _braid_Step(core, level, fi, NULL, u);
+            if (time_relax_on)
+               relaxcalls++;
+            _braid_Step(core, level, fi, braid_ASCaller_FCRelax, NULL, u);
             _braid_USetVector(core, level, fi, u, 0);
          }
 
+         
+#if STMG_DEBUG
+            _braid_printf("\nFCRelax(), processor %d: C-relax on %d\n", myid, ci);
+#endif
          /* C-relaxation */
          if (ci > 0)
          {
-            _braid_Step(core, level, ci, NULL, u);
+            if (time_relax_on)
+               relaxcalls++;
+            _braid_Step(core, level, ci, braid_ASCaller_FCRelax, NULL, u);
             _braid_USetVector(core, level, ci, u, 1);
          }
 
@@ -1565,16 +1584,30 @@ _braid_FCRelax(braid_Core  core,
             cstart_odd = clower+1;
             cstart_evn = clower;
          }
+         
+#if STMG_DEBUG
+            _braid_printf("\nFCRelax(), processor %d: relaxation on odd points in [%d, %d]\n", myid, cstart_odd, cupper);
+#endif
+         
          for (ci = cstart_odd; ci <= cupper; ci += 2)
          {
             _braid_UGetVector(core, level, ci-1, &u);
-            _braid_Step(core, level, ci, NULL, u);
+            if (time_relax_on)
+               relaxcalls++;
+            _braid_Step(core, level, ci, braid_ASCaller_FCRelax, NULL, u);
             _braid_USetVector(core, level, ci, u, 1);
          }
+         
+#if STMG_DEBUG
+            _braid_printf("\nFCRelax(), processor %d: relaxation on even points in [%d, %d]\n", myid, cstart_evn, cupper);
+#endif
+         
          for (ci = cstart_evn; ci <= cupper; ci += 2)
          {
             _braid_UGetVector(core, level, ci-1, &u);
-            _braid_Step(core, level, ci, NULL, u);
+            if (time_relax_on)
+               relaxcalls++;
+            _braid_Step(core, level, ci, braid_ASCaller_FCRelax, NULL, u);
             _braid_USetVector(core, level, ci, u, 1);
          }
       }
@@ -1653,6 +1686,11 @@ _braid_FRestrict(braid_Core   core,
    braid_Vector         u, r;
    braid_Int            interval, flo, fhi, fi, ci;
    braid_Real           rnorm, grnorm, rnorm_temp, rnm;
+   
+#if STMG_DEBUG
+      braid_Int myid = _braid_CoreElt(core, myid_world);
+#endif
+   braid_Real localtime;
 
    c_level  = level+1;
    c_ilower = _braid_GridElt(grids[c_level], ilower);
@@ -1671,6 +1709,8 @@ _braid_FRestrict(braid_Core   core,
     * convergence checking on the finest grid.  This loop updates va and fa. */
    for (interval = ncpoints; interval > -1; interval--)
    {
+      if (time_relax_on)
+         localtime = MPI_Wtime();
       _braid_GetInterval(core, level, interval, &flo, &fhi, &ci);
 
       if (flo <= fhi)
@@ -1681,23 +1721,34 @@ _braid_FRestrict(braid_Core   core,
       {
          _braid_UGetVector(core, level, ci-1, &r);
       }
-
-      /* F-relaxation */
-      _braid_GetRNorm(core, -1, &rnm);
-      for (fi = flo; fi <= fhi; fi++)
+      
+      if (cfactor > 1)
       {
-         _braid_Step(core, level, fi, NULL, r);
-         _braid_USetVector(core, level, fi, r, 0);
-         
-         /* Allow user to process current vector, note that r here is
-          * temporarily holding the state vector */
-         if( (access_level >= 3) )
+#if STMG_DEBUG
+         _braid_printf("\nFRestrict(), processor %d: F-relax on points in [%d, %d]\n", myid, flo, fhi);
+#endif
+         /* F-relaxation */
+         _braid_GetRNorm(core, -1, &rnm);
+         for (fi = flo; fi <= fhi; fi++)
          {
-            _braid_AccessStatusInit(ta[fi-f_ilower], rnm, iter, level, nrefine, gupper,
-                                    0, 0, braid_ASCaller_FRestrict, astatus);
-            _braid_AccessVector(core, astatus, r);
+            if (time_relax_on)
+               relaxcalls++;
+            _braid_Step(core, level, fi, braid_ASCaller_FRestrict, NULL, r);
+            _braid_USetVector(core, level, fi, r, 0);
+         
+            /* Allow user to process current vector, note that r here is
+             * temporarily holding the state vector */
+            if( (access_level >= 3) )
+            {
+               _braid_AccessStatusInit(ta[fi-f_ilower], rnm, iter, level, nrefine, gupper,
+                                       0, 0, braid_ASCaller_FRestrict, astatus);
+               _braid_AccessVector(core, astatus, r);
+            }
          }
       }
+      if (time_relax_on)
+         relaxtime += (MPI_Wtime()-localtime);
+         
 
       /* Allow user to process current C-point */
       if( (access_level>= 3) && (ci > -1) )
@@ -1868,7 +1919,7 @@ _braid_FInterp(braid_Core  core,
       }
       for (fi = flo; fi <= fhi; fi++)
       {
-         _braid_Step(core, level, fi, NULL, u);
+         _braid_Step(core, level, fi, braid_ASCaller_FInterp, NULL, u);
          _braid_USetVector(core, level, fi, u, 0);
          /* Allow user to process current vector */
          if( (access_level >= 3) )
@@ -2470,7 +2521,7 @@ _braid_FRefine(braid_Core   core,
          _braid_UGetVector(core, 0, flo-1, &u);
          for (fi = flo; fi <= fhi; fi++)
          {
-            _braid_Step(core, 0, fi, NULL, u);
+            _braid_Step(core, 0, fi, braid_ASCaller_FRefine, NULL, u);
             _braid_USetVector(core, 0, fi, u, 0); /* needed for communication */
 
             /* Set send_ua */
@@ -2757,7 +2808,7 @@ _braid_FRefine(braid_Core   core,
             for ( ; f_j < f_hi; f_j++)
             {
                _braid_USetVector(core, 0, f_j, u, 0);
-               _braid_Step(core, 0, f_j+1, NULL, u);
+               _braid_Step(core, 0, f_j+1, braid_ASCaller_FRefine, NULL, u);
             }
          }
          _braid_USetVector(core, 0, f_j, u, 1);
@@ -2827,7 +2878,7 @@ _braid_FAccess(braid_Core     core,
       }
       for (fi = flo; fi <= fhi; fi++)
       {
-         _braid_Step(core, level, fi, NULL, u);
+         _braid_Step(core, level, fi, braid_ASCaller_FAccess, NULL, u);
          _braid_USetVector(core, level, fi, u, 0);
 
          if (access_level >= 1)

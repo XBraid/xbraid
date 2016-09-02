@@ -102,8 +102,8 @@ double taddforcing;
  *   pfmg_tol            stopping tolerance for spatial MG
  *   pfmg_maxiter        maximum number of spatial MG iterations
  *   pfmg_maxlev         maximum number of spatial MG grid levels
- *   pfmg_pre            number of pre-smoothing iterations of spatial MG
- *   pfmg_post           number of post-smoothing iterations of spatial MG
+ *   pfmg_npre           number of pre-smoothing iterations of spatial MG
+ *   pfmg_npost          number of post-smoothing iterations of spatial MG
  *   explicit            use explicit discretization (1) or not (0)
  *   output_vis            save the error for GLVis visualization
  *   output_files        save the solution/error/error norm to files
@@ -133,8 +133,8 @@ typedef struct _simulation_manager_struct {
    double                  pfmg_tol;
    int                     pfmg_maxiter;
    int                     pfmg_maxlev;
-   int                     pfmg_pre;
-   int                     pfmg_post;
+   int                     pfmg_npre;
+   int                     pfmg_npost;
    int                     explicit;
    int                     output_vis;
    int                     output_files;
@@ -1450,10 +1450,10 @@ setUpStructSolver( simulation_manager  *man,
    HYPRE_SStructMatrix A        = man->A;
    double              tol      = man->pfmg_tol;
    int                 maxlev   = man->pfmg_maxlev;
+   int                 n_pre    = man->pfmg_npre;
+   int                 n_post   = man->pfmg_npost;
    
    /* hard coded PFMG parameters */
-   int n_pre               = 1;       /* number of PFMG presmoothing steps */
-   int n_post              = 1;       /* number of PFMG postmoothing steps */
    int rap                 = 1;       /* type of RAP coarse grid to use in PFMG
                                          0 - Galerkin (default)
                                          1 - non-Galerkin ParFlow operators
@@ -1490,6 +1490,23 @@ setUpStructSolver( simulation_manager  *man,
    /* Set up PFMG solver. */
    HYPRE_StructPFMGSetup( solver, sA, sb, sx );
 
+#if STMG_DEBUG
+   {
+      int myid;
+      MPI_Comm_rank( man->comm, &myid );
+      
+      if (myid == 0)
+      {
+         printf ("=========== PFMG setup ============\n");
+         printf ("tol      = %.2e\n", tol);
+         printf ("maxlevel = %d\n", maxlev);
+         printf ("n_pre    = %d\n", n_pre);
+         printf ("n_post   = %d\n", n_post);
+         printf ("relax    = %d\n\n", relax);
+      }
+   }
+#endif
+
    man->solver = solver;
 }
 
@@ -1515,6 +1532,8 @@ int take_step(simulation_manager * man,         /* manager holding basic sim inf
    HYPRE_SStructVector b;
    HYPRE_StructMatrix  sA;
    HYPRE_StructVector  sxstop, sbstop, sx, sb;
+   
+   //printf("pfmg_maxiter = %d\n", pfmg_maxiter);
    
    /* Grab these object pointers for use below */
    HYPRE_SStructMatrixGetObject( man->A, (void **) &sA );

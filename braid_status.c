@@ -336,17 +336,19 @@ _braid_StepStatusInit(braid_Real       tstart,
                       braid_Int        level,
                       braid_Int        nrefine,
                       braid_Int        gupper,
+                      braid_Int        calling_function,
                       braid_StepStatus status)
 {
-   _braid_StatusElt(status, tstart)    = tstart;
-   _braid_StatusElt(status, tstop)     = tstop;
-   _braid_StatusElt(status, tol)       = tol;
-   _braid_StatusElt(status, iter)      = iter;
-   _braid_StatusElt(status, level)     = level;
-   _braid_StatusElt(status, nrefine)   = nrefine;
-   _braid_StatusElt(status, gupper)    = gupper;
-   _braid_StatusElt(status, rfactor)   = 1;
-   _braid_StatusElt(status, r_space)   = 0;
+   _braid_StatusElt(status, tstart)            = tstart;
+   _braid_StatusElt(status, tstop)             = tstop;
+   _braid_StatusElt(status, tol)               = tol;
+   _braid_StatusElt(status, iter)              = iter;
+   _braid_StatusElt(status, level)             = level;
+   _braid_StatusElt(status, nrefine)           = nrefine;
+   _braid_StatusElt(status, gupper)            = gupper;
+   _braid_StatusElt(status, calling_function)  = calling_function;
+   _braid_StatusElt(status, rfactor)           = 1;
+   _braid_StatusElt(status, r_space)           = 0;
 
    return _braid_error_flag;
 }
@@ -487,6 +489,15 @@ braid_StepStatusSetTightFineTolx(braid_StepStatus  status,
                                  )
 {
    _braid_StatusElt(status, tight_fine_tolx) = tight_fine_tolx;
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_StepStatusGetCallingFunction(braid_StepStatus  status,
+                                   braid_Int        *calling_function
+                                   )
+{
+   *calling_function = _braid_StatusElt(status, calling_function);
    return _braid_error_flag;
 }
 

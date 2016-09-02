@@ -389,7 +389,7 @@ braid_Drive(braid_Core  core)
    braid_Int      ilower, iupper, i;
    braid_Real    *ta;
    _braid_Grid   *grid;
-   braid_Real     localtime, globaltime;
+   braid_Real     localtime, globaltime, localtime_new, relaxlocal;
 
    /* Cycle state variables */
    _braid_CycleState  cycle;
@@ -403,6 +403,7 @@ braid_Drive(braid_Core  core)
 
    /* Start timer */
    localtime = MPI_Wtime();
+   localtime_new = localtime;
 
    /* Create fine grid */
    _braid_GetDistribution(core, &ilower, &iupper);
@@ -464,9 +465,18 @@ braid_Drive(braid_Core  core)
       if (cycle.down)
       {
          /* Down cycle */
-
+         
+         /* time relaxation in iteration 4 */
+         if (iter == 3)
+         {
+            relaxlocal = MPI_Wtime();
+            if (level == 0)
+               time_relax_on = 1;
+         }
          /* CF-relaxation */
          _braid_FCRelax(core, level);
+         if (time_relax_on)
+            relaxtime += (MPI_Wtime() - relaxlocal);
 
          /* F-relax then restrict (note that FRestrict computes a new rnorm) */
          _braid_FRestrict(core, level);
@@ -489,12 +499,12 @@ braid_Drive(braid_Core  core)
          {
             /* F-relax then interpolate */
             _braid_FInterp(core, level);
-
             level--;
+            /* CF-relaxation
+            _braid_FCRelax(core, level);*/
          }
          else
          {
-
             // Output the solution at the end of each cycle
             // Copy the rfactors because the call to FAccess will modify them
             if (access_level >= 2)
@@ -524,8 +534,15 @@ braid_Drive(braid_Core  core)
             _braid_FRefine(core, &refined);
             nlevels = _braid_CoreElt(core, nlevels);
 
-            /* Print current status */
-            _braid_DrivePrintStatus(core, level, iter, refined, localtime);
+            /* Print current status
+            _braid_DrivePrintStatus(core, level, iter, refined, localtime);*/
+            _braid_DrivePrintStatus(core, level, iter, refined, localtime_new);
+            if (time_relax_on)
+            {
+               /*_braid_printf("  total time for relaxation (%d calls) in one iteration on all grid levels: %.2lfs\n", relaxcalls, relaxtime);*/
+               time_relax_on = 0;
+            }
+            localtime_new = MPI_Wtime();
 
             /* If no refinement was done, check for convergence */
             if (!refined)

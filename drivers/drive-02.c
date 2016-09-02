@@ -86,7 +86,8 @@
 
 #define DEBUG 0
 
-#define BRAID_TIMING 1
+#define PFMG_COARSENING 1
+#define DEBUG_PFMG_COARSENING 0
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -94,12 +95,35 @@
 #include "_hypre_utilities.h"
 #include "HYPRE_sstruct_ls.h"
 #include "_hypre_sstruct_mv.h"
+#include "_hypre_struct_ls.h"
 
 #include "braid.h"
 #include "braid_test.h"
 
 #include "../examples/ex-02-lib.c"
 
+#define hypre_PFMGSetCIndex(cdir, cindex)       \
+{                                            \
+hypre_SetIndex3(cindex, 0, 0, 0);          \
+hypre_IndexD(cindex, cdir) = 0;           \
+}
+
+#define hypre_PFMGSetFIndex(cdir, findex)       \
+{                                            \
+hypre_SetIndex3(findex, 0, 0, 0);          \
+hypre_IndexD(findex, cdir) = 1;           \
+}
+
+#define hypre_PFMGSetStride(cdir, stride)       \
+{                                            \
+hypre_SetIndex3(stride, 1, 1, 1);          \
+hypre_IndexD(stride, cdir) = 2;           \
+}
+
+
+/* communication and total runtime of spatial coarsening and restriction routines */
+double srestrictTime[2];
+double sinterpTime[2];
 
 /* 
  * This will store the spatial discretization information for interpolating to and 
@@ -129,6 +153,12 @@
  *                      fine spatial mesh used to generate this mesh
  * ncoarsen             the number of coarsenings used to generate this grid from the grid specified
  *                      by fspatial_disc_idx
+ *
+ * For using interpolation and restriction as in PFMG, we need 
+ * coarse_grid          StructGrid for coarse grid vectors
+ * P_grid               StructGrid for interpolation
+ * P                    interpolation matrix
+ * RT                   restriction matrix (stored as transpose of interpolation)
  * */
 typedef struct _spatial_discretization
 {
@@ -139,6 +169,12 @@ typedef struct _spatial_discretization
    HYPRE_SStructGrid       grid_x_matrix;
    HYPRE_SStructGraph      graph_vector;
    HYPRE_SStructGraph      graph_matrix;
+   HYPRE_StructGrid        coarse_grid;
+   HYPRE_StructGrid        P_grid;
+   HYPRE_StructMatrix      P;
+   HYPRE_StructMatrix      RT;
+   void                   *restrict_data;
+   void                   *interp_data;
 } spatial_discretization;
 
 /* --------------------------------------------------------------------
@@ -165,6 +201,8 @@ typedef struct _spatial_discretization
  *   runtime_max_iter      runtime information on the number of iterations taken for 
  *                         the implicit solves
  *   max_iter_x            expensive and cheap maximum number of spatial MG iterations
+ *   add_relax_x           if mimicking STMG we want to do extra relaxation for the last
+ *                         F sweep if time coarsening is performed
  *   scoarsen              use spatial refinement and coarsening
  *   num_scoarsen_CFL      the number of entries in scoarsen_CFL
  *   scoarsenCFL           array of CFL numbers such that if the actual CFL at level k is 
@@ -196,6 +234,7 @@ typedef struct _braid_App_struct {
    HYPRE_StructSolver     *solver;
    int                    *runtime_max_iter;
    int                    *max_iter_x;
+   int                     add_relax_x;
    int                     scoarsen;
    int                     num_scoarsenCFL;
    double                 *scoarsenCFL;
@@ -207,13 +246,6 @@ typedef struct _braid_App_struct {
    int                     use_rand;
    int                     buffer_size;
    int                     print_level;
-   
-   /*
-    * spatial solver info
-    */
-   int                    *solver_calls;
-   int                    *solver_iters;
-   double                 *solver_time;
 } my_App;
 
 /* struct my_Vector contains local information specific to one time point
@@ -224,6 +256,31 @@ typedef struct _braid_Vector_struct
    int                   spatial_disc_idx;
    HYPRE_SStructVector   x;
 } my_Vector;
+
+/* --------------------------------------------------------------------
+ * Inititialization routine for the user's manager structure, so that it
+ * aligns with a given spatial discretization level
+ * -------------------------------------------------------------------- */
+
+int update_manager_from_disc_idx(simulation_manager     *man,
+                                 int                     spatial_disc_idx,
+                                 spatial_discretization *spatial_lookup_table)
+{
+   man->nlx = (spatial_lookup_table[spatial_disc_idx]).nlx;
+   man->nly = (spatial_lookup_table[spatial_disc_idx]).nly;
+   man->nx  = (spatial_lookup_table[spatial_disc_idx]).nx;
+   man->ny  = (spatial_lookup_table[spatial_disc_idx]).ny;
+   man->dx  = (spatial_lookup_table[spatial_disc_idx]).dx;
+   man->dy  = (spatial_lookup_table[spatial_disc_idx]).dy;
+   
+   man->ilower[0] = (spatial_lookup_table[spatial_disc_idx]).ilower[0];
+   man->ilower[1] = (spatial_lookup_table[spatial_disc_idx]).ilower[1];
+   man->iupper[0] = (spatial_lookup_table[spatial_disc_idx]).iupper[0];
+   man->iupper[1] = (spatial_lookup_table[spatial_disc_idx]).iupper[1];
+   man->grid_x    = (spatial_lookup_table[spatial_disc_idx]).grid_x_matrix;
+   
+   return 0;
+}
 
 /* --------------------------------------------------------------------
  * Inititialization routine for the user's manager structure, so that it
@@ -298,17 +355,17 @@ my_Step(braid_App        app,
         braid_Vector     u,
         braid_StepStatus status)
 {
-   double tstart;             /* current time */
-   double tstop;              /* evolve to this time*/
+   double               tstart;             /* current time */
+   double               tstop;              /* evolve to this time*/
    HYPRE_SStructVector  bstop;
-   double accuracy, cfl_value;
-   int i, A_idx, user_explicit, level;
-   int ilower[2], iupper[2], nlx, nly, nx, ny;
-   double dx, dy;
-   int print_level      = app->print_level;
-   double temp_double;
-   int temp_int;
-   double tsolverstart, tsolverstop;
+   double               accuracy, cfl_value;
+   int                  i, A_idx, user_explicit, level;
+   int                  ilower[2], iupper[2], nlx, nly, nx, ny;
+   double               dx, dy;
+   int                  print_level  = app->print_level;
+   double               temp_double;
+   int                  temp_int;
+   int                  calling_function;
    
    /* This debug output is mostly for regression testing */
    if(print_level == 2)
@@ -398,8 +455,8 @@ my_Step(braid_App        app,
        * Add entry to matrix lookup table. */   
       
       app->dt_A[A_idx] = tstop-tstart;
-      app->dy_A[A_idx] = dx;
-      app->dx_A[A_idx] = dy;
+      app->dx_A[A_idx] = dx;
+      app->dy_A[A_idx] = dy;
 
      /* We need to "trick" the user's data structure into mimicking this
       * discretization level */
@@ -417,6 +474,7 @@ my_Step(braid_App        app,
       else{
          setUpImplicitMatrix( app->man );
          app->A[A_idx] = app->man->A;
+         
 #if DEBUG
 {
    char  filename[255];
@@ -447,10 +505,24 @@ my_Step(braid_App        app,
    app->man->solver = app->solver[A_idx];
    
    /* Use level specific max_iter by "tricking" the user's data structure*/
-   if( level == 0 )
-      app->man->pfmg_maxiter = app->max_iter_x[0];
+   /* Get calling function for doing extra work in FRestrict if stmg option
+    * is used. */
+   braid_StepStatusGetCallingFunction(status, &calling_function);
+   if( (app->stmg) && ( (calling_function == 1) || (calling_function == 0) ) )
+   /*if( (app->stmg) && (calling_function == 1) )*/
+   {
+      if( level == 0 )
+         app->man->pfmg_maxiter = app->max_iter_x[0] + app->add_relax_x;
+      else
+         app->man->pfmg_maxiter = app->max_iter_x[1] + app->add_relax_x;
+   }
    else
-      app->man->pfmg_maxiter = app->max_iter_x[1];
+   {
+      if( level == 0 )
+         app->man->pfmg_maxiter = app->max_iter_x[0];
+      else
+         app->man->pfmg_maxiter = app->max_iter_x[1];
+   }
    
    /* Use level specific time stepper by "tricking" the user's data structure*/
    user_explicit = app->man->explicit;
@@ -465,8 +537,6 @@ my_Step(braid_App        app,
    app->man->pfmg_tol = accuracy;
    
    /* Take step */
-   tsolverstart = MPI_Wtime();
-   
    if (fstop == NULL)
    {
       bstop = NULL;
@@ -476,8 +546,6 @@ my_Step(braid_App        app,
       bstop = fstop->x;
    }
    take_step(app->man, ustop->x, bstop, u->x, tstart, tstop, &iters_taken);
-   
-   tsolverstop = MPI_Wtime();
 
    /* Go back to the user's original choice of explicit */
    app->man->explicit = user_explicit;
@@ -487,13 +555,6 @@ my_Step(braid_App        app,
                                             iters_taken);
    /* Tell XBraid no refinement */
    braid_StepStatusSetRFactor(status, 1);
-   
-   /*
-    * update spatial solver info
-    */
-   app->solver_iters[level] += iters_taken;
-   app->solver_calls[level]++;
-   app->solver_time[level]  += (tsolverstop - tsolverstart);
 
    return 0;
 }
@@ -681,10 +742,19 @@ my_Sum(braid_App    app,
        double       beta,
        braid_Vector y)
 {
-   int i;
-   double *values_x, *values_y;
+   HYPRE_StructVector  sx, sy;
    
-   /* Grab spatial info about vector */
+   HYPRE_SStructVectorGetObject( x->x, (void **) &sx );
+   HYPRE_SStructVectorGetObject( y->x, (void **) &sy );
+   
+   hypre_StructScale(beta, sy);
+   hypre_StructAxpy (alpha, sx, sy);
+   
+   /*
+   int i;
+   double *values_x, *values_y;*/
+   
+   /* Grab spatial info about vector
    int ilower[2], iupper[2], nlx, nly, nx, ny;
    double dx, dy;
    grab_vec_spatial_info(x, app->spatial_lookup_table, ilower, iupper, 
@@ -706,7 +776,7 @@ my_Sum(braid_App    app,
    HYPRE_SStructVectorSetBoxValues( y->x, 0, ilower, iupper, 0, values_y );
 
    free( values_x );
-   free( values_y );
+   free( values_y );*/
 
    return 0;
 }
@@ -892,6 +962,533 @@ double log2( double n )
    return log(n)/log(2.0);  
 }
 
+
+/* --------------------------------------------------------------------
+ * Set up StructGrids for coarsening and interpolation using hypre
+ * routines like in PFMG.
+ *
+ * Note: Coarsening is done in two steps by semicoarsening in x
+ *       followed by semicoarsening in y.
+ * -------------------------------------------------------------------- */
+void
+setUpCoarseSGrids( braid_App app,
+                   int       spatial_disc_idx_xcoarsen,
+                   int       spatial_disc_idx_ycoarsen)
+{
+   HYPRE_StructGrid    fine_grid, coarse_grid_x, coarse_grid_y;
+   HYPRE_StructGrid    P_grid_x, P_grid_y;
+   
+   hypre_Box          *cbox;
+   hypre_Index         cindex;
+   hypre_Index         findex;
+   hypre_Index         stride;
+   HYPRE_Int           cdir;
+   
+   /* get fine grid (= coarse grid from previous spatial discretization) */
+   fine_grid = (app->spatial_lookup_table[spatial_disc_idx_xcoarsen-1]).coarse_grid;
+   cbox      = hypre_BoxDuplicate(hypre_StructGridBoundingBox(fine_grid));
+   
+   /* semicoarsening in x */
+   /* set cindex, findex, and stride */
+   cdir = 0;
+   hypre_PFMGSetCIndex(cdir, cindex);
+   hypre_PFMGSetFIndex(cdir, findex);
+   hypre_PFMGSetStride(cdir, stride);
+   
+   /* coarsen cbox */
+   hypre_ProjectBox(cbox, cindex, stride);
+   hypre_StructMapFineToCoarse(hypre_BoxIMin(cbox), cindex, stride,
+                               hypre_BoxIMin(cbox));
+   hypre_StructMapFineToCoarse(hypre_BoxIMax(cbox), cindex, stride,
+                               hypre_BoxIMax(cbox));
+   
+   /* build the interpolation grid */
+   hypre_StructCoarsen(fine_grid, findex, stride, 0, &P_grid_x);
+   
+   /* build the coarse grid */
+   hypre_StructCoarsen(fine_grid, cindex, stride, 1, &coarse_grid_x);
+   
+   (app->spatial_lookup_table[spatial_disc_idx_xcoarsen]).coarse_grid = coarse_grid_x;
+   (app->spatial_lookup_table[spatial_disc_idx_xcoarsen]).P_grid      = P_grid_x;
+   
+   /* semicoarsening in y */
+   /* set cindex, findex, and stride */
+   cdir = 1;
+   hypre_PFMGSetCIndex(cdir, cindex);
+   hypre_PFMGSetFIndex(cdir, findex);
+   hypre_PFMGSetStride(cdir, stride);
+   
+   /* coarsen cbox */
+   hypre_ProjectBox(cbox, cindex, stride);
+   hypre_StructMapFineToCoarse(hypre_BoxIMin(cbox), cindex, stride,
+                               hypre_BoxIMin(cbox));
+   hypre_StructMapFineToCoarse(hypre_BoxIMax(cbox), cindex, stride,
+                               hypre_BoxIMax(cbox));
+   
+   /* build the interpolation grid */
+   hypre_StructCoarsen(coarse_grid_x, findex, stride, 0, &P_grid_y);
+   
+   /* build the coarse grid */
+   hypre_StructCoarsen(coarse_grid_x, cindex, stride, 1, &coarse_grid_y);
+   
+   (app->spatial_lookup_table[spatial_disc_idx_ycoarsen]).coarse_grid = coarse_grid_y;
+   (app->spatial_lookup_table[spatial_disc_idx_ycoarsen]).P_grid      = P_grid_y;
+   
+   /* free up box */
+   hypre_BoxDestroy(cbox);
+   
+   return;
+}
+
+
+HYPRE_Int
+my_PFMGSetupInterpOp( hypre_StructMatrix *A,
+                      HYPRE_Int           cdir,
+                      hypre_Index         findex,
+                      hypre_Index         stride,
+                      hypre_StructMatrix *P       )
+{
+   hypre_BoxArray        *compute_boxes;
+   hypre_Box             *compute_box;
+   
+   hypre_Box             *A_dbox;
+   hypre_Box             *P_dbox;
+   
+   HYPRE_Real            *Pp0, *Pp1;
+   HYPRE_Int              constant_coefficient;
+   
+   hypre_StructStencil   *stencil;
+   hypre_Index           *stencil_shape;
+   HYPRE_Int              stencil_size;
+   hypre_StructStencil   *P_stencil;
+   hypre_Index           *P_stencil_shape;
+   
+   HYPRE_Int              Pstenc0, Pstenc1;
+   
+   hypre_Index            loop_size;
+   hypre_Index            start;
+   hypre_IndexRef         startc;
+   hypre_Index            stridec;
+   
+   HYPRE_Int              i, si;
+   
+   HYPRE_Int              si0, si1;
+   HYPRE_Int              mrk0, mrk1;
+   HYPRE_Int              d;
+   
+   HYPRE_Int              Ai, Pi;
+   HYPRE_Real            *Ap;
+   
+   /*----------------------------------------------------------
+    * Initialize some things
+    *----------------------------------------------------------*/
+   
+   stencil       = hypre_StructMatrixStencil(A);
+   stencil_shape = hypre_StructStencilShape(stencil);
+   stencil_size  = hypre_StructStencilSize(stencil);
+   
+   P_stencil       = hypre_StructMatrixStencil(P);
+   P_stencil_shape = hypre_StructStencilShape(P_stencil);
+   
+   constant_coefficient = hypre_StructMatrixConstantCoefficient(A);
+   
+   /*----------------------------------------------------------
+    * Find stencil enties in A corresponding to P
+    *----------------------------------------------------------*/
+   
+   si0 = -1;
+   si1 = -1;
+   for (si = 0; si < stencil_size; si++)
+   {
+      mrk0 = 0;
+      mrk1 = 0;
+      for (d = 0; d < hypre_StructStencilNDim(stencil); d++)
+      {
+         if (hypre_IndexD(stencil_shape[si], d) ==
+             hypre_IndexD(P_stencil_shape[0], d))
+         {
+            mrk0++;
+         }
+         if (hypre_IndexD(stencil_shape[si], d) ==
+             hypre_IndexD(P_stencil_shape[1], d))
+         {
+            mrk1++;
+         }
+      }
+      if (mrk0 == hypre_StructStencilNDim(stencil))
+      {
+         si0 = si;
+      }
+      if (mrk1 == hypre_StructStencilNDim(stencil))
+      {
+         si1 = si;
+      }
+   }
+   
+   hypre_SetIndex3(stridec, 1, 1, 1);
+   
+   /*----------------------------------------------------------
+    * Compute P
+    *----------------------------------------------------------*/
+   
+   compute_boxes = hypre_StructGridBoxes(hypre_StructMatrixGrid(P));
+   hypre_ForBoxI(i, compute_boxes)
+   {
+      compute_box = hypre_BoxArrayBox(compute_boxes, i);
+      
+      A_dbox = hypre_BoxArrayBox(hypre_StructMatrixDataSpace(A), i);
+      P_dbox = hypre_BoxArrayBox(hypre_StructMatrixDataSpace(P), i);
+      
+      Pp0 = hypre_StructMatrixBoxData(P, i, 0);
+      Pp1 = hypre_StructMatrixBoxData(P, i, 1);
+      
+      Pstenc0 = hypre_IndexD(P_stencil_shape[0], cdir);
+      Pstenc1 = hypre_IndexD(P_stencil_shape[1], cdir);
+      
+      startc  = hypre_BoxIMin(compute_box);
+      hypre_StructMapCoarseToFine(startc, findex, stride, start);
+      
+      hypre_BoxGetStrideSize(compute_box, stridec, loop_size);
+      
+      hypre_BoxLoop2Begin(hypre_StructMatrixNDim(A), loop_size,
+                          A_dbox, start, stride, Ai,
+                          P_dbox, startc, stridec, Pi);
+#ifdef HYPRE_USING_OPENMP
+#pragma omp parallel for private(HYPRE_BOX_PRIVATE,Ai,Pi,si,center,Ap,mrk0,mrk1) HYPRE_SMP_SCHEDULE
+#endif
+      hypre_BoxLoop2For(Ai, Pi)
+      {
+         Pp0[Pi] = 0.0;
+         Pp1[Pi] = 0.0;
+         mrk0 = 0;
+         mrk1 = 0;
+         
+         Ap = hypre_StructMatrixBoxData(A, i, si0);
+         if (Ap[Ai] != 0.0)
+         {
+            Pp0[Pi] = 0.5;
+         }
+         else
+         {
+            mrk0++;
+         }
+         
+         Ap = hypre_StructMatrixBoxData(A, i, si1);
+         if (Ap[Ai] != 0.0)
+         {
+            Pp1[Pi] = 0.5;
+         }
+         else
+         {
+            mrk1++;
+         }
+
+         
+         /*----------------------------------------------
+          * Set interpolation weight to zero, if stencil
+          * entry in same direction is zero. Prevents
+          * interpolation and operator stencils reaching
+          * outside domain.
+          *----------------------------------------------*/
+         if (mrk0 != 0)
+            Pp0[Pi] = 0.0;
+         if (mrk1 != 0)
+            Pp1[Pi] = 0.0;
+      }
+      hypre_BoxLoop2End(Ai, Pi);
+   }
+   
+   hypre_StructInterpAssemble(A, P, 0, cdir, findex, stride);
+   
+   return hypre_error_flag;
+}
+
+
+/* --------------------------------------------------------------------
+ * Set up interpolation and restriction operators for coarsening and
+ * interpolation using hypre routines like in PFMG.
+ *
+ * Note: Coarsening is done in two steps by semicoarsening in x
+ *       followed by semicoarsening in y.
+ * -------------------------------------------------------------------- */
+void
+setUpIntergridOp( braid_App app,
+                  double    fdt,
+                  double    fdx,
+                  double    fdy,
+                  double    cdx,
+                  int       fspatial_disc_idx,
+                  int       spatial_disc_idx_xcoarsen,
+                  int       spatial_disc_idx_ycoarsen )
+{
+   HYPRE_StructMatrix   P_x;
+   HYPRE_StructMatrix   RT_x;
+   HYPRE_StructMatrix   P_y;
+   HYPRE_StructMatrix   RT_y;
+   HYPRE_StructMatrix   A, A_x;
+   
+   int                  A_idx, i, cfl;
+   double               cfl_value;
+   
+   void                *restrict_data_x;
+   void                *interp_data_x;
+   void                *restrict_data_y;
+   void                *interp_data_y;
+   
+   /* temp vectors on fine and coarse grids */
+   HYPRE_StructVector   fvec;
+   HYPRE_StructVector   cvec;
+   
+   hypre_Index          cindex;
+   hypre_Index          findex;
+   hypre_Index          stride;
+   HYPRE_Int            cdir;
+   
+#if DEBUG_PFMG_COARSENING
+   char                 filename[255];
+   int                  myid_x, myid_t;
+   MPI_Comm_rank( app->comm_x, &myid_x );
+   MPI_Comm_rank( app->comm_t, &myid_t );
+   hypre_printf("proc (%d, %d) setUpIntergridOp(): fdt = %.4lf, fdx = %.4lf, fdy = %.4lf, cdx = %.4lf, indices (%d, %d, %d)\n", myid_x, myid_t, fdt, fdx, fdy, cdx,
+                fspatial_disc_idx,spatial_disc_idx_xcoarsen, spatial_disc_idx_ycoarsen);
+#endif
+   
+   /* Get discretization matrix for (fdt, fdx, fdy)-tuple. */
+   A_idx = -1.0;
+   for( i = 0; i < app->nA; i++ )
+   {
+      if( (fabs( app->dt_A[i] - fdt )/fdt < 1e-10) &&
+          (fabs( app->dx_A[i] - fdx )/fdx < 1e-10) &&
+          (fabs( app->dy_A[i] - fdy )/fdy < 1e-10) )
+      {
+         A_idx = i;
+         break;
+      }
+   }
+   
+   if( A_idx == -1.0 ){
+      cfl = 0;
+      /* Check CFL condition, always switch to implicit time stepping if you violate the CFL */
+      cfl_value = (app->man->K)*( (fdt)/((fdx)*(fdx)) + (fdt)/((fdy)*(fdy)) );
+      if( cfl_value < 0.5 )
+      {
+         cfl = 1;
+      }
+      A_idx = i;
+      app->nA++;
+      
+      /* No matrix for time step fdt exists.
+       * Add entry to matrix lookup table. */
+      
+      app->dt_A[A_idx] = fdt;
+      app->dx_A[A_idx] = fdx;
+      app->dy_A[A_idx] = fdy;
+      
+      /* We need to "trick" the user's data structure into mimicking this
+       * discretization level */
+      app->man->dt    = fdt;
+      update_manager_from_disc_idx(app->man, fspatial_disc_idx, app->spatial_lookup_table);
+      app->man->graph = (app->spatial_lookup_table[fspatial_disc_idx]).graph_matrix;
+      
+      /* Set up the implicit or explicit discretization matrix.  If CFL is violated,
+       * automatically use implicit */
+      if( app->man->explicit && cfl ){
+         setUpExplicitMatrix( app->man );
+         app->A[A_idx] = app->man->A;
+         
+         /* Store that we used explicit on this level */
+         (app->runtime_scoarsen_info)[ (5*i) ]    = 1;
+      }
+      else{
+         setUpImplicitMatrix( app->man );
+         app->A[A_idx] = app->man->A;
+         
+         /* Don't need the PFMG solver. */
+         app->solver[A_idx] = NULL;
+         
+         /* Store that we used implicit on this level */
+         (app->runtime_scoarsen_info)[ (5*i) ]    = 0;
+      }
+   }
+   /* Discretization matrix for creating operators for semicoarsening in x. */
+   A = hypre_SStructPMatrixSMatrix(
+         (hypre_SStructMatrixPMatrix(app->A[A_idx],0)),0, 0);
+   
+#if DEBUG_PFMG_COARSENING
+   hypre_printf("use A[%d] for A\n", A_idx);
+   hypre_sprintf(filename, "zout_A.%02d", A_idx);
+   hypre_StructMatrixPrint(filename, A, 0);
+#endif
+   
+   /* We need a discretization matrix on the first semi-coarsened grid as well.
+    * Add entry to spatial lookup table (check if it exists already). */
+   A_idx = -1.0;
+   for( i = 0; i < app->nA; i++ )
+   {
+      if( (fabs( app->dt_A[i] - fdt )/fdt < 1e-10) &&
+          (fabs( app->dx_A[i] - cdx )/cdx < 1e-10) &&
+          (fabs( app->dy_A[i] - fdy )/fdy < 1e-10) )
+      {
+         A_idx = i;
+         break;
+      }
+   }
+   
+   if( A_idx == -1.0 ){
+      cfl = 0;
+      /* Check CFL condition, always switch to implicit time stepping if you violate the CFL.
+       * Note: Decision is based on (fdt, fdx, fdy)-tuple to guarantee consistency. */
+      cfl_value = (app->man->K)*( (fdt)/((fdx)*(fdx)) + (fdt)/((fdy)*(fdy)) );
+      if( cfl_value < 0.5 )
+      {
+         cfl = 1;
+      }
+      A_idx = i;
+      app->nA++;
+      
+      /* No matrix for time step fdt exists.
+       * Add entry to matrix lookup table. */
+      
+      app->dt_A[A_idx] = fdt;
+      app->dx_A[A_idx] = cdx;
+      app->dy_A[A_idx] = fdy;
+      
+      /* We need to "trick" the user's data structure into mimicking this
+       * discretization level */
+      app->man->dt    = fdt;
+      update_manager_from_disc_idx(app->man, spatial_disc_idx_xcoarsen, app->spatial_lookup_table);
+      app->man->graph = (app->spatial_lookup_table[spatial_disc_idx_xcoarsen]).graph_matrix;
+      
+      /* Set up the implicit or explicit discretization matrix.  If CFL is violated,
+       * automatically use implicit */
+      if( app->man->explicit && cfl ){
+         setUpExplicitMatrix( app->man );
+         app->A[A_idx] = app->man->A;
+         
+         /* Store that we used explicit on this level */
+         (app->runtime_scoarsen_info)[ (5*i) ]    = 1;
+      }
+      else{
+         setUpImplicitMatrix( app->man );
+         app->A[A_idx] = app->man->A;
+         
+         /* Don't need the PFMG solver. */
+         app->solver[A_idx] = NULL;
+         
+         /* Store that we used implicit on this level */
+         (app->runtime_scoarsen_info)[ (5*i) ]    = 0;
+      }
+   }
+   
+   /* Discretization matrix for creating operators for semicoarsening in y. */
+   A_x = hypre_SStructPMatrixSMatrix(
+            (hypre_SStructMatrixPMatrix(app->A[A_idx],0)),0, 0);
+   
+#if DEBUG_PFMG_COARSENING
+   hypre_printf("use A[%d] for A_x\n", A_idx);
+   hypre_sprintf(filename, "zout_A_x.%02d", A_idx);
+   hypre_StructMatrixPrint(filename, A_x, 0);
+#endif
+   
+   /* Create intergrid transfer operators. */
+   /* semicoarsening in x */
+   cdir = 0;
+   P_x  = hypre_PFMGCreateInterpOp(A,
+           (app->spatial_lookup_table[spatial_disc_idx_xcoarsen]).P_grid,
+           cdir, 1);
+   hypre_StructMatrixInitialize(P_x);
+   RT_x = P_x;
+   
+   (app->spatial_lookup_table[fspatial_disc_idx]).P  = P_x;
+   (app->spatial_lookup_table[fspatial_disc_idx]).RT = RT_x;
+   
+   /* semicoarsening in y */
+   cdir = 1;
+   P_y  = hypre_PFMGCreateInterpOp(A_x,
+           (app->spatial_lookup_table[spatial_disc_idx_ycoarsen]).P_grid,
+           cdir, 1);
+   hypre_StructMatrixInitialize(P_y);
+   RT_y = P_y;
+   
+   (app->spatial_lookup_table[spatial_disc_idx_xcoarsen]).P  = P_y;
+   (app->spatial_lookup_table[spatial_disc_idx_xcoarsen]).RT = RT_y;
+   
+   /* Set up intergrid transfer operators. */
+   /* semicoarsening in x */
+   cdir = 0;
+   hypre_PFMGSetCIndex(cdir, cindex);
+   hypre_PFMGSetFIndex(cdir, findex);
+   hypre_PFMGSetStride(cdir, stride);
+   
+   /* set up interpolation operator */
+   my_PFMGSetupInterpOp(A, cdir, findex, stride, P_x);
+   
+   /* set up dummy vectors for setting up the interpolation and 
+    * restriction routines */
+   fvec = hypre_StructVectorCreate(app->comm_x,
+            (app->spatial_lookup_table[fspatial_disc_idx]).coarse_grid);
+   hypre_StructVectorInitialize(fvec);
+   hypre_StructVectorAssemble(fvec);
+   cvec = hypre_StructVectorCreate(app->comm_x,
+            (app->spatial_lookup_table[spatial_disc_idx_xcoarsen]).coarse_grid);
+   hypre_StructVectorInitialize(cvec);
+   hypre_StructVectorAssemble(cvec);
+   
+   /* set up the interpolation routine */
+   interp_data_x = hypre_SemiInterpCreate();
+   hypre_SemiInterpSetup(interp_data_x, P_x, 0, cvec, fvec,
+                         cindex, findex, stride);
+   
+   /* set up the restriction routine */
+   restrict_data_x = hypre_SemiRestrictCreate();
+   hypre_SemiRestrictSetup(restrict_data_x, RT_x, 1, fvec, cvec,
+                           cindex, findex, stride);
+   
+   (app->spatial_lookup_table[fspatial_disc_idx]).restrict_data = restrict_data_x;
+   (app->spatial_lookup_table[fspatial_disc_idx]).interp_data   = interp_data_x;
+   
+   HYPRE_StructVectorDestroy(fvec);
+   HYPRE_StructVectorDestroy(cvec);
+   
+   /* semicoarsening in y */
+   cdir = 1;
+   hypre_PFMGSetCIndex(cdir, cindex);
+   hypre_PFMGSetFIndex(cdir, findex);
+   hypre_PFMGSetStride(cdir, stride);
+   
+   /* set up interpolation operator */
+   my_PFMGSetupInterpOp(A_x, cdir, findex, stride, P_y);
+   
+   /* set up dummy vectors for setting up the interpolation and restriction routines */
+   fvec = hypre_StructVectorCreate(app->comm_x,
+            (app->spatial_lookup_table[spatial_disc_idx_xcoarsen]).coarse_grid);
+   hypre_StructVectorInitialize(fvec);
+   hypre_StructVectorAssemble(fvec);
+   cvec = hypre_StructVectorCreate(app->comm_x,
+            (app->spatial_lookup_table[spatial_disc_idx_ycoarsen]).coarse_grid);
+   hypre_StructVectorInitialize(cvec);
+   hypre_StructVectorAssemble(cvec);
+   
+   /* set up the interpolation routine */
+   interp_data_y = hypre_SemiInterpCreate();
+   hypre_SemiInterpSetup(interp_data_y, P_y, 0, cvec, fvec,
+                         cindex, findex, stride);
+   
+   /* set up the restriction routine */
+   restrict_data_y = hypre_SemiRestrictCreate();
+   hypre_SemiRestrictSetup(restrict_data_y, RT_y, 1, fvec, cvec,
+                           cindex, findex, stride);
+   
+   (app->spatial_lookup_table[spatial_disc_idx_xcoarsen]).restrict_data = restrict_data_y;
+   (app->spatial_lookup_table[spatial_disc_idx_xcoarsen]).interp_data   = interp_data_y;
+   
+   HYPRE_StructVectorDestroy( fvec );
+   HYPRE_StructVectorDestroy( cvec );
+   
+   return;
+}
+
+
 /* --------------------------------------------------------------------
  * Return the number of times to uniformly coarsen, in order
  * to minimally satisfy the CFL.  This function returns an integer beta, 
@@ -990,7 +1587,16 @@ void get_coarse_spatial_disc( braid_App app,
    int max_levels = app->max_levels;
    double coarsen_factor, cdx, cdy, cdt_loc;
 
-   /* Initial spatial_disc_idx to -1, indicating that no match has yet 
+#if DEBUG_PFMG_COARSENING
+   char               filename[255];
+   FILE              *file;
+   int                myid_t, myid_x;
+   MPI_Comm_rank( app->comm_x, &myid_x );
+   MPI_Comm_rank( app->comm_t, &myid_t );
+   /*hypre_printf("cdt = %.4lf, fdt = %.4lf, fdx = %.4lf, fdy = %.4lf, fspatial_disc_idx = %d\n",
+          cdt, fdt, fdx, fdy, fspatial_disc_idx);*/
+#endif
+   /* Initial spatial_disc_idx to -1, indicating that no match has yet
     * been found */
    (*spatial_disc_idx) = -1;
 
@@ -1075,6 +1681,195 @@ void get_coarse_spatial_disc( braid_App app,
       {
          if( ( (app->spatial_lookup_table[i]).cdt == -1.0 ) && ( (app->spatial_lookup_table[i]).fdt == -1.0 ) )
          {
+#if PFMG_COARSENING
+            if (ncoarsen == 0)
+            {
+               /* no spatial coarsening, just generate one new entry
+                * Note: same code as for not using PFMG coarsening */
+               (app->spatial_lookup_table[i]).cdt = cdt_loc;
+               (app->spatial_lookup_table[i]).fdt = fdt;
+               (app->spatial_lookup_table[i]).ncoarsen = ncoarsen_loc;
+               (app->spatial_lookup_table[i]).dx = cdx;
+               (app->spatial_lookup_table[i]).dy = cdy;
+               (app->spatial_lookup_table[i]).nx = cnx;
+               (app->spatial_lookup_table[i]).ny = cny;
+               (app->spatial_lookup_table[i]).nlx = cnlx;
+               (app->spatial_lookup_table[i]).nly = cnly;
+               (app->spatial_lookup_table[i]).ilower[0] = cilower[0];
+               (app->spatial_lookup_table[i]).ilower[1] = cilower[1];
+               (app->spatial_lookup_table[i]).iupper[0] = ciupper[0];
+               (app->spatial_lookup_table[i]).iupper[1] = ciupper[1];
+               (app->spatial_lookup_table[i]).fspatial_disc_idx = fspatial_disc_idx;
+               
+               /* We also have to set up a new 2D grid and graph for the new COARSE level. */
+               setUp2Dgrid( app->comm_x, &((app->spatial_lookup_table[i]).grid_x_matrix), app->man->dim_x,
+                           cilower, ciupper, app->man->vartype, 1 );
+               setUpGraph( app->comm_x, &((app->spatial_lookup_table[i]).graph_matrix),
+                          (app->spatial_lookup_table[i]).grid_x_matrix, app->man->object_type,
+                          app->man->stencil );
+               /* We temporarily let the vector grid and graph be the matrix grid and graph. Once we figure
+                * out the correct ghost layer, we will replace these two values */
+               (app->spatial_lookup_table[i]).grid_x_vector = (app->spatial_lookup_table[i]).grid_x_matrix;
+               (app->spatial_lookup_table[i]).graph_vector = (app->spatial_lookup_table[i]).graph_matrix;
+               
+               /* We also need the StructGrid */
+               (app->spatial_lookup_table[i]).coarse_grid = hypre_SStructPGridSGrid(
+                                                             hypre_SStructGridPGrid(
+                                                               (app->spatial_lookup_table[i]).grid_x_vector,0), 0);
+               
+               /* We also have to set up a new 2D grid and graph for the fine level vectors that has the
+                * correct number of ghost layers */
+               setUp2Dgrid( app->comm_x, &((app->spatial_lookup_table[fspatial_disc_idx]).grid_x_vector),
+                           app->man->dim_x, (app->spatial_lookup_table[fspatial_disc_idx]).ilower,
+                           (app->spatial_lookup_table[fspatial_disc_idx]).iupper, app->man->vartype, 2);
+               setUpGraph(app->comm_x, &((app->spatial_lookup_table[fspatial_disc_idx]).graph_vector),
+                          (app->spatial_lookup_table[fspatial_disc_idx]).grid_x_vector,
+                          app->man->object_type, app->man->stencil );
+               
+               /* This is a return value detailing which rule this is*/
+               (*spatial_disc_idx) = i;
+               break;
+            }
+            else
+            {
+#if DEBUG_PFMG_COARSENING
+               printf("spatial coarsening: generate entries for indices %d and %d: ", i, i+1);
+               printf("ncoarsen_loc = %d, cdt_loc = %.4lf, cdx = %.4lf, cdy = %.4lf, cnx = %d, cny = %d, cnlx = %d, cnly = %d\n",
+                       ncoarsen_loc, cdt_loc, cdx, cdy, cnx, cny, cnlx, cnly);
+#endif
+               /* Generate two new entries for semicoarsening in x, followed by semicoarsening in y
+                * Note: Entry i is an intermediate grid.
+                * Note: If multiple instances of spatial coarsening, then cdt = -1.0 on all
+                *       intermediate grids. */
+               (app->spatial_lookup_table[i]).cdt = -1.0; /* since this is an intermediate grid */
+               (app->spatial_lookup_table[i]).fdt = fdt;
+               (app->spatial_lookup_table[i]).ncoarsen = ncoarsen_loc;
+               (app->spatial_lookup_table[i]).dx = cdx;
+               (app->spatial_lookup_table[i]).dy = (app->spatial_lookup_table[i-1]).dy;
+               (app->spatial_lookup_table[i]).nx = cnx;
+               (app->spatial_lookup_table[i]).ny = (app->spatial_lookup_table[i-1]).ny;
+               (app->spatial_lookup_table[i]).nlx = cnlx;
+               (app->spatial_lookup_table[i]).nly = (app->spatial_lookup_table[i-1]).nly;
+               (app->spatial_lookup_table[i]).ilower[0] = cilower[0];
+               (app->spatial_lookup_table[i]).ilower[1] = (app->spatial_lookup_table[i-1]).ilower[1];
+               (app->spatial_lookup_table[i]).iupper[0] = ciupper[0];
+               (app->spatial_lookup_table[i]).iupper[1] = (app->spatial_lookup_table[i-1]).iupper[1];
+               (app->spatial_lookup_table[i]).fspatial_disc_idx = fspatial_disc_idx;
+               
+               /*printf("infos for index %d: cdt = %.4lf, fdt = %.4lf, ncoarsen = %d, dx = %.4lf, dy = %.4lf\n",
+                      i, (app->spatial_lookup_table[i]).cdt, (app->spatial_lookup_table[i]).fdt,
+                      (app->spatial_lookup_table[i]).ncoarsen,
+                      (app->spatial_lookup_table[i]).dx, (app->spatial_lookup_table[i]).dy);
+               printf("infos for index %d: nx = %d, ny = %d, nlx = %d, nly = %d, (%d, %d) x (%d, %d)\n",
+                      i, (app->spatial_lookup_table[i]).nx, (app->spatial_lookup_table[i]).ny,
+                      (app->spatial_lookup_table[i]).nlx, (app->spatial_lookup_table[i]).nly,
+                      (app->spatial_lookup_table[i]).ilower[0], (app->spatial_lookup_table[i]).ilower[1],
+                      (app->spatial_lookup_table[i]).iupper[0], (app->spatial_lookup_table[i]).iupper[1]);*/
+               
+               (app->spatial_lookup_table[i+1]).cdt = cdt_loc;
+               (app->spatial_lookup_table[i+1]).fdt = fdt;
+               (app->spatial_lookup_table[i+1]).ncoarsen = ncoarsen_loc;
+               (app->spatial_lookup_table[i+1]).dx = cdx;
+               (app->spatial_lookup_table[i+1]).dy = cdy;
+               (app->spatial_lookup_table[i+1]).nx = cnx;
+               (app->spatial_lookup_table[i+1]).ny = cny;
+               (app->spatial_lookup_table[i+1]).nlx = cnlx;
+               (app->spatial_lookup_table[i+1]).nly = cnly;
+               (app->spatial_lookup_table[i+1]).ilower[0] = cilower[0];
+               (app->spatial_lookup_table[i+1]).ilower[1] = cilower[1];
+               (app->spatial_lookup_table[i+1]).iupper[0] = ciupper[0];
+               (app->spatial_lookup_table[i+1]).iupper[1] = ciupper[1];
+               (app->spatial_lookup_table[i+1]).fspatial_disc_idx = fspatial_disc_idx;
+               
+               /*printf("infos for index %d: cdt = %.4lf, fdt = %.4lf, ncoarsen = %d, dx = %.4lf, dy = %.4lf\n",
+                      i+1, (app->spatial_lookup_table[i+1]).cdt, (app->spatial_lookup_table[i+1]).fdt,
+                      (app->spatial_lookup_table[i+1]).ncoarsen,
+                      (app->spatial_lookup_table[i+1]).dx, (app->spatial_lookup_table[i+1]).dy);
+               printf("infos for index %d: nx = %d, ny = %d, nlx = %d, nly = %d, (%d, %d) x (%d, %d)\n",
+                      i+1, (app->spatial_lookup_table[i+1]).nx, (app->spatial_lookup_table[i+1]).ny,
+                      (app->spatial_lookup_table[i+1]).nlx, (app->spatial_lookup_table[i+1]).nly,
+                      (app->spatial_lookup_table[i+1]).ilower[0], (app->spatial_lookup_table[i+1]).ilower[1],
+                      (app->spatial_lookup_table[i+1]).iupper[0], (app->spatial_lookup_table[i+1]).iupper[1]);*/
+               
+               /* We also have to set up a new 2D grid and graph for the new COARSE levels. */
+               setUp2Dgrid( app->comm_x, &((app->spatial_lookup_table[i]).grid_x_matrix), app->man->dim_x,
+                           (app->spatial_lookup_table[i]).ilower, (app->spatial_lookup_table[i]).iupper,
+                            app->man->vartype, 1 );
+               setUpGraph( app->comm_x, &((app->spatial_lookup_table[i]).graph_matrix),
+                          (app->spatial_lookup_table[i]).grid_x_matrix, app->man->object_type,
+                          app->man->stencil );
+               setUp2Dgrid( app->comm_x, &((app->spatial_lookup_table[i+1]).grid_x_matrix), app->man->dim_x,
+                           cilower, ciupper, app->man->vartype, 1 );
+               setUpGraph( app->comm_x, &((app->spatial_lookup_table[i+1]).graph_matrix),
+                          (app->spatial_lookup_table[i+1]).grid_x_matrix, app->man->object_type,
+                          app->man->stencil );
+               /* We temporarily let the vector grid and graph be the matrix grid and graph. Once we figure
+                * out the correct ghost layer, we will replace these two values */
+               (app->spatial_lookup_table[i]).grid_x_vector   = (app->spatial_lookup_table[i]).grid_x_matrix;
+               (app->spatial_lookup_table[i]).graph_vector    = (app->spatial_lookup_table[i]).graph_matrix;
+               (app->spatial_lookup_table[i+1]).grid_x_vector = (app->spatial_lookup_table[i+1]).grid_x_matrix;
+               (app->spatial_lookup_table[i+1]).graph_vector  = (app->spatial_lookup_table[i+1]).graph_matrix;
+               
+               /* We also have to set up a new 2D grid and graph for the fine level vectors that has the
+                * correct number of ghost layers */
+               setUp2Dgrid( app->comm_x, &((app->spatial_lookup_table[fspatial_disc_idx]).grid_x_vector),
+                           app->man->dim_x, (app->spatial_lookup_table[fspatial_disc_idx]).ilower,
+                           (app->spatial_lookup_table[fspatial_disc_idx]).iupper, app->man->vartype, 2);
+               setUpGraph(app->comm_x, &((app->spatial_lookup_table[fspatial_disc_idx]).graph_vector),
+                          (app->spatial_lookup_table[fspatial_disc_idx]).grid_x_vector,
+                          app->man->object_type, app->man->stencil );
+               
+               /* We also have to set up StructGrids and intergrid transfer operators for PFMG coarsening. */
+               setUpCoarseSGrids( app, i, i+1 );
+               
+#if DEBUG_PFMG_COARSENING
+               /*hypre_printf("done with setting up struct grids\n");*/
+               hypre_sprintf(filename, "zout_grid.px%02d.pt%02d.%02d", myid_x, myid_t, fspatial_disc_idx);
+               file = fopen(filename, "w");
+               hypre_StructGridPrint(file,
+                     (app->spatial_lookup_table[fspatial_disc_idx]).coarse_grid);
+               fflush(file);
+               fclose(file);
+               hypre_sprintf(filename, "zout_grid.px%02d.pt%02d.%02d", myid_x, myid_t, i);
+               file = fopen(filename, "w");
+               hypre_StructGridPrint(file,
+                     (app->spatial_lookup_table[i]).coarse_grid);
+               fflush(file);
+               fclose(file);
+               hypre_sprintf(filename, "zout_grid.px%02d.pt%02d.%02d", myid_x, myid_t, i+1);
+               file = fopen(filename, "w");
+               hypre_StructGridPrint(file,
+                     (app->spatial_lookup_table[i+1]).coarse_grid);
+               fflush(file);
+               fclose(file);
+#endif
+               
+               setUpIntergridOp( app, ncoarsen_loc*fdt, ncoarsen_loc*fdx, ncoarsen_loc*fdy,
+                                 ncoarsen_loc*cdx, fspatial_disc_idx+2*(ncoarsen_loc-1), i, i+1 );
+               
+#if DEBUG_PFMG_COARSENING
+               /*hypre_printf("done with setting up intergrid operators\n");*/
+               hypre_sprintf(filename, "zout_P.px%02d.pt%02d.%02d", myid_x, myid_t,
+                             fspatial_disc_idx+2*(ncoarsen_loc-1));
+               hypre_StructMatrixPrint(filename,
+                    (app->spatial_lookup_table[fspatial_disc_idx+2*(ncoarsen_loc-1)]).P, 0);
+               hypre_sprintf(filename, "zout_RT.px%02d.pt%02d.%02d", myid_x, myid_t,
+                             fspatial_disc_idx+2*(ncoarsen_loc-1));
+               hypre_StructMatrixPrint(filename,
+                    (app->spatial_lookup_table[fspatial_disc_idx+2*(ncoarsen_loc-1)]).RT, 0);
+               hypre_sprintf(filename, "zout_P.px%02d.pt%02d.%02d", myid_x, myid_t, i);
+               hypre_StructMatrixPrint(filename,
+                    (app->spatial_lookup_table[i]).P, 0);
+               hypre_sprintf(filename, "zout_RT.px%02d.pt%02d.%02d", myid_x, myid_t, i);
+               hypre_StructMatrixPrint(filename,
+                    (app->spatial_lookup_table[i]).RT, 0);
+#endif
+               
+               /* This is a return value detailing which rule this is*/
+               (*spatial_disc_idx) = i+1;
+               break;
+            }
+#else
             (app->spatial_lookup_table[i]).cdt = cdt_loc;
             (app->spatial_lookup_table[i]).fdt = fdt;
             (app->spatial_lookup_table[i]).ncoarsen = ncoarsen_loc;
@@ -1088,31 +1883,32 @@ void get_coarse_spatial_disc( braid_App app,
             (app->spatial_lookup_table[i]).ilower[1] = cilower[1];
             (app->spatial_lookup_table[i]).iupper[0] = ciupper[0];
             (app->spatial_lookup_table[i]).iupper[1] = ciupper[1];
-            (app->spatial_lookup_table[i]).fspatial_disc_idx = fspatial_disc_idx; 
-            
+            (app->spatial_lookup_table[i]).fspatial_disc_idx = fspatial_disc_idx;
+               
             /* We also have to set up a new 2D grid and graph for the new COARSE level*/
-            setUp2Dgrid( app->comm_x, &((app->spatial_lookup_table[i]).grid_x_matrix), app->man->dim_x,  
+            setUp2Dgrid( app->comm_x, &((app->spatial_lookup_table[i]).grid_x_matrix), app->man->dim_x,
                          cilower, ciupper, app->man->vartype, 1 );
-            setUpGraph( app->comm_x, &((app->spatial_lookup_table[i]).graph_matrix), 
-                       (app->spatial_lookup_table[i]).grid_x_matrix, app->man->object_type, 
+            setUpGraph( app->comm_x, &((app->spatial_lookup_table[i]).graph_matrix),
+                        (app->spatial_lookup_table[i]).grid_x_matrix, app->man->object_type,
                         app->man->stencil );
             /* We temporarily let the vector grid and graph be the matrix grid and graph. Once we figure
              * out the correct ghost layer, we will replace these two values */
             (app->spatial_lookup_table[i]).grid_x_vector = (app->spatial_lookup_table[i]).grid_x_matrix;
             (app->spatial_lookup_table[i]).graph_vector = (app->spatial_lookup_table[i]).graph_matrix;
-            
+               
             /* We also have to set up a new 2D grid and graph for the fine level vectors that has the
              * correct number of ghost layers */
-            setUp2Dgrid( app->comm_x, &((app->spatial_lookup_table[fspatial_disc_idx]).grid_x_vector), 
-                         app->man->dim_x, (app->spatial_lookup_table[fspatial_disc_idx]).ilower, 
+            setUp2Dgrid( app->comm_x, &((app->spatial_lookup_table[fspatial_disc_idx]).grid_x_vector),
+                         app->man->dim_x, (app->spatial_lookup_table[fspatial_disc_idx]).ilower,
                          (app->spatial_lookup_table[fspatial_disc_idx]).iupper, app->man->vartype, 2);
-            setUpGraph(app->comm_x, &((app->spatial_lookup_table[fspatial_disc_idx]).graph_vector), 
-                       (app->spatial_lookup_table[fspatial_disc_idx]).grid_x_vector, 
-                       app->man->object_type, app->man->stencil );
-
-            /* This is a return value detailing which rule this is*/
+            setUpGraph(app->comm_x, &((app->spatial_lookup_table[fspatial_disc_idx]).graph_vector),
+                       (app->spatial_lookup_table[fspatial_disc_idx]).grid_x_vector,
+                        app->man->object_type, app->man->stencil );
+               
+            /* This is a return value detailing which rule this is */
             (*spatial_disc_idx) = i;
             break;
+#endif
          }
       }
    
@@ -1178,6 +1974,81 @@ void retrieve_spatial_discretization( braid_App app,
    (*spatial_disc_idx) = -1;
 }
 
+/* --------------------------------------------------------------------
+ * Do a single uniform refinement of a braid_Vector.
+ * Use bilinear interpolation.
+ * Assume a regular grid of size 2^k + 1 in each dimension.
+ * Use PFMG interpolation.
+ *
+ * The basic strategy is to (possible multiple) uniform refinments with a
+ * helper function that does only one uniform refinement while an outter
+ * driver calls the helper function ncoarsen number of times.
+ * -------------------------------------------------------------------- */
+int
+my_RefinePFMG(braid_App              app,
+              braid_Vector           cu,
+              braid_Vector          *fu_ptr,
+              braid_CoarsenRefStatus status)
+{
+   
+   int                 spatial_disc_idx  = cu->spatial_disc_idx;
+   int                 fspatial_disc_idx = spatial_disc_idx - 2;
+   int                 filower[2], fiupper[2];
+   int                 cilower[2], ciupper[2];
+   my_Vector          *fu;
+   HYPRE_StructVector  cx;
+   HYPRE_StructVector  fx;
+   HYPRE_StructVector  tx;
+   
+   cilower[0] = (app->spatial_lookup_table[spatial_disc_idx]).ilower[0];
+   cilower[1] = (app->spatial_lookup_table[spatial_disc_idx]).ilower[1];
+   ciupper[0] = (app->spatial_lookup_table[spatial_disc_idx]).iupper[0];
+   ciupper[1] = (app->spatial_lookup_table[spatial_disc_idx]).iupper[1];
+   
+   filower[0] = (app->spatial_lookup_table[fspatial_disc_idx]).ilower[0];
+   filower[1] = (app->spatial_lookup_table[fspatial_disc_idx]).ilower[1];
+   fiupper[0] = (app->spatial_lookup_table[fspatial_disc_idx]).iupper[0];
+   fiupper[1] = (app->spatial_lookup_table[fspatial_disc_idx]).iupper[1];
+   
+   fu         = (my_Vector *) malloc(sizeof(my_Vector));
+
+   app->man->grid_x = (app->spatial_lookup_table[fspatial_disc_idx]).grid_x_matrix;
+   
+   /* Create an empty vector object. */
+   app->man->grid_x = (app->spatial_lookup_table[fspatial_disc_idx]).grid_x_matrix;
+   initialize_vector(app->man, &(fu->x));
+   
+   /* Get StructVector objects */
+   HYPRE_SStructVectorGetObject( fu->x, (void **) &fx );
+   HYPRE_SStructVectorGetObject( cu->x, (void **) &cx );
+   /* Create temp vector for intermediate grid */
+   tx = hypre_StructVectorCreate(app->comm_x,
+                                 (app->spatial_lookup_table[spatial_disc_idx-1]).coarse_grid);
+   hypre_StructVectorInitialize(tx);
+   hypre_StructVectorAssemble(tx);
+   
+   /* Only do work if you have a non-empty coarse grid and F-points to fill */
+   if( (filower[0] <= fiupper[0]) && (filower[1] <= fiupper[1]) )
+   {
+      if( (cilower[0] <= ciupper[0]) && (cilower[1] <= ciupper[1]) )
+      {
+         /* interpolate to semicoarsened-in-x grid */
+         hypre_SemiInterp((app->spatial_lookup_table[spatial_disc_idx-1]).interp_data,
+                          (app->spatial_lookup_table[spatial_disc_idx-1]).P, cx, tx);
+         /* interpolate to fine grid */
+         hypre_SemiInterp((app->spatial_lookup_table[fspatial_disc_idx]).interp_data,
+                          (app->spatial_lookup_table[fspatial_disc_idx]).P, tx, fx);
+      }
+   }
+   
+   HYPRE_StructVectorDestroy(tx);
+   
+   fu->spatial_disc_idx = fspatial_disc_idx;
+   *fu_ptr = fu;
+   
+   return 0;
+}
+
 
 /* --------------------------------------------------------------------
  * Do a single uniform refinement of a braid_Vector.
@@ -1210,6 +2081,8 @@ my_RefineHelper(braid_App              app,
    hypre_CommHandle      *comm_handle;
    hypre_CommPkg         *comm_pkg;
    int                   *num_ghost;
+   
+   double     wtime;
    
    /*double     tstart;
    braid_CoarsenRefStatusGetTstart(status, &tstart); */
@@ -1288,6 +2161,7 @@ my_RefineHelper(braid_App              app,
     * which are of the same size, and done a SetBoxValues with fvalues */
    if( (fiupper[0] >= filower[0]) && (fiupper[1] >= filower[1])) 
    {
+       wtime = MPI_Wtime();
        HYPRE_SStructVectorGather( fu->x );
        hypre_StructVector *fu_struct = hypre_SStructPVectorSVector( (hypre_SStructVectorPVector((fu->x),0)), 0);
        num_ghost = hypre_StructVectorNumGhost(fu_struct);
@@ -1325,7 +2199,8 @@ my_RefineHelper(braid_App              app,
                                        1);             /* HYPRE_Int           outside */ 
        hypre_BoxDestroy(box);
        hypre_CommPkgDestroy(comm_pkg);
-       
+       sinterpTime[1] += (MPI_Wtime()-wtime);
+      
        /* print the vectors for some time step (comment in matching print below)
         * $$ srun -N 1 -n 1 -p pdebug ./drive-02 -pgrid 1 1 1 -nt 256 -mi 2 -ml 15 -nx 9 9 -scoarsen 2 
         * 
@@ -1449,6 +2324,8 @@ my_Refine(braid_App              app,
    int        k, ncoarsen, spatial_disc_idx;
    double     cdt, fdt;
    double     tstart, f_tstop, f_tprior, c_tstop, c_tprior;
+   
+   double     wtime;
 
    
    /* Get coarse and fine time step sizes */
@@ -1490,14 +2367,97 @@ my_Refine(braid_App              app,
    else
    {
       for(k = 0; k < ncoarsen; k++)
-      {     
+      {
+         wtime = MPI_Wtime();
+#if PFMG_COARSENING
+         my_RefinePFMG(app, cu, fu_ptr, status);
+#else
          my_RefineHelper(app, cu, fu_ptr, status);
+#endif
+         sinterpTime[0] += (MPI_Wtime()-wtime);
          if((k > 0) && (k < (ncoarsen-1)) )
          {  my_Free(app, cu); }
          cu = *fu_ptr;
       }
    }
 
+   return 0;
+}
+
+/* --------------------------------------------------------------------
+ * Do a single uniform coarsening of a braid_Vector.
+ * Use (1/4) times the transpose of bilinear interpolation.
+ * Assume a regular grid of size 2^k + 1 in each dimension.
+ * Use PFMG routines.
+ *
+ * The basic strategy is to (possible multiple) uniform coaresnings with a
+ * helper function that does only one uniform coarsening while an outter
+ * driver calls the helper function ncoarsen number of times.
+ * -------------------------------------------------------------------- */
+
+int
+my_CoarsenBilinearPFMG(braid_App              app,
+                       braid_Vector           fu,
+                       braid_Vector          *cu_ptr,
+                       braid_CoarsenRefStatus status)
+{
+   int                 fspatial_disc_idx = fu->spatial_disc_idx;
+   int                 filower[2], fiupper[2];
+   int                 cilower[2], ciupper[2];
+   my_Vector          *cu;
+   HYPRE_StructVector  fx;
+   HYPRE_StructVector  cx;
+   HYPRE_StructVector  tx;
+   
+   filower[0] = (app->spatial_lookup_table[fspatial_disc_idx]).ilower[0];
+   filower[1] = (app->spatial_lookup_table[fspatial_disc_idx]).ilower[1];
+   fiupper[0] = (app->spatial_lookup_table[fspatial_disc_idx]).iupper[0];
+   fiupper[1] = (app->spatial_lookup_table[fspatial_disc_idx]).iupper[1];
+   
+   cilower[0] = (app->spatial_lookup_table[fspatial_disc_idx+2]).ilower[0];
+   cilower[1] = (app->spatial_lookup_table[fspatial_disc_idx+2]).ilower[1];
+   ciupper[0] = (app->spatial_lookup_table[fspatial_disc_idx+2]).iupper[0];
+   ciupper[1] = (app->spatial_lookup_table[fspatial_disc_idx+2]).iupper[1];
+   
+   cu         = (my_Vector *) malloc(sizeof(my_Vector));
+   
+   /* Create an empty vector object. */
+   app->man->grid_x = (app->spatial_lookup_table[fspatial_disc_idx+2]).grid_x_matrix;
+   initialize_vector(app->man, &(cu->x));
+   
+   /* Get StructVector objects */
+   HYPRE_SStructVectorGetObject( fu->x, (void **) &fx );
+   HYPRE_SStructVectorGetObject( cu->x, (void **) &cx );
+   /* Create temp vector for intermediate grid */
+   tx = hypre_StructVectorCreate(app->comm_x,
+                                 (app->spatial_lookup_table[fspatial_disc_idx+1]).coarse_grid);
+   hypre_StructVectorInitialize(tx);
+   hypre_StructVectorAssemble(tx);
+   
+   /* Only do work if you have a non-empty fine grid and C-points to fill */
+   if( (filower[0] <= fiupper[0]) && (filower[1] <= fiupper[1]) )
+   {
+      if( (cilower[0] <= ciupper[0]) && (cilower[1] <= ciupper[1]) )
+      {
+         /* semicoarsening in x */
+         hypre_SemiRestrict((app->spatial_lookup_table[fspatial_disc_idx]).restrict_data,
+                            (app->spatial_lookup_table[fspatial_disc_idx]).RT, fx, tx);
+         hypre_StructScale(0.5, tx);
+         /* semicoarsening in y */
+         hypre_SemiRestrict((app->spatial_lookup_table[fspatial_disc_idx+1]).restrict_data,
+                            (app->spatial_lookup_table[fspatial_disc_idx+1]).RT, tx, cx);
+         hypre_StructScale(0.5, cx);
+      }
+   }
+   
+   HYPRE_StructVectorDestroy(tx);
+   
+   /* Unless multiple coarsenings/refinements happen between levels, then
+    * the spatial_disc_idx just progresses by +/- 2 (semicoarsening in x
+    * followed by semicoarsening in y) */
+   cu->spatial_disc_idx = fspatial_disc_idx+2;
+   *cu_ptr = cu;
+   
    return 0;
 }
 
@@ -1539,6 +2499,8 @@ my_CoarsenBilinearHelper(braid_App              app,
    hypre_CommHandle      *comm_handle;
    hypre_CommPkg         *comm_pkg;
    int                   *num_ghost;
+   
+   double     wtime;
 
    braid_CoarsenRefStatusGetTstart(status, &tstart);
    cu = (my_Vector *) malloc(sizeof(my_Vector));
@@ -1563,7 +2525,7 @@ my_CoarsenBilinearHelper(braid_App              app,
    /* Only do work if you have a non-empty fine grid */
    if( (filower[0] <= fiupper[0]) && (filower[1] <= fiupper[1]) )
    {
-
+      wtime = MPI_Wtime();
       /* Grab the fvalues plus the default single ghost layer  */
       HYPRE_SStructVectorGather( fu->x );
       hypre_StructVector *fu_struct = hypre_SStructPVectorSVector( (hypre_SStructVectorPVector((fu->x),0)), 0);
@@ -1602,6 +2564,7 @@ my_CoarsenBilinearHelper(braid_App              app,
                                       1);             /* HYPRE_Int           outside */ 
       hypre_BoxDestroy(box);
       hypre_CommPkgDestroy(comm_pkg);
+      srestrictTime[1] += (MPI_Wtime()-wtime);
      
       /* print the vectors for some time step (comment in matching print below)
        * $$ srun -N 1 -n 1 -p pdebug ./drive-02 -pgrid 1 1 1 -nt 256 -mi 2 -ml 15 -nx 9 9 -scoarsen 2 
@@ -1730,6 +2693,7 @@ my_CoarsenBilinear(braid_App              app,
    int        k, ncoarsen, level;
    double     cdt, fdt, scoarsenCFL;
    double     tstart, f_tstop, f_tprior, c_tstop, c_tprior;
+   double     wtime;
    
    /* Get Coarse and fine time step sizes */
    braid_CoarsenRefStatusGetTstart(status, &tstart);
@@ -1761,9 +2725,13 @@ my_CoarsenBilinear(braid_App              app,
     * This could be the same as the fine spatial discretization */ 
    braid_CoarsenRefStatusGetLevel(status, &level);
    scoarsenCFL = app->scoarsenCFL[min_i(app->num_scoarsenCFL-1, level)];
+   /*printf("level %d: my_CoarsenBilinear() getting spatial discretization\n", level);*/
    get_coarse_spatial_disc( app, cdt, fdt, fdx, fdy, scoarsenCFL, (app->coarsen_in_space[level]),
                             fnx, fny, fspatial_disc_idx, filower, fiupper, &spatial_disc_idx);
    ncoarsen = (app->spatial_lookup_table[spatial_disc_idx]).ncoarsen;
+   
+   /*printf ("level %d: tstart = %.4lf, c_tstop = %.4lf, cdt = %.4lf, f_tstop = %.4lf, fdt = %.4lf: discretization %d from fine disc %d\n",
+           level, tstart, c_tstop, cdt, f_tstop, fdt, spatial_disc_idx, fspatial_disc_idx);*/
          
    /* If no coarsening, then just clone.
     * Otherwise, repeatedly coarsen by a factor of two until the 
@@ -1778,16 +2746,20 @@ my_CoarsenBilinear(braid_App              app,
    else
    {
       for(k = 0; k < ncoarsen; k++)
-      {     
+      {
+         wtime = MPI_Wtime();
+#if PFMG_COARSENING
+         /*printf("level %d: calling my_CoarsenBilinearPFMG() with spatial_disc_idx = %d (coarse %d) for coarsening %d/%d\n", level, fu->spatial_disc_idx, spatial_disc_idx, k, ncoarsen);*/
+         my_CoarsenBilinearPFMG(app, fu, cu_ptr, status);
+#else
          my_CoarsenBilinearHelper(app, fu, cu_ptr, status);
+#endif
+         srestrictTime[0] += (MPI_Wtime()-wtime);
          if((k > 0) && (k < (ncoarsen-1)) )
          {  my_Free(app, fu); }
          fu = *cu_ptr;
-         
-      
       }
    }
-   
 
    return 0;
 }
@@ -1947,19 +2919,10 @@ int main (int argc, char *argv[])
    double tol, tol_x[2], *scoarsenCFL;
    double mystarttime, myendtime, mytime, maxtime;
    int run_wrapper_tests, correct, fspatial_disc_idx;
-   int max_iter, max_iter_x[2], pfmg_maxlev, pfmg_pre, pfmg_post;
+   int max_iter, max_iter_x[2], add_relax_x, pfmg_maxlev, pfmg_pre, pfmg_post;
    int print_level, access_level, nA_max, max_levels, min_coarse, skip;
    int nrelax, nrelax0, cfactor, cfactor0, storage, res, new_res;
    int fmg, tnorm, nfmg_Vcyc, scoarsen, num_scoarsenCFL, use_rand, stmg;
-   
-   /*
-    * Spatial solver info
-    */
-   int    *solver_calls_global = NULL;
-   int    *solver_iters_global = NULL;
-   double *solver_time_global  = NULL;
-   double  solver_time_total   = 0.0;
-   double taddforcing_global;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -2009,6 +2972,7 @@ int main (int argc, char *argv[])
    tol_x[1]            = 1.0e-09;
    max_iter_x[0]       = 50;
    max_iter_x[1]       = 50;
+   add_relax_x          = 0;
    pfmg_maxlev         = 20;
    pfmg_pre            = 1;
    pfmg_post           = 1;
@@ -2132,6 +3096,10 @@ int main (int argc, char *argv[])
          max_iter_x[0] = atoi(argv[arg_index++]);
          max_iter_x[1] = atoi(argv[arg_index++]);
       }
+      else if ( strcmp(argv[arg_index], "-add_relax") == 0 ){
+         arg_index++;
+         add_relax_x = atoi(argv[arg_index++]);
+      }
       else if( strcmp(argv[arg_index], "-pfmg_ml") == 0 ){
          arg_index++;
          pfmg_maxlev = atoi(argv[arg_index++]);
@@ -2203,7 +3171,8 @@ int main (int argc, char *argv[])
       printf("  -cf0  <cfactor>                    : set coarsening factor for level 0 \n");
       printf("  -mi  <max_iter>                    : set max iterations (default: 100)\n");
       printf("  -pfmg_tolx <loose_tol tight_tol>   : loose and tight PFMG stopping tol (default: 1e-09 1e-09)\n"); 
-      printf("  -pfmg_mi <mi_fine mi_coarse>       : max number of PFMG iters for fine and coarse levels (default: 50 50)\n"); 
+      printf("  -pfmg_mi <mi_fine mi_coarse>       : max number of PFMG iters for fine and coarse levels (default: 50 50)\n");
+      printf("  -add_relax <nu>                    : add nu PFMG iterations for fine and coarse levels (default: 0)\n");
       printf("  -pfmg_ml <max_levels>              : max number of PFMG grid levels\n");
       printf("  -pfmg_nu <nu_pre nu_post>          : number of pre- and post-smoothing steps for PFMG\n");
       printf("  -fmg <nfmg_Vcyc>                   : use FMG cycling, nfmg_Vcyc V-cycles at each fmg level\n");
@@ -2366,8 +3335,8 @@ int main (int argc, char *argv[])
    (app->man->pfmg_tol)        = tol_x[0];
    (app->man->pfmg_maxiter)    = max_iter_x[0];
    (app->man->pfmg_maxlev)     = pfmg_maxlev;
-   (app->man->pfmg_pre)        = pfmg_pre;
-   (app->man->pfmg_post)       = pfmg_post;
+   (app->man->pfmg_npre)       = pfmg_pre;
+   (app->man->pfmg_npost)      = pfmg_post;
    (app->man->explicit)        = explicit;
    (app->man->output_vis)      = output_vis;
    (app->man->output_files)    = output_files;
@@ -2394,6 +3363,10 @@ int main (int argc, char *argv[])
    (app->max_iter_x)      = (int*) malloc( 2*sizeof(int) );
    (app->max_iter_x[0])   = max_iter_x[0];
    (app->max_iter_x[1])   = max_iter_x[1];
+   
+   /* Set the number of extra PFMG relaxation sweeps. */
+   (app->add_relax_x)     = add_relax_x;
+   (app->stmg)            = stmg;
 
    /* Initialize the storage structure for recording spatial coarsening information */ 
    app->runtime_scoarsen_info = (double*) malloc( 5*(app->max_levels)*sizeof(double) );
@@ -2444,20 +3417,6 @@ int main (int argc, char *argv[])
    app->runtime_max_iter = (int*) calloc( (app->max_levels),  sizeof(int) );
    for( i = 0; i < app->max_levels; i++ )
       app->runtime_max_iter[i] = 0;
-   
-   /*
-    * Allocate memory for spatial solver info.
-    */
-   app->solver_calls = (int*) calloc( (app->max_levels), sizeof(int) );
-   app->solver_iters = (int*) calloc( (app->max_levels), sizeof(int) );
-   app->solver_time  = (double*) calloc( (app->max_levels), sizeof(double) );
-   for( i = 0; i < app->max_levels; i++ )
-   {
-      app->solver_calls[i] = 0;
-      app->solver_iters[i] = 0;
-      app->solver_time[i]  = 0.0;
-   }
-   
 
    /* Setup the lookup table that records how grids are coarsened (refined)
     * spatially.  
@@ -2468,8 +3427,8 @@ int main (int argc, char *argv[])
    (app->spatial_lookup_table) = (spatial_discretization*) malloc( 3*max_levels*sizeof(spatial_discretization) );
    for( i = 1; i < 3*(app->max_levels); i++ )
    {
-      app->spatial_lookup_table[i].fdt = -1.0;
-      app->spatial_lookup_table[i].cdt = -1.0;
+      app->spatial_lookup_table[i].fdt         = -1.0;
+      app->spatial_lookup_table[i].cdt         = -1.0;
    }
    (app->spatial_lookup_table[0]).grid_x_matrix = (app->man->grid_x);
    (app->spatial_lookup_table[0]).grid_x_vector = (app->man->grid_x);
@@ -2489,6 +3448,9 @@ int main (int argc, char *argv[])
    (app->spatial_lookup_table[0]).iupper[0] = (app->man->iupper[0]);
    (app->spatial_lookup_table[0]).iupper[1] = (app->man->iupper[1]);
    (app->spatial_lookup_table[0]).fspatial_disc_idx = 0;
+   (app->spatial_lookup_table[0]).coarse_grid = hypre_SStructPGridSGrid(
+                                                   hypre_SStructGridPGrid((app->man->grid_x),0), 0);
+   (app->spatial_lookup_table[0]).P_grid = NULL;
    
    
    if( run_wrapper_tests)
@@ -2545,7 +3507,12 @@ int main (int argc, char *argv[])
       /* Start timer. */
       mystarttime = MPI_Wtime();
       
-      taddforcing = 0.0;
+      /* init some global timers */
+      taddforcing      = 0.0;
+      srestrictTime[0] = 0.0;
+      srestrictTime[1] = 0.0;
+      sinterpTime[0]   = 0.0;
+      sinterpTime[1]   = 0.0;
 
       braid_Init(comm, comm_t, tstart, tstop, nt, app, my_Step, my_Init,
             my_Clone, my_Free, my_Sum, my_SpatialNorm, my_Access, my_BufSize,
@@ -2635,7 +3602,7 @@ int main (int argc, char *argv[])
             double  cx = 1, ct = 1;
             for (l = 0; l < max_levels; l++)
             {
-               if ( (ct*dt)/(cx*cx*dx*dx) > lamcrit )
+               if ( (ct*dt)/(cx*cx*dx*dx) >= lamcrit )
                {
                   /* coarsen in space only */
                   app->coarsen_in_space[l] = 1;
@@ -2670,6 +3637,9 @@ int main (int argc, char *argv[])
          printf("  Begin simulation \n\n");
       }
       
+      time_relax_on = 0;
+      relaxtime     = 0.0;
+      relaxcalls    = 0;
       braid_Drive(core);
       
       /* Debug level printing for regression testing */
@@ -2715,15 +3685,6 @@ int main (int argc, char *argv[])
       runtime_max_iter_global = (int*) malloc( nA_max*sizeof(int) );
       runtime_scoarsen_info_global = (double*) malloc( 5*nA_max*sizeof(double) );
       
-      /*
-       * Spatial solver info
-       */
-      solver_calls_global = (int*) malloc (nA_max*sizeof(int) );
-      solver_iters_global = (int*) malloc (nA_max*sizeof(int) );
-      solver_time_global  = (double*) malloc (nA_max*sizeof(double) );
-      MPI_Allreduce( &taddforcing,
-                    &taddforcing_global, 1, MPI_DOUBLE, MPI_MAX, comm );
-      
       for( i = 0; i < nA_max; i++ ){
          /* Grab max num interations information */
          MPI_Allreduce( &(app->runtime_max_iter[i]), 
@@ -2740,17 +3701,6 @@ int main (int argc, char *argv[])
                &runtime_scoarsen_info_global[i*5+3], 1, MPI_DOUBLE, MPI_MAX, comm ); 
          MPI_Allreduce( &(app->runtime_scoarsen_info)[i*5+4],
                &runtime_scoarsen_info_global[i*5+4], 1, MPI_DOUBLE, MPI_MAX, comm );
-         
-         /*
-          * Grab solver info
-          */
-         MPI_Allreduce( &(app->solver_calls[i]),
-                        &solver_calls_global[i], 1, MPI_INT, MPI_MAX, comm );
-         MPI_Allreduce( &(app->solver_iters[i]),
-                        &solver_iters_global[i], 1, MPI_INT, MPI_MAX, comm );
-         MPI_Allreduce( &(app->solver_time[i]),
-                        &solver_time_global[i], 1, MPI_DOUBLE, MPI_MAX, comm );
-         solver_time_total += solver_time_global[i];
       }
 
       if( myid == 0 )
@@ -2766,6 +3716,8 @@ int main (int argc, char *argv[])
          printf(" \n"); 
          printf("   Fine-level max iter            :  %d\n", app->max_iter_x[0]);
          printf("   Coarse-level max iter          :  %d\n", app->max_iter_x[1]);
+         if (app->stmg)
+            printf("   Extra F-relaxation             :  %d\n", app->add_relax_x);
 
          printf("\n-----------------------------------------------------------------\n"); 
          printf("-----------------------------------------------------------------\n\n"); 
@@ -2788,6 +3740,7 @@ int main (int argc, char *argv[])
             }
             else
             {
+               if( runtime_scoarsen_info_global[i*5+1] != -1.0 )
                printf(" %2d   |  impl, %2d   %1.2e    %1.2e    %1.2e    %1.2e\n", 
                   i, runtime_max_iter_global[i],
                   runtime_scoarsen_info_global[i*5+1], runtime_scoarsen_info_global[i*5+2],
@@ -2795,22 +3748,6 @@ int main (int argc, char *argv[])
             }
          }
 
-         printf( "\n" );
-         
-         printf(" Spatial solver information\n");
-         printf(" Total time for spatial solver on all levels: %.5lfs\n", solver_time_total);
-         if (forcing)
-         {
-            printf(" Time for adding forcing info: %.5lfs\n", taddforcing_global);
-         }
-         printf("level   calls      iters        time\n");
-         printf("-----------------------------------------------------------------\n");
-         for( i = 0; i < nA_max; i++)
-         {
-            printf(" %2d   | %5d      %5d      %4.5lfs\n",
-                      i, solver_calls_global[i], solver_iters_global[i], solver_time_global[i]);
-         }
-         
          printf( "\n" );
       }
 
@@ -2825,7 +3762,7 @@ int main (int argc, char *argv[])
    HYPRE_SStructVectorDestroy( app->e );
    HYPRE_SStructGridDestroy( app->man->grid_x );
    HYPRE_SStructStencilDestroy( app->man->stencil );
-   HYPRE_SStructGraphDestroy( app->man->graph );
+   /*HYPRE_SStructGraphDestroy( app->man->graph );*/
    free( app->dt_A );
    free( app->dx_A );
    free( app->dy_A );

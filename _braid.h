@@ -41,6 +41,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+   
+braid_Real relaxtime;
+braid_Int  time_relax_on;
+braid_Int  relaxcalls;
 
 /*--------------------------------------------------------------------------
  * Main data structures and accessor macros
@@ -484,6 +488,7 @@ braid_Int
 _braid_Step(braid_Core     core,
             braid_Int      level,
             braid_Int      index,
+            braid_Int      calling_function,
             braid_Vector   ustop,
             braid_Vector   u);
 

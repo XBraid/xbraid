@@ -71,6 +71,7 @@ typedef struct _braid_AccessStatus_struct *braid_AccessStatus;
 #define braid_ASCaller_FRestrict 1
 #define braid_ASCaller_FRefine   2
 #define braid_ASCaller_FAccess   3
+#define braid_ASCaller_FCRelax   4
 typedef struct _braid_AccessStatus_struct
 {
    braid_Real    t;                /**< current time */
@@ -134,18 +135,19 @@ typedef struct _braid_StepStatus_struct *braid_StepStatus;
  **/
 typedef struct _braid_StepStatus_struct
 {
-   braid_Real    tstart;          /**< current time value  */
-   braid_Real    tstop;           /**< time value to evolve towards, time value to the right of tstart */
-   braid_Real*   rnorms;          /**< residual norm history, (points to Core->rnorms object) */ 
-   braid_Real    old_fine_tolx;   /**< Allows for storing the previously used fine tolerance from GetSpatialAccuracy */
-   braid_Int     tight_fine_tolx; /**< Boolean, indicating whether the tightest fine tolx has been used, condition for halting */
-   braid_Real    tol;             /**< Current stopping tolerance */
-   braid_Int     iter;            /**< Current iteration (also equal to length of rnorms) */
-   braid_Int     rfactor;         /**< if set by user, allows for subdivision of this interval for better time accuracy */
-   braid_Int     r_space;         /**< if set by the user, spatial coarsening function will be called following the vcycle */
-   braid_Int     level;           /**< current grid level */
-   braid_Int     nrefine;         /**< number of refinements done */
-   braid_Int     gupper;          /**< global size of the fine grid */
+   braid_Real    tstart;           /**< current time value  */
+   braid_Real    tstop;            /**< time value to evolve towards, time value to the right of tstart */
+   braid_Real*   rnorms;           /**< residual norm history, (points to Core->rnorms object) */
+   braid_Real    old_fine_tolx;    /**< Allows for storing the previously used fine tolerance from GetSpatialAccuracy */
+   braid_Int     tight_fine_tolx;  /**< Boolean, indicating whether the tightest fine tolx has been used, condition for halting */
+   braid_Real    tol;              /**< Current stopping tolerance */
+   braid_Int     iter;             /**< Current iteration (also equal to length of rnorms) */
+   braid_Int     rfactor;          /**< if set by user, allows for subdivision of this interval for better time accuracy */
+   braid_Int     r_space;          /**< if set by the user, spatial coarsening function will be called following the vcycle */
+   braid_Int     level;            /**< current grid level */
+   braid_Int     nrefine;          /**< number of refinements done */
+   braid_Int     calling_function; /**< from which function are we accessing the vector */
+   braid_Int     gupper;           /**< global size of the fine grid */
 
 } _braid_StepStatus;
 
@@ -279,7 +281,7 @@ braid_AccessStatusGetWrapperTest(braid_AccessStatus  status,      /**< structure
  **/
 braid_Int
 braid_AccessStatusGetCallingFunction(braid_AccessStatus  status,           /**< structure containing current simulation info */
-                                     braid_Int          *calling_function  /**< output, function number (0=FInterp, 1=FRestrict, 2=FRefine, 3=FAccess) */
+                                     braid_Int          *calling_function  /**< output, function number (0=FInterp, 1=FRestrict, 2=FRefine, 3=FAccess, 4=FCRelax) */
                                      );
 
 /**
@@ -420,14 +422,15 @@ braid_CoarsenRefStatusGetNTPoints(braid_CoarsenRefStatus  status,       /**< str
  * Initialize a braid_StepStatus structure 
  **/
 braid_Int
-_braid_StepStatusInit(braid_Real        tstart,      /**< current time value  */
-                      braid_Real        tstop,       /**< time value to evolve towards, time value to the right of tstart */
-                      braid_Real        tol,         /**< Current XBraid stopping tolerance */
-                      braid_Int         iter,        /**< Current XBraid iteration (also equal to length of rnorms) */
-                      braid_Int         level,       /**< current level in XBraid */
-                      braid_Int         nrefine,     /**< number of refinements done */
-                      braid_Int         gupper,      /**< global size of the fine grid */
-                      braid_StepStatus  status       /**< structure to initialize */
+_braid_StepStatusInit(braid_Real        tstart,           /**< current time value  */
+                      braid_Real        tstop,            /**< time value to evolve towards, time value to the right of tstart */
+                      braid_Real        tol,              /**< Current XBraid stopping tolerance */
+                      braid_Int         iter,             /**< Current XBraid iteration (also equal to length of rnorms) */
+                      braid_Int         level,            /**< current level in XBraid */
+                      braid_Int         nrefine,          /**< number of refinements done */
+                      braid_Int         gupper,           /**< global size of the fine grid */
+                      braid_Int         calling_function, /**< from which function are we accessing the vector */
+                      braid_StepStatus  status            /**< structure to initialize */
                       );
 
 /**
@@ -570,7 +573,13 @@ braid_StepStatusSetTightFineTolx(braid_StepStatus  status,             /**< stru
                                  braid_Int         tight_fine_tolx     /**< input, boolean indicating whether the tight tolx has been used */
                                  );
 
-
+/**
+ * Return flag indicating from which function the vector is accessed
+ **/
+braid_Int
+braid_StepStatusGetCallingFunction(braid_StepStatus  status,           /**< structure containing current simulation info */
+                                   braid_Int        *calling_function  /**< output, function number (0=FInterp, 1=FRestrict, 2=FRefine, 3=FAccess, 4=FCRelax) */
+                                    );
 
 /*--------------------------------------------------------------------------
  * BufferStatus Prototypes
