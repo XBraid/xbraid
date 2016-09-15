@@ -1081,7 +1081,7 @@ braid_F90_Name(braid_set_timegrid_f90, BRAID_SET_TIMEGRID_F90)(
 /* braid_SetSpatialCoarsen( ) */
 braid_Int
 braid_F90_Name(braid_set_spatial_coarsen_f90, BRAID_SET_SPATIAL_COARSEN_F90)(
-                   braid_F90_ObjPtr   *core,        /**< braid_Core (_braid_Core) struct*/
+                   braid_F90_ObjPtr   *core        /**< braid_Core (_braid_Core) struct*/
                    )
 {
    braid_SetSpatialCoarsen(braid_TakeF90_ObjDeref(braid_Core,  core) ,
@@ -1092,7 +1092,7 @@ braid_F90_Name(braid_set_spatial_coarsen_f90, BRAID_SET_SPATIAL_COARSEN_F90)(
 /* braid_SetSpatialRefine( ) */
 braid_Int
 braid_F90_Name(braid_set_spatial_refine_f90, BRAID_SET_SPATIAL_REFINE_F90)(
-                   braid_F90_ObjPtr   *core,        /**< braid_Core (_braid_Core) struct*/
+                   braid_F90_ObjPtr   *core        /**< braid_Core (_braid_Core) struct*/
                    )
 {
    braid_SetSpatialRefine(braid_TakeF90_ObjDeref(braid_Core,  core) ,
