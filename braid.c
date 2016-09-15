@@ -237,9 +237,9 @@ _braid_DriveCheckConvergence(braid_Core  core,
    braid_Real           tol             = _braid_CoreElt(core, tol);
    braid_Int            rtol            = _braid_CoreElt(core, rtol);
    braid_Int            max_iter        = _braid_CoreElt(core, max_iter);
-   braid_StepStatus     sstatus         = _braid_CoreElt(core, sstatus);
+   braid_Status         status          = _braid_CoreElt(core, status);
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
-   braid_Int            tight_fine_tolx = _braid_StatusElt(sstatus, tight_fine_tolx);
+   braid_Int            tight_fine_tolx = _braid_StatusElt(status, tight_fine_tolx);
    braid_Real           rnorm, rnorm0;
 
    braid_Int            done = *done_ptr;
@@ -686,10 +686,15 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, nfmg)            = nfmg;
    _braid_CoreElt(core, nfmg_Vcyc)       = nfmg_Vcyc;
 
+   _braid_CoreElt(core, status)          = _braid_CTAlloc(_braid_Status, 1);
    _braid_CoreElt(core, astatus)         = _braid_CTAlloc(_braid_AccessStatus, 1);
    _braid_CoreElt(core, sstatus)         = _braid_CTAlloc(_braid_StepStatus, 1);
    _braid_CoreElt(core, cstatus)         = _braid_CTAlloc(_braid_CoarsenRefStatus, 1);
    _braid_CoreElt(core, bstatus)         = _braid_CTAlloc(_braid_BufferStatus, 1);
+   _braid_CoreElt(core, astatus) -> gs   = _braid_CoreElt(core, status);
+   _braid_CoreElt(core, bstatus) -> gs   = _braid_CoreElt(core, status);
+   _braid_CoreElt(core, cstatus) -> gs   = _braid_CoreElt(core, status);
+   _braid_CoreElt(core, sstatus) -> gs   = _braid_CoreElt(core, status);
 
    _braid_CoreElt(core, storage)         = -1;            /* only store C-points */
    _braid_CoreElt(core, useshell)         = 0;
@@ -713,12 +718,12 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, rnorm0)              = braid_INVALID_RNORM;
    _braid_CoreElt(core, rnorms)              = NULL; /* Set with SetMaxIter() below */
    _braid_StatusElt(
-      _braid_CoreElt(core, sstatus), rnorms) = NULL; /* Set with SetMaxIter() below */
+      _braid_CoreElt(core, status), rnorms)  = NULL; /* Set with SetMaxIter() below */
    _braid_CoreElt(core, full_rnorm_res)      = NULL;
    _braid_CoreElt(core, full_rnorm0)         = braid_INVALID_RNORM;
    _braid_CoreElt(core, full_rnorms)         = NULL; /* Set with SetMaxIter() below */
-   _braid_StatusElt( _braid_CoreElt(core, sstatus), old_fine_tolx)   = -1.0;
-   _braid_StatusElt( _braid_CoreElt(core, sstatus), tight_fine_tolx) = 1;
+   _braid_StatusElt( _braid_CoreElt(core, status), old_fine_tolx)   = -1.0;
+   _braid_StatusElt( _braid_CoreElt(core, status), tight_fine_tolx) = 1;
 
    braid_SetMaxLevels(core, max_levels);
    braid_SetMaxIter(core, max_iter);
@@ -738,6 +743,7 @@ braid_Destroy(braid_Core  core)
    {
       braid_Int               nlevels    = _braid_CoreElt(core, nlevels);
       _braid_Grid           **grids      = _braid_CoreElt(core, grids);
+      braid_Status            status     = _braid_CoreElt(core, status);
       braid_AccessStatus      astatus    = _braid_CoreElt(core, astatus);
       braid_CoarsenRefStatus  cstatus    = _braid_CoreElt(core, cstatus);
       braid_StepStatus        sstatus    = _braid_CoreElt(core, sstatus);
@@ -750,10 +756,11 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, cfactors));
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
-      _braid_AccessStatusDestroy(astatus);
-      _braid_StepStatusDestroy(sstatus);
-      _braid_CoarsenRefStatusDestroy(cstatus);
-      _braid_BufferStatusDestroy(bstatus);
+      _braid_TFree(astatus);
+      _braid_TFree(bstatus);
+      _braid_TFree(cstatus);
+      _braid_TFree(sstatus);
+      _braid_StatusDestroy(status);
       
       for (level = 0; level < nlevels; level++)
       {
@@ -1128,7 +1135,7 @@ braid_SetMaxIter(braid_Core  core,
    }
 
    _braid_CoreElt(core, rnorms) = rnorms;
-   _braid_StatusElt(_braid_CoreElt(core, sstatus), rnorms) = rnorms;
+   _braid_StatusElt(_braid_CoreElt(core, status), rnorms) = rnorms;
    _braid_CoreElt(core, full_rnorms) = full_rnorms;
 
    return _braid_error_flag;

@@ -36,118 +36,8 @@
 #define DEBUG 0
 #endif
 
-/*--------------------------------------------------------------------------
- * AccessStatus Routines
- *--------------------------------------------------------------------------*/
-
 braid_Int
-braid_AccessStatusGetT(braid_AccessStatus  status,
-                       braid_Real         *t_ptr)
-{
-   *t_ptr = _braid_StatusElt(status, t);
-   return _braid_error_flag;
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-braid_Int
-braid_AccessStatusGetIstop(braid_AccessStatus  status,
-                           braid_Int          *istop_ptr)
-{
-   *istop_ptr = _braid_StatusElt(status, istop);
-   return _braid_error_flag;
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-braid_Int
-braid_AccessStatusGetResidual(braid_AccessStatus  status,
-                              braid_Real         *rnorm_ptr)
-{
-   *rnorm_ptr = _braid_StatusElt(status, rnorm);
-   return _braid_error_flag;
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-braid_Int
-braid_AccessStatusGetIter(braid_AccessStatus  status,
-                          braid_Int          *iter_ptr)
-{
-   *iter_ptr = _braid_StatusElt(status, iter);
-   return _braid_error_flag;
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-braid_Int
-braid_AccessStatusGetLevel(braid_AccessStatus  status,
-                           braid_Int          *level_ptr)
-{
-   *level_ptr = _braid_StatusElt(status, level);
-   return _braid_error_flag;
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-braid_Int
-braid_AccessStatusGetNRefine(braid_AccessStatus  status,
-                             braid_Int          *nrefine_ptr)
-{
-   *nrefine_ptr = _braid_StatusElt(status, nrefine);
-   return _braid_error_flag;
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-braid_Int
-braid_AccessStatusGetNTPoints(braid_AccessStatus  status,
-                              braid_Int          *ntpoints_ptr)
-{
-   *ntpoints_ptr = _braid_StatusElt(status, gupper);
-   return _braid_error_flag;
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-braid_Int
-braid_AccessStatusGetDone(braid_AccessStatus  status,
-                          braid_Int          *done_ptr)
-{
-   *done_ptr = _braid_StatusElt(status, done);
-   return _braid_error_flag;
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-braid_Int
-braid_AccessStatusGetTILD(braid_AccessStatus  status,
-                          braid_Real          *t_ptr,
-                          braid_Int           *iter_ptr,
-                          braid_Int           *level_ptr,
-                          braid_Int           *done_ptr)
-{
-   *t_ptr     =_braid_StatusElt(status, t);
-   *level_ptr = _braid_StatusElt(status, level);
-   *done_ptr  = _braid_StatusElt(status, done);
-   *iter_ptr  = _braid_StatusElt(status, iter); 
-
-   return _braid_error_flag;
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-braid_Int
-_braid_AccessStatusDestroy(braid_AccessStatus  status)
+_braid_StatusDestroy(braid_Status status)
 {
    if (status)
    {
@@ -158,35 +48,252 @@ _braid_AccessStatusDestroy(braid_AccessStatus  status)
 }
 
 /*--------------------------------------------------------------------------
+ * GlobalStatus Routines
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_AccessStatusGetWrapperTest(braid_AccessStatus  status,
-                                 braid_Int          *wtest_ptr
+braid_GlobalStatusGetT(braid_GlobalStatus status,                      /**< structure containing current simulation info */
+                       braid_Real        *t_ptr                        /**< output, current time */
+                       )
+{
+   *t_ptr = _braid_StatusElt(status->gs, t);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusGetTIndex(braid_GlobalStatus status,                  /**< structure containing current simulation info */
+                           braid_Int         *idx_ptr                  /**< output, global index value corresponding to current time value */
+                           )
+{
+   *idx_ptr = _braid_StatusElt(status->gs, idx);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusGetIter(braid_GlobalStatus status,                   /**< structure containing current simulation info */
+                          braid_Int         *iter_ptr                  /**< output, current XBraid iteration number*/
+                          )
+{
+   *iter_ptr = _braid_StatusElt(status->gs, iter);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusGetLevel(braid_GlobalStatus status,                  /**< structure containing current simulation info */
+                           braid_Int         *level_ptr                /**< output, current level in XBraid */
+                           )
+{
+   *level_ptr = _braid_StatusElt(status->gs, level);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusGetNRefine(braid_GlobalStatus status,                /**< structure containing current simulation info */
+                             braid_Int         *nrefine_ptr            /**< output, number of refinements done */
+                             )
+{
+   *nrefine_ptr = _braid_StatusElt(status->gs, nrefine);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusGetNTPoints(braid_GlobalStatus status,               /**< structure containing current simulation info */
+                              braid_Int         *ntpoints_ptr          /**< output, number of time points on the fine grid */
+                              )
+{
+   *ntpoints_ptr = _braid_StatusElt(status->gs, gupper);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusGetResidual(braid_GlobalStatus status,               /**< structure containing current simulation info */
+                              braid_Real        *rnorm_ptr             /**< output, current residual norm */
+                              )
+{
+   *rnorm_ptr = _braid_StatusElt(status->gs, rnorm);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusGetDone(braid_GlobalStatus status,                   /**< structure containing current simulation info */
+                          braid_Int         *done_ptr                  /**< output,  =1 if XBraid has finished, else =0 */
+                          )
+{
+   *done_ptr = _braid_StatusElt(status->gs, done);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusGetTILD(braid_GlobalStatus status,                   /**< structure containing current simulation info */
+                          braid_Real        *t_ptr,                    /**< output, current time */
+                          braid_Int         *iter_ptr,                 /**< output, current XBraid iteration number*/
+                          braid_Int         *level_ptr,                /**< output, current level in XBraid */
+                          braid_Int         *done_ptr                  /**< output,  =1 if XBraid has finished, else =0 */
+                          )
+{
+   *t_ptr = _braid_StatusElt(status->gs, t);
+   *iter_ptr = _braid_StatusElt(status->gs, iter);
+   *level_ptr = _braid_StatusElt(status->gs, level);
+   *done_ptr = _braid_StatusElt(status->gs, done);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusGetWrapperTest(braid_GlobalStatus status,            /**< structure containing current simulation info */
+                                 braid_Int         *wtest_ptr          /**< output, =1 if this is a wrapper test, =0 if XBraid run */
                                  )
 {
-   *wtest_ptr = _braid_StatusElt(status, wrapper_test);
+   *wtest_ptr = _braid_StatusElt(status->gs, wrapper_test);
    return _braid_error_flag;
 }
-
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
 braid_Int
-braid_AccessStatusGetCallingFunction(braid_AccessStatus  status,
-                                     braid_Int          *calling_function
+braid_GlobalStatusGetCallingFunction(braid_GlobalStatus status,        /**< structure containing current simulation info */
+                                     braid_Int         *cfunction_ptr  /**< output, function number (0=FInterp, 1=FRestrict, 2=FRefine, 3=FAccess) */
                                      )
 {
-   *calling_function = _braid_StatusElt(status, calling_function);
+   *cfunction_ptr = _braid_StatusElt(status->gs, calling_function);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusGetCTprior(braid_GlobalStatus status,                /**< structure containing current simulation info */
+                             braid_Real        *ctprior_ptr            /**< output, time value to the left of current time value on coarse grid */
+                             )
+{
+   *ctprior_ptr = _braid_StatusElt(status->gs, c_tprior);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusGetCTstop(braid_GlobalStatus status,                 /**< structure containing current simulation info */
+                            braid_Real        *ctstop_ptr              /**< output, time value to the right of current time value on coarse grid */
+                            )
+{
+   *ctstop_ptr = _braid_StatusElt(status->gs, c_tstop);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusGetFTprior(braid_GlobalStatus status,                /**< structure containing current simulation info */
+                             braid_Real        *ftprior_ptr            /**< output, time value to the left of current time value on fine grid */
+                             )
+{
+   *ftprior_ptr = _braid_StatusElt(status->gs, f_tprior);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusGetFTstop(braid_GlobalStatus status,                 /**< structure containing current simulation info */
+                            braid_Real        *ftstop_ptr              /**< output, time value to the right of current time value on fine grid */
+                            )
+{
+   *ftstop_ptr = _braid_StatusElt(status->gs, f_tstop);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusGetTpriorTstop(braid_GlobalStatus status,            /**< structure containing current simulation info */
+                                 braid_Real        *t_ptr,             /**< output, current time */
+                                 braid_Real        *ftprior_ptr,       /**< output, time value to the left of current time value on fine grid */
+                                 braid_Real        *ftstop_ptr,        /**< output, time value to the right of current time value on fine grid */
+                                 braid_Real        *ctprior_ptr,       /**< output, time value to the left of current time value on coarse grid */
+                                 braid_Real        *ctstop_ptr         /**< output, time value to the right of current time value on coarse grid */
+                                 )
+{
+   *ctprior_ptr = _braid_StatusElt(status->gs, c_tprior);
+   *ctstop_ptr = _braid_StatusElt(status->gs, c_tstop);
+   *ftprior_ptr = _braid_StatusElt(status->gs, f_tprior);
+   *ftstop_ptr = _braid_StatusElt(status->gs, f_tstop);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusGetTstop(braid_GlobalStatus status,                  /**< structure containing current simulation info */
+                           braid_Real        *tstop_ptr                /**< output, next time value to evolve towards */
+                           )
+{
+   *tstop_ptr = _braid_StatusElt(status->gs, tstop);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusGetTstartTstop(braid_GlobalStatus status,            /**< structure containing current simulation info */
+                                 braid_Real        *tstart_ptr,        /**< output, current time */
+                                 braid_Real        *tstop_ptr          /**< output, next time value to evolve towards */
+                                 )
+{
+   *tstart_ptr = _braid_StatusElt(status->gs, t);
+   *tstop_ptr = _braid_StatusElt(status->gs, tstop);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusGetTol(braid_GlobalStatus status,                    /**< structure containing current simulation info */
+                         braid_Real        *tol_ptr                    /**< output, current XBraid stopping tolerance */
+                         )
+{
+   *tol_ptr = _braid_StatusElt(status->gs, tol);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusGetRNorms(braid_GlobalStatus status,                 /**< structure containing current simulation info */
+                            braid_Int         *nrequest_ptr,           /**< input/output, input: number of requested residual norms, output: number actually copied */
+                            braid_Real        *rnorms_ptr              /**< output, XBraid residual norm history, of length *nrequest_ptr* */
+                            )
+{
+   braid_Real *_rnorms    = _braid_StatusElt(status->gs, rnorms);
+   braid_Int   rnorms_len = _braid_StatusElt(status->gs, iter) + 1;
+
+   _braid_GetNEntries(_rnorms, rnorms_len, nrequest_ptr, rnorms_ptr);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusGetOldFineTolx(braid_GlobalStatus status,            /**< structure containing current simulation info */
+                                 braid_Real        *old_fine_tolx_ptr  /**< output, previous *old_fine_tolx*, set through *braid_StepStatusSetOldFineTolx* */
+                                 )
+{
+   *old_fine_tolx_ptr = _braid_StatusElt(status->gs, old_fine_tolx);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusSetOldFineTolx(braid_GlobalStatus status,            /**< structure containing current simulation info */
+                                 braid_Real         old_fine_tolx      /**< input, the last used fine_tolx */
+                                 )
+{
+   _braid_StatusElt(status->gs, old_fine_tolx) = old_fine_tolx;
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusSetTightFineTolx(braid_GlobalStatus status,          /**< structure containing current simulation info */
+                                   braid_Real         tight_fine_tolx  /**< input, boolean indicating whether the tight tolx has been used */
+                                   )
+{
+   _braid_StatusElt(status->gs, tight_fine_tolx) = tight_fine_tolx;
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusSetRFactor(braid_GlobalStatus status,                /**< structure containing current simulation info */
+                             braid_Real         rfactor                /**< input, user-determined desired rfactor */
+                             )
+{
+   _braid_StatusElt(status->gs, rfactor) = rfactor;
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusSetRSpace(braid_GlobalStatus status,                 /**< structure containing current simulation info */
+                            braid_Real         r_space
+                            )
+{
+   _braid_StatusElt(status->gs, r_space) = r_space;
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusGetMessageType(braid_GlobalStatus status,            /**< structure containing current simulation info */
+                                 braid_Int         *messagetype_ptr    /**< output, type of message, 0: for Step(), 1: for load balancing */
+                                 )
+{
+   *messagetype_ptr = _braid_StatusElt(status->gs, messagetype);
+   return _braid_error_flag;
+}
+braid_Int
+braid_GlobalStatusSetSize(braid_GlobalStatus status,                   /**< structure containing current simulation info */
+                          braid_Real         size                      /**< input, size of the send buffer */
+                          )
+{
+   _braid_StatusElt(status->gs, size ) = size;
    return _braid_error_flag;
 }
 
-
 /*--------------------------------------------------------------------------
+ * AccessStatus Routines
  *--------------------------------------------------------------------------*/
+
 braid_Int
 _braid_AccessStatusInit(braid_Real           t,
-                        braid_Int            istop,
+                        braid_Int            idx,
                         braid_Real           rnorm,
                         braid_Int            iter,
                         braid_Int            level,
@@ -197,19 +304,98 @@ _braid_AccessStatusInit(braid_Real           t,
                         braid_Int            calling_function,
                         braid_AccessStatus   status)
 {
-   _braid_StatusElt(status, t)            = t;
-   _braid_StatusElt(status, istop)        = istop;
-   _braid_StatusElt(status, level)        = level;
-   _braid_StatusElt(status, nrefine)      = nrefine;
-   _braid_StatusElt(status, gupper)       = gupper;
-   _braid_StatusElt(status, rnorm)        = rnorm;
-   _braid_StatusElt(status, done)         = done;
-   _braid_StatusElt(status, iter)         = iter; 
-   _braid_StatusElt(status, wrapper_test) = wrapper_test;
-   _braid_StatusElt(status, calling_function) = calling_function;
+   _braid_StatusElt(status->gs, t)            = t;
+   _braid_StatusElt(status->gs, idx)          = idx;
+   _braid_StatusElt(status->gs, level)        = level;
+   _braid_StatusElt(status->gs, nrefine)      = nrefine;
+   _braid_StatusElt(status->gs, gupper)       = gupper;
+   _braid_StatusElt(status->gs, rnorm)        = rnorm;
+   _braid_StatusElt(status->gs, done)         = done;
+   _braid_StatusElt(status->gs, iter)         = iter;
+   _braid_StatusElt(status->gs, wrapper_test) = wrapper_test;
+   _braid_StatusElt(status->gs, calling_function) = calling_function;
    return _braid_error_flag;
 }
-
+braid_Int
+braid_AccessStatusGetT(braid_AccessStatus status,                      /**< structure containing current simulation info */
+                       braid_Real        *t_ptr                        /**< output, current time */
+                       )
+{
+   return braid_GlobalStatusGetT((braid_GlobalStatus)status, t_ptr);
+}
+braid_Int
+braid_AccessStatusGetTIndex(braid_AccessStatus status,                  /**< structure containing current simulation info */
+                           braid_Int         *idx_ptr                  /**< output, global index value corresponding to current time value */
+                           )
+{
+   return braid_GlobalStatusGetTIndex((braid_GlobalStatus)status, idx_ptr);
+}
+braid_Int
+braid_AccessStatusGetIter(braid_AccessStatus status,                   /**< structure containing current simulation info */
+                          braid_Int         *iter_ptr                  /**< output, current XBraid iteration number*/
+                          )
+{
+   return braid_GlobalStatusGetIter((braid_GlobalStatus)status, iter_ptr);
+}
+braid_Int
+braid_AccessStatusGetLevel(braid_AccessStatus status,                  /**< structure containing current simulation info */
+                           braid_Int         *level_ptr                /**< output, current level in XBraid */
+                           )
+{
+   return braid_GlobalStatusGetLevel((braid_GlobalStatus)status, level_ptr);
+}
+braid_Int
+braid_AccessStatusGetNRefine(braid_AccessStatus status,                /**< structure containing current simulation info */
+                             braid_Int         *nrefine_ptr            /**< output, number of refinements done */
+                             )
+{
+   return braid_GlobalStatusGetNRefine((braid_GlobalStatus)status, nrefine_ptr);
+}
+braid_Int
+braid_AccessStatusGetNTPoints(braid_AccessStatus status,               /**< structure containing current simulation info */
+                              braid_Int         *ntpoints_ptr          /**< output, number of time points on the fine grid */
+                              )
+{
+   return braid_GlobalStatusGetNTPoints((braid_GlobalStatus)status, ntpoints_ptr);
+}
+braid_Int
+braid_AccessStatusGetResidual(braid_AccessStatus status,               /**< structure containing current simulation info */
+                              braid_Real        *rnorm_ptr             /**< output, current residual norm */
+                              )
+{
+   return braid_GlobalStatusGetResidual((braid_GlobalStatus)status, rnorm_ptr);
+}
+braid_Int
+braid_AccessStatusGetDone(braid_AccessStatus status,                   /**< structure containing current simulation info */
+                          braid_Int         *done_ptr                  /**< output,  =1 if XBraid has finished, else =0 */
+                          )
+{
+   return braid_GlobalStatusGetDone((braid_GlobalStatus)status, done_ptr);
+}
+braid_Int
+braid_AccessStatusGetTILD(braid_AccessStatus status,                   /**< structure containing current simulation info */
+                          braid_Real        *t_ptr,                    /**< output, current time */
+                          braid_Int         *iter_ptr,                 /**< output, current XBraid iteration number*/
+                          braid_Int         *level_ptr,                /**< output, current level in XBraid */
+                          braid_Int         *done_ptr                  /**< output,  =1 if XBraid has finished, else =0 */
+                          )
+{
+   return braid_GlobalStatusGetTILD((braid_GlobalStatus)status, t_ptr, iter_ptr, level_ptr, done_ptr);
+}
+braid_Int
+braid_AccessStatusGetWrapperTest(braid_AccessStatus status,            /**< structure containing current simulation info */
+                                 braid_Int         *wtest_ptr          /**< output, =1 if this is a wrapper test, =0 if XBraid run */
+                                 )
+{
+   return braid_GlobalStatusGetWrapperTest((braid_GlobalStatus)status, wtest_ptr);
+}
+braid_Int
+braid_AccessStatusGetCallingFunction(braid_AccessStatus status,        /**< structure containing current simulation info */
+                                     braid_Int         *cfunction_ptr  /**< output, function number (0=FInterp, 1=FRestrict, 2=FRefine, 3=FAccess) */
+                                     )
+{
+   return braid_GlobalStatusGetCallingFunction((braid_GlobalStatus)status, cfunction_ptr);
+}
 
 /*--------------------------------------------------------------------------
  * CoarsenRefStatus Routines
@@ -226,124 +412,107 @@ _braid_CoarsenRefStatusInit(braid_Real              tstart,
                             braid_Int               gupper,
                             braid_CoarsenRefStatus  status)
 {
-   _braid_StatusElt(status, tstart)   = tstart;
-   _braid_StatusElt(status, f_tprior) = f_tprior;
-   _braid_StatusElt(status, f_tstop)  = f_tstop;
-   _braid_StatusElt(status, c_tprior) = c_tprior;
-   _braid_StatusElt(status, c_tstop)  = c_tstop;
-   _braid_StatusElt(status, level)    = level;
-   _braid_StatusElt(status, nrefine)  = nrefine;
-   _braid_StatusElt(status, gupper)   = gupper;
+   _braid_StatusElt(status->gs, t)        = tstart;
+   _braid_StatusElt(status->gs, f_tprior) = f_tprior;
+   _braid_StatusElt(status->gs, f_tstop)  = f_tstop;
+   _braid_StatusElt(status->gs, c_tprior) = c_tprior;
+   _braid_StatusElt(status->gs, c_tstop)  = c_tstop;
+   _braid_StatusElt(status->gs, level)    = level;
+   _braid_StatusElt(status->gs, nrefine)  = nrefine;
+   _braid_StatusElt(status->gs, gupper)   = gupper;
 
    return _braid_error_flag;
 }
-
 braid_Int
-_braid_CoarsenRefStatusDestroy(braid_CoarsenRefStatus  status)
+braid_CoarsenRefStatusGetT(braid_CoarsenRefStatus status,                      /**< structure containing current simulation info */
+                           braid_Real            *t_ptr                        /**< output, current time */
+                           )
 {
-   if (status)
-   {
-      _braid_TFree(status);
-   }
-
-   return _braid_error_flag;
+   return braid_GlobalStatusGetT((braid_GlobalStatus)status, t_ptr);
 }
-
 braid_Int
-braid_CoarsenRefStatusGetTstart(braid_CoarsenRefStatus  status,
-                                braid_Real             *tstart_ptr
-                                )
-{
-   *tstart_ptr = _braid_StatusElt(status, tstart);
-   return _braid_error_flag;
-}
-
-braid_Int
-braid_CoarsenRefStatusGetFTstop(braid_CoarsenRefStatus  status,
-                                braid_Real             *f_tstop_ptr
-                                )
-{
-   *f_tstop_ptr = _braid_StatusElt(status, f_tstop);
-   return _braid_error_flag;
-}
-
-braid_Int
-braid_CoarsenRefStatusGetFTprior(braid_CoarsenRefStatus  status,
-                                 braid_Real             *f_tprior_ptr
-                                 )
-{
-   *f_tprior_ptr = _braid_StatusElt(status, f_tprior);
-   return _braid_error_flag;
-}
-
-braid_Int
-braid_CoarsenRefStatusGetCTstop(braid_CoarsenRefStatus  status,
-                                braid_Real             *c_tstop_ptr
-                                )
-{
-   *c_tstop_ptr = _braid_StatusElt(status, c_tstop);
-   return _braid_error_flag;
-}
-
-braid_Int
-braid_CoarsenRefStatusGetCTprior(braid_CoarsenRefStatus  status,
-                                 braid_Real             *c_tprior_ptr
-                                 )
-{
-   *c_tprior_ptr = _braid_StatusElt(status, c_tprior);
-   return _braid_error_flag;
-}
-
-braid_Int
-braid_CoarsenRefStatusGetTpriorTstop(braid_CoarsenRefStatus  status,
-                                     braid_Real              *tstart_ptr,
-                                     braid_Real              *f_tprior_ptr,
-                                     braid_Real              *f_tstop_ptr, 
-                                     braid_Real              *c_tprior_ptr,
-                                     braid_Real              *c_tstop_ptr)
-{
-   *tstart_ptr = _braid_StatusElt(status, tstart);
-   *f_tprior_ptr = _braid_StatusElt(status, f_tprior);
-   *f_tstop_ptr = _braid_StatusElt(status, f_tstop);
-   *c_tprior_ptr = _braid_StatusElt(status, c_tprior);
-   *c_tstop_ptr = _braid_StatusElt(status, c_tstop);
-
-   return _braid_error_flag;
-}
-
-braid_Int
-braid_CoarsenRefStatusGetLevel(braid_CoarsenRefStatus  status,
-                               braid_Int              *level_ptr
+braid_CoarsenRefStatusGetTIndex(braid_CoarsenRefStatus status,                  /**< structure containing current simulation info */
+                               braid_Int             *idx_ptr                  /**< output, global index value corresponding to current time value */
                                )
 {
-   *level_ptr = _braid_StatusElt(status, level);
-   return _braid_error_flag;
+   return braid_GlobalStatusGetTIndex((braid_GlobalStatus)status, idx_ptr);
 }
-
 braid_Int
-braid_CoarsenRefStatusGetNRefine(braid_CoarsenRefStatus  status,
-                                 braid_Int              *nrefine_ptr
+braid_CoarsenRefStatusGetIter(braid_CoarsenRefStatus status,                   /**< structure containing current simulation info */
+                              braid_Int             *iter_ptr                  /**< output, current XBraid iteration number*/
+                              )
+{
+   return braid_GlobalStatusGetIter((braid_GlobalStatus)status, iter_ptr);
+}
+braid_Int
+braid_CoarsenRefStatusGetLevel(braid_CoarsenRefStatus status,                  /**< structure containing current simulation info */
+                               braid_Int             *level_ptr                /**< output, current level in XBraid */
+                               )
+{
+   return braid_GlobalStatusGetLevel((braid_GlobalStatus)status, level_ptr);
+}
+braid_Int
+braid_CoarsenRefStatusGetNRefine(braid_CoarsenRefStatus status,                /**< structure containing current simulation info */
+                                 braid_Int             *nrefine_ptr            /**< output, number of refinements done */
+                                 )
+{
+   return braid_GlobalStatusGetNRefine((braid_GlobalStatus)status, nrefine_ptr);
+}
+braid_Int
+braid_CoarsenRefStatusGetNTPoints(braid_CoarsenRefStatus status,               /**< structure containing current simulation info */
+                                  braid_Int             *ntpoints_ptr          /**< output, number of time points on the fine grid */
+                                  )
+{
+   return braid_GlobalStatusGetNTPoints((braid_GlobalStatus)status, ntpoints_ptr);
+}
+braid_Int
+braid_CoarsenRefStatusGetCTprior(braid_CoarsenRefStatus status,                /**< structure containing current simulation info */
+                                 braid_Real            *ctprior_ptr            /**< output, time value to the left of current time value on coarse grid */
+                                 )
+{
+   return braid_GlobalStatusGetCTprior((braid_GlobalStatus)status, ctprior_ptr);
+}
+braid_Int
+braid_CoarsenRefStatusGetCTstop(braid_CoarsenRefStatus status,                 /**< structure containing current simulation info */
+                                braid_Real            *ctstop_ptr              /**< output, time value to the right of current time value on coarse grid */
                                 )
 {
-   *nrefine_ptr = _braid_StatusElt(status, nrefine);
-   return _braid_error_flag;
+   return braid_GlobalStatusGetCTstop((braid_GlobalStatus)status, ctstop_ptr);
 }
-
 braid_Int
-braid_CoarsenRefStatusGetNTPoints(braid_CoarsenRefStatus  status,
-                                  braid_Int              *ntpoints_ptr)
+braid_CoarsenRefStatusGetFTprior(braid_CoarsenRefStatus status,                /**< structure containing current simulation info */
+                                 braid_Real            *ftprior_ptr            /**< output, time value to the left of current time value on fine grid */
+                                 )
 {
-   *ntpoints_ptr = _braid_StatusElt(status, gupper);
-   return _braid_error_flag;
+   return braid_GlobalStatusGetFTprior((braid_GlobalStatus)status, ftprior_ptr);
+}
+braid_Int
+braid_CoarsenRefStatusGetFTstop(braid_CoarsenRefStatus status,                 /**< structure containing current simulation info */
+                                braid_Real            *ftstop_ptr              /**< output, time value to the right of current time value on fine grid */
+                                )
+{
+   return braid_GlobalStatusGetFTstop((braid_GlobalStatus)status, ftstop_ptr);
+}
+braid_Int
+braid_CoarsenRefStatusGetTpriorTstop(braid_CoarsenRefStatus status,            /**< structure containing current simulation info */
+                                     braid_Real            *t_ptr,             /**< output, current time */
+                                     braid_Real            *ftprior_ptr,       /**< output, time value to the left of current time value on fine grid */
+                                     braid_Real            *ftstop_ptr,        /**< output, time value to the right of current time value on fine grid */
+                                     braid_Real            *ctprior_ptr,       /**< output, time value to the left of current time value on coarse grid */
+                                     braid_Real            *ctstop_ptr         /**< output, time value to the right of current time value on coarse grid */
+                                     )
+{
+   return braid_GlobalStatusGetTpriorTstop((braid_GlobalStatus)status, t_ptr, ftprior_ptr, ftstop_ptr, ctprior_ptr, ctstop_ptr);
 }
 
 /*--------------------------------------------------------------------------
  * StepStatus Routines
  *--------------------------------------------------------------------------*/
+
 braid_Int
 _braid_StepStatusInit(braid_Real       tstart,
                       braid_Real       tstop,
-                      braid_Int        istop,
+                      braid_Int        idx,
                       braid_Real       tol,
                       braid_Int        iter,
                       braid_Int        level,
@@ -351,208 +520,151 @@ _braid_StepStatusInit(braid_Real       tstart,
                       braid_Int        gupper,
                       braid_StepStatus status)
 {
-   _braid_StatusElt(status, tstart)    = tstart;
-   _braid_StatusElt(status, tstop)     = tstop;
-   _braid_StatusElt(status, istop)     = istop;
-   _braid_StatusElt(status, tol)       = tol;
-   _braid_StatusElt(status, iter)      = iter;
-   _braid_StatusElt(status, level)     = level;
-   _braid_StatusElt(status, nrefine)   = nrefine;
-   _braid_StatusElt(status, gupper)    = gupper;
-   _braid_StatusElt(status, rfactor)   = 1;
-   _braid_StatusElt(status, r_space)   = 0;
+   _braid_StatusElt(status->gs, t)         = tstart;
+   _braid_StatusElt(status->gs, tstop)     = tstop;
+   _braid_StatusElt(status->gs, idx)       = idx;
+   _braid_StatusElt(status->gs, tol)       = tol;
+   _braid_StatusElt(status->gs, iter)      = iter;
+   _braid_StatusElt(status->gs, level)     = level;
+   _braid_StatusElt(status->gs, nrefine)   = nrefine;
+   _braid_StatusElt(status->gs, gupper)    = gupper;
+   _braid_StatusElt(status->gs, rfactor)   = 1;
+   _braid_StatusElt(status->gs, r_space)   = 0;
 
    return _braid_error_flag;
 }
-
 braid_Int
-_braid_StepStatusDestroy(braid_StepStatus  status)
+braid_StepStatusGetT(braid_StepStatus status,                      /**< structure containing current simulation info */
+                     braid_Real      *t_ptr                        /**< output, current time */
+                     )
 {
-   if (status)
-   {
-      _braid_TFree(status);
-   }
-
-   return _braid_error_flag;
+   return braid_GlobalStatusGetT((braid_GlobalStatus)status, t_ptr);
 }
-
-
 braid_Int
-braid_StepStatusGetTstart(braid_StepStatus  status,
-                          braid_Real       *tstart_ptr)
+braid_StepStatusGetTIndex(braid_StepStatus status,                  /**< structure containing current simulation info */
+                         braid_Int       *idx_ptr                  /**< output, global index value corresponding to current time value */
+                         )
 {
-   *tstart_ptr = _braid_StatusElt(status, tstart);
-   return _braid_error_flag;
+   return braid_GlobalStatusGetTIndex((braid_GlobalStatus)status, idx_ptr);
 }
-
 braid_Int
-braid_StepStatusGetTstop(braid_StepStatus  status,
-                         braid_Real       *tstop_ptr)
-{
-   *tstop_ptr = _braid_StatusElt(status, tstop);
-   return _braid_error_flag;
-}
-
-braid_Int
-braid_StepStatusGetIstop(braid_StepStatus  status,
-                         braid_Int        *istop_ptr
+braid_StepStatusGetIter(braid_StepStatus status,                   /**< structure containing current simulation info */
+                        braid_Int       *iter_ptr                  /**< output, current XBraid iteration number*/
                         )
 {
-   *istop_ptr = _braid_StatusElt(status, istop);
-   return _braid_error_flag;
+   return braid_GlobalStatusGetIter((braid_GlobalStatus)status, iter_ptr);
 }
-
 braid_Int
-braid_StepStatusGetLevel(braid_StepStatus  status,
-                         braid_Int        *level_ptr
-                        )
+braid_StepStatusGetLevel(braid_StepStatus status,                  /**< structure containing current simulation info */
+                         braid_Int       *level_ptr                /**< output, current level in XBraid */
+                         )
 {
-   *level_ptr = _braid_StatusElt(status, level);
-   return _braid_error_flag;
+   return braid_GlobalStatusGetLevel((braid_GlobalStatus)status, level_ptr);
 }
-
 braid_Int
-braid_StepStatusGetNRefine(braid_StepStatus  status,
-                           braid_Int        *nrefine_ptr
-                          )
+braid_StepStatusGetNRefine(braid_StepStatus status,                /**< structure containing current simulation info */
+                           braid_Int       *nrefine_ptr            /**< output, number of refinements done */
+                           )
 {
-   *nrefine_ptr = _braid_StatusElt(status, nrefine);
-   return _braid_error_flag;
+   return braid_GlobalStatusGetNRefine((braid_GlobalStatus)status, nrefine_ptr);
 }
-
 braid_Int
-braid_StepStatusGetNTPoints(braid_StepStatus  status,
-                            braid_Int        *ntpoints_ptr)
+braid_StepStatusGetNTPoints(braid_StepStatus status,               /**< structure containing current simulation info */
+                            braid_Int       *ntpoints_ptr          /**< output, number of time points on the fine grid */
+                            )
 {
-   *ntpoints_ptr = _braid_StatusElt(status, gupper);
-   return _braid_error_flag;
+   return braid_GlobalStatusGetNTPoints((braid_GlobalStatus)status, ntpoints_ptr);
 }
-
 braid_Int
-braid_StepStatusSetRFactor(braid_StepStatus  status,
-                           braid_Real        rfactor)
+braid_StepStatusGetTstop(braid_StepStatus status,                  /**< structure containing current simulation info */
+                         braid_Real      *tstop_ptr                /**< output, next time value to evolve towards */
+                         )
 {
-   _braid_StatusElt(status, rfactor) = rfactor;
-   return _braid_error_flag;
+   return braid_GlobalStatusGetTstop((braid_GlobalStatus)status, tstop_ptr);
 }
-
 braid_Int
-braid_StepStatusSetRSpace(braid_StepStatus  status,
-                          braid_Int         r_space)
+braid_StepStatusGetTstartTstop(braid_StepStatus status,            /**< structure containing current simulation info */
+                               braid_Real      *tstart_ptr,        /**< output, current time */
+                               braid_Real      *tstop_ptr          /**< output, next time value to evolve towards */
+                               )
 {
-   _braid_StatusElt(status, r_space) = r_space;
-   return _braid_error_flag;
-}   
-
-braid_Int
-braid_StepStatusGetTstartTstop(braid_StepStatus  status,
-                               braid_Real       *tstart_ptr,
-                               braid_Real       *tstop_ptr)
-{
-   *tstart_ptr = _braid_StatusElt(status, tstart);
-   *tstop_ptr = _braid_StatusElt(status, tstop);
-
-   return _braid_error_flag;
+   return braid_GlobalStatusGetTstartTstop((braid_GlobalStatus)status, tstart_ptr, tstop_ptr);
 }
-
 braid_Int
-braid_StepStatusGetTol(braid_StepStatus  status,
-                       braid_Real       *tol_ptr
+braid_StepStatusGetTol(braid_StepStatus status,                    /**< structure containing current simulation info */
+                       braid_Real      *tol_ptr                    /**< output, current XBraid stopping tolerance */
                        )
 {
-   *tol_ptr = _braid_StatusElt(status, tol);
-   return _braid_error_flag;
+   return braid_GlobalStatusGetTol((braid_GlobalStatus)status, tol_ptr);
 }
-
 braid_Int
-braid_StepStatusGetIter(braid_StepStatus  status,
-                        braid_Int        *iter_ptr
-                        )
-{
-   *iter_ptr = _braid_StatusElt(status, iter);
-   return _braid_error_flag;
-}
-
-braid_Int
-braid_StepStatusGetRNorms(braid_StepStatus  status,
-                          braid_Int        *nrequest_ptr,
-                          braid_Real       *rnorms 
+braid_StepStatusGetRNorms(braid_StepStatus status,                 /**< structure containing current simulation info */
+                          braid_Int       *nrequest_ptr,           /**< input/output, input: number of requested residual norms, output: number actually copied */
+                          braid_Real      *rnorms_ptr              /**< output, XBraid residual norm history, of length *nrequest_ptr* */
                           )
 {
-   braid_Real     *_rnorms   = _braid_StatusElt(status, rnorms);
-   braid_Int      rnorms_len = _braid_StatusElt(status, iter) + 1;
-   
-   _braid_GetNEntries(_rnorms, rnorms_len, nrequest_ptr, rnorms);
-   return _braid_error_flag;
+   return braid_GlobalStatusGetRNorms((braid_GlobalStatus)status, nrequest_ptr, rnorms_ptr);
 }
-
 braid_Int
-braid_StepStatusGetOldFineTolx(braid_StepStatus  status,
-                               braid_Real       *old_fine_tolx_ptr
+braid_StepStatusGetOldFineTolx(braid_StepStatus status,            /**< structure containing current simulation info */
+                               braid_Real      *old_fine_tolx_ptr  /**< output, previous *old_fine_tolx*, set through *braid_StepStatusSetOldFineTolx* */
                                )
 {
-   *old_fine_tolx_ptr = _braid_StatusElt(status, old_fine_tolx);
-   return _braid_error_flag;
+   return braid_GlobalStatusGetOldFineTolx((braid_GlobalStatus)status, old_fine_tolx_ptr);
 }
-
 braid_Int
-braid_StepStatusSetOldFineTolx(braid_StepStatus  status,
-                               braid_Real        old_fine_tolx_ptr
+braid_StepStatusSetOldFineTolx(braid_StepStatus status,            /**< structure containing current simulation info */
+                               braid_Real       old_fine_tolx      /**< input, the last used fine_tolx */
                                )
 {
-   _braid_StatusElt(status, old_fine_tolx) = old_fine_tolx_ptr;
-   return _braid_error_flag;
+   return braid_GlobalStatusSetOldFineTolx((braid_GlobalStatus)status, old_fine_tolx);
 }
-
 braid_Int
-braid_StepStatusSetTightFineTolx(braid_StepStatus  status,
-                                 braid_Int         tight_fine_tolx
+braid_StepStatusSetTightFineTolx(braid_StepStatus status,          /**< structure containing current simulation info */
+                                 braid_Real       tight_fine_tolx  /**< input, boolean indicating whether the tight tolx has been used */
                                  )
 {
-   _braid_StatusElt(status, tight_fine_tolx) = tight_fine_tolx;
-   return _braid_error_flag;
+   return braid_GlobalStatusSetTightFineTolx((braid_GlobalStatus)status, tight_fine_tolx);
 }
-
+braid_Int
+braid_StepStatusSetRFactor(braid_StepStatus status,                /**< structure containing current simulation info */
+                           braid_Real       rfactor                /**< input, user-determined desired rfactor */
+                           )
+{
+   return braid_GlobalStatusSetRFactor((braid_GlobalStatus)status, rfactor);
+}
+braid_Int
+braid_StepStatusSetRSpace(braid_StepStatus status,                 /**< structure containing current simulation info */
+                          braid_Real       r_space
+                          )
+{
+   return braid_GlobalStatusSetRSpace((braid_GlobalStatus)status, r_space);
+}
 
 /*--------------------------------------------------------------------------
  * BufferStatus Routines
  *--------------------------------------------------------------------------*/
-
 
 braid_Int
 _braid_BufferStatusInit(braid_Int        messagetype,
                         braid_Int        size,
                         braid_BufferStatus status)
 {
-   _braid_StatusElt(status, messagetype)    = messagetype;
-   _braid_StatusElt(status, size)           = size;
+   _braid_StatusElt(status->gs, messagetype)    = messagetype;
+   _braid_StatusElt(status->gs, size)           = size;
    return _braid_error_flag;
 }
-
 braid_Int
-_braid_BufferStatusDestroy(braid_BufferStatus  status)
+braid_BufferStatusGetMessageType(braid_BufferStatus status,            /**< structure containing current simulation info */
+                                 braid_Int         *messagetype_ptr    /**< output, type of message, 0: for Step(), 1: for load balancing */
+                                 )
 {
-   if (status)
-   {
-      _braid_TFree(status);
-   }
-
-   return _braid_error_flag;
+   return braid_GlobalStatusGetMessageType((braid_GlobalStatus)status, messagetype_ptr);
 }
-
 braid_Int
-braid_BufferStatusGetMessageType(braid_BufferStatus  status,
-                                 braid_Int           *messagetype_ptr)
+braid_BufferStatusSetSize(braid_BufferStatus status,                   /**< structure containing current simulation info */
+                          braid_Real         size                      /**< input, size of the send buffer */
+                          )
 {
-   *messagetype_ptr = _braid_StatusElt(status, messagetype);
-   return _braid_error_flag;
+   return braid_GlobalStatusSetSize((braid_GlobalStatus)status, size);
 }
-
-braid_Int
-braid_BufferStatusSetSize(braid_BufferStatus  status,
-                          braid_Int           size)
-{
-   _braid_StatusElt(status, size ) = size; 
-   return _braid_error_flag;
-}
-

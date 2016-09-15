@@ -157,6 +157,7 @@ typedef struct _braid_Core_struct
    braid_Real            *full_rnorms;      /**< (optional) full residual norm history */
 
 
+   braid_Status           status;           /**< main status structure, actually containing all the information. The others status contain just a pointer to this status*/
    braid_AccessStatus     astatus;          /**< status structure passed to user-written Access routine */
    braid_CoarsenRefStatus cstatus;          /**< status structure passed to user-written coarsen/refine routines */
    braid_StepStatus       sstatus;          /**< status structure passed to user-written step routines */

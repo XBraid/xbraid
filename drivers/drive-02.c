@@ -1164,7 +1164,7 @@ my_RefineHelper(braid_App              app,
    int                   *num_ghost;
    
    /*double     tstart;
-   braid_CoarsenRefStatusGetTstart(status, &tstart); */
+   braid_CoarsenRefStatusGetT(status, &tstart); */
    
    /* Determine current local spatial grid size.  Note that subtracting one from a 
     * spatial discretization index will give you the index for the next finer grid. */
@@ -1404,7 +1404,7 @@ my_Refine(braid_App              app,
 
    
    /* Get coarse and fine time step sizes */
-   braid_CoarsenRefStatusGetTstart(status, &tstart);
+   braid_CoarsenRefStatusGetT(status, &tstart);
    braid_CoarsenRefStatusGetCTstop(status, &c_tstop);
    braid_CoarsenRefStatusGetCTprior(status, &c_tprior);
    braid_CoarsenRefStatusGetFTstop(status, &f_tstop);
@@ -1492,7 +1492,7 @@ my_CoarsenBilinearHelper(braid_App              app,
    hypre_CommPkg         *comm_pkg;
    int                   *num_ghost;
 
-   braid_CoarsenRefStatusGetTstart(status, &tstart);
+   braid_CoarsenRefStatusGetT(status, &tstart);
    cu = (my_Vector *) malloc(sizeof(my_Vector));
    
    filower[0]    = (app->spatial_lookup_table[fspatial_disc_idx]).ilower[0];
@@ -1684,7 +1684,7 @@ my_CoarsenBilinear(braid_App              app,
    double     tstart, f_tstop, f_tprior, c_tstop, c_tprior;
    
    /* Get Coarse and fine time step sizes */
-   braid_CoarsenRefStatusGetTstart(status, &tstart);
+   braid_CoarsenRefStatusGetT(status, &tstart);
    braid_CoarsenRefStatusGetCTstop(status, &c_tstop);
    braid_CoarsenRefStatusGetCTprior(status, &c_tprior);
    braid_CoarsenRefStatusGetFTstop(status, &f_tstop);
@@ -1775,7 +1775,7 @@ my_CoarsenInjection(braid_App              app,
    double     tstart, f_tstop, f_tprior, c_tstop, c_tprior;
 
    /* Get Coarse and fine time step sizes */
-   braid_CoarsenRefStatusGetTstart(status, &tstart);
+   braid_CoarsenRefStatusGetT(status, &tstart);
    braid_CoarsenRefStatusGetCTstop(status, &c_tstop);
    braid_CoarsenRefStatusGetCTprior(status, &c_tprior);
    braid_CoarsenRefStatusGetFTstop(status, &f_tstop);

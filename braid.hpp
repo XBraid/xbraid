@@ -163,7 +163,7 @@ class BraidStepStatus
       { braid_StepStatusGetRNorms(pstatus, nrequest_ptr, rnorms); }
       void GetTstartTstop(braid_Real *tstart_ptr, braid_Real *tstop_ptr)
       { braid_StepStatusGetTstartTstop(pstatus, tstart_ptr, tstop_ptr); }
-      void GetTstart(braid_Real *tstart_ptr)             { braid_StepStatusGetTstart(pstatus, tstart_ptr); }
+      void GetTstart(braid_Real *tstart_ptr)             { braid_StepStatusGetT(pstatus, tstart_ptr); }
       void GetTstop(braid_Real *tstop_ptr)               { braid_StepStatusGetTstop(pstatus, tstop_ptr); }
       void GetLevel(braid_Int *level_ptr)                { braid_StepStatusGetLevel(pstatus, level_ptr); }
       void GetNRefine(braid_Int *nrefine_ptr)            { braid_StepStatusGetNRefine(pstatus, nrefine_ptr); }
@@ -204,7 +204,7 @@ class BraidCoarsenRefStatus
             cstatus, tstart_ptr, f_tprior_ptr, f_tstop_ptr,
             c_tprior_ptr, c_tstop_ptr);
       }
-      void GetTstart(braid_Real *tstart_ptr)    { braid_CoarsenRefStatusGetTstart(cstatus, tstart_ptr); }
+      void GetTstart(braid_Real *tstart_ptr)    { braid_CoarsenRefStatusGetT(cstatus, tstart_ptr); }
       void GetFTstop(braid_Real *f_tstop_ptr)   { braid_CoarsenRefStatusGetFTstop(cstatus, f_tstop_ptr); }
       void GetFTprior(braid_Real *f_tprior_ptr) { braid_CoarsenRefStatusGetFTprior(cstatus, f_tprior_ptr); }
       void GetCTstop(braid_Real *c_tstop_ptr)   { braid_CoarsenRefStatusGetCTstop(cstatus, c_tstop_ptr); }

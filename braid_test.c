@@ -44,7 +44,9 @@ braid_TestInitAccess( braid_App           app,
 {
    
    braid_Vector          u ;
-   braid_AccessStatus    astatus = _braid_CTAlloc(_braid_AccessStatus, 1);;
+   braid_Status          status = _braid_CTAlloc(_braid_Status, 1);
+   braid_AccessStatus    astatus = _braid_CTAlloc(_braid_AccessStatus, 1);
+   astatus->gs=status;
    braid_Int             myid_x = 0;
    
    _braid_AccessStatusInit(t, 0, 0.0, 0, 0, 0, 0, 0, 1, -1, astatus);
@@ -69,7 +71,8 @@ braid_TestInitAccess( braid_App           app,
    /* Free variables */
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitAccess:   myfree(u) \n");
    myfree(app, u);
-   _braid_AccessStatusDestroy(astatus);
+   _braid_TFree(astatus);
+   _braid_StatusDestroy(status);
    
    _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestInitAccess\n");
 
@@ -88,7 +91,9 @@ braid_TestClone( braid_App        app,
 {
    
    braid_Vector        u, v;
-   braid_AccessStatus  astatus = _braid_CTAlloc(_braid_AccessStatus, 1);;
+   braid_Status        status = _braid_CTAlloc(_braid_Status, 1);
+   braid_AccessStatus  astatus = _braid_CTAlloc(_braid_AccessStatus, 1);
+   astatus->gs=status;
    braid_Int           myid_x;
    
    _braid_AccessStatusInit(t, 0, 0.0, 0, 0, 0, 0, 0, 1, -1, astatus);
@@ -124,7 +129,8 @@ braid_TestClone( braid_App        app,
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestClone:   myfree(v)\n");
    myfree(app, v);
 
-   _braid_AccessStatusDestroy(astatus);
+   _braid_TFree(astatus);
+   _braid_StatusDestroy(status);
    
    _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestClone\n");
    
@@ -146,7 +152,9 @@ braid_TestSum( braid_App        app,
 {
    
    braid_Vector        u, v;
-   braid_AccessStatus  astatus = _braid_CTAlloc(_braid_AccessStatus, 1);;
+   braid_Status        status  = _braid_CTAlloc(_braid_Status, 1);
+   braid_AccessStatus  astatus = _braid_CTAlloc(_braid_AccessStatus, 1);
+   astatus->gs=status;
    braid_Int           myid_x;
    
    _braid_AccessStatusInit(t, 0, 0.0, 0, 0, 0, 0, 0, 1, -1, astatus);
@@ -197,7 +205,8 @@ braid_TestSum( braid_App        app,
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSum:   myfree(v)\n");
    myfree(app, v);
 
-   _braid_AccessStatusDestroy(astatus);
+   _braid_TFree(astatus);
+   _braid_StatusDestroy(status);
    
    _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestSum\n");
 
@@ -387,8 +396,9 @@ braid_TestBuf( braid_App              app,
    
    MPI_Comm_rank( comm_x, &myid_x );
    
-   
+   braid_Status            status = _braid_CTAlloc(_braid_Status, 1);
    braid_BufferStatus      bstatus = _braid_CTAlloc(_braid_BufferStatus, 1);
+   bstatus->gs=status;
    _braid_BufferStatusInit( 0, 0, bstatus );
    /* Initialize the correct flag */
    correct = 1;
@@ -421,7 +431,7 @@ braid_TestBuf( braid_App              app,
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   buffer = bufpack(u, buffer))\n");
    
-   _braid_StatusElt( bstatus, size ) = size;   
+   _braid_DeriveStatusElt( bstatus, size ) = size;
    bufpack(app, u, buffer, bstatus);
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   v = bufunpack(buffer)\n");
@@ -457,7 +467,8 @@ braid_TestBuf( braid_App              app,
    else      
       _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestBuf: some tests failed\n");
 
-   _braid_BufferStatusDestroy(bstatus);
+   _braid_TFree(bstatus);
+   _braid_StatusDestroy(status);
    return correct;
 }
 
@@ -480,8 +491,11 @@ braid_TestCoarsenRefine( braid_App           app,
    braid_Vector            u, v, w, uc, vc, wc;
    braid_Real              result1;
    braid_Int               myid_x, level, correct;
-   braid_AccessStatus      astatus = _braid_CTAlloc(_braid_AccessStatus, 1);;
-   braid_CoarsenRefStatus  cstatus = _braid_CTAlloc(_braid_CoarsenRefStatus, 1);;
+   braid_Status            status  = _braid_CTAlloc(_braid_Status, 1);
+   braid_AccessStatus      astatus = _braid_CTAlloc(_braid_AccessStatus, 1);
+   braid_CoarsenRefStatus  cstatus = _braid_CTAlloc(_braid_CoarsenRefStatus, 1);
+   astatus->gs=status;
+   cstatus->gs=status;
    
    _braid_CoarsenRefStatusInit(t, t-fdt, t+fdt, t-cdt, t+cdt, 0, 0, 0, cstatus);
    MPI_Comm_rank( comm_x, &myid_x );
@@ -629,7 +643,9 @@ braid_TestCoarsenRefine( braid_App           app,
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   myfree(wc)\n");
    myfree(app, wc);
 
-   _braid_AccessStatusDestroy(astatus);
+   _braid_TFree(astatus);
+   _braid_TFree(cstatus);
+   _braid_StatusDestroy(status);
 
    if(correct == 1) 
       _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestCoarsenRefine: all tests passed successfully\n");

@@ -271,9 +271,9 @@ _braid_CommSendInit(braid_Core           core,
       buffer = malloc(size);
       
       /* Note that bufpack may return a size smaller than bufsize */ 
-      _braid_StatusElt(bstatus, size) = size;
+      _braid_DeriveStatusElt(bstatus, size) = size;
       _braid_CoreFcn(core, bufpack)(app, vector, buffer, bstatus);
-      size = _braid_StatusElt( bstatus, size );
+      size = _braid_DeriveStatusElt( bstatus, size );
 
       num_requests = 1;
       requests = _braid_CTAlloc(MPI_Request, num_requests);
@@ -902,7 +902,7 @@ _braid_Step(braid_Core     core,
    braid_Int        ii;
 
    ii = index-ilower;
-   _braid_StepStatusInit(ta[ii-1], ta[ii], index, tol, iter, level, nrefine, gupper, status);
+   _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, status);
 
    /* If ustop is set to NULL, use a default approach for setting it */
    if (ustop == NULL)
@@ -913,8 +913,8 @@ _braid_Step(braid_Core     core,
    if (level == 0)
    {
       _braid_CoreFcn(core, step)(app, ustop, NULL, u, status);
-      rfactors[ii] = _braid_StatusElt(status, rfactor);
-      if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
+      rfactors[ii] = _braid_DeriveStatusElt(status, rfactor);
+      if ( !_braid_CoreElt(core, r_space) && _braid_DeriveStatusElt(status, r_space) )
             _braid_CoreElt(core, r_space) = 1;
    }     
    else
@@ -962,7 +962,7 @@ _braid_Residual(braid_Core     core,
    braid_Int        ii;
 
    ii = index-ilower;
-   _braid_StepStatusInit(ta[ii-1], ta[ii], index, tol, iter, level, nrefine, gupper, status);
+   _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, status);
    if ( _braid_CoreElt(core, residual) == NULL )
    {
       /* By default: r = ustop - \Phi(ustart)*/
@@ -971,8 +971,8 @@ _braid_Residual(braid_Core     core,
       _braid_CoreFcn(core, sum)(app, 1.0, ustop, -1.0, r);
       if (level == 0)
       {
-         rfactors[ii] = _braid_StatusElt(status, rfactor);
-         if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
+         rfactors[ii] = _braid_DeriveStatusElt(status, rfactor);
+         if ( !_braid_CoreElt(core, r_space) && _braid_DeriveStatusElt(status, r_space) )
                _braid_CoreElt(core, r_space) = 1;
       }
    }
@@ -1404,7 +1404,7 @@ _braid_ComputeFullRNorm(braid_Core  core,
 
          /* Update local processor norm. */
          ii = fi-ilower;
-         _braid_StepStatusInit(ta[ii-1], ta[ii], fi, tol, iter, level, nrefine, gupper, status);
+         _braid_StepStatusInit(ta[ii-1], ta[ii], fi-1, tol, iter, level, nrefine, gupper, status);
          _braid_CoreFcn(core, full_rnorm_res)(app, u, r, status);
          _braid_CoreFcn(core, spatialnorm)(app, r, &rnorm_temp); 
          if(tnorm == 1)       /* one-norm */ 
@@ -1437,7 +1437,7 @@ _braid_ComputeFullRNorm(braid_Core  core,
       {
          /* Update local processor norm. */
          ii = ci-ilower;
-         _braid_StepStatusInit(ta[ii-1], ta[ii], ci, tol, iter, level, nrefine, gupper, status);
+         _braid_StepStatusInit(ta[ii-1], ta[ii], ci-1, tol, iter, level, nrefine, gupper, status);
          _braid_UGetVector(core, level, ci, &r);
          _braid_CoreFcn(core, full_rnorm_res)(app, r, u, status);
          _braid_CoreFcn(core, spatialnorm)(app, u, &rnorm_temp);
@@ -2565,9 +2565,9 @@ _braid_FRefine(braid_Core   core,
             /* Pack u into buffer, adjust size, and put size into buffer */
             buffer = &bptr[1];
             _braid_CoreFcn(core, bufsize)(app, &size, bstatus);
-            _braid_StatusElt( bstatus, size ) = size;
+            _braid_DeriveStatusElt( bstatus, size ) = size;
             _braid_CoreFcn(core, bufpack)(app, send_ua[ii], buffer, bstatus);
-            size = _braid_StatusElt(bstatus, size); 
+            size = _braid_DeriveStatusElt(bstatus, size);
             _braid_CoreFcn(core, free)(app, send_ua[ii]);
             _braid_NBytesToNReals(size, size);
             bptr[0] = (braid_Int) size; /* insert size at the beginning */

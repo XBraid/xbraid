@@ -658,15 +658,15 @@ braid_F90_Name(braid_access_status_get_tild_f90, BRAID_ACCESS_STATUS_GET_TILD_F9
    return 0;
 }
 
-/* Wrap braid_AccessStatusGetIstop( ) */
+/* Wrap braid_AccessStatusGetTIndex( ) */
 braid_Int
-braid_F90_Name(braid_access_status_get_istop_f90, BRAID_ACCESS_STATUS_GET_ISTOP_F90)(
+braid_F90_Name(braid_access_status_get_tindex_f90, BRAID_ACCESS_STATUS_GET_TINDEX_F90)(
                               braid_F90_ObjPtr    status,        /**< structure containing current simulation info */
-                              braid_F90_Int      *istop_ptr      /**< output, global index value corresponding to next time value to evolve towards */
+                              braid_F90_Int      *idx_ptr      /**< output, global index value corresponding to current time value to evolve from */
                               )
 {
-   braid_AccessStatusGetIstop( braid_TakeF90_Obj(braid_AccessStatus, status),
-                               braid_TakeF90_IntPtr(                 istop_ptr) );
+   braid_AccessStatusGetTIndex( braid_TakeF90_Obj(braid_AccessStatus, status),
+                               braid_TakeF90_IntPtr(                 idx_ptr) );
    return 0;
 }
 
@@ -684,15 +684,15 @@ braid_F90_Name(braid_step_status_get_tstart_tstop_f90, BRAID_STEP_STATUS_GET_TST
    return 0;
 }
 
-/* Wrap braid_StepStatusGetIstop( ) */
+/* Wrap braid_StepStatusGetTIndex( ) */
 braid_Int
-braid_F90_Name(braid_step_status_get_istop_f90, BRAID_STEP_STATUS_GET_ISTOP_F90)(
+braid_F90_Name(braid_step_status_get_tindex_f90, BRAID_STEP_STATUS_GET_TINDEX_F90)(
                               braid_F90_ObjPtr    status,        /**< structure containing current simulation info */
-                              braid_F90_Int      *istop_ptr      /**< output, global index value corresponding to next time value to evolve towards */
+                              braid_F90_Int      *idx_ptr      /**< output, global index value corresponding to next time value to evolve towards */
                               )
 {
-   braid_StepStatusGetIstop( braid_TakeF90_Obj(braid_StepStatus, status),
-                               braid_TakeF90_IntPtr(             istop_ptr) );
+   braid_StepStatusGetTIndex( braid_TakeF90_Obj(braid_StepStatus, status),
+                               braid_TakeF90_IntPtr(             idx_ptr) );
    return 0;
 }
 
