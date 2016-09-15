@@ -31,16 +31,16 @@
 #include "_util.h"
 
 /*--------------------------------------------------------------------------
- * Some simple tests on the init, access and free routines 
+ * Some simple tests on the myinit, myaccess and myfree routines
  *--------------------------------------------------------------------------*/
 braid_Int
 braid_TestInitAccess( braid_App           app, 
                      MPI_Comm            comm_x,
                      FILE               *fp, 
                      braid_Real          t,
-                     braid_PtFcnInit     init, 
-                     braid_PtFcnAccess   access,
-                     braid_PtFcnFree     free)
+                     braid_PtFcnInit     myinit,
+                     braid_PtFcnAccess   myaccess,
+                     braid_PtFcnFree     myfree)
 {
    
    braid_Vector          u ;
@@ -55,20 +55,20 @@ braid_TestInitAccess( braid_App           app,
 
    /* Test */
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitAccess:   Starting Test 1\n");
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitAccess:   u = init(t=%1.2e)\n", t);
-   init(app, t, &u);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitAccess:   u = myinit(t=%1.2e)\n", t);
+   myinit(app, t, &u);
    
-   if(access != NULL)
+   if(myaccess != NULL)
    {
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitAccess:   access(u) \n");
-      access(app, u, astatus);
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitAccess:   myaccess(u) \n");
+      myaccess(app, u, astatus);
 
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitAccess:   check output: wrote u for initial condition at t=%1.2e. \n\n",t);
    }
 
    /* Free variables */
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitAccess:   free(u) \n");
-   free(app, u);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitAccess:   myfree(u) \n");
+   myfree(app, u);
    _braid_AccessStatusDestroy(astatus);
    
    _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestInitAccess\n");
@@ -81,9 +81,9 @@ braid_TestClone( braid_App        app,
               MPI_Comm            comm_x,
               FILE               *fp, 
               braid_Real          t,
-              braid_PtFcnInit     init, 
-              braid_PtFcnAccess   access,
-              braid_PtFcnFree     free,
+              braid_PtFcnInit     myinit,
+              braid_PtFcnAccess   myaccess,
+              braid_PtFcnFree     myfree,
               braid_PtFcnClone    clone)
 {
    
@@ -99,30 +99,30 @@ braid_TestClone( braid_App        app,
 
    /* Test 1 */
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestClone:   Starting Test 1\n");
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestClone:   u = init(t=%1.2e)\n", t);
-   init(app, t, &u);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestClone:   u = myinit(t=%1.2e)\n", t);
+   myinit(app, t, &u);
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestClone:   v = clone(u)\n");
    clone(app, u, &v);
    
-   if(access != NULL)
+   if(myaccess != NULL)
    {
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestClone:   access(u)\n");
-      access(app, u, astatus);
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestClone:   myaccess(u)\n");
+      myaccess(app, u, astatus);
 
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestClone:   access(v)\n");
-      access(app, v, astatus);
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestClone:   myaccess(v)\n");
+      myaccess(app, v, astatus);
       
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestClone:   check output:  wrote u and v for initial condition at t=%1.2e.\n\n", t);
 
    }
 
    /* Free variables */
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestClone:   free(u)\n");
-   free(app, u);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestClone:   myfree(u)\n");
+   myfree(app, u);
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestClone:   free(v)\n");
-   free(app, v);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestClone:   myfree(v)\n");
+   myfree(app, v);
 
    _braid_AccessStatusDestroy(astatus);
    
@@ -136,13 +136,13 @@ braid_TestClone( braid_App        app,
 braid_Int
 braid_TestSum( braid_App        app, 
             MPI_Comm            comm_x,
-            FILE               *fp, 
+            FILE               *fp,
             braid_Real          t,
-            braid_PtFcnInit     init, 
-            braid_PtFcnAccess   access,
-            braid_PtFcnFree     free, 
+            braid_PtFcnInit     myinit,
+            braid_PtFcnAccess   myaccess,
+            braid_PtFcnFree     myfree,
             braid_PtFcnClone    clone,
-            braid_PtFcnSum      sum )  
+            braid_PtFcnSum      sum )
 {
    
    braid_Vector        u, v;
@@ -157,8 +157,8 @@ braid_TestSum( braid_App        app,
    
    /* Test 1 */
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSum:   Starting Test 1\n");
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSum:   u = init(t=%1.2e)\n", t);
-   init(app, t, &u);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSum:   u = myinit(t=%1.2e)\n", t);
+   myinit(app, t, &u);
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSum:   v = clone(u)\n");
    clone(app, u, &v);
@@ -166,10 +166,10 @@ braid_TestSum( braid_App        app,
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSum:   v = u - v\n");
    sum(app, 1.0, u, -1.0, v); 
 
-   if(access != NULL)
+   if(myaccess != NULL)
    {
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSum:   access(v)\n");
-      access(app, v, astatus);
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSum:   myaccess(v)\n");
+      myaccess(app, v, astatus);
       
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSum:   check output:  v should equal the zero vector\n\n");
    }
@@ -179,23 +179,23 @@ braid_TestSum( braid_App        app,
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSum:   v = 2*u + v\n");
    sum(app, 2.0, u, 1.0, v); 
 
-   if(access != NULL)
+   if(myaccess != NULL)
    {
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSum:   access(v)\n");
-      access(app, v, astatus);
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSum:   myaccess(v)\n");
+      myaccess(app, v, astatus);
       
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSum:   access(u)\n");
-      access(app, u, astatus);
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSum:   myaccess(u)\n");
+      myaccess(app, u, astatus);
    }
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSum:   check output:  v should equal 2*u \n\n");
 
    /* Free variables */
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSum:   free(u)\n");
-   free(app, u);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSum:   myfree(u)\n");
+   myfree(app, u);
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSum:   free(v)\n");
-   free(app, v);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSum:   myfree(v)\n");
+   myfree(app, v);
 
    _braid_AccessStatusDestroy(astatus);
    
@@ -209,8 +209,8 @@ braid_TestSpatialNorm( braid_App              app,
                        MPI_Comm               comm_x,
                        FILE                  *fp, 
                        braid_Real             t,
-                       braid_PtFcnInit        init, 
-                       braid_PtFcnFree        free, 
+                       braid_PtFcnInit        myinit,
+                       braid_PtFcnFree        myfree,
                        braid_PtFcnClone       clone,
                        braid_PtFcnSum         sum,  
                        braid_PtFcnSpatialNorm spatialnorm) 
@@ -231,8 +231,8 @@ braid_TestSpatialNorm( braid_App              app,
    
    /* Test 1 */
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Starting Test 1\n");
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   u = init(t=%1.2e)\n", t);
-   init(app, t, &u);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   u = myinit(t=%1.2e)\n", t);
+   myinit(app, t, &u);
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   spatialnorm(u) \n");
    spatialnorm(app, u, &result1);
@@ -303,8 +303,8 @@ braid_TestSpatialNorm( braid_App              app,
 
    /* Test 3 */
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Starting Test 3\n");
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   free(w)\n");
-   free(app, w);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   myfree(w)\n");
+   myfree(app, w);
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   w = clone(u)\n");
    clone(app, u, &w);
@@ -340,14 +340,14 @@ braid_TestSpatialNorm( braid_App              app,
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   expected output:  spatialnorm(w) / spatialnorm(u) = 0.5 \n\n");
 
    /* Free variables */
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   free(u)\n");
-   free(app, u);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   myfree(u)\n");
+   myfree(app, u);
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   free(v)\n");
-   free(app, v);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   myfree(v)\n");
+   myfree(app, v);
    
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   free(w)\n");
-   free(app, w);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   myfree(w)\n");
+   myfree(app, w);
 
    if(correct == 1) 
       _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestSpatialNorm: all tests passed successfully\n");
@@ -371,8 +371,8 @@ braid_TestBuf( braid_App              app,
                MPI_Comm               comm_x,
                FILE                   *fp, 
                braid_Real             t,
-               braid_PtFcnInit        init,
-               braid_PtFcnFree        free,
+               braid_PtFcnInit        myinit,
+               braid_PtFcnFree        myfree,
                braid_PtFcnSum         sum,  
                braid_PtFcnSpatialNorm spatialnorm, 
                braid_PtFcnBufSize     bufsize,
@@ -398,8 +398,8 @@ braid_TestBuf( braid_App              app,
    
    /* Test 1 */
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   Starting Test 1\n");
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   u = init(t=%1.2e)\n", t);
-   init(app, t, &u);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   u = myinit(t=%1.2e)\n", t);
+   myinit(app, t, &u);
    
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   spatialnorm(u) \n");
    spatialnorm(app, u, &result1);
@@ -446,11 +446,11 @@ braid_TestBuf( braid_App              app,
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   expected output:  spatialnorm(v) = 0.0 \n\n");
    
    /* Free variables */
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   free(u)\n");
-   free(app, u);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   myfree(u)\n");
+   myfree(app, u);
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   free(v)\n");
-   free(app, v);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   myfree(v)\n");
+   myfree(app, v);
    
    if(correct == 1) 
       _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestBuf: all tests passed successfully\n");
@@ -468,9 +468,9 @@ braid_TestCoarsenRefine( braid_App           app,
                       braid_Real             t,
                       braid_Real             fdt,
                       braid_Real             cdt,
-                      braid_PtFcnInit        init,
-                      braid_PtFcnAccess      access,
-                      braid_PtFcnFree        free,
+                      braid_PtFcnInit        myinit,
+                      braid_PtFcnAccess      myaccess,
+                      braid_PtFcnFree        myfree,
                       braid_PtFcnClone       clone,
                       braid_PtFcnSum         sum,
                       braid_PtFcnSpatialNorm spatialnorm, 
@@ -494,8 +494,8 @@ braid_TestCoarsenRefine( braid_App           app,
    
    /* Test 1 */
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   Starting Test 1\n");
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   u = init(t=%1.2e)\n", t);
-   init(app, t, &u);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   u = myinit(t=%1.2e)\n", t);
+   myinit(app, t, &u);
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   spatialnorm(u) \n");
    spatialnorm(app, u, &result1);
@@ -512,17 +512,17 @@ braid_TestCoarsenRefine( braid_App           app,
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   uc = coarsen(u)\n");
    coarsen(app, u, &uc, cstatus); 
 
-   if(access != NULL)
+   if(myaccess != NULL)
    {
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   access(uc) \n");
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   myaccess(uc) \n");
       level = 1;
       _braid_AccessStatusInit(t, 0, 0.0, 0, level, 0, 0, 0, 1, -1, astatus);
-      access(app, uc, astatus);
+      myaccess(app, uc, astatus);
 
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   access(u) \n");
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   myaccess(u) \n");
       level = 0;
       _braid_AccessStatusInit(t, 0, 0.0, 0, level, 0, 0, 0, 1, -1, astatus);
-      access(app, u, astatus);
+      myaccess(app, u, astatus);
    }
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   actual output:   wrote u and spatially coarsened u \n\n");
@@ -564,11 +564,11 @@ braid_TestCoarsenRefine( braid_App           app,
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   w = clone(u)\n");
    clone(app, u, &w);
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   free(u)\n");
-   free(app, u);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   myfree(u)\n");
+   myfree(app, u);
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   free(v)\n");
-   free(app, v);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   myfree(v)\n");
+   myfree(app, v);
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   v = refine(vc)\n");
    refine(app, vc, &v, cstatus); 
@@ -611,23 +611,23 @@ braid_TestCoarsenRefine( braid_App           app,
                    "                             (e.g., constant), spatialnorm(w) should = 0\n\n");
 
    /* Free variables */
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   free(u)\n");
-   free(app, u);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   myfree(u)\n");
+   myfree(app, u);
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   free(v)\n");
-   free(app, v);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   myfree(v)\n");
+   myfree(app, v);
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   free(w)\n");
-   free(app, w);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   myfree(w)\n");
+   myfree(app, w);
    
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   free(uc)\n");
-   free(app, uc);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   myfree(uc)\n");
+   myfree(app, uc);
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   free(vc)\n");
-   free(app, vc);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   myfree(vc)\n");
+   myfree(app, vc);
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   free(wc)\n");
-   free(app, wc);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   myfree(wc)\n");
+   myfree(app, wc);
 
    _braid_AccessStatusDestroy(astatus);
 
@@ -646,8 +646,8 @@ braid_TestAll( braid_App            app,
             braid_Real              t,
             braid_Real              fdt,
             braid_Real              cdt,
-            braid_PtFcnInit         init,
-            braid_PtFcnFree         free,
+            braid_PtFcnInit         myinit,
+            braid_PtFcnFree         myfree,
             braid_PtFcnClone        clone,
             braid_PtFcnSum          sum,
             braid_PtFcnSpatialNorm  spatialnorm, 
@@ -661,30 +661,30 @@ braid_TestAll( braid_App            app,
    MPI_Comm_rank( comm_x, &myid_x );
    
    /** 
-    * We set the access parameter to NULL below, because this function is
+    * We set the myaccess parameter to NULL below, because this function is
     * is designed to return only one value, the boolean correct
     **/
 
-   /* Test init(), free() */
-   braid_TestInitAccess( app, comm_x, fp, t, init, NULL, free);
-   braid_TestInitAccess( app, comm_x, fp, fdt, init, NULL, free);
+   /* Test myinit(), myfree() */
+   braid_TestInitAccess( app, comm_x, fp, t, myinit, NULL, myfree);
+   braid_TestInitAccess( app, comm_x, fp, fdt, myinit, NULL, myfree);
 
    /* Test clone() */
-   braid_TestClone( app, comm_x, fp, t, init, NULL, free, clone);
-   braid_TestClone( app, comm_x, fp, fdt, init, NULL, free, clone);
+   braid_TestClone( app, comm_x, fp, t, myinit, NULL, myfree, clone);
+   braid_TestClone( app, comm_x, fp, fdt, myinit, NULL, myfree, clone);
 
    /* Test sum() */
-   braid_TestSum( app, comm_x, fp, t, init, NULL, free, clone, sum);
-   braid_TestSum( app, comm_x, fp, fdt, init, NULL, free, clone, sum);
+   braid_TestSum( app, comm_x, fp, t, myinit, NULL, myfree, clone, sum);
+   braid_TestSum( app, comm_x, fp, fdt, myinit, NULL, myfree, clone, sum);
 
    /* Test spatialnorm() */
-   flag = braid_TestSpatialNorm( app, comm_x, fp, t, init, free, clone, sum, spatialnorm);
+   flag = braid_TestSpatialNorm( app, comm_x, fp, t, myinit, myfree, clone, sum, spatialnorm);
    if(flag == 0)
    {
       _braid_ParFprintfFlush(fp, myid_x, "-> braid_TestAll:   TestSpatialNorm 1 Failed\n");
       correct = 0;
    }
-   flag = braid_TestSpatialNorm( app, comm_x, fp, fdt, init, free, clone, sum, spatialnorm);
+   flag = braid_TestSpatialNorm( app, comm_x, fp, fdt, myinit, myfree, clone, sum, spatialnorm);
    if(flag == 0)
    {
       _braid_ParFprintfFlush(fp, myid_x, "-> braid_TestAll:   TestSpatialNorm 2 Failed\n");
@@ -692,13 +692,13 @@ braid_TestAll( braid_App            app,
    }
 
    /* Test bufsize(), bufpack(), bufunpack() */
-   flag = braid_TestBuf( app, comm_x, fp, t, init, free, sum, spatialnorm, bufsize, bufpack, bufunpack);
+   flag = braid_TestBuf( app, comm_x, fp, t, myinit, myfree, sum, spatialnorm, bufsize, bufpack, bufunpack);
    if(flag == 0)
    {
       _braid_ParFprintfFlush(fp, myid_x, "-> braid_TestAll:   TestBuf 1 Failed\n");
       correct = 0;
    }
-   flag = braid_TestBuf( app, comm_x, fp, fdt, init, free, sum, spatialnorm, bufsize, bufpack, bufunpack);
+   flag = braid_TestBuf( app, comm_x, fp, fdt, myinit, myfree, sum, spatialnorm, bufsize, bufpack, bufunpack);
    if(flag == 0)
    {
       _braid_ParFprintfFlush(fp, myid_x, "-> braid_TestAll:   TestBuf 2 Failed\n");
@@ -708,8 +708,8 @@ braid_TestAll( braid_App            app,
    /* Test coarsen and refine */
    if( (coarsen != NULL) && (refine != NULL) )
    {
-      flag = braid_TestCoarsenRefine(app, comm_x, fp, t, fdt, cdt, init,
-                          NULL, free, clone, sum, spatialnorm, coarsen, refine);
+      flag = braid_TestCoarsenRefine(app, comm_x, fp, t, fdt, cdt, myinit,
+                          NULL, myfree, clone, sum, spatialnorm, coarsen, refine);
       if(flag == 0)
       {
          _braid_ParFprintfFlush(fp, myid_x, "-> braid_TestAll:   TestCoarsenRefine 1 Failed\n");
