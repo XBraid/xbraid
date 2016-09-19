@@ -99,36 +99,14 @@ typedef struct _braid_Status_struct _braid_Status;
 typedef struct _braid_Status_struct *braid_Status;
 
 /**
- * GlobalStatus. This structure is the main class, the other *Status structure
- * derive from it. The user can cast his *Status into GlobalStatus if he wants to access
- * properties that are not accessible from his current Status struct, for instance
- * accessing a Step property from a CoarsenRef structure. He should probably not do that...
- */
-struct _braid_GlobalStatus_struct
-{
-   braid_Status gs;
-};
-typedef struct _braid_GlobalStatus_struct _braid_GlobalStatus;
-/**
- * The user only handles pointer to Status structures.
- **/
-typedef struct _braid_GlobalStatus_struct *braid_GlobalStatus;
-
-/**
  * AccessStatus structure which defines the status of XBraid at a given instant
  * on some level during a run.  The user accesses it through
  * _braid_AccessStatusGet**()_ functions. This is just a pointer to the braid_Status
  **/
-struct _braid_AccessStatus_struct
+typedef struct 
 {
-   braid_Status gs;
-};
-typedef struct _braid_AccessStatus_struct _braid_AccessStatus;
-/**
- * The user access routine will receive braid_AccessStatus, which will be
- * a pointer to the actual _braid_AccessStatus_struct
- **/
-typedef struct _braid_AccessStatus_struct *braid_AccessStatus;
+   _braid_Status status;
+} *braid_AccessStatus;
 
 /**
  * The user's step routine routine will receive a StepStatus structure, which
@@ -136,16 +114,10 @@ typedef struct _braid_AccessStatus_struct *braid_AccessStatus;
  * during a run.  The user accesses it through _braid_StepStatusGet**()_ functions.
  * This is just a pointer to the braid_Status.
  **/
-struct _braid_StepStatus_struct
+typedef struct 
 {
-   braid_Status gs;
-};
-typedef struct _braid_StepStatus_struct _braid_StepStatus;
-/**
- * The user's step routine will receive braid_StepStatus, which will be a
- * pointer to the actual _braid_StepStatus_struct
- **/
-typedef struct _braid_StepStatus_struct *braid_StepStatus;
+   _braid_Status status;
+} *braid_StepStatus;
 
 /**
  * The user coarsen and refine routines will receive a CoarsenRefStatus structure, which
@@ -153,32 +125,20 @@ typedef struct _braid_StepStatus_struct *braid_StepStatus;
  * during a run.  The user accesses it through _braid_CoarsenRefStatusGet**()_ functions.
  * This is just a pointer to the braid_Status.
  **/
-struct _braid_CoarsenRefStatus_struct
+typedef struct 
 {
-   braid_Status gs;
-};
-typedef struct _braid_CoarsenRefStatus_struct _braid_CoarsenRefStatus;
-/**
- * The user coarsen and refine routines will receive braid_CoarsenRefStatus, which will be
- * a pointer to the actual _braid_CoarsenRefStatus_struct
- **/
-typedef struct _braid_CoarsenRefStatus_struct *braid_CoarsenRefStatus;
+   _braid_Status status;
+} *braid_CoarsenRefStatus;
 
 /**
  * The user's bufpack, bufunpack and bufsize routines will receive a BufferStatus structure, which
  * defines the status of XBraid at a given buff (un)pack instance.  The user accesses it
  * through _braid_BufferStatusGet**()_ functions. This is just a pointer to the braid_Status.
  **/
-struct _braid_BufferStatus_struct
+typedef struct 
 {
-   braid_Status gs;
-};
-typedef struct _braid_BufferStatus_struct _braid_BufferStatus;
-/**
- * The user's buffer routines will receive a braid_BufferStatus, which will be a
- * pointer to the actual _braid_BufferStatus_struct
- **/
-typedef struct _braid_BufferStatus_struct *braid_BufferStatus;
+   _braid_Status status;
+} *braid_BufferStatus;
 
 /*--------------------------------------------------------------------------
  * Accessor macros 
@@ -188,7 +148,7 @@ typedef struct _braid_BufferStatus_struct *braid_BufferStatus;
  * Accessor for _braid_Status attributes
  **/
 #define _braid_StatusElt(status, elt) ( (status) -> elt )
-#define _braid_DeriveStatusElt(xstatus, elt) ( ( (xstatus) -> gs) -> elt )
+#define _braid_DeriveStatusElt(xstatus, elt) ( _braid_StatusElt((braid_Status)xstatus,elt))
 
 #define ACCESSOR_HEADER_GET1(stype,param,vtype1) \
   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1);
@@ -206,65 +166,65 @@ _braid_StatusDestroy(braid_Status status);
 
 
 /*--------------------------------------------------------------------------
- * GlobalStatus Prototypes
+ * Global Status Prototypes
  *--------------------------------------------------------------------------*/
 
 /**
- * Return the current time from the GlobalStatus structure.
+ * Return the current time from the Status structure.
  **/
 braid_Int
-braid_GlobalStatusGetT(braid_GlobalStatus status,                      /**< structure containing current simulation info */
-                       braid_Real        *t_ptr                        /**< output, current time */
-                       );
+braid_StatusGetT(braid_Status status,                      /**< structure containing current simulation info */
+                 braid_Real  *t_ptr                        /**< output, current time */
+                 );
 
 /**
  * Return the index value corresponding to the current time value
- * from the GlobalStatus structure.
+ * from the Status structure.
  **/
 braid_Int
-braid_GlobalStatusGetTIndex(braid_GlobalStatus status,                  /**< structure containing current simulation info */
-                           braid_Int         *idx_ptr                  /**< output, global index value corresponding to current time value */
-                           );
+braid_StatusGetTIndex(braid_Status status,                  /**< structure containing current simulation info */
+                      braid_Int   *idx_ptr                  /**< output, global index value corresponding to current time value */
+                      );
 
 /**
- * Return the current iteration from the GlobalStatus structure.
+ * Return the current iteration from the Status structure.
  **/
 braid_Int
-braid_GlobalStatusGetIter(braid_GlobalStatus status,                   /**< structure containing current simulation info */
-                          braid_Int         *iter_ptr                  /**< output, current XBraid iteration number*/
-                          );
+braid_StatusGetIter(braid_Status status,                   /**< structure containing current simulation info */
+                    braid_Int   *iter_ptr                  /**< output, current XBraid iteration number*/
+                    );
 
 /**
- * Return the current XBraid level from the GlobalStatus structure.
+ * Return the current XBraid level from the Status structure.
  **/
 braid_Int
-braid_GlobalStatusGetLevel(braid_GlobalStatus status,                  /**< structure containing current simulation info */
-                           braid_Int         *level_ptr                /**< output, current level in XBraid */
-                           );
+braid_StatusGetLevel(braid_Status status,                  /**< structure containing current simulation info */
+                     braid_Int   *level_ptr                /**< output, current level in XBraid */
+                     );
 
 /**
  * Return the number of refinements done.
  **/
 braid_Int
-braid_GlobalStatusGetNRefine(braid_GlobalStatus status,                /**< structure containing current simulation info */
-                             braid_Int         *nrefine_ptr            /**< output, number of refinements done */
-                             );
+braid_StatusGetNRefine(braid_Status status,                /**< structure containing current simulation info */
+                       braid_Int   *nrefine_ptr            /**< output, number of refinements done */
+                       );
 
 /**
  * Return the global number of time points on the fine grid.
  **/
 braid_Int
-braid_GlobalStatusGetNTPoints(braid_GlobalStatus status,               /**< structure containing current simulation info */
-                              braid_Int         *ntpoints_ptr          /**< output, number of time points on the fine grid */
-                              );
+braid_StatusGetNTPoints(braid_Status status,               /**< structure containing current simulation info */
+                        braid_Int   *ntpoints_ptr          /**< output, number of time points on the fine grid */
+                        );
 
 /**
- * Return the current residual norm from the GlobalStatus structure.
+ * Return the current residual norm from the Status structure.
  **/
 braid_Int
-braid_GlobalStatusGetResidual(braid_GlobalStatus status,               /**< structure containing current simulation info */
-                              braid_Real        *rnorm_ptr             /**< output, current residual norm */
-                              );
+braid_StatusGetResidual(braid_Status status,               /**< structure containing current simulation info */
+                        braid_Real  *rnorm_ptr             /**< output, current residual norm */
+                        );
 
 /**
  * Return whether XBraid is done for the current simulation.
@@ -273,9 +233,9 @@ braid_GlobalStatusGetResidual(braid_GlobalStatus status,               /**< stru
  * (either maxiter has been reached, or the tolerance has been met).
  **/
 braid_Int
-braid_GlobalStatusGetDone(braid_GlobalStatus status,                   /**< structure containing current simulation info */
-                          braid_Int         *done_ptr                  /**< output,  =1 if XBraid has finished, else =0 */
-                          );
+braid_StatusGetDone(braid_Status status,                   /**< structure containing current simulation info */
+                    braid_Int   *done_ptr                  /**< output,  =1 if XBraid has finished, else =0 */
+                    );
 
 /**
  * Return XBraid status for the current simulation. Four values are 
@@ -285,68 +245,68 @@ braid_GlobalStatusGetDone(braid_GlobalStatus status,                   /**< stru
  *
  * These values are also available through individual Get routines. 
  * These individual routines are the location of detailed documentation on 
- * each parameter, e.g., see *braid_GlobalStatusGetDone* for more information
+ * each parameter, e.g., see *braid_StatusGetDone* for more information
  * on the *done* value.
  **/
 braid_Int
-braid_GlobalStatusGetTILD(braid_GlobalStatus status,                   /**< structure containing current simulation info */
-                          braid_Real        *t_ptr,                    /**< output, current time */
-                          braid_Int         *iter_ptr,                 /**< output, current XBraid iteration number*/
-                          braid_Int         *level_ptr,                /**< output, current level in XBraid */
-                          braid_Int         *done_ptr                  /**< output,  =1 if XBraid has finished, else =0 */
-                          );
+braid_StatusGetTILD(braid_Status status,                   /**< structure containing current simulation info */
+                    braid_Real  *t_ptr,                    /**< output, current time */
+                    braid_Int   *iter_ptr,                 /**< output, current XBraid iteration number*/
+                    braid_Int   *level_ptr,                /**< output, current level in XBraid */
+                    braid_Int   *done_ptr                  /**< output,  =1 if XBraid has finished, else =0 */
+                    );
 
 /**
  * Return whether this is a wrapper test or an XBraid run
  **/
 braid_Int
-braid_GlobalStatusGetWrapperTest(braid_GlobalStatus status,            /**< structure containing current simulation info */
-                                 braid_Int         *wtest_ptr          /**< output, =1 if this is a wrapper test, =0 if XBraid run */
-                                 );
+braid_StatusGetWrapperTest(braid_Status status,            /**< structure containing current simulation info */
+                           braid_Int   *wtest_ptr          /**< output, =1 if this is a wrapper test, =0 if XBraid run */
+                           );
 
 /**
  * Return flag indicating from which function the vector is accessed
  **/
 braid_Int
-braid_GlobalStatusGetCallingFunction(braid_GlobalStatus status,        /**< structure containing current simulation info */
-                                     braid_Int         *cfunction_ptr  /**< output, function number (0=FInterp, 1=FRestrict, 2=FRefine, 3=FAccess) */
-                                     );
+braid_StatusGetCallingFunction(braid_Status status,        /**< structure containing current simulation info */
+                               braid_Int   *cfunction_ptr  /**< output, function number (0=FInterp, 1=FRestrict, 2=FRefine, 3=FAccess) */
+                               );
 
 /**
  * Return the **coarse grid** time value to the left of the current time value from
- * the GlobalStatus structure.
+ * the Status structure.
  **/
 braid_Int
-braid_GlobalStatusGetCTprior(braid_GlobalStatus status,                /**< structure containing current simulation info */
-                             braid_Real        *ctprior_ptr            /**< output, time value to the left of current time value on coarse grid */
-                             );
+braid_StatusGetCTprior(braid_Status status,                /**< structure containing current simulation info */
+                       braid_Real  *ctprior_ptr            /**< output, time value to the left of current time value on coarse grid */
+                       );
 
 /**
  * Return the **coarse grid** time value to the right of the current time value from
- * the GlobalStatus structure.
+ * the Status structure.
  **/
 braid_Int
-braid_GlobalStatusGetCTstop(braid_GlobalStatus status,                 /**< structure containing current simulation info */
-                            braid_Real        *ctstop_ptr              /**< output, time value to the right of current time value on coarse grid */
-                            );
+braid_StatusGetCTstop(braid_Status status,                 /**< structure containing current simulation info */
+                      braid_Real  *ctstop_ptr              /**< output, time value to the right of current time value on coarse grid */
+                      );
 
 /**
  * Return the **fine grid** time value to the left of the current time value from
- * the GlobalStatus structure.
+ * the Status structure.
  **/
 braid_Int
-braid_GlobalStatusGetFTprior(braid_GlobalStatus status,                /**< structure containing current simulation info */
-                             braid_Real        *ftprior_ptr            /**< output, time value to the left of current time value on fine grid */
-                             );
+braid_StatusGetFTprior(braid_Status status,                /**< structure containing current simulation info */
+                       braid_Real  *ftprior_ptr            /**< output, time value to the left of current time value on fine grid */
+                       );
 
 /**
  * Return the **fine grid** time value to the right of the current time value from
- * the GlobalStatus structure.
+ * the Status structure.
  **/
 braid_Int
-braid_GlobalStatusGetFTstop(braid_GlobalStatus status,                 /**< structure containing current simulation info */
-                            braid_Real        *ftstop_ptr              /**< output, time value to the right of current time value on fine grid */
-                            );
+braid_StatusGetFTstop(braid_Status status,                 /**< structure containing current simulation info */
+                      braid_Real  *ftstop_ptr              /**< output, time value to the right of current time value on fine grid */
+                      );
 
 /**
  * Return XBraid status for the current simulation. Five values are 
@@ -354,26 +314,26 @@ braid_GlobalStatusGetFTstop(braid_GlobalStatus status,                 /**< stru
  *
  * These values are also available through individual Get routines. 
  * These individual routines are the location of detailed documentation on 
- * each parameter, e.g., see *braid_GlobalStatusGetCTprior* for more
+ * each parameter, e.g., see *braid_StatusGetCTprior* for more
  * information on the *c_tprior* value.
  **/
 braid_Int
-braid_GlobalStatusGetTpriorTstop(braid_GlobalStatus status,            /**< structure containing current simulation info */
-                                 braid_Real        *t_ptr,             /**< output, current time */
-                                 braid_Real        *ftprior_ptr,       /**< output, time value to the left of current time value on fine grid */
-                                 braid_Real        *ftstop_ptr,        /**< output, time value to the right of current time value on fine grid */
-                                 braid_Real        *ctprior_ptr,       /**< output, time value to the left of current time value on coarse grid */
-                                 braid_Real        *ctstop_ptr         /**< output, time value to the right of current time value on coarse grid */
-                                 );
+braid_StatusGetTpriorTstop(braid_Status status,            /**< structure containing current simulation info */
+                           braid_Real  *t_ptr,             /**< output, current time */
+                           braid_Real  *ftprior_ptr,       /**< output, time value to the left of current time value on fine grid */
+                           braid_Real  *ftstop_ptr,        /**< output, time value to the right of current time value on fine grid */
+                           braid_Real  *ctprior_ptr,       /**< output, time value to the left of current time value on coarse grid */
+                           braid_Real  *ctstop_ptr         /**< output, time value to the right of current time value on coarse grid */
+                           );
 
 /**
  * Return the time value to the right of the current time value from
- * the GlobalStatus structure.
+ * the Status structure.
  **/
 braid_Int
-braid_GlobalStatusGetTstop(braid_GlobalStatus status,                  /**< structure containing current simulation info */
-                           braid_Real        *tstop_ptr                /**< output, next time value to evolve towards */
-                           );
+braid_StatusGetTstop(braid_Status status,                  /**< structure containing current simulation info */
+                     braid_Real  *tstop_ptr                /**< output, next time value to evolve towards */
+                     );
 
 /**
  * Return XBraid status for the current simulation. Two values are
@@ -381,22 +341,22 @@ braid_GlobalStatusGetTstop(braid_GlobalStatus status,                  /**< stru
  *
  * These values are also available through individual Get routines.
  * These individual routines are the location of detailed documentation on
- * each parameter, e.g., see *braid_GlobalStatusGetTstart* for more information
+ * each parameter, e.g., see *braid_StatusGetTstart* for more information
  * on the *tstart* value.
  **/
 braid_Int
-braid_GlobalStatusGetTstartTstop(braid_GlobalStatus status,            /**< structure containing current simulation info */
-                                 braid_Real        *tstart_ptr,        /**< output, current time */
-                                 braid_Real        *tstop_ptr          /**< output, next time value to evolve towards */
-                                 );
+braid_StatusGetTstartTstop(braid_Status status,            /**< structure containing current simulation info */
+                           braid_Real  *tstart_ptr,        /**< output, current time */
+                           braid_Real  *tstop_ptr          /**< output, next time value to evolve towards */
+                           );
 
 /**
  * Return the current XBraid stopping tolerance
  **/
 braid_Int
-braid_GlobalStatusGetTol(braid_GlobalStatus status,                    /**< structure containing current simulation info */
-                         braid_Real        *tol_ptr                    /**< output, current XBraid stopping tolerance */
-                         );
+braid_StatusGetTol(braid_Status status,                    /**< structure containing current simulation info */
+                   braid_Real  *tol_ptr                    /**< output, current XBraid stopping tolerance */
+                   );
 
 /**
  * Return the current XBraid residual history.  If *nrequest_ptr*
@@ -406,28 +366,28 @@ braid_GlobalStatusGetTol(braid_GlobalStatus status,                    /**< stru
  * returned.
  **/
 braid_Int
-braid_GlobalStatusGetRNorms(braid_GlobalStatus status,                 /**< structure containing current simulation info */
-                            braid_Int         *nrequest_ptr,           /**< input/output, input: number of requested residual norms, output: number actually copied */
-                            braid_Real        *rnorms_ptr              /**< output, XBraid residual norm history, of length *nrequest_ptr* */
-                            );
+braid_StatusGetRNorms(braid_Status status,                 /**< structure containing current simulation info */
+                      braid_Int   *nrequest_ptr,           /**< input/output, input: number of requested residual norms, output: number actually copied */
+                      braid_Real  *rnorms_ptr              /**< output, XBraid residual norm history, of length *nrequest_ptr* */
+                      );
 
 /**
- * Return the previous *old_fine_tolx* set through *braid_GlobalStatusSetOldFineTolx*
+ * Return the previous *old_fine_tolx* set through *braid_StatusSetOldFineTolx*
  * This is used especially by *braid_GetSpatialAccuracy
  **/
 braid_Int
-braid_GlobalStatusGetOldFineTolx(braid_GlobalStatus status,            /**< structure containing current simulation info */
-                                 braid_Real        *old_fine_tolx_ptr  /**< output, previous *old_fine_tolx*, set through *braid_StepStatusSetOldFineTolx* */
-                                 );
+braid_StatusGetOldFineTolx(braid_Status status,            /**< structure containing current simulation info */
+                           braid_Real  *old_fine_tolx_ptr  /**< output, previous *old_fine_tolx*, set through *braid_StepStatusSetOldFineTolx* */
+                           );
 
 /**
- * Set *old_fine_tolx*, available for retrieval through *braid_GlobalStatusGetOldFineTolx*
+ * Set *old_fine_tolx*, available for retrieval through *braid_StatusGetOldFineTolx*
  * This is used especially by *braid_GetSpatialAccuracy
  **/
 braid_Int
-braid_GlobalStatusSetOldFineTolx(braid_GlobalStatus status,            /**< structure containing current simulation info */
-                                 braid_Real         old_fine_tolx      /**< input, the last used fine_tolx */
-                                 );
+braid_StatusSetOldFineTolx(braid_Status status,            /**< structure containing current simulation info */
+                           braid_Real   old_fine_tolx      /**< input, the last used fine_tolx */
+                           );
 
 /**
  * Set *tight_fine_tolx*, boolean variable indicating whether the tightest
@@ -435,9 +395,9 @@ braid_GlobalStatusSetOldFineTolx(braid_GlobalStatus status,            /**< stru
  * must be 1 in order for XBraid to halt (unless maxiter is reached)
  **/
 braid_Int
-braid_GlobalStatusSetTightFineTolx(braid_GlobalStatus status,          /**< structure containing current simulation info */
-                                   braid_Real         tight_fine_tolx  /**< input, boolean indicating whether the tight tolx has been used */
-                                   );
+braid_StatusSetTightFineTolx(braid_Status status,          /**< structure containing current simulation info */
+                             braid_Real   tight_fine_tolx  /**< input, boolean indicating whether the tight tolx has been used */
+                             );
 
 /**
  * Set the rfactor, a desired refinement factor for this interval.  rfactor=1
@@ -445,9 +405,9 @@ braid_GlobalStatusSetTightFineTolx(braid_GlobalStatus status,          /**< stru
  * times. 
  **/
 braid_Int
-braid_GlobalStatusSetRFactor(braid_GlobalStatus status,                /**< structure containing current simulation info */
-                             braid_Real         rfactor                /**< input, user-determined desired rfactor */
-                             );
+braid_StatusSetRFactor(braid_Status status,                /**< structure containing current simulation info */
+                       braid_Real   rfactor                /**< input, user-determined desired rfactor */
+                       );
 
 /**
  * Set the r_space flag. When set = 1, spatial coarsening will be called,
@@ -456,29 +416,29 @@ braid_GlobalStatusSetRFactor(braid_GlobalStatus status,                /**< stru
  * allows for spatial refinment without temporal refinment
  **/
 braid_Int
-braid_GlobalStatusSetRSpace(braid_GlobalStatus status,                 /**< structure containing current simulation info */
-                            braid_Real         r_space
-                            );
+braid_StatusSetRSpace(braid_Status status,                 /**< structure containing current simulation info */
+                      braid_Real   r_space
+                      );
 
 /**
- * Return the current message type from the GlobalStatus structure.
+ * Return the current message type from the Status structure.
  **/
 braid_Int
-braid_GlobalStatusGetMessageType(braid_GlobalStatus status,            /**< structure containing current simulation info */
-                                 braid_Int         *messagetype_ptr    /**< output, type of message, 0: for Step(), 1: for load balancing */
-                                 );
+braid_StatusGetMessageType(braid_Status status,            /**< structure containing current simulation info */
+                           braid_Int   *messagetype_ptr    /**< output, type of message, 0: for Step(), 1: for load balancing */
+                           );
 
 /**
  * Set the size of the buffer. If set by user, the send buffer will
    be "size" bytes in length. If not, BufSize is used.
  **/
 braid_Int
-braid_GlobalStatusSetSize(braid_GlobalStatus status,                   /**< structure containing current simulation info */
-                          braid_Real         size                      /**< input, size of the send buffer */
-                          );
+braid_StatusSetSize(braid_Status status,                   /**< structure containing current simulation info */
+                    braid_Real   size                      /**< input, size of the send buffer */
+                    );
 
 /*--------------------------------------------------------------------------
- * AccessStatus Prototypes: They just wrap the corresponding GlobalStatus accessors
+ * AccessStatus Prototypes: They just wrap the corresponding Status accessors
  *--------------------------------------------------------------------------*/
 
 /**
@@ -510,7 +470,7 @@ ACCESSOR_HEADER_GET1(Access, WrapperTest,     Int)
 ACCESSOR_HEADER_GET1(Access, CallingFunction, Int)
 
 /*--------------------------------------------------------------------------
- * CoarsenRefStatus Prototypes: They just wrap the corresponding GlobalStatus accessors
+ * CoarsenRefStatus Prototypes: They just wrap the corresponding Status accessors
  *--------------------------------------------------------------------------*/
 
 /**
@@ -540,7 +500,7 @@ ACCESSOR_HEADER_GET1(CoarsenRef, FTstop,      Real)
 ACCESSOR_HEADER_GET5(CoarsenRef, TpriorTstop, Real, Real, Real, Real, Real)
 
 /*--------------------------------------------------------------------------
- * StepStatus Prototypes: They just wrap the corresponding GlobalStatus accessors
+ * StepStatus Prototypes: They just wrap the corresponding Status accessors
  *--------------------------------------------------------------------------*/
 
 /**
@@ -574,7 +534,7 @@ ACCESSOR_HEADER_SET1(Step, RFactor,       Real)
 ACCESSOR_HEADER_SET1(Step, RSpace,        Real)
 
 /*--------------------------------------------------------------------------
- * BufferStatus Prototypes: They just wrap the corresponding GlobalStatus accessors
+ * BufferStatus Prototypes: They just wrap the corresponding Status accessors
  *--------------------------------------------------------------------------*/
 
 /**

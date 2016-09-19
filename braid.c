@@ -687,14 +687,10 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, nfmg_Vcyc)       = nfmg_Vcyc;
 
    _braid_CoreElt(core, status)          = _braid_CTAlloc(_braid_Status, 1);
-   _braid_CoreElt(core, astatus)         = _braid_CTAlloc(_braid_AccessStatus, 1);
-   _braid_CoreElt(core, sstatus)         = _braid_CTAlloc(_braid_StepStatus, 1);
-   _braid_CoreElt(core, cstatus)         = _braid_CTAlloc(_braid_CoarsenRefStatus, 1);
-   _braid_CoreElt(core, bstatus)         = _braid_CTAlloc(_braid_BufferStatus, 1);
-   _braid_CoreElt(core, astatus) -> gs   = _braid_CoreElt(core, status);
-   _braid_CoreElt(core, bstatus) -> gs   = _braid_CoreElt(core, status);
-   _braid_CoreElt(core, cstatus) -> gs   = _braid_CoreElt(core, status);
-   _braid_CoreElt(core, sstatus) -> gs   = _braid_CoreElt(core, status);
+   _braid_CoreElt(core, astatus)         = (braid_AccessStatus)(_braid_CoreElt(core, status));
+   _braid_CoreElt(core, sstatus)         = (braid_StepStatus)(_braid_CoreElt(core, status));
+   _braid_CoreElt(core, cstatus)         = (braid_CoarsenRefStatus)(_braid_CoreElt(core, status));
+   _braid_CoreElt(core, bstatus)         = (braid_BufferStatus)(_braid_CoreElt(core, status));
 
    _braid_CoreElt(core, storage)         = -1;            /* only store C-points */
    _braid_CoreElt(core, useshell)         = 0;
@@ -744,10 +740,6 @@ braid_Destroy(braid_Core  core)
       braid_Int               nlevels    = _braid_CoreElt(core, nlevels);
       _braid_Grid           **grids      = _braid_CoreElt(core, grids);
       braid_Status            status     = _braid_CoreElt(core, status);
-      braid_AccessStatus      astatus    = _braid_CoreElt(core, astatus);
-      braid_CoarsenRefStatus  cstatus    = _braid_CoreElt(core, cstatus);
-      braid_StepStatus        sstatus    = _braid_CoreElt(core, sstatus);
-      braid_BufferStatus      bstatus    = _braid_CoreElt(core, bstatus);
       braid_Int               level;
 
       _braid_TFree(_braid_CoreElt(core, nrels));
@@ -756,10 +748,10 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, cfactors));
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
-      _braid_TFree(astatus);
-      _braid_TFree(bstatus);
-      _braid_TFree(cstatus);
-      _braid_TFree(sstatus);
+      _braid_CoreElt(core, astatus)=NULL;
+      _braid_CoreElt(core, bstatus)=NULL;
+      _braid_CoreElt(core, cstatus)=NULL;
+      _braid_CoreElt(core, sstatus)=NULL;
       _braid_StatusDestroy(status);
       
       for (level = 0; level < nlevels; level++)
