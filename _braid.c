@@ -271,9 +271,9 @@ _braid_CommSendInit(braid_Core           core,
       buffer = malloc(size);
       
       /* Note that bufpack may return a size smaller than bufsize */ 
-      _braid_DeriveStatusElt(bstatus, size) = size;
+      _braid_DeriveStatusElt(bstatus, size_buffer) = size;
       _braid_CoreFcn(core, bufpack)(app, vector, buffer, bstatus);
-      size = _braid_DeriveStatusElt( bstatus, size );
+      size = _braid_DeriveStatusElt( bstatus, size_buffer );
 
       num_requests = 1;
       requests = _braid_CTAlloc(MPI_Request, num_requests);
@@ -2565,9 +2565,9 @@ _braid_FRefine(braid_Core   core,
             /* Pack u into buffer, adjust size, and put size into buffer */
             buffer = &bptr[1];
             _braid_CoreFcn(core, bufsize)(app, &size, bstatus);
-            _braid_DeriveStatusElt( bstatus, size ) = size;
+            _braid_DeriveStatusElt( bstatus, size_buffer ) = size;
             _braid_CoreFcn(core, bufpack)(app, send_ua[ii], buffer, bstatus);
-            size = _braid_DeriveStatusElt(bstatus, size);
+            size = _braid_DeriveStatusElt(bstatus, size_buffer);
             _braid_CoreFcn(core, free)(app, send_ua[ii]);
             _braid_NBytesToNReals(size, size);
             bptr[0] = (braid_Int) size; /* insert size at the beginning */

@@ -66,7 +66,7 @@ struct _braid_Status_struct
    braid_Int     r_space;          /**< if set by the user, spatial coarsening function will be called following the vcycle */
    /** Buffer properties */
    braid_Int    messagetype;       /**< message type, 0: for Step(), 1: for load balancing */
-   braid_Int    size;              /**< if set by user, send buffer will be "size" bytes in length */
+   braid_Int    size_buffer;       /**< if set by user, send buffer will be "size" bytes in length */
 };
 
 /**
