@@ -64,37 +64,7 @@ extern "C" {
  * The user does not have access to this structure, but only to the derived Status
  * structures. This class is accessed only inside XBraid code.
  */
-struct _braid_Status_struct
-{
-   /** Common properties */
-   braid_Real    t;                /**< current time */
-   braid_Int     idx;              /**< time point index value corresponding to t on the global time grid */
-   braid_Int     iter;             /**< XBraid iteration number */
-   braid_Int     level;            /**< current level in XBraid*/
-   braid_Int     nrefine;          /**< number of refinements done */
-   braid_Int     gupper;           /**< global size of the fine grid */
-   /** Access properties */
-   braid_Real    rnorm;            /**< residual norm */
-   braid_Int     done;             /**< boolean describing whether XBraid has finished */
-   braid_Int     wrapper_test;     /**< boolean describing whether this call is only a wrapper test */
-   braid_Int     calling_function; /**< from which function are we accessing the vector */
-   /** CoarsenRef properties*/
-   braid_Real    f_tprior;         /**< time value to the left of tstart on fine grid */
-   braid_Real    f_tstop;          /**< time value to the right of tstart  on fine grid */
-   braid_Real    c_tprior;         /**< time value to the left of tstart on coarse grid */
-   braid_Real    c_tstop;          /**< time value to the right of tstart on coarse grid */
-   /** Step properties */
-   braid_Real    tstop;            /**< time value to evolve towards, time value to the right of tstart */
-   braid_Real    tol;              /**< Current stopping tolerance */
-   braid_Real*   rnorms;           /**< residual norm history, (points to Core->rnorms object) */
-   braid_Real    old_fine_tolx;    /**< Allows for storing the previously used fine tolerance from GetSpatialAccuracy */
-   braid_Int     tight_fine_tolx;  /**< Boolean, indicating whether the tightest fine tolx has been used, condition for halting */
-   braid_Int     rfactor;          /**< if set by user, allows for subdivision of this interval for better time accuracy */
-   braid_Int     r_space;          /**< if set by the user, spatial coarsening function will be called following the vcycle */
-   /** Buffer properties */
-   braid_Int    messagetype;       /**< message type, 0: for Step(), 1: for load balancing */
-   braid_Int    size;              /**< if set by user, send buffer will be "size" bytes in length */
-};
+struct _braid_Status_struct;
 typedef struct _braid_Status_struct _braid_Status;
 typedef struct _braid_Status_struct *braid_Status;
 
@@ -103,10 +73,7 @@ typedef struct _braid_Status_struct *braid_Status;
  * on some level during a run.  The user accesses it through
  * _braid_AccessStatusGet**()_ functions. This is just a pointer to the braid_Status
  **/
-typedef struct 
-{
-   _braid_Status status;
-} *braid_AccessStatus;
+typedef struct _braid_AccessStatus_struct *braid_AccessStatus;
 
 /**
  * The user's step routine routine will receive a StepStatus structure, which
@@ -114,10 +81,7 @@ typedef struct
  * during a run.  The user accesses it through _braid_StepStatusGet**()_ functions.
  * This is just a pointer to the braid_Status.
  **/
-typedef struct 
-{
-   _braid_Status status;
-} *braid_StepStatus;
+typedef struct _braid_StepStatus_struct *braid_StepStatus;
 
 /**
  * The user coarsen and refine routines will receive a CoarsenRefStatus structure, which
@@ -125,20 +89,14 @@ typedef struct
  * during a run.  The user accesses it through _braid_CoarsenRefStatusGet**()_ functions.
  * This is just a pointer to the braid_Status.
  **/
-typedef struct 
-{
-   _braid_Status status;
-} *braid_CoarsenRefStatus;
+typedef struct _braid_CoarsenRefStatus_struct *braid_CoarsenRefStatus;
 
 /**
  * The user's bufpack, bufunpack and bufsize routines will receive a BufferStatus structure, which
  * defines the status of XBraid at a given buff (un)pack instance.  The user accesses it
  * through _braid_BufferStatusGet**()_ functions. This is just a pointer to the braid_Status.
  **/
-typedef struct 
-{
-   _braid_Status status;
-} *braid_BufferStatus;
+typedef struct _braid_BufferStatus_struct *braid_BufferStatus;
 
 /*--------------------------------------------------------------------------
  * Accessor macros 

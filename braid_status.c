@@ -27,7 +27,7 @@
  *
  */
 
-#include "braid_status.h"
+#include "_braid_status.h"
 #include "_braid.h"
 #include "braid_defs.h"
 #include "_util.h"
