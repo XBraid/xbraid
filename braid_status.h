@@ -105,7 +105,7 @@ typedef struct _braid_BufferStatus_struct *braid_BufferStatus;
 /**
  * Accessor for _braid_Status attributes
  **/
-#define _braid_StatusElt(status, elt) ( (status) -> elt )
+#define _braid_StatusElt(status, elt) ( ((braid_Core)status) -> elt )
 #define _braid_DeriveStatusElt(xstatus, elt) ( _braid_StatusElt((braid_Status)xstatus,elt))
 
 #define ACCESSOR_HEADER_GET1(stype,param,vtype1) \

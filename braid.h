@@ -41,7 +41,7 @@ typedef int MPI_Comm;
 #endif
 
 #include "braid_defs.h"
-#include "_braid_status.h"
+#include "braid_status.h"
 
 #ifdef __cplusplus
 extern "C" {

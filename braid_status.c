@@ -89,7 +89,7 @@ braid_StatusGetIter(braid_Status status,                   /**< structure contai
                     braid_Int   *iter_ptr                  /**< output, current XBraid iteration number*/
                     )
 {
-   *iter_ptr = _braid_StatusElt(status, iter);
+   *iter_ptr = _braid_StatusElt(status, niter);
    return _braid_error_flag;
 }
 braid_Int
@@ -141,7 +141,7 @@ braid_StatusGetTILD(braid_Status status,                   /**< structure contai
                     )
 {
    *t_ptr = _braid_StatusElt(status, t);
-   *iter_ptr = _braid_StatusElt(status, iter);
+   *iter_ptr = _braid_StatusElt(status, niter);
    *level_ptr = _braid_StatusElt(status, level);
    *done_ptr = _braid_StatusElt(status, done);
    return _braid_error_flag;
@@ -214,7 +214,7 @@ braid_StatusGetTstop(braid_Status status,                  /**< structure contai
                      braid_Real  *tstop_ptr                /**< output, next time value to evolve towards */
                      )
 {
-   *tstop_ptr = _braid_StatusElt(status, tstop);
+   *tstop_ptr = _braid_StatusElt(status, tnext);
    return _braid_error_flag;
 }
 braid_Int
@@ -224,7 +224,7 @@ braid_StatusGetTstartTstop(braid_Status status,            /**< structure contai
                            )
 {
    *tstart_ptr = _braid_StatusElt(status, t);
-   *tstop_ptr = _braid_StatusElt(status, tstop);
+   *tstop_ptr = _braid_StatusElt(status, tnext);
    return _braid_error_flag;
 }
 braid_Int
@@ -242,7 +242,7 @@ braid_StatusGetRNorms(braid_Status status,                 /**< structure contai
                       )
 {
    braid_Real *_rnorms    = _braid_StatusElt(status, rnorms);
-   braid_Int   rnorms_len = _braid_StatusElt(status, iter) + 1;
+   braid_Int   rnorms_len = _braid_StatusElt(status, niter) + 1;
 
    _braid_GetNEntries(_rnorms, rnorms_len, nrequest_ptr, rnorms_ptr);
    return _braid_error_flag;
@@ -328,7 +328,7 @@ _braid_AccessStatusInit(braid_Real           t,
    _braid_DeriveStatusElt(status, gupper)       = gupper;
    _braid_DeriveStatusElt(status, rnorm)        = rnorm;
    _braid_DeriveStatusElt(status, done)         = done;
-   _braid_DeriveStatusElt(status, iter)         = iter;
+   _braid_DeriveStatusElt(status, niter)        = iter;
    _braid_DeriveStatusElt(status, wrapper_test) = wrapper_test;
    _braid_DeriveStatusElt(status, calling_function) = calling_function;
    return _braid_error_flag;
@@ -399,10 +399,10 @@ _braid_StepStatusInit(braid_Real       tstart,
                       braid_StepStatus status)
 {
    _braid_DeriveStatusElt(status, t)         = tstart;
-   _braid_DeriveStatusElt(status, tstop)     = tstop;
+   _braid_DeriveStatusElt(status, tnext)     = tstop;
    _braid_DeriveStatusElt(status, idx)       = idx;
    _braid_DeriveStatusElt(status, tol)       = tol;
-   _braid_DeriveStatusElt(status, iter)      = iter;
+   _braid_DeriveStatusElt(status, niter)     = iter;
    _braid_DeriveStatusElt(status, level)     = level;
    _braid_DeriveStatusElt(status, nrefine)   = nrefine;
    _braid_DeriveStatusElt(status, gupper)    = gupper;

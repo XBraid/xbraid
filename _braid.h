@@ -156,13 +156,6 @@ typedef struct _braid_Core_struct
    braid_Real             full_rnorm0;      /**< (optional) initial full residual norm */
    braid_Real            *full_rnorms;      /**< (optional) full residual norm history */
 
-
-   braid_Status           status;           /**< main status structure, actually containing all the information. The others status contain just a pointer to this status*/
-   braid_AccessStatus     astatus;          /**< status structure passed to user-written Access routine */
-   braid_CoarsenRefStatus cstatus;          /**< status structure passed to user-written coarsen/refine routines */
-   braid_StepStatus       sstatus;          /**< status structure passed to user-written step routines */
-   braid_BufferStatus     bstatus;          /**< status structure passed to user-written buffer routines */
-
    braid_Int              storage;          /**< storage = 0 (C-points), = 1 (all) */
    braid_Int              useshell;         /**< activate the shell structure of vectors */
 
@@ -184,6 +177,29 @@ typedef struct _braid_Core_struct
    braid_Real             localtime;        /**< local wall time for braid_Drive() */
    braid_Real             globaltime;       /**< global wall time for braid_Drive() */
 
+   /**< Missing Status members */
+   /** Common properties */
+   braid_Real    t;                /**< current time */
+   braid_Int     idx;              /**< time point index value corresponding to t on the global time grid */
+   braid_Int     level;            /**< current level in XBraid*/
+   /** Access properties */
+   braid_Real    rnorm;            /**< residual norm */
+   braid_Int     done;             /**< boolean describing whether XBraid has finished */
+   braid_Int     wrapper_test;     /**< boolean describing whether this call is only a wrapper test */
+   braid_Int     calling_function; /**< from which function are we accessing the vector */
+   /** CoarsenRef properties*/
+   braid_Real    f_tprior;         /**< time value to the left of tstart on fine grid */
+   braid_Real    f_tstop;          /**< time value to the right of tstart  on fine grid */
+   braid_Real    c_tprior;         /**< time value to the left of tstart on coarse grid */
+   braid_Real    c_tstop;          /**< time value to the right of tstart on coarse grid */
+   /** Step properties */
+   braid_Real    tnext;            /**< time value to evolve towards, time value to the right of tstart */
+   braid_Real    old_fine_tolx;    /**< Allows for storing the previously used fine tolerance from GetSpatialAccuracy */
+   braid_Int     tight_fine_tolx;  /**< Boolean, indicating whether the tightest fine tolx has been used, condition for halting */
+   braid_Int     rfactor;          /**< if set by user, allows for subdivision of this interval for better time accuracy */
+   /** Buffer properties */
+   braid_Int    messagetype;       /**< message type, 0: for Step(), 1: for load balancing */
+   braid_Int    size_buffer;       /**< if set by user, send buffer will be "size" bytes in length */
 } _braid_Core;
 
 /*--------------------------------------------------------------------------
