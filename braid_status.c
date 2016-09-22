@@ -284,7 +284,8 @@ braid_StatusSetRSpace(braid_Status status,                 /**< structure contai
                       braid_Real   r_space
                       )
 {
-   _braid_StatusElt(status, r_space) = r_space;
+   if ( !_braid_StatusElt(status, r_space) && r_space )
+      _braid_StatusElt(status, r_space) = 1;
    return _braid_error_flag;
 }
 braid_Int

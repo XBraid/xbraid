@@ -971,7 +971,9 @@ _braid_Residual(braid_Core     core,
       _braid_CoreFcn(core, sum)(app, 1.0, ustop, -1.0, r);
       if (level == 0)
       {
+         /*TODO Remove this line after modifing the _braid_StatusSetRFactor to set the rfactor in the array directly */
          rfactors[ii] = _braid_StatusElt(status, rfactor);
+         /* TODO : Remove these two lines, which are now useless since core==status */
          if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
                _braid_CoreElt(core, r_space) = 1;
       }
