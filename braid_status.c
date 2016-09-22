@@ -321,16 +321,16 @@ _braid_AccessStatusInit(braid_Real           t,
                         braid_Int            calling_function,
                         braid_AccessStatus   status)
 {
-   _braid_DeriveStatusElt(status, t)            = t;
-   _braid_DeriveStatusElt(status, idx)          = idx;
-   _braid_DeriveStatusElt(status, level)        = level;
-   _braid_DeriveStatusElt(status, nrefine)      = nrefine;
-   _braid_DeriveStatusElt(status, gupper)       = gupper;
-   _braid_DeriveStatusElt(status, rnorm)        = rnorm;
-   _braid_DeriveStatusElt(status, done)         = done;
-   _braid_DeriveStatusElt(status, niter)        = iter;
-   _braid_DeriveStatusElt(status, wrapper_test) = wrapper_test;
-   _braid_DeriveStatusElt(status, calling_function) = calling_function;
+   _braid_StatusElt(status, t)            = t;
+   _braid_StatusElt(status, idx)          = idx;
+   _braid_StatusElt(status, level)        = level;
+   _braid_StatusElt(status, nrefine)      = nrefine;
+   _braid_StatusElt(status, gupper)       = gupper;
+   _braid_StatusElt(status, rnorm)        = rnorm;
+   _braid_StatusElt(status, done)         = done;
+   _braid_StatusElt(status, niter)        = iter;
+   _braid_StatusElt(status, wrapper_test) = wrapper_test;
+   _braid_StatusElt(status, calling_function) = calling_function;
    return _braid_error_flag;
 }
 ACCESSOR_FUNCTION_GET1(Access, T,               Real)
@@ -360,14 +360,14 @@ _braid_CoarsenRefStatusInit(braid_Real              tstart,
                             braid_Int               gupper,
                             braid_CoarsenRefStatus  status)
 {
-   _braid_DeriveStatusElt(status, t)        = tstart;
-   _braid_DeriveStatusElt(status, f_tprior) = f_tprior;
-   _braid_DeriveStatusElt(status, f_tstop)  = f_tstop;
-   _braid_DeriveStatusElt(status, c_tprior) = c_tprior;
-   _braid_DeriveStatusElt(status, c_tstop)  = c_tstop;
-   _braid_DeriveStatusElt(status, level)    = level;
-   _braid_DeriveStatusElt(status, nrefine)  = nrefine;
-   _braid_DeriveStatusElt(status, gupper)   = gupper;
+   _braid_StatusElt(status, t)        = tstart;
+   _braid_StatusElt(status, f_tprior) = f_tprior;
+   _braid_StatusElt(status, f_tstop)  = f_tstop;
+   _braid_StatusElt(status, c_tprior) = c_tprior;
+   _braid_StatusElt(status, c_tstop)  = c_tstop;
+   _braid_StatusElt(status, level)    = level;
+   _braid_StatusElt(status, nrefine)  = nrefine;
+   _braid_StatusElt(status, gupper)   = gupper;
 
    return _braid_error_flag;
 }
@@ -398,16 +398,16 @@ _braid_StepStatusInit(braid_Real       tstart,
                       braid_Int        gupper,
                       braid_StepStatus status)
 {
-   _braid_DeriveStatusElt(status, t)         = tstart;
-   _braid_DeriveStatusElt(status, tnext)     = tstop;
-   _braid_DeriveStatusElt(status, idx)       = idx;
-   _braid_DeriveStatusElt(status, tol)       = tol;
-   _braid_DeriveStatusElt(status, niter)     = iter;
-   _braid_DeriveStatusElt(status, level)     = level;
-   _braid_DeriveStatusElt(status, nrefine)   = nrefine;
-   _braid_DeriveStatusElt(status, gupper)    = gupper;
-   _braid_DeriveStatusElt(status, rfactor)   = 1;
-   _braid_DeriveStatusElt(status, r_space)   = 0;
+   _braid_StatusElt(status, t)         = tstart;
+   _braid_StatusElt(status, tnext)     = tstop;
+   _braid_StatusElt(status, idx)       = idx;
+   _braid_StatusElt(status, tol)       = tol;
+   _braid_StatusElt(status, niter)     = iter;
+   _braid_StatusElt(status, level)     = level;
+   _braid_StatusElt(status, nrefine)   = nrefine;
+   _braid_StatusElt(status, gupper)    = gupper;
+   _braid_StatusElt(status, rfactor)   = 1;
+   _braid_StatusElt(status, r_space)   = 0;
 
    return _braid_error_flag;
 }
@@ -436,8 +436,8 @@ _braid_BufferStatusInit(braid_Int        messagetype,
                         braid_Int        size,
                         braid_BufferStatus status)
 {
-   _braid_DeriveStatusElt(status, messagetype)    = messagetype;
-   _braid_DeriveStatusElt(status, size_buffer)    = size;
+   _braid_StatusElt(status, messagetype)    = messagetype;
+   _braid_StatusElt(status, size_buffer)    = size;
    return _braid_error_flag;
 }
 ACCESSOR_FUNCTION_GET1(Buffer, MessageType, Int)

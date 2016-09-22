@@ -42,6 +42,7 @@ struct _braid_Status_struct
 {
    _braid_Core core;
 };
+typedef struct _braid_Status_struct _braid_Status;
 
 /**
  * AccessStatus structure which defines the status of XBraid at a given instant

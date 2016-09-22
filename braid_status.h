@@ -65,7 +65,6 @@ extern "C" {
  * structures. This class is accessed only inside XBraid code.
  */
 struct _braid_Status_struct;
-typedef struct _braid_Status_struct _braid_Status;
 typedef struct _braid_Status_struct *braid_Status;
 
 /**
@@ -106,7 +105,6 @@ typedef struct _braid_BufferStatus_struct *braid_BufferStatus;
  * Accessor for _braid_Status attributes
  **/
 #define _braid_StatusElt(status, elt) ( ((braid_Core)status) -> elt )
-#define _braid_DeriveStatusElt(xstatus, elt) ( _braid_StatusElt((braid_Status)xstatus,elt))
 
 #define ACCESSOR_HEADER_GET1(stype,param,vtype1) \
   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1);

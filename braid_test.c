@@ -424,7 +424,7 @@ braid_TestBuf( braid_App              app,
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   buffer = bufpack(u, buffer))\n");
    
-   _braid_DeriveStatusElt( bstatus, size_buffer ) = size;
+   _braid_StatusElt( bstatus, size_buffer ) = size;
    bufpack(app, u, buffer, bstatus);
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   v = bufunpack(buffer)\n");

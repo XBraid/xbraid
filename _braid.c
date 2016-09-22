@@ -271,9 +271,9 @@ _braid_CommSendInit(braid_Core           core,
       buffer = malloc(size);
       
       /* Note that bufpack may return a size smaller than bufsize */ 
-      _braid_DeriveStatusElt(bstatus, size_buffer) = size;
+      _braid_StatusElt(bstatus, size_buffer) = size;
       _braid_CoreFcn(core, bufpack)(app, vector, buffer, bstatus);
-      size = _braid_DeriveStatusElt( bstatus, size_buffer );
+      size = _braid_StatusElt( bstatus, size_buffer );
 
       num_requests = 1;
       requests = _braid_CTAlloc(MPI_Request, num_requests);
@@ -913,8 +913,8 @@ _braid_Step(braid_Core     core,
    if (level == 0)
    {
       _braid_CoreFcn(core, step)(app, ustop, NULL, u, status);
-      rfactors[ii] = _braid_DeriveStatusElt(status, rfactor);
-      if ( !_braid_CoreElt(core, r_space) && _braid_DeriveStatusElt(status, r_space) )
+      rfactors[ii] = _braid_StatusElt(status, rfactor);
+      if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
             _braid_CoreElt(core, r_space) = 1;
    }     
    else
@@ -971,8 +971,8 @@ _braid_Residual(braid_Core     core,
       _braid_CoreFcn(core, sum)(app, 1.0, ustop, -1.0, r);
       if (level == 0)
       {
-         rfactors[ii] = _braid_DeriveStatusElt(status, rfactor);
-         if ( !_braid_CoreElt(core, r_space) && _braid_DeriveStatusElt(status, r_space) )
+         rfactors[ii] = _braid_StatusElt(status, rfactor);
+         if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
                _braid_CoreElt(core, r_space) = 1;
       }
    }
@@ -2565,9 +2565,9 @@ _braid_FRefine(braid_Core   core,
             /* Pack u into buffer, adjust size, and put size into buffer */
             buffer = &bptr[1];
             _braid_CoreFcn(core, bufsize)(app, &size, bstatus);
-            _braid_DeriveStatusElt( bstatus, size_buffer ) = size;
+            _braid_StatusElt( bstatus, size_buffer ) = size;
             _braid_CoreFcn(core, bufpack)(app, send_ua[ii], buffer, bstatus);
-            size = _braid_DeriveStatusElt(bstatus, size_buffer);
+            size = _braid_StatusElt(bstatus, size_buffer);
             _braid_CoreFcn(core, free)(app, send_ua[ii]);
             _braid_NBytesToNReals(size, size);
             bptr[0] = (braid_Int) size; /* insert size at the beginning */
