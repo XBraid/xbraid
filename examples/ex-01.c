@@ -126,9 +126,9 @@ my_Step(braid_App        app,
 {
    double tstart;             /* current time */
    double tstop;              /* evolve to this time*/
-   int    istop;              /* time point index value corresponding to tstop on (global) fine grid */
+   int    istart;              /* time point index value corresponding to tstop on (global) fine grid */
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
-   braid_StepStatusGetIstop(status, &istop);
+   braid_StepStatusGetTIndex(status, &istart);
 
    /* On the finest grid, each value is half the previous value */
    (u->value) = pow(0.5, tstop-tstart)*(u->value);
@@ -302,7 +302,7 @@ my_Access(braid_App          app,
    char       filename[255];
    FILE      *file;
    
-   braid_AccessStatusGetIstop(astatus, &index);
+   braid_AccessStatusGetTIndex(astatus, &index);
 
    sprintf(filename, "%s.%07d.%05d", "ex-01.out", index, app->rank);
    file = fopen(filename, "w");
