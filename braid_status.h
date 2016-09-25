@@ -23,8 +23,8 @@
  
 
 /** \file braid_status.h
- * \brief Define headers for XBraid status structures, status get/set routines
- * and status create/destroy routines.
+ * \brief Define headers for XBraid status structures and headers for the user 
+ * functions allowing the user to get/set status structure values. 
  *
  */
 
@@ -38,74 +38,10 @@ extern "C" {
 #endif
 
 /*--------------------------------------------------------------------------
- * Routines for user to access XBraid status structures
+ * These accessor macros allow for a "generic" braid_StatusGet function to be
+ * used by all the various Status structures, e.g., StepStatus and AccessStatus
  *--------------------------------------------------------------------------*/
-
-/** \defgroup braidstatus XBraid status routines
- *  \ingroup userinterface
- *  
- *  XBraid status structures are what tell the user the status of the simulation
- *  when their routines (step, coarsen/refine, access) are called. 
- *
- *  @{
- */
-
-
-/*----------------------------------------------------------------------------------
- * Define Status Structure. All other status only contains a pointer to this struct
- *----------------------------------------------------------------------------------*/
-
-#define braid_ASCaller_FInterp   0
-#define braid_ASCaller_FRestrict 1
-#define braid_ASCaller_FRefine   2
-#define braid_ASCaller_FAccess   3
-/**
- * This is the main Status structure, that contains the properties of all the status.
- * The user does not have access to this structure, but only to the derived Status
- * structures. This class is accessed only inside XBraid code.
- */
-struct _braid_Status_struct;
-typedef struct _braid_Status_struct *braid_Status;
-
-/**
- * AccessStatus structure which defines the status of XBraid at a given instant
- * on some level during a run.  The user accesses it through
- * _braid_AccessStatusGet**()_ functions. This is just a pointer to the braid_Status
- **/
-typedef struct _braid_AccessStatus_struct *braid_AccessStatus;
-
-/**
- * The user's step routine routine will receive a StepStatus structure, which
- * defines the status of XBraid at the given instant for step evaluation on some level
- * during a run.  The user accesses it through _braid_StepStatusGet**()_ functions.
- * This is just a pointer to the braid_Status.
- **/
-typedef struct _braid_StepStatus_struct *braid_StepStatus;
-
-/**
- * The user coarsen and refine routines will receive a CoarsenRefStatus structure, which
- * defines the status of XBraid at a given instant of coarsening or refinement on some level
- * during a run.  The user accesses it through _braid_CoarsenRefStatusGet**()_ functions.
- * This is just a pointer to the braid_Status.
- **/
-typedef struct _braid_CoarsenRefStatus_struct *braid_CoarsenRefStatus;
-
-/**
- * The user's bufpack, bufunpack and bufsize routines will receive a BufferStatus structure, which
- * defines the status of XBraid at a given buff (un)pack instance.  The user accesses it
- * through _braid_BufferStatusGet**()_ functions. This is just a pointer to the braid_Status.
- **/
-typedef struct _braid_BufferStatus_struct *braid_BufferStatus;
-
-/*--------------------------------------------------------------------------
- * Accessor macros 
- *--------------------------------------------------------------------------*/
-
-/**
- * Accessor for _braid_Status attributes
- **/
-#define _braid_StatusElt(status, elt) ( ((braid_Core)status) -> elt )
-
+/** Macros allowing for auto-generation of `inherited' StatusGet functions */
 #define ACCESSOR_HEADER_GET1(stype,param,vtype1) \
   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1);
 #define ACCESSOR_HEADER_GET2(stype,param,vtype1,vtype2) \
@@ -117,9 +53,73 @@ typedef struct _braid_BufferStatus_struct *braid_BufferStatus;
 #define ACCESSOR_HEADER_SET1(stype,param,vtype1) \
   braid_Int braid_##stype##StatusSet##param(braid_##stype##Status s, braid_##vtype1 v1);
 
-braid_Int
-_braid_StatusDestroy(braid_Status status);
+/*----------------------------------------------------------------------------------
+ * Define Status Structure. The `base' class is braid_Status, and all the other
+ * status structures derive from this class.
+ *----------------------------------------------------------------------------------*/
+/** \defgroup braidstatusstruct XBraid status structures 
+ *  \ingroup userinterface
+ *  
+ *  Define the different status types.
+ *
+ *  @{
+ */
 
+struct _braid_Status_struct;
+/**
+ * This is the main Status structure, that contains the properties of all the status.
+ * The user does not have access to this structure, but only to the derived Status
+ * structures. This class is accessed only inside XBraid code.
+ */
+typedef struct _braid_Status_struct *braid_Status;
+
+
+/**
+ * AccessStatus structure which defines the status of XBraid at a given instant
+ * on some level during a run.  The user accesses it through
+ * _braid_AccessStatusGet**()_ functions. This is just a pointer to the braid_Status.
+ */
+typedef struct _braid_AccessStatus_struct *braid_AccessStatus;
+
+/**
+ * The user's step routine routine will receive a StepStatus structure, which
+ * defines the status of XBraid at the given instant for step evaluation on some level
+ * during a run.  The user accesses it through _braid_StepStatusGet**()_ functions.
+ * This is just a pointer to the braid_Status.
+ */
+typedef struct _braid_StepStatus_struct *braid_StepStatus;
+
+/**
+ * The user coarsen and refine routines will receive a CoarsenRefStatus structure, which
+ * defines the status of XBraid at a given instant of coarsening or refinement on some level
+ * during a run.  The user accesses it through _braid_CoarsenRefStatusGet**()_ functions.
+ * This is just a pointer to the braid_Status.
+ */
+typedef struct _braid_CoarsenRefStatus_struct *braid_CoarsenRefStatus;
+
+/**
+ * The user's bufpack, bufunpack and bufsize routines will receive a BufferStatus structure, which
+ * defines the status of XBraid at a given buff (un)pack instance.  The user accesses it
+ * through _braid_BufferStatusGet**()_ functions. This is just a pointer to the braid_Status.
+ */
+typedef struct _braid_BufferStatus_struct *braid_BufferStatus;
+
+/** @}*/
+
+
+/*--------------------------------------------------------------------------
+ * Routines for user to access XBraid status structures
+ *--------------------------------------------------------------------------*/
+
+/** \defgroup braidstatusroutines XBraid status routines
+ *  \ingroup userinterface
+ *  
+ *  XBraid status structures and associated Get/Set routines are what tell 
+ *  the user the status of the simulation  when their routines (step, 
+ *  coarsen/refine, access) are called. 
+ *
+ *  @{
+ */
 
 /*--------------------------------------------------------------------------
  * Global Status Prototypes
@@ -373,7 +373,7 @@ braid_StatusSetRFactor(braid_Status status,                /**< structure contai
  **/
 braid_Int
 braid_StatusSetRSpace(braid_Status status,                 /**< structure containing current simulation info */
-                      braid_Real   r_space
+                      braid_Real   r_space                 /**< input, if 1, call spatial refinement on finest grid after this iter */
                       );
 
 /**
@@ -392,27 +392,28 @@ braid_Int
 braid_StatusSetSize(braid_Status status,                   /**< structure containing current simulation info */
                     braid_Real   size                      /**< input, size of the send buffer */
                     );
+/** @}*/
+
+
+/*--------------------------------------------------------------------------
+ * Begin definition of `inherited' Get/Set functions from the base class, 
+ * use macros to accomplish this
+ *--------------------------------------------------------------------------*/
+/** \defgroup braidstatusroutinesinherited Inherited XBraid status routines
+ *  \ingroup userinterface
+ *  
+ *  These are the `inherited' Status Get/Set functions.  See the 
+ *  *XBraid status routines* section for the description of each function.
+ *  For example, for braid_StepStatusGetT(...), you would look up 
+ *  braid_StatusGetT(...)
+ *
+ *  @{
+ */
 
 /*--------------------------------------------------------------------------
  * AccessStatus Prototypes: They just wrap the corresponding Status accessors
  *--------------------------------------------------------------------------*/
 
-/**
- * Initialize a braid_AccessStatus structure
- **/
-braid_Int
-_braid_AccessStatusInit(braid_Real          t,                /**< current time */
-                        braid_Int           idx,              /**< time point index value corresponding to t on the global time grid */
-                        braid_Real          rnorm,            /**< current residual norm in XBraid */
-                        braid_Int           iter,             /**< current iteration in XBraid*/
-                        braid_Int           level,            /**< current level in XBraid */
-                        braid_Int           nrefine,          /**< number of refinements done */
-                        braid_Int           gupper,           /**< global size of the fine grid */
-                        braid_Int           done,             /**< boolean describing whether XBraid has finished */
-                        braid_Int           wrapper_test,     /**< boolean describing whether this call is only a wrapper test */
-                        braid_Int           calling_function, /**< from which function are we accessing the vector */
-                        braid_AccessStatus  status            /**< structure to initialize */
-                        );
 ACCESSOR_HEADER_GET1(Access, T,               Real)
 ACCESSOR_HEADER_GET1(Access, TIndex,          Int)
 ACCESSOR_HEADER_GET1(Access, Iter,            Int)
@@ -429,20 +430,6 @@ ACCESSOR_HEADER_GET1(Access, CallingFunction, Int)
  * CoarsenRefStatus Prototypes: They just wrap the corresponding Status accessors
  *--------------------------------------------------------------------------*/
 
-/**
- * Initialize a braid_CoarsenRefStatus structure
- **/
-braid_Int
-_braid_CoarsenRefStatusInit(braid_Real              tstart,      /**< time value for current vector */
-                            braid_Real              f_tprior,    /**< time value to the left of tstart on fine grid */
-                            braid_Real              f_tstop,     /**< time value to the right of tstart on fine grid */
-                            braid_Real              c_tprior,    /**< time value to the left of tstart on coarse grid */
-                            braid_Real              c_tstop,     /**< time value to the right of tstart on coarse grid */
-                            braid_Int               level,       /**< current fine level in XBraid */
-                            braid_Int               nrefine,     /**< number of refinements done */
-                            braid_Int               gupper,      /**< global size of the fine grid */
-                            braid_CoarsenRefStatus  status       /**< structure to initialize */
-                            );
 ACCESSOR_HEADER_GET1(CoarsenRef, T,           Real)
 ACCESSOR_HEADER_GET1(CoarsenRef, TIndex,      Int)
 ACCESSOR_HEADER_GET1(CoarsenRef, Iter,        Int)
@@ -459,20 +446,6 @@ ACCESSOR_HEADER_GET5(CoarsenRef, TpriorTstop, Real, Real, Real, Real, Real)
  * StepStatus Prototypes: They just wrap the corresponding Status accessors
  *--------------------------------------------------------------------------*/
 
-/**
- * Initialize a braid_StepStatus structure
- **/
-braid_Int
-_braid_StepStatusInit(braid_Real        tstart,      /**< current time value  */
-                      braid_Real        tstop,       /**< time value to evolve towards, time value to the right of tstart */
-                      braid_Int         idx,         /**< time point index value corresponding to tstart on the global time grid */
-                      braid_Real        tol,         /**< Current XBraid stopping tolerance */
-                      braid_Int         iter,        /**< Current XBraid iteration (also equal to length of rnorms) */
-                      braid_Int         level,       /**< current level in XBraid */
-                      braid_Int         nrefine,     /**< number of refinements done */
-                      braid_Int         gupper,      /**< global size of the fine grid */
-                      braid_StepStatus  status       /**< structure to initialize */
-                      );
 ACCESSOR_HEADER_GET1(Step, T,             Real)
 ACCESSOR_HEADER_GET1(Step, TIndex,        Int)
 ACCESSOR_HEADER_GET1(Step, Iter,          Int)
@@ -493,19 +466,33 @@ ACCESSOR_HEADER_SET1(Step, RSpace,        Real)
  * BufferStatus Prototypes: They just wrap the corresponding Status accessors
  *--------------------------------------------------------------------------*/
 
-/**
- * Initialize a braid_BufferStatus structure 
- **/
-braid_Int
-_braid_BufferStatusInit(braid_Int           messagetype,  /**< message type, 0: for Step(), 1: for load balancing */
-                        braid_Int           size,         /**< if set by user, size of send buffer is "size" bytes */
-                        braid_BufferStatus  status        /**< structure to initialize */
-                        );
 ACCESSOR_HEADER_GET1(Buffer, MessageType, Int)
 ACCESSOR_HEADER_SET1(Buffer, Size,        Real)
 
+/** @}*/
+
+
+/*--------------------------------------------------------------------------
+ * Macros 
+ *--------------------------------------------------------------------------*/
+/** \defgroup braidstatusmacros XBraid status macros
+ *  \ingroup userinterface
+ * Macros defining Status values that the user can obtain during runtime, which will
+ * tell the user where in Braid the current cycle is, e.g. in the FInterp function.
+ *  @{
+ */
+
+/** When CallingFunction equals 0, Braid is in FInterp */
+#define braid_ASCaller_FInterp   0
+/** When CallingFunction equals 0, Braid is in FRestrict */
+#define braid_ASCaller_FRestrict 1
+/** When CallingFunction equals 0, Braid is in FRefine */
+#define braid_ASCaller_FRefine   2
+/** When CallingFunction equals 0, Braid is in FAccess */
+#define braid_ASCaller_FAccess   3
 
 /** @}*/
+
 
 #ifdef __cplusplus
 }

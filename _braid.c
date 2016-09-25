@@ -29,6 +29,7 @@
 #include "_braid.h"
 #include "braid_defs.h"
 #include "_util.h"
+#include "_braid_status.h"
 
 #define DEBUG 0
 

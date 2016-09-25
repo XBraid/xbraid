@@ -240,7 +240,7 @@ subroutine braid_Access_F90(app, u, astatus)
    character(len=21) :: val_string
    
    call braid_access_status_get_tild_f90(astatus, t, iter, level, done)
-   call braid_access_status_get_istop_f90(astatus, step)
+   call braid_access_status_get_tindex_f90(astatus, step)
 
    ! Print my rank 
    call mpi_comm_size(app%comm, numprocs, ierr)

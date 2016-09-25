@@ -23,9 +23,8 @@
  
 
 /** \file _braid_status.h
- * \brief Define headers for XBraid status structures, status get/set routines
- * and status create/destroy routines.
- *
+ * \brief Define the internals of the XBraid status structures and internal 
+ * status structure functions, like destroy. 
  */
 
 #ifndef _braid_status_HEADER
@@ -38,54 +37,105 @@
 extern "C" {
 #endif
 
+
+/*--------------------------------------------------------------------------
+ * Define base Status structure as a pointer to core, and all other derived
+ * Status structures as pointers to the base class.  
+ *
+ * See braid_status.h for a description of each Status structure.
+ *--------------------------------------------------------------------------*/
+
 struct _braid_Status_struct
 {
    _braid_Core core;
 };
 typedef struct _braid_Status_struct _braid_Status;
 
-/**
- * AccessStatus structure which defines the status of XBraid at a given instant
- * on some level during a run.  The user accesses it through
- * _braid_AccessStatusGet**()_ functions. This is just a pointer to the braid_Status
- **/
 struct _braid_AccessStatus_struct
 {
    _braid_Status status;
 };
 
-/**
- * The user's step routine routine will receive a StepStatus structure, which
- * defines the status of XBraid at the given instant for step evaluation on some level
- * during a run.  The user accesses it through _braid_StepStatusGet**()_ functions.
- * This is just a pointer to the braid_Status.
- **/
 struct _braid_StepStatus_struct
 {
    _braid_Status status;
 };
 
-/**
- * The user coarsen and refine routines will receive a CoarsenRefStatus structure, which
- * defines the status of XBraid at a given instant of coarsening or refinement on some level
- * during a run.  The user accesses it through _braid_CoarsenRefStatusGet**()_ functions.
- * This is just a pointer to the braid_Status.
- **/
 struct _braid_CoarsenRefStatus_struct
 {
    _braid_Status status;
 };
 
-/**
- * The user's bufpack, bufunpack and bufsize routines will receive a BufferStatus structure, which
- * defines the status of XBraid at a given buff (un)pack instance.  The user accesses it
- * through _braid_BufferStatusGet**()_ functions. This is just a pointer to the braid_Status.
- **/
 struct _braid_BufferStatus_struct
 {
    _braid_Status status;
 };
 
+
+/*--------------------------------------------------------------------------
+ * Begin headers for internal Braid Status functions, like Destroy, and StatusInit
+ *--------------------------------------------------------------------------*/
+
+#define _braid_StatusElt(status, elt) ( ((braid_Core)status) -> elt )
+
+braid_Int
+_braid_StatusDestroy(braid_Status status);
+
+/**
+ * Initialize a braid_AccessStatus structure
+ */
+braid_Int
+_braid_AccessStatusInit(braid_Real          t,                /**< current time */
+                        braid_Int           idx,              /**< time point index value corresponding to t on the global time grid */
+                        braid_Real          rnorm,            /**< current residual norm in XBraid */
+                        braid_Int           iter,             /**< current iteration in XBraid*/
+                        braid_Int           level,            /**< current level in XBraid */
+                        braid_Int           nrefine,          /**< number of refinements done */
+                        braid_Int           gupper,           /**< global size of the fine grid */
+                        braid_Int           done,             /**< boolean describing whether XBraid has finished */
+                        braid_Int           wrapper_test,     /**< boolean describing whether this call is only a wrapper test */
+                        braid_Int           calling_function, /**< from which function are we accessing the vector */
+                        braid_AccessStatus  status            /**< structure to initialize */
+                        );
+
+/**
+ * Initialize a braid_CoarsenRefStatus structure
+ */
+braid_Int
+_braid_CoarsenRefStatusInit(braid_Real              tstart,      /**< time value for current vector */
+                            braid_Real              f_tprior,    /**< time value to the left of tstart on fine grid */
+                            braid_Real              f_tstop,     /**< time value to the right of tstart on fine grid */
+                            braid_Real              c_tprior,    /**< time value to the left of tstart on coarse grid */
+                            braid_Real              c_tstop,     /**< time value to the right of tstart on coarse grid */
+                            braid_Int               level,       /**< current fine level in XBraid */
+                            braid_Int               nrefine,     /**< number of refinements done */
+                            braid_Int               gupper,      /**< global size of the fine grid */
+                            braid_CoarsenRefStatus  status       /**< structure to initialize */
+                            );
+
+/**
+ * Initialize a braid_StepStatus structure
+ */
+braid_Int
+_braid_StepStatusInit(braid_Real        tstart,      /**< current time value  */
+                      braid_Real        tstop,       /**< time value to evolve towards, time value to the right of tstart */
+                      braid_Int         idx,         /**< time point index value corresponding to tstart on the global time grid */
+                      braid_Real        tol,         /**< Current XBraid stopping tolerance */
+                      braid_Int         iter,        /**< Current XBraid iteration (also equal to length of rnorms) */
+                      braid_Int         level,       /**< current level in XBraid */
+                      braid_Int         nrefine,     /**< number of refinements done */
+                      braid_Int         gupper,      /**< global size of the fine grid */
+                      braid_StepStatus  status       /**< structure to initialize */
+                      );
+
+/**
+ * Initialize a braid_BufferStatus structure 
+ */
+braid_Int
+_braid_BufferStatusInit(braid_Int           messagetype,  /**< message type, 0: for Step(), 1: for load balancing */
+                        braid_Int           size,         /**< if set by user, size of send buffer is "size" bytes */
+                        braid_BufferStatus  status        /**< structure to initialize */
+                        );
 
 #ifdef __cplusplus
 }

@@ -20,7 +20,7 @@
  * Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  ***********************************************************************EHEADER*/
- 
+
 /** \file braid.h
  * \brief Define headers for user interface routines.
  *
@@ -47,23 +47,44 @@ typedef int MPI_Comm;
 extern "C" {
 #endif
 
-/** Turn on Fortran 90 interface options manually */
+/*--------------------------------------------------------------------------
+ * F90 Interface 
+ *--------------------------------------------------------------------------*/
+/** \defgroup fortraninterface Fortran 90 interface options 
+ *
+ * Allows user to manually, at compile-time, turn on Fortran 90 interface options
+ *
+ * @{
+ */
+
+/** Define Fortran name-mangling schema, there are four supported options, see braid_F90_iface.c */
 #define braid_FMANGLE 1
+/** Turn on the optional user-defined spatial coarsening and refinement functions */ 
 #define braid_Fortran_SpatialCoarsen 0
+/** Turn on the optional user-defined residual function */ 
 #define braid_Fortran_Residual 0
+/** Turn on the optional user-defined time-grid function */ 
 #define braid_Fortran_TimeGrid 1
 
-/** Value used to represent an invalid residual norm */
-#define braid_INVALID_RNORM -1
+/** @} */
+
 
 /*--------------------------------------------------------------------------
- * Error codes
+ * Error Codes 
  *--------------------------------------------------------------------------*/
+/** \defgroup errorcodes Error Codes
+ *
+ * @{
+ */
+
+/** Value used to represent an invalid residual norm */
+#define braid_INVALID_RNORM -1 
 
 #define braid_ERROR_GENERIC         1   /* generic error */
 #define braid_ERROR_MEMORY          2   /* unable to allocate memory */
 #define braid_ERROR_ARG             4   /* argument error */
 /* bits 4-8 are reserved for the index of the argument error */
+/** @} */
 
 /*--------------------------------------------------------------------------
  * User-written routines

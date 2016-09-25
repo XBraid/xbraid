@@ -1055,7 +1055,7 @@ braid_F90_Name(braid_set_residual_f90, BRAID_SET_RESIDUAL_F90)(
                    )
 {
    braid_SetResidual(braid_TakeF90_ObjDeref(braid_Core,  core) ,
-                     braid_F90_Name(braid_residual_f90,  BRAID_RESIDUAL_F90) );
+                    (braid_PtFcnResidual) braid_F90_Name(braid_residual_f90,  BRAID_RESIDUAL_F90) );
    return 0;
 }
 
@@ -1070,7 +1070,7 @@ braid_F90_Name(braid_set_timegrid_f90, BRAID_SET_TIMEGRID_F90)(
                    )
 {
    braid_SetTimeGrid(braid_TakeF90_ObjDeref(braid_Core,  core) ,
-                     braid_F90_Name(braid_timegrid_f90, BRAID_TIMEGRID_F90) );
+                     (braid_PtFcnTimeGrid) braid_F90_Name(braid_timegrid_f90, BRAID_TIMEGRID_F90) );
    return 0;
 }
 
@@ -1085,7 +1085,7 @@ braid_F90_Name(braid_set_spatial_coarsen_f90, BRAID_SET_SPATIAL_COARSEN_F90)(
                    )
 {
    braid_SetSpatialCoarsen(braid_TakeF90_ObjDeref(braid_Core,  core) ,
-                           braid_F90_Name(braid_coarsen_f90,   BRAID_COARSEN_F90) );
+                          (braid_PtFcnSCoarsen) braid_F90_Name(braid_coarsen_f90,   BRAID_COARSEN_F90) );
    return 0;
 }
 
@@ -1096,7 +1096,7 @@ braid_F90_Name(braid_set_spatial_refine_f90, BRAID_SET_SPATIAL_REFINE_F90)(
                    )
 {
    braid_SetSpatialRefine(braid_TakeF90_ObjDeref(braid_Core,  core) ,
-                          braid_F90_Name(braid_refine_f90,    BRAID_REFINE_F90) );
+                          (braid_PtFcnSRefine) braid_F90_Name(braid_refine_f90,    BRAID_REFINE_F90) );
    return 0;
 }
 
