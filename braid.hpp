@@ -51,41 +51,80 @@ public:
 
    virtual ~BraidApp() { }
 
-   virtual braid_Int Step(braid_Vector    _u,
-                         braid_Vector    _ustop,
-                         braid_Vector    _fstop,
-                         BraidStepStatus &pstatus) = 0;
+   /** @brief Apply the time stepping routine to the input vector @a u_
+       corresponding to time @a tstart, and return in the same vector @a u_ the
+       computed result for time @a tstop. The values of @a tstart and @a tstop
+       can be obtained from @a pstatus.
 
-   virtual braid_Int Residual(braid_Vector _u,
-                              braid_Vector _r,
+       @param[in,out] u_ Input: approximate solution at time @a tstart.
+                         Output: computed solution at time @a tstop.
+       @param[in] ustop_ Previous approximate solution at @a tstop?
+       @param[in] fstop_ Additional source at time @a tstop. May be set to NULL,
+                         indicating no additional source.
+
+       @see braid_PtFcnStep. */
+   virtual braid_Int Step(braid_Vector     u_,
+                          braid_Vector     ustop_,
+                          braid_Vector     fstop_,
+                          BraidStepStatus &pstatus) = 0;
+
+   /** @brief Compute the residual at time @a tstop, given the approximate
+       solutions at @a tstart and @a tstop. The values of @a tstart and @a tstop
+       can be obtained from @a pstatus.
+
+       @param[in]     u_ Input: approximate solution at time @a tstop.
+       @param[in,out] r_ Input: approximate solution at time @a tstart.
+                         Output: residual at time @a tstop.
+
+       @see braid_PtFcnResidual.
+   */
+   virtual braid_Int Residual(braid_Vector     u_,
+                              braid_Vector     r_,
                               BraidStepStatus &pstatus) = 0;
 
-   virtual braid_Int Clone(braid_Vector  _u,
+   /// Allocate a new vector in @a *v_ptr, which is a deep copy of @a u_.
+   /// @see braid_PtFcnClone.
+   virtual braid_Int Clone(braid_Vector  u_,
                            braid_Vector *v_ptr) = 0;
 
+   /** @brief Allocate a new vector in @a *u_ptr and initialize it with an
+       initial guess appropriate for time @a t. If @a t is the starting time,
+       this method should set @a *u_ptr to the initial value vector of the ODE
+       problem.
+       @see braid_PtFcnInit. */
    virtual braid_Int Init(braid_Real    t,
                           braid_Vector *u_ptr) = 0;
 
-   virtual braid_Int Free(braid_Vector _u) = 0;
+   /// De-allocate the vector @a u_.
+   /// @see braid_PtFcnFree.
+   virtual braid_Int Free(braid_Vector u_) = 0;
 
+   /// Perform the operation: @a y_ = @a alpha * @a x_ + @a beta * @a y_.
+   /// @see braid_PtFcnSum.
    virtual braid_Int Sum(braid_Real   alpha,
-                         braid_Vector _x,
+                         braid_Vector x_,
                          braid_Real   beta,
-                         braid_Vector _y) = 0;
+                         braid_Vector y_) = 0;
 
-   virtual braid_Int SpatialNorm(braid_Vector  _u,
+   /// Compute in @a *norm_ptr an appropriate spatial norm of @a u_.
+   /// @see braid_PtFcnSpatialNorm.
+   virtual braid_Int SpatialNorm(braid_Vector  u_,
                                  braid_Real   *norm_ptr) = 0;
 
-   virtual braid_Int Access(braid_Vector       _u,
+   /// @see braid_PtFcnAccess.
+   virtual braid_Int Access(braid_Vector       u_,
                             BraidAccessStatus &astatus) = 0;
 
-   virtual braid_Int BufSize(braid_Int          *size_ptr,
-                             BraidBufferStatus  &bstatus) = 0;
+   /// @see braid_PtFcnBufSize.
+   virtual braid_Int BufSize(braid_Int         *size_ptr,
+                             BraidBufferStatus &bstatus) = 0;
 
-   virtual braid_Int BufPack(braid_Vector  _u,
+   /// @see braid_PtFcnBufPack.
+   virtual braid_Int BufPack(braid_Vector       u_,
                              void              *buffer,
-                             BraidBufferStatus  &bstatus) = 0;
+                             BraidBufferStatus &bstatus) = 0;
 
+   /// @see braid_PtFcnBufUnpack.
    virtual braid_Int BufUnpack(void              *buffer,
                                braid_Vector      *u_ptr,
                                BraidBufferStatus &bstatus) = 0;
@@ -93,26 +132,27 @@ public:
    // These two functions may be optionally defined by the user, if spatial
    // coarsening is desired (see documentation for more details).  To turn on
    // spatial coarsening, use core.SetSpatialCoarsenAndRefine()
-   virtual braid_Int Coarsen(braid_Vector           _fu,
+   /// @see braid_PtFcnSCoarsen.
+   virtual braid_Int Coarsen(braid_Vector           fu_,
                              braid_Vector          *cu_ptr,
                              BraidCoarsenRefStatus &status)
    {
       fprintf(stderr, "Braid C++ Wrapper Warning: turn off spatial coarsening "
                       "until Coarsen and Refine have been user implemented\n");
-      Clone(_fu, cu_ptr);
+      Clone(fu_, cu_ptr);
       return 0;
    }
 
-   virtual braid_Int Refine(braid_Vector           _cu,
+   /// @see braid_PtFcnSRefine.
+   virtual braid_Int Refine(braid_Vector           cu_,
                             braid_Vector          *fu_ptr,
                             BraidCoarsenRefStatus &status)
    {
       fprintf(stderr, "Braid C++ Wrapper Warning: turn off spatial coarsening "
                       "until Coarsen and Refine have been user implemented\n");
-      Clone(_cu, fu_ptr);
+      Clone(cu_, fu_ptr);
       return 0;
    }
-
 };
 
 
