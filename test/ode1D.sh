@@ -72,30 +72,32 @@ mkdir -p $output_dir
 
 # compile the regression test drivers 
 # note that there are a lot of unavoidable Fortran warnings about 
-# unused app structures, hence we ignore those for ex-01f
+# unused app structures, hence we ignore those for ex-01b-f
 echo "Compiling regression test drivers"
 cd $example_dir
 make clean
 make ex-01 
-make ex-01f &> /dev/null
+make ex-01b 
+make ex-01b-f &> /dev/null
 cd $test_dir
 
 
 # Run the following regression tests 
-TESTS=( "$RunString -np 1 $example_dir/ex-01" \
-        "$RunString -np 1 $example_dir/ex-01f" \
-        "$RunString -np 1 $example_dir/ex-01f -wrapper_tests" \
-        "$RunString -np 1 $example_dir/ex-01f -ml 2" \
-        "$RunString -np 1 $example_dir/ex-01f -ml 2 -cf0 2 -cf 2" \
-        "$RunString -np 2 $example_dir/ex-01f -ml 2 -cf0 2 -cf 2" \
-        "$RunString -np 4 $example_dir/ex-01f -ml 2 -cf0 2 -cf 2" \
-        "$RunString -np 1 $example_dir/ex-01f -tg 0" \
-        "$RunString -np 1 $example_dir/ex-01f -tg 1" \
-        "$RunString -np 1 $example_dir/ex-01f -tg 2" \
-        "$RunString -np 1 $example_dir/ex-01f -tg 2 -ml 2 -cf0 2 -cf 2" \
-        "$RunString -np 1 $example_dir/ex-01f -tg 2 -ml 3 -cf0 2 -cf 2" \
-        "$RunString -np 2 $example_dir/ex-01f -tg 2 -ml 2 -cf0 2 -cf 2" \
-        "$RunString -np 2 $example_dir/ex-01f -tg 2 -ml 3 -cf0 2 -cf 2" )
+TESTS=( "$RunString -np 1 $example_dir/ex-01 -ml 1" \
+        "$RunString -np 1 $example_dir/ex-01b -ml 1" \
+        "$RunString -np 1 $example_dir/ex-01b-f -ml 1" \
+        "$RunString -np 1 $example_dir/ex-01b-f -wrapper_tests" \
+        "$RunString -np 1 $example_dir/ex-01b-f -ml 2" \
+        "$RunString -np 1 $example_dir/ex-01b-f -ml 2 -cf0 2 -cf 2" \
+        "$RunString -np 2 $example_dir/ex-01b-f -ml 2 -cf0 2 -cf 2" \
+        "$RunString -np 4 $example_dir/ex-01b-f -ml 2 -cf0 2 -cf 2" \
+        "$RunString -np 1 $example_dir/ex-01b-f -tg 0 -ml 1" \
+        "$RunString -np 1 $example_dir/ex-01b-f -tg 1 -ml 1" \
+        "$RunString -np 1 $example_dir/ex-01b-f -tg 2 -ml 1" \
+        "$RunString -np 1 $example_dir/ex-01b-f -tg 2 -ml 2 -cf0 2 -cf 2" \
+        "$RunString -np 1 $example_dir/ex-01b-f -tg 2 -ml 3 -cf0 2 -cf 2" \
+        "$RunString -np 2 $example_dir/ex-01b-f -tg 2 -ml 2 -cf0 2 -cf 2" \
+        "$RunString -np 2 $example_dir/ex-01b-f -tg 2 -ml 3 -cf0 2 -cf 2" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 

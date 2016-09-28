@@ -46,8 +46,8 @@ MFEM_LIB_FILE = mfem_is_not_built
 BRAID_FLAGS = -I$(BRAID_DIR)
 BRAID_LIB_FILE = $(BRAID_DIR)/libbraid.a
 
-C_NOHYPRE = ex-01 ex-burgers ex-lorenz ex-bdf2
-F_NOHYPRE = ex-01f ex-fburgers
+C_NOHYPRE = ex-01 ex-01b ex-burgers ex-lorenz ex-bdf2
+F_NOHYPRE = ex-01b-f
 C_EXAMPLES = ex-02 ex-02-serial
 # Note: .cpp examples will be linked with mfem
 #CXX_EXAMPLES = ex-04
@@ -80,13 +80,13 @@ ex-01: ex-01.c $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
 	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
 
-# Rule for building ex-01f
-ex-01f: ex-01f.f90 $(BRAID_LIB_FILE)
+# Rule for building ex-01b
+ex-01b: ex-01b.c $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
-	$(MPIF90) $(FORTFLAGS) $(@).f90 -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
 
-# Rule for building ex-fburgers
-ex-fburgers: ex-fburgers.f90 $(BRAID_LIB_FILE)
+# Rule for building ex-01b-f
+ex-01b-f: ex-01b-f.f90 $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
 	$(MPIF90) $(FORTFLAGS) $(@).f90 -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
 

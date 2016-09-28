@@ -1,3 +1,56 @@
+!BHEADER
+!* Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
+!* Produced at the Lawrence Livermore National Laboratory. Written by 
+!* Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
+!* Dobrev, et al. LLNL-CODE-660355. All rights reserved.
+!* 
+!* This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+!* 
+!* This program is free software; you can redistribute it and/or modify it under
+!* the terms of the GNU General Public License (as published by the Free Software
+!* Foundation) version 2.1 dated February 1999.
+!* 
+!* This program is distributed in the hope that it will be useful, but WITHOUT ANY
+!* WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the terms and conditions of the GNU General Public
+!* License for more details.
+!* 
+!* You should have received a copy of the GNU Lesser General Public License along
+!* with this program; if not, write to the Free Software Foundation, Inc., 59
+!* Temple Place, Suite 330, Boston, MA 02111-1307 USA
+!*
+!EHEADER
+
+
+!  Example 01b (in Fortran 90)
+!
+!  Compile with: make ex-01b-f
+!
+!  Sample run:   mpirun -np 2 ex-01b-f
+!
+!  Description:
+!
+!  Solve the scalar ODE: u' = lambda u
+!  
+!  Same as ex-01, only show how to implement more advanced XBraid features.
+!  
+!  When run with the default 10 time steps, the solution is:
+!  $ ./ex-01b-f
+!  $ cat ex-01b-f.out.00*
+!    1.00000000000000e+00
+!    5.00000000000000e-01
+!    2.50000000000000e-01
+!    1.25000000000000e-01
+!    6.25000000000000e-02
+!    3.12500000000000e-02
+!    1.56250000000000e-02
+!    7.81250000000000e-03
+!    3.90625000000000e-03
+!    1.95312500000000e-03
+!    9.76562500000000e-04
+
+
+! F90 modules are a convenient way of defining XBraid vectors and app structure
 module braid_types
    
    ! Declare vector object (just a scalar)
@@ -33,7 +86,7 @@ module braid_types
 end module braid_types
 
 
-! Replace character a with character b
+! Helper function: Replace character a with character b
 subroutine replace(s, a, b, length)
    implicit none
 
@@ -130,7 +183,6 @@ subroutine braid_timegrid_f90(app, ta, ilower, iupper)
 end subroutine
 
 
-! Initialize a braid_Vector
 subroutine braid_Init_Vec_F90(app, t, u_ptr)
    
    ! Braid types
@@ -155,7 +207,6 @@ subroutine braid_Init_Vec_F90(app, t, u_ptr)
 end subroutine braid_Init_Vec_F90
 
 
-! Deallocate a braid_Vector
 subroutine braid_Free_F90(app, u)
    
    ! Braid types
@@ -168,7 +219,6 @@ subroutine braid_Free_F90(app, u)
 end subroutine braid_Free_F90
 
 
-! Clone a braid_Vector
 subroutine braid_Clone_F90(app, u, v_ptr)
    
    ! Braid types
@@ -185,7 +235,6 @@ subroutine braid_Clone_F90(app, u, v_ptr)
 end subroutine braid_Clone_F90
 
 
-! Sum two braid_Vectors together
 subroutine braid_Sum_F90(app, alpha, x, beta, y)
    
    ! Braid types
@@ -202,7 +251,6 @@ subroutine braid_Sum_F90(app, alpha, x, beta, y)
 end subroutine braid_Sum_F90
 
 
-! Take norm of braid_Vector
 subroutine braid_SpatialNorm_F90(app, u, norm_ptr)
    
    ! Braid types
@@ -219,7 +267,6 @@ subroutine braid_SpatialNorm_F90(app, u, norm_ptr)
 end subroutine braid_SpatialNorm_F90
 
 
-! Access a braid_Vector, print to screen, save to file, or whatever
 subroutine braid_Access_F90(app, u, astatus)
    
    ! Braid types
@@ -232,10 +279,10 @@ subroutine braid_Access_F90(app, u, astatus)
    ! Other declarations
    integer          :: iter, level, done, ierr, step, numprocs, rank, out_unit
    double precision :: t
-   character(len=25):: fname = "ex-01f.out"
-   character(len=10):: fname_short = "ex-01f.out"
-   character(len=7) :: step_string
-   character(len=5) :: rank_string
+   character(len=25):: fname = "ex-01b-f.out"
+   character(len=12):: fname_short = "ex-01b-f.out"
+   character(len=4) :: step_string
+   character(len=3) :: rank_string
    character(len=1) :: dot = "."
    character(len=21) :: val_string
    
@@ -249,20 +296,12 @@ subroutine braid_Access_F90(app, u, astatus)
    ! Print info to screan
    !print *, "   access print vector", u%val, '  t = ',  t
    !print *, "u->val          = ", u%val
-   !print *, "app->tstart     = ", app%tstart
-   !print *, "app->tstop      = ", app%tstop
-   !print *, "app->ntime      = ", app%ntime
-   !
-   !print *, "astatus->t      = ", t
-   !print *, "astatus->iter   = ", iter
-   !print *, "astatus->level  = ", level
-   !print *, "astatus->done   = ", done
    
    ! Write the scalar solution at this time to file
-   write(step_string, "(I7)")  step
-   call replace(step_string, ' ', '0', 7)
-   write(rank_string, "(I5)")  rank
-   call replace(rank_string, ' ', '0', 5)
+   write(step_string, "(I4)")  step
+   call replace(step_string, ' ', '0', 4)
+   write(rank_string, "(I3)")  rank
+   call replace(rank_string, ' ', '0', 3)
    write(val_string, "(E21.15)")  u%val
    fname = fname_short // dot // step_string // dot // rank_string
 
@@ -274,7 +313,6 @@ subroutine braid_Access_F90(app, u, astatus)
 end subroutine braid_Access_F90
 
 
-! Timestep with a braid_Vector
 subroutine braid_Step_F90(app, ustop, fstop, fnotzero, u, pstatus)
    
    ! Braid types
@@ -308,7 +346,6 @@ subroutine braid_Step_F90(app, ustop, fstop, fnotzero, u, pstatus)
 end subroutine braid_Step_F90
 
 
-! Residual
 subroutine braid_Residual_F90(app, ustop, r, pstatus)
    
    ! Braid types
@@ -335,7 +372,6 @@ subroutine braid_Residual_F90(app, ustop, r, pstatus)
 end subroutine braid_Residual_F90
 
 
-! Return the buffer size (in bytes) for braid_Vector
 subroutine braid_BufSize_F90(app, size_ptr, bstatus)
    
    ! Braid types
@@ -351,7 +387,6 @@ subroutine braid_BufSize_F90(app, size_ptr, bstatus)
 end subroutine braid_BufSize_F90
 
 
-! Pack an mpi buffer with a braid_Vector
 subroutine braid_BufPack_F90(app, u, buffer, bstatus)
    
    ! Braid types
@@ -371,7 +406,6 @@ subroutine braid_BufPack_F90(app, u, buffer, bstatus)
 end subroutine braid_BufPack_F90
 
 
-! Pack an mpi buffer with a braid_Vector
 subroutine braid_BufUnPack_F90(app, buffer, u_ptr, bstatus)
    
    ! Braid types
@@ -426,12 +460,12 @@ program ex01_f90
    ! Set default values
    allocate(app)
    app%tstart    = 0.0
-   app%ntime     = 32
+   app%ntime     = 10
    app%tstop     = app%tstart + app%ntime
    app%mydt      = 0
    app%bufsize   = 1
    app%comm      = mpi_comm_world
-   max_levels    = 1
+   max_levels    = 2
    nrelax        = 1
    nrelax0       = -1
    tol           = 1.0e-06
