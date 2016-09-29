@@ -23,21 +23,21 @@
 
 
 /*
-   Example 01b
+   Example 01-expanded
 
-   Compile with: make ex-01b
+   Compile with: make ex-01-expanded
 
-   Sample run:   mpirun -np 2 ex-01b
+   Sample run:   mpirun -np 2 ex-01-expanded
 
-   Description:
-
-   Solve the scalar ODE: u' = lambda u
+   Description: solve the scalar ODE 
+      u' = lambda u, 
+      with lambda=-1 and y(0) = 1
    
-   Same as ex-01, only show how to implement more advanced XBraid features.
+   Same as ex-01, only implements more advanced XBraid features.
    
    When run with the default 10 time steps, the solution is:
-   $ ./ex-01b
-   $ cat ex-01b.out.00*
+   $ ./ex-01-expanded
+   $ cat ex-01-expanded.out.00*
      1.00000000000000e+00
      5.00000000000000e-01
      2.50000000000000e-01
@@ -131,14 +131,14 @@ my_Step(braid_App        app,
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
    braid_StepStatusGetTIndex(status, &istart);
 
-   /* On the finest grid, each value is half the previous value */
-   (u->value) = pow(0.5, tstop-tstart)*(u->value);
-
+   /* Account for XBraid right-hand-side */
    if (fstop != NULL)
    {
-      /* Nonzero rhs */
       (u->value) += (fstop->value);
    }
+
+   /* Use backward Euler to propagate solution */
+   (u->value) = 1./(1. + tstop-tstart)*(u->value);
 
    /* no refinement */
    braid_StepStatusSetRFactor(status, 1);
@@ -157,7 +157,7 @@ my_Residual(braid_App        app,
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
 
    /* On the finest grid, each value is half the previous value */
-   (r->value) = (ustop->value) - pow(0.5, tstop-tstart)*(r->value);
+   (r->value) = (1. + tstop-tstart)*(ustop->value) - (r->value);
 
    return 0;
 }
@@ -304,8 +304,7 @@ my_Access(braid_App          app,
    FILE      *file;
    
    braid_AccessStatusGetTIndex(astatus, &index);
-
-   sprintf(filename, "%s.%04d.%03d", "ex-01b.out", index, app->rank);
+   sprintf(filename, "%s.%04d.%03d", "ex-01-expanded.out", index, app->rank);
    file = fopen(filename, "w");
    fprintf(file, "%.14e\n", (u->value));
    fflush(file);

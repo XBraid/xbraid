@@ -22,32 +22,32 @@
 !EHEADER
 
 
-!  Example 01b (in Fortran 90)
+!  Example 01-expanded, but in Fortran 90
 !
-!  Compile with: make ex-01b-f
+!  Compile with: make ex-01-expanded-f
 !
-!  Sample run:   mpirun -np 2 ex-01b-f
+!  Sample run:   mpirun -np 2 ex-01-expanded-f
 !
-!  Description:
-!
-!  Solve the scalar ODE: u' = lambda u
+!  Description: solve the scalar ODE 
+!     u' = lambda u, 
+!     with lambda=-1 and y(0) = 1
 !  
-!  Same as ex-01, only show how to implement more advanced XBraid features.
+!  Same as ex-01-expanded, only uses F90
 !  
 !  When run with the default 10 time steps, the solution is:
-!  $ ./ex-01b-f
-!  $ cat ex-01b-f.out.00*
-!    1.00000000000000e+00
-!    5.00000000000000e-01
-!    2.50000000000000e-01
-!    1.25000000000000e-01
-!    6.25000000000000e-02
-!    3.12500000000000e-02
-!    1.56250000000000e-02
-!    7.81250000000000e-03
-!    3.90625000000000e-03
-!    1.95312500000000e-03
-!    9.76562500000000e-04
+!  $ ./ex-01-expanded-f
+!  $ cat ex-01-expanded-f.out.00*
+!    0.100000000000000E+01
+!    0.500000000000000E+00
+!    0.250000000000000E+00
+!    0.125000000000000E+00
+!    0.625000000000000E-01
+!    0.312500000000000E-01
+!    0.156250000000000E-01
+!    0.781250000000000E-02
+!    0.390625000000000E-02
+!    0.195312500000000E-02
+!    0.976562500000000E-03
 
 
 ! F90 modules are a convenient way of defining XBraid vectors and app structure
@@ -279,8 +279,8 @@ subroutine braid_Access_F90(app, u, astatus)
    ! Other declarations
    integer          :: iter, level, done, ierr, step, numprocs, rank, out_unit
    double precision :: t
-   character(len=25):: fname = "ex-01b-f.out"
-   character(len=12):: fname_short = "ex-01b-f.out"
+   character(len=29):: fname = "ex-01-expanded-f.out"
+   character(len=20):: fname_short = "ex-01-expanded-f.out"
    character(len=4) :: step_string
    character(len=3) :: rank_string
    character(len=1) :: dot = "."
@@ -332,13 +332,13 @@ subroutine braid_Step_F90(app, ustop, fstop, fnotzero, u, pstatus)
    call braid_step_status_get_tstart_tstop_f90(pstatus, tstart, tstop)
    dt = tstop - tstart
 
-   ! On the finest grid, each value is half the previous value
-   u%val = (0.5**dt)*(u%val)
-
+   ! Account for XBraid right-hand-side
    if (fnotzero .eq. 1) then
-      ! Nonzero rhs
       u%val = u%val + fstop%val
    end if
+
+   ! Use backward Euler to propagate solution
+   u%val = 1.0/(1.0 + dt)*u%val
 
    ! no refinement
    call braid_step_status_set_rfactor_f90(pstatus, 1)
@@ -364,7 +364,7 @@ subroutine braid_Residual_F90(app, ustop, r, pstatus)
    dt = tstop - tstart
 
    ! On the finest grid, each value is half the previous value
-   r%val = (ustop%val) - (0.5**dt)*(r%val)
+   r%val = (1.0 + dt)*(ustop%val) - (r%val)
 
    ! no refinement
    call braid_step_status_set_rfactor_f90(pstatus, 1)
@@ -609,6 +609,11 @@ program ex01_f90
          if (app%mydt > 0) then
             call init_timesteps(app)
             call braid_set_timegrid_f90(braid_core)
+         endif
+         
+         ! Define a user-supplied XBraid residual function 
+         if (res > 0) then
+            call braid_set_residual_f90(braid_core)
          endif
          
          ! Run braid and clean up

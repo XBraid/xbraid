@@ -29,9 +29,9 @@
 
    Sample run:   mpirun -np 2 ex-01
 
-   Description:
-
-   Solve the scalar ODE: u' = lambda u
+   Description: solve the scalar ODE 
+      u' = lambda u, 
+      with lambda=-1 and y(0) = 1
    in a very simplified XBraid setting.
 
 
@@ -85,8 +85,9 @@ my_Step(braid_App        app,
    double tstop;              /* evolve to this time*/
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
 
-   /* On the finest grid, each value is half the previous value */
-   (u->value) = pow(0.5, tstop-tstart)*(u->value);
+   /* Use backward Euler to propagate solution */
+   (u->value) = 1./(1. + tstop-tstart)*(u->value);
+   
    return 0;
 }
 
@@ -166,7 +167,6 @@ my_Access(braid_App          app,
    FILE      *file;
    
    braid_AccessStatusGetTIndex(astatus, &index);
-
    sprintf(filename, "%s.%04d.%03d", "ex-01.out", index, app->rank);
    file = fopen(filename, "w");
    fprintf(file, "%.14e\n", (u->value));

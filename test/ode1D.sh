@@ -77,27 +77,25 @@ echo "Compiling regression test drivers"
 cd $example_dir
 make clean
 make ex-01 
-make ex-01b 
-make ex-01b-f &> /dev/null
+make ex-01-expanded
+make ex-01-expanded-f &> /dev/null
 cd $test_dir
 
 
 # Run the following regression tests 
-TESTS=( "$RunString -np 1 $example_dir/ex-01 -ml 1" \
-        "$RunString -np 1 $example_dir/ex-01b -ml 1" \
-        "$RunString -np 1 $example_dir/ex-01b-f -ml 1" \
-        "$RunString -np 1 $example_dir/ex-01b-f -wrapper_tests" \
-        "$RunString -np 1 $example_dir/ex-01b-f -ml 2" \
-        "$RunString -np 1 $example_dir/ex-01b-f -ml 2 -cf0 2 -cf 2" \
-        "$RunString -np 2 $example_dir/ex-01b-f -ml 2 -cf0 2 -cf 2" \
-        "$RunString -np 4 $example_dir/ex-01b-f -ml 2 -cf0 2 -cf 2" \
-        "$RunString -np 1 $example_dir/ex-01b-f -tg 0 -ml 1" \
-        "$RunString -np 1 $example_dir/ex-01b-f -tg 1 -ml 1" \
-        "$RunString -np 1 $example_dir/ex-01b-f -tg 2 -ml 1" \
-        "$RunString -np 1 $example_dir/ex-01b-f -tg 2 -ml 2 -cf0 2 -cf 2" \
-        "$RunString -np 1 $example_dir/ex-01b-f -tg 2 -ml 3 -cf0 2 -cf 2" \
-        "$RunString -np 2 $example_dir/ex-01b-f -tg 2 -ml 2 -cf0 2 -cf 2" \
-        "$RunString -np 2 $example_dir/ex-01b-f -tg 2 -ml 3 -cf0 2 -cf 2" )
+TESTS=( "$RunString -np 1 $example_dir/ex-01" \
+        "$RunString -np 1 $example_dir/ex-01-expanded -ml 1" \
+        "$RunString -np 1 $example_dir/ex-01-expanded-f -ml 1" \
+        "$RunString -np 1 $example_dir/ex-01-expanded-f -wrapper_tests" \
+        "$RunString -np 1 $example_dir/ex-01-expanded-f -ml 2" \
+        "$RunString -np 1 $example_dir/ex-01-expanded-f -ml 2 -cf0 2 -cf 2" \
+        "$RunString -np 2 $example_dir/ex-01-expanded-f -ml 2 -cf0 2 -cf 2" \
+        "$RunString -np 4 $example_dir/ex-01-expanded-f -ml 2 -cf0 2 -cf 2" \
+        "$RunString -np 1 $example_dir/ex-01-expanded-f -tg 0 -ml 1" \
+        "$RunString -np 1 $example_dir/ex-01-expanded-f -tg 1 -ml 1" \
+        "$RunString -np 1 $example_dir/ex-01-expanded-f -tg 2 -ml 1" \
+        "$RunString -np 1 $example_dir/ex-01-expanded-f -tg 2 -ml 2 -cf0 2 -cf 2" \
+        "$RunString -np 2 $example_dir/ex-01-expanded-f -tg 2 -ml 2 -cf0 2 -cf 2" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 

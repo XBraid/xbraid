@@ -62,7 +62,7 @@ extern "C" {
 /** Turn on the optional user-defined spatial coarsening and refinement functions */ 
 #define braid_Fortran_SpatialCoarsen 0
 /** Turn on the optional user-defined residual function */ 
-#define braid_Fortran_Residual 0
+#define braid_Fortran_Residual 1
 /** Turn on the optional user-defined time-grid function */ 
 #define braid_Fortran_TimeGrid 1
 
@@ -262,7 +262,7 @@ typedef braid_Int
 typedef braid_Int
 (*braid_PtFcnResidual)(braid_App        app,    /**< user-defined _braid_App structure */
                        braid_Vector     ustop,  /**< input, u vector at *tstop* */
-                       braid_Vector     r     , /**< output, residual at *tstop* */
+                       braid_Vector     r     , /**< output, residual at *tstop* (at input, equals *u* at *tstart*) */
                        braid_StepStatus status  /**< query this struct for info about u (e.g., tstart and tstop) */ 
                        );
 
