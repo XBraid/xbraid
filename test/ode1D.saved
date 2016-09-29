@@ -1,6 +1,6 @@
 # Begin Test 0
   time steps = 10
-  iterations            = 2
+  iterations            = 4
   residual norm         = 0.000000e+00
   number of levels      = 2
 # Begin Test 1
@@ -14,25 +14,25 @@
   residual norm         = -1.000000e+00
   number of levels      = 1
 # Begin Test 3
-Finished braid_TestAll: all tests passed successfully
+Finished braid_TestAll: no fails detected, however some results must be
 # Begin Test 4
   time steps = 10
-  iterations            = 2
+  iterations            = 4
   residual norm         = 0.000000e+00
   number of levels      = 2
 # Begin Test 5
   time steps = 10
-  iterations            = 2
+  iterations            = 4
   residual norm         = 0.000000e+00
   number of levels      = 2
 # Begin Test 6
   time steps = 10
-  iterations            = 2
+  iterations            = 4
   residual norm         = 0.000000e+00
   number of levels      = 2
 # Begin Test 7
   time steps = 10
-  iterations            = 2
+  iterations            = 4
   residual norm         = 0.000000e+00
   number of levels      = 2
 # Begin Test 8
@@ -52,11 +52,11 @@ Finished braid_TestAll: all tests passed successfully
   number of levels      = 1
 # Begin Test 11
   time steps = 10
-  iterations            = 2
+  iterations            = 4
   residual norm         = 0.000000e+00
   number of levels      = 2
 # Begin Test 12
   time steps = 10
-  iterations            = 2
+  iterations            = 4
   residual norm         = 0.000000e+00
   number of levels      = 2

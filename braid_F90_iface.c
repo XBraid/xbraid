@@ -596,42 +596,43 @@ braid_F90_Name(braid_test_all_f90, BRAID_TEST_ALL_F90)(
                           )
 {   
 
-#if (braid_Fortran_SpatialCoarsen == 0)
-   braid_TestAll( braid_TakeF90_Obj(braid_App, app), 
-                  braid_TakeF90_Comm(          comm_x), 
-                                               stdout, 
-                  braid_TakeF90_Real(          t), 
-                  braid_TakeF90_Real(          fdt), 
-                  braid_TakeF90_Real(          cdt), 
-                                               braid_Init_Vec_F90_Iface, 
-                                               braid_Free_F90_Iface,
-                                               braid_Clone_F90_Iface,
-                                               braid_Sum_F90_Iface,
-                                               braid_SpatialNorm_F90_Iface,
-                                               braid_BufSize_F90_Iface,
-                                               braid_BufPack_F90_Iface,
-                                               braid_BufUnpack_F90_Iface,
-                                               NULL,
-                                               NULL);
-#else
-   braid_TestAll( braid_TakeF90_Obj(braid_App, app), 
-                  braid_TakeF90_Comm(          comm_x), 
-                                               stdout, 
-                  braid_TakeF90_Real(          t), 
-                  braid_TakeF90_Real(          fdt), 
-                  braid_TakeF90_Real(          cdt), 
-                                               braid_Init_Vec_F90_Iface, 
-                                               braid_Free_F90_Iface,
-                                               braid_Clone_F90_Iface,
-                                               braid_Sum_F90_Iface,
-                                               braid_SpatialNorm_F90_Iface,
-                                               braid_BufSize_F90_Iface,
-                                               braid_BufPack_F90_Iface,
-                                               braid_BufUnpack_F90_Iface,
-                                               braid_Coarsen_F90_Iface,
-                                               braid_Refine_F90_Iface);
 
+#if (braid_Fortran_SpatialCoarsen != 0)
+   braid_PtFcnSCoarsen coarsen_fcn = braid_Coarsen_F90_Iface;
+   braid_PtFcnSRefine refine_fcn = braid_Refine_F90_Iface;
+#else
+   braid_PtFcnSCoarsen coarsen_fcn = NULL;
+   braid_PtFcnSRefine refine_fcn = NULL;
 #endif
+
+#if (braid_Fortran_Residual != 0)
+   braid_PtFcnStep step_fcn = braid_Step_F90_Iface;
+   braid_PtFcnResidual residual_fcn = braid_Residual_F90_Iface;
+#else
+   braid_PtFcnStep step_fcn = NULL;
+   braid_PtFcnResidual residual_fcn = NULL;
+#endif
+
+
+   braid_TestAll( braid_TakeF90_Obj(braid_App, app), 
+                  braid_TakeF90_Comm(          comm_x), 
+                                               stdout, 
+                  braid_TakeF90_Real(          t), 
+                  braid_TakeF90_Real(          fdt), 
+                  braid_TakeF90_Real(          cdt), 
+                                               braid_Init_Vec_F90_Iface, 
+                                               braid_Free_F90_Iface,
+                                               braid_Clone_F90_Iface,
+                                               braid_Sum_F90_Iface,
+                                               braid_SpatialNorm_F90_Iface,
+                                               braid_BufSize_F90_Iface,
+                                               braid_BufPack_F90_Iface,
+                                               braid_BufUnpack_F90_Iface,
+                                               coarsen_fcn,
+                                               refine_fcn,
+                                               residual_fcn,
+                                               step_fcn);
+
    return 0;
 }
 

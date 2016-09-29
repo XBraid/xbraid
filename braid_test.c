@@ -644,6 +644,117 @@ braid_TestCoarsenRefine( braid_App           app,
 }
 
 braid_Int
+braid_TestResidual( braid_App              app,
+                    MPI_Comm               comm_x,
+                    FILE                   *fp, 
+                    braid_Real             t,
+                    braid_Real             dt,
+                    braid_PtFcnInit        myinit,
+                    braid_PtFcnAccess      myaccess,
+                    braid_PtFcnFree        myfree,
+                    braid_PtFcnClone       clone,
+                    braid_PtFcnSum         sum,
+                    braid_PtFcnSpatialNorm spatialnorm, 
+                    braid_PtFcnResidual    residual,
+                    braid_PtFcnStep        step)
+ {   
+   braid_Vector            u, unext, ustop, fstop;
+   braid_Real              result1;
+   braid_Int               myid_x;
+   braid_Status            status  = _braid_CTAlloc(_braid_Status, 1);
+   braid_AccessStatus      astatus = (braid_AccessStatus)status;
+   braid_StepStatus        sstatus = (braid_StepStatus)status;
+   
+   _braid_StepStatusInit(t, t+dt, 0, 1e-16, 0, 0, 0, 2, sstatus);
+   _braid_AccessStatusInit(t, 0, 0.0, 0, 0, 0, 2, 0, 1, -1, astatus);
+
+   MPI_Comm_rank( comm_x, &myid_x );
+
+   /* Print intro */
+   _braid_ParFprintfFlush(fp, myid_x, "\nStarting braid_TestResidual\n\n");
+   
+   /* Test 1 */
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   Starting Test 1\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   u = init(t=%1.2e)\n", t);
+   myinit(app, t, &u);
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   spatialnorm(u) \n");
+   spatialnorm(app, u, &result1);
+   if( fabs(result1) == 0.0)
+   {
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   Warning:  spatialnorm(u) = 0.0\n"); 
+   }
+   else if( braid_isnan(result1) )
+   {
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   Warning:  spatialnorm(u) = nan\n"); 
+   }
+   
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   unext = clone(u)\n");
+   clone(app, u, &unext);
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   ustop = clone(u)\n");
+   clone(app, u, &ustop);
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   fstop = clone(u)\n");
+   clone(app, u, &fstop);
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   fstop = ustop + fstop \n");
+   sum(app, 1.0, ustop, 1.0, fstop); 
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   unext = step(ustop, fstop, unext) \n");
+   step(app, ustop, fstop, unext, sstatus); 
+   
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   ustop = clone(u)\n");
+   clone(app, u, &ustop);
+   
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   fstop = clone(u)\n");
+   clone(app, u, &fstop);
+   
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   fstop = ustop + fstop \n");
+   sum(app, 1.0, ustop, 1.0, fstop); 
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   r = residual(unext, u) \n");
+   residual(app, unext, u, sstatus); 
+   
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   r = fstop - r \n");
+   sum(app, 1.0, fstop, -1.0, u); 
+   
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   spatialnorm(r)\n");
+   spatialnorm(app, u, &result1);
+
+   if(myaccess != NULL)
+   {
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   access(r) \n");
+      myaccess(app, u, astatus);
+   }
+
+   /* We expect the result to be close to zero */
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   actual output:    spatialnorm(r) = %1.2e \n", result1);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   expected output:  spatialnorm(r) approx. 0.0 \n\n");
+
+   /* Free variables */
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   free(u)\n");
+   myfree(app, u);
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   free(unext)\n");
+   myfree(app, unext);
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   free(ustop)\n");
+   myfree(app, ustop);
+   
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   free(fstop)\n");
+   myfree(app, fstop);
+
+   _braid_StatusDestroy(status);
+
+   _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestResidual \n");
+   
+   return 0;
+}
+
+
+
+braid_Int
 braid_TestAll( braid_App            app,
             MPI_Comm                comm_x,
             FILE                    *fp, 
@@ -659,7 +770,10 @@ braid_TestAll( braid_App            app,
             braid_PtFcnBufPack      bufpack,
             braid_PtFcnBufUnpack    bufunpack,
             braid_PtFcnSCoarsen     coarsen,
-            braid_PtFcnSRefine      refine)
+            braid_PtFcnSRefine      refine,
+            braid_PtFcnResidual     residual,
+            braid_PtFcnStep         step)
+
 {
    braid_Int    myid_x, flag = 0, correct = 1;
    MPI_Comm_rank( comm_x, &myid_x );
@@ -721,10 +835,16 @@ braid_TestAll( braid_App            app,
       }
    }
 
+   /* Test step and residual */
+   if( (step != NULL) && (residual != NULL) )
+   {
+      braid_TestResidual(app, comm_x, fp, t, fdt, myinit, NULL, myfree, clone, sum, spatialnorm, residual, step);
+   }
+
    if(correct == 1)
    {
       _braid_ParFprintfFlush(fp, myid_x, "\n\n");
-      _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestAll: all tests passed successfully\n\n");
+      _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestAll: no fails detected, however some results must be\nuser-interpreted in the log messages\n\n");
    }
    else
    {

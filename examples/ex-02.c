@@ -864,6 +864,7 @@ int main (int argc, char *argv[])
          braid_TestInitAccess( app, comm_x, stdout, mytime, my_Init, my_Access, my_Free);
          braid_TestClone( app, comm_x, stdout, mytime, my_Init, my_Access, my_Free, my_Clone);
          braid_TestSum( app, comm_x, stdout, mytime, my_Init, my_Access, my_Free, my_Clone, my_Sum);
+         braid_TestResidual(app, comm_x, stdout, mytime, app->man->dt, my_Init, my_Access, my_Free, my_Clone, my_Sum, my_SpatialNorm, my_Residual, my_Step);
          correct1 = braid_TestSpatialNorm( app, comm_x, stdout, mytime, my_Init, my_Free, my_Clone, my_Sum, my_SpatialNorm);
          correct2 = braid_TestBuf( app, comm_x, stdout, mytime, my_Init, my_Free, my_Sum, my_SpatialNorm, my_BufSize, my_BufPack, my_BufUnpack);
          mytime += app->man->dt;

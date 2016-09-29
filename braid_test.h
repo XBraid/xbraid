@@ -173,6 +173,33 @@ braid_TestCoarsenRefine( braid_App                app,         /**< User defined
                          );
 
 /**
+ * Test compatibility of the Step and Residual functions.\n
+ * A vector is initialized at time *t*, step is called with *dt*,
+ * followed by an evaluation of residual, to test the condition
+ * fstop - residual( step(u, fstop), u)  approx.  0
+ * 
+ * - Check the log messages to determine if test passed.  The result 
+ *   should approximately be zero.  The more accurate the solution for 
+ *   *u* is computed in step, the closer the result will be to 0. 
+ * - The residual is also written to file 
+ **/
+braid_Int
+braid_TestResidual( braid_App              app,             /**< User defined App structure */
+                    MPI_Comm               comm_x,          /**< Spatial communicator */
+                    FILE                   *fp,             /**< File pointer (could be stdout or stderr) for log messages*/
+                    braid_Real             t,               /**< Time value to initialize test vectors */
+                    braid_Real             dt,              /**< Time step value to use in step */ 
+                    braid_PtFcnInit        myinit,          /**< Initialize a braid_Vector on finest temporal grid*/
+                    braid_PtFcnAccess      myaccess,        /**< Allows access to XBraid and current braid_Vector (can be NULL for no writing)*/ 
+                    braid_PtFcnFree        myfree,          /**< Free a braid_Vector*/
+                    braid_PtFcnClone       clone,           /**< Clone a braid_Vector */
+                    braid_PtFcnSum         sum,             /**< Compute vector sum of two braid_Vectors */
+                    braid_PtFcnSpatialNorm spatialnorm,     /**< Compute norm of a braid_Vector, this is a norm only over space */
+                    braid_PtFcnResidual    residual,        /**< Compute a residual given two consectuive braid_Vectors */
+                    braid_PtFcnStep        step             /**< Compute a time step with a braid_Vector */
+                    );
+
+   /**
  * Runs all of the individual braid_Test* routines
  *
  * - Returns 0 if the tests fail
@@ -195,7 +222,9 @@ braid_TestAll( braid_App                app,         /**< User defined App struc
                braid_PtFcnBufPack       bufpack,     /**< Packs MPI buffer to contain one braid_Vector */
                braid_PtFcnBufUnpack     bufunpack,   /**< Unpacks MPI buffer into a braid_Vector */
                braid_PtFcnSCoarsen      coarsen,     /**< Spatially coarsen a vector. If NULL, test is skipped.*/
-               braid_PtFcnSRefine       refine       /**< Spatially refine a vector. If NULL, test is skipped.*/
+               braid_PtFcnSRefine       refine,      /**< Spatially refine a vector. If NULL, test is skipped.*/
+               braid_PtFcnResidual      residual,    /**< Compute a residual given two consectuive braid_Vectors */
+               braid_PtFcnStep          step         /**< Compute a time step with a braid_Vector */
                );
 
 /** @}*/

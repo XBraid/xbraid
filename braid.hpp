@@ -581,6 +581,17 @@ public:
          _BraidAppInit, _BraidAppAccess, _BraidAppFree,
          _BraidAppClone, _BraidAppSum, _BraidAppSpatialNorm,
          _BraidAppCoarsen, _BraidAppRefine); }
+   
+   // Test Functions Coarsen and Refine
+   braid_Int TestResidual(BraidApp   *app,
+                          MPI_Comm    comm_x,
+                          FILE       *fp,
+                          braid_Real  t,
+                          braid_Real  dt)
+   { return braid_TestResidual((braid_App) app, comm_x, fp, t, dt,
+         _BraidAppInit, _BraidAppAccess, _BraidAppFree,
+         _BraidAppClone, _BraidAppSum, _BraidAppSpatialNorm,
+         _BraidAppResidual, _BraidAppStep); }
 
    braid_Int TestAll(BraidApp   *app,
                      MPI_Comm    comm_x,
@@ -592,7 +603,7 @@ public:
          _BraidAppInit, _BraidAppFree, _BraidAppClone,
          _BraidAppSum, _BraidAppSpatialNorm, _BraidAppBufSize,
          _BraidAppBufPack, _BraidAppBufUnpack, _BraidAppCoarsen,
-         _BraidAppRefine); }
+         _BraidAppRefine, _BraidAppResidual, _BraidAppStep); }
 
    ~BraidUtil() { }
 };
