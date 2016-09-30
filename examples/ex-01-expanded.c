@@ -39,16 +39,16 @@
    $ ./ex-01-expanded
    $ cat ex-01-expanded.out.00*
      1.00000000000000e+00
-     5.00000000000000e-01
-     2.50000000000000e-01
-     1.25000000000000e-01
-     6.25000000000000e-02
-     3.12500000000000e-02
-     1.56250000000000e-02
-     7.81250000000000e-03
-     3.90625000000000e-03
-     1.95312500000000e-03
-     9.76562500000000e-04
+     6.66666666666667e-01
+     4.44444444444444e-01
+     2.96296296296296e-01
+     1.97530864197531e-01
+     1.31687242798354e-01
+     8.77914951989026e-02
+     5.85276634659351e-02
+     3.90184423106234e-02
+     2.60122948737489e-02
+     1.73415299158326e-02
 */
 
 #include <stdlib.h>
@@ -233,12 +233,10 @@ my_Init(braid_App     app,
    u = (my_Vector *) malloc(sizeof(my_Vector));
    if (t == 0.0) /* Initial condition */
    {
-      /* Initial condition */
       (u->value) = 1.0;
    }
    else /* All other time points set to arbitrary value */
    {
-      /* Initialize all other time points */
       (u->value) = 0.456;
    }
    *u_ptr = u;
@@ -382,10 +380,10 @@ int main (int argc, char *argv[])
    MPI_Init(&argc, &argv);
    MPI_Comm_rank(comm, &rank);
 
-   /* Define time domain: ntime intervals with dt=1 */
+   /* Define time domain: ntime intervals */
    ntime  = 10;
    tstart = 0.0;
-   tstop  = tstart + ntime;
+   tstop  = tstart + ntime/2.;
    
    /* Parse command line */
    arg_index = 1;
@@ -396,6 +394,7 @@ int main (int argc, char *argv[])
          if ( rank == 0 )
          {
             printf("\nExample 1: Solve a scalar ODE \n\n");
+            printf("  -ntime <ntime>    : set num time points\n");
             printf("  -ml  <max_levels> : set max levels\n");
             printf("  -nu  <nrelax>     : set num F-C relaxations\n");
             printf("  -nu0 <nrelax>     : set num F-C relaxations on level 0\n");
@@ -410,6 +409,12 @@ int main (int argc, char *argv[])
          }
          exit(1);
       } 
+      else if ( strcmp(argv[arg_index], "-ntime") == 0 )
+      {
+         arg_index++;
+         ntime = atoi(argv[arg_index++]);
+         tstop  = tstart + ntime/2.;
+      }
       else if ( strcmp(argv[arg_index], "-ml") == 0 )
       {
          arg_index++;
@@ -485,7 +490,6 @@ int main (int argc, char *argv[])
    }
    braid_SetAbsTol(core, tol);
    braid_SetCFactor(core, -1, cfactor);
-   /*braid_SetCFactor(core,  0, 10);*/
    braid_SetMaxIter(core, max_iter);
    if (fmg)
    {

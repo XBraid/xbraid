@@ -74,18 +74,15 @@ mkdir -p $output_dir
 echo "Compiling regression test drivers"
 cd $example_dir
 make clean
-make 
-cd $driver_dir
-make clean
-make 
+make ex-01-expanded-bdf2
 cd $test_dir
 
 
 # Run the following regression tests 
-TESTS=( "$RunString -np 4 $example_dir/ex-bdf2 -cf 2 -ntime 100 -tol 1e-5 -ac 0" \
-        "$RunString -np 4 $example_dir/ex-bdf2 -cf 2 -ntime 100 -tol 1e-10 -ac 1" \
-        "$RunString -np 4 $example_dir/ex-bdf2 -cf 10 -ntime 10000 -tol 1e-5 -ac 2" \
-        "$RunString -np 4 $example_dir/ex-bdf2 -cf 10 -ntime 10000 -tol 1e-10 -ac 3" )
+TESTS=( "$RunString -np 4 $example_dir/ex-01-expanded-bdf2 -cf 2 -ntime 100 -tol 1e-5 -ac 0" \
+        "$RunString -np 4 $example_dir/ex-01-expanded-bdf2 -cf 2 -ntime 100 -tol 1e-10 -ac 1" \
+        "$RunString -np 4 $example_dir/ex-01-expanded-bdf2 -cf 10 -ntime 10000 -tol 1e-5 -ac 2" \
+        "$RunString -np 4 $example_dir/ex-01-expanded-bdf2 -cf 10 -ntime 10000 -tol 1e-10 -ac 3" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 
@@ -141,4 +138,5 @@ done
 if [ -n $MACHINES_FILE ] ; then
    rm $MACHINES_FILE
 fi
-rm braid.out.cycle ex-bdf2.out
+rm braid.out.cycle 2> /dev/null
+rm ex-01*.out.* 2> /dev/null

@@ -38,16 +38,16 @@
 !  $ ./ex-01-expanded-f
 !  $ cat ex-01-expanded-f.out.00*
 !    0.100000000000000E+01
-!    0.500000000000000E+00
-!    0.250000000000000E+00
-!    0.125000000000000E+00
-!    0.625000000000000E-01
-!    0.312500000000000E-01
-!    0.156250000000000E-01
-!    0.781250000000000E-02
-!    0.390625000000000E-02
-!    0.195312500000000E-02
-!    0.976562500000000E-03
+!    0.666666666666667E+00
+!    0.444444444444444E+00
+!    0.296296296296296E+00
+!    0.197530864197531E+00
+!    0.131687242798354E+00
+!    0.877914951989026E-01
+!    0.585276634659351E-01
+!    0.390184423106234E-01
+!    0.260122948737489E-01
+!    0.173415299158326E-01
 
 
 ! F90 modules are a convenient way of defining XBraid vectors and app structure
@@ -461,7 +461,7 @@ program ex01_f90
    allocate(app)
    app%tstart    = 0.0
    app%ntime     = 10
-   app%tstop     = app%tstart + app%ntime
+   app%tstop     = app%tstart + app%ntime/2.0
    app%mydt      = 0
    app%bufsize   = 1
    app%comm      = mpi_comm_world
@@ -493,6 +493,7 @@ program ex01_f90
       if (arg == '-nt') then
          i = i+1; call getarg ( i, arg); i = i+1
          read(arg,*) app%ntime
+         app%tstop     = app%tstart + app%ntime/2.0
       else if (arg == '-ml') then
          i = i+1; call getarg ( i, arg); i = i+1 
          read(arg,*) max_levels
