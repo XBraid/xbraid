@@ -83,7 +83,7 @@ ex-01-expanded: ex-01-expanded.c $(BRAID_LIB_FILE)
 # Rule for building ex-01-expanded-f
 ex-01-expanded-f: ex-01-expanded-f.f90 $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
-	$(MPIF90) $(FORTFLAGS) $(@).f90 -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+	$(MPIF90) $(FORTFLAGS) -Wno-unused-dummy-argument -Wno-uninitialized $(@).f90 -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
 
 # Rule for building ex-01-expanded-bdf2
 ex-01-expanded-bdf2: ex-01-expanded-bdf2.c $(BRAID_LIB_FILE)

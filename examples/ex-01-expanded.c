@@ -193,7 +193,6 @@ print_my_timegrid(braid_App        app,
    return 0;
 }
 
-/* function passed to XBraid that initializes time-grid */
 int
 my_timegrid(braid_App        app,
             braid_Real      *ta,
