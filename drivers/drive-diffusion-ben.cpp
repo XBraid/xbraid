@@ -19,33 +19,44 @@
 // Temple Place, Suite 330, Boston, MA 02111-1307 USA
 //
 
-/* Drive 07 2D/3D Diffusion equation . Requires MFEM, Hpyre, Metis and GlVis
 
-         Interface: MFEM 
-
-         Compile with: make drive-07 -- Modify Makefile to point to metis, mfem and hypre libraries
-
-         Help with:    drive-06 -help
-
-         Sample run:   mpirun -n12 ./drive-07 -prob -1
-
-         Description:  This code solves the 2D/3D diffusion equaiton with
-                        time dependent coefficients 
-
-                                       u_t - div( A(t) grad(u) ) = b,
-                                             u(x,0) = U0(x)                                  
-                                    A(t)grad(u) . n = g(x,t) on boundary
-
-                        on a given mesh using MFEM where A(t) is a d dimentional tensor
-
-                                       A(t) = [a(t) , 0; 0 , b(t)] in 2D
-                                 A(t) = [ a(t), 0 , 0; 0, c(t), 0; 0, 0, b(t)] in 3D
-
-                     a(t) and b(t) are specidied in the problem class. Examples include
-                                 prob < 0: a(t) = b(t) = c(t) = -prob
-                                 prob = 10: a(t) = 1, c(t) = 1, b(t) = cosine
-                                 prob = 11: a(t) = 1, c(t) = 1, b(t) ~ t
-                                 prob = 12: a(t) = 1, c(t) = 1, b(t) jumps between 0.001 and 1*/
+// Driver:        drive-diffusion-ben.cpp
+//
+// Interface:     C++, through MFEM 
+//
+// Requires:      MFEM, Hypre, Metis and GlVis
+//                Modify Makefile to point to metis, mfem and hypre libraries
+//
+// Compile with:  make drive-diffusion-ben
+//
+// Help with:     drive-diffusion-ben -help
+//
+// Sample run:    mpirun -n 12 ./drive-diffusion-ben -prob -1
+//
+// Description:   This code solves the 2D/3D diffusion equation with
+//                time dependent coefficients 
+//
+//                               u_t - div( A(t) grad(u) ) = b,
+//                                     u(x,0) = U0(x)                                  
+//                            A(t)grad(u) . n = g(x,t) on boundary
+//
+//                on a given mesh using MFEM where A(t) is a d dimentional tensor
+//
+//                               A(t) = [a(t) , 0; 0 , b(t)] in 2D
+//                         A(t) = [ a(t), 0 , 0; 0, c(t), 0; 0, 0, b(t)] in 3D
+//
+//                a(t) and b(t) are specidied in the problem class. Examples include
+//                         prob < 0: a(t) = b(t) = c(t) = -prob
+//                         prob = 10: a(t) = 1, c(t) = 1, b(t) = cosine
+//                         prob = 11: a(t) = 1, c(t) = 1, b(t) ~ t
+//                         prob = 12: a(t) = 1, c(t) = 1, b(t) jumps between 0.001 and 1
+//                         
+// Notes:         This is essentially equivalent to drive-diffusion.cpp, and could be removed,
+//                but we're keeping it around because it's what Ben-O used for his head-to-head
+//                comparison with the p-Laplacian.  This driver implements linear diffusion in the 
+//                same way that the p-Laplacian driver implemented nonlinear diffusion, making it
+//                suitable for head-to-head timings and such.  
+//
 
 #include "braid_mfem.hpp"
 #include <fstream>

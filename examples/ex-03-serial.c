@@ -21,34 +21,30 @@
  *
  ***********************************************************************EHEADER*/
 
+/**
+ * Example:       ex-03-serial.c
+ *
+ * Interface:     C
+ * 
+ * Requires:      hypre 
+ *
+ * Compile with:  make ex-03-serial
+ *
+ * Help with:     ex-03-serial -help
+ *
+ * Sample run:    mpirun -np 9 ex-03-serial -pgrid 3 3 -nx 33 33
+ *
+ * Description:   Solves the 2D heat equation on a regular grid in space and time,
+ *                using backward Euler in time and classic second order 
+ *                finite-differencing in space.
+ *
+ *                The key difference withe ex-03.c is that this is a strictly 
+ *                sequential time integration code, created for readers to 
+ *                compare with ex-03.c. 
+ *
+ *                For more details on the discretization, see the header comment in ex-03.c.
+ **/
 
-/*
-   Example 02 sequential time stepping
-   2D heat equation, constant coefficient, structured grid in time and space
-
-   Compile with: make ex-02-serial
-
-   Help with:    ex-02-serial -help
-
-   Sample run:   mpirun -np 9 ex-02-serial -pgrid 3 3 -nx 33 33
-
-   Uses: SStruct interface from hypre along with hypre PFMG solver for implicit time stepping
-
-   Description:  This code solves the diffusion problem 
-
-                              u_t - K * div grad(u) = b,
-                        b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))
-                                          or
-                                     b(x,y,t) = 0
-
-                 in the unit square subject to zero Dirichlet boundary
-                 conditions, and initial condition U0 at time t = 0.
-                 
-                 The domain is split into an p_x X p_y processor grid.  Each
-                 processor has a n_x X n_y grid, with nodes connected by a
-                 5-point stencil. We use standard central FD in space
-                 and backward Euler in time, definining the stencil
-*/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -57,7 +53,7 @@
 #include "HYPRE_sstruct_ls.h"
 #include "_hypre_sstruct_mv.h"
 
-#include "ex-02-lib.c"
+#include "ex-03-lib.c"
 
 int main (int argc, char *argv[])
 {
@@ -290,7 +286,7 @@ int main (int argc, char *argv[])
       /* Output */
       compute_disc_err(man, u, tstop, e, &disc_err);
       if( man->output_files ){
-         sprintf(filename, "%s.timestep%05d", "ex-02-serial.error_norm", i);
+         sprintf(filename, "%s.timestep%05d", "ex-03-serial.error_norm", i);
          output_error_file(man, tstop, disc_err, filename); 
       }
 
@@ -331,9 +327,9 @@ int main (int argc, char *argv[])
 
    /* Visualize final error */
    if( man->output_vis){
-      sprintf(filename_mesh, "%s", "ex-02-serial_mesh");
-      sprintf(filename_err, "%s", "ex-02-serial_err_tstop");
-      sprintf(filename_sol, "%s", "ex-02-serial_sol_tstop");
+      sprintf(filename_mesh, "%s", "ex-03-serial_mesh");
+      sprintf(filename_err, "%s", "ex-03-serial_err_tstop");
+      sprintf(filename_sol, "%s", "ex-03-serial_sol_tstop");
       output_vis(man, u, tstop, filename_mesh, filename_err, filename_sol);
    }
 

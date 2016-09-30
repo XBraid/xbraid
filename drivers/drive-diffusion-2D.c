@@ -21,6 +21,76 @@
  *
  ***********************************************************************EHEADER*/
 
+/**
+ * Driver:        drive-diffusion-2D.c
+ *
+ * Interface:     C
+ * 
+ * Requires:      only C-language support     
+ *
+ * Compile with:  make drive-diffusion-2D
+ *
+ * Help with:     drive-diffusion-2D -help
+ *
+ * Sample run:    drive-diffusion-2D -nt 100
+ *
+ * Description:   Solves the 2D heat equation on a regular grid in space and time
+ *                Uses forward or backward Euler in time and classic second order 
+ *                finite-differencing in space.  Spatial coarsening is also 
+ *                supported with linear interpolation and restriction in space. 
+ *
+ *                More specifically, the diffusion problem is 
+ *
+ *                                u_t - K * div u = b,
+ *                      b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))
+ *                                        or
+ *                                   b(x,y,t) = 0
+ *
+ *                in the unit square subject to zero Dirichlet boundary
+ *                conditions,u_b = 0, and initial condition U0 at time t = 0.
+ *                
+ *                The domain is split into an p_x x p_y processor grid.  Each
+ *                processor has a n_x x n_y grid, with nodes connected by a
+ *                5-point stencil. More precisely, we use central FD in space
+ *                and forward or backward Euler in time, definining the stencil
+ *
+ *                                  -K*dt/(dy^2)
+ *                 -K*dt/(dx^2)  1+2*K*(dt/(dx^2)+dt/(dy^2)) -K*dt/(dx^2)
+ *                                  -K*dt/(dy^2)   
+ *                   
+ *                We use cell-centered variables, and, therefore, the nodes are
+ *                not shared.
+ *
+ *                To incorporate the boundary conditions, we do the following:
+ *                Let x_i and x_b be the interior and boundary parts of the
+ *                solution vector x, respectively, and let u_b the boundary
+ *                condition. If we split the matrix A as
+ *
+ *                           A = [A_ii A_ib; 
+ *                                A_bi A_bb],
+ *
+ *                then we solve
+ *
+ *                           [A_ii 0; [x_i;    [b_i - A_ib u_b;
+ *                            0    I]  x_b] =        u_b       ].
+ *
+ *                For zero boundary conditions, u_b = 0, we are just 
+ *                solving
+ *
+ *                        A_ii x_i = b_i.
+ *
+ *                Note that this approach is useful for more general types 
+ *                of boundary conditions.
+ *
+ *                We use a structured solver for the spatial solve at each 
+ *                time step.
+ *
+ *
+ * Notes:         Uses the SStructured interface (SStruct) in hypre to build the spatial
+ *                discretization matrices, and the hypre PFMG solver for implicit time 
+ *                stepping
+ **/
+
 
 /*
    Example 05
@@ -37,52 +107,7 @@
    Notes:        The " -expl and -scoarsen " options should be used together
                  to coarsen spatially and do explicit time stepping.  
 
-   Description:  This code solves the diffusion problem 
-
-                                  u_t - K * div u = b,
-                        b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))
-                                          or
-                                     b(x,y,t) = 0
-
-                 in the unit square subject to zero Dirichlet boundary
-                 conditions,u_b = 0, and initial condition U0 at time t = 0.
-                 
-                 The domain is split into an p_x x p_y processor grid.  Each
-                 processor has a n_x x n_y grid, with nodes connected by a
-                 5-point stencil. More precisely, we use central FD in space
-                 and forward or backward Euler in time, definining the stencil
-
-                                    -K*dt/(dy^2)
-                   -K*dt/(dx^2)  1+2*K*(dt/(dx^2)+dt/(dy^2)) -K*dt/(dx^2)
-                                    -K*dt/(dy^2)   
-                     
-                  We use cell-centered variables, and, therefore, the nodes are
-                  not shared.
-
-                  To incorporate the boundary conditions, we do the following:
-                  Let x_i and x_b be the interior and boundary parts of the
-                  solution vector x, respectively, and let u_b the boundary
-                  condition. If we split the matrix A as
-
-                             A = [A_ii A_ib; 
-                                  A_bi A_bb],
-
-                  then we solve
-
-                             [A_ii 0; [x_i;    [b_i - A_ib u_b;
-                              0    I]  x_b] =        u_b       ].
-
-                  For zero boundary conditions, u_b = 0, we are just 
-                  solving
-
-                          A_ii x_i = b_i.
-
-                  Note that this approach is useful for more general types 
-                  of boundary conditions.
-
-                  We use a structured solver for the spatial solve at each 
-                  time step.
-*/
+   Description:  */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -94,7 +119,7 @@
 #include "braid.h"
 #include "braid_test.h"
 
-#include "../examples/ex-02-lib.c"
+#include "../examples/ex-03-lib.c"
 
 /* 
  * This will store the spatial discretization information for interpolating to and 

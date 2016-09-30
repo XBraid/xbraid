@@ -69,7 +69,7 @@ touch $destination_dir/$archive_name
    ##
    # clean up drivers
    cd drivers
-   rm -rf hyperdrive
+   rm -rf old_drivers
    cd ../
 
    ##

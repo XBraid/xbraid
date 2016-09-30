@@ -21,25 +21,24 @@
  *
  ***********************************************************************EHEADER*/
 
+/**
+ * Driver:        drive-lorenz.c
+ *
+ * Interface:     C
+ * 
+ * Requires:      only C-language support     
+ *
+ * Compile with:  make drive-lorenz
+ *
+ * Help with:     drive-lorenz -help
+ *
+ * Sample run:    mpirun -np 2 drive-lorenz
+ *
+ * Description:   Solves the Lorenz problem 
+ *
+ *                Use vis-burgers-1D.py to visualize.
+ **/
 
-/*
-   Example lorenz
-
-   Compile with: make ex-lorenz
-
-   Sample run:   mpirun -np 2 ex-lorenz
-
-   Description:
-
-   Blah...
-
-   When run with the default 10 time steps, the solution is as follows:
-
-      1.00000000000000e+00
-      5.00000000000000e-01
-      ...
-
-*/
 
 #include <stdlib.h>
 #include <stdio.h>

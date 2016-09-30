@@ -19,8 +19,32 @@
 // Temple Place, Suite 330, Boston, MA 02111-1307 USA
 //
 
-// Sample runs:
-//   mpirun -np 4 ./drive-08 -cf 4 -nu 2 -skip 0 -no-vis
+
+// Driver:        drive-lin-elasticity.cpp
+//
+// Interface:     C++, through MFEM 
+// 
+// Requires:      MFEM, Hypre, Metis and GlVis
+//                Modify Makefile to point to metis, mfem and hypre libraries
+//
+// Compile with:  make drive-lin-elasticity
+//
+// Sample run:    mpirun -np 4 ./drive-lin-elasticity -cf 4 -nu 2 -skip 0 -no-vis
+//
+// Help with:     drive-lin-elasticity -help
+//
+// Description:   Solves time-dependent linearized elasticity 
+//                
+//                After spatial discretization, the elasticity model can be written 
+//                as a system of ODEs:
+//               
+//                    dv/dt = -M^{-1}*(H*x + S*v)
+//                    dx/dt = v,
+//                
+//                where x is the vector representing the displacement, v is the
+//                velocity field, M is the mass matrix, S is the viscosity matrix, 
+//                and H is the elasticity matrix.
+
 
 #include "braid_mfem.hpp"
 #include <memory>
@@ -36,16 +60,8 @@ void InitialDeformation(const Vector &x, Vector &y);
 void InitialVelocity(const Vector &x, Vector &v);
 
 
-/** After spatial discretization, the elasticity model can be written as a
-    system of ODEs:
-       dv/dt = -M^{-1}*(H*x + S*v)
-       dx/dt = v,
-    where x is the vector representing the displacement, v is the velocity
-    field, M is the mass matrix, S is the viscosity matrix, and H is the
-    elasticity matrix.
-
-    Class LinearElasticOperator represents the right-hand side of the above
-    system of ODEs. */
+//  Class LinearElasticOperator represents the right-hand side of the above
+//  system of ODEs in terms of dv/dt and dx/dt 
 class LinearElasticOperator : public TimeDependentOperator
 {
 protected:
@@ -706,13 +722,14 @@ int LinearElasticityApp::Residual(
       braid_Vector     r_,
       BraidStepStatus &pstatus)
 {
-   BlockVector *u = (BlockVector *) u_; // input
-   BlockVector *r = (BlockVector *) r_; // input,output
+   // BlockVector *u = (BlockVector *) u_; // input
+   // BlockVector *r = (BlockVector *) r_; // input,output
    // u - input: approximate solution at tstop
    // r - input: approximate solution at tstart
    //   - output: residual at tstop
    // tstart, tstop - from pstatus (not needed here)
    cout << _MFEM_FUNC_NAME << ": not implemented" << endl;
+   return 0;
 }
 
 int LinearElasticityApp::Clone(
@@ -776,6 +793,7 @@ int LinearElasticityApp::BufSize(
       BraidBufferStatus &status)
 {
    *size_ptr = sizeof(double)*true_offsets.Last();
+   return 0;
 }
 
 int LinearElasticityApp::BufPack(
@@ -805,14 +823,14 @@ int LinearElasticityApp::Coarsen(
       braid_Vector           fu_,
       braid_Vector          *cu_ptr,
       BraidCoarsenRefStatus &status)
-{ }
+{ return 0; }
 
 // optional
 int LinearElasticityApp::Refine(
       braid_Vector           cu_,
       braid_Vector          *fu_ptr,
       BraidCoarsenRefStatus &status)
-{ }
+{ return 0; }
 
 int LinearElasticityApp::Access(
       braid_Vector       u_,
@@ -856,6 +874,7 @@ int LinearElasticityApp::Access(
              << setw(6) << setfill('0') << cycle << ".png" << endl;
       }
    }
+   return 0;
 }
 
 

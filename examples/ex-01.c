@@ -21,35 +21,39 @@
  *
  ***********************************************************************EHEADER*/
 
-
-/*
-   Example 01
-
-   Compile with: make ex-01
-
-   Sample run:   mpirun -np 2 ex-01
-
-   Description: solve the scalar ODE 
-      u' = lambda u, 
-      with lambda=-1 and y(0) = 1
-   in a very simplified XBraid setting.
-
-
-   When run with the default 10 time steps, the solution is:
-   $ ./ex-01
-   $ cat ex-01.out.00*
-     1.00000000000000e+00
-     6.66666666666667e-01
-     4.44444444444444e-01
-     2.96296296296296e-01
-     1.97530864197531e-01
-     1.31687242798354e-01
-     8.77914951989026e-02
-     5.85276634659351e-02
-     3.90184423106234e-02
-     2.60122948737489e-02
-     1.73415299158326e-02
-*/
+/**
+ * Example:       ex-01.c
+ *
+ * Interface:     C
+ * 
+ * Requires:      only C-language support     
+ *
+ * Compile with:  make ex-01
+ *
+ * Help with:     this is the simplest example available, read the source
+ *
+ * Sample run:    mpirun -np 2 ex-01
+ *
+ * Description:   solve the scalar ODE 
+ *                   u' = lambda u, 
+ *                   with lambda=-1 and y(0) = 1
+ *                in a very simplified XBraid setting.
+ *                
+ *                When run with the default 10 time steps, the solution is:
+ *                $ ./ex-01
+ *                $ cat ex-01.out.00*
+ *                  1.00000000000000e+00
+ *                  6.66666666666667e-01
+ *                  4.44444444444444e-01
+ *                  2.96296296296296e-01
+ *                  1.97530864197531e-01
+ *                  1.31687242798354e-01
+ *                  8.77914951989026e-02
+ *                  5.85276634659351e-02
+ *                  3.90184423106234e-02
+ *                  2.60122948737489e-02
+ *                  1.73415299158326e-02
+ **/
 
 #include <stdlib.h>
 #include <stdio.h>

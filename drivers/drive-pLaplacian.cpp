@@ -19,46 +19,49 @@
 // Temple Place, Suite 330, Boston, MA 02111-1307 USA
 //
 
-/* Drive 06: 2D nonlinear p-laplacian equation. Requires MFEM, Hpyre, Metis and GlVis
-   
-   Interface: MFEM 
-f
-   Compile with: make drive-06 -- Modify Makefile to point to metis, mfem and hypre libraries
-
-   Help with:    drive-06 -help
-
-   Sample run:   mpirun -n12 ./drive-06
-
-   Description:  This code solves the 2D p -laplacian problem 
-      
-                                     u_t - div( |grad(u)|^2 grad(u) ) = b,
-                                                 u(x,0) = U0(x)                                  
-                                 |grad(u)|^2 grad(u) . n = g(x,t) on boundary
-            
-                 on a given mesh using MFEM. The coressponding weak form is
- 
-                     <u_t,v> + <|grad(u)|^2 grad(u), grad(v) = <b,v> + <g,v>_b = <f,v>
-                 
-                 Implicit methods use newtons method. Consider BDF1. Let u_k = u(t_k) and define
-
-                               L(u)(v) = <u,v> + dt*<|grad(u)|^2 grad(u),grad(v)>
-                                       f(v) = <u_k + dt*b, v> + dt*<g,v>_b
-                L'(u)(v)[w] = <w,v> + dt*<(|grad(u)|^2 + 2 grad(u)grad(u)^t ) grad(w), grad(v)>  
-                                       
-                where L' is the Frechet derivitive of L. Each implicit time step solves
-
-                                            L(u_{k+1})(v) - f(v) = 0 
-                
-                Letting superscript denote iteration number, Newtons method is
-
-                            u^{j+1} = u^j -  L'(u^j)(v)[L(u^j)(v) - f(v)] = u^j - m^j
-                
-                where the previous time step value is used for u^0 and m^j solves
-                the linear equaiton 
-                              
-                              L'(u^j)(v)[m^j] = L(u_j)(v) - f(v)  
-                               
-                Hypre BOOMERamg is used as the linear solver */
+// Driver:        drive-pLaplacian.cpp
+// 
+// Interface:     C++, through MFEM 
+// 
+// Requires:      MFEM, Hypre, Metis and GlVis
+//                Modify Makefile to point to metis, mfem and hypre libraries
+//
+// Compile with:  make drive-pLaplacian 
+//
+// Help with:     drive-pLaplacian -help
+//
+// Sample run:    mpirun -n 12 ./drive-pLaplacian
+// 
+// Description:   This code solves the 2D p-laplacian problem 
+//    
+//                                   u_t - div( |grad(u)|^2 grad(u) ) = b,
+//                                               u(x,0) = U0(x)                                  
+//                               |grad(u)|^2 grad(u) . n = g(x,t) on boundary
+//          
+//               on a given mesh using MFEM. The coressponding weak form is
+//
+//                   <u_t,v> + <|grad(u)|^2 grad(u), grad(v) = <b,v> + <g,v>_b = <f,v>
+//               
+//               Implicit methods use newtons method. Consider BDF1. Let u_k = u(t_k) and define
+//
+//                             L(u)(v) = <u,v> + dt*<|grad(u)|^2 grad(u),grad(v)>
+//                                     f(v) = <u_k + dt*b, v> + dt*<g,v>_b
+//              L'(u)(v)[w] = <w,v> + dt*<(|grad(u)|^2 + 2 grad(u)grad(u)^t ) grad(w), grad(v)>  
+//                                     
+//              where L' is the Frechet derivitive of L. Each implicit time step solves
+//
+//                                          L(u_{k+1})(v) - f(v) = 0 
+//              
+//              Letting superscript denote iteration number, Newtons method is
+//
+//                          u^{j+1} = u^j -  L'(u^j)(v)[L(u^j)(v) - f(v)] = u^j - m^j
+//              
+//              where the previous time step value is used for u^0 and m^j solves
+//              the linear equaiton 
+//                            
+//                            L'(u^j)(v)[m^j] = L(u_j)(v) - f(v)  
+//                             
+//              Hypre BOOMERAMG is used as the linear solver
 
 #include "braid_mfem.hpp"
 #include <fstream>

@@ -4,10 +4,30 @@
 
 using namespace std;
 
-
-/* -------------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------------- */
-
+// Driver:        drive-nonlin-elasticity.cpp
+//
+// Interface:     C++, through MFEM 
+// 
+// Requires:      MFEM, Hypre, Metis and GlVis
+//                Modify Makefile to point to metis, mfem and hypre libraries
+//
+// Compile with:  make drive-nonlin-elasticity
+//
+// Sample run:    mpirun -np 4 ./drive-nonlin-elasticity -cf 4 -nu 2 --serial-refinement 0
+//
+// Help with:     drive-nonlin-elasticity -help
+//
+// Description:   Solves time-dependent nonlinear elasticity 
+//                
+//                After spatial discretization, the hyperelastic model can be 
+//                written as a system of ODEs:
+//               
+//                    dv/dt = -M^{-1}*(H(x) + S*v)
+//                    dx/dt = v,
+//                
+//                where x is the vector representing the displacement, v is the
+//                velocity field, M is the mass matrix, S is the viscosity matrix, 
+//                and H(x) is the nonlinear hyperelastic operator.
 
 void InitialDeformation(const Vector &x, Vector &y);
 
@@ -18,16 +38,8 @@ void InitialVelocity(const Vector &x, Vector &v);
 class BackwardEulerOperator;
 
 
-/** After spatial discretization, the hyperelastic model can be written as a
- *  system of ODEs:
- *	  dv/dt = -M^{-1}*(H(x) + S*v)
- *	  dx/dt = v,
- *  where x is the vector representing the deformation, v is the velocity field,
- *  M is the mass matrix, S is the viscosity matrix, and H(x) is the nonlinear
- *  hyperelastic operator.
- *
- *  Class HyperelasticOperator represents the right-hand side of the above
- *  system of ODEs. */
+// Class HyperelasticOperator represents the right-hand side of the above
+// system of ODEs in terms of dv/dt and dx/dt 
 class HyperelasticOperator : public TimeDependentOperator
 {
 protected:

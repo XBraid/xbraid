@@ -93,22 +93,22 @@ cd $test_dir
 # Run the following regression tests 
 # These tests run 5 different processor configurations in time and make sure that the exact same residual
 # norm is returned in all cases.  The three different temporal norm options are all tested.  
-TESTS=( "$RunString -np 1  $driver_dir/drive-04 -nt 32 -mi 2 -sref 1 -pref 1 -px 1 -fe 1 -odesolver -1 -nu0 0  -skip 0"\ 
-        "$RunString -np 2  $driver_dir/drive-04 -nt 32 -mi 2 -sref 1 -pref 1 -px 1 -fe 2 -odesolver -2 -nu0 1  -skip 0"\ 
-        "$RunString -np 3  $driver_dir/drive-04 -nt 32 -mi 2 -sref 1 -pref 1 -px 1 -fe 1 -odesolver -3 -nu0 0  -skip 1 -fmg 1"\ 
-        "$RunString -np 4  $driver_dir/drive-04 -nt 32 -mi 2 -sref 1 -pref 1 -px 2 -fe 2 -odesolver -41 -nu 0  -skip 1 -fmg 2"\
-        "$RunString -np 1  $driver_dir/drive-05 -nt 32 -mi 2 -rs 1   -rp 1   -px 1 -o  1 -s         -11 -nu0 0 -skip 0 -tf 0.01"\ 
-        "$RunString -np 2  $driver_dir/drive-05 -nt 32 -mi 2 -rs 1   -rp 1   -px 1 -o  2 -s         -12 -nu0 1 -skip 0 -tf 0.01"\ 
-        "$RunString -np 3  $driver_dir/drive-05 -nt 32 -mi 2 -rs 1   -rp 1   -px 1 -o  1 -s         -13 -nu0 0 -skip 1 -fmg 1 -tf 0.01 -sc"\ 
-        "$RunString -np 4  $driver_dir/drive-05 -nt 32 -mi 2 -rs 1   -rp 1   -px 2 -o  2 -s         -13 -nu 0  -skip 1 -fmg 2 -tf 0.01 -sc"\
-        "$RunString -np 1  $driver_dir/drive-06 -nt 32 -mi 2 -rs 1   -rp 1   -px 1       -s         -11 -nu0 0 -skip 0"\ 
-        "$RunString -np 2  $driver_dir/drive-06 -nt 32 -mi 2 -rs 1   -rp 1   -px 1       -s         -12 -nu0 1 -skip 0"\ 
-        "$RunString -np 3  $driver_dir/drive-06 -nt 32 -mi 2 -rs 1   -rp 1   -px 1       -s         -13 -nu0 0 -skip 1 -fmg 1 -sc"\ 
-        "$RunString -np 4  $driver_dir/drive-06 -nt 32 -mi 2 -rs 1   -rp 1   -px 2       -s         -13 -nu 0  -skip 1 -fmg 2 -sc"\
-        "$RunString -np 1  $driver_dir/drive-07 -nt 32 -mi 2 -rs 1   -rp 1   -px 1       -s         -11 -nu0 0 -skip 0"\ 
-        "$RunString -np 2  $driver_dir/drive-07 -nt 32 -mi 2 -rs 1   -rp 1   -px 1       -s         -12 -nu0 1 -skip 0"\ 
-        "$RunString -np 3  $driver_dir/drive-07 -nt 32 -mi 2 -rs 1   -rp 1   -px 1       -s         -13 -nu0 0 -skip 1 -fmg 1 -sc"\ 
-        "$RunString -np 4  $driver_dir/drive-07 -nt 32 -mi 2 -rs 1   -rp 1   -px 2       -s         -13 -nu 0  -skip 1 -fmg 2 -sc")
+TESTS=( "$RunString -np 1  $driver_dir/drive-diffusion -nt 32 -mi 2 -sref 1 -pref 1 -px 1 -fe 1 -odesolver -1 -nu0 0  -skip 0"\ 
+        "$RunString -np 2  $driver_dir/drive-diffusion -nt 32 -mi 2 -sref 1 -pref 1 -px 1 -fe 2 -odesolver -2 -nu0 1  -skip 0"\ 
+        "$RunString -np 3  $driver_dir/drive-diffusion -nt 32 -mi 2 -sref 1 -pref 1 -px 1 -fe 1 -odesolver -3 -nu0 0  -skip 1 -fmg 1"\ 
+        "$RunString -np 4  $driver_dir/drive-diffusion -nt 32 -mi 2 -sref 1 -pref 1 -px 2 -fe 2 -odesolver -41 -nu 0  -skip 1 -fmg 2"\
+        "$RunString -np 1  $driver_dir/drive-adv-diff-DG -nt 32 -mi 2 -rs 1   -rp 1   -px 1 -o  1 -s         -11 -nu0 0 -skip 0 -tf 0.01"\ 
+        "$RunString -np 2  $driver_dir/drive-adv-diff-DG -nt 32 -mi 2 -rs 1   -rp 1   -px 1 -o  2 -s         -12 -nu0 1 -skip 0 -tf 0.01"\ 
+        "$RunString -np 3  $driver_dir/drive-adv-diff-DG -nt 32 -mi 2 -rs 1   -rp 1   -px 1 -o  1 -s         -13 -nu0 0 -skip 1 -fmg 1 -tf 0.01 -sc"\ 
+        "$RunString -np 4  $driver_dir/drive-adv-diff-DG -nt 32 -mi 2 -rs 1   -rp 1   -px 2 -o  2 -s         -13 -nu 0  -skip 1 -fmg 2 -tf 0.01 -sc"\
+        "$RunString -np 1  $driver_dir/drive-pLaplacian -nt 32 -mi 2 -rs 1   -rp 1   -px 1       -s         -11 -nu0 0 -skip 0"\ 
+        "$RunString -np 2  $driver_dir/drive-pLaplacian -nt 32 -mi 2 -rs 1   -rp 1   -px 1       -s         -12 -nu0 1 -skip 0"\ 
+        "$RunString -np 3  $driver_dir/drive-pLaplacian -nt 32 -mi 2 -rs 1   -rp 1   -px 1       -s         -13 -nu0 0 -skip 1 -fmg 1 -sc"\ 
+        "$RunString -np 4  $driver_dir/drive-pLaplacian -nt 32 -mi 2 -rs 1   -rp 1   -px 2       -s         -13 -nu 0  -skip 1 -fmg 2 -sc"\
+        "$RunString -np 1  $driver_dir/drive-diffusion-ben -nt 32 -mi 2 -rs 1   -rp 1   -px 1       -s         -11 -nu0 0 -skip 0"\ 
+        "$RunString -np 2  $driver_dir/drive-diffusion-ben -nt 32 -mi 2 -rs 1   -rp 1   -px 1       -s         -12 -nu0 1 -skip 0"\ 
+        "$RunString -np 3  $driver_dir/drive-diffusion-ben -nt 32 -mi 2 -rs 1   -rp 1   -px 1       -s         -13 -nu0 0 -skip 1 -fmg 1 -sc"\ 
+        "$RunString -np 4  $driver_dir/drive-diffusion-ben -nt 32 -mi 2 -rs 1   -rp 1   -px 2       -s         -13 -nu 0  -skip 1 -fmg 2 -sc")
 
 
 # The below commands will then dump each of the tests to the output files 

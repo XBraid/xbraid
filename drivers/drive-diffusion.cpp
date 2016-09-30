@@ -20,17 +20,23 @@
 //
 
 
-
-// Example 04
+// Driver:        drive-diffusion.cpp
 //
-// Compile with: make drive-04
+// Interface:     C++, through MFEM 
+// 
+// Requires:      MFEM, Hypre, Metis and GlVis
+//                Modify Makefile to point to metis, mfem and hypre libraries
 //
-// Sample runs:  mpirun -np 4 drive-04
-//               mpirun -np 4 drive-04 -pref 1 -px 2 -nt 100 -odesolver -2
-//               mpirun -np 4 drive-04 -mesh ../../mfem/data/beam-quad.mesh -sref 2 -nobraid
-//               mpirun -np 16 drive-04 -mesh ../../mfem/data/escher-p2.mesh -nobraid
+// Compile with:  make drive-diffusion
 //
-// Description:  Unstructured 2D/3D ODE problems in MFEM.
+// Help with:     drive-diffusion -help
+//
+// Sample runs:   mpirun -np 4 drive-diffusion
+//                mpirun -np 4 drive-diffusion  -pref 1 -px 2 -nt 100 -odesolver -2
+//                mpirun -np 4 drive-diffusion  -mesh ../../mfem/data/beam-quad.mesh -sref 2 -nobraid
+//                mpirun -np 16 drive-diffusion -mesh ../../mfem/data/escher-p2.mesh -nobraid
+//                
+// Description:   Solves (a) scalar ODE problems, and (b) the 2D/3D heat equation
 
 #include <fstream>
 #include "braid_mfem.hpp"

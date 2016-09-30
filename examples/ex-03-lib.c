@@ -22,30 +22,13 @@
  ***********************************************************************EHEADER*/
 
 
-/*
-   This file contains library functions and basic data structures for ex-02.c 
-   and ex-02-serial.c.  This file is also used by drivers/driver-02.c.
-   In general, these files solve the 2D heat equation with the spatial stencil,
-                                    
-                                    -K*dt/(dy^2)
-                   -K*dt/(dx^2)  1+2*K*(dt/(dx^2)+dt/(dy^2)) -K*dt/(dx^2)
-                                    -K*dt/(dy^2)   
-                     
-                  To incorporate spatial boundary conditions, let x_i and x_b
-                  be the interior and boundary parts of the solution vector at
-                  one time step, x.  Let u_b be the boundary condition. Then, 
-
-                             A = [A_ii  A_ib] 
-                                 [A_bi  A_bb],
-
-                  and we solve
-
-                             [A_ii   0]  [x_i]    [b_i - A_ib u_b]
-                              [0     I]  [x_b] =  [    u_b       ].
-
-                  For zero boundary conditions, u_b = 0.  This approach is
-                  useful for more general types of boundary conditions.
-*/
+/**
+ *  This file contains library functions and basic data structures for ex-03.c 
+ *  and ex-03-serial.c.  This file is also used by drivers/driver-diffusion-2D.c.
+ *  In general, these files solve the 2D heat equation with the spatial stencil,
+ *                                   
+ *  For more details on the discretization, see the header comment in ex-03.c.
+ **/
 
 #include <stdlib.h>
 #include <stdio.h>

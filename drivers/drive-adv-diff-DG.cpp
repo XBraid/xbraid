@@ -17,7 +17,22 @@
 // You should have received a copy of the GNU Lesser General Public License along
 // with this program; if not, write to the Free Software Foundation, Inc., 59
 // Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+// Driver:        drive-adv-diff-DG.cpp
 //
+// Interface:     C++, through MFEM 
+// 
+// Requires:      MFEM, Hypre, Metis and GlVis
+//                Modify Makefile to point to metis, mfem and hypre libraries
+//
+// Compile with:  make drive-adv-diff-DG
+//
+// Help with:     drive-adv-diff-DG -help
+//
+// Sample runs:   mpirun -np 4 drive-adv-diff-DG -rp 0 -rs 1 -nt 100 --ode-solver 11
+//
+// Description:   Solves (a) scalar ODE problems, and (b) the 2D/3D heat equation
+
 
 #include "braid_mfem.hpp"
 #include "mfem_arnoldi.hpp"

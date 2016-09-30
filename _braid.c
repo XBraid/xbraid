@@ -3233,6 +3233,7 @@ _braid_SetRNorm(braid_Core  core,
 {
    braid_Real  *rnorms   = _braid_CoreElt(core, rnorms);
    braid_Int    max_iter = _braid_CoreElt(core, max_iter);
+   braid_Int    skip     = _braid_CoreElt(core, skip);
    braid_Int    k;
 
    k = iter;
@@ -3246,7 +3247,7 @@ _braid_SetRNorm(braid_Core  core,
       rnorms[k] = rnorm;
 
       /* Set initial residual norm if not already set */
-      if (k == 0)
+      if ((k == 0) || ((k==1) && (skip == 1)))
       {
          if ( _braid_CoreElt(core, rnorm0) == braid_INVALID_RNORM )
          {
@@ -3300,6 +3301,7 @@ _braid_SetFullRNorm(braid_Core  core,
 {
    braid_Real  *rnorms   = _braid_CoreElt(core, full_rnorms);
    braid_Int    max_iter = _braid_CoreElt(core, max_iter);
+   braid_Int    skip     = _braid_CoreElt(core, skip);
    braid_Int    k;
 
    if (rnorms == NULL)
@@ -3318,7 +3320,7 @@ _braid_SetFullRNorm(braid_Core  core,
       rnorms[k] = rnorm;
 
       /* Set initial residual norm if not already set */
-      if (k == 0)
+      if ((k == 0) || ((k==1) && (skip == 1)))
       {
          if ( _braid_CoreElt(core, full_rnorm0) == braid_INVALID_RNORM )
          {

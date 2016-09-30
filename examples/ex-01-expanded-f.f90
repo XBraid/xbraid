@@ -21,33 +21,39 @@
 !
 ! EHEADER
 
+! Example:       ex-01-expanded-f.f90
+!
+! Interface:     Fortran 90
+! 
+! Requires:      Fortran 90 and C-language support     
+!
+! Compile with:  make ex-01-expanded-f
+!
+! Help with:     ex-01-expanded-f -help
+!
+! Sample run:    mpirun -np 2 ex-01-expanded-f
+!
+! Description:   solve the scalar ODE 
+!                   u' = lambda u, 
+!                   with lambda=-1 and y(0) = 1
+!
+!                Same as ex-01-expanded, only implemented in Fortran 90
+!                
+!                When run with the default 10 time steps, the solution is:
+!                $ ./ex-01-expanded-f
+!                $ cat ex-01-expanded-f.out.00*
+!                  0.100000000000000E+01
+!                  0.666666666666667E+00
+!                  0.444444444444444E+00
+!                  0.296296296296296E+00
+!                  0.197530864197531E+00
+!                  0.131687242798354E+00
+!                  0.877914951989026E-01
+!                  0.585276634659351E-01
+!                  0.390184423106234E-01
+!                  0.260122948737489E-01
+!                  0.173415299158326E-01
 
-!  Example 01-expanded, but in Fortran 90
-!
-!  Compile with: make ex-01-expanded-f
-!
-!  Sample run:   mpirun -np 2 ex-01-expanded-f
-!
-!  Description: solve the scalar ODE 
-!     u' = lambda u, 
-!     with lambda=-1 and y(0) = 1
-!  
-!  Same as ex-01-expanded, only uses F90
-!  
-!  When run with the default 10 time steps, the solution is:
-!  $ ./ex-01-expanded-f
-!  $ cat ex-01-expanded-f.out.00*
-!    0.100000000000000E+01
-!    0.666666666666667E+00
-!    0.444444444444444E+00
-!    0.296296296296296E+00
-!    0.197530864197531E+00
-!    0.131687242798354E+00
-!    0.877914951989026E-01
-!    0.585276634659351E-01
-!    0.390184423106234E-01
-!    0.260122948737489E-01
-!    0.173415299158326E-01
 
 !--------------------------------------------------------------------------
 !   User-defined routines and structures
