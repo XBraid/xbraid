@@ -199,7 +199,7 @@ int my_Step(braid_App        app,
    double tstop;              /* evolve to this time*/
    int level, i;
    double cfl, x;
-   double deltaT = tstop - tstart; 
+   double deltaT;
    double deltaX = (app->xstop - app->xstart) / (u->size - 1.0);
 
    braid_StepStatusGetLevel(status, &level);
@@ -292,7 +292,7 @@ my_Residual(braid_App        app,
    double tstop;              /* evolve to this time*/
    int i;
    double cfl, x;
-   double deltaT = tstop - tstart; 
+   double deltaT;
    double deltaX = (app->xstop - app->xstart) / (ustop->size - 1.0);
 
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);

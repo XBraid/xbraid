@@ -34,9 +34,17 @@ include makefile.inc
 # Targets
 ##################################################################
 
-BRAID_HEADERS = _braid.h braid.h _util.h braid_test.h braid_status.h braid_defs.h mpistubs.h
+BRAID_HEADERS = _braid.h braid.h _util.h braid_test.h braid_status.h braid_defs.h
 
-BRAID_FILES = _util.c braid.c _braid.c braid_test.c _braid_status.c braid_F90_iface.c mpistubs.c
+BRAID_FILES = _util.c braid.c _braid.c braid_test.c _braid_status.c braid_F90_iface.c
+
+ifeq ($(sequential),yes)
+	BRAID_HEADERS += mpistubs.h
+	BRAID_FILES += mpistubs.c
+	SEQFLAGS = -Dbraid_SEQUENTIAL
+else
+	SEQFLAGS = 
+endif
 
 BRAID_OBJ = $(BRAID_FILES:.c=.o)
 
@@ -46,7 +54,7 @@ BRAID_OBJ = $(BRAID_FILES:.c=.o)
 
 # Rule for compiling .c files
 %.o: %.c $(BRAID_HEADERS)
-	$(MPICC) $(CFLAGS) -c $< -o $@
+	$(MPICC) $(SEQFLAGS) $(CFLAGS) -c $< -o $@
 
 libbraid.a: $(BRAID_HEADERS) $(BRAID_OBJ)
 	@echo "Building" $@ "..."
