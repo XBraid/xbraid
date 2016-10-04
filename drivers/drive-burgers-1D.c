@@ -588,7 +588,7 @@ my_Access(braid_App          app,
 
    MPI_Comm_rank(comm, &myid);
 
-   sprintf(filename, "%s.%07d.%05d", "ex-burgers.out", index, myid);
+   sprintf(filename, "%s.%07d.%05d", "drive-burgers-1D.out", index, myid);
    file = fopen(filename, "w");
    fprintf(file, "%d\n", ntime+1);
    fprintf(file, "%.14e\n", app->tstart);
@@ -851,7 +851,7 @@ int main (int argc, char *argv[])
    double        tstart, tstop, epsilon, a, dx, dt;
    int           i, ntime;
    double        xstart, xstop, xLeft, xRight;
-   int           nspace, problem;
+   int           nspace, problem, myid;
 
    int           max_levels    = 2;
    int           nrelax        = 1;
@@ -872,9 +872,11 @@ int main (int argc, char *argv[])
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
+   comm   = MPI_COMM_WORLD;
+   MPI_Comm_rank(comm, &myid);
+
 
    /* dt = dx = 0.1 by default */
-   comm   = MPI_COMM_WORLD;
    tstart =  0.0;
    tstop  =  5.0;
    ntime  =  60;
@@ -896,8 +898,6 @@ int main (int argc, char *argv[])
    {
       if ( strcmp(argv[arg_index], "-help") == 0 )
       {
-         int  myid;
-         MPI_Comm_rank(comm, &myid);
          if ( myid == 0 )
          {
             printf("\n");
@@ -1162,24 +1162,25 @@ int main (int argc, char *argv[])
    //      my_InterpBilinear);
 
    braid_Drive(core);
-
-   printf("\n-----------------------------------------------------------------\n"); 
-   printf("-----------------------------------------------------------------\n\n"); 
-   printf( " Per level diagnostic information \n\n");
-   printf("level     dx         dt       a*dt/dx       a*dt/dx^2\n"); 
-   printf("-----------------------------------------------------------------\n"); 
-   for( i = 0; i < max_levels; i++)
+   
+   if(myid == 0)
    {
-      dx = app->sc_info[i*2];
-      dt = app->sc_info[i*2+1];
-      if (dx == -1){
-         break;
-      }
-      printf(" %2d   |   %1.2e    %1.2e    %1.2e    %1.2e\n", i, dx, dt, a*dt/dx, a*dt/(dx*dx) ); 
+      printf("\n-----------------------------------------------------------------\n"); 
+      printf("-----------------------------------------------------------------\n\n"); 
+      printf( " Per level diagnostic information \n\n");
+      printf("level     dx         dt       a*dt/dx       a*dt/dx^2\n"); 
+      printf("-----------------------------------------------------------------\n"); 
+      for( i = 0; i < max_levels; i++)
+      {
+         dx = app->sc_info[i*2];
+         dt = app->sc_info[i*2+1];
+         if (dx == -1){
+            break;
+         }
+         printf(" %2d   |   %1.2e    %1.2e    %1.2e    %1.2e\n", i, dx, dt, a*dt/dx, a*dt/(dx*dx) ); 
+      }  
+      printf( "\n" );
    }
-   printf( "\n" );
-
-
 
    braid_Destroy(core);
    free( app->sc_info);

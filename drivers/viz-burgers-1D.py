@@ -6,11 +6,11 @@ from os import sys
 # Run like 
 #  $ python viz.py
 #
-#  Vizualize the files from ex-burgers.c.  The output is assumed to have 
+#  Vizualize the files from drive-burgers-1D.c.  The output is assumed to have 
 #  the following format.  The filenames are 
 #       file_stem + '.' step_number + '.' + rank
 #  So, the filename
-#       ex-burgers.out.0000350.00000
+#       drive-burgers-1D.out.0000350.00000
 #  is the output from step 350 from processor rank 0.  Right now,
 #  there is no parallelism, so it's always rank 0.
 #
@@ -32,7 +32,7 @@ from os import sys
 
 # Set the braid iteration number and number of steps
 rank = 0 #int(sys.argv[1])
-file_stem = 'ex-burgers.out.'
+file_stem = 'drive-burgers-1D.out.'
 
 # Find out size of problem in space and time, and the 
 # grid spacings

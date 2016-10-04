@@ -6,11 +6,11 @@ from os import sys
 # Run like 
 #  $ python viz.py
 #
-#  Vizualize the files from ex-burgers.c.  The output is assumed to have 
+#  Vizualize the files from ex-02.c.  The output is assumed to have 
 #  the following format.  The filenames are 
 #       file_stem + '.' step_number + '.' + rank
 #  So, the filename
-#       ex-burgers.out.0000350.00000
+#       ex-02.out.0000350.00000
 #  is the output from step 350 from processor rank 0.  Right now,
 #  there is no parallelism, so it's always rank 0.
 #
@@ -32,7 +32,7 @@ from os import sys
 
 # Set the braid iteration number and number of steps
 rank = 0 #int(sys.argv[1])
-file_stem = 'ex-burgers.out.'
+file_stem = 'ex-02.out.'
 
 # Find out size of problem in space and time, and the 
 # grid spacings
@@ -65,6 +65,7 @@ mpl.ylabel('u')
 mpl.xlabel('space')
 mpl.title('Step 0')
 mpl.ylim(data[0,:].min()-1.0, data[0,:].max()+1.0)
+mpl.xlim(xstart, xstop) 
 
 mpl.figure(2)
 mpl.plot(mesh, data[nsteps/2,:], '-o')
@@ -72,6 +73,7 @@ mpl.ylabel('u')
 mpl.xlabel('space')
 mpl.title('Step %d'%(nsteps/2))
 mpl.ylim(data[nsteps/2,:].min()-1.0, data[nsteps/2,:].max()+1.0)
+mpl.xlim(xstart, xstop) 
 
 mpl.figure(3)
 mpl.plot(mesh, data[nsteps-1,:], '-o')
@@ -79,6 +81,7 @@ mpl.ylabel('u')
 mpl.xlabel('space')
 mpl.title('Step %d'%(nsteps-1))
 mpl.ylim(data[nsteps-1,:].min()-1.0, data[nsteps-1,:].max()+1.0)
+mpl.xlim(xstart, xstop) 
 
 
 mpl.show()

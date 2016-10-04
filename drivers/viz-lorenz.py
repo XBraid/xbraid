@@ -1,7 +1,7 @@
 import scipy, numpy, matplotlib
 from matplotlib import pyplot
 
-data = numpy.loadtxt('ex-lorenz.out')
+data = numpy.loadtxt('drive-lorenz.out')
 
 x = data[:,0]
 y = data[:,1]

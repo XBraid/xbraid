@@ -162,7 +162,7 @@ my_Residual(braid_App        app,
    double tstop;              /* evolve to this time*/
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
 
-   /* On the finest grid, each value is half the previous value */
+   /* compute A(u_i, u_{i-1}) */
    (r->value) = (1. + tstop-tstart)*(ustop->value) - (r->value);
 
    return 0;

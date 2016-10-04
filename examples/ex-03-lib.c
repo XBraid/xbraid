@@ -84,7 +84,7 @@
  *   max_iter            maximum number of spatial MG iterations
  *   tol                 stopping tolerance for spatial MG
  *   explicit            use explicit discretization (1) or not (0)
- *   output_vis            save the error for GLVis visualization
+ *   output_vis          save the error for GLVis visualization
  *   output_files        save the solution/error/error norm to files
  */
 typedef struct _simulation_manager_struct {

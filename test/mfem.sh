@@ -79,14 +79,9 @@ mkdir -p $output_dir
 
 # compile the regression test drivers 
 echo "Compiling regression test drivers"
-cd $example_dir
-make clean
-make 
 cd $driver_dir
 make clean
 make 
-make drive-06
-make drive-07
 cd $test_dir
 
 
