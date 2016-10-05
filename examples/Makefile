@@ -60,16 +60,6 @@ C_EXAMPLES = ex-03 ex-03-serial
 # put this rule first so it becomes the default
 all: $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES)
 
-# Rule for building ex-burgers
-ex-burgers: ex-burgers.c $(BRAID_LIB_FILE)
-	@echo "Building" $@ "..."
-	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
-
-# Rule for building ex-lorenz
-ex-lorenz: ex-lorenz.c $(BRAID_LIB_FILE)
-	@echo "Building" $@ "..."
-	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
-
 # Rule for building ex-01
 ex-01: ex-01.c $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
@@ -87,6 +77,26 @@ ex-01-expanded-f: ex-01-expanded-f.f90 $(BRAID_LIB_FILE)
 
 # Rule for building ex-01-expanded-bdf2
 ex-01-expanded-bdf2: ex-01-expanded-bdf2.c $(BRAID_LIB_FILE)
+	@echo "Building" $@ "..."
+	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+
+# Rule for building ex-02
+ex-02: ex-02.c $(BRAID_LIB_FILE) ex-02-lib.c
+	@echo "Building" $@ "..."
+	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+
+# Rule for building ex-02-serial
+ex-02-serial: ex-02-serial.c $(BRAID_LIB_FILE) ex-02-lib.c
+	@echo "Building" $@ "..."
+	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+
+# Rule for building ex-03
+ex-03: ex-03.c $(BRAID_LIB_FILE) ex-03-lib.c
+	@echo "Building" $@ "..."
+	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+
+# Rule for building ex-03-serial
+ex-03-serial: ex-03-serial.c $(BRAID_LIB_FILE) ex-03-lib.c
 	@echo "Building" $@ "..."
 	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
 

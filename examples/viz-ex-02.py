@@ -31,13 +31,12 @@ from os import sys
 ##
 
 # Set the braid iteration number and number of steps
-rank = 0 #int(sys.argv[1])
 file_stem = 'ex-02.out.'
+current_rank = 0
 
-# Find out size of problem in space and time, and the 
-# grid spacings
+# Load the initial solution file and extract the problem size in space and time and the grid spacings
 step = 0
-fname = file_stem + "%07d"%step + '.' + "%05d"%rank
+fname = file_stem + "%07d"%step + '.' + "%05d"%current_rank
 data = loadtxt(fname)
 nsteps = int(data[0])
 tstart = float(data[1])
@@ -48,10 +47,16 @@ xstop = float(data[5])
 mesh = linspace(xstart, xstop, nspace)
 data = zeros((nsteps,data.shape[0]-6))
 
-# Load space-time solution
+# Load space-time solution, noting that we don't know the MPI ranks ahead of
+# time that generated the files, so we guess :-)
 for step in range(nsteps):
-    fname = file_stem + "%07d"%step + '.' + "%05d"%rank
-    data[step,:] = (loadtxt(fname))[6:]
+    try:
+        fname = file_stem + "%07d"%step + '.' + "%05d"%current_rank
+        data[step,:] = (loadtxt(fname))[6:]
+    except:
+        current_rank = current_rank + 1
+        fname = file_stem + "%07d"%step + '.' + "%05d"%current_rank
+        data[step,:] = (loadtxt(fname))[6:]
 
 mpl.figure(0)
 mpl.imshow(data,origin='lower',extent=(xstart, xstop, tstart, tstop))

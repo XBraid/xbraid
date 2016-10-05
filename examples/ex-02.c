@@ -40,36 +40,17 @@
  *
  **/
 
-
 #include <stdlib.h>
 #include <stdio.h>
-#include <math.h>
 #include <string.h>
 
 #include "braid.h"
 #include "braid_test.h"
-
-#ifdef M_PI
-   #define PI M_PI
-#else
-   #define PI 3.14159265358979
-#endif
+#include "ex-02-lib.c"
 
 /*--------------------------------------------------------------------------
- * My integration routines
+ * My App and Vector structures
  *--------------------------------------------------------------------------*/
-
-// have same interface and bells and whistles as f90 and expanded
-//
-// if you do spatial coarsening, then you'll have to re-compute the matrix stencils based on x.
-//
-// mem-check
-//
-// don't forget that you want a serial time evolution code as well...
-//
-// Get the residual option to work
-//
-// Put in Test All
 
 /* can put anything in my app and name it anything as well */
 typedef struct _braid_App_struct
@@ -81,11 +62,10 @@ typedef struct _braid_App_struct
    double    xstart;       /* Define the spatial domain */
    double    xstop;
    int       nspace;
-   double    xLeft;        /* the left spatial boundary condition (for all t-values) */
-   double    xRight;       /* the right spatial boundary condition (for all t-values) */
    double    matrix[3];    /* the three point spatial discretization stencil */
    double *  g;            /* temporary vector for inversions and mat-vecs */
-   double *  sc_info;      /* Runtime information on CFL's encountered and spatial discretizations used */
+   double *  sc_info;      /* Runtime information that tracks the space-time grids visited */
+   int       print_level;  /* Level of output desired by user (see the -help message below) */
 } my_App;
 
 /* Can put anything in my vector and name it anything as well */
@@ -96,98 +76,20 @@ typedef struct _braid_Vector_struct
 
 } my_Vector;
 
-
-/* Exact solution */ 
-double exact(double t, double x)
+/* create and allocate a vector */
+void
+create_vector(my_Vector **u, 
+              int size)
 {
-    return sin(x)*cos(t);
-}
-
-/* Forcing term F(t, x) for PDE,  u_t = u_xx + F(t,x) */
-double forcing(double t, double x)
-{
-   return (-1.0)*sin(x)*sin(t) + sin(x)*cos(t);
-}
-
-/* Compute L2-norm of the error at a point in time */
-double compute_error_norm(double * values, double xstart, double xstop, int nspace, double t)
-{
-   int i;
-   double deltaX = (xstop - xstart) / (nspace - 1.0);
-   double x = xstart;
-   double error = 0.0;
-
-   for(i = 0; i < nspace; i++)
-   {
-      error = error + pow( values[i] - exact(t, x), 2);
-      x += deltaX;
-   }
-
-   return sqrt( error*deltaX ); 
-}
-
-/* Helper function for tridiagonal solver */
-double dabs(double x)
-{
-   if (x < 0.0)
-   {
-      return -1.0;
-   }
-   else if (x > 0.0)
-   {
-      return 1.0;
-   }
-   else
-   {
-      return 0.0;
-   }
+   (*u) = (my_Vector *) malloc(sizeof(my_Vector));
+   ((*u)->size)   = size;
+   ((*u)->values) = (double *) malloc(size*sizeof(double));
 }
 
 
-/* Helper function for Step: Tridiagonal system solver (Thomas algorithm) */
-void 
-solve_tridiag(double *x, double *g, int N, double* matrix)
-{
-   /**
-    * solves Ax = v where A is a tridiagonal matrix with stencil [ a, b, c].
-    * 
-    * There is a built in assumption that the first and last rows are the 
-    * identity (boundary conditions)
-    *
-    * Input
-    * -----
-    * x - initially contains v
-    * g - temp data array for the algorithm
-    * N - length of vectors x and g
-    * matrix - length three array representing the tridiagonal stencil
-    * 
-    * Output
-    * ------
-    * x - contains solution upon output (over-written)
-    * g - is a working array, and will be modified as such
-    **/
-
-   int i;
-   double m;
-       
-   g[0] = 0.0;  /* Assume the first row is the identity */
-   
-   /* loop from 1 to N - 2 inclusive, performing the forward sweep */
-   for (i = 1; i < N - 1; i++) 
-   {
-       m = 1.0 / (matrix[1] - matrix[0]*g[i-1]);
-       g[i] = m*matrix[2];
-       x[i] = m*(x[i] - matrix[0]*x[i-1]);
-   }
-   
-   /* Do nothing for x[N-1], assume last row is the identity */
-   
-   /* loop from N - 2 to 1 inclusive to perform the back substitution */
-   for (i = N - 2; i >= 1; i--)
-   {
-       x[i] = x[i] - g[i] * x[i+1];
-   }
-}
+/*--------------------------------------------------------------------------
+ * My integration routines
+ *--------------------------------------------------------------------------*/
 
 int my_Step(braid_App        app,
             braid_Vector     ustop,
@@ -198,25 +100,14 @@ int my_Step(braid_App        app,
    double tstart;             /* current time */
    double tstop;              /* evolve to this time*/
    int level, i;
-   double cfl, x;
-   double deltaT;
-   double deltaX = (app->xstop - app->xstart) / (u->size - 1.0);
+   double deltaX, deltaT;
 
    braid_StepStatusGetLevel(status, &level);
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
    deltaT = tstop - tstart;
+   deltaX = (app->xstop - app->xstart) / (ustop->size - 1.0);
    
-   /* Store information on CFL and spatial coarsening for later output */
-   (app->sc_info)[ (2*level) ] = deltaX;
-   (app->sc_info)[ (2*level) + 1] = deltaT;
-   
-   /* Set up matrix stencil for 1D heat equation*/
-   cfl = (deltaT/(deltaX*deltaX));
-   app->matrix[0] = -cfl;
-   app->matrix[1] = 1.0 + 2*cfl;
-   app->matrix[2] = -cfl;
-
-   /* Braid forcing */
+   /* XBraid forcing */
    if(fstop != NULL)
    {
       for(i = 0; i < u->size; i++)
@@ -224,21 +115,16 @@ int my_Step(braid_App        app,
          u->values[i] = u->values[i] + fstop->values[i];
       }
    }
+   
+   /* Take backward Euler step 
+    * Note: if an iterative solver were used, ustop->values would 
+    *       contain the XBraid's best initial guess. */
+   take_step(u->values, u->size, tstop, app->xstart, deltaX, deltaT,
+         app->matrix, app->g); 
 
-   /* Apply boundary conditions */
-   (u->values[0]) = (app->xLeft);
-   (u->values[u->size-1]) = (app->xRight);
-
-   /* PDE forcing */
-   x = app->xstart;
-   for(i = 0; i < u->size; i++)
-   {
-      u->values[i] = u->values[i] + deltaT*forcing(tstop, x);
-      x = x + deltaX;
-   }
-
-   /* Backward Euler step */
-   solve_tridiag(u->values, app->g, u->size, app->matrix);
+   /* Store info on space-time grids visited during the simulation */
+   (app->sc_info)[ (2*level) ] = deltaX;
+   (app->sc_info)[ (2*level) + 1] = deltaT;
    
    /* no refinement */
    braid_StepStatusSetRFactor(status, 1);
@@ -246,75 +132,6 @@ int my_Step(braid_App        app,
    return 0;
 }
 
-/* Helper function for Residual: Carry out mat-vec with tridiagonal stencil */
-void 
-matvec_tridiag(double *x, double *g, int N, double* matrix)
-{
-   /**
-    * Matvec solves g <-- Ax, where A is a tridiagonal matrix with stencil [ a, b, c].
-    * 
-    * There is a built in assumption that the first and last rows are the 
-    * identity (boundary conditions)
-    *
-    * Input
-    * -----
-    * x - input vector 
-    * N - length of vectors x and g
-    * matrix - length three array representing the tridiagonal stencil
-    * 
-    * Output
-    * ------
-    * g - Equals A*x
-    **/
-
-   int i;
-       
-   /* loop from 1 to N - 2 inclusive, performing the matvec */
-   for (i = 1; i < N - 1; i++) 
-   {
-       g[i] = matrix[0]*x[i-1] + matrix[1]*x[i] + matrix[2]*x[i+1];
-   }
-   
-   /* boundary points */
-   g[0] = x[0];
-   g[N-1] = x[N-1];
-
-}
-
-
-int
-my_Residual(braid_App        app,
-            braid_Vector     ustop,
-            braid_Vector     r,
-            braid_StepStatus status)
-{
-   double tstart;             /* current time */
-   double tstop;              /* evolve to this time*/
-   int i;
-   double cfl, x;
-   double deltaT;
-   double deltaX = (app->xstop - app->xstart) / (ustop->size - 1.0);
-
-   braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
-   deltaT = tstop - tstart;
-   
-   /* Set up matrix stencil for 1D heat equation*/
-   cfl = (deltaT/(deltaX*deltaX));
-   app->matrix[0] = -cfl;
-   app->matrix[1] = 1.0 + 2*cfl;
-   app->matrix[2] = -cfl;
-
-   /* Residual r = A*ustop - r - forcing */
-   matvec_tridiag(ustop->values, app->g, ustop->size, app->matrix);
-   x = app->xstart;
-   for(i = 0; i < r->size; i++)
-   {
-      r->values[i] = app->g[i] - r->values[i] - deltaT*forcing(tstop, x);
-      x = x + deltaX;
-   }
-
-   return 0;
-}
 
 int
 my_Init(braid_App     app,
@@ -325,22 +142,15 @@ my_Init(braid_App     app,
    int    i; 
    int nspace = (app->nspace);
    double deltaX = (app->xstop - app->xstart) / (nspace - 1.0);
-   double x = app->xstart;
 
    /* Allocate vector */
-   u = (my_Vector *) malloc(sizeof(my_Vector));
-   (u->size)   = nspace;
-   (u->values) = (double *) malloc((u->size)*sizeof(double));
-
+   create_vector(&u, nspace);
    
    /* Initialize vector (with correct boundary conditions) */
    if(t == 0.0)
    {
-      for(i=0; i < nspace; i++)
-      {
-         (u->values)[i] = exact(t, x);
-         x += deltaX;
-      }
+      /* Get the solution at time t=0 */
+      get_solution(u->values, u->size, 0.0, app->xstart, deltaX);
    }
    else
    {
@@ -366,9 +176,7 @@ my_Clone(braid_App     app,
    int size = (u->size);
    int i;
 
-   v = (my_Vector *) malloc(sizeof(my_Vector));
-   (v->size)   = size;
-   (v->values) = (double *) malloc(size*sizeof(double));
+   create_vector(&v, size);
    for (i = 0; i < size; i++)
    {
       (v->values)[i] = (u->values)[i];
@@ -429,35 +237,30 @@ my_Access(braid_App          app,
           braid_Vector       u,
           braid_AccessStatus astatus)
 {
-   int        i, index, rank;
+   int        index, rank, level, done;
    char       filename[255];
-   FILE      *file;
    double     t, error;
    
    braid_AccessStatusGetT(astatus, &t);
    braid_AccessStatusGetTIndex(astatus, &index);
-
-   MPI_Comm_rank( (app->comm), &rank);
-
-   sprintf(filename, "%s.%07d.%05d", "ex-02.out", index, rank);
-   file = fopen(filename, "w");
-   fprintf(file, "%d\n",    (app->ntime) +1);
-   fprintf(file, "%.14e\n", (app->tstart) );
-   fprintf(file, "%.14e\n", (app->tstop) );
-   fprintf(file, "%d\n",    (u->size) );
-   fprintf(file, "%.14e\n", (app->xstart) );
-   fprintf(file, "%.14e\n", (app->xstop) );
-   for (i = 0; i < (u->size); i++)
+   braid_AccessStatusGetLevel(astatus, &level);
+   braid_AccessStatusGetDone(astatus, &done);
+   
+   /* Print solution to file if simulation is over */
+   if(done)
    {
-      fprintf(file, "%.14e\n", (u->values)[i]);
+      MPI_Comm_rank( (app->comm), &rank);
+      sprintf(filename, "%s.%07d.%05d", "ex-02.out", index, rank);
+      save_solution(filename, u->values, u->size, app->xstart, 
+            app->xstop, app->ntime, app->tstart, app->tstop);
    }
-   fflush(file);
-   fclose(file);
 
-   if(index == app->ntime)
+   /* IF on the finest level AND print_level is high enough AND at the final time,
+    * THEN print out the discretization error */
+   if( (level == 0) && ((app->print_level) > 0) && (index == app->ntime) )
    {
       error = compute_error_norm(u->values, app->xstart, app->xstop, u->size, t);
-      printf("\n  Discretization error at final time:  %1.4e\n", error);
+      printf("  Discretization error at final time:  %1.4e\n", error);
    }
 
    return 0;
@@ -499,15 +302,12 @@ my_BufUnpack(braid_App           app,
              braid_Vector       *u_ptr,
              braid_BufferStatus  bstatus)
 {
-   my_Vector *u;
+   my_Vector *u = NULL;
    double    *dbuffer = buffer;
    int        i, size;
 
    size = dbuffer[0];
-   
-   u = (my_Vector *) malloc(sizeof(my_Vector));
-   (u->size)   = size;
-   (u->values) = (double *) malloc(size*sizeof(double));
+   create_vector(&u, size);
 
    for (i = 0; i < size; i++)
    {
@@ -519,46 +319,69 @@ my_BufUnpack(braid_App           app,
 }
 
 
+/*--------------------------------------------------------------------------
+ * my_Residual, my_Coarsen and my_Refine are advanced XBraid options, ignore
+ * them until you understand the rest of the driver.
+ *--------------------------------------------------------------------------*/
+
+int
+my_Residual(braid_App        app,
+            braid_Vector     ustop,
+            braid_Vector     r,
+            braid_StepStatus status)
+{
+   double tstart;             /* current time */
+   double tstop;              /* evolve to this time*/
+   int i;
+   double x, deltaX, deltaT;
+
+   braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+   deltaT = tstop - tstart;
+   deltaX = (app->xstop - app->xstart) / (ustop->size - 1.0);
+   
+   /* Set up matrix stencil for 1D heat equation*/
+   compute_stencil(deltaX, deltaT, app->matrix);
+   
+   /* Residual r = A*xstop - r - forcing - boundary 
+    *   note: there are no boundary terms here */
+   matvec_tridiag(ustop->values, app->g, ustop->size, app->matrix);
+   x = app->xstart;
+   for(i = 0; i < r->size; i++)
+   {
+      r->values[i] = app->g[i] - r->values[i] - deltaT*forcing(tstop, x);
+      x = x + deltaX;
+   }
+
+   return 0;
+}
+
 /* Bilinear Coarsening */
 int
-my_CoarsenLinear(braid_App              app,           
-                 braid_Vector           fu,
-                 braid_Vector          *cu_ptr,
-                 braid_CoarsenRefStatus status)
+my_Coarsen(braid_App              app,           
+           braid_Vector           fu,
+           braid_Vector          *cu_ptr,
+           braid_CoarsenRefStatus status)
 {
 
-   int i, csize, fidx, level;
-   double *fvals = fu->values;
+   int csize, level;
    my_Vector *v;
    
    /* This returns the level for fu */
    braid_CoarsenRefStatusGetLevel(status, &level);
    
-   /* There are only enough points in space to coarsen on the first
-    * floor(log2(app->nspace)) levels.  The finest level is 0 */
-   if( level < floor(log2(app->nspace)) )
+   /* Stop spatial coarsening/interpolation after reaching a grid of 3 points.
+    * This is the smallest spatial grid (2 boundary points, one true DOF). */
+   if( level < floor(log2(app->nspace)) - 1 )
    {
-      /* Interpolate to interior points */
-      csize = (fu->size - 1)/2 + 1;
-      v = (my_Vector *) malloc(sizeof(my_Vector));
-      (v->size)   = csize;
-      (v->values) = (double *) malloc(csize*sizeof(double));
-      for (i = 1; i < csize-1; i++)
-      {
-         fidx = 2*i;
-         (v->values)[i] = 0.5*fvals[fidx] + 0.25*fvals[fidx+1] + 0.25*fvals[fidx-1];
-      }
-      
-      /* Boundary Conditions */
-      (v->values)[0] = (4./3.)*0.5*fvals[0] + (4./3.)*0.25*fvals[1];
-      (v->values)[csize-1] = (4./3.)*0.5*fvals[fu->size-1] + (4./3.)*0.25*fvals[fu->size-2];
+      csize = ((fu->size) - 1)/2 + 1;
+      create_vector(&v, csize);
+      coarsen_1D(v->values, fu->values, csize, fu->size);
    }
    else
    {
       /* No coarsening, clone the vector */
       my_Clone(app, fu, &v);
    }   
-
 
    *cu_ptr = v;
 
@@ -567,39 +390,25 @@ my_CoarsenLinear(braid_App              app,
 
 /* Bilinear interpolation */
 int
-my_InterpLinear(braid_App              app,           
-                braid_Vector           cu,
-                braid_Vector          *fu_ptr,
-                braid_CoarsenRefStatus status)
+my_Interp(braid_App              app,           
+          braid_Vector           cu,
+          braid_Vector          *fu_ptr,
+          braid_CoarsenRefStatus status)
 {
 
-   int i, fsize, level;
-   double *cvals = cu->values;
+   int fsize, level;
    my_Vector *v;
 
    /* This returns the level for fu_ptr */
    braid_CoarsenRefStatusGetLevel(status, &level);
    
-   /* There are only enough points in space to coarsen on the first
-    * floor(log2(app->nspace)) levels.  The finest level is 0 */
-   if( level < floor(log2(app->nspace)) )
+   /* Stop spatial coarsening/interpolation after reaching a grid of 3 points.
+    * This is the smallest spatial grid (2 boundary points, one true DOF). */
+   if( level < floor(log2(app->nspace)) - 1 )
    {
-      /* Interpolate to interior points */
       fsize = (cu->size - 1)*2 + 1;
-      v = (my_Vector *) malloc(sizeof(my_Vector));
-      (v->size)   = fsize;
-      (v->values) = (double *) malloc(fsize*sizeof(double));
-      for (i = 1; i < fsize-1; i++)
-      {
-         if(i%2 == 1)
-            (v->values)[i] = 0.5*cvals[i/2] + 0.5*cvals[(i+1)/2];
-         else
-            (v->values)[i] = cvals[i/2];
-      }
-      
-      /* Boundary Conditions */
-      (v->values)[0] = cvals[0];
-      (v->values)[fsize-1] = cvals[cu->size-1];
+      create_vector(&v, fsize);
+      interpolate_1D(cu->values, v->values, cu->size, fsize);     
    }
    else
    {
@@ -621,42 +430,41 @@ int main (int argc, char *argv[])
 {
    braid_Core    core;
    my_App       *app;
-   MPI_Comm      comm;
-   double        tstart, tstop, dx, dt;
-   int           i, ntime, rank;
-   double        xstart, xstop, xLeft, xRight;
-   int           nspace;
+   MPI_Comm      comm, comm_x, comm_t;
+   int           i, rank, arg_index;
+   double        loglevels;
+   
+   /* Define space-time domain */
+   double    tstart        =  0.0;
+   double    tstop         =  2*PI;
+   int       ntime         =  64;
+   double    xstart        =  0.0;
+   double    xstop         =  PI;
+   int       nspace        =  33;
 
-   int           max_levels    = 2;
-   int           nrelax        = 1;
-   int           nrelax0       = -1;
-   int           skip          = 0;
-   double        tol           = 1.0e-07;
-   int           cfactor       = 2;
-   int           max_iter      = 30;
-   int           fmg           = 0;
-   int           nfmg_Vcyc     = 1;
-   int           scoarsen      = 0;
-   int           res           = 0;
-
-   int           arg_index;
+   /* Define XBraid parameters 
+    * See -help message for descriptions */
+   int       max_levels    = 2;
+   int       nrelax        = 1;
+   int       skip          = 0;
+   double    tol           = 1.0e-07;
+   int       cfactor       = 2;
+   int       max_iter      = 30;
+   int       min_coarse    = 3;
+   int       fmg           = 0;
+   int       scoarsen      = 0;
+   int       res           = 0;
+   int       wrapper_tests = 0;
+   int       print_level   = 1;
+   int       access_level  = 1;
+   int       use_sequential= 0;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
    comm   = MPI_COMM_WORLD;
    MPI_Comm_rank(comm, &rank);
-
-   tstart =  0.0;
-   tstop  =  2*PI;
-   ntime  =  64;
-   xstart =  0.0;
-   xstop  =  PI;
-   nspace =  32;
-   xLeft  =  exact(0, 0.0);
-   xRight =  exact(0, PI);
    
    /* Parse command line */
-
    arg_index = 1;
    while (arg_index < argc)
    {
@@ -667,21 +475,53 @@ int main (int argc, char *argv[])
             printf("\n");
             printf(" Solve the 1D heat equation on space-time domain:  [0, PI] x [0, 2*PI]\n");
             printf(" with exact solution u(t,x) = sin(x)*cos(t) \n\n");
-            printf("  -ntime <ntime>       : set num points in time\n");
-            printf("  -nspace <nspace>     : set num points in space\n");
-            printf("  -ml   <max_levels>   : set max levels\n");
-            printf("  -nu   <nrelax>       : set num F-C relaxations\n");
-            printf("  -skip <set_skip>     : set skip relaxations on first down-cycle; 0: no skip;  1: skip\n");
-            printf("  -nu0  <nrelax>       : set num F-C relaxations on level 0\n");
-            printf("  -tol  <tol>          : set stopping tolerance (scaled later by sqrt(dt) sqrt(dx))\n");
-            printf("  -cf   <cfactor>      : set coarsening factor\n");
-            printf("  -mi   <max_iter>     : set max iterations\n");
-            printf("  -fmg  <nfmg_Vcyc>    : use FMG cycling, nfmg_Vcyc V-cycles at each fmg level\n");
-            printf("  -sc                  : use spatial coarsening by factor of 2 each level\n");
-            printf("  -res                 : use my residual\n");
-            printf("\n");
+            printf("   -wrapper_tests       : run the user code + XBraid wrapper tests (no simulation)\n\n");
+            printf("   -use_seq             : use the solution from sequential time stepping as the initial guess\n");
+            printf("                          for XBraid. All zero residuals should be produced.\n");
+            printf("   -ntime <ntime>       : set num points in time\n");
+            printf("   -nspace <nspace>     : set num points in space\n\n");
+            printf("   -ml   <max_levels>   : set max levels\n");
+            printf("   -nu   <nrelax>       : set num F-C relaxations\n");
+            printf("   -skip <set_skip>     : set skip relaxations on first down-cycle; 0: no skip;  1: skip\n");
+            printf("   -tol  <tol>          : set stopping tolerance (scaled later by sqrt(dt) sqrt(dx))\n");
+            printf("   -cf   <cfactor>      : set coarsening factor on all levels \n");
+            printf("   -mc  <min_coarse>    : set min possible coarse level size (default: 3)\n");
+            printf("   -mi   <max_iter>     : set max iterations\n");
+            printf("   -fmg                 : use FMG cycling\n");
+            printf("   -sc                  : use spatial coarsening by factor of 2 each level\n");
+            printf("   -res                 : use my residual\n\n");
+            printf("   -print_level <l>     : sets the print_level (default: 1) \n");
+            printf("                          0 - no output to standard out \n");
+            printf("                          1 - Basic convergence information and hierarchy statistics\n");
+            printf("                          2 - Debug level output \n");
+            printf("   -access_level <l>    : sets the access_level (default: 1) \n");
+            printf("                          0 - never call access \n");
+            printf("                          1 - call access only after completion \n");
+            printf("                          2 - call access every iteration and level\n\n");
          }
          exit(1);
+      }
+      else if ( strcmp(argv[arg_index], "-wrapper_tests") == 0 )
+      {
+         arg_index++;
+         wrapper_tests = 1;
+      }
+      else if ( strcmp(argv[arg_index], "-use_seq") == 0 )
+      {
+         arg_index++;
+         use_sequential = 1;
+         tol = -1.0;
+         max_iter = 5;
+      }
+      else if ( strcmp(argv[arg_index], "-ntime") == 0 )
+      {
+         arg_index++;
+         ntime = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-nspace") == 0 )
+      {
+         arg_index++;
+         nspace = atoi(argv[arg_index++]);
       }
       else if ( strcmp(argv[arg_index], "-ml") == 0 )
       {
@@ -698,21 +538,6 @@ int main (int argc, char *argv[])
          arg_index++;
          skip = atoi(argv[arg_index++]);
       }
-      else if ( strcmp(argv[arg_index], "-ntime") == 0 )
-      {
-         arg_index++;
-         ntime = atoi(argv[arg_index++]);
-      }
-      else if ( strcmp(argv[arg_index], "-nspace") == 0 )
-      {
-         arg_index++;
-         nspace = atoi(argv[arg_index++]);
-      }
-      else if ( strcmp(argv[arg_index], "-nu0") == 0 )
-      {
-         arg_index++;
-         nrelax0 = atoi(argv[arg_index++]);
-      }
       else if ( strcmp(argv[arg_index], "-tol") == 0 ) 
       {
          arg_index++;
@@ -723,6 +548,10 @@ int main (int argc, char *argv[])
          arg_index++;
          cfactor = atoi(argv[arg_index++]);
       }
+      else if( strcmp(argv[arg_index], "-mc") == 0 ){
+          arg_index++;
+          min_coarse = atoi(argv[arg_index++]);
+      }
       else if ( strcmp(argv[arg_index], "-mi") == 0 )
       {
          arg_index++;
@@ -732,7 +561,6 @@ int main (int argc, char *argv[])
       {
          arg_index++;
          fmg = 1;
-         nfmg_Vcyc = atoi(argv[arg_index++]);
       }
       else if ( strcmp(argv[arg_index], "-sc") == 0 )
       {
@@ -743,6 +571,14 @@ int main (int argc, char *argv[])
       {
          arg_index++;
          res = 1;
+      }
+      else if( strcmp(argv[arg_index], "-print_level") == 0 ){
+         arg_index++;
+         print_level = atoi(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-access_level") == 0 ){
+         arg_index++;
+         access_level = atoi(argv[arg_index++]);
       }
       else
       {
@@ -763,10 +599,9 @@ int main (int argc, char *argv[])
    (app->xstart)        = xstart;
    (app->xstop)         = xstop;
    (app->nspace)        = nspace;
-   (app->xLeft)         = xLeft;
-   (app->xRight)        = xRight;
+   (app->print_level)   = print_level;
 
-   /* Initialize the storage structure for recording spatial coarsening information */ 
+   /* Initialize storage for sc_info, for tracking space-time grids visited during the simulation */
    app->sc_info = (double*) malloc( 2*max_levels*sizeof(double) );
    for( i = 0; i < 2*max_levels; i++) {
       app->sc_info[i] = -1.0;
@@ -776,71 +611,68 @@ int main (int argc, char *argv[])
    braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
           my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
           my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
-
-   /* Scale tol by domain */
-   tol = tol/( sqrt((tstop - tstart)/(ntime-1))*sqrt((xstop - xstart)/(nspace-1)) );
-
-   /* Set Braid options */
-   braid_SetPrintLevel( core, 1);
-   braid_SetMaxLevels(core, max_levels);
-   braid_SetSkip(core, skip);
-   braid_SetNRelax(core, -1, nrelax);
-   if (nrelax0 > -1)
+   
+   /* The first step before running simulations, is always to verify the wrapper tests */
+   if(wrapper_tests)
    {
-      braid_SetNRelax(core,  0, nrelax0);
+      /* Create spatial communicator for wrapper-tests */
+      braid_SplitCommworld(&comm, 1, &comm_x, &comm_t);
+      
+      braid_TestAll(app, comm_x, stdout, 0.0, (tstop-tstart)/ntime, 
+                    2*(tstop-tstart)/ntime, my_Init, my_Free, my_Clone, 
+                    my_Sum, my_SpatialNorm, my_BufSize, my_BufPack, 
+                    my_BufUnpack, my_Coarsen, my_Interp, my_Residual, my_Step);
    }
-   braid_SetAbsTol(core, tol);
-   braid_SetCFactor(core, -1, cfactor);
-   braid_SetMaxIter(core, max_iter);
-   if (fmg)
+   else
    {
-      braid_SetFMG(core);
-      braid_SetNFMGVcyc(core, nfmg_Vcyc);
-   }
-   if (res)
-   {
-      braid_SetResidual(core, my_Residual);
-   }
-   if (scoarsen)
-   {
-      if( fabs(log2(nspace - 1.0) - round(log2(nspace - 1.0))) > 1e-10 )
+      /* Scale tol by domain */
+      tol = tol/( sqrt((tstop - tstart)/(ntime-1))*sqrt((xstop - xstart)/(nspace-1)) );
+      
+      /* Set Braid options */
+      braid_SetPrintLevel( core, print_level);
+      braid_SetAccessLevel( core, access_level);
+      braid_SetMaxLevels(core, max_levels);
+      braid_SetMinCoarse( core, min_coarse );
+      braid_SetSkip(core, skip);
+      braid_SetNRelax(core, -1, nrelax);
+      braid_SetAbsTol(core, tol);
+      braid_SetCFactor(core, -1, cfactor);
+      braid_SetMaxIter(core, max_iter);
+      braid_SetSeqSoln(core, use_sequential);
+      if (fmg)
+      {
+         braid_SetFMG(core);
+      }
+      if (res)
+      {
+         braid_SetResidual(core, my_Residual);
+      }
+      loglevels = log2(nspace - 1.0);
+      if ( scoarsen && ( fabs(loglevels - round(loglevels)) > 1e-10 ))
       {
          if(rank == 0)
          {
-            fprintf(stderr, "\nWarning!\nWhen using spatial coarsening, spatial grids "
-                            "must be power of 2 + 1, \ni.e., nspace = 2^k + 1.  Your "
-                            "spatial grid is of size %d.  Spatial \ncoarsening is "
-                            "therefore being ignored.\n\n", nspace);
+            fprintf(stderr, "\nWarning!\nFor spatial coarsening, spatial grids must be a "
+                    "power of 2 + 1, \ni.e., nspace = 2^k + 1.  Your spatial grid is of size"
+                    " %d.  Spatial \ncoarsening is therefore being ignored.\n\n", nspace);
          }
       }
       else
       {
-         braid_SetSpatialCoarsen(core, my_CoarsenLinear);
-         braid_SetSpatialRefine(core,  my_InterpLinear);
+         braid_SetSpatialCoarsen(core, my_Coarsen);
+         braid_SetSpatialRefine(core,  my_Interp);
       }
-   }
-
-   braid_Drive(core);
-
-   if(rank == 0)
-   {
-      printf("\n-----------------------------------------------------------------\n"); 
-      printf("-----------------------------------------------------------------\n\n"); 
-      printf( " Per level diagnostic information \n\n");
-      printf("level       dx          dt        dt/dx^2\n"); 
-      printf("-----------------------------------------------------------------\n"); 
-      for( i = 0; i < max_levels; i++)
+      
+      braid_Drive(core);
+      
+      /* Print accumulated info on space-time grids visited during the simulation */
+      if( (print_level > 0) && (rank == 0))
       {
-         dx = app->sc_info[i*2];
-         dt = app->sc_info[i*2+1];
-         if (dx == -1){
-            break;
-         }
-         printf(" %2d   |   %1.2e    %1.2e    %1.2e\n", i, dx, dt, dt/(dx*dx) ); 
+         print_sc_info(app->sc_info, max_levels);
       }
-      printf( "\n" );
    }
 
+   /* Clean up */
    braid_Destroy(core);
    free( app->sc_info);
    free( app->g);
