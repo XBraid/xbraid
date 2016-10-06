@@ -47,15 +47,16 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <mpi.h>
+#include <sys/time.h>
 #include "ex-02-lib.c"
 
 int main (int argc, char *argv[])
 {
-   int           step, arg_index;
-   double        t, starttime, stoptime, error, matrix[3];
-   double       *values, *temp;
-   char          filename[255];
+   int             step, arg_index;
+   double          t, error, matrix[3], elapsed;
+   double         *values, *temp;
+   char            filename[255];
+   struct timeval  begin, end;
 
    /* Define space-time domain */
    double    deltaX, deltaT;
@@ -99,8 +100,8 @@ int main (int argc, char *argv[])
    printf("\n  --------------------- \n");
    printf("  Begin simulation \n");
    printf("  --------------------- \n\n");
-   starttime = MPI_Wtime();
-   
+   gettimeofday(&begin, NULL);
+
    /* Setup workspace */
    values = (double*) malloc( nspace*sizeof(double) );
    temp   = (double*) malloc( nspace*sizeof(double) );
@@ -127,8 +128,9 @@ int main (int argc, char *argv[])
       save_solution(filename, values, nspace, xstart, xstop, ntime, tstart, tstop);
    }
    error = compute_error_norm(values, xstart, xstop, nspace, tstop);
-   stoptime = MPI_Wtime();
-   
+   gettimeofday(&end, NULL);
+   elapsed = (end.tv_sec - begin.tv_sec) + (end.tv_usec - begin.tv_usec)/1000000.0;
+
    printf("\n  --------------------- \n");
    printf("  End simulation \n");
    printf("  --------------------- \n\n");
@@ -139,7 +141,7 @@ int main (int argc, char *argv[])
    printf("  Spatial points:                      %d\n", nspace);
    printf("  Spatial mesh size:                   %1.2e\n", deltaX);           
    printf("  CFL ratio dt/dx^2:                   %1.2e\n\n", deltaT/(deltaX*deltaX)); 
-   printf("  Wall-clock run-time:                 %1.2e\n", stoptime - starttime);
+   printf("  Wall-clock run-time:                 %.2f\n", elapsed);
    printf("  Discretization error at final time:  %1.4e\n", error);
    
    free(values);

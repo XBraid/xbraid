@@ -85,34 +85,27 @@ make ex-02
 make ex-02-serial
 cd $test_dir
 
-#TODO CHECK RESID NORM AND DISCR ERROR, and that DISCR error is the same for serial and non-serial
-
 # Run the following regression tests 
 # These tests run 5 different processor configurations in time and make sure that the exact same residual
 # norm is returned in all cases.  The three different temporal norm options are all tested.  
-TESTS=( "$example_dir/ex-02-serial -ntime 16 -nspace 9 -nu 1 -ml 3 -mi 2 -skip 0" \
-        "$example_dir/ex-02-serial -ntime 32 -nspace 17 -nu 1 -ml 3 -mi 2 -skip 0" \
-        "$example_dir/ex-02-serial -ntime 64 -nspace 33 -nu 1 -ml 3 -mi 2 -skip 0" \
+TESTS=( "$example_dir/ex-02-serial -ntime 16 -nspace 9" \
+        "$example_dir/ex-02-serial -ntime 32 -nspace 17" \
+        "$example_dir/ex-02-serial -ntime 64 -nspace 33" \
         "$RunString -np 1  $example_dir/ex-02 -ntime 16 -nspace 9 -nu 1 -ml 3 -mi 2 -skip 0" \
         "$RunString -np 2  $example_dir/ex-02 -ntime 16 -nspace 9 -nu 1 -ml 3 -mi 2 -skip 0" \
         "$RunString -np 3  $example_dir/ex-02 -ntime 16 -nspace 9 -nu 1 -ml 3 -mi 2 -skip 0" \
-        "$RunString -np 4  $example_dir/ex-02 -ntime 16 -nspace 9 -nu 1 -ml 3 -mi 2 -skip 0" \
-        "$RunString -np 5  $example_dir/ex-02 -ntime 16 -nspace 9 -nu 1 -ml 3 -mi 2 -skip 0" \
+        "$RunString -np 1  $example_dir/ex-02 -ntime 16 -nspace 9 -nu 1 -ml 3 -mi 2 -skip 0 -fmg" \
+        "$RunString -np 2  $example_dir/ex-02 -ntime 16 -nspace 9 -nu 1 -ml 3 -mi 2 -skip 0 -fmg" \
+        "$RunString -np 3  $example_dir/ex-02 -ntime 16 -nspace 9 -nu 1 -ml 3 -mi 2 -skip 0 -fmg" \
         "$RunString -np 1  $example_dir/ex-02 -ntime 32 -nspace 17 -nu 1 -ml 3 -mi 2 -skip 0 -sc" \
         "$RunString -np 2  $example_dir/ex-02 -ntime 32 -nspace 17 -nu 1 -ml 3 -mi 2 -skip 0 -sc" \
         "$RunString -np 3  $example_dir/ex-02 -ntime 32 -nspace 17 -nu 1 -ml 3 -mi 2 -skip 0 -sc" \
-        "$RunString -np 4  $example_dir/ex-02 -ntime 32 -nspace 17 -nu 1 -ml 3 -mi 2 -skip 0 -sc" \
-        "$RunString -np 5  $example_dir/ex-02 -ntime 32 -nspace 17 -nu 1 -ml 3 -mi 2 -skip 0 -sc" \
         "$RunString -np 1  $example_dir/ex-02 -ntime 64 -nspace 33 -nu 1 -ml 3 -mi 2 -skip 1 -use_seq" \
         "$RunString -np 2  $example_dir/ex-02 -ntime 64 -nspace 33 -nu 1 -ml 3 -mi 2 -skip 1 -use_seq" \
         "$RunString -np 3  $example_dir/ex-02 -ntime 64 -nspace 33 -nu 1 -ml 3 -mi 2 -skip 1 -use_seq" \
-        "$RunString -np 4  $example_dir/ex-02 -ntime 64 -nspace 33 -nu 1 -ml 3 -mi 2 -skip 1 -use_seq" \
-        "$RunString -np 5  $example_dir/ex-02 -ntime 64 -nspace 33 -nu 1 -ml 3 -mi 2 -skip 1 -use_seq" \
         "$RunString -np 1  $example_dir/ex-02 -ntime 64 -nspace 17 -nu 1 -ml 3 -mi 2 -skip 1 -res" \
         "$RunString -np 2  $example_dir/ex-02 -ntime 64 -nspace 17 -nu 1 -ml 3 -mi 2 -skip 1 -res" \
-        "$RunString -np 3  $example_dir/ex-02 -ntime 64 -nspace 17 -nu 1 -ml 3 -mi 2 -skip 1 -res" \
-        "$RunString -np 4  $example_dir/ex-02 -ntime 64 -nspace 17 -nu 1 -ml 3 -mi 2 -skip 1 -res" \
-        "$RunString -np 5  $example_dir/ex-02 -ntime 64 -nspace 17 -nu 1 -ml 3 -mi 2 -skip 1 -res" )
+        "$RunString -np 3  $example_dir/ex-02 -ntime 64 -nspace 17 -nu 1 -ml 3 -mi 2 -skip 1 -res")
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 

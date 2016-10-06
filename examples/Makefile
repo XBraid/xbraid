@@ -93,12 +93,13 @@ ex-02-serial: ex-02-serial.c $(BRAID_LIB_FILE) ex-02-lib.c
 # Rule for building ex-03
 ex-03: ex-03.c $(BRAID_LIB_FILE) ex-03-lib.c
 	@echo "Building" $@ "..."
-	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(HYPRE_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(HYPRE_LIB) $(LFLAGS)
+
 
 # Rule for building ex-03-serial
 ex-03-serial: ex-03-serial.c $(BRAID_LIB_FILE) ex-03-lib.c
 	@echo "Building" $@ "..."
-	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(HYPRE_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(HYPRE_LIB) $(LFLAGS)
 
 # Rule for compiling .c files
 %: %.c $(BRAID_LIB_FILE)

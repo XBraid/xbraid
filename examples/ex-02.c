@@ -657,7 +657,7 @@ int main (int argc, char *argv[])
                     " %d.  Spatial \ncoarsening is therefore being ignored.\n\n", nspace);
          }
       }
-      else
+      else if (scoarsen)
       {
          braid_SetSpatialCoarsen(core, my_Coarsen);
          braid_SetSpatialRefine(core,  my_Interp);

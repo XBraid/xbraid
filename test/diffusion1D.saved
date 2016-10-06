@@ -1,579 +1,108 @@
 # Begin Test 0
 
-  my_Access() called, iter= 9, level= 0
-  time steps = 256
-  iterations           = 9
-  number of levels     = 7
- Fine level spatial problem size  : 17 x 17
-
-# Begin Test 1
-
-  my_Access() called, iter= 9, level= 0
-  time steps = 256
-  iterations           = 9
-  number of levels     = 7
- Fine level spatial problem size  : 17 x 17
-
-# Begin Test 2
-
-  my_Access() called, iter= 8, level= 0
-  time steps = 256
-  iterations           = 8
-  number of levels     = 7
- Fine level spatial problem size  : 17 x 17
-
-# Begin Test 3
-
-  my_Access() called, iter= 7, level= 0
   time steps = 256
   iterations           = 7
   number of levels     = 7
- Fine level spatial problem size  : 17 x 17
 
-# Begin Test 4
+# Begin Test 1
 
-  my_Access() called, iter= 6, level= 0
   time steps = 256
   iterations           = 6
   number of levels     = 7
- Fine level spatial problem size  : 17 x 17
 
-# Begin Test 5
+# Begin Test 2
 
-  my_Access() called, iter= 4, level= 0
+  time steps = 256
+  iterations           = 7
+  number of levels     = 7
+
+# Begin Test 3
+
   time steps = 256
   iterations           = 4
   number of levels     = 7
- Fine level spatial problem size  : 17 x 17
+
+# Begin Test 4
+
+  time steps = 256
+  iterations           = 9
+  number of levels     = 7
+
+# Begin Test 5
+
+  time steps = 256
+  iterations           = 7
+  number of levels     = 7
 
 # Begin Test 6
 
-  my_Access() called, iter= 11, level= 0
-  time steps = 256
-  iterations           = 11
-  number of levels     = 7
- Fine level spatial problem size  : 17 x 17
+  time steps = 128
+  iterations           = 7
+  number of levels     = 6
 
 # Begin Test 7
 
-  my_Access() called, iter= 10, level= 0
-  time steps = 256
-  iterations           = 10
-  number of levels     = 7
- Fine level spatial problem size  : 17 x 17
+  time steps = 32
+  iterations           = 6
+  number of levels     = 4
 
 # Begin Test 8
 
-  Braid: Temporal refinement occurred, 486 time steps
-  Braid: Temporal refinement occurred, 737 time steps
-  Braid: Temporal refinement occurred, 1078 time steps
-  time steps = 1078
-  iterations            = 7
-  number of levels      = 9
+  time steps = 32
+  iterations            = 6
+  number of levels      = 4
 
 # Begin Test 9
 
-  Braid: Temporal refinement occurred, 486 time steps
-  Braid: Temporal refinement occurred, 737 time steps
-  Braid: Temporal refinement occurred, 1078 time steps
-  time steps = 1078
-  iterations            = 5
-  number of levels      = 9
+  time steps = 32
+  iterations            = 6
+  number of levels      = 4
 
 # Begin Test 10
 
-  my_Access() called, iter= 9, level= 0
-  time steps = 256
-  iterations           = 9
-  number of levels     = 8
- Fine level spatial problem size  : 17 x 17
 
 # Begin Test 11
 
-  my_Access() called, iter= 9, level= 0
-  time steps = 256
-  iterations           = 9
-  number of levels     = 8
- Fine level spatial problem size  : 17 x 17
+  time steps = 32
+  iterations           = 6
+  number of levels     = 4
 
 # Begin Test 12
 
-  my_Access() called, iter= 5, level= 0
-  time steps = 256
-  iterations           = 5
-  number of levels     = 8
- Fine level spatial problem size  : 17 x 17
+  time steps = 9
+  iterations           = 4
+  number of levels     = 2
 
 
 # Begin Test 13
 
-  my_Access() called, iter= 24, level= 0
-  time steps = 128
-  iterations           = 24
-  number of levels     = 6
- Fine level spatial problem size  : 33 x 33
-  0   |  expl       9.82e-02    9.82e-02    1.45e-03    3.00e-01
-  1   |  expl       1.96e-01    1.96e-01    2.89e-03    1.50e-01
-  2   |  expl       1.96e-01    1.96e-01    5.78e-03    3.00e-01
-  3   |  expl       3.93e-01    3.93e-01    1.16e-02    1.50e-01
-  4   |  expl       3.93e-01    3.93e-01    2.31e-02    3.00e-01
-  5   |  expl       7.85e-01    7.85e-01    4.63e-02    1.50e-01
+  time steps = 32
+  iterations           = 6
+  number of levels     = 4
 
 # Begin Test 14
-
-  my_Access() called, iter= 7, level= 0
-  time steps = 32
-  iterations           = 7
-  number of levels     = 4
- Fine level spatial problem size  : 17 x 17
-
-# Begin Test 15
-
-  my_Access() called, iter= 0, level= 0
-  my_Access() called, iter= 1, level= 0
-  my_Access() called, iter= 2, level= 0
-  my_Access() called, iter= 3, level= 0
-  my_Access() called, iter= 4, level= 0
-  my_Access() called, iter= 5, level= 0
-  my_Access() called, iter= 6, level= 0
-  my_Access() called, iter= 7, level= 0
-  time steps = 32
-  iterations           = 7
-  number of levels     = 4
- Fine level spatial problem size  : 17 x 17
-
-# Begin Test 16
-  my_Access() called, iter= 0, level= 0
-  my_Access() called, iter= 0, level= 1
-  my_Access() called, iter= 0, level= 2
-  my_Access() called, iter= 0, level= 3
-  my_Access() called, iter= 0, level= 2
-  my_Access() called, iter= 0, level= 1
-  my_Access() called, iter= 0, level= 0
-  my_Access() called, iter= 1, level= 0
-  my_Access() called, iter= 1, level= 1
-  my_Access() called, iter= 1, level= 2
-  my_Access() called, iter= 1, level= 3
-  my_Access() called, iter= 1, level= 2
-  my_Access() called, iter= 1, level= 1
-  my_Access() called, iter= 1, level= 0
-  my_Access() called, iter= 2, level= 0
-  my_Access() called, iter= 2, level= 1
-  my_Access() called, iter= 2, level= 2
-  my_Access() called, iter= 2, level= 3
-  my_Access() called, iter= 2, level= 2
-  my_Access() called, iter= 2, level= 1
-  my_Access() called, iter= 2, level= 0
-  my_Access() called, iter= 3, level= 0
-  my_Access() called, iter= 3, level= 1
-  my_Access() called, iter= 3, level= 2
-  my_Access() called, iter= 3, level= 3
-  my_Access() called, iter= 3, level= 2
-  my_Access() called, iter= 3, level= 1
-  my_Access() called, iter= 3, level= 0
-  my_Access() called, iter= 4, level= 0
-  my_Access() called, iter= 4, level= 1
-  my_Access() called, iter= 4, level= 2
-  my_Access() called, iter= 4, level= 3
-  my_Access() called, iter= 4, level= 2
-  my_Access() called, iter= 4, level= 1
-  my_Access() called, iter= 4, level= 0
-  my_Access() called, iter= 5, level= 0
-  my_Access() called, iter= 5, level= 1
-  my_Access() called, iter= 5, level= 2
-  my_Access() called, iter= 5, level= 3
-  my_Access() called, iter= 5, level= 2
-  my_Access() called, iter= 5, level= 1
-  my_Access() called, iter= 5, level= 0
-  my_Access() called, iter= 6, level= 0
-  my_Access() called, iter= 6, level= 1
-  my_Access() called, iter= 6, level= 2
-  my_Access() called, iter= 6, level= 3
-  my_Access() called, iter= 6, level= 2
-  my_Access() called, iter= 6, level= 1
-  my_Access() called, iter= 6, level= 0
-  my_Access() called, iter= 7, level= 0
-  time steps = 32
-  iterations           = 7
-  number of levels     = 4
- Fine level spatial problem size  : 17 x 17
-
-
-# Begin Test 17
-
-  my_Access() called, iter= 7, level= 0
- Fine level spatial problem size  : 17 x 17
-
-
-# Begin Test 18
- 
-  my_Access() called, iter= 7, level= 0
-  time steps = 32
-  iterations           = 7
-  number of levels     = 4
- Fine level spatial problem size  : 17 x 17
-
-# Begin Test 19
- 
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  0
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  0
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  0
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  0
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  1.96e-03
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  1.96e-03
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  1.96e-03
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  1.96e-03
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  1.96e-03
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  1.96e-03
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  1.96e-03
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  1.96e-03
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  4.66e-07
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  4.66e-07
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  4.66e-07
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  4.66e-07
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  4.66e-07
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  4.66e-07
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  4.66e-07
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  4.66e-07
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  2.09e-08
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  2.09e-08
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  2.09e-08
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  2.09e-08
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  2.09e-08
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  2.09e-08
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  2.09e-08
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  2.09e-08
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  2.09e-08
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  -1.00e+00
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  6.69e-11
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  6.69e-11
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  6.69e-11
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  6.69e-11
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  6.69e-11
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  6.69e-11
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  6.69e-11
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  6.69e-11
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-09
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  4
-  braid_StepStatusGetRNorms[-1]:  6.69e-11
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  my_Access() called, iter= 4, level= 0
-  braid_GetSpatialAccuracy:  1.00e-09
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  4
-  braid_StepStatusGetRNorms[-1]:  6.69e-11
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-09
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  4
-  braid_StepStatusGetRNorms[-1]:  6.69e-11
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-09
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  4
-  braid_StepStatusGetRNorms[-1]:  6.69e-11
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-09
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  4
-  braid_StepStatusGetRNorms[-1]:  6.69e-11
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  time steps = 9
-  iterations            = 4
-  number of levels      = 2
-  braid_GetRNorms[0] = -1.00e+00
-  braid_GetRNorms[-1] = 6.69e-11
-  braid_GetRNorms[0] = -1.00e+00
-  braid_GetRNorms[1] = 1.96e-03
-  braid_GetRNorms[2] = 4.66e-07
-  braid_GetRNorms[3] = 6.69e-11
-  braid_GetRNorms[0] = -1.00e+00
-  braid_GetRNorms[1] = 1.96e-03
-  braid_GetRNorms[2] = 4.66e-07
-  braid_GetRNorms[3] = 6.69e-11
-  braid_GetRNorms[4] = 6.69e-11
- Fine level spatial problem size  : 17 x 17
-
-# Begin Test 20
- 
-  my_Access() called, iter= 7, level= 0
-  time steps = 32
-  iterations           = 7
-  number of levels     = 4
- Fine level spatial problem size  : 17 x 17
-
-# Begin Test 21
 
 Starting braid_TestInitAccess
    braid_TestInitAccess:   Starting Test 1
    braid_TestInitAccess:   u = init(t=0.00e+00)
-   braid_TestInitAccess:   access(u) 
-  my_Access() called, iter= 0, level= 0
-   braid_TestInitAccess:   check output: wrote u for initial condition at t=0.00e+00. 
    braid_TestInitAccess:   free(u) 
 Finished braid_TestInitAccess
 Starting braid_TestInitAccess
    braid_TestInitAccess:   Starting Test 1
-   braid_TestInitAccess:   u = init(t=5.78e-03)
-   braid_TestInitAccess:   access(u) 
-   braid_TestInitAccess:   check output: wrote u for initial condition at t=5.78e-03. 
+   braid_TestInitAccess:   u = init(t=9.82e-02)
    braid_TestInitAccess:   free(u) 
 Finished braid_TestInitAccess
 Starting braid_TestClone
    braid_TestClone:   Starting Test 1
    braid_TestClone:   u = init(t=0.00e+00)
    braid_TestClone:   v = clone(u)
-   braid_TestClone:   access(u)
-   braid_TestClone:   access(v)
-   braid_TestClone:   check output:  wrote u and v for initial condition at t=0.00e+00.
    braid_TestClone:   free(u)
    braid_TestClone:   free(v)
 Finished braid_TestClone
 Starting braid_TestClone
    braid_TestClone:   Starting Test 1
-   braid_TestClone:   u = init(t=5.78e-03)
+   braid_TestClone:   u = init(t=9.82e-02)
    braid_TestClone:   v = clone(u)
-   braid_TestClone:   access(u)
-   braid_TestClone:   access(v)
-   braid_TestClone:   check output:  wrote u and v for initial condition at t=5.78e-03.
    braid_TestClone:   free(u)
    braid_TestClone:   free(v)
 Finished braid_TestClone
@@ -582,27 +111,19 @@ Starting braid_TestSum
    braid_TestSum:   u = init(t=0.00e+00)
    braid_TestSum:   v = clone(u)
    braid_TestSum:   v = u - v
-   braid_TestSum:   access(v)
-   braid_TestSum:   check output:  v should equal the zero vector
    braid_TestSum:   Starting Test 2
    braid_TestSum:   v = 2*u + v
-   braid_TestSum:   access(v)
-   braid_TestSum:   access(u)
    braid_TestSum:   check output:  v should equal 2*u 
    braid_TestSum:   free(u)
    braid_TestSum:   free(v)
 Finished braid_TestSum
 Starting braid_TestSum
    braid_TestSum:   Starting Test 1
-   braid_TestSum:   u = init(t=5.78e-03)
+   braid_TestSum:   u = init(t=9.82e-02)
    braid_TestSum:   v = clone(u)
    braid_TestSum:   v = u - v
-   braid_TestSum:   access(v)
-   braid_TestSum:   check output:  v should equal the zero vector
    braid_TestSum:   Starting Test 2
    braid_TestSum:   v = 2*u + v
-   braid_TestSum:   access(v)
-   braid_TestSum:   access(u)
    braid_TestSum:   check output:  v should equal 2*u 
    braid_TestSum:   free(u)
    braid_TestSum:   free(v)
@@ -623,7 +144,7 @@ Starting braid_TestSpatialNorm
    braid_TestSpatialNorm:   spatialnorm(u)
    braid_TestSpatialNorm:   spatialnorm(w)
    braid_TestSpatialNorm:   Test 2 Passed
-   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 1.60e+01 / 8.00e+00 = 2.00e+00 
+   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 8.00e+00 / 4.00e+00 = 2.00e+00 
    braid_TestSpatialNorm:   expected output:  spatialnorm(w) / spatialnorm(u) = 2.0 
    braid_TestSpatialNorm:   Starting Test 3
    braid_TestSpatialNorm:   free(w)
@@ -632,7 +153,7 @@ Starting braid_TestSpatialNorm
    braid_TestSpatialNorm:   spatialnorm(u)
    braid_TestSpatialNorm:   spatialnorm(w)
    braid_TestSpatialNorm:   Test 3 Passed
-   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 4.00e+00 / 8.00e+00 = 5.00e-01 
+   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 2.00e+00 / 4.00e+00 = 5.00e-01 
    braid_TestSpatialNorm:   expected output:  spatialnorm(w) / spatialnorm(u) = 0.5 
    braid_TestSpatialNorm:   free(u)
    braid_TestSpatialNorm:   free(v)
@@ -640,7 +161,7 @@ Starting braid_TestSpatialNorm
 Finished braid_TestSpatialNorm: all tests passed successfully
 Starting braid_TestSpatialNorm
    braid_TestSpatialNorm:   Starting Test 1
-   braid_TestSpatialNorm:   u = init(t=5.78e-03)
+   braid_TestSpatialNorm:   u = init(t=9.82e-02)
    braid_TestSpatialNorm:   spatialnorm(u) 
    braid_TestSpatialNorm:   v = clone(u)
    braid_TestSpatialNorm:   v = u - v 
@@ -654,7 +175,7 @@ Starting braid_TestSpatialNorm
    braid_TestSpatialNorm:   spatialnorm(u)
    braid_TestSpatialNorm:   spatialnorm(w)
    braid_TestSpatialNorm:   Test 2 Passed
-   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 2.03e+01 / 1.01e+01 = 2.00e+00 
+   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 6.77e+00 / 3.39e+00 = 2.00e+00 
    braid_TestSpatialNorm:   expected output:  spatialnorm(w) / spatialnorm(u) = 2.0 
    braid_TestSpatialNorm:   Starting Test 3
    braid_TestSpatialNorm:   free(w)
@@ -663,7 +184,7 @@ Starting braid_TestSpatialNorm
    braid_TestSpatialNorm:   spatialnorm(u)
    braid_TestSpatialNorm:   spatialnorm(w)
    braid_TestSpatialNorm:   Test 3 Passed
-   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 5.07e+00 / 1.01e+01 = 5.00e-01 
+   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 1.69e+00 / 3.39e+00 = 5.00e-01 
    braid_TestSpatialNorm:   expected output:  spatialnorm(w) / spatialnorm(u) = 0.5 
    braid_TestSpatialNorm:   free(u)
    braid_TestSpatialNorm:   free(v)
@@ -687,7 +208,7 @@ Starting braid_TestBuf
 Finished braid_TestBuf: all tests passed successfully
 Starting braid_TestBuf
    braid_TestBuf:   Starting Test 1
-   braid_TestBuf:   u = init(t=5.78e-03)
+   braid_TestBuf:   u = init(t=9.82e-02)
    braid_TestBuf:   spatialnorm(u) 
    braid_TestBuf:   size = bufsize()
    braid_TestBuf:   buffer = malloc(size)
@@ -701,36 +222,89 @@ Starting braid_TestBuf
    braid_TestBuf:   free(u)
    braid_TestBuf:   free(v)
 Finished braid_TestBuf: all tests passed successfully
+Starting braid_TestCoarsenRefine
+   braid_TestCoarsenRefine:   Starting Test 1
+   braid_TestCoarsenRefine:   u = init(t=0.00e+00)
+   braid_TestCoarsenRefine:   spatialnorm(u) 
+   braid_TestCoarsenRefine:   uc = coarsen(u)
+   braid_TestCoarsenRefine:   actual output:   wrote u and spatially coarsened u 
+   braid_TestCoarsenRefine:   Starting Test 2
+   braid_TestCoarsenRefine:   v = clone(u)
+   braid_TestCoarsenRefine:   vc = coarsen(v)
+   braid_TestCoarsenRefine:   wc = clone(vc)
+   braid_TestCoarsenRefine:   wc = uc - wc 
+   braid_TestCoarsenRefine:   spatialnorm(wc)
+   braid_TestCoarsenRefine:   Test 2 Passed
+   braid_TestCoarsenRefine:   actual output:    spatialnorm(wc) = 0.00e+00 
+   braid_TestCoarsenRefine:   expected output:  spatialnorm(wc) = 0.0 
+   braid_TestCoarsenRefine:   Starting Test 3
+   braid_TestCoarsenRefine:   w = clone(u)
+   braid_TestCoarsenRefine:   free(u)
+   braid_TestCoarsenRefine:   free(v)
+   braid_TestCoarsenRefine:   v = refine(vc)
+   braid_TestCoarsenRefine:   u = refine(uc)
+   braid_TestCoarsenRefine:   v = u - v 
+   braid_TestCoarsenRefine:   spatialnorm(v)
+   braid_TestCoarsenRefine:   Test 3 Passed
+   braid_TestCoarsenRefine:   actual output:    spatialnorm(v) = 0.00e+00 
+   braid_TestCoarsenRefine:   expected output:  spatialnorm(v) = 0.0 
+   braid_TestCoarsenRefine:   Starting Test 4
+   braid_TestCoarsenRefine:   w = w - u 
+   braid_TestCoarsenRefine:   spatialnorm(w)
+   braid_TestCoarsenRefine:   actual output:    spatialnorm(w) = 2.15e-02 
+   braid_TestCoarsenRefine:   expected output:  For simple interpolation formulas
+   braid_TestCoarsenRefine:   free(u)
+   braid_TestCoarsenRefine:   free(v)
+   braid_TestCoarsenRefine:   free(w)
+   braid_TestCoarsenRefine:   free(uc)
+   braid_TestCoarsenRefine:   free(vc)
+   braid_TestCoarsenRefine:   free(wc)
+Finished braid_TestCoarsenRefine: all tests passed successfully
+Starting braid_TestResidual
+   braid_TestResidual:   Starting Test 1
+   braid_TestResidual:   u = init(t=0.00e+00)
+   braid_TestResidual:   spatialnorm(u) 
+   braid_TestResidual:   unext = clone(u)
+   braid_TestResidual:   ustop = clone(u)
+   braid_TestResidual:   fstop = clone(u)
+   braid_TestResidual:   fstop = ustop + fstop 
+   braid_TestResidual:   unext = step(ustop, fstop, unext) 
+   braid_TestResidual:   ustop = clone(u)
+   braid_TestResidual:   fstop = clone(u)
+   braid_TestResidual:   fstop = ustop + fstop 
+   braid_TestResidual:   r = residual(unext, u) 
+   braid_TestResidual:   r = fstop - r 
+   braid_TestResidual:   spatialnorm(r)
+   braid_TestResidual:   actual output:    spatialnorm(r) = 2.03e-14 
+   braid_TestResidual:   expected output:  spatialnorm(r) approx. 0.0 
+   braid_TestResidual:   free(u)
+   braid_TestResidual:   free(unext)
+   braid_TestResidual:   free(ustop)
+   braid_TestResidual:   free(fstop)
+Finished braid_TestResidual 
+Finished braid_TestAll: no fails detected, however some results must be
 
-# Begin Test 22
+# Begin Test 15
 
-  my_Access() called, iter= 1, level= 0
   time steps = 128
   iterations           = 1
   number of levels     = 1
- Fine level spatial problem size  : 17 x 17
 
-# Begin Test 23
-
-  my_Access() called, iter= 8, level= 0
+# Begin Test 16
+  
   time steps = 128
-  iterations           = 8
+  iterations           = 6
   number of levels     = 2
- Fine level spatial problem size  : 17 x 17
 
-# Begin Test 24
 
-  my_Access() called, iter= 8, level= 0
+# Begin Test 17
+
   time steps = 128
-  iterations           = 8
+  iterations           = 6
   number of levels     = 8
- Fine level spatial problem size  : 17 x 17
 
-# Begin Test 25
-
-  my_Access() called, iter= 8, level= 0
+# Begin Test 18
+ 
   time steps = 128
-  iterations           = 8
+  iterations           = 6
   number of levels     = 2
- Fine level spatial problem size  : 17 x 17
-
