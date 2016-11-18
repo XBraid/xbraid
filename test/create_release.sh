@@ -25,7 +25,7 @@
 
 ##
 # Set these variables to what you want
-this_version="2.0.0"
+this_version="2.1.0"
 destination_dir="/usr/casc/hypre/braid/share/braid_tarballs"
 docs_destination_dir="/usr/casc/hypre/braid/share/braid_manuals/"
 braid_version_to_checkout='HEAD'
