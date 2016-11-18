@@ -326,14 +326,15 @@ Finally, to run ex-01, type
 
 # Some Advanced Features {#advancedfeatures}
 
-We now give an overview of some *optional* advanced features, together in one place, that will 
+We now give an overview of some *optional* advanced features that will 
 be implemented in some of the following examples. 
 
 9. **SCoarsen**, **SRestrict**: These are advanced options that allow
    for coarsening in space while you coarsen in time.  This is useful for
    maintaining stable explicit schemes on coarse time scales and is not needed
-   here.  See for instance ``drivers/drive-diffusion`` and ``drivers/drive-diffusion-2D`` 
-   which use these routines.
+   here.  See ``examples/ex-02`` for a simple example of this feature, and then 
+   ``drivers/drive-diffusion`` and ``drivers/drive-diffusion-2D`` 
+   for more advanced examples of this feature. 
    \latexonly \\ \endlatexonly
 
    These functions allow you to vary the spatial mesh size on XBraid levels as depicted here
@@ -346,97 +347,104 @@ be implemented in some of the following examples.
    \endlatexonly
 
 10. **Residual**: A user-defined residual can be provided with the
-    function [braid_SetResidual](@ref braid_SetResidual) and can result
-    in substantial computational savings, as explained below.  
-    
-    However to use this advanced feature, one must first understand how XBraid 
-    measures the residual.  XBraid computes residuals of this equation,
-    
-    \f[ A_i(u_i, u_{i-1}) = f_i, \f]
-
-    where \f$ A_i(,) \f$ evaluates one block-row of the the global space-time
-    operator \f$A\f$.  The forcing \f$f_i\f$ is the XBraid forcing, the FAS
-    right-hand-side term on coarse-grids and 0 on the finest grid.  The PDE forcing
-    goes inside of \f$A_i\f$. 
-    
-    Since XBraid assumes one-step methods, define \f$A_i()\f$ to be
-
-    \f[ A_i(u_i, u_{i-1}) = - \Phi(u_{i-1} + \Psi(u_i), \f]
-    
-    i.e., the subdiagonal and diagonal blocks of \f$A\f$.
-    
-    **Default setting** In the default XBraid setting (no residual option
-    used), the user only defines *Step()* and here that means defining only the
-    \f$\Phi()\f$ function because \f$\Psi()\f$ is assumed to be the identity.
-    Thus, XBraid can compute the residual using only a user-defined
-    \f$\Phi()\f$ in *Step()* by combining *Step()* with the *Sum()* function, i.e.
-
-    \f[ r_i = f_i + \Phi(u_{i-1}) -u_i. \f]
-    
-    The *fstop* parameter in *Step()* corresponds to \f$f_i\f$ and need not
-    be operated on my user in order to compute the residual \f$r_i\f$.  Thus
-    *fstop* is NULL in the default setting.  
-
-    An implication of this is the evaluation of \f$\Phi()\f$ on the finest grid
-    must be very accurate, or the residual will not be accurate.  This leads to a
-    nonintrusive, but expensive algorithm.  The accuracy of \f$\Phi()\f$ can be relaxed
-    on coarser grids.  
-    
-    **Residual setting** 
-    The alternative to the above default non-intrusive strategy is to have the user
-    define 
-
-    \f[ A_i(u_i, u_{i-1}) = - \Phi(u_{i-1} + \Psi(u_i), \f]
-
-    directly, which is the case when the *Residual* function is defined with
-    [braid_PtFcnResidual](@ref braid_PtFcnResidual).  In other words, the user
-    now defines each block-row of the space-time operator, rather than only
-    defining \f$\Phi()\f$.  The user function computes \f$A_i(u_i, u_{i-1})\f$
-    and XBraid then subtracts this from \f$f_i\f$ to compute \f$r_i\f$.
-
-    However, more care must now be taken when defining the *Step()* function.
-    In particular, the *fstop* value (\f$f_i\f$) value must be taken into account.
-    Overall, the definition of *Step()* now changes.  It no longer defines  \f$\Phi()\f$,
-    it instead defines a (possibly inexact) solve of the equation defined by 
-    
-    \f[ A_i(u_i, u_{i-1}) = f_i. \f]
-
-    Thus, *Step()* must be compatible with *Residual()*. Essentially, *Step()*
-    must now compute 
-    
-    \f[ u_i = \Psi^{-1}(f_i - \Phi(u_{i-1})). \f]
-    
-    It is clear that the *fstop* (\f$f_i\f$) value must be given to the
-    *Step()* function so that this equation must be solved.  Essentially, one
-    can think of *Residual()* as defining the equation, and *Step()* defining a
-    preconditioner for that row of the equation, an inexact solve for
-    \f$u_i\f$. 
+   function [braid_SetResidual](@ref braid_SetResidual) and can result
+   in substantial computational savings, as explained below.  
+   However to use this advanced feature, one must first understand how XBraid 
+   measures the residual.  XBraid computes residuals of this equation,
    
-    As an example, let \f$\Psi = (I + \Delta t L)\f$, where \f$L\f$ is a
-    Laplacian and \f$\Phi = I\f$.  The application of the residual function
-    will only be a sparse matrix-vector application, as opposed to the default
-    case where \f$\Phi = (I + \Delta t L)^{-1}\f$ and  \f$\Psi = I\f$.  This
-    results in considerable computational savings.  The application of *Step()*
-    then involves an inexact inversion of  \f$\Psi\f$, e.g., with just 1
-    spatial multigrid V-cycle, which again results in substantial computation
-    savings over a full inversion.
+   \f[ A_i(u_i, u_{i-1}) = f_i, \f]
 
-    Another way to think about the compatibility between \f$\Psi\f$ and \f$\Phi\f$
-    is that 
+   where \f$ A_i(,) \f$ evaluates one block-row of the the global space-time
+   operator \f$A\f$.  The forcing \f$f_i\f$ is the XBraid forcing, which is the FAS
+   right-hand-side term on coarse grids and 0 on the finest grid.  The PDE forcing
+   goes inside of \f$A_i\f$. 
+   
+   Since XBraid assumes one-step methods, \f$A_i()\f$ is defined to be
+
+   \f[ A_i(u_i, u_{i-1}) = - \Phi(u_{i-1}) + \Psi(u_i), \f]
+   
+   i.e., the subdiagonal and diagonal blocks of \f$A\f$.
+   \latexonly \\ \endlatexonly
+   
+   **Default setting**: In the default XBraid setting (no residual option
+   used), the user only implements *Step()* and *Step()* will simply apply 
+   \f$\Phi()\f$, because \f$\Psi()\f$ is assumed to be the identity.
+   Thus, XBraid can compute the residual using only the user-defined
+   *Step()* function by combining *Step()* with the *Sum()* function, i.e.
+
+   \f[ r_i = f_i + \Phi(u_{i-1}) -u_i. \f]
+   
+   The *fstop* parameter in *Step()* corresponds to \f$f_i\f$, but is always
+   passed in as NULL to the user in this setting and should be ignored.  This
+   is because XBraid can compute the contribution of \f$f_i\f$ to the residual 
+   on its own using the *Sum()* function.
+
+   An implication of this is that the evaluation of \f$\Phi()\f$ on the finest grid
+   must be very accurate, or the residual will not be accurate.  This leads to a
+   nonintrusive, but expensive algorithm.  The accuracy of \f$\Phi()\f$ can be relaxed
+   on coarser grids to save computations.
+   \latexonly \\ \endlatexonly
     
-    \f[ f_i - A_i( u_i, u_{i-1} ) = 0 \f]
+   **Residual setting**: 
+   The alternative to the above default least-intrusive strategy is to have the user
+   define 
 
-    must hold exactly if \f$u_i\f$ is an exact propagation of \f$u_{i-1}\f$,
-    or 
-    \f[ f_i - A_i( Step(u_{i-1},f_i), u_{i-1} ) = 0 \f]
-    must hold.  When the accuracy of the *Step()* function is reduced (as mentioned
-    above), this exact equality with 0 is lost, but this should evaluate to something
-    ``small``.  There is an XBraid test function [braid_TestResidual](@ref braid_TestResidual)
-    that tests for this compatibility.
+   \f[ A_i(u_i, u_{i-1}) = - \Phi(u_{i-1}) + \Psi(u_i), \f]
 
-    The residual feature is implemented in the examples
-    ``examples/ex-01-expanded.c``, ``examples/ex-02.c``, and
-    ``examples/ex-03.c``.
+   directly, which is what the *Residual* function implements (set with 
+   [braid_PtFcnResidual](@ref braid_PtFcnResidual)).  In other words, the user
+   now defines each block-row of the space-time operator, rather than only
+   defining \f$\Phi()\f$.  The user *Residual()* function computes \f$A_i(u_i, u_{i-1})\f$
+   and XBraid then subtracts this from \f$f_i\f$ to compute \f$r_i\f$.
+
+   However, more care must now be taken when defining the *Step()* function.
+   In particular, the *fstop* value (i.e., the \f$f_i\f$ value) must be taken into account.
+   Essentially, the definition of *Step()* changes so that it no longer defines \f$\Phi()\f$,
+   but instead defines a (possibly inexact) solve of the equation defined by 
+   
+   \f[ A_i(u_i, u_{i-1}) = f_i. \f]
+
+   Thus, *Step()* must be compatible with *Residual()*.  Expanding the previous
+   equation, we say that *Step()* must now compute 
+   
+   \f[ u_i = \Psi^{-1}(f_i + \Phi(u_{i-1})). \f]
+   
+   It is clear that the *fstop* value (i.e., the \f$f_i\f$ value) must now be
+   given to the *Step()* function so that this equation can be solved by the
+   user.  In other words, *fstop* is now no longer NULL.  
+   
+   Essentially, one can
+   think of *Residual()* as defining the equation, and *Step()* defining a
+   preconditioner for that row of the equation, or an inexact solve for
+   \f$u_i\f$. 
+   
+   As an example, let \f$\Psi = (I + \Delta t L)\f$, where \f$L\f$ is a
+   Laplacian and \f$\Phi = I\f$.  The application of the residual function will
+   only be a sparse matrix-vector multiply, as opposed to the default case
+   where an inversion is required for \f$\Phi = (I + \Delta t L)^{-1}\f$ and
+   \f$\Psi = I\f$.  This results in considerable computational savings.
+   Moreover, the application of *Step()* now involves an inexact inversion of
+   \f$\Psi\f$, e.g., by using just one spatial multigrid V-cycle. This again results
+   in substantial computation savings when compared with the naive approach of
+   a full matrix inversion.  \latexonly \\ \endlatexonly
+
+   Another way to think about the compatibility between \f$\Psi\f$ and \f$\Phi\f$
+   is that 
+   
+   \f[ f_i - A_i( u_i, u_{i-1} ) = 0 \f]
+
+   must hold exactly if \f$u_i\f$ is an exact propagation of \f$u_{i-1}\f$,
+   that is,
+   \f[ f_i - A_i( Step(u_{i-1},f_i), u_{i-1} ) = 0 \f]
+   must hold.  When the accuracy of the *Step()* function is reduced (as mentioned
+   above), this exact equality with 0 is lost, but this should evaluate to something
+   ``small``.  There is an XBraid test function [braid_TestResidual](@ref braid_TestResidual)
+   that tests for this compatibility.
+   \latexonly \\ \endlatexonly
+
+   The residual feature is implemented in the examples
+   ``examples/ex-01-expanded.c``, ``examples/ex-02.c``, and
+   ``examples/ex-03.c``.
 
 
 11. **Adaptive and variable time stepping**:  This feature is available by first calling the
@@ -449,17 +457,15 @@ be implemented in some of the following examples.
    for the next iteration.  Refinement can only be done on the finest XBraid level.
    \latexonly \\ \endlatexonly
 
-   In this example, no refinement is being done (factor = 1).  Currently, each
-   refinement factor is constrained to be no larger than the coarsening factor.
-   The final time grid is constructed adaptively in an FMG-like cycle by
-   refining the initial grid according to the requested refinement factors.
-   Refinement stops when the requested factors are all one or when various
-   upper bounds are reached such as the max number of time points or max number
-   of time grid refinement levels allowed.
+   Currently, each refinement factor is constrained to be no larger than the
+   coarsening factor.  The final time grid is constructed adaptively in an
+   FMG-like cycle by refining the initial grid according to the requested
+   refinement factors.  Refinement stops when the requested factors are all
+   one or when various upper bounds are reached such as the max number of time
+   points or max number of time grid refinement levels allowed.
+   See ``examples/ex-03.c`` for an implementation of this.
 
 12. **Shell-vector**: This feature supports the use of multi-step methods.
-   It is used in example ``examples/ex-01-expanded-bdf2.c``.
-
    The strategy for BDF-K methods is to allow for the lumping of ``k`` time
    points into a single XBraid vector.  So, if the problem had 100 time points
    and the time-stepper was BDF-2, then XBraid would only ``see`` 50 time
@@ -470,29 +476,33 @@ be implemented in some of the following examples.
    However, the time-point spacing between the two points internal to the
    vector stays the same on all time grids, while the spacing between vectors
    grows on coarse time grids.  This creates an irregular spacing which is
-   problematic for BDF-k methods and lends itself to the shell-vector strategy
-   that lets meta-data be stored at all time points, even for F-points which are
-   usually not stored.
+   problematic for BDF-k methods.  Thus the shell-vector strategy
+   lets meta-data be stored at all time points, even for F-points which are
+   usually not stored, so that the irregular spacings can be tracked and 
+   accounted for with the BDF method.  (Note, there are other possible uses
+   for shell-vectors.)
 
-   There are many strategies for handling the coarse time-grids (dropping the BDF
-   order, adjusting time-point spacings inside the vector, etc...).  Prospective
-   users are encouraged to contact xbraid-support@llnl.gov because this is active
-   research.
+   There are many strategies for handling the coarse time-grids with BDF
+   methods (dropping the BDF order, adjusting time-point spacings inside the
+   lumped vectors, etc...).  Prospective users are encouraged to contact
+   xbraid-support@llnl.gov because this is active research.
 
-13. **Storage**:  
+   See ``examples/ex-01-expanded-bdf2.c``.
 
-   This option (see [braid_SetStorage](@ref braid_SetStorage)) allows the user
-   to specify storage at all time points (C and F) or only at C-points.  This
-   extra storage is useful for implicit methods, where the solution value from
-   the *previous XBraid iteration* for a time step can be used as the initial
-   guess to the implicit solver.  This is often a better initial guess than
-   using the solution value from the previous time step.  The default is to
-   store only C-point values, thus the better initial guess is only available
-   there.
+13. **Storage**:  This option (see [braid_SetStorage](@ref braid_SetStorage))
+    allows the user to specify storage at all time points (C and F) or only at
+    C-points.  This extra storage is useful for implicit methods, where the
+    solution value from the *previous XBraid iteration* for time step \f$i\f$
+    can be used as the initial guess when computing step \f$i\f$ with the
+    implicit solver.  This is often a better initial guess than using the
+    solution value from the previous time step \f$i-1\f$.  The default is to
+    store only C-point values, thus the better initial guess is only available
+    at C-points in the default setting.  When storage is turned on at F-points,
+    the better initial guess becomes available everywhere.
    
    In general, the user should always use the *ustop* parameter in
    *Step()* as the initial guess for an implicit solve.  If storage
-   is turned on (set to 0), then this value will always be the improved
+   is turned on (i.e., set to 0), then this value will always be the improved
    initial guess for C- and F-points.  If storage is not turned on, then
    this will be the improved guess only for C-points.  For F-points,
    it will equal the solution from the previous time step.
@@ -517,7 +527,7 @@ The goal here is to show more advanced features of XBraid.
      shell-vector feature in order to implement BDF2.
     
    - ``examples/ex-01-expanded-f.f90``:  same as ex-01-expanded.c, but
-     implemented in f90
+     implemented in f90.
 
 
 # One-Dimensional Heat Equation {#exampletwo}
@@ -528,25 +538,25 @@ time-only parallel example that implements the 1D heat equation,
 \f[ \delta/\delta_t \; u(x,t) = \Delta\, u(x,t) + g(x,t), \f]
 
 as opposed to @ref exampleone, which implements only a scalar ODE for one
-degree-of-freedom in space.  There is not spatial parallelism, as a serial
+degree-of-freedom in space.  There is no spatial parallelism, as a serial
 cyclic reduction algorithm is used to invert the tri-diagonal spatial operators.
 The space-time discretization is the standard 3-point finite
-difference stencil (\f$[-1,2,-1]\f$), scaled by mesh widths coupled with 
-backward Euler.
+difference stencil (\f$[-1,2,-1]\f$), scaled by mesh widths.  Backward Euler
+is used in time. 
 
 This example consists of three files and two executables.
 
-   - examples/ex-02-serial.c:  This file compiles into its own executable
+   - ``examples/ex-02-serial.c``:  This file compiles into its own executable
      ``ex-02-serial`` and represents a simple example user application that
      does sequential time-stepping.  This file represents where a new 
      XBraid user would start, in terms of converting a sequential time-stepping
      code to XBraid. 
 
-   - examples/ex-02.c:  This file compiles into its own executable
-     ``ex-02`` and represents an XBraid wrapping of the user application 
-     ``ex-02-serial``.  
+   - ``examples/ex-02.c``:  This file compiles into its own executable
+     ``ex-02`` and represents a time-parallel XBraid wrapping of the user
+     application ``ex-02-serial``.  
 
-   - ex-02-lib.c:  This file contains shared functions used by the time-serial
+   - ``ex-02-lib.c``:  This file contains shared functions used by the time-serial
      version and the time-parallel version.   This file provides the basic functionality of this
      problem.  For instance, *take_step(u, tstart, tstop, ...)* carries out 
      a step, moving the vector *u* from time *tstart* to time *tstop*. 
