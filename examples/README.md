@@ -58,9 +58,9 @@ To run the examples, type
           HYPRE_LIB = -L$(HYPRE_DIR)/lib -lHYPRE
 
    Only implicit time stepping (backward Euler) is supported.  See Section
-   (@ref exampletwo) for more discussion of this example.  The driver
+   (@ref examplethree) for more discussion of this example.  The driver
 
-          drivers/drive-02
+          drivers/drive-diffusion
    
    is a more sophisticated version of this simple example that supports
    explicit time stepping and spatial coarsening.
