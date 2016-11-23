@@ -23,7 +23,7 @@
 
 Type
 
-      ex-0* -help
+      ex-* -help
 
 for instructions on how to run any example.
 
@@ -34,9 +34,22 @@ To run the examples, type
 
 1. ex-01 is the simplest example.  It implements a scalar ODE and can be
   compiled and run with no outside dependencies.  See Section (@ref exampleone)
-  for more discussion of this example.
+  for more discussion of this example.  There are four versions of this example,
+  
+    + *ex-01.c*:  simplest possible implementation, start reading this example first
+    
+    + *ex-01-expanded.c*:  same as ex-01.c but adds more XBraid features
+    
+    + *ex-01-expanded-bdf2.c*:  same as ex-01-expanded.c, but uses BDF2 instead 
+      of backward Euler
+    
+    + *ex-01-expanded-f.f90*:  same as ex-01-expanded.c, but implemented in f90
 
-2. ex-02 implements the 2D heat equation on a regular grid.  You must have
+2. ex-02 implements the 1D heat equation on a regular grid, using a very simple
+   implementation.  This is the next example to read after the various ex-01
+   cases.
+
+3. ex-03 implements the 2D heat equation on a regular grid.  You must have
    [hypre](https://computation.llnl.gov/project/linear_solvers/software.php)
    installed and these variables in examples/Makefile set correctly
     
@@ -45,17 +58,12 @@ To run the examples, type
           HYPRE_LIB = -L$(HYPRE_DIR)/lib -lHYPRE
 
    Only implicit time stepping (backward Euler) is supported.  See Section
-   (@ref exampletwo) for more discussion of this example.  The driver
+   (@ref examplethree) for more discussion of this example.  The driver
 
-          drivers/drive-02
+          drivers/drive-diffusion
    
    is a more sophisticated version of this simple example that supports
    explicit time stepping and spatial coarsening.
 
-3. ex-burgers implements Burger's equation in one spatial dimension, 
-   supports spatial coarsening and forward and backward Euler.  It is
-   under developement, but a fun example.  See also *viz-burgers.py*
-   for visualizing the output.
+   
 
-4. ex-lorenz implements the Lorenz equation and is under development. 
-   See also *viz-lorenz.py* for visualizing the output.

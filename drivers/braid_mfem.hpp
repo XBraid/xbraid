@@ -279,6 +279,8 @@ struct BraidOptions : public OptionsParser
 
    Mesh *LoadMeshAndSerialRefine();
 
+   ParMesh *LoadMeshAndRefine(MPI_Comm comm_x);
+
    virtual void SetBraidCoreOptions(BraidCore &core);
 };
 
@@ -963,6 +965,22 @@ Mesh *BraidOptions::LoadMeshAndSerialRefine()
       }
    }
    return mesh;
+}
+
+ParMesh *BraidOptions::LoadMeshAndRefine(MPI_Comm comm_x)
+{
+   ParMesh *pmesh = NULL;
+   Mesh *mesh = LoadMeshAndSerialRefine();
+   if (mesh)
+   {
+      pmesh = new ParMesh(comm_x, *mesh);
+      delete mesh;
+      for (int lev = 0; lev < par_ref_levels; lev++)
+      {
+         pmesh->UniformRefinement();
+      }
+   }
+   return pmesh;
 }
 
 void BraidOptions::SetBraidCoreOptions(BraidCore &core)

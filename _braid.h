@@ -132,6 +132,7 @@ typedef struct _braid_Core_struct
    braid_PtFcnResidual    residual;         /**< (optional) compute residual */
    braid_PtFcnSCoarsen    scoarsen;         /**< (optional) return a spatially coarsened vector */
    braid_PtFcnSRefine     srefine;          /**< (optional) return a spatially refined vector */
+   braid_PtFcnTimeGrid    tgrid;            /**< (optional) return time point values on level 0 */
 
    braid_Int              access_level;     /**< determines how often to call the user's access routine */ 
    braid_Int              print_level;      /**< determines amount of output printed to screen (0,1,2) */
@@ -157,12 +158,6 @@ typedef struct _braid_Core_struct
    braid_Real             full_rnorm0;      /**< (optional) initial full residual norm */
    braid_Real            *full_rnorms;      /**< (optional) full residual norm history */
 
-
-   braid_AccessStatus     astatus;          /**< status structure passed to user-written Access routine */
-   braid_CoarsenRefStatus cstatus;          /**< status structure passed to user-written coarsen/refine routines */
-   braid_StepStatus       sstatus;          /**< status structure passed to user-written step routines */
-   braid_BufferStatus     bstatus;          /**< status structure passed to user-written buffer routines */
-
    braid_Int              storage;          /**< storage = 0 (C-points), = 1 (all) */
    braid_Int              useshell;         /**< activate the shell structure of vectors */
 
@@ -171,7 +166,7 @@ typedef struct _braid_Core_struct
    braid_Int              refine;           /**< refine in time (refine = 1) */
    braid_Int              lbalance;         /**< load balance in time ( lbalance = 1 ) */
    braid_Int             *rfactors;         /**< refinement factors for finest grid (if any) */
-   braid_Real            *wfactors;         /**< load balencing wieghts for finest */
+   braid_Real            *wfactors;         /**< load balancing weights for finest */
    braid_Int              r_space;          /**< spatial refinment flag */
    braid_Int              rstopped;         /**< refinement stopped at iteration rstopped */
    braid_Int              nrefine;          /**< number of refinements done */
@@ -186,6 +181,30 @@ typedef struct _braid_Core_struct
    braid_Real             localtime;        /**< local wall time for braid_Drive() */
    braid_Real             globaltime;       /**< global wall time for braid_Drive() */
 
+   /** Data elements required for the Status structures */
+   /** Common Status properties */
+   braid_Real    t;                /**< current time */
+   braid_Int     idx;              /**< time point index value corresponding to t on the global time grid */
+   braid_Int     level;            /**< current level in XBraid*/
+   /** AccessStatus properties */
+   braid_Real    rnorm;            /**< residual norm */
+   braid_Int     done;             /**< boolean describing whether XBraid has finished */
+   braid_Int     wrapper_test;     /**< boolean describing whether this call is only a wrapper test */
+   braid_Int     calling_function; /**< from which function are we accessing the vector */
+   /** CoarsenRefStatus properties*/
+   braid_Real    f_tprior;         /**< time value to the left of tstart on fine grid */
+   braid_Real    f_tstop;          /**< time value to the right of tstart  on fine grid */
+   braid_Real    c_tprior;         /**< time value to the left of tstart on coarse grid */
+   braid_Real    c_tstop;          /**< time value to the right of tstart on coarse grid */
+   /** StepStatus properties */
+   braid_Real    tnext;            /**< time value to evolve towards, time value to the right of tstart */
+   braid_Real    old_fine_tolx;    /**< Allows for storing the previously used fine tolerance from GetSpatialAccuracy */
+   braid_Int     tight_fine_tolx;  /**< Boolean, indicating whether the tightest fine tolx has been used, condition for halting */
+   braid_Int     rfactor;          /**< if set by user, allows for subdivision of this interval for better time accuracy */
+   braid_Int     wfactor;          /**< if set by user, allows for better load balancing */
+   /** BufferStatus properties */
+   braid_Int    messagetype;       /**< message type, 0: for Step(), 1: for load balancing */
+   braid_Int    size_buffer;       /**< if set by user, send buffer will be "size" bytes in length */
 } _braid_Core;
 
 /*--------------------------------------------------------------------------

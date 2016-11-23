@@ -53,7 +53,10 @@ rm -fr $output_dir
 mkdir -p $output_dir
 
 # Run the following regression tests 
-TESTS=( "diffusion2D.sh " \
+TESTS=( "diffusion1D.sh " \
+        "diffusion1D_scaling.sh" \
+        "diffusion1D_check_rnorm.sh" \
+        "diffusion2D.sh " \
         "diffusion2D_storage.sh " \
         "diffusion2D_scaling.sh " \
         "diffusion2D_scaling_storage.sh " \
@@ -62,6 +65,7 @@ TESTS=( "diffusion2D.sh " \
         "compare_examples_drivers.sh " \
         "compare_examples_drivers_storage.sh " \
         "mfem.sh" \
+        "ode1D.sh" \
         "machine-tux-checkout-compile.sh " \
         "docs.sh" \
         "memcheck-tux-jacob.sh ")

@@ -86,25 +86,25 @@ cd $test_dir
 
 # Run the following regression tests
 valgrind_opts="--log-fd=1 --leak-check=full"
-TESTS=( "MPIWRAP_DEBUG=quiet $RunString -np 1 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 1 1 1 -nt 30 -ml 15 -skip 0 -store -2" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 2 2 1 -nt 30 -ml 15 -skip 1 -store -1" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 2 2 1 -nt 30 -ml 15 -skip 1 -store 0" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 2 2 1 -nt 30 -ml 15 -skip 0 -store 1" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 8 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 2 2 2 -nt 30 -ml 15 -skip 0 -cf0 1 -store -2" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 1 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 1 1 1 -nt 32 -ml 15 -scoarsen 1 -skip 0 -store -2" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 2 2 1 -nt 32 -ml 15 -scoarsen 1 -skip 1 -store -1" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 2 2 1 -nt 32 -ml 15 -scoarsen 1 -skip 1 -store 0" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 2 2 1 -nt 32 -ml 15 -scoarsen 1 -skip 1 -store 1" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 2 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 1 1 2 -nt 32 -cf 4 -ml 15 -fmg 1 -skip 0 -store -2" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 8 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 2 2 2 -nt 33 -cf 4 -ml 15 -fmg 1 -skip 1 -store -1" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 8 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 2 2 2 -nt 33 -cf 4 -ml 15 -fmg 1 -skip 0 -store 0" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 8 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 2 2 2 -nt 33 -cf 4 -ml 15 -fmg 1 -skip 0 -store 1" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 2 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 1 1 2 -nt 33 -cf 4 -ml 15 -fmg 1 -scoarsen 2 -skip 0 -store -2" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 8 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 2 2 2 -nt 33 -cf 4 -ml 15 -fmg 1 -scoarsen 2 -skip 1 -store -1" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 8 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 2 2 2 -nt 33 -cf 4 -ml 15 -fmg 1 -scoarsen 2 -skip 0 -store 0" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 8 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 2 2 2 -nt 33 -cf 4 -ml 15 -fmg 1 -scoarsen 2 -skip 1 -store 1" \
-        "MPIWRAP_DEBUG=quiet $RunString -np 2 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 1 1 2 -nt 33 -cf 4 -ml 15 -fmg 1 -access_level 2 -skip 0" )
-        #"MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $driver_dir/drive-02 -pgrid 1 1 4 -nt 32 -cf 4 -ml 15 -fmg 1 " )
+TESTS=( "MPIWRAP_DEBUG=quiet $RunString -np 1 valgrind $valgrind_opts $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 30 -ml 15 -skip 0 -store -2" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $driver_dir/drive-diffusion-2D -pgrid 2 2 1 -nt 30 -ml 15 -skip 1 -store -1" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $driver_dir/drive-diffusion-2D -pgrid 2 2 1 -nt 30 -ml 15 -skip 1 -store 0" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $driver_dir/drive-diffusion-2D -pgrid 2 2 1 -nt 30 -ml 15 -skip 0 -store 1" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 8 valgrind $valgrind_opts $driver_dir/drive-diffusion-2D -pgrid 2 2 2 -nt 30 -ml 15 -skip 0 -cf0 1 -store -2" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 1 valgrind $valgrind_opts $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 32 -ml 15 -scoarsen 1 -skip 0 -store -2" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $driver_dir/drive-diffusion-2D -pgrid 2 2 1 -nt 32 -ml 15 -scoarsen 1 -skip 1 -store -1" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $driver_dir/drive-diffusion-2D -pgrid 2 2 1 -nt 32 -ml 15 -scoarsen 1 -skip 1 -store 0" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $driver_dir/drive-diffusion-2D -pgrid 2 2 1 -nt 32 -ml 15 -scoarsen 1 -skip 1 -store 1" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 2 valgrind $valgrind_opts $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 32 -cf 4 -ml 15 -fmg 1 -skip 0 -store -2" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 8 valgrind $valgrind_opts $driver_dir/drive-diffusion-2D -pgrid 2 2 2 -nt 33 -cf 4 -ml 15 -fmg 1 -skip 1 -store -1" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 8 valgrind $valgrind_opts $driver_dir/drive-diffusion-2D -pgrid 2 2 2 -nt 33 -cf 4 -ml 15 -fmg 1 -skip 0 -store 0" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 8 valgrind $valgrind_opts $driver_dir/drive-diffusion-2D -pgrid 2 2 2 -nt 33 -cf 4 -ml 15 -fmg 1 -skip 0 -store 1" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 2 valgrind $valgrind_opts $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 33 -cf 4 -ml 15 -fmg 1 -scoarsen 2 -skip 0 -store -2" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 8 valgrind $valgrind_opts $driver_dir/drive-diffusion-2D -pgrid 2 2 2 -nt 33 -cf 4 -ml 15 -fmg 1 -scoarsen 2 -skip 1 -store -1" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 8 valgrind $valgrind_opts $driver_dir/drive-diffusion-2D -pgrid 2 2 2 -nt 33 -cf 4 -ml 15 -fmg 1 -scoarsen 2 -skip 0 -store 0" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 8 valgrind $valgrind_opts $driver_dir/drive-diffusion-2D -pgrid 2 2 2 -nt 33 -cf 4 -ml 15 -fmg 1 -scoarsen 2 -skip 1 -store 1" \
+        "MPIWRAP_DEBUG=quiet $RunString -np 2 valgrind $valgrind_opts $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 33 -cf 4 -ml 15 -fmg 1 -access_level 2 -skip 0" )
+        #"MPIWRAP_DEBUG=quiet $RunString -np 4 valgrind $valgrind_opts $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 32 -cf 4 -ml 15 -fmg 1 " )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 

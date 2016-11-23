@@ -21,33 +21,39 @@
  *
  ***********************************************************************EHEADER*/
 
-
-/*
-   Example 01
-
-   Compile with: make ex-01
-
-   Sample run:   mpirun -np 2 ex-01
-
-   Description:
-
-   Blah...
-
-   When run with the default 10 time steps, the solution is as follows:
-
-      1.00000000000000e+00
-      5.00000000000000e-01
-      2.50000000000000e-01
-      1.25000000000000e-01
-      6.25000000000000e-02
-      3.12500000000000e-02
-      1.56250000000000e-02
-      7.81250000000000e-03
-      3.90625000000000e-03
-      1.95312500000000e-03
-      9.76562500000000e-04
-
-*/
+/**
+ * Example:       ex-01.c
+ *
+ * Interface:     C
+ * 
+ * Requires:      only C-language support     
+ *
+ * Compile with:  make ex-01
+ *
+ * Help with:     this is the simplest example available, read the source
+ *
+ * Sample run:    mpirun -np 2 ex-01
+ *
+ * Description:   solve the scalar ODE 
+ *                   u' = lambda u, 
+ *                   with lambda=-1 and y(0) = 1
+ *                in a very simplified XBraid setting.
+ *                
+ *                When run with the default 10 time steps, the solution is:
+ *                $ ./ex-01
+ *                $ cat ex-01.out.00*
+ *                  1.00000000000000e+00
+ *                  6.66666666666667e-01
+ *                  4.44444444444444e-01
+ *                  2.96296296296296e-01
+ *                  1.97530864197531e-01
+ *                  1.31687242798354e-01
+ *                  8.77914951989026e-02
+ *                  5.85276634659351e-02
+ *                  3.90184423106234e-02
+ *                  2.60122948737489e-02
+ *                  1.73415299158326e-02
+ **/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -57,24 +63,19 @@
 #include "braid.h"
 
 /*--------------------------------------------------------------------------
- * My integration routines
+ * User-defined routines and structures
  *--------------------------------------------------------------------------*/
 
-/* can put anything in my app and name it anything as well */
+/* App structure can contain anything, and be named anything as well */
 typedef struct _braid_App_struct
 {
-   MPI_Comm  comm;
-   double    tstart;
-   double    tstop;
-   int       ntime;
-
+   int       rank;
 } my_App;
 
-/* can put anything in my vector and name it anything as well */
+/* Vector structure can contain anything, and be name anything as well */
 typedef struct _braid_Vector_struct
 {
    double value;
-
 } my_Vector;
 
 int
@@ -88,34 +89,9 @@ my_Step(braid_App        app,
    double tstop;              /* evolve to this time*/
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
 
-   /* On the finest grid, each value is half the previous value */
-   (u->value) = pow(0.5, tstop-tstart)*(u->value);
-
-   if (fstop != NULL)
-   {
-      /* Nonzero rhs */
-      (u->value) += (fstop->value);
-   }
-
-   /* no refinement */
-   braid_StepStatusSetRFactor(status, 1);
-
-   return 0;
-}
-
-int
-my_Residual(braid_App        app,
-            braid_Vector     ustop,
-            braid_Vector     r,
-            braid_StepStatus status)
-{
-   double tstart;             /* current time */
-   double tstop;              /* evolve to this time*/
-   braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
-
-   /* On the finest grid, each value is half the previous value */
-   (r->value) = (ustop->value) - pow(0.5, tstop-tstart)*(r->value);
-
+   /* Use backward Euler to propagate solution */
+   (u->value) = 1./(1. + tstop-tstart)*(u->value);
+   
    return 0;
 }
 
@@ -127,15 +103,13 @@ my_Init(braid_App     app,
    my_Vector *u;
 
    u = (my_Vector *) malloc(sizeof(my_Vector));
-   if (t == 0.0)
+   if (t == 0.0) /* Initial condition */
    {
-      /* Initial condition */
       (u->value) = 1.0;
    }
-   else
+   else /* All other time points set to arbitrary value */
    {
-      /* Initialize all other time points */
-      (u->value) = 0.456;//((double)rand()) / RAND_MAX;
+      (u->value) = 0.456;
    }
    *u_ptr = u;
 
@@ -161,7 +135,6 @@ my_Free(braid_App    app,
         braid_Vector u)
 {
    free(u);
-
    return 0;
 }
 
@@ -173,7 +146,6 @@ my_Sum(braid_App     app,
        braid_Vector  y)
 {
    (y->value) = alpha*(x->value) + beta*(y->value);
-
    return 0;
 }
 
@@ -186,7 +158,6 @@ my_SpatialNorm(braid_App     app,
 
    dot = (u->value)*(u->value);
    *norm_ptr = sqrt(dot);
-
    return 0;
 }
 
@@ -195,21 +166,12 @@ my_Access(braid_App          app,
           braid_Vector       u,
           braid_AccessStatus astatus)
 {
-   MPI_Comm   comm   = (app->comm);
-   double     tstart = (app->tstart);
-   double     tstop  = (app->tstop);
-   int        ntime  = (app->ntime);
-   int        index, myid;
+   int        index;
    char       filename[255];
    FILE      *file;
-   double     t;
    
-   braid_AccessStatusGetT(astatus, &t);
-   index = ((t-tstart) / ((tstop-tstart)/ntime) + 0.1);
-
-   MPI_Comm_rank(comm, &myid);
-
-   sprintf(filename, "%s.%07d.%05d", "ex-01.out", index, myid);
+   braid_AccessStatusGetTIndex(astatus, &index);
+   sprintf(filename, "%s.%04d.%03d", "ex-01.out", index, app->rank);
    file = fopen(filename, "w");
    fprintf(file, "%.14e\n", (u->value));
    fflush(file);
@@ -265,137 +227,37 @@ int main (int argc, char *argv[])
 {
    braid_Core    core;
    my_App       *app;
-   MPI_Comm      comm;
    double        tstart, tstop;
-   int           ntime;
+   int           ntime, rank;
 
-   int           max_levels = 1;
-   int           nrelax     = 1;
-   int           nrelax0    = -1;
-   double        tol        = 1.0e-06;
-   int           cfactor    = 2;
-   int           max_iter   = 100;
-   int           fmg        = 0;
-   int           res        = 0;
-
-   int           arg_index;
-
+   /* Define time domain: ntime intervals */
+   ntime  = 10;
+   tstart = 0.0;
+   tstop  = tstart + ntime/2.;
+   
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
-
-   /* ntime time intervals with spacing 1 */
-   comm   = MPI_COMM_WORLD;
-   ntime  = 32;
-   tstart = 0.0;
-   tstop  = tstart + ntime;
+   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
    
-   /* Parse command line */
-
-   arg_index = 1;
-   while (arg_index < argc)
-   {
-      if ( strcmp(argv[arg_index], "-help") == 0 )
-      {
-         int  myid;
-         MPI_Comm_rank(comm, &myid);
-         if ( myid == 0 )
-         {
-            printf("\n");
-            printf("  -ml  <max_levels> : set max levels\n");
-            printf("  -nu  <nrelax>     : set num F-C relaxations\n");
-            printf("  -nu0 <nrelax>     : set num F-C relaxations on level 0\n");
-            printf("  -tol <tol>        : set stopping tolerance\n");
-            printf("  -cf  <cfactor>    : set coarsening factor\n");
-            printf("  -mi  <max_iter>   : set max iterations\n");
-            printf("  -fmg              : use FMG cycling\n");
-            printf("  -res              : use my residual\n");
-            printf("\n");
-         }
-         exit(1);
-      }
-      else if ( strcmp(argv[arg_index], "-ml") == 0 )
-      {
-         arg_index++;
-         max_levels = atoi(argv[arg_index++]);
-      }
-      else if ( strcmp(argv[arg_index], "-nu") == 0 )
-      {
-         arg_index++;
-         nrelax = atoi(argv[arg_index++]);
-      }
-      else if ( strcmp(argv[arg_index], "-nu0") == 0 )
-      {
-         arg_index++;
-         nrelax0 = atoi(argv[arg_index++]);
-      }
-      else if ( strcmp(argv[arg_index], "-tol") == 0 ) 
-      {
-         arg_index++;
-         tol = atof(argv[arg_index++]);
-      }
-      else if ( strcmp(argv[arg_index], "-cf") == 0 )
-      {
-         arg_index++;
-         cfactor = atoi(argv[arg_index++]);
-      }
-      else if ( strcmp(argv[arg_index], "-mi") == 0 )
-      {
-         arg_index++;
-         max_iter = atoi(argv[arg_index++]);
-      }
-      else if ( strcmp(argv[arg_index], "-fmg") == 0 )
-      {
-         arg_index++;
-         fmg = 1;
-      }
-      else if ( strcmp(argv[arg_index], "-res") == 0 )
-      {
-         arg_index++;
-         res = 1;
-      }
-      else
-      {
-         arg_index++;
-         /*break;*/
-      }
-   }
-
    /* set up app structure */
    app = (my_App *) malloc(sizeof(my_App));
-   (app->comm)   = comm;
-   (app->tstart) = tstart;
-   (app->tstop)  = tstop;
-   (app->ntime)  = ntime;
-
-   braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
+   (app->rank)   = rank;
+   
+   /* initialize XBraid and set options */
+   braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
              my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
              my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
-
+   
+   /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);
-   braid_SetMaxLevels(core, max_levels);
-   braid_SetNRelax(core, -1, nrelax);
-   if (nrelax0 > -1)
-   {
-      braid_SetNRelax(core,  0, nrelax0);
-   }
-   braid_SetAbsTol(core, tol);
-   braid_SetCFactor(core, -1, cfactor);
-   /*braid_SetCFactor(core,  0, 10);*/
-   braid_SetMaxIter(core, max_iter);
-   if (fmg)
-   {
-      braid_SetFMG(core);
-   }
-   if (res)
-   {
-      braid_SetResidual(core, my_Residual);
-   }
-
+   braid_SetMaxLevels(core, 2);
+   braid_SetAbsTol(core, 1.0e-06);
+   braid_SetCFactor(core, -1, 2);
+   
+   /* Run simulation, and then clean up */
    braid_Drive(core);
 
    braid_Destroy(core);
-
-   /* Finalize MPI */
    MPI_Finalize();
 
    return (0);

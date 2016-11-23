@@ -83,32 +83,32 @@ cd $test_dir
 
 
 # Run the following regression tests 
-TESTS=( "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15  -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -forcing -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1 -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15  -storage -2 -skip 1" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -forcing -storage -2 -skip 1" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1 -storage -2 -skip 1" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15  -storage -2 -skip 0 -res " \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1 -storage -2 -skip 0 -res" \
-        "$RunString -np 4 $example_dir/ex-02   -pgrid 1 1 4 -nt 256 -ml 15  -storage -2 -skip 0 -refine " \
-        "$RunString -np 4 $example_dir/ex-02   -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1 -storage -2 -skip 0 -refine" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15  -storage -2 -skip 0 -cf0 1" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -forcing -storage -2 -skip 0 -cf0 1" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1 -storage -2 -skip 0 -cf0 1" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -ml 15 -nt 128 -nx 33 33 -mi 100 -expl -scoarsen 1 -skip 0"\
-        "$RunString -np 2 $driver_dir/drive-02 -pgrid 1 1 2 -nt 32 -ml 15 -access_level 1  -storage -2 -skip 0" \
-        "$RunString -np 2 $driver_dir/drive-02 -pgrid 1 1 2 -nt 32 -ml 15 -access_level 2  -storage -2 -skip 0" \
-        "$RunString -np 2 $driver_dir/drive-02 -pgrid 1 1 2 -nt 32 -ml 15 -access_level 3  -storage -2 -skip 0" \
-        "$RunString -np 2 $driver_dir/drive-02 -pgrid 1 1 2 -nt 32 -ml 15 -print_level 0  -storage -2 -skip 0" \
-        "$RunString -np 2 $driver_dir/drive-02 -pgrid 1 1 2 -nt 32 -ml 15 -print_level 1  -storage -2 -skip 0" \
-        "$RunString -np 1 $driver_dir/drive-02 -pgrid 1 1 1 -nt 9  -ml 2  -print_level 2  -storage -2 -skip 1 -mc 1 -nu 0 -mc 1 -mi 4 2" \
-        "$RunString -np 2 $driver_dir/drive-02 -pgrid 1 1 2 -nt 32 -ml 15 -print_level 1 -fmg 2 -storage -2 -skip 0" \
-        "$RunString -np 1 $driver_dir/drive-02 -pgrid 1 1 1 -run_wrapper_tests  -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 65  -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 64  -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 1  -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-02 -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 4 -cfl 0.30 -nu0 1 -nu 1 -mc 16  -storage -2 -skip 0" )
+TESTS=( "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15  -storage -2 -skip 0" \
+        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15 -forcing -storage -2 -skip 0" \
+        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1 -storage -2 -skip 0" \
+        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15  -storage -2 -skip 1" \
+        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15 -forcing -storage -2 -skip 1" \
+        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1 -storage -2 -skip 1" \
+        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15  -storage -2 -skip 0 -res " \
+        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1 -storage -2 -skip 0 -res" \
+        "$RunString -np 4 $example_dir/ex-03   -pgrid 1 1 4 -nt 256 -ml 15  -storage -2 -skip 0 -refine " \
+        "$RunString -np 4 $example_dir/ex-03   -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1 -storage -2 -skip 0 -refine" \
+        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15  -storage -2 -skip 0 -cf0 1" \
+        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15 -forcing -storage -2 -skip 0 -cf0 1" \
+        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1 -storage -2 -skip 0 -cf0 1" \
+        "$RunString -np 8 $driver_dir/drive-diffusion-2D -pgrid 1 1 8 -ml 15 -nt 128 -nx 33 33 -mi 100 -expl -scoarsen 1 -skip 0"\
+        "$RunString -np 2 $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 32 -ml 15 -access_level 1  -storage -2 -skip 0" \
+        "$RunString -np 2 $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 32 -ml 15 -access_level 2  -storage -2 -skip 0" \
+        "$RunString -np 2 $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 32 -ml 15 -access_level 3  -storage -2 -skip 0" \
+        "$RunString -np 2 $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 32 -ml 15 -print_level 0  -storage -2 -skip 0" \
+        "$RunString -np 2 $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 32 -ml 15 -print_level 1  -storage -2 -skip 0" \
+        "$RunString -np 1 $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 9  -ml 2  -print_level 2  -storage -2 -skip 1 -mc 1 -nu 0 -mc 1 -mi 4 2" \
+        "$RunString -np 2 $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 32 -ml 15 -print_level 1 -fmg 2 -storage -2 -skip 0" \
+        "$RunString -np 1 $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -run_wrapper_tests  -storage -2 -skip 0" \
+        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 65  -storage -2 -skip 0" \
+        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 64  -storage -2 -skip 0" \
+        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 1  -storage -2 -skip 0" \
+        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 4 -cfl 0.30 -nu0 1 -nu 1 -mc 16  -storage -2 -skip 0" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 

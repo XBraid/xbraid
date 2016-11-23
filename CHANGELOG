@@ -1,0 +1,270 @@
+----------------------------
+Version 2.1.0, 10/18/2016
+----------------------------
+
+- Updated documentation to reflect new features
+
+- Added user-defined initial time-grids.  Allows for non-uniform
+  initial grids, and for bit-wise equivalent time-grids between codes. 	
+
+- New 1D heat equation example, which is an excellent teaching
+  tool for learning XBraid. examples/ex-02.c 
+
+- New linear elasticity MFEM driver, drivers/drive-lin-elasticity.cpp
+
+- New scalar ODE example showing how to use the shell-vector option
+  with BDF2, ex-01-expanded-bdf2.c
+
+- Renamed and reorganized examples and drivers directories.
+  So that all "research and development" files are in drivers,
+  and examples will be a stable set of files for instruction and
+  introducation to XBraid.
+
+  Also, reworked the examples for consistency in appearance, functionality and
+  style.
+
+- Changed make system so that the sequential option is now enabled with
+  
+  make sequential=yes
+  
+  similar to the other two options
+  
+  make debug=yes|no
+  make valgrind=yes|no
+    
+- Added a braid test to test the compatibility of Residual()
+  and Step(), i.e., that
+  
+  f - Residual( Step(u_{i-1}, f_i), u_{i-1}) \approx 0
+
+- Updates and bug fixes to the adaptive refinement in time capabilities
+
+- Unified the status structure implementation 
+
+- Updated Fortran interface to support missing functions
+
+
+----------------------------
+Version 2.0.0, 05/25/2016
+----------------------------
+
+- Updated documentation to reflect new features
+
+- Changed the name of "Phi" to "Step", because this is more 
+  descriptive of the function's purpose, especially as it
+  relates to the new residual function.
+
+- Added major new features
+	
+  Flexible storage options, allowing for storage at only C
+  or at C and F points.  Extra storage gives you better initial
+  guesses for implicit solves.  Storage=-2 is compatability mode
+  with the original XBraid.  Storage=-1 (storage only at C-points)
+  is the default.
+
+  Support for adaptive refinement in time (see FRefine function)
+  This was not an easy implementation!
+
+  Support for user-defined residual computations (see User's Manual
+  for description).  This can result in computational savings. 
+
+  Support for the new Shell feature which allows for storing meta
+  data at all time points (even if storage is turned off at F-points).
+  This is useful, for instance, for BDF methods.  See examples.
+
+  Support for skipping work during the first XBraid down-cycle
+
+  Ability to visualize cycling with cycleplot.py (see user_utils) 
+  
+  Ability to compile without MPI (see makefile.inc and make sequential)
+
+  Ability to compute residual at all points, F and C, as opposed to the
+  default with only computes the residual at C-points.
+
+  Added Fortran interface, see ex-01-f.f90. Currently, it is turned on
+  manually in braid.h with 3 pound-defines at the top of that file.
+
+- New examples: Burger's equation in 1D and the Lorenz attractors
+
+- Set size_ptr prior to calling bufpack such that: size_ptr = 0 at entry
+  to bufpack indicates the message will be used for completing a time
+  step on the next processor. At entry size_ptr = 1 indicates the message
+  will be used for load balenceing in FRefine.
+  
+  Reason: Far less information is needed when completing a time step
+  than when moving an entire vector to a new processor. In my
+  case each vector saves its entire spatial heirachy of meshes.
+  To complete a time step on the next processor the message only
+  needs to contain the current function and the current mesh. To
+  move an entire vector to a new processor the message must contain
+  the fine grid solution and mesh + all other coarse grid messages.
+
+- Updates to the MFEM C++ interface and drivers,
+  
+  drive-05.cpp is a new DG advection diffusion driver, supporting higher-order
+  artificial dissipation
+  
+  drive-06 is a nonlinear diffusion (p-Laplacian) example
+
+  drive-10 is a nonlinear elasticity driver
+
+  1D heat equation with moving mesh driver
+
+- Moved the additional "hypre" functions from drive-04.cpp to hypre_extra.hpp, so
+  they can be used in other drivers.
+    
+- Modification of the access_level. Now, we have:
+  - access_level == 0 : do nothing
+  - access_level == 1 : call at the end of the simulation (fine grid)
+  - access_level == 2 : call at the end of each iteration and end of simulation (fine grid only)
+  - access_level == 3 : same as other, plus call in FRestrict, FInterp and FRefine (on all levels).
+  
+
+- New regression tests, for among other things, 
+  braid_GetSpatialAccuracy
+  braid_GetRNorms
+  braid_StepStatusGetTol
+  braid_StepStatusGetIter
+  braid_StepStatusGetRNorms
+  braid_StepStatusGetOldFineTolx
+  braid_StepStatusSetOldFineTolx
+  braid_StepStatusSetTightFineTolx
+    
+  Note that the Get|Set.*Tolx routines
+  are tested implicitly with the tests on
+  braid_GetSpatialAccuracy
+    
+- Changed util.h|c to _util.h|c These files only contain Braid internal
+  routines and were as such improperly named.
+
+- Simplified greatly the cycling logic in braid.c::Drive()
+    - Allows for interactive printing of cycle information with
+      _braid_DriveUpdateCycle() to the cycle.outfile which is
+      by default with 'braid.out.cycle'
+    - The cycling information in this file can be plotted with
+      cycleplot.gnuplot file
+    - There is a mpistubs.h|.c for purely serial compilations
+
+
+- Fixed some bugs in _braid.c and especially in _braid_GetUInit() regarding
+   the various storage options, where storage=-2 is compatability mode with
+   old braid, and -1 and 0 use more current information.  There is a long comment
+   at the top of FRestrict() that outline some of the reasoning behind the issues
+   addressed in this commit.
+
+   To test the bug fixes a new option was added braid_SetSeqSoln() which allows
+   the user to initialize the problem with the solution from sequential time stepping.
+   This is there just for debugging, but can be quite useful.
+
+- Added a number of new features in drive-06 for the nonlinear parabolic
+    paper.  These integrate some changes from Ben over the summer, like
+    tracking the number of Newton iterations, varying the Newton tolerance
+    and capping the number of Newton and BoomerAMG iterations. These options
+    are all available from the command line.
+
+- Added new information to status structures
+
+- Switched "isnan()" to our own in-house "braid_isnan()" macro.  This is for
+   better portability.  
+
+- Added support for cfactor=1. I believe this one line change is required in
+   _braid.c I also added some regression tests to test cfactor=1 on the finest
+   grid.
+
+
+- Cleaned up how the core->rnorms array is accessed with three new accessor
+  functions
+    _braid_AppendResidual
+    _braid_GetRNorm
+    _braid_DeleteLasResidual
+  The number of residual norms available depends on the skip option and the
+  iteration number.  Sometimes there are resdiual norms available, sometimes not.
+  And the number available does not equal the number of iterations.  So, these
+  functions make all that easier.
+
+- Fixed a memory problem with the rnorms array when MaxIter is changed by the user.
+
+- Added NaN check for braid residuals to stop iterating. 
+
+- Updated drive-02 so that it uses the storage and new residual options.
+
+- A tolerance <= 0.0 now means that iterations will proceed until max_iter is
+  reached.
+ 
+- Updated accuracy handle 
+   
+
+----------------------------
+Version 1.1.b, 03/10/2015
+----------------------------
+
+- Updated documentation to reflect new features
+
+- Split examples directory into "examples" and "drivers"
+  examples holds simple user-friendly examples.  Currently that's
+  ex-01 and ex-02, a scalar ODE and heat equation example, respectively.
+    
+  ex-02 is a simplified example that only does backward Euler and corresponds
+  to ex-02-serial which is a mock-up of a simple user application that we
+  parallelize in time with ex-02.
+    
+  drivers holds more sophisticated drivers that we use for research
+  This is where all the old drivers (drive-02, drive-03, drive-04,
+  drive-05 and hyperdrive) ended up.
+    
+  The old drive-02 was eliminated, and replaced by the old drive-05.
+  These drivers duplicated functionality.
+    
+  Associated regression tests were added for the new examples
+
+- New information available through the Status structures in Phi, 
+	like the current XBraid level.
+
+- Drive-05 now supports spatial parallelism and spatial coarsening on
+  regular grids.
+
+	Also, changed the drive-05 interface to more easily allow playing around
+	with varying coarse grid CFL numbers.  Also added a couple comments to
+	_braid.c that better explain the grid structure's data elements.
+
+
+----------------------------
+Version 1.0.b, 10/27/2014
+----------------------------
+
+- Implements basic MGRIT algorithm, see newly written 
+  User's and Developer's Manuals for overview
+
+- Decided on Git repository for collaboration and development of XBraid 
+
+- Developed logo 
+
+- Decided on name "XBraid" after too many conflicts with "Warp", 
+  our first choice
+
+- Developed C++ interface, see braid.hpp which implements abstract
+  base classes for wrapping Phi(), Clone(), ..., and then see 
+  drivers/drive-04.cpp which uses the interface
+
+- Basic driver and example functionality for the heat equation 
+  (drive-04.cpp, drive-03.c, ...)
+
+- Added wrapper test functions to test things like Sum(), Access(), ...
+
+- Developed suite of regression tests (see test directory)
+
+- Added Copyright and License statements for LGPL 2.1 
+
+- Allow for 1-norm and inf-norm halting options
+
+- Implemented Status structure interface which allows for us to 
+
+- Added some debug level printing to allow for tracking the residual
+  value over each interval, see braid_SetPrintLevel  
+	 
+- Added ability to do enhanced F-cycles (i.e. mutliple V-cycles at each level
+	in an FMG cycle)
+
+- Made design decisions for the user to include PDE forcing inside of Phi().
+  XBraid implements FAS, so this should be fine. 
+

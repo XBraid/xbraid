@@ -20,7 +20,7 @@
  * Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  ***********************************************************************EHEADER*/
- 
+
 /** \file braid.h
  * \brief Define headers for user interface routines.
  *
@@ -31,8 +31,9 @@
 #ifndef braid_HEADER
 #define braid_HEADER
 
-//#define braid_SEQUENTIAL
-
+/* To enable XBraid without MPI, re-compile with
+ *   make sequential=yes 
+ * This will compile using the mpistubs.h */
 #ifdef braid_SEQUENTIAL
 typedef int MPI_Comm;
 #include "mpistubs.h"
@@ -47,22 +48,44 @@ typedef int MPI_Comm;
 extern "C" {
 #endif
 
-/** Turn on Fortran 90 interface options manually */
-#define braid_FMANGLE 1
-#define braid_Fortran_SpatialCoarsen 0
-#define braid_Fortran_Residual 0
+/*--------------------------------------------------------------------------
+ * F90 Interface 
+ *--------------------------------------------------------------------------*/
+/** \defgroup fortraninterface Fortran 90 interface options 
+ *
+ * Allows user to manually, at compile-time, turn on Fortran 90 interface options
+ *
+ * @{
+ */
 
-/** Value used to represent an invalid residual norm */
-#define braid_INVALID_RNORM -1
+/** Define Fortran name-mangling schema, there are four supported options, see braid_F90_iface.c */
+#define braid_FMANGLE 1
+/** Turn on the optional user-defined spatial coarsening and refinement functions */ 
+#define braid_Fortran_SpatialCoarsen 0
+/** Turn on the optional user-defined residual function */ 
+#define braid_Fortran_Residual 1
+/** Turn on the optional user-defined time-grid function */ 
+#define braid_Fortran_TimeGrid 1
+
+/** @} */
+
 
 /*--------------------------------------------------------------------------
- * Error codes
+ * Error Codes 
  *--------------------------------------------------------------------------*/
+/** \defgroup errorcodes Error Codes
+ *
+ * @{
+ */
+
+/** Value used to represent an invalid residual norm */
+#define braid_INVALID_RNORM -1 
 
 #define braid_ERROR_GENERIC         1   /* generic error */
 #define braid_ERROR_MEMORY          2   /* unable to allocate memory */
 #define braid_ERROR_ARG             4   /* argument error */
 /* bits 4-8 are reserved for the index of the argument error */
+/** @} */
 
 /*--------------------------------------------------------------------------
  * User-written routines
@@ -240,7 +263,7 @@ typedef braid_Int
 typedef braid_Int
 (*braid_PtFcnResidual)(braid_App        app,    /**< user-defined _braid_App structure */
                        braid_Vector     ustop,  /**< input, u vector at *tstop* */
-                       braid_Vector     r     , /**< output, residual at *tstop* */
+                       braid_Vector     r     , /**< output, residual at *tstop* (at input, equals *u* at *tstart*) */
                        braid_StepStatus status  /**< query this struct for info about u (e.g., tstart and tstop) */ 
                        );
 
@@ -306,6 +329,16 @@ typedef braid_Int
 (*braid_PtFcnSFree)(braid_App     app,            /**< user-defined _braid_App structure */
                     braid_Vector  u               /**< vector to free (keeping the shell) */
                     );
+
+/**
+ * Set time values for temporal grid on level 0 (time slice per processor)
+ **/
+typedef braid_Int
+(*braid_PtFcnTimeGrid)(braid_App         app,       /**< user-defined _braid_App structure */
+                       braid_Real       *ta,        /**< temporal grid on level 0 (slice per processor) */
+                       braid_Int        *ilower,    /**< lower time index value for this processor */
+                       braid_Int        *iupper     /**< upper time index value for this processor */
+                       );
 
 /** @}*/
 
@@ -565,6 +598,14 @@ braid_Int
 braid_SetFullRNormRes(braid_Core          core,     /**< braid_Core (_braid_Core) struct*/ 
                       braid_PtFcnResidual residual  /**< function pointer to residual routine */
                       );
+
+/**
+ * Set user-defined time points on finest grid
+ **/
+braid_Int
+braid_SetTimeGrid(braid_Core          core,  /**< braid_Core (_braid_Core) struct*/
+                  braid_PtFcnTimeGrid tgrid  /**< function pointer to time grid routine */
+                  );
 
 /**
  * Set spatial coarsening routine with user-defined routine.

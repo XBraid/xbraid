@@ -23,7 +23,7 @@
 
 Type
 
-      drive-0* -help
+      drive-* -help
 
 for instructions on how to run any driver.
 
@@ -32,7 +32,7 @@ To run the examples, type
       mpirun -np 4 drive-*  [args]
 
 
-1. drive-02 implements the 2D heat equation on a regular grid.  You must have
+1. *drive-diffusion-2D* implements the 2D heat equation on a regular grid.  You must have
    [hypre](https://computation.llnl.gov/project/linear_solvers/software.php)
    installed and these variables in examples/Makefile set correctly
     
@@ -44,13 +44,20 @@ To run the examples, type
    This allows you to use explicit time stepping on each Braid level, 
    regardless of time step size.  
 
-2. drive-03 implements the 3D heat equation on a regular grid, and assumes 
-   [hypre](https://computation.llnl.gov/project/linear_solvers/software.php)
-   is installed just like drive-02.  This driver does not support spatial 
-   coarsening, and thus if explicit time stepping is used, the time stepping 
-   switchs to implicit on coarse XBraid grids when the CFL condition is violated.
+2. *drive-burgers-1D* implements Burger's equation (and also linear advection) in 1D
+   using forward or backward Euler in time and Lax-Friedrichs in space.  Spatial
+   coarsening is supported, allowing for stable time stepping on coarse time-grids.
 
-3. drive-04 is a sophisticated test bed for finite element discretizations of the 
+   See also *viz-burgers.py* for visualizing the output.
+
+3. *drive-lorenz* implements the Lorenz equation, with it's trademark attractors.
+   This problem has not been researched very extensively, and XBraid's behavior
+   is not yet well understood.  Convergence stagnates, but is the solution 
+   "good enough" from a statistical point-of-view?
+   
+   See also *viz-lorenz.py* for visualizing the output.
+
+4. *drive-diffusion* is a sophisticated test bed for finite element discretizations of the 
    heat equation. It relies on the [mfem](http://mfem.org)
    package to create general finite element discretizations for the spatial problem.
    Other packages must be installed in this order.
@@ -82,22 +89,42 @@ To run the examples, type
        
        then type
             
-            make drive-04
+            make drive-diffusion
 
-     + To run drive-04 and glvis, open two windows.  In one, start a glvis session
+     + To run drive-diffusion and glvis, open two windows.  In one, start a glvis session
       
                ./glvis
   
-         Then, in the other window, run drive-04
+         Then, in the other window, run drive-diffusion
       
-               mpirun -np ... drive-04 [args]
+               mpirun -np ... drive-diffusion [args]
          
-         Glvis will listen on a port to which drive-04 will dump visualization information.
+         Glvis will listen on a port to which drive-diffusion will dump visualization 
+         information.
 
-4. drive-05, 6, 7 and 10 are additional mfem examples compiled like drive-04.
-     + drive-05 implements advection(-diffusion) with a discontinuous Galerkin
-       discretization.
-     + drive-06 implements nonlinear diffusion, i.e., the \f$p\f$-Laplacian.
-     + drive-07 is under development.
-     + drive-10 is under development.
+5. The other drive-.cpp files use MFEM to implement other PDEs
+
+     + *drive-adv-diff-DG*:  implements advection(-diffusion) with a discontinuous Galerkin
+       discretization.  This driver is under developement.
+
+     + *drive-diffusion-1D-moving-mesh*:  implements the 1D heat equation, but with a
+       moving mesh that adapts to the forcing function so that the mesh 
+       equidistributes the arc-length of the solution.
+
+     + *drive-diffusion-1D-moving-mesh-serial*:  implements a serial time-stepping version
+       of the above problem.
+
+     + *drive-pLaplacian*:  implements the 2D the \f$p\f$-Laplacian (nonlinear diffusion).
+
+     + *drive-diffusion-ben*:  implements the 2D/3D diffusion equation with time-dependent
+       coefficients. This is essentially equivalent to drive-diffusion, and could be 
+       removed, but we're keeping it around because it implements linear diffusion in the 
+       same way that the p-Laplacian driver implemented nonlinear diffusion.  This makes it
+       suitable for head-to-head timings.
+
+     + *drive-lin-elasticity*:  implements time-dependent linearized elasticity and is under
+       development.
+
+     + *drive-nonlin-elasticity*:  implements time-dependent nonlinear elasticity and is under
+       development.
 
