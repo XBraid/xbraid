@@ -637,6 +637,10 @@ Wrapping and debugging a code with XBraid typically follows a few steps.
   XBraid and by sequential time stepping are bit-wise the same (by using the
   user-defined time grid option [braid_SetTimeGrid](@ref braid_SetTimeGrid) ),
   then the agreement of their solutions should be bit-wise the same.
+- Continue with max levels equal to 1, but switch to two processors in time.
+  Check that the answer again exactly matches sequential time stepping.  This
+  test checks that the information in braid_Vector is sufficient to correctly
+  start the simulation on the second processor in time.
 - Set max levels to 2, halting tolerance to 0.0 
   ([braid_SetAbsTol](@ref braid_SetAbsTol)), max iterations to 3 
   ([braid_SetMaxIter](@ref braid_SetMaxIter )) and turn on the option 
