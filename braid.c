@@ -61,6 +61,7 @@ _braid_DriveInitCycle(braid_Core          core,
    braid_Int  fmg        = _braid_CoreElt(core, fmg);
    braid_Int  nfmg       = _braid_CoreElt(core, nfmg);
    braid_Int  nlevels    = _braid_CoreElt(core, nlevels);
+   braid_Int  io_level   = _braid_CoreElt(core, io_level);
 
    _braid_CycleState  cycle;
 
@@ -75,7 +76,7 @@ _braid_DriveInitCycle(braid_Core          core,
    }
 
    /* Open cycle output file */
-   if (myid == 0)
+   if (myid == 0 && io_level>=1)
    {
       cycle.outfile = fopen("braid.out.cycle", "w");
    }
@@ -110,6 +111,7 @@ _braid_DriveUpdateCycle(braid_Core          core,
    braid_Int      nfmg      = _braid_CoreElt(core, nfmg);
    braid_Int      nfmg_Vcyc = _braid_CoreElt(core, nfmg_Vcyc); 
    braid_Int      nlevels   = _braid_CoreElt(core, nlevels);
+   braid_Int      io_level  = _braid_CoreElt(core, io_level);
    _braid_CycleState  cycle = *cycle_ptr;
    braid_Real     rnorm;     
 
@@ -168,7 +170,7 @@ _braid_DriveUpdateCycle(braid_Core          core,
    }
 
    /* Print to cycle output file */
-   if (myid == 0)
+   if (myid == 0 && io_level>=1)
    {
       braid_Int            nrefine = _braid_CoreElt(core, nrefine);
       braid_Int            gupper  = _braid_CoreElt(core, gupper);
@@ -208,12 +210,13 @@ braid_Int
 _braid_DriveEndCycle(braid_Core          core,
                      _braid_CycleState  *cycle_ptr)
 {
-   braid_Int  myid = _braid_CoreElt(core, myid_world);
+   braid_Int  myid     = _braid_CoreElt(core, myid_world);
+   braid_Int  io_level = _braid_CoreElt(core, io_level);
 
    _braid_CycleState  cycle = *cycle_ptr;
 
    /* Close cycle output file */
-   if (myid == 0)
+   if (myid == 0 && io_level>=1)
    {
       fclose(cycle.outfile);
    }
@@ -622,6 +625,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              min_coarse      = 2;              /* Default min_coarse */
    braid_Int              seq_soln        = 0;              /* Default initial guess is from user's Init() function */
    braid_Int              print_level     = 1;              /* Default print level */
+   braid_Int              io_level        = 1;              /* Default output-to-file level */
    braid_Int              access_level    = 1;              /* Default access level */
    braid_Int              tnorm           = 2;              /* Default temporal norm */
    braid_Real             tol             = 1.0e-09;        /* Default absolute tolerance */
@@ -667,6 +671,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, access_level)    = access_level;
    _braid_CoreElt(core, tnorm)           = tnorm;
    _braid_CoreElt(core, print_level)     = print_level;
+   _braid_CoreElt(core, io_level)        = io_level;
    _braid_CoreElt(core, max_levels)      = 0; /* Set with SetMaxLevels() below */
    _braid_CoreElt(core, min_coarse)      = min_coarse;
    _braid_CoreElt(core, seq_soln)        = seq_soln;
@@ -932,6 +937,18 @@ braid_SetPrintLevel(braid_Core  core,
                     braid_Int   print_level)
 {
    _braid_CoreElt(core, print_level) = print_level;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetFileIOLevel(braid_Core  core,
+                     braid_Int   io_level)
+{
+   _braid_CoreElt(core, io_level) = io_level;
 
    return _braid_error_flag;
 }
