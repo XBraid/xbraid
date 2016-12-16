@@ -84,6 +84,7 @@ typedef struct
    braid_Vector      *ua;            /**< unknown vectors            (C-points at least)*/
    braid_Real        *ta;            /**< time values                (all points) */
    braid_Vector      *va;            /**< restricted unknown vectors (all points, NULL on level 0) */
+   braid_Vector      *wa;            /**< same as va, but approximates the homogenous problem */
    braid_Vector      *fa;            /**< rhs vectors f              (all points, NULL on level 0) */
 
    braid_Int          recv_index;    /**<  -1 means no receive */
@@ -94,6 +95,7 @@ typedef struct
    braid_Vector      *ua_alloc;      /**< original memory allocation for ua */
    braid_Real        *ta_alloc;      /**< original memory allocation for ta */
    braid_Vector      *va_alloc;      /**< original memory allocation for va */
+   braid_Vector      *wa_alloc;      /**< original memory allocation for wa */
    braid_Vector      *fa_alloc;      /**< original memory allocation for fa */
 
 } _braid_Grid;
@@ -504,7 +506,8 @@ _braid_Step(braid_Core     core,
             braid_Int      level,
             braid_Int      index,
             braid_Vector   ustop,
-            braid_Vector   u);
+            braid_Vector   u,
+            braid_Int      move);
 
 /**
  * Compute residual *r*

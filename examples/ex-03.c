@@ -21,6 +21,12 @@
  *
  ***********************************************************************EHEADER*/
 
+/* RDF: debug print */
+#define DEBUG 0
+#if DEBUG
+int  stepcount = 0;
+#endif
+
 /**
  * Example:       ex-03.c
  *
@@ -222,6 +228,17 @@ my_Step(braid_App        app,
       bstop = fstop->x;
    }
    take_step(app->man, ustop->x, bstop, u->x, tstart, tstop, &iters_taken);
+
+/* RDF: debug print */
+#if DEBUG
+{
+   int  iter, tindex;
+   stepcount++;
+   braid_StepStatusGetIter(status, &iter);
+   braid_StepStatusGetTIndex(status, &tindex);
+   printf("MGIters: %-5d %-5d %-5d %-5d %-5d\n", iter, level, tindex, stepcount, iters_taken);
+}
+#endif
 
    /* Store iterations taken */
    app->runtime_max_iter[A_idx] = max_i( (app->runtime_max_iter[A_idx]), iters_taken);
@@ -870,8 +887,7 @@ int main (int argc, char *argv[])
    app->man->dy = PI / (app->man->ny - 1);
 
    /* Set time-step size and tstop, the final time */
-   app->man->dt = app->man->K*cfl*( ((app->man->dx)*(app->man->dx) * (app->man->dy)*(app->man->dy)) /
-                            ((app->man->dx)*(app->man->dx) + (app->man->dy)*(app->man->dy)) );
+   app->man->dt = app->man->K*cfl*((app->man->dx)*(app->man->dx)+(app->man->dy)*(app->man->dy))/2;
    app->man->tstop =  app->man->tstart + app->man->nt*app->man->dt;
 
    /* Set up the variable type, grid, stencil and matrix graph. */
@@ -994,11 +1010,11 @@ int main (int argc, char *argv[])
          printf("  End simulation \n");
          printf("  --------------------- \n\n");
       
-         printf("  Time step size                 %1.2e\n", app->dt_A[0]);
+         printf("  Time step size                 %1.2e\n", app->man->dt);
          printf("  Spatial grid size:             %d,%d\n", app->man->nx, app->man->ny);
          printf("  Spatial mesh width (dx,dy):   (%1.2e, %1.2e)\n", app->man->dx, app->man->dy);           
          printf("  CFL ratio 2dt/(dx^2 + dy^2):   %1.2e\n\n", 
-               2*(app->dt_A[0] / ( (app->man->dx)*(app->man->dx) + (app->man->dy)*(app->man->dy)) ));
+                2*(app->man->dt) / ((app->man->dx)*(app->man->dx)+(app->man->dy)*(app->man->dy)));
          printf("  Run time:                      %1.2e\n", maxtime);
          printf("\n   Level   Max PFMG Iters\n");
          printf("  -----------------------\n");

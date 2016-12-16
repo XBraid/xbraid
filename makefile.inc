@@ -183,8 +183,8 @@ endif
 
 # MPICC    = insure -g
 # MPICXX   = insure -g
-# CFLAGS   = -I/home/falgout/codes/mpich2-1.4.1-install/include
-# CXXFLAGS = -I/home/falgout/codes/mpich2-1.4.1-install/include
-# LFLAGS   = -L/home/falgout/codes/mpich2-1.4.1-install/lib -Wl,-rpath,/home/falgout/codes/mpich2-1.4.1-install/lib -lmpich -lopa -lmpl -lrt -lpthread  -lstdc++ -lm
+# CFLAGS   = -I/home/falgout2/codes/mpich2-1.4.1-install/include
+# CXXFLAGS = -I/home/falgout2/codes/mpich2-1.4.1-install/include
+# LFLAGS   = -L/home/falgout2/codes/mpich2-1.4.1-install/lib -Wl,-rpath,/home/falgout2/codes/mpich2-1.4.1-install/lib -lmpich -lopa -lmpl -lrt -lpthread  -lstdc++ -lm
 
 -include $(BRAID_DIR)/makefile.user
