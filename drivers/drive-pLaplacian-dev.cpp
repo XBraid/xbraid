@@ -20,7 +20,7 @@
 //
 //TODO Added a C to test the spatail coarsening stuff
 //
-/* Drive 06: 2D nonlinear p-laplacian equation. Requires MFEM, Hpyre, Metis and GlVis
+/* Drive pLaplcian: 2D nonlinear p-laplacian equation. Requires MFEM, Hpyre, Metis and GlVis
 
    Interface: MFEM
 f
@@ -30,17 +30,22 @@ f
 
    Sample run:   mpirun -n12 ./drive-06
 
-   Description:  This code solves the 2D p -laplacian problem
-
+   Description:  This code solves the 2D p -laplacian problem using BDF1 
+  
                                      u_t - div( (|grad(u)|^2+C) grad(u) ) = b,
                                                  u(x,0) = U0(x)
-                                 (|grad(u)|^2 + C) grad(u) . n = g(x,t) on boundary
+                                 (|grad(u)|^p + C) grad(u) . n = g(x,t) on boundary
 
                  on a given mesh using MFEM. The coressponding weak form is
 
-                     <u_t,v> + <(C+ |grad(u)|^2) grad(u), grad(v) = <b,v> + <g,v>_b = <f,v>
+                     <u_t,v> + <(C+ |grad(u)|^p) grad(u), grad(v) = <b,v> + <g,v>_b = <f,v>
 
-                 Implicit methods use newtons method. Consider BDF1. Let u_k = u(t_k) and define
+                 
+                The option "-pow" sets the power of the p-Laplacian. The default is "2". Setting 
+                pow = 0 solves the linear heat equation, be it with a Newton solver. Setting pow 
+                = -1, removes the nonlinearity, replacing it with the exact solution. 
+                     
+                Implicit methods use newtons method. Consider BDF1 for p=2. Let u_k = u(t_k) and define
 
                                L(u)(v) = <u,v> + dt*<( C + |grad(u)|^2 ) grad(u),grad(v)>
                                        f(v) = <u_k + dt*b, v> + dt*<g,v>_b
