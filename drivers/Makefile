@@ -34,12 +34,12 @@ include $(BRAID_DIR)/makefile.inc
 # Build exmaples 
 ##################################################################
 
-HYPRE_DIR = $(BRAID_DIR)/../linear_solvers/src/hypre
+HYPRE_DIR ?= $(BRAID_DIR)/../linear_solvers/src/hypre
 HYPRE_FLAGS = -I$(HYPRE_DIR)/include
 HYPRE_LIB = -L$(HYPRE_DIR)/lib -lHYPRE
 
 MFEM_INTERFACE = ./braid_mfem.hpp ./braid_mfem_block.hpp ../braid.hpp
-MFEM_DIR = $(BRAID_DIR)/../mfem
+MFEM_DIR ?= $(BRAID_DIR)/../mfem
 MFEM_CONFIG_MK = $(MFEM_DIR)/config/config.mk
 MFEM_LIB_FILE = mfem_is_not_built
 -include $(MFEM_CONFIG_MK)

@@ -258,6 +258,7 @@ struct BraidOptions : public OptionsParser
    bool   rtol;
    int    tnorm;
    int    storage;
+   int    keepwa;
    int    cfactor;
    int    cfactor0;
    int    max_iter;
@@ -467,11 +468,11 @@ void MFEMBraidApp::InitMultilevelApp(ParMesh *pmesh, int pref, bool scoarsen)
    InitLevel(0); // initialize ode[0], solver[0], and max_dt[0]
    buff_size[0] = EvalBufSize(fe_space[0]->TrueVSize());
 
-   // Print mesh info
+   /* Print mesh info
    int myid_t;
    MPI_Comm_rank(comm_t, &myid_t);
    if(myid_t == 0)
-      pmesh->PrintInfo();
+      pmesh->PrintInfo(); */
 
    // Print size of finest-grid spatial matrix
    int myid, size;
@@ -882,7 +883,7 @@ BraidOptions::BraidOptions(int argc, char *argv[])
    // The values below should match the braid defaults.
    skip             = 1;
    max_levels       = 30;
-   min_coarse       = 2;
+   min_coarse       = 3;
    nrelax           = 1;
    nrelax0          = -1;    // if > -1, use as nrelax for level 0
    tol              = 1e-9;
@@ -923,6 +924,8 @@ BraidOptions::BraidOptions(int argc, char *argv[])
              "Coarsening factor.");
    AddOption(&storage, "-store", "--storage-option",
              "Storage to use: 0:store C points, 1:store all points.");
+   AddOption(&keepwa, "-keep", "--keep-init-guess",
+             "Keep initial guess when possible: 0:No, 1:Yes.");
    AddOption(&cfactor0, "-cf0", "--agg-coarsen-factor",
              "Aggressive coarsening factor, -1:off.");
    AddOption(&max_iter, "-mi", "--max-iter",

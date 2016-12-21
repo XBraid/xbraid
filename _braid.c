@@ -1204,6 +1204,7 @@ _braid_GridClean(braid_Core    core,
                  _braid_Grid  *grid)
 {
    braid_App      app      = _braid_CoreElt(core, app);
+   braid_Int      keepwa   = _braid_CoreElt(core, keepwa);
    braid_Int      ilower   = _braid_GridElt(grid, ilower);
    braid_Int      iupper   = _braid_GridElt(grid, iupper);
    braid_Int      nupoints = _braid_GridElt(grid, nupoints);
@@ -1215,7 +1216,7 @@ _braid_GridClean(braid_Core    core,
    braid_Vector  *va_alloc = _braid_GridElt(grid, va_alloc);
    braid_Vector  *wa_alloc = _braid_GridElt(grid, wa_alloc);
    braid_Vector  *fa_alloc = _braid_GridElt(grid, fa_alloc);
-   
+    
    braid_Int      ii;
 
    if (ua_alloc)
@@ -1240,7 +1241,7 @@ _braid_GridClean(braid_Core    core,
          }
       }
    }
-   if (wa_alloc)
+   if (wa_alloc && !keepwa )
    {
       for (ii = -1; ii <= (iupper-ilower); ii++)
       {
@@ -1275,13 +1276,16 @@ _braid_GridDestroy(braid_Core    core,
 {
    if (grid)
    {
+      braid_Int      keepwa   = _braid_CoreElt(core, keepwa);   
       braid_Vector  *ua_alloc = _braid_GridElt(grid, ua_alloc);
       braid_Real    *ta_alloc = _braid_GridElt(grid, ta_alloc);
       braid_Vector  *va_alloc = _braid_GridElt(grid, va_alloc);
       braid_Vector  *wa_alloc = _braid_GridElt(grid, wa_alloc);
       braid_Vector  *fa_alloc = _braid_GridElt(grid, fa_alloc);
 
+      _braid_CoreElt(core, keepwa ) = 0;
       _braid_GridClean(core, grid);
+      _braid_CoreElt(core, keepwa ) = keepwa;
 
       if (ua_alloc)
       {

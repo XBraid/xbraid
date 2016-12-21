@@ -1221,6 +1221,18 @@ braid_SetStorage(braid_Core  core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
+braid_SetKeepWa(braid_Core  core,
+                braid_Int   keepwa)
+{
+   _braid_CoreElt(core, keepwa) = keepwa;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
 braid_SetTemporalNorm(braid_Core  core,
                       braid_Int   tnorm)
 {

@@ -485,6 +485,8 @@ public:
    void SetNFMGVcyc(braid_Int nfmg_Vcyc) { braid_SetNFMGVcyc(core, nfmg_Vcyc); }
 
    void SetStorage(braid_Int storage) { braid_SetStorage(core, storage); }
+   
+   void SetKeepWa(braid_Int keepwa) { braid_SetKeepWa(core, keepwa); }
 
    void GetNumIter(braid_Int *niter_ptr) { braid_GetNumIter(core, niter_ptr); }
 

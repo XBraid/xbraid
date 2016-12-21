@@ -161,6 +161,7 @@ typedef struct _braid_Core_struct
 
    braid_Int              storage;          /**< storage = 0 (C-points), = 1 (all) */
    braid_Int              useshell;         /**< activate the shell structure of vectors */
+   braid_Int              keepwa;           /**< (bool) keepwa = true doesnt delete the wa initial guess */
 
    braid_Int              gupper;           /**< global size of the fine grid */
 

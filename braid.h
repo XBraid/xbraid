@@ -550,6 +550,16 @@ braid_SetStorage(braid_Core  core,          /**< braid_Core (_braid_Core) struct
                  braid_Int   storage        /**< store C-points (0), all points (1) */
                 );
 
+/**
+ * Once called, XBraid will attempt to keep the initial guesses, wa,
+ * from iteation to iteration. If FRefine completes spatial refinement,
+ * temporal refinement, or load balancing, then those values are deleted
+ * regardless
+ **/
+braid_Int
+braid_SetKeepWa(braid_Core  core,          /**< braid_Core (_braid_Core) struct*/
+                braid_Int   keepwa         /**< keep wa from iter to iter (1) */
+               );
 /** 
  * Sets XBraid temporal norm.
  *
