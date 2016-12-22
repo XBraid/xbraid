@@ -1241,7 +1241,7 @@ _braid_GridClean(braid_Core    core,
          }
       }
    }
-   if (wa_alloc && !keepwa )
+   if (wa_alloc && !keepwa )   
    {
       for (ii = -1; ii <= (iupper-ilower); ii++)
       {
@@ -1757,7 +1757,7 @@ _braid_FRestrict(braid_Core   core,
          _braid_Coarsen(core, c_level, ci, c_index, u, &c_va[c_index-c_ilower]);
          _braid_Coarsen(core, c_level, ci, c_index, r, &c_fa[c_index-c_ilower]);
          /* In the no-residual case, store an approximation to the homogenous problem */
-         if ( _braid_CoreElt(core, residual) == NULL )
+         if ( _braid_CoreElt(core, residual) == NULL && c_wa[c_index-c_ilower] == NULL )
          {
             _braid_CoreFcn(core, clone)(app, c_va[c_index-c_ilower], &c_wa[c_index-c_ilower]);
          }

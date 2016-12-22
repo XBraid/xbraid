@@ -890,6 +890,7 @@ BraidOptions::BraidOptions(int argc, char *argv[])
    rtol             = true;
    tnorm            = 2;
    storage          = -1;
+   keepwa           = 1;
    cfactor          = 2;
    cfactor0         = -1;    // if > -1, use as cfactor for level 0
    max_iter         = 100;
@@ -1001,6 +1002,7 @@ void BraidOptions::SetBraidCoreOptions(BraidCore &core)
    core.SetAggCFactor(cfactor0);
    core.SetMaxIter(max_iter);
    core.SetStorage(storage);
+   core.SetKeepWa(keepwa);
    core.SetTemporalNorm(tnorm);
    core.SetSkip(skip);
    if (spatial_coarsen)
