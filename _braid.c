@@ -2130,7 +2130,7 @@ _braid_FRefine(braid_Core   core,
          _braid_Error(braid_ERROR_GENERIC, "Refinement factor smaller than one");
          rfactors[ii] = 1;
       }
-      rfactors[ii] = _braid_min(rfactors[ii], cfactor);
+      //rfactors[ii] = _braid_min(rfactors[ii], cfactor);
       r_npoints += rfactors[i-ilower];
    }
    MPI_Allreduce(&r_npoints, &f_gupper, 1, braid_MPI_INT, MPI_SUM, comm);
@@ -2719,8 +2719,8 @@ _braid_FRefine(braid_Core   core,
       if (u != NULL)
       {
          f_j = f_i;
-         f_ci = _braid_NextCPoint(f_i, cfactor);
-         if (next > f_ci)
+         f_ci = _braid_PriorCPoint(next-1, cfactor);
+         if (f_i < f_ci)
          {
             /* integrate */
             f_hi = _braid_min(f_ci, f_iupper);
