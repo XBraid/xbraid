@@ -71,6 +71,8 @@ typedef struct _braid_App_struct
 {
    int       rank;
    int       limit_rfactor;
+   int       refine;
+   double    tol;
 } my_App;
 
 /* Vector structure can contain anything, and be name anything as well */
@@ -88,26 +90,43 @@ my_Step(braid_App        app,
 {
    double tstart;             /* current time */
    double tstop;              /* evolve to this time*/
+   double dt;                 /* step size */
+   double v;                  /* current value of the solution */
+   double LTE;
+
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+   dt = tstop-tstart;
+   v = (u->value);
 
    /* Use backward Euler to propagate solution */
-   (u->value) = 1./(1. + tstop-tstart)*(u->value);
-   
-   int level,rf;
+   /* Use forward Euler to estimate the local trucation error */
+   (u->value) = 1./(1. + dt)*v;
+   LTE = (u->value) - (1. - dt)*v;
+   LTE  = (LTE < 0) ? -LTE : LTE;
+
+   int level;
    braid_StepStatusGetLevel(status, &level);
 
-   /* Arbitrarily refine around t=2.5 until dt<1e-3 */
-   rf = 1;
-   if (level==0)
+   if (level == 0)
    {
-      double dt=tstop-tstart;
-      if (dt>0.001)
-         if ( (tstart<=2.5+0.00001)&&(2.5-0.00001<=tstop) )
-            rf = 100;
+      int rf = 1;
+      if (app->refine == 1)
+      {
+         if (dt>0.001)
+            if ( (tstart<=2.5+0.00001)&&(2.5-0.00001<=tstop) )
+               rf = 100;
+      }
+      else if (app->refine == 2)
+      {
+         rf = (int)(sqrt(0.5*LTE/(u->value)/(app->tol)));
+      }
+
+      rf = (rf < 1) ? 1 : rf;
+      if (app->limit_rfactor > 0)
+         rf = (rf < app->limit_rfactor) ? rf : app->limit_rfactor;
+      braid_StepStatusSetRFactor(status, rf);
    }
-   if (app->limit_rfactor > 0)
-      rf = (rf < app->limit_rfactor) ? rf : app->limit_rfactor;
-   braid_StepStatusSetRFactor(status, rf);
+
 
    return 0;
 }
@@ -246,8 +265,8 @@ int main (int argc, char *argv[])
 {
    braid_Core    core;
    my_App       *app;
-   double        tstart, tstop;
-   int           ntime, rank, limit_rfactor, arg_index, print_usage;
+   double        tstart, tstop, tol;
+   int           ntime, rank, limit_rfactor, arg_index, print_usage, refine;
 
    /* Define time domain: ntime intervals */
    ntime  = 100;
@@ -255,6 +274,8 @@ int main (int argc, char *argv[])
    tstop  = 5.0;
    limit_rfactor = -1;
    print_usage = 0;
+   tol = 1.0e-6;
+   refine = 0;
    
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -270,6 +291,14 @@ int main (int argc, char *argv[])
       if( strcmp(argv[arg_index], "-limit_rfactor") == 0 ){
          arg_index++;
          limit_rfactor = atoi(argv[arg_index++]);
+      }
+      if( strcmp(argv[arg_index], "-refine") == 0 ){
+         arg_index++;
+         refine = atoi(argv[arg_index++]);
+      }
+      if( strcmp(argv[arg_index], "-tol") == 0 ){
+         arg_index++;
+         tol = atof(argv[arg_index++]);
       }
       else if( strcmp(argv[arg_index], "-help") == 0 ){
          print_usage = 1;
@@ -290,6 +319,11 @@ int main (int argc, char *argv[])
       printf(" General XBraid configuration parameters\n");
       printf(" ---------------------------------------\n");
       printf("  -nt  <n>                           : number of time steps (default: 100)\n"); 
+      printf("  -tol <tol>                         : set the stopping tolerance (default: 1e-6)\n");
+      printf("  -refine <n>                        : set the type of temporal refinement (default: 0)\n");
+      printf("                                     : 0 - no refinement\n");
+      printf("                                     : 1 - arbitrary refinement around t=2.5\n");
+      printf("                                     : 2 - refinement based on local truncation error\n");
       printf("  -limit_rfactor <lim>               : limit the refinement factor (default: -1)\n");
       printf("  -help                              : print this help and exit\n");
       printf("\n");
@@ -305,7 +339,9 @@ int main (int argc, char *argv[])
    app = (my_App *) malloc(sizeof(my_App));
    (app->rank)   = rank;
    (app->limit_rfactor)   = limit_rfactor;
-   
+   (app->refine) = refine;
+   (app->tol) = tol;
+
    /* initialize XBraid and set options */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
              my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
@@ -314,7 +350,7 @@ int main (int argc, char *argv[])
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);
    braid_SetMaxLevels(core, 2);
-   braid_SetAbsTol(core, 1.0e-06);
+   braid_SetAbsTol(core, tol);
    braid_SetCFactor(core, -1, 2);
    braid_SetRefine(core, 1);
    
