@@ -70,6 +70,7 @@
 typedef struct _braid_App_struct
 {
    int       rank;
+   int       limit_rfactor;
 } my_App;
 
 /* Vector structure can contain anything, and be name anything as well */
@@ -92,17 +93,21 @@ my_Step(braid_App        app,
    /* Use backward Euler to propagate solution */
    (u->value) = 1./(1. + tstop-tstart)*(u->value);
    
-   int level;
+   int level,rf;
    braid_StepStatusGetLevel(status, &level);
 
    /* Arbitrarily refine around t=2.5 until dt<1e-3 */
+   rf = 1;
    if (level==0)
    {
       double dt=tstop-tstart;
       if (dt>0.001)
          if ( (tstart<=2.5+0.00001)&&(2.5-0.00001<=tstop) )
-              braid_StepStatusSetRFactor(status, 100);
+            rf = 100;
    }
+   if (app->limit_rfactor > 0)
+      rf = (rf < app->limit_rfactor) ? rf : app->limit_rfactor;
+   braid_StepStatusSetRFactor(status, rf);
 
    return 0;
 }
@@ -242,20 +247,64 @@ int main (int argc, char *argv[])
    braid_Core    core;
    my_App       *app;
    double        tstart, tstop;
-   int           ntime, rank;
+   int           ntime, rank, limit_rfactor, arg_index, print_usage;
 
    /* Define time domain: ntime intervals */
    ntime  = 100;
    tstart = 0.0;
    tstop  = 5.0;
+   limit_rfactor = -1;
+   print_usage = 0;
    
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
    
+   /* Parse command line */
+   arg_index = 0;
+   while( arg_index < argc ){
+      if( strcmp(argv[arg_index], "-nt") == 0 ){
+         arg_index++;
+         ntime = atoi(argv[arg_index++]);
+      }
+      if( strcmp(argv[arg_index], "-limit_rfactor") == 0 ){
+         arg_index++;
+         limit_rfactor = atoi(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-help") == 0 ){
+         print_usage = 1;
+         break;
+      }
+      else{
+         if(arg_index > 1){
+            printf("UNUSED command line paramter %s\n", argv[arg_index]);
+         }
+         arg_index++;
+      }
+   }
+
+   if((print_usage) && (rank == 0)){
+      printf("\n");
+      printf("Usage: %s [<options>]\n", argv[0]);
+      printf("\n");
+      printf(" General XBraid configuration parameters\n");
+      printf(" ---------------------------------------\n");
+      printf("  -nt  <n>                           : number of time steps (default: 100)\n"); 
+      printf("  -limit_rfactor <lim>               : limit the refinement factor (default: -1)\n");
+      printf("  -help                              : print this help and exit\n");
+      printf("\n");
+   }
+
+   if( print_usage ){
+      MPI_Finalize();
+      return (0);
+   }
+
+
    /* set up app structure */
    app = (my_App *) malloc(sizeof(my_App));
    (app->rank)   = rank;
+   (app->limit_rfactor)   = limit_rfactor;
    
    /* initialize XBraid and set options */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
