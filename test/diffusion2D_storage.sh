@@ -111,7 +111,13 @@ TESTS=( "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -m
         "$RunString -np 4 $example_dir/ex-03   -pgrid 1 1 4 -nt 256 -ml 15 -storage 1 -skip 0 -refine -max_rfactor 2" \
         "$RunString -np 4 $example_dir/ex-03   -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1 -storage 1 -skip 0 -refine -max_rfactor 2" \
         "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15 -storage 1 -skip 0 -cf0 1" \
-        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15 -storage 1 -skip 0 -cf 4" )
+        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15 -storage 1 -skip 0 -cf 4" \
+        "$RunString -np 4 $example_dir/ex-03   -pgrid 1 1 4 -nt 256 -ml 15 -storage -1 -skip 0 -refine -max_rfactor 3" \
+        "$RunString -np 4 $example_dir/ex-03   -pgrid 1 1 4 -nt 256 -ml 15 -storage -1 -skip 0 -refine -max_rfactor 4" \
+        "$RunString -np 4 $example_dir/ex-03   -pgrid 1 1 4 -nt 256 -ml 15 -storage -1 -skip 0 -refine -max_rfactor 5" \
+        "$RunString -np 4 $example_dir/ex-03   -pgrid 1 1 4 -nt 256 -ml 15 -storage -1 -skip 0 -refine -max_rfactor 6" \
+        "$RunString -np 4 $example_dir/ex-03   -pgrid 1 1 4 -nt 256 -ml 15 -storage -1 -skip 0 -refine -max_rfactor 7" \
+        "$RunString -np 4 $example_dir/ex-03   -pgrid 1 1 4 -nt 256 -ml 15 -storage -1 -skip 0 -refine -max_rfactor 8" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 
