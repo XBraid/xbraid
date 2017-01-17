@@ -30,7 +30,7 @@
  *
  * Compile with:  make ex-01
  *
- * Help with:     this is a simple example showing usage of (arbitrary) refinement
+ * Help with:     this is a simple example showing usage of refinement
  *
  * Sample run:    mpirun -np 2 ex-01
  *
@@ -39,7 +39,7 @@
  *                   with lambda=-1 and y(0) = 1
  *                in a very simplified XBraid setting.
  *                
- *                When run with the default 10 time steps, the solution is:
+ *                When run with the default 10 time steps and no refinement, the solution is:
  *                $ ./ex-01
  *                $ cat ex-01.out.00*
  *                  1.00000000000000e+00
@@ -53,6 +53,11 @@
  *                  3.90184423106234e-02
  *                  2.60122948737489e-02
  *                  1.73415299158326e-02
+ *
+ *                The refine option enables the refinement. If set to a value of 1,
+ *                an arbitrary refinement is used. If set to a value of 2, the refinement
+ *                is based on an estimation of the error. On this simplified problem,
+ *                the option -refine 2 leads to a targeted step size of sqrt(2*tol).
  **/
 
 #include <stdlib.h>
@@ -118,7 +123,7 @@ my_Step(braid_App        app,
       }
       else if (app->refine == 2)
       {
-         rf = (int)(sqrt(0.5*LTE/(u->value)/(app->tol)));
+         rf = (int)(ceil(sqrt(0.5*LTE/(u->value)/(app->tol))));
       }
 
       rf = (rf < 1) ? 1 : rf;
@@ -266,7 +271,7 @@ int main (int argc, char *argv[])
    braid_Core    core;
    my_App       *app;
    double        tstart, tstop, tol;
-   int           ntime, rank, limit_rfactor, arg_index, print_usage, refine;
+   int           ntime, rank, limit_rfactor, arg_index, print_usage, refine, output;
 
    /* Define time domain: ntime intervals */
    ntime  = 100;
@@ -276,6 +281,7 @@ int main (int argc, char *argv[])
    print_usage = 0;
    tol = 1.0e-6;
    refine = 0;
+   output = 1;
    
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -288,17 +294,21 @@ int main (int argc, char *argv[])
          arg_index++;
          ntime = atoi(argv[arg_index++]);
       }
-      if( strcmp(argv[arg_index], "-limit_rfactor") == 0 ){
+      else if( strcmp(argv[arg_index], "-max_rfactor") == 0 ){
          arg_index++;
          limit_rfactor = atoi(argv[arg_index++]);
       }
-      if( strcmp(argv[arg_index], "-refine") == 0 ){
+      else if( strcmp(argv[arg_index], "-refine") == 0 ){
          arg_index++;
          refine = atoi(argv[arg_index++]);
       }
-      if( strcmp(argv[arg_index], "-tol") == 0 ){
+      else if( strcmp(argv[arg_index], "-tol") == 0 ){
          arg_index++;
          tol = atof(argv[arg_index++]);
+      }
+      else if( strcmp(argv[arg_index], "-no_output") == 0 ){
+         arg_index++;
+         output = 0;
       }
       else if( strcmp(argv[arg_index], "-help") == 0 ){
          print_usage = 1;
@@ -324,7 +334,8 @@ int main (int argc, char *argv[])
       printf("                                     : 0 - no refinement\n");
       printf("                                     : 1 - arbitrary refinement around t=2.5\n");
       printf("                                     : 2 - refinement based on local truncation error\n");
-      printf("  -limit_rfactor <lim>               : limit the refinement factor (default: -1)\n");
+      printf("  -max_rfactor <lim>                 : limit the refinement factor (default: -1)\n");
+      printf("  -no_output                         : do not save the solution in output files\n");
       printf("  -help                              : print this help and exit\n");
       printf("\n");
    }
@@ -349,10 +360,12 @@ int main (int argc, char *argv[])
    
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);
-   braid_SetMaxLevels(core, 2);
+   braid_SetMaxLevels(core, 15);
    braid_SetAbsTol(core, tol);
    braid_SetCFactor(core, -1, 2);
    braid_SetRefine(core, 1);
+   if (!output)
+      braid_SetAccessLevel(core, 0);
    
    /* Run simulation, and then clean up */
    braid_Drive(core);
