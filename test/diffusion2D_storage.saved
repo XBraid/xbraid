@@ -244,3 +244,57 @@
   number of levels      = 4
  Fine level spatial problem size  : 17 x 17
 
+# Begin Test 30
+
+  Braid: Temporal refinement occurred, 674 time steps
+  Braid: Temporal refinement occurred, 1296 time steps
+  Braid: Temporal refinement occurred, 2452 time steps
+  time steps = 2452
+  iterations            = 7
+  number of levels      = 10
+
+# Begin Test 31
+
+  Braid: Temporal refinement occurred, 827 time steps
+  Braid: Temporal refinement occurred, 1814 time steps
+  Braid: Temporal refinement occurred, 3958 time steps
+  time steps = 3958
+  iterations            = 7
+  number of levels      = 11
+
+# Begin Test 32
+
+  Braid: Temporal refinement occurred, 952 time steps
+  Braid: Temporal refinement occurred, 2433 time steps
+  Braid: Temporal refinement occurred, 5901 time steps
+  time steps = 5901
+  iterations            = 7
+  number of levels      = 11
+
+# Begin Test 33
+
+  Braid: Temporal refinement occurred, 1039 time steps
+  Braid: Temporal refinement occurred, 2773 time steps
+  Braid: Temporal refinement occurred, 7030 time steps
+  time steps = 7030
+  iterations            = 7
+  number of levels      = 12
+
+# Begin Test 34
+
+  Braid: Temporal refinement occurred, 1092 time steps
+  Braid: Temporal refinement occurred, 3071 time steps
+  Braid: Temporal refinement occurred, 8330 time steps
+  time steps = 8330
+  iterations            = 8
+  number of levels      = 12
+
+# Begin Test 35
+
+  Braid: Temporal refinement occurred, 1113 time steps
+  Braid: Temporal refinement occurred, 3157 time steps
+  Braid: Temporal refinement occurred, 8734 time steps
+  time steps = 8734
+  iterations            = 8
+  number of levels      = 12
+

@@ -34,7 +34,7 @@ To run the examples, type
 
 1. ex-01 is the simplest example.  It implements a scalar ODE and can be
   compiled and run with no outside dependencies.  See Section (@ref exampleone)
-  for more discussion of this example.  There are four versions of this example,
+  for more discussion of this example.  There are five versions of this example,
   
     + *ex-01.c*:  simplest possible implementation, start reading this example first
     
@@ -44,6 +44,8 @@ To run the examples, type
       of backward Euler
     
     + *ex-01-expanded-f.f90*:  same as ex-01-expanded.c, but implemented in f90
+
+    + *ex-01-refinement.c*: same as ex-01.c, but adds the refinement feature
 
 2. ex-02 implements the 1D heat equation on a regular grid, using a very simple
    implementation.  This is the next example to read after the various ex-01

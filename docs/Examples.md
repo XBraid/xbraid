@@ -457,13 +457,15 @@ be implemented in some of the following examples.
    for the next iteration.  Refinement can only be done on the finest XBraid level.
    \latexonly \\ \endlatexonly
 
-   Currently, each refinement factor is constrained to be no larger than the
-   coarsening factor.  The final time grid is constructed adaptively in an
+   The final time grid is constructed adaptively in an
    FMG-like cycle by refining the initial grid according to the requested
    refinement factors.  Refinement stops when the requested factors are all
    one or when various upper bounds are reached such as the max number of time
-   points or max number of time grid refinement levels allowed.
-   See ``examples/ex-03.c`` for an implementation of this.
+   points or max number of time grid refinement levels allowed. No restriction on
+   the refinement factors is applied within XBraid, so the user may want to apply his
+   own upper bound on the refinement factors to avoid over-refinement.
+   See ``examples/ex-01-refinement.c`` and ``examples/ex-03.c`` for an
+   implementation of this.
 
 12. **Shell-vector**: This feature supports the use of multi-step methods.
    The strategy for BDF-K methods is to allow for the lumping of ``k`` time
@@ -528,6 +530,9 @@ The goal here is to show more advanced features of XBraid.
     
    - ``examples/ex-01-expanded-f.f90``:  same as ex-01-expanded.c, but
      implemented in f90.
+
+   - ``examples/ex-01-refinement.c``: same as ex-01.c, but adds the refinement feature
+     of XBraid. The refinement can be arbitrary or based on error estimate.
 
 
 # One-Dimensional Heat Equation {#exampletwo}

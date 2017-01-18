@@ -2007,6 +2007,9 @@ _braid_FRefineSpace(braid_Core   core,
  *   send_ua - array of u-vectors to send to new processors    (size 'npoints')
  *   recv_ua - array of u-vectors received from old processors (size 'f_npoints')
  *
+ *   f_first - fine grid index for the first coarse point in my fine interval
+ *   f_next  - fine grid index for the first coarse point in the next fine interval
+ *
  * Example: Some processor p owns the coarse interval, ilower = 29, iupper = 33.
  * The coarsening factor is 3 and 'rfactors' indicates the refinement factor for
  * the coarse interval to the left.  From this, an intermediate refined grid and
@@ -2130,7 +2133,6 @@ _braid_FRefine(braid_Core   core,
          _braid_Error(braid_ERROR_GENERIC, "Refinement factor smaller than one");
          rfactors[ii] = 1;
       }
-      rfactors[ii] = _braid_min(rfactors[ii], cfactor);
       r_npoints += rfactors[i-ilower];
    }
    MPI_Allreduce(&r_npoints, &f_gupper, 1, braid_MPI_INT, MPI_SUM, comm);
@@ -2719,8 +2721,8 @@ _braid_FRefine(braid_Core   core,
       if (u != NULL)
       {
          f_j = f_i;
-         f_ci = _braid_NextCPoint(f_i, cfactor);
-         if (next > f_ci)
+         f_ci = _braid_PriorCPoint(next-1, cfactor);
+         if (f_i < f_ci)
          {
             /* integrate */
             f_hi = _braid_min(f_ci, f_iupper);
