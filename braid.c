@@ -910,7 +910,11 @@ braid_Int
 braid_SetSkip(braid_Core  core,
               braid_Int   skip)
 {
-   _braid_CoreElt(core, skip) = skip;
+   /* Do not set skip=1 if we do sequential integration first */
+   if (_braid_CoreElt(core, seq_soln) == 0)
+      _braid_CoreElt(core, skip) = skip;
+   else if (skip == 1)
+      _braid_printf("  Braid: The skip option is not compatible with SeqSoln option\n");
 
    return _braid_error_flag;
 }
@@ -1445,7 +1449,10 @@ braid_Int
 braid_SetSeqSoln(braid_Core  core,
                  braid_Int   seq_soln)
 {
+   /* Skip needs to be 0 if we do a sequential integration first */
    _braid_CoreElt(core, seq_soln) = seq_soln;
+   if (seq_soln == 1)
+      _braid_CoreElt(core, skip) = 0;
 
    return _braid_error_flag;
 }
