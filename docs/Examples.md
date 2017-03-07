@@ -20,6 +20,9 @@
   - Temple Place, Suite 330, Boston, MA 02111-1307 USA
  -->
 
+This section is the chief *tutorial* of XBraid, illustrating how to use it through a sequence
+of progressively more sophisticated examples.
+
 # The Simplest Example {#exampleone}
 
 ## User Defined Structures and Wrappers
@@ -33,16 +36,12 @@ The two data structures are:
 
 1. **App**: This holds a wide variety of information and is *global* in that it
    is passed to every function.  This structure holds everything that the user
-   will need to carry out a simulation.  Here, this is just the global MPI
-   communicator and few values describing the temporal domain.
+   will need to carry out a simulation.  Here for illustration, this is just an 
+   integer storing a processor's rank. 
    
         typedef struct _braid_App_struct
         {
-           MPI_Comm  comm;
-           double    tstart;
-           double    tstop;
-           int       ntime;
-         
+           int       rank;
         } my_App;
 
 2. **Vector**: this defines (roughly) a state vector at a certain time value.
@@ -53,7 +52,6 @@ The two data structures are:
         typedef struct _braid_Vector_struct
         {
            double value;
-        
         } my_Vector;
 
 The user must also define a few wrapper routines.  Note, that the *app* structure is the 
@@ -73,8 +71,7 @@ first argument to every function.
    (not required) and forms the the right-hand
    side of the nonlinear problem on the given time grid.  This value is only nonzero when
    providing a residual with [braid_SetResidual](@ref braid_SetResidual).  More
-   information on how to use this optional feature is given below.  Also see the
-   full code listing for this example in ``examples/ex-01``.
+   information on how to use this optional feature is given below.  
    \latexonly \\ \endlatexonly
    
    Here advancing the solution just involves the scalar \f$ \lambda \f$.
@@ -89,21 +86,13 @@ first argument to every function.
             double tstart;             /* current time */
             double tstop;              /* evolve to this time*/
             braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
-         
-            /* On the finest grid, each value is half the previous value */
-            (u->value) = pow(0.5, tstop-tstart)*(u->value);
-         
-            if (fstop != NULL)
-            {
-               /* Nonzero rhs */
-               (u->value) += (fstop->value);
-            }
-         
-            /* no refinement */
-            braid_StepStatusSetRFactor(status, 1);
-         
+      
+            /* Use backward Euler to propagate solution */
+            (u->value) = 1./(1. + tstop-tstart)*(u->value);
+            
             return 0;
          }
+
 
 2. **Init**: This function tells XBraid how to initialize a vector at time *t*.
    Here that is just allocating and setting a scalar on the heap.
@@ -116,14 +105,12 @@ first argument to every function.
             my_Vector *u;
 
             u = (my_Vector *) malloc(sizeof(my_Vector));
-            if (t == 0.0)
+            if (t == 0.0) /* Initial condition */
             {
-               /* Initial condition */
                (u->value) = 1.0;
             }
-            else
+            else /* All other time points set to arbitrary value */
             {
-               /* Initialize all other time points */
                (u->value) = 0.456;
             }
             *u_ptr = u;
@@ -215,39 +202,29 @@ first argument to every function.
    Eventually, this routine will allow for broader access to XBraid and computational steering.
    \latexonly \\ \endlatexonly
    
-   See ``examples/ex-02`` and ``drivers/drive-04`` for more advanced uses of the
-   *access* function.  In ``drive-04``, *access* is used to write solution
-   vectors to a GLVIS visualization port, and ``ex-02`` uses *access* to write
-   to .vtu files.
+   See ``examples/ex-03`` and ``drivers/drive-diffusion`` for more advanced
+   uses of the *access* function.  In ``drive-diffusion``, *access* is used to write
+   solution vectors to a GLVIS visualization port, and ``ex-03`` uses *access*
+   to write to .vtu files.
 
          int
          my_Access(braid_App          app,
                    braid_Vector       u,
                    braid_AccessStatus astatus)
          {
-            MPI_Comm   comm   = (app->comm);
-            double     tstart = (app->tstart);
-            double     tstop  = (app->tstop);
-            int        ntime  = (app->ntime);
-            int        index, myid;
+            int        index;
             char       filename[255];
             FILE      *file;
-            double     t;
             
-            braid_AccessStatusGetT(astatus, &t);
-            index = ((t-tstart) / ((tstop-tstart)/ntime) + 0.1);
-        
-            MPI_Comm_rank(comm, &myid);
-        
-            sprintf(filename, "%s.%07d.%05d", "ex-01.out", index, myid);
+            braid_AccessStatusGetTIndex(astatus, &index);
+            sprintf(filename, "%s.%04d.%03d", "ex-01.out", index, app->rank);
             file = fopen(filename, "w");
             fprintf(file, "%.14e\n", (u->value));
             fflush(file);
             fclose(file);
-        
+      
             return 0;
          }
-
 
 8. **BufSize**, **BufPack**, **BufUnpack**: These three routines tell XBraid how to 
    communicate vectors between processors.  *BufPack* packs a vector 
@@ -309,87 +286,6 @@ first argument to every function.
             return 0;
          }
 
-9. **SCoarsen**, **SRestrict** (optional): These are advanced options that allow
-   for coarsening in space while you coarsen in time.  This is useful for
-   maintaining stable explicit schemes on coarse time scales and is not needed
-   here.  See for instance ``drivers/drive-04`` and ``drivers/drive-02`` which
-   use these routines.
-   \latexonly \\ \endlatexonly
-
-   These functions allow you to vary the spatial mesh size on XBraid levels as depicted here
-   where the spatial and temporal grid sizes are halved every level.
-   \latexonly
-   \begin{figure}[!ht] \centering 
-       \subfloat{\includegraphics[width=0.25\textwidth]{../img/spatial_coarsening.pdf}}
-       \label{img:heat_results}
-   \end{figure}
-   \endlatexonly
-
-10. **Residual** (optional): A user-defined residual can be provided with the
-    function [braid_SetResidual](@ref braid_SetResidual) and can result
-    in substantial computational savings, as explained below.  *Residual* defines
-    the nonlinear equation at each time step, i.e., it evaluates one block-row of the global
-    space-time operator \f$A\f$ with a right-hand side (a residual computation).  
-    It defines the equation which *Step* must solve.
-    Because XBraid assumes a one-step method, the equation to solve on each grid
-    level has the form
-
-    \f[ A_i(u_i, u_{i-1}) = f_i, \f]
-
-    where \f$ A_i() \f$ is the *Residual* function and \f$ f_i = 0 \f$ on the
-    finest grid level.  The nonzero right-hand-side on each coarse grid is
-    needed to implement the FAS algorithm.  The *Step* function provides an
-    approximation to the solution \f$ u_i \f$ of this equation.  That is,
-
-    \f[ u_i \approx \Phi(u_{i-1}, f_i), \f]
-
-    where \f$ \Phi(u,f) \f$ is the *Step* function augmented with a right-hand side
-    term.  When *Residual* is provided,
-    *Step* does not need to produce an accurate time step, especially when all
-    time points are stored (see [braid_SetStorage](@ref braid_SetStorage)).
-    In this case, substantial computational savings are possible because one
-    application of *Step* becomes much cheaper than a step for sequential 
-    time-stepping.  For example if *Step* were backward Euler for a linear problem,
-    *Residual* would essentially be a matrix-vector product, while *Step* would
-    be an inaccurate solve of the corresponding linear system.
-    
-    Users should write the *Residual* and *Step* routines such that the
-    following holds:
-    
-    \f[ A_i( \Phi(u_{i-1}, f_i), u_{i-1} ) \approx f_i. \f]
-
-    Note that when *Residual* is not provided, XBraid defines the residual in
-    terms of the *Step* function as follows:
-
-    \f[ A_i(u_i, u_{i-1}) = u_i - \Phi(u_{i-1}) = 0. \f]
-
-    In this case, we have exact equality above (i.e., \f$ \approx \f$ becomes
-    \f$ = \f$).  In addition, the nonzero right-hand-side *fstop* needed on coarse grids
-    to do FAS does not need to be provided to the user because the solution to
-    the non-homogeneous equation is simply \f$ u_i = \Phi(u_{i-1}) + f_i \f$,
-    and this can easily be computed internally in XBraid.  
-    In other words, the *fstop* parameter for *Step* is always zero by default.  
-    Also note that in this default setting, *Step* must always be an accurate 
-    time step on the finest grid level so that residual computations are accurate.
-
-11. Adaptive and variable time stepping are available by first calling the
-   function [braid_SetRefine](@ref braid_SetRefine) in the main driver and then
-   using [braid_StepStatusSetRFactor](@ref braid_StepStatusSetRFactor) in the
-   *Step* routine to set a refinement factor for interval [*tstart*, *tstop*].
-   In this way, user-defined criteria can subdivide intervals on the fly and adaptively
-   refine in time.  For instance, returning a refinement factor of 4 in *Step* 
-   will tell XBraid to subdivide that interval into 4 evenly spaced smaller intervals
-   for the next iteration.  Refinement can only be done on the finest XBraid level.
-   \latexonly \\ \endlatexonly
-
-   In this example, no refinement is being done (factor = 1).  Currently, each
-   refinement factor is constrained to be no larger than the coarsening factor.
-   The final time grid is constructed adaptively in an FMG-like cycle by
-   refining the initial grid according to the requested refinement factors.
-   Refinement stops when the requested factors are all one or when various
-   upper bounds are reached such as the max number of time points or max number
-   of time grid refinement levels allowed.
-
 ## Running XBraid for this Example 
 
 A typical flow of events in the *main* function is to first initialize the *app*
@@ -397,10 +293,7 @@ structure.
 
     /* set up app structure */
     app = (my_App *) malloc(sizeof(my_App));
-    (app->comm)   = comm;
-    (app->tstart) = tstart;
-    (app->tstop)  = tstop;
-    (app->ntime)  = ntime;
+    (app->rank)   = rank;
 
 Then, the data structure definitions and wrapper routines are passed to XBraid.
 The core structure is used by XBraid for internal data structures. 
@@ -414,10 +307,8 @@ Then, XBraid options are set.
 
     braid_SetPrintLevel( core, 1);
     braid_SetMaxLevels(core, max_levels);
-    braid_SetNRelax(core, -1, nrelax);
     braid_SetAbsTol(core, tol);
     braid_SetCFactor(core, -1, cfactor);
-    braid_SetMaxIter(core, max_iter);
    
 Then, the simulation is run.
 
@@ -429,12 +320,253 @@ Then, we clean up.
 
 Finally, to run ex-01, type
 
-    ex-01 -ml 5
-
-This will run ``ex-01``. See ``examples/ex-0*`` for more extensive examples.
+    ex-01
 
 
-# Two-Dimensional Heat Equation {#exampletwo}
+
+# Some Advanced Features {#advancedfeatures}
+
+We now give an overview of some *optional* advanced features that will 
+be implemented in some of the following examples. 
+
+9. **SCoarsen**, **SRestrict**: These are advanced options that allow
+   for coarsening in space while you coarsen in time.  This is useful for
+   maintaining stable explicit schemes on coarse time scales and is not needed
+   here.  See ``examples/ex-02`` for a simple example of this feature, and then 
+   ``drivers/drive-diffusion`` and ``drivers/drive-diffusion-2D`` 
+   for more advanced examples of this feature. 
+   \latexonly \\ \endlatexonly
+
+   These functions allow you to vary the spatial mesh size on XBraid levels as depicted here
+   where the spatial and temporal grid sizes are halved every level.
+   \latexonly
+   \begin{figure}[!ht] \centering 
+       \subfloat{\includegraphics[width=0.25\textwidth]{../img/spatial_coarsening.pdf}}
+       \label{img:heat_results}
+   \end{figure}
+   \endlatexonly
+
+10. **Residual**: A user-defined residual can be provided with the
+   function [braid_SetResidual](@ref braid_SetResidual) and can result
+   in substantial computational savings, as explained below.  
+   However to use this advanced feature, one must first understand how XBraid 
+   measures the residual.  XBraid computes residuals of this equation,
+   
+   \f[ A_i(u_i, u_{i-1}) = f_i, \f]
+
+   where \f$ A_i(,) \f$ evaluates one block-row of the the global space-time
+   operator \f$A\f$.  The forcing \f$f_i\f$ is the XBraid forcing, which is the FAS
+   right-hand-side term on coarse grids and 0 on the finest grid.  The PDE forcing
+   goes inside of \f$A_i\f$. 
+   
+   Since XBraid assumes one-step methods, \f$A_i()\f$ is defined to be
+
+   \f[ A_i(u_i, u_{i-1}) = - \Phi(u_{i-1}) + \Psi(u_i), \f]
+   
+   i.e., the subdiagonal and diagonal blocks of \f$A\f$.
+   \latexonly \\ \endlatexonly
+   
+   **Default setting**: In the default XBraid setting (no residual option
+   used), the user only implements *Step()* and *Step()* will simply apply 
+   \f$\Phi()\f$, because \f$\Psi()\f$ is assumed to be the identity.
+   Thus, XBraid can compute the residual using only the user-defined
+   *Step()* function by combining *Step()* with the *Sum()* function, i.e.
+
+   \f[ r_i = f_i + \Phi(u_{i-1}) -u_i. \f]
+   
+   The *fstop* parameter in *Step()* corresponds to \f$f_i\f$, but is always
+   passed in as NULL to the user in this setting and should be ignored.  This
+   is because XBraid can compute the contribution of \f$f_i\f$ to the residual 
+   on its own using the *Sum()* function.
+
+   An implication of this is that the evaluation of \f$\Phi()\f$ on the finest grid
+   must be very accurate, or the residual will not be accurate.  This leads to a
+   nonintrusive, but expensive algorithm.  The accuracy of \f$\Phi()\f$ can be relaxed
+   on coarser grids to save computations.
+   \latexonly \\ \endlatexonly
+    
+   **Residual setting**: 
+   The alternative to the above default least-intrusive strategy is to have the user
+   define 
+
+   \f[ A_i(u_i, u_{i-1}) = - \Phi(u_{i-1}) + \Psi(u_i), \f]
+
+   directly, which is what the *Residual* function implements (set with 
+   [braid_PtFcnResidual](@ref braid_PtFcnResidual)).  In other words, the user
+   now defines each block-row of the space-time operator, rather than only
+   defining \f$\Phi()\f$.  The user *Residual()* function computes \f$A_i(u_i, u_{i-1})\f$
+   and XBraid then subtracts this from \f$f_i\f$ to compute \f$r_i\f$.
+
+   However, more care must now be taken when defining the *Step()* function.
+   In particular, the *fstop* value (i.e., the \f$f_i\f$ value) must be taken into account.
+   Essentially, the definition of *Step()* changes so that it no longer defines \f$\Phi()\f$,
+   but instead defines a (possibly inexact) solve of the equation defined by 
+   
+   \f[ A_i(u_i, u_{i-1}) = f_i. \f]
+
+   Thus, *Step()* must be compatible with *Residual()*.  Expanding the previous
+   equation, we say that *Step()* must now compute 
+   
+   \f[ u_i = \Psi^{-1}(f_i + \Phi(u_{i-1})). \f]
+   
+   It is clear that the *fstop* value (i.e., the \f$f_i\f$ value) must now be
+   given to the *Step()* function so that this equation can be solved by the
+   user.  In other words, *fstop* is now no longer NULL.  
+   
+   Essentially, one can
+   think of *Residual()* as defining the equation, and *Step()* defining a
+   preconditioner for that row of the equation, or an inexact solve for
+   \f$u_i\f$. 
+   
+   As an example, let \f$\Psi = (I + \Delta t L)\f$, where \f$L\f$ is a
+   Laplacian and \f$\Phi = I\f$.  The application of the residual function will
+   only be a sparse matrix-vector multiply, as opposed to the default case
+   where an inversion is required for \f$\Phi = (I + \Delta t L)^{-1}\f$ and
+   \f$\Psi = I\f$.  This results in considerable computational savings.
+   Moreover, the application of *Step()* now involves an inexact inversion of
+   \f$\Psi\f$, e.g., by using just one spatial multigrid V-cycle. This again results
+   in substantial computation savings when compared with the naive approach of
+   a full matrix inversion.  \latexonly \\ \endlatexonly
+
+   Another way to think about the compatibility between \f$\Psi\f$ and \f$\Phi\f$
+   is that 
+   
+   \f[ f_i - A_i( u_i, u_{i-1} ) = 0 \f]
+
+   must hold exactly if \f$u_i\f$ is an exact propagation of \f$u_{i-1}\f$,
+   that is,
+   \f[ f_i - A_i( Step(u_{i-1},f_i), u_{i-1} ) = 0 \f]
+   must hold.  When the accuracy of the *Step()* function is reduced (as mentioned
+   above), this exact equality with 0 is lost, but this should evaluate to something
+   ``small``.  There is an XBraid test function [braid_TestResidual](@ref braid_TestResidual)
+   that tests for this compatibility.
+   \latexonly \\ \endlatexonly
+
+   The residual feature is implemented in the examples
+   ``examples/ex-01-expanded.c``, ``examples/ex-02.c``, and
+   ``examples/ex-03.c``.
+
+
+11. **Adaptive and variable time stepping**:  This feature is available by first calling the
+   function [braid_SetRefine](@ref braid_SetRefine) in the main driver and then
+   using [braid_StepStatusSetRFactor](@ref braid_StepStatusSetRFactor) in the
+   *Step* routine to set a refinement factor for interval [*tstart*, *tstop*].
+   In this way, user-defined criteria can subdivide intervals on the fly and adaptively
+   refine in time.  For instance, returning a refinement factor of 4 in *Step* 
+   will tell XBraid to subdivide that interval into 4 evenly spaced smaller intervals
+   for the next iteration.  Refinement can only be done on the finest XBraid level.
+   \latexonly \\ \endlatexonly
+
+   The final time grid is constructed adaptively in an
+   FMG-like cycle by refining the initial grid according to the requested
+   refinement factors.  Refinement stops when the requested factors are all
+   one or when various upper bounds are reached such as the max number of time
+   points or max number of time grid refinement levels allowed. No restriction on
+   the refinement factors is applied within XBraid, so the user may want to apply his
+   own upper bound on the refinement factors to avoid over-refinement.
+   See ``examples/ex-01-refinement.c`` and ``examples/ex-03.c`` for an
+   implementation of this.
+
+12. **Shell-vector**: This feature supports the use of multi-step methods.
+   The strategy for BDF-K methods is to allow for the lumping of ``k`` time
+   points into a single XBraid vector.  So, if the problem had 100 time points
+   and the time-stepper was BDF-2, then XBraid would only ``see`` 50 time
+   points but each XBraid vector would contain two separate time points.  By
+   lumping 2 time points into one vector, the BDF-2 scheme remains one-step and
+   compatible with XBraid.  
+
+   However, the time-point spacing between the two points internal to the
+   vector stays the same on all time grids, while the spacing between vectors
+   grows on coarse time grids.  This creates an irregular spacing which is
+   problematic for BDF-k methods.  Thus the shell-vector strategy
+   lets meta-data be stored at all time points, even for F-points which are
+   usually not stored, so that the irregular spacings can be tracked and 
+   accounted for with the BDF method.  (Note, there are other possible uses
+   for shell-vectors.)
+
+   There are many strategies for handling the coarse time-grids with BDF
+   methods (dropping the BDF order, adjusting time-point spacings inside the
+   lumped vectors, etc...).  Prospective users are encouraged to contact
+   xbraid-support@llnl.gov because this is active research.
+
+   See ``examples/ex-01-expanded-bdf2.c``.
+
+13. **Storage**:  This option (see [braid_SetStorage](@ref braid_SetStorage))
+    allows the user to specify storage at all time points (C and F) or only at
+    C-points.  This extra storage is useful for implicit methods, where the
+    solution value from the *previous XBraid iteration* for time step \f$i\f$
+    can be used as the initial guess when computing step \f$i\f$ with the
+    implicit solver.  This is often a better initial guess than using the
+    solution value from the previous time step \f$i-1\f$.  The default is to
+    store only C-point values, thus the better initial guess is only available
+    at C-points in the default setting.  When storage is turned on at F-points,
+    the better initial guess becomes available everywhere.
+   
+   In general, the user should always use the *ustop* parameter in
+   *Step()* as the initial guess for an implicit solve.  If storage
+   is turned on (i.e., set to 0), then this value will always be the improved
+   initial guess for C- and F-points.  If storage is not turned on, then
+   this will be the improved guess only for C-points.  For F-points,
+   it will equal the solution from the previous time step.
+
+   See ``examples/ex-03`` for an example which uses this feature.
+
+# Simplest example expanded {#exampleoneexapanded}
+
+These examples build on @ref exampleone, but still solve the 
+scalar ODE, 
+
+\f[ u_t = \lambda u. \f]
+
+The goal here is to show more advanced features of XBraid.
+
+   - ``examples/ex-01-expanded.c``:  same as ``ex-01.c`` but adds more XBraid features
+     such as the residual feature, the user defined initial time-grid and full multigrid
+     cycling.
+
+   - ``examples/ex-01-expanded-bdf2.c``:  same as ex-01-expanded.c, but uses
+     BDF2 instead of backward Euler.  This example makes use of the advanced 
+     shell-vector feature in order to implement BDF2.
+    
+   - ``examples/ex-01-expanded-f.f90``:  same as ex-01-expanded.c, but
+     implemented in f90.
+
+   - ``examples/ex-01-refinement.c``: same as ex-01.c, but adds the refinement feature
+     of XBraid. The refinement can be arbitrary or based on error estimate.
+
+
+# One-Dimensional Heat Equation {#exampletwo}
+
+In this example, we assume familiarity with @ref exampleone.  This example is a
+time-only parallel example that implements the 1D heat equation, 
+
+\f[ \delta/\delta_t \; u(x,t) = \Delta\, u(x,t) + g(x,t), \f]
+
+as opposed to @ref exampleone, which implements only a scalar ODE for one
+degree-of-freedom in space.  There is no spatial parallelism, as a serial
+cyclic reduction algorithm is used to invert the tri-diagonal spatial operators.
+The space-time discretization is the standard 3-point finite
+difference stencil (\f$[-1,2,-1]\f$), scaled by mesh widths.  Backward Euler
+is used in time. 
+
+This example consists of three files and two executables.
+
+   - ``examples/ex-02-serial.c``:  This file compiles into its own executable
+     ``ex-02-serial`` and represents a simple example user application that
+     does sequential time-stepping.  This file represents where a new 
+     XBraid user would start, in terms of converting a sequential time-stepping
+     code to XBraid. 
+
+   - ``examples/ex-02.c``:  This file compiles into its own executable
+     ``ex-02`` and represents a time-parallel XBraid wrapping of the user
+     application ``ex-02-serial``.  
+
+   - ``ex-02-lib.c``:  This file contains shared functions used by the time-serial
+     version and the time-parallel version.   This file provides the basic functionality of this
+     problem.  For instance, *take_step(u, tstart, tstop, ...)* carries out 
+     a step, moving the vector *u* from time *tstart* to time *tstop*. 
+
+# Two-Dimensional Heat Equation {#examplethree}
 
 In this example, we assume familiarity with @ref exampleone and describe the
 major ways in which this example differs.  This example is a full space-time
@@ -457,18 +589,18 @@ interface for this example.
 
 This example consists of three files and two executables.
 
-   - examples/ex-02-serial.c:  This file compiles into its own executable
-     ``ex-02-serial`` and represents a simple example user application.  This file
+   - examples/ex-03-serial.c:  This file compiles into its own executable
+     ``ex-03-serial`` and represents a simple example user application.  This file
      supports only parallelism in space and represents a basic approach to
      doing efficient sequential time stepping with the backward Euler scheme.
      Note that the hypre solver used (PFMG) to carry out the time stepping is
      highly efficient.
 
-   - examples/ex-02.c:  This file compiles into its own executable
-     ``ex-02`` and represents a basic example of wrapping the user application 
-     ``ex-02-serial``.  We will go over the wrappers below.
+   - examples/ex-03.c:  This file compiles into its own executable
+     ``ex-03`` and represents a basic example of wrapping the user application 
+     ``ex-03-serial``.  We will go over the wrappers below.
 
-   - ex-02-lib.c:  This file contains shared functions used by the time-serial
+   - ex-03-lib.c:  This file contains shared functions used by the time-serial
      version and the time-parallel version.  This is where most of the hypre
      specific calls reside.  This file provides the basic functionality of this
      problem.  For instance, *take_step(u, tstart, tstop, ...)* carries out 
@@ -479,7 +611,7 @@ This example consists of three files and two executables.
 ## User Defined Structures and Wrappers
 
 We now discuss in more detail the important data structures and wrapper
-routines in ``examples/ex-02.c``.  The actual code for this example is quite simple
+routines in ``examples/ex-03.c``.  The actual code for this example is quite simple
 and it is recommended to read through it after this overview.
 
 The two data structures are:
@@ -487,7 +619,7 @@ The two data structures are:
    is passed to every user function.  This structure holds everything that the
    user will need to carry out a simulation.  One important structure contained in
    the *app* is the *simulation_manager*.  This is a structure native to the user
-   code ``ex-02-lib.c``.  This structure conveniently holds the information needed by
+   code ``ex-03-lib.c``.  This structure conveniently holds the information needed by
    the user code to carry out a time step.  For instance, 
 
         app->man->A
@@ -547,7 +679,7 @@ is the first argument to every function.
   this \f$dt\f$ value.  If not, generate a new matrix and solver and store them in
   the *app* structure.  If they do already exist, then re-use the data.  
   
-  + To carry out a step, the user routines from ``ex-02-lib.c`` rely on a few
+  + To carry out a step, the user routines from ``ex-03-lib.c`` rely on a few
   crucial data members *man->dt*, *man->A* and *man-solver*.  We overwrite
   these members with the correct information for the time step size in question.
   Then, we pass *man* and *u* to the user function *take_step(...)* which
@@ -609,18 +741,18 @@ is the first argument to every function.
 also must be written.  These functions are all simple for this example, as for
 the case of @ref exampleone. All we do here is standard operations on a spatial
 vector such as initialize, clone, take an inner-product, pack, etc... We refer
-the reader to ``ex-02.c``.
+the reader to ``ex-03.c``.
 
 ## Running XBraid for this Example 
 
 To initialize and run XBraid, the procedure is similar to  @ref exampleone.
 Only here, we have to both initialize the user code and XBraid.  The code that
 is specific to the user's application comes directly from the existing serial
-simulation code.  If you compare ``ex-02-serial.c`` and ``ex-02.c``, you will
+simulation code.  If you compare ``ex-03-serial.c`` and ``ex-03.c``, you will
 see that most of the code setting up the user's data structures and defining
 the wrapper functions are simply lifted from the serial simulation.
 
-Taking excerpts from the function *main()* in ex-02.c,
+Taking excerpts from the function *main()* in ex-03.c,
 we first initialize the user's simulation manager with code like
       
       ...
@@ -671,20 +803,20 @@ Then, we clean up.
 
     braid_Destroy(core);
 
-Finally, to run ex-02, type
+Finally, to run ex-03, type
 
-    ex-02 -help
+    ex-03 -help
 
 As a simple example, try the following.
 
-    mpirun -np 8 ex-02 -pgrid 2 2 2 -nt 256
+    mpirun -np 8 ex-03 -pgrid 2 2 2 -nt 256
 
 ## Scaling Study with this Example {#twodheat_scaling}
 
 Here, we carry out a simple strong scaling study for this example.  The "time
 stepping" data set represents sequential time stepping and was generated using
-``examples/ex-02-serial``.  The time-parallel data set was generated using
-``examples/ex-02``.
+``examples/ex-03-serial``.  The time-parallel data set was generated using
+``examples/ex-03``.
    \latexonly
    \begin{figure}[!ht] \centering 
        \subfloat{\includegraphics[width=0.45\textwidth]{../img/heat_results.pdf}}
@@ -693,7 +825,7 @@ stepping" data set represents sequential time stepping and was generated using
    \endlatexonly
 The problem setup is as follows.
 - Backwards Euler is used as the time stepper.  This is the only time stepper
-supported by ``ex-02``.
+supported by ``ex-03``.
 - We used a Linux cluster with 4 cores per node, a Sandybridge Intel chipset, 
   and a fast Infiniband interconnect.  
 - The space-time problem size was \f$ 129^2 \times 16,192 \f$ over the unit cube 
@@ -725,18 +857,18 @@ supported by ``ex-02``.
   points (i.e., it approximates the L2-norm).
 
 
-To re-run this scaling study, a sample run string for ex-02 is
+To re-run this scaling study, a sample run string for ex-03 is
 
-      mpirun -np 64 ex-02 -pgrid 4 4 4 -nx 129 129 -nt 16129 -cf0 16 -cf 2 -nu 1 -use_rand 0
+      mpirun -np 64 ex-03 -pgrid 4 4 4 -nx 129 129 -nt 16129 -cf0 16 -cf 2 -nu 1 -use_rand 0
 
-To re-run the baseline sequential time stepper, ex-02-serial, try
+To re-run the baseline sequential time stepper, ex-03-serial, try
 
-      mpirun -np 64 ex-02-serial -pgrid 8 8 -nx 129 129 -nt 16129
+      mpirun -np 64 ex-03-serial -pgrid 8 8 -nx 129 129 -nt 16129
 
 For explanations of the command line parameters, type
      
-      ex-02-serial -help
-      ex-02 -help
+      ex-03-serial -help
+      ex-03 -help
 
 
 Regarding the performance, we can say

@@ -1,0 +1,168 @@
+# Begin Test 0 -- Begin 2-level FCF-relaxation tests
+  
+  time steps = 32
+  iterations           = 6
+  number of levels     = 2
+
+# Begin Test 1
+  
+  time steps = 128
+  iterations           = 6
+  number of levels     = 2
+
+# Begin Test 2
+  
+  time steps = 512
+  iterations           = 6
+  number of levels     = 2
+
+# Begin Test 3 
+  
+  time steps = 2048
+  iterations           = 6
+  number of levels     = 2
+
+# Begin Test 4 -- Begin multilvel-level V-cycle FCF-relaxation tests
+  
+  time steps = 32
+  iterations           = 6
+  number of levels     = 4
+
+# Begin Test 5
+  
+  time steps = 128
+  iterations           = 7
+  number of levels     = 6
+
+# Begin Test 6 
+
+  time steps = 512
+  iterations           = 7
+  number of levels     = 8
+
+# Begin Test 7
+  
+  time steps = 2048
+  iterations           = 8
+  number of levels     = 10
+
+# Begin Test 8 -- Begin multilvel-level F-cycle FCF-relaxation tests
+  
+  time steps = 32
+  iterations           = 6
+  number of levels     = 4
+
+# Begin Test 9
+  
+  time steps = 128
+  iterations           = 6
+  number of levels     = 6
+
+# Begin Test 10
+  
+  time steps = 512
+  iterations           = 6
+  number of levels     = 8
+
+# Begin Test 11
+  
+  time steps = 2048
+  iterations           = 6
+  number of levels     = 10
+
+# Begin Test 12 -- Begin 2-level F-relaxation tests
+  
+  time steps = 32
+  iterations           = 9
+  number of levels     = 2
+
+# Begin Test 13
+  
+  time steps = 128
+  iterations           = 9
+  number of levels     = 2
+
+# Begin Test 14
+  
+  time steps = 512
+  iterations           = 9
+  number of levels     = 2
+
+# Begin Test 15
+  
+  time steps = 2048
+  iterations           = 9
+  number of levels     = 2
+
+# Begin Test 16 -- Begin multilvel-level V-cycle F-relaxation tests
+  
+  time steps = 32
+  iterations           = 10
+  number of levels     = 4
+
+# Begin Test 17
+  
+  time steps = 128
+  iterations           = 15
+  number of levels     = 6
+
+# Begin Test 18
+  
+  time steps = 512
+  iterations           = 19
+  number of levels     = 8
+
+# Begin Test 19
+
+  time steps = 2048
+  iterations           = 22
+  number of levels     = 10
+
+# Begin Test 20 -- Begin multilvel-level F-cycle F-relaxation tests
+  
+  time steps = 32
+  iterations           = 9
+  number of levels     = 4
+
+# Begin Test 21
+  
+  time steps = 128
+  iterations           = 9
+  number of levels     = 6
+
+# Begin Test 22
+  
+  time steps = 512
+  iterations           = 8
+  number of levels     = 8
+
+# Begin Test 23
+  
+  time steps = 2048
+  iterations           = 8
+  number of levels     = 10
+
+# Begin Test 24 -- Begin multilvel-level V-cycle F-relaxation with Skip tests
+  
+  time steps = 32
+  iterations           = 9
+  number of levels     = 4
+
+# Begin Test 25
+  
+  time steps = 128
+  iterations           = 9
+  number of levels     = 6
+
+# Begin Test 26
+  
+  time steps = 512
+  iterations           = 9
+  number of levels     = 8
+
+# Begin Test 27
+  
+  time steps = 2048
+  iterations           = 9
+  number of levels     = 10
+

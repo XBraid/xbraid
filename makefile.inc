@@ -22,8 +22,10 @@
 #
 #EHEADER**********************************************************************
 
-# Uncomment the next line if compiling without MPI (or use 'make sequential=yes [target]')
-# sequential = yes
+# Three compile time options
+# make debug=yes|no
+# make valgrind=yes|no
+# make sequential=yes|no
 
 # Was DEBUG specified? 
 ifeq ($(debug),no)
@@ -37,6 +39,13 @@ ifeq ($(valgrind),yes)
    lvalgrind = YES
 else
    lvalgrind = NO
+endif
+
+# Was MPI use specified?
+ifeq ($(sequential),yes)
+   sequential = YES
+else
+   sequential = NO
 endif
 
 # Default compiler options for different platforms and known machines
@@ -154,7 +163,7 @@ else
 endif
 
 # Compiler options when compiling without MPI
-ifdef sequential
+ifeq ($(sequential),YES)
    MPICC = gcc
    MPICXX = g++
    MPIF90 = gfortran

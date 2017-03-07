@@ -1,0 +1,89 @@
+# Begin Test 0 -- begin serial tests
+  
+  Discretization error at final time:  1.0049e-01
+
+# Begin Test 1
+  
+  Discretization error at final time:  5.5581e-02
+
+# Begin Test 2
+  
+  Discretization error at final time:  2.9214e-02
+
+# Begin Test 3 -- begin 3-level Braid
+  
+  Discretization error at final time:  9.7632e-02
+  residual norm         = 6.944644e-02
+  
+# Begin Test 4
+
+ 
+  Discretization error at final time:  9.7632e-02
+  residual norm         = 6.944644e-02
+                        
+# Begin Test 5 
+
+  Discretization error at final time:  9.7632e-02
+  residual norm         = 6.944644e-02
+                       
+# Begin Test 6 -- begin 3-level Braid with FMG
+
+  Discretization error at final time:  9.7729e-02
+  residual norm         = 6.831611e-02
+
+                       
+# Begin Test 7
+
+  Discretization error at final time:  9.7729e-02
+  residual norm         = 6.831611e-02
+                        
+# Begin Test 8
+
+  Discretization error at final time:  9.7729e-02
+  residual norm         = 6.831611e-02
+                        
+# Begin Test 9 -- begin 3-level Braid with spatial coarsening
+
+  Discretization error at final time:  5.4755e-02
+  residual norm         = 1.198403e-01
+                        
+# Begin Test 10
+
+  Discretization error at final time:  5.4755e-02
+  residual norm         = 1.198403e-01
+ 
+# Begin Test 11
+  
+  Discretization error at final time:  5.4755e-02
+  residual norm         = 1.198403e-01
+
+# Begin Test 12  -- begin 3-level Braid with sequential time stepping as initial guess
+  
+  Discretization error at final time:  2.9214e-02
+  residual norm         = 0.000000e+00
+
+# Begin Test 13
+  
+  Discretization error at final time:  2.9214e-02
+  residual norm         = 0.000000e+00
+
+# Begin Test 14
+  
+  Discretization error at final time:  2.9214e-02
+  residual norm         = 0.000000e+00
+
+# Begin Test 15  -- begin 3-level Braid with residual option
+
+  Discretization error at final time:  3.3696e-02
+  residual norm         = 2.445729e-01
+                       
+# Begin Test 16
+
+  Discretization error at final time:  3.3696e-02
+  residual norm         = 2.445729e-01
+                        
+# Begin Test 17
+
+  Discretization error at final time:  3.3696e-02
+  residual norm         = 2.445729e-01
+                        

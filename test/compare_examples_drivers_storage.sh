@@ -81,31 +81,32 @@ make clean
 make 
 cd $test_dir
 
-# Run the following regression tests -- here we run a comparison of ex-02 and
-# drive-02 The first three tests compare drive-02, ex-02 and ex-02-serial,
-# making sure that all three versions have the same discretization error when
-# run to a very small tolerance.  The subsequent tests check the discretization
-# error after only 2 iterations, so that we can test various XBraid options.
-# This way the printed discretization error is printed before convergence and
-# hence `unique' to this particular option combination. 
-TESTS=( "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage -1 -skip 0" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage -1 -skip 0" 
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage -1 -skip 1" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage -1 -skip 1" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg 1 -mi 4 -storage -1 -skip 0" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg   -mi 4 -storage -1 -skip 0" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage 0 -skip 0" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage 0 -skip 0" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage 0 -skip 1" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage 0 -skip 1" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg 1 -mi 4 -storage 0 -skip 0" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg   -mi 4 -storage 0 -skip 0" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage 1 -skip 0" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage 1 -skip 0" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage 1 -skip 1" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage 1 -skip 1" \
-        "$RunString -np 8 $driver_dir/drive-02 -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg 1 -mi 4 -storage 1 -skip 0" \
-        "$RunString -np 8 $example_dir/ex-02   -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg   -mi 4 -storage 1 -skip 0" )
+# Run the following regression tests -- here we run a comparison of ex-03 and
+# drive-diffusion-2D The first three tests compare drive-diffusion-2D, ex-03
+# and ex-03-serial, making sure that all three versions have the same
+# discretization error when run to a very small tolerance.  The subsequent
+# tests check the discretization error after only 2 iterations, so that we can
+# test various XBraid options.  This way the printed discretization error is
+# printed before convergence and hence `unique' to this particular option
+# combination. 
+TESTS=( "$RunString -np 8 $driver_dir/drive-diffusion-2D -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage -1 -skip 0" \
+        "$RunString -np 8 $example_dir/ex-03   -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage -1 -skip 0" 
+        "$RunString -np 8 $driver_dir/drive-diffusion-2D -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage -1 -skip 1" \
+        "$RunString -np 8 $example_dir/ex-03   -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage -1 -skip 1" \
+        "$RunString -np 8 $driver_dir/drive-diffusion-2D -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg 1 -mi 4 -storage -1 -skip 0" \
+        "$RunString -np 8 $example_dir/ex-03   -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg   -mi 4 -storage -1 -skip 0" \
+        "$RunString -np 8 $driver_dir/drive-diffusion-2D -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage 0 -skip 0" \
+        "$RunString -np 8 $example_dir/ex-03   -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage 0 -skip 0" \
+        "$RunString -np 8 $driver_dir/drive-diffusion-2D -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage 0 -skip 1" \
+        "$RunString -np 8 $example_dir/ex-03   -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage 0 -skip 1" \
+        "$RunString -np 8 $driver_dir/drive-diffusion-2D -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg 1 -mi 4 -storage 0 -skip 0" \
+        "$RunString -np 8 $example_dir/ex-03   -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg   -mi 4 -storage 0 -skip 0" \
+        "$RunString -np 8 $driver_dir/drive-diffusion-2D -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage 1 -skip 0" \
+        "$RunString -np 8 $example_dir/ex-03   -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage 1 -skip 0" \
+        "$RunString -np 8 $driver_dir/drive-diffusion-2D -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage 1 -skip 1" \
+        "$RunString -np 8 $example_dir/ex-03   -pgrid 1 1 8 -nt 128 -nx 17 17 -mi 4 -storage 1 -skip 1" \
+        "$RunString -np 8 $driver_dir/drive-diffusion-2D -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg 1 -mi 4 -storage 1 -skip 0" \
+        "$RunString -np 8 $example_dir/ex-03   -pgrid 1 1 8 -nt 128 -nx 17 17 -fmg   -mi 4 -storage 1 -skip 0" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 

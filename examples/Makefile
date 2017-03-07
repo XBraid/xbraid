@@ -46,9 +46,9 @@ MFEM_LIB_FILE = mfem_is_not_built
 BRAID_FLAGS = -I$(BRAID_DIR)
 BRAID_LIB_FILE = $(BRAID_DIR)/libbraid.a
 
-C_NOHYPRE = ex-01 ex-burgers ex-lorenz ex-bdf2
-F_NOHYPRE = ex-01f ex-fburgers
-C_EXAMPLES = ex-02 ex-02-serial
+C_NOHYPRE = ex-01 ex-01-refinement ex-01-expanded ex-01-expanded-bdf2 ex-02
+F_NOHYPRE = ex-01-expanded-f
+C_EXAMPLES = ex-03 ex-03-serial
 # Note: .cpp examples will be linked with mfem
 #CXX_EXAMPLES = ex-04
 
@@ -60,35 +60,51 @@ C_EXAMPLES = ex-02 ex-02-serial
 # put this rule first so it becomes the default
 all: $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES)
 
-# Rule for building ex-burgers
-ex-burgers: ex-burgers.c $(BRAID_LIB_FILE)
-	@echo "Building" $@ "..."
-	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
-
-# Rule for building ex-lorenz
-ex-lorenz: ex-lorenz.c $(BRAID_LIB_FILE)
-	@echo "Building" $@ "..."
-	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
-
-# Rule for building ex-bdf2
-ex-bdf2: ex-bdf2.c $(BRAID_LIB_FILE)
-	@echo "Building" $@ "..."
-	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
-
 # Rule for building ex-01
 ex-01: ex-01.c $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
 	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
 
-# Rule for building ex-01f
-ex-01f: ex-01f.f90 $(BRAID_LIB_FILE)
+# Rule for building ex-01-refinement
+ex-01-refinement: ex-01-refinement.c $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
-	$(MPIF90) $(FORTFLAGS) $(@).f90 -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
 
-# Rule for building ex-fburgers
-ex-fburgers: ex-fburgers.f90 $(BRAID_LIB_FILE)
+# Rule for building ex-01-expanded
+ex-01-expanded: ex-01-expanded.c $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
-	$(MPIF90) $(FORTFLAGS) $(@).f90 -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+
+# Rule for building ex-01-expanded-f
+ex-01-expanded-f: ex-01-expanded-f.f90 $(BRAID_LIB_FILE)
+	@echo "Building" $@ "..."
+	$(MPIF90) $(FORTFLAGS) -Wno-unused-dummy-argument -Wno-uninitialized $(@).f90 -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+
+# Rule for building ex-01-expanded-bdf2
+ex-01-expanded-bdf2: ex-01-expanded-bdf2.c $(BRAID_LIB_FILE)
+	@echo "Building" $@ "..."
+	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+
+# Rule for building ex-02
+ex-02: ex-02.c $(BRAID_LIB_FILE) ex-02-lib.c
+	@echo "Building" $@ "..."
+	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+
+# Rule for building ex-02-serial
+ex-02-serial: ex-02-serial.c $(BRAID_LIB_FILE) ex-02-lib.c
+	@echo "Building" $@ "..."
+	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+
+# Rule for building ex-03
+ex-03: ex-03.c $(BRAID_LIB_FILE) ex-03-lib.c
+	@echo "Building" $@ "..."
+	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(HYPRE_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(HYPRE_LIB) $(LFLAGS)
+
+
+# Rule for building ex-03-serial
+ex-03-serial: ex-03-serial.c $(BRAID_LIB_FILE) ex-03-lib.c
+	@echo "Building" $@ "..."
+	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(HYPRE_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(HYPRE_LIB) $(LFLAGS)
 
 # Rule for compiling .c files
 %: %.c $(BRAID_LIB_FILE)
@@ -112,3 +128,4 @@ clean: cleanout
 
 cleanout:
 	rm -f ex*.out.*
+

@@ -38,6 +38,7 @@ HYPRE_DIR = $(BRAID_DIR)/../../hypre-2.11.1/src/hypre
 HYPRE_FLAGS = -I$(HYPRE_DIR)/include
 HYPRE_LIB = -L$(HYPRE_DIR)/lib -lHYPRE
 
+MFEM_INTERFACE = ./braid_mfem.hpp ./braid_mfem_block.hpp ../braid.hpp
 MFEM_DIR = $(BRAID_DIR)/../mfem
 MFEM_CONFIG_MK = $(MFEM_DIR)/config/config.mk
 MFEM_LIB_FILE = mfem_is_not_built
@@ -46,9 +47,12 @@ MFEM_LIB_FILE = mfem_is_not_built
 BRAID_FLAGS = -I$(BRAID_DIR)
 BRAID_LIB_FILE = $(BRAID_DIR)/libbraid.a
 
-C_EXAMPLES = drive-02 #drive-03
+C_EXAMPLES = drive-burgers-1D drive-diffusion-2D drive-lorenz
 # Note: .cpp examples will be linked with mfem
-#CXX_EXAMPLES = drive-04 drive-05 # drive-06 drive-07
+CXX_EXAMPLES = drive-diffusion-1D-moving-mesh drive-diffusion-1D-moving-mesh-serial \
+					drive-diffusion-ben drive-diffusion drive-lin-elasticity \
+					drive-pLaplacian drive-adv-diff-DG drive-nonlin-elasticity
+
 # clean all possible
 ALL_EXAMPLES := $(patsubst %.cpp,%,$(wildcard *.c *.cpp))
 ALL_EXAMPLES := $(patsubst %.c,%,$(ALL_EXAMPLES))
@@ -68,7 +72,7 @@ all: $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES)
  $(BRAID_LIB_FILE) $(HYPRE_LIB) $(LFLAGS)
 
 # Rule for compiling .cpp files; links with mfem
-%: %.cpp $(BRAID_LIB_FILE) $(MFEM_LIB_FILE) $(MFEM_CONFIG_MK)
+%: %.cpp $(BRAID_LIB_FILE) $(MFEM_LIB_FILE) $(MFEM_CONFIG_MK) $(MFEM_INTERFACE)
 	@echo "Building" $@ "..."
 	$(MPICXX) $(CXXFLAGS) $(BRAID_FLAGS) $(MFEM_FLAGS) \
 	$< -o $@ $(MFEM_LIBS) $(BRAID_LIB_FILE) $(LFLAGS)
