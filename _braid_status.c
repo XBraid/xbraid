@@ -438,21 +438,22 @@ _braid_StepStatusInit(braid_Real       tstart,
 
    return _braid_error_flag;
 }
-ACCESSOR_FUNCTION_GET1(Step, T,             Real)
-ACCESSOR_FUNCTION_GET1(Step, TIndex,        Int)
-ACCESSOR_FUNCTION_GET1(Step, Iter,          Int)
-ACCESSOR_FUNCTION_GET1(Step, Level,         Int)
-ACCESSOR_FUNCTION_GET1(Step, NRefine,       Int)
-ACCESSOR_FUNCTION_GET1(Step, NTPoints,      Int)
-ACCESSOR_FUNCTION_GET1(Step, Tstop,         Real)
-ACCESSOR_FUNCTION_GET2(Step, TstartTstop,   Real, Real)
-ACCESSOR_FUNCTION_GET1(Step, Tol,           Real)
-ACCESSOR_FUNCTION_GET2(Step, RNorms,        Int,  Real)
-ACCESSOR_FUNCTION_GET1(Step, OldFineTolx,   Real)
-ACCESSOR_FUNCTION_SET1(Step, OldFineTolx,   Real)
-ACCESSOR_FUNCTION_SET1(Step, TightFineTolx, Real)
-ACCESSOR_FUNCTION_SET1(Step, RFactor,       Real)
-ACCESSOR_FUNCTION_SET1(Step, RSpace,        Real)
+ACCESSOR_FUNCTION_GET1(Step, T,                Real)
+ACCESSOR_FUNCTION_GET1(Step, TIndex,           Int)
+ACCESSOR_FUNCTION_GET1(Step, Iter,             Int)
+ACCESSOR_FUNCTION_GET1(Step, Level,            Int)
+ACCESSOR_FUNCTION_GET1(Step, NRefine,          Int)
+ACCESSOR_FUNCTION_GET1(Step, NTPoints,         Int)
+ACCESSOR_FUNCTION_GET1(Step, Tstop,            Real)
+ACCESSOR_FUNCTION_GET1(Step, CallingFunction,  Int)
+ACCESSOR_FUNCTION_GET2(Step, TstartTstop,      Real, Real)
+ACCESSOR_FUNCTION_GET1(Step, Tol,              Real)
+ACCESSOR_FUNCTION_GET2(Step, RNorms,           Int,  Real)
+ACCESSOR_FUNCTION_GET1(Step, OldFineTolx,      Real)
+ACCESSOR_FUNCTION_SET1(Step, OldFineTolx,      Real)
+ACCESSOR_FUNCTION_SET1(Step, TightFineTolx,    Real)
+ACCESSOR_FUNCTION_SET1(Step, RFactor,          Real)
+ACCESSOR_FUNCTION_SET1(Step, RSpace,           Real)
 
 /*--------------------------------------------------------------------------
  * BufferStatus Routines

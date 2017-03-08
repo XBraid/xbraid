@@ -81,8 +81,11 @@
  *                       local space interval upper bounds
  *   object_type         object type of vector to access different hypre solvers 
  *   solver              hypre solver (for implicit time stepping)
- *   max_iter            maximum number of spatial MG iterations
- *   tol                 stopping tolerance for spatial MG
+ *   pfmg_tol            stopping tolerance for spatial MG
+ *   pfmg_maxiter        maximum number of spatial MG iterations
+ *   pfmg_maxlevel       maximum number of spatial MG grid levels
+ *   pfmg_npre           number of pre-smoothing iterations of spatial MG
+ *   pfmg_npost          number of post-smoothing iterations of spatial MG 
  *   explicit            use explicit discretization (1) or not (0)
  *   output_vis          save the error for GLVis visualization
  *   output_files        save the solution/error/error norm to files
@@ -109,8 +112,11 @@ typedef struct _simulation_manager_struct {
    int                     ilower[2], iupper[2];
    int                     object_type;
    HYPRE_StructSolver      solver;
-   int                     max_iter;
-   double                  tol;
+   double                  pfmg_tol;
+   int                     pfmg_maxiter;
+   int                     pfmg_maxlevel;
+   int                     pfmg_npre;
+   int                     pfmg_npost;
    int                     explicit;
    int                     output_vis;
    int                     output_files;
@@ -123,33 +129,34 @@ print_simulation_manager(simulation_manager *man)
    MPI_Comm_rank( man->comm, &myid );
    
    printf("\n\nmyid:  %d,  Simulation manager contents:\n", myid);
-   printf("myid:  %d,  K:            %1.2e\n", myid, man->K);
-   printf("myid:  %d,  dim_x         %d\n", myid, man->dim_x);
-   printf("myid:  %d,  nlx:          %d\n", myid, man->nlx);
-   printf("myid:  %d,  nly:          %d\n", myid, man->nly);
-   printf("myid:  %d,  nx:           %d\n", myid, man->ny);
-   printf("myid:  %d,  ny:           %d\n", myid, man->ny);
-   printf("myid:  %d,  tstart:       %1.2e\n", myid, man->tstart);
-   printf("myid:  %d,  tstop:        %1.2e\n", myid, man->tstop);
-   printf("myid:  %d,  nt:           %d\n", myid, man->nt);
-   printf("myid:  %d,  dx:           %1.2e\n", myid, man->dx);
-   printf("myid:  %d,  dy:           %1.2e\n", myid, man->dy);
-   printf("myid:  %d,  dt:           %1.2e\n", myid, man->dt);
-   printf("myid:  %d,  forcing:      %d\n", myid, man->forcing);
-   printf("myid:  %d,  px:           %d\n", myid, man->px);
-   printf("myid:  %d,  py:           %d\n", myid, man->py);
-   printf("myid:  %d,  pi:           %d\n", myid, man->pi);
-   printf("myid:  %d,  pj:           %d\n", myid, man->pj);
-   printf("myid:  %d,  ilower[0]     %d\n", myid, man->ilower[0]);
-   printf("myid:  %d,  ilower[1]     %d\n", myid, man->ilower[1]);
-   printf("myid:  %d,  iupper[0]     %d\n", myid, man->iupper[0]);
-   printf("myid:  %d,  iupper[1]     %d\n", myid, man->iupper[1]);
-   printf("myid:  %d,  max_iter:     %d\n", myid, man->max_iter);
-   printf("myid:  %d,  object_type:  %d\n", myid, man->object_type);
-   printf("myid:  %d,  tol:          %1.2e\n", myid, man->tol);
-   printf("myid:  %d,  explicit:     %d\n", myid, man->explicit);
-   printf("myid:  %d,  output_vis:   %d\n", myid, man->output_vis);
-   printf("myid:  %d,  output_files: %d\n", myid, man->output_files);
+   printf("myid:  %d,  K:             %1.2e\n", myid, man->K);
+   printf("myid:  %d,  dim_x          %d\n", myid, man->dim_x);
+   printf("myid:  %d,  nlx:           %d\n", myid, man->nlx);
+   printf("myid:  %d,  nly:           %d\n", myid, man->nly);
+   printf("myid:  %d,  nx:            %d\n", myid, man->ny);
+   printf("myid:  %d,  ny:            %d\n", myid, man->ny);
+   printf("myid:  %d,  tstart:        %1.2e\n", myid, man->tstart);
+   printf("myid:  %d,  tstop:         %1.2e\n", myid, man->tstop);
+   printf("myid:  %d,  nt:            %d\n", myid, man->nt);
+   printf("myid:  %d,  dx:            %1.2e\n", myid, man->dx);
+   printf("myid:  %d,  dy:            %1.2e\n", myid, man->dy);
+   printf("myid:  %d,  dt:            %1.2e\n", myid, man->dt);
+   printf("myid:  %d,  forcing:       %d\n", myid, man->forcing);
+   printf("myid:  %d,  px:            %d\n", myid, man->px);
+   printf("myid:  %d,  py:            %d\n", myid, man->py);
+   printf("myid:  %d,  pi:            %d\n", myid, man->pi);
+   printf("myid:  %d,  pj:            %d\n", myid, man->pj);
+   printf("myid:  %d,  ilower[0]      %d\n", myid, man->ilower[0]);
+   printf("myid:  %d,  ilower[1]      %d\n", myid, man->ilower[1]);
+   printf("myid:  %d,  iupper[0]      %d\n", myid, man->iupper[0]);
+   printf("myid:  %d,  iupper[1]      %d\n", myid, man->iupper[1]);
+   printf("myid:  %d,  pfmg_tol:      %1.2e\n", myid, man->pfmg_tol);
+   printf("myid:  %d,  pfmg_maxiter:  %d\n", myid, man->pfmg_maxiter);
+   printf("myid:  %d,  pfmg_maxlevel: %d\n", myid, man->pfmg_maxlevel);
+   printf("myid:  %d,  object_type:   %d\n", myid, man->object_type);
+   printf("myid:  %d,  explicit:      %d\n", myid, man->explicit);
+   printf("myid:  %d,  output_vis:    %d\n", myid, man->output_vis);
+   printf("myid:  %d,  output_files:  %d\n", myid, man->output_files);
 
    printf("\nmyid:  %d,  Note that some object members like vartype, grid_x, stencil, graph, A and solver cannot be printed\n\n", myid);
    return 0;
@@ -1422,12 +1429,13 @@ setUpStructSolver( simulation_manager  *man,
 {
    MPI_Comm            comm     = man->comm;
    HYPRE_SStructMatrix A        = man->A;
-   int                 max_iter = man->max_iter;
-   double              tol      = man->tol;
+   double              tol      = man->pfmg_tol;
+   int                 maxlevel = man->pfmg_maxlevel;
+   int                 n_pre    = man->pfmg_npre;
+   int                 n_post   = man->pfmg_npost;
+   int                 max_iter = man->pfmg_maxiter;
    
    /* hard coded PFMG parameters */
-   int n_pre               = 1;       /* number of PFMG presmoothing steps */
-   int n_post              = 1;       /* number of PFMG postmoothing steps */
    int rap                 = 1;       /* type of RAP coarse grid to use in PFMG
                                          0 - Galerkin (default)
                                          1 - non-Galerkin ParFlow operators
@@ -1459,6 +1467,7 @@ setUpStructSolver( simulation_manager  *man,
    HYPRE_StructPFMGSetNumPreRelax( solver, n_pre );
    HYPRE_StructPFMGSetNumPostRelax( solver, n_post );
    HYPRE_StructPFMGSetSkipRelax( solver, skip );
+   HYPRE_StructPFMGSetMaxLevels( solver, maxlevel );
    HYPRE_StructPFMGSetPrintLevel( solver, 1 );
    HYPRE_StructPFMGSetLogging( solver, 1 );
 
@@ -1481,10 +1490,10 @@ int take_step(simulation_manager * man,         /* manager holding basic sim inf
               double               tstop, 
               int                 *iters_taken) /* if implicit, returns the number of iters taken */
 {
-   int      iters      = man->max_iter; /* if implicit, max iters for solve */
-   double   tol        = man->tol;      /* if implicit, solver tolerance */
-   int      explicit   = man->explicit; /* if true, use explicit, else implicit */
-   int      forcing    = man->forcing;  /* if true, use the nonzero forcing term */
+   int      iters      = man->pfmg_maxiter;  /* if implicit, max iters for solve */
+   double   tol        = man->pfmg_tol;      /* if implicit, solver tolerance */
+   int      explicit   = man->explicit;      /* if true, use explicit, else implicit */
+   int      forcing    = man->forcing;       /* if true, use the nonzero forcing term */
    HYPRE_Int num_iters = 0;
    
    HYPRE_SStructVector b;

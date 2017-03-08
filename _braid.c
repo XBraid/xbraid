@@ -1518,6 +1518,10 @@ _braid_FCRelax(braid_Core  core,
    {
       _braid_UCommInit(core, level);
 
+      /* ******************
+       * STMG-like specific
+       * ******************
+       * if temporal coarsening, do FC-relaxation */
       if (cfactor > 1)
       {
       /* Start from the right-most interval */
@@ -1541,8 +1545,6 @@ _braid_FCRelax(braid_Core  core,
          /* F-relaxation */
          for (fi = flo; fi <= fhi; fi++)
          {
-            if (time_relax_on)
-               relaxcalls++;
             _braid_Step(core, level, fi, braid_ASCaller_FCRelax, NULL, u);
             _braid_USetVector(core, level, fi, u, 0);
          }
@@ -1554,8 +1556,6 @@ _braid_FCRelax(braid_Core  core,
          /* C-relaxation */
          if (ci > 0)
          {
-            if (time_relax_on)
-               relaxcalls++;
             _braid_Step(core, level, ci, braid_ASCaller_FCRelax, NULL, u);
             _braid_USetVector(core, level, ci, u, 1);
          }
@@ -1568,6 +1568,10 @@ _braid_FCRelax(braid_Core  core,
       }
       }
       else
+      /* ******************
+       * STMG-like specific
+       * ******************
+       * if spatial coarsening, do odd-even-relaxation  */
       {
          braid_Int  clower  = _braid_GridElt(grids[level], clower);
          braid_Int  cupper  = _braid_GridElt(grids[level], cupper);
@@ -1594,8 +1598,6 @@ _braid_FCRelax(braid_Core  core,
          for (ci = cstart_odd; ci <= cupper; ci += 2)
          {
             _braid_UGetVector(core, level, ci-1, &u);
-            if (time_relax_on)
-               relaxcalls++;
             _braid_Step(core, level, ci, braid_ASCaller_FCRelax, NULL, u);
             _braid_USetVector(core, level, ci, u, 1);
          }
@@ -1607,8 +1609,6 @@ _braid_FCRelax(braid_Core  core,
          for (ci = cstart_evn; ci <= cupper; ci += 2)
          {
             _braid_UGetVector(core, level, ci-1, &u);
-            if (time_relax_on)
-               relaxcalls++;
             _braid_Step(core, level, ci, braid_ASCaller_FCRelax, NULL, u);
             _braid_USetVector(core, level, ci, u, 1);
          }
@@ -1692,7 +1692,6 @@ _braid_FRestrict(braid_Core   core,
 #if STMG_DEBUG
       braid_Int myid = _braid_CoreElt(core, myid_world);
 #endif
-   braid_Real localtime;
 
    c_level  = level+1;
    c_ilower = _braid_GridElt(grids[c_level], ilower);
@@ -1711,8 +1710,6 @@ _braid_FRestrict(braid_Core   core,
     * convergence checking on the finest grid.  This loop updates va and fa. */
    for (interval = ncpoints; interval > -1; interval--)
    {
-      if (time_relax_on)
-         localtime = MPI_Wtime();
       _braid_GetInterval(core, level, interval, &flo, &fhi, &ci);
 
       if (flo <= fhi)
@@ -1724,6 +1721,10 @@ _braid_FRestrict(braid_Core   core,
          _braid_UGetVector(core, level, ci-1, &r);
       }
       
+      /* ******************
+       * STMG-like specific
+       * ******************
+       * no F-points in case of spatial coarsening, so skip F-relaxation */
       if (cfactor > 1)
       {
 #if STMG_DEBUG
@@ -1733,8 +1734,6 @@ _braid_FRestrict(braid_Core   core,
          _braid_GetRNorm(core, -1, &rnm);
          for (fi = flo; fi <= fhi; fi++)
          {
-            if (time_relax_on)
-               relaxcalls++;
             _braid_Step(core, level, fi, braid_ASCaller_FRestrict, NULL, r);
             _braid_USetVector(core, level, fi, r, 0);
          
@@ -1742,14 +1741,12 @@ _braid_FRestrict(braid_Core   core,
              * temporarily holding the state vector */
             if( (access_level >= 3) )
             {
-               _braid_AccessStatusInit(ta[fi-f_ilower], rnm, iter, level, nrefine, gupper,
+               _braid_AccessStatusInit(ta[fi-f_ilower], fi, rnm, iter, level, nrefine, gupper,
                                        0, 0, braid_ASCaller_FRestrict, astatus);
                _braid_AccessVector(core, astatus, r);
             }
          }
       }
-      if (time_relax_on)
-         relaxtime += (MPI_Wtime()-localtime);
          
 
       /* Allow user to process current C-point */

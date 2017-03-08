@@ -392,7 +392,7 @@ braid_Drive(braid_Core  core)
    braid_Int      ilower, iupper, i;
    braid_Real    *ta;
    _braid_Grid   *grid;
-   braid_Real     localtime, globaltime, localtime_new, relaxlocal;
+   braid_Real     localtime, globaltime, localtime_new;
 
    /* Cycle state variables */
    _braid_CycleState  cycle;
@@ -477,17 +477,8 @@ braid_Drive(braid_Core  core)
       {
          /* Down cycle */
          
-         /* time relaxation in iteration 4 */
-         if (iter == 3)
-         {
-            relaxlocal = MPI_Wtime();
-            if (level == 0)
-               time_relax_on = 1;
-         }
          /* CF-relaxation */
          _braid_FCRelax(core, level);
-         if (time_relax_on)
-            relaxtime += (MPI_Wtime() - relaxlocal);
 
          /* F-relax then restrict (note that FRestrict computes a new rnorm) */
          _braid_FRestrict(core, level);
@@ -548,11 +539,6 @@ braid_Drive(braid_Core  core)
             /* Print current status
             _braid_DrivePrintStatus(core, level, iter, refined, localtime);*/
             _braid_DrivePrintStatus(core, level, iter, refined, localtime_new);
-            if (time_relax_on)
-            {
-               /*_braid_printf("  total time for relaxation (%d calls) in one iteration on all grid levels: %.2lfs\n", relaxcalls, relaxtime);*/
-               time_relax_on = 0;
-            }
             localtime_new = MPI_Wtime();
 
             /* If no refinement was done, check for convergence */

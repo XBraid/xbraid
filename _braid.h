@@ -41,10 +41,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-   
-braid_Real relaxtime;
-braid_Int  time_relax_on;
-braid_Int  relaxcalls;
 
 /*--------------------------------------------------------------------------
  * Main data structures and accessor macros
