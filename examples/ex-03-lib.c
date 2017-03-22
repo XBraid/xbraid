@@ -1666,12 +1666,11 @@ int take_step2(simulation_manager  *man,         /* manager holding basic sim in
    HYPRE_StructMatrix  sA;
    HYPRE_StructVector  sxstop, sbstop, sx, sb;
    
-   printf(" ==> take_step2(): grabbing object pointers...\n");
-   
    /* Grab these object pointers for use below */
    HYPRE_SStructMatrixGetObject( man->A, (void **) &sA );
    HYPRE_SStructVectorGetObject( xstop, (void **) &sxstop );
    HYPRE_SStructVectorGetObject( x, (void **) &sx );
+   
 
    /* Create temporary vector */
    initialize_vector(man, &b);
@@ -1710,7 +1709,6 @@ int take_step2(simulation_manager  *man,         /* manager holding basic sim in
          hypre_StructAxpy(1.0, sbstop, sb);
       }
 
-      printf(" ==> take_step2(): solve linear system...\n");
       /* Solve system */
       if (xstop != x)
       {
@@ -1722,8 +1720,6 @@ int take_step2(simulation_manager  *man,         /* manager holding basic sim in
       HYPRE_StructPFMGSolve( man->solver, sA, sb, sx );
       HYPRE_StructPFMGGetNumIterations( man->solver, &num_iters);
       (*iters_taken) = num_iters;
-      printf(" ==> take_step2(): done solving!!!\n");
-
    }
 
    /* free memory */
@@ -1755,7 +1751,6 @@ int comp_res(simulation_manager * man,         /* manager holding basic sim info
 
    if( explicit )
    {
-   
       /* Create temporary vector */
       initialize_vector(man, &b);
       HYPRE_SStructVectorAssemble(b);

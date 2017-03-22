@@ -383,7 +383,7 @@ my_Step(braid_App        app,
    double               tstart;             /* current time */
    double               tstop;              /* evolve to this time*/
    HYPRE_SStructVector  bstop;
-   HYPRE_StructVector   sbstop, sg, stmp;
+   HYPRE_StructVector   sbstop, sg;
    double               accuracy, cfl_value;
    int                  i, A_idx, user_explicit, level;
    int                  ilower[2], iupper[2], nlx, nly, nx, ny;
@@ -392,8 +392,6 @@ my_Step(braid_App        app,
    double               temp_double;
    int                  temp_int;
    int                  calling_function;
-   char                 filename[255];
-   int                  index;
    
    /* This debug output is mostly for regression testing */
    if(print_level == 2)
@@ -436,7 +434,7 @@ my_Step(braid_App        app,
       accuracy = app->tol_x[0];
    }
 
-   printf ("my_Step(): integrating from %lf to %lf\n", tstart, tstop);
+   //printf ("my_Step(): integrating from %lf to %lf\n", tstart, tstop);
    
    int cfl = 0;
    int iters_taken = -1;
@@ -570,7 +568,6 @@ my_Step(braid_App        app,
    /* Take step */
    if (fstop == NULL)
    {
-      printf("*** No forcing from braid ***\n");
       /* Add PDE forcing */
       if (app->man->forcing)
       {
@@ -594,7 +591,6 @@ my_Step(braid_App        app,
    }
    else
    {
-      printf("*** braid forcing ***\n");
       /* Add PDE forcing */
       if (app->man->forcing)
       {
@@ -620,19 +616,18 @@ my_Step(braid_App        app,
       else
          bstop = fstop->x;
    }
-   index = ((tstop - app->man->tstart) / (app->man->dt)) + .5;
-   /*HYPRE_SStructVectorGetObject( u->x, (void **) &stmp );
-   hypre_sprintf(filename, "ux.%02d", index);
-   hypre_StructVectorPrint(filename, stmp, 0);*/
-   if (ustop == NULL)
-      printf("WARNING: ustop = NULL!!!");
+
+   /* check if we are using shell (if no shell, braid will set ustop = u) */
    if (ustop->x == NULL)
-      printf("WARNING: ustop->x = NULL!!!");
-   HYPRE_SStructVectorGetObject( ustop->x, (void **) &stmp );
-   hypre_sprintf(filename, "ustopx.%02d", index);
-   hypre_StructVectorPrint(filename, stmp, 0);
-   printf("my_Step(): calling take_step2() for (%lf, %lf)...\n", tstart, tstop);
-   take_step2(app->man, ustop->x, bstop, u->x, tstart, tstop, &iters_taken);
+   {
+      //printf("ustop->x = NULL => use u for ustop\n");
+      take_step2(app->man, u->x, bstop, u->x, tstart, tstop, &iters_taken);
+   }
+   else
+   {
+      //printf("use ustop\n");
+      take_step2(app->man, ustop->x, bstop, u->x, tstart, tstop, &iters_taken);
+   }
 
    /* Go back to the user's original choice of explicit */
    app->man->explicit = user_explicit;
@@ -641,10 +636,13 @@ my_Step(braid_App        app,
    app->runtime_max_iter[A_idx] = max_i( (app->runtime_max_iter[A_idx]),
                                             iters_taken);
    
-   /* Copy PDE forcing */
-   HYPRE_SStructVectorGetObject( ustop->b, (void **) &sbstop );
-   HYPRE_SStructVectorGetObject( u->b, (void **) &sg );
-   HYPRE_StructVectorCopy(sbstop, sg);
+   /* Copy PDE forcing since u is now u_i */
+   if (app->man->forcing)
+   {
+      HYPRE_SStructVectorGetObject( ustop->b, (void **) &sbstop );
+      HYPRE_SStructVectorGetObject( u->b, (void **) &sg );
+      HYPRE_StructVectorCopy(sbstop, sg);
+   }
 
    
    /* Tell XBraid no refinement */
@@ -759,8 +757,6 @@ my_Init(braid_App     app,
         double        t,
         braid_Vector *u_ptr)
 {
-   printf("************ my_Init(%lf) ****************\n", t);
-   
    /* Initialize vector and store the spatial index, here it's level 0 */
    my_Vector * u = (my_Vector *) malloc( sizeof(my_Vector) );
    u->spatial_disc_idx = 0; 
@@ -801,7 +797,6 @@ my_InitShell(braid_App     app,
              double        t,
              braid_Vector *u_ptr)
 {
-   printf("************ my_InitShell(%lf) ****************\n", t);
    /* Initialize vector and store the spatial index, here it's level 0 */
    my_Vector * u = (my_Vector *) malloc( sizeof(my_Vector) );
    u->spatial_disc_idx = 0;
@@ -929,7 +924,8 @@ int
 my_Free(braid_App    app,
         braid_Vector u)
 {
-   HYPRE_SStructVectorDestroy( u->x );
+   if (u->x != NULL)
+      HYPRE_SStructVectorDestroy( u->x );
    if (app->man->forcing)
       HYPRE_SStructVectorDestroy( u->b );
    free( u );
@@ -938,15 +934,15 @@ my_Free(braid_App    app,
 }
 
 /* --------------------------------------------------------------------
- * Destroy shell of a vector object.
+ * Destroy all but shell of a vector object.
  * -------------------------------------------------------------------- */
 int
 my_FreeShell(braid_App    app,
              braid_Vector u)
 {
-   if (app->man->forcing)
-      HYPRE_SStructVectorDestroy( u->b );
-   free( u );
+   if (u->x != NULL)
+      HYPRE_SStructVectorDestroy( u->x );
+   u->x = NULL;
    
    return 0;
 }
@@ -2319,9 +2315,10 @@ my_RefineHelper(braid_App              app,
    hypre_CommHandle      *comm_handle;
    hypre_CommPkg         *comm_pkg;
    int                   *num_ghost;
+   HYPRE_StructVector    sb, sbprev;
    
-   /*double     tstart;
-   braid_CoarsenRefStatusGetT(status, &tstart); */
+   double     tstart;
+   braid_CoarsenRefStatusGetT(status, &tstart);
    
    /* Determine current local spatial grid size.  Note that subtracting one from a 
     * spatial discretization index will give you the index for the next finer grid. */
@@ -2536,9 +2533,24 @@ my_RefineHelper(braid_App              app,
    {   HYPRE_SStructVectorSetBoxValues( fu->x, 0, filower,
                                     fiupper, 0, fvaluesplus ); }
    HYPRE_SStructVectorAssemble( fu->x );
-   fu->spatial_disc_idx = fspatial_disc_idx; 
-       
-   if( (fiupper[0] >= filower[0]) && (fiupper[1] >= filower[1])) 
+   fu->spatial_disc_idx = fspatial_disc_idx;
+   if (app->man->forcing)
+   {
+      /* check if we have computed the PDE forcing yet */
+      if ((*fu_ptr)->b != NULL)
+         set_forcing(app->man, &(fu->b), tstart);
+      else
+      {
+         initialize_vector(app->man, &(fu->b));
+         HYPRE_SStructVectorGetObject( (*fu_ptr)->b, (void **) &sbprev );
+         HYPRE_SStructVectorGetObject( fu->b, (void **) &sb );
+         HYPRE_StructVectorCopy(sbprev, sb);
+      }
+   }
+   else
+      fu->b = NULL;
+   
+   if( (fiupper[0] >= filower[0]) && (fiupper[1] >= filower[1]))
    {   free(fvaluesplus); } 
 
    /* Set return value */
@@ -2728,6 +2740,7 @@ my_CoarsenBilinearHelper(braid_App              app,
    hypre_CommHandle      *comm_handle;
    hypre_CommPkg         *comm_pkg;
    int                   *num_ghost;
+   HYPRE_StructVector     sb, sbprev;
 
    braid_CoarsenRefStatusGetT(status, &tstart);
    cu = (my_Vector *) malloc(sizeof(my_Vector));
@@ -2888,7 +2901,22 @@ my_CoarsenBilinearHelper(braid_App              app,
    } /* End-if for the non-empty c-level box */
    
    HYPRE_SStructVectorAssemble( cu->x );
-     
+   
+   if (app->man->forcing)
+   {
+      /* check if we have computed the PDE forcing yet */
+      if ((*cu_ptr)->b != NULL)
+         set_forcing(app->man, &(cu->b), tstart);
+      else
+      {
+         initialize_vector(app->man, &(cu->b));
+         HYPRE_SStructVectorGetObject( (*cu_ptr)->b, (void **) &sbprev );
+         HYPRE_SStructVectorGetObject( cu->b, (void **) &sb );
+         HYPRE_StructVectorCopy(sbprev, sb);
+      }
+   }
+   else
+      cu->b = NULL;
 
    /* Unless multiple coarsenings/refinements happen between levels, then 
     * the spatial_disc_idx just progresses by +/- 1*/   
@@ -3012,9 +3040,14 @@ my_CoarsenInjection(braid_App              app,
 
    int        cilower[2], ciupper[2];
    double     coarsen_factor;
-   int        cnlx, cnly, ncoarsen, coarsen_factor_int, level;
+   int        cnlx, cnly, ncoarsen, coarsen_factor_int, level, iter;
    double     cdt, fdt, scoarsenCFL;
    double     tstart, f_tstop, f_tprior, c_tstop, c_tprior;
+   
+   HYPRE_StructVector sfb, scb;
+   
+   /* Get current XBraid iteration */
+   braid_CoarsenRefStatusGetIter(status, &iter);
 
    /* Get Coarse and fine time step sizes */
    braid_CoarsenRefStatusGetT(status, &tstart);
@@ -3106,6 +3139,24 @@ my_CoarsenInjection(braid_App              app,
    
    free( fvalues );
    free( cvalues );
+   
+   /* Copy shell vector
+    * In the first braid iteration, we need to compute the PDE forcing,
+    * otherwise copy from the previous iteration. */
+   if (app->man->forcing)
+   {
+      if (iter == 0)
+         set_forcing(app->man, &(cu->b), tstart);
+      else
+      {
+         initialize_vector(app->man, &(cu->b));
+         HYPRE_SStructVectorGetObject( fu->b, (void **) &sfb );
+         HYPRE_SStructVectorGetObject( cu->b, (void **) &scb );
+         HYPRE_StructVectorCopy(sfb, scb);
+      }
+   }
+   else
+      cu->b = NULL;
 
    /* Store spatial_disc_idx */
    cu->spatial_disc_idx = spatial_disc_idx;
