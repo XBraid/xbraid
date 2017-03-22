@@ -114,7 +114,7 @@
 
 #define DEBUG 0
 
-#define PFMG_COARSENING 1
+#define PFMG_COARSENING 0
 #define DEBUG_PFMG_COARSENING 0
 
 #include <stdlib.h>
@@ -129,6 +129,8 @@
 #include "braid_test.h"
 
 #include "../examples/ex-03-lib.c"
+
+int debug=0;
 
 #define hypre_PFMGSetCIndex(cdir, cindex)       \
 {                                            \
@@ -1183,6 +1185,8 @@ my_BufUnpack(braid_App           app,
       HYPRE_SStructVectorSetBoxValues( u->b, 0, ilower, iupper, 0, &(dbuffer[nlx*nly+1]) );
       HYPRE_SStructVectorAssemble( u->b );
    }
+   else
+     u->b = NULL;
 
    *u_ptr = u;
 
@@ -2534,10 +2538,11 @@ my_RefineHelper(braid_App              app,
                                     fiupper, 0, fvaluesplus ); }
    HYPRE_SStructVectorAssemble( fu->x );
    fu->spatial_disc_idx = fspatial_disc_idx;
+   /*
    if (app->man->forcing)
    {
-      /* check if we have computed the PDE forcing yet */
-      if ((*fu_ptr)->b != NULL)
+      // check if we have computed the PDE forcing yet
+      if ((*fu_ptr)->b == NULL)
          set_forcing(app->man, &(fu->b), tstart);
       else
       {
@@ -2549,7 +2554,9 @@ my_RefineHelper(braid_App              app,
    }
    else
       fu->b = NULL;
-   
+   */
+      fu->b = NULL;
+
    if( (fiupper[0] >= filower[0]) && (fiupper[1] >= filower[1]))
    {   free(fvaluesplus); } 
 
@@ -2727,6 +2734,7 @@ my_CoarsenBilinearHelper(braid_App              app,
    int        fnly = (app->spatial_lookup_table[fspatial_disc_idx]).nly;
    int        fnx  = (app->spatial_lookup_table[fspatial_disc_idx]).nx;
    int        fny  = (app->spatial_lookup_table[fspatial_disc_idx]).ny;
+   int        iter,level;
 
    int        cilower[2], ciupper[2];
    int        cnlx, cnly;
@@ -2743,6 +2751,8 @@ my_CoarsenBilinearHelper(braid_App              app,
    HYPRE_StructVector     sb, sbprev;
 
    braid_CoarsenRefStatusGetT(status, &tstart);
+   braid_CoarsenRefStatusGetIter(status, &iter);
+   braid_CoarsenRefStatusGetLevel(status, &level);
    cu = (my_Vector *) malloc(sizeof(my_Vector));
    
    filower[0]    = (app->spatial_lookup_table[fspatial_disc_idx]).ilower[0];
@@ -2905,14 +2915,18 @@ my_CoarsenBilinearHelper(braid_App              app,
    if (app->man->forcing)
    {
       /* check if we have computed the PDE forcing yet */
-      if ((*cu_ptr)->b != NULL)
-         set_forcing(app->man, &(cu->b), tstart);
+      if (*cu_ptr == NULL || iter == 0)
+	{
+	  printf("## DEBUG = %i %i %i\n",debug,iter, level);
+	  debug++;
+	  set_forcing(app->man, &(cu->b), tstart);
+	}
       else
       {
-         initialize_vector(app->man, &(cu->b));
-         HYPRE_SStructVectorGetObject( (*cu_ptr)->b, (void **) &sbprev );
-         HYPRE_SStructVectorGetObject( cu->b, (void **) &sb );
-         HYPRE_StructVectorCopy(sbprev, sb);
+	initialize_vector(app->man, &(cu->b));
+	HYPRE_SStructVectorGetObject( (*cu_ptr)->b, (void **) &sbprev );
+	HYPRE_SStructVectorGetObject( cu->b, (void **) &sb );
+	HYPRE_StructVectorCopy(sbprev, sb);
       }
    }
    else
