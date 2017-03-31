@@ -60,17 +60,17 @@
 # Begin Test 12  -- begin 3-level Braid with sequential time stepping as initial guess
   
   Discretization error at final time:  2.9214e-02
-  residual norm         = 1.275047e-05
+  residual norm         = 0.000000e+00
 
 # Begin Test 13
   
   Discretization error at final time:  2.9214e-02
-  residual norm         = 1.275047e-05
+  residual norm         = 0.000000e+00
 
 # Begin Test 14
   
   Discretization error at final time:  2.9214e-02
-  residual norm         = 1.275047e-05
+  residual norm         = 0.000000e+00
 
 # Begin Test 15  -- begin 3-level Braid with residual option
 

@@ -114,6 +114,7 @@ typedef struct _braid_App_struct {
    HYPRE_SStructVector     e;                /* temporary vector used for error computations */
    int                     nA;               /* number of discr. matrices that have been created */
    int                     max_nA;           /* max nA value allowed */
+   int                     max_rfactor;      /* limit on the refinement factor */
    HYPRE_SStructMatrix    *A;                /* nA sized array of discr. matrices (one per time level) */
    double                 *dt_A;             /* nA sized array of time step sizes for each  matrix  */
    HYPRE_StructSolver     *solver;           /* nA sized array of solvers (one per time level) */
@@ -189,6 +190,11 @@ my_Step(braid_App        app,
 
    /* Set up a new matrix */
    if( A_idx == -1.0 ){
+      if (i>=app->max_nA)
+      {
+         printf("Not enough memory allocated for the matrices\n");
+         abort();
+      }
       A_idx = i;
       app->nA++;
       app->dt_A[A_idx] = tstop-tstart;
@@ -250,6 +256,8 @@ my_Step(braid_App        app,
          }
          index = ((tstop - gtstart) / (gtstop - gtstart))*gnt + 0.1;
          rfactor = ( (int)((7919*index*index)/71) )%8 + 1;
+         if (app->max_rfactor>0)
+            rfactor = (rfactor > app->max_rfactor) ? app->max_rfactor : rfactor;
          braid_StepStatusSetRFactor(status, rfactor);
       }
    }
@@ -279,6 +287,8 @@ my_Step(braid_App        app,
             case 7: rfactor = 1; break;
             case 8: rfactor = 1; break;
          }
+         if (app->max_rfactor>0)
+            rfactor = (rfactor > app->max_rfactor) ? app->max_rfactor : rfactor;
          braid_StepStatusSetRFactor(status, rfactor);
       }
    }
@@ -629,6 +639,7 @@ int main (int argc, char *argv[])
    /* Other parameters specific to parallel in time */
    app->use_rand       = 1;               /* If 1, use a random initial guess, else use a zero initial guess */
    app->refine         = 0;               /* If 1, refine temporal grid */
+   app->max_rfactor    = -1;              /* No limit on the refinement factors */
    app->pt             = 1;               /* Number of processors in time */
    app->max_iter_x     = (int*) malloc( 2*sizeof(int) );
    app->max_iter_x[0]  = 50;              /* Maximum number of PFMG iters (the spatial solver from hypre) on XBraid level 0 */
@@ -724,6 +735,10 @@ int main (int argc, char *argv[])
          arg_index++;
          app->refine = 1;
       }
+      else if( strcmp(argv[arg_index], "-max_rfactor") == 0 ){
+          arg_index++;
+          app->max_rfactor = atoi(argv[arg_index++]);
+      }
       else if ( strcmp(argv[arg_index], "-res") == 0 ){
          arg_index++;
          res = 1;
@@ -799,6 +814,7 @@ int main (int argc, char *argv[])
       printf("  -pfmg_tol  <tol_x>                 : PFMG halting tolerance (default: 1e-09 )\n"); 
       printf("  -fmg                               : use FMG cycling\n");
       printf("  -refine                            : refine in time\n");
+      printf("  -max_rfactor <max>                 : limit on the refinement factor (default: -1)\n");
       printf("  -res                               : use my residual\n");
       printf("  -storage <level>                   : full storage on levels >= level\n");
       printf("  -forcing                           : consider non-zero RHS b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))\n");
@@ -882,7 +898,7 @@ int main (int argc, char *argv[])
 
    /* Allocate items of app, especially A and dt_A which are arrays of discretization 
     * matrices which one matrix and corresponding dt value for each XBraid level */
-   max_nA = 100*max_levels; /* use generous value to keep code simple */
+   max_nA = 512*max_levels; /* use generous value to keep code simple */
    initialize_vector(app->man, &(app->e));
    app->A = (HYPRE_SStructMatrix*) malloc( max_nA*sizeof(HYPRE_SStructMatrix));
    app->dt_A = (double*) malloc( max_nA*sizeof(double) );
@@ -999,10 +1015,13 @@ int main (int argc, char *argv[])
          printf("  CFL ratio 2dt/(dx^2 + dy^2):   %1.2e\n\n", 
                 2*(app->man->dt) / ((app->man->dx)*(app->man->dx)+(app->man->dy)*(app->man->dy)));
          printf("  Run time:                      %1.2e\n", maxtime);
-         printf("\n   Level   Max PFMG Iters\n");
-         printf("  -----------------------\n");
-         for(i = 0; i < nA_max; i++){
-            printf("     %d           %d\n", i, runtime_max_iter_global[i]);
+         if (!app->refine)
+         {
+            printf("\n   Level   Max PFMG Iters\n");
+            printf("  -----------------------\n");
+            for(i = 0; i < nA_max; i++){
+               printf("     %d           %d\n", i, runtime_max_iter_global[i]);
+            }
          }
          printf("\n");
       }

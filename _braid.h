@@ -272,6 +272,12 @@ extern FILE *_braid_printfile;
 #define _braid_NextCPoint(index, cfactor) \
 ( ((braid_Int)((index)+(cfactor)-1)/(cfactor))*(cfactor) )
 
+/**
+ * Returns the index for the previous C-point to the left of index (inclusive)
+ **/
+#define _braid_PriorCPoint(index, cfactor) \
+( ((braid_Int)(index)/(cfactor))*(cfactor) )
+
 /*--------------------------------------------------------------------------
  * Prototypes
  *--------------------------------------------------------------------------*/
