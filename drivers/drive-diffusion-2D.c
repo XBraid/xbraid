@@ -313,12 +313,14 @@ my_Step(braid_App        app,
    double tstop;              /* evolve to this time*/
    HYPRE_SStructVector  bstop;
    double accuracy, cfl_value;
-   int i, A_idx, user_explicit, level;
+   int user_explicit, level;
    int ilower[2], iupper[2], nlx, nly, nx, ny;
    double dx, dy;
    int print_level      = app->print_level;
    double temp_double;
    int temp_int;
+   int cfl = 0;
+   int iters_taken = -1;
    
    /* This debug output is mostly for regression testing */
    if(print_level == 2)
@@ -361,27 +363,13 @@ my_Step(braid_App        app,
       accuracy = app->tol_x[0];
    }
 
-   int cfl = 0;
-   int iters_taken = -1;
+   /* 
+    * Now, set up the discretization matrix.  Use the XBraid level to index
+    * into the matrix lookup table 
+    * */
 
-   /* -----------------------------------------------------------------
-    * Set up the discretization matrix.
-    * If no variable coefficients, check matrix lookup table if matrix 
-    * has already been created for time step size tstop-tstart and the 
-    * mesh size dx and dy.
-    * ----------------------------------------------------------------- */
-   A_idx = -1.0;
-   for( i = 0; i < app->nA; i++ ){
-      if( (fabs( app->dt_A[i] - (tstop-tstart) )/(tstop-tstart) < 1e-10) &&
-          (fabs( app->dx_A[i] - dx )/dx < 1e-10) &&
-          (fabs( app->dy_A[i] - dy )/dy < 1e-10) )
-      { 
-         A_idx = i;
-         break;
-      }
-   }
-
-   /* Check CFL condition, always switch to implicit time stepping if you violate the CFL */
+   /* First: check CFL condition, always switch to implicit time stepping if
+    * you violate the CFL Note: CFL = K*(dt/dx^2 + dt/dy^2) */
    cfl_value = (app->man->K)*( (tstop-tstart)/((dx)*(dx)) + (tstop-tstart)/((dy)*(dy)) );
    if( cfl_value < 0.5 )
    {
@@ -400,16 +388,15 @@ my_Step(braid_App        app,
    /* We need to "trick" the user's manager with the new dt */
    app->man->dt = tstop - tstart;
 
-   if( A_idx == -1.0 ){
-      A_idx = i;
+   if( app->dt_A[level] == -1.0 ){
       app->nA++;
       
       /* No matrix for time step tstop-tstart exists. 
        * Add entry to matrix lookup table. */   
       
-      app->dt_A[A_idx] = tstop-tstart;
-      app->dy_A[A_idx] = dx;
-      app->dx_A[A_idx] = dy;
+      app->dt_A[level] = tstop-tstart;
+      app->dy_A[level] = dx;
+      app->dx_A[level] = dy;
 
      /* We need to "trick" the user's data structure into mimicking this
       * discretization level */
@@ -419,21 +406,21 @@ my_Step(braid_App        app,
        * automatically use implicit */
      if( app->man->explicit && cfl ){
          setUpExplicitMatrix( app->man );
-         app->A[A_idx] = app->man->A;
+         app->A[level] = app->man->A;
          
          /* Store that we used explicit on this level */
-         (app->runtime_scoarsen_info)[ (5*i) ]    = 1;
+         (app->runtime_scoarsen_info)[ (5*level) ]    = 1;
       }
       else{
          setUpImplicitMatrix( app->man );
-         app->A[A_idx] = app->man->A;
+         app->A[level] = app->man->A;
       
          /* Set up the PFMG solver using u->x as dummy vectors. */
          setUpStructSolver( app->man, u->x, u->x );
-         app->solver[A_idx] = app->man->solver;
+         app->solver[level] = app->man->solver;
 
          /* Store that we used implicit on this level */
-         (app->runtime_scoarsen_info)[ (5*i) ]    = 0;   
+         (app->runtime_scoarsen_info)[ (5*level) ]    = 0;   
       }
    } 
 
@@ -446,11 +433,11 @@ my_Step(braid_App        app,
     * -------------------------------------------------------------- */
    
    /* update manager with a few other important data items */
-   app->man->A = app->A[A_idx];
-   app->man->solver = app->solver[A_idx];
+   app->man->A = app->A[level];
+   app->man->solver = app->solver[level];
    
    /* Use level specific max_iter by "tricking" the user's data structure*/
-   if( A_idx == 0 )
+   if( level == 0 )
       app->man->max_iter = app->max_iter_x[0];
    else
       app->man->max_iter = app->max_iter_x[1];
@@ -482,7 +469,7 @@ my_Step(braid_App        app,
    app->man->explicit = user_explicit;
    
    /* Store iterations taken */
-   app->runtime_max_iter[A_idx] = max_i( (app->runtime_max_iter[A_idx]),
+   app->runtime_max_iter[level] = max_i( (app->runtime_max_iter[level]),
                                             iters_taken);
    /* Tell XBraid no refinement */
    braid_StepStatusSetRFactor(status, 1);
@@ -500,10 +487,12 @@ my_Residual(braid_App        app,
 {
    double tstart;             /* current time */
    double tstop;              /* evolve u to this time*/
-   int i, A_idx;
-   int ilower[2], iupper[2], nlx, nly, nx, ny;
+   int ilower[2], iupper[2], nlx, nly, nx, ny, level;
    double dx, dy;
    
+   /* Grab level */
+   braid_StepStatusGetLevel(status, &level);
+
    /* Grab spatial info about u */
    grab_vec_spatial_info(ustop, app->spatial_lookup_table, ilower, iupper, 
                          &nlx, &nly, &nx, &ny, &dx, &dy);
@@ -511,31 +500,21 @@ my_Residual(braid_App        app,
    /* Grab status of current time step */
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
 
-   /* Check matrix lookup table to see if this matrix already exists*/
-   A_idx = -1.0;
-   for( i = 0; i < app->nA; i++ ){
-      if( (fabs( app->dt_A[i] - (tstop-tstart) )/(tstop-tstart) < 1e-10) &&
-          (fabs( app->dx_A[i] - dx )/dx < 1e-10) &&
-          (fabs( app->dy_A[i] - dy )/dy < 1e-10) ) 
-      { 
-         A_idx = i;
-         break;
-      }
-   }
-   
    /* Update manager relative to this vector */
    update_manager_from_vector(app->man, ustop, app->spatial_lookup_table);
    
    /* We need to "trick" the user's manager with the new dt */
    app->man->dt = tstop - tstart;
 
-   /* Set up a new matrix */
-   if( A_idx == -1.0 ){
-      A_idx = i;
+   /* 
+    * Now, set up the discretization matrix.  Use the XBraid level to index
+    * into the matrix lookup table 
+    * */
+   if( app->dt_A[level] == -1.0 ){
       app->nA++;
-      app->dt_A[A_idx] = tstop-tstart;
-      app->dx_A[A_idx] = dx;
-      app->dy_A[A_idx] = dy;
+      app->dt_A[level] = tstop-tstart;
+      app->dx_A[level] = dx;
+      app->dy_A[level] = dy;
       
       /* We need to "trick" the user's data structure into mimicking this
       * discretization level */
@@ -543,18 +522,18 @@ my_Residual(braid_App        app,
 
 
       setUpImplicitMatrix( app->man );
-      app->A[A_idx] = app->man->A;
+      app->A[level] = app->man->A;
       
       /* Set up the PFMG solver using r->x as dummy vectors. */
       setUpStructSolver( app->man, r->x, r->x );
-      app->solver[A_idx] = app->man->solver;
+      app->solver[level] = app->man->solver;
 
      /* Store that we used implicit on this level */
-     (app->runtime_scoarsen_info)[ (5*i) ]    = 0;   
+     (app->runtime_scoarsen_info)[ (5*level) ]    = 0;   
    } 
 
    /* Compute residual Ax */
-   app->man->A = app->A[A_idx];
+   app->man->A = app->A[level];
    comp_res(app->man, ustop->x, r->x, tstart, tstop);
 
    return 0;
@@ -879,7 +858,7 @@ double log2( double n )
  * to minimally satisfy the CFL.  This function returns an integer beta, 
  * such that dx and dy must be multipled by 2^beta.   
  *
- * The CFL conditioner checked is:   
+ * The CFL condition checked is:   
  *
  *       K*( dt/dx^2 + dt/dy^2 ) <  scoarsenCFL
  *
@@ -2137,8 +2116,9 @@ int main (int argc, char *argv[])
       printf("  -pgrid  <px py pt>                 : processors in each dimension (default: 1 1 1)\n");
       printf("  -nx  <nx ny>                       : 2D spatial problem size of form 2^k+1, 2^k+1 (default: 17 17)\n");
       printf("  -nt  <n>                           : number of time steps (default: 32)\n"); 
-      printf("  -cfl <cfl>                         : CFL number to run, note that 2*CFL = dt/(dx^2) (default: 0.30)\n"); 
-      printf("                                       CFL < 0.5 for explicit forward Euler\n");
+      printf("  -cfl <cfl>                         : CFL number to run (default: 0.30)\n"); 
+      printf("                                       Note: CFL = K*(dt/dx^2 + dt/dy^2) is used to define dt and t-final\n");
+      printf("                                       Note: CFL < 0.5 for explicit forward Euler\n");
       printf("  -ml  <max_levels>                  : set max number of time levels (default: 15)\n");
       printf("  -skip <skip>                       : boolean, whether to skip all work on first down cycle (default: 1\n");
       printf("  -mc  <min_coarse>                  : set min possible coarse level size (default: 3)\n");
@@ -2199,8 +2179,8 @@ int main (int argc, char *argv[])
       printf("                                     \n");
       printf("                                     Notes: valid CFLs for explicit time stepping are in [0, 0.5],\n");
       printf("                                     \n");
-      printf("                                     Default is n=1 and cfls=0.5.\n");
-      printf("                                     and this option must be used with scoarsen > 0.\n");
+      printf("                                     Default is n=1 and cfls=0.5, for stable explicit time-stepping.\n");
+      printf("                                     This option must be used with scoarsen > 0.\n");
       printf("                                     \n");
       printf("                                     \n");
       printf(" Output related parameters\n");
@@ -2276,9 +2256,12 @@ int main (int argc, char *argv[])
    dx = PI / (nx - 1);
    dy = PI / (ny - 1);
 
-   /* Set time-step size. */
-   dt = K*cfl*( (dx*dx)*(dy*dy) / ((dx*dx)+(dy*dy)) );
-   /* Determine tstop. */
+   /* Set time-step size, noting that the CFL number definition 
+    *     K*(dt/dx^2 + dt/dy^2) = CFL
+    * implies that dt is equal to 
+    *     dt = ( CFL dx^2 dy^2) / ( K(dx^2 + dy^2)) */
+   dt = (cfl*(dx*dx)*(dy*dy)) / (K*((dx*dx)+(dy*dy)));
+   /* Now using dt, compute the final time, tstop value */
    tstop =  tstart + nt*dt;
 
    /* -----------------------------------------------------------------

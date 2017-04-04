@@ -109,10 +109,13 @@ my_Step(braid_App        app,
    LTE = (u->value) - (1. - dt)*v;
    LTE  = (LTE < 0) ? -LTE : LTE;
 
-   int level;
+   int level, nrefine;
    braid_StepStatusGetLevel(status, &level);
-
-   if (level == 0)
+   braid_StepStatusGetNRefine(status, &nrefine);
+   
+   /* XBraid only accepts refinements on level 0, and it's also a good idea to
+    * cap the number of possible refinements (here capped at 8) */ 
+   if ((level == 0) && (nrefine < 8))
    {
       int rf = 1;
       if (app->refine == 1)
@@ -271,7 +274,8 @@ int main (int argc, char *argv[])
    braid_Core    core;
    my_App       *app;
    double        tstart, tstop, tol;
-   int           ntime, rank, limit_rfactor, arg_index, print_usage, refine, output;
+   int           ntime, rank, limit_rfactor, arg_index, print_usage;
+   int           refine, output, storage, fmg;
 
    /* Define time domain: ntime intervals */
    ntime  = 100;
@@ -282,6 +286,8 @@ int main (int argc, char *argv[])
    tol = 1.0e-6;
    refine = 0;
    output = 1;
+   storage = -1;
+   fmg = 0;   
    
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -314,6 +320,14 @@ int main (int argc, char *argv[])
          print_usage = 1;
          break;
       }
+      else if ( strcmp(argv[arg_index], "-storage") == 0 ){
+         arg_index++;
+         storage = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-fmg") == 0 ){
+         arg_index++;
+         fmg = 1;
+      }
       else{
          if(arg_index > 1){
             printf("UNUSED command line paramter %s\n", argv[arg_index]);
@@ -335,6 +349,8 @@ int main (int argc, char *argv[])
       printf("                                     : 1 - arbitrary refinement around t=2.5\n");
       printf("                                     : 2 - refinement based on local truncation error\n");
       printf("  -max_rfactor <lim>                 : limit the refinement factor (default: -1)\n");
+      printf("  -fmg                               : use FMG cycling\n");
+      printf("  -storage <level>                   : full storage on levels >= level\n");
       printf("  -no_output                         : do not save the solution in output files\n");
       printf("  -help                              : print this help and exit\n");
       printf("\n");
@@ -364,6 +380,10 @@ int main (int argc, char *argv[])
    braid_SetAbsTol(core, tol);
    braid_SetCFactor(core, -1, 2);
    braid_SetRefine(core, 1);
+   if (fmg)
+      braid_SetFMG(core);
+   if (storage >= -2)
+      braid_SetStorage(core, storage);
    if (!output)
       braid_SetAccessLevel(core, 0);
    

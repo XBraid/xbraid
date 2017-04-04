@@ -309,27 +309,3 @@
   residual norm         = 3.552895e-04
                          --> 2-norm TemporalNorm 
 
-# Begin Test 63 -- Use Frefine 
-
-  residual norm         = 1.033821e-03
-                         --> 2-norm TemporalNorm 
-# Begin Test 64
-
-  residual norm         = 1.033821e-03
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 65
-
-  residual norm         = 1.033821e-03
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 66
-
-  residual norm         = 1.033821e-03
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 67
-
-  residual norm         = 1.033821e-03
-                         --> 2-norm TemporalNorm 
-

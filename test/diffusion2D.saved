@@ -64,39 +64,21 @@
 
 # Begin Test 8
 
-  Braid: Temporal refinement occurred, 486 time steps
-  Braid: Temporal refinement occurred, 737 time steps
-  Braid: Temporal refinement occurred, 1078 time steps
-  time steps = 1078
-  iterations            = 7
-  number of levels      = 9
+  my_Access() called, iter= 9, level= 0
+  time steps = 256
+  iterations           = 9
+  number of levels     = 8
+ Fine level spatial problem size  : 17 x 17
 
 # Begin Test 9
 
-  Braid: Temporal refinement occurred, 486 time steps
-  Braid: Temporal refinement occurred, 737 time steps
-  Braid: Temporal refinement occurred, 1078 time steps
-  time steps = 1078
-  iterations            = 5
-  number of levels      = 9
+  my_Access() called, iter= 9, level= 0
+  time steps = 256
+  iterations           = 9
+  number of levels     = 8
+ Fine level spatial problem size  : 17 x 17
 
 # Begin Test 10
-
-  my_Access() called, iter= 9, level= 0
-  time steps = 256
-  iterations           = 9
-  number of levels     = 8
- Fine level spatial problem size  : 17 x 17
-
-# Begin Test 11
-
-  my_Access() called, iter= 9, level= 0
-  time steps = 256
-  iterations           = 9
-  number of levels     = 8
- Fine level spatial problem size  : 17 x 17
-
-# Begin Test 12
 
   my_Access() called, iter= 5, level= 0
   time steps = 256
@@ -105,7 +87,7 @@
  Fine level spatial problem size  : 17 x 17
 
 
-# Begin Test 13
+# Begin Test 11
 
   my_Access() called, iter= 24, level= 0
   time steps = 128
@@ -119,7 +101,7 @@
   4   |  expl       3.93e-01    3.93e-01    2.31e-02    3.00e-01
   5   |  expl       7.85e-01    7.85e-01    4.63e-02    1.50e-01
 
-# Begin Test 14
+# Begin Test 12
 
   my_Access() called, iter= 7, level= 0
   time steps = 32
@@ -127,7 +109,7 @@
   number of levels     = 4
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 15
+# Begin Test 13
 
   my_Access() called, iter= 0, level= 0
   my_Access() called, iter= 1, level= 0
@@ -142,7 +124,7 @@
   number of levels     = 4
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 16
+# Begin Test 14
   my_Access() called, iter= 0, level= 0
   my_Access() called, iter= 0, level= 1
   my_Access() called, iter= 0, level= 2
@@ -199,13 +181,13 @@
  Fine level spatial problem size  : 17 x 17
 
 
-# Begin Test 17
+# Begin Test 15
 
   my_Access() called, iter= 7, level= 0
  Fine level spatial problem size  : 17 x 17
 
 
-# Begin Test 18
+# Begin Test 16
  
   my_Access() called, iter= 7, level= 0
   time steps = 32
@@ -213,7 +195,7 @@
   number of levels     = 4
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 19
+# Begin Test 17
  
   braid_GetSpatialAccuracy:  1.00e-02
   braid_StepStatusGetTol:  6.70e-08
@@ -532,7 +514,7 @@
   braid_GetRNorms[4] = 6.69e-11
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 20
+# Begin Test 18
  
   my_Access() called, iter= 7, level= 0
   time steps = 32
@@ -540,7 +522,7 @@
   number of levels     = 4
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 21
+# Begin Test 19
 
 Starting braid_TestInitAccess
    braid_TestInitAccess:   Starting Test 1
@@ -702,7 +684,7 @@ Starting braid_TestBuf
    braid_TestBuf:   free(v)
 Finished braid_TestBuf: all tests passed successfully
 
-# Begin Test 22
+# Begin Test 20
 
   my_Access() called, iter= 1, level= 0
   time steps = 128
@@ -710,7 +692,7 @@ Finished braid_TestBuf: all tests passed successfully
   number of levels     = 1
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 23
+# Begin Test 21
 
   my_Access() called, iter= 8, level= 0
   time steps = 128
@@ -718,7 +700,7 @@ Finished braid_TestBuf: all tests passed successfully
   number of levels     = 2
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 24
+# Begin Test 22
 
   my_Access() called, iter= 8, level= 0
   time steps = 128
@@ -726,7 +708,7 @@ Finished braid_TestBuf: all tests passed successfully
   number of levels     = 8
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 25
+# Begin Test 23
 
   my_Access() called, iter= 8, level= 0
   time steps = 128

@@ -48,31 +48,13 @@
 
 # Begin Test 6
 
-  Braid: Temporal refinement occurred, 486 time steps
-  Braid: Temporal refinement occurred, 737 time steps
-  Braid: Temporal refinement occurred, 1078 time steps
-  time steps = 1078
-  iterations            = 7
-  number of levels      = 9
-
-# Begin Test 7
-
-  Braid: Temporal refinement occurred, 486 time steps
-  Braid: Temporal refinement occurred, 737 time steps
-  Braid: Temporal refinement occurred, 1078 time steps
-  time steps = 1078
-  iterations            = 5
-  number of levels      = 9
-
-# Begin Test 8
-
   my_Access() called, iter= 9, level= 0
   time steps = 256
   iterations            = 9
   number of levels      = 8
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 9
+# Begin Test 7
 
   my_Access() called, iter= 9, level= 0
   time steps = 256
@@ -80,7 +62,7 @@
   number of levels      = 4
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 10 -- Begin storage = 0
+# Begin Test 8 -- Begin storage = 0
 
   my_Access() called, iter= 9, level= 0
   time steps = 256
@@ -88,7 +70,7 @@
   number of levels      = 7
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 11
+# Begin Test 9
 
   my_Access() called, iter= 8, level= 0
   time steps = 256
@@ -96,7 +78,7 @@
   number of levels      = 7
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 12
+# Begin Test 10
 
   my_Access() called, iter= 7, level= 0
   time steps = 256
@@ -104,7 +86,7 @@
   number of levels      = 7
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 13
+# Begin Test 11
 
   my_Access() called, iter= 4, level= 0
   time steps = 256
@@ -112,12 +94,28 @@
   number of levels      = 7
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 14
+# Begin Test 12
 
   my_Access() called, iter= 11, level= 0
   time steps = 256
   iterations            = 11
   number of levels      = 7
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 13
+
+  my_Access() called, iter= 9, level= 0
+  time steps = 256
+  iterations            = 9
+  number of levels      = 7
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 14
+
+  my_Access() called, iter= 9, level= 0
+  time steps = 256
+  iterations            = 9
+  number of levels      = 8
  Fine level spatial problem size  : 17 x 17
 
 # Begin Test 15
@@ -125,44 +123,10 @@
   my_Access() called, iter= 9, level= 0
   time steps = 256
   iterations            = 9
-  number of levels      = 7
- Fine level spatial problem size  : 17 x 17
-
-# Begin Test 16
-
-  Braid: Temporal refinement occurred, 486 time steps
-  Braid: Temporal refinement occurred, 737 time steps
-  Braid: Temporal refinement occurred, 1078 time steps
-  time steps = 1078
-  iterations            = 7
-  number of levels      = 9
-
-# Begin Test 17
-
-  Braid: Temporal refinement occurred, 486 time steps
-  Braid: Temporal refinement occurred, 737 time steps
-  Braid: Temporal refinement occurred, 1078 time steps
-  time steps = 1078
-  iterations            = 5
-  number of levels      = 9
-
-# Begin Test 18
-
-  my_Access() called, iter= 9, level= 0
-  time steps = 256
-  iterations            = 9
-  number of levels      = 8
- Fine level spatial problem size  : 17 x 17
-
-# Begin Test 19
-
-  my_Access() called, iter= 9, level= 0
-  time steps = 256
-  iterations            = 9
   number of levels      = 4
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 20 -- Begin storage = 1 tests
+# Begin Test 16 -- Begin storage = 1 tests
 
   my_Access() called, iter= 9, level= 0
   time steps = 256
@@ -170,7 +134,7 @@
   number of levels      = 7
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 21
+# Begin Test 17
 
   my_Access() called, iter= 8, level= 0
   time steps = 256
@@ -178,7 +142,7 @@
   number of levels      = 7
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 22
+# Begin Test 18
 
   my_Access() called, iter= 7, level= 0
   time steps = 256
@@ -186,7 +150,7 @@
   number of levels      = 7
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 23
+# Begin Test 19
 
   my_Access() called, iter= 4, level= 0
   time steps = 256
@@ -194,7 +158,7 @@
   number of levels      = 7
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 24
+# Begin Test 20
 
   my_Access() called, iter= 11, level= 0
   time steps = 256
@@ -202,7 +166,7 @@
   number of levels      = 7
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 25
+# Begin Test 21
 
   my_Access() called, iter= 9, level= 0
   time steps = 256
@@ -210,25 +174,7 @@
   number of levels      = 7
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 26
-
-  Braid: Temporal refinement occurred, 486 time steps
-  Braid: Temporal refinement occurred, 737 time steps
-  Braid: Temporal refinement occurred, 1078 time steps
-  time steps = 1078
-  iterations            = 7
-  number of levels      = 9
-
-# Begin Test 27
-
-  Braid: Temporal refinement occurred, 486 time steps
-  Braid: Temporal refinement occurred, 737 time steps
-  Braid: Temporal refinement occurred, 1078 time steps
-  time steps = 1078
-  iterations            = 5
-  number of levels      = 9
-
-# Begin Test 28
+# Begin Test 22
 
   my_Access() called, iter= 9, level= 0
   time steps = 256
@@ -236,65 +182,11 @@
   number of levels      = 8
  Fine level spatial problem size  : 17 x 17
 
-# Begin Test 29
+# Begin Test 23
 
   my_Access() called, iter= 9, level= 0
   time steps = 256
   iterations            = 9
   number of levels      = 4
  Fine level spatial problem size  : 17 x 17
-
-# Begin Test 30
-
-  Braid: Temporal refinement occurred, 674 time steps
-  Braid: Temporal refinement occurred, 1296 time steps
-  Braid: Temporal refinement occurred, 2452 time steps
-  time steps = 2452
-  iterations            = 7
-  number of levels      = 10
-
-# Begin Test 31
-
-  Braid: Temporal refinement occurred, 827 time steps
-  Braid: Temporal refinement occurred, 1814 time steps
-  Braid: Temporal refinement occurred, 3958 time steps
-  time steps = 3958
-  iterations            = 7
-  number of levels      = 11
-
-# Begin Test 32
-
-  Braid: Temporal refinement occurred, 952 time steps
-  Braid: Temporal refinement occurred, 2433 time steps
-  Braid: Temporal refinement occurred, 5901 time steps
-  time steps = 5901
-  iterations            = 7
-  number of levels      = 11
-
-# Begin Test 33
-
-  Braid: Temporal refinement occurred, 1039 time steps
-  Braid: Temporal refinement occurred, 2773 time steps
-  Braid: Temporal refinement occurred, 7030 time steps
-  time steps = 7030
-  iterations            = 7
-  number of levels      = 12
-
-# Begin Test 34
-
-  Braid: Temporal refinement occurred, 1092 time steps
-  Braid: Temporal refinement occurred, 3071 time steps
-  Braid: Temporal refinement occurred, 8330 time steps
-  time steps = 8330
-  iterations            = 8
-  number of levels      = 12
-
-# Begin Test 35
-
-  Braid: Temporal refinement occurred, 1113 time steps
-  Braid: Temporal refinement occurred, 3157 time steps
-  Braid: Temporal refinement occurred, 8734 time steps
-  time steps = 8734
-  iterations            = 8
-  number of levels      = 12
 

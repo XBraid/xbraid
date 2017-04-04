@@ -101,7 +101,20 @@ TESTS=( "$RunString -np 1 $example_dir/ex-01" \
         "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 1" \
         "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 2" \
         "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 10" \
-        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor -1" )
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor -1" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 1 -storage 0" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 2 -storage 0" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 10 -storage 0" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor -1 -storage 0" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 1 -fmg" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 2 -fmg" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 10 -fmg" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor -1 -fmg" \
+        "$RunString -np 1 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 4" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 4" \
+        "$RunString -np 3 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 4" \
+        "$RunString -np 4 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 4" \
+        "$RunString -np 5 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 4" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 

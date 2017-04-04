@@ -114,11 +114,9 @@ typedef struct _braid_App_struct {
    HYPRE_SStructVector     e;                /* temporary vector used for error computations */
    int                     nA;               /* number of discr. matrices that have been created */
    int                     max_nA;           /* max nA value allowed */
-   int                     max_rfactor;      /* limit on the refinement factor */
    HYPRE_SStructMatrix    *A;                /* nA sized array of discr. matrices (one per time level) */
    double                 *dt_A;             /* nA sized array of time step sizes for each  matrix  */
    HYPRE_StructSolver     *solver;           /* nA sized array of solvers (one per time level) */
-   int                     refine;           /* if 1, refine temporal grid */
    int                     use_rand;         /* binary, use random initial guess (1) or zero initial guess (0) */
    int                    *runtime_max_iter; /* runtime info for the max number of spatial solve iterations at each level */
    int                    *max_iter_x;       /* length 2 array of expensive and cheap max PFMG iters for spatial solves*/
@@ -169,48 +167,36 @@ my_Step(braid_App        app,
    double tstart;             /* current time */
    double tstop;              /* evolve u to this time*/
    HYPRE_SStructVector  bstop;
-   int i, A_idx, level;
+   int level;
    int iters_taken = -1;
    
    /* Grab status of current time step */
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
    braid_StepStatusGetLevel(status, &level);
 
-   /* Check matrix lookup table to see if this matrix already exists*/
-   A_idx = -1.0;
-   for( i = 0; i < app->nA; i++ ){
-      if( fabs( app->dt_A[i] - (tstop-tstart) )/(tstop-tstart) < 1e-10) { 
-         A_idx = i;
-         break;
-      }
-   }
+   /* Now, set up the discretization matrix.  Use the XBraid level to index
+    * into the matrix lookup table */
 
    /* We need to "trick" the user's manager with the new dt */
    app->man->dt = tstop - tstart;
 
    /* Set up a new matrix */
-   if( A_idx == -1.0 ){
-      if (i>=app->max_nA)
-      {
-         printf("Not enough memory allocated for the matrices\n");
-         abort();
-      }
-      A_idx = i;
+   if( app->dt_A[level] == -1.0 ){
       app->nA++;
-      app->dt_A[A_idx] = tstop-tstart;
+      app->dt_A[level] = tstop-tstart;
 
       setUpImplicitMatrix( app->man );
-      app->A[A_idx] = app->man->A;
+      app->A[level] = app->man->A;
       
       /* Set up the PFMG solver using u->x as dummy vectors. */
       setUpStructSolver( app->man, u->x, u->x );
-      app->solver[A_idx] = app->man->solver;
+      app->solver[level] = app->man->solver;
    } 
 
    /* Time integration to next time point: Solve the system Ax = b.
     * First, "trick" the user's manager with the right matrix and solver */ 
-   app->man->A = app->A[A_idx];
-   app->man->solver = app->solver[A_idx];
+   app->man->A = app->A[level];
+   app->man->solver = app->solver[level];
 
    /* Use level specific max_iter */
    if( level == 0 )
@@ -230,69 +216,10 @@ my_Step(braid_App        app,
    take_step(app->man, ustop->x, bstop, u->x, tstart, tstop, &iters_taken);
 
    /* Store iterations taken */
-   app->runtime_max_iter[A_idx] = max_i( (app->runtime_max_iter[A_idx]), iters_taken);
+   app->runtime_max_iter[level] = max_i( (app->runtime_max_iter[level]), iters_taken);
 
    /* Tell XBraid no refinement */
    braid_StepStatusSetRFactor(status, 1);
-
-#if 1
-   /* New code to test 3 levels of temporal refinement of variable size.
-    * Refinement factors are determined by a somewhat arbitrary function that
-    * produces rfactors between 1 and 8. */
-   if (app->refine)
-   {
-      int nrefine, gnt, index, rfactor;
-      double gtstart, gtstop;
-      braid_StepStatusGetNRefine(status, &nrefine);
-      if ((level == 0) && (nrefine < 3))
-      {
-         gtstart = app->man->tstart;
-         gtstop  = app->man->tstop;
-         braid_StepStatusGetNTPoints(status, &gnt);
-         switch (nrefine) /* Assume average refinement of 4 each time */
-         {
-            case 2: gnt *= 4;
-            case 1: gnt *= 4;
-         }
-         index = ((tstop - gtstart) / (gtstop - gtstart))*gnt + 0.1;
-         rfactor = ( (int)((7919*index*index)/71) )%8 + 1;
-         if (app->max_rfactor>0)
-            rfactor = (rfactor > app->max_rfactor) ? app->max_rfactor : rfactor;
-         braid_StepStatusSetRFactor(status, rfactor);
-      }
-   }
-#endif
-
-#if 0 /* RDF HACKED TEST */
-   /* New code to test FRefine functionality */
-   if (app->refine)
-   {
-      int nrefine, gnt, index, rfactor;
-      double gtstart, gtstop;
-      braid_StepStatusGetNRefine(status, &nrefine);
-      if ((level == 0) && (nrefine < 1))
-      {
-         gtstart = app->man->tstart;
-         gtstop  = app->man->tstop;
-         braid_StepStatusGetNTPoints(status, &gnt);
-         index = ((tstop - gtstart) / (gtstop - gtstart))*gnt + 0.1;
-         switch (index)
-         {
-            case 1: rfactor = 1; break;
-            case 2: rfactor = 3; break;
-            case 3: rfactor = 6; break;
-            case 4: rfactor = 4; break;
-            case 5: rfactor = 6; break;
-            case 6: rfactor = 2; break;
-            case 7: rfactor = 1; break;
-            case 8: rfactor = 1; break;
-         }
-         if (app->max_rfactor>0)
-            rfactor = (rfactor > app->max_rfactor) ? app->max_rfactor : rfactor;
-         braid_StepStatusSetRFactor(status, rfactor);
-      }
-   }
-#endif
 
    return 0;
 }
@@ -307,39 +234,33 @@ my_Residual(braid_App        app,
 {
    double tstart;             /* current time */
    double tstop;              /* evolve u to this time*/
-   int i, A_idx;
+   int level;
    
    /* Grab status of current time step */
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
 
-   /* Check matrix lookup table to see if this matrix already exists*/
-   A_idx = -1.0;
-   for( i = 0; i < app->nA; i++ ){
-      if( fabs( app->dt_A[i] - (tstop-tstart) )/(tstop-tstart) < 1e-10) { 
-         A_idx = i;
-         break;
-      }
-   }
+   /* Grab level */
+   braid_StepStatusGetLevel(status, &level);
 
    /* We need to "trick" the user's manager with the new dt */
    app->man->dt = tstop - tstart;
 
-   /* Set up a new matrix */
-   if( A_idx == -1.0 ){
-      A_idx = i;
+   /* Now, set up the discretization matrix.  Use the XBraid level to index
+    * into the matrix lookup table */
+   if( app->dt_A[level] == -1.0 ){
       app->nA++;
-      app->dt_A[A_idx] = tstop-tstart;
+      app->dt_A[level] = tstop-tstart;
 
       setUpImplicitMatrix( app->man );
-      app->A[A_idx] = app->man->A;
+      app->A[level] = app->man->A;
       
       /* Set up the PFMG solver using r->x as dummy vectors. */
       setUpStructSolver( app->man, r->x, r->x );
-      app->solver[A_idx] = app->man->solver;
+      app->solver[level] = app->man->solver;
    } 
 
    /* Compute residual Ax */
-   app->man->A = app->A[A_idx];
+   app->man->A = app->A[level];
    comp_res(app->man, ustop->x, r->x, tstart, tstop);
 
    return 0;
@@ -613,7 +534,7 @@ int main (int argc, char *argv[])
    app->man->object_type     = HYPRE_STRUCT;  /* Hypre Struct interface is used for solver */
    app->man->vartype         = HYPRE_SSTRUCT_VARIABLE_CELL;
    app->man->explicit        = 0;             /* Permanently turns off the explicit time stepping capability */
-   cfl                       = 0.30;          /* CFL ratio of dt/dx^2 to use */
+   cfl                       = 0.30;          /* CFL = K*(dt/dx^2 + dt/dy^2) is used to define dt and t-final */
  
    
    /* Default XBraid parameters */
@@ -638,8 +559,6 @@ int main (int argc, char *argv[])
 
    /* Other parameters specific to parallel in time */
    app->use_rand       = 1;               /* If 1, use a random initial guess, else use a zero initial guess */
-   app->refine         = 0;               /* If 1, refine temporal grid */
-   app->max_rfactor    = -1;              /* No limit on the refinement factors */
    app->pt             = 1;               /* Number of processors in time */
    app->max_iter_x     = (int*) malloc( 2*sizeof(int) );
    app->max_iter_x[0]  = 50;              /* Maximum number of PFMG iters (the spatial solver from hypre) on XBraid level 0 */
@@ -731,14 +650,6 @@ int main (int argc, char *argv[])
          arg_index++;
          fmg = 1;
       }
-      else if ( strcmp(argv[arg_index], "-refine") == 0 ){
-         arg_index++;
-         app->refine = 1;
-      }
-      else if( strcmp(argv[arg_index], "-max_rfactor") == 0 ){
-          arg_index++;
-          app->max_rfactor = atoi(argv[arg_index++]);
-      }
       else if ( strcmp(argv[arg_index], "-res") == 0 ){
          arg_index++;
          res = 1;
@@ -795,8 +706,8 @@ int main (int argc, char *argv[])
       printf("  -pgrid  <px py pt>                 : processors in each dimension (default: 1 1 1)\n");
       printf("  -nx  <nx ny>                       : 2D spatial problem size of form 2^k+1, 2^k+1 (default: 17 17)\n");
       printf("  -nt  <n>                           : number of time steps (default: 32)\n"); 
-      printf("  -cfl <cfl>                         : CFL number to run, note that 2*CFL = dt/(dx^2) (default: 0.30)\n"); 
-      printf("                                       CFL < 0.5 for explicit forward Euler\n");
+      printf("  -cfl <cfl>                         : CFL number to run (default: 0.30)\n"); 
+      printf("                                       Note: CFL = K*(dt/dx^2 + dt/dy^2) is used to define dt and t-final\n");
       printf("  -ml  <max_levels>                  : set max number of time levels (default: 15)\n");
       printf("  -skip <skip>                       : boolean, whether to skip all work on first down cycle (default: 1\n");
       printf("  -mc  <min_coarse>                  : set min possible coarse level size (default: 3)\n");
@@ -813,8 +724,6 @@ int main (int argc, char *argv[])
       printf("  -pfmg_mi <max_iter max_iter_cheap> : maximum number of PFMG iterations (default: 50 50)\n"); 
       printf("  -pfmg_tol  <tol_x>                 : PFMG halting tolerance (default: 1e-09 )\n"); 
       printf("  -fmg                               : use FMG cycling\n");
-      printf("  -refine                            : refine in time\n");
-      printf("  -max_rfactor <max>                 : limit on the refinement factor (default: -1)\n");
       printf("  -res                               : use my residual\n");
       printf("  -storage <level>                   : full storage on levels >= level\n");
       printf("  -forcing                           : consider non-zero RHS b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))\n");
@@ -885,8 +794,13 @@ int main (int argc, char *argv[])
    app->man->dx = PI / (app->man->nx - 1);
    app->man->dy = PI / (app->man->ny - 1);
 
-   /* Set time-step size and tstop, the final time */
-   app->man->dt = app->man->K*cfl*((app->man->dx)*(app->man->dx)+(app->man->dy)*(app->man->dy))/2;
+   /* Set time-step size, noting that the CFL number definition 
+    *     K*(dt/dx^2 + dt/dy^2) = CFL
+    * implies that dt is equal to 
+    *     dt = ( CFL dx^2 dy^2) / ( K(dx^2 + dy^2)) */
+   app->man->dt = (cfl*(app->man->dx)*(app->man->dx)*(app->man->dy)*(app->man->dy))/
+                  (app->man->K*((app->man->dx)*(app->man->dx) + (app->man->dy)*(app->man->dy)));
+   /* Now using dt, compute the final time, tstop value */
    app->man->tstop =  app->man->tstart + app->man->nt*app->man->dt;
 
    /* Set up the variable type, grid, stencil and matrix graph. */
@@ -977,9 +891,6 @@ int main (int argc, char *argv[])
       if (storage >= -2) {
          braid_SetStorage(core, storage);
       }
-      if (app->refine > 0) {
-         braid_SetRefine(core, 1);
-      }
 
       MPI_Comm_rank( comm, &myid );
       if( myid == 0 ) {
@@ -1009,19 +920,16 @@ int main (int argc, char *argv[])
          printf("  End simulation \n");
          printf("  --------------------- \n\n");
       
-         printf("  Time step size                 %1.2e\n", app->man->dt);
-         printf("  Spatial grid size:             %d,%d\n", app->man->nx, app->man->ny);
-         printf("  Spatial mesh width (dx,dy):   (%1.2e, %1.2e)\n", app->man->dx, app->man->dy);           
-         printf("  CFL ratio 2dt/(dx^2 + dy^2):   %1.2e\n\n", 
-                2*(app->man->dt) / ((app->man->dx)*(app->man->dx)+(app->man->dy)*(app->man->dy)));
+         printf("  Time step size                    %1.2e\n", app->man->dt);
+         printf("  Spatial grid size:                %d,%d\n", app->man->nx, app->man->ny);
+         printf("  Spatial mesh width (dx,dy):      (%1.2e, %1.2e)\n", app->man->dx, app->man->dy);
+         printf("  CFL ratio K (dt/dx^2 + dt/dy^2):  %1.2e\n\n", 
+                app->man->K*((app->man->dt)/((app->man->dx)*(app->man->dx)) + (app->man->dt)/((app->man->dy)*(app->man->dy))));
          printf("  Run time:                      %1.2e\n", maxtime);
-         if (!app->refine)
-         {
-            printf("\n   Level   Max PFMG Iters\n");
-            printf("  -----------------------\n");
-            for(i = 0; i < nA_max; i++){
-               printf("     %d           %d\n", i, runtime_max_iter_global[i]);
-            }
+         printf("\n   Level   Max PFMG Iters\n");
+         printf("  -----------------------\n");
+         for(i = 0; i < nA_max; i++){
+            printf("     %d           %d\n", i, runtime_max_iter_global[i]);
          }
          printf("\n");
       }

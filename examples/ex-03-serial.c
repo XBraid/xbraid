@@ -86,7 +86,7 @@ int main (int argc, char *argv[])
    nly                 = 17;      /* number of point ~local~ to this processor in the y-dim */
    tstart              = 0.0;     /* global start time */
    nt                  = 64;      /* number of time steps */
-   cfl                 = 0.30;    /* CFL ratio of dt/dx^2 to use */
+   cfl                 = 0.30;    /* CFL = K*(dt/dx^2 + dt/dy^2) is used to define dt and t-final */
    px                  = 1;       /* my processor number in the x-direction, px*py=num procs in space */
    py                  = 1;       /* my processor number in the y-direction, px*py=num procs in space */
    max_iter            = 50;      /* Maximum number of iterations to use inside of PFMG */
@@ -158,8 +158,9 @@ int main (int argc, char *argv[])
       printf("  -pgrid  <px py>                  : processors in each dimension (default: 1 1)\n");
       printf("  -nx  <nx ny>                     : 2D spatial problem size of form 2^k+1, 2^k+1 (default: 17 17)\n");
       printf("  -nt  <n>                         : number of time steps (default: 32)\n"); 
-      printf("  -cfl <cfl>                       : CFL number to run, note that 2*CFL = dt/(dx^2) (default: 0.30)\n"); 
-      printf("  -forcing                           : consider non-zero RHS b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))\n");
+      printf("  -cfl <cfl>                       : CFL number to run (default: 0.30)\n"); 
+      printf("                                     Note: CFL = K*(dt/dx^2 + dt/dy^2) is used to define dt and t-final\n");
+      printf("  -forcing                         : consider non-zero RHS b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))\n");
       printf("  -pfmg_mi <max_iter>              : maximum number of PFMG iterations (default: 50)\n"); 
       printf("  -pfmg_tol <tol>                  : loose and tight stopping tolerance for PFMG (default: 1e-09 1e-09)\n"); 
       printf("  -output_files                    : save the solution/error/error norms to files\n");
@@ -202,9 +203,12 @@ int main (int argc, char *argv[])
    dx = PI / (nx - 1);
    dy = PI / (ny - 1);
 
-   /* Set time-step size. */
-   dt = K*cfl*( (dx*dx)*(dy*dy) / ((dx*dx)+(dy*dy)) );
-   /* Determine tstop. */
+   /* Set time-step size, noting that the CFL number definition 
+    *     K*(dt/dx^2 + dt/dy^2) = CFL
+    * implies that dt is equal to 
+    *     dt = ( CFL dx^2 dy^2) / ( K(dx^2 + dy^2)) */
+   dt = (cfl*(dx*dx)*(dy*dy)) / (K*((dx*dx)+(dy*dy)));
+   /* Now using dt, compute the final time, tstop value */
    tstop =  tstart + nt*dt;
 
    /* -----------------------------------------------------------------
@@ -316,7 +320,8 @@ int main (int argc, char *argv[])
       printf("  Time steps taken:             %d\n\n", i);
       printf("  Spatial grid size:            %d,%d\n", man->nx, man->ny);
       printf("  Spatial mesh width (dx,dy):  (%1.2e, %1.2e)\n", man->dx, man->dy);           
-      printf("  CFL ratio 2dt/(dx^2 + dy^2):  %1.2e\n\n", 2*(man->dt / ( (man->dx)*(man->dx) + (man->dy)*(man->dy)) ));
+      printf("  CFL ratio 2dt/(dx^2 + dy^2):  %1.2e\n\n",
+            man->K*((man->dt)/((man->dx)*(man->dx)) + (man->dt)/((man->dy)*(man->dy))));
       printf("  Run time:                     %1.2e\n", maxtime);
       printf("  Max PFMG Iterations:          %d\n", max_iters_taken);
       printf("  Discr. error at final time:   %1.4e\n", disc_err);
