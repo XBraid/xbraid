@@ -105,6 +105,15 @@ braid_StatusGetLevel(braid_Status status,
 }
 
 braid_Int
+braid_StatusGetNLevels(braid_Status status,
+                       braid_Int   *nlevels_ptr
+                       )
+{
+   *nlevels_ptr = _braid_StatusElt(status, nlevels);
+   return _braid_error_flag;
+}
+
+braid_Int
 braid_StatusGetNRefine(braid_Status status,
                        braid_Int   *nrefine_ptr
                        )
