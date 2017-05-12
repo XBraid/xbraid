@@ -261,6 +261,7 @@ my_Access(braid_App          app,
    {
       error = compute_error_norm(u->values, app->xstart, app->xstop, u->size, t);
       printf("  Discretization error at final time:  %1.4e\n", error);
+      fflush(stdout);
    }
 
    return 0;
