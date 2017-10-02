@@ -1,4 +1,24 @@
 ----------------------------
+Version 2.2.0, 10/02/2017
+----------------------------
+
+- New example examples/ex-01-refinement which highlights using 
+  temporal refinement based on an error estimator.  The "RDF Hack"
+  that put refinement in ex-03 has been removed.
+
+- Removed restriction on the user-returned temporal refinement factor from
+  Step().  Previously, this value was limited to be less than the coarsening
+  factor.  The temporal refinement factor can now be arbitrary.
+  
+  New regression tests were added to verify this feature.
+
+- Updated documentation to reflect new features and new debugging advice.
+
+- Several bug fixes in drivers regarding CFL number computations and PFMG 
+  iteration tracking
+
+
+----------------------------
 Version 2.1.0, 10/18/2016
 ----------------------------
 
