@@ -39,7 +39,7 @@ HYPRE_FLAGS = -I$(HYPRE_DIR)/include
 HYPRE_LIB = -L$(HYPRE_DIR)/lib -lHYPRE
 
 MFEM_INTERFACE = ./braid_mfem.hpp ./braid_mfem_block.hpp ../braid.hpp
-MFEM_DIR = $(BRAID_DIR)/../mfem-v3.2-1125-g593ca6a
+MFEM_DIR = $(BRAID_DIR)/../mfem
 MFEM_CONFIG_MK = $(MFEM_DIR)/config/config.mk
 MFEM_LIB_FILE = mfem_is_not_built
 -include $(MFEM_CONFIG_MK)
