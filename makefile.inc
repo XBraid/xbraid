@@ -53,7 +53,7 @@ endif
 
 HOSTNAME := $(shell hostname)
 
-ifeq ($(findstring tux343,$(HOSTNAME)),tux343)
+ifeq ($(findstring tux408,$(HOSTNAME)),tux408)
    CC = mpicc
    MPICC = mpicc
    MPICXX = mpicxx
