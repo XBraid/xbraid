@@ -28,6 +28,7 @@
  */
 
 #include "_braid.h"
+#include "_util.h"
 
 #ifndef DEBUG
 #define DEBUG 0
@@ -171,3 +172,41 @@ _braid_GetNEntries(braid_Real   *_array,
 }
 
 
+
+void 
+stack_init(node* head)
+{
+   head = NULL;
+}
+
+node* 
+stack_push(node* head, void* data_ptr)
+{
+   node* tmp = (node*)malloc(sizeof(node));
+   if (tmp == NULL)
+   {
+      exit(0);
+      printf("MALLOC ERROR!\n") ;
+   }
+   tmp->data_ptr = data_ptr;
+   tmp->next = head;
+   head = tmp;
+
+   return head;
+}
+
+node* 
+stack_pop(node *head)
+{
+    node* tmp = head;
+    head = head->next;
+    free(tmp);
+
+    return head;
+}
+
+int 
+stack_isempty(node* head)
+{
+    return head == NULL ? 1 : 0;
+}

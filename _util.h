@@ -71,7 +71,7 @@ _braid_printf( const char *format, ...);
 braid_Int
 _braid_ParFprintfFlush(FILE * file, 
                        braid_Int myid,
-                       char * message, 
+                       const char * message, 
                        ...);
 
 /**
@@ -97,6 +97,49 @@ _braid_GetNEntries(braid_Real   *_array,
                    braid_Int    array_len, 
                    braid_Int    *k_ptr, 
                    braid_Real   *array);
+
+
+
+/**
+ * 
+ * C-Implementation of a stack storing pointers to generic data
+ * This structure represents one stack element, holding a pointer to data and a pointer to the next node
+ **/ 
+typedef struct node_
+{
+    void *data_ptr;
+    struct node_ *next;
+
+} node;
+
+
+/**
+ * Initialize the stack
+ **/
+void 
+stack_init(node* head);
+
+/**
+ * Push data on the stack 
+ * Return pointer to head
+ **/
+node* 
+stack_push(node* head, void* ptr);
+
+/**
+ * Pop an element from the stack 
+ * Return pointer to head
+ **/
+node* 
+stack_pop(node* head);
+
+/** 
+ * Test if stack is empty
+ * return 1 if stack is empty, otherwise returns 0
+ **/
+int 
+stack_isempty(node* head);
+
 
 
 #endif
