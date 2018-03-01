@@ -219,6 +219,32 @@ my_BufUnpack(braid_App          app,
    return 0;
 }
 
+
+int
+my_Access_Adjoint(braid_App          app,
+                  braid_Vector       u,
+                  braid_AccessStatus astatus)
+{
+   
+   printf("Inside my_Access_Adjoint\n");
+   return 0;
+}
+
+
+int
+my_Step_Adjoint(braid_App        app,
+                // braid_Vector     ustop,
+                // braid_Vector     fstop,
+                braid_Vector     u,
+                braid_StepStatus status)
+{
+
+   printf("Inside adjoint step\n");
+
+   return 0;
+}
+
+
 /*--------------------------------------------------------------------------
  * Main driver
  *--------------------------------------------------------------------------*/
@@ -243,10 +269,18 @@ int main (int argc, char *argv[])
    app = (my_App *) malloc(sizeof(my_App));
    (app->rank)   = rank;
    
+
    /* initialize XBraid and set options */
-   braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
+//    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
+        //      my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
+        //      my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
+
+
+   /* Initialize the adjoint core (should do the same sing as braid_Init for now) */
+   braid_Init_Adjoint(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
              my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
-             my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
+             my_Access, my_BufSize, my_BufPack, my_BufUnpack, my_Step_Adjoint, 
+             my_Access_Adjoint, &core);
    
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);

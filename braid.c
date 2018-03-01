@@ -727,6 +727,143 @@ braid_Init(MPI_Comm               comm_world,
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
+braid_Int
+braid_Init_Adjoint(MPI_Comm               comm_world,
+                   MPI_Comm               comm,
+                   braid_Real             tstart,
+                   braid_Real             tstop,
+                   braid_Int              ntime,
+                   braid_App              app,
+                   braid_PtFcnStep        step,
+                   braid_PtFcnInit        init,
+                   braid_PtFcnClone       clone,
+                   braid_PtFcnFree        free,
+                   braid_PtFcnSum         sum,
+                   braid_PtFcnSpatialNorm spatialnorm,
+                   braid_PtFcnAccess      access,
+                   braid_PtFcnBufSize     bufsize,
+                   braid_PtFcnBufPack     bufpack,
+                   braid_PtFcnBufUnpack   bufunpack,
+                   braid_PtFcnStepAdj     step_adj, 
+                   braid_PtFcnAccessAdj   access_adj,
+                   braid_Core            *core_ptr)
+
+{
+   _braid_Core           *core;
+
+   /* Braid default values */
+   braid_Int              cfdefault       = 2;              /* Default coarsening factor */
+   braid_Int              nrdefault       = 1;              /* Default number of FC sweeps on each level */
+   braid_Int              fmg             = 0;              /* Default fmg (0 is off) */
+   braid_Int              nfmg            = -1;             /* Default fmg cycles is -1, indicating all fmg-cycles (if fmg=1) */
+   braid_Int              nfmg_Vcyc       = 1;              /* Default num V-cycles at each fmg level is 1 */
+   braid_Int              max_iter        = 100;            /* Default max_iter */
+   braid_Int              max_levels      = 30;             /* Default max_levels */
+   braid_Int              min_coarse      = 2;              /* Default min_coarse */
+   braid_Int              seq_soln        = 0;              /* Default initial guess is from user's Init() function */
+   braid_Int              print_level     = 1;              /* Default print level */
+   braid_Int              io_level        = 1;              /* Default output-to-file level */
+   braid_Int              access_level    = 1;              /* Default access level */
+   braid_Int              tnorm           = 2;              /* Default temporal norm */
+   braid_Real             tol             = 1.0e-09;        /* Default absolute tolerance */
+   braid_Int              rtol            = 1;              /* Use relative tolerance */
+   braid_Int              skip            = 1;              /* Default skip value, skips all work on first down-cycle */
+   braid_Int              max_refinements = 200;            /* Maximum number of F-refinements */
+   braid_Int              tpoints_cutoff  = braid_Int_Max;  /* Maximum number of time steps, controls FRefine()*/ 
+
+   braid_Int              myid_world,  myid;
+
+   MPI_Comm_rank(comm_world, &myid_world);
+   MPI_Comm_rank(comm, &myid);
+
+   core = _braid_CTAlloc(_braid_Core, 1);
+
+   _braid_CoreElt(core, comm_world)      = comm_world;
+   _braid_CoreElt(core, comm)            = comm;
+   _braid_CoreElt(core, myid_world)      = myid_world;
+   _braid_CoreElt(core, myid)            = myid;
+   _braid_CoreElt(core, tstart)          = tstart;
+   _braid_CoreElt(core, tstop)           = tstop;
+   _braid_CoreElt(core, ntime)           = ntime;
+   _braid_CoreElt(core, app)             = app;
+
+   _braid_CoreElt(core, step)            = step;
+   _braid_CoreElt(core, init)            = init;
+   _braid_CoreElt(core, sinit)           = NULL;
+   _braid_CoreElt(core, clone)           = clone;
+   _braid_CoreElt(core, sclone)          = NULL;
+   _braid_CoreElt(core, free)            = free;
+   _braid_CoreElt(core, sfree)           = NULL;
+   _braid_CoreElt(core, sum)             = sum;
+   _braid_CoreElt(core, spatialnorm)     = spatialnorm;
+   _braid_CoreElt(core, access)          = access;
+   _braid_CoreElt(core, bufsize)         = bufsize;
+   _braid_CoreElt(core, bufpack)         = bufpack;
+   _braid_CoreElt(core, bufunpack)       = bufunpack;
+   _braid_CoreElt(core, residual)        = NULL;
+   _braid_CoreElt(core, scoarsen)        = NULL;
+   _braid_CoreElt(core, srefine)         = NULL;
+   _braid_CoreElt(core, tgrid)           = NULL;
+
+   _braid_CoreElt(core, access_level)    = access_level;
+   _braid_CoreElt(core, tnorm)           = tnorm;
+   _braid_CoreElt(core, print_level)     = print_level;
+   _braid_CoreElt(core, io_level)        = io_level;
+   _braid_CoreElt(core, max_levels)      = 0; /* Set with SetMaxLevels() below */
+   _braid_CoreElt(core, min_coarse)      = min_coarse;
+   _braid_CoreElt(core, seq_soln)        = seq_soln;
+   _braid_CoreElt(core, tol)             = tol;
+   _braid_CoreElt(core, rtol)            = rtol;
+
+   _braid_CoreElt(core, nrels)           = NULL; /* Set with SetMaxLevels() below */
+   _braid_CoreElt(core, nrdefault)       = nrdefault;
+
+   _braid_CoreElt(core, cfactors)        = NULL; /* Set with SetMaxLevels() below */
+   _braid_CoreElt(core, cfdefault)       = cfdefault;
+
+   _braid_CoreElt(core, max_iter)        = 0; /* Set with SetMaxIter() below */
+   _braid_CoreElt(core, niter)           = 0;
+   _braid_CoreElt(core, fmg)             = fmg;
+   _braid_CoreElt(core, nfmg)            = nfmg;
+   _braid_CoreElt(core, nfmg_Vcyc)       = nfmg_Vcyc;
+
+   _braid_CoreElt(core, storage)         = -1;            /* only store C-points */
+   _braid_CoreElt(core, useshell)         = 0;
+
+   _braid_CoreElt(core, gupper)          = ntime;
+
+   _braid_CoreElt(core, refine)          = 0;  /* Time refinement off by default */
+   _braid_CoreElt(core, rfactors)        = NULL;
+   _braid_CoreElt(core, r_space)         = 0;
+   _braid_CoreElt(core, rstopped)        = -1;
+   _braid_CoreElt(core, nrefine)         = 0;
+   _braid_CoreElt(core, max_refinements) = max_refinements;
+   _braid_CoreElt(core, tpoints_cutoff)  = tpoints_cutoff;
+
+   _braid_CoreElt(core, nlevels)         = 0;
+   _braid_CoreElt(core, grids)           = NULL; /* Set with SetMaxLevels() below */
+
+   _braid_CoreElt(core, skip)            = skip;
+
+   /* Residual history and accuracy tracking for StepStatus*/
+   _braid_CoreElt(core, rnorm0)              = braid_INVALID_RNORM;
+   _braid_CoreElt(core, rnorms)              = NULL; /* Set with SetMaxIter() below */
+   _braid_CoreElt(core, full_rnorm_res)      = NULL;
+   _braid_CoreElt(core, full_rnorm0)         = braid_INVALID_RNORM;
+   _braid_CoreElt(core, full_rnorms)         = NULL; /* Set with SetMaxIter() below */
+   _braid_CoreElt(core, old_fine_tolx)       = -1.0;
+   _braid_CoreElt(core, tight_fine_tolx)     = 1;
+
+   braid_SetMaxLevels(core, max_levels);
+   braid_SetMaxIter(core, max_iter);
+
+   *core_ptr = core;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
 
 braid_Int
 braid_Destroy(braid_Core  core)

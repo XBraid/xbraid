@@ -340,6 +340,27 @@ typedef braid_Int
                        braid_Int        *iupper     /**< upper time index value for this processor */
                        );
 
+/**
+ * Adjoint time-stepping routine 
+ **/
+typedef braid_Int
+(*braid_PtFcnStepAdj)(braid_App        app,    /**< user-defined _braid_App structure */
+                     //  braid_Vector     ustop,  /**< input, u vector at *tstop* */
+                     //  braid_Vector     fstop,  /**< input, right-hand-side at *tstop* */
+                      braid_Vector     uadj     , /**< input/output, adjoint vector */
+                      braid_StepStatus status  /**< query this struct for info about u (e.g., tstart and tstop), allows for steering (e.g., set rfactor) */ 
+                   );
+
+/**
+ * Adjoint access function 
+ **/
+typedef braid_Int
+(*braid_PtFcnAccessAdj)(braid_App           app,              /**< user-defined _braid_App structure */
+                        braid_Vector        u,                /**< vector to be accessed */
+                        braid_AccessStatus  status            /**< can be querried for info like the current XBraid Iteration */
+                     );
+
+
 /** @}*/
 
 /*--------------------------------------------------------------------------
@@ -796,6 +817,39 @@ braid_SetSeqSoln(braid_Core  core,          /**< braid_Core (_braid_Core) struct
                  braid_Int   seq_soln       /**< 1: Init with sequential time stepping soln, 0: Use user's Init()*/
                  );
 /** @}*/
+
+
+/**
+ * Create a core object with the required initial data.
+ *
+ * This core is used by XBraid for internal data structures. 
+ * The output is *core_ptr* which points to the newly created 
+ * braid_Core structure. 
+ **/
+braid_Int
+braid_Init_Adjoint(MPI_Comm               comm_world,  /**< Global communicator for space and time */
+                   MPI_Comm               comm,        /**< Communicator for temporal dimension*/
+                   braid_Real             tstart,      /**< start time */
+                   braid_Real             tstop,       /**< End time*/
+                   braid_Int              ntime,       /**< Initial number of temporal grid values*/
+                   braid_App              app,         /**< User-defined _braid_App structure */
+                   braid_PtFcnStep        step,        /**< User time stepping routine to advance a braid_Vector forward one step */
+                   braid_PtFcnInit        init,        /**< Initialize a braid_Vector on the finest temporal grid*/
+                   braid_PtFcnClone       clone,       /**< Clone a braid_Vector*/
+                   braid_PtFcnFree        free,        /**< Free a braid_Vector*/
+                   braid_PtFcnSum         sum,         /**< Compute vector sum of two braid_Vectors*/
+                   braid_PtFcnSpatialNorm spatialnorm, /**< Compute norm of a braid_Vector, this is a norm only over space */
+                   braid_PtFcnAccess      access,      /**< Allows access to XBraid and current braid_Vector */
+                   braid_PtFcnBufSize     bufsize,     /**< Computes size for MPI buffer for one braid_Vector */
+                   braid_PtFcnBufPack     bufpack,     /**< Packs MPI buffer to contain one braid_Vector*/
+                   braid_PtFcnBufUnpack   bufunpack,   /**< Unpacks MPI buffer into a braid_Vector */
+                   braid_PtFcnStepAdj     step_adj,    /**< User adjoint time stepping routine to advance an adjoint vector backwards in time */
+                   braid_PtFcnAccessAdj   access_adj,      /**< Allows access to XBraid and current braid_Vector */
+                   braid_Core             *core_ptr    /**< Pointer to braid_Core (_braid_Core) struct*/   
+           );
+
+
+
 
 #ifdef __cplusplus
 }
