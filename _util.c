@@ -174,15 +174,15 @@ _braid_GetNEntries(braid_Real   *_array,
 
 
 void 
-stack_init(node* head)
+tape_init(tape* head)
 {
    head = NULL;
 }
 
-node* 
-stack_push(node* head, void* data_ptr)
+tape* 
+tape_push(tape* head, void* data_ptr)
 {
-   node* tmp = (node*)malloc(sizeof(node));
+   tape* tmp = (tape*)malloc(sizeof(tape));
    if (tmp == NULL)
    {
       exit(0);
@@ -195,10 +195,10 @@ stack_push(node* head, void* data_ptr)
    return head;
 }
 
-node* 
-stack_pop(node *head)
+tape* 
+tape_pop(tape *head)
 {
-    node* tmp = head;
+    tape* tmp = head;
     head = head->next;
     free(tmp);
 
@@ -206,7 +206,7 @@ stack_pop(node *head)
 }
 
 int 
-stack_isempty(node* head)
+tape_isempty(tape* head)
 {
     return head == NULL ? 1 : 0;
 }

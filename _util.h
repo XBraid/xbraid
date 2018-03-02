@@ -102,45 +102,45 @@ _braid_GetNEntries(braid_Real   *_array,
 
 /**
  * 
- * C-Implementation of a stack storing pointers to generic data
- * This structure represents one stack element, holding a pointer to data and a pointer to the next node
+ * C-Implementation of a linked list storing pointers to generic data
+ * This structure represents one tape element, holding a pointer to data and a pointer to the next element
  **/ 
-typedef struct node_
+typedef struct tape_
 {
     void *data_ptr;
-    struct node_ *next;
+    struct tape_ *next;
 
-} node;
+} tape;
 
 
 /**
- * Initialize the stack
+ * Initialize the tape
  **/
 void 
-stack_init(node* head);
+tape_init(tape* head);
 
 /**
- * Push data on the stack 
+ * Push data on the tape 
  * Return pointer to head
  **/
-node* 
-stack_push(node* head, void* ptr);
+tape* 
+tape_push(tape* head, void* ptr);
 
 /**
- * Pop an element from the stack 
+ * Pop an element from the tape 
  * Return pointer to head
  **/
-node* 
-stack_pop(node* head);
+tape* 
+tape_pop(tape* head);
 
 /** 
- * Test if stack is empty
- * return 1 if stack is empty, otherwise returns 0
+ * Test if tape is empty
+ * return 1 if tape is empty, otherwise returns 0
  **/
 int 
-stack_isempty(node* head);
+tape_isempty(tape* head);
+
 
 
 
 #endif
-
