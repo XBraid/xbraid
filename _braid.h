@@ -177,6 +177,7 @@ typedef struct _braid_Core_struct
 
    braid_Real             localtime;        /**< local wall time for braid_Drive() */
    braid_Real             globaltime;       /**< global wall time for braid_Drive() */
+   braid_Int              adjoint;          /**< determines if adjoint run is performed (1) or not (0) */
 
    /** Data elements required for the Status structures */
    /** Common Status properties */
