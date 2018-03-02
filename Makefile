@@ -34,9 +34,9 @@ include makefile.inc
 # Targets
 ##################################################################
 
-BRAID_HEADERS = _braid.h braid.h _util.h braid_test.h braid_status.h braid_defs.h
+BRAID_HEADERS = _braid.h braid.h _util.h braid_test.h braid_status.h braid_defs.h _braid_user.h
 
-BRAID_FILES = _util.c braid.c _braid.c braid_test.c _braid_status.c braid_F90_iface.c
+BRAID_FILES = _util.c braid.c _braid.c braid_test.c _braid_status.c braid_F90_iface.c _braid_user.c
 
 ifeq ($(sequential),yes)
 	BRAID_HEADERS += mpistubs.h

@@ -30,6 +30,7 @@
 #include "braid_defs.h"
 #include "_util.h"
 #include "_braid_status.h"
+#include "_braid_user.h"
 
 #define DEBUG 0
 
@@ -220,7 +221,7 @@ _braid_CommRecvInit(braid_Core           core,
 
       /* Allocate buffer through user routine */
       _braid_BufferStatusInit( 0, 0, bstatus );
-      _braid_CoreFcn(core, bufsize)(app, &size, bstatus);
+      _braid_UserBufSize(core, app,  &size, bstatus);
       buffer = malloc(size);
 
       num_requests = 1;
@@ -268,12 +269,12 @@ _braid_CommSendInit(braid_Core           core,
 
       /* Allocate buffer through user routine */
       _braid_BufferStatusInit( 0, 0, bstatus );
-      _braid_CoreFcn(core, bufsize)(app, &size, bstatus);
+      _braid_UserBufSize(core, app,  &size, bstatus);
       buffer = malloc(size);
       
       /* Note that bufpack may return a size smaller than bufsize */ 
       _braid_StatusElt(bstatus, size_buffer) = size;
-      _braid_CoreFcn(core, bufpack)(app, vector, buffer, bstatus);
+      _braid_UserBufPack(core, app,  vector, buffer, bstatus);
       size = _braid_StatusElt( bstatus, size_buffer );
 
       num_requests = 1;
@@ -318,7 +319,7 @@ _braid_CommWait(braid_Core          core,
       {
          _braid_BufferStatusInit( 0, 0, bstatus );
          braid_Vector  *vector_ptr = _braid_CommHandleElt(handle, vector_ptr);
-         _braid_CoreFcn(core, bufunpack)(app, buffer, vector_ptr, bstatus);
+         _braid_UserBufUnpack(core, app,  buffer, vector_ptr, bstatus);
       }
       
       _braid_TFree(requests);
@@ -495,7 +496,7 @@ _braid_UGetVector(braid_Core     core,
       _braid_UGetIndex(core, level, index, &iu, &sflag);
       if (sflag == 0)
       {
-         _braid_CoreFcn(core, clone)(app, ua[iu], &u);
+         _braid_UserClone(core, app,  ua[iu], &u);
       }
       else if (sflag == -1)
       {
@@ -544,7 +545,7 @@ _braid_USetVector(braid_Core    core,
    {
       if (ua[iu] != NULL)
       {
-         _braid_CoreFcn(core, free)(app, ua[iu]);
+         _braid_UserFree(core, app,  ua[iu]);
       }
       if (move)
       {
@@ -552,14 +553,14 @@ _braid_USetVector(braid_Core    core,
       }
       else
       {
-         _braid_CoreFcn(core, clone)(app, u, &ua[iu]); /* copy the vector */
+         _braid_UserClone(core, app,  u, &ua[iu]); /* copy the vector */
       }
    }
    else if (sflag == -1) // We have a shell
    {
       if (ua[iu] != NULL)
       {
-         _braid_CoreFcn(core, free)(app, ua[iu]);
+         _braid_UserFree(core, app,  ua[iu]);
       }
       if (move)
       {
@@ -574,7 +575,7 @@ _braid_USetVector(braid_Core    core,
    }
    else if (move) // We store nothing
    {
-      _braid_CoreFcn(core, free)(app, u);              /* free the vector */
+      _braid_UserFree(core, app,  u);              /* free the vector */
    }
 
    return _braid_error_flag;
@@ -816,7 +817,7 @@ _braid_AccessVector(braid_Core          core,
 {
    braid_App      app    = _braid_CoreElt(core, app);
 
-   _braid_CoreFcn(core, access)(app, u, status);
+   _braid_UserAccess(core, app,  u, status);
 
    return _braid_error_flag;
 }
@@ -913,7 +914,7 @@ _braid_Step(braid_Core     core,
 
    if (level == 0)
    {
-      _braid_CoreFcn(core, step)(app, ustop, NULL, u, status);
+      _braid_UserStep(core, app,  ustop, NULL, u, status);
       rfactors[ii] = _braid_StatusElt(status, rfactor);
       if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
             _braid_CoreElt(core, r_space) = 1;
@@ -922,15 +923,15 @@ _braid_Step(braid_Core     core,
    {
       if ( _braid_CoreElt(core, residual) == NULL )
       {
-         _braid_CoreFcn(core, step)(app, ustop, NULL, u, status);
+         _braid_UserStep(core, app,  ustop, NULL, u, status);
          if(fa[ii] != NULL)
          {
-            _braid_CoreFcn(core, sum)(app, 1.0, fa[ii], 1.0, u);
+            _braid_UserSum(core, app,  1.0, fa[ii], 1.0, u);
          }
       }
       else
       {
-         _braid_CoreFcn(core, step)(app, ustop, fa[ii], u, status);
+         _braid_UserStep(core, app,  ustop, fa[ii], u, status);
       }
    }
 
@@ -968,8 +969,8 @@ _braid_Residual(braid_Core     core,
    {
       /* By default: r = ustop - \Phi(ustart)*/
       _braid_GetUInit(core, level, index, r, &rstop);
-      _braid_CoreFcn(core, step)(app, rstop, NULL, r, status);
-      _braid_CoreFcn(core, sum)(app, 1.0, ustop, -1.0, r);
+      _braid_UserStep(core, app,  rstop, NULL, r, status);
+      _braid_UserSum(core, app,  1.0, ustop, -1.0, r);
       if (level == 0)
       {
          /*TODO Remove this line after modifing the _braid_StatusSetRFactor to set the rfactor in the array directly */
@@ -1009,18 +1010,18 @@ _braid_FASResidual(braid_Core     core,
    _braid_Residual(core, level, index, ustop, r);
    if (level == 0)
    {
-      _braid_CoreFcn(core, sum)(app, 0.0, r, -1.0, r);
+      _braid_UserSum(core, app,  0.0, r, -1.0, r);
    }
    else
    {
       ii = index-ilower;
       if(fa[ii] == NULL)
       {
-         _braid_CoreFcn(core, sum)(app, 0.0, r, -1.0, r);
+         _braid_UserSum(core, app,  0.0, r, -1.0, r);
       }
       else
       {
-         _braid_CoreFcn(core, sum)(app, 1.0, fa[ii], -1.0, r);
+         _braid_UserSum(core, app,  1.0, fa[ii], -1.0, r);
       }
    }
 
@@ -1055,7 +1056,7 @@ _braid_Coarsen(braid_Core     core,
    if ( _braid_CoreElt(core, scoarsen) == NULL )
    {
       /* No spatial coarsening needed, just clone the fine vector.*/
-      _braid_CoreFcn(core, clone)(app, fvector, cvector);
+      _braid_UserClone(core, app,  fvector, cvector);
    }
    else
    {
@@ -1088,7 +1089,7 @@ _braid_RefineBasic(braid_Core     core,
    if ( _braid_CoreElt(core, scoarsen) == NULL )
    {
       /* No spatial refinement needed, just clone the fine vector.*/
-      _braid_CoreFcn(core, clone)(app, cvector, fvector);
+      _braid_UserClone(core, app,  cvector, fvector);
    }
    else
    {
@@ -1186,7 +1187,7 @@ _braid_GridClean(braid_Core    core,
       {
          if (ua[ii] != NULL)
          {
-            _braid_CoreFcn(core, free)(app, ua[ii]);
+            _braid_UserFree(core, app,  ua[ii]);
             ua[ii] = NULL;
          }
       }
@@ -1197,7 +1198,7 @@ _braid_GridClean(braid_Core    core,
       {
          if (va[ii] != NULL)
          {
-            _braid_CoreFcn(core, free)(app, va[ii]);
+            _braid_UserFree(core, app,  va[ii]);
             va[ii] = NULL;
          }
       }
@@ -1208,7 +1209,7 @@ _braid_GridClean(braid_Core    core,
       {
          if (fa[ii] != NULL)
          {
-            _braid_CoreFcn(core, free)(app, fa[ii]);
+            _braid_UserFree(core, app,  fa[ii]);
             fa[ii] = NULL;
          }
       }
@@ -1283,7 +1284,7 @@ _braid_InitGuess(braid_Core  core,
       /* If first processor, grab initial condition */
       if(ilower == 0)
       {
-         _braid_CoreFcn(core, init)(app, ta[0], &u);
+         _braid_UserInit(core, app,  ta[0], &u);
          _braid_USetVector(core, 0, 0, u, 0);
          ilower += 1;
       }
@@ -1316,7 +1317,7 @@ _braid_InitGuess(braid_Core  core,
             if (_braid_IsCPoint(i,cfactor))
             {
                // We are on a C-point, init full vector
-               _braid_CoreFcn(core, init)(app, ta[i-ilower], &u);
+               _braid_UserInit(core, app,  ta[i-ilower], &u);
             }
             else
             {
@@ -1331,7 +1332,7 @@ _braid_InitGuess(braid_Core  core,
          /* Only initialize the C-points on the finest grid */
          for (i = clower; i <= cupper; i += cfactor)
          {
-            _braid_CoreFcn(core, init)(app, ta[i-ilower], &u);
+            _braid_UserInit(core, app,  ta[i-ilower], &u);
             _braid_USetVectorRef(core, level, i, u);
          }
       }
@@ -1343,7 +1344,7 @@ _braid_InitGuess(braid_Core  core,
          _braid_UGetIndex(core, level, i, &iu, &sflag);
          if (sflag == 0) // Full point
          {
-            _braid_CoreFcn(core, clone)(app, va[i-ilower], &u);
+            _braid_UserClone(core, app,  va[i-ilower], &u);
             _braid_USetVectorRef(core, level, i, u);
          }
          else if (sflag == -1) // Shell
@@ -1402,14 +1403,14 @@ _braid_ComputeFullRNorm(braid_Core  core,
       /* Generate F-points and get residual. */
       for (fi = flo; fi <= fhi; fi++)
       {
-         _braid_CoreFcn(core, clone)(app, u, &r);
+         _braid_UserClone(core, app,  u, &r);
          _braid_Step(core, level, fi, NULL, u);
 
          /* Update local processor norm. */
          ii = fi-ilower;
          _braid_StepStatusInit(ta[ii-1], ta[ii], fi-1, tol, iter, level, nrefine, gupper, status);
          _braid_CoreFcn(core, full_rnorm_res)(app, u, r, status);
-         _braid_CoreFcn(core, spatialnorm)(app, r, &rnorm_temp); 
+         _braid_UserSpatialNorm(core, app,  r, &rnorm_temp); 
          if(tnorm == 1)       /* one-norm */ 
          {  
             rnorm += rnorm_temp;
@@ -1433,7 +1434,7 @@ _braid_ComputeFullRNorm(braid_Core  core,
             _braid_GridElt(grids[level], send_index)  = -1;
             _braid_GridElt(grids[level], send_handle) = send_handle;
          }
-         _braid_CoreFcn(core, free)(app, r);
+         _braid_UserFree(core, app,  r);
       }
       /* Residual from C-point. */
       if (ci > 0)
@@ -1443,7 +1444,7 @@ _braid_ComputeFullRNorm(braid_Core  core,
          _braid_StepStatusInit(ta[ii-1], ta[ii], ci-1, tol, iter, level, nrefine, gupper, status);
          _braid_UGetVector(core, level, ci, &r);
          _braid_CoreFcn(core, full_rnorm_res)(app, r, u, status);
-         _braid_CoreFcn(core, spatialnorm)(app, u, &rnorm_temp);
+         _braid_UserSpatialNorm(core, app,  u, &rnorm_temp);
 
          if(tnorm == 1)       /* one-norm */ 
          {  
@@ -1457,12 +1458,12 @@ _braid_ComputeFullRNorm(braid_Core  core,
          {  
             rnorm += (rnorm_temp*rnorm_temp);
          }
-         _braid_CoreFcn(core, free)(app, r);
+         _braid_UserFree(core, app,  r);
       }
 
       if ((flo <= fhi) || (ci > 0))
       {
-         _braid_CoreFcn(core, free)(app, u);
+         _braid_UserFree(core, app,  u);
       }
    }
 
@@ -1542,7 +1543,7 @@ _braid_FCRelax(braid_Core  core,
          /* if ((flo <= fhi) && (interval == ncpoints)) */
          if ((flo <= fhi) && !(ci > 0))
          {
-            _braid_CoreFcn(core, free)(app, u);
+            _braid_UserFree(core, app,  u);
          }
       }
       _braid_UCommWait(core, level);
@@ -1685,7 +1686,7 @@ _braid_FRestrict(braid_Core   core,
          /* Compute rnorm (only on level 0) */
          if (level == 0)
          {
-            _braid_CoreFcn(core, spatialnorm)(app, r, &rnorm_temp);
+            _braid_UserSpatialNorm(core, app,  r, &rnorm_temp);
             tnorm_a[interval] = rnorm_temp;       /* inf-norm uses tnorm_a */
             if(tnorm == 1) 
             {  
@@ -1711,7 +1712,7 @@ _braid_FRestrict(braid_Core   core,
 
       if ((flo <= fhi) || (ci > 0))
       {
-         _braid_CoreFcn(core, free)(app, r);
+         _braid_UserFree(core, app,  r);
       }
    }
    _braid_UCommWait(core, level);
@@ -1770,10 +1771,10 @@ _braid_FRestrict(braid_Core   core,
             /* Finalize update of c_va[-1] */
             _braid_CommWait(core, &recv_handle);
          }
-         _braid_CoreFcn(core, clone)(app, c_va[c_ii-1], &c_u);
+         _braid_UserClone(core, app,  c_va[c_ii-1], &c_u);
          _braid_Residual(core, c_level, c_i, c_va[c_ii], c_u);
-         _braid_CoreFcn(core, sum)(app, 1.0, c_u, 1.0, c_fa[c_ii]);
-         _braid_CoreFcn(core, free)(app, c_u);
+         _braid_UserSum(core, app,  1.0, c_u, 1.0, c_fa[c_ii]);
+         _braid_UserFree(core, app,  c_u);
       }
    }
    _braid_CommWait(core, &send_handle);
@@ -1845,17 +1846,17 @@ _braid_FInterp(braid_Core  core,
             _braid_AccessVector(core, astatus, u);
          }
          e = va[fi-ilower];
-         _braid_CoreFcn(core, sum)(app, 1.0, u, -1.0, e);
+         _braid_UserSum(core, app,  1.0, u, -1.0, e);
          _braid_MapCoarseToFine(fi, f_cfactor, f_index);
          _braid_Refine(core, f_level, f_index, fi, e, &f_e);
          _braid_UGetVectorRef(core, f_level, f_index, &f_u);
-         _braid_CoreFcn(core, sum)(app, 1.0, f_e, 1.0, f_u);
+         _braid_UserSum(core, app,  1.0, f_e, 1.0, f_u);
          _braid_USetVectorRef(core, f_level, f_index, f_u);
-         _braid_CoreFcn(core, free)(app, f_e);
+         _braid_UserFree(core, app,  f_e);
       }
       if (flo <= fhi)
       {
-         _braid_CoreFcn(core, free)(app, u);
+         _braid_UserFree(core, app,  u);
       }
 
       /* Interpolate C-points, refining in space if needed */
@@ -1870,13 +1871,13 @@ _braid_FInterp(braid_Core  core,
             _braid_AccessVector(core, astatus, u);
          }
          e = va[ci-ilower];
-         _braid_CoreFcn(core, sum)(app, 1.0, u, -1.0, e);
+         _braid_UserSum(core, app,  1.0, u, -1.0, e);
          _braid_MapCoarseToFine(ci, f_cfactor, f_index);
          _braid_Refine(core, f_level, f_index, ci, e, &f_e);
          _braid_UGetVectorRef(core, f_level, f_index, &f_u);
-         _braid_CoreFcn(core, sum)(app, 1.0, f_e, 1.0, f_u);
+         _braid_UserSum(core, app,  1.0, f_e, 1.0, f_u);
          _braid_USetVectorRef(core, f_level, f_index, f_u);
-         _braid_CoreFcn(core, free)(app, f_e);
+         _braid_UserFree(core, app,  f_e);
       }
    }
 
@@ -2461,7 +2462,7 @@ _braid_FRefine(braid_Core   core,
                _braid_AccessVector(core, astatus, u);
             }
          }
-         _braid_CoreFcn(core, free)(app, u);
+         _braid_UserFree(core, app,  u);
       }
 
       /* Refine C-points in space */
@@ -2535,7 +2536,7 @@ _braid_FRefine(braid_Core   core,
    statuses = _braid_CTAlloc(MPI_Status,  (nsends+nrecvs));
 
    _braid_BufferStatusInit( 1, 0, bstatus );
-   _braid_CoreFcn(core, bufsize)(app, &max_usize, bstatus); /* max buffer size */
+   _braid_UserBufSize(core, app,  &max_usize, bstatus); /* max buffer size */
    _braid_NBytesToNReals(max_usize, max_usize);
 
    /* Post u-vector receives */
@@ -2569,11 +2570,11 @@ _braid_FRefine(braid_Core   core,
          {
             /* Pack u into buffer, adjust size, and put size into buffer */
             buffer = &bptr[1];
-            _braid_CoreFcn(core, bufsize)(app, &size, bstatus);
+            _braid_UserBufSize(core, app,  &size, bstatus);
             _braid_StatusElt( bstatus, size_buffer ) = size;
-            _braid_CoreFcn(core, bufpack)(app, send_ua[ii], buffer, bstatus);
+            _braid_UserBufPack(core, app,  send_ua[ii], buffer, bstatus);
             size = _braid_StatusElt(bstatus, size_buffer);
-            _braid_CoreFcn(core, free)(app, send_ua[ii]);
+            _braid_UserFree(core, app,  send_ua[ii]);
             _braid_NBytesToNReals(size, size);
             bptr[0] = (braid_Int) size; /* insert size at the beginning */
             bptr += (1+size);
@@ -2617,7 +2618,7 @@ _braid_FRefine(braid_Core   core,
          {
             /* Unpack buffer into u-vector */
             buffer = &bptr[1];
-            _braid_CoreFcn(core, bufunpack)(app, buffer, &recv_ua[f_ii], bstatus);
+            _braid_UserBufUnpack(core, app, buffer, &recv_ua[f_ii], bstatus);
             size = (braid_Int) bptr[0];
             bptr += (1+size);
             unum--;
@@ -2811,7 +2812,7 @@ _braid_FAccess(braid_Core     core,
       }
       if (flo <= fhi)
       {
-         _braid_CoreFcn(core, free)(app, u);
+         _braid_UserFree(core, app,  u);
       }
 
       /* Give access at C-points */
@@ -3203,13 +3204,13 @@ _braid_CopyFineToCoarse(braid_Core  core)
          _braid_UGetVector(core, level-1, f_index, &u);
          _braid_Coarsen(core, level, f_index, index, u, &va[index-ilower]);
          
-         _braid_CoreFcn(core, free)(app, u);
-         _braid_CoreFcn(core, clone)(app, va[index-ilower], &u);
+         _braid_UserFree(core, app,  u);
+         _braid_UserClone(core, app,  va[index-ilower], &u);
          _braid_USetVectorRef(core, level, index, u);
          _braid_UGetIndex(core, level, index, &iu, &is_stored);
          if (is_stored == -2) /* Case where F-points are not stored, and we are not using shell vectors */
          {
-            _braid_CoreFcn(core, free)(app, u);
+            _braid_UserFree(core, app,  u);
          }
          else if (is_stored == -1) /* This is a shell vector */
          {
