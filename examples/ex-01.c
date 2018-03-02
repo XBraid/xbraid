@@ -271,16 +271,13 @@ int main (int argc, char *argv[])
    
 
    /* initialize XBraid and set options */
-//    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
-        //      my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
-        //      my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
+   braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
+             my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
+             my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
 
 
    /* Initialize the adjoint core (should do the same sing as braid_Init for now) */
-   braid_Init_Adjoint(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
-             my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
-             my_Access, my_BufSize, my_BufPack, my_BufUnpack, my_Step_Adjoint, 
-             my_Access_Adjoint, &core);
+   braid_Init_Adjoint(my_Step_Adjoint, my_Access_Adjoint, &core);
    
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);
