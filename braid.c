@@ -744,16 +744,22 @@ braid_Init_Adjoint(braid_PtFcnStepAdj     step_adj,
                    braid_PtFcnAccessAdj   access_adj,
                    braid_Core             *core_ptr)
 {
+  if( _braid_CoreElt(*core_ptr, refine) )
+  {
+    printf("ERROR: Adjoint of FRefine not supported yet!\n");
+    exit(1);
+  }
 
    /* Set the adjoint flag */ 
    _braid_CoreElt(*core_ptr, adjoint) = 1;
-
-   /* TODO: Store pointer to adjoint user interface in the core */
 
    /* Initialize the tapes */
    _braid_TapeInit( _braid_CoreElt(*core_ptr,actiontape) );
    _braid_TapeInit( _braid_CoreElt(*core_ptr,primaltape) );
    _braid_TapeInit( _braid_CoreElt(*core_ptr,adjointtape) );
+
+   /* TODO: Store pointer to adjoint user interface in the core */
+  
 
    return _braid_error_flag;
 }

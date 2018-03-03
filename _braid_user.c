@@ -223,12 +223,12 @@ _braid_UserBufPack(braid_Core core,
       /* Set up the action */
       _braid_Action* action  = _braid_CTAlloc(_braid_Action, 1);
       action->braidCall      = BUFPACK;
-      // TODO: STORE THE SENDER_RECEIVER!
-      // action->send_recv_rank = _braid_
+      action->send_recv_rank = _braid_CoreElt(core, send_recv_rank);
       
       /* Push the action to the action tape */
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
    }
+   
    /* Call the users BufPack function */
    _braid_CoreFcn(core, bufpack)(app, u, buffer, status);
 
@@ -250,8 +250,7 @@ _braid_UserBufUnpack(braid_Core core,
       /* Set up the action */
       _braid_Action* action  = _braid_CTAlloc(_braid_Action, 1);
       action->braidCall      = BUFUNPACK;
-      // TODO: STORE THE SENDER_RECEIVER!
-      // action->send_recv_rank = _braid_
+      action->send_recv_rank = _braid_CoreElt(core, send_recv_rank);
       
       /* Push the action to the action tape */
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);

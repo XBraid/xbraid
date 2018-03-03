@@ -185,8 +185,8 @@ _braid_TapePush(_braid_Tape* head, void* data_ptr)
    _braid_Tape* tmp = (_braid_Tape*)malloc(sizeof(_braid_Tape));
    if (tmp == NULL)
    {
-      exit(0);
       printf("MALLOC ERROR!\n") ;
+      exit(1);
    }
    tmp->data_ptr = data_ptr;
    tmp->next = head;
