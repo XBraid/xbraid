@@ -105,42 +105,48 @@ _braid_GetNEntries(braid_Real   *_array,
  * C-Implementation of a linked list storing pointers to generic data
  * This structure represents one tape element, holding a pointer to data and a pointer to the next element
  **/ 
-typedef struct tape_
+typedef struct _braid_tape_struct
 {
     void *data_ptr;
-    struct tape_ *next;
+    struct _braid_tape_struct *next;
 
-} tape;
+} _braid_Tape;
 
 
 /**
  * Initialize the tape
  **/
 void 
-tape_init(tape* head);
+_braid_TapeInit(_braid_Tape* head);
 
 /**
  * Push data on the tape 
  * Return pointer to head
  **/
-tape* 
-tape_push(tape* head, void* ptr);
+_braid_Tape* 
+_braid_TapePush(_braid_Tape* head, void* ptr);
 
 /**
  * Pop an element from the tape 
  * Return pointer to head
  **/
-tape* 
-tape_pop(tape* head);
+_braid_Tape* 
+_braid_TapePop(_braid_Tape* head);
 
 /** 
  * Test if tape is empty
  * return 1 if tape is empty, otherwise returns 0
  **/
-int 
-tape_isempty(tape* head);
+braid_Int 
+_braid_TapeIsEmpty(_braid_Tape* head);
 
 
+/**
+ * Displays the entire tape
+ * ONLY WORKS FOR THE ACTION TAPE !!!
+ **/
+void 
+_braid_TapeDisplay(_braid_Tape* head);
 
 
 

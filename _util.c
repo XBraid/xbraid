@@ -174,15 +174,15 @@ _braid_GetNEntries(braid_Real   *_array,
 
 
 void 
-tape_init(tape* head)
+_braid_TapeInit(_braid_Tape* head)
 {
    head = NULL;
 }
 
-tape* 
-tape_push(tape* head, void* data_ptr)
+_braid_Tape* 
+_braid_TapePush(_braid_Tape* head, void* data_ptr)
 {
-   tape* tmp = (tape*)malloc(sizeof(tape));
+   _braid_Tape* tmp = (_braid_Tape*)malloc(sizeof(_braid_Tape));
    if (tmp == NULL)
    {
       exit(0);
@@ -195,18 +195,43 @@ tape_push(tape* head, void* data_ptr)
    return head;
 }
 
-tape* 
-tape_pop(tape *head)
+_braid_Tape* 
+_braid_TapePop(_braid_Tape *head)
 {
-    tape* tmp = head;
+    _braid_Tape* tmp = head;
     head = head->next;
     free(tmp);
 
     return head;
 }
 
-int 
-tape_isempty(tape* head)
+braid_Int 
+_braid_TapeIsEmpty(_braid_Tape* head)
 {
     return head == NULL ? 1 : 0;
+}
+
+
+void _braid_TapeDisplay(_braid_Tape* head)
+{
+    _braid_Tape* current;
+    current = head;
+    if (current!=NULL)
+    {
+        printf("\n\nTape: \n\n");
+        do
+        {
+            /* ONLY WORKS FOR THE ACTION TAPE !!! */
+            _braid_Action* my_action = (_braid_Action*)(current->data_ptr);
+            printf("Action: %d ", my_action->braidCall);
+            printf("\n");
+            current=current->next;
+        }
+        while (current!=NULL);
+        printf("\n\n");
+    }
+    else
+    {
+        printf("Stack is empty\n");
+    }
 }
