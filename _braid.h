@@ -37,6 +37,7 @@
 #include <math.h>
 
 #include "braid.h"
+#include "_util.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -178,6 +179,11 @@ typedef struct _braid_Core_struct
    braid_Real             localtime;        /**< local wall time for braid_Drive() */
    braid_Real             globaltime;       /**< global wall time for braid_Drive() */
    braid_Int              adjoint;          /**< determines if adjoint run is performed (1) or not (0) */
+
+   _braid_Tape* actiontape;                 /**< tape storing the actions while adjoint recording */
+   _braid_Tape* primaltape;                     /**< tape storing primal braid_vectors while adjoint recording */
+   _braid_Tape* adjointtape;                    /**< tape storing intermediate adjoint braid_vectors while adjoint recording */
+ 
 
    /** Data elements required for the Status structures */
    /** Common Status properties */

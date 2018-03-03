@@ -549,7 +549,13 @@ braid_Drive(braid_Core  core)
             }
          }
       }
-   }
+   
+      if (_braid_CoreElt(core,adjoint)){
+        /* Display the actions for this iteration */
+        _braid_TapeDisplay( _braid_CoreElt(core,actiontape) );
+        done=1;
+      }
+}
 
    /* By default, set the final residual norm to be the same as the previous */
    {
@@ -710,6 +716,9 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, skip)            = skip;
 
    _braid_CoreElt(core, adjoint)         = adjoint;
+   _braid_CoreElt(core, actiontape)      = NULL;
+   _braid_CoreElt(core, primaltape)      = NULL;
+   _braid_CoreElt(core, adjointtape)     = NULL;
    
    /* Residual history and accuracy tracking for StepStatus*/
    _braid_CoreElt(core, rnorm0)              = braid_INVALID_RNORM;
@@ -740,6 +749,11 @@ braid_Init_Adjoint(braid_PtFcnStepAdj     step_adj,
    _braid_CoreElt(*core_ptr, adjoint) = 1;
 
    /* TODO: Store pointer to adjoint user interface in the core */
+
+   /* Initialize the tapes */
+   _braid_TapeInit( _braid_CoreElt(*core_ptr,actiontape) );
+   _braid_TapeInit( _braid_CoreElt(*core_ptr,primaltape) );
+   _braid_TapeInit( _braid_CoreElt(*core_ptr,adjointtape) );
 
    return _braid_error_flag;
 }

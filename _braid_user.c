@@ -17,6 +17,25 @@ _braid_UserStep(braid_Core       core,
                 braid_Vector     u, 
                 braid_StepStatus status )
 {
+
+   /* if adjoint: Record to the tape */
+   if ( _braid_CoreElt(core, adjoint) )
+   {
+      /* Set up the action */
+      _braid_Action* action = _braid_CTAlloc(_braid_Action, 1);
+      action->braidCall     = STEP;
+      action->inTime        = _braid_CoreElt(core, t);
+      action->outTime       = _braid_CoreElt(core, tnext);
+      action->status        = (braid_Status) status;
+
+      
+      /* Push the action to the actiontape */
+      _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
+
+      /* delete action ? */
+   
+   }
+
    /* Call the users Step function */
    _braid_CoreFcn(core, step)(app, ustop, fstop, u, status);
    
@@ -32,6 +51,19 @@ _braid_UserInit(braid_Core core,
                 braid_Vector  *u_ptr
                 )
 {
+   /* if adjoint: Record to the tape */
+   if ( _braid_CoreElt(core, adjoint) )
+   {
+      /* Set up the action */
+      _braid_Action* action = _braid_CTAlloc(_braid_Action, 1);
+      action->braidCall     = INIT;
+      action->inTime        = _braid_CoreElt(core, t);
+      
+      /* Push the action to the action tape */
+      _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
+
+   }
+   
    /* Call the users Init function */
    _braid_CoreFcn(core, init)(app, t, u_ptr);
 
@@ -45,6 +77,18 @@ _braid_UserClone(braid_Core core,
                  braid_Vector  *v_ptr 
                  )
 {
+
+   /* if adjoint: Record to the tape */
+   if ( _braid_CoreElt(core, adjoint) )
+   {
+      /* Set up the action */
+      _braid_Action* action = _braid_CTAlloc(_braid_Action, 1);
+      action->braidCall     = CLONE;
+      
+      /* Push the action to the action tape */
+      _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
+   }
+   
    /* Call the users Clone function */
    _braid_CoreFcn(core, clone)(app, u, v_ptr);
 
@@ -58,6 +102,19 @@ _braid_UserFree(braid_Core core,
                 braid_Vector  u   
                 )
 {
+
+
+   /* if adjoint: Record to the tape */
+   if ( _braid_CoreElt(core, adjoint) )
+   {
+      /* Set up the action */
+      _braid_Action* action = _braid_CTAlloc(_braid_Action, 1);
+      action->braidCall     = FREE;
+      
+      /* Push the action to the action tape */
+      _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
+   }
+ 
    /* Call the users free function */
    _braid_CoreFcn(core, free)(app, u);
 
@@ -74,7 +131,21 @@ _braid_UserSum(braid_Core core,
                braid_Vector  y       
                )
 {
-   /* Call the users Sum function */
+
+   /* if adjoint: Record to the tape */
+   if ( _braid_CoreElt(core, adjoint) )
+   {
+      /* Set up the action */
+      _braid_Action* action = _braid_CTAlloc(_braid_Action, 1);
+      action->braidCall     = SUM;
+      action->sum_alpha     = alpha;
+      action->sum_beta      = beta;
+      
+      /* Push the action to the action tape */
+      _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
+   }
+
+    /* Call the users Sum function */
    _braid_CoreFcn(core, sum)(app, alpha, x, beta, y);
 
    return 0;
@@ -88,6 +159,7 @@ _braid_UserSpatialNorm(braid_Core core,
                        braid_Real    *norm_ptr  /**< output, norm of braid_Vector (this is a spatial norm) */ 
                        )
 {
+
    /* Call the users SpatialNorm function */
    _braid_CoreFcn(core, spatialnorm)(app, u, norm_ptr);
 
@@ -102,6 +174,19 @@ _braid_UserAccess(braid_Core core,
                   braid_AccessStatus  status 
                   )
 {
+
+   /* if adjoint: Record to the tape */
+   if ( _braid_CoreElt(core, adjoint) )
+   {
+      /* Set up the action */
+      _braid_Action* action = _braid_CTAlloc(_braid_Action, 1);
+      action->braidCall     = ACCESS;
+      action->inTime        = _braid_CoreElt(core, t);
+      
+      /* Push the action to the action tape */
+      _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
+   }
+
    /* Call the users Access function */
    _braid_CoreFcn(core, access)(app, u, status);
 
@@ -116,6 +201,7 @@ _braid_UserBufSize(braid_Core core,
                    braid_BufferStatus  status     /**< can be querried for info on the message type */
                    ) 
 {
+
    /* Call the users BufSize function */
    _braid_CoreFcn(core, bufsize)(app, size_ptr, status);
 
@@ -131,6 +217,18 @@ _braid_UserBufPack(braid_Core core,
                    braid_BufferStatus  status     
                    )
 {
+      /* if adjoint: Record to the tape */
+   if ( _braid_CoreElt(core, adjoint) )
+   {
+      /* Set up the action */
+      _braid_Action* action  = _braid_CTAlloc(_braid_Action, 1);
+      action->braidCall      = BUFPACK;
+      // TODO: STORE THE SENDER_RECEIVER!
+      // action->send_recv_rank = _braid_
+      
+      /* Push the action to the action tape */
+      _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
+   }
    /* Call the users BufPack function */
    _braid_CoreFcn(core, bufpack)(app, u, buffer, status);
 
@@ -146,6 +244,18 @@ _braid_UserBufUnpack(braid_Core core,
                      braid_BufferStatus   status  
                      )
 {
+      /* if adjoint: Record to the tape */
+   if ( _braid_CoreElt(core, adjoint) )
+   {
+      /* Set up the action */
+      _braid_Action* action  = _braid_CTAlloc(_braid_Action, 1);
+      action->braidCall      = BUFUNPACK;
+      // TODO: STORE THE SENDER_RECEIVER!
+      // action->send_recv_rank = _braid_
+      
+      /* Push the action to the action tape */
+      _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
+   }
    /* Call the users BufUnPack function */
    _braid_CoreFcn(core, bufunpack)(app, buffer, u_ptr, status);
 

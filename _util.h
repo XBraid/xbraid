@@ -155,7 +155,7 @@ _braid_TapeDisplay(_braid_Tape* head);
  **/
 typedef enum _braid_Call_enum
 {
-   PHI       = 1,
+   STEP      = 1,
    INIT      = 2,
    CLONE     = 3,
    FREE      = 4,
@@ -177,7 +177,7 @@ typedef struct _braid_Action_struct
    _braid_Call       braidCall;        /**< type of the user routine */
    braid_Real        inTime;           /*< time of the input vector */
    braid_Real        outTime;          /*< time of the output vector */
-   // braid_StepStatus  StepStatus;        /*< status used in my_step */
+   braid_Status      status;        /*< status used in my_step */
    braid_Real        sum_alpha;        /*< first coefficient of my_sum */
    braid_Real        sum_beta;         /*< second coefficient of my_sum */
    braid_Int         send_recv_rank;   /*< processor rank of sender / receiver in my_bufpack / my_bufunpack */
@@ -185,18 +185,6 @@ typedef struct _braid_Action_struct
    braid_Int         myid;             /*< processors id */
 
 } _braid_Action;
-
-
-/**
- * Tape structure for storing actions, primal and adjoint vectors. 
- * 
- **/
-typedef struct _braid_Tape_struct
-{
-   tape* actiontape;    /**< tape for _braid_Action */
-   tape* primal;        /**< tape for primal braid_vectors */
-   tape* adjoint;       /**< tape for intermediate adjoint braid_vectors */
-   
-} _braid_Tape;
+ 
 
 #endif
