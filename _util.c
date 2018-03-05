@@ -218,20 +218,36 @@ void _braid_TapeDisplay(_braid_Tape* head)
     current = head;
     if (current!=NULL)
     {
-        printf("\n\nTape: \n\n");
         do
         {
             /* ONLY WORKS FOR THE ACTION TAPE !!! */
             _braid_Action* my_action = (_braid_Action*)(current->data_ptr);
-            printf("Action: %d ", my_action->braidCall);
+            printf("%d: %s ", my_action->myid, _braid_CallGetName(my_action->braidCall));
             printf("\n");
             current=current->next;
         }
         while (current!=NULL);
-        printf("\n\n");
     }
     else
     {
         printf("Stack is empty\n");
     }
+}
+
+
+
+const char* _braid_CallGetName(_braid_Call call)
+{
+    switch (call)
+    {
+        case STEP:      return "STEP";
+        case INIT:      return "INIT";
+        case CLONE:     return "CLONE";
+        case FREE:      return "FREE";
+        case SUM:       return "SUM";
+        case BUFPACK:   return "BUFPACK";
+        case BUFUNPACK: return "BUFUNPACK";
+        case ACCESS:    return "ACCESS";
+    }
+    return "Not a _braid_Call!";
 }

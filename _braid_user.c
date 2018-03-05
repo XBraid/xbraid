@@ -27,6 +27,7 @@ _braid_UserStep(braid_Core       core,
       action->inTime        = _braid_CoreElt(core, t);
       action->outTime       = _braid_CoreElt(core, tnext);
       action->status        = (braid_Status) status;
+      action->myid          = _braid_CoreElt(core, myid);
 
       
       /* Push the action to the actiontape */
@@ -58,6 +59,7 @@ _braid_UserInit(braid_Core core,
       _braid_Action* action = _braid_CTAlloc(_braid_Action, 1);
       action->braidCall     = INIT;
       action->inTime        = _braid_CoreElt(core, t);
+      action->myid          = _braid_CoreElt(core, myid);
       
       /* Push the action to the action tape */
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
@@ -84,6 +86,7 @@ _braid_UserClone(braid_Core core,
       /* Set up the action */
       _braid_Action* action = _braid_CTAlloc(_braid_Action, 1);
       action->braidCall     = CLONE;
+      action->myid          = _braid_CoreElt(core, myid);
       
       /* Push the action to the action tape */
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
@@ -110,6 +113,7 @@ _braid_UserFree(braid_Core core,
       /* Set up the action */
       _braid_Action* action = _braid_CTAlloc(_braid_Action, 1);
       action->braidCall     = FREE;
+      action->myid          = _braid_CoreElt(core, myid);
       
       /* Push the action to the action tape */
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
@@ -140,6 +144,7 @@ _braid_UserSum(braid_Core core,
       action->braidCall     = SUM;
       action->sum_alpha     = alpha;
       action->sum_beta      = beta;
+      action->myid          = _braid_CoreElt(core, myid);
       
       /* Push the action to the action tape */
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
@@ -182,6 +187,7 @@ _braid_UserAccess(braid_Core core,
       _braid_Action* action = _braid_CTAlloc(_braid_Action, 1);
       action->braidCall     = ACCESS;
       action->inTime        = _braid_CoreElt(core, t);
+      action->myid          = _braid_CoreElt(core, myid);
       
       /* Push the action to the action tape */
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
@@ -224,6 +230,7 @@ _braid_UserBufPack(braid_Core core,
       _braid_Action* action  = _braid_CTAlloc(_braid_Action, 1);
       action->braidCall      = BUFPACK;
       action->send_recv_rank = _braid_CoreElt(core, send_recv_rank);
+      action->myid           = _braid_CoreElt(core, myid);
       
       /* Push the action to the action tape */
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
@@ -251,6 +258,7 @@ _braid_UserBufUnpack(braid_Core core,
       _braid_Action* action  = _braid_CTAlloc(_braid_Action, 1);
       action->braidCall      = BUFUNPACK;
       action->send_recv_rank = _braid_CoreElt(core, send_recv_rank);
+      action->myid           = _braid_CoreElt(core, myid);
       
       /* Push the action to the action tape */
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);

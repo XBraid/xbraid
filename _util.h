@@ -168,6 +168,12 @@ typedef enum _braid_Call_enum
 
 
 /**
+ * Return the name of a _braid_Call (action name)
+ */
+const char* _braid_CallGetName(_braid_Call call);
+
+
+/**
  * XBraid Action structure
  *
  * Holds information for the called user routines
