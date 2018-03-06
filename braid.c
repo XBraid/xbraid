@@ -565,9 +565,16 @@ braid_Drive(braid_Core  core)
         _braid_TapeIterateBackwards( core, _braid_CoreElt(core, primaltape), _braid_TapeDisplayPrimal);
         printf(" %d: Tape End\n\n", _braid_CoreElt(core, myid));
 
+
+        /* Evaluate the adjoint action tape */
+        _braid_TapeIterateBackwards(core, _braid_CoreElt(core, actiontape), _braid_AdjointCall);
+
+
+
         /* Stop iterating */
         _braid_CoreElt(core, done) =1;
         done = 1;
+
       }
 }
 

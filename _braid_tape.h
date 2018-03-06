@@ -27,6 +27,7 @@ typedef struct _braid_tape_struct
 
 /**
  * Initialize the tape
+ * Set head to NULL
  **/
 void 
 _braid_TapeInit(_braid_Tape* head);
@@ -54,13 +55,18 @@ _braid_TapeIsEmpty(_braid_Tape* head);
 
 
 /** 
- * Iterate through the tape from end to beginning and call display function at each element
+ * Iterate through the tape from end to beginning and calling a function at each element
  * Input: - pointer to the braid core 
- *        - function pointer to the corresponding display function 
+ *        - pointer to function that should be called at each element
  */
 void
-_braid_TapeIterateBackwards(braid_Core core, _braid_Tape* head, void (*displayfct)(braid_Core core, void* data_ptr));
+_braid_TapeIterateBackwards(braid_Core core, _braid_Tape* head, void (*fctptr)(braid_Core core, void* data_ptr));
 
+/**
+ * Call adjoint action 
+ */
+void
+_braid_AdjointCall(braid_Core core, void* data_ptr);
 
 /**
  * Display function for a _braid_action

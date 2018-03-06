@@ -5,6 +5,7 @@
 
 #include "_braid.h"
 #include "_braid_tape.h"
+#include "_braid_user.h"
 
 #ifndef DEBUG
 #define DEBUG 0
@@ -54,7 +55,7 @@ _braid_TapeIsEmpty(_braid_Tape* head)
 
 
 void 
-_braid_TapeIterateBackwards(braid_Core core, _braid_Tape* head, void (*displayfct)(braid_Core core, void* data_ptr))
+_braid_TapeIterateBackwards(braid_Core core, _braid_Tape* head, void (*fctptr)(braid_Core core, void* data_ptr))
 {
     _braid_Tape* current;
     current = head;
@@ -62,8 +63,8 @@ _braid_TapeIterateBackwards(braid_Core core, _braid_Tape* head, void (*displayfc
     {
         do 
         {
-            /* Call the display function */
-            (*displayfct)(core, current->data_ptr);
+            /* Call the function */
+            (*fctptr)(core, current->data_ptr);
             /* Move to next element */
             current = current->next;
         }
@@ -77,12 +78,65 @@ _braid_TapeIterateBackwards(braid_Core core, _braid_Tape* head, void (*displayfc
 
 
 void
+_braid_AdjointCall(braid_Core core,void* data_ptr)
+{
+   /* Get the action */    
+   _braid_Action* action = (_braid_Action*)(data_ptr);
+   
+   /* Call the corresponding adjoint action */
+   switch (action->braidCall)
+   {
+      case STEP : 
+      {
+         _braid_UserStepAdjoint(action, _braid_CoreElt(core, app));
+         break;
+      }
+      case INIT: 
+      {
+         /* Do nothing */
+         break;
+      }
+      case CLONE: 
+      {
+         _braid_UserCloneAdjoint(action);
+         break;
+      }
+      case FREE: 
+      {
+         /* Do nothing */
+         break;
+      }
+      case SUM: 
+      {
+         _braid_UserSumAdjoint(action);
+         break;
+      }
+      case ACCESS: 
+      {
+         _braid_UserAccessAdjoint(action, _braid_CoreElt(core, app));
+         break;
+      }
+      case BUFPACK: 
+      {
+         _braid_UserBufPackAdjoint(action, _braid_CoreElt(core, app));
+         break;
+      }
+      case BUFUNPACK: 
+      {
+         _braid_UserBufUnpackAdjoint(action, _braid_CoreElt(core, app));
+         break;
+      } 
+   }
+}
+
+
+void
 _braid_TapeDisplayAction(braid_Core core,void* data_ptr){
 
     /* Get the action */    
-    _braid_Action* my_action = (_braid_Action*)(data_ptr);
+    _braid_Action* action = (_braid_Action*)(data_ptr);
     /* Print action information */
-    printf("%d: %s ", my_action->myid, _braid_CallGetName(my_action->braidCall));
+    printf("%d: %s ", action->myid, _braid_CallGetName(action->braidCall));
     printf("\n");
 
 }
@@ -97,6 +151,7 @@ _braid_TapeDisplayPrimal(braid_Core core,void* data_ptr)
    braid_AccessStatus   astatus = (braid_AccessStatus)core;
    _braid_CoreFcn(core, access)(_braid_CoreElt(core, app), vector, astatus );
 }
+
 
 const char* _braid_CallGetName(_braid_Call call)
 {

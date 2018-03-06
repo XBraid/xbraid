@@ -269,4 +269,47 @@ _braid_UserBufUnpack(braid_Core core,
 }
 
 
+/*----- Adjoint of user routines ------*/
+braid_Int
+_braid_UserStepAdjoint(_braid_Action *action, braid_App app)
+{
+      printf("STEP adjoint\n");
+      return 0;
+}
+
+braid_Int
+_braid_UserCloneAdjoint(_braid_Action *action)
+{
+      printf("CLONE adjoint\n");
+      return 0;
+}
+
+braid_Int
+_braid_UserSumAdjoint(_braid_Action *action)
+{
+      printf("SUM adjoint\n");
+      return 0;
+}
+
+
+braid_Int
+_braid_UserAccessAdjoint(_braid_Action *action, braid_App app)
+{
+      printf("ACCESS adjoint\n");
+      return 0;
+}
+
+braid_Int
+_braid_UserBufPackAdjoint(_braid_Action *action, braid_App app)
+{
+      printf("BufPack adjoint\n");
+      return 0;
+}
+
+braid_Int
+_braid_UserBufUnpackAdjoint(_braid_Action *action, braid_App app)
+{
+      printf("BufUnack adjoint\n");
+      return 0;
+}
 #endif
