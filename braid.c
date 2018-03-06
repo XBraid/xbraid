@@ -561,7 +561,7 @@ braid_Drive(braid_Core  core)
 
 
         /* Display the primal tape */
-        printf("\n Primal Tape: \n");
+        printf("\n Primal Tape: Size %d\n", _braid_CoreElt(core, primaltape)->size );
         _braid_TapeIterateBackwards( core, _braid_CoreElt(core, primaltape), _braid_TapeDisplayPrimal);
         printf(" Tape End\n\n");
 

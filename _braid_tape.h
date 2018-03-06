@@ -14,9 +14,11 @@
  * 
  * C-Implementation of a linked list storing pointers to generic data
  * This structure represents one tape element, holding a pointer to data and a pointer to the next element
+ * int size holds the number of all elements in the tape
  **/ 
 typedef struct _braid_tape_struct
 {
+    int size;
     void *data_ptr;
     struct _braid_tape_struct *next;
 
