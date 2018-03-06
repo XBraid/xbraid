@@ -62,7 +62,7 @@ _braid_TapeGetSize(_braid_Tape* head)
 
 
 void 
-_braid_TapeIterateBackwards(braid_Core core, _braid_Tape* head, void (*fctptr)(braid_Core core, void* data_ptr))
+_braid_TapeDisplayBackwards(braid_Core core, _braid_Tape* head, void (*displayfct)(braid_Core core, void* data_ptr))
 {
     _braid_Tape* current;
     current = head;
@@ -70,8 +70,8 @@ _braid_TapeIterateBackwards(braid_Core core, _braid_Tape* head, void (*fctptr)(b
     {
         do 
         {
-            /* Call the function */
-            (*fctptr)(core, current->data_ptr);
+            /* Call the display function */
+            (*displayfct)(core, current->data_ptr);
             /* Move to next element */
             current = current->next;
         }
@@ -81,21 +81,42 @@ _braid_TapeIterateBackwards(braid_Core core, _braid_Tape* head, void (*fctptr)(b
     {
         printf("Tape is empty\n");
     }
+  
 }
 
 
-void
-_braid_AdjointCall(braid_Core core,void* data_ptr)
+_braid_Tape* 
+_braid_TapeEvaluateAdjoint(braid_Core core, _braid_Tape* head)
 {
-   /* Get the action */    
-   _braid_Action* action = (_braid_Action*)(data_ptr);
+
+    while ( !_braid_TapeIsEmpty(head) )
+    {
+       /* Get the data */
+       _braid_Action* action = (_braid_Action*) head->data_ptr;
+
+       /* Call the adjoint action */
+       _braid_AdjointCall(core, action);
+
+       /* Pop the action from the tape */
+       head = _braid_TapePop( head );
+
+       /* Free memory of the action */
+       free(action);
+    }
+    
+    return head;
+}
+
+void
+_braid_AdjointCall(braid_Core core, _braid_Action* action)
+{
    
    /* Call the corresponding adjoint action */
    switch (action->braidCall)
    {
       case STEP : 
       {
-         _braid_UserStepAdjoint(action, _braid_CoreElt(core, app));
+         _braid_UserStepAdjoint(action,  _braid_CoreElt(core, app));
          break;
       }
       case INIT: 

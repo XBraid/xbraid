@@ -28,16 +28,16 @@ _braid_UserStep(braid_Core       core,
       action->outTime       = _braid_CoreElt(core, tnext);
       action->status        = (braid_Status) status;
       action->myid          = _braid_CoreElt(core, myid);
+      // printf("STEP push\n");
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
 
       /* Push a copy of the primal vector to the tape */
-      braid_Vector u_copy;
-      _braid_CoreFcn(core, clone)(app, u, &u_copy);  // this will accolate memory for the copy!
-      _braid_CoreElt(core, primaltape) = _braid_TapePush( _braid_CoreElt(core, primaltape), u_copy);
+      // braid_Vector u_copy;
+      // _braid_CoreFcn(core, clone)(app, u, &u_copy);  // this will accolate memory for the copy!
+      // _braid_CoreElt(core, primaltape) = _braid_TapePush( _braid_CoreElt(core, primaltape), u_copy);
 
       /* Debug info: */
-      printf("STEP push: ");
-      _braid_CoreFcn(core, access)(app, u_copy, (braid_AccessStatus) status);
+      // _braid_CoreFcn(core, access)(app, u_copy, (braid_AccessStatus) status);
   }
 
    /* Call the users Step function */
@@ -63,6 +63,7 @@ _braid_UserInit(braid_Core core,
       action->braidCall     = INIT;
       action->inTime        = _braid_CoreElt(core, t);
       action->myid          = _braid_CoreElt(core, myid);
+      // printf("INIT push: \n");
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
 
    }
@@ -88,6 +89,7 @@ _braid_UserClone(braid_Core core,
       _braid_Action* action = _braid_CTAlloc(_braid_Action, 1);
       action->braidCall     = CLONE;
       action->myid          = _braid_CoreElt(core, myid);
+      // printf("CLONE push: \n");
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
    }
    
@@ -113,6 +115,7 @@ _braid_UserFree(braid_Core core,
       _braid_Action* action = _braid_CTAlloc(_braid_Action, 1);
       action->braidCall     = FREE;
       action->myid          = _braid_CoreElt(core, myid);
+      // printf("FREE push\n");
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
    }
  
@@ -142,6 +145,7 @@ _braid_UserSum(braid_Core core,
       action->sum_alpha     = alpha;
       action->sum_beta      = beta;
       action->myid          = _braid_CoreElt(core, myid);
+      // printf("SUM push\n");
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
    }
 
@@ -183,16 +187,16 @@ _braid_UserAccess(braid_Core core,
       action->braidCall     = ACCESS;
       action->inTime        = _braid_CoreElt(core, t);
       action->myid          = _braid_CoreElt(core, myid);
+      // printf("ACCESS push\n");
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
 
       /* Push a copy of the primal vector to the tape */
-      braid_Vector u_copy;
-      _braid_CoreFcn(core, clone)(app, u, &u_copy);  // this will accolate memory for the copy!
-      _braid_CoreElt(core, primaltape) = _braid_TapePush( _braid_CoreElt(core, primaltape), u_copy);
+      // braid_Vector u_copy;
+      // _braid_CoreFcn(core, clone)(app, u, &u_copy);  // this will accolate memory for the copy!
+      // _braid_CoreElt(core, primaltape) = _braid_TapePush( _braid_CoreElt(core, primaltape), u_copy);
 
-      /* Debug info: */
-      printf("ACCESS push: ");
-      _braid_CoreFcn(core, access)(app, u_copy, (braid_AccessStatus) status);
+      // /* Debug info: */
+      // _braid_CoreFcn(core, access)(app, u_copy, (braid_AccessStatus) status);
    }
 
    /* Call the users Access function */
@@ -233,6 +237,7 @@ _braid_UserBufPack(braid_Core core,
       action->braidCall      = BUFPACK;
       action->send_recv_rank = _braid_CoreElt(core, send_recv_rank);
       action->myid           = _braid_CoreElt(core, myid);
+      // printf("BufPack push\n");
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
    }
    
@@ -259,6 +264,7 @@ _braid_UserBufUnpack(braid_Core core,
       action->braidCall      = BUFUNPACK;
       action->send_recv_rank = _braid_CoreElt(core, send_recv_rank);
       action->myid           = _braid_CoreElt(core, myid);
+      // printf("BufUnpack push\n");
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
    }
 
@@ -271,23 +277,37 @@ _braid_UserBufUnpack(braid_Core core,
 
 /*----- Adjoint of user routines ------*/
 braid_Int
-_braid_UserStepAdjoint(_braid_Action *action, braid_App app)
+_braid_UserStepAdjoint( _braid_Action *action, braid_App app)
 {
-      printf("STEP adjoint\n");
+      printf("STEP adjoint pops from the primal tape\n");
+
+      /* Get the braid_vector */
+      // braid_Vector vector = (braid_Vector) (head->data_ptr);
+
+      /* Pop from the stack*/
+      // head = pop(head);
+
+      /* Free memory of the data */
+      // free(ptr);
+
+
+//    /* DEBUG: Display the vector */
+//    _braid_CoreFcn(core, access)(_braid_CoreElt(core, app), vector, astatus )
+
       return 0;
 }
 
 braid_Int
 _braid_UserCloneAdjoint(_braid_Action *action)
 {
-      printf("CLONE adjoint\n");
+      // printf("CLONE adjoint\n");
       return 0;
 }
 
 braid_Int
 _braid_UserSumAdjoint(_braid_Action *action)
 {
-      printf("SUM adjoint\n");
+      // printf("SUM adjoint\n");
       return 0;
 }
 
@@ -295,21 +315,21 @@ _braid_UserSumAdjoint(_braid_Action *action)
 braid_Int
 _braid_UserAccessAdjoint(_braid_Action *action, braid_App app)
 {
-      printf("ACCESS adjoint\n");
+      // printf("ACCESS adjoint\n");
       return 0;
 }
 
 braid_Int
 _braid_UserBufPackAdjoint(_braid_Action *action, braid_App app)
 {
-      printf("BufPack adjoint\n");
+      // printf("BufPack adjoint\n");
       return 0;
 }
 
 braid_Int
 _braid_UserBufUnpackAdjoint(_braid_Action *action, braid_App app)
 {
-      printf("BufUnack adjoint\n");
+      // printf("BufUnack adjoint\n");
       return 0;
 }
 #endif

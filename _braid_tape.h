@@ -25,6 +25,43 @@ typedef struct _braid_tape_struct
 } _braid_Tape;
 
 
+/** 
+ * Enumerator for identifying performed action 
+ **/
+typedef enum _braid_Call_enum
+{
+   STEP      = 1,
+   INIT      = 2,
+   CLONE     = 3,
+   FREE      = 4,
+   SUM       = 5,
+   BUFPACK   = 6,
+   BUFUNPACK = 7,
+   ACCESS    = 8,
+
+} _braid_Call;
+
+/**
+ * XBraid Action structure
+ *
+ * Holds information for the called user routines
+ **/
+typedef struct _braid_Action_struct
+{
+   _braid_Call       braidCall;        /**< type of the user routine */
+   braid_Real        inTime;           /*< time of the input vector */
+   braid_Real        outTime;          /*< time of the output vector */
+   braid_Status      status;        /*< status used in my_step */
+   braid_Real        sum_alpha;        /*< first coefficient of my_sum */
+   braid_Real        sum_beta;         /*< second coefficient of my_sum */
+   braid_Int         send_recv_rank;   /*< processor rank of sender / receiver in my_bufpack / my_bufunpack */
+   braid_Int         braid_iter;       /*< iteration number of xBraid */
+   braid_Int         myid;             /*< processors id */
+
+} _braid_Action;
+ 
+
+
 /**
  * Initialize the tape
  * Set head to NULL
@@ -60,18 +97,27 @@ braid_Int
 _braid_TapeGetSize(_braid_Tape* head);
 
 /** 
- * Iterate through the tape from end to beginning and calling a function at each element
+ * Display the tape in reverse order, calls the display function at each element
  * Input: - pointer to the braid core 
- *        - pointer to function that should be called at each element
+ *        - pointer to the display function
  */
 void
-_braid_TapeIterateBackwards(braid_Core core, _braid_Tape* head, void (*fctptr)(braid_Core core, void* data_ptr));
+_braid_TapeDisplayBackwards(braid_Core core, _braid_Tape* head, void (*fctptr)(braid_Core core, void* data_ptr));
+
+/** 
+ * Evaluate the action tape in adjoint order. This will clear the action tape!
+ * Input: - pointer to the braid core 
+ *        - pointer to the head of the action tape
+ * Returns heal = NULL
+ */
+_braid_Tape*
+_braid_TapeEvaluateAdjoint(braid_Core core, _braid_Tape* head);
 
 /**
  * Call adjoint action 
  */
 void
-_braid_AdjointCall(braid_Core core, void* data_ptr);
+_braid_AdjointCall(braid_Core core, _braid_Action* action);
 
 /**
  * Display function for a _braid_action
@@ -88,21 +134,8 @@ void
 _braid_TapeDisplayPrimal(braid_Core core,void* data_ptr);
 
 
-/** 
- * Enumerator for identifying performed action 
- **/
-typedef enum _braid_Call_enum
-{
-   STEP      = 1,
-   INIT      = 2,
-   CLONE     = 3,
-   FREE      = 4,
-   SUM       = 5,
-   BUFPACK   = 6,
-   BUFUNPACK = 7,
-   ACCESS    = 8,
-
-} _braid_Call;
+void
+_braid_TapeDisplayInt(braid_Core core,void* data_ptr);
 
 
 /**
@@ -110,25 +143,5 @@ typedef enum _braid_Call_enum
  */
 const char* _braid_CallGetName(_braid_Call call);
 
-
-/**
- * XBraid Action structure
- *
- * Holds information for the called user routines
- **/
-typedef struct _braid_Action_struct
-{
-   _braid_Call       braidCall;        /**< type of the user routine */
-   braid_Real        inTime;           /*< time of the input vector */
-   braid_Real        outTime;          /*< time of the output vector */
-   braid_Status      status;        /*< status used in my_step */
-   braid_Real        sum_alpha;        /*< first coefficient of my_sum */
-   braid_Real        sum_beta;         /*< second coefficient of my_sum */
-   braid_Int         send_recv_rank;   /*< processor rank of sender / receiver in my_bufpack / my_bufunpack */
-   braid_Int         braid_iter;       /*< iteration number of xBraid */
-   braid_Int         myid;             /*< processors id */
-
-} _braid_Action;
- 
 
 #endif

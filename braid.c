@@ -28,6 +28,7 @@
 
 #include "_braid.h"
 #include "braid_defs.h"
+#include "_braid_tape.h"
 #include "_util.h"
 
 #ifndef DEBUG
@@ -554,29 +555,35 @@ braid_Drive(braid_Core  core)
    
       if (_braid_CoreElt(core,adjoint)){
 
+        _braid_Tape* actiontape = _braid_CoreElt(core, actiontape);
+        // _braid_Tape* primaltape = _braid_CoreElt(core, primaltape);
         /* Display the actions */
-        printf("\n %d: Action Tape: Size %d \n", _braid_CoreElt(core, myid), _braid_TapeGetSize( _braid_CoreElt(core, actiontape) ) );
-        _braid_TapeIterateBackwards( core, _braid_CoreElt(core, actiontape), _braid_TapeDisplayAction);
+        printf("\n %d: Action Tape: Size %d \n", _braid_CoreElt(core, myid), _braid_TapeGetSize( actiontape ) );
+        _braid_TapeDisplayBackwards( core, actiontape, _braid_TapeDisplayAction);
         printf("%d: Tape End\n\n", _braid_CoreElt(core, myid));
 
-
         /* Display the primal tape */
-        printf("\n %d: Primal Tape: Size %d\n", _braid_CoreElt(core, myid), _braid_TapeGetSize( _braid_CoreElt(core, primaltape) ) );
-        _braid_TapeIterateBackwards( core, _braid_CoreElt(core, primaltape), _braid_TapeDisplayPrimal);
-        printf(" %d: Tape End\n\n", _braid_CoreElt(core, myid));
+        // printf("\n %d: Primal Tape: Size %d\n", _braid_CoreElt(core, myid), _braid_TapeGetSize( primaltape ) );
+        // _braid_TapeDisplayBackwards( core, primaltape, _braid_TapeDisplayPrimal);
+        // printf(" %d: Tape End\n\n", _braid_CoreElt(core, myid));
 
 
         /* Evaluate the adjoint action tape */
-        _braid_TapeIterateBackwards(core, _braid_CoreElt(core, actiontape), _braid_AdjointCall);
+        actiontape = _braid_TapeEvaluateAdjoint(core, actiontape );
+        /* Update the actiontape in the core */
+        _braid_CoreElt(core, actiontape) = actiontape;
 
-
+        /* Check if adjoint action tape is empty */
+        printf("\n %d: Action Tape: Size %d \n", _braid_CoreElt(core, myid), _braid_TapeGetSize( actiontape ) );
 
         /* Stop iterating */
-        _braid_CoreElt(core, done) =1;
         done = 1;
 
       }
-}
+   }
+
+   /* Stop adjoint recording */
+   _braid_CoreElt(core, adjoint) = 0;
 
    /* By default, set the final residual norm to be the same as the previous */
    {
