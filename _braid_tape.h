@@ -53,6 +53,11 @@ _braid_TapePop(_braid_Tape* head);
 braid_Int 
 _braid_TapeIsEmpty(_braid_Tape* head);
 
+/**
+ * Returns the number of elements in the tape
+ */
+braid_Int
+_braid_TapeGetSize(_braid_Tape* head);
 
 /** 
  * Iterate through the tape from end to beginning and calling a function at each element

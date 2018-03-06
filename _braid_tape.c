@@ -27,7 +27,7 @@ _braid_TapePush(_braid_Tape* head, void* data_ptr)
       printf("MALLOC ERROR!\n") ;
       exit(1);
    }
-   if (head==NULL) tmp->size = 1;
+   if ( _braid_TapeIsEmpty(head) ) tmp->size = 1;
    else tmp->size = head->size + 1;
    tmp->data_ptr = data_ptr;
    tmp->next = head;
@@ -51,6 +51,13 @@ braid_Int
 _braid_TapeIsEmpty(_braid_Tape* head)
 {
     return head == NULL ? 1 : 0;
+}
+
+braid_Int
+_braid_TapeGetSize(_braid_Tape* head)
+{
+    if ( _braid_TapeIsEmpty(head) ) return 0;
+    else return head->size;
 }
 
 
