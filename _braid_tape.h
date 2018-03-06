@@ -110,8 +110,8 @@ _braid_TapeDisplayBackwards(braid_Core core, _braid_Tape* head, void (*fctptr)(b
  *        - pointer to the head of the action tape
  * Returns heal = NULL
  */
-_braid_Tape*
-_braid_TapeEvaluateAdjoint(braid_Core core, _braid_Tape* head);
+void
+_braid_TapeEvaluateAdjoint(braid_Core core);
 
 /**
  * Call adjoint action 

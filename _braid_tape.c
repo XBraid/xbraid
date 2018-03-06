@@ -85,26 +85,29 @@ _braid_TapeDisplayBackwards(braid_Core core, _braid_Tape* head, void (*displayfc
 }
 
 
-_braid_Tape* 
-_braid_TapeEvaluateAdjoint(braid_Core core, _braid_Tape* head)
+void 
+_braid_TapeEvaluateAdjoint(braid_Core core)
 {
+    /* Get the tape */
+    _braid_Tape* actiontape = _braid_CoreElt(core, actiontape);
 
-    while ( !_braid_TapeIsEmpty(head) )
+    while ( !_braid_TapeIsEmpty(actiontape) )
     {
-       /* Get the data */
-       _braid_Action* action = (_braid_Action*) head->data_ptr;
+       /* Get the action */
+       _braid_Action* action = (_braid_Action*) actiontape->data_ptr;
 
        /* Call the adjoint action */
        _braid_AdjointCall(core, action);
 
        /* Pop the action from the tape */
-       head = _braid_TapePop( head );
+       actiontape = _braid_TapePop( actiontape );
 
        /* Free memory of the action */
        free(action);
     }
     
-    return head;
+    /* Update the actiontape in the core */
+    _braid_CoreElt(core, actiontape) = actiontape;
 }
 
 void
@@ -116,7 +119,7 @@ _braid_AdjointCall(braid_Core core, _braid_Action* action)
    {
       case STEP : 
       {
-         _braid_UserStepAdjoint(action,  _braid_CoreElt(core, app));
+         _braid_UserStepAdjoint(core, action);
          break;
       }
       case INIT: 
@@ -141,7 +144,7 @@ _braid_AdjointCall(braid_Core core, _braid_Action* action)
       }
       case ACCESS: 
       {
-         _braid_UserAccessAdjoint(action, _braid_CoreElt(core, app));
+         _braid_UserAccessAdjoint(core, action);
          break;
       }
       case BUFPACK: 
@@ -178,6 +181,16 @@ _braid_TapeDisplayPrimal(braid_Core core,void* data_ptr)
    /*--- Display the vector --*/
    braid_AccessStatus   astatus = (braid_AccessStatus)core;
    _braid_CoreFcn(core, access)(_braid_CoreElt(core, app), vector, astatus );
+}
+
+void
+_braid_TapeDisplayInt(braid_Core core,void* data_ptr)
+{
+    /* Get the integer*/
+    int* int_ptr = (int* ) data_ptr;
+
+   /*--- Display the integer --*/
+    printf(" Integer: %d", (*int_ptr) );
 }
 
 

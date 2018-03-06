@@ -555,11 +555,9 @@ braid_Drive(braid_Core  core)
    
       if (_braid_CoreElt(core,adjoint)){
 
-        _braid_Tape* actiontape = _braid_CoreElt(core, actiontape);
-        // _braid_Tape* primaltape = _braid_CoreElt(core, primaltape);
         /* Display the actions */
-        printf("\n %d: Action Tape: Size %d \n", _braid_CoreElt(core, myid), _braid_TapeGetSize( actiontape ) );
-        _braid_TapeDisplayBackwards( core, actiontape, _braid_TapeDisplayAction);
+        printf("\n %d: Action Tape: Size %d \n", _braid_CoreElt(core, myid), _braid_TapeGetSize( _braid_CoreElt(core, actiontape)) );
+        _braid_TapeDisplayBackwards( core, _braid_CoreElt(core, actiontape), _braid_TapeDisplayAction);
         printf("%d: Tape End\n\n", _braid_CoreElt(core, myid));
 
         /* Display the primal tape */
@@ -569,15 +567,13 @@ braid_Drive(braid_Core  core)
 
 
         /* Evaluate the adjoint action tape */
-        actiontape = _braid_TapeEvaluateAdjoint(core, actiontape );
-        /* Update the actiontape in the core */
-        _braid_CoreElt(core, actiontape) = actiontape;
+        _braid_TapeEvaluateAdjoint(core);
 
         /* Check if adjoint action tape is empty */
-        printf("\n %d: Action Tape: Size %d \n", _braid_CoreElt(core, myid), _braid_TapeGetSize( actiontape ) );
+        printf("\n %d: Action Tape: Size %d \n", _braid_CoreElt(core, myid), _braid_TapeGetSize( _braid_CoreElt(core, actiontape) ));
 
         /* Stop iterating */
-        done = 1;
+        // done = 1;
 
       }
    }

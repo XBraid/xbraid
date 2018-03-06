@@ -277,7 +277,7 @@ _braid_UserBufUnpack(braid_Core core,
 
 /*----- Adjoint of user routines ------*/
 braid_Int
-_braid_UserStepAdjoint( _braid_Action *action, braid_App app)
+_braid_UserStepAdjoint(braid_Core core, _braid_Action *action)
 {
       printf("STEP adjoint pops from the primal tape\n");
 
@@ -313,7 +313,7 @@ _braid_UserSumAdjoint(_braid_Action *action)
 
 
 braid_Int
-_braid_UserAccessAdjoint(_braid_Action *action, braid_App app)
+_braid_UserAccessAdjoint(braid_Core core, _braid_Action *action)
 {
       // printf("ACCESS adjoint\n");
       return 0;
