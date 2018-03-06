@@ -279,13 +279,25 @@ _braid_UserBufUnpack(braid_Core core,
 braid_Int
 _braid_UserStepAdjoint(braid_Core core, _braid_Action *action)
 {
-      printf("STEP adjoint pops from the primal tape\n");
+      braid_Real        inTime;
+      braid_Real        outTime;
+      braid_StepStatus  status;
+      braid_Int         myid;
+      braid_Vector      vector;
 
-      /* Get the braid_vector (last one on the primal tape) */
-      braid_Vector vector = (braid_Vector) (_braid_CoreElt(core, primaltape)->data_ptr);
+      /* Grab information from the action */
+      inTime  = action->inTime;
+      outTime = action->outTime;
+      status  = (braid_StepStatus) action->status;
+      myid    = action->myid;
+
+      /* Get the braid_vector that was used in primal run */
+      vector = (braid_Vector) (_braid_CoreElt(core, primaltape)->data_ptr);
 
 //    /* DEBUG: Display the vector */
+//       printf("STEP adjoint pops from the primal tape\n");
 //    _braid_CoreFcn(core, access)(_braid_CoreElt(core, app), vector, astatus )
+
 
       /* TODO: Call the users's adjoint step function */
 
@@ -302,6 +314,11 @@ _braid_UserStepAdjoint(braid_Core core, _braid_Action *action)
 braid_Int
 _braid_UserCloneAdjoint(_braid_Action *action)
 {
+      braid_Int         myid;
+
+      /* Grab information from the action */
+      myid = action->myid;
+
       // printf("CLONE adjoint\n");
       return 0;
 }
@@ -309,6 +326,15 @@ _braid_UserCloneAdjoint(_braid_Action *action)
 braid_Int
 _braid_UserSumAdjoint(_braid_Action *action)
 {
+      braid_Real alpha;
+      braid_Real beta;
+      braid_Int  myid;
+
+      /* Grab information from the action */
+      alpha = action->sum_alpha;
+      beta  = action->sum_beta;
+      myid  = action->myid;
+
       // printf("SUM adjoint\n");
       return 0;
 }
@@ -317,13 +343,21 @@ _braid_UserSumAdjoint(_braid_Action *action)
 braid_Int
 _braid_UserAccessAdjoint(braid_Core core, _braid_Action *action)
 {
-      printf("ACCESS adjoint pops from the primal tape\n");
+      braid_Int     inTime;
+      braid_Int     myid;
+      braid_Vector  vector;
 
-      /* Get the braid_vector (last one on the primal tape) */
-      braid_Vector vector = (braid_Vector) (_braid_CoreElt(core, primaltape)->data_ptr);
+      /* Grab information from the app */
+      inTime = action->inTime;
+      myid   = action->myid;
+
+      /* Get the braid_vector that was used in primal run */
+      vector = (braid_Vector) (_braid_CoreElt(core, primaltape)->data_ptr);
 
 //    /* DEBUG: Display the vector */
+//       printf("ACCESS adjoint pops from the primal tape\n");
 //    _braid_CoreFcn(core, access)(_braid_CoreElt(core, app), vector, astatus )
+
 
       /* TODO: Call the users's adjoint access function */
 
@@ -340,6 +374,14 @@ _braid_UserAccessAdjoint(braid_Core core, _braid_Action *action)
 braid_Int
 _braid_UserBufPackAdjoint(_braid_Action *action, braid_App app)
 {
+      braid_Real send_recv_rank;
+      braid_Int  myid;
+
+      /* Grab information from the action */
+      send_recv_rank = action->send_recv_rank;
+      myid           = action->myid;
+
+      
       // printf("BufPack adjoint\n");
       return 0;
 }
@@ -347,6 +389,13 @@ _braid_UserBufPackAdjoint(_braid_Action *action, braid_App app)
 braid_Int
 _braid_UserBufUnpackAdjoint(_braid_Action *action, braid_App app)
 {
+      braid_Real send_recv_rank;
+      braid_Int  myid;
+
+      /* Grab information from the action */
+      send_recv_rank = action->send_recv_rank;
+      myid           = action->myid;
+
       // printf("BufUnack adjoint\n");
       return 0;
 }
