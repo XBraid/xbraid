@@ -32,9 +32,9 @@ _braid_UserStep(braid_Core       core,
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
 
       /* Push a copy of the primal vector to the tape */
-      // braid_Vector u_copy;
-      // _braid_CoreFcn(core, clone)(app, u, &u_copy);  // this will accolate memory for the copy!
-      // _braid_CoreElt(core, primaltape) = _braid_TapePush( _braid_CoreElt(core, primaltape), u_copy);
+      braid_Vector u_copy;
+      _braid_CoreFcn(core, clone)(app, u, &u_copy);  // this will accolate memory for the copy!
+      _braid_CoreElt(core, primaltape) = _braid_TapePush( _braid_CoreElt(core, primaltape), u_copy);
 
       /* Debug info: */
       // _braid_CoreFcn(core, access)(app, u_copy, (braid_AccessStatus) status);
@@ -191,9 +191,9 @@ _braid_UserAccess(braid_Core core,
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
 
       /* Push a copy of the primal vector to the tape */
-      // braid_Vector u_copy;
-      // _braid_CoreFcn(core, clone)(app, u, &u_copy);  // this will accolate memory for the copy!
-      // _braid_CoreElt(core, primaltape) = _braid_TapePush( _braid_CoreElt(core, primaltape), u_copy);
+      braid_Vector u_copy;
+      _braid_CoreFcn(core, clone)(app, u, &u_copy);  // this will accolate memory for the copy!
+      _braid_CoreElt(core, primaltape) = _braid_TapePush( _braid_CoreElt(core, primaltape), u_copy);
 
       // /* Debug info: */
       // _braid_CoreFcn(core, access)(app, u_copy, (braid_AccessStatus) status);
@@ -281,18 +281,20 @@ _braid_UserStepAdjoint(braid_Core core, _braid_Action *action)
 {
       printf("STEP adjoint pops from the primal tape\n");
 
-      /* Get the braid_vector */
-      // braid_Vector vector = (braid_Vector) (head->data_ptr);
-
-      /* Pop from the stack*/
-      // head = pop(head);
-
-      /* Free memory of the data */
-      // free(ptr);
-
+      /* Get the braid_vector (last one on the primal tape) */
+      braid_Vector vector = (braid_Vector) (_braid_CoreElt(core, primaltape)->data_ptr);
 
 //    /* DEBUG: Display the vector */
 //    _braid_CoreFcn(core, access)(_braid_CoreElt(core, app), vector, astatus )
+
+      /* TODO: Call the users's adjoint step function */
+
+      /* Pop the vector from the primal tape*/
+      _braid_CoreElt(core, primaltape) = _braid_TapePop( _braid_CoreElt(core, primaltape) );
+
+      /* Free memory of the braid_vector */
+      _braid_CoreFcn(core, free)(_braid_CoreElt(core, app), vector);
+
 
       return 0;
 }
@@ -315,7 +317,23 @@ _braid_UserSumAdjoint(_braid_Action *action)
 braid_Int
 _braid_UserAccessAdjoint(braid_Core core, _braid_Action *action)
 {
-      // printf("ACCESS adjoint\n");
+      printf("ACCESS adjoint pops from the primal tape\n");
+
+      /* Get the braid_vector (last one on the primal tape) */
+      braid_Vector vector = (braid_Vector) (_braid_CoreElt(core, primaltape)->data_ptr);
+
+//    /* DEBUG: Display the vector */
+//    _braid_CoreFcn(core, access)(_braid_CoreElt(core, app), vector, astatus )
+
+      /* TODO: Call the users's adjoint access function */
+
+      /* Pop the vector from the primal tape*/
+      _braid_CoreElt(core, primaltape) = _braid_TapePop( _braid_CoreElt(core, primaltape) );
+
+      /* Free memory of the braid_vector */
+      _braid_CoreFcn(core, free)(_braid_CoreElt(core, app), vector);
+
+
       return 0;
 }
 

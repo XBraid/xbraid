@@ -571,6 +571,7 @@ braid_Drive(braid_Core  core)
 
         /* Check if adjoint action tape is empty */
         printf("\n %d: Action Tape: Size %d \n", _braid_CoreElt(core, myid), _braid_TapeGetSize( _braid_CoreElt(core, actiontape) ));
+        printf("\n %d: Primal Tape: Size %d\n", _braid_CoreElt(core, myid), _braid_TapeGetSize( _braid_CoreElt(core, primaltape) ) );
 
         /* Stop iterating */
         // done = 1;
