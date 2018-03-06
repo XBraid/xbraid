@@ -549,10 +549,23 @@ braid_Drive(braid_Core  core)
             }
          }
       }
+
+      /*------ Adjoint XBraid -------*/
    
       if (_braid_CoreElt(core,adjoint)){
-        /* Display the actions for this iteration */
-        _braid_TapeDisplay( _braid_CoreElt(core,actiontape) );
+
+        /* Display the actions */
+        // printf("\n Action Tape: \n");
+        // _braid_TapeIterateBackwards( core, _braid_CoreElt(core, actiontape), _braid_TapeDisplayAction);
+        // printf(" Tape End\n\n");
+
+
+        /* Display the primal tape */
+        printf("\n Primal Tape: \n");
+        _braid_TapeIterateBackwards( core, _braid_CoreElt(core, primaltape), _braid_TapeDisplayPrimal);
+        printf(" Tape End\n\n");
+
+        /* Stop iterating */
         done=1;
       }
 }

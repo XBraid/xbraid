@@ -166,16 +166,25 @@ my_Access(braid_App          app,
           braid_Vector       u,
           braid_AccessStatus astatus)
 {
-   int        index;
-   char       filename[255];
-   FILE      *file;
+//    int        index;
+//    char       filename[255];
+//    FILE      *file;
    
-   braid_AccessStatusGetTIndex(astatus, &index);
-   sprintf(filename, "%s.%04d.%03d", "ex-01.out", index, app->rank);
-   file = fopen(filename, "w");
-   fprintf(file, "%.14e\n", (u->value));
-   fflush(file);
-   fclose(file);
+//    braid_AccessStatusGetTIndex(astatus, &index);
+//    sprintf(filename, "%s.%04d.%03d", "ex-01.out", index, app->rank);
+//    file = fopen(filename, "w");
+//    fprintf(file, "%.14e\n", (u->value));
+//    fflush(file);
+//    fclose(file);
+
+   /* Debug info for adjoint taping */
+   int done, level;
+   braid_AccessStatusGetLevel(astatus, &level);
+   braid_AccessStatusGetDone(astatus, &done);
+   if (!done)
+   {
+        printf("%.14e\n", (u->value));
+   }
 
    return 0;
 }
@@ -284,6 +293,7 @@ int main (int argc, char *argv[])
    braid_SetMaxLevels(core, 2);
    braid_SetAbsTol(core, 1.0e-06);
    braid_SetCFactor(core, -1, 2);
+   braid_SetAccessLevel(core, 3);
    
    /* Run simulation, and then clean up */
    braid_Drive(core);

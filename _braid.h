@@ -38,6 +38,7 @@
 
 #include "braid.h"
 #include "_util.h"
+#include "_braid_tape.h"
 
 #ifdef __cplusplus
 extern "C" {
