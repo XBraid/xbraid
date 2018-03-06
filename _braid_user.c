@@ -19,7 +19,7 @@ _braid_UserStep(braid_Core       core,
 {
 
    /* if adjoint: Record to the tape */
-   if ( _braid_CoreElt(core, adjoint) )
+   if ( _braid_CoreElt(core, adjoint) && !_braid_CoreElt(core, done) )
    {
       /* Set up and push the action */
       _braid_Action* action = _braid_CTAlloc(_braid_Action, 1);
@@ -56,7 +56,7 @@ _braid_UserInit(braid_Core core,
                 )
 {
    /* if adjoint: Record to the tape */
-   if ( _braid_CoreElt(core, adjoint) )
+   if ( _braid_CoreElt(core, adjoint) && !_braid_CoreElt(core, done) )
    {
       /* Set up and push the action */
       _braid_Action* action = _braid_CTAlloc(_braid_Action, 1);
@@ -82,7 +82,7 @@ _braid_UserClone(braid_Core core,
 {
 
    /* if adjoint: Record to the tape */
-   if ( _braid_CoreElt(core, adjoint) )
+   if ( _braid_CoreElt(core, adjoint) && !_braid_CoreElt(core, done) )
    {
       /* Set up and push the action */
       _braid_Action* action = _braid_CTAlloc(_braid_Action, 1);
@@ -107,7 +107,7 @@ _braid_UserFree(braid_Core core,
 
 
    /* if adjoint: Record to the tape */
-   if ( _braid_CoreElt(core, adjoint) )
+   if ( _braid_CoreElt(core, adjoint) && !_braid_CoreElt(core, done) )
    {
       /* Set up and push the action */
       _braid_Action* action = _braid_CTAlloc(_braid_Action, 1);
@@ -134,7 +134,7 @@ _braid_UserSum(braid_Core core,
 {
 
    /* if adjoint: Record to the tape */
-   if ( _braid_CoreElt(core, adjoint) )
+   if ( _braid_CoreElt(core, adjoint) && !_braid_CoreElt(core, done) )
    {
       /* Set up and push the action */
       _braid_Action* action = _braid_CTAlloc(_braid_Action, 1);
@@ -176,7 +176,7 @@ _braid_UserAccess(braid_Core core,
 {
 
    /* if adjoint: Record to the tape */
-   if ( _braid_CoreElt(core, adjoint) )
+   if ( _braid_CoreElt(core, adjoint) && !_braid_CoreElt(core, done) )
    {
       /* Set up and push the action */
       _braid_Action* action = _braid_CTAlloc(_braid_Action, 1);
@@ -226,7 +226,7 @@ _braid_UserBufPack(braid_Core core,
                    )
 {
       /* if adjoint: Record to the tape */
-   if ( _braid_CoreElt(core, adjoint) )
+   if ( _braid_CoreElt(core, adjoint) && !_braid_CoreElt(core, done) )
    {
       /* Set up and push the action */
       _braid_Action* action  = _braid_CTAlloc(_braid_Action, 1);
@@ -252,7 +252,7 @@ _braid_UserBufUnpack(braid_Core core,
                      )
 {
       /* if adjoint: Record to the tape */
-   if ( _braid_CoreElt(core, adjoint) )
+   if ( _braid_CoreElt(core, adjoint) && !_braid_CoreElt(core, done) )
    {
       /* Set up and push the action */
       _braid_Action* action  = _braid_CTAlloc(_braid_Action, 1);

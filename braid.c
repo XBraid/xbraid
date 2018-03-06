@@ -555,18 +555,19 @@ braid_Drive(braid_Core  core)
       if (_braid_CoreElt(core,adjoint)){
 
         /* Display the actions */
-        // printf("\n Action Tape: \n");
-        // _braid_TapeIterateBackwards( core, _braid_CoreElt(core, actiontape), _braid_TapeDisplayAction);
-        // printf(" Tape End\n\n");
+        printf("\n %d: Action Tape: Size %d \n", _braid_CoreElt(core, myid), _braid_CoreElt(core, actiontape)->size );
+        _braid_TapeIterateBackwards( core, _braid_CoreElt(core, actiontape), _braid_TapeDisplayAction);
+        printf("%d: Tape End\n\n", _braid_CoreElt(core, myid));
 
 
         /* Display the primal tape */
-        printf("\n Primal Tape: Size %d\n", _braid_CoreElt(core, primaltape)->size );
+        printf("\n %d: Primal Tape: Size %d\n", _braid_CoreElt(core, myid), _braid_CoreElt(core, primaltape)->size );
         _braid_TapeIterateBackwards( core, _braid_CoreElt(core, primaltape), _braid_TapeDisplayPrimal);
-        printf(" Tape End\n\n");
+        printf(" %d: Tape End\n\n", _braid_CoreElt(core, myid));
 
         /* Stop iterating */
-        done=1;
+        _braid_CoreElt(core, done) =1;
+        done = 1;
       }
 }
 
