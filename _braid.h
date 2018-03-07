@@ -44,6 +44,17 @@
 extern "C" {
 #endif
 
+
+/**
+ * Adjoint wrapper for the user's braid_Vector
+ */
+struct _braid_Vector_wrap
+{
+  braid_UserVector primal;
+  braid_UserVector adjoint; 
+};
+typedef struct _braid_Vector_wrap *braid_Vector;
+
 /*--------------------------------------------------------------------------
  * Main data structures and accessor macros
  *--------------------------------------------------------------------------*/
@@ -180,6 +191,7 @@ typedef struct _braid_Core_struct
    braid_Real             localtime;        /**< local wall time for braid_Drive() */
    braid_Real             globaltime;       /**< global wall time for braid_Drive() */
    braid_Int              adjoint;          /**< determines if adjoint run is performed (1) or not (0) */
+   braid_Int              verbose;          /**< verbosity of the adjoint code */
 
    _braid_Tape* actiontape;                 /**< tape storing the actions while adjoint recording */
    _braid_Tape* primaltape;                     /**< tape storing primal braid_vectors while adjoint recording */

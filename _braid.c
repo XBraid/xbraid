@@ -459,7 +459,7 @@ _braid_USetVectorRef(braid_Core    core,
    else if (sflag == -1)
    {
       braid_App    app = _braid_CoreElt(core, app);
-      _braid_CoreFcn(core, sfree)(app, u);
+      _braid_UserSFree(core,  app, u);
       ua[iu] = u;
    }
 
@@ -508,7 +508,7 @@ _braid_UGetVector(braid_Core     core,
       else if (sflag == -1)
       {
          // In this case, sclone != NULL
-         _braid_CoreFcn(core, sclone)(app, ua[iu], &u);
+         _braid_UserSClone(core,  app, ua[iu], &u);
       }
    }
 
@@ -572,12 +572,12 @@ _braid_USetVector(braid_Core    core,
       if (move)
       {
          // We are on an F-point, with shellvector option. We only keep the shell.
-         _braid_CoreFcn(core, sfree)(app, u);
+         _braid_UserSFree(core,  app, u);
          ua[iu] = u;                                   /* move the vector */
       }
       else
       {
-         _braid_CoreFcn(core, sclone)(app, u, &ua[iu]); /* copy the vector */
+         _braid_UserSClone(core,  app, u, &ua[iu]); /* copy the vector */
       }
    }
    else if (move) // We store nothing
@@ -990,7 +990,7 @@ _braid_Residual(braid_Core     core,
    else
    {
       /* Call the user's residual routine */
-      _braid_CoreFcn(core, residual)(app, ustop, r, status);
+      _braid_UserResidual(core, app, ustop, r, status);
    }
 
    return _braid_error_flag;
@@ -1071,7 +1071,7 @@ _braid_Coarsen(braid_Core     core,
       _braid_CoarsenRefStatusInit(f_ta[f_ii], f_ta[f_ii-1], f_ta[f_ii+1], 
                                   c_ta[c_ii-1], c_ta[c_ii+1],
                                   level-1, nrefine, gupper, cstatus);
-      _braid_CoreFcn(core, scoarsen)(app, fvector, cvector, cstatus);
+      _braid_UserSCoarsen(core, app, fvector, cvector, cstatus);
    }
    return _braid_error_flag;
 }
@@ -1103,7 +1103,7 @@ _braid_RefineBasic(braid_Core     core,
       /* Call the user's refinement routine */
       _braid_CoarsenRefStatusInit(f_ta[0], f_ta[-1], f_ta[+1], c_ta[-1], c_ta[+1],
                                   level, nrefine, gupper, cstatus);
-      _braid_CoreFcn(core, srefine)(app, cvector, fvector, cstatus);
+      _braid_UserSRefine(core,  app, cvector, fvector, cstatus);
    }
 
    return _braid_error_flag;
@@ -1329,7 +1329,7 @@ _braid_InitGuess(braid_Core  core,
             else
             {
                // We are on a F-point, init shell only
-               _braid_CoreFcn(core, sinit)(app, ta[i-ilower], &u);
+               _braid_UserSInit(core,  app, ta[i-ilower], &u);
             }
             _braid_USetVectorRef(core, level, i, u);
          }
@@ -1356,7 +1356,7 @@ _braid_InitGuess(braid_Core  core,
          }
          else if (sflag == -1) // Shell
          {
-            _braid_CoreFcn(core, sclone)(app, va[i-ilower], &u);
+            _braid_UserSClone(core,  app, va[i-ilower], &u);
             _braid_USetVectorRef(core, level, i, u);
          }
       }
@@ -1416,7 +1416,7 @@ _braid_ComputeFullRNorm(braid_Core  core,
          /* Update local processor norm. */
          ii = fi-ilower;
          _braid_StepStatusInit(ta[ii-1], ta[ii], fi-1, tol, iter, level, nrefine, gupper, status);
-         _braid_CoreFcn(core, full_rnorm_res)(app, u, r, status);
+         _braid_UserResidual(core, app, u, r, status);
          _braid_UserSpatialNorm(core, app,  r, &rnorm_temp); 
          if(tnorm == 1)       /* one-norm */ 
          {  
@@ -1450,7 +1450,7 @@ _braid_ComputeFullRNorm(braid_Core  core,
          ii = ci-ilower;
          _braid_StepStatusInit(ta[ii-1], ta[ii], ci-1, tol, iter, level, nrefine, gupper, status);
          _braid_UGetVector(core, level, ci, &r);
-         _braid_CoreFcn(core, full_rnorm_res)(app, r, u, status);
+         _braid_UserResidual(core, app, r, u, status);
          _braid_UserSpatialNorm(core, app,  u, &rnorm_temp);
 
          if(tnorm == 1)       /* one-norm */ 
@@ -3222,7 +3222,7 @@ _braid_CopyFineToCoarse(braid_Core  core)
          else if (is_stored == -1) /* This is a shell vector */
          {
             // We free the data in u, keeping the shell
-            _braid_CoreFcn(core, sfree)(app, u);
+            _braid_UserSFree(core,  app, u);
          }
  
       }

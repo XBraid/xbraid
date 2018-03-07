@@ -180,7 +180,7 @@ _braid_TapeDisplayPrimal(braid_Core core,void* data_ptr)
 
    /*--- Display the vector --*/
    braid_AccessStatus   astatus = (braid_AccessStatus)core;
-   _braid_CoreFcn(core, access)(_braid_CoreElt(core, app), vector, astatus );
+   _braid_CoreFcn(core, access)(_braid_CoreElt(core, app), vector->primal, astatus );
 }
 
 void

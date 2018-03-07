@@ -30,6 +30,7 @@
 #include "braid_defs.h"
 #include "_braid_tape.h"
 #include "_util.h"
+#include "_braid_user.h"
 
 #ifndef DEBUG
 #define DEBUG 0
@@ -417,7 +418,7 @@ braid_Drive(braid_Core  core)
    if ( _braid_CoreElt(core, tgrid) != NULL )
    {
       /* Call the user's time grid routine */
-      _braid_CoreFcn(core, tgrid)(app, ta, &ilower, &iupper);
+      _braid_UserTimeGrid(core, app, ta, &ilower, &iupper);
    }
    else
    {
@@ -556,9 +557,9 @@ braid_Drive(braid_Core  core)
       if (_braid_CoreElt(core,adjoint)){
 
         /* Display the actions */
-        printf("\n %d: Action Tape: Size %d \n", _braid_CoreElt(core, myid), _braid_TapeGetSize( _braid_CoreElt(core, actiontape)) );
-        _braid_TapeDisplayBackwards( core, _braid_CoreElt(core, actiontape), _braid_TapeDisplayAction);
-        printf("%d: Tape End\n\n", _braid_CoreElt(core, myid));
+        // printf("\n %d: Action Tape: Size %d \n", _braid_CoreElt(core, myid), _braid_TapeGetSize( _braid_CoreElt(core, actiontape)) );
+        // _braid_TapeDisplayBackwards( core, _braid_CoreElt(core, actiontape), _braid_TapeDisplayAction);
+        // printf("%d: Tape End\n\n", _braid_CoreElt(core, myid));
 
         /* Display the primal tape */
         // printf("\n %d: Primal Tape: Size %d\n", _braid_CoreElt(core, myid), _braid_TapeGetSize( primaltape ) );
@@ -566,12 +567,12 @@ braid_Drive(braid_Core  core)
         // printf(" %d: Tape End\n\n", _braid_CoreElt(core, myid));
 
 
-        /* Evaluate the adjoint action tape */
+        /* Evaluate (and clear) the adjoint action tape */
         _braid_TapeEvaluateAdjoint(core);
 
         /* Check if adjoint action tape is empty */
-        printf("\n %d: Action Tape: Size %d \n", _braid_CoreElt(core, myid), _braid_TapeGetSize( _braid_CoreElt(core, actiontape) ));
-        printf("\n %d: Primal Tape: Size %d\n", _braid_CoreElt(core, myid), _braid_TapeGetSize( _braid_CoreElt(core, primaltape) ) );
+        // printf("\n %d: Action Tape: Size %d \n", _braid_CoreElt(core, myid), _braid_TapeGetSize( _braid_CoreElt(core, actiontape) ));
+        // printf("\n %d: Primal Tape: Size %d\n", _braid_CoreElt(core, myid), _braid_TapeGetSize( _braid_CoreElt(core, primaltape) ) );
 
         /* Stop iterating */
         // done = 1;
@@ -665,6 +666,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              max_refinements = 200;            /* Maximum number of F-refinements */
    braid_Int              tpoints_cutoff  = braid_Int_Max;  /* Maximum number of time steps, controls FRefine()*/ 
    braid_Int              adjoint         = 0;              /* Default adjoint run: Turned off */
+   braid_Int              verbose         = 0;              /* Default verbosity Turned off */
 
    braid_Int              myid_world,  myid;
 
@@ -741,6 +743,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, skip)            = skip;
 
    _braid_CoreElt(core, adjoint)         = adjoint;
+   _braid_CoreElt(core, verbose)         = verbose;
    _braid_CoreElt(core, actiontape)      = NULL;
    _braid_CoreElt(core, primaltape)      = NULL;
    _braid_CoreElt(core, adjointtape)     = NULL;
@@ -777,6 +780,9 @@ braid_Init_Adjoint(braid_PtFcnStepAdj     step_adj,
 
    /* Set the adjoint flag */ 
    _braid_CoreElt(*core_ptr, adjoint) = 1;
+
+   /* Turn on adjoint verbosity */
+   _braid_CoreElt(*core_ptr, verbose) = 0;
 
    /* Initialize the tapes */
    _braid_TapeInit( _braid_CoreElt(*core_ptr,actiontape) );

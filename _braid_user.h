@@ -95,6 +95,61 @@ _braid_UserBufUnpack(braid_Core core,
                      );
 
 
+braid_Int
+_braid_UserResidual(braid_Core core,
+                     braid_App        app,    /**< user-defined _braid_App structure */
+                       braid_Vector     ustop,  /**< input, u vector at *tstop* */
+                       braid_Vector     r     , /**< output, residual at *tstop* (at input, equals *u* at *tstart*) */
+                       braid_StepStatus status  /**< query this struct for info about u (e.g., tstart and tstop) */ 
+                       );
+
+braid_Int
+_braid_UserSCoarsen(braid_Core core,
+                    braid_App               app,    /**< user-defined _braid_App structure */
+                       braid_Vector            fu,     /**< braid_UserVector to refine*/
+                       braid_Vector           *cu_ptr, /**< output, refined vector */   
+                       braid_CoarsenRefStatus  status  /**< query this struct for info about fu and cu (e.g., where in time fu and cu are)  */ 
+                       );
+
+
+braid_Int
+_braid_UserSRefine(braid_Core core,
+                   braid_App               app,    /**< user-defined _braid_App structure */
+                      braid_Vector            cu,     /**< braid_UserVector to refine*/
+                      braid_Vector           *fu_ptr, /**< output, refined vector */       
+                      braid_CoarsenRefStatus  status  /**< query this struct for info about fu and cu (e.g., where in time fu and cu are)  */ 
+                      );
+
+braid_Int
+_braid_UserSInit(braid_Core core,
+                 braid_App     app,           /**< user-defined _braid_App structure */
+                   braid_Real     t,             /**< time value for *u_ptr* */
+                   braid_Vector  *u_ptr          /**< output, newly allocated and initialized vector shell */
+                   );
+
+braid_Int
+_braid_UserSClone(braid_Core core, 
+                 braid_App      app,          /**< user-defined _braid_App structure */
+                    braid_Vector   u,            /**< vector to clone */ 
+                    braid_Vector  *v_ptr         /**< output, newly allocated and cloned vector shell */
+                    );
+
+
+braid_Int
+_braid_UserSFree(braid_Core core,
+                  braid_App     app,            /**< user-defined _braid_App structure */
+                    braid_Vector  u               /**< vector to free (keeping the shell) */
+                    );
+
+braid_Int
+_braid_UserTimeGrid(braid_Core core,
+                   braid_App         app,       /**< user-defined _braid_App structure */
+                       braid_Real       *ta,        /**< temporal grid on level 0 (slice per processor) */
+                       braid_Int        *ilower,    /**< lower time index value for this processor */
+                       braid_Int        *iupper     /**< upper time index value for this processor */
+                       );
+
+
 /*---- Adjoint routines ---- */
 
 braid_Int

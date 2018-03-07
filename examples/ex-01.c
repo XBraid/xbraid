@@ -62,6 +62,8 @@
 
 #include "braid.h"
 
+#define braid_Vector braid_UserVector
+
 /*--------------------------------------------------------------------------
  * User-defined routines and structures
  *--------------------------------------------------------------------------*/
