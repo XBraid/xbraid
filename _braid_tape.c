@@ -1,5 +1,5 @@
 /** \file _braid_tape.c
- * \brief Source code for utility routines. See _util.h for more documentation.
+ * \brief Source code for tape routines. See _braid_tape.h for more documentation.
  *
  */
 

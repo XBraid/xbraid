@@ -108,7 +108,6 @@ _braid_TapeDisplayBackwards(braid_Core core, _braid_Tape* head, void (*fctptr)(b
  * Evaluate the action tape in adjoint order. This will clear the action tape!
  * Input: - pointer to the braid core 
  *        - pointer to the head of the action tape
- * Returns heal = NULL
  */
 void
 _braid_TapeEvaluateAdjoint(braid_Core core);

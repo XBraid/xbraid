@@ -52,7 +52,7 @@ _braid_AdjointCopy(braid_Adjoint adj, braid_Adjoint *adj_ptr)
 void
 _braid_AdjointDelete(braid_Core core, braid_Adjoint adj)
 {
-  /* Decrese the useCount */
+  /* Decrease the useCount */
   adj->useCount--;
 
   /* Delete the adjoint, if no pointer points to it anymore */
