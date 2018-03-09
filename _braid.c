@@ -41,6 +41,37 @@ braid_Int  FRefine_count = 0;
 braid_Int _braid_error_flag = 0;
 FILE    *_braid_printfile  = NULL;
 
+
+void 
+_braid_AdjointCopy(braid_Adjoint adj, braid_Adjoint *adj_ptr)
+{
+  adj->useCount++;
+  *adj_ptr= adj;
+}
+
+void
+_braid_AdjointDelete(braid_Core core, braid_Adjoint adj)
+{
+  /* Decrese the useCount */
+  adj->useCount--;
+
+  /* Delete the adjoint, if no pointer points to it anymore */
+  if (adj->useCount==0)
+  {
+      _braid_CoreFcn(core, free)(_braid_CoreElt(core, app), adj->userVector);
+      free(adj);
+  }
+  /* Sanity check */
+  else if (adj->useCount < 0)
+  {
+    printf("ERROR: useCount < 0 !\n");
+    exit(0);
+  }
+
+}
+
+
+
 /*----------------------------------------------------------------------------
  * Macros used below
  *----------------------------------------------------------------------------*/

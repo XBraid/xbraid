@@ -37,23 +37,47 @@
 #include <math.h>
 
 #include "braid.h"
-#include "_util.h"
 #include "_braid_tape.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * Data structure for storing the adjoint variables
+ * Implements shared pointer feature for C
+ */
+struct _braid_Adjoint_struct
+{
+  braid_UserVector userVector;        /**< holds the adjoint data */
+  braid_Int useCount;                 /**< counts the number of pointer to this struct */
+}; 
+typedef struct _braid_Adjoint_struct *braid_Adjoint;
 
 /**
- * Adjoint wrapper for the user's braid_Vector
+ * This copies a braid_Adjoint pointer, i.e. it increases its useCount by one. 
+ */
+void 
+_braid_AdjointCopy(braid_Adjoint adj, braid_Adjoint *adj_ptr);
+
+/**
+ * This reduces the useCount of the adjoint pointer 
+ * It free's the adjoint memory if no pointer points it anymore (usecount = 0). 
+ */ 
+void
+_braid_AdjointDelete(braid_Core core, braid_Adjoint adj);
+
+
+/**
+ * Augmented braid vector, that stores both the users vector as well as its adjoint
  */
 struct _braid_Vector_wrap
 {
-  braid_UserVector primal;
-  braid_UserVector adjoint; 
+  braid_UserVector primal;      /**< holds the users vector */
+  braid_Adjoint    adjoint;     /**< holds the adjoint vector (shared pointer implementation) */
 };
 typedef struct _braid_Vector_wrap *braid_Vector;
+
 
 /*--------------------------------------------------------------------------
  * Main data structures and accessor macros

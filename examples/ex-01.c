@@ -181,14 +181,14 @@ my_Access(braid_App          app,
 //    fflush(file);
 //    fclose(file);
 
-   /* Debug info for adjoint taping */
-   int done, level;
-   braid_AccessStatusGetLevel(astatus, &level);
-   braid_AccessStatusGetDone(astatus, &done);
-   if (!done)
-   {
-        printf("%.14e\n", (u->value));
-   }
+   /* Debug info for adjoint */
+//    int done, level;
+//    braid_AccessStatusGetLevel(astatus, &level);
+//    braid_AccessStatusGetDone(astatus, &done);
+//    if (!done)
+//    {
+        printf("myacces: %.14e\n", (u->value));
+//    }
 
    return 0;
 }
@@ -299,21 +299,8 @@ int main (int argc, char *argv[])
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 3);
    
-
-   /* Test myinit(), myfree() */
-   braid_TestInitAccess( app, MPI_COMM_WORLD, stdout, 1.0, my_Init, my_Access, my_Free);
-   braid_TestInitAccess( app, MPI_COMM_WORLD, stdout, 0.0, my_Init, my_Access, my_Free);
-
-   /* Test clone() */
-   braid_TestClone( app, MPI_COMM_WORLD, stdout, 1.0, my_Init, my_Access, my_Free, my_Clone);
-   braid_TestClone( app, MPI_COMM_WORLD, stdout, 0.0, my_Init, my_Access, my_Free, my_Clone);
-
-   /* Test sum() */
-   braid_TestSum( app, MPI_COMM_WORLD, stdout, 1.0, my_Init, my_Access, my_Free, my_Clone, my_Sum);
-   braid_TestSum( app, MPI_COMM_WORLD, stdout, 0.0, my_Init, my_Access, my_Free, my_Clone, my_Sum);
-
    /* Run simulation, and then clean up */
-//    braid_Drive(core);
+   braid_Drive(core);
 
    braid_Destroy(core);
    MPI_Finalize();
