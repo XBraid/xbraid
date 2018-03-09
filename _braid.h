@@ -191,6 +191,7 @@ typedef struct _braid_Core_struct
    braid_Real             localtime;        /**< local wall time for braid_Drive() */
    braid_Real             globaltime;       /**< global wall time for braid_Drive() */
    braid_Int              adjoint;          /**< determines if adjoint run is performed (1) or not (0) */
+   braid_Int              record;          /**< determines if actions are recorded to the tape or not */
    braid_Int              verbose;          /**< verbosity of the adjoint code */
 
    _braid_Tape* actiontape;                 /**< tape storing the actions while adjoint recording */

@@ -581,7 +581,7 @@ braid_Drive(braid_Core  core)
    }
 
    /* Stop adjoint recording */
-   _braid_CoreElt(core, adjoint) = 0;
+   _braid_CoreElt(core, record) = 0;
 
    /* By default, set the final residual norm to be the same as the previous */
    {
@@ -666,6 +666,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              max_refinements = 200;            /* Maximum number of F-refinements */
    braid_Int              tpoints_cutoff  = braid_Int_Max;  /* Maximum number of time steps, controls FRefine()*/ 
    braid_Int              adjoint         = 0;              /* Default adjoint run: Turned off */
+   braid_Int              record          = 0;              /* Default action recording: Turned off */
    braid_Int              verbose         = 0;              /* Default verbosity Turned off */
 
    braid_Int              myid_world,  myid;
@@ -743,6 +744,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, skip)            = skip;
 
    _braid_CoreElt(core, adjoint)         = adjoint;
+   _braid_CoreElt(core, record)          = record;
    _braid_CoreElt(core, verbose)         = verbose;
    _braid_CoreElt(core, actiontape)      = NULL;
    _braid_CoreElt(core, primaltape)      = NULL;
@@ -780,6 +782,7 @@ braid_Init_Adjoint(braid_PtFcnStepAdj     step_adj,
 
    /* Set the adjoint flag */ 
    _braid_CoreElt(*core_ptr, adjoint) = 1;
+   _braid_CoreElt(*core_ptr, record) = 0;
 
    /* Turn on adjoint verbosity */
    _braid_CoreElt(*core_ptr, verbose) = 0;
