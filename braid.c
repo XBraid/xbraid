@@ -576,6 +576,7 @@ braid_Drive(braid_Core  core)
 
         /* Stop iterating */
         // done = 1;
+        // _braid_CoreElt(core, done) = 1;
 
       }
    }
@@ -782,7 +783,7 @@ braid_Init_Adjoint(braid_PtFcnStepAdj     step_adj,
 
    /* Set the adjoint flag */ 
    _braid_CoreElt(*core_ptr, adjoint) = 1;
-   _braid_CoreElt(*core_ptr, record) = 0;
+   _braid_CoreElt(*core_ptr, record) = 1;
 
    /* Turn on adjoint verbosity */
    _braid_CoreElt(*core_ptr, verbose) = 0;
