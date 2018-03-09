@@ -52,6 +52,15 @@ _braid_UserStep(braid_Core       core,
       /* TODO: Check the fstop feature!!! */
       _braid_CoreFcn(core, step)(app, ustop->primal, fstop->primal, u->primal, status);
    }
+
+   if (_braid_CoreElt(core, record) )
+   {
+      /* Copy and push the adjoint pointer to the adjoint tape */
+      braid_Adjoint adjoint_copy;
+      _braid_AdjointCopy(u->adjoint, &adjoint_copy);
+      _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy);
+
+   }
    
    return 0;
 }
@@ -98,8 +107,15 @@ _braid_UserInit(braid_Core core,
 //   braid_AccessStatus astatus = (braid_AccessStatus) core;
 //   _braid_CoreFcn(core, access)(app, u->adjoint->userVector, astatus);
 
+   if (_braid_CoreElt(core, record) )
+   {
+      /* Copy and push the adjoint pointer to the adjoint tape */
+      braid_Adjoint adjoint_copy;
+      _braid_AdjointCopy(u->adjoint, &adjoint_copy);
+      _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy);
+   }
 
-   /* Set the pointer */
+   /* Set the return pointer */
    *u_ptr = u;
 
    return 0;
@@ -139,6 +155,16 @@ _braid_UserClone(braid_Core core,
    _braid_CoreFcn(core, sum)(app, -1.0, myadjoint->userVector, 1.0, myadjoint->userVector);
    v->adjoint = myadjoint;
 
+   if (_braid_CoreElt(core, record) )
+   {
+      /* Copy and push both adjoint pointer to the adjoint tape */
+      braid_Adjoint adjoint_copy_u;
+      braid_Adjoint adjoint_copy_v;
+      _braid_AdjointCopy(u->adjoint, &adjoint_copy_u);
+      _braid_AdjointCopy(v->adjoint, &adjoint_copy_v);
+      _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy_u);
+      _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy_v);
+   }
 
    *v_ptr = v;
 
@@ -211,6 +237,18 @@ _braid_UserSum(braid_Core core,
 
     /* Call the users Sum function */
    _braid_CoreFcn(core, sum)(app, alpha, x->primal, beta, y->primal);
+   
+   
+   if (_braid_CoreElt(core, record) )
+   {
+      /* Copy and push both adjoint pointer to the adjoint tape */
+      braid_Adjoint adjoint_copy_x;
+      braid_Adjoint adjoint_copy_y;
+      _braid_AdjointCopy(x->adjoint, &adjoint_copy_x);
+      _braid_AdjointCopy(y->adjoint, &adjoint_copy_y);
+      _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy_x);
+      _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy_y);
+   }
 
    return 0;
 }
@@ -258,6 +296,11 @@ _braid_UserAccess(braid_Core core,
 
       // /* Debug info: */
       // _braid_CoreFcn(core, access)(app, u_copy, (braid_AccessStatus) status);
+
+      /* Copy and push the adjoint pointer to the adjoint tape */
+      braid_Adjoint adjoint_copy;
+      _braid_AdjointCopy(u->adjoint, &adjoint_copy);
+      _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy);
    }
 
    /* Call the users Access function */
@@ -303,6 +346,12 @@ _braid_UserBufPack(braid_Core core,
       action->myid           = _braid_CoreElt(core, myid);
       // printf("BufPack push\n");
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
+
+      /* Copy and push the adjoint pointer to the adjoint tape */
+      braid_Adjoint adjoint_copy;
+      _braid_AdjointCopy(u->adjoint, &adjoint_copy);
+      _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy);
+
    }
    
    /* Call the users BufPack function */
@@ -334,10 +383,32 @@ _braid_UserBufUnpack(braid_Core core,
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
    }
 
-   braid_Vector u = (braid_Vector)malloc(sizeof(braid_Vector));
+   /* Allocate memory for the braid_Vector */
+   braid_Vector u = (braid_Vector)malloc(sizeof(braid_UserVector)+sizeof(braid_Adjoint));
 
-   /* Call the users BufUnPack function */
+   /* Call the users BufUnPack function for the primal */
    _braid_CoreFcn(core, bufunpack)(app, buffer, &(u->primal), status);
+
+   /* Allocate and initialize the adjoint with zero*/
+   braid_Adjoint myadjoint = (braid_Adjoint)malloc(sizeof(braid_UserVector)+sizeof(int));
+   myadjoint->useCount = 1;
+   _braid_CoreFcn(core, init)(app, _braid_CoreElt(core, tstart), &(myadjoint->userVector));
+   _braid_CoreFcn(core, sum)(app, -1.0, myadjoint->userVector, 1.0, myadjoint->userVector);
+   u->adjoint = myadjoint;
+
+  /* Debug: */
+//    printf("Init adjoint, useCount: %d, adjoint value: ", u->adjoint->useCount);
+//   braid_AccessStatus astatus = (braid_AccessStatus) core;
+//   _braid_CoreFcn(core, access)(app, u->adjoint->userVector, astatus);
+
+   if (_braid_CoreElt(core, record) )
+   {
+      /* Copy and push the adjoint pointer to the adjoint tape */
+      braid_Adjoint adjoint_copy;
+      _braid_AdjointCopy(u->adjoint, &adjoint_copy);
+      _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy);
+   }
+   
 
    *u_ptr = u;
 
