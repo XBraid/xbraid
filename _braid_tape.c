@@ -97,7 +97,7 @@ _braid_TapeEvaluateAdjoint(braid_Core core)
        _braid_Action* action = (_braid_Action*) actiontape->data_ptr;
 
        /* Call the adjoint action */
-       _braid_AdjointCall(core, action);
+       _braid_AdjointCall(action);
 
        /* Pop the action from the tape */
        actiontape = _braid_TapePop( actiontape );
@@ -111,7 +111,7 @@ _braid_TapeEvaluateAdjoint(braid_Core core)
 }
 
 void
-_braid_AdjointCall(braid_Core core, _braid_Action* action)
+_braid_AdjointCall(_braid_Action* action)
 {
    
    /* Call the corresponding adjoint action */
@@ -119,7 +119,7 @@ _braid_AdjointCall(braid_Core core, _braid_Action* action)
    {
       case STEP : 
       {
-         _braid_UserStepAdjoint(core, action);
+         _braid_UserStepAdjoint(action);
          break;
       }
       case INIT: 
@@ -144,17 +144,17 @@ _braid_AdjointCall(braid_Core core, _braid_Action* action)
       }
       case ACCESS: 
       {
-         _braid_UserAccessAdjoint(core, action);
+         _braid_UserAccessAdjoint(action);
          break;
       }
       case BUFPACK: 
       {
-         _braid_UserBufPackAdjoint(action, _braid_CoreElt(core, app));
+         _braid_UserBufPackAdjoint(action, _braid_CoreElt(action->core, app));
          break;
       }
       case BUFUNPACK: 
       {
-         _braid_UserBufUnpackAdjoint(action, _braid_CoreElt(core, app));
+         _braid_UserBufUnpackAdjoint(action, _braid_CoreElt(action->core, app));
          break;
       } 
    }

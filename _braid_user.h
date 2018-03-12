@@ -153,7 +153,7 @@ _braid_UserTimeGrid(braid_Core core,
 /*---- Adjoint routines ---- */
 
 braid_Int
-_braid_UserStepAdjoint(braid_Core core, _braid_Action *action);
+_braid_UserStepAdjoint(_braid_Action *action);
 
 
 braid_Int
@@ -163,7 +163,7 @@ braid_Int
 _braid_UserSumAdjoint(_braid_Action *action);
 
 braid_Int
-_braid_UserAccessAdjoint(braid_Core core, _braid_Action *action);
+_braid_UserAccessAdjoint(_braid_Action *action);
 
 braid_Int
 _braid_UserBufPackAdjoint(_braid_Action *action, braid_App app);
