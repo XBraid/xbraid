@@ -222,6 +222,8 @@ typedef struct _braid_Core_struct
    _braid_Tape* primaltape;                     /**< tape storing primal braid_vectors while adjoint recording */
    _braid_Tape* adjointtape;                    /**< tape storing intermediate adjoint braid_vectors while adjoint recording */
  
+   braid_PtFcnStepAdj        step_adjoint;             /**< apply adjoint step function */
+   braid_PtFcnAccessAdj      access_adjoint;             /**< apply adjoint access function */
 
    /** Data elements required for the Status structures */
    /** Common Status properties */

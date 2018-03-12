@@ -182,12 +182,14 @@ my_Access(braid_App          app,
 //    fclose(file);
 
    /* Debug info for adjoint */
-//    int done, level;
-//    braid_AccessStatusGetLevel(astatus, &level);
-//    braid_AccessStatusGetDone(astatus, &done);
+   int done, level;
+   double t;
+   braid_AccessStatusGetLevel(astatus, &level);
+   braid_AccessStatusGetDone(astatus, &done);
+   braid_AccessStatusGetT(astatus, &t);
 //    if (!done)
 //    {
-        printf("myacces: %.14e\n", (u->value));
+        printf("myaccess: %d, %1.2f, %.14e\n", level, t, (u->value) );
 //    }
 
    return 0;
@@ -235,11 +237,13 @@ my_BufUnpack(braid_App          app,
 
 int
 my_Access_Adjoint(braid_App          app,
-                  braid_Vector       u,
+                  braid_Vector       u_primal,
+                  braid_Vector       u_adjoint,
                   braid_AccessStatus astatus)
 {
    
-   printf("Inside my_Access_Adjoint\n");
+   printf("ACCE adj: primal %.14e, adjoint %.14e\n", (u_primal->value), (u_adjoint->value));
+
    return 0;
 }
 
@@ -248,11 +252,12 @@ int
 my_Step_Adjoint(braid_App        app,
                 // braid_Vector     ustop,
                 // braid_Vector     fstop,
-                braid_Vector     u,
+                braid_Vector       u_primal,
+                braid_Vector       u_adjoint,
                 braid_StepStatus status)
 {
 
-   printf("Inside adjoint step\n");
+   printf("STEP adj: primal %.14e, adjoint %.14e\n", (u_primal->value), (u_adjoint->value));
 
    return 0;
 }

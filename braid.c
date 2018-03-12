@@ -575,8 +575,8 @@ braid_Drive(braid_Core  core)
         // printf("\n %d: Primal Tape: Size %d\n", _braid_CoreElt(core, myid), _braid_TapeGetSize( _braid_CoreElt(core, primaltape) ) );
 
         /* Stop iterating */
-        // done = 1;
-        // _braid_CoreElt(core, done) = 1;
+        done = 1;
+        _braid_CoreElt(core, done) = 1;
 
       }
    }
@@ -771,8 +771,8 @@ braid_Init(MPI_Comm               comm_world,
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 braid_Int
-braid_Init_Adjoint(braid_PtFcnStepAdj     step_adj, 
-                   braid_PtFcnAccessAdj   access_adj,
+braid_Init_Adjoint(braid_PtFcnStepAdj     step_adjoint, 
+                   braid_PtFcnAccessAdj   access_adjoint,
                    braid_Core             *core_ptr)
 {
   if( _braid_CoreElt(*core_ptr, refine) )
@@ -793,7 +793,9 @@ braid_Init_Adjoint(braid_PtFcnStepAdj     step_adj,
    _braid_TapeInit( _braid_CoreElt(*core_ptr,primaltape) );
    _braid_TapeInit( _braid_CoreElt(*core_ptr,adjointtape) );
 
-   /* TODO: Store pointer to adjoint user interface in the core */
+   /* Store pointer to adjoint user interface in the core */
+   _braid_CoreElt(*core_ptr, step_adjoint)   = step_adjoint;
+   _braid_CoreElt(*core_ptr, access_adjoint) = access_adjoint;
   
 
    return _braid_error_flag;

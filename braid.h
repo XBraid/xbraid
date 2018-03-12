@@ -349,7 +349,8 @@ typedef braid_Int
 (*braid_PtFcnStepAdj)(braid_App        app,    /**< user-defined _braid_App structure */
                      //  braid_UserVector     ustop,  /**< input, u vector at *tstop* */
                      //  braid_UserVector     fstop,  /**< input, right-hand-side at *tstop* */
-                      braid_UserVector     uadj     , /**< input/output, adjoint vector */
+                      braid_UserVector     u_primal, /**< primal vector */
+                      braid_UserVector     u_adjoint, /**< adjoint vector */
                       braid_StepStatus status  /**< query this struct for info about u (e.g., tstart and tstop), allows for steering (e.g., set rfactor) */ 
                    );
 
@@ -358,7 +359,8 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnAccessAdj)(braid_App           app,              /**< user-defined _braid_App structure */
-                        braid_UserVector        u,                /**< vector to be accessed */
+                        braid_UserVector    u_primal,         /**< primal vector */
+                        braid_UserVector    u_adjoint,        /**< adjoint vector */
                         braid_AccessStatus  status            /**< can be querried for info like the current XBraid Iteration */
                      );
 
