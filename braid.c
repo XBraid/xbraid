@@ -549,39 +549,27 @@ braid_Drive(braid_Core  core)
                iter++;
                _braid_CoreElt(core, niter) = iter;
             }
+
+            /*--- Evaluate the adjoint sensitivities after one cycle ---*/
+
+            printf("Eval Adjoint. iter %d level %d\n", iter, level);
+            if (_braid_CoreElt(core,adjoint)){
+      
+              /* Evaluate (and clear) the adjoint action tape */
+              _braid_TapeEvaluateAdjoint(core);
+      
+              /* Stop iterating */
+              done = 1;
+              _braid_CoreElt(core, done) = 1;
+      
+            } /* End of Adjoint */
+
          }
-      }
-
-      /*------ Adjoint XBraid -------*/
-   
-      if (_braid_CoreElt(core,adjoint)){
-
-        /* Display the actions */
-        // printf("\n %d: Action Tape: Size %d \n", _braid_CoreElt(core, myid), _braid_TapeGetSize( _braid_CoreElt(core, actiontape)) );
-        // _braid_TapeDisplayBackwards( core, _braid_CoreElt(core, actiontape), _braid_TapeDisplayAction);
-        // printf("%d: Tape End\n\n", _braid_CoreElt(core, myid));
-
-        /* Display the primal tape */
-        // printf("\n %d: Primal Tape: Size %d\n", _braid_CoreElt(core, myid), _braid_TapeGetSize( primaltape ) );
-        // _braid_TapeDisplayBackwards( core, primaltape, _braid_TapeDisplayPrimal);
-        // printf(" %d: Tape End\n\n", _braid_CoreElt(core, myid));
-
-
-        /* Evaluate (and clear) the adjoint action tape */
-        _braid_TapeEvaluateAdjoint(core);
-
-        /* Check if adjoint action tape is empty */
-        // printf("\n %d: Action Tape: Size %d \n", _braid_CoreElt(core, myid), _braid_TapeGetSize( _braid_CoreElt(core, actiontape) ));
-        // printf("\n %d: Primal Tape: Size %d\n", _braid_CoreElt(core, myid), _braid_TapeGetSize( _braid_CoreElt(core, primaltape) ) );
-
-        /* Stop iterating */
-        done = 1;
-        _braid_CoreElt(core, done) = 1;
-
       }
    }
 
    /* Stop adjoint recording */
+   printf("\nStop recording\n\n");
    _braid_CoreElt(core, record) = 0;
 
    /* By default, set the final residual norm to be the same as the previous */
