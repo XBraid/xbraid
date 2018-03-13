@@ -45,9 +45,9 @@ _braid_UserStep(braid_Core       core,
       _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy);
 
       /* DEBUG: Display the vector */
-      printf("STEP pushes primal: ");
-      braid_AccessStatus astatus = (braid_AccessStatus) status;
-      _braid_CoreFcn(core, access)( app, u->primal, astatus);
+      // printf("STEP pushes primal: ");
+      // braid_AccessStatus astatus = (braid_AccessStatus) status;
+      // _braid_CoreFcn(core, access)( app, u->primal, astatus);
   }
 
    /* Call the users Step function */
@@ -317,8 +317,8 @@ _braid_UserAccess(braid_Core core,
       _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy);
 
       /* Debug info: */
-      printf("ACCE pushes primal: ");
-      _braid_CoreFcn(core, access)(app, u->primal, (braid_AccessStatus) status);
+      // printf("ACCE pushes primal: ");
+      // _braid_CoreFcn(core, access)(app, u->primal, (braid_AccessStatus) status);
 
    }
 
@@ -632,7 +632,12 @@ _braid_UserCloneAdjoint(_braid_Action *action)
       // _braid_CoreFcn(core, access)(_braid_CoreElt(core, app), u_adjoint->userVector, NULL );
 
 
-      /* TODO: Perform the adjoint action */
+      /* Perform the adjoint action :
+      *  ub += vb
+      *  vb  = 0.0
+      */
+      _braid_CoreFcn(core, sum)(_braid_CoreElt(core,app),1.0, v_adjoint->userVector,  1.0, u_adjoint->userVector);
+      _braid_CoreFcn(core, sum)(_braid_CoreElt(core,app),1.0, v_adjoint->userVector, -1.0, v_adjoint->userVector);
 
 
       /* Decrease the useCount of the adjoint */
@@ -651,16 +656,16 @@ _braid_UserSumAdjoint(_braid_Action *action)
 {
    // printf("SUM adjoint\n");
 
-   // braid_Real alpha;
-   // braid_Real beta;
+   braid_Core core;
+   braid_Real alpha;
+   braid_Real beta;
    // braid_Int  myid;
 
    /* Grab information from the action */
-   braid_Core core = action->core;
-   // alpha = action->sum_alpha;
-   // beta  = action->sum_beta;
+   core  = action->core;
+   alpha = action->sum_alpha;
+   beta  = action->sum_beta;
    // myid  = action->myid;
-
 
    /* Pop the adjoint vectors from the tape */
    braid_Adjoint y_adjoint;
@@ -673,7 +678,12 @@ _braid_UserSumAdjoint(_braid_Action *action)
    _braid_CoreElt(core, adjointtape) = _braid_TapePop( _braid_CoreElt(core, adjointtape) );
 
 
-   /* TODO: Perform the adjoint action */
+   /* Perform the adjoint action: 
+   *  xb += alpha * yb
+   *  yb  = beta  * xb
+   */
+   _braid_CoreFcn(core, sum)(_braid_CoreElt(core, app), alpha, y_adjoint->userVector,  1.0, x_adjoint->userVector);
+   _braid_CoreFcn(core, sum)(_braid_CoreElt(core, app),   0.0, x_adjoint->userVector, beta, y_adjoint->userVector);
 
 
    /* Decrease the useCount of the adjoint */
@@ -736,11 +746,12 @@ _braid_UserBufPackAdjoint(_braid_Action *action, braid_App app)
 {
       // printf("BufPack adjoint\n");
 
+      braid_Core core;
       // braid_Real send_recv_rank;
       // braid_Int  myid;
 
       /* Grab information from the action */
-      braid_Core core = action->core;
+      core           = action->core;
       // send_recv_rank = action->send_recv_rank;
       // myid           = action->myid;
 
