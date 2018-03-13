@@ -788,6 +788,9 @@ braid_Init_Adjoint(braid_PtFcnStepAdj     step_adjoint,
    /* Turn on adjoint verbosity */
    _braid_CoreElt(*core_ptr, verbose) = 0;
 
+  /* Turn off skip on downcycle */
+  _braid_CoreElt(*core_ptr, skip) = 0;
+
    /* Initialize the tapes */
    _braid_TapeInit( _braid_CoreElt(*core_ptr,actiontape) );
    _braid_TapeInit( _braid_CoreElt(*core_ptr,primaltape) );
