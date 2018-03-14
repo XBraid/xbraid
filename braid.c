@@ -30,7 +30,7 @@
 #include "braid_defs.h"
 #include "_braid_tape.h"
 #include "_util.h"
-#include "_braid_user.h"
+#include "_braid_base.h"
 
 #ifndef DEBUG
 #define DEBUG 0
@@ -418,7 +418,7 @@ braid_Drive(braid_Core  core)
    if ( _braid_CoreElt(core, tgrid) != NULL )
    {
       /* Call the user's time grid routine */
-      _braid_UserTimeGrid(core, app, ta, &ilower, &iupper);
+      _braid_BaseTimeGrid(core, app, ta, &ilower, &iupper);
    }
    else
    {

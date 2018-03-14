@@ -5,7 +5,7 @@
 
 #include "_braid.h"
 #include "_braid_tape.h"
-#include "_braid_user.h"
+#include "_braid_base.h"
 
 #ifndef DEBUG
 #define DEBUG 0
@@ -119,7 +119,7 @@ _braid_AdjointCall(_braid_Action* action)
    {
       case STEP : 
       {
-         _braid_UserStepAdjoint(action);
+         _braid_BaseStepAdjoint(action);
          break;
       }
       case INIT: 
@@ -129,7 +129,7 @@ _braid_AdjointCall(_braid_Action* action)
       }
       case CLONE: 
       {
-         _braid_UserCloneAdjoint(action);
+         _braid_BaseCloneAdjoint(action);
          break;
       }
       case FREE: 
@@ -139,59 +139,59 @@ _braid_AdjointCall(_braid_Action* action)
       }
       case SUM: 
       {
-         _braid_UserSumAdjoint(action);
+         _braid_BaseSumAdjoint(action);
          break;
       }
       case ACCESS: 
       {
-         _braid_UserAccessAdjoint(action);
+         _braid_BaseAccessAdjoint(action);
          break;
       }
       case BUFPACK: 
       {
-         _braid_UserBufPackAdjoint(action, _braid_CoreElt(action->core, app));
+         _braid_BaseBufPackAdjoint(action, _braid_CoreElt(action->core, app));
          break;
       }
       case BUFUNPACK: 
       {
-         _braid_UserBufUnpackAdjoint(action, _braid_CoreElt(action->core, app));
+         _braid_BaseBufUnpackAdjoint(action, _braid_CoreElt(action->core, app));
          break;
       } 
    }
 }
 
 
-void
-_braid_TapeDisplayAction(braid_Core core,void* data_ptr){
+// void
+// _braid_TapeDisplayAction(braid_Core core,void* data_ptr){
 
-    /* Get the action */    
-    _braid_Action* action = (_braid_Action*)(data_ptr);
-    /* Print action information */
-    printf("%d: %s ", action->myid, _braid_CallGetName(action->braidCall));
-    printf("\n");
+//     /* Get the action */    
+//     _braid_Action* action = (_braid_Action*)(data_ptr);
+//     /* Print action information */
+//     printf("%d: %s ", action->myid, _braid_CallGetName(action->braidCall));
+//     printf("\n");
 
-}
+// }
 
-void
-_braid_TapeDisplayPrimal(braid_Core core,void* data_ptr)
-{
-    /* Get the braid_vector */
-   braid_Vector vector = (braid_Vector) (data_ptr);
+// void
+// _braid_TapeDisplayPrimal(braid_Core core,void* data_ptr)
+// {
+//     /* Get the braid_vector */
+//    braid_Vector vector = (braid_Vector) (data_ptr);
 
-   /*--- Display the vector --*/
-   braid_AccessStatus   astatus = (braid_AccessStatus)core;
-   _braid_CoreFcn(core, access)(_braid_CoreElt(core, app), vector->primal, astatus );
-}
+//    /*--- Display the vector --*/
+//    braid_AccessStatus   astatus = (braid_AccessStatus)core;
+//    _braid_CoreFcn(core, access)(_braid_CoreElt(core, app), vector->primal, astatus );
+// }
 
-void
-_braid_TapeDisplayInt(braid_Core core,void* data_ptr)
-{
-    /* Get the integer*/
-    int* int_ptr = (int* ) data_ptr;
+// void
+// _braid_TapeDisplayInt(braid_Core core,void* data_ptr)
+// {
+//     /* Get the integer*/
+//     int* int_ptr = (int* ) data_ptr;
 
-   /*--- Display the integer --*/
-    printf(" Integer: %d", (*int_ptr) );
-}
+//    /*--- Display the integer --*/
+//     printf(" Integer: %d", (*int_ptr) );
+// }
 
 
 const char* _braid_CallGetName(_braid_Call call)

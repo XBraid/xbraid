@@ -30,7 +30,7 @@
 #include "braid_defs.h"
 #include "_util.h"
 #include "_braid_status.h"
-#include "_braid_user.h"
+#include "_braid_base.h"
 
 #define DEBUG 0
 
@@ -233,7 +233,7 @@ braid_Int
 _braid_CommRecvInit(braid_Core           core,
                     braid_Int            level,
                     braid_Int            index,
-                    braid_Vector        *vector_ptr,
+                    braid_BaseVector        *vector_ptr,
                     _braid_CommHandle  **handle_ptr)
 {
    MPI_Comm            comm = _braid_CoreElt(core, comm);
@@ -252,7 +252,7 @@ _braid_CommRecvInit(braid_Core           core,
 
       /* Allocate buffer through user routine */
       _braid_BufferStatusInit( 0, 0, bstatus );
-      _braid_UserBufSize(core, app,  &size, bstatus);
+      _braid_BaseBufSize(core, app,  &size, bstatus);
       buffer = malloc(size);
 
       num_requests = 1;
@@ -280,7 +280,7 @@ braid_Int
 _braid_CommSendInit(braid_Core           core,
                     braid_Int            level,
                     braid_Int            index,
-                    braid_Vector         vector,
+                    braid_BaseVector         vector,
                     _braid_CommHandle  **handle_ptr)
 {
    MPI_Comm            comm = _braid_CoreElt(core, comm);
@@ -300,7 +300,7 @@ _braid_CommSendInit(braid_Core           core,
 
       /* Allocate buffer through user routine */
       _braid_BufferStatusInit( 0, 0, bstatus );
-      _braid_UserBufSize(core, app,  &size, bstatus);
+      _braid_BaseBufSize(core, app,  &size, bstatus);
       buffer = malloc(size);
 
       /* Store the receiver rank in the status */
@@ -308,7 +308,7 @@ _braid_CommSendInit(braid_Core           core,
 
       /* Note that bufpack may return a size smaller than bufsize */ 
       _braid_StatusElt(bstatus, size_buffer) = size;
-      _braid_UserBufPack(core, app,  vector, buffer, bstatus);
+      _braid_BaseBufPack(core, app,  vector, buffer, bstatus);
       size = _braid_StatusElt( bstatus, size_buffer );
 
       num_requests = 1;
@@ -352,12 +352,12 @@ _braid_CommWait(braid_Core          core,
       if (request_type == 1) /* recv type */
       {
          _braid_BufferStatusInit( 0, 0, bstatus );
-         braid_Vector  *vector_ptr = _braid_CommHandleElt(handle, vector_ptr);
+         braid_BaseVector  *vector_ptr = _braid_CommHandleElt(handle, vector_ptr);
          
          /* Store the sender rank the bufferStatus */   
          _braid_StatusElt(bstatus, send_recv_rank ) = status->MPI_SOURCE;
          
-         _braid_UserBufUnpack(core, app,  buffer, vector_ptr, bstatus);
+         _braid_BaseBufUnpack(core, app,  buffer, vector_ptr, bstatus);
       }
       
       _braid_TFree(requests);
@@ -446,12 +446,12 @@ braid_Int
 _braid_UGetVectorRef(braid_Core     core,
                      braid_Int      level,
                      braid_Int      index,
-                     braid_Vector  *u_ptr)
+                     braid_BaseVector  *u_ptr)
 {
    _braid_Grid        **grids = _braid_CoreElt(core, grids);
-   braid_Vector        *ua    = _braid_GridElt(grids[level], ua);
+   braid_BaseVector        *ua    = _braid_GridElt(grids[level], ua);
    braid_Int            iu, sflag;
-   braid_Vector         u = NULL;
+   braid_BaseVector         u = NULL;
 
    _braid_UGetIndex(core, level, index, &iu, &sflag);
    if (sflag>-2) // We have a full point or a shell (iu>=0)
@@ -475,10 +475,10 @@ braid_Int
 _braid_USetVectorRef(braid_Core    core,
                      braid_Int     level,
                      braid_Int     index,
-                     braid_Vector  u)
+                     braid_BaseVector  u)
 {
    _braid_Grid        **grids = _braid_CoreElt(core, grids);
-   braid_Vector        *ua    = _braid_GridElt(grids[level], ua);
+   braid_BaseVector        *ua    = _braid_GridElt(grids[level], ua);
    braid_Int            iu, sflag;
 
    _braid_UGetIndex(core, level, index, &iu, &sflag);
@@ -490,7 +490,7 @@ _braid_USetVectorRef(braid_Core    core,
    else if (sflag == -1)
    {
       braid_App    app = _braid_CoreElt(core, app);
-      _braid_UserSFree(core,  app, u);
+      _braid_BaseSFree(core,  app, u);
       ua[iu] = u;
    }
 
@@ -508,14 +508,14 @@ braid_Int
 _braid_UGetVector(braid_Core     core,
                   braid_Int      level,
                   braid_Int      index,
-                  braid_Vector  *u_ptr)
+                  braid_BaseVector  *u_ptr)
 {
    braid_App            app         = _braid_CoreElt(core, app);
    _braid_Grid        **grids       = _braid_CoreElt(core, grids);
-   braid_Vector        *ua          = _braid_GridElt(grids[level], ua);
+   braid_BaseVector        *ua          = _braid_GridElt(grids[level], ua);
    braid_Int            recv_index  = _braid_GridElt(grids[level], recv_index);
    _braid_CommHandle   *recv_handle = _braid_GridElt(grids[level], recv_handle);
-   braid_Vector         u = NULL;
+   braid_BaseVector         u = NULL;
    braid_Int            iu, sflag;
 
    if (index == recv_index)
@@ -534,12 +534,12 @@ _braid_UGetVector(braid_Core     core,
       _braid_UGetIndex(core, level, index, &iu, &sflag);
       if (sflag == 0)
       {
-         _braid_UserClone(core, app,  ua[iu], &u);
+         _braid_BaseClone(core, app,  ua[iu], &u);
       }
       else if (sflag == -1)
       {
          // In this case, sclone != NULL
-         _braid_UserSClone(core,  app, ua[iu], &u);
+         _braid_BaseSClone(core,  app, ua[iu], &u);
       }
    }
 
@@ -560,12 +560,12 @@ braid_Int
 _braid_USetVector(braid_Core    core,
                   braid_Int     level,
                   braid_Int     index,
-                  braid_Vector  u,
+                  braid_BaseVector  u,
                   braid_Int     move)
 {
    braid_App            app         = _braid_CoreElt(core, app);
    _braid_Grid        **grids       = _braid_CoreElt(core, grids);
-   braid_Vector        *ua          = _braid_GridElt(grids[level], ua);
+   braid_BaseVector        *ua          = _braid_GridElt(grids[level], ua);
    braid_Int            send_index  = _braid_GridElt(grids[level], send_index);
    _braid_CommHandle   *send_handle = _braid_GridElt(grids[level], send_handle);
    braid_Int            iu, sflag;
@@ -583,7 +583,7 @@ _braid_USetVector(braid_Core    core,
    {
       if (ua[iu] != NULL)
       {
-         _braid_UserFree(core, app,  ua[iu]);
+         _braid_BaseFree(core, app,  ua[iu]);
       }
       if (move)
       {
@@ -591,29 +591,29 @@ _braid_USetVector(braid_Core    core,
       }
       else
       {
-         _braid_UserClone(core, app,  u, &ua[iu]); /* copy the vector */
+         _braid_BaseClone(core, app,  u, &ua[iu]); /* copy the vector */
       }
    }
    else if (sflag == -1) // We have a shell
    {
       if (ua[iu] != NULL)
       {
-         _braid_UserFree(core, app,  ua[iu]);
+         _braid_BaseFree(core, app,  ua[iu]);
       }
       if (move)
       {
          // We are on an F-point, with shellvector option. We only keep the shell.
-         _braid_UserSFree(core,  app, u);
+         _braid_BaseSFree(core,  app, u);
          ua[iu] = u;                                   /* move the vector */
       }
       else
       {
-         _braid_UserSClone(core,  app, u, &ua[iu]); /* copy the vector */
+         _braid_BaseSClone(core,  app, u, &ua[iu]); /* copy the vector */
       }
    }
    else if (move) // We store nothing
    {
-      _braid_UserFree(core, app,  u);              /* free the vector */
+      _braid_BaseFree(core, app,  u);              /* free the vector */
    }
 
    return _braid_error_flag;
@@ -633,7 +633,7 @@ _braid_UCommInitBasic(braid_Core  core,
    _braid_Grid        **grids       = _braid_CoreElt(core, grids);
    braid_Int            ilower      = _braid_GridElt(grids[level], ilower);
    braid_Int            iupper      = _braid_GridElt(grids[level], iupper);
-   braid_Vector        *ua          = _braid_GridElt(grids[level], ua);
+   braid_BaseVector        *ua          = _braid_GridElt(grids[level], ua);
    braid_Int            recv_index  = -1;
    braid_Int            send_index  = -1;
    _braid_CommHandle   *recv_handle = NULL;
@@ -684,7 +684,7 @@ _braid_UCommInit(braid_Core  core,
    braid_Int            ilower      = _braid_GridElt(grids[level], ilower);
    braid_Int            iupper      = _braid_GridElt(grids[level], iupper);
    braid_Int            cfactor     = _braid_GridElt(grids[level], cfactor);
-   braid_Vector        *ua          = _braid_GridElt(grids[level], ua);
+   braid_BaseVector        *ua          = _braid_GridElt(grids[level], ua);
    braid_Int            recv_index  = -1;
    braid_Int            send_index  = -1;
    _braid_CommHandle   *recv_handle = NULL;
@@ -733,7 +733,7 @@ _braid_UCommInitF(braid_Core  core,
    braid_Int            ilower      = _braid_GridElt(grids[level], ilower);
    braid_Int            iupper      = _braid_GridElt(grids[level], iupper);
    braid_Int            cfactor     = _braid_GridElt(grids[level], cfactor);
-   braid_Vector        *ua          = _braid_GridElt(grids[level], ua);
+   braid_BaseVector        *ua          = _braid_GridElt(grids[level], ua);
    braid_Int            recv_index  = -1;
    braid_Int            send_index  = -1;
    _braid_CommHandle   *recv_handle = NULL;
@@ -851,11 +851,11 @@ _braid_GetInterval(braid_Core   core,
 braid_Int
 _braid_AccessVector(braid_Core          core,
                     braid_AccessStatus  status,
-                    braid_Vector        u)
+                    braid_BaseVector        u)
 {
    braid_App      app    = _braid_CoreElt(core, app);
 
-   _braid_UserAccess(core, app,  u, status);
+   _braid_BaseAccess(core, app,  u, status);
 
    return _braid_error_flag;
 }
@@ -869,15 +869,15 @@ braid_Int
 _braid_GetUInit(braid_Core     core,
                 braid_Int      level,
                 braid_Int      index,
-                braid_Vector   u,
-                braid_Vector  *ustop_ptr)
+                braid_BaseVector   u,
+                braid_BaseVector  *ustop_ptr)
 {
    _braid_Grid    **grids    = _braid_CoreElt(core, grids);
    braid_Int        ilower   = _braid_GridElt(grids[level], ilower);
    braid_Int        storage  = _braid_CoreElt(core, storage);
-   braid_Vector    *va       = _braid_GridElt(grids[level], va);
+   braid_BaseVector    *va       = _braid_GridElt(grids[level], va);
 
-   braid_Vector     ustop = *ustop_ptr;
+   braid_BaseVector     ustop = *ustop_ptr;
    braid_Int        ii;
 
    ii = index-ilower;
@@ -924,8 +924,8 @@ braid_Int
 _braid_Step(braid_Core     core,
             braid_Int      level,
             braid_Int      index,
-            braid_Vector   ustop,
-            braid_Vector   u)
+            braid_BaseVector   ustop,
+            braid_BaseVector   u)
 {
    braid_App        app      = _braid_CoreElt(core, app);
    braid_Real       tol      = _braid_CoreElt(core, tol);
@@ -937,7 +937,7 @@ _braid_Step(braid_Core     core,
    braid_Int        gupper   = _braid_CoreElt(core, gupper);
    braid_Int        ilower   = _braid_GridElt(grids[level], ilower);
    braid_Real      *ta       = _braid_GridElt(grids[level], ta);
-   braid_Vector    *fa       = _braid_GridElt(grids[level], fa);
+   braid_BaseVector    *fa       = _braid_GridElt(grids[level], fa);
 
    braid_Int        ii;
 
@@ -952,7 +952,7 @@ _braid_Step(braid_Core     core,
 
    if (level == 0)
    {
-      _braid_UserStep(core, app,  ustop, NULL, u, status);
+      _braid_BaseStep(core, app,  ustop, NULL, u, status);
       rfactors[ii] = _braid_StatusElt(status, rfactor);
       if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
             _braid_CoreElt(core, r_space) = 1;
@@ -961,15 +961,15 @@ _braid_Step(braid_Core     core,
    {
       if ( _braid_CoreElt(core, residual) == NULL )
       {
-         _braid_UserStep(core, app,  ustop, NULL, u, status);
+         _braid_BaseStep(core, app,  ustop, NULL, u, status);
          if(fa[ii] != NULL)
          {
-            _braid_UserSum(core, app,  1.0, fa[ii], 1.0, u);
+            _braid_BaseSum(core, app,  1.0, fa[ii], 1.0, u);
          }
       }
       else
       {
-         _braid_UserStep(core, app,  ustop, fa[ii], u, status);
+         _braid_BaseStep(core, app,  ustop, fa[ii], u, status);
       }
    }
 
@@ -984,8 +984,8 @@ braid_Int
 _braid_Residual(braid_Core     core,
                 braid_Int      level,
                 braid_Int      index,
-                braid_Vector   ustop,
-                braid_Vector   r)
+                braid_BaseVector   ustop,
+                braid_BaseVector   r)
 {
    braid_App        app      = _braid_CoreElt(core, app);
    braid_Real       tol      = _braid_CoreElt(core, tol);
@@ -998,7 +998,7 @@ _braid_Residual(braid_Core     core,
    braid_Int        ilower   = _braid_GridElt(grids[level], ilower);
    braid_Real      *ta       = _braid_GridElt(grids[level], ta);
 
-   braid_Vector     rstop;
+   braid_BaseVector     rstop;
    braid_Int        ii;
 
    ii = index-ilower;
@@ -1007,8 +1007,8 @@ _braid_Residual(braid_Core     core,
    {
       /* By default: r = ustop - \Phi(ustart)*/
       _braid_GetUInit(core, level, index, r, &rstop);
-      _braid_UserStep(core, app,  rstop, NULL, r, status);
-      _braid_UserSum(core, app,  1.0, ustop, -1.0, r);
+      _braid_BaseStep(core, app,  rstop, NULL, r, status);
+      _braid_BaseSum(core, app,  1.0, ustop, -1.0, r);
       if (level == 0)
       {
          /*TODO Remove this line after modifing the _braid_StatusSetRFactor to set the rfactor in the array directly */
@@ -1021,7 +1021,7 @@ _braid_Residual(braid_Core     core,
    else
    {
       /* Call the user's residual routine */
-      _braid_UserResidual(core, app, ustop, r, status);
+      _braid_BaseResidual(core, app, ustop, r, status);
    }
 
    return _braid_error_flag;
@@ -1035,31 +1035,31 @@ braid_Int
 _braid_FASResidual(braid_Core     core,
                    braid_Int      level,
                    braid_Int      index,
-                   braid_Vector   ustop,
-                   braid_Vector   r)
+                   braid_BaseVector   ustop,
+                   braid_BaseVector   r)
 {
    braid_App        app    = _braid_CoreElt(core, app);
    _braid_Grid    **grids  = _braid_CoreElt(core, grids);
    braid_Int        ilower = _braid_GridElt(grids[level], ilower);
-   braid_Vector    *fa     = _braid_GridElt(grids[level], fa);
+   braid_BaseVector    *fa     = _braid_GridElt(grids[level], fa);
 
    braid_Int        ii;
 
    _braid_Residual(core, level, index, ustop, r);
    if (level == 0)
    {
-      _braid_UserSum(core, app,  0.0, r, -1.0, r);
+      _braid_BaseSum(core, app,  0.0, r, -1.0, r);
    }
    else
    {
       ii = index-ilower;
       if(fa[ii] == NULL)
       {
-         _braid_UserSum(core, app,  0.0, r, -1.0, r);
+         _braid_BaseSum(core, app,  0.0, r, -1.0, r);
       }
       else
       {
-         _braid_UserSum(core, app,  1.0, fa[ii], -1.0, r);
+         _braid_BaseSum(core, app,  1.0, fa[ii], -1.0, r);
       }
    }
 
@@ -1075,8 +1075,8 @@ _braid_Coarsen(braid_Core     core,
                braid_Int      level,    /* coarse level */
                braid_Int      f_index,  /* fine index */
                braid_Int      c_index,  /* coarse index */
-               braid_Vector   fvector,
-               braid_Vector  *cvector)
+               braid_BaseVector   fvector,
+               braid_BaseVector  *cvector)
 {
    braid_App      app             = _braid_CoreElt(core, app);
    _braid_Grid  **grids           = _braid_CoreElt(core, grids);
@@ -1094,7 +1094,7 @@ _braid_Coarsen(braid_Core     core,
    if ( _braid_CoreElt(core, scoarsen) == NULL )
    {
       /* No spatial coarsening needed, just clone the fine vector.*/
-      _braid_UserClone(core, app,  fvector, cvector);
+      _braid_BaseClone(core, app,  fvector, cvector);
    }
    else
    {
@@ -1102,7 +1102,7 @@ _braid_Coarsen(braid_Core     core,
       _braid_CoarsenRefStatusInit(f_ta[f_ii], f_ta[f_ii-1], f_ta[f_ii+1], 
                                   c_ta[c_ii-1], c_ta[c_ii+1],
                                   level-1, nrefine, gupper, cstatus);
-      _braid_UserSCoarsen(core, app, fvector, cvector, cstatus);
+      _braid_BaseSCoarsen(core, app, fvector, cvector, cstatus);
    }
    return _braid_error_flag;
 }
@@ -1116,8 +1116,8 @@ _braid_RefineBasic(braid_Core     core,
                    braid_Int      level,    /* fine level */
                    braid_Real    *f_ta,     /* pointer into fine time array */
                    braid_Real    *c_ta,     /* pointer into coarse time array */
-                   braid_Vector   cvector,
-                   braid_Vector  *fvector)
+                   braid_BaseVector   cvector,
+                   braid_BaseVector  *fvector)
 {
    braid_App              app     = _braid_CoreElt(core, app);
    braid_CoarsenRefStatus cstatus = (braid_CoarsenRefStatus)core;
@@ -1127,14 +1127,14 @@ _braid_RefineBasic(braid_Core     core,
    if ( _braid_CoreElt(core, scoarsen) == NULL )
    {
       /* No spatial refinement needed, just clone the fine vector.*/
-      _braid_UserClone(core, app,  cvector, fvector);
+      _braid_BaseClone(core, app,  cvector, fvector);
    }
    else
    {
       /* Call the user's refinement routine */
       _braid_CoarsenRefStatusInit(f_ta[0], f_ta[-1], f_ta[+1], c_ta[-1], c_ta[+1],
                                   level, nrefine, gupper, cstatus);
-      _braid_UserSRefine(core,  app, cvector, fvector, cstatus);
+      _braid_BaseSRefine(core,  app, cvector, fvector, cstatus);
    }
 
    return _braid_error_flag;
@@ -1149,8 +1149,8 @@ _braid_Refine(braid_Core     core,
               braid_Int      level,    /* fine level */
               braid_Int      f_index,  /* fine index */
               braid_Int      c_index,  /* coarse index */
-              braid_Vector   cvector,
-              braid_Vector  *fvector)
+              braid_BaseVector   cvector,
+              braid_BaseVector  *fvector)
 {
    _braid_Grid  **grids           = _braid_CoreElt(core, grids);
    braid_Int      f_ilower        = _braid_GridElt(grids[level], ilower);
@@ -1210,12 +1210,12 @@ _braid_GridClean(braid_Core    core,
    braid_Int      ilower   = _braid_GridElt(grid, ilower);
    braid_Int      iupper   = _braid_GridElt(grid, iupper);
    braid_Int      nupoints = _braid_GridElt(grid, nupoints);
-   braid_Vector  *ua       = _braid_GridElt(grid, ua);
-   braid_Vector  *va       = _braid_GridElt(grid, va);
-   braid_Vector  *fa       = _braid_GridElt(grid, fa);
-   braid_Vector  *ua_alloc = _braid_GridElt(grid, ua_alloc);
-   braid_Vector  *va_alloc = _braid_GridElt(grid, va_alloc);
-   braid_Vector  *fa_alloc = _braid_GridElt(grid, fa_alloc);
+   braid_BaseVector  *ua       = _braid_GridElt(grid, ua);
+   braid_BaseVector  *va       = _braid_GridElt(grid, va);
+   braid_BaseVector  *fa       = _braid_GridElt(grid, fa);
+   braid_BaseVector  *ua_alloc = _braid_GridElt(grid, ua_alloc);
+   braid_BaseVector  *va_alloc = _braid_GridElt(grid, va_alloc);
+   braid_BaseVector  *fa_alloc = _braid_GridElt(grid, fa_alloc);
    
    braid_Int      ii;
 
@@ -1225,7 +1225,7 @@ _braid_GridClean(braid_Core    core,
       {
          if (ua[ii] != NULL)
          {
-            _braid_UserFree(core, app,  ua[ii]);
+            _braid_BaseFree(core, app,  ua[ii]);
             ua[ii] = NULL;
          }
       }
@@ -1236,7 +1236,7 @@ _braid_GridClean(braid_Core    core,
       {
          if (va[ii] != NULL)
          {
-            _braid_UserFree(core, app,  va[ii]);
+            _braid_BaseFree(core, app,  va[ii]);
             va[ii] = NULL;
          }
       }
@@ -1247,7 +1247,7 @@ _braid_GridClean(braid_Core    core,
       {
          if (fa[ii] != NULL)
          {
-            _braid_UserFree(core, app,  fa[ii]);
+            _braid_BaseFree(core, app,  fa[ii]);
             fa[ii] = NULL;
          }
       }
@@ -1265,10 +1265,10 @@ _braid_GridDestroy(braid_Core    core,
 {
    if (grid)
    {
-      braid_Vector  *ua_alloc = _braid_GridElt(grid, ua_alloc);
+      braid_BaseVector  *ua_alloc = _braid_GridElt(grid, ua_alloc);
       braid_Real    *ta_alloc = _braid_GridElt(grid, ta_alloc);
-      braid_Vector  *va_alloc = _braid_GridElt(grid, va_alloc);
-      braid_Vector  *fa_alloc = _braid_GridElt(grid, fa_alloc);
+      braid_BaseVector  *va_alloc = _braid_GridElt(grid, va_alloc);
+      braid_BaseVector  *fa_alloc = _braid_GridElt(grid, fa_alloc);
 
       _braid_GridClean(core, grid);
 
@@ -1312,9 +1312,9 @@ _braid_InitGuess(braid_Core  core,
    braid_Int      cupper   = _braid_GridElt(grids[level], cupper);
    braid_Int      cfactor  = _braid_GridElt(grids[level], cfactor);
    braid_Real    *ta       = _braid_GridElt(grids[level], ta);
-   braid_Vector  *va       = _braid_GridElt(grids[level], va);
+   braid_BaseVector  *va       = _braid_GridElt(grids[level], va);
 
-   braid_Vector   u;
+   braid_BaseVector   u;
    braid_Int      i, iu, sflag;
 
    if ( (level == 0) && (seq_soln == 1) )
@@ -1322,7 +1322,7 @@ _braid_InitGuess(braid_Core  core,
       /* If first processor, grab initial condition */
       if(ilower == 0)
       {
-         _braid_UserInit(core, app,  ta[0], &u);
+         _braid_BaseInit(core, app,  ta[0], &u);
          _braid_USetVector(core, 0, 0, u, 0);
          ilower += 1;
       }
@@ -1355,12 +1355,12 @@ _braid_InitGuess(braid_Core  core,
             if (_braid_IsCPoint(i,cfactor))
             {
                // We are on a C-point, init full vector
-               _braid_UserInit(core, app,  ta[i-ilower], &u);
+               _braid_BaseInit(core, app,  ta[i-ilower], &u);
             }
             else
             {
                // We are on a F-point, init shell only
-               _braid_UserSInit(core,  app, ta[i-ilower], &u);
+               _braid_BaseSInit(core,  app, ta[i-ilower], &u);
             }
             _braid_USetVectorRef(core, level, i, u);
          }
@@ -1370,7 +1370,7 @@ _braid_InitGuess(braid_Core  core,
          /* Only initialize the C-points on the finest grid */
          for (i = clower; i <= cupper; i += cfactor)
          {
-            _braid_UserInit(core, app,  ta[i-ilower], &u);
+            _braid_BaseInit(core, app,  ta[i-ilower], &u);
             _braid_USetVectorRef(core, level, i, u);
          }
       }
@@ -1382,12 +1382,12 @@ _braid_InitGuess(braid_Core  core,
          _braid_UGetIndex(core, level, i, &iu, &sflag);
          if (sflag == 0) // Full point
          {
-            _braid_UserClone(core, app,  va[i-ilower], &u);
+            _braid_BaseClone(core, app,  va[i-ilower], &u);
             _braid_USetVectorRef(core, level, i, u);
          }
          else if (sflag == -1) // Shell
          {
-            _braid_UserSClone(core,  app, va[i-ilower], &u);
+            _braid_BaseSClone(core,  app, va[i-ilower], &u);
             _braid_USetVectorRef(core, level, i, u);
          }
       }
@@ -1421,7 +1421,7 @@ _braid_ComputeFullRNorm(braid_Core  core,
 
    braid_Int        flo, fhi, fi, ci, ii, interval;
    braid_Real       rnorm_temp, rnorm = 0, global_rnorm = 0;
-   braid_Vector     u, r;
+   braid_BaseVector     u, r;
 
    _braid_UCommInit(core, level);
 
@@ -1441,14 +1441,14 @@ _braid_ComputeFullRNorm(braid_Core  core,
       /* Generate F-points and get residual. */
       for (fi = flo; fi <= fhi; fi++)
       {
-         _braid_UserClone(core, app,  u, &r);
+         _braid_BaseClone(core, app,  u, &r);
          _braid_Step(core, level, fi, NULL, u);
 
          /* Update local processor norm. */
          ii = fi-ilower;
          _braid_StepStatusInit(ta[ii-1], ta[ii], fi-1, tol, iter, level, nrefine, gupper, status);
-         _braid_UserResidual(core, app, u, r, status);
-         _braid_UserSpatialNorm(core, app,  r, &rnorm_temp); 
+         _braid_BaseResidual(core, app, u, r, status);
+         _braid_BaseSpatialNorm(core, app,  r, &rnorm_temp); 
          if(tnorm == 1)       /* one-norm */ 
          {  
             rnorm += rnorm_temp;
@@ -1472,7 +1472,7 @@ _braid_ComputeFullRNorm(braid_Core  core,
             _braid_GridElt(grids[level], send_index)  = -1;
             _braid_GridElt(grids[level], send_handle) = send_handle;
          }
-         _braid_UserFree(core, app,  r);
+         _braid_BaseFree(core, app,  r);
       }
       /* Residual from C-point. */
       if (ci > 0)
@@ -1481,8 +1481,8 @@ _braid_ComputeFullRNorm(braid_Core  core,
          ii = ci-ilower;
          _braid_StepStatusInit(ta[ii-1], ta[ii], ci-1, tol, iter, level, nrefine, gupper, status);
          _braid_UGetVector(core, level, ci, &r);
-         _braid_UserResidual(core, app, r, u, status);
-         _braid_UserSpatialNorm(core, app,  u, &rnorm_temp);
+         _braid_BaseResidual(core, app, r, u, status);
+         _braid_BaseSpatialNorm(core, app,  u, &rnorm_temp);
 
          if(tnorm == 1)       /* one-norm */ 
          {  
@@ -1496,12 +1496,12 @@ _braid_ComputeFullRNorm(braid_Core  core,
          {  
             rnorm += (rnorm_temp*rnorm_temp);
          }
-         _braid_UserFree(core, app,  r);
+         _braid_BaseFree(core, app,  r);
       }
 
       if ((flo <= fhi) || (ci > 0))
       {
-         _braid_UserFree(core, app,  u);
+         _braid_BaseFree(core, app,  u);
       }
    }
 
@@ -1540,7 +1540,7 @@ _braid_FCRelax(braid_Core  core,
    _braid_Grid   **grids    = _braid_CoreElt(core, grids);
    braid_Int       ncpoints = _braid_GridElt(grids[level], ncpoints);
 
-   braid_Vector    u;
+   braid_BaseVector    u;
    braid_Int       flo, fhi, fi, ci;
    braid_Int       nu, nrelax, interval;
 
@@ -1581,7 +1581,7 @@ _braid_FCRelax(braid_Core  core,
          /* if ((flo <= fhi) && (interval == ncpoints)) */
          if ((flo <= fhi) && !(ci > 0))
          {
-            _braid_UserFree(core, app,  u);
+            _braid_BaseFree(core, app,  u);
          }
       }
       _braid_UCommWait(core, level);
@@ -1654,9 +1654,9 @@ _braid_FRestrict(braid_Core   core,
    _braid_CommHandle   *send_handle = NULL;
 
    braid_Int            c_level, c_ilower, c_iupper, c_index, c_i, c_ii;
-   braid_Vector         c_u, *c_va, *c_fa;
+   braid_BaseVector         c_u, *c_va, *c_fa;
 
-   braid_Vector         u, r;
+   braid_BaseVector         u, r;
    braid_Int            interval, flo, fhi, fi, ci;
    braid_Real           rnorm, grnorm, rnorm_temp, rnm;
 
@@ -1724,7 +1724,7 @@ _braid_FRestrict(braid_Core   core,
          /* Compute rnorm (only on level 0) */
          if (level == 0)
          {
-            _braid_UserSpatialNorm(core, app,  r, &rnorm_temp);
+            _braid_BaseSpatialNorm(core, app,  r, &rnorm_temp);
             tnorm_a[interval] = rnorm_temp;       /* inf-norm uses tnorm_a */
             if(tnorm == 1) 
             {  
@@ -1750,7 +1750,7 @@ _braid_FRestrict(braid_Core   core,
 
       if ((flo <= fhi) || (ci > 0))
       {
-         _braid_UserFree(core, app,  r);
+         _braid_BaseFree(core, app,  r);
       }
    }
    _braid_UCommWait(core, level);
@@ -1809,10 +1809,10 @@ _braid_FRestrict(braid_Core   core,
             /* Finalize update of c_va[-1] */
             _braid_CommWait(core, &recv_handle);
          }
-         _braid_UserClone(core, app,  c_va[c_ii-1], &c_u);
+         _braid_BaseClone(core, app,  c_va[c_ii-1], &c_u);
          _braid_Residual(core, c_level, c_i, c_va[c_ii], c_u);
-         _braid_UserSum(core, app,  1.0, c_u, 1.0, c_fa[c_ii]);
-         _braid_UserFree(core, app,  c_u);
+         _braid_BaseSum(core, app,  1.0, c_u, 1.0, c_fa[c_ii]);
+         _braid_BaseFree(core, app,  c_u);
       }
    }
    _braid_CommWait(core, &send_handle);
@@ -1837,14 +1837,14 @@ _braid_FInterp(braid_Core  core,
    braid_Int          gupper       = _braid_CoreElt(core, gupper);
    braid_Int          ilower       = _braid_GridElt(grids[level], ilower);
    braid_Int          ncpoints     = _braid_GridElt(grids[level], ncpoints);
-   braid_Vector      *va           = _braid_GridElt(grids[level], va);
+   braid_BaseVector      *va           = _braid_GridElt(grids[level], va);
    braid_Real        *ta           = _braid_GridElt(grids[level], ta);
    
    braid_Real         rnorm;
    braid_Int          f_level, f_cfactor, f_index;
-   braid_Vector       f_u, f_e;
+   braid_BaseVector       f_u, f_e;
 
-   braid_Vector       u, e;
+   braid_BaseVector       u, e;
    braid_Int          flo, fhi, fi, ci;
    braid_Int          interval;
 
@@ -1884,17 +1884,17 @@ _braid_FInterp(braid_Core  core,
             _braid_AccessVector(core, astatus, u);
          }
          e = va[fi-ilower];
-         _braid_UserSum(core, app,  1.0, u, -1.0, e);
+         _braid_BaseSum(core, app,  1.0, u, -1.0, e);
          _braid_MapCoarseToFine(fi, f_cfactor, f_index);
          _braid_Refine(core, f_level, f_index, fi, e, &f_e);
          _braid_UGetVectorRef(core, f_level, f_index, &f_u);
-         _braid_UserSum(core, app,  1.0, f_e, 1.0, f_u);
+         _braid_BaseSum(core, app,  1.0, f_e, 1.0, f_u);
          _braid_USetVectorRef(core, f_level, f_index, f_u);
-         _braid_UserFree(core, app,  f_e);
+         _braid_BaseFree(core, app,  f_e);
       }
       if (flo <= fhi)
       {
-         _braid_UserFree(core, app,  u);
+         _braid_BaseFree(core, app,  u);
       }
 
       /* Interpolate C-points, refining in space if needed */
@@ -1909,13 +1909,13 @@ _braid_FInterp(braid_Core  core,
             _braid_AccessVector(core, astatus, u);
          }
          e = va[ci-ilower];
-         _braid_UserSum(core, app,  1.0, u, -1.0, e);
+         _braid_BaseSum(core, app,  1.0, u, -1.0, e);
          _braid_MapCoarseToFine(ci, f_cfactor, f_index);
          _braid_Refine(core, f_level, f_index, ci, e, &f_e);
          _braid_UGetVectorRef(core, f_level, f_index, &f_u);
-         _braid_UserSum(core, app,  1.0, f_e, 1.0, f_u);
+         _braid_BaseSum(core, app,  1.0, f_e, 1.0, f_u);
          _braid_USetVectorRef(core, f_level, f_index, f_u);
-         _braid_UserFree(core, app,  f_e);
+         _braid_BaseFree(core, app,  f_e);
       }
    }
 
@@ -1946,7 +1946,7 @@ _braid_FRefineSpace(braid_Core   core,
 
    braid_Int     global_r_space;
    braid_Int     i, ii;
-   braid_Vector  c_vec, f_vec;  
+   braid_BaseVector  c_vec, f_vec;  
 
    if ( _braid_CoreElt(core, scoarsen) != NULL )
    {
@@ -2115,7 +2115,7 @@ _braid_FRefine(braid_Core   core,
    braid_Int     *r_ca, *r_fa, *f_ca, f_first, f_next, next;
    braid_Real    *ta, *r_ta_alloc, *r_ta, *f_ta;
 
-   braid_Vector  *send_ua, *recv_ua, u;
+   braid_BaseVector  *send_ua, *recv_ua, u;
    braid_Int     *send_procs, *recv_procs, *send_unums, *recv_unums, *iptr;
    braid_Real    *send_buffer, *recv_buffer, **send_buffers, **recv_buffers, *bptr;
    void          *buffer;
@@ -2456,12 +2456,12 @@ _braid_FRefine(braid_Core   core,
     * coarse grid, then injecting and refining spatially.  Redistribute these
     * u-vectors to the fine grid (recv_ua). */
 
-   send_ua = _braid_CTAlloc(braid_Vector, npoints);
+   send_ua = _braid_CTAlloc(braid_BaseVector, npoints);
    send_procs = _braid_CTAlloc(braid_Int, npoints);
    send_unums = _braid_CTAlloc(braid_Int, npoints);
    send_buffers = _braid_CTAlloc(braid_Real *, npoints);
 
-   recv_ua = _braid_CTAlloc(braid_Vector, f_npoints);
+   recv_ua = _braid_CTAlloc(braid_BaseVector, f_npoints);
    recv_procs = _braid_CTAlloc(braid_Int, f_npoints);
    recv_unums = _braid_CTAlloc(braid_Int, f_npoints);
    recv_buffers = _braid_CTAlloc(braid_Real *, f_npoints);
@@ -2500,7 +2500,7 @@ _braid_FRefine(braid_Core   core,
                _braid_AccessVector(core, astatus, u);
             }
          }
-         _braid_UserFree(core, app,  u);
+         _braid_BaseFree(core, app,  u);
       }
 
       /* Refine C-points in space */
@@ -2574,7 +2574,7 @@ _braid_FRefine(braid_Core   core,
    statuses = _braid_CTAlloc(MPI_Status,  (nsends+nrecvs));
 
    _braid_BufferStatusInit( 1, 0, bstatus );
-   _braid_UserBufSize(core, app,  &max_usize, bstatus); /* max buffer size */
+   _braid_BaseBufSize(core, app,  &max_usize, bstatus); /* max buffer size */
    _braid_NBytesToNReals(max_usize, max_usize);
 
    /* Post u-vector receives */
@@ -2608,11 +2608,11 @@ _braid_FRefine(braid_Core   core,
          {
             /* Pack u into buffer, adjust size, and put size into buffer */
             buffer = &bptr[1];
-            _braid_UserBufSize(core, app,  &size, bstatus);
+            _braid_BaseBufSize(core, app,  &size, bstatus);
             _braid_StatusElt( bstatus, size_buffer ) = size;
-            _braid_UserBufPack(core, app,  send_ua[ii], buffer, bstatus);
+            _braid_BaseBufPack(core, app,  send_ua[ii], buffer, bstatus);
             size = _braid_StatusElt(bstatus, size_buffer);
-            _braid_UserFree(core, app,  send_ua[ii]);
+            _braid_BaseFree(core, app,  send_ua[ii]);
             _braid_NBytesToNReals(size, size);
             bptr[0] = (braid_Int) size; /* insert size at the beginning */
             bptr += (1+size);
@@ -2656,7 +2656,7 @@ _braid_FRefine(braid_Core   core,
          {
             /* Unpack buffer into u-vector */
             buffer = &bptr[1];
-            _braid_UserBufUnpack(core, app, buffer, &recv_ua[f_ii], bstatus);
+            _braid_BaseBufUnpack(core, app, buffer, &recv_ua[f_ii], bstatus);
             size = (braid_Int) bptr[0];
             bptr += (1+size);
             unum--;
@@ -2819,7 +2819,7 @@ _braid_FAccess(braid_Core     core,
    braid_Int           ilower      = _braid_GridElt(grids[level], ilower);
 
    braid_Real     rnorm;
-   braid_Vector   u;
+   braid_BaseVector   u;
    braid_Int      interval, flo, fhi, fi, ci;
 
    _braid_UCommInitF(core, level);
@@ -2850,7 +2850,7 @@ _braid_FAccess(braid_Core     core,
       }
       if (flo <= fhi)
       {
-         _braid_UserFree(core, app,  u);
+         _braid_BaseFree(core, app,  u);
       }
 
       /* Give access at C-points */
@@ -2907,9 +2907,9 @@ _braid_InitHierarchy(braid_Core    core,
    braid_Int      ilower, iupper;
    braid_Int      clower, cupper, cfactor, ncpoints, nupoints;
    braid_Real    *ta;
-   braid_Vector  *ua;
-   braid_Vector  *va;
-   braid_Vector  *fa;
+   braid_BaseVector  *ua;
+   braid_BaseVector  *va;
+   braid_BaseVector  *fa;
 
    _braid_Grid   *grid;
    braid_Real    *f_ta;
@@ -3043,8 +3043,8 @@ _braid_InitHierarchy(braid_Core    core,
       iupper = _braid_GridElt(grid, iupper);
       if (level > 0)
       {
-         va = _braid_CTAlloc(braid_Vector, iupper-ilower+2);
-         fa = _braid_CTAlloc(braid_Vector, iupper-ilower+2);
+         va = _braid_CTAlloc(braid_BaseVector, iupper-ilower+2);
+         fa = _braid_CTAlloc(braid_BaseVector, iupper-ilower+2);
          _braid_GridElt(grid, va_alloc) = va;
          _braid_GridElt(grid, fa_alloc) = fa;
          _braid_GridElt(grid, va)       = va+1;  /* shift */
@@ -3062,7 +3062,7 @@ _braid_InitHierarchy(braid_Core    core,
       {
          nupoints = iupper-ilower+1;                  /* all points */
       }
-      ua = _braid_CTAlloc(braid_Vector, nupoints+1);
+      ua = _braid_CTAlloc(braid_BaseVector, nupoints+1);
       _braid_GridElt(grid, nupoints)  = nupoints;
       _braid_GridElt(grid, ua_alloc)  = ua;
       _braid_GridElt(grid, ua)        = ua+1;  /* shift */
@@ -3224,7 +3224,7 @@ _braid_CopyFineToCoarse(braid_Core  core)
    
    braid_Int      f_index, index, iu, is_stored, level, f_cfactor;
    braid_Int      ilower, iupper;
-   braid_Vector   u, *va;
+   braid_BaseVector   u, *va;
 
    for(level = 1; level < nlevels; level++)
    {
@@ -3242,18 +3242,18 @@ _braid_CopyFineToCoarse(braid_Core  core)
          _braid_UGetVector(core, level-1, f_index, &u);
          _braid_Coarsen(core, level, f_index, index, u, &va[index-ilower]);
          
-         _braid_UserFree(core, app,  u);
-         _braid_UserClone(core, app,  va[index-ilower], &u);
+         _braid_BaseFree(core, app,  u);
+         _braid_BaseClone(core, app,  va[index-ilower], &u);
          _braid_USetVectorRef(core, level, index, u);
          _braid_UGetIndex(core, level, index, &iu, &is_stored);
          if (is_stored == -2) /* Case where F-points are not stored, and we are not using shell vectors */
          {
-            _braid_UserFree(core, app,  u);
+            _braid_BaseFree(core, app,  u);
          }
          else if (is_stored == -1) /* This is a shell vector */
          {
             // We free the data in u, keeping the shell
-            _braid_UserSFree(core,  app, u);
+            _braid_BaseSFree(core,  app, u);
          }
  
       }

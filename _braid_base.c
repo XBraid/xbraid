@@ -3,18 +3,18 @@
  **/
 
 
-#ifndef _braid_user_HEADER
-#define _braid_user_HEADER
+#ifndef _braid_base_HEADER
+#define _braid_base_HEADER
 
 #include "_braid.h"
 
 
 braid_Int 
-_braid_UserStep(braid_Core       core,
+_braid_BaseStep(braid_Core       core,
                 braid_App        app,    
-                braid_Vector     ustop,
-                braid_Vector     fstop, 
-                braid_Vector     u, 
+                braid_BaseVector     ustop,
+                braid_BaseVector     fstop, 
+                braid_BaseVector     u, 
                 braid_StepStatus status )
 {
 
@@ -35,7 +35,7 @@ _braid_UserStep(braid_Core       core,
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
 
       /* Push a copy of the primal vector to the primal tape */
-      braid_UserVector u_copy;
+      braid_Vector u_copy;
       _braid_CoreFcn(core, clone)(app, u->primal, &u_copy);  // this will accolate memory for the copy!
       _braid_CoreElt(core, primaltape) = _braid_TapePush( _braid_CoreElt(core, primaltape), u_copy);
 
@@ -66,16 +66,16 @@ _braid_UserStep(braid_Core       core,
 
                         
 braid_Int
-_braid_UserInit(braid_Core core,
+_braid_BaseInit(braid_Core core,
                 braid_App      app, 
                 braid_Real     t,   
-                braid_Vector  *u_ptr
+                braid_BaseVector  *u_ptr
                 )
 {
    if (_braid_CoreElt(core, verbose)) printf("INIT\n");
 
-   /* Allocate memory for the braid_Vector */
-   braid_Vector u = (braid_Vector)malloc(sizeof(braid_UserVector)+sizeof(braid_Adjoint));
+   /* Allocate memory for the braid_BaseVector */
+   braid_BaseVector u = (braid_BaseVector)malloc(sizeof(braid_Vector)+sizeof(braid_Adjoint));
    u->primal= NULL;
    u->adjoint = NULL;
 
@@ -85,7 +85,7 @@ _braid_UserInit(braid_Core core,
    /* Allocate and initialize the adjoint */
    if ( _braid_CoreElt(core, adjoint) )
    {
-      braid_Adjoint myadjoint = (braid_Adjoint)malloc(sizeof(braid_UserVector)+sizeof(int));
+      braid_Adjoint myadjoint = (braid_Adjoint)malloc(sizeof(braid_Vector)+sizeof(int));
       myadjoint->useCount = 1;
       _braid_CoreFcn(core, init)(app, t, &(myadjoint->userVector));
       _braid_CoreFcn(core, sum)(app, -1.0, myadjoint->userVector, 1.0, myadjoint->userVector);
@@ -128,27 +128,27 @@ _braid_UserInit(braid_Core core,
 }
 
 braid_Int
-_braid_UserClone(braid_Core core,
+_braid_BaseClone(braid_Core core,
                  braid_App app,  
-                 braid_Vector   u,    
-                 braid_Vector  *v_ptr 
+                 braid_BaseVector   u,    
+                 braid_BaseVector  *v_ptr 
                  )
 {
 
    if (_braid_CoreElt(core, verbose)) printf("CLONE\n");
 
-   /* Allocate memory for the braid_Vector */
-   braid_Vector v = (braid_Vector)malloc(sizeof(braid_UserVector)+sizeof(braid_Adjoint));
+   /* Allocate memory for the braid_BaseVector */
+   braid_BaseVector v = (braid_BaseVector)malloc(sizeof(braid_Vector)+sizeof(braid_Adjoint));
    v->primal  = NULL;
    v->adjoint = NULL;
 
-   /* Call the users Clone function for the primal braid_UserVector */
+   /* Call the users Clone function for the primal braid_Vector */
    _braid_CoreFcn(core, clone)(app, u->primal, &(v->primal) );
 
    if (_braid_CoreElt(core, adjoint))
    {
       /* Allocate and initialize the adjoint to zero*/
-      braid_Adjoint myadjoint = (braid_Adjoint)malloc(sizeof(braid_UserVector)+sizeof(int));
+      braid_Adjoint myadjoint = (braid_Adjoint)malloc(sizeof(braid_Vector)+sizeof(int));
       myadjoint->useCount = 1;
       _braid_CoreFcn(core, clone)(app, u->adjoint->userVector, &(myadjoint->userVector));
       _braid_CoreFcn(core, sum)(app, -1.0, myadjoint->userVector, 1.0, myadjoint->userVector);
@@ -185,9 +185,9 @@ _braid_UserClone(braid_Core core,
 
 
 braid_Int
-_braid_UserFree(braid_Core core,
+_braid_BaseFree(braid_Core core,
                 braid_App     app,
-                braid_Vector  u   
+                braid_BaseVector  u   
                 )
 {
 
@@ -221,7 +221,7 @@ _braid_UserFree(braid_Core core,
       _braid_AdjointDelete(core, u->adjoint);
    }
 
-   /* Free the braid_Vector */
+   /* Free the braid_BaseVector */
    free(u);
 
    return 0;
@@ -229,12 +229,12 @@ _braid_UserFree(braid_Core core,
 
 
 braid_Int
-_braid_UserSum(braid_Core core,
+_braid_BaseSum(braid_Core core,
                braid_App        app,    
                braid_Real    alpha,  
-               braid_Vector  x,      
+               braid_BaseVector  x,      
                braid_Real    beta,   
-               braid_Vector  y       
+               braid_BaseVector  y       
                )
 {
    if (_braid_CoreElt(core, verbose)) printf("SUM\n");
@@ -270,10 +270,10 @@ _braid_UserSum(braid_Core core,
 
 
 braid_Int
-_braid_UserSpatialNorm(braid_Core core,
+_braid_BaseSpatialNorm(braid_Core core,
                        braid_App      app,      /**< user-defined _braid_App structure */
-                       braid_Vector   u,        /**< vector to norm */
-                       braid_Real    *norm_ptr  /**< output, norm of braid_Vector (this is a spatial norm) */ 
+                       braid_BaseVector   u,        /**< vector to norm */
+                       braid_Real    *norm_ptr  /**< output, norm of braid_BaseVector (this is a spatial norm) */ 
                        )
 {
 
@@ -285,9 +285,9 @@ _braid_UserSpatialNorm(braid_Core core,
 
 
 braid_Int
-_braid_UserAccess(braid_Core core,
+_braid_BaseAccess(braid_Core core,
                   braid_App           app,   
-                  braid_Vector        u,     
+                  braid_BaseVector        u,     
                   braid_AccessStatus  status 
                   )
 {
@@ -307,7 +307,7 @@ _braid_UserAccess(braid_Core core,
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
 
       /* Push a copy of the primal vector to the primal tape */
-      braid_UserVector u_copy;
+      braid_Vector u_copy;
       _braid_CoreFcn(core, clone)(app, u->primal, &u_copy);  // this will accolate memory for the copy!
       _braid_CoreElt(core, primaltape) = _braid_TapePush( _braid_CoreElt(core, primaltape), u_copy);
 
@@ -330,7 +330,7 @@ _braid_UserAccess(braid_Core core,
 
 
 braid_Int
-_braid_UserBufSize(braid_Core core,
+_braid_BaseBufSize(braid_Core core,
                    braid_App   app,               /**< user-defined _braid_App structure */
                    braid_Int  *size_ptr,           /**< upper bound on vector size in bytes */
                    braid_BufferStatus  status     /**< can be querried for info on the message type */
@@ -346,9 +346,9 @@ _braid_UserBufSize(braid_Core core,
 
 
 braid_Int
-_braid_UserBufPack(braid_Core core,
+_braid_BaseBufPack(braid_Core core,
                    braid_App           app,       
-                   braid_Vector        u,         
+                   braid_BaseVector        u,         
                    void               *buffer,    
                    braid_BufferStatus  status     
                    )
@@ -382,17 +382,17 @@ _braid_UserBufPack(braid_Core core,
 
 
 braid_Int
-_braid_UserBufUnpack(braid_Core core,
+_braid_BaseBufUnpack(braid_Core core,
                      braid_App            app,    
                      void                *buffer, 
-                     braid_Vector        *u_ptr,  
+                     braid_BaseVector        *u_ptr,  
                      braid_BufferStatus   status  
                      )
 {
    if (_braid_CoreElt(core, verbose)) printf("BUFUNPACK\n");
 
-   /* Allocate memory for the braid_Vector */
-   braid_Vector u = (braid_Vector)malloc(sizeof(braid_UserVector)+sizeof(braid_Adjoint));
+   /* Allocate memory for the braid_BaseVector */
+   braid_BaseVector u = (braid_BaseVector)malloc(sizeof(braid_Vector)+sizeof(braid_Adjoint));
    u->primal  = NULL;
    u->adjoint = NULL;
    
@@ -403,7 +403,7 @@ _braid_UserBufUnpack(braid_Core core,
    if ( _braid_CoreElt(core, adjoint) )
    {
       /* Allocate and initialize the adjoint with zero*/
-      braid_Adjoint myadjoint = (braid_Adjoint)malloc(sizeof(braid_UserVector)+sizeof(int));
+      braid_Adjoint myadjoint = (braid_Adjoint)malloc(sizeof(braid_Vector)+sizeof(int));
       myadjoint->useCount = 1;
       _braid_CoreFcn(core, init)(app, _braid_CoreElt(core, tstart), &(myadjoint->userVector));
       _braid_CoreFcn(core, sum)(app, -1.0, myadjoint->userVector, 1.0, myadjoint->userVector);
@@ -439,10 +439,10 @@ _braid_UserBufUnpack(braid_Core core,
 }
 
 braid_Int
-_braid_UserResidual(braid_Core core,
+_braid_BaseResidual(braid_Core core,
                      braid_App        app,    /**< user-defined _braid_App structure */
-                       braid_Vector     ustop,  /**< input, u vector at *tstop* */
-                       braid_Vector     r     , /**< output, residual at *tstop* (at input, equals *u* at *tstart*) */
+                       braid_BaseVector     ustop,  /**< input, u vector at *tstop* */
+                       braid_BaseVector     r     , /**< output, residual at *tstop* (at input, equals *u* at *tstart*) */
                        braid_StepStatus status  /**< query this struct for info about u (e.g., tstart and tstop) */ 
                        )
 {
@@ -456,14 +456,14 @@ _braid_UserResidual(braid_Core core,
 
 
 braid_Int
-_braid_UserSCoarsen(braid_Core core,
+_braid_BaseSCoarsen(braid_Core core,
                     braid_App               app,    /**< user-defined _braid_App structure */
-                       braid_Vector            fu,     /**< braid_UserVector to refine*/
-                       braid_Vector           *cu_ptr, /**< output, refined vector */   
+                       braid_BaseVector            fu,     /**< braid_Vector to refine*/
+                       braid_BaseVector           *cu_ptr, /**< output, refined vector */   
                        braid_CoarsenRefStatus  status  /**< query this struct for info about fu and cu (e.g., where in time fu and cu are)  */ 
                        )
 {
-      braid_Vector cu = (braid_Vector)malloc(sizeof(braid_Vector));
+      braid_BaseVector cu = (braid_BaseVector)malloc(sizeof(braid_BaseVector));
 
       /* Call the users SCoarsen Function */
       _braid_CoreFcn(core, scoarsen)(app, fu->primal, &(cu->primal), status);
@@ -474,14 +474,14 @@ _braid_UserSCoarsen(braid_Core core,
 }
 
 braid_Int
-_braid_UserSRefine(braid_Core core,
+_braid_BaseSRefine(braid_Core core,
                    braid_App               app,    /**< user-defined _braid_App structure */
-                      braid_Vector            cu,     /**< braid_UserVector to refine*/
-                      braid_Vector           *fu_ptr, /**< output, refined vector */       
+                      braid_BaseVector            cu,     /**< braid_Vector to refine*/
+                      braid_BaseVector           *fu_ptr, /**< output, refined vector */       
                       braid_CoarsenRefStatus  status  /**< query this struct for info about fu and cu (e.g., where in time fu and cu are)  */ 
                       )
 {
-      braid_Vector fu = (braid_Vector)malloc(sizeof(braid_Vector));
+      braid_BaseVector fu = (braid_BaseVector)malloc(sizeof(braid_BaseVector));
 
       /* Call the users SRefine */
       _braid_CoreFcn(core, srefine)(app, cu->primal, &(fu->primal), status);
@@ -492,13 +492,13 @@ _braid_UserSRefine(braid_Core core,
 }                      
 
 braid_Int
-_braid_UserSInit(braid_Core core,
+_braid_BaseSInit(braid_Core core,
                  braid_App     app,           /**< user-defined _braid_App structure */
                    braid_Real     t,             /**< time value for *u_ptr* */
-                   braid_Vector  *u_ptr          /**< output, newly allocated and initialized vector shell */
+                   braid_BaseVector  *u_ptr          /**< output, newly allocated and initialized vector shell */
                    )
 {
-      braid_Vector u = (braid_Vector)malloc(sizeof(braid_Vector));
+      braid_BaseVector u = (braid_BaseVector)malloc(sizeof(braid_BaseVector));
 
       /* Call the users SInit */
       _braid_CoreFcn(core, sinit)(app, t, &(u->primal));
@@ -509,13 +509,13 @@ _braid_UserSInit(braid_Core core,
 }
 
 braid_Int
-_braid_UserSClone(braid_Core core, 
+_braid_BaseSClone(braid_Core core, 
                  braid_App      app,          /**< user-defined _braid_App structure */
-                    braid_Vector   u,            /**< vector to clone */ 
-                    braid_Vector  *v_ptr         /**< output, newly allocated and cloned vector shell */
+                    braid_BaseVector   u,            /**< vector to clone */ 
+                    braid_BaseVector  *v_ptr         /**< output, newly allocated and cloned vector shell */
                     )
 {
-      braid_Vector v = (braid_Vector)malloc(sizeof(braid_Vector));
+      braid_BaseVector v = (braid_BaseVector)malloc(sizeof(braid_BaseVector));
 
       /* Call the users SClone */
       _braid_CoreFcn(core, sclone)(app, u->primal, &(v->primal));
@@ -527,9 +527,9 @@ _braid_UserSClone(braid_Core core,
 
 
 braid_Int
-_braid_UserSFree(braid_Core core,
+_braid_BaseSFree(braid_Core core,
                   braid_App     app,            /**< user-defined _braid_App structure */
-                    braid_Vector  u               /**< vector to free (keeping the shell) */
+                    braid_BaseVector  u               /**< vector to free (keeping the shell) */
                     )
 {
       /* Call the users sfree */
@@ -541,7 +541,7 @@ _braid_UserSFree(braid_Core core,
 }
 
 braid_Int
-_braid_UserTimeGrid(braid_Core core,
+_braid_BaseTimeGrid(braid_Core core,
                    braid_App         app,       /**< user-defined _braid_App structure */
                        braid_Real       *ta,        /**< temporal grid on level 0 (slice per processor) */
                        braid_Int        *ilower,    /**< lower time index value for this processor */
@@ -558,7 +558,7 @@ _braid_UserTimeGrid(braid_Core core,
 /*----- Adjoint of user routines ------*/
 
 braid_Int
-_braid_UserStepAdjoint(_braid_Action *action)
+_braid_BaseStepAdjoint(_braid_Action *action)
 {
       // braid_Real        inTime;
       // braid_Real        outTime;
@@ -574,8 +574,8 @@ _braid_UserStepAdjoint(_braid_Action *action)
       // myid    = action->myid;
 
       /* Get the braid_vector that was used in primal run */
-      braid_UserVector primal;
-      primal = (braid_UserVector) (_braid_CoreElt(core, primaltape)->data_ptr);
+      braid_Vector primal;
+      primal = (braid_Vector) (_braid_CoreElt(core, primaltape)->data_ptr);
 
 
       /* Pop the adjoint vector from the tape*/
@@ -605,7 +605,7 @@ _braid_UserStepAdjoint(_braid_Action *action)
 }
 
 braid_Int
-_braid_UserCloneAdjoint(_braid_Action *action)
+_braid_BaseCloneAdjoint(_braid_Action *action)
 {
       // printf("CLONE adjoint\n");
 
@@ -652,7 +652,7 @@ _braid_UserCloneAdjoint(_braid_Action *action)
 }
 
 braid_Int
-_braid_UserSumAdjoint(_braid_Action *action)
+_braid_BaseSumAdjoint(_braid_Action *action)
 {
    // printf("SUM adjoint\n");
 
@@ -696,7 +696,7 @@ _braid_UserSumAdjoint(_braid_Action *action)
 
 
 braid_Int
-_braid_UserAccessAdjoint(_braid_Action *action)
+_braid_BaseAccessAdjoint(_braid_Action *action)
 {
 //       braid_Int     inTime;
 //       braid_Int     myid;
@@ -708,8 +708,8 @@ _braid_UserAccessAdjoint(_braid_Action *action)
 //       myid   = action->myid;
 
       /* Pop the primal vector that was used in primal access function */
-      braid_UserVector  primal;
-      primal = (braid_UserVector) (_braid_CoreElt(core, primaltape)->data_ptr);
+      braid_Vector  primal;
+      primal = (braid_Vector) (_braid_CoreElt(core, primaltape)->data_ptr);
       _braid_CoreElt(core, primaltape) = _braid_TapePop( _braid_CoreElt(core, primaltape) );
 
       /* Pop the adjoint vector from the tape*/
@@ -742,7 +742,7 @@ _braid_UserAccessAdjoint(_braid_Action *action)
 }
 
 braid_Int
-_braid_UserBufPackAdjoint(_braid_Action *action, braid_App app)
+_braid_BaseBufPackAdjoint(_braid_Action *action, braid_App app)
 {
       // printf("BufPack adjoint\n");
 
@@ -769,7 +769,7 @@ _braid_UserBufPackAdjoint(_braid_Action *action, braid_App app)
 }
 
 braid_Int
-_braid_UserBufUnpackAdjoint(_braid_Action *action, braid_App app)
+_braid_BaseBufUnpackAdjoint(_braid_Action *action, braid_App app)
 {
       // printf("BufUnack adjoint\n");
 

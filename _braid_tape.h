@@ -119,23 +119,23 @@ _braid_TapeEvaluateAdjoint(braid_Core core);
 void
 _braid_AdjointCall(_braid_Action* action);
 
-/**
- * Display function for a _braid_action
- * Input: Pointer to an action 
- */
-void
-_braid_TapeDisplayAction(braid_Core core,void* data_ptr);
+// /**
+//  * Display function for a _braid_action
+//  * Input: Pointer to an action 
+//  */
+// void
+// _braid_TapeDisplayAction(braid_Core core,void* data_ptr);
 
-/**
- * Display function for a _braid_vector
- * Input: Pointer to a _braid_Vector
- */
-void
-_braid_TapeDisplayPrimal(braid_Core core,void* data_ptr);
+// /**
+//  * Display function for a _braid_vector
+//  * Input: Pointer to a _braid_Vector
+//  */
+// void
+// _braid_TapeDisplayPrimal(braid_Core core,void* data_ptr);
 
 
-void
-_braid_TapeDisplayInt(braid_Core core,void* data_ptr);
+// void
+// _braid_TapeDisplayInt(braid_Core core,void* data_ptr);
 
 
 /**

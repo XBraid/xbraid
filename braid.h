@@ -93,7 +93,7 @@ extern "C" {
 /** \defgroup userwritten User-written routines
  *  
  *  These are all user-written data structures and routines.  There are two
- *  data structures (@ref braid_App and @ref braid_UserVector) for the user to define.
+ *  data structures (@ref braid_App and @ref braid_Vector) for the user to define.
  *  And, there are a variety of function interfaces (defined through function pointer
  *  declarations) that the user must implement.
  *
@@ -114,7 +114,7 @@ struct _braid_Vector_struct;
  * It could also contain any other information related to this vector which is 
  * needed to evolve the vector to the next time value, like mesh information.
  **/
-typedef struct _braid_Vector_struct *braid_UserVector;
+typedef struct _braid_Vector_struct *braid_Vector;
 
 /**
  * Defines the central time stepping function that the user must write.
@@ -133,9 +133,9 @@ typedef struct _braid_Vector_struct *braid_UserVector;
  **/
 typedef braid_Int
 (*braid_PtFcnStep)(braid_App        app,    /**< user-defined _braid_App structure */
-                   braid_UserVector     ustop,  /**< input, u vector at *tstop* */
-                   braid_UserVector     fstop,  /**< input, right-hand-side at *tstop* */
-                   braid_UserVector     u     , /**< input/output, initially u vector at *tstart*, upon exit, u vector at *tstop* */
+                   braid_Vector     ustop,  /**< input, u vector at *tstop* */
+                   braid_Vector     fstop,  /**< input, right-hand-side at *tstop* */
+                   braid_Vector     u     , /**< input/output, initially u vector at *tstart*, upon exit, u vector at *tstop* */
                    braid_StepStatus status  /**< query this struct for info about u (e.g., tstart and tstop), allows for steering (e.g., set rfactor) */ 
                    );
 
@@ -145,7 +145,7 @@ typedef braid_Int
 typedef braid_Int
 (*braid_PtFcnInit)(braid_App      app,           /**< user-defined _braid_App structure */
                    braid_Real     t,             /**< time value for *u_ptr* */
-                   braid_UserVector  *u_ptr          /**< output, newly allocated and initialized vector */
+                   braid_Vector  *u_ptr          /**< output, newly allocated and initialized vector */
                    );
 
 /**
@@ -153,8 +153,8 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnClone)(braid_App      app,          /**< user-defined _braid_App structure */
-                    braid_UserVector   u,            /**< vector to clone */ 
-                    braid_UserVector  *v_ptr         /**< output, newly allocated and cloned vector */
+                    braid_Vector   u,            /**< vector to clone */ 
+                    braid_Vector  *v_ptr         /**< output, newly allocated and cloned vector */
                     );
 
 /**
@@ -162,7 +162,7 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnFree)(braid_App     app,            /**< user-defined _braid_App structure */
-                   braid_UserVector  u               /**< vector to free */
+                   braid_Vector  u               /**< vector to free */
                    );
 
 /**
@@ -171,13 +171,13 @@ typedef braid_Int
 typedef braid_Int
 (*braid_PtFcnSum)(braid_App     app,             /**< user-defined _braid_App structure */
                   braid_Real    alpha,           /**< scalar for AXPY */
-                  braid_UserVector  x,               /**< vector for AXPY */
+                  braid_Vector  x,               /**< vector for AXPY */
                   braid_Real    beta,            /**< scalar for AXPY */
-                  braid_UserVector  y                /**< output and vector for AXPY */
+                  braid_Vector  y                /**< output and vector for AXPY */
                   );
 
 /** 
- * Carry out a spatial norm by taking the norm of a braid_UserVector 
+ * Carry out a spatial norm by taking the norm of a braid_Vector 
  * *norm_ptr* = || *u* || 
  * A common choice is the standard Eucliden norm, but many other choices are
  * possible, such as an L2-norm based on a finite element space.  See
@@ -187,8 +187,8 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnSpatialNorm)(braid_App      app,      /**< user-defined _braid_App structure */
-                          braid_UserVector   u,        /**< vector to norm */
-                          braid_Real    *norm_ptr  /**< output, norm of braid_UserVector (this is a spatial norm) */ 
+                          braid_Vector   u,        /**< vector to norm */
+                          braid_Real    *norm_ptr  /**< output, norm of braid_Vector (this is a spatial norm) */ 
                           );
 
 /**
@@ -211,13 +211,13 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnAccess)(braid_App           app,              /**< user-defined _braid_App structure */
-                     braid_UserVector        u,                /**< vector to be accessed */
+                     braid_Vector        u,                /**< vector to be accessed */
                      braid_AccessStatus  status            /**< can be querried for info like the current XBraid Iteration */
                      );
 
 /**
  * This routine tells XBraid message sizes by computing an upper bound in bytes
- * for an arbitrary braid_UserVector.  This size must be an upper bound for what
+ * for an arbitrary braid_Vector.  This size must be an upper bound for what
  * BufPack and BufUnPack will assume.
  **/
 typedef braid_Int
@@ -227,28 +227,28 @@ typedef braid_Int
                       );      
 
 /**
- * This allows XBraid to send messages containing braid_UserVectors.  This routine
+ * This allows XBraid to send messages containing braid_Vectors.  This routine
  * packs a vector _u_ into a _void \*  buffer_ for MPI. The status structure holds
  * information regarding the message. This is accessed through the _braid_BufferStatusGet**(..)_ 
  * routines. Optionally, the user can set the message size through the status structure. 
  **/
 typedef braid_Int
 (*braid_PtFcnBufPack)(braid_App           app,            /**< user-defined _braid_App structure */
-                      braid_UserVector        u,              /**< vector to back into buffer */
+                      braid_Vector        u,              /**< vector to back into buffer */
                       void               *buffer,         /**< output, MPI buffer containing u */
                       braid_BufferStatus  status          /**< can be queeried for info on the message type required */
                       );
 
 /**
- * This allows XBraid to receive messages containing braid_UserVectors.  This routine
- * unpacks a _void * buffer_ from MPI into a braid_UserVector. The status structure, contains
+ * This allows XBraid to receive messages containing braid_Vectors.  This routine
+ * unpacks a _void * buffer_ from MPI into a braid_Vector. The status structure, contains
  * information conveying the type of message inside the buffer. This can be accessed through 
  * the _braid_BufferStatusGet**(..)_ routines. 
  **/
 typedef braid_Int
 (*braid_PtFcnBufUnpack)(braid_App            app,           /**< user-defined _braid_App structure */
                         void                *buffer,        /**< MPI Buffer to unpack and place in u_ptr */
-                        braid_UserVector        *u_ptr,         /**< output, braid_UserVector containing buffer's data */
+                        braid_Vector        *u_ptr,         /**< output, braid_Vector containing buffer's data */
                         braid_BufferStatus   status         /**< can be querried for info on the current message type */
                         );
 
@@ -262,8 +262,8 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnResidual)(braid_App        app,    /**< user-defined _braid_App structure */
-                       braid_UserVector     ustop,  /**< input, u vector at *tstop* */
-                       braid_UserVector     r     , /**< output, residual at *tstop* (at input, equals *u* at *tstart*) */
+                       braid_Vector     ustop,  /**< input, u vector at *tstop* */
+                       braid_Vector     r     , /**< output, residual at *tstop* (at input, equals *u* at *tstart*) */
                        braid_StepStatus status  /**< query this struct for info about u (e.g., tstart and tstop) */ 
                        );
 
@@ -281,8 +281,8 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnSCoarsen)(braid_App               app,    /**< user-defined _braid_App structure */
-                       braid_UserVector            fu,     /**< braid_UserVector to refine*/
-                       braid_UserVector           *cu_ptr, /**< output, refined vector */   
+                       braid_Vector            fu,     /**< braid_Vector to refine*/
+                       braid_Vector           *cu_ptr, /**< output, refined vector */   
                        braid_CoarsenRefStatus  status  /**< query this struct for info about fu and cu (e.g., where in time fu and cu are)  */ 
                        );
 
@@ -300,8 +300,8 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnSRefine)(braid_App               app,    /**< user-defined _braid_App structure */
-                      braid_UserVector            cu,     /**< braid_UserVector to refine*/
-                      braid_UserVector           *fu_ptr, /**< output, refined vector */       
+                      braid_Vector            cu,     /**< braid_Vector to refine*/
+                      braid_Vector           *fu_ptr, /**< output, refined vector */       
                       braid_CoarsenRefStatus  status  /**< query this struct for info about fu and cu (e.g., where in time fu and cu are)  */ 
                       );
 /**
@@ -310,7 +310,7 @@ typedef braid_Int
 typedef braid_Int
 (*braid_PtFcnSInit)(braid_App     app,           /**< user-defined _braid_App structure */
                    braid_Real     t,             /**< time value for *u_ptr* */
-                   braid_UserVector  *u_ptr          /**< output, newly allocated and initialized vector shell */
+                   braid_Vector  *u_ptr          /**< output, newly allocated and initialized vector shell */
                    );
 
 /**
@@ -318,8 +318,8 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnSClone)(braid_App      app,          /**< user-defined _braid_App structure */
-                    braid_UserVector   u,            /**< vector to clone */ 
-                    braid_UserVector  *v_ptr         /**< output, newly allocated and cloned vector shell */
+                    braid_Vector   u,            /**< vector to clone */ 
+                    braid_Vector  *v_ptr         /**< output, newly allocated and cloned vector shell */
                     );
 
 /**
@@ -327,7 +327,7 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnSFree)(braid_App     app,            /**< user-defined _braid_App structure */
-                    braid_UserVector  u               /**< vector to free (keeping the shell) */
+                    braid_Vector  u               /**< vector to free (keeping the shell) */
                     );
 
 /**
@@ -347,10 +347,10 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnStepAdj)(braid_App        app,    /**< user-defined _braid_App structure */
-                     //  braid_UserVector     ustop,  /**< input, u vector at *tstop* */
-                     //  braid_UserVector     fstop,  /**< input, right-hand-side at *tstop* */
-                      braid_UserVector     u_primal, /**< primal vector */
-                      braid_UserVector     u_adjoint, /**< adjoint vector */
+                     //  braid_Vector     ustop,  /**< input, u vector at *tstop* */
+                     //  braid_Vector     fstop,  /**< input, right-hand-side at *tstop* */
+                      braid_Vector     u_primal, /**< primal vector */
+                      braid_Vector     u_adjoint, /**< adjoint vector */
                       braid_StepStatus status  /**< query this struct for info about u (e.g., tstart and tstop), allows for steering (e.g., set rfactor) */ 
                    );
 
@@ -359,8 +359,8 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnAccessAdj)(braid_App           app,              /**< user-defined _braid_App structure */
-                        braid_UserVector    u_primal,         /**< primal vector */
-                        braid_UserVector    u_adjoint,        /**< adjoint vector */
+                        braid_Vector    u_primal,         /**< primal vector */
+                        braid_Vector    u_adjoint,        /**< adjoint vector */
                         braid_AccessStatus  status            /**< can be querried for info like the current XBraid Iteration */
                      );
 
@@ -408,16 +408,16 @@ braid_Init(MPI_Comm               comm_world,  /**< Global communicator for spac
            braid_Real             tstop,       /**< End time*/
            braid_Int              ntime,       /**< Initial number of temporal grid values*/
            braid_App              app,         /**< User-defined _braid_App structure */
-           braid_PtFcnStep        step,        /**< User time stepping routine to advance a braid_UserVector forward one step */
-           braid_PtFcnInit        init,        /**< Initialize a braid_UserVector on the finest temporal grid*/
-           braid_PtFcnClone       clone,       /**< Clone a braid_UserVector*/
-           braid_PtFcnFree        free,        /**< Free a braid_UserVector*/
-           braid_PtFcnSum         sum,         /**< Compute vector sum of two braid_UserVectors*/
-           braid_PtFcnSpatialNorm spatialnorm, /**< Compute norm of a braid_UserVector, this is a norm only over space */
-           braid_PtFcnAccess      access,      /**< Allows access to XBraid and current braid_UserVector */
-           braid_PtFcnBufSize     bufsize,     /**< Computes size for MPI buffer for one braid_UserVector */
-           braid_PtFcnBufPack     bufpack,     /**< Packs MPI buffer to contain one braid_UserVector*/
-           braid_PtFcnBufUnpack   bufunpack,   /**< Unpacks MPI buffer into a braid_UserVector */
+           braid_PtFcnStep        step,        /**< User time stepping routine to advance a braid_Vector forward one step */
+           braid_PtFcnInit        init,        /**< Initialize a braid_Vector on the finest temporal grid*/
+           braid_PtFcnClone       clone,       /**< Clone a braid_Vector*/
+           braid_PtFcnFree        free,        /**< Free a braid_Vector*/
+           braid_PtFcnSum         sum,         /**< Compute vector sum of two braid_Vectors*/
+           braid_PtFcnSpatialNorm spatialnorm, /**< Compute norm of a braid_Vector, this is a norm only over space */
+           braid_PtFcnAccess      access,      /**< Allows access to XBraid and current braid_Vector */
+           braid_PtFcnBufSize     bufsize,     /**< Computes size for MPI buffer for one braid_Vector */
+           braid_PtFcnBufPack     bufpack,     /**< Packs MPI buffer to contain one braid_Vector*/
+           braid_PtFcnBufUnpack   bufunpack,   /**< Unpacks MPI buffer into a braid_Vector */
            braid_Core            *core_ptr     /**< Pointer to braid_Core (_braid_Core) struct*/   
            );
 
