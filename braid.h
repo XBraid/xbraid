@@ -364,6 +364,17 @@ typedef braid_Int
                         braid_AccessStatus  status            /**< can be querried for info like the current XBraid Iteration */
                      );
 
+/**
+ * Evaluate the local objective function at time t 
+ **/
+typedef braid_Int
+(*braid_PtFcnObjectiveT)(braid_App           app,              /**< user-defined _braid_App structure */
+                        braid_Vector    u_primal,             /**< primal vector */
+                        braid_AccessStatus  status,            /**< can be querried for info about the current time */
+                        braid_Real          *objectiveT_ptr    /**< output: objective function f(u(t)) at current time */
+                        );
+
+
 
 /** @}*/
 
@@ -830,6 +841,7 @@ braid_SetSeqSoln(braid_Core  core,          /**< braid_Core (_braid_Core) struct
 braid_Int
 braid_Init_Adjoint( braid_PtFcnStepAdj     step_adj,    /**< Adjoint time stepping routine to advance an adjoint vector backwards one time step */
                     braid_PtFcnAccessAdj   access_adj,  /**< Adjoint of the access function */
+                    braid_PtFcnObjectiveT  objT,        /**< Evaluate the local objective function at time t  */
                     braid_Core             *core_ptr    /**< Pointer to braid_Core (_braid_Core) struct*/   
            );
 

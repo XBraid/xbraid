@@ -323,8 +323,16 @@ _braid_DrivePrintStatus(braid_Core  core,
    }
    if (rnorm != braid_INVALID_RNORM)
    {
-      _braid_printf("  Braid: || r_%d || = %1.6e, conv factor = %1.2e, wall time = %1.2e\n",
-                    iter, rnorm, cfactor, wtime);
+      if (!_braid_CoreElt(core, adjoint))
+      {
+         _braid_printf("  Braid: || r_%d || = %1.6e, conv factor = %1.2e, wall time = %1.2e\n",
+                       iter, rnorm, cfactor, wtime);
+      } 
+      else 
+      {
+         _braid_printf("  Braid: || r_%d || = %1.6e, conv factor = %1.2e, objective = %1.12e\n",
+                       iter, rnorm, cfactor, _braid_CoreElt(core, optim)->objective);
+      }
    }
    else
    {
@@ -482,6 +490,7 @@ braid_Drive(braid_Core  core)
          _braid_FCRelax(core, level);
 
          /* F-relax then restrict (note that FRestrict computes a new rnorm) */
+         /* if adjoint: This computes the local objective function at each step on finest grid. */
          _braid_FRestrict(core, level);
             
          /* Compute full residual norm if requested */
@@ -532,10 +541,11 @@ braid_Drive(braid_Core  core)
                _braid_TFree(saved_rfactors);
             }
 
-
             /* Finest grid - refine grid if desired, else check convergence */
             _braid_FRefine(core, &refined);
             nlevels = _braid_CoreElt(core, nlevels);
+
+            /* TODO: Collect objective function from all processors. */
 
             /* Print current status */
             _braid_DrivePrintStatus(core, level, iter, refined, localtime);
@@ -739,6 +749,10 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, primaltape)      = NULL;
    _braid_CoreElt(core, adjointtape)     = NULL;
    _braid_CoreElt(core, optim)           = NULL;
+   _braid_CoreElt(core, access_adjoint)  = NULL;
+   _braid_CoreElt(core, step_adjoint)    = NULL;
+   _braid_CoreElt(core, objectiveT)      = NULL;
+
    
    /* Residual history and accuracy tracking for StepStatus*/
    _braid_CoreElt(core, rnorm0)              = braid_INVALID_RNORM;
@@ -762,6 +776,7 @@ braid_Init(MPI_Comm               comm_world,
 braid_Int
 braid_Init_Adjoint(braid_PtFcnStepAdj     step_adjoint, 
                    braid_PtFcnAccessAdj   access_adjoint,
+                   braid_PtFcnObjectiveT  objectiveT,
                    braid_Core             *core_ptr)
 {
   if( _braid_CoreElt(*core_ptr, refine) )
@@ -790,11 +805,10 @@ braid_Init_Adjoint(braid_PtFcnStepAdj     step_adjoint,
    _braid_OptimInit( core_ptr, &optim);
    _braid_CoreElt(*core_ptr, optim) = optim; 
 
-   printf("\n TEST %f \n\n", optim->tstart_obj);
-
    /* Store pointer to adjoint user interface in the core */
    _braid_CoreElt(*core_ptr, step_adjoint)   = step_adjoint;
    _braid_CoreElt(*core_ptr, access_adjoint) = access_adjoint;
+   _braid_CoreElt(*core_ptr, objectiveT)     = objectiveT;
   
 
    return _braid_error_flag;

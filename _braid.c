@@ -1716,6 +1716,20 @@ _braid_FRestrict(braid_Core   core,
                                     0, 0, braid_ASCaller_FRestrict, astatus);
             _braid_AccessVector(core, astatus, r);
          }
+
+         /* Evaluate the user's local objective function at FPoints on finest grid */
+         if (level == 0)
+         {
+           _braid_AccessStatusInit(ta[fi-f_ilower], fi, rnm, iter, level, nrefine, gupper,
+                                    0, 0, braid_ASCaller_FRestrict, astatus);
+           printf("Objective at fpoint %f ", ta[fi-f_ilower]);
+           braid_Real objT;
+           _braid_CoreFcn(core, objectiveT)(app, r->primal, astatus, &objT);
+
+           /* Add to the time-averaged objective function */
+           _braid_CoreElt(core, optim)->objective += objT;
+         }
+
       }
 
       /* Allow user to process current C-point */
@@ -1726,6 +1740,21 @@ _braid_FRestrict(braid_Core   core,
                                  0, 0, braid_ASCaller_FRestrict, astatus);
          _braid_AccessVector(core, astatus, u);
       }
+
+      /* Evaluate the user's local objective function at CPoints on finest grid */
+      if (level == 0 && (ci > -1) )
+      {
+         _braid_UGetVectorRef(core, level, ci, &u);
+         _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper,
+                                 0, 0, braid_ASCaller_FRestrict, astatus);
+         printf("Objective at cpoint %f ", ta[ci-f_ilower]);
+         braid_Real objT;
+         _braid_CoreFcn(core, objectiveT)(app, u->primal, astatus, &objT);
+
+         /* Add to the time-averaged objective function */
+         _braid_CoreElt(core, optim)->objective += objT;
+      }
+         
       
       /* Compute residual and restrict */
       if (ci > 0)

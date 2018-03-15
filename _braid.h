@@ -246,6 +246,7 @@ typedef struct _braid_Core_struct
 
    braid_PtFcnStepAdj        step_adjoint;             /**< apply adjoint step function */
    braid_PtFcnAccessAdj      access_adjoint;             /**< apply adjoint access function */
+   braid_PtFcnObjectiveT     objectiveT;                 /**< evaluate objective function at time t */
 
    /** Data elements required for the Status structures */
    /** Common Status properties */

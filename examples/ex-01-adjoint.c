@@ -232,6 +232,21 @@ my_BufUnpack(braid_App          app,
    return 0;
 }
 
+int 
+my_ObjectiveT(braid_App          app,
+              braid_Vector       u,
+              braid_AccessStatus astatus,
+              double             *objectiveT_ptr)
+{
+   /* f(u(t),rho) = u(t)**2 */
+   double objT= (u->value) * (u->value);
+   printf("objT %f\n", objT);
+
+   *objectiveT_ptr = objT;
+   
+   return 0;
+}
+
 
 int
 my_Access_Adjoint(braid_App          app,
@@ -255,7 +270,7 @@ my_Step_Adjoint(braid_App        app,
                 braid_StepStatus status)
 {
 
-   printf("STEP adj: primal %.14e, adjoint %.14e\n", (u_primal->value), (u_adjoint->value));
+//    printf("STEP adj: primal %.14e, adjoint %.14e\n", (u_primal->value), (u_adjoint->value));
 
    return 0;
 }
@@ -293,15 +308,20 @@ int main (int argc, char *argv[])
 
 
    /* Initialize the adjoint core (should do the same sing as braid_Init for now) */
-   braid_Init_Adjoint(my_Step_Adjoint, my_Access_Adjoint, &core);
+   braid_Init_Adjoint(my_Step_Adjoint, my_Access_Adjoint, my_ObjectiveT, &core);
    
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);
    braid_SetMaxLevels(core, 2);
    braid_SetAbsTol(core, 1.0e-06);
    braid_SetCFactor(core, -1, 2);
-   braid_SetAccessLevel(core, 3);
-   
+   braid_SetAccessLevel(core, 1);
+
+   /* Optional: Set the time for starting time-average */
+//    braid_SetTStartTimeaverage( core, 1.0);
+//    braid_SetTStopTimeaverage( core, tstop);
+
+
    /* Run simulation, and then clean up */
    braid_Drive(core);
 
