@@ -738,6 +738,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, actiontape)      = NULL;
    _braid_CoreElt(core, primaltape)      = NULL;
    _braid_CoreElt(core, adjointtape)     = NULL;
+   _braid_CoreElt(core, optim)           = NULL;
    
    /* Residual history and accuracy tracking for StepStatus*/
    _braid_CoreElt(core, rnorm0)              = braid_INVALID_RNORM;
@@ -784,6 +785,13 @@ braid_Init_Adjoint(braid_PtFcnStepAdj     step_adjoint,
    _braid_TapeInit( _braid_CoreElt(*core_ptr,primaltape) );
    _braid_TapeInit( _braid_CoreElt(*core_ptr,adjointtape) );
 
+   /* Initialize the optimization structure */
+   braid_Optim optim;
+   _braid_OptimInit( core_ptr, &optim);
+   _braid_CoreElt(*core_ptr, optim) = optim; 
+
+   printf("\n TEST %f \n\n", optim->tstart_obj);
+
    /* Store pointer to adjoint user interface in the core */
    _braid_CoreElt(*core_ptr, step_adjoint)   = step_adjoint;
    _braid_CoreElt(*core_ptr, access_adjoint) = access_adjoint;
@@ -810,6 +818,7 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, cfactors));
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
+      _braid_TFree(_braid_CoreElt(core, optim));
       
       for (level = 0; level < nlevels; level++)
       {
@@ -1524,3 +1533,57 @@ braid_SetSeqSoln(braid_Core  core,
    return _braid_error_flag;
 }
 
+
+/*----------------------------------------------------------------------------
+* Optimization 
+*-----------------------------------------------------------------------------*/
+braid_Int
+braid_SetTStartTimeaverage(braid_Core core, 
+                           braid_Real tstart_obj)
+{
+  _braid_CoreElt(core, optim->tstart_obj) = tstart_obj;
+  
+  /* Sanity check */
+  if ( tstart_obj < _braid_CoreElt(core, tstart) )
+  {
+    _braid_printf("\n WARNING: tstart_objective < tstart ! Using default tstart now.\n\n");
+    _braid_CoreElt(core, optim->tstart_obj) = _braid_CoreElt(core, tstart);
+  }
+
+  return _braid_error_flag;
+}
+
+braid_Int
+braid_GetTStartTimeaverage(braid_Core core,
+                           braid_Real *tstart_obj_ptr)
+{
+  *tstart_obj_ptr = _braid_CoreElt(core, optim->tstart_obj);
+
+  return _braid_error_flag;
+}
+
+braid_Int
+braid_SetTStopTimeaverage(braid_Core core, 
+                          braid_Real tstop_obj)
+{
+  _braid_CoreElt(core, optim->tstop_obj) = tstop_obj;
+  
+  /* Sanity check */
+  if ( tstop_obj > _braid_CoreElt(core, tstop) )
+  {
+    _braid_printf("\n WARNING: tstop_objective > tstop ! Using default tstop now.\n\n");
+    _braid_CoreElt(core, optim->tstop_obj) = _braid_CoreElt(core, tstop);
+  }
+
+
+  return _braid_error_flag;
+}
+
+braid_Int
+braid_GetTStopTimeaverage(braid_Core core,
+                          braid_Real *tstop_obj_ptr)
+{
+  *tstop_obj_ptr = _braid_CoreElt(core, optim->tstop_obj);
+
+  return _braid_error_flag;
+}

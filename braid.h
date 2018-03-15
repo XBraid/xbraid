@@ -833,6 +833,42 @@ braid_Init_Adjoint( braid_PtFcnStepAdj     step_adj,    /**< Adjoint time steppi
                     braid_Core             *core_ptr    /**< Pointer to braid_Core (_braid_Core) struct*/   
            );
 
+
+/**
+ * Set the time for starting the time-average for objective function 
+ * Default is tstart of the primal braid run
+ */
+braid_Int
+braid_SetTStartTimeaverage(braid_Core core, 
+                           braid_Real tstart_obj);
+
+/**
+ * Return the time that starts the time-average of objective function 
+ */
+braid_Int
+braid_GetTStartTimeaverage(braid_Core core,
+                           braid_Real *tstart_obj);
+
+
+/**
+ * Set the time for stopping the time-average for objective function 
+ * Default is tstop of the primal braid run
+ */
+braid_Int
+braid_SetTStopTimeaverage(braid_Core core, 
+                          braid_Real tstop_obj);
+
+
+/**
+ * Return the time that starts the time-average of objective function 
+ */
+braid_Int
+braid_GetTStopTimeaverage(braid_Core core,
+                          braid_Real *tstop_obj);
+
+
+
+                          
 #ifdef __cplusplus
 }
 #endif

@@ -43,6 +43,26 @@
 extern "C" {
 #endif
 
+
+/** 
+ * Data structure for storing the optimization variables
+ */
+struct _braid_Optimization_struct
+{
+  braid_Real objective;        /**< time-averaged objective function */
+  braid_Real tstart_obj;       /**< time for starting the time-average of the objective function */
+  braid_Real tstop_obj;        /**< time for stopping the time-average of the objective function */
+};
+typedef struct _braid_Optimization_struct *braid_Optim;
+
+/**
+ * Initialize the optimization structure:
+ * Allocate memory and set the variables 
+ */
+void
+_braid_OptimInit( braid_Core *core_ptr,               
+                  braid_Optim *optim_ptr);
+
 /**
  * Data structure for storing the adjoint variables
  * Implements shared pointer feature for C
@@ -222,6 +242,8 @@ typedef struct _braid_Core_struct
    _braid_Tape* primaltape;                     /**< tape storing primal braid_vectors while adjoint recording */
    _braid_Tape* adjointtape;                    /**< tape storing intermediate adjoint braid_vectors while adjoint recording */
  
+   braid_Optim optim;                      /**< structure that stores optimization variables (objective function, etc.) */ 
+
    braid_PtFcnStepAdj        step_adjoint;             /**< apply adjoint step function */
    braid_PtFcnAccessAdj      access_adjoint;             /**< apply adjoint access function */
 
