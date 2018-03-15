@@ -556,20 +556,23 @@ braid_Drive(braid_Core  core)
             // printf("Eval Adjoint. iter %d level %d\n", iter, level);
             if (_braid_CoreElt(core,adjoint))
             {
-
                /* Compute the time-averaged objective function. */
                localobjective = _braid_CoreElt(core, optim)->objective;
-               MPI_Allreduce(&localobjective, &globalobjective, 1, braid_MPI_REAL, MPI_MAX, comm_world);
-               _braid_CoreElt(core, optim)->objective = globalobjective / _braid_CoreElt(core, ntime);
-
-               printf(" Objective = %1.14e\n", _braid_CoreElt(core, optim)->objective );
+               MPI_Allreduce(&localobjective, &globalobjective, 1, braid_MPI_REAL, MPI_SUM, comm_world);
+               _braid_CoreElt(core, optim)->objective = globalobjective / ( ntime + 1 );
+               printf("  Objective = %1.14e\n", _braid_CoreElt(core, optim)->objective);
 
                /* Evaluate (and clear) the adjoint action tape */
                _braid_TapeEvaluateAdjoint(core);
+
+               /* Reset the objective function for the next iteration */
+               _braid_CoreElt(core, optim)->objective = 0.0;
+
+               /* Reset the gradient */
       
                /* Stop iterating */
-               done = 1;
-               _braid_CoreElt(core, done) = 1;
+              //  done = 1;
+              //  _braid_CoreElt(core, done) = 1;
       
             } /* End of Adjoint */
 
