@@ -62,6 +62,8 @@
 
 #include "braid.h"
 
+#include "braid_test.h"
+
 /*--------------------------------------------------------------------------
  * User-defined routines and structures
  *--------------------------------------------------------------------------*/
@@ -166,16 +168,27 @@ my_Access(braid_App          app,
           braid_Vector       u,
           braid_AccessStatus astatus)
 {
-   int        index;
-   char       filename[255];
-   FILE      *file;
+//    int        index;
+//    char       filename[255];
+//    FILE      *file;
    
-   braid_AccessStatusGetTIndex(astatus, &index);
-   sprintf(filename, "%s.%04d.%03d", "ex-01.out", index, app->rank);
-   file = fopen(filename, "w");
-   fprintf(file, "%.14e\n", (u->value));
-   fflush(file);
-   fclose(file);
+//    braid_AccessStatusGetTIndex(astatus, &index);
+//    sprintf(filename, "%s.%04d.%03d", "ex-01.out", index, app->rank);
+//    file = fopen(filename, "w");
+//    fprintf(file, "%.14e\n", (u->value));
+//    fflush(file);
+//    fclose(file);
+
+   /* Debug info for adjoint */
+   int done, level;
+   double t;
+   braid_AccessStatusGetLevel(astatus, &level);
+   braid_AccessStatusGetDone(astatus, &done);
+   braid_AccessStatusGetT(astatus, &t);
+//    if (!done)
+//    {
+        printf("myaccess: %d, %1.2f, %.14e\n", level, t, (u->value) );
+//    }
 
    return 0;
 }
@@ -219,6 +232,35 @@ my_BufUnpack(braid_App          app,
    return 0;
 }
 
+
+int
+my_Access_Adjoint(braid_App          app,
+                  braid_Vector       u_primal,
+                  braid_Vector       u_adjoint,
+                  braid_AccessStatus astatus)
+{
+   
+   printf("ACCE adj: primal %.14e, adjoint %.14e\n", (u_primal->value), (u_adjoint->value));
+
+   return 0;
+}
+
+
+int
+my_Step_Adjoint(braid_App        app,
+                // braid_Vector     ustop,
+                // braid_Vector     fstop,
+                braid_Vector       u_primal,
+                braid_Vector       u_adjoint,
+                braid_StepStatus status)
+{
+
+   printf("STEP adj: primal %.14e, adjoint %.14e\n", (u_primal->value), (u_adjoint->value));
+
+   return 0;
+}
+
+
 /*--------------------------------------------------------------------------
  * Main driver
  *--------------------------------------------------------------------------*/
@@ -243,16 +285,22 @@ int main (int argc, char *argv[])
    app = (my_App *) malloc(sizeof(my_App));
    (app->rank)   = rank;
    
+
    /* initialize XBraid and set options */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
              my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
              my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
+
+
+   /* Initialize the adjoint core (should do the same sing as braid_Init for now) */
+   braid_Init_Adjoint(my_Step_Adjoint, my_Access_Adjoint, &core);
    
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);
    braid_SetMaxLevels(core, 2);
    braid_SetAbsTol(core, 1.0e-06);
    braid_SetCFactor(core, -1, 2);
+   braid_SetAccessLevel(core, 3);
    
    /* Run simulation, and then clean up */
    braid_Drive(core);
