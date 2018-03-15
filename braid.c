@@ -323,16 +323,8 @@ _braid_DrivePrintStatus(braid_Core  core,
    }
    if (rnorm != braid_INVALID_RNORM)
    {
-      if (!_braid_CoreElt(core, adjoint))
-      {
-         _braid_printf("  Braid: || r_%d || = %1.6e, conv factor = %1.2e, wall time = %1.2e\n",
+       _braid_printf("  Braid: || r_%d || = %1.6e, conv factor = %1.2e, wall time = %1.2e\n",
                        iter, rnorm, cfactor, wtime);
-      } 
-      else 
-      {
-         _braid_printf("  Braid: || r_%d || = %1.6e, conv factor = %1.2e, objective = %1.12e\n",
-                       iter, rnorm, cfactor, _braid_CoreElt(core, optim)->objective);
-      }
    }
    else
    {
@@ -403,6 +395,7 @@ braid_Drive(braid_Core  core)
    braid_Real    *ta;
    _braid_Grid   *grid;
    braid_Real     localtime, globaltime;
+   braid_Real     localobjective, globalobjective;
 
    /* Cycle state variables */
    _braid_CycleState  cycle;
@@ -545,8 +538,6 @@ braid_Drive(braid_Core  core)
             _braid_FRefine(core, &refined);
             nlevels = _braid_CoreElt(core, nlevels);
 
-            /* TODO: Collect objective function from all processors. */
-
             /* Print current status */
             _braid_DrivePrintStatus(core, level, iter, refined, localtime);
 
@@ -562,15 +553,23 @@ braid_Drive(braid_Core  core)
 
             /*--- Evaluate the adjoint sensitivities after one cycle ---*/
 
-            printf("Eval Adjoint. iter %d level %d\n", iter, level);
-            if (_braid_CoreElt(core,adjoint)){
+            // printf("Eval Adjoint. iter %d level %d\n", iter, level);
+            if (_braid_CoreElt(core,adjoint))
+            {
+
+               /* Compute the time-averaged objective function. */
+               localobjective = _braid_CoreElt(core, optim)->objective;
+               MPI_Allreduce(&localobjective, &globalobjective, 1, braid_MPI_REAL, MPI_MAX, comm_world);
+               _braid_CoreElt(core, optim)->objective = globalobjective / _braid_CoreElt(core, ntime);
+
+               printf(" Objective = %1.14e\n", _braid_CoreElt(core, optim)->objective );
+
+               /* Evaluate (and clear) the adjoint action tape */
+               _braid_TapeEvaluateAdjoint(core);
       
-              /* Evaluate (and clear) the adjoint action tape */
-              _braid_TapeEvaluateAdjoint(core);
-      
-              /* Stop iterating */
-              done = 1;
-              _braid_CoreElt(core, done) = 1;
+               /* Stop iterating */
+               done = 1;
+               _braid_CoreElt(core, done) = 1;
       
             } /* End of Adjoint */
 

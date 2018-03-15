@@ -1671,7 +1671,7 @@ _braid_FRestrict(braid_Core   core,
 
    braid_BaseVector         u, r;
    braid_Int            interval, flo, fhi, fi, ci;
-   braid_Real           rnorm, grnorm, rnorm_temp, rnm;
+   braid_Real           rnorm, grnorm, rnorm_temp, rnm, objT_tmp;
 
    c_level  = level+1;
    c_ilower = _braid_GridElt(grids[c_level], ilower);
@@ -1722,12 +1722,10 @@ _braid_FRestrict(braid_Core   core,
          {
            _braid_AccessStatusInit(ta[fi-f_ilower], fi, rnm, iter, level, nrefine, gupper,
                                     0, 0, braid_ASCaller_FRestrict, astatus);
-           printf("Objective at fpoint %f ", ta[fi-f_ilower]);
-           braid_Real objT;
-           _braid_CoreFcn(core, objectiveT)(app, r->primal, astatus, &objT);
+           _braid_CoreFcn(core, objectiveT)(app, r->primal, astatus, &objT_tmp);
 
            /* Add to the time-averaged objective function */
-           _braid_CoreElt(core, optim)->objective += objT;
+           _braid_CoreElt(core, optim)->objective += objT_tmp;
          }
 
       }
@@ -1747,12 +1745,10 @@ _braid_FRestrict(braid_Core   core,
          _braid_UGetVectorRef(core, level, ci, &u);
          _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper,
                                  0, 0, braid_ASCaller_FRestrict, astatus);
-         printf("Objective at cpoint %f ", ta[ci-f_ilower]);
-         braid_Real objT;
-         _braid_CoreFcn(core, objectiveT)(app, u->primal, astatus, &objT);
+         _braid_CoreFcn(core, objectiveT)(app, u->primal, astatus, &objT_tmp);
 
          /* Add to the time-averaged objective function */
-         _braid_CoreElt(core, optim)->objective += objT;
+         _braid_CoreElt(core, optim)->objective += objT_tmp;
       }
          
       

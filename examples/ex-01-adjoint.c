@@ -240,7 +240,6 @@ my_ObjectiveT(braid_App          app,
 {
    /* f(u(t),rho) = u(t)**2 */
    double objT= (u->value) * (u->value);
-   printf("objT %f\n", objT);
 
    *objectiveT_ptr = objT;
    
