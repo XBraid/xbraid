@@ -562,6 +562,9 @@ braid_Drive(braid_Core  core)
                _braid_CoreElt(core, optim)->objective = globalobjective / ( ntime + 1 );
                printf("  Objective = %1.14e\n", _braid_CoreElt(core, optim)->objective);
 
+               /* Set the seed for tape evaluation */
+               _braid_CoreElt(core, optim)->f_bar = 1. / (ntime + 1);
+
                /* Evaluate (and clear) the action tape */
                _braid_TapeEvaluate(core);
 

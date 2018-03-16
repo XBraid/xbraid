@@ -277,10 +277,10 @@ my_Step_diff(braid_App        app,
    /* Grab the design from the app */
    double lambda = app->design;
 
-   /* Partial derivative with respect to u */
+   /* Partial derivative with respect to u times u_adjoint */
    du = 1./(1. - lambda * deltat) * (u_adjoint->value);
  
-   /* Partial derivative with respect to design */
+   /* Partial derivative with respect to design times u_adjoint */
    ddesign = (deltat * (u_primal->value)) / pow(1. - deltat*lambda,2) * (u_adjoint->value);
 
    /* Update adjoint and gradient */
@@ -296,19 +296,20 @@ int
 my_ObjectiveT_diff(braid_App          app,
                   braid_Vector       u_primal,
                   braid_Vector       u_adjoint,
+                  braid_Real         f_bar,
                   braid_AccessStatus astatus)
 {
    double du, ddesign; 
-   /* Partial derivative with respect to u */
-   du = 2. * u_primal->value / (app->ntime + 1);
 
-   /* Partial derivative with respect to design*/
-   ddesign = 0.0;
+   /* Partial derivative with respect to u times f_bar */
+   du = 2. * u_primal->value * f_bar;
+
+   /* Partial derivative with respect to design times f_bar*/
+   ddesign = 0.0 * f_bar;
 
    /* Update adjoint and gradient */
    u_adjoint->value += du;
    app->gradient    += ddesign;
-
 
    return 0;
 }

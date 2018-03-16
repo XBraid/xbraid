@@ -759,18 +759,9 @@ _braid_BaseObjectiveT_diff(_braid_Action *action)
       _braid_CoreElt(core, adjointtape) = _braid_TapePop( _braid_CoreElt(core, adjointtape) );
 
 
-//    /* DEBUG: Display the vector */
-//    printf("ACCESS adjoint pops from the primal tape\n");
-//    _braid_CoreFcn(core, access)(_braid_CoreElt(core, app), primal, astatus )
-
-      /* DEBUG: Display the primal vector */
-      // printf("ACCESS adjoint pops adjoint: ");
-      // _braid_CoreFcn(core, access)(_braid_CoreElt(core, app), adjoint->userVector, NULL );
-
-
-      /* Call the users's adjoint access function */
-      _braid_CoreFcn(core, objT_diff)(_braid_CoreElt(core, app), primal, adjoint->userVector, astatus);
-
+     /* Call the users's differentiated objective function */
+      braid_Real f_bar = _braid_CoreElt(core, optim)->f_bar;
+      _braid_CoreFcn(core, objT_diff)(_braid_CoreElt(core, app), primal, adjoint->userVector, f_bar, astatus);
 
       /* Free memory of the primal Vector and pop it from the tape */
       _braid_CoreFcn(core, free)(_braid_CoreElt(core, app), primal);

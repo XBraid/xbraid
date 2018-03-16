@@ -361,6 +361,7 @@ typedef braid_Int
 (*braid_PtFcnObjectiveTDiff)(braid_App           app,              /**< user-defined _braid_App structure */
                         braid_Vector    u_primal,         /**< primal vector */
                         braid_Vector    u_adjoint,        /**< adjoint vector */
+                        braid_Real      f_bar,            /**< Contains the AD-seed */
                         braid_AccessStatus  status            /**< can be querried for info like the current XBraid Iteration */
                      );
 

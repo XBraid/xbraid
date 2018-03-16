@@ -75,12 +75,13 @@ _braid_OptimInit( braid_Core *core_ptr,
                   braid_Optim *optim_ptr)
 {
   /* Allocate memory for the optimization structure */
-  (*optim_ptr) = (braid_Optim)_braid_TAlloc(braid_Real, 3);
+  (*optim_ptr) = (braid_Optim)_braid_TAlloc(braid_Real, 4);
 
   /* Set the (default) values variables */
   (*optim_ptr)->objective  = 0.0;
   (*optim_ptr)->tstart_obj = _braid_CoreElt(*core_ptr, tstart);
   (*optim_ptr)->tstop_obj  = _braid_CoreElt(*core_ptr, tstop);
+  (*optim_ptr)->f_bar      = 1.0;
 }
 
 

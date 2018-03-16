@@ -52,6 +52,7 @@ struct _braid_Optimization_struct
   braid_Real objective;        /**< time-averaged objective function */
   braid_Real tstart_obj;       /**< time for starting the time-average of the objective function */
   braid_Real tstop_obj;        /**< time for stopping the time-average of the objective function */
+  braid_Real f_bar;            /**< contains the seed for tape evaluation */
 };
 typedef struct _braid_Optimization_struct *braid_Optim;
 
