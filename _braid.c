@@ -1725,7 +1725,6 @@ _braid_FRestrict(braid_Core   core,
            _braid_BaseObjectiveT(core, app, r, astatus, &objT_tmp);
 
            /* Add to the time-averaged objective function */
-          //  printf("%d: %f: %f\n",_braid_CoreElt(core, myid), ta[fi-f_ilower], objT_tmp);
            _braid_CoreElt(core, optim)->objective += objT_tmp;
          }
 
@@ -2861,6 +2860,7 @@ _braid_FAccess(braid_Core     core,
    braid_Real     rnorm;
    braid_BaseVector   u;
    braid_Int      interval, flo, fhi, fi, ci;
+   braid_Real     objT_tmp;
 
    _braid_UCommInitF(core, level);
    

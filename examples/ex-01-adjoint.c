@@ -78,6 +78,7 @@ typedef struct _braid_App_struct
    int       rank;
    double    design;        /* Store the design variables in the app */
    double    gradient;      /* Store the gradient in the app - should be of same size as design! */
+   double    ntime;
 } my_App;
 
 /* Vector structure can contain anything, and be name anything as well */
@@ -196,7 +197,7 @@ my_Access(braid_App          app,
    braid_AccessStatusGetT(astatus, &t);
 //    if (!done)
 //    {
-        printf("myaccess: %d, %1.2f, %.14e\n", level, t, (u->value) );
+        // printf("myaccess: %d, %1.2f, %.14e\n", level, t, (u->value) );
 //    }
 
    return 0;
@@ -248,7 +249,7 @@ my_ObjectiveT(braid_App          app,
               double             *objectiveT_ptr)
 {
    /* f(u(t),lambda) = u(t)**2 */
-   double objT= (u->value) * (u->value);
+   double objT = (u->value) * (u->value);
 
    *objectiveT_ptr = objT;
    
@@ -271,14 +272,21 @@ my_Step_diff(braid_App        app,
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
    deltat = tstop - tstart;
 
+   double du, ddesign;
+
    /* Grab the design from the app */
    double lambda = app->design;
 
    /* Partial derivative with respect to u */
-   (u_adjoint->value) += 1./(1. - lambda * deltat) * (u_adjoint->value);
+   du = 1./(1. - lambda * deltat) * (u_adjoint->value);
  
    /* Partial derivative with respect to design */
-   app->gradient += (deltat * (u_primal->value)) / pow(1. - deltat*lambda,2) * (u_adjoint->value);
+   ddesign = (deltat * (u_primal->value)) / pow(1. - deltat*lambda,2) * (u_adjoint->value);
+
+   /* Update adjoint and gradient */
+   u_adjoint->value  = du;              // Make sure to do "=" here, not "+="! 
+   app->gradient    += ddesign;
+
 
    return 0;
 }
@@ -290,12 +298,17 @@ my_ObjectiveT_diff(braid_App          app,
                   braid_Vector       u_adjoint,
                   braid_AccessStatus astatus)
 {
-   
+   double du, ddesign; 
    /* Partial derivative with respect to u */
-   u_adjoint->value += 2. * u_primal->value;
+   du = 2. * u_primal->value / (app->ntime + 1);
 
-   /* Partial derivative with respect to lambda is zero*/
-   app->gradient += 0.0;
+   /* Partial derivative with respect to design*/
+   ddesign = 0.0;
+
+   /* Update adjoint and gradient */
+   u_adjoint->value += du;
+   app->gradient    += ddesign;
+
 
    return 0;
 }
@@ -322,7 +335,11 @@ int main (int argc, char *argv[])
 
    /* Initialize optimization */
    design   = -1.0;
-   gradient = 1.0;
+   gradient = 0.0;
+
+   /* DEBUG gradient */
+//    double obj_ref = 1.77166086544457e-01;  //design=-1
+//    design += 1e-8;
    
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -333,6 +350,7 @@ int main (int argc, char *argv[])
    (app->rank)     = rank;
    (app->design)   = design;
    (app->gradient) = gradient;
+   (app->ntime)    = ntime;
 
    /* initialize XBraid and set options */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
