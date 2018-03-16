@@ -602,8 +602,28 @@ braid_Drive(braid_Core  core)
       _braid_FRestrict(core, level);
    }
 
+   /* If sequential time-marching, record it! */
+   if (max_levels <= 1)
+   {
+      _braid_CoreElt(core, record) = 1; 
+   }
+
    /* Allow final access to Braid by carrying out an F-relax to generate points */
    _braid_FAccess(core, 0, 1);
+
+
+   /* If sequential time-marching, evaluate the tape */
+   if (max_levels <= 1 && _braid_CoreElt(core, adjoint))
+   {
+      /* Compute the time-averaged objective function. */
+      localobjective = _braid_CoreElt(core, optim)->objective;
+      MPI_Allreduce(&localobjective, &globalobjective, 1, braid_MPI_REAL, MPI_SUM, comm_world);
+      _braid_CoreElt(core, optim)->objective = globalobjective / ( ntime + 1 );
+      printf("  Objective = %1.14e\n", _braid_CoreElt(core, optim)->objective);
+      /* Evaluate (and clear) the action tape */
+      _braid_TapeEvaluate(core);
+   }
+
 
    /* End cycle */
    _braid_DriveEndCycle(core, &cycle);

@@ -607,6 +607,8 @@ _braid_BaseStep_diff(_braid_Action *action)
       outTime = action->outTime;
       // myid    = action->myid;
 
+      if (_braid_CoreElt(core, verbose)) printf("STEP_DIFF\n");
+
       /* Get the braid_vector that was used in primal run */
       braid_Vector primal;
       primal = (braid_Vector) (_braid_CoreElt(core, primaltape)->data_ptr);
@@ -644,13 +646,13 @@ _braid_BaseStep_diff(_braid_Action *action)
 braid_Int
 _braid_BaseClone_diff(_braid_Action *action)
 {
-      // printf("CLONE adjoint\n");
 
       /* Grab information from the action */
       braid_Core core = action->core;
       // braid_Int         myid;
       // myid = action->myid;
       
+      if (_braid_CoreElt(core, verbose)) printf("CLONE_DIFF\n");
 
       /* Pop the adjoint vectors from the tape */
       braid_Adjoint v_adjoint;
@@ -691,8 +693,6 @@ _braid_BaseClone_diff(_braid_Action *action)
 braid_Int
 _braid_BaseSum_diff(_braid_Action *action)
 {
-   // printf("SUM adjoint\n");
-
    braid_Core core;
    braid_Real alpha;
    braid_Real beta;
@@ -703,6 +703,8 @@ _braid_BaseSum_diff(_braid_Action *action)
    alpha = action->sum_alpha;
    beta  = action->sum_beta;
    // myid  = action->myid;
+
+   if (_braid_CoreElt(core, verbose)) printf("SUM_DIFF\n");
 
    /* Pop the adjoint vectors from the tape */
    braid_Adjoint y_adjoint;
@@ -743,6 +745,8 @@ _braid_BaseObjectiveT_diff(_braid_Action *action)
       braid_AccessStatus astatus = (braid_AccessStatus) action->status;
 //       inTime = action->inTime;
 //       myid   = action->myid;
+ 
+      if (_braid_CoreElt(core, verbose)) printf("OBJT_DIFF\n");
 
       /* Pop the primal vector that was used in primal access function */
       braid_Vector  primal;
@@ -781,7 +785,6 @@ _braid_BaseObjectiveT_diff(_braid_Action *action)
 braid_Int
 _braid_BaseBufPack_diff(_braid_Action *action, braid_App app)
 {
-      // printf("BufPack adjoint\n");
 
       braid_Core core;
       // braid_Real send_recv_rank;
@@ -791,6 +794,8 @@ _braid_BaseBufPack_diff(_braid_Action *action, braid_App app)
       core           = action->core;
       // send_recv_rank = action->send_recv_rank;
       // myid           = action->myid;
+
+      if (_braid_CoreElt(core, verbose)) printf("BUFPACK_DIFF\n");
 
       /* Pop the adjoint vector from the tape*/
       braid_Adjoint      adjoint;
@@ -817,6 +822,8 @@ _braid_BaseBufUnpack_diff(_braid_Action *action, braid_App app)
       braid_Core core = action->core;
       // send_recv_rank = action->send_recv_rank;
       // myid           = action->myid;
+
+      if (_braid_CoreElt(core, verbose)) printf("BUFUNPACK_DIFF\n");
 
       /* Pop the adjoint vector from the tape*/
       braid_Adjoint      adjoint;

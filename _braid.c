@@ -2886,6 +2886,15 @@ _braid_FAccess(braid_Core     core,
             _braid_AccessStatusInit( ta[fi-ilower], fi, rnorm, iter, level, nrefine, gupper,
                                      done, 0, braid_ASCaller_FAccess, astatus);
             _braid_AccessVector(core, astatus, u);
+
+            if (_braid_CoreElt(core, max_levels <=1) && _braid_CoreElt(core, adjoint)) 
+            {
+              /* Evaluate the user's local objective function at FPoints on finest grid */
+              _braid_BaseObjectiveT(core, app, u, astatus, &objT_tmp);
+              /* Add to the time-averaged objective function */
+              // printf("OBJT at %f: %1.14f\n", ta[fi-ilower], objT_tmp  );
+              _braid_CoreElt(core, optim)->objective += objT_tmp;
+            }
          }
       }
       if (flo <= fhi)
@@ -2900,7 +2909,15 @@ _braid_FAccess(braid_Core     core,
          _braid_AccessStatusInit( ta[ci-ilower], ci, rnorm, iter, level, nrefine, gupper,
                                   done, 0, braid_ASCaller_FAccess, astatus);
          _braid_AccessVector(core, astatus, u);
-      }
+            if (_braid_CoreElt(core, max_levels <=1) && _braid_CoreElt(core, adjoint)) 
+            {
+              /* Evaluate the user's local objective function at FPoints on finest grid */
+              _braid_BaseObjectiveT(core, app, u, astatus, &objT_tmp);
+              // printf("OBJT at %f: %1.14f\n", ta[ci-ilower], objT_tmp  );
+              /* Add to the time-averaged objective function */
+              _braid_CoreElt(core, optim)->objective += objT_tmp;
+            }
+       }
    }
    _braid_UCommWait(core, level);
 
