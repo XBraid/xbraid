@@ -86,7 +86,7 @@ _braid_TapeDisplayBackwards(braid_Core core, _braid_Tape* head, void (*displayfc
 
 
 void 
-_braid_TapeEvaluateAdjoint(braid_Core core)
+_braid_TapeEvaluate(braid_Core core)
 {
     /* Get the tape */
     _braid_Tape* actiontape = _braid_CoreElt(core, actiontape);
@@ -96,8 +96,8 @@ _braid_TapeEvaluateAdjoint(braid_Core core)
        /* Get the action */
        _braid_Action* action = (_braid_Action*) actiontape->data_ptr;
 
-       /* Call the adjoint action */
-       _braid_AdjointCall(action);
+       /* Call the differentiated action */
+       _braid_DiffCall(action);
 
        /* Pop the action from the tape */
        actiontape = _braid_TapePop( actiontape );
@@ -111,15 +111,15 @@ _braid_TapeEvaluateAdjoint(braid_Core core)
 }
 
 void
-_braid_AdjointCall(_braid_Action* action)
+_braid_DiffCall(_braid_Action* action)
 {
    
-   /* Call the corresponding adjoint action */
+   /* Call the corresponding differentiated action */
    switch (action->braidCall)
    {
       case STEP : 
       {
-         _braid_BaseStepAdjoint(action);
+         _braid_BaseStep_diff(action);
          break;
       }
       case INIT: 
@@ -129,7 +129,7 @@ _braid_AdjointCall(_braid_Action* action)
       }
       case CLONE: 
       {
-         _braid_BaseCloneAdjoint(action);
+         _braid_BaseClone_diff(action);
          break;
       }
       case FREE: 
@@ -139,22 +139,22 @@ _braid_AdjointCall(_braid_Action* action)
       }
       case SUM: 
       {
-         _braid_BaseSumAdjoint(action);
+         _braid_BaseSum_diff(action);
          break;
       }
       case ACCESS: 
       {
-         _braid_BaseAccessAdjoint(action);
+         _braid_BaseAccess_diff(action);
          break;
       }
       case BUFPACK: 
       {
-         _braid_BaseBufPackAdjoint(action, _braid_CoreElt(action->core, app));
+         _braid_BaseBufPack_diff(action, _braid_CoreElt(action->core, app));
          break;
       }
       case BUFUNPACK: 
       {
-         _braid_BaseBufUnpackAdjoint(action, _braid_CoreElt(action->core, app));
+         _braid_BaseBufUnpack_diff(action, _braid_CoreElt(action->core, app));
          break;
       } 
    }

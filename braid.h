@@ -346,7 +346,7 @@ typedef braid_Int
  * Adjoint time-stepping routine 
  **/
 typedef braid_Int
-(*braid_PtFcnStepAdj)(braid_App        app,    /**< user-defined _braid_App structure */
+(*braid_PtFcnStepDiff)(braid_App        app,    /**< user-defined _braid_App structure */
                      //  braid_Vector     ustop,  /**< input, u vector at *tstop* */
                      //  braid_Vector     fstop,  /**< input, right-hand-side at *tstop* */
                       braid_Vector     u_primal, /**< primal vector */
@@ -358,7 +358,7 @@ typedef braid_Int
  * Adjoint access function 
  **/
 typedef braid_Int
-(*braid_PtFcnAccessAdj)(braid_App           app,              /**< user-defined _braid_App structure */
+(*braid_PtFcnAccessDiff)(braid_App           app,              /**< user-defined _braid_App structure */
                         braid_Vector    u_primal,         /**< primal vector */
                         braid_Vector    u_adjoint,        /**< adjoint vector */
                         braid_AccessStatus  status            /**< can be querried for info like the current XBraid Iteration */
@@ -839,8 +839,8 @@ braid_SetSeqSoln(braid_Core  core,          /**< braid_Core (_braid_Core) struct
  *
  **/
 braid_Int
-braid_Init_Adjoint( braid_PtFcnStepAdj     step_adj,    /**< Adjoint time stepping routine to advance an adjoint vector backwards one time step */
-                    braid_PtFcnAccessAdj   access_adj,  /**< Adjoint of the access function */
+braid_Init_Adjoint( braid_PtFcnStepDiff     step_adj,    /**< Adjoint time stepping routine to advance an adjoint vector backwards one time step */
+                    braid_PtFcnAccessDiff   access_adj,  /**< Adjoint of the access function */
                     braid_PtFcnObjectiveT  objT,        /**< Evaluate the local objective function at time t  */
                     braid_Core             *core_ptr    /**< Pointer to braid_Core (_braid_Core) struct*/   
            );

@@ -150,25 +150,25 @@ _braid_BaseTimeGrid(braid_Core core,
                        );
 
 
-/*---- Adjoint routines ---- */
+/*---- Differentiated user routines ---- */
 
 braid_Int
-_braid_BaseStepAdjoint(_braid_Action *action);
+_braid_BaseStep_diff(_braid_Action *action);
 
 
 braid_Int
-_braid_BaseCloneAdjoint(_braid_Action *action);
+_braid_BaseClone_diff(_braid_Action *action);
 
 braid_Int
-_braid_BaseSumAdjoint(_braid_Action *action);
+_braid_BaseSum_diff(_braid_Action *action);
 
 braid_Int
-_braid_BaseAccessAdjoint(_braid_Action *action);
+_braid_BaseAccess_diff(_braid_Action *action);
 
 braid_Int
-_braid_BaseBufPackAdjoint(_braid_Action *action, braid_App app);
+_braid_BaseBufPack_diff(_braid_Action *action, braid_App app);
 
 braid_Int
-_braid_BaseBufUnpackAdjoint(_braid_Action *action, braid_App app);
+_braid_BaseBufUnpack_diff(_braid_Action *action, braid_App app);
 
 #endif

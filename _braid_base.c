@@ -556,10 +556,10 @@ _braid_BaseTimeGrid(braid_Core core,
 }
 
 
-/*----- Adjoint of user routines ------*/
+/*----- Differentiated user routines ------*/
 
 braid_Int
-_braid_BaseStepAdjoint(_braid_Action *action)
+_braid_BaseStep_diff(_braid_Action *action)
 {
       braid_Real        inTime;
       braid_Real        outTime;
@@ -594,8 +594,8 @@ _braid_BaseStepAdjoint(_braid_Action *action)
       _braid_StatusElt(status, t)     = inTime;
       _braid_StatusElt(status, tnext) = outTime;
 
-      /* Call the users's adjoint step function */
-      _braid_CoreFcn(core, step_adjoint)(_braid_CoreElt(core, app), primal, adjoint->userVector, status);
+      /* Call the users's differentiated step function */
+      _braid_CoreFcn(core, step_diff)(_braid_CoreElt(core, app), primal, adjoint->userVector, status);
 
 
       /* Decrease the useCount of the adjoint and pop the adjoint from the adjoint tape */
@@ -609,7 +609,7 @@ _braid_BaseStepAdjoint(_braid_Action *action)
 }
 
 braid_Int
-_braid_BaseCloneAdjoint(_braid_Action *action)
+_braid_BaseClone_diff(_braid_Action *action)
 {
       // printf("CLONE adjoint\n");
 
@@ -656,7 +656,7 @@ _braid_BaseCloneAdjoint(_braid_Action *action)
 }
 
 braid_Int
-_braid_BaseSumAdjoint(_braid_Action *action)
+_braid_BaseSum_diff(_braid_Action *action)
 {
    // printf("SUM adjoint\n");
 
@@ -700,7 +700,7 @@ _braid_BaseSumAdjoint(_braid_Action *action)
 
 
 braid_Int
-_braid_BaseAccessAdjoint(_braid_Action *action)
+_braid_BaseAccess_diff(_braid_Action *action)
 {
 //       braid_Int     inTime;
 //       braid_Int     myid;
@@ -732,7 +732,7 @@ _braid_BaseAccessAdjoint(_braid_Action *action)
 
 
       /* Call the users's adjoint access function */
-      _braid_CoreFcn(core, access_adjoint)(_braid_CoreElt(core, app), primal, adjoint->userVector, astatus);
+      _braid_CoreFcn(core, access_diff)(_braid_CoreElt(core, app), primal, adjoint->userVector, astatus);
 
 
       /* Free memory of the primal Vector and pop it from the tape */
@@ -746,7 +746,7 @@ _braid_BaseAccessAdjoint(_braid_Action *action)
 }
 
 braid_Int
-_braid_BaseBufPackAdjoint(_braid_Action *action, braid_App app)
+_braid_BaseBufPack_diff(_braid_Action *action, braid_App app)
 {
       // printf("BufPack adjoint\n");
 
@@ -773,7 +773,7 @@ _braid_BaseBufPackAdjoint(_braid_Action *action, braid_App app)
 }
 
 braid_Int
-_braid_BaseBufUnpackAdjoint(_braid_Action *action, braid_App app)
+_braid_BaseBufUnpack_diff(_braid_Action *action, braid_App app)
 {
       // printf("BufUnack adjoint\n");
 

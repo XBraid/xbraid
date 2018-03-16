@@ -106,18 +106,18 @@ void
 _braid_TapeDisplayBackwards(braid_Core core, _braid_Tape* head, void (*fctptr)(braid_Core core, void* data_ptr));
 
 /** 
- * Evaluate the action tape in adjoint order. This will clear the action tape!
+ * Evaluate the action tape in reverse order. This will clear the action tape!
  * Input: - pointer to the braid core 
  *        - pointer to the head of the action tape
  */
 void
-_braid_TapeEvaluateAdjoint(braid_Core core);
+_braid_TapeEvaluate(braid_Core core);
 
 /**
- * Call adjoint action 
+ * Call differentiated action 
  */
 void
-_braid_AdjointCall(_braid_Action* action);
+_braid_DiffCall(_braid_Action* action);
 
 // /**
 //  * Display function for a _braid_action

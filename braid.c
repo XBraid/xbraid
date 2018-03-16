@@ -562,8 +562,8 @@ braid_Drive(braid_Core  core)
                _braid_CoreElt(core, optim)->objective = globalobjective / ( ntime + 1 );
                printf("  Objective = %1.14e\n", _braid_CoreElt(core, optim)->objective);
 
-               /* Evaluate (and clear) the adjoint action tape */
-               _braid_TapeEvaluateAdjoint(core);
+               /* Evaluate (and clear) the action tape */
+               _braid_TapeEvaluate(core);
 
                /* Reset the objective function for the next iteration */
                _braid_CoreElt(core, optim)->objective = 0.0;
@@ -571,8 +571,8 @@ braid_Drive(braid_Core  core)
                /* Reset the gradient */
       
                /* Stop iterating */
-              //  done = 1;
-              //  _braid_CoreElt(core, done) = 1;
+               done = 1;
+               _braid_CoreElt(core, done) = 1;
       
             } /* End of Adjoint */
 
@@ -751,8 +751,8 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, primaltape)      = NULL;
    _braid_CoreElt(core, adjointtape)     = NULL;
    _braid_CoreElt(core, optim)           = NULL;
-   _braid_CoreElt(core, access_adjoint)  = NULL;
-   _braid_CoreElt(core, step_adjoint)    = NULL;
+   _braid_CoreElt(core, access_diff)  = NULL;
+   _braid_CoreElt(core, step_diff)    = NULL;
    _braid_CoreElt(core, objectiveT)      = NULL;
 
    
@@ -776,8 +776,8 @@ braid_Init(MPI_Comm               comm_world,
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 braid_Int
-braid_Init_Adjoint(braid_PtFcnStepAdj     step_adjoint, 
-                   braid_PtFcnAccessAdj   access_adjoint,
+braid_Init_Adjoint(braid_PtFcnStepDiff     step_diff, 
+                   braid_PtFcnAccessDiff   access_diff,
                    braid_PtFcnObjectiveT  objectiveT,
                    braid_Core             *core_ptr)
 {
@@ -808,8 +808,8 @@ braid_Init_Adjoint(braid_PtFcnStepAdj     step_adjoint,
    _braid_CoreElt(*core_ptr, optim) = optim; 
 
    /* Store pointer to adjoint user interface in the core */
-   _braid_CoreElt(*core_ptr, step_adjoint)   = step_adjoint;
-   _braid_CoreElt(*core_ptr, access_adjoint) = access_adjoint;
+   _braid_CoreElt(*core_ptr, step_diff)   = step_diff;
+   _braid_CoreElt(*core_ptr, access_diff) = access_diff;
    _braid_CoreElt(*core_ptr, objectiveT)     = objectiveT;
   
 

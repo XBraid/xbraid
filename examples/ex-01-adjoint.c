@@ -53,6 +53,10 @@
  *                  3.90184423106234e-02
  *                  2.60122948737489e-02
  *                  1.73415299158326e-02
+ * 
+ *                 The time-averaged objective after convergence is 1.63614492461104e-01. 
+ *                 The time-averaged objective after one iteration  1.77166086544457e-01. 
+ * 
  **/
 
 #include <stdlib.h>
@@ -72,6 +76,8 @@
 typedef struct _braid_App_struct
 {
    int       rank;
+   double    design;        /* Store the design variables in the app */
+   double    gradient;      /* Store the gradient in the app - should be of same size as design! */
 } my_App;
 
 /* Vector structure can contain anything, and be name anything as well */
@@ -91,8 +97,11 @@ my_Step(braid_App        app,
    double tstop;              /* evolve to this time*/
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
 
+   /* Grab the design from the app */
+   double lambda = app->design;
+
    /* Use backward Euler to propagate solution */
-   (u->value) = 1./(1. + tstop-tstart)*(u->value);
+   (u->value) = 1./(1. - lambda* (tstop-tstart))*(u->value);
    
    return 0;
 }
@@ -168,16 +177,16 @@ my_Access(braid_App          app,
           braid_Vector       u,
           braid_AccessStatus astatus)
 {
-//    int        index;
-//    char       filename[255];
-//    FILE      *file;
+   int        index;
+   char       filename[255];
+   FILE      *file;
    
-//    braid_AccessStatusGetTIndex(astatus, &index);
-//    sprintf(filename, "%s.%04d.%03d", "ex-01.out", index, app->rank);
-//    file = fopen(filename, "w");
-//    fprintf(file, "%.14e\n", (u->value));
-//    fflush(file);
-//    fclose(file);
+   braid_AccessStatusGetTIndex(astatus, &index);
+   sprintf(filename, "%s.%04d.%03d", "ex-01.out", index, app->rank);
+   file = fopen(filename, "w");
+   fprintf(file, "%.14e\n", (u->value));
+   fflush(file);
+   fclose(file);
 
    /* Debug info for adjoint */
    int done, level;
@@ -238,7 +247,7 @@ my_ObjectiveT(braid_App          app,
               braid_AccessStatus astatus,
               double             *objectiveT_ptr)
 {
-   /* f(u(t),rho) = u(t)**2 */
+   /* f(u(t),lambda) = u(t)**2 */
    double objT= (u->value) * (u->value);
 
    *objectiveT_ptr = objT;
@@ -248,28 +257,43 @@ my_ObjectiveT(braid_App          app,
 
 
 int
-my_Access_Adjoint(braid_App          app,
+my_Access_diff(braid_App          app,
                   braid_Vector       u_primal,
                   braid_Vector       u_adjoint,
                   braid_AccessStatus astatus)
 {
    
-   printf("ACCE adj: primal %.14e, adjoint %.14e\n", (u_primal->value), (u_adjoint->value));
+   /* Partial derivative with respect to u */
+   u_adjoint->value += 2. * u_primal->value;
+
+   /* Partial derivative with respect to lambda*/
 
    return 0;
 }
 
 
 int
-my_Step_Adjoint(braid_App        app,
+my_Step_diff(braid_App        app,
                 // braid_Vector     ustop,
                 // braid_Vector     fstop,
                 braid_Vector       u_primal,
                 braid_Vector       u_adjoint,
-                braid_StepStatus status)
+                braid_StepStatus   status)
 {
 
-//    printf("STEP adj: primal %.14e, adjoint %.14e\n", (u_primal->value), (u_adjoint->value));
+   /* Get time that has been used in primal step evaluation  */
+   double tstop, tstart, deltat;
+   braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+   deltat = tstop - tstart;
+
+   /* Grab the design from the app */
+   double lambda = app->design;
+
+   /* Partial derivative with respect to u */
+   (u_adjoint->value) += 1./(1. - lambda * deltat) * (u_adjoint->value);
+ 
+   /* Partial derivative with respect to design */
+   app->gradient += (deltat * (u_primal->value)) / pow(1. - deltat*lambda,2) * (u_adjoint->value);
 
    return 0;
 }
@@ -285,11 +309,17 @@ int main (int argc, char *argv[])
    my_App       *app;
    double        tstart, tstop;
    int           ntime, rank;
+   double        design; 
+   double        gradient;
 
    /* Define time domain: ntime intervals */
    ntime  = 10;
    tstart = 0.0;
    tstop  = tstart + ntime/2.;
+
+   /* Initialize optimization */
+   design   = -1.0;
+   gradient = 1.0;
    
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -297,8 +327,9 @@ int main (int argc, char *argv[])
    
    /* set up app structure */
    app = (my_App *) malloc(sizeof(my_App));
-   (app->rank)   = rank;
-   
+   (app->rank)     = rank;
+   (app->design)   = design;
+   (app->gradient) = gradient;
 
    /* initialize XBraid and set options */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
@@ -307,7 +338,7 @@ int main (int argc, char *argv[])
 
 
    /* Initialize the adjoint core (should do the same sing as braid_Init for now) */
-   braid_Init_Adjoint(my_Step_Adjoint, my_Access_Adjoint, my_ObjectiveT, &core);
+   braid_Init_Adjoint(my_Step_diff, my_Access_diff, my_ObjectiveT, &core);
    
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);
@@ -323,6 +354,8 @@ int main (int argc, char *argv[])
 
    /* Run simulation, and then clean up */
    braid_Drive(core);
+
+   printf("Gradient: %1.14f\n", app->gradient);
 
    braid_Destroy(core);
    MPI_Finalize();
