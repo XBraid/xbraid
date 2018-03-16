@@ -7,6 +7,7 @@
 #define _braid_base_HEADER
 
 #include "_braid.h"
+#include "_braid_status.h"
 
 
 braid_Int 
@@ -560,8 +561,8 @@ _braid_BaseTimeGrid(braid_Core core,
 braid_Int
 _braid_BaseStepAdjoint(_braid_Action *action)
 {
-      // braid_Real        inTime;
-      // braid_Real        outTime;
+      braid_Real        inTime;
+      braid_Real        outTime;
       braid_StepStatus  status;
       braid_Core        core;
       // braid_Int         myid;
@@ -569,8 +570,8 @@ _braid_BaseStepAdjoint(_braid_Action *action)
       /* Grab information from the action */
       core    = action->core;
       status  = (braid_StepStatus) action->status;
-      // inTime  = action->inTime;
-      // outTime = action->outTime;
+      inTime  = action->inTime;
+      outTime = action->outTime;
       // myid    = action->myid;
 
       /* Get the braid_vector that was used in primal run */
@@ -589,6 +590,9 @@ _braid_BaseStepAdjoint(_braid_Action *action)
       // printf("STEP adjoint pops adjoint: ");
       // _braid_CoreFcn(core, access)(_braid_CoreElt(core, app), adjoint->userVector, NULL );
 
+      /* Trigger the status with the correct tstart and tstop*/
+      _braid_StatusElt(status, t)     = inTime;
+      _braid_StatusElt(status, tnext) = outTime;
 
       /* Call the users's adjoint step function */
       _braid_CoreFcn(core, step_adjoint)(_braid_CoreElt(core, app), primal, adjoint->userVector, status);
