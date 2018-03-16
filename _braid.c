@@ -1722,7 +1722,7 @@ _braid_FRestrict(braid_Core   core,
          {
            _braid_AccessStatusInit(ta[fi-f_ilower], fi, rnm, iter, level, nrefine, gupper,
                                     0, 0, braid_ASCaller_FRestrict, astatus);
-           _braid_CoreFcn(core, objectiveT)(app, r->primal, astatus, &objT_tmp);
+           _braid_BaseObjectiveT(core, app, r, astatus, &objT_tmp);
 
            /* Add to the time-averaged objective function */
           //  printf("%d: %f: %f\n",_braid_CoreElt(core, myid), ta[fi-f_ilower], objT_tmp);

@@ -124,7 +124,7 @@ _braid_DiffCall(_braid_Action* action)
       }
       case INIT: 
       {
-         /* Do nothing */
+         /* TODO: so something, if design is part of  initial conditions!!  */
          break;
       }
       case CLONE: 
@@ -144,7 +144,7 @@ _braid_DiffCall(_braid_Action* action)
       }
       case ACCESS: 
       {
-         _braid_BaseAccess_diff(action);
+         /* Do nothing (because access is only for output!) */
          break;
       }
       case BUFPACK: 
@@ -157,6 +157,12 @@ _braid_DiffCall(_braid_Action* action)
          _braid_BaseBufUnpack_diff(action, _braid_CoreElt(action->core, app));
          break;
       } 
+      case OBJECTIVET:
+      {
+          /* TODO: Call the differentiated routine */
+          _braid_BaseObjectiveT_diff(action);
+          break;
+      }
    }
 }
 
@@ -198,14 +204,15 @@ const char* _braid_CallGetName(_braid_Call call)
 {
     switch (call)
     {
-        case STEP:      return "STEP";
-        case INIT:      return "INIT";
-        case CLONE:     return "CLONE";
-        case FREE:      return "FREE";
-        case SUM:       return "SUM";
-        case BUFPACK:   return "BUFPACK";
-        case BUFUNPACK: return "BUFUNPACK";
-        case ACCESS:    return "ACCESS";
+        case STEP:       return "STEP";
+        case INIT:       return "INIT";
+        case CLONE:      return "CLONE";
+        case FREE:       return "FREE";
+        case SUM:        return "SUM";
+        case BUFPACK:    return "BUFPACK";
+        case BUFUNPACK:  return "BUFUNPACK";
+        case ACCESS:     return "ACCESS";
+        case OBJECTIVET: return "OBJECTIVET";
     }
     return "Not a _braid_Call!";
 }

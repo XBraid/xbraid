@@ -307,20 +307,6 @@ _braid_BaseAccess(braid_Core core,
       // printf("ACCESS push\n");
       _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
 
-      /* Push a copy of the primal vector to the primal tape */
-      braid_Vector u_copy;
-      _braid_CoreFcn(core, clone)(app, u->primal, &u_copy);  // this will accolate memory for the copy!
-      _braid_CoreElt(core, primaltape) = _braid_TapePush( _braid_CoreElt(core, primaltape), u_copy);
-
-      /* Push a copy of the adjoint vector to the adjoint tape */
-      braid_Adjoint adjoint_copy;
-      _braid_AdjointCopy(u->adjoint, &adjoint_copy);
-      _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy);
-
-      /* Debug info: */
-      // printf("ACCE pushes primal: ");
-      // _braid_CoreFcn(core, access)(app, u->primal, (braid_AccessStatus) status);
-
    }
 
    /* Call the users Access function */
@@ -438,6 +424,53 @@ _braid_BaseBufUnpack(braid_Core core,
 
    return 0;
 }
+
+
+braid_Int
+_braid_BaseObjectiveT(braid_Core core,
+                      braid_App  app,
+                      braid_BaseVector u,
+                      braid_AccessStatus astatus,
+                      braid_Real *objT_ptr
+                      )
+{
+   if (_braid_CoreElt(core, verbose)) printf("OBJECTIVET\n");
+
+   /* if adjoint: Record to the tape */
+   if ( _braid_CoreElt(core, record) )
+   {
+      /* Set up and push the action */
+      _braid_Action* action = _braid_CTAlloc(_braid_Action, 1);
+      action->braidCall     = OBJECTIVET;
+      action->core          = core;
+      action->status        = (braid_Status) astatus;
+      action->inTime        = _braid_CoreElt(core, t);
+      action->myid          = _braid_CoreElt(core, myid);
+      // printf("ACCESS push\n");
+      _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
+
+      /* Push a copy of the primal vector to the primal tape */
+      braid_Vector u_copy;
+      _braid_CoreFcn(core, clone)(app, u->primal, &u_copy);  // this will accolate memory for the copy!
+      _braid_CoreElt(core, primaltape) = _braid_TapePush( _braid_CoreElt(core, primaltape), u_copy);
+
+      /* Push a copy of the adjoint vector to the adjoint tape */
+      braid_Adjoint adjoint_copy;
+      _braid_AdjointCopy(u->adjoint, &adjoint_copy);
+      _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy);
+
+      /* Debug info: */
+      // printf("OBJT pushes primal: ");
+      // _braid_CoreFcn(core, access)(app, u->primal, (braid_AccessStatus) status);
+
+   }
+
+   /* Call the users objective function */
+   _braid_CoreFcn(core, objectiveT)(app, u->primal, astatus, objT_ptr);
+
+   return 0;
+}
+
 
 braid_Int
 _braid_BaseResidual(braid_Core core,
@@ -700,7 +733,7 @@ _braid_BaseSum_diff(_braid_Action *action)
 
 
 braid_Int
-_braid_BaseAccess_diff(_braid_Action *action)
+_braid_BaseObjectiveT_diff(_braid_Action *action)
 {
 //       braid_Int     inTime;
 //       braid_Int     myid;
@@ -732,7 +765,7 @@ _braid_BaseAccess_diff(_braid_Action *action)
 
 
       /* Call the users's adjoint access function */
-      _braid_CoreFcn(core, access_diff)(_braid_CoreElt(core, app), primal, adjoint->userVector, astatus);
+      _braid_CoreFcn(core, objT_diff)(_braid_CoreElt(core, app), primal, adjoint->userVector, astatus);
 
 
       /* Free memory of the primal Vector and pop it from the tape */

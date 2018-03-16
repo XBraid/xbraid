@@ -751,8 +751,8 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, primaltape)      = NULL;
    _braid_CoreElt(core, adjointtape)     = NULL;
    _braid_CoreElt(core, optim)           = NULL;
-   _braid_CoreElt(core, access_diff)  = NULL;
-   _braid_CoreElt(core, step_diff)    = NULL;
+   _braid_CoreElt(core, step_diff)       = NULL;
+   _braid_CoreElt(core, objT_diff)       = NULL;
    _braid_CoreElt(core, objectiveT)      = NULL;
 
    
@@ -776,10 +776,10 @@ braid_Init(MPI_Comm               comm_world,
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 braid_Int
-braid_Init_Adjoint(braid_PtFcnStepDiff     step_diff, 
-                   braid_PtFcnAccessDiff   access_diff,
-                   braid_PtFcnObjectiveT  objectiveT,
-                   braid_Core             *core_ptr)
+braid_Init_Adjoint(braid_PtFcnObjectiveT      objectiveT,
+                   braid_PtFcnStepDiff        step_diff, 
+                   braid_PtFcnObjectiveTDiff  objT_diff,
+                   braid_Core                 *core_ptr)
 {
   if( _braid_CoreElt(*core_ptr, refine) )
   {
@@ -807,10 +807,12 @@ braid_Init_Adjoint(braid_PtFcnStepDiff     step_diff,
    _braid_OptimInit( core_ptr, &optim);
    _braid_CoreElt(*core_ptr, optim) = optim; 
 
-   /* Store pointer to adjoint user interface in the core */
-   _braid_CoreElt(*core_ptr, step_diff)   = step_diff;
-   _braid_CoreElt(*core_ptr, access_diff) = access_diff;
+   /* Additional user functions */
    _braid_CoreElt(*core_ptr, objectiveT)     = objectiveT;
+
+   /* Differentiated functions */
+   _braid_CoreElt(*core_ptr, step_diff)   = step_diff;
+   _braid_CoreElt(*core_ptr, objT_diff)   = objT_diff;
   
 
    return _braid_error_flag;

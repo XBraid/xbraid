@@ -234,19 +234,22 @@ typedef struct _braid_Core_struct
 
    braid_Real             localtime;        /**< local wall time for braid_Drive() */
    braid_Real             globaltime;       /**< global wall time for braid_Drive() */
+
+   /* Data for adjoint and optimization */
    braid_Int              adjoint;          /**< determines if adjoint run is performed (1) or not (0) */
    braid_Int              record;          /**< determines if actions are recorded to the tape or not */
    braid_Int              verbose;          /**< verbosity of the adjoint code */
 
-   _braid_Tape* actiontape;                 /**< tape storing the actions while recording */
-   _braid_Tape* primaltape;                     /**< tape storing primal braid_vectors while recording */
-   _braid_Tape* adjointtape;                    /**< tape storing intermediate AD-adjoint variables while recording */
+   _braid_Tape*          actiontape;        /**< tape storing the actions while recording */
+   _braid_Tape*          primaltape;            /**< tape storing primal braid_vectors while recording */
+   _braid_Tape*          adjointtape;           /**< tape storing intermediate AD-adjoint variables while recording */
  
-   braid_Optim optim;                      /**< structure that stores optimization variables (objective function, etc.) */ 
+   braid_Optim optim;                          /**< structure that stores optimization variables (objective function, etc.) */ 
+   braid_PtFcnObjectiveT     objectiveT;       /**< User function: evaluate objective function at time t */
 
-   braid_PtFcnStepDiff        step_diff;             /**< apply differentiated step function */
-   braid_PtFcnAccessDiff      access_diff;             /**< apply differentiated access function */
-   braid_PtFcnObjectiveT     objectiveT;                 /**< evaluate objective function at time t */
+   /* Differentiated user functions */
+   braid_PtFcnStepDiff         step_diff;             /**< User function: apply differentiated step function */
+   braid_PtFcnObjectiveTDiff   objT_diff;             /**< User function: apply differentiated access function */
 
    /** Data elements required for the Status structures */
    /** Common Status properties */

@@ -30,14 +30,15 @@ typedef struct _braid_tape_struct
  **/
 typedef enum _braid_Call_enum
 {
-   STEP      = 1,
-   INIT      = 2,
-   CLONE     = 3,
-   FREE      = 4,
-   SUM       = 5,
-   BUFPACK   = 6,
-   BUFUNPACK = 7,
-   ACCESS    = 8,
+   STEP       = 1,
+   INIT       = 2,
+   CLONE      = 3,
+   FREE       = 4,
+   SUM        = 5,
+   BUFPACK    = 6,
+   BUFUNPACK  = 7,
+   ACCESS     = 8,
+   OBJECTIVET = 9
 
 } _braid_Call;
 
