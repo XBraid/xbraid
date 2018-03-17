@@ -776,27 +776,52 @@ _braid_BaseObjectiveT_diff(_braid_Action *action)
 braid_Int
 _braid_BaseBufPack_diff(_braid_Action *action, braid_App app)
 {
-
       braid_Core core;
-      // braid_Real send_recv_rank;
-      // braid_Int  myid;
+      braid_Real send_recv_rank;
+      braid_Int  size;
+      void       *buffer;
+      braid_Vector u;
+      braid_BufferStatus bstatus;
+      braid_Adjoint      adjoint;
 
       /* Grab information from the action */
       core           = action->core;
-      // send_recv_rank = action->send_recv_rank;
-      // myid           = action->myid;
+      send_recv_rank = action->send_recv_rank;
 
       if (_braid_CoreElt(core, verbose)) printf("BUFPACK_DIFF\n");
 
       /* Pop the adjoint vector from the tape*/
-      braid_Adjoint      adjoint;
       adjoint = (braid_Adjoint) (_braid_CoreElt(core, adjointtape)->data_ptr);
       _braid_CoreElt(core, adjointtape) = _braid_TapePop( _braid_CoreElt(core, adjointtape) );
 
-      /* TODO: Perform the adjoint action */
+
+      /* Allocate buffer through the user routine */
+      bstatus = (braid_BufferStatus) core;
+      _braid_BufferStatusInit( 0, 0, bstatus);
+      _braid_CoreFcn(core, bufsize)(_braid_CoreElt(core, app), &size, bstatus);
+      buffer = malloc(size);
+
+      /* Receive the buffer 
+       * TODO: Add CommHandle or some status check!!
+       */
+      // MPI_Request *requests;
+      // requests = _braid_CTAlloc(MPI_Request, 1);
+      // MPI_Irecv(buffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), &requests[0]); 
+      MPI_Recv(buffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), MPI_STATUS_IGNORE); 
+      // MPI_Request_free(&requests);
+
+      /* Unpack the buffer (this allocates memory for a braid_Vector */
+      _braid_CoreFcn(core, bufunpack)(_braid_CoreElt(core, app), buffer, &u, bstatus);
+
+      /* Update the adjoint */
+      _braid_CoreFcn(core, sum)(_braid_CoreElt(core, app), 1., u, 1., adjoint->userVector);
 
       /* Decrease the useCount of the adjoint and pop the adjoint from the adjoint tape */
       _braid_AdjointDelete(core, adjoint);
+
+      /* Free memory */
+      free(buffer);
+      _braid_CoreFcn(core, free)(_braid_CoreElt(core, app), u);
 
       return 0;
 }
@@ -804,24 +829,40 @@ _braid_BaseBufPack_diff(_braid_Action *action, braid_App app)
 braid_Int
 _braid_BaseBufUnpack_diff(_braid_Action *action, braid_App app)
 {
-      // printf("BufUnack adjoint\n");
-
-      // braid_Real send_recv_rank;
-      // braid_Int  myid;
+      braid_Real         send_recv_rank;
+      braid_Adjoint      adjoint;
+      braid_Core         core;
+      braid_BufferStatus bstatus;
+      void               *buffer;
+      braid_Int          size;
+      MPI_Request        *requests;
 
       /* Grab information from the action */
-      braid_Core core = action->core;
-      // send_recv_rank = action->send_recv_rank;
-      // myid           = action->myid;
+      core           = action->core;
+      send_recv_rank = action->send_recv_rank;
 
       if (_braid_CoreElt(core, verbose)) printf("BUFUNPACK_DIFF\n");
 
       /* Pop the adjoint vector from the tape*/
-      braid_Adjoint      adjoint;
       adjoint = (braid_Adjoint) (_braid_CoreElt(core, adjointtape)->data_ptr);
       _braid_CoreElt(core, adjointtape) = _braid_TapePop( _braid_CoreElt(core, adjointtape) );
 
-      /* TODO: Perform the adjoint action */
+     /* Allocate buffer through the user routine */
+      bstatus = (braid_BufferStatus) core;
+      _braid_BufferStatusInit( 0, 0, bstatus);
+      _braid_CoreFcn(core, bufsize)(_braid_CoreElt(core, app), &size, bstatus);
+      buffer = malloc(size); 
+
+      /* Pack the buffer with the adjoint variable */
+      _braid_CoreFcn(core, bufpack)(_braid_CoreElt(core, app), adjoint->userVector, buffer, bstatus);
+
+      /* TODO: Check the status of the recv!*/
+      /* Also: Why MPI_Recv but MPI_Isend? (blocking / non-blocking) Bug? */
+      /* Send the buffer  */
+      requests = _braid_CTAlloc(MPI_Request, 1);
+      MPI_Isend(buffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), &requests[0]);
+      MPI_Request_free(requests);
+
 
       /* Decrease the useCount of the adjoint and pop the adjoint from the adjoint tape */
       _braid_AdjointDelete(core, adjoint);

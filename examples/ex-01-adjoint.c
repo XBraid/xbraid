@@ -377,7 +377,10 @@ int main (int argc, char *argv[])
    /* Run simulation, and then clean up */
    braid_Drive(core);
 
-   /* Do MPIAllreduce for the gradient ! */
+   double localgradient = app->gradient;
+   double globalgradient;
+   MPI_Allreduce(&localgradient, &globalgradient, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+   app->gradient = globalgradient;
    printf("Gradient: %1.14f\n", app->gradient);
 
    braid_Destroy(core);

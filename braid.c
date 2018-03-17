@@ -568,10 +568,12 @@ braid_Drive(braid_Core  core)
                /* Evaluate (and clear) the action tape */
                _braid_TapeEvaluate(core);
 
+               /* TODO: Allreduce the gradient */
+
                /* Reset the objective function for the next iteration */
                _braid_CoreElt(core, optim)->objective = 0.0;
 
-               /* Reset the gradient */
+               /* TODO: Reset the gradient */
       
                /* Stop iterating */
                done = 1;
