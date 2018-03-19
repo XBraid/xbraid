@@ -1669,6 +1669,9 @@ _braid_FRestrict(braid_Core   core,
    _braid_CommHandle   *recv_handle = NULL;
    _braid_CommHandle   *send_handle = NULL;
 
+   braid_Real           tstart_obj  = _braid_CoreElt(core, optim)->tstart_obj;
+   braid_Real           tstop_obj   = _braid_CoreElt(core, optim)->tstop_obj;
+
    braid_Int            c_level, c_ilower, c_iupper, c_index, c_i, c_ii;
    braid_BaseVector         c_u, *c_va, *c_fa;
 
@@ -1723,12 +1726,16 @@ _braid_FRestrict(braid_Core   core,
          /* Evaluate the user's local objective function at FPoints on finest grid */
          if ( _braid_CoreElt(core, adjoint) && level == 0)
          {
-           _braid_AccessStatusInit(ta[fi-f_ilower], fi, rnm, iter, level, nrefine, gupper,
-                                    0, 0, braid_ASCaller_FRestrict, astatus);
-           _braid_BaseObjectiveT(core, app, r, astatus, &objT_tmp);
+            if ( ta[fi-f_ilower] >= tstart_obj && 
+                 ta[fi-f_ilower] <= tstop_obj )
+            {
+              _braid_AccessStatusInit(ta[fi-f_ilower], fi, rnm, iter, level, nrefine, gupper,
+                                       0, 0, braid_ASCaller_FRestrict, astatus);
+              _braid_BaseObjectiveT(core, app, r, astatus, &objT_tmp);
 
-           /* Add to the time-averaged objective function */
-           _braid_CoreElt(core, optim)->objective += objT_tmp;
+              /* Add to the time-averaged objective function */
+              _braid_CoreElt(core, optim)->objective += objT_tmp;
+            }
          }
 
       }
@@ -1745,14 +1752,18 @@ _braid_FRestrict(braid_Core   core,
       /* Evaluate the user's local objective function at CPoints on finest grid */
       if (_braid_CoreElt(core, adjoint) && level == 0 && (ci > -1) )
       {
-         _braid_UGetVectorRef(core, level, ci, &u);
-         _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper,
-                                 0, 0, braid_ASCaller_FRestrict, astatus);
-         _braid_BaseObjectiveT(core, app, u, astatus, &objT_tmp);
+         if ( ta[ci-f_ilower] >= tstart_obj && 
+              ta[ci-f_ilower] <= tstop_obj )
+         {
+            _braid_UGetVectorRef(core, level, ci, &u);
+            _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper,
+                                    0, 0, braid_ASCaller_FRestrict, astatus);
+            _braid_BaseObjectiveT(core, app, u, astatus, &objT_tmp);
 
-         /* Add to the time-averaged objective function */
-        //  printf("%d: %f: %f\n",_braid_CoreElt(core, myid), ta[ci-f_ilower], objT_tmp);
-         _braid_CoreElt(core, optim)->objective += objT_tmp;
+            /* Add to the time-averaged objective function */
+           //  printf("%d: %f: %f\n",_braid_CoreElt(core, myid), ta[ci-f_ilower], objT_tmp);
+            _braid_CoreElt(core, optim)->objective += objT_tmp;
+         }
       }
          
       
