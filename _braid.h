@@ -238,19 +238,21 @@ typedef struct _braid_Core_struct
 
    /* Data for adjoint and optimization */
    braid_Int              adjoint;          /**< determines if adjoint run is performed (1) or not (0) */
-   braid_Int              record;          /**< determines if actions are recorded to the tape or not */
+   braid_Int              record;           /**< determines if actions are recorded to the tape or not */
    braid_Int              verbose;          /**< verbosity of the adjoint code */
 
-   _braid_Tape*          actiontape;        /**< tape storing the actions while recording */
-   _braid_Tape*          primaltape;            /**< tape storing primal braid_vectors while recording */
-   _braid_Tape*          adjointtape;           /**< tape storing intermediate AD-adjoint variables while recording */
+   _braid_Tape*          actiontape;             /**< tape storing the actions while recording */
+   _braid_Tape*          primaltape;             /**< tape storing primal braid_vectors while recording */
+   _braid_Tape*          adjointtape;            /**< tape storing intermediate AD-adjoint variables while recording */
  
-   braid_Optim optim;                          /**< structure that stores optimization variables (objective function, etc.) */ 
-   braid_PtFcnObjectiveT     objectiveT;       /**< User function: evaluate objective function at time t */
+   braid_Optim optim;                            /**< structure that stores optimization variables (objective function, etc.) */ 
+   braid_PtFcnObjectiveT       objectiveT;       /**< User function: evaluate objective function at time t */
+   braid_PtFcnResetGradient    reset_gradient;   /**< User function: Set the gradient to zero. Is called before each iteration */
+   braid_PtFcnAccessGradient   access_gradient;  /**< User function: Access the gradient for output or optimization. This involves MPI_Allreduce! */
 
    /* Differentiated user functions */
-   braid_PtFcnStepDiff         step_diff;             /**< User function: apply differentiated step function */
-   braid_PtFcnObjectiveTDiff   objT_diff;             /**< User function: apply differentiated access function */
+   braid_PtFcnStepDiff         step_diff;        /**< User function: apply differentiated step function */
+   braid_PtFcnObjectiveTDiff   objT_diff;        /**< User function: apply differentiated access function */
 
    /** Data elements required for the Status structures */
    /** Common Status properties */

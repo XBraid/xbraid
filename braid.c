@@ -556,11 +556,14 @@ braid_Drive(braid_Core  core)
             // printf("Eval Adjoint. iter %d level %d\n", iter, level);
             if (_braid_CoreElt(core,adjoint))
             {
-               /* Compute the time-averaged objective function. */
+               /* Compute and print the time-averaged objective function. */
                localobjective = _braid_CoreElt(core, optim)->objective;
                MPI_Allreduce(&localobjective, &globalobjective, 1, braid_MPI_REAL, MPI_SUM, comm_world);
                _braid_CoreElt(core, optim)->objective = globalobjective / ( ntime + 1 );
-               printf("  Objective = %1.14e\n", _braid_CoreElt(core, optim)->objective);
+               if (_braid_CoreElt(core, myid_world) == 0 ) 
+               {
+                  _braid_printf("  Braid: Objective = %1.14e\n", _braid_CoreElt(core, optim)->objective);
+               }
 
                /* Set the seed for tape evaluation */
                _braid_CoreElt(core, optim)->f_bar = 1. / (ntime + 1);
@@ -568,12 +571,14 @@ braid_Drive(braid_Core  core)
                /* Evaluate (and clear) the action tape */
                _braid_TapeEvaluate(core);
 
-               /* TODO: Allreduce the gradient */
+               /* Access the gradient (this involves a MPI_Allreduce call) */
+               _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
 
                /* Reset the objective function for the next iteration */
                _braid_CoreElt(core, optim)->objective = 0.0;
 
-               /* TODO: Reset the gradient */
+               /* Reset the gradient for the next iteration */
+               _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
       
                /* Stop iterating */
                done = 1;
@@ -779,6 +784,8 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, step_diff)       = NULL;
    _braid_CoreElt(core, objT_diff)       = NULL;
    _braid_CoreElt(core, objectiveT)      = NULL;
+   _braid_CoreElt(core, reset_gradient)  = NULL;
+   _braid_CoreElt(core, access_gradient) = NULL;
 
    
    /* Residual history and accuracy tracking for StepStatus*/
@@ -804,6 +811,8 @@ braid_Int
 braid_Init_Adjoint(braid_PtFcnObjectiveT      objectiveT,
                    braid_PtFcnStepDiff        step_diff, 
                    braid_PtFcnObjectiveTDiff  objT_diff,
+                   braid_PtFcnResetGradient   reset_gradient,
+                   braid_PtFcnAccessGradient  access_gradient,
                    braid_Core                 *core_ptr)
 {
   if( _braid_CoreElt(*core_ptr, refine) )
@@ -832,12 +841,13 @@ braid_Init_Adjoint(braid_PtFcnObjectiveT      objectiveT,
    _braid_OptimInit( core_ptr, &optim);
    _braid_CoreElt(*core_ptr, optim) = optim; 
 
-   /* Additional user functions */
-   _braid_CoreElt(*core_ptr, objectiveT)     = objectiveT;
 
-   /* Differentiated functions */
-   _braid_CoreElt(*core_ptr, step_diff)   = step_diff;
-   _braid_CoreElt(*core_ptr, objT_diff)   = objT_diff;
+   /* Additional user functions */
+   _braid_CoreElt(*core_ptr, objectiveT)      = objectiveT;
+   _braid_CoreElt(*core_ptr, step_diff)       = step_diff;
+   _braid_CoreElt(*core_ptr, objT_diff)       = objT_diff;
+   _braid_CoreElt(*core_ptr, reset_gradient)  = reset_gradient;
+   _braid_CoreElt(*core_ptr, access_gradient) = access_gradient;
   
 
    return _braid_error_flag;

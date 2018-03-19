@@ -314,6 +314,33 @@ my_ObjectiveT_diff(braid_App          app,
    return 0;
 }
 
+int 
+my_AccessGradient(braid_App app)
+{
+   double localgradient;
+   double globalgradient;
+
+   /* Collect sensitivities from all time-processors */
+   localgradient = app->gradient;
+   MPI_Allreduce(&localgradient, &globalgradient, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+   /* Broadcast the global gradient to all processor */
+   app->gradient = globalgradient;
+
+   /* Print the gradient */
+   printf("Gradient: %1.14f\n", app->gradient);
+
+   return 0;
+}
+
+
+int 
+my_ResetGradient(braid_App app)
+{
+   /* Set the gradient to zero */
+   app->gradient = 0.0;
+
+   return 0;
+}
 
 
 /*--------------------------------------------------------------------------
@@ -360,7 +387,7 @@ int main (int argc, char *argv[])
 
 
    /* Initialize the adjoint core (should do the same sing as braid_Init for now) */
-   braid_Init_Adjoint( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, &core);
+   braid_Init_Adjoint( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_ResetGradient, my_AccessGradient, &core);
    
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);
@@ -377,11 +404,7 @@ int main (int argc, char *argv[])
    /* Run simulation, and then clean up */
    braid_Drive(core);
 
-   double localgradient = app->gradient;
-   double globalgradient;
-   MPI_Allreduce(&localgradient, &globalgradient, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-   app->gradient = globalgradient;
-   printf("Gradient: %1.14f\n", app->gradient);
+
 
    braid_Destroy(core);
    MPI_Finalize();

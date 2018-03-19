@@ -376,6 +376,23 @@ typedef braid_Int
                         );
 
 
+/**
+ * Set the gradient to zero
+ */
+typedef braid_Int
+(*braid_PtFcnResetGradient)(braid_App   app              /**< user-defined _braid_App structure */
+                           );      
+
+
+/**
+ * Access the gradient for output and / or updating the design for optimization 
+ * 
+ * This routine must involve a MPI_Allreduce call for collecting gradient information from all time-processors. 
+ */
+typedef braid_Int
+(*braid_PtFcnAccessGradient)(braid_App   app              /**< user-defined _braid_App structure */
+                            );      
+
 
 /** @}*/
 
@@ -840,10 +857,12 @@ braid_SetSeqSoln(braid_Core  core,          /**< braid_Core (_braid_Core) struct
  *
  **/
 braid_Int
-braid_Init_Adjoint( braid_PtFcnObjectiveT     objT,        /**< Evaluate the local objective function at time t  */
-                    braid_PtFcnStepDiff       step_adj,    /**< Adjoint time stepping routine to advance an adjoint vector backwards one time step */
-                    braid_PtFcnObjectiveTDiff objT_diff,
-                    braid_Core                *core_ptr    /**< Pointer to braid_Core (_braid_Core) struct*/   
+braid_Init_Adjoint( braid_PtFcnObjectiveT      objT,            /**< Evaluate the local objective function at time t  */
+                    braid_PtFcnStepDiff        step_diff,       /**< Differentiated version of the step function */
+                    braid_PtFcnObjectiveTDiff  objT_diff,       /**< differentiated version of the objT function  */
+                    braid_PtFcnResetGradient   reset_gradient,  /**< Set the gradient to zero */
+                    braid_PtFcnAccessGradient  access_gradient, /**< Access the gradient for output or optimization */
+                    braid_Core                *core_ptr         /**< Pointer to braid_Core (_braid_Core) struct */   
            );
 
 
