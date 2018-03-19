@@ -565,9 +565,6 @@ braid_Drive(braid_Core  core)
                   _braid_printf("  Braid: Objective = %1.14e\n", _braid_CoreElt(core, optim)->objective);
                }
 
-               /* Set the seed for tape evaluation */
-               _braid_CoreElt(core, optim)->f_bar = 1. / (ntime + 1);
-
                /* Evaluate (and clear) the action tape */
                _braid_TapeEvaluate(core);
 
@@ -815,6 +812,7 @@ braid_Init_Adjoint(braid_PtFcnObjectiveT      objectiveT,
                    braid_PtFcnAccessGradient  access_gradient,
                    braid_Core                 *core_ptr)
 {
+
   if( _braid_CoreElt(*core_ptr, refine) )
   {
     printf("ERROR: Adjoint of FRefine not supported yet!\n");
@@ -840,7 +838,6 @@ braid_Init_Adjoint(braid_PtFcnObjectiveT      objectiveT,
    braid_Optim optim;
    _braid_OptimInit( core_ptr, &optim);
    _braid_CoreElt(*core_ptr, optim) = optim; 
-
 
    /* Additional user functions */
    _braid_CoreElt(*core_ptr, objectiveT)      = objectiveT;
