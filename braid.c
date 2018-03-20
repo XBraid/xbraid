@@ -396,6 +396,7 @@ braid_Drive(braid_Core  core)
    _braid_Grid   *grid;
    braid_Real     localtime, globaltime;
    braid_Real     localobjective, globalobjective;
+   braid_Optim    optim;
 
    /* Cycle state variables */
    _braid_CycleState  cycle;
@@ -435,6 +436,14 @@ braid_Drive(braid_Core  core)
 
    /* Set initial values */
    _braid_InitGuess(core, 0);
+
+   if (_braid_CoreElt(core, adjoint))
+   {
+      /* Initialize the optimization structure */
+      _braid_OptimInit( core, grid, &optim);
+      _braid_CoreElt(core, optim) = optim; 
+      
+   }
 
    /* Initialize cycle state */
    _braid_DriveInitCycle(core, &cycle);
@@ -834,10 +843,6 @@ braid_Init_Adjoint(braid_PtFcnObjectiveT      objectiveT,
    _braid_TapeInit( _braid_CoreElt(*core_ptr,primaltape) );
    _braid_TapeInit( _braid_CoreElt(*core_ptr,adjointtape) );
 
-   /* Initialize the optimization structure */
-   braid_Optim optim;
-   _braid_OptimInit( core_ptr, &optim);
-   _braid_CoreElt(*core_ptr, optim) = optim; 
 
    /* Additional user functions */
    _braid_CoreElt(*core_ptr, objectiveT)      = objectiveT;
@@ -868,6 +873,9 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, cfactors));
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
+
+      /* Destroy the optimization structure */
+      _braid_OptimDestroy( core );
       _braid_TFree(_braid_CoreElt(core, optim));
       
       for (level = 0; level < nlevels; level++)

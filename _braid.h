@@ -43,27 +43,6 @@
 extern "C" {
 #endif
 
-
-/** 
- * Data structure for storing the optimization variables
- */
-struct _braid_Optimization_struct
-{
-  braid_Real objective;        /**< time-averaged objective function */
-  braid_Real tstart_obj;       /**< time for starting the time-average of the objective function */
-  braid_Real tstop_obj;        /**< time for stopping the time-average of the objective function */
-  braid_Real f_bar;            /**< contains the seed for tape evaluation */
-};
-typedef struct _braid_Optimization_struct *braid_Optim;
-
-/**
- * Initialize the optimization structure:
- * Allocate memory and set the variables 
- */
-void
-_braid_OptimInit( braid_Core *core_ptr,               
-                  braid_Optim *optim_ptr);
-
 /**
  * Data structure for storing the adjoint variables
  * Implements shared pointer feature for C
@@ -75,19 +54,18 @@ struct _braid_Adjoint_struct
 }; 
 typedef struct _braid_Adjoint_struct *braid_Adjoint;
 
-/**
- * This copies a braid_Adjoint pointer, i.e. it increases its useCount by one. 
+/** 
+ * Data structure for storing the optimization variables
  */
-void 
-_braid_AdjointCopy(braid_Adjoint adj, braid_Adjoint *adj_ptr);
-
-/**
- * This reduces the useCount of the adjoint pointer 
- * It free's the adjoint memory if no pointer points it anymore (usecount = 0). 
- */ 
-void
-_braid_AdjointDelete(braid_Core core, braid_Adjoint adj);
-
+struct _braid_Optimization_struct
+{
+  braid_Real     objective;        /**< time-averaged objective function */
+  braid_Real     tstart_obj;       /**< time for starting the time-average of the objective  function */
+  braid_Real     tstop_obj;        /**< time for stopping the time-average of the objective  function */
+  braid_Real     f_bar;            /**< contains the seed for tape evaluation */
+  braid_Adjoint *adjoints;          /**< vector holding pointers to the adjoint optimization variables */
+};
+typedef struct _braid_Optimization_struct *braid_Optim;
 
 /**
  * Augmented braid vector, that stores both the users vector as well as its adjoint
@@ -836,6 +814,39 @@ _braid_GetFullRNorm(braid_Core  core,
  */
 braid_Int
 _braid_DeleteLastResidual(braid_Core  core);
+
+
+
+/**
+ * This copies a braid_Adjoint pointer, i.e. it increases its useCount by one. 
+ */
+void 
+_braid_AdjointCopy(braid_Adjoint adj, braid_Adjoint *adj_ptr);
+
+/**
+ * This reduces the useCount of the adjoint pointer 
+ * It free's the adjoint memory if no pointer points it anymore (usecount = 0). 
+ */ 
+void
+_braid_AdjointDelete(braid_Core core, braid_Adjoint adj);
+
+/**
+ * Initialize the optimization structure:
+ * Allocate memory and set the variables 
+ */
+braid_Int
+_braid_OptimInit( braid_Core  core,               
+                  _braid_Grid *fine_grid,
+                  braid_Optim *optim_ptr);
+
+/**
+ * Free memory of the optimization structure 
+ */
+braid_Int
+_braid_OptimDestroy( braid_Core core);
+
+
+
 
 #ifdef __cplusplus
 }

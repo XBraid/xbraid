@@ -61,6 +61,7 @@ _braid_AdjointDelete(braid_Core core, braid_Adjoint adj)
       _braid_CoreFcn(core, free)(_braid_CoreElt(core, app), adj->userVector);
       free(adj);
   }
+
   /* Sanity check */
   else if (adj->useCount < 0)
   {
@@ -70,22 +71,70 @@ _braid_AdjointDelete(braid_Core core, braid_Adjoint adj)
 
 }
 
-void
-_braid_OptimInit( braid_Core *core_ptr,               
+braid_Int
+_braid_OptimInit( braid_Core  core,
+                  _braid_Grid *fine_grid,               
                   braid_Optim *optim_ptr)
 {
-   braid_Int ntime = _braid_CoreElt(*core_ptr, ntime);
+   braid_Optim optim;
+   braid_Adjoint *adjoints = NULL; 
+   braid_Int ntime, ncpoints, clower, iupper, cfactor, sflag, iclocal;
+   braid_BaseVector u;
+   braid_Adjoint adjoint_copy;
+   ncpoints  = _braid_GridElt(fine_grid, ncpoints);
+   clower    = _braid_GridElt(fine_grid, clower);
+   iupper    = _braid_GridElt(fine_grid, iupper);
+   cfactor   = _braid_GridElt(fine_grid, cfactor);
+   ntime     = _braid_CoreElt(core, ntime);
 
    /* Allocate memory for the optimization structure */
-   (*optim_ptr) = (braid_Optim)_braid_TAlloc(braid_Real, 4);
- 
-   /* Set the (default) values variables */
-   (*optim_ptr)->objective  = 0.0;
-   (*optim_ptr)->tstart_obj = _braid_CoreElt(*core_ptr, tstart);
-   (*optim_ptr)->tstop_obj  = _braid_CoreElt(*core_ptr, tstop);
-   (*optim_ptr)->f_bar      = 1. / (ntime + 1);
+   optim = (braid_Optim)malloc(4*sizeof(braid_Real) + sizeof(braid_Adjoint));
+   adjoints = _braid_CTAlloc(braid_Adjoint, ncpoints);
+
+   for (braid_Int ic=clower; ic <= iupper; ic += cfactor)
+   {
+         _braid_UGetVectorRef(core, 0, ic, &u);
+         _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
+         _braid_AdjointCopy(u->adjoint, &adjoint_copy);
+         adjoints[iclocal]=adjoint_copy;
+   }
+
+   /* Set the (default) optimization variables */
+   optim->adjoints   = adjoints;
+   optim->objective  = 0.0;
+   optim->tstart_obj = _braid_CoreElt(core, tstart);
+   optim->tstop_obj  = _braid_CoreElt(core, tstop);
+   optim->f_bar      = 1. / (ntime + 1);
+
+   *optim_ptr = optim;
+
+   return 0;
 }
 
+
+braid_Int
+_braid_OptimDestroy( braid_Core core)
+{
+   braid_Optim  optim;
+   _braid_Grid *fine_grid; 
+   braid_Int    clower, iupper, cfactor, sflag, iclocal;
+
+   optim       = _braid_CoreElt(core, optim);
+   fine_grid   = _braid_CoreElt(core, grids)[0];
+   clower      = _braid_GridElt(fine_grid, clower);
+   iupper      = _braid_GridElt(fine_grid, iupper);
+   cfactor     = _braid_GridElt(fine_grid, cfactor);
+
+   /* Free the adjoint variables */
+   for (braid_Int ic=clower; ic <= iupper; ic += cfactor)
+   {
+      _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
+      _braid_AdjointDelete(core, optim->adjoints[iclocal] );
+   }
+   free(optim->adjoints);
+
+   return 0;
+}
 
 
 /*----------------------------------------------------------------------------
