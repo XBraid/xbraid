@@ -61,56 +61,59 @@ _braid_TapeGetSize(_braid_Tape* head)
 }
 
 
-void 
+braid_Int
 _braid_TapeDisplayBackwards(braid_Core core, _braid_Tape* head, void (*displayfct)(braid_Core core, void* data_ptr))
 {
-    _braid_Tape* current;
-    current = head;
-    if (current!=NULL)
-    {
-        do 
-        {
-            /* Call the display function */
-            (*displayfct)(core, current->data_ptr);
-            /* Move to next element */
-            current = current->next;
-        }
-        while (current!=NULL);
-    }
-    else
-    {
-        printf("Tape is empty\n");
-    }
+   _braid_Tape* current;
+   current = head;
+   if (current!=NULL)
+   {
+       do 
+       {
+           /* Call the display function */
+           (*displayfct)(core, current->data_ptr);
+           /* Move to next element */
+           current = current->next;
+       }
+       while (current!=NULL);
+   }
+   else
+   {
+       printf("Tape is empty\n");
+   }
   
+  return 0;
 }
 
 
-void 
+braid_Int
 _braid_TapeEvaluate(braid_Core core)
 {
-    /* Get the tape */
-    _braid_Tape* actiontape = _braid_CoreElt(core, actiontape);
+   /* Get the tape */
+   _braid_Tape* actiontape = _braid_CoreElt(core, actiontape);
 
-    while ( !_braid_TapeIsEmpty(actiontape) )
-    {
-       /* Get the action */
-       _braid_Action* action = (_braid_Action*) actiontape->data_ptr;
+   while ( !_braid_TapeIsEmpty(actiontape) )
+   {
+      /* Get the action */
+      _braid_Action* action = (_braid_Action*) actiontape->data_ptr;
 
-       /* Call the differentiated action */
-       _braid_DiffCall(action);
+      /* Call the differentiated action */
+      _braid_DiffCall(action);
 
-       /* Pop the action from the tape */
-       actiontape = _braid_TapePop( actiontape );
+      /* Pop the action from the tape */
+      actiontape = _braid_TapePop( actiontape );
 
-       /* Free memory of the action */
-       free(action);
-    }
-    
-    /* Update the actiontape in the core */
-    _braid_CoreElt(core, actiontape) = actiontape;
+     /* Free memory of the action */
+     free(action);
+   }
+  
+   /* Update the actiontape in the core */
+   _braid_CoreElt(core, actiontape) = actiontape;
+
+   return 0;
 }
 
-void
+braid_Int
 _braid_DiffCall(_braid_Action* action)
 {
    
@@ -164,10 +167,12 @@ _braid_DiffCall(_braid_Action* action)
           break;
       }
    }
+
+   return 0;
 }
 
 
-void
+braid_Int
 _braid_TapeSetSeed(braid_Core core)
 {
    _braid_Grid *fine_grid;
@@ -193,9 +198,11 @@ _braid_TapeSetSeed(braid_Core core)
       /* Set the seed using the optimization adjoints */
       _braid_CoreFcn(core, sum)(app, 1.0, optim->adjoints[iclocal]->userVector, 0.0, u_out->adjoint->userVector);
    }
+
+   return 0;
 }
 
-void 
+braid_Int
 _braid_TapeResetInput(braid_Core core)
 {
    braid_BaseVector u_out;
@@ -221,6 +228,8 @@ _braid_TapeResetInput(braid_Core core)
       _braid_AdjointCopy(u_out->adjoint, &adjoint_copy );
       _braid_CoreElt(core, optim)->tapeinput[iclocal] = adjoint_copy;
    }
+
+   return 0;
 }
 
 // void

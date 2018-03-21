@@ -103,7 +103,7 @@ _braid_TapeGetSize(_braid_Tape* head);
  * Input: - pointer to the braid core 
  *        - pointer to the display function
  */
-void
+braid_Int
 _braid_TapeDisplayBackwards(braid_Core core, _braid_Tape* head, void (*fctptr)(braid_Core core, void* data_ptr));
 
 /** 
@@ -111,25 +111,25 @@ _braid_TapeDisplayBackwards(braid_Core core, _braid_Tape* head, void (*fctptr)(b
  * Input: - pointer to the braid core 
  *        - pointer to the head of the action tape
  */
-void
+braid_Int
 _braid_TapeEvaluate(braid_Core core);
 
 /**
  * Call differentiated action 
  */
-void
+braid_Int
 _braid_DiffCall(_braid_Action* action);
 
 /**
  * Set the adjoint seed for tape evaluation (u_bar at output variables)
  */
-void
+braid_Int
 _braid_TapeSetSeed(braid_Core core);
 
 /**
  * Set the pointers in tapeinput to the input of an xbraid iteration (ua).
  */
-void 
+braid_Int 
 _braid_TapeResetInput(braid_Core core);
 
 
