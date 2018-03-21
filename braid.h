@@ -898,6 +898,12 @@ braid_Int
 braid_GetTStopTimeaverage(braid_Core core,
                           braid_Real *tstop_obj);
 
+/*
+ * Switch for displaying the actions while iterating. Used for debugging only. 
+ */
+braid_Int
+braid_SetVerbosity(braid_Core  core,
+                    braid_Int   verbose);
 
 
                           

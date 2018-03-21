@@ -121,7 +121,8 @@ my_Init(braid_App     app,
    }
    else /* All other time points set to arbitrary value */
    {
-      (u->value) = 0.456;
+      // (u->value) = 0.456;
+      (u->value) = t+1;
    }
    *u_ptr = u;
 
@@ -190,15 +191,14 @@ my_Access(braid_App          app,
 //    fclose(file);
 
    /* Debug info for adjoint */
-   int done, level;
-   double t;
-   braid_AccessStatusGetLevel(astatus, &level);
-   braid_AccessStatusGetDone(astatus, &done);
-   braid_AccessStatusGetT(astatus, &t);
-//    if (!done)
-//    {
-        // printf("myaccess: %d, %1.2f, %.14e\n", level, t, (u->value) );
-//    }
+   // int done, level;
+   // double t;
+   // braid_AccessStatusGetLevel(astatus, &level);
+   // braid_AccessStatusGetDone(astatus, &done);
+   // braid_AccessStatusGetT(astatus, &t);
+   // printf("myaccess: %d, %1.2f, %.14e\n", level, t, (u->value) );
+
+   printf("myaccess: %.14e\n", (u->value) );
 
    return 0;
 }
@@ -366,8 +366,7 @@ int main (int argc, char *argv[])
    gradient = 0.0;
 
    /* DEBUG gradient */
-//    double obj_ref = 1.77166086544457e-01;  //design=-1
-//    design += 1e-8;
+   // design += 1e-8;
    
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -395,6 +394,7 @@ int main (int argc, char *argv[])
    braid_SetAbsTol(core, 1.0e-06);
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 1);
+   braid_SetVerbosity(core, 0);
 
    /* Optional: Set the time for starting time-average */
 //    braid_SetTStartTimeaverage( core, 1.0);
