@@ -883,6 +883,10 @@ _braid_BaseBufUnpack_diff(_braid_Action *action, braid_App app)
       MPI_Isend(buffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), &requests[0]);
       MPI_Request_free(requests);
 
+      
+      /* Set ubar to zero */
+      _braid_CoreFcn(core, sum)(app, -1., adjoint->userVector, 1., adjoint->userVector );
+
 
       /* Decrease the useCount of the adjoint and pop the adjoint from the adjoint tape */
       _braid_AdjointDelete(core, adjoint);
