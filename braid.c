@@ -465,6 +465,7 @@ braid_Drive(braid_Core  core)
 
    iter = 0;
    _braid_CoreElt(core, niter) = iter;
+   printf("Start iterating\n");
    while (!done)
    {
       /* When there is just one grid level, do sequential time marching */
@@ -562,7 +563,6 @@ braid_Drive(braid_Core  core)
 
             /*--- Evaluate the adjoint sensitivities after one cycle ---*/
 
-            // printf("Eval Adjoint. iter %d level %d\n", iter, level);
             if (_braid_CoreElt(core,adjoint))
             {
                /* Compute and print the time-averaged objective function. */
@@ -573,22 +573,30 @@ braid_Drive(braid_Core  core)
                {
                   _braid_printf("  Braid: Objective = %1.14e\n", _braid_CoreElt(core, optim)->objective);
                }
+               
+               /* Set the adjoint seed at coarse points on level 0 */
+               _braid_TapeSetSeed(core);
 
                /* Evaluate (and clear) the action tape */
                _braid_TapeEvaluate(core);
-
+               
                /* Access the gradient (this involves a MPI_Allreduce call) */
                _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
 
-               /* Reset the objective function for the next iteration */
-               _braid_CoreElt(core, optim)->objective = 0.0;
+               /* Update optimization adjoints and compute residual norm */
+               braid_Real rnorm_adj;
+               _braid_UpdateAdjoint(core, &rnorm_adj);
 
-               /* Reset the gradient for the next iteration */
+               /* Reset the pointer in tapeinput to ua */ 
+               _braid_TapeResetInput(core);
+
+               /* Reset objective and gradient for the next iteration */
+               _braid_CoreElt(core, optim)->objective = 0.0;
                _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
       
                /* Stop iterating */
-               done = 1;
-               _braid_CoreElt(core, done) = 1;
+               // done = 1;
+               // _braid_CoreElt(core, done) = 1;
       
             } /* End of Adjoint */
 
@@ -597,8 +605,14 @@ braid_Drive(braid_Core  core)
    }
 
    /* Stop adjoint recording */
-   printf("\nStop recording\n\n");
-   _braid_CoreElt(core, record) = 0;
+   if (_braid_CoreElt(core, adjoint))
+   {
+      _braid_CoreElt(core, record) = 0;
+      if (_braid_CoreElt(core, verbose))
+      {
+        printf("\nStop recording\n\n"); 
+      } 
+   }
 
    /* By default, set the final residual norm to be the same as the previous */
    {
@@ -625,7 +639,7 @@ braid_Drive(braid_Core  core)
    }
 
    /* Allow final access to Braid by carrying out an F-relax to generate points */
-   _braid_FAccess(core, 0, 1);
+   // _braid_FAccess(core, 0, 1);
 
 
    /* If sequential time-marching, evaluate the tape */
@@ -636,8 +650,13 @@ braid_Drive(braid_Core  core)
       MPI_Allreduce(&localobjective, &globalobjective, 1, braid_MPI_REAL, MPI_SUM, comm_world);
       _braid_CoreElt(core, optim)->objective = globalobjective / ( ntime + 1 );
       printf("  Objective = %1.14e\n", _braid_CoreElt(core, optim)->objective);
+
       /* Evaluate (and clear) the action tape */
       _braid_TapeEvaluate(core);
+
+      /* Access the gradient (this involves a MPI_Allreduce call) */
+      _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
+
    }
 
 
@@ -832,9 +851,14 @@ braid_Init_Adjoint(braid_PtFcnObjectiveT      objectiveT,
    _braid_CoreElt(*core_ptr, adjoint) = 1;
    _braid_CoreElt(*core_ptr, record) = 1;
 
-   /* Turn on adjoint verbosity */
-   _braid_CoreElt(*core_ptr, verbose) = 0;
+  /* Debug: */
 
+   if (_braid_CoreElt(*core_ptr, verbose))
+   {
+      printf("\n Start recording \n\n");
+   }
+
+ 
   /* Turn off skip on downcycle */
   _braid_CoreElt(*core_ptr, skip) = 0;
 
@@ -1644,4 +1668,13 @@ braid_GetTStopTimeaverage(braid_Core core,
   *tstop_obj_ptr = _braid_CoreElt(core, optim->tstop_obj);
 
   return _braid_error_flag;
+}
+
+braid_Int
+braid_SetVerbosity(braid_Core  core,
+                    braid_Int   verbose)
+{
+   _braid_CoreElt(core, verbose) = verbose;
+
+   return _braid_error_flag;
 }

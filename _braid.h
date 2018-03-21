@@ -64,6 +64,8 @@ struct _braid_Optimization_struct
   braid_Real     tstop_obj;        /**< time for stopping the time-average of the objective  function */
   braid_Real     f_bar;            /**< contains the seed for tape evaluation */
   braid_Adjoint *adjoints;          /**< vector holding pointers to the adjoint optimization variables */
+
+  braid_Adjoint *tapeinput;         /**< helper: store pointer to input of one braid iteration */
 };
 typedef struct _braid_Optimization_struct *braid_Optim;
 
@@ -846,6 +848,9 @@ braid_Int
 _braid_OptimDestroy( braid_Core core);
 
 
+braid_Int
+_braid_UpdateAdjoint(braid_Core core,
+                     braid_Real *rnorm_adj_ptr);
 
 
 #ifdef __cplusplus

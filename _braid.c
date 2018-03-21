@@ -77,8 +77,9 @@ _braid_OptimInit( braid_Core  core,
                   braid_Optim *optim_ptr)
 {
    braid_Optim optim;
-   braid_Adjoint *adjoints = NULL; 
-   braid_Int ntime, ncpoints, clower, iupper, cfactor, sflag, iclocal;
+   braid_Adjoint *adjoints  = NULL; 
+   braid_Adjoint *tapeinput = NULL; 
+   braid_Int ntime, ncpoints, clower, iupper, cfactor, sflag, iclocal, ic;
    braid_BaseVector u;
    braid_Adjoint adjoint_copy;
    ncpoints  = _braid_GridElt(fine_grid, ncpoints);
@@ -88,19 +89,30 @@ _braid_OptimInit( braid_Core  core,
    ntime     = _braid_CoreElt(core, ntime);
 
    /* Allocate memory for the optimization structure */
-   optim = (braid_Optim)malloc(4*sizeof(braid_Real) + sizeof(braid_Adjoint));
-   adjoints = _braid_CTAlloc(braid_Adjoint, ncpoints);
+   optim = (braid_Optim)malloc(4*sizeof(braid_Real) + 2*sizeof(braid_Adjoint));
+   adjoints  = _braid_CTAlloc(braid_Adjoint, ncpoints);
+   tapeinput = _braid_CTAlloc(braid_Adjoint, ncpoints);
 
-   for (braid_Int ic=clower; ic <= iupper; ic += cfactor)
+   for (ic=clower; ic <= iupper; ic += cfactor)
    {
          _braid_UGetVectorRef(core, 0, ic, &u);
          _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
+
+         /* Initialize optimization adjoints with zeros */
+         braid_Adjoint myadjoint = (braid_Adjoint)malloc(sizeof(braid_Vector)+sizeof(int));
+         myadjoint->useCount = 1;
+         _braid_CoreFcn(core, init)(_braid_CoreElt(core, app), _braid_CoreElt(core, tstart), &(myadjoint->userVector));
+         _braid_CoreFcn(core, sum)(_braid_CoreElt(core, app), -1.0, myadjoint->userVector, 1.0, myadjoint->userVector);
+         adjoints[iclocal] = myadjoint;
+
+         /* Initialize the tapeinput with u_bar */
          _braid_AdjointCopy(u->adjoint, &adjoint_copy);
-         adjoints[iclocal]=adjoint_copy;
+         tapeinput[iclocal] = adjoint_copy;
    }
 
    /* Set the (default) optimization variables */
    optim->adjoints   = adjoints;
+   optim->tapeinput  = tapeinput;
    optim->objective  = 0.0;
    optim->tstart_obj = _braid_CoreElt(core, tstart);
    optim->tstop_obj  = _braid_CoreElt(core, tstop);
@@ -117,7 +129,7 @@ _braid_OptimDestroy( braid_Core core)
 {
    braid_Optim  optim;
    _braid_Grid *fine_grid; 
-   braid_Int    clower, iupper, cfactor, sflag, iclocal;
+   braid_Int    clower, iupper, cfactor, sflag, iclocal, ic;
 
    optim       = _braid_CoreElt(core, optim);
    fine_grid   = _braid_CoreElt(core, grids)[0];
@@ -125,16 +137,49 @@ _braid_OptimDestroy( braid_Core core)
    iupper      = _braid_GridElt(fine_grid, iupper);
    cfactor     = _braid_GridElt(fine_grid, cfactor);
 
-   /* Free the adjoint variables */
-   for (braid_Int ic=clower; ic <= iupper; ic += cfactor)
+   /* Free the adjoint variables and tapeinput */
+   for (ic=clower; ic <= iupper; ic += cfactor)
    {
       _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
       _braid_AdjointDelete(core, optim->adjoints[iclocal] );
+      _braid_AdjointDelete(core, optim->tapeinput[iclocal] );
    }
    free(optim->adjoints);
+   free(optim->tapeinput);
 
    return 0;
 }
+
+braid_Int
+_braid_UpdateAdjoint(braid_Core core,
+                     braid_Real *rnorm_adj_ptr)
+{
+   _braid_Grid     *fine_grid;
+   braid_Int        clower, iupper, cfactor, iclocal, sflag, ic;
+   braid_App        app;
+   braid_Optim      optim;
+
+   fine_grid = _braid_CoreElt(core, grids)[0];
+   clower    = _braid_GridElt(fine_grid, clower);
+   iupper    = _braid_GridElt(fine_grid, iupper);
+   cfactor   = _braid_GridElt(fine_grid, cfactor);
+   app       = _braid_CoreElt(core, app);
+   optim     = _braid_CoreElt(core, optim);
+
+   /* Loop over all C-point on the fine grid */
+   for (ic=clower; ic <= iupper; ic += cfactor)
+   {
+      /* Get the local index of the C-points */
+      _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
+
+      /* Update the optimization adjoints */
+      _braid_CoreFcn(core, sum)(app, 1.0, optim->tapeinput[iclocal]->userVector, 0.0, optim->adjoints[iclocal]->userVector);
+      _braid_AdjointDelete(core, optim->tapeinput[iclocal]);
+   }
+
+   return 0;
+}
+
 
 
 /*----------------------------------------------------------------------------

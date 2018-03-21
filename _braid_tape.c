@@ -167,6 +167,67 @@ _braid_DiffCall(_braid_Action* action)
 }
 
 
+void
+_braid_TapeSetSeed(braid_Core core)
+{
+   _braid_Grid *fine_grid;
+   braid_BaseVector u_out;
+   braid_Int clower, cfactor, iclocal, iupper, sflag;
+   braid_Optim optim;
+   braid_App app;
+
+   fine_grid = _braid_CoreElt(core, grids)[0];
+   clower    = _braid_GridElt(fine_grid, clower);
+   iupper    = _braid_GridElt(fine_grid, iupper);
+   cfactor   = _braid_GridElt(fine_grid, cfactor);
+   optim     = _braid_CoreElt(core, optim);
+   app       = _braid_CoreElt(core, app);
+
+   /* Loop over all coarse points on finest grid level */
+   for (braid_Int ic=clower; ic <= iupper; ic += cfactor)
+   {
+      /* Get the output vector u and its index in the ua vector  */
+      _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
+      _braid_UGetVectorRef(core, 0, ic, &u_out);
+
+      /* Set the seed using the optimization adjoints */
+      _braid_CoreFcn(core, sum)(app, 1.0, optim->adjoints[iclocal]->userVector, 0.0, u_out->adjoint->userVector);
+
+      /* Debug: */
+      // printf("Seeding for %d %p\n", iclocal, u_out->adjoint );
+      // _braid_CoreFcn(core, access)(app, u_out->adjoint->userVector, NULL);
+
+   }
+}
+
+void 
+_braid_TapeResetInput(braid_Core core)
+{
+   braid_BaseVector u_out;
+   braid_Adjoint    adjoint_copy;
+   _braid_Grid     *fine_grid;
+   braid_Int        clower, iupper, cfactor, iclocal, sflag, ic;
+   braid_Optim      optim;
+
+   fine_grid = _braid_CoreElt(core, grids)[0];
+   clower    = _braid_GridElt(fine_grid, clower);
+   iupper    = _braid_GridElt(fine_grid, iupper);
+   cfactor   = _braid_GridElt(fine_grid, cfactor);
+   optim     = _braid_CoreElt(core, optim);
+  
+   /* Loop over all C-points */
+   for (ic=clower; ic <= iupper; ic += cfactor)
+   {
+      /* Get the vector in ua and its local index */
+      _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
+      _braid_UGetVectorRef(core, 0, ic, &u_out);
+
+      /* Copy a pointer to its adjoint to the tapeinput vector */
+      _braid_AdjointCopy(u_out->adjoint, &adjoint_copy );
+      _braid_CoreElt(core, optim)->tapeinput[iclocal] = adjoint_copy;
+   }
+}
+
 // void
 // _braid_TapeDisplayAction(braid_Core core,void* data_ptr){
 

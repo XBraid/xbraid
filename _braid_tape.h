@@ -120,6 +120,19 @@ _braid_TapeEvaluate(braid_Core core);
 void
 _braid_DiffCall(_braid_Action* action);
 
+/**
+ * Set the adjoint seed for tape evaluation (u_bar at output variables)
+ */
+void
+_braid_TapeSetSeed(braid_Core core);
+
+/**
+ * Set the pointers in tapeinput to the input of an xbraid iteration (ua).
+ */
+void 
+_braid_TapeResetInput(braid_Core core);
+
+
 // /**
 //  * Display function for a _braid_action
 //  * Input: Pointer to an action 
