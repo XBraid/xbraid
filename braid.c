@@ -305,6 +305,7 @@ _braid_DrivePrintStatus(braid_Core  core,
    braid_Int            rstopped        = _braid_CoreElt(core, rstopped);
    braid_Int            print_level     = _braid_CoreElt(core, print_level);
    braid_Real           rnorm, rnorm_prev, cfactor, wtime;
+   braid_Real           rnorm_adj, objective;
 
    /* If my processor is not 0, or if print_level is not set high enough, return */
    if ((myid != 0) || (print_level < 1))
@@ -313,6 +314,12 @@ _braid_DrivePrintStatus(braid_Core  core,
    }
 
    wtime = MPI_Wtime() - localtime;
+
+   if (_braid_CoreElt(core, adjoint))
+   {
+      rnorm_adj = _braid_CoreElt(core, optim)->rnorm_adj;
+      objective = _braid_CoreElt(core, optim)->objective;
+   }
 
    _braid_GetRNorm(core, -1, &rnorm);
    _braid_GetRNorm(core, -2, &rnorm_prev);
@@ -323,8 +330,15 @@ _braid_DrivePrintStatus(braid_Core  core,
    }
    if (rnorm != braid_INVALID_RNORM)
    {
-       _braid_printf("  Braid: || r_%d || = %1.6e, conv factor = %1.2e, wall time = %1.2e\n",
+      if (!_braid_CoreElt(core, adjoint))
+      {
+         _braid_printf("  Braid: || r_%d || = %1.6e, conv factor = %1.2e, wall time = %1.2e\n",
                        iter, rnorm, cfactor, wtime);
+      }
+      else
+      {
+         _braid_printf("  Braid: || r_%d || = %1.6e, || r_adj_%d || = %1.6e, objective = %1.14e\n", iter, rnorm, iter,  rnorm_adj, objective);
+      }
    }
    else
    {
@@ -545,35 +559,14 @@ braid_Drive(braid_Core  core)
                _braid_TFree(saved_rfactors);
             }
 
-            /* Finest grid - refine grid if desired, else check convergence */
-            _braid_FRefine(core, &refined);
-            nlevels = _braid_CoreElt(core, nlevels);
 
-            /* Print current status */
-            _braid_DrivePrintStatus(core, level, iter, refined, localtime);
-
-            /* If no refinement was done, check for convergence */
-            if (!refined)
-            {
-               /* Check convergence */
-               _braid_DriveCheckConvergence(core, iter, &done);
-
-               iter++;
-               _braid_CoreElt(core, niter) = iter;
-            }
-
-            /*--- Evaluate the adjoint sensitivities after one cycle ---*/
-
+            /*--- Evaluate the adjoint sensitivities ---*/
             if (_braid_CoreElt(core,adjoint))
             {
                /* Compute and print the time-averaged objective function. */
                localobjective = _braid_CoreElt(core, optim)->objective;
                MPI_Allreduce(&localobjective, &globalobjective, 1, braid_MPI_REAL, MPI_SUM, comm_world);
                _braid_CoreElt(core, optim)->objective = globalobjective / ( ntime + 1 );
-               if (_braid_CoreElt(core, myid_world) == 0 ) 
-               {
-                  _braid_printf("  Braid: Objective = %1.14e\n", _braid_CoreElt(core, optim)->objective);
-               }
                
                /* Set the adjoint seed at coarse points on level 0 */
                _braid_TapeSetSeed(core);
@@ -584,8 +577,28 @@ braid_Drive(braid_Core  core)
                /* Update optimization adjoints and compute residual norm */
                _braid_UpdateAdjoint(core, &rnorm_adj);
                _braid_CoreElt(core, optim)->rnorm_adj = rnorm_adj;
-               _braid_printf("  Braid: || r_adj_%d || = %1.14e \n\n", iter-1, rnorm_adj);
+            }
 
+            /* Finest grid - refine grid if desired */
+            _braid_FRefine(core, &refined);
+            nlevels = _braid_CoreElt(core, nlevels);
+
+            /* Print current status */
+            _braid_DrivePrintStatus(core, level, iter, refined, localtime);
+            
+            /* If no refinement was done, check for convergence */
+            if (!refined)
+            {
+               /* Check convergence */
+               _braid_DriveCheckConvergence(core, iter, &done);
+
+               iter++;
+               _braid_CoreElt(core, niter) = iter;
+            }
+
+
+            if (_braid_CoreElt(core, adjoint))
+            {
                
                /* Access the gradient (this involves a MPI_Allreduce call) */
                _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
@@ -595,12 +608,12 @@ braid_Drive(braid_Core  core)
                _braid_CoreElt(core, optim)->objective = 0.0;
                _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
       
-               /* Stop iterating */
+      
+            }
+
+               /* DEBUG: Stop iterating */
                // done = 1;
                // _braid_CoreElt(core, done) = 1;
-      
-            } /* End of Adjoint */
-
          }
       }
    }
