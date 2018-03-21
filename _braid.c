@@ -177,6 +177,11 @@ _braid_UpdateAdjoint(braid_Core core,
    /* Loop over all C-point on the fine grid */
    for (ic=clower; ic <= iupper; ic += cfactor)
    {
+      if (ic == 0)
+      {
+         continue;
+      }
+
       /* Get the local index of the C-points */
       _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
 
@@ -186,6 +191,8 @@ _braid_UpdateAdjoint(braid_Core core,
       /* Compute the norm of the adjoint residual */
       _braid_CoreFcn(core, sum)(app, 1., tape_vec, -1., adjoint_vec);
       _braid_CoreFcn(core, spatialnorm)(app, adjoint_vec, &rnorm_temp);
+      // printf(" rnorm at ic %d iclocal %d: %1.14e\n", ic, iclocal, rnorm_temp);
+
       if(tnorm == 1)       /* one-norm */ 
       {  
          rnorm_adj += rnorm_temp;

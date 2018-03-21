@@ -245,6 +245,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
    braid_Int            tight_fine_tolx = _braid_CoreElt(core, tight_fine_tolx);
    braid_Real           rnorm, rnorm0;
+   braid_Real           rnorm_adj;
 
    braid_Int            done = *done_ptr;
 
@@ -269,10 +270,16 @@ _braid_DriveCheckConvergence(braid_Core  core,
    if ( (rnorm != braid_INVALID_RNORM) && (rnorm < tol) && (tight_fine_tolx == 1) )
    {
       done = 1;
-   } 
-   else if (iter == max_iter-1)
-   {
-      done = 1;
+
+      /* Keep iterating, if adjoint not converged yet. */
+      if (_braid_CoreElt(core, adjoint))
+      {
+         rnorm_adj = _braid_CoreElt(core, optim)->rnorm_adj;
+         if ( ! (rnorm_adj < tol) )
+         {
+            done = 0;
+         }
+      }
    } 
    else if ( braid_isnan(rnorm) )
    {
@@ -282,6 +289,11 @@ _braid_DriveCheckConvergence(braid_Core  core,
       }
       done = 1; 
    }
+   
+   if (iter == max_iter-1)
+   {
+      done = 1;
+   } 
 
    *done_ptr = done;
 
@@ -337,7 +349,7 @@ _braid_DrivePrintStatus(braid_Core  core,
       }
       else
       {
-         _braid_printf("  Braid: || r_%d || = %1.6e, || r_adj_%d || = %1.6e, objective = %1.14e\n", iter, rnorm, iter,  rnorm_adj, objective);
+         _braid_printf("  Braid: || r_%d || = %1.6e, || r_adj_%d || = %1.6e, Obj = %1.14e\n", iter, rnorm, iter,  rnorm_adj, objective);
       }
    }
    else
@@ -480,7 +492,6 @@ braid_Drive(braid_Core  core)
 
    iter = 0;
    _braid_CoreElt(core, niter) = iter;
-   printf("Start iterating\n");
    while (!done)
    {
       /* When there is just one grid level, do sequential time marching */
@@ -559,6 +570,10 @@ braid_Drive(braid_Core  core)
                _braid_TFree(saved_rfactors);
             }
 
+            /* Finest grid - refine grid if desired */
+            _braid_FRefine(core, &refined);
+            nlevels = _braid_CoreElt(core, nlevels);
+
 
             /*--- Evaluate the adjoint sensitivities ---*/
             if (_braid_CoreElt(core,adjoint))
@@ -579,10 +594,6 @@ braid_Drive(braid_Core  core)
                _braid_CoreElt(core, optim)->rnorm_adj = rnorm_adj;
             }
 
-            /* Finest grid - refine grid if desired */
-            _braid_FRefine(core, &refined);
-            nlevels = _braid_CoreElt(core, nlevels);
-
             /* Print current status */
             _braid_DrivePrintStatus(core, level, iter, refined, localtime);
             
@@ -599,16 +610,13 @@ braid_Drive(braid_Core  core)
 
             if (_braid_CoreElt(core, adjoint))
             {
-               
                /* Access the gradient (this involves a MPI_Allreduce call) */
                _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
 
-               /* Reset for the next iteration */ 
+               /* Reset adjoint for the next iteration */ 
                _braid_TapeResetInput(core);
                _braid_CoreElt(core, optim)->objective = 0.0;
                _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
-      
-      
             }
 
                /* DEBUG: Stop iterating */

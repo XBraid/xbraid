@@ -395,6 +395,7 @@ int main (int argc, char *argv[])
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 1);
    braid_SetVerbosity(core, 0);
+   braid_SetMaxIter(core, 10);
 
    /* Optional: Set the time for starting time-average */
 //    braid_SetTStartTimeaverage( core, 1.0);
