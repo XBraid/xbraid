@@ -77,7 +77,7 @@ _braid_OptimInit( braid_Core  core,
                   braid_Optim *optim_ptr)
 {
    braid_Optim optim;
-   braid_Adjoint *adjoints  = NULL; 
+   braid_Vector  *adjoints  = NULL; 
    braid_Adjoint *tapeinput = NULL; 
    braid_Int ntime, ncpoints, clower, iupper, cfactor, sflag, iclocal, ic;
    braid_BaseVector u;
@@ -89,8 +89,8 @@ _braid_OptimInit( braid_Core  core,
    ntime     = _braid_CoreElt(core, ntime);
 
    /* Allocate memory for the optimization structure */
-   optim = (braid_Optim)malloc(5*sizeof(braid_Real) + 2*sizeof(braid_Adjoint));
-   adjoints  = _braid_CTAlloc(braid_Adjoint, ncpoints);
+   optim = (braid_Optim)malloc(5*sizeof(braid_Real) + sizeof(braid_Adjoint) + sizeof(braid_Vector));
+   adjoints  = _braid_CTAlloc(braid_Vector, ncpoints);
    tapeinput = _braid_CTAlloc(braid_Adjoint, ncpoints);
 
    for (ic=clower; ic <= iupper; ic += cfactor)
@@ -99,10 +99,9 @@ _braid_OptimInit( braid_Core  core,
          _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
 
          /* Initialize optimization adjoints with zeros */
-         braid_Adjoint myadjoint = (braid_Adjoint)malloc(sizeof(braid_Vector)+sizeof(int));
-         myadjoint->useCount = 1;
-         _braid_CoreFcn(core, init)(_braid_CoreElt(core, app), _braid_CoreElt(core, tstart), &(myadjoint->userVector));
-         _braid_CoreFcn(core, sum)(_braid_CoreElt(core, app), -1.0, myadjoint->userVector, 1.0, myadjoint->userVector);
+         braid_Vector myadjoint;
+         _braid_CoreFcn(core, init)(_braid_CoreElt(core, app), _braid_CoreElt(core, tstart), &myadjoint);
+         _braid_CoreFcn(core, sum)(_braid_CoreElt(core, app), -1.0, myadjoint, 1.0, myadjoint);
          adjoints[iclocal] = myadjoint;
 
          /* Initialize the tapeinput with u_bar */
@@ -142,7 +141,7 @@ _braid_OptimDestroy( braid_Core core)
    for (ic=clower; ic <= iupper; ic += cfactor)
    {
       _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
-      _braid_AdjointDelete(core, optim->adjoints[iclocal] );
+      _braid_CoreFcn(core, free)(_braid_CoreElt(core, app), optim->adjoints[iclocal]);
       _braid_AdjointDelete(core, optim->tapeinput[iclocal] );
    }
    free(optim->adjoints);
@@ -182,7 +181,7 @@ _braid_UpdateAdjoint(braid_Core core,
       _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
 
       tape_vec    = optim->tapeinput[iclocal]->userVector;  
-      adjoint_vec = optim->adjoints[iclocal]->userVector;
+      adjoint_vec = optim->adjoints[iclocal];
 
       if (ic > 0)
       {
