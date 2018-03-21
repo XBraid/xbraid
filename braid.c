@@ -397,6 +397,7 @@ braid_Drive(braid_Core  core)
    braid_Real     localtime, globaltime;
    braid_Real     localobjective, globalobjective;
    braid_Optim    optim;
+   braid_Real     rnorm_adj;
 
    /* Cycle state variables */
    _braid_CycleState  cycle;
@@ -579,18 +580,18 @@ braid_Drive(braid_Core  core)
 
                /* Evaluate (and clear) the action tape */
                _braid_TapeEvaluate(core);
+
+               /* Update optimization adjoints and compute residual norm */
+               _braid_UpdateAdjoint(core, &rnorm_adj);
+               _braid_CoreElt(core, optim)->rnorm_adj = rnorm_adj;
+               _braid_printf("  Braid: || r_adj_%d || = %1.14e \n\n", iter-1, rnorm_adj);
+
                
                /* Access the gradient (this involves a MPI_Allreduce call) */
                _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
 
-               /* Update optimization adjoints and compute residual norm */
-               braid_Real rnorm_adj;
-               _braid_UpdateAdjoint(core, &rnorm_adj);
-
-               /* Reset the pointer in tapeinput to ua */ 
+               /* Reset for the next iteration */ 
                _braid_TapeResetInput(core);
-
-               /* Reset objective and gradient for the next iteration */
                _braid_CoreElt(core, optim)->objective = 0.0;
                _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
       

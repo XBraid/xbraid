@@ -89,7 +89,7 @@ _braid_OptimInit( braid_Core  core,
    ntime     = _braid_CoreElt(core, ntime);
 
    /* Allocate memory for the optimization structure */
-   optim = (braid_Optim)malloc(4*sizeof(braid_Real) + 2*sizeof(braid_Adjoint));
+   optim = (braid_Optim)malloc(5*sizeof(braid_Real) + 2*sizeof(braid_Adjoint));
    adjoints  = _braid_CTAlloc(braid_Adjoint, ncpoints);
    tapeinput = _braid_CTAlloc(braid_Adjoint, ncpoints);
 
@@ -117,6 +117,7 @@ _braid_OptimInit( braid_Core  core,
    optim->tstart_obj = _braid_CoreElt(core, tstart);
    optim->tstop_obj  = _braid_CoreElt(core, tstop);
    optim->f_bar      = 1. / (ntime + 1);
+   optim->rnorm_adj  = -1.;
 
    *optim_ptr = optim;
 
@@ -154,28 +155,74 @@ braid_Int
 _braid_UpdateAdjoint(braid_Core core,
                      braid_Real *rnorm_adj_ptr)
 {
+   MPI_Comm         comm;
    _braid_Grid     *fine_grid;
-   braid_Int        clower, iupper, cfactor, iclocal, sflag, ic;
+   braid_Vector     tape_vec, adjoint_vec;
+   braid_Int        clower, iupper, cfactor, iclocal, sflag, ic, tnorm;
    braid_App        app;
    braid_Optim      optim;
+   braid_Real       rnorm_adj, rnorm_temp, global_rnorm;
 
+   comm      = _braid_CoreElt(core, comm);
+   app       = _braid_CoreElt(core, app);
+   optim     = _braid_CoreElt(core, optim);
+   tnorm     = _braid_CoreElt(core, tnorm);
    fine_grid = _braid_CoreElt(core, grids)[0];
    clower    = _braid_GridElt(fine_grid, clower);
    iupper    = _braid_GridElt(fine_grid, iupper);
    cfactor   = _braid_GridElt(fine_grid, cfactor);
-   app       = _braid_CoreElt(core, app);
-   optim     = _braid_CoreElt(core, optim);
 
+   rnorm_adj    = 0.;
+   global_rnorm = 0.;
    /* Loop over all C-point on the fine grid */
    for (ic=clower; ic <= iupper; ic += cfactor)
    {
       /* Get the local index of the C-points */
       _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
 
+      tape_vec    = optim->tapeinput[iclocal]->userVector;  
+      adjoint_vec = optim->adjoints[iclocal]->userVector;
+
+      /* Compute the norm of the adjoint residual */
+      _braid_CoreFcn(core, sum)(app, 1., tape_vec, -1., adjoint_vec);
+      _braid_CoreFcn(core, spatialnorm)(app, adjoint_vec, &rnorm_temp);
+      if(tnorm == 1)       /* one-norm */ 
+      {  
+         rnorm_adj += rnorm_temp;
+      }
+      else if(tnorm == 3)  /* inf-norm */
+      {  
+         rnorm_adj = (((rnorm_temp) > (rnorm_adj)) ? (rnorm_temp) : (rnorm_adj));
+      }
+      else                 /* default two-norm */
+      {  
+         rnorm_adj += (rnorm_temp*rnorm_temp);
+      }
+
       /* Update the optimization adjoints */
-      _braid_CoreFcn(core, sum)(app, 1.0, optim->tapeinput[iclocal]->userVector, 0.0, optim->adjoints[iclocal]->userVector);
+      _braid_CoreFcn(core, sum)(app, 1., tape_vec , 0., adjoint_vec);
+
+      /* Delete the pointer */
       _braid_AdjointDelete(core, optim->tapeinput[iclocal]);
    }
+
+ 
+   /* Compute global residual norm. */
+   if(tnorm == 1)       /* one-norm reduction */
+   {  
+      MPI_Allreduce(&rnorm_adj, &global_rnorm, 1, MPI_DOUBLE, MPI_SUM, comm);
+   }
+   else if(tnorm == 3)  /* inf-norm reduction */
+   {  
+      MPI_Allreduce(&rnorm_adj, &global_rnorm, 1, MPI_DOUBLE, MPI_MAX, comm);
+   }
+   else                 /* default two-norm reduction */
+   {  
+      MPI_Allreduce(&rnorm_adj, &global_rnorm, 1, MPI_DOUBLE, MPI_SUM, comm);
+      global_rnorm = sqrt(global_rnorm);
+   }
+
+   *rnorm_adj_ptr = global_rnorm;
 
    return 0;
 }
