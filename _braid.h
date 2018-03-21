@@ -44,15 +44,26 @@ extern "C" {
 #endif
 
 /**
- * Data structure for storing the adjoint variables
- * Implements shared pointer feature for C
+ * Shared pointer implentation for storing the intermediat AD-bar variables while taping
  */
-struct _braid_Adjoint_struct
+struct _braid_VectorBar_struct
 {
-  braid_Vector userVector;        /**< holds the adjoint data */
-  braid_Int useCount;                 /**< counts the number of pointer to this struct */
+  braid_Vector userVector;            /**< holds the u_bar data */
+  braid_Int useCount;                 /**< counts the number of pointers to this struct */
 }; 
-typedef struct _braid_Adjoint_struct *braid_Adjoint;
+typedef struct _braid_VectorBar_struct *braid_VectorBar;
+
+/**
+ * Augmented braid vector, that stores both the users primal vector and its associated bar vector 
+ * if adjoint: bar contains intermediate AD-vector, else bar=NULL
+ */
+struct _braid_BaseVector_struct
+{
+  braid_Vector    userVector;      /**< holds the users primal vector */
+  braid_VectorBar bar;             /**< holds the bar vector (shared pointer implementation) */
+};
+typedef struct _braid_BaseVector_struct *braid_BaseVector;
+
 
 /** 
  * Data structure for storing the optimization variables
@@ -65,21 +76,11 @@ struct _braid_Optimization_struct
   braid_Real     f_bar;            /**< contains the seed for tape evaluation */
   braid_Real     rnorm_adj;        /**< norm of the adjoint residual */
 
-  braid_Vector *adjoints;          /**< vector for the adjoint optimization variables */
+  braid_Vector  *adjoints;          /**< vector for the adjoint optimization variables */
 
-  braid_Adjoint *tapeinput;         /**< helper: store pointer to input of one braid iteration */
+  braid_VectorBar *tapeinput;         /**< helper: store pointer to input of one braid iteration */
 };
 typedef struct _braid_Optimization_struct *braid_Optim;
-
-/**
- * Augmented braid vector, that stores both the users vector as well as its adjoint
- */
-struct _braid_BaseVector_struct
-{
-  braid_Vector primal;      /**< holds the users vector */
-  braid_Adjoint    adjoint;     /**< holds the adjoint vector (shared pointer implementation) */
-};
-typedef struct _braid_BaseVector_struct *braid_BaseVector;
 
 
 /*--------------------------------------------------------------------------
@@ -223,9 +224,9 @@ typedef struct _braid_Core_struct
    braid_Int              record;           /**< determines if actions are recorded to the tape or not */
    braid_Int              verbose;          /**< verbosity of the adjoint code */
 
-   _braid_Tape*          actiontape;             /**< tape storing the actions while recording */
-   _braid_Tape*          primaltape;             /**< tape storing primal braid_vectors while recording */
-   _braid_Tape*          adjointtape;            /**< tape storing intermediate AD-adjoint variables while recording */
+   _braid_Tape*          actionTape;         /**< tape storing the actions while recording */
+   _braid_Tape*          userVectorTape;     /**< tape storing primal braid_vectors while recording */
+   _braid_Tape*          barTape;            /**< tape storing intermediate AD-bar variables while recording */
  
    braid_Optim optim;                            /**< structure that stores optimization variables (objective function, etc.) */ 
    braid_PtFcnObjectiveT       objectiveT;       /**< User function: evaluate objective function at time t */
@@ -822,17 +823,18 @@ _braid_DeleteLastResidual(braid_Core  core);
 
 
 /**
- * This copies a braid_Adjoint pointer, i.e. it increases its useCount by one. 
+ * This copies a braid_VectorBar shared pointer, i.e. it increases its useCount by one. 
  */
 void 
-_braid_AdjointCopy(braid_Adjoint adj, braid_Adjoint *adj_ptr);
+_braid_VectorBarCopy(braid_VectorBar bar, braid_VectorBar *bar_ptr);
+
 
 /**
- * This reduces the useCount of the adjoint pointer 
- * It free's the adjoint memory if no pointer points it anymore (usecount = 0). 
+ * This reduces the useCount of a braid_VectorBar shared pointer 
+ * If (usecount==0) : memory of bar is free'd
  */ 
 void
-_braid_AdjointDelete(braid_Core core, braid_Adjoint adj);
+_braid_VectorBarDelete(braid_Core core, braid_VectorBar bar);
 
 /**
  * Initialize the optimization structure:
@@ -850,6 +852,10 @@ braid_Int
 _braid_OptimDestroy( braid_Core core);
 
 
+/**
+ * Update the optimization adjoint variables and compute adjoint residual norm
+ * Returns the tnorm of adjoint residual
+ */
 braid_Int
 _braid_UpdateAdjoint(braid_Core core,
                      braid_Real *rnorm_adj_ptr);

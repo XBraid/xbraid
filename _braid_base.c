@@ -21,8 +21,8 @@ _braid_BaseStep(braid_Core       core,
 
     if (_braid_CoreElt(core, verbose)) 
     {
-       printf("%d: STEP pushes %p\n",_braid_CoreElt(core, myid), u->adjoint);
-      // _braid_CoreFcn(core, access)( app, u->adjoint->userVector, NULL );
+       printf("%d: STEP pushes %p\n",_braid_CoreElt(core, myid), u->bar);
+      // _braid_CoreFcn(core, access)( app, u->bar->userVector, NULL );
     }
 
    /* Record to the tape */
@@ -37,33 +37,33 @@ _braid_BaseStep(braid_Core       core,
       action->status        = (braid_Status) status;
       action->myid          = _braid_CoreElt(core, myid);
       // printf("STEP push\n");
-      _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
+      _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
 
       /* Push a copy of the primal vector to the primal tape */
       braid_Vector u_copy;
-      _braid_CoreFcn(core, clone)(app, u->primal, &u_copy);  // this will accolate memory for the copy!
-      _braid_CoreElt(core, primaltape) = _braid_TapePush( _braid_CoreElt(core, primaltape), u_copy);
+      _braid_CoreFcn(core, clone)(app, u->userVector, &u_copy);  // this will accolate memory for the copy!
+      _braid_CoreElt(core, userVectorTape) = _braid_TapePush( _braid_CoreElt(core, userVectorTape), u_copy);
 
-      /* Push a copy of the adjoint vector to the adjoint tape */
-      braid_Adjoint adjoint_copy;
-      _braid_AdjointCopy(u->adjoint, &adjoint_copy);
-      _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy);
+      /* Push a copy of the bar vector to the bar tape */
+      braid_VectorBar bar_copy;
+      _braid_VectorBarCopy(u->bar, &bar_copy);
+      _braid_CoreElt(core, barTape) = _braid_TapePush(_braid_CoreElt(core, barTape), bar_copy);
 
       /* DEBUG: Display the vector */
-      // printf("STEP pushes primal: ");
+      // printf("STEP pushes userVector: ");
       // braid_AccessStatus astatus = (braid_AccessStatus) status;
-      // _braid_CoreFcn(core, access)( app, u->primal, astatus);
+      // _braid_CoreFcn(core, access)( app, u->userVector, astatus);
   }
 
    /* Call the users Step function */
    if ( _braid_CoreElt(core, residual) == NULL )
    {
-      _braid_CoreFcn(core, step)(app, ustop->primal, NULL, u->primal, status);
+      _braid_CoreFcn(core, step)(app, ustop->userVector, NULL, u->userVector, status);
    }
    else
    {
       /* TODO: Check the fstop feature!!! */
-      _braid_CoreFcn(core, step)(app, ustop->primal, fstop->primal, u->primal, status);
+      _braid_CoreFcn(core, step)(app, ustop->userVector, fstop->userVector, u->userVector, status);
    }
    return 0;
 }
@@ -80,23 +80,23 @@ _braid_BaseInit(braid_Core core,
    if (_braid_CoreElt(core, verbose)) printf("%d INIT\n", _braid_CoreElt(core, myid));
 
    /* Allocate memory for the braid_BaseVector */
-   braid_BaseVector u = (braid_BaseVector)malloc(sizeof(braid_Vector)+sizeof(braid_Adjoint));
-   u->primal= NULL;
-   u->adjoint = NULL;
+   braid_BaseVector u = (braid_BaseVector)malloc(sizeof(braid_Vector)+sizeof(braid_VectorBar));
+   u->userVector= NULL;
+   u->bar = NULL;
 
    /* Call the users init function. This allocates and initializes the primal */
-   _braid_CoreFcn(core, init)(app, t, &(u->primal));
+   _braid_CoreFcn(core, init)(app, t, &(u->userVector));
    
-   /* Allocate and initialize the adjoint */
+   /* Allocate and initialize the bar */
    if ( _braid_CoreElt(core, adjoint) )
    {
-      braid_Adjoint myadjoint = (braid_Adjoint)malloc(sizeof(braid_Vector)+sizeof(int));
-      myadjoint->useCount = 1;
-      _braid_CoreFcn(core, init)(app, t, &(myadjoint->userVector));
-      _braid_CoreFcn(core, sum)(app, -1.0, myadjoint->userVector, 1.0, myadjoint->userVector);
-      u->adjoint = myadjoint;
+      braid_VectorBar mybar = (braid_VectorBar)malloc(sizeof(braid_Vector)+sizeof(int));
+      mybar->useCount = 1;
+      _braid_CoreFcn(core, init)(app, t, &(mybar->userVector));
+      _braid_CoreFcn(core, sum)(app, -1.0, mybar->userVector, 1.0, mybar->userVector);
+      u->bar = mybar;
 
-      // _braid_CoreFcn(core, access)( app, u->adjoint->userVector, NULL );
+      // _braid_CoreFcn(core, access)( app, u->bar->userVector, NULL );
    }
 
    /* Record to the tape */
@@ -109,19 +109,19 @@ _braid_BaseInit(braid_Core core,
       action->inTime        = _braid_CoreElt(core, t);
       action->myid          = _braid_CoreElt(core, myid);
       // printf("INIT push: \n");
-      _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
+      _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
 
 
       /* DEBUG: Display the vector */
-      // printf("Init creates %p\n", u->adjoint);
-      // _braid_CoreFcn(core, access)( app, u->adjoint->userVector, NULL );
+      // printf("Init creates %p\n", u->bar);
+      // _braid_CoreFcn(core, access)( app, u->bar->userVector, NULL );
    
    }
 
   /* Debug: */
-//    printf("Init adjoint, useCount: %d, adjoint value: ", u->adjoint->useCount);
+//    printf("Init bar, useCount: %d, bar value: ", u->bar->useCount);
 //   braid_AccessStatus astatus = (braid_AccessStatus) core;
-//   _braid_CoreFcn(core, access)(app, u->adjoint->userVector, astatus);
+//   _braid_CoreFcn(core, access)(app, u->bar->userVector, astatus);
 
    /* Set the return pointer */
    *u_ptr = u;
@@ -140,21 +140,21 @@ _braid_BaseClone(braid_Core core,
    if (_braid_CoreElt(core, verbose)) printf("%d: CLONE\n",_braid_CoreElt(core, myid));
 
    /* Allocate memory for the braid_BaseVector */
-   braid_BaseVector v = (braid_BaseVector)malloc(sizeof(braid_Vector)+sizeof(braid_Adjoint));
-   v->primal  = NULL;
-   v->adjoint = NULL;
+   braid_BaseVector v = (braid_BaseVector)malloc(sizeof(braid_Vector)+sizeof(braid_VectorBar));
+   v->userVector  = NULL;
+   v->bar = NULL;
 
    /* Call the users Clone function for the primal braid_Vector */
-   _braid_CoreFcn(core, clone)(app, u->primal, &(v->primal) );
+   _braid_CoreFcn(core, clone)(app, u->userVector, &(v->userVector) );
 
    if (_braid_CoreElt(core, adjoint))
    {
-      /* Allocate and initialize the adjoint to zero*/
-      braid_Adjoint myadjoint = (braid_Adjoint)malloc(sizeof(braid_Vector)+sizeof(int));
-      myadjoint->useCount = 1;
-      _braid_CoreFcn(core, clone)(app, u->adjoint->userVector, &(myadjoint->userVector));
-      _braid_CoreFcn(core, sum)(app, -1.0, myadjoint->userVector, 1.0, myadjoint->userVector);
-      v->adjoint = myadjoint;
+      /* Allocate and initialize the bar to zero*/
+      braid_VectorBar mybar = (braid_VectorBar)malloc(sizeof(braid_Vector)+sizeof(int));
+      mybar->useCount = 1;
+      _braid_CoreFcn(core, clone)(app, u->bar->userVector, &(mybar->userVector));
+      _braid_CoreFcn(core, sum)(app, -1.0, mybar->userVector, 1.0, mybar->userVector);
+      v->bar = mybar;
    } 
 
 
@@ -167,19 +167,19 @@ _braid_BaseClone(braid_Core core,
       action->core          = core;
       action->myid          = _braid_CoreElt(core, myid);
       // printf("CLONE push: \n");
-      _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
+      _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
 
-      /* Copy and push both adjoint pointers to the adjoint tape */
-      braid_Adjoint adjoint_copy_u;
-      braid_Adjoint adjoint_copy_v;
-      _braid_AdjointCopy(u->adjoint, &adjoint_copy_u);
-      _braid_AdjointCopy(v->adjoint, &adjoint_copy_v);
-      _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy_u);
-      _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy_v);
+      /* Copy and push both bar pointers to the bar tape */
+      braid_VectorBar bar_copy_u;
+      braid_VectorBar bar_copy_v;
+      _braid_VectorBarCopy(u->bar, &bar_copy_u);
+      _braid_VectorBarCopy(v->bar, &bar_copy_v);
+      _braid_CoreElt(core, barTape) = _braid_TapePush(_braid_CoreElt(core, barTape), bar_copy_u);
+      _braid_CoreElt(core, barTape) = _braid_TapePush(_braid_CoreElt(core, barTape), bar_copy_v);
       
       /*Debug: */
-      // printf("Clone pushes old u %p\n", u->adjoint);
-      // printf("Clone creates new v %p\n", v->adjoint);
+      // printf("Clone pushes old u %p\n", u->bar);
+      // printf("Clone creates new v %p\n", v->bar);
 
    }
 
@@ -199,9 +199,9 @@ _braid_BaseFree(braid_Core core,
 
    if (_braid_CoreElt(core, verbose)) printf("%d: FREE\n",_braid_CoreElt(core, myid));
    /*Debug: */
-//    _braid_CoreFcn(core, access)( app, u->adjoint->userVector, NULL );
+//    _braid_CoreFcn(core, access)( app, u->bar->userVector, NULL );
 
-   /* if adjoint: Record to the tape */
+   /* if bar: Record to the tape */
    if ( _braid_CoreElt(core, record) )
    {
       /* Set up and push the action */
@@ -210,24 +210,24 @@ _braid_BaseFree(braid_Core core,
       action->core          = core;
       action->myid          = _braid_CoreElt(core, myid);
       // printf("FREE push\n");
-      _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
+      _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
    }
  
-   /* Call the users free function for the primal */
-   _braid_CoreFcn(core, free)(app, u->primal);
+   /* Call the users free function for the userVector */
+   _braid_CoreFcn(core, free)(app, u->userVector);
 
 
    /* Debug: */
-//    printf("Init adjoint, useCount: %d, adjoint value: ", u->adjoint->useCount);
+//    printf("Init bar, useCount: %d, bar value: ", u->bar->useCount);
 //    braid_AccessStatus astatus = (braid_AccessStatus) core;
-//    _braid_CoreFcn(core, access)(app, u->adjoint->userVector, astatus);
+//    _braid_CoreFcn(core, access)(app, u->bar->userVector, astatus);
 
    if ( _braid_CoreElt(core, adjoint) )
    {
-      /* Decrease usecount of the adjoint and free the adjoint if useCount == 0. */
-      // printf("Free %p\n", u->adjoint);
-      // printf(", useCount: %d \n", u->adjoint->useCount);
-      _braid_AdjointDelete(core, u->adjoint);
+      /* Decrease usecount of the bar and free the bar if useCount == 0. */
+      // printf("Free %p\n", u->bar);
+      // printf(", useCount: %d \n", u->bar->useCount);
+      _braid_VectorBarDelete(core, u->bar);
    }
 
    /* Free the braid_BaseVector */
@@ -248,7 +248,7 @@ _braid_BaseSum(braid_Core core,
 {
    if (_braid_CoreElt(core, verbose)) printf("%d: SUM\n",_braid_CoreElt(core, myid));
 
-   /* if adjoint: Record to the tape */
+   /* if bar: Record to the tape */
    if ( _braid_CoreElt(core, record) )
    {
       /* Set up and push the action */
@@ -259,24 +259,24 @@ _braid_BaseSum(braid_Core core,
       action->sum_beta      = beta;
       action->myid          = _braid_CoreElt(core, myid);
       // printf("SUM push\n");
-      _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
+      _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
 
-      /* Copy and push both adjoint pointers to the adjoint tape */
-      braid_Adjoint adjoint_copy_x;
-      braid_Adjoint adjoint_copy_y;
-      _braid_AdjointCopy(x->adjoint, &adjoint_copy_x);
-      _braid_AdjointCopy(y->adjoint, &adjoint_copy_y);
-      _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy_x);
-      _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy_y);
+      /* Copy and push both bar pointers to the bar tape */
+      braid_VectorBar bar_copy_x;
+      braid_VectorBar bar_copy_y;
+      _braid_VectorBarCopy(x->bar, &bar_copy_x);
+      _braid_VectorBarCopy(y->bar, &bar_copy_y);
+      _braid_CoreElt(core, barTape) = _braid_TapePush(_braid_CoreElt(core, barTape), bar_copy_x);
+      _braid_CoreElt(core, barTape) = _braid_TapePush(_braid_CoreElt(core, barTape), bar_copy_y);
    }
 
     /* Call the users Sum function */
-   _braid_CoreFcn(core, sum)(app, alpha, x->primal, beta, y->primal);
+   _braid_CoreFcn(core, sum)(app, alpha, x->userVector, beta, y->userVector);
 
    
    /*Debug: */
-      // printf("Sum pushes y %p\n", y->adjoint);
-      // printf("Sum pushes x %p\n", x->adjoint);
+      // printf("Sum pushes y %p\n", y->bar);
+      // printf("Sum pushes x %p\n", x->bar);
    
    return 0;
 }
@@ -291,7 +291,7 @@ _braid_BaseSpatialNorm(braid_Core core,
 {
 
    /* Call the users SpatialNorm function */
-   _braid_CoreFcn(core, spatialnorm)(app, u->primal, norm_ptr);
+   _braid_CoreFcn(core, spatialnorm)(app, u->userVector, norm_ptr);
 
    return 0;
 }
@@ -306,7 +306,7 @@ _braid_BaseAccess(braid_Core core,
 {
    if (_braid_CoreElt(core, verbose)) printf("%d: ACCESS\n",_braid_CoreElt(core, myid));
 
-   /* if adjoint: Record to the tape */
+   /* if bar: Record to the tape */
    if ( _braid_CoreElt(core, record) )
    {
       /* Set up and push the action */
@@ -317,15 +317,15 @@ _braid_BaseAccess(braid_Core core,
       action->inTime        = _braid_CoreElt(core, t);
       action->myid          = _braid_CoreElt(core, myid);
       // printf("ACCESS push\n");
-      _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
+      _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
 
    }
 
    /* Call the users Access function */
-   _braid_CoreFcn(core, access)(app, u->primal, status);
+   _braid_CoreFcn(core, access)(app, u->userVector, status);
 
    /* Debug */
-//    _braid_CoreFcn(core, access)( app, u->adjoint->userVector, NULL );
+//    _braid_CoreFcn(core, access)( app, u->bar->userVector, NULL );
 
    return 0;
 }
@@ -357,7 +357,7 @@ _braid_BaseBufPack(braid_Core core,
 {
    if (_braid_CoreElt(core, verbose)) printf("%d: BUFPACK\n", _braid_CoreElt(core, myid) );
 
-      /* if adjoint: Record to the tape */
+      /* if bar: Record to the tape */
    if ( _braid_CoreElt(core, record) )
    {
       /* Set up and push the action */
@@ -367,17 +367,17 @@ _braid_BaseBufPack(braid_Core core,
       action->send_recv_rank = _braid_CoreElt(core, send_recv_rank);
       action->myid           = _braid_CoreElt(core, myid);
       // printf("BufPack push\n");
-      _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
+      _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
 
-      /* Copy and push the adjoint pointer to the adjoint tape */
-      braid_Adjoint adjoint_copy;
-      _braid_AdjointCopy(u->adjoint, &adjoint_copy);
-      _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy);
+      /* Copy and push the bar pointer to the bar tape */
+      braid_VectorBar bar_copy;
+      _braid_VectorBarCopy(u->bar, &bar_copy);
+      _braid_CoreElt(core, barTape) = _braid_TapePush(_braid_CoreElt(core, barTape), bar_copy);
 
    }
    
    /* Call the users BufPack function */
-   _braid_CoreFcn(core, bufpack)(app, u->primal, buffer, status);
+   _braid_CoreFcn(core, bufpack)(app, u->userVector, buffer, status);
 
    return 0;
 }
@@ -394,22 +394,22 @@ _braid_BaseBufUnpack(braid_Core core,
    if (_braid_CoreElt(core, verbose)) printf("%d: BUFUNPACK\n", _braid_CoreElt(core, myid));
 
    /* Allocate memory for the braid_BaseVector */
-   braid_BaseVector u = (braid_BaseVector)malloc(sizeof(braid_Vector)+sizeof(braid_Adjoint));
-   u->primal  = NULL;
-   u->adjoint = NULL;
+   braid_BaseVector u = (braid_BaseVector)malloc(sizeof(braid_Vector)+sizeof(braid_VectorBar));
+   u->userVector  = NULL;
+   u->bar = NULL;
    
 
-   /* Call the users BufUnPack function for the primal */
-   _braid_CoreFcn(core, bufunpack)(app, buffer, &(u->primal), status);
+   /* Call the users BufUnPack function for the userVector */
+   _braid_CoreFcn(core, bufunpack)(app, buffer, &(u->userVector), status);
 
    if ( _braid_CoreElt(core, adjoint) )
    {
-      /* Allocate and initialize the adjoint with zero*/
-      braid_Adjoint myadjoint = (braid_Adjoint)malloc(sizeof(braid_Vector)+sizeof(int));
-      myadjoint->useCount = 1;
-      _braid_CoreFcn(core, init)(app, _braid_CoreElt(core, tstart), &(myadjoint->userVector));
-      _braid_CoreFcn(core, sum)(app, -1.0, myadjoint->userVector, 1.0, myadjoint->userVector);
-      u->adjoint = myadjoint;
+      /* Allocate and initialize the bar with zero*/
+      braid_VectorBar mybar = (braid_VectorBar)malloc(sizeof(braid_Vector)+sizeof(int));
+      mybar->useCount = 1;
+      _braid_CoreFcn(core, init)(app, _braid_CoreElt(core, tstart), &(mybar->userVector));
+      _braid_CoreFcn(core, sum)(app, -1.0, mybar->userVector, 1.0, mybar->userVector);
+      u->bar = mybar;
    }
 
    /* Record to the tape */
@@ -421,18 +421,18 @@ _braid_BaseBufUnpack(braid_Core core,
       action->core          = core;
       action->send_recv_rank = _braid_CoreElt(core, send_recv_rank);
       action->myid           = _braid_CoreElt(core, myid);
-      _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
+      _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
 
-      /* Copy and push the adjoint pointer to the adjoint tape */
-      braid_Adjoint adjoint_copy;
-      _braid_AdjointCopy(u->adjoint, &adjoint_copy);
-      _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy);
+      /* Copy and push the bar pointer to the bar tape */
+      braid_VectorBar bar_copy;
+      _braid_VectorBarCopy(u->bar, &bar_copy);
+      _braid_CoreElt(core, barTape) = _braid_TapePush(_braid_CoreElt(core, barTape), bar_copy);
     }
 
   /* Debug: */
-//    printf("Init adjoint, useCount: %d, adjoint value: ", u->adjoint->useCount);
+//    printf("Init bar, useCount: %d, bar value: ", u->bar->useCount);
 //   braid_AccessStatus astatus = (braid_AccessStatus) core;
-//   _braid_CoreFcn(core, access)(app, u->adjoint->userVector, astatus);
+//   _braid_CoreFcn(core, access)(app, u->bar->userVector, astatus);
 
   
    *u_ptr = u;
@@ -451,7 +451,7 @@ _braid_BaseObjectiveT(braid_Core core,
 {
    if (_braid_CoreElt(core, verbose)) printf("%d: OBJECTIVET\n", _braid_CoreElt(core, myid));
 
-   /* if adjoint: Record to the tape */
+   /* if bar: Record to the tape */
    if ( _braid_CoreElt(core, record) )
    {
       /* Set up and push the action */
@@ -462,30 +462,30 @@ _braid_BaseObjectiveT(braid_Core core,
       action->inTime        = _braid_CoreElt(core, t);
       action->myid          = _braid_CoreElt(core, myid);
       // printf("ACCESS push\n");
-      _braid_CoreElt(core, actiontape) = _braid_TapePush( _braid_CoreElt(core, actiontape) , action);
+      _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
 
       /* Push a copy of the primal vector to the primal tape */
       braid_Vector u_copy;
-      _braid_CoreFcn(core, clone)(app, u->primal, &u_copy);  // this will accolate memory for the copy!
-      _braid_CoreElt(core, primaltape) = _braid_TapePush( _braid_CoreElt(core, primaltape), u_copy);
+      _braid_CoreFcn(core, clone)(app, u->userVector, &u_copy);  // this will accolate memory for the copy!
+      _braid_CoreElt(core, userVectorTape) = _braid_TapePush( _braid_CoreElt(core, userVectorTape), u_copy);
 
-      /* Push a copy of the adjoint vector to the adjoint tape */
-      braid_Adjoint adjoint_copy;
-      _braid_AdjointCopy(u->adjoint, &adjoint_copy);
-      _braid_CoreElt(core, adjointtape) = _braid_TapePush(_braid_CoreElt(core, adjointtape), adjoint_copy);
+      /* Push a copy of the bar vector to the bar tape */
+      braid_VectorBar bar_copy;
+      _braid_VectorBarCopy(u->bar, &bar_copy);
+      _braid_CoreElt(core, barTape) = _braid_TapePush(_braid_CoreElt(core, barTape), bar_copy);
 
       /* Debug info: */
-      // printf("OBJT pushes primal: ");
-      // _braid_CoreFcn(core, access)(app, u->primal, (braid_AccessStatus) status);
+      // printf("OBJT pushes userVector: ");
+      // _braid_CoreFcn(core, access)(app, u->userVector, (braid_AccessStatus) status);
 
    }
 
    /* Call the users objective function */
-   _braid_CoreFcn(core, objectiveT)(app, u->primal, astatus, objT_ptr);
+   _braid_CoreFcn(core, objectiveT)(app, u->userVector, astatus, objT_ptr);
 
 
    /* Debug */
-      // printf("ObjT pushes %p\n", u->adjoint);
+      // printf("ObjT pushes %p\n", u->bar);
 
    return 0;
 }
@@ -502,7 +502,7 @@ _braid_BaseResidual(braid_Core core,
    if (_braid_CoreElt(core, verbose)) printf("RESIDUAL\n");
 
       /* Call the users Residual function */
-   _braid_CoreFcn(core, residual)(app, ustop->primal, r->primal, status);
+   _braid_CoreFcn(core, residual)(app, ustop->userVector, r->userVector, status);
 
    return 0;
 }
@@ -519,7 +519,7 @@ _braid_BaseSCoarsen(braid_Core core,
       braid_BaseVector cu = (braid_BaseVector)malloc(sizeof(braid_BaseVector));
 
       /* Call the users SCoarsen Function */
-      _braid_CoreFcn(core, scoarsen)(app, fu->primal, &(cu->primal), status);
+      _braid_CoreFcn(core, scoarsen)(app, fu->userVector, &(cu->userVector), status);
 
       *cu_ptr = cu;
 
@@ -537,7 +537,7 @@ _braid_BaseSRefine(braid_Core core,
       braid_BaseVector fu = (braid_BaseVector)malloc(sizeof(braid_BaseVector));
 
       /* Call the users SRefine */
-      _braid_CoreFcn(core, srefine)(app, cu->primal, &(fu->primal), status);
+      _braid_CoreFcn(core, srefine)(app, cu->userVector, &(fu->userVector), status);
 
       *fu_ptr = fu;
 
@@ -554,7 +554,7 @@ _braid_BaseSInit(braid_Core core,
       braid_BaseVector u = (braid_BaseVector)malloc(sizeof(braid_BaseVector));
 
       /* Call the users SInit */
-      _braid_CoreFcn(core, sinit)(app, t, &(u->primal));
+      _braid_CoreFcn(core, sinit)(app, t, &(u->userVector));
 
       *u_ptr = u;
 
@@ -571,7 +571,7 @@ _braid_BaseSClone(braid_Core core,
       braid_BaseVector v = (braid_BaseVector)malloc(sizeof(braid_BaseVector));
 
       /* Call the users SClone */
-      _braid_CoreFcn(core, sclone)(app, u->primal, &(v->primal));
+      _braid_CoreFcn(core, sclone)(app, u->userVector, &(v->userVector));
 
       *v_ptr = v;
 
@@ -586,7 +586,7 @@ _braid_BaseSFree(braid_Core core,
                     )
 {
       /* Call the users sfree */
-      _braid_CoreFcn(core, sfree)(app, u->primal);
+      _braid_CoreFcn(core, sfree)(app, u->userVector);
 
       free(u);
 
@@ -630,34 +630,34 @@ _braid_BaseStep_diff(_braid_Action *action)
       if (_braid_CoreElt(core, verbose)) printf("%d: STEP_DIFF\n", _braid_CoreElt(core, myid));
 
       /* Get the braid_vector that was used in primal run */
-      braid_Vector primal;
-      primal = (braid_Vector) (_braid_CoreElt(core, primaltape)->data_ptr);
+      braid_Vector userVector;
+      userVector = (braid_Vector) (_braid_CoreElt(core, userVectorTape)->data_ptr);
 
 
-      /* Pop the adjoint vector from the tape*/
-      braid_Adjoint      adjoint;
-      adjoint = (braid_Adjoint) (_braid_CoreElt(core, adjointtape)->data_ptr);
-      _braid_CoreElt(core, adjointtape) = _braid_TapePop( _braid_CoreElt(core, adjointtape) );
+      /* Pop the bar vector from the tape*/
+      braid_VectorBar      bar;
+      bar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
+      _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
       /* DEBUG: Display the vector */
-      // printf("STEP adjoint pops from the primal tape\n");
-      // _braid_CoreFcn(core, access)(_braid_CoreElt(core, app), primal, astatus );
-      // printf("Step pops %p\n", adjoint);
+      // printf("STEP bar pops from the primal tape\n");
+      // _braid_CoreFcn(core, access)(_braid_CoreElt(core, app), userVector, astatus );
+      // printf("Step pops %p\n", bar);
 
       /* Trigger the status with the correct tstart and tstop*/
       _braid_StatusElt(status, t)     = inTime;
       _braid_StatusElt(status, tnext) = outTime;
 
       /* Call the users's differentiated step function */
-      _braid_CoreFcn(core, step_diff)(_braid_CoreElt(core, app), primal, adjoint->userVector, status);
+      _braid_CoreFcn(core, step_diff)(_braid_CoreElt(core, app), userVector, bar->userVector, status);
 
 
-      /* Decrease the useCount of the adjoint and pop the adjoint from the adjoint tape */
-      _braid_AdjointDelete(core, adjoint);
+      /* Decrease the useCount of the bar and pop the bar from the bar tape */
+      _braid_VectorBarDelete(core, bar);
 
       /* Delete memory of the primal vector and pop it from the primal tape*/
-      _braid_CoreFcn(core, free)(_braid_CoreElt(core, app), primal);
-      _braid_CoreElt(core, primaltape) = _braid_TapePop( _braid_CoreElt(core, primaltape) );
+      _braid_CoreFcn(core, free)(_braid_CoreElt(core, app), userVector);
+      _braid_CoreElt(core, userVectorTape) = _braid_TapePop( _braid_CoreElt(core, userVectorTape) );
 
       return 0;
 }
@@ -673,32 +673,32 @@ _braid_BaseClone_diff(_braid_Action *action)
       
       if (_braid_CoreElt(core, verbose)) printf("%d: CLONE_DIFF\n", _braid_CoreElt(core, myid));
 
-      /* Pop the adjoint vectors from the tape */
-      braid_Adjoint v_adjoint;
-      braid_Adjoint u_adjoint;
+      /* Pop the bar vectors from the tape */
+      braid_VectorBar v_bar;
+      braid_VectorBar u_bar;
 
-      v_adjoint = (braid_Adjoint) (_braid_CoreElt(core, adjointtape)->data_ptr);
-      _braid_CoreElt(core, adjointtape) = _braid_TapePop( _braid_CoreElt(core, adjointtape) );
+      v_bar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
+      _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
-      u_adjoint = (braid_Adjoint) (_braid_CoreElt(core, adjointtape)->data_ptr);
-      _braid_CoreElt(core, adjointtape) = _braid_TapePop( _braid_CoreElt(core, adjointtape) );
+      u_bar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
+      _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
       // /* DEBUG: Display the vector */
-      // printf("Clone pops v %p\n", v_adjoint);
-      // printf("Clone pops u %p\n", u_adjoint);
+      // printf("Clone pops v %p\n", v_bar);
+      // printf("Clone pops u %p\n", u_bar);
 
 
-      /* Perform the adjoint action :
+      /* Perform the bar action :
       *  ub += vb
       *  vb  = 0.0
       */
-      _braid_CoreFcn(core, sum)(_braid_CoreElt(core,app),1.0, v_adjoint->userVector,  1.0, u_adjoint->userVector);
-      _braid_CoreFcn(core, sum)(_braid_CoreElt(core,app),1.0, v_adjoint->userVector, -1.0, v_adjoint->userVector);
+      _braid_CoreFcn(core, sum)(_braid_CoreElt(core,app),1.0, v_bar->userVector,  1.0, u_bar->userVector);
+      _braid_CoreFcn(core, sum)(_braid_CoreElt(core,app),1.0, v_bar->userVector, -1.0, v_bar->userVector);
 
 
-      /* Decrease the useCount of the adjoint */
-      _braid_AdjointDelete(core, u_adjoint);
-      _braid_AdjointDelete(core, v_adjoint);
+      /* Decrease the useCount of the bar */
+      _braid_VectorBarDelete(core, u_bar);
+      _braid_VectorBarDelete(core, v_bar);
 
  
 
@@ -723,30 +723,30 @@ _braid_BaseSum_diff(_braid_Action *action)
 
    if (_braid_CoreElt(core, verbose)) printf("%d: SUM_DIFF\n", _braid_CoreElt(core, myid));
 
-   /* Pop the adjoint vectors from the tape */
-   braid_Adjoint y_adjoint;
-   braid_Adjoint x_adjoint;
+   /* Pop the bar vectors from the tape */
+   braid_VectorBar y_bar;
+   braid_VectorBar x_bar;
 
-   y_adjoint = (braid_Adjoint) (_braid_CoreElt(core, adjointtape)->data_ptr);
-   _braid_CoreElt(core, adjointtape) = _braid_TapePop( _braid_CoreElt(core, adjointtape) );
+   y_bar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
+   _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
-   x_adjoint = (braid_Adjoint) (_braid_CoreElt(core, adjointtape)->data_ptr);
-   _braid_CoreElt(core, adjointtape) = _braid_TapePop( _braid_CoreElt(core, adjointtape) );
+   x_bar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
+   _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
    /*DEBUG*/
-      // printf("SUM pops y %p\n", y_adjoint);
-      // printf("SUM pops x %p\n", x_adjoint);
+      // printf("SUM pops y %p\n", y_bar);
+      // printf("SUM pops x %p\n", x_bar);
 
-   /* Perform the adjoint action: 
+   /* Perform the bar action: 
    *  xb += alpha * yb
    *  yb  = beta  * yb
    */
-   _braid_CoreFcn(core, sum)(_braid_CoreElt(core, app), alpha, y_adjoint->userVector,  1.0, x_adjoint->userVector);
-   _braid_CoreFcn(core, sum)(_braid_CoreElt(core, app),   0.0, x_adjoint->userVector, beta, y_adjoint->userVector);
+   _braid_CoreFcn(core, sum)(_braid_CoreElt(core, app), alpha, y_bar->userVector,  1.0, x_bar->userVector);
+   _braid_CoreFcn(core, sum)(_braid_CoreElt(core, app),   0.0, x_bar->userVector, beta, y_bar->userVector);
 
-   /* Decrease the useCount of the adjoint */
-   _braid_AdjointDelete(core, y_adjoint);
-   _braid_AdjointDelete(core, x_adjoint);
+   /* Decrease the useCount of the bar */
+   _braid_VectorBarDelete(core, y_bar);
+   _braid_VectorBarDelete(core, x_bar);
 
 
    return 0;
@@ -768,27 +768,27 @@ _braid_BaseObjectiveT_diff(_braid_Action *action)
       if (_braid_CoreElt(core, verbose)) printf("%d: OBJT_DIFF\n", _braid_CoreElt(core, myid));
 
       /* Pop the primal vector that was used in primal access function */
-      braid_Vector  primal;
-      primal = (braid_Vector) (_braid_CoreElt(core, primaltape)->data_ptr);
-      _braid_CoreElt(core, primaltape) = _braid_TapePop( _braid_CoreElt(core, primaltape) );
+      braid_Vector  userVector;
+      userVector = (braid_Vector) (_braid_CoreElt(core, userVectorTape)->data_ptr);
+      _braid_CoreElt(core, userVectorTape) = _braid_TapePop( _braid_CoreElt(core, userVectorTape) );
 
-      /* Pop the adjoint vector from the tape*/
-      braid_Adjoint      adjoint;
-      adjoint = (braid_Adjoint) (_braid_CoreElt(core, adjointtape)->data_ptr);
-      _braid_CoreElt(core, adjointtape) = _braid_TapePop( _braid_CoreElt(core, adjointtape) );
+      /* Pop the bar vector from the tape*/
+      braid_VectorBar      bar;
+      bar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
+      _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
 
-      // printf("ObjT pops u %p\n", adjoint);
+      // printf("ObjT pops u %p\n", bar);
       
      /* Call the users's differentiated objective function */
       braid_Real f_bar = _braid_CoreElt(core, optim)->f_bar;
-      _braid_CoreFcn(core, objT_diff)(_braid_CoreElt(core, app), primal, adjoint->userVector, f_bar, astatus);
+      _braid_CoreFcn(core, objT_diff)(_braid_CoreElt(core, app), userVector, bar->userVector, f_bar, astatus);
 
       /* Free memory of the primal Vector and pop it from the tape */
-      _braid_CoreFcn(core, free)(_braid_CoreElt(core, app), primal);
+      _braid_CoreFcn(core, free)(_braid_CoreElt(core, app), userVector);
 
-      /* Decrease the useCount of the adjoint and pop the adjoint from the adjoint tape */
-      _braid_AdjointDelete(core, adjoint);
+      /* Decrease the useCount of the bar and pop the bar from the bar tape */
+      _braid_VectorBarDelete(core, bar);
 
 
       return 0;
@@ -803,7 +803,7 @@ _braid_BaseBufPack_diff(_braid_Action *action, braid_App app)
       void       *buffer;
       braid_Vector u;
       braid_BufferStatus bstatus;
-      braid_Adjoint      adjoint;
+      braid_VectorBar      bar;
 
       /* Grab information from the action */
       core           = action->core;
@@ -811,9 +811,9 @@ _braid_BaseBufPack_diff(_braid_Action *action, braid_App app)
 
       if (_braid_CoreElt(core, verbose)) printf("%d: BUFPACK_DIFF\n", _braid_CoreElt(core, myid));
 
-      /* Pop the adjoint vector from the tape*/
-      adjoint = (braid_Adjoint) (_braid_CoreElt(core, adjointtape)->data_ptr);
-      _braid_CoreElt(core, adjointtape) = _braid_TapePop( _braid_CoreElt(core, adjointtape) );
+      /* Pop the bar vector from the tape*/
+      bar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
+      _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
 
       /* Allocate buffer through the user routine */
@@ -823,26 +823,27 @@ _braid_BaseBufPack_diff(_braid_Action *action, braid_App app)
       buffer = malloc(size);
 
       /* Receive the buffer 
-       * TODO: Add CommHandle or some status check!!
+       * TODO: Add CommHandle / status check!!
+       * WHY blocking Recv ? 
        */
       // MPI_Request *requests;
       // requests = _braid_CTAlloc(MPI_Request, 1);
       // MPI_Irecv(buffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), &requests[0]); 
+      // MPI_Request_free(requests);
       MPI_Recv(buffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), MPI_STATUS_IGNORE); 
-      // MPI_Request_free(&requests);
 
       /* Unpack the buffer (this allocates memory for a braid_Vector */
       _braid_CoreFcn(core, bufunpack)(_braid_CoreElt(core, app), buffer, &u, bstatus);
 
-      /* Update the adjoint  */
-      _braid_CoreFcn(core, sum)(_braid_CoreElt(core, app), 1., u, 1., adjoint->userVector);
+      /* Update the bar  */
+      _braid_CoreFcn(core, sum)(_braid_CoreElt(core, app), 1., u, 1., bar->userVector);
 
       /*DEBUG */
       // printf("%d: bufunpack_diff recvs ", _braid_CoreElt(core, myid));
-      // _braid_CoreFcn(core, access)(app, adjoint->userVector, NULL);      
+      // _braid_CoreFcn(core, access)(app, bar->userVector, NULL);      
 
-      /* Decrease the useCount of the adjoint and pop the adjoint from the adjoint tape */
-      _braid_AdjointDelete(core, adjoint);
+      /* Decrease the useCount of the bar and pop the bar from the bar tape */
+      _braid_VectorBarDelete(core, bar);
 
       /* Free memory */
       free(buffer);
@@ -855,7 +856,7 @@ braid_Int
 _braid_BaseBufUnpack_diff(_braid_Action *action, braid_App app)
 {
       braid_Real         send_recv_rank;
-      braid_Adjoint      adjoint;
+      braid_VectorBar      bar;
       braid_Core         core;
       braid_BufferStatus bstatus;
       void               *buffer;
@@ -868,9 +869,9 @@ _braid_BaseBufUnpack_diff(_braid_Action *action, braid_App app)
 
       if (_braid_CoreElt(core, verbose)) printf("%d: BUFUNPACK_DIFF\n", _braid_CoreElt(core, myid));
 
-      /* Pop the adjoint vector from the tape*/
-      adjoint = (braid_Adjoint) (_braid_CoreElt(core, adjointtape)->data_ptr);
-      _braid_CoreElt(core, adjointtape) = _braid_TapePop( _braid_CoreElt(core, adjointtape) );
+      /* Pop the bar vector from the tape*/
+      bar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
+      _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
      /* Allocate buffer through the user routine */
       bstatus = (braid_BufferStatus) core;
@@ -878,15 +879,13 @@ _braid_BaseBufUnpack_diff(_braid_Action *action, braid_App app)
       _braid_CoreFcn(core, bufsize)(_braid_CoreElt(core, app), &size, bstatus);
       buffer = malloc(size); 
 
-      /* Pack the buffer with the adjoint variable */
-      _braid_CoreFcn(core, bufpack)(_braid_CoreElt(core, app), adjoint->userVector, buffer, bstatus);
+      /* Pack the buffer with the bar variable */
+      _braid_CoreFcn(core, bufpack)(_braid_CoreElt(core, app), bar->userVector, buffer, bstatus);
 
       /*DEBUG */
       // printf("%d: bufunpack_diff isends ", _braid_CoreElt(core, myid));
-      // _braid_CoreFcn(core, access)(app, adjoint->userVector, NULL);      
+      // _braid_CoreFcn(core, access)(app, bar->userVector, NULL);      
 
-      /* TODO: Check the status of the recv!*/
-      /* Also: Why MPI_Recv but MPI_Isend? (blocking / non-blocking) Bug? */
       /* Send the buffer  */
       requests = _braid_CTAlloc(MPI_Request, 1);
       MPI_Isend(buffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), &requests[0]);
@@ -894,11 +893,11 @@ _braid_BaseBufUnpack_diff(_braid_Action *action, braid_App app)
 
       
       /* Set ubar to zero */
-      _braid_CoreFcn(core, sum)(app, -1., adjoint->userVector, 1., adjoint->userVector );
+      _braid_CoreFcn(core, sum)(app, -1., bar->userVector, 1., bar->userVector );
 
 
-      /* Decrease the useCount of the adjoint and pop the adjoint from the adjoint tape */
-      _braid_AdjointDelete(core, adjoint);
+      /* Decrease the useCount of the bar and pop the bar from the bar tape */
+      _braid_VectorBarDelete(core, bar);
 
 
       return 0;

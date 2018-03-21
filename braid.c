@@ -464,12 +464,12 @@ braid_Drive(braid_Core  core)
    /* Set initial values */
    _braid_InitGuess(core, 0);
 
+
+   /* if adjoint: initialize the optimization structure */
    if (_braid_CoreElt(core, adjoint))
    {
-      /* Initialize the optimization structure */
       _braid_OptimInit( core, grid, &optim);
       _braid_CoreElt(core, optim) = optim; 
-      
    }
 
    /* Initialize cycle state */
@@ -575,10 +575,10 @@ braid_Drive(braid_Core  core)
             nlevels = _braid_CoreElt(core, nlevels);
 
 
-            /*--- Evaluate the adjoint sensitivities ---*/
+            /* If adjoint: evaluate the adjoint sensitivities */
             if (_braid_CoreElt(core,adjoint))
             {
-               /* Compute and print the time-averaged objective function. */
+               /* Compute and print the time-averaged objective function */
                localobjective = _braid_CoreElt(core, optim)->objective;
                MPI_Allreduce(&localobjective, &globalobjective, 1, braid_MPI_REAL, MPI_SUM, comm_world);
                _braid_CoreElt(core, optim)->objective = globalobjective / ( ntime + 1 );
@@ -610,10 +610,10 @@ braid_Drive(braid_Core  core)
 
             if (_braid_CoreElt(core, adjoint))
             {
-               /* Access the gradient (this involves a MPI_Allreduce call) */
+               /* Access the gradient (this involves an MPI_Allreduce call) */
                _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
 
-               /* Reset adjoint for the next iteration */ 
+               /* Prepare for the next iteration */ 
                _braid_TapeResetInput(core);
                _braid_CoreElt(core, optim)->objective = 0.0;
                _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
@@ -630,6 +630,7 @@ braid_Drive(braid_Core  core)
    if (_braid_CoreElt(core, adjoint))
    {
       _braid_CoreElt(core, record) = 0;
+
       if (_braid_CoreElt(core, verbose))
       {
         printf("\nStop recording\n\n"); 
@@ -676,7 +677,7 @@ braid_Drive(braid_Core  core)
       /* Evaluate (and clear) the action tape */
       _braid_TapeEvaluate(core);
 
-      /* Access the gradient (this involves a MPI_Allreduce call) */
+      /* Access the gradient (this involves an MPI_Allreduce call) */
       _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
 
    }
@@ -824,9 +825,9 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, adjoint)         = adjoint;
    _braid_CoreElt(core, record)          = record;
    _braid_CoreElt(core, verbose)         = verbose;
-   _braid_CoreElt(core, actiontape)      = NULL;
-   _braid_CoreElt(core, primaltape)      = NULL;
-   _braid_CoreElt(core, adjointtape)     = NULL;
+   _braid_CoreElt(core, actionTape)      = NULL;
+   _braid_CoreElt(core, userVectorTape)      = NULL;
+   _braid_CoreElt(core, barTape)     = NULL;
    _braid_CoreElt(core, optim)           = NULL;
    _braid_CoreElt(core, step_diff)       = NULL;
    _braid_CoreElt(core, objT_diff)       = NULL;
@@ -885,9 +886,9 @@ braid_Init_Adjoint(braid_PtFcnObjectiveT      objectiveT,
   _braid_CoreElt(*core_ptr, skip) = 0;
 
    /* Initialize the tapes */
-   _braid_TapeInit( _braid_CoreElt(*core_ptr,actiontape) );
-   _braid_TapeInit( _braid_CoreElt(*core_ptr,primaltape) );
-   _braid_TapeInit( _braid_CoreElt(*core_ptr,adjointtape) );
+   _braid_TapeInit( _braid_CoreElt(*core_ptr, actionTape) );
+   _braid_TapeInit( _braid_CoreElt(*core_ptr, userVectorTape) );
+   _braid_TapeInit( _braid_CoreElt(*core_ptr, barTape) );
 
 
    /* Additional user functions */

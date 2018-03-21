@@ -346,33 +346,33 @@ typedef braid_Int
  * Differentiated time-stepping routine 
  **/
 typedef braid_Int
-(*braid_PtFcnStepDiff)(braid_App        app,    /**< user-defined _braid_App structure */
+(*braid_PtFcnStepDiff)(braid_App        app,      /**< user-defined _braid_App structure */
                      //  braid_Vector     ustop,  /**< input, u vector at *tstop* */
                      //  braid_Vector     fstop,  /**< input, right-hand-side at *tstop* */
-                      braid_Vector     u_primal, /**< primal vector */
-                      braid_Vector     u_adjoint, /**< adjoint vector */
-                      braid_StepStatus status  /**< query this struct for info about u (e.g., tstart and tstop), allows for steering (e.g., set rfactor) */ 
-                   );
+                       braid_Vector     u,         /**< primal vector */
+                       braid_Vector     u_bar,     /**< adjoint vector */
+                       braid_StepStatus status     /**< query this struct for info about u (e.g., tstart and tstop), allows for steering (e.g., set rfactor) */ 
+                      );
 
 /**
  * Differentiated objective at time t 
  **/
 typedef braid_Int
-(*braid_PtFcnObjectiveTDiff)(braid_App           app,              /**< user-defined _braid_App structure */
-                        braid_Vector    u_primal,         /**< primal vector */
-                        braid_Vector    u_adjoint,        /**< adjoint vector */
-                        braid_Real      f_bar,            /**< Contains the AD-seed */
-                        braid_AccessStatus  status            /**< can be querried for info like the current XBraid Iteration */
-                     );
+(*braid_PtFcnObjectiveTDiff)(braid_App          app,       /**< user-defined _braid_App structure */
+                             braid_Vector       u,         /**< primal vector */
+                             braid_Vector       u_bar,     /**< adjoint vector */
+                             braid_Real         f_bar,     /**< contains the AD-seed for the costfunction */
+                             braid_AccessStatus status     /**< can be querried for info like the current XBraid Iteration */
+                            );
 
 /**
  * Evaluate the local objective function at time t 
  **/
 typedef braid_Int
 (*braid_PtFcnObjectiveT)(braid_App           app,              /**< user-defined _braid_App structure */
-                        braid_Vector    u_primal,             /**< primal vector */
-                        braid_AccessStatus  status,            /**< can be querried for info about the current time */
-                        braid_Real          *objectiveT_ptr    /**< output: objective function f(u(t)) at current time */
+                         braid_Vector        u,                /**< primal vector */
+                         braid_AccessStatus  status,           /**< can be querried for info about the current time */
+                         braid_Real         *objectiveT_ptr    /**< output: objective function f(u(t)) at current time */
                         );
 
 
@@ -380,8 +380,7 @@ typedef braid_Int
  * Set the gradient to zero
  */
 typedef braid_Int
-(*braid_PtFcnResetGradient)(braid_App   app              /**< user-defined _braid_App structure */
-                           );      
+(*braid_PtFcnResetGradient)(braid_App app );             /**< user-defined _braid_App structure */
 
 
 /**
@@ -390,8 +389,7 @@ typedef braid_Int
  * This routine must involve a MPI_Allreduce call for collecting gradient information from all time-processors. 
  */
 typedef braid_Int
-(*braid_PtFcnAccessGradient)(braid_App   app              /**< user-defined _braid_App structure */
-                            );      
+(*braid_PtFcnAccessGradient)(braid_App app );              /**< user-defined _braid_App structure */
 
 
 /** @}*/
@@ -863,7 +861,7 @@ braid_Init_Adjoint( braid_PtFcnObjectiveT      objT,            /**< Evaluate th
                     braid_PtFcnResetGradient   reset_gradient,  /**< Set the gradient to zero */
                     braid_PtFcnAccessGradient  access_gradient, /**< Access the gradient for output or optimization */
                     braid_Core                *core_ptr         /**< Pointer to braid_Core (_braid_Core) struct */   
-           );
+                  );
 
 
 /**

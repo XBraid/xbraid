@@ -260,12 +260,12 @@ my_ObjectiveT(braid_App          app,
 
 
 int
-my_Step_diff(braid_App        app,
+my_Step_diff(braid_App              app,
                 // braid_Vector     ustop,
                 // braid_Vector     fstop,
-                braid_Vector       u_primal,
-                braid_Vector       u_adjoint,
-                braid_StepStatus   status)
+                braid_Vector        u,
+                braid_Vector        u_bar,
+                braid_StepStatus    status)
 {
 
    /* Get time that has been used in primal step evaluation  */
@@ -278,14 +278,14 @@ my_Step_diff(braid_App        app,
    /* Grab the design from the app */
    double lambda = app->design;
 
-   /* Partial derivative with respect to u times u_adjoint */
-   du = 1./(1. - lambda * deltat) * (u_adjoint->value);
+   /* Partial derivative with respect to u times u_bar */
+   du = 1./(1. - lambda * deltat) * (u_bar->value);
  
-   /* Partial derivative with respect to design times u_adjoint */
-   ddesign = (deltat * (u_primal->value)) / pow(1. - deltat*lambda,2) * (u_adjoint->value);
+   /* Partial derivative with respect to design times u_bar */
+   ddesign = (deltat * (u->value)) / pow(1. - deltat*lambda,2) * (u_bar->value);
 
-   /* Update adjoint and gradient */
-   u_adjoint->value  = du;              // Make sure to do "=" here, not "+="! 
+   /* Update u_bar and gradient */
+   u_bar->value      = du;              // Make sure to do "=" here, not "+="! 
    app->gradient    += ddesign;
 
 
@@ -294,22 +294,22 @@ my_Step_diff(braid_App        app,
 
 
 int
-my_ObjectiveT_diff(braid_App          app,
-                  braid_Vector       u_primal,
-                  braid_Vector       u_adjoint,
+my_ObjectiveT_diff(braid_App         app,
+                  braid_Vector       u,
+                  braid_Vector       u_bar,
                   braid_Real         f_bar,
                   braid_AccessStatus astatus)
 {
    double du, ddesign; 
 
    /* Partial derivative with respect to u times f_bar */
-   du = 2. * u_primal->value * f_bar;
+   du = 2. * u->value * f_bar;
 
    /* Partial derivative with respect to design times f_bar*/
    ddesign = 0.0 * f_bar;
 
-   /* Update adjoint and gradient */
-   u_adjoint->value += du;
+   /* Update u_bar and gradient */
+   u_bar->value += du;
    app->gradient    += ddesign;
 
    return 0;

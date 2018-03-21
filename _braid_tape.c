@@ -90,25 +90,25 @@ braid_Int
 _braid_TapeEvaluate(braid_Core core)
 {
    /* Get the tape */
-   _braid_Tape* actiontape = _braid_CoreElt(core, actiontape);
+   _braid_Tape* actionTape = _braid_CoreElt(core, actionTape);
 
-   while ( !_braid_TapeIsEmpty(actiontape) )
+   while ( !_braid_TapeIsEmpty(actionTape) )
    {
       /* Get the action */
-      _braid_Action* action = (_braid_Action*) actiontape->data_ptr;
+      _braid_Action* action = (_braid_Action*) actionTape->data_ptr;
 
       /* Call the differentiated action */
       _braid_DiffCall(action);
 
       /* Pop the action from the tape */
-      actiontape = _braid_TapePop( actiontape );
+      actionTape = _braid_TapePop( actionTape );
 
      /* Free memory of the action */
      free(action);
    }
   
-   /* Update the actiontape in the core */
-   _braid_CoreElt(core, actiontape) = actiontape;
+   /* Update the actionTape in the core */
+   _braid_CoreElt(core, actionTape) = actionTape;
 
    return 0;
 }
@@ -137,7 +137,7 @@ _braid_DiffCall(_braid_Action* action)
       }
       case FREE: 
       {
-         /* Do nothing */
+         /* Do nothing (memory management for bar vectors is handled by shared pointer) */
          break;
       }
       case SUM: 
@@ -147,7 +147,7 @@ _braid_DiffCall(_braid_Action* action)
       }
       case ACCESS: 
       {
-         /* Do nothing (because access is only for output!) */
+         /* Do nothing (access is only for output!) */
          break;
       }
       case BUFPACK: 
@@ -162,7 +162,6 @@ _braid_DiffCall(_braid_Action* action)
       } 
       case OBJECTIVET:
       {
-          /* TODO: Call the differentiated routine */
           _braid_BaseObjectiveT_diff(action);
           break;
       }
@@ -196,7 +195,7 @@ _braid_TapeSetSeed(braid_Core core)
       _braid_UGetVectorRef(core, 0, ic, &u_out);
 
       /* Set the seed using the optimization adjoints */
-      _braid_CoreFcn(core, sum)(app, 1.0, optim->adjoints[iclocal], 0.0, u_out->adjoint->userVector);
+      _braid_CoreFcn(core, sum)(app, 1.0, optim->adjoints[iclocal], 0.0, u_out->bar->userVector);
    }
 
    return 0;
@@ -206,16 +205,14 @@ braid_Int
 _braid_TapeResetInput(braid_Core core)
 {
    braid_BaseVector u_out;
-   braid_Adjoint    adjoint_copy;
+   braid_VectorBar    bar_copy;
    _braid_Grid     *fine_grid;
    braid_Int        clower, iupper, cfactor, iclocal, sflag, ic;
-   // braid_Optim      optim;
 
    fine_grid = _braid_CoreElt(core, grids)[0];
    clower    = _braid_GridElt(fine_grid, clower);
    iupper    = _braid_GridElt(fine_grid, iupper);
    cfactor   = _braid_GridElt(fine_grid, cfactor);
-   // optim     = _braid_CoreElt(core, optim);
   
    /* Loop over all C-points */
    for (ic=clower; ic <= iupper; ic += cfactor)
@@ -224,9 +221,9 @@ _braid_TapeResetInput(braid_Core core)
       _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
       _braid_UGetVectorRef(core, 0, ic, &u_out);
 
-      /* Copy a pointer to its adjoint to the tapeinput vector */
-      _braid_AdjointCopy(u_out->adjoint, &adjoint_copy );
-      _braid_CoreElt(core, optim)->tapeinput[iclocal] = adjoint_copy;
+      /* Copy a pointer to its bar to the tapeinput vector */
+      _braid_VectorBarCopy(u_out->bar, &bar_copy );
+      _braid_CoreElt(core, optim)->tapeinput[iclocal] = bar_copy;
    }
 
    return 0;
@@ -251,7 +248,7 @@ _braid_TapeResetInput(braid_Core core)
 
 //    /*--- Display the vector --*/
 //    braid_AccessStatus   astatus = (braid_AccessStatus)core;
-//    _braid_CoreFcn(core, access)(_braid_CoreElt(core, app), vector->primal, astatus );
+//    _braid_CoreFcn(core, access)(_braid_CoreElt(core, app), vector->userVector, astatus );
 // }
 
 // void
