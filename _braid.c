@@ -1817,15 +1817,21 @@ _braid_FRestrict(braid_Core   core,
    _braid_CommHandle   *recv_handle = NULL;
    _braid_CommHandle   *send_handle = NULL;
 
-   braid_Real           tstart_obj  = _braid_CoreElt(core, optim)->tstart_obj;
-   braid_Real           tstop_obj   = _braid_CoreElt(core, optim)->tstop_obj;
-
    braid_Int            c_level, c_ilower, c_iupper, c_index, c_i, c_ii;
    braid_BaseVector         c_u, *c_va, *c_fa;
 
    braid_BaseVector         u, r;
    braid_Int            interval, flo, fhi, fi, ci;
    braid_Real           rnorm, grnorm, rnorm_temp, rnm, objT_tmp;
+   braid_Real           tstart_obj, tstop_obj;
+
+   if (_braid_CoreElt(core, adjoint))
+   {
+      tstart_obj = _braid_CoreElt(core, optim)->tstart_obj;
+      tstop_obj  = _braid_CoreElt(core, optim)->tstop_obj;
+   }
+
+
 
    c_level  = level+1;
    c_ilower = _braid_GridElt(grids[c_level], ilower);

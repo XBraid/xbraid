@@ -921,8 +921,11 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
 
       /* Destroy the optimization structure */
-      _braid_OptimDestroy( core );
-      _braid_TFree(_braid_CoreElt(core, optim));
+      if (_braid_CoreElt(core, adjoint))
+      {
+         _braid_OptimDestroy( core );
+         _braid_TFree(_braid_CoreElt(core, optim));
+      }
       
       for (level = 0; level < nlevels; level++)
       {

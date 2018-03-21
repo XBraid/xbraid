@@ -207,13 +207,13 @@ _braid_TapeResetInput(braid_Core core)
    braid_Adjoint    adjoint_copy;
    _braid_Grid     *fine_grid;
    braid_Int        clower, iupper, cfactor, iclocal, sflag, ic;
-   braid_Optim      optim;
+   // braid_Optim      optim;
 
    fine_grid = _braid_CoreElt(core, grids)[0];
    clower    = _braid_GridElt(fine_grid, clower);
    iupper    = _braid_GridElt(fine_grid, iupper);
    cfactor   = _braid_GridElt(fine_grid, cfactor);
-   optim     = _braid_CoreElt(core, optim);
+   // optim     = _braid_CoreElt(core, optim);
   
    /* Loop over all C-points */
    for (ic=clower; ic <= iupper; ic += cfactor)
