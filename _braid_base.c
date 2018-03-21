@@ -21,7 +21,7 @@ _braid_BaseStep(braid_Core       core,
 
     if (_braid_CoreElt(core, verbose)) 
     {
-       printf("STEP pushes %p\n", u->adjoint);
+       printf("%d: STEP pushes %p\n",_braid_CoreElt(core, myid), u->adjoint);
       // _braid_CoreFcn(core, access)( app, u->adjoint->userVector, NULL );
     }
 
@@ -77,7 +77,7 @@ _braid_BaseInit(braid_Core core,
                 braid_BaseVector  *u_ptr
                 )
 {
-   if (_braid_CoreElt(core, verbose)) printf("INIT\n");
+   if (_braid_CoreElt(core, verbose)) printf("%d INIT\n", _braid_CoreElt(core, myid));
 
    /* Allocate memory for the braid_BaseVector */
    braid_BaseVector u = (braid_BaseVector)malloc(sizeof(braid_Vector)+sizeof(braid_Adjoint));
@@ -137,7 +137,7 @@ _braid_BaseClone(braid_Core core,
                  )
 {
 
-   if (_braid_CoreElt(core, verbose)) printf("CLONE\n");
+   if (_braid_CoreElt(core, verbose)) printf("%d: CLONE\n",_braid_CoreElt(core, myid));
 
    /* Allocate memory for the braid_BaseVector */
    braid_BaseVector v = (braid_BaseVector)malloc(sizeof(braid_Vector)+sizeof(braid_Adjoint));
@@ -197,7 +197,7 @@ _braid_BaseFree(braid_Core core,
                 )
 {
 
-   if (_braid_CoreElt(core, verbose)) printf("FREE\n");
+   if (_braid_CoreElt(core, verbose)) printf("%d: FREE\n",_braid_CoreElt(core, myid));
    /*Debug: */
 //    _braid_CoreFcn(core, access)( app, u->adjoint->userVector, NULL );
 
@@ -246,7 +246,7 @@ _braid_BaseSum(braid_Core core,
                braid_BaseVector  y       
                )
 {
-   if (_braid_CoreElt(core, verbose)) printf("SUM\n");
+   if (_braid_CoreElt(core, verbose)) printf("%d: SUM\n",_braid_CoreElt(core, myid));
 
    /* if adjoint: Record to the tape */
    if ( _braid_CoreElt(core, record) )
@@ -304,7 +304,7 @@ _braid_BaseAccess(braid_Core core,
                   braid_AccessStatus  status 
                   )
 {
-   if (_braid_CoreElt(core, verbose)) printf("ACCESS\n");
+   if (_braid_CoreElt(core, verbose)) printf("%d: ACCESS\n",_braid_CoreElt(core, myid));
 
    /* if adjoint: Record to the tape */
    if ( _braid_CoreElt(core, record) )
@@ -355,7 +355,7 @@ _braid_BaseBufPack(braid_Core core,
                    braid_BufferStatus  status     
                    )
 {
-   if (_braid_CoreElt(core, verbose)) printf("BUFPACK\n");
+   if (_braid_CoreElt(core, verbose)) printf("%d: BUFPACK\n", _braid_CoreElt(core, myid) );
 
       /* if adjoint: Record to the tape */
    if ( _braid_CoreElt(core, record) )
@@ -391,7 +391,7 @@ _braid_BaseBufUnpack(braid_Core core,
                      braid_BufferStatus   status  
                      )
 {
-   if (_braid_CoreElt(core, verbose)) printf("BUFUNPACK\n");
+   if (_braid_CoreElt(core, verbose)) printf("%d: BUFUNPACK\n", _braid_CoreElt(core, myid));
 
    /* Allocate memory for the braid_BaseVector */
    braid_BaseVector u = (braid_BaseVector)malloc(sizeof(braid_Vector)+sizeof(braid_Adjoint));
@@ -449,7 +449,7 @@ _braid_BaseObjectiveT(braid_Core core,
                       braid_Real *objT_ptr
                       )
 {
-   if (_braid_CoreElt(core, verbose)) printf("OBJECTIVET\n");
+   if (_braid_CoreElt(core, verbose)) printf("%d: OBJECTIVET\n", _braid_CoreElt(core, myid));
 
    /* if adjoint: Record to the tape */
    if ( _braid_CoreElt(core, record) )
@@ -613,6 +613,7 @@ _braid_BaseTimeGrid(braid_Core core,
 braid_Int
 _braid_BaseStep_diff(_braid_Action *action)
 {
+
       braid_Real        inTime;
       braid_Real        outTime;
       braid_StepStatus  status;
@@ -626,7 +627,7 @@ _braid_BaseStep_diff(_braid_Action *action)
       outTime = action->outTime;
       // myid    = action->myid;
 
-      // printf("STEP_DIFF: \n");
+      if (_braid_CoreElt(core, verbose)) printf("%d: STEP_DIFF\n", _braid_CoreElt(core, myid));
 
       /* Get the braid_vector that was used in primal run */
       braid_Vector primal;
@@ -670,7 +671,7 @@ _braid_BaseClone_diff(_braid_Action *action)
       // braid_Int         myid;
       // myid = action->myid;
       
-      if (_braid_CoreElt(core, verbose)) printf("CLONE_DIFF\n");
+      if (_braid_CoreElt(core, verbose)) printf("%d: CLONE_DIFF\n", _braid_CoreElt(core, myid));
 
       /* Pop the adjoint vectors from the tape */
       braid_Adjoint v_adjoint;
@@ -720,7 +721,7 @@ _braid_BaseSum_diff(_braid_Action *action)
    beta  = action->sum_beta;
    // myid  = action->myid;
 
-   if (_braid_CoreElt(core, verbose)) printf("SUM_DIFF\n");
+   if (_braid_CoreElt(core, verbose)) printf("%d: SUM_DIFF\n", _braid_CoreElt(core, myid));
 
    /* Pop the adjoint vectors from the tape */
    braid_Adjoint y_adjoint;
@@ -764,7 +765,7 @@ _braid_BaseObjectiveT_diff(_braid_Action *action)
 //       inTime = action->inTime;
 //       myid   = action->myid;
  
-      if (_braid_CoreElt(core, verbose)) printf("OBJT_DIFF\n");
+      if (_braid_CoreElt(core, verbose)) printf("%d: OBJT_DIFF\n", _braid_CoreElt(core, myid));
 
       /* Pop the primal vector that was used in primal access function */
       braid_Vector  primal;
@@ -808,7 +809,7 @@ _braid_BaseBufPack_diff(_braid_Action *action, braid_App app)
       core           = action->core;
       send_recv_rank = action->send_recv_rank;
 
-      if (_braid_CoreElt(core, verbose)) printf("BUFPACK_DIFF\n");
+      if (_braid_CoreElt(core, verbose)) printf("%d: BUFPACK_DIFF\n", _braid_CoreElt(core, myid));
 
       /* Pop the adjoint vector from the tape*/
       adjoint = (braid_Adjoint) (_braid_CoreElt(core, adjointtape)->data_ptr);
@@ -833,8 +834,12 @@ _braid_BaseBufPack_diff(_braid_Action *action, braid_App app)
       /* Unpack the buffer (this allocates memory for a braid_Vector */
       _braid_CoreFcn(core, bufunpack)(_braid_CoreElt(core, app), buffer, &u, bstatus);
 
-      /* Update the adjoint */
+      /* Update the adjoint  */
       _braid_CoreFcn(core, sum)(_braid_CoreElt(core, app), 1., u, 1., adjoint->userVector);
+
+      /*DEBUG */
+      // printf("%d: bufunpack_diff recvs ", _braid_CoreElt(core, myid));
+      // _braid_CoreFcn(core, access)(app, adjoint->userVector, NULL);      
 
       /* Decrease the useCount of the adjoint and pop the adjoint from the adjoint tape */
       _braid_AdjointDelete(core, adjoint);
@@ -861,7 +866,7 @@ _braid_BaseBufUnpack_diff(_braid_Action *action, braid_App app)
       core           = action->core;
       send_recv_rank = action->send_recv_rank;
 
-      if (_braid_CoreElt(core, verbose)) printf("BUFUNPACK_DIFF\n");
+      if (_braid_CoreElt(core, verbose)) printf("%d: BUFUNPACK_DIFF\n", _braid_CoreElt(core, myid));
 
       /* Pop the adjoint vector from the tape*/
       adjoint = (braid_Adjoint) (_braid_CoreElt(core, adjointtape)->data_ptr);
@@ -875,6 +880,10 @@ _braid_BaseBufUnpack_diff(_braid_Action *action, braid_App app)
 
       /* Pack the buffer with the adjoint variable */
       _braid_CoreFcn(core, bufpack)(_braid_CoreElt(core, app), adjoint->userVector, buffer, bstatus);
+
+      /*DEBUG */
+      // printf("%d: bufunpack_diff isends ", _braid_CoreElt(core, myid));
+      // _braid_CoreFcn(core, access)(app, adjoint->userVector, NULL);      
 
       /* TODO: Check the status of the recv!*/
       /* Also: Why MPI_Recv but MPI_Isend? (blocking / non-blocking) Bug? */

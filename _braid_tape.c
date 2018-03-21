@@ -192,11 +192,6 @@ _braid_TapeSetSeed(braid_Core core)
 
       /* Set the seed using the optimization adjoints */
       _braid_CoreFcn(core, sum)(app, 1.0, optim->adjoints[iclocal]->userVector, 0.0, u_out->adjoint->userVector);
-
-      /* Debug: */
-      // printf("Seeding for %d %p\n", iclocal, u_out->adjoint );
-      // _braid_CoreFcn(core, access)(app, u_out->adjoint->userVector, NULL);
-
    }
 }
 

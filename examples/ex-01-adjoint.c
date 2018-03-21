@@ -79,6 +79,7 @@ typedef struct _braid_App_struct
    double    design;        /* Store the design variables in the app */
    double    gradient;      /* Store the gradient in the app - should be of same size as design! */
    double    ntime;
+   int       myid;
 } my_App;
 
 /* Vector structure can contain anything, and be name anything as well */
@@ -327,7 +328,7 @@ my_AccessGradient(braid_App app)
    app->gradient = globalgradient;
 
    /* Print the gradient */
-   printf("Gradient: %1.14f\n", app->gradient);
+   if (app->myid==0) printf("Gradient: %1.14e\n", app->gradient);
 
    return 0;
 }
@@ -378,6 +379,7 @@ int main (int argc, char *argv[])
    (app->design)   = design;
    (app->gradient) = gradient;
    (app->ntime)    = ntime;
+   app->myid       = rank;
 
    /* initialize XBraid and set options */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
