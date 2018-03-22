@@ -82,6 +82,8 @@ _braid_OptimInit( braid_Core  core,
    braid_Int ntime, ncpoints, clower, iupper, cfactor, sflag, iclocal, ic;
    braid_BaseVector u;
    braid_VectorBar bar_copy;
+   braid_Vector mybar;
+   
    ncpoints  = _braid_GridElt(fine_grid, ncpoints);
    clower    = _braid_GridElt(fine_grid, clower);
    iupper    = _braid_GridElt(fine_grid, iupper);
@@ -93,13 +95,13 @@ _braid_OptimInit( braid_Core  core,
    adjoints  = _braid_CTAlloc(braid_Vector, ncpoints);
    tapeinput = _braid_CTAlloc(braid_VectorBar, ncpoints);
 
+   /* Loop over all C-points */
    for (ic=clower; ic <= iupper; ic += cfactor)
    {
          _braid_UGetVectorRef(core, 0, ic, &u);
          _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
 
          /* Initialize optimization adjoints with zeros */
-         braid_Vector mybar;
          _braid_CoreFcn(core, init)(_braid_CoreElt(core, app), _braid_CoreElt(core, tstart), &mybar);
          _braid_CoreFcn(core, sum)(_braid_CoreElt(core, app), -1.0, mybar, 1.0, mybar);
          adjoints[iclocal] = mybar;
@@ -109,12 +111,12 @@ _braid_OptimInit( braid_Core  core,
          tapeinput[iclocal] = bar_copy;
    }
 
-   /* Set the (default) optimization variables */
+   /* Set the some optimization variables */
    optim->adjoints   = adjoints;
    optim->tapeinput  = tapeinput;
    optim->objective  = 0.0;
-   optim->tstart_obj = _braid_CoreElt(core, tstart);
-   optim->tstop_obj  = _braid_CoreElt(core, tstop);
+   optim->tstart_obj = _braid_CoreElt(core, tstart);     /* default value */
+   optim->tstop_obj  = _braid_CoreElt(core, tstop);      /* default value */
    optim->f_bar      = 1. / (ntime + 1);
    optim->rnorm_adj  = -1.;
 

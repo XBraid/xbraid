@@ -173,9 +173,9 @@ braid_Int
 _braid_BaseObjectiveT_diff(_braid_Action *action);
 
 braid_Int
-_braid_BaseBufPack_diff(_braid_Action *action, braid_App app);
+_braid_BaseBufPack_diff(_braid_Action *action);
 
 braid_Int
-_braid_BaseBufUnpack_diff(_braid_Action *action, braid_App app);
+_braid_BaseBufUnpack_diff(_braid_Action *action);
 
 #endif

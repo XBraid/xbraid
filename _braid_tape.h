@@ -132,26 +132,6 @@ _braid_TapeSetSeed(braid_Core core);
 braid_Int 
 _braid_TapeResetInput(braid_Core core);
 
-
-// /**
-//  * Display function for a _braid_action
-//  * Input: Pointer to an action 
-//  */
-// void
-// _braid_TapeDisplayAction(braid_Core core,void* data_ptr);
-
-// /**
-//  * Display function for a _braid_vector
-//  * Input: Pointer to a _braid_Vector
-//  */
-// void
-// _braid_TapeDisplayPrimal(braid_Core core,void* data_ptr);
-
-
-// void
-// _braid_TapeDisplayInt(braid_Core core,void* data_ptr);
-
-
 /**
  * Return the name of a _braid_Call (action name)
  */
