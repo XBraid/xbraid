@@ -445,7 +445,7 @@ braid_Int
 _braid_BaseObjectiveT(braid_Core core,
                       braid_App  app,
                       braid_BaseVector u,
-                      braid_AccessStatus astatus,
+                      braid_Real t,
                       braid_Real *objT_ptr
                       )
 {
@@ -458,8 +458,7 @@ _braid_BaseObjectiveT(braid_Core core,
       _braid_Action* action = _braid_CTAlloc(_braid_Action, 1);
       action->braidCall     = OBJECTIVET;
       action->core          = core;
-      action->status        = (braid_Status) astatus;
-      action->inTime        = _braid_CoreElt(core, t);
+      action->inTime        = t;
       action->myid          = _braid_CoreElt(core, myid);
       // printf("ACCESS push\n");
       _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
@@ -481,7 +480,7 @@ _braid_BaseObjectiveT(braid_Core core,
    }
 
    /* Call the users objective function */
-   _braid_CoreFcn(core, objectiveT)(app, u->userVector, astatus, objT_ptr);
+   _braid_CoreFcn(core, objectiveT)(app, u->userVector, t, objT_ptr);
 
 
    /* Debug */
@@ -760,9 +759,8 @@ _braid_BaseObjectiveT_diff(_braid_Action *action)
 //       braid_Int     myid;
 
       /* Grab information from the app */
-      braid_Core core            = action->core;
-      braid_AccessStatus astatus = (braid_AccessStatus) action->status;
-//       inTime = action->inTime;
+      braid_Core core   = action->core;
+      braid_Int  inTime = action->inTime;
 //       myid   = action->myid;
  
       if (_braid_CoreElt(core, verbose)) printf("%d: OBJT_DIFF\n", _braid_CoreElt(core, myid));
@@ -782,7 +780,7 @@ _braid_BaseObjectiveT_diff(_braid_Action *action)
       
      /* Call the users's differentiated objective function */
       braid_Real f_bar = _braid_CoreElt(core, optim)->f_bar;
-      _braid_CoreFcn(core, objT_diff)(_braid_CoreElt(core, app), userVector, bar->userVector, f_bar, astatus);
+      _braid_CoreFcn(core, objT_diff)(_braid_CoreElt(core, app), userVector, bar->userVector, f_bar, inTime);
 
       /* Free memory of the primal Vector and pop it from the tape */
       _braid_CoreFcn(core, free)(_braid_CoreElt(core, app), userVector);

@@ -98,7 +98,7 @@ braid_Int
 _braid_BaseObjectiveT(braid_Core core,
                       braid_App  app,
                       braid_BaseVector u,
-                      braid_AccessStatus astatus,
+                      braid_Real t,
                       braid_Real *objT_ptr
                       );
 

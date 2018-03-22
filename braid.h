@@ -362,7 +362,7 @@ typedef braid_Int
                              braid_Vector       u,         /**< primal vector */
                              braid_Vector       u_bar,     /**< adjoint vector */
                              braid_Real         f_bar,     /**< contains the AD-seed for the costfunction */
-                             braid_AccessStatus status     /**< can be querried for info like the current XBraid Iteration */
+                             braid_Real         t                /**< current time */
                             );
 
 /**
@@ -371,7 +371,7 @@ typedef braid_Int
 typedef braid_Int
 (*braid_PtFcnObjectiveT)(braid_App           app,              /**< user-defined _braid_App structure */
                          braid_Vector        u,                /**< primal vector */
-                         braid_AccessStatus  status,           /**< can be querried for info about the current time */
+                         braid_Real          t,                /**< current time */
                          braid_Real         *objectiveT_ptr    /**< output: objective function f(u(t)) at current time */
                         );
 

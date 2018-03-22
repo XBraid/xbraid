@@ -1883,7 +1883,7 @@ _braid_FRestrict(braid_Core   core,
             {
               _braid_AccessStatusInit(ta[fi-f_ilower], fi, rnm, iter, level, nrefine, gupper,
                                        0, 0, braid_ASCaller_FRestrict, astatus);
-              _braid_BaseObjectiveT(core, app, r, astatus, &objT_tmp);
+              _braid_BaseObjectiveT(core, app, r, ta[fi-f_ilower], &objT_tmp);
 
               /* Add to the time-averaged objective function */
               _braid_CoreElt(core, optim)->objective += objT_tmp;
@@ -1910,7 +1910,7 @@ _braid_FRestrict(braid_Core   core,
             _braid_UGetVectorRef(core, level, ci, &u);
             _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper,
                                     0, 0, braid_ASCaller_FRestrict, astatus);
-            _braid_BaseObjectiveT(core, app, u, astatus, &objT_tmp);
+            _braid_BaseObjectiveT(core, app, u, ta[ci-f_ilower], &objT_tmp);
 
             /* Add to the time-averaged objective function */
            //  printf("%d: %f: %f\n",_braid_CoreElt(core, myid), ta[ci-f_ilower], objT_tmp);
@@ -3056,7 +3056,7 @@ _braid_FAccess(braid_Core     core,
             if (_braid_CoreElt(core, max_levels <=1) && _braid_CoreElt(core, adjoint)) 
             {
               /* Evaluate the user's local objective function at FPoints on finest grid */
-              _braid_BaseObjectiveT(core, app, u, astatus, &objT_tmp);
+              _braid_BaseObjectiveT(core, app, u, ta[fi-ilower], &objT_tmp);
               /* Add to the time-averaged objective function */
               // printf("OBJT at %f: %1.14f\n", ta[fi-ilower], objT_tmp  );
               _braid_CoreElt(core, optim)->objective += objT_tmp;
@@ -3078,7 +3078,7 @@ _braid_FAccess(braid_Core     core,
             if (_braid_CoreElt(core, max_levels <=1) && _braid_CoreElt(core, adjoint)) 
             {
               /* Evaluate the user's local objective function at FPoints on finest grid */
-              _braid_BaseObjectiveT(core, app, u, astatus, &objT_tmp);
+              _braid_BaseObjectiveT(core, app, u, ta[ci-ilower], &objT_tmp);
               // printf("OBJT at %f: %1.14f\n", ta[ci-ilower], objT_tmp  );
               /* Add to the time-averaged objective function */
               _braid_CoreElt(core, optim)->objective += objT_tmp;
