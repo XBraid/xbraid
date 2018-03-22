@@ -861,6 +861,15 @@ _braid_UpdateAdjoint(braid_Core core,
                      braid_Real *rnorm_adj_ptr);
 
 
+/**
+ * Evaluate the user's local objective function at time t and add it to the time-averaged objective function
+ */
+braid_Int
+_braid_AddToObjective(braid_Core core, 
+                      braid_BaseVector u, 
+                      braid_Real t);
+
+
 #ifdef __cplusplus
 }
 #endif
