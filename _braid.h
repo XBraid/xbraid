@@ -70,7 +70,8 @@ typedef struct _braid_BaseVector_struct *braid_BaseVector;
  */
 struct _braid_Optimization_struct
 {
-  braid_Real     objective;        /**< time-averaged objective function */
+  braid_Real     timeavg;          /**< time-averaged objective function */
+  braid_Real     objective;        /**< objective function of the optimization problem. Postprocess of time-averaged objective */
   braid_Real     tstart_obj;       /**< time for starting the time-average of the objective  function */
   braid_Real     tstop_obj;        /**< time for stopping the time-average of the objective  function */
   braid_Real     f_bar;            /**< contains the seed for tape evaluation */
@@ -232,6 +233,8 @@ typedef struct _braid_Core_struct
    braid_PtFcnObjectiveT       objectiveT;       /**< User function: evaluate objective function at time t */
    braid_PtFcnResetGradient    reset_gradient;   /**< User function: Set the gradient to zero. Is called before each iteration */
    braid_PtFcnAccessGradient   access_gradient;  /**< User function: Access the gradient for output or optimization. This involves MPI_Allreduce! */
+   braid_PtFcnPostprocessObjective postprocess_obj; /**< Optional user function: Further modify the time-averaged objective function, e.g. for inverse design problems, adding relaxation term etc. */
+   braid_PtFcnPostprocessObjective_diff postprocess_obj_diff; /**< Optional user function: Differentiated version of the postprocessing function  */
 
    /* Differentiated user functions */
    braid_PtFcnStepDiff         step_diff;        /**< User function: apply differentiated step function */

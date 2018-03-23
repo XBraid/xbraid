@@ -375,6 +375,26 @@ typedef braid_Int
                          braid_Real         *objectiveT_ptr    /**< output: objective function f(u(t)) at current time */
                         );
 
+/**
+ * This function can be used to postprocess the time-averaged objective function 
+ * E.g. for inverse design problems: Choose a tracking-type objective function and/or add relaxation term
+ **/
+typedef braid_Int
+(*braid_PtFcnPostprocessObjective)(braid_App    app,              /**< user-defined _braid_App structure */
+                                   braid_Real   objT_avg,         /**< Time-averaged objective function */
+                                   braid_Real  *post_ptr    /**< output: Postprocessed objective, e.g. tracking type function */
+                                   );
+
+/**
+ * Differentiated Postprocessing function 
+ **/
+typedef braid_Int
+(*braid_PtFcnPostprocessObjective_diff)(braid_App    app,              /**< user-defined _braid_App structure */
+                                        braid_Real   objT_avg,         /**< Time-averaged objective function */
+                                        braid_Real  *objT_avg_bar    /**< output: derivative of postprocessing objective */
+                                   );
+
+
 
 /**
  * Set the gradient to zero
@@ -902,6 +922,22 @@ braid_GetTStopTimeaverage(braid_Core core,
 braid_Int
 braid_SetVerbosity(braid_Core  core,
                     braid_Int   verbose);
+
+/**
+ * Set the postprocessing objective function 
+ **/
+braid_Int
+braid_SetPostprocessObjective(braid_Core                      core,     /**< braid_Core (_braid_Core) struct*/
+                              braid_PtFcnPostprocessObjective post_fcn  /**< function pointer to postprocessing routine */
+                              ); 
+
+/**
+ * Set the differentiated postprocessing objective function 
+ **/
+braid_Int
+braid_SetPostprocessObjective_diff(braid_Core                           core,     /**< braid_Core (_braid_Core) struct*/
+                                   braid_PtFcnPostprocessObjective_diff post_fcn_diff  /**< function pointer to postprocessing routine */
+                                   ); 
 
 
                           

@@ -80,6 +80,10 @@ typedef struct _braid_App_struct
    double    gradient;      /* Store the gradient in the app - should be of same size as design! */
    double    ntime;
    int       myid;
+
+   double    target;       /* Target for tracking type objective function (inverse design) */
+   double    relax;        /* Relaxation parameter for the tracking type objective function */
+
 } my_App;
 
 /* Vector structure can contain anything, and be name anything as well */
@@ -247,7 +251,7 @@ int
 my_ObjectiveT(braid_App          app,
               braid_Vector       u,
               braid_Real         t, 
-              double             *objectiveT_ptr)
+              double            *objectiveT_ptr)
 {
    /* f(u(t),lambda) = u(t)**2 */
    double objT = (u->value) * (u->value);
@@ -257,6 +261,42 @@ my_ObjectiveT(braid_App          app,
    return 0;
 }
 
+int
+my_PostprocessObjective(braid_App   app,
+                        braid_Real  objective,
+                        double     *postprocess
+                        )
+{
+   double J;
+
+   /* Tracking-type function */
+   J  = 1./2. * pow(objective - app->target,2);
+   /* Regularization term */
+   J += + 1./2. * (app->relax) * pow(app->design,2);
+
+   *postprocess = J;
+
+   return 0;
+}
+
+int
+my_PostprocessObjective_diff(braid_App   app,
+                             braid_Real  objective,
+                             double     *objective_bar
+                             )
+{
+   double J_bar;
+
+   /* Derivative of tracking type function */
+   J_bar = objective - app->target;
+
+   /* Derivative of regularization term */
+   app->design = (app->relax) * (app->design);
+
+   *objective_bar= J_bar;
+
+   return 0;
+}
 
 
 int
@@ -356,6 +396,8 @@ int main (int argc, char *argv[])
    int           ntime, rank;
    double        design; 
    double        gradient;
+   double        target;
+   double        relax;
 
    /* Define time domain: ntime intervals */
    ntime  = 10;
@@ -365,6 +407,8 @@ int main (int argc, char *argv[])
    /* Initialize optimization */
    design   = -1.0;
    gradient = 0.0;
+   target   = 0.3;
+   relax    = 0.0005;
 
    /* DEBUG gradient */
    // design += 1e-8;
@@ -380,6 +424,8 @@ int main (int argc, char *argv[])
    (app->gradient) = gradient;
    (app->ntime)    = ntime;
    app->myid       = rank;
+   app->target     = target;
+   app->relax      = relax;
 
    /* initialize XBraid and set options */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
@@ -403,6 +449,9 @@ int main (int argc, char *argv[])
 //    braid_SetTStartTimeaverage( core, 1.0);
 //    braid_SetTStopTimeaverage( core, tstop);
 
+   /* Optional: Set the tracking type objective function and derivative */
+   braid_SetPostprocessObjective(core, my_PostprocessObjective);
+   braid_SetPostprocessObjective_diff(core, my_PostprocessObjective_diff);
 
    /* Run simulation, and then clean up */
    braid_Drive(core);

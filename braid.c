@@ -421,7 +421,7 @@ braid_Drive(braid_Core  core)
    braid_Real    *ta;
    _braid_Grid   *grid;
    braid_Real     localtime, globaltime;
-   braid_Real     localobjective, globalobjective;
+   braid_Real     localtimeavg, globaltimeavg;
    braid_Optim    optim;
    braid_Real     rnorm_adj;
 
@@ -574,15 +574,25 @@ braid_Drive(braid_Core  core)
             _braid_FRefine(core, &refined);
             nlevels = _braid_CoreElt(core, nlevels);
 
-
-            /* If adjoint: evaluate the adjoint sensitivities */
             if (_braid_CoreElt(core,adjoint))
             {
-               /* Compute and print the time-averaged objective function */
-               localobjective = _braid_CoreElt(core, optim)->objective;
-               MPI_Allreduce(&localobjective, &globalobjective, 1, braid_MPI_REAL, MPI_SUM, comm_world);
-               _braid_CoreElt(core, optim)->objective = globalobjective / ( ntime + 1 );
-               
+               /* Compute the time-averaged objective function */
+               localtimeavg = _braid_CoreElt(core, optim)->timeavg;
+               MPI_Allreduce(&localtimeavg, &globaltimeavg, 1, braid_MPI_REAL, MPI_SUM, comm_world);
+               _braid_CoreElt(core, optim)->timeavg = globaltimeavg / ( ntime + 1 );
+
+                /* Compute the postprocess objective function, if set */
+               if (_braid_CoreElt(core, postprocess_obj) != NULL)
+               {
+                  braid_Real posttmp;
+                  _braid_CoreFcn(core, postprocess_obj) (_braid_CoreElt(core, app), _braid_CoreElt(core, optim)->timeavg, &posttmp);
+                  _braid_CoreElt(core, optim)->objective = posttmp;
+               }
+               else
+               {
+                  _braid_CoreElt(core, optim)->objective = _braid_CoreElt(core, optim)->timeavg ;
+               }
+              
                /* Set the adjoint seed at coarse points on level 0 */
                _braid_TapeSetSeed(core);
 
@@ -616,6 +626,7 @@ braid_Drive(braid_Core  core)
                /* Prepare for the next iteration */ 
                _braid_TapeResetInput(core);
                _braid_CoreElt(core, optim)->objective = 0.0;
+               _braid_CoreElt(core, optim)->timeavg   = 0.0;
                _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
             }
 
@@ -662,17 +673,30 @@ braid_Drive(braid_Core  core)
    }
 
    /* Allow final access to Braid by carrying out an F-relax to generate points */
-   // _braid_FAccess(core, 0, 1);
+   _braid_FAccess(core, 0, 1);
 
 
    /* If sequential time-marching, evaluate the tape */
    if (max_levels <= 1 && _braid_CoreElt(core, adjoint))
    {
       /* Compute the time-averaged objective function. */
-      localobjective = _braid_CoreElt(core, optim)->objective;
-      MPI_Allreduce(&localobjective, &globalobjective, 1, braid_MPI_REAL, MPI_SUM, comm_world);
-      _braid_CoreElt(core, optim)->objective = globalobjective / ( ntime + 1 );
+      localtimeavg = _braid_CoreElt(core, optim)->timeavg;
+      MPI_Allreduce(&localtimeavg, &globaltimeavg, 1, braid_MPI_REAL, MPI_SUM, comm_world);
+      _braid_CoreElt(core, optim)->timeavg= globaltimeavg / ( ntime + 1 );
+
+      /* Compute the postprocess objective function, if set */
+      if (_braid_CoreElt(core, postprocess_obj) != NULL)
+      {
+         braid_Real posttmp;
+         _braid_CoreFcn(core, postprocess_obj) (_braid_CoreElt(core, app), _braid_CoreElt(core, optim)->timeavg, &posttmp);
+         _braid_CoreElt(core, optim)->objective = posttmp;
+      }
+      else
+      {
+         _braid_CoreElt(core, optim)->objective = _braid_CoreElt(core, optim)->timeavg ;
+      }
       printf("  Objective = %1.14e\n", _braid_CoreElt(core, optim)->objective);
+
 
       /* Evaluate (and clear) the action tape */
       _braid_TapeEvaluate(core);
@@ -822,19 +846,20 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, skip)            = skip;
 
-   _braid_CoreElt(core, adjoint)         = adjoint;
-   _braid_CoreElt(core, record)          = record;
-   _braid_CoreElt(core, verbose)         = verbose;
-   _braid_CoreElt(core, actionTape)      = NULL;
-   _braid_CoreElt(core, userVectorTape)      = NULL;
-   _braid_CoreElt(core, barTape)     = NULL;
-   _braid_CoreElt(core, optim)           = NULL;
-   _braid_CoreElt(core, step_diff)       = NULL;
-   _braid_CoreElt(core, objT_diff)       = NULL;
-   _braid_CoreElt(core, objectiveT)      = NULL;
-   _braid_CoreElt(core, reset_gradient)  = NULL;
-   _braid_CoreElt(core, access_gradient) = NULL;
-
+   _braid_CoreElt(core, adjoint)              = adjoint;
+   _braid_CoreElt(core, record)               = record;
+   _braid_CoreElt(core, verbose)              = verbose;
+   _braid_CoreElt(core, actionTape)           = NULL;
+   _braid_CoreElt(core, userVectorTape)       = NULL;
+   _braid_CoreElt(core, barTape)              = NULL;
+   _braid_CoreElt(core, optim)                = NULL;
+   _braid_CoreElt(core, step_diff)            = NULL;
+   _braid_CoreElt(core, objT_diff)            = NULL;
+   _braid_CoreElt(core, objectiveT)           = NULL;
+   _braid_CoreElt(core, reset_gradient)       = NULL;
+   _braid_CoreElt(core, access_gradient)      = NULL;
+   _braid_CoreElt(core, postprocess_obj)      = NULL;
+   _braid_CoreElt(core, postprocess_obj_diff) = NULL;
    
    /* Residual history and accuracy tracking for StepStatus*/
    _braid_CoreElt(core, rnorm0)              = braid_INVALID_RNORM;
@@ -1702,5 +1727,24 @@ braid_SetVerbosity(braid_Core  core,
 {
    _braid_CoreElt(core, verbose) = verbose;
 
+   return _braid_error_flag;
+}
+
+
+braid_Int
+braid_SetPostprocessObjective(braid_Core                      core,     
+                              braid_PtFcnPostprocessObjective post_fcn )
+{
+   _braid_CoreElt(core, postprocess_obj) = post_fcn;
+
+   return _braid_error_flag;
+}                            
+
+braid_Int
+braid_SetPostprocessObjective_diff(braid_Core                           core,         
+                                   braid_PtFcnPostprocessObjective_diff post_fcn_diff )
+{
+
+   _braid_CoreElt(core, postprocess_obj_diff) = post_fcn_diff;
    return _braid_error_flag;
 }

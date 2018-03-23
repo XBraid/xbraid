@@ -91,7 +91,7 @@ _braid_OptimInit( braid_Core  core,
    ntime     = _braid_CoreElt(core, ntime);
 
    /* Allocate memory for the optimization structure */
-   optim = (braid_Optim)malloc(5*sizeof(braid_Real) + sizeof(braid_VectorBar) + sizeof(braid_Vector));
+   optim = (braid_Optim)malloc(6*sizeof(braid_Real) + sizeof(braid_VectorBar) + sizeof(braid_Vector));
    adjoints  = _braid_CTAlloc(braid_Vector, ncpoints);
    tapeinput = _braid_CTAlloc(braid_VectorBar, ncpoints);
 
@@ -115,6 +115,7 @@ _braid_OptimInit( braid_Core  core,
    optim->adjoints   = adjoints;
    optim->tapeinput  = tapeinput;
    optim->objective  = 0.0;
+   optim->timeavg    = 0.0;
    optim->tstart_obj = _braid_CoreElt(core, tstart);     /* default value */
    optim->tstop_obj  = _braid_CoreElt(core, tstop);      /* default value */
    optim->f_bar      = 1. / (ntime + 1);
@@ -250,7 +251,7 @@ _braid_AddToObjective(braid_Core core,
      _braid_BaseObjectiveT(core, app, u, t, &objT_tmp);
 
      /* Add to the time-averaged objective function */
-     _braid_CoreElt(core, optim)->objective += objT_tmp;
+     _braid_CoreElt(core, optim)->timeavg += objT_tmp;
    }
 
    return 0;
