@@ -296,7 +296,6 @@ braid_Int
 _braid_EvalObjective_diff(braid_Core core)
 {
    braid_Real timeavg_bar;
-   braid_Real f_bar;
    braid_Int ntime    = _braid_CoreElt(core, ntime);
    braid_Real timeavg = _braid_CoreElt(core, optim)->timeavg;
    braid_App app      = _braid_CoreElt(core, app);
@@ -312,9 +311,14 @@ _braid_EvalObjective_diff(braid_Core core)
    }
 
    /* Differentiate the time average */
-   f_bar = 1./ (ntime+1) * timeavg_bar;
-   
-   _braid_CoreElt(core, optim)->f_bar = f_bar;
+   _braid_CoreElt(core, optim)->f_bar = 1./ (ntime+1) * timeavg_bar;
+
+
+   /* Reset the gradient on all but one processor (one should hold the differentiated relaxation term) */
+   if (_braid_CoreElt(core, myid) != 0)
+   {
+      _braid_CoreFcn(core, reset_gradient)(app);
+   }
 
    return 0;
 }

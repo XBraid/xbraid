@@ -281,22 +281,19 @@ my_PostprocessObjective(braid_App   app,
 
 int
 my_PostprocessObjective_diff(braid_App   app,
-                             braid_Real  objective,
-                             double     *objective_bar
+                             braid_Real  timeavg,
+                             double     *timeavg_bar
                              )
 {
    double J_bar;
 
    /* Derivative of tracking type function */
-   J_bar = objective - app->target;
+   J_bar = timeavg - app->target;
 
    /* Derivative of regularization term */
-   if (app->myid == 0)
-   {
-      app->gradient = (app->relax) * (app->design);
-   }
+   app->gradient = (app->relax) * (app->design);
 
-   *objective_bar= J_bar;
+   *timeavg_bar= J_bar;
 
    return 0;
 }
@@ -352,8 +349,8 @@ my_ObjectiveT_diff(braid_App         app,
    ddesign = 0.0 * f_bar;
 
    /* Update u_bar and gradient */
-   u_bar->value += du;
-   app->gradient    += ddesign;
+   u_bar->value  += du;
+   app->gradient += ddesign;
 
    return 0;
 }
@@ -414,7 +411,7 @@ int main (int argc, char *argv[])
    relax    = 0.0005;
 
    /* DEBUG gradient */
-   design += 1e-8;
+   // design += 1e-8;
    
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
