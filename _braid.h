@@ -868,10 +868,23 @@ _braid_UpdateAdjoint(braid_Core core,
  * Evaluate the user's local objective function at time t and add it to the time-averaged objective function
  */
 braid_Int
-_braid_AddToObjective(braid_Core core, 
+_braid_AddToTimeavg(braid_Core core, 
                       braid_BaseVector u, 
                       braid_Real t);
 
+/**
+ * Evaluate the objective function :
+ * MPI_Allreduce the time average and postprocess the objective 
+ */
+braid_Int
+_braid_EvalObjective(braid_Core core);
+
+
+/** 
+ * Differentiated objective function 
+ */
+braid_Int
+_braid_EvalObjective_diff(braid_Core core);
 
 #ifdef __cplusplus
 }

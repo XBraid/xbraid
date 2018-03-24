@@ -421,7 +421,6 @@ braid_Drive(braid_Core  core)
    braid_Real    *ta;
    _braid_Grid   *grid;
    braid_Real     localtime, globaltime;
-   braid_Real     localtimeavg, globaltimeavg;
    braid_Optim    optim;
    braid_Real     rnorm_adj;
 
@@ -576,23 +575,12 @@ braid_Drive(braid_Core  core)
 
             if (_braid_CoreElt(core,adjoint))
             {
-               /* Compute the time-averaged objective function */
-               localtimeavg = _braid_CoreElt(core, optim)->timeavg;
-               MPI_Allreduce(&localtimeavg, &globaltimeavg, 1, braid_MPI_REAL, MPI_SUM, comm_world);
-               _braid_CoreElt(core, optim)->timeavg = globaltimeavg / ( ntime + 1 );
+               /* Compute the objective function */
+               _braid_EvalObjective(core);
 
-                /* Compute the postprocess objective function, if set */
-               if (_braid_CoreElt(core, postprocess_obj) != NULL)
-               {
-                  braid_Real posttmp;
-                  _braid_CoreFcn(core, postprocess_obj) (_braid_CoreElt(core, app), _braid_CoreElt(core, optim)->timeavg, &posttmp);
-                  _braid_CoreElt(core, optim)->objective = posttmp;
-               }
-               else
-               {
-                  _braid_CoreElt(core, optim)->objective = _braid_CoreElt(core, optim)->timeavg ;
-               }
-              
+               /* Compute differentiated objective function */
+               _braid_EvalObjective_diff(core);
+             
                /* Set the adjoint seed at coarse points on level 0 */
                _braid_TapeSetSeed(core);
 
@@ -677,27 +665,16 @@ braid_Drive(braid_Core  core)
 
 
    /* If sequential time-marching, evaluate the tape */
-   if (max_levels <= 1 && _braid_CoreElt(core, adjoint))
+   if (_braid_CoreElt(core, adjoint) && max_levels <= 1 )
    {
-      /* Compute the time-averaged objective function. */
-      localtimeavg = _braid_CoreElt(core, optim)->timeavg;
-      MPI_Allreduce(&localtimeavg, &globaltimeavg, 1, braid_MPI_REAL, MPI_SUM, comm_world);
-      _braid_CoreElt(core, optim)->timeavg= globaltimeavg / ( ntime + 1 );
 
-      /* Compute the postprocess objective function, if set */
-      if (_braid_CoreElt(core, postprocess_obj) != NULL)
-      {
-         braid_Real posttmp;
-         _braid_CoreFcn(core, postprocess_obj) (_braid_CoreElt(core, app), _braid_CoreElt(core, optim)->timeavg, &posttmp);
-         _braid_CoreElt(core, optim)->objective = posttmp;
-      }
-      else
-      {
-         _braid_CoreElt(core, optim)->objective = _braid_CoreElt(core, optim)->timeavg ;
-      }
-      printf("  Objective = %1.14e\n", _braid_CoreElt(core, optim)->objective);
-
-
+      /* Compute the objective function */
+      _braid_EvalObjective(core);
+      _braid_printf("Braid: Obj = %1.14e\n", _braid_CoreElt(core, optim)->objective);
+             
+      /* Compute differentiated objective function */
+      _braid_EvalObjective_diff(core);
+      
       /* Evaluate (and clear) the action tape */
       _braid_TapeEvaluate(core);
 

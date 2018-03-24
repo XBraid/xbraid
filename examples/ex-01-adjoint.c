@@ -291,7 +291,10 @@ my_PostprocessObjective_diff(braid_App   app,
    J_bar = objective - app->target;
 
    /* Derivative of regularization term */
-   app->design = (app->relax) * (app->design);
+   if (app->myid == 0)
+   {
+      app->gradient = (app->relax) * (app->design);
+   }
 
    *objective_bar= J_bar;
 
@@ -411,7 +414,7 @@ int main (int argc, char *argv[])
    relax    = 0.0005;
 
    /* DEBUG gradient */
-   // design += 1e-8;
+   design += 1e-8;
    
    /* Initialize MPI */
    MPI_Init(&argc, &argv);

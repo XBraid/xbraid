@@ -79,7 +79,7 @@ _braid_OptimInit( braid_Core  core,
    braid_Optim optim;
    braid_Vector  *adjoints  = NULL; 
    braid_VectorBar *tapeinput = NULL; 
-   braid_Int ntime, ncpoints, clower, iupper, cfactor, sflag, iclocal, ic;
+   braid_Int ncpoints, clower, iupper, cfactor, sflag, iclocal, ic;
    braid_BaseVector u;
    braid_VectorBar bar_copy;
    braid_Vector mybar;
@@ -88,7 +88,6 @@ _braid_OptimInit( braid_Core  core,
    clower    = _braid_GridElt(fine_grid, clower);
    iupper    = _braid_GridElt(fine_grid, iupper);
    cfactor   = _braid_GridElt(fine_grid, cfactor);
-   ntime     = _braid_CoreElt(core, ntime);
 
    /* Allocate memory for the optimization structure */
    optim = (braid_Optim)malloc(6*sizeof(braid_Real) + sizeof(braid_VectorBar) + sizeof(braid_Vector));
@@ -118,7 +117,7 @@ _braid_OptimInit( braid_Core  core,
    optim->timeavg    = 0.0;
    optim->tstart_obj = _braid_CoreElt(core, tstart);     /* default value */
    optim->tstop_obj  = _braid_CoreElt(core, tstop);      /* default value */
-   optim->f_bar      = 1. / (ntime + 1);
+   optim->f_bar      = 0.0;
    optim->rnorm_adj  = -1.;
 
    *optim_ptr = optim;
@@ -236,7 +235,7 @@ _braid_UpdateAdjoint(braid_Core core,
 }
 
 braid_Int
-_braid_AddToObjective(braid_Core core, 
+_braid_AddToTimeavg(braid_Core core, 
                       braid_BaseVector u, 
                       braid_Real t)
 {
@@ -257,6 +256,68 @@ _braid_AddToObjective(braid_Core core,
    return 0;
 }
 
+braid_Int
+_braid_EvalObjective(braid_Core core)
+{
+   braid_Real localtimeavg, globaltimeavg, posttmp;
+   braid_Real objective;
+   MPI_Comm comm      = _braid_CoreElt(core, comm);
+   braid_Int ntime    = _braid_CoreElt(core, ntime);
+   braid_App app      = _braid_CoreElt(core, app);
+   braid_Real timeavg = _braid_CoreElt(core, optim)->timeavg;
+   
+   /* Compute the global time average */
+   localtimeavg = timeavg / ( ntime + 1 );
+   MPI_Allreduce(&localtimeavg, &globaltimeavg, 1, braid_MPI_REAL, MPI_SUM, comm);
+
+    /* Compute the postprocess objective function, if set */
+   if (_braid_CoreElt(core, postprocess_obj) != NULL)
+   {
+      _braid_CoreFcn(core, postprocess_obj) (app, globaltimeavg, &posttmp);
+      objective = posttmp;
+   }
+   else
+   {
+      objective = globaltimeavg;
+   }
+
+   /* Store the timeaverage and objective function in the optim structure */
+   _braid_CoreElt(core, optim)->timeavg   = globaltimeavg;
+   _braid_CoreElt(core, optim)->objective = objective;
+
+   return 0;
+}
+
+
+/** 
+ * Differentiated objective function 
+ */
+braid_Int
+_braid_EvalObjective_diff(braid_Core core)
+{
+   braid_Real timeavg_bar;
+   braid_Real f_bar;
+   braid_Int ntime    = _braid_CoreElt(core, ntime);
+   braid_Real timeavg = _braid_CoreElt(core, optim)->timeavg;
+   braid_App app      = _braid_CoreElt(core, app);
+
+   /* Differentiate the postprocessing objective, if set */
+   if (_braid_CoreElt(core, postprocess_obj_diff != NULL))
+   {
+      _braid_CoreFcn(core, postprocess_obj_diff)(app, timeavg, &timeavg_bar);
+   }
+   else
+   {
+      timeavg_bar = 1.0;
+   }
+
+   /* Differentiate the time average */
+   f_bar = 1./ (ntime+1) * timeavg_bar;
+   
+   _braid_CoreElt(core, optim)->f_bar = f_bar;
+
+   return 0;
+}
 
 
 /*----------------------------------------------------------------------------
@@ -1894,7 +1955,7 @@ _braid_FRestrict(braid_Core   core,
          /* Evaluate the user's local objective function at FPoints on finest grid */
          if ( _braid_CoreElt(core, adjoint) && level == 0)
          {
-            _braid_AddToObjective(core, r, ta[fi-f_ilower]);
+            _braid_AddToTimeavg(core, r, ta[fi-f_ilower]);
          }
 
       }
@@ -1912,7 +1973,7 @@ _braid_FRestrict(braid_Core   core,
       if (_braid_CoreElt(core, adjoint) && level == 0 && (ci > -1) )
       {
          _braid_UGetVectorRef(core, 0, ci, &u);
-         _braid_AddToObjective(core, u, ta[ci-f_ilower]);
+         _braid_AddToTimeavg(core, u, ta[ci-f_ilower]);
       }
          
       
@@ -3053,7 +3114,7 @@ _braid_FAccess(braid_Core     core,
             if ( _braid_CoreElt(core, adjoint) && 
                  _braid_CoreElt(core, max_levels <=1) ) 
             {
-               _braid_AddToObjective(core, u, ta[fi-ilower]);
+               _braid_AddToTimeavg(core, u, ta[fi-ilower]);
             }
          }
       }
@@ -3074,7 +3135,7 @@ _braid_FAccess(braid_Core     core,
          if ( _braid_CoreElt(core, adjoint) && 
                  _braid_CoreElt(core, max_levels <=1) ) 
          {
-            _braid_AddToObjective(core, u, ta[ci-ilower]);
+            _braid_AddToTimeavg(core, u, ta[ci-ilower]);
          }
        }
    }
