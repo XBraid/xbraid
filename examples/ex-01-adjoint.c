@@ -184,26 +184,16 @@ my_Access(braid_App          app,
           braid_Vector       u,
           braid_AccessStatus astatus)
 {
-//    int        index;
-//    char       filename[255];
-//    FILE      *file;
+   int        index;
+   char       filename[255];
+   FILE      *file;
    
-//    braid_AccessStatusGetTIndex(astatus, &index);
-//    sprintf(filename, "%s.%04d.%03d", "ex-01.out", index, app->rank);
-//    file = fopen(filename, "w");
-//    fprintf(file, "%.14e\n", (u->value));
-//    fflush(file);
-//    fclose(file);
-
-   /* Debug info for adjoint */
-   // int done, level;
-   // double t;
-   // braid_AccessStatusGetLevel(astatus, &level);
-   // braid_AccessStatusGetDone(astatus, &done);
-   // braid_AccessStatusGetT(astatus, &t);
-   // printf("myaccess: %d, %1.2f, %.14e\n", level, t, (u->value) );
-
-   printf("myaccess: %.14e\n", (u->value) );
+   braid_AccessStatusGetTIndex(astatus, &index);
+   sprintf(filename, "%s.%04d.%03d", "ex-01.out", index, app->rank);
+   file = fopen(filename, "w");
+   fprintf(file, "%.14e\n", (u->value));
+   fflush(file);
+   fclose(file);
 
    return 0;
 }
@@ -263,14 +253,14 @@ my_ObjectiveT(braid_App          app,
 
 int
 my_PostprocessObjective(braid_App   app,
-                        braid_Real  objective,
+                        braid_Real  timeavg,
                         double     *postprocess
                         )
 {
    double J;
 
    /* Tracking-type function */
-   J  = 1./2. * pow(objective - app->target,2);
+   J  = 1./2. * pow(timeavg - app->target,2);
    /* Regularization term */
    J += + 1./2. * (app->relax) * pow(app->design,2);
 
@@ -400,14 +390,14 @@ int main (int argc, char *argv[])
    double        relax;
 
    /* Define time domain: ntime intervals */
-   ntime  = 10;
+   ntime  = 100;
    tstart = 0.0;
    tstop  = tstart + ntime/2.;
 
    /* Initialize optimization */
    design   = -1.0;
    gradient = 0.0;
-   target   = 0.3;
+   target   = 2.50661945043060e-01; // precomputed from design = -0.5, ntime=10
    relax    = 0.0005;
 
    /* DEBUG gradient */
@@ -445,13 +435,18 @@ int main (int argc, char *argv[])
    braid_SetVerbosity(core, 0);
    braid_SetMaxIter(core, 10);
 
+   /* debug: don't skip work on downcycle for comparison with adjoint run.*/
+   braid_SetSkip(core, 0);
+
    /* Optional: Set the time for starting time-average */
 //    braid_SetTStartTimeaverage( core, 1.0);
 //    braid_SetTStopTimeaverage( core, tstop);
 
    /* Optional: Set the tracking type objective function and derivative */
-   braid_SetPostprocessObjective(core, my_PostprocessObjective);
-   braid_SetPostprocessObjective_diff(core, my_PostprocessObjective_diff);
+   // braid_SetPostprocessObjective(core, my_PostprocessObjective);
+   // braid_SetPostprocessObjective_diff(core, my_PostprocessObjective_diff);
+
+
 
    /* Run simulation, and then clean up */
    braid_Drive(core);

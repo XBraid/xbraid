@@ -674,7 +674,7 @@ braid_Drive(braid_Core  core)
              
       /* Compute differentiated objective function */
       _braid_EvalObjective_diff(core);
-      
+
       /* Evaluate (and clear) the action tape */
       _braid_TapeEvaluate(core);
 

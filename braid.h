@@ -381,7 +381,7 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnPostprocessObjective)(braid_App    app,              /**< user-defined _braid_App structure */
-                                   braid_Real   objT_avg,         /**< Time-averaged objective function */
+                                   braid_Real   timeavg,         /**< Time-averaged objective function */
                                    braid_Real  *post_ptr    /**< output: Postprocessed objective, e.g. tracking type function */
                                    );
 
@@ -390,8 +390,8 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnPostprocessObjective_diff)(braid_App    app,              /**< user-defined _braid_App structure */
-                                        braid_Real   objT_avg,         /**< Time-averaged objective function */
-                                        braid_Real  *objT_avg_bar    /**< output: derivative of postprocessing objective */
+                                        braid_Real   timeavg,         /**< Time-averaged objective function */
+                                        braid_Real  *timeavg_bar    /**< output: derivative of postprocessing objective */
                                    );
 
 
