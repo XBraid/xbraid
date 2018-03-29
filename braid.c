@@ -642,17 +642,6 @@ braid_Drive(braid_Core  core)
       }
    }
 
-   /* Stop adjoint recording */
-   if (_braid_CoreElt(core, adjoint))
-   {
-      _braid_CoreElt(core, record) = 0;
-
-      if (_braid_CoreElt(core, verbose))
-      {
-        printf("\nStop recording\n\n"); 
-      } 
-   }
-
    /* By default, set the final residual norm to be the same as the previous */
    {
       braid_Real  rnorm;
@@ -671,14 +660,17 @@ braid_Drive(braid_Core  core)
       _braid_FRestrict(core, level);
    }
 
-   /* If sequential time-marching, record it! */
-   if (max_levels <= 1)
+   /* Stop adjoint recording, unless sequential time stepping */
+   if (max_levels > 1)
    {
-      _braid_CoreElt(core, record) = 1; 
+      _braid_CoreElt(core, record) = 0;
    }
 
    /* Allow final access to Braid by carrying out an F-relax to generate points */
    _braid_FAccess(core, 0, 1);
+
+   /* Stop adjoint recording */
+   _braid_CoreElt(core, record) = 0; 
 
 
    /* If sequential time-marching, evaluate the tape */
@@ -699,7 +691,6 @@ braid_Drive(braid_Core  core)
       _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
 
    }
-
 
    /* End cycle */
    _braid_DriveEndCycle(core, &cycle);
