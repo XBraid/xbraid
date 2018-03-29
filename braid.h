@@ -939,6 +939,14 @@ braid_SetPostprocessObjective_diff(braid_Core                           core,   
                                    braid_PtFcnPostprocessObjective_diff post_fcn_diff  /**< function pointer to postprocessing routine */
                                    ); 
 
+/**
+ * Set the adjoint residual tolerance (default is same as primal one)
+ * This is an absolute or relative stopping criterion depending on what has been chosen for the primal run. 
+ */
+braid_Int
+braid_SetTolAdj(braid_Core core,       /**< braid_Core (_braid_Core) struct */
+                braid_Real tol_adj     /**< tolerance for the adjoint residual */
+                );
 
                           
 #ifdef __cplusplus

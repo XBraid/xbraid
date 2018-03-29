@@ -221,6 +221,7 @@ typedef struct _braid_Core_struct
    braid_Real             globaltime;       /**< global wall time for braid_Drive() */
 
    /* Data for adjoint and optimization */
+   braid_Real             tol_adj;       /**< initial norm of the adjoint residual */
    braid_Int              adjoint;          /**< determines if adjoint run is performed (1) or not (0) */
    braid_Int              record;           /**< determines if actions are recorded to the tape or not */
    braid_Int              verbose;          /**< verbosity of the adjoint code */

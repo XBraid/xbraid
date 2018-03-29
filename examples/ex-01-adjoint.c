@@ -390,7 +390,7 @@ int main (int argc, char *argv[])
    double        relax;
 
    /* Define time domain: ntime intervals */
-   ntime  = 100;
+   ntime  = 10;
    tstart = 0.0;
    tstop  = tstart + ntime/2.;
 
@@ -409,13 +409,13 @@ int main (int argc, char *argv[])
    
    /* set up app structure */
    app = (my_App *) malloc(sizeof(my_App));
-   (app->rank)     = rank;
-   (app->design)   = design;
-   (app->gradient) = gradient;
-   (app->ntime)    = ntime;
-   app->myid       = rank;
-   app->target     = target;
-   app->relax      = relax;
+   app->rank      = rank;
+   app->design    = design;
+   app->gradient  = gradient;
+   app->ntime     = ntime;
+   app->myid      = rank;
+   app->target    = target;
+   app->relax     = relax;
 
    /* initialize XBraid and set options */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
@@ -446,6 +446,8 @@ int main (int argc, char *argv[])
    // braid_SetPostprocessObjective(core, my_PostprocessObjective);
    // braid_SetPostprocessObjective_diff(core, my_PostprocessObjective_diff);
 
+   /* Optional: Set the adjoint residual */
+   // braid_SetTolAdj(core, 1.0e-2);
 
 
    /* Run simulation, and then clean up */

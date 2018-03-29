@@ -245,7 +245,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
    braid_Int            tight_fine_tolx = _braid_CoreElt(core, tight_fine_tolx);
    braid_Real           rnorm, rnorm0;
-   braid_Real           rnorm_adj;
+   braid_Real           rnorm_adj, tol_adj;
 
    braid_Int            done = *done_ptr;
 
@@ -261,6 +261,13 @@ _braid_DriveCheckConvergence(braid_Core  core,
       rnorm0 = _braid_CoreElt(core, rnorm0);
    }
 
+   /* Get adjoint norm */
+   if (_braid_CoreElt(core, adjoint))
+   {
+      rnorm_adj = _braid_CoreElt(core, optim)->rnorm_adj;
+      tol_adj   = _braid_CoreElt(core, tol_adj);
+   }
+
    /* If using a relative tolerance, adjust tol */
    if (rtol)
    {
@@ -274,8 +281,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
       /* Keep iterating, if adjoint not converged yet. */
       if (_braid_CoreElt(core, adjoint))
       {
-         rnorm_adj = _braid_CoreElt(core, optim)->rnorm_adj;
-         if ( ! (rnorm_adj < tol) )
+         if ( ! (rnorm_adj < tol_adj) )
          {
             done = 0;
          }
@@ -823,6 +829,7 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, skip)            = skip;
 
+   _braid_CoreElt(core, tol_adj)              = tol;
    _braid_CoreElt(core, adjoint)              = adjoint;
    _braid_CoreElt(core, record)               = record;
    _braid_CoreElt(core, verbose)              = verbose;
@@ -1723,5 +1730,15 @@ braid_SetPostprocessObjective_diff(braid_Core                           core,
 {
 
    _braid_CoreElt(core, postprocess_obj_diff) = post_fcn_diff;
+   return _braid_error_flag;
+}
+
+
+braid_Int
+braid_SetTolAdj(braid_Core core, 
+                braid_Real tol_adj)
+{
+   _braid_CoreElt(core, tol_adj) = tol_adj;
+
    return _braid_error_flag;
 }
