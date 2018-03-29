@@ -471,6 +471,7 @@ braid_Drive(braid_Core  core)
    _braid_InitHierarchy(core, grid, 0);
    nlevels = _braid_CoreElt(core, nlevels);
 
+
    /* Set initial values */
    _braid_InitGuess(core, 0);
 
@@ -679,7 +680,10 @@ braid_Drive(braid_Core  core)
 
       /* Compute the objective function */
       _braid_EvalObjective(core);
-      _braid_printf("Braid: Obj = %1.14e\n", _braid_CoreElt(core, optim)->objective);
+      if (myid == 0)
+      {
+         _braid_printf(" Braid: Obj = %1.14e\n", _braid_CoreElt(core, optim)->objective);
+      }
              
       /* Compute differentiated objective function */
       _braid_EvalObjective_diff(core);

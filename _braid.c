@@ -97,6 +97,8 @@ _braid_OptimInit( braid_Core  core,
    /* Loop over all C-points */
    for (ic=clower; ic <= iupper; ic += cfactor)
    {
+      if( _braid_IsCPoint(ic, cfactor))
+      {
          _braid_UGetVectorRef(core, 0, ic, &u);
          _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
 
@@ -108,6 +110,7 @@ _braid_OptimInit( braid_Core  core,
          /* Initialize the tapeinput with u_bar */
          _braid_VectorBarCopy(u->bar, &bar_copy);
          tapeinput[iclocal] = bar_copy;
+      }
    }
 
    /* Set the some optimization variables */
@@ -143,9 +146,12 @@ _braid_OptimDestroy( braid_Core core)
    /* Free the adjoint variables and tapeinput */
    for (ic=clower; ic <= iupper; ic += cfactor)
    {
-      _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
-      _braid_CoreFcn(core, free)(_braid_CoreElt(core, app), optim->adjoints[iclocal]);
-      _braid_VectorBarDelete(core, optim->tapeinput[iclocal] );
+      if( _braid_IsCPoint(ic, cfactor))
+      {
+         _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
+         _braid_CoreFcn(core, free)(_braid_CoreElt(core, app), optim->adjoints[iclocal]);
+         _braid_VectorBarDelete(core, optim->tapeinput[iclocal] );
+      }
    }
    free(optim->adjoints);
    free(optim->tapeinput);
@@ -179,39 +185,41 @@ _braid_UpdateAdjoint(braid_Core core,
    /* Loop over all C-point on the fine grid */
    for (ic=clower; ic <= iupper; ic += cfactor)
    {
-
-      /* Get the local index of the C-points */
-      _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
-
-      tape_vec    = optim->tapeinput[iclocal]->userVector;  
-      adjoint_vec = optim->adjoints[iclocal];
-
-      if (ic > 0)
+      if( _braid_IsCPoint(ic, cfactor))
       {
-         /* Compute the norm of the adjoint residual */
-         _braid_CoreFcn(core, sum)(app, 1., tape_vec, -1., adjoint_vec);
-         _braid_CoreFcn(core, spatialnorm)(app, adjoint_vec, &rnorm_temp);
-         // printf(" rnorm at ic %d iclocal %d: %1.14e\n", ic, iclocal, rnorm_temp);
+         /* Get the local index of the C-points */
+         _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
 
-         if(tnorm == 1)       /* one-norm */ 
-         {  
-            rnorm_adj += rnorm_temp;
-         }
-         else if(tnorm == 3)  /* inf-norm */
-         {  
-            rnorm_adj = (((rnorm_temp) > (rnorm_adj)) ? (rnorm_temp) : (rnorm_adj));
-         }
-         else                 /* default two-norm */
-         {  
-            rnorm_adj += (rnorm_temp*rnorm_temp);
+         tape_vec    = optim->tapeinput[iclocal]->userVector;  
+         adjoint_vec = optim->adjoints[iclocal];
+
+         if (ic > 0)
+         {
+            /* Compute the norm of the adjoint residual */
+            _braid_CoreFcn(core, sum)(app, 1., tape_vec, -1., adjoint_vec);
+            _braid_CoreFcn(core, spatialnorm)(app, adjoint_vec, &rnorm_temp);
+            // printf(" rnorm at ic %d iclocal %d: %1.14e\n", ic, iclocal, rnorm_temp);
+
+            if(tnorm == 1)       /* one-norm */ 
+            {  
+               rnorm_adj += rnorm_temp;
+            }
+            else if(tnorm == 3)  /* inf-norm */
+            {  
+               rnorm_adj = (((rnorm_temp) > (rnorm_adj)) ? (rnorm_temp) : (rnorm_adj));
+            }
+            else                 /* default two-norm */
+            {  
+               rnorm_adj += (rnorm_temp*rnorm_temp);
+            }
+
+            /* Update the optimization adjoints */
+            _braid_CoreFcn(core, sum)(app, 1., tape_vec , 0., adjoint_vec);
          }
 
-         /* Update the optimization adjoints */
-         _braid_CoreFcn(core, sum)(app, 1., tape_vec , 0., adjoint_vec);
+         /* Delete the pointer */
+         _braid_VectorBarDelete(core, optim->tapeinput[iclocal]);
       }
-
-      /* Delete the pointer */
-      _braid_VectorBarDelete(core, optim->tapeinput[iclocal]);
    }
 
  

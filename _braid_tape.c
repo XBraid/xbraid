@@ -187,12 +187,15 @@ _braid_TapeSetSeed(braid_Core core)
    /* Loop over all C-points */
    for (braid_Int ic=clower; ic <= iupper; ic += cfactor)
    {
-      /* Get the vector and its local index in ua */
-      _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
-      _braid_UGetVectorRef(core, 0, ic, &u_out);
+      if( _braid_IsCPoint(ic, cfactor))
+      {
+         /* Get the vector and its local index in ua */
+         _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
+         _braid_UGetVectorRef(core, 0, ic, &u_out);
 
-      /* Set the seed using the optimization adjoints */
-      _braid_CoreFcn(core, sum)(app, 1.0, optim->adjoints[iclocal], 0.0, u_out->bar->userVector);
+         /* Set the seed using the optimization adjoints */
+         _braid_CoreFcn(core, sum)(app, 1.0, optim->adjoints[iclocal], 0.0, u_out->bar->userVector);
+      }
    }
 
    return 0;
@@ -212,13 +215,16 @@ _braid_TapeResetInput(braid_Core core)
    /* Loop over all C-points */
    for (ic=clower; ic <= iupper; ic += cfactor)
    {
-      /* Get the vector and its local index in ua */
-      _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
-      _braid_UGetVectorRef(core, 0, ic, &u);
+      if( _braid_IsCPoint(ic, cfactor))
+      {
+         /* Get the vector and its local index in ua */
+         _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
+         _braid_UGetVectorRef(core, 0, ic, &u);
 
-      /* Copy a pointer to its bar vector to the tapeinput vector */
-      _braid_VectorBarCopy(u->bar, &ubar_copy );
-      _braid_CoreElt(core, optim)->tapeinput[iclocal] = ubar_copy;
+         /* Copy a pointer to its bar vector to the tapeinput vector */
+         _braid_VectorBarCopy(u->bar, &ubar_copy );
+         _braid_CoreElt(core, optim)->tapeinput[iclocal] = ubar_copy;
+      }
    }
 
    return 0;
