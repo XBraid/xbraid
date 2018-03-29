@@ -76,6 +76,7 @@ struct _braid_Optimization_struct
   braid_Real     tstop_obj;        /**< time for stopping the time-average of the objective  function */
   braid_Real     f_bar;            /**< contains the seed for tape evaluation */
   braid_Real     rnorm_adj;        /**< norm of the adjoint residual */
+  braid_Real     rnorm0_adj;        /**< norm of the adjoint residual */
 
   braid_Vector  *adjoints;          /**< vector for the adjoint optimization variables */
 
@@ -221,7 +222,7 @@ typedef struct _braid_Core_struct
    braid_Real             globaltime;       /**< global wall time for braid_Drive() */
 
    /* Data for adjoint and optimization */
-   braid_Real             tol_adj;       /**< initial norm of the adjoint residual */
+   braid_Real             tol_adj;          /**< tolerance of adjoint residual */
    braid_Int              adjoint;          /**< determines if adjoint run is performed (1) or not (0) */
    braid_Int              record;           /**< determines if actions are recorded to the tape or not */
    braid_Int              verbose;          /**< verbosity of the adjoint code */
@@ -864,6 +865,13 @@ braid_Int
 _braid_UpdateAdjoint(braid_Core core,
                      braid_Real *rnorm_adj_ptr);
 
+
+/**
+ * Set adjoint residual norm 
+ */
+braid_Int _braid_SetRNormAdjoint(braid_Core core, 
+                                 braid_Int iter, 
+                                 braid_Real rnorm_adj);
 
 /**
  * Evaluate the user's local objective function at time t and add it to the time-averaged objective function

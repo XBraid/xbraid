@@ -245,7 +245,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
    braid_Int            tight_fine_tolx = _braid_CoreElt(core, tight_fine_tolx);
    braid_Real           rnorm, rnorm0;
-   braid_Real           rnorm_adj, tol_adj;
+   braid_Real           rnorm_adj, rnorm0_adj, tol_adj;
 
    braid_Int            done = *done_ptr;
 
@@ -261,17 +261,22 @@ _braid_DriveCheckConvergence(braid_Core  core,
       rnorm0 = _braid_CoreElt(core, rnorm0);
    }
 
-   /* Get adjoint norm */
+   /* Get adjoint tolerance and rnorm */
    if (_braid_CoreElt(core, adjoint))
    {
-      rnorm_adj = _braid_CoreElt(core, optim)->rnorm_adj;
-      tol_adj   = _braid_CoreElt(core, tol_adj);
+      rnorm_adj  = _braid_CoreElt(core, optim)->rnorm_adj;
+      rnorm0_adj = _braid_CoreElt(core, optim)->rnorm0_adj;
+      tol_adj    = _braid_CoreElt(core, tol_adj);
    }
 
    /* If using a relative tolerance, adjust tol */
    if (rtol)
    {
       tol *= rnorm0;
+      if (_braid_CoreElt(core, adjoint))
+      {
+         tol_adj *= rnorm0_adj;
+      }
    }
 
    if ( (rnorm != braid_INVALID_RNORM) && (rnorm < tol) && (tight_fine_tolx == 1) )
@@ -470,11 +475,17 @@ braid_Drive(braid_Core  core)
    _braid_InitGuess(core, 0);
 
 
-   /* if adjoint: initialize the optimization structure */
+   /* if adjoint: initialize optimization */
    if (_braid_CoreElt(core, adjoint))
    {
       _braid_OptimInit( core, grid, &optim);
       _braid_CoreElt(core, optim) = optim; 
+
+      /* Set default adjoint tolerance if not set already */
+      if (_braid_CoreElt(core, tol_adj) == braid_INVALID_RNORM)
+      {
+         _braid_CoreElt(core, tol_adj) = _braid_CoreElt(core, tol);
+      }
    }
 
    /* Initialize cycle state */
@@ -595,7 +606,7 @@ braid_Drive(braid_Core  core)
 
                /* Update optimization adjoints and compute residual norm */
                _braid_UpdateAdjoint(core, &rnorm_adj);
-               _braid_CoreElt(core, optim)->rnorm_adj = rnorm_adj;
+               _braid_SetRNormAdjoint(core, iter, rnorm_adj);
             }
 
             /* Print current status */
@@ -829,7 +840,7 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, skip)            = skip;
 
-   _braid_CoreElt(core, tol_adj)              = tol;
+   _braid_CoreElt(core, tol_adj)              = braid_INVALID_RNORM;
    _braid_CoreElt(core, adjoint)              = adjoint;
    _braid_CoreElt(core, record)               = record;
    _braid_CoreElt(core, verbose)              = verbose;
@@ -884,13 +895,11 @@ braid_Init_Adjoint(braid_PtFcnObjectiveT      objectiveT,
    _braid_CoreElt(*core_ptr, record) = 1;
 
   /* Debug: */
-
    if (_braid_CoreElt(*core_ptr, verbose))
    {
       printf("\n Start recording \n\n");
    }
 
- 
   /* Turn off skip on downcycle */
   _braid_CoreElt(*core_ptr, skip) = 0;
 

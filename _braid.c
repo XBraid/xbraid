@@ -90,7 +90,7 @@ _braid_OptimInit( braid_Core  core,
    cfactor   = _braid_GridElt(fine_grid, cfactor);
 
    /* Allocate memory for the optimization structure */
-   optim = (braid_Optim)malloc(6*sizeof(braid_Real) + sizeof(braid_VectorBar) + sizeof(braid_Vector));
+   optim = (braid_Optim)malloc(7*sizeof(braid_Real) + sizeof(braid_VectorBar) + sizeof(braid_Vector));
    adjoints  = _braid_CTAlloc(braid_Vector, ncpoints);
    tapeinput = _braid_CTAlloc(braid_VectorBar, ncpoints);
 
@@ -119,6 +119,7 @@ _braid_OptimInit( braid_Core  core,
    optim->tstop_obj  = _braid_CoreElt(core, tstop);      /* default value */
    optim->f_bar      = 0.0;
    optim->rnorm_adj  = -1.;
+   optim->rnorm0_adj = braid_INVALID_RNORM;
 
    *optim_ptr = optim;
 
@@ -233,6 +234,25 @@ _braid_UpdateAdjoint(braid_Core core,
 
    return 0;
 }
+
+braid_Int _braid_SetRNormAdjoint(braid_Core core, 
+                                 braid_Int iter, 
+                                 braid_Real rnorm_adj)
+{
+
+   _braid_CoreElt(core, optim)->rnorm_adj = rnorm_adj;
+
+   /* Set initial adjoint residual norm if not already set */
+   if (iter == 0)
+   {
+      if (_braid_CoreElt(core, optim)->rnorm0_adj == braid_INVALID_RNORM)
+      {
+         _braid_CoreElt(core, optim)->rnorm0_adj = rnorm_adj;
+      }
+   }
+
+   return 0;
+}                           
 
 braid_Int
 _braid_AddToTimeavg(braid_Core core, 
