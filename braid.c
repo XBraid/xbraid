@@ -1735,7 +1735,7 @@ braid_SetPostprocessObjective_diff(braid_Core                           core,
 
 
 braid_Int
-braid_SetTolAdj(braid_Core core, 
+braid_SetTolAdjoint(braid_Core core, 
                 braid_Real tol_adj)
 {
    _braid_CoreElt(core, tol_adj) = tol_adj;

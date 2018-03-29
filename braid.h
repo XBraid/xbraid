@@ -944,7 +944,7 @@ braid_SetPostprocessObjective_diff(braid_Core                           core,   
  * This is an absolute or relative stopping criterion depending on what has been chosen for the primal run. 
  */
 braid_Int
-braid_SetTolAdj(braid_Core core,       /**< braid_Core (_braid_Core) struct */
+braid_SetTolAdjoint(braid_Core core,       /**< braid_Core (_braid_Core) struct */
                 braid_Real tol_adj     /**< tolerance for the adjoint residual */
                 );
 

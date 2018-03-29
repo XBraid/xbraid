@@ -447,7 +447,7 @@ int main (int argc, char *argv[])
    // braid_SetPostprocessObjective_diff(core, my_PostprocessObjective_diff);
 
    /* Optional: Set the adjoint residual */
-   // braid_SetTolAdj(core, 1.0e-2);
+   // braid_SetTolAdjoint(core, 1.0e-5);
 
 
    /* Run simulation, and then clean up */
