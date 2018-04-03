@@ -3110,7 +3110,7 @@ _braid_PrintSpatialNorms(braid_Core    core,
    braid_Int      cfactor    = _braid_GridElt(grids[0], cfactor);
    braid_Int      gupper     = _braid_CoreElt(core, gupper);
 
-   braid_Int      g_ncpoints = ceil( ((braid_Real) gupper) / ((braid_Real) cfactor ));
+   braid_Int      g_ncpoints = ceil( ((braid_Real) gupper) / ((braid_Real) cfactor )) + 1;
    
    braid_Int     *recvcounts = NULL;
    braid_Real    *recvbuf;
@@ -3155,7 +3155,7 @@ _braid_PrintSpatialNorms(braid_Core    core,
 
       if(myid_t == 0)
       {
-         for(i = 0; i <= g_ncpoints; i++){
+         for(i = 0; i < g_ncpoints; i++){
             _braid_printf("  Braid:  time step: %6d, rnorm: %1.2e\n", i*cfactor, recvbuf[i]);
          }
       }

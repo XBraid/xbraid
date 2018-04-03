@@ -258,6 +258,7 @@ int main (int argc, char *argv[])
    braid_Drive(core);
 
    braid_Destroy(core);
+   free(app);
    MPI_Finalize();
 
    return (0);
