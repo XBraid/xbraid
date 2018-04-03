@@ -243,8 +243,8 @@ my_ObjectiveT(braid_App          app,
               braid_Real         t, 
               double            *objectiveT_ptr)
 {
-   /* f(u(t),lambda) = u(t)**2 */
-   double objT = (u->value) * (u->value);
+   /* 1/N * f(u(t),lambda) = 1/N * u(t)**2 */
+   double objT = 1. / (app->ntime) * (u->value) * (u->value);
 
    *objectiveT_ptr = objT;
    
@@ -333,7 +333,7 @@ my_ObjectiveT_diff(braid_App         app,
    double du, ddesign; 
 
    /* Partial derivative with respect to u times f_bar */
-   du = 2. * u->value * f_bar;
+   du = 2. / (app->ntime) * u->value * f_bar;
 
    /* Partial derivative with respect to design times f_bar*/
    ddesign = 0.0 * f_bar;

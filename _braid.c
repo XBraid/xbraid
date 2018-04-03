@@ -290,12 +290,11 @@ _braid_EvalObjective(braid_Core core)
    braid_Real localtimeavg, globaltimeavg, posttmp;
    braid_Real objective;
    MPI_Comm comm      = _braid_CoreElt(core, comm);
-   braid_Int ntime    = _braid_CoreElt(core, ntime);
    braid_App app      = _braid_CoreElt(core, app);
    braid_Real timeavg = _braid_CoreElt(core, optim)->timeavg;
    
    /* Compute the global time average */
-   localtimeavg = timeavg / ( ntime + 1 );
+   localtimeavg = timeavg;
    MPI_Allreduce(&localtimeavg, &globaltimeavg, 1, braid_MPI_REAL, MPI_SUM, comm);
 
     /* Compute the postprocess objective function, if set */
@@ -324,7 +323,6 @@ braid_Int
 _braid_EvalObjective_diff(braid_Core core)
 {
    braid_Real timeavg_bar;
-   braid_Int ntime    = _braid_CoreElt(core, ntime);
    braid_Real timeavg = _braid_CoreElt(core, optim)->timeavg;
    braid_App app      = _braid_CoreElt(core, app);
 
@@ -339,7 +337,7 @@ _braid_EvalObjective_diff(braid_Core core)
    }
 
    /* Differentiate the time average */
-   _braid_CoreElt(core, optim)->f_bar = 1./ (ntime+1) * timeavg_bar;
+   _braid_CoreElt(core, optim)->f_bar = timeavg_bar;
 
 
    /* Reset the gradient on all but one processor (one should hold the differentiated relaxation term) */
