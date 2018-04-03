@@ -877,9 +877,9 @@ braid_Int _braid_SetRNormAdjoint(braid_Core core,
  * Evaluate the user's local objective function at time t and add it to the time-averaged objective function
  */
 braid_Int
-_braid_AddToTimeavg(braid_Core core, 
-                      braid_BaseVector u, 
-                      braid_Real t);
+_braid_AddToTimeavg(braid_Core           core, 
+                      braid_BaseVector   u, 
+                      braid_AccessStatus astatus);
 
 /**
  * Evaluate the objective function :

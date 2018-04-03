@@ -240,7 +240,7 @@ my_BufUnpack(braid_App          app,
 int 
 my_ObjectiveT(braid_App          app,
               braid_Vector       u,
-              braid_Real         t, 
+              braid_AccessStatus astatus,
               double            *objectiveT_ptr)
 {
    /* 1/N * f(u(t),lambda) = 1/N * u(t)**2 */
@@ -328,7 +328,8 @@ my_ObjectiveT_diff(braid_App         app,
                   braid_Vector       u,
                   braid_Vector       u_bar,
                   braid_Real         f_bar,
-                  braid_Real         t)
+                  braid_Real         t, 
+                  braid_Int          tidx)
 {
    double du, ddesign; 
 

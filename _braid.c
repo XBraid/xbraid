@@ -263,19 +263,21 @@ braid_Int _braid_SetRNormAdjoint(braid_Core core,
 }                           
 
 braid_Int
-_braid_AddToTimeavg(braid_Core core, 
-                      braid_BaseVector u, 
-                      braid_Real t)
+_braid_AddToTimeavg(braid_Core           core, 
+                      braid_BaseVector   u, 
+                      braid_AccessStatus astatus)
 {
    braid_App  app        = _braid_CoreElt(core, app);
    braid_Real tstart_obj = _braid_CoreElt(core, optim)->tstart_obj;
    braid_Real tstop_obj  = _braid_CoreElt(core, optim)->tstop_obj;
    braid_Real objT_tmp;
+   braid_Real t;
 
+   braid_AccessStatusGetT(astatus, &t);
    if ( tstart_obj <= t && t <= tstop_obj )
    {
       /* Evaluate objective at time t */
-     _braid_BaseObjectiveT(core, app, u, t, &objT_tmp);
+     _braid_BaseObjectiveT(core, app, u, astatus, &objT_tmp);
 
      /* Add to the time-averaged objective function */
      _braid_CoreElt(core, optim)->timeavg += objT_tmp;
@@ -1975,27 +1977,27 @@ _braid_FRestrict(braid_Core   core,
          
          /* Allow user to process current vector, note that r here is
           * temporarily holding the state vector */
+         _braid_AccessStatusInit(ta[fi-f_ilower], fi, rnm, iter, level, nrefine, gupper,
+                                 0, 0, braid_ASCaller_FRestrict, astatus);
          if( (access_level >= 3) )
          {
-            _braid_AccessStatusInit(ta[fi-f_ilower], fi, rnm, iter, level, nrefine, gupper,
-                                    0, 0, braid_ASCaller_FRestrict, astatus);
             _braid_AccessVector(core, astatus, r);
          }
 
          /* Evaluate the user's local objective function at FPoints on finest grid */
          if ( _braid_CoreElt(core, adjoint) && level == 0)
          {
-            _braid_AddToTimeavg(core, r, ta[fi-f_ilower]);
+            _braid_AddToTimeavg(core, r, astatus);
          }
 
       }
 
+      _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper,
+                              0, 0, braid_ASCaller_FRestrict, astatus);
       /* Allow user to process current C-point */
       if( (access_level>= 3) && (ci > -1) )
       {
          _braid_UGetVectorRef(core, level, ci, &u);
-         _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper,
-                                 0, 0, braid_ASCaller_FRestrict, astatus);
          _braid_AccessVector(core, astatus, u);
       }
 
@@ -2003,7 +2005,7 @@ _braid_FRestrict(braid_Core   core,
       if (_braid_CoreElt(core, adjoint) && level == 0 && (ci > -1) )
       {
          _braid_UGetVectorRef(core, 0, ci, &u);
-         _braid_AddToTimeavg(core, u, ta[ci-f_ilower]);
+         _braid_AddToTimeavg(core, u, astatus);
       }
          
       
@@ -3144,7 +3146,7 @@ _braid_FAccess(braid_Core     core,
             if ( _braid_CoreElt(core, adjoint) && 
                  _braid_CoreElt(core, max_levels <=1) ) 
             {
-               _braid_AddToTimeavg(core, u, ta[fi-ilower]);
+               _braid_AddToTimeavg(core, u, astatus);
             }
          }
       }
@@ -3165,7 +3167,7 @@ _braid_FAccess(braid_Core     core,
          if ( _braid_CoreElt(core, adjoint) && 
                  _braid_CoreElt(core, max_levels <=1) ) 
          {
-            _braid_AddToTimeavg(core, u, ta[ci-ilower]);
+            _braid_AddToTimeavg(core, u, astatus);
          }
        }
    }

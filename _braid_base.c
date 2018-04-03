@@ -426,11 +426,11 @@ _braid_BaseBufUnpack(braid_Core          core,
 
 
 braid_Int
-_braid_BaseObjectiveT(braid_Core       core,
-                      braid_App        app,
-                      braid_BaseVector u,
-                      braid_Real       t,
-                      braid_Real      *objT_ptr )
+_braid_BaseObjectiveT(braid_Core          core,
+                      braid_App           app,
+                      braid_BaseVector    u,
+                      braid_AccessStatus  astatus,
+                      braid_Real         *objT_ptr )
 {
    _braid_Action   *action;
    braid_Vector     u_copy;
@@ -438,17 +438,23 @@ _braid_BaseObjectiveT(braid_Core       core,
    braid_Int        verbose  = _braid_CoreElt(core, verbose);
    braid_Int        record   = _braid_CoreElt(core, record);
    braid_Int        myid     = _braid_CoreElt(core, myid);
+   braid_Real       t;
+   braid_Int        tidx;
    
    if ( verbose ) printf("%d: OBJECTIVET\n", myid);
 
    /* if bar: Record to the tape */
    if ( record )
    {
+      braid_AccessStatusGetT(astatus, &t);
+      braid_AccessStatusGetTIndex(astatus, &tidx);
+
       /* Set up and push the action */
       action            = _braid_CTAlloc(_braid_Action, 1);
       action->braidCall = OBJECTIVET;
-      action->core      = core;
       action->inTime    = t;
+      action->inTimeIdx = tidx;
+      action->core      = core;
       action->myid      = myid;
       _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
 
@@ -462,7 +468,7 @@ _braid_BaseObjectiveT(braid_Core       core,
    }
 
    /* Evaluate the objective function at time t */
-   _braid_CoreFcn(core, objectiveT)(app, u->userVector, t, objT_ptr);
+   _braid_CoreFcn(core, objectiveT)(app, u->userVector, astatus,objT_ptr);
 
    return 0;
 }
@@ -734,6 +740,7 @@ _braid_BaseObjectiveT_diff(_braid_Action *action)
    braid_VectorBar ubar;
    braid_Core      core    = action->core;
    braid_Int       t       = action->inTime;
+   braid_Int       tidx    = action->inTimeIdx;
    braid_App       app     = _braid_CoreElt(core, app);
    braid_Int       verbose = _braid_CoreElt(core, verbose);
    braid_Int       myid    = _braid_CoreElt(core, myid);
@@ -750,7 +757,7 @@ _braid_BaseObjectiveT_diff(_braid_Action *action)
    _braid_CoreElt(core, barTape)        = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
   /* Call the users's differentiated objective function */
-   _braid_CoreFcn(core, objT_diff)( app, u, ubar->userVector, f_bar, t);
+   _braid_CoreFcn(core, objT_diff)( app, u, ubar->userVector, f_bar, t, tidx);
 
    /* Free primal and bar vectors */
    _braid_CoreFcn(core, free)(app, u);

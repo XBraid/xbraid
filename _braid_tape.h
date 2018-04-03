@@ -51,14 +51,15 @@ typedef struct _braid_Action_struct
 {
    _braid_Call       braidCall;        /**< type of the user routine */
    braid_Core        core;             /**< pointer to braid's core structure */
-   braid_Real        inTime;           /*< time of the input vector */
-   braid_Real        outTime;          /*< time of the output vector */
-   braid_Status      status;           /*< braid's status used in step and access */
-   braid_Real        sum_alpha;        /*< first coefficient of my_sum */
-   braid_Real        sum_beta;         /*< second coefficient of my_sum */
-   braid_Int         send_recv_rank;   /*< processor rank of sender / receiver in my_bufpack / my_bufunpack */
-   braid_Int         braid_iter;       /*< iteration number of xBraid */
-   braid_Int         myid;             /*< processors id */
+   braid_Real        inTime;           /**< time of the input vector */
+   braid_Real        outTime;          /**< time of the output vector */
+   braid_Int         inTimeIdx;        /**< index of time of input vector */
+   braid_Status      status;           /**< braid's status used in step and access */
+   braid_Real        sum_alpha;        /**< first coefficient of my_sum */
+   braid_Real        sum_beta;         /**< second coefficient of my_sum */
+   braid_Int         send_recv_rank;   /**< processor rank of sender / receiver in my_bufpack / my_bufunpack */
+   braid_Int         braid_iter;       /**< iteration number of xBraid */
+   braid_Int         myid;             /**< processors id */
 
 } _braid_Action;
  
