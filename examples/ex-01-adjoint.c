@@ -349,6 +349,19 @@ my_ObjectiveT_diff(braid_App         app,
 int 
 my_AccessGradient(braid_App app)
 {
+   /* Print the gradient */
+   if (app->myid==0)
+   {
+     printf("Gradient: %1.14e\n", app->gradient);
+   } 
+
+   return 0;
+}
+
+int
+my_AllreduceGradient(braid_App app, 
+                     MPI_Comm comm)
+{
    double localgradient;
    double globalgradient;
 
@@ -356,13 +369,10 @@ my_AccessGradient(braid_App app)
    localgradient = app->gradient;
    MPI_Allreduce(&localgradient, &globalgradient, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
    /* Broadcast the global gradient to all processor */
-   app->gradient = globalgradient;
-
-   /* Print the gradient */
-   if (app->myid==0) printf("Gradient: %1.14e\n", app->gradient);
+   app->gradient = globalgradient; 
 
    return 0;
-}
+}                  
 
 
 int 
@@ -425,7 +435,7 @@ int main (int argc, char *argv[])
 
 
    /* Initialize adjoint XBraid */
-   braid_Init_Adjoint( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_ResetGradient, my_AccessGradient, &core);
+   braid_Init_Adjoint( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_AllreduceGradient, my_ResetGradient, my_AccessGradient, &core);
    
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);

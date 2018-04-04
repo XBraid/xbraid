@@ -626,7 +626,10 @@ braid_Drive(braid_Core  core)
 
             if (_braid_CoreElt(core, adjoint))
             {
-               /* Access the gradient (this involves an MPI_Allreduce call) */
+               /* Collect sensitivities from all temporal processors */
+               _braid_CoreFcn(core, allreduce_gradient)(_braid_CoreElt(core, app), _braid_CoreElt(core, comm));
+
+               /* Allow the user to access the gradient */
                _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
 
                /* Prepare for the next iteration */ 
@@ -691,9 +694,11 @@ braid_Drive(braid_Core  core)
       /* Evaluate (and clear) the action tape */
       _braid_TapeEvaluate(core);
 
-      /* Access the gradient (this involves an MPI_Allreduce call) */
-      _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
+      /* Collect sensitivities from all temporal processors */
+      _braid_CoreFcn(core, allreduce_gradient)(_braid_CoreElt(core, app), _braid_CoreElt(core, comm));
 
+      /* Allow the user to access the gradient */
+      _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
    }
 
    /* End cycle */
@@ -846,6 +851,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, step_diff)            = NULL;
    _braid_CoreElt(core, objT_diff)            = NULL;
    _braid_CoreElt(core, objectiveT)           = NULL;
+   _braid_CoreElt(core, allreduce_gradient)   = NULL;
    _braid_CoreElt(core, reset_gradient)       = NULL;
    _braid_CoreElt(core, access_gradient)      = NULL;
    _braid_CoreElt(core, postprocess_obj)      = NULL;
@@ -871,12 +877,13 @@ braid_Init(MPI_Comm               comm_world,
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 braid_Int
-braid_Init_Adjoint(braid_PtFcnObjectiveT      objectiveT,
-                   braid_PtFcnStepDiff        step_diff, 
-                   braid_PtFcnObjectiveTDiff  objT_diff,
-                   braid_PtFcnResetGradient   reset_gradient,
-                   braid_PtFcnAccessGradient  access_gradient,
-                   braid_Core                 *core_ptr)
+braid_Init_Adjoint(braid_PtFcnObjectiveT        objectiveT,
+                   braid_PtFcnStepDiff          step_diff, 
+                   braid_PtFcnObjectiveTDiff    objT_diff,
+                   braid_PtFcnAllreduceGradient allreduce_gradient,
+                   braid_PtFcnResetGradient     reset_gradient,
+                   braid_PtFcnAccessGradient    access_gradient,
+                   braid_Core                  *core_ptr)
 {
 
   if( _braid_CoreElt(*core_ptr, refine) )
@@ -905,11 +912,12 @@ braid_Init_Adjoint(braid_PtFcnObjectiveT      objectiveT,
 
 
    /* Additional user functions */
-   _braid_CoreElt(*core_ptr, objectiveT)      = objectiveT;
-   _braid_CoreElt(*core_ptr, step_diff)       = step_diff;
-   _braid_CoreElt(*core_ptr, objT_diff)       = objT_diff;
-   _braid_CoreElt(*core_ptr, reset_gradient)  = reset_gradient;
-   _braid_CoreElt(*core_ptr, access_gradient) = access_gradient;
+   _braid_CoreElt(*core_ptr, objectiveT)        = objectiveT;
+   _braid_CoreElt(*core_ptr, step_diff)         = step_diff;
+   _braid_CoreElt(*core_ptr, objT_diff)         = objT_diff;
+   _braid_CoreElt(*core_ptr, allreduce_gradient) = allreduce_gradient;
+   _braid_CoreElt(*core_ptr, reset_gradient)    = reset_gradient;
+   _braid_CoreElt(*core_ptr, access_gradient)   = access_gradient;
   
 
    return _braid_error_flag;

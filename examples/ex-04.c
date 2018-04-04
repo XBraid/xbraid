@@ -379,18 +379,9 @@ my_Step_diff(braid_App              app,
 int 
 my_AccessGradient(braid_App app)
 {
-   int ts;
-   double localgradient;
-   double globalgradient;
 
-   /* Collect sensitivities from all time-processors */
-   for (ts = 0; ts < app->ntime; ts++)
+   for (int ts = 0; ts < app->ntime; ts++)
    {
-      localgradient = app->gradient[ts];
-      MPI_Allreduce(&localgradient, &globalgradient, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-      /* Broadcast the global gradient to all processor */
-      app->gradient[ts] = globalgradient;
-
       /* Print the gradient */
       if (app->myid == 0) 
       {
@@ -398,6 +389,24 @@ my_AccessGradient(braid_App app)
       }
    }
 
+
+   return 0;
+}
+
+int
+my_AllreduceGradient(braid_App app, MPI_Comm comm)
+{
+   double localgradient;
+   double globalgradient;
+
+   /* Collect sensitivities from all time-processors */
+   for (int ts = 0; ts < app->ntime; ts++)
+   {
+       localgradient = app->gradient[ts];
+      MPI_Allreduce(&localgradient, &globalgradient, 1, MPI_DOUBLE, MPI_SUM, comm);
+      /* Broadcast the global gradient to all processor */
+      app->gradient[ts] = globalgradient;
+   }
 
    return 0;
 }
@@ -472,7 +481,7 @@ int main (int argc, char *argv[])
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app, my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
 
    /* Initialize adjoint XBraid */
-   braid_Init_Adjoint( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_ResetGradient, my_AccessGradient, &core);
+   braid_Init_Adjoint( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_AllreduceGradient, my_ResetGradient, my_AccessGradient, &core);
 
    /* Set some Braid parameters */
    braid_SetPrintLevel( core, 1);

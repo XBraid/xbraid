@@ -233,6 +233,7 @@ typedef struct _braid_Core_struct
  
    braid_Optim optim;                            /**< structure that stores optimization variables (objective function, etc.) */ 
    braid_PtFcnObjectiveT       objectiveT;       /**< User function: evaluate objective function at time t */
+   braid_PtFcnAllreduceGradient    allreduce_gradient;   /**< User function: Invoke an MPI_Allreduce call for the gradient */
    braid_PtFcnResetGradient    reset_gradient;   /**< User function: Set the gradient to zero. Is called before each iteration */
    braid_PtFcnAccessGradient   access_gradient;  /**< User function: Access the gradient for output or optimization. This involves MPI_Allreduce! */
    braid_PtFcnPostprocessObjective postprocess_obj; /**< Optional user function: Further modify the time-averaged objective function, e.g. for inverse design problems, adding relaxation term etc. */
