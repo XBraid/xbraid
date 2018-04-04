@@ -72,25 +72,28 @@ _braid_VectorBarDelete(braid_Core core, braid_VectorBar bar)
 
 
 braid_Int
-_braid_OptimInit( braid_Core  core,
+_braid_OptimInit( braid_Core   core,
                   _braid_Grid *fine_grid,               
                   braid_Optim *optim_ptr)
 {
-   braid_Optim optim;
-   braid_Vector  *adjoints  = NULL; 
+   braid_Optim      optim;
+   braid_Vector    *adjoints  = NULL; 
    braid_VectorBar *tapeinput = NULL; 
-   braid_Int ncpoints, clower, iupper, cfactor, sflag, iclocal, ic;
    braid_BaseVector u;
-   braid_VectorBar bar_copy;
-   braid_Vector mybar;
+   braid_VectorBar  bar_copy;
+   braid_Vector     mybar;
+   braid_Int        myid, io_level;
+   braid_Int        ncpoints, clower, iupper, cfactor, sflag, iclocal, ic;
    
+   myid      = _braid_CoreElt(core, myid);
+   io_level  = _braid_CoreElt(core, io_level);
    ncpoints  = _braid_GridElt(fine_grid, ncpoints);
    clower    = _braid_GridElt(fine_grid, clower);
    iupper    = _braid_GridElt(fine_grid, iupper);
    cfactor   = _braid_GridElt(fine_grid, cfactor);
 
    /* Allocate memory for the optimization structure */
-   optim = (braid_Optim)malloc(7*sizeof(braid_Real) + sizeof(braid_VectorBar) + sizeof(braid_Vector));
+   optim = (braid_Optim) malloc(7*sizeof(braid_Real) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE*));
    adjoints  = _braid_CTAlloc(braid_Vector, ncpoints);
    tapeinput = _braid_CTAlloc(braid_VectorBar, ncpoints);
 
@@ -124,6 +127,13 @@ _braid_OptimInit( braid_Core  core,
    optim->rnorm_adj  = -1.;
    optim->rnorm0_adj = braid_INVALID_RNORM;
 
+   /* Open optimization output file */
+   if (myid == 0 && io_level>=1)
+   {
+      optim->outfile = fopen("braid.out.optim", "w");
+      _braid_ParFprintfFlush(optim->outfile, myid, "#    || r ||              || r_adj ||          Objective \n");
+   }
+
    *optim_ptr = optim;
 
    return 0;
@@ -135,10 +145,13 @@ _braid_OptimDestroy( braid_Core core)
 {
    braid_Optim  optim;
    _braid_Grid *fine_grid; 
+   braid_Int    myid, io_level;
    braid_Int    clower, iupper, cfactor, sflag, iclocal, ic;
 
    optim       = _braid_CoreElt(core, optim);
    fine_grid   = _braid_CoreElt(core, grids)[0];
+   myid        = _braid_CoreElt(core, myid);
+   io_level    = _braid_CoreElt(core, io_level);
    clower      = _braid_GridElt(fine_grid, clower);
    iupper      = _braid_GridElt(fine_grid, iupper);
    cfactor     = _braid_GridElt(fine_grid, cfactor);
@@ -155,6 +168,13 @@ _braid_OptimDestroy( braid_Core core)
    }
    free(optim->adjoints);
    free(optim->tapeinput);
+
+
+   /* Close optimization output file */
+   if (myid == 0 && io_level>=1)
+   {
+      fclose(optim->outfile);
+   }
 
    return 0;
 }

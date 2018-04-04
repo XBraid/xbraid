@@ -76,7 +76,8 @@ struct _braid_Optimization_struct
   braid_Real     tstop_obj;        /**< time for stopping the time-average of the objective  function */
   braid_Real     f_bar;            /**< contains the seed for tape evaluation */
   braid_Real     rnorm_adj;        /**< norm of the adjoint residual */
-  braid_Real     rnorm0_adj;        /**< norm of the adjoint residual */
+  braid_Real     rnorm0_adj;       /**< norm of the adjoint residual */
+  FILE          *outfile;          /**< Outputfile for state / adjoint residuals, objective function value, etc. */ 
 
   braid_Vector  *adjoints;          /**< vector for the adjoint optimization variables */
 

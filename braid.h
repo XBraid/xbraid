@@ -714,10 +714,10 @@ braid_SetPrintLevel(braid_Core  core,          /**< braid_Core (_braid_Core) str
 
 /**
  * Set output level for XBraid.  This controls how much information is
- * saved to files (only braid.out.cycle for now).
+ * saved to files .
  *
  * - Level 0: no output
- * - Level 1: save the cycle in braid.out.cycle
+ * - Level 1: save the cycle in braid.out.cycle and optimization history in braid.out.optim
  *
  * Default is level 1.
  **/

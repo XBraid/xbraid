@@ -327,6 +327,7 @@ _braid_DrivePrintStatus(braid_Core  core,
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
    braid_Int            rstopped        = _braid_CoreElt(core, rstopped);
    braid_Int            print_level     = _braid_CoreElt(core, print_level);
+   braid_Optim          optim           = _braid_CoreElt(core, optim);
    braid_Real           rnorm, rnorm_prev, cfactor, wtime;
    braid_Real           rnorm_adj, objective;
 
@@ -361,6 +362,9 @@ _braid_DrivePrintStatus(braid_Core  core,
       else
       {
          _braid_printf("  Braid: || r_%d || = %1.6e, || r_adj_%d || = %1.6e, Obj = %1.14e\n", iter, rnorm, iter,  rnorm_adj, objective);
+
+         /* Save residuals in optimization outfile */
+         _braid_ParFprintfFlush(optim->outfile, myid, "%03d  %1.14e %1.14e %1.14e\n", iter, rnorm, rnorm_adj, objective);
       }
    }
    else
