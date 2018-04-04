@@ -246,7 +246,8 @@ _braid_DriveCheckConvergence(braid_Core  core,
    braid_Int            tight_fine_tolx = _braid_CoreElt(core, tight_fine_tolx);
    braid_Optim          optim           = _braid_CoreElt(core, optim);
    braid_Real           rnorm, rnorm0;
-   braid_Real           rnorm_adj, rnorm0_adj, gnorm, tol_adj;
+   braid_Real           rnorm_adj, rnorm0_adj, gnorm, gnorm0;
+   braid_Real           tol_adj, tol_grad;
 
    braid_Int            done = *done_ptr;
 
@@ -262,13 +263,15 @@ _braid_DriveCheckConvergence(braid_Core  core,
       rnorm0 = _braid_CoreElt(core, rnorm0);
    }
 
-   /* Get adjoint residual norm, tolerance and norm of gradient */
+   /* Get adjoint residual and gradient norm and stopping tolerances */
    if (_braid_CoreElt(core, adjoint))
    {
       rnorm_adj  = optim->rnorm_adj;
       rnorm0_adj = optim->rnorm0_adj;
       gnorm      = optim->gnorm;
+      gnorm0     = optim->gnorm0;
       tol_adj    = _braid_CoreElt(core, tol_adj);
+      tol_grad   = _braid_CoreElt(core, tol_grad);
    }
 
    /* If using a relative tolerance, adjust tol */
@@ -277,7 +280,8 @@ _braid_DriveCheckConvergence(braid_Core  core,
       tol *= rnorm0;
       if (_braid_CoreElt(core, adjoint))
       {
-         tol_adj *= rnorm0_adj;
+         tol_adj  *= rnorm0_adj;
+         tol_grad *= gnorm0;
       }
    }
 
@@ -285,10 +289,16 @@ _braid_DriveCheckConvergence(braid_Core  core,
    {
       done = 1;
 
-      /* Keep iterating, if adjoint not converged yet. */
       if (_braid_CoreElt(core, adjoint))
       {
+         /* Keep iterating, if adjoint not converged yet. */
          if ( ! (rnorm_adj < tol_adj) )
+         {
+            done = 0;
+         }
+
+         /* Keep iterating, if gradient norm not converged yet. */
+         if ( ! (gnorm < tol_grad) )
          {
             done = 0;
          }
@@ -488,10 +498,14 @@ braid_Drive(braid_Core  core)
       _braid_OptimInit( core, grid, &optim);
       _braid_CoreElt(core, optim) = optim; 
 
-      /* Set default adjoint tolerance if not set already */
+      /* If not set already: set default tolerance for adjoint residual norm and gradient norm */
       if (_braid_CoreElt(core, tol_adj) == braid_INVALID_RNORM)
       {
-         _braid_CoreElt(core, tol_adj) = _braid_CoreElt(core, tol);
+         _braid_CoreElt(core, tol_adj)  = _braid_CoreElt(core, tol);
+      }
+      if (_braid_CoreElt(core, tol_grad) == braid_INVALID_RNORM)
+      {
+         _braid_CoreElt(core, tol_grad) = _braid_CoreElt(core, tol);
       }
    }
 
@@ -618,14 +632,16 @@ braid_Drive(braid_Core  core)
                /* Collect gradient from all temporal processors */
                _braid_CoreFcn(core, allreduce_gradient)(_braid_CoreElt(core, app), _braid_CoreElt(core, comm));
 
-
-
-               /* Update the design, if desired */
-               _braid_BaseUpdateDesign(core);
             }
 
             /* Print current status */
             _braid_DrivePrintStatus(core, level, iter, refined, localtime);
+
+            /* Update the design, if desired, and set gradient norm */
+            if (_braid_CoreElt(core, adjoint))
+            {
+               _braid_BaseUpdateDesign(core, iter);
+            }
             
             /* If no refinement was done, check for convergence */
             if (!refined)
@@ -856,6 +872,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, skip)            = skip;
 
    _braid_CoreElt(core, tol_adj)               = braid_INVALID_RNORM;
+   _braid_CoreElt(core, tol_grad)              = braid_INVALID_RNORM;
    _braid_CoreElt(core, adjoint)               = adjoint;
    _braid_CoreElt(core, record)                = record;
    _braid_CoreElt(core, verbose)               = verbose;
@@ -1767,6 +1784,17 @@ braid_SetTolAdjoint(braid_Core core,
 
    return _braid_error_flag;
 }
+
+
+braid_Int
+braid_SetTolGradient(braid_Core core, 
+                     braid_Real tol_grad)
+{
+   _braid_CoreElt(core, tol_grad) = tol_grad;
+
+   return _braid_error_flag;
+}
+
 
 braid_Int
 braid_SetGradientAccessLevel(braid_Core  core,

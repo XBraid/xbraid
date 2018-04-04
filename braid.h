@@ -970,6 +970,16 @@ braid_SetTolAdjoint(braid_Core core,       /**< braid_Core (_braid_Core) struct 
                    );
 
 /**
+ * Set the tolerance for gradient norm (default is same as primal one)
+ * This is an absolute or relative stopping criterion depending on what has been chosen for the primal run. 
+ */
+braid_Int
+braid_SetTolGradient(braid_Core core,       /**< braid_Core (_braid_Core) struct */
+                     braid_Real tol_grad    /**< tolerance for the gradient norm */
+                    );
+
+
+/**
  * This controls how often the user's gradient access routine is called.
  * 
  * - Level 0:  Never 

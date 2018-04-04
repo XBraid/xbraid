@@ -430,9 +430,10 @@ my_UpdateDesign(braid_App app,
                 double    objective,
                 double    rnorm,
                 double    rnorm_adj,
-                double   *gradient_norm_prt)
+                double   *gradient_norm_ptr)
 {
    
+   *gradient_norm_ptr = 0.0;
    return 0;
 }
 

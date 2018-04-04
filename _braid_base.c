@@ -860,7 +860,8 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
 
 
 braid_Int
-_braid_BaseUpdateDesign(braid_Core core)
+_braid_BaseUpdateDesign(braid_Core core,
+                        braid_Int  iter)
 {
    braid_App   app       = _braid_CoreElt(core, app);
    braid_Optim optim     = _braid_CoreElt(core, optim);
@@ -872,13 +873,11 @@ _braid_BaseUpdateDesign(braid_Core core)
    /* Get primal braid norm */
    _braid_GetRNorm(core, -1, &rnorm);
 
-   // if (update)
-   // {
-      _braid_CoreFcn(core, update_design)(app, objective, rnorm, rnorm_adj, &gnorm);
-   // }
+   /* Call the users update_design function */
+   _braid_CoreFcn(core, update_design)(app, objective, rnorm, rnorm_adj, &gnorm);
 
    /* Set the norm of the gradient */
-   optim->gnorm = gnorm;
+   _braid_SetGradientNorm(core, iter, gnorm);
 
    return 0;
 }

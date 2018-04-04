@@ -77,6 +77,7 @@ struct _braid_Optimization_struct
   braid_Real     f_bar;            /**< contains the seed for tape evaluation */
   braid_Real     rnorm_adj;        /**< norm of the adjoint residual */
   braid_Real     rnorm0_adj;       /**< norm of the adjoint residual */
+  braid_Real     gnorm0;           /**< norm of the gradient */
   braid_Real     gnorm;            /**< norm of the gradient */
   FILE          *outfile;          /**< Outputfile for state / adjoint residuals, objective function value, etc. */ 
 
@@ -225,6 +226,7 @@ typedef struct _braid_Core_struct
 
    /* Data for adjoint and optimization */
    braid_Real             tol_adj;          /**< tolerance of adjoint residual */
+   braid_Real             tol_grad;         /**< tolerance for the gradient norm */
    braid_Int              adjoint;          /**< determines if adjoint run is performed (1) or not (0) */
    braid_Int              record;           /**< determines if actions are recorded to the tape or not */
    braid_Int              verbose;          /**< verbosity of the adjoint code */
@@ -878,6 +880,12 @@ braid_Int _braid_SetRNormAdjoint(braid_Core core,
                                  braid_Int iter, 
                                  braid_Real rnorm_adj);
 
+/**
+ * Set the gradient norm 
+ */
+braid_Int _braid_SetGradientNorm(braid_Core core, 
+                                 braid_Int  iter, 
+                                 braid_Real gnorm);
 /**
  * Evaluate the user's local objective function at time t and add it to the time-averaged objective function
  */
