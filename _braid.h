@@ -230,7 +230,6 @@ typedef struct _braid_Core_struct
    braid_Int              adjoint;          /**< determines if adjoint run is performed (1) or not (0) */
    braid_Int              record;           /**< determines if actions are recorded to the tape or not */
    braid_Int              verbose;          /**< verbosity of the adjoint code */
-   braid_Int              gradient_access_level; /**< determines how often the user's access_gradient function is called */
 
    _braid_Tape*          actionTape;         /**< tape storing the actions while recording */
    _braid_Tape*          userVectorTape;     /**< tape storing primal braid_vectors while recording */
@@ -240,7 +239,6 @@ typedef struct _braid_Core_struct
    braid_PtFcnObjectiveT           objectiveT;         /**< User function: evaluate objective function at time t */
    braid_PtFcnAllreduceGradient    allreduce_gradient; /**< User function: Invoke an MPI_Allreduce call for the gradient */
    braid_PtFcnResetGradient        reset_gradient;     /**< User function: Set the gradient to zero. Is called before each iteration */
-   braid_PtFcnAccessGradient       access_gradient;    /**< User function: Access the gradient for output or optimization. */
    braid_PtFcnUpdateDesign         update_design;      /**< User function: Update the design */
    braid_PtFcnComputeGNorm         compute_gnorm;      /**< User function: Return the norm of the gradient */
    braid_PtFcnPostprocessObjective postprocess_obj; /**< Optional user function: Modify the time-averaged objective function, e.g. for inverse design problems, adding relaxation term etc. */
