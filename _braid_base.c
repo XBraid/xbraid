@@ -865,6 +865,7 @@ _braid_BaseUpdateDesign(braid_Core core)
    braid_App   app              = _braid_CoreElt(core, app);
    braid_Optim optim            = _braid_CoreElt(core, optim);
    braid_Real  tol_designupdate = _braid_CoreElt(core, tol_designupdate);
+   braid_Int   iter             = _braid_CoreElt(core, niter);
    braid_Real  objective        = optim->objective;
    braid_Real  rnorm_adj        = optim->rnorm_adj;
    braid_Real  rnorm;
@@ -879,10 +880,14 @@ _braid_BaseUpdateDesign(braid_Core core)
    }
 
    /* Call the users update_design function, if state and adjoint residual norms are below the tolerance */
-   if (rnorm    < tol_designupdate && 
-      rnorm_adj < tol_designupdate)
+   if ( rnorm    < tol_designupdate && 
+        rnorm_adj < tol_designupdate )
    {
-      _braid_CoreFcn(core, update_design)(app, objective, rnorm, rnorm_adj);
+      /* Never update the design at first few iterations because initialization error can be big. */
+      if (iter > 2)
+      {
+         _braid_CoreFcn(core, update_design)(app, objective, rnorm, rnorm_adj);
+      }
    }   
 
    return 0;
