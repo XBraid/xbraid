@@ -629,8 +629,12 @@ braid_Drive(braid_Core  core)
                /* Collect sensitivities from all temporal processors */
                _braid_CoreFcn(core, allreduce_gradient)(_braid_CoreElt(core, app), _braid_CoreElt(core, comm));
 
-               /* Allow the user to access the gradient */
-               _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
+               /* Allow the user to access the gradient if acces level is high enough */
+               if (  _braid_CoreElt(core, gradient_access_level) >= 1 )
+               {
+                  if ( done || _braid_CoreElt(core, gradient_access_level) == 2 )
+                  _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
+               }
 
                /* Prepare for the next iteration */ 
                _braid_TapeResetInput(core);
@@ -638,10 +642,6 @@ braid_Drive(braid_Core  core)
                _braid_CoreElt(core, optim)->timeavg   = 0.0;
                _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
             }
-
-               /* DEBUG: Stop iterating */
-               // done = 1;
-               // _braid_CoreElt(core, done) = 1;
          }
       }
    }
@@ -698,7 +698,10 @@ braid_Drive(braid_Core  core)
       _braid_CoreFcn(core, allreduce_gradient)(_braid_CoreElt(core, app), _braid_CoreElt(core, comm));
 
       /* Allow the user to access the gradient */
-      _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
+      if (_braid_CoreElt(core, gradient_access_level) >= 1)
+      {
+         _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
+      }
    }
 
    /* End cycle */
@@ -765,6 +768,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              adjoint         = 0;              /* Default adjoint run: Turned off */
    braid_Int              record          = 0;              /* Default action recording: Turned off */
    braid_Int              verbose         = 0;              /* Default verbosity Turned off */
+   braid_Int              gradient_access_level = 1;        /* Default gradient access level */
 
    braid_Int              myid_world,  myid;
 
@@ -840,22 +844,23 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, skip)            = skip;
 
-   _braid_CoreElt(core, tol_adj)              = braid_INVALID_RNORM;
-   _braid_CoreElt(core, adjoint)              = adjoint;
-   _braid_CoreElt(core, record)               = record;
-   _braid_CoreElt(core, verbose)              = verbose;
-   _braid_CoreElt(core, actionTape)           = NULL;
-   _braid_CoreElt(core, userVectorTape)       = NULL;
-   _braid_CoreElt(core, barTape)              = NULL;
-   _braid_CoreElt(core, optim)                = NULL;
-   _braid_CoreElt(core, step_diff)            = NULL;
-   _braid_CoreElt(core, objT_diff)            = NULL;
-   _braid_CoreElt(core, objectiveT)           = NULL;
-   _braid_CoreElt(core, allreduce_gradient)   = NULL;
-   _braid_CoreElt(core, reset_gradient)       = NULL;
-   _braid_CoreElt(core, access_gradient)      = NULL;
-   _braid_CoreElt(core, postprocess_obj)      = NULL;
-   _braid_CoreElt(core, postprocess_obj_diff) = NULL;
+   _braid_CoreElt(core, tol_adj)               = braid_INVALID_RNORM;
+   _braid_CoreElt(core, adjoint)               = adjoint;
+   _braid_CoreElt(core, record)                = record;
+   _braid_CoreElt(core, verbose)               = verbose;
+   _braid_CoreElt(core, gradient_access_level) = gradient_access_level;
+   _braid_CoreElt(core, actionTape)            = NULL;
+   _braid_CoreElt(core, userVectorTape)        = NULL;
+   _braid_CoreElt(core, barTape)               = NULL;
+   _braid_CoreElt(core, optim)                 = NULL;
+   _braid_CoreElt(core, step_diff)             = NULL;
+   _braid_CoreElt(core, objT_diff)             = NULL;
+   _braid_CoreElt(core, objectiveT)            = NULL;
+   _braid_CoreElt(core, allreduce_gradient)    = NULL;
+   _braid_CoreElt(core, reset_gradient)        = NULL;
+   _braid_CoreElt(core, access_gradient)       = NULL;
+   _braid_CoreElt(core, postprocess_obj)       = NULL;
+   _braid_CoreElt(core, postprocess_obj_diff)  = NULL;
    
    /* Residual history and accuracy tracking for StepStatus*/
    _braid_CoreElt(core, rnorm0)              = braid_INVALID_RNORM;
@@ -895,12 +900,6 @@ braid_Init_Adjoint(braid_PtFcnObjectiveT        objectiveT,
    /* Set the adjoint flag */ 
    _braid_CoreElt(*core_ptr, adjoint) = 1;
    _braid_CoreElt(*core_ptr, record) = 1;
-
-  /* Debug: */
-   if (_braid_CoreElt(*core_ptr, verbose))
-   {
-      printf("\n Start recording \n\n");
-   }
 
   /* Turn off skip on downcycle */
   _braid_CoreElt(*core_ptr, skip) = 0;
@@ -1751,6 +1750,15 @@ braid_SetTolAdjoint(braid_Core core,
                 braid_Real tol_adj)
 {
    _braid_CoreElt(core, tol_adj) = tol_adj;
+
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_SetGradientAccessLevel(braid_Core  core,
+                             braid_Int   gradient_access_level)
+{
+   _braid_CoreElt(core, gradient_access_level) = gradient_access_level;
 
    return _braid_error_flag;
 }

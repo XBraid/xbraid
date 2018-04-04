@@ -490,7 +490,7 @@ int main (int argc, char *argv[])
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 1);
    braid_SetMaxIter(core, 10);
-   // braid_SetVerbosity(core, 0);
+   braid_SetGradientAccessLevel(core, 2);
 
    // /* debug: never skip work on downcycle for comparing primal and adjoint run.*/
    braid_SetSkip(core, 0);

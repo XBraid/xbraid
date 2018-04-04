@@ -226,6 +226,7 @@ typedef struct _braid_Core_struct
    braid_Int              adjoint;          /**< determines if adjoint run is performed (1) or not (0) */
    braid_Int              record;           /**< determines if actions are recorded to the tape or not */
    braid_Int              verbose;          /**< verbosity of the adjoint code */
+   braid_Int              gradient_access_level; /**< determines how often the user's access_gradient function is called */
 
    _braid_Tape*          actionTape;         /**< tape storing the actions while recording */
    _braid_Tape*          userVectorTape;     /**< tape storing primal braid_vectors while recording */
