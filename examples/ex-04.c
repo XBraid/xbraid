@@ -315,8 +315,7 @@ my_ObjectiveT_diff(braid_App         app,
 {
    double deltaT = 1. / app->ntime;
    double  ddesign; 
-   double *du;
-   du      = (double*) malloc(2*sizeof(double));
+   double *du = (double*) malloc(2*sizeof(double));
 
    /* Compute derivative if time index > 0 */
    if ( index > 0 )
@@ -329,8 +328,8 @@ my_ObjectiveT_diff(braid_App         app,
       ddesign = 2. * deltaT * app->gamma * app->design[index-1] * f_bar;
 
       /* Update u_bar and gradient */
-      u_bar->values[0]     += du[0];
-      u_bar->values[1]     += du[1];
+      u_bar->values[0]       += du[0];
+      u_bar->values[1]       += du[1];
       app->gradient[index-1] += ddesign;
    }
    
@@ -477,14 +476,14 @@ int main (int argc, char *argv[])
 
    /* Set some Braid parameters */
    braid_SetPrintLevel( core, 1);
-   braid_SetMaxLevels(core, 1);
+   braid_SetMaxLevels(core, 2);
    braid_SetAbsTol(core, 1.0e-06);
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 1);
-   braid_SetMaxIter(core, 1);
+   braid_SetMaxIter(core, 10);
    // braid_SetVerbosity(core, 0);
 
-   // /* debug: don't skip work on downcycle for comparison with adjoint run.*/
+   // /* debug: never skip work on downcycle for comparing primal and adjoint run.*/
    braid_SetSkip(core, 0);
 
 
@@ -493,7 +492,6 @@ int main (int argc, char *argv[])
 
 
    /* Clean up */
-
    free(design);
    free(gradient);
    free(app);
