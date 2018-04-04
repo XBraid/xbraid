@@ -308,10 +308,10 @@ my_Step_diff(braid_App              app,
    /* Grab the design from the app */
    double lambda = app->design;
 
-   /* Partial derivative with respect to u times u_bar */
+   /* Transposed derivative of step wrt u times u_bar */
    du = 1./(1. - lambda * deltat) * (u_bar->value);
  
-   /* Partial derivative with respect to design times u_bar */
+   /* Transposed derivative of step wrt design times u_bar */
    ddesign = (deltat * (u->value)) / pow(1. - deltat*lambda,2) * (u_bar->value);
 
    /* Update u_bar and gradient */
@@ -418,13 +418,13 @@ int main (int argc, char *argv[])
    app->target    = target;
    app->relax     = relax;
 
-   /* initialize XBraid and set options */
+   /* initialize XBraid */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
              my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
              my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
 
 
-   /* Initialize the adjoint core (should do the same sing as braid_Init for now) */
+   /* Initialize adjoint XBraid */
    braid_Init_Adjoint( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_ResetGradient, my_AccessGradient, &core);
    
    /* Set some typical Braid parameters */

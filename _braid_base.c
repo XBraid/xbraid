@@ -26,8 +26,9 @@ _braid_BaseStep(braid_Core       core,
    braid_Int        myid      = _braid_CoreElt(core, myid);
    braid_Int        verbose   = _braid_CoreElt(core, verbose);
    braid_Int        record    = _braid_CoreElt(core, record);
+   braid_Int        tidx      = _braid_CoreElt(core, idx);
 
-   if (verbose) printf("%d: STEP pushes %p\n", myid, u->bar);
+   if (verbose) printf("%d: STEP %.4f to %.4f, %d\n", myid, t, tnext, tidx);
 
    /* Record to the tape */
    if ( record )
@@ -38,6 +39,7 @@ _braid_BaseStep(braid_Core       core,
       action->core       = core;
       action->inTime     = t;
       action->outTime    = tnext;
+      action->inTimeIdx  = tidx;
       action->status     = (braid_Status) status;
       action->myid       = myid;
       _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
@@ -635,11 +637,12 @@ _braid_BaseStep_diff(_braid_Action *action)
    braid_StepStatus status   = (braid_StepStatus) action->status;
    braid_Real       inTime   = action->inTime;
    braid_Real       outTime  = action->outTime;
+   braid_Int        tidx     = action->inTimeIdx;
    braid_App        app      = _braid_CoreElt(core, app);
    braid_Int        verbose  = _braid_CoreElt(core, verbose);
    braid_Int        myid     = _braid_CoreElt(core, myid);
 
-   if ( verbose ) printf("%d: STEP_DIFF\n", myid);
+   if ( verbose ) printf("%d: STEP_DIFF %.4f to %.4f, %d\n", myid, inTime, outTime, tidx);
 
    /* Get the priamal and bar vectors and pop them from the tapes */
    u    = (braid_Vector)    (_braid_CoreElt(core, userVectorTape)->data_ptr);
@@ -650,6 +653,7 @@ _braid_BaseStep_diff(_braid_Action *action)
    /* Trigger the status with the correct tstart and tstop*/
    _braid_StatusElt(status, t)     = inTime;
    _braid_StatusElt(status, tnext) = outTime;
+   _braid_StatusElt(status, idx)   = tidx;
 
    /* Call the users's differentiated step function */
    _braid_CoreFcn(core, step_diff)(app, u, ubar->userVector, status);
