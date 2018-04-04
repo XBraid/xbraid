@@ -468,7 +468,7 @@ int main (int argc, char *argv[])
 
 
    /* Initialize adjoint XBraid */
-   braid_Init_Adjoint( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_AllreduceGradient, my_ResetGradient, my_GradientNorm, my_UpdateDesign, &core);
+   braid_Init_Adjoint( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_AllreduceGradient, my_ResetGradient, my_GradientNorm, NULL, &core);
    
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);

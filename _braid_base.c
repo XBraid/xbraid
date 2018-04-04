@@ -871,8 +871,11 @@ _braid_BaseUpdateDesign(braid_Core core)
    /* Get primal braid norm */
    _braid_GetRNorm(core, -1, &rnorm);
 
-   /* Call the users update_design function */
-   _braid_CoreFcn(core, update_design)(app, objective, rnorm, rnorm_adj);
+   /* Call the users update_design function, if set */
+   if (_braid_CoreElt(core, update_design) != NULL)
+   {
+      _braid_CoreFcn(core, update_design)(app, objective, rnorm, rnorm_adj);
+   }
 
    return 0;
 }
@@ -888,7 +891,15 @@ _braid_BaseComputeGNorm(braid_Core core,
    /* Call the users update_design function */
    _braid_CoreFcn(core, compute_gnorm)(app, &gnorm);
 
-   /* Set the norm of the gradient */
+   /* If no design updates are performed, set gradient to zero
+    * This ensures, that stopping criterion is based only on state and adjoint residuals. 
+    */
+   if (_braid_CoreElt(core, update_design) == NULL)
+   {
+      gnorm = 0.0;
+   }
+
+   /* Store the gradient norm in the optim structure */
    _braid_SetGradientNorm(core, iter, gnorm);
 
    return 0;
