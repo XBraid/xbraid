@@ -638,6 +638,13 @@ braid_Drive(braid_Core  core)
                /* Collect gradient from all temporal processors */
                _braid_CoreFcn(core, allreduce_gradient)(_braid_CoreElt(core, app), _braid_CoreElt(core, comm));
 
+               /* Allow the user to access the gradient if acces level is high enough */
+               if (  _braid_CoreElt(core, gradient_access_level) >= 1 )
+               {
+                  if ( done || _braid_CoreElt(core, gradient_access_level) == 2 )
+                  _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
+               }
+
                /* Set the norm of the gradient */
                _braid_BaseComputeGNorm(core, iter);
             }
@@ -723,6 +730,11 @@ braid_Drive(braid_Core  core)
       /* Collect sensitivities from all temporal processors */
       _braid_CoreFcn(core, allreduce_gradient)(_braid_CoreElt(core, app), _braid_CoreElt(core, comm));
 
+      /* Allow the user to access the gradient */
+      if (_braid_CoreElt(core, gradient_access_level) >= 1)
+      {
+         _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
+      }
    }
 
    /* End cycle */
@@ -789,6 +801,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              adjoint         = 0;              /* Default adjoint run: Turned off */
    braid_Int              record          = 0;              /* Default action recording: Turned off */
    braid_Int              verbose         = 0;              /* Default verbosity Turned off */
+   braid_Int              gradient_access_level = 1;        /* Default gradient access level */
 
    braid_Int              myid_world,  myid;
 
@@ -869,6 +882,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, adjoint)               = adjoint;
    _braid_CoreElt(core, record)                = record;
    _braid_CoreElt(core, verbose)               = verbose;
+   _braid_CoreElt(core, gradient_access_level) = gradient_access_level;
    _braid_CoreElt(core, actionTape)            = NULL;
    _braid_CoreElt(core, userVectorTape)        = NULL;
    _braid_CoreElt(core, barTape)               = NULL;
@@ -878,6 +892,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, objectiveT)            = NULL;
    _braid_CoreElt(core, allreduce_gradient)    = NULL;
    _braid_CoreElt(core, reset_gradient)        = NULL;
+   _braid_CoreElt(core, access_gradient)       = NULL;
    _braid_CoreElt(core, compute_gnorm)         = NULL;
    _braid_CoreElt(core, update_design)         = NULL;
    _braid_CoreElt(core, postprocess_obj)       = NULL;
@@ -908,6 +923,7 @@ braid_Init_Adjoint(braid_PtFcnObjectiveT        objectiveT,
                    braid_PtFcnObjectiveTDiff    objT_diff,
                    braid_PtFcnAllreduceGradient allreduce_gradient,
                    braid_PtFcnResetGradient     reset_gradient,
+                   braid_PtFcnAccessGradient    access_gradient,
                    braid_PtFcnComputeGNorm      compute_gnorm,
                    braid_PtFcnUpdateDesign      update_design,
                    braid_Core                  *core_ptr)
@@ -938,6 +954,7 @@ braid_Init_Adjoint(braid_PtFcnObjectiveT        objectiveT,
    _braid_CoreElt(*core_ptr, objT_diff)         = objT_diff;
    _braid_CoreElt(*core_ptr, allreduce_gradient) = allreduce_gradient;
    _braid_CoreElt(*core_ptr, reset_gradient)    = reset_gradient;
+   _braid_CoreElt(*core_ptr, access_gradient)   = access_gradient;
    _braid_CoreElt(*core_ptr, compute_gnorm)     = compute_gnorm;
    _braid_CoreElt(*core_ptr, update_design)     = update_design;
   
@@ -1787,3 +1804,12 @@ braid_SetTolGradient(braid_Core core,
    return _braid_error_flag;
 }
 
+
+braid_Int
+braid_SetGradientAccessLevel(braid_Core  core,
+                             braid_Int   gradient_access_level)
+{
+   _braid_CoreElt(core, gradient_access_level) = gradient_access_level;
+
+   return _braid_error_flag;
+}

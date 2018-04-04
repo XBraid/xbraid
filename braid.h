@@ -414,6 +414,12 @@ typedef braid_Int
 
 
 /**
+ * Access the gradient, used for printing etc.
+ */
+typedef braid_Int
+(*braid_PtFcnAccessGradient)(braid_App app );    /**< user-defined _braid_App structure */
+
+/**
  * Compute the norm of the gradient 
  */
 typedef braid_Int
@@ -900,6 +906,7 @@ braid_Init_Adjoint( braid_PtFcnObjectiveT        objT,               /**< Evalua
                     braid_PtFcnObjectiveTDiff    objT_diff,          /**< differentiated version of the objT function  */
                     braid_PtFcnAllreduceGradient allreduce_gradient, /**< Invoke an MPI_Allreduce call for the gradient */
                     braid_PtFcnResetGradient     reset_gradient,     /**< Set the gradient to zero */
+                    braid_PtFcnAccessGradient    access_gradient,    /**< Access the gradient, i.e. for output */
                     braid_PtFcnComputeGNorm      compute_gnorm,      /**< Compute norm of the gradient */
                     braid_PtFcnUpdateDesign      update_design,      /**< Update the design for optimization */
                     braid_Core                  *core_ptr            /**< Pointer to braid_Core (_braid_Core) struct */   
@@ -978,6 +985,21 @@ braid_Int
 braid_SetTolGradient(braid_Core core,       /**< braid_Core (_braid_Core) struct */
                      braid_Real tol_grad    /**< tolerance for the gradient norm */
                     );
+
+
+/**
+ * This controls how often the user's gradient access routine is called.
+ * 
+ * - Level 0:  Never 
+ * - Level 1:  Only after the Braid (optimization) iterations have terminated
+ * - Level 2:  After each iteration
+ * 
+ * Default is level 1.
+ **/
+braid_Int
+braid_SetGradientAccessLevel(braid_Core  core,                 /**< braid_Core struct */
+                             braid_Int   gradient_access_level /**< desired level for accessing the gradient */
+                            );
 
 
                           

@@ -346,6 +346,18 @@ my_ObjectiveT_diff(braid_App         app,
    return 0;
 }
 
+int 
+my_AccessGradient(braid_App app)
+{
+   /* Print the gradient */
+   if (app->myid==0)
+   {
+     printf("Gradient: %1.14e\n", app->gradient);
+   } 
+
+   return 0;
+}
+
 int
 my_AllreduceGradient(braid_App app, 
                      MPI_Comm comm)
@@ -468,7 +480,7 @@ int main (int argc, char *argv[])
 
 
    /* Initialize adjoint XBraid */
-   braid_Init_Adjoint( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_AllreduceGradient, my_ResetGradient, my_GradientNorm, NULL, &core);
+   braid_Init_Adjoint( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_AllreduceGradient, my_ResetGradient, my_AccessGradient, my_GradientNorm, my_UpdateDesign, &core);
    
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);
@@ -478,6 +490,7 @@ int main (int argc, char *argv[])
    braid_SetAccessLevel(core, 1);
    braid_SetVerbosity(core, 0);
    braid_SetMaxIter(core, 100);
+   braid_SetGradientAccessLevel(core, 0);
    /* Optional: Set the adjoint residual */
    // braid_SetTolAdjoint(core, 1e-9);
    braid_SetTolGradient(core, 1e-5);
