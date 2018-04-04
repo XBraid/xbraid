@@ -244,8 +244,9 @@ _braid_DriveCheckConvergence(braid_Core  core,
    braid_Int            max_iter        = _braid_CoreElt(core, max_iter);
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
    braid_Int            tight_fine_tolx = _braid_CoreElt(core, tight_fine_tolx);
+   braid_Optim          optim           = _braid_CoreElt(core, optim);
    braid_Real           rnorm, rnorm0;
-   braid_Real           rnorm_adj, rnorm0_adj, tol_adj;
+   braid_Real           rnorm_adj, rnorm0_adj, gnorm, tol_adj;
 
    braid_Int            done = *done_ptr;
 
@@ -261,11 +262,12 @@ _braid_DriveCheckConvergence(braid_Core  core,
       rnorm0 = _braid_CoreElt(core, rnorm0);
    }
 
-   /* Get adjoint tolerance and rnorm */
+   /* Get adjoint residual norm, tolerance and norm of gradient */
    if (_braid_CoreElt(core, adjoint))
    {
-      rnorm_adj  = _braid_CoreElt(core, optim)->rnorm_adj;
-      rnorm0_adj = _braid_CoreElt(core, optim)->rnorm0_adj;
+      rnorm_adj  = optim->rnorm_adj;
+      rnorm0_adj = optim->rnorm0_adj;
+      gnorm      = optim->gnorm;
       tol_adj    = _braid_CoreElt(core, tol_adj);
    }
 
