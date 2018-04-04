@@ -986,6 +986,15 @@ braid_SetTolGradient(braid_Core core,       /**< braid_Core (_braid_Core) struct
                      braid_Real tol_grad    /**< tolerance for the gradient norm */
                     );
 
+/*
+ * Update the design only if state and adjoint residual norms are below this tolerance.
+ * Default value is the tolerance specified for state residual norm. 
+ * Choose a higher tolerance for One-shot optimization.
+ */
+braid_Int
+braid_SetTolDesignUpdate(braid_Core core,             /**< braid_Core struct */
+                         braid_Real tol_designupdate  /**< tolerance for state and adjoint residual norms */
+                        );
 
 /**
  * This controls how often the user's gradient access routine is called.

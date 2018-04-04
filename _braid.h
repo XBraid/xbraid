@@ -227,6 +227,7 @@ typedef struct _braid_Core_struct
    /* Data for adjoint and optimization */
    braid_Real             tol_adj;          /**< tolerance of adjoint residual */
    braid_Real             tol_grad;         /**< tolerance for the gradient norm */
+   braid_Real             tol_designupdate;  /**< perform design updates only if state and adjoint residuals are below this tolerance */
    braid_Int              adjoint;          /**< determines if adjoint run is performed (1) or not (0) */
    braid_Int              record;           /**< determines if actions are recorded to the tape or not */
    braid_Int              verbose;          /**< verbosity of the adjoint code */

@@ -504,7 +504,7 @@ braid_Drive(braid_Core  core)
       _braid_OptimInit( core, grid, &optim);
       _braid_CoreElt(core, optim) = optim; 
 
-      /* If not set already: set default tolerance for adjoint residual norm and gradient norm */
+      /* If not set already: set default tolerance for adjoint residual norm, gradient norm, designupdates */
       if (_braid_CoreElt(core, tol_adj) == braid_INVALID_RNORM)
       {
          _braid_CoreElt(core, tol_adj)  = _braid_CoreElt(core, tol);
@@ -512,6 +512,10 @@ braid_Drive(braid_Core  core)
       if (_braid_CoreElt(core, tol_grad) == braid_INVALID_RNORM)
       {
          _braid_CoreElt(core, tol_grad) = _braid_CoreElt(core, tol);
+      }
+      if (_braid_CoreElt(core, tol_designupdate) == braid_INVALID_RNORM)
+      {
+         _braid_CoreElt(core, tol_designupdate) = _braid_CoreElt(core, tol);
       }
    }
 
@@ -638,13 +642,6 @@ braid_Drive(braid_Core  core)
                /* Collect gradient from all temporal processors */
                _braid_CoreFcn(core, allreduce_gradient)(_braid_CoreElt(core, app), _braid_CoreElt(core, comm));
 
-               /* Allow the user to access the gradient if acces level is high enough */
-               if (  _braid_CoreElt(core, gradient_access_level) >= 1 )
-               {
-                  if ( done || _braid_CoreElt(core, gradient_access_level) == 2 )
-                  _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
-               }
-
                /* Set the norm of the gradient */
                _braid_BaseComputeGNorm(core, iter);
             }
@@ -665,8 +662,18 @@ braid_Drive(braid_Core  core)
 
             if (_braid_CoreElt(core, adjoint))
             {
+               /* Allow the user to access the gradient if acces level is high enough */
+               if (  _braid_CoreElt(core, gradient_access_level) >= 1 )
+               {
+                  if ( done || _braid_CoreElt(core, gradient_access_level) == 2 )
+                  _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
+               }
+
                /* Update the design, if desired */
-               _braid_BaseUpdateDesign(core);
+               if (!done)
+               {
+                  _braid_BaseUpdateDesign(core);
+               }
             
 
                /* Prepare for the next iteration */ 
@@ -879,6 +886,7 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, tol_adj)               = braid_INVALID_RNORM;
    _braid_CoreElt(core, tol_grad)              = braid_INVALID_RNORM;
+   _braid_CoreElt(core, tol_designupdate)      = braid_INVALID_RNORM;
    _braid_CoreElt(core, adjoint)               = adjoint;
    _braid_CoreElt(core, record)                = record;
    _braid_CoreElt(core, verbose)               = verbose;
@@ -1800,6 +1808,15 @@ braid_SetTolGradient(braid_Core core,
                      braid_Real tol_grad)
 {
    _braid_CoreElt(core, tol_grad) = tol_grad;
+
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_SetTolDesignUpdate(braid_Core core, 
+                         braid_Real tol_designupdate)
+{
+   _braid_CoreElt(core, tol_designupdate) = tol_designupdate;
 
    return _braid_error_flag;
 }

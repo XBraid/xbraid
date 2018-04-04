@@ -862,20 +862,28 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
 braid_Int
 _braid_BaseUpdateDesign(braid_Core core)
 {
-   braid_App   app       = _braid_CoreElt(core, app);
-   braid_Optim optim     = _braid_CoreElt(core, optim);
-   braid_Real  objective = optim->objective;
-   braid_Real  rnorm_adj = optim->rnorm_adj;
+   braid_App   app              = _braid_CoreElt(core, app);
+   braid_Optim optim            = _braid_CoreElt(core, optim);
+   braid_Real  tol_designupdate = _braid_CoreElt(core, tol_designupdate);
+   braid_Real  objective        = optim->objective;
+   braid_Real  rnorm_adj        = optim->rnorm_adj;
    braid_Real  rnorm;
 
    /* Get primal braid norm */
    _braid_GetRNorm(core, -1, &rnorm);
 
-   /* Call the users update_design function, if set */
-   if (_braid_CoreElt(core, update_design) != NULL)
+   /* Return if no update_design function has been specified -> only gradient computation */
+   if (_braid_CoreElt(core, update_design) == NULL)
+   {
+      return 0;
+   }
+
+   /* Call the users update_design function, if state and adjoint residual norms are below the tolerance */
+   if (rnorm    < tol_designupdate && 
+      rnorm_adj < tol_designupdate)
    {
       _braid_CoreFcn(core, update_design)(app, objective, rnorm, rnorm_adj);
-   }
+   }   
 
    return 0;
 }

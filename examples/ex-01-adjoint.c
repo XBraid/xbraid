@@ -83,7 +83,6 @@ typedef struct _braid_App_struct
    double    stepsize;        /* Stepsize for design updates */
    double    target;          /* Target for tracking type objective function (inverse design) */
    double    relax;           /* Relaxation parameter for the tracking type objective function */
-   double    tol_designupdate; /* Update design only if state and adjoint residual norms are below this tolerance */
 } my_App;
 
 /* Vector structure can contain anything, and be name anything as well */
@@ -412,13 +411,9 @@ my_UpdateDesign(braid_App app,
    /* Hessian approximation */
    Hinv = 1. ;
 
-   /* Design update, if primal and adjoint residuals are small */
-   if (rnorm    < app->tol_designupdate && 
-      rnorm_adj < app->tol_designupdate)
-   {
-      app->design = app->design - (app->stepsize) * Hinv * (app->gradient);
-      printf("Design update: %1.14e\n", app->design);
-   }
+   /* Design update */
+   app->design = app->design - (app->stepsize) * Hinv * (app->gradient);
+   printf("Design update: %1.14e\n", app->design);
 
    return 0;
 }             
@@ -439,7 +434,6 @@ int main (int argc, char *argv[])
    double        target;
    double        relax;
    double        stepsize;
-   double        tol_designupdate;
 
    /* Define time domain: ntime intervals */
    ntime  = 50;
@@ -452,7 +446,6 @@ int main (int argc, char *argv[])
    target           = 1.15231184218078e-01; // Inverse Design Target: precomputed from design = -0.2, ntime=50
    relax            = 0.0005;               // Relaxation parameter
    stepsize         = 10.0;                  // Stepsize for design updates 
-   tol_designupdate = 1e-8;                 // Update design only if state and adjoint residual norms are below this tolerance. 
 
    /* DEBUG gradient */
    // design += 1e-8;
@@ -471,7 +464,6 @@ int main (int argc, char *argv[])
    app->stepsize         = stepsize;
    app->target           = target;
    app->relax            = relax;
-   app->tol_designupdate = tol_designupdate;
 
    /* initialize XBraid */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
@@ -490,10 +482,10 @@ int main (int argc, char *argv[])
    braid_SetAccessLevel(core, 1);
    braid_SetVerbosity(core, 0);
    braid_SetMaxIter(core, 100);
-   braid_SetGradientAccessLevel(core, 0);
-   /* Optional: Set the adjoint residual */
-   // braid_SetTolAdjoint(core, 1e-9);
-   braid_SetTolGradient(core, 1e-5);
+   // braid_SetGradientAccessLevel(core, 1);   
+   // braid_SetTolAdjoint(core, 1e-9);        
+   // braid_SetTolGradient(core, 1e-9);
+   // braid_SetTolDesignUpdate(core, 1e-8);
 
    /* debug: don't skip work on downcycle for comparison with adjoint run.*/
    braid_SetSkip(core, 0);
