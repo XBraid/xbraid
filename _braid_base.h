@@ -183,8 +183,11 @@ _braid_BaseBufUnpack_diff(_braid_Action *action);
 /*---- User routines for Optimization ---- */
 
 braid_Int
-_braid_BaseUpdateDesign(braid_Core core, 
-                        braid_Int  iter);
+_braid_BaseUpdateDesign(braid_Core core);
 
+
+braid_Int
+_braid_BaseComputeGNorm(braid_Core core,
+                        braid_Int  iter);
 
 #endif

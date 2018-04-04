@@ -341,7 +341,7 @@ _braid_DrivePrintStatus(braid_Core  core,
    braid_Int            print_level     = _braid_CoreElt(core, print_level);
    braid_Optim          optim           = _braid_CoreElt(core, optim);
    braid_Real           rnorm, rnorm_prev, cfactor, wtime;
-   braid_Real           rnorm_adj, objective;
+   braid_Real           rnorm_adj, objective, gnorm;
 
    /* If my processor is not 0, or if print_level is not set high enough, return */
    if ((myid != 0) || (print_level < 1))
@@ -353,8 +353,9 @@ _braid_DrivePrintStatus(braid_Core  core,
 
    if (_braid_CoreElt(core, adjoint))
    {
-      rnorm_adj = _braid_CoreElt(core, optim)->rnorm_adj;
-      objective = _braid_CoreElt(core, optim)->objective;
+      rnorm_adj = optim->rnorm_adj;
+      objective = optim->objective;
+      gnorm     = optim->gnorm;
    }
 
    _braid_GetRNorm(core, -1, &rnorm);
@@ -632,17 +633,20 @@ braid_Drive(braid_Core  core)
                /* Collect gradient from all temporal processors */
                _braid_CoreFcn(core, allreduce_gradient)(_braid_CoreElt(core, app), _braid_CoreElt(core, comm));
 
+               /* Allow the user to access the gradient if acces level is high enough */
+               if (  _braid_CoreElt(core, gradient_access_level) >= 1 )
+               {
+                  if ( done || _braid_CoreElt(core, gradient_access_level) == 2 )
+                  _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
+               }
+
+               /* Set the norm of the gradient */
+               _braid_BaseComputeGNorm(core, iter);
             }
 
             /* Print current status */
             _braid_DrivePrintStatus(core, level, iter, refined, localtime);
 
-            /* Update the design, if desired, and set gradient norm */
-            if (_braid_CoreElt(core, adjoint))
-            {
-               _braid_BaseUpdateDesign(core, iter);
-            }
-            
             /* If no refinement was done, check for convergence */
             if (!refined)
             {
@@ -656,12 +660,9 @@ braid_Drive(braid_Core  core)
 
             if (_braid_CoreElt(core, adjoint))
             {
-               /* Allow the user to access the gradient if acces level is high enough */
-               if (  _braid_CoreElt(core, gradient_access_level) >= 1 )
-               {
-                  if ( done || _braid_CoreElt(core, gradient_access_level) == 2 )
-                  _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
-               }
+               /* Update the design, if desired */
+               _braid_BaseUpdateDesign(core);
+            
 
                /* Prepare for the next iteration */ 
                _braid_TapeResetInput(core);
@@ -887,6 +888,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, allreduce_gradient)    = NULL;
    _braid_CoreElt(core, reset_gradient)        = NULL;
    _braid_CoreElt(core, access_gradient)       = NULL;
+   _braid_CoreElt(core, compute_gnorm)         = NULL;
    _braid_CoreElt(core, update_design)         = NULL;
    _braid_CoreElt(core, postprocess_obj)       = NULL;
    _braid_CoreElt(core, postprocess_obj_diff)  = NULL;
@@ -917,6 +919,7 @@ braid_Init_Adjoint(braid_PtFcnObjectiveT        objectiveT,
                    braid_PtFcnAllreduceGradient allreduce_gradient,
                    braid_PtFcnResetGradient     reset_gradient,
                    braid_PtFcnAccessGradient    access_gradient,
+                   braid_PtFcnComputeGNorm      compute_gnorm,
                    braid_PtFcnUpdateDesign      update_design,
                    braid_Core                  *core_ptr)
 {
@@ -947,6 +950,7 @@ braid_Init_Adjoint(braid_PtFcnObjectiveT        objectiveT,
    _braid_CoreElt(*core_ptr, allreduce_gradient) = allreduce_gradient;
    _braid_CoreElt(*core_ptr, reset_gradient)    = reset_gradient;
    _braid_CoreElt(*core_ptr, access_gradient)   = access_gradient;
+   _braid_CoreElt(*core_ptr, compute_gnorm)     = compute_gnorm;
    _braid_CoreElt(*core_ptr, update_design)     = update_design;
   
 

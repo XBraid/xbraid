@@ -384,18 +384,30 @@ my_ResetGradient(braid_App app)
    return 0;
 }
 
+int
+my_GradientNorm(braid_App app,
+                double   *gradient_norm_prt)
+
+{
+   double gnorm;
+
+   /* Norm of gradient */
+   gnorm = sqrt( (app->gradient)*(app->gradient) );
+
+   /* Return the gradient norm */
+   *gradient_norm_prt = gnorm;
+
+   return 0;
+}
+             
+
 int 
 my_UpdateDesign(braid_App app, 
                 double    objective,
                 double    rnorm,
-                double    rnorm_adj,
-                double   *gradient_norm_prt)
+                double    rnorm_adj)
 {
-   double gnorm;
    double Hinv;
-
-   /* Norm of gradient */
-   gnorm = sqrt( (app->gradient)*(app->gradient) );
 
    /* Hessian approximation */
    Hinv = 1. ;
@@ -405,14 +417,8 @@ my_UpdateDesign(braid_App app,
       rnorm_adj < app->tol_designupdate)
    {
       app->design = app->design - (app->stepsize) * Hinv * (app->gradient);
-      printf("Design update: %1.14e, ||g||= %1.14e \n", app->design, gnorm);
+      printf("Design update: %1.14e\n", app->design);
    }
-
-   /* Return the gradient norm */
-   *gradient_norm_prt = gnorm;
-
-   /* If no optimization, return 0.0 ! */
-   // *gradient_norm_prt = 0.0;
 
    return 0;
 }             
@@ -445,8 +451,8 @@ int main (int argc, char *argv[])
    gradient         = 0.0;                  // Initial gradient
    target           = 1.15231184218078e-01; // Inverse Design Target: precomputed from design = -0.2, ntime=50
    relax            = 0.0005;               // Relaxation parameter
-   stepsize         = 1.0;                  // Stepsize for design updates 
-   tol_designupdate = 1e-5;                 // Update design only if state and adjoint residual norms are below this tolerance. 
+   stepsize         = 10.0;                  // Stepsize for design updates 
+   tol_designupdate = 1e-8;                 // Update design only if state and adjoint residual norms are below this tolerance. 
 
    /* DEBUG gradient */
    // design += 1e-8;
@@ -474,7 +480,7 @@ int main (int argc, char *argv[])
 
 
    /* Initialize adjoint XBraid */
-   braid_Init_Adjoint( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_AllreduceGradient, my_ResetGradient, my_AccessGradient, my_UpdateDesign, &core);
+   braid_Init_Adjoint( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_AllreduceGradient, my_ResetGradient, my_AccessGradient, my_GradientNorm, my_UpdateDesign, &core);
    
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);
@@ -484,10 +490,10 @@ int main (int argc, char *argv[])
    braid_SetAccessLevel(core, 1);
    braid_SetVerbosity(core, 0);
    braid_SetMaxIter(core, 100);
-   braid_SetGradientAccessLevel(core, 1);
+   braid_SetGradientAccessLevel(core, 0);
    /* Optional: Set the adjoint residual */
    // braid_SetTolAdjoint(core, 1e-9);
-   braid_SetTolGradient(core, 1e-4);
+   braid_SetTolGradient(core, 1e-5);
 
    /* debug: don't skip work on downcycle for comparison with adjoint run.*/
    braid_SetSkip(core, 0);

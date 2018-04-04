@@ -419,6 +419,14 @@ typedef braid_Int
 typedef braid_Int
 (*braid_PtFcnAccessGradient)(braid_App app );    /**< user-defined _braid_App structure */
 
+/**
+ * Compute the norm of the gradient 
+ */
+typedef braid_Int
+(*braid_PtFcnComputeGNorm)(braid_App   app,     /**< user-defined _braid_App structure */
+                           braid_Real *gnorm_ptr    /**< Return value: Norm of the gradient */
+                          );
+
 
 /** 
  * Update the design variable 
@@ -427,8 +435,7 @@ typedef braid_Int
 (*braid_PtFcnUpdateDesign)(braid_App   app,         /**< user-defined _braid_App structure */ 
                            braid_Real  objective,   /**< objective function value */
                            braid_Real  rnorm,       /**< norm of the state residual */
-                           braid_Real  rnorm_adj,   /**< norm of the adjoint residual */
-                           braid_Real *gnorm_ptr    /**< Return value: Norm of the gradient */
+                           braid_Real  rnorm_adj    /**< norm of the adjoint residual */
                           );
 
 /** @}*/
@@ -900,6 +907,7 @@ braid_Init_Adjoint( braid_PtFcnObjectiveT        objT,               /**< Evalua
                     braid_PtFcnAllreduceGradient allreduce_gradient, /**< Invoke an MPI_Allreduce call for the gradient */
                     braid_PtFcnResetGradient     reset_gradient,     /**< Set the gradient to zero */
                     braid_PtFcnAccessGradient    access_gradient,    /**< Access the gradient, i.e. for output */
+                    braid_PtFcnComputeGNorm      compute_gnorm,      /**< Compute norm of the gradient */
                     braid_PtFcnUpdateDesign      update_design,      /**< Update the design for optimization */
                     braid_Core                  *core_ptr            /**< Pointer to braid_Core (_braid_Core) struct */   
                   );
