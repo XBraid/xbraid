@@ -374,10 +374,10 @@ _braid_DrivePrintStatus(braid_Core  core,
       }
       else
       {
-         _braid_printf("  Braid: || r_%d || = %1.6e, || r_adj_%d || = %1.6e, Obj = %1.14e\n", iter, rnorm, iter,  rnorm_adj, objective);
+         _braid_printf("  Braid: %3d  %1.6e  %1.6e  %1.6e  %1.6e\n", iter, rnorm, iter,  rnorm_adj, gnorm, objective);
 
-         /* Save residuals in optimization outfile */
-         _braid_ParFprintfFlush(optim->outfile, myid, "%03d  %1.14e %1.14e %1.14e\n", iter, rnorm, rnorm_adj, objective);
+         /* Write to optimization outfile */
+         _braid_ParFprintfFlush(optim->outfile, myid, "%03d  %1.14e %1.14e %1.14e %1.14e\n", iter, rnorm, rnorm_adj, gnorm, objective);
       }
    }
    else
@@ -460,6 +460,11 @@ braid_Drive(braid_Core  core)
    { 
       _braid_printf("  Braid: Begin simulation, %d time steps\n\n",
                     _braid_CoreElt(core, gupper));
+      if (_braid_CoreElt(core, adjoint))
+      {
+         _braid_printf("  Braid:     || r ||      || r_adj ||   || gradient ||  Objective\n");
+         _braid_printf("  Braid: ------------------------------------------------------------\n");
+      }                 
    }
 
    /* Start timer */

@@ -133,7 +133,7 @@ _braid_OptimInit( braid_Core   core,
    if (myid == 0 && io_level>=1)
    {
       optim->outfile = fopen("braid.out.optim", "w");
-      _braid_ParFprintfFlush(optim->outfile, myid, "#    || r ||              || r_adj ||          Objective \n");
+      _braid_ParFprintfFlush(optim->outfile, myid, "#    || r ||              || r_adj ||          Gradient              Objective\n");
    }
 
    *optim_ptr = optim;
