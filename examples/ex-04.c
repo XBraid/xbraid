@@ -425,6 +425,16 @@ my_ResetGradient(braid_App app)
    return 0;
 }
 
+int 
+my_UpdateDesign(braid_App app, 
+                double    objective,
+                double    rnorm,
+                double    rnorm_adj,
+                double   *gradient_norm_prt)
+{
+   
+   return 0;
+}
 
 /*--------------------------------------------------------------------------
  * Main driver
@@ -481,7 +491,7 @@ int main (int argc, char *argv[])
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app, my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
 
    /* Initialize adjoint XBraid */
-   braid_Init_Adjoint( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_AllreduceGradient, my_ResetGradient, my_AccessGradient, &core);
+   braid_Init_Adjoint( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_AllreduceGradient, my_ResetGradient, my_AccessGradient, my_UpdateDesign, &core);
 
    /* Set some Braid parameters */
    braid_SetPrintLevel( core, 1);
@@ -490,7 +500,7 @@ int main (int argc, char *argv[])
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 1);
    braid_SetMaxIter(core, 10);
-   braid_SetGradientAccessLevel(core, 2);
+   // braid_SetGradientAccessLevel(core, 2);
 
    // /* debug: never skip work on downcycle for comparing primal and adjoint run.*/
    braid_SetSkip(core, 0);

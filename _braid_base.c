@@ -857,4 +857,30 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
 
    return 0;
 }
+
+
+braid_Int
+_braid_BaseUpdateDesign(braid_Core core)
+{
+   braid_App   app       = _braid_CoreElt(core, app);
+   braid_Optim optim     = _braid_CoreElt(core, optim);
+   braid_Real  objective = optim->objective;
+   braid_Real  rnorm_adj = optim->rnorm_adj;
+   braid_Real  rnorm;
+   braid_Real  gnorm;
+
+   /* Get primal braid norm */
+   _braid_GetRNorm(core, -1, &rnorm);
+
+   // if (update)
+   // {
+      _braid_CoreFcn(core, update_design)(app, objective, rnorm, rnorm_adj, &gnorm);
+   // }
+
+   /* Set the norm of the gradient */
+   optim->gnorm = gnorm;
+
+   return 0;
+}
+
 #endif

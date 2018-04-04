@@ -178,4 +178,11 @@ _braid_BaseBufPack_diff(_braid_Action *action);
 braid_Int
 _braid_BaseBufUnpack_diff(_braid_Action *action);
 
+
+
+/*---- User routines for Optimization ---- */
+braid_Int
+_braid_BaseUpdateDesign(braid_Core core);
+
+
 #endif

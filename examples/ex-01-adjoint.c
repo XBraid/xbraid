@@ -394,16 +394,22 @@ my_UpdateDesign(braid_App app,
    double gnorm;
    double Hinv;
 
+   /* Norm of gradient */
+   gnorm = sqrt( (app->gradient)*(app->gradient) );
+
    /* Hessian approximation */
    Hinv = 1. ;
 
    /* Design update */
-   app->design = app->design - (app->stepsize) * Hinv * (app->gradient);
-
-   /* Norm of gradient */
-   gnorm = sqrt( (app->gradient)*(app->gradient) );
+   double tol = 1e-6;
+   if (rnorm < tol && rnorm_adj < 1e-6)
+   {
+      printf("Design update!\n");
+      app->design = app->design - (app->stepsize) * Hinv * (app->gradient);
+   }
 
    /* Return the gradient norm */
+   /* If no optimization, return 0.0 ! */
    *gradient_norm_prt = gnorm;
 
    return 0;
@@ -473,7 +479,7 @@ int main (int argc, char *argv[])
    braid_SetAccessLevel(core, 1);
    braid_SetVerbosity(core, 0);
    braid_SetMaxIter(core, 10);
-   braid_SetGradientAccessLevel(core, 2);
+   braid_SetGradientAccessLevel(core, 1);
    /* Optional: Set the adjoint residual */
    // braid_SetTolAdjoint(core, 1.0e-4);
 

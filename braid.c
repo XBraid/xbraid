@@ -614,6 +614,14 @@ braid_Drive(braid_Core  core)
                /* Update optimization adjoints and compute residual norm */
                _braid_UpdateAdjoint(core, &rnorm_adj);
                _braid_SetRNormAdjoint(core, iter, rnorm_adj);
+
+               /* Collect gradient from all temporal processors */
+               _braid_CoreFcn(core, allreduce_gradient)(_braid_CoreElt(core, app), _braid_CoreElt(core, comm));
+
+
+
+               /* Update the design, if desired */
+               _braid_BaseUpdateDesign(core);
             }
 
             /* Print current status */
@@ -632,9 +640,6 @@ braid_Drive(braid_Core  core)
 
             if (_braid_CoreElt(core, adjoint))
             {
-               /* Collect sensitivities from all temporal processors */
-               _braid_CoreFcn(core, allreduce_gradient)(_braid_CoreElt(core, app), _braid_CoreElt(core, comm));
-
                /* Allow the user to access the gradient if acces level is high enough */
                if (  _braid_CoreElt(core, gradient_access_level) >= 1 )
                {

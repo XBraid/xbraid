@@ -425,7 +425,7 @@ typedef braid_Int
  */
 typedef braid_Int
 (*braid_PtFcnUpdateDesign)(braid_App   app,         /**< user-defined _braid_App structure */ 
-                           braid_Real   objective,    /**< objective function value */
+                           braid_Real  objective,   /**< objective function value */
                            braid_Real  rnorm,       /**< norm of the state residual */
                            braid_Real  rnorm_adj,   /**< norm of the adjoint residual */
                            braid_Real *gnorm_ptr    /**< Return value: Norm of the gradient */
