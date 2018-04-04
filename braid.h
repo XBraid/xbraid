@@ -410,15 +410,26 @@ typedef braid_Int
  * Set the gradient to zero
  */
 typedef braid_Int
-(*braid_PtFcnResetGradient)(braid_App app );             /**< user-defined _braid_App structure */
+(*braid_PtFcnResetGradient)(braid_App app );     /**< user-defined _braid_App structure */
 
 
 /**
  * Access the gradient, used for printing etc.
  */
 typedef braid_Int
-(*braid_PtFcnAccessGradient)(braid_App app );              /**< user-defined _braid_App structure */
+(*braid_PtFcnAccessGradient)(braid_App app );    /**< user-defined _braid_App structure */
 
+
+/** 
+ * Update the design variable 
+ */
+typedef braid_Int
+(*braid_PtFcnUpdateDesign)(braid_App   app,         /**< user-defined _braid_App structure */ 
+                           braid_Real   objective,    /**< objective function value */
+                           braid_Real  rnorm,       /**< norm of the state residual */
+                           braid_Real  rnorm_adj,   /**< norm of the adjoint residual */
+                           braid_Real *gnorm_ptr    /**< Return value: Norm of the gradient */
+                          );
 
 /** @}*/
 
@@ -888,7 +899,8 @@ braid_Init_Adjoint( braid_PtFcnObjectiveT        objT,               /**< Evalua
                     braid_PtFcnObjectiveTDiff    objT_diff,          /**< differentiated version of the objT function  */
                     braid_PtFcnAllreduceGradient allreduce_gradient, /**< Invoke an MPI_Allreduce call for the gradient */
                     braid_PtFcnResetGradient     reset_gradient,     /**< Set the gradient to zero */
-                    braid_PtFcnAccessGradient    access_gradient,    /**< Access the gradient for output or optimization */
+                    braid_PtFcnAccessGradient    access_gradient,    /**< Access the gradient, i.e. for output */
+                    braid_PtFcnUpdateDesign      update_design,      /**< Update the design for optimization */
                     braid_Core                  *core_ptr            /**< Pointer to braid_Core (_braid_Core) struct */   
                   );
 

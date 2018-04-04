@@ -863,6 +863,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, allreduce_gradient)    = NULL;
    _braid_CoreElt(core, reset_gradient)        = NULL;
    _braid_CoreElt(core, access_gradient)       = NULL;
+   _braid_CoreElt(core, update_design)         = NULL;
    _braid_CoreElt(core, postprocess_obj)       = NULL;
    _braid_CoreElt(core, postprocess_obj_diff)  = NULL;
    
@@ -892,6 +893,7 @@ braid_Init_Adjoint(braid_PtFcnObjectiveT        objectiveT,
                    braid_PtFcnAllreduceGradient allreduce_gradient,
                    braid_PtFcnResetGradient     reset_gradient,
                    braid_PtFcnAccessGradient    access_gradient,
+                   braid_PtFcnUpdateDesign      update_design,
                    braid_Core                  *core_ptr)
 {
 
@@ -921,6 +923,7 @@ braid_Init_Adjoint(braid_PtFcnObjectiveT        objectiveT,
    _braid_CoreElt(*core_ptr, allreduce_gradient) = allreduce_gradient;
    _braid_CoreElt(*core_ptr, reset_gradient)    = reset_gradient;
    _braid_CoreElt(*core_ptr, access_gradient)   = access_gradient;
+   _braid_CoreElt(*core_ptr, update_design)     = update_design;
   
 
    return _braid_error_flag;

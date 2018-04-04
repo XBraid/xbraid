@@ -76,11 +76,11 @@
 typedef struct _braid_App_struct
 {
    int       rank;
-   double    design;        /* Store the design variables in the app */
-   double    gradient;      /* Store the gradient in the app - should be of same size as design! */
    double    ntime;
    int       myid;
-
+   double    design;        /* Store the design variables in the app */
+   double    gradient;      /* Store the gradient in the app - should be of same size as design! */
+   double    stepsize;      /* Stepsize for design updates */
    double    target;       /* Target for tracking type objective function (inverse design) */
    double    relax;        /* Relaxation parameter for the tracking type objective function */
 
@@ -384,6 +384,31 @@ my_ResetGradient(braid_App app)
    return 0;
 }
 
+int 
+my_UpdateDesign(braid_App app, 
+                double    objective,
+                double    rnorm,
+                double    rnorm_adj,
+                double   *gradient_norm_prt)
+{
+   double gnorm;
+   double Hinv;
+
+   /* Hessian approximation */
+   Hinv = 1. ;
+
+   /* Design update */
+   app->design = app->design - (app->stepsize) * Hinv * (app->gradient);
+
+   /* Norm of gradient */
+   gnorm = sqrt( (app->gradient)*(app->gradient) );
+
+   /* Return the gradient norm */
+   *gradient_norm_prt = gnorm;
+
+   return 0;
+}             
+
 
 /*--------------------------------------------------------------------------
  * Main driver
@@ -399,17 +424,19 @@ int main (int argc, char *argv[])
    double        gradient;
    double        target;
    double        relax;
+   double        stepsize;
 
    /* Define time domain: ntime intervals */
-   ntime  = 10;
+   ntime  = 50;
    tstart = 0.0;
    tstop  = tstart + ntime/2.;
 
    /* Initialize optimization */
-   design   = -1.0;
-   gradient = 0.0;
-   target   = 2.50661945043060e-01; // precomputed from design = -0.5, ntime=10
-   relax    = 0.0005;
+   design   = -1.0;                 // Initial design 
+   gradient = 0.0;                  // Initial gradient
+   stepsize = 0.1;                  // Stepsize for design updates 
+   target   = 1.15231184218078e-01; // Inverse Design Target: precomputed from design = -0.2, ntime=50
+   relax    = 0.0005;               // Relaxation parameter
 
    /* DEBUG gradient */
    // design += 1e-8;
@@ -425,6 +452,7 @@ int main (int argc, char *argv[])
    app->gradient  = gradient;
    app->ntime     = ntime;
    app->myid      = rank;
+   app->stepsize  = stepsize;
    app->target    = target;
    app->relax     = relax;
 
@@ -435,7 +463,7 @@ int main (int argc, char *argv[])
 
 
    /* Initialize adjoint XBraid */
-   braid_Init_Adjoint( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_AllreduceGradient, my_ResetGradient, my_AccessGradient, &core);
+   braid_Init_Adjoint( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_AllreduceGradient, my_ResetGradient, my_AccessGradient, my_UpdateDesign, &core);
    
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);
@@ -445,27 +473,28 @@ int main (int argc, char *argv[])
    braid_SetAccessLevel(core, 1);
    braid_SetVerbosity(core, 0);
    braid_SetMaxIter(core, 10);
+   braid_SetGradientAccessLevel(core, 2);
+   /* Optional: Set the adjoint residual */
+   // braid_SetTolAdjoint(core, 1.0e-4);
 
    /* debug: don't skip work on downcycle for comparison with adjoint run.*/
    braid_SetSkip(core, 0);
 
    /* Optional: Set the time for starting time-average */
-//    braid_SetTStartTimeaverage( core, 1.0);
-//    braid_SetTStopTimeaverage( core, tstop);
+   // braid_SetTStartTimeaverage( core, 1.0);
+   // braid_SetTStopTimeaverage( core, tstop);
 
    /* Optional: Set the tracking type objective function and derivative */
-   // braid_SetPostprocessObjective(core, my_PostprocessObjective);
-   // braid_SetPostprocessObjective_diff(core, my_PostprocessObjective_diff);
-
-   /* Optional: Set the adjoint residual */
-   // braid_SetTolAdjoint(core, 1.0e-4);
+   braid_SetPostprocessObjective(core, my_PostprocessObjective);
+   braid_SetPostprocessObjective_diff(core, my_PostprocessObjective_diff);
 
 
-   /* Run simulation, and then clean up */
+   /* Run simulation */
    braid_Drive(core);
 
 
-
+   /* Clean up */
+   free(app);
    braid_Destroy(core);
    MPI_Finalize();
 

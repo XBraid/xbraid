@@ -233,13 +233,14 @@ typedef struct _braid_Core_struct
    _braid_Tape*          userVectorTape;     /**< tape storing primal braid_vectors while recording */
    _braid_Tape*          barTape;            /**< tape storing intermediate AD-bar variables while recording */
  
-   braid_Optim optim;                            /**< structure that stores optimization variables (objective function, etc.) */ 
-   braid_PtFcnObjectiveT       objectiveT;       /**< User function: evaluate objective function at time t */
-   braid_PtFcnAllreduceGradient    allreduce_gradient;   /**< User function: Invoke an MPI_Allreduce call for the gradient */
-   braid_PtFcnResetGradient    reset_gradient;   /**< User function: Set the gradient to zero. Is called before each iteration */
-   braid_PtFcnAccessGradient   access_gradient;  /**< User function: Access the gradient for output or optimization. This involves MPI_Allreduce! */
-   braid_PtFcnPostprocessObjective postprocess_obj; /**< Optional user function: Further modify the time-averaged objective function, e.g. for inverse design problems, adding relaxation term etc. */
-   braid_PtFcnPostprocessObjective_diff postprocess_obj_diff; /**< Optional user function: Differentiated version of the postprocessing function  */
+   braid_Optim                     optim;              /**< structure that stores optimization variables (objective function, etc.) */ 
+   braid_PtFcnObjectiveT           objectiveT;         /**< User function: evaluate objective function at time t */
+   braid_PtFcnAllreduceGradient    allreduce_gradient; /**< User function: Invoke an MPI_Allreduce call for the gradient */
+   braid_PtFcnResetGradient        reset_gradient;     /**< User function: Set the gradient to zero. Is called before each iteration */
+   braid_PtFcnAccessGradient       access_gradient;    /**< User function: Access the gradient for output or optimization. */
+   braid_PtFcnUpdateDesign         update_design;
+   braid_PtFcnPostprocessObjective postprocess_obj; /**< Optional user function: Modify the time-averaged objective function, e.g. for inverse design problems, adding relaxation term etc. */
+   braid_PtFcnPostprocessObjective_diff postprocess_obj_diff; /**< Optional user function: Derivative of postprocessing function  */
 
    /* Differentiated user functions */
    braid_PtFcnStepDiff         step_diff;        /**< User function: apply differentiated step function */
