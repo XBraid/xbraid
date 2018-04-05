@@ -867,8 +867,8 @@ _braid_BaseUpdateDesign(braid_Core  core,
    braid_App   app              = _braid_CoreElt(core, app);
    braid_Optim optim            = _braid_CoreElt(core, optim);
    braid_Int   myid             = _braid_CoreElt(core, myid);
-   braid_Real  tol_designupdate = _braid_CoreElt(core, tol_designupdate);
    braid_Int   iter             = _braid_CoreElt(core, niter);
+   braid_Real  tol_designupdate = optim->tol_designupdate;
    braid_Real  objective        = optim->objective;
    braid_Real  rnorm            = optim->rnorm;
    braid_Real  rnorm_adj        = optim->rnorm_adj;

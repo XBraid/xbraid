@@ -246,7 +246,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
    braid_Int            tight_fine_tolx = _braid_CoreElt(core, tight_fine_tolx);
    braid_Int            maxoptimiter    = _braid_CoreElt(core, maxoptimiter);
    braid_Optim          optim           = _braid_CoreElt(core, optim);
-   braid_Int            optimiter       = optim->iter;
+   braid_Int            optimiter;
    braid_Real           rnorm, rnorm0;
    braid_Real           rnorm_adj, rnorm0_adj, gnorm, gnorm0;
    braid_Real           tol_adj, tol_grad;
@@ -264,20 +264,22 @@ _braid_DriveCheckConvergence(braid_Core  core,
       _braid_GetRNorm(core, -1, &rnorm);
       rnorm0 = _braid_CoreElt(core, rnorm0);
    }
-   /* Store state norm in the optimization structure */
-   optim->rnorm  = rnorm;
-   optim->rnorm0 = rnorm0;
 
-   /* Get adjoint residual and gradient norm and stopping tolerances */
+
    if (_braid_CoreElt(core, adjoint))
    {
+      /* Store state norm in the optimization structure */
+      optim->rnorm  = rnorm;
+      optim->rnorm0 = rnorm0;
+
+      /* Get information from the optim structure */ 
       rnorm_adj  = optim->rnorm_adj;
       rnorm0_adj = optim->rnorm0_adj;
       gnorm      = optim->gnorm;
       gnorm0     = optim->gnorm0;
-      tol_adj    = _braid_CoreElt(core, tol_adj);
-      tol_grad   = _braid_CoreElt(core, tol_grad);
-
+      tol_adj    = optim->tol_adj;
+      tol_grad   = optim->tol_grad;
+      optimiter  = optim->iter;
    }
 
    /* If using a relative tolerance, adjust tol */
@@ -319,10 +321,16 @@ _braid_DriveCheckConvergence(braid_Core  core,
       done = 1; 
    }
    
-   if (iter == max_iter-1 || optimiter == maxoptimiter -1)
+   if (iter == max_iter-1 )
    {
       done = 1;
+      printf("\n Max. state iterations reached.\n\n");
    } 
+   if (optimiter == maxoptimiter -1)
+   {
+      done = 1;
+      printf("\n Max. optimization iterations reached.\n\n");
+   }
 
    *done_ptr = done;
 
@@ -453,6 +461,7 @@ braid_Drive(braid_Core  core)
    braid_Int            access_level    = _braid_CoreElt(core, access_level);
    braid_App            app             = _braid_CoreElt(core, app);
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
+   braid_Optim          optim           = _braid_CoreElt(core, optim);
 
    braid_Int     *nrels, nrel0;
    braid_Int      nlevels;
@@ -516,8 +525,25 @@ braid_Drive(braid_Core  core)
    _braid_InitGuess(core, 0);
 
 
-   /* Initialize and allocate the adjoint variables */
-   _braid_InitAdjoint(core, grid);
+   if (_braid_CoreElt(core, adjoint))
+   {
+      /* Initialize and allocate the adjoint variables */
+      _braid_InitAdjoint(core, grid);
+
+      /* Set default tolerance, if not set already */
+      if (optim->tol_adj == -1)
+      {
+          optim->tol_adj = _braid_CoreElt(core, tol);
+      }
+      if (optim->tol_grad == -1)
+      {
+          optim->tol_grad = _braid_CoreElt(core, tol);
+      }
+      if (optim->tol_designupdate == -1)
+      {
+          optim->tol_designupdate = _braid_CoreElt(core, tol);
+      }
+   }
 
 
    /* Initialize cycle state */
@@ -895,9 +921,6 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, skip)            = skip;
 
-   _braid_CoreElt(core, tol_adj)               = braid_INVALID_RNORM;
-   _braid_CoreElt(core, tol_grad)              = braid_INVALID_RNORM;
-   _braid_CoreElt(core, tol_designupdate)      = braid_INVALID_RNORM;
    _braid_CoreElt(core, adjoint)               = adjoint;
    _braid_CoreElt(core, record)                = record;
    _braid_CoreElt(core, verbose)               = verbose;
@@ -951,7 +974,8 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    braid_Optim optim;
    braid_Int   myid       = _braid_CoreElt(*core_ptr, myid);
    braid_Int   io_level   = _braid_CoreElt(*core_ptr, io_level);
-   braid_Real  tol        = _braid_CoreElt(*core_ptr, tol);
+
+   /* Default values */
    braid_Real  tstart_obj = _braid_CoreElt(*core_ptr, tstart);
    braid_Real  tstop_obj  = _braid_CoreElt(*core_ptr, tstop);
 
@@ -983,15 +1007,11 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    _braid_CoreElt(*core_ptr, compute_gnorm)     = compute_gnorm;
    _braid_CoreElt(*core_ptr, update_design)     = update_design;
 
-   /* Set default tolerance values */
-   _braid_CoreElt(*core_ptr, tol_adj)          = tol;
-   _braid_CoreElt(*core_ptr, tol_grad)         = tol;
-   _braid_CoreElt(*core_ptr, tol_designupdate) = tol;
   
    /* Allocate memory for the optimization structure */
-   optim = (braid_Optim) malloc(11*sizeof(braid_Real) + sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE));
+   optim = (braid_Optim) malloc(14*sizeof(braid_Real) + sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE));
 
-   /* Set the some optimization variables */
+   /* Set the optimization variables */
    optim->adjoints     = NULL;  // will be initialized in braid_Drive()
    optim->tapeinput    = NULL;  // will be initialized in braid_Drive()
    optim->objective    = 0.0;
@@ -1006,6 +1026,9 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    optim->gnorm0       = braid_INVALID_RNORM;
    optim->tstart_obj   = tstart_obj;
    optim->tstop_obj    = tstop_obj; 
+   optim->tol_adj      = -1.;       /* will be set in braid_Drive() */
+   optim->tol_grad     = -1.;       /* will be set in braid_Drive() */
+   optim->tol_designupdate = -1.;       /* will be set in braid_Drive() */
 
    /* Open and prepare optimization output file */
    if (myid == 0 && io_level>=1)
@@ -1016,7 +1039,6 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
 
    /* Store the optim structure in the core */
    _braid_CoreElt( *core_ptr, optim) = optim; 
-
 
    return _braid_error_flag;
 }
@@ -1848,7 +1870,7 @@ braid_Int
 braid_SetTolAdjoint(braid_Core core, 
                 braid_Real tol_adj)
 {
-   _braid_CoreElt(core, tol_adj) = tol_adj;
+   _braid_CoreElt(core, optim)->tol_adj = tol_adj;
 
    return _braid_error_flag;
 }
@@ -1858,7 +1880,7 @@ braid_Int
 braid_SetTolGradient(braid_Core core, 
                      braid_Real tol_grad)
 {
-   _braid_CoreElt(core, tol_grad) = tol_grad;
+   _braid_CoreElt(core, optim)->tol_grad = tol_grad;
 
    return _braid_error_flag;
 }
@@ -1867,7 +1889,7 @@ braid_Int
 braid_SetTolDesignUpdate(braid_Core core, 
                          braid_Real tol_designupdate)
 {
-   _braid_CoreElt(core, tol_designupdate) = tol_designupdate;
+   _braid_CoreElt(core, optim)->tol_designupdate = tol_designupdate;
 
    return _braid_error_flag;
 }

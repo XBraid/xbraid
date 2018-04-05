@@ -70,23 +70,27 @@ typedef struct _braid_BaseVector_struct *braid_BaseVector;
  */
 struct _braid_Optimization_struct
 {
-  braid_Real     timeavg;          /**< time-averaged objective function */
-  braid_Real     objective;        /**< objective function of the optimization problem. Postprocess of time-averaged objective */
-  braid_Real     tstart_obj;       /**< time for starting the time-average of the objective  function */
-  braid_Real     tstop_obj;        /**< time for stopping the time-average of the objective  function */
-  braid_Real     f_bar;            /**< contains the seed for tape evaluation */
-  braid_Real     rnorm_adj;        /**< norm of the adjoint residual */
-  braid_Real     rnorm0_adj;       /**< initial norm of the adjoint residual */
-  braid_Real     rnorm;            /**< norm of the state residual */
-  braid_Real     rnorm0;           /**< initial norm of the state residual */
-  braid_Real     gnorm;            /**< norm of the gradient */
-  braid_Real     gnorm0;           /**< initial norm of the gradient */
-  braid_Int      iter;              /**< counts the number of design updates (i.e. optimization cycles) */
-  FILE          *outfile;          /**< Outputfile for state / adjoint residuals, objective function value, etc. */ 
+   braid_Real     timeavg;          /**< time-averaged objective function */
+   braid_Real     objective;        /**< objective function of the optimization  problem. Postprocess of time-averaged objective */
+   braid_Real     tstart_obj;       /**< time for starting the time-average of  the objective  function */
+   braid_Real     tstop_obj;        /**< time for stopping the time-average of  the objective  function */
+   braid_Real     f_bar;            /**< contains the seed for tape evaluation  */
+   braid_Real     rnorm_adj;        /**< norm of the adjoint residual */
+   braid_Real     rnorm0_adj;       /**< initial norm of the adjoint residual */
+   braid_Real     rnorm;            /**< norm of the state residual */
+   braid_Real     rnorm0;           /**< initial norm of the state residual */
+   braid_Real     gnorm;            /**< norm of the gradient */
+   braid_Real     gnorm0;           /**< initial norm of the gradient */
+   braid_Real     tol_adj;          /**< tolerance of adjoint residual */
+   braid_Real     tol_grad;         /**< tolerance for the gradient norm */
+   braid_Real     tol_designupdate;  /**< perform design updates only if state and adjoint residuals are below this tolerance */
+ 
+   braid_Int      iter;              /**< counts the number of design updates (i.e. optimization cycles) */
+   FILE          *outfile;          /**< Outputfile for state / adjoint residuals, objective function value, etc. */ 
 
-  braid_Vector  *adjoints;          /**< vector for the adjoint optimization variables */
+   braid_Vector  *adjoints;          /**< vector for the adjoint optimization variables */
 
-  braid_VectorBar *tapeinput;         /**< helper: store pointer to input of one braid iteration */
+   braid_VectorBar *tapeinput;         /**< helper: store pointer to input of one braid iteration */
 };
 typedef struct _braid_Optimization_struct *braid_Optim;
 
@@ -228,9 +232,6 @@ typedef struct _braid_Core_struct
    braid_Real             globaltime;       /**< global wall time for braid_Drive() */
 
    /* Data for adjoint and optimization */
-   braid_Real             tol_adj;          /**< tolerance of adjoint residual */
-   braid_Real             tol_grad;         /**< tolerance for the gradient norm */
-   braid_Real             tol_designupdate;  /**< perform design updates only if state and adjoint residuals are below this tolerance */
    braid_Int              maxoptimiter;      /**< maximum number of optimization iterations */
    braid_Int              adjoint;          /**< determines if adjoint run is performed (1) or not (0) */
    braid_Int              record;           /**< determines if actions are recorded to the tape or not */
