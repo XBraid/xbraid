@@ -345,8 +345,8 @@ _braid_DrivePrintStatus(braid_Core  core,
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
    braid_Int            rstopped        = _braid_CoreElt(core, rstopped);
    braid_Int            print_level     = _braid_CoreElt(core, print_level);
-   braid_Optim          optim           = _braid_CoreElt(core, optim);
-   braid_Int            optimiter       = optim->iter;
+   braid_Optim          optim; 
+   braid_Int            optimiter;
    braid_Real           rnorm, rnorm_prev, cfactor, wtime;
    braid_Real           rnorm_adj, objective, gnorm;
 
@@ -360,6 +360,8 @@ _braid_DrivePrintStatus(braid_Core  core,
 
    if (_braid_CoreElt(core, adjoint))
    {
+      optim           = _braid_CoreElt(core, optim);
+      optimiter       = optim->iter;
       rnorm_adj = optim->rnorm_adj;
       objective = optim->objective;
       gnorm     = optim->gnorm;
