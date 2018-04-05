@@ -542,10 +542,13 @@ int main (int argc, char *argv[])
    braid_Drive(core);
 
    /* Print final design */
-   printf("Final design:");
-   for (ts = 0; ts<ntime; ts++)
+   if (rank == 0)
    {
-      printf("%d %1.14e\n", ts, app->design[ts]);
+      printf("Final design:\n");
+      for (ts = 0; ts<ntime; ts++)
+      {
+         printf("%d %1.14e\n", ts, app->design[ts]);
+      }
    }
 
    /* Clean up */

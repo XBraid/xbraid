@@ -480,7 +480,6 @@ int main (int argc, char *argv[])
    braid_SetAbsTol(core, 1.0e-06);
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 1);
-   braid_SetVerbosity(core, 0);
    braid_SetMaxIter(core, 10);
    braid_SetMaxOptimIter(core, 100);
    // braid_SetGradientAccessLevel(core, 1);   
