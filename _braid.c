@@ -70,81 +70,6 @@ _braid_VectorBarDelete(braid_Core core, braid_VectorBar bar)
   }
 }
 
-
-braid_Int
-_braid_OptimInit( braid_Core   core,
-                  _braid_Grid *fine_grid,               
-                  braid_Optim *optim_ptr)
-{
-   braid_Optim      optim;
-   braid_Vector    *adjoints  = NULL; 
-   braid_VectorBar *tapeinput = NULL; 
-   braid_BaseVector u;
-   braid_VectorBar  bar_copy;
-   braid_Vector     mybar;
-   braid_Int        myid, io_level;
-   braid_Int        ncpoints, clower, iupper, cfactor, sflag, iclocal, ic;
-   
-   myid      = _braid_CoreElt(core, myid);
-   io_level  = _braid_CoreElt(core, io_level);
-   ncpoints  = _braid_GridElt(fine_grid, ncpoints);
-   clower    = _braid_GridElt(fine_grid, clower);
-   iupper    = _braid_GridElt(fine_grid, iupper);
-   cfactor   = _braid_GridElt(fine_grid, cfactor);
-
-   /* Allocate memory for the optimization structure */
-   optim = (braid_Optim) malloc(11*sizeof(braid_Real) + sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE));
-   adjoints  = _braid_CTAlloc(braid_Vector, ncpoints);
-   tapeinput = _braid_CTAlloc(braid_VectorBar, ncpoints);
-
-   /* Loop over all C-points */
-   for (ic=clower; ic <= iupper; ic += cfactor)
-   {
-      if( _braid_IsCPoint(ic, cfactor))
-      {
-         _braid_UGetVectorRef(core, 0, ic, &u);
-         _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
-
-         /* Initialize optimization adjoints with zeros */
-         _braid_CoreFcn(core, init)(_braid_CoreElt(core, app), _braid_CoreElt(core, tstart), &mybar);
-         _braid_CoreFcn(core, sum)(_braid_CoreElt(core, app), -1.0, mybar, 1.0, mybar);
-         adjoints[iclocal] = mybar;
-
-         /* Initialize the tapeinput with u_bar */
-         _braid_VectorBarCopy(u->bar, &bar_copy);
-         tapeinput[iclocal] = bar_copy;
-      }
-   }
-
-   /* Set the some optimization variables */
-   optim->adjoints     = adjoints;
-   optim->tapeinput    = tapeinput;
-   optim->objective    = 0.0;
-   optim->timeavg      = 0.0;
-   optim->tstart_obj   = _braid_CoreElt(core, tstart);     /* default value */
-   optim->tstop_obj    = _braid_CoreElt(core, tstop);      /* default value */
-   optim->f_bar        = 0.0;
-   optim->rnorm_adj    = -1.;
-   optim->rnorm0_adj   = braid_INVALID_RNORM;
-   optim->rnorm        = -1.;
-   optim->rnorm0       = braid_INVALID_RNORM;
-   optim->gnorm        = -1.;
-   optim->gnorm0       = braid_INVALID_RNORM;
-   optim->iter         = 0;
-
-   /* Open optimization output file */
-   if (myid == 0 && io_level>=1)
-   {
-      optim->outfile = fopen("braid.out.optim", "w");
-      _braid_ParFprintfFlush(optim->outfile, myid, "#    || r ||              || r_adj ||          || Gradient ||          Objective\n");
-   }
-
-   *optim_ptr = optim;
-
-   return 0;
-}
-
-
 braid_Int
 _braid_OptimDestroy( braid_Core core)
 {
@@ -396,6 +321,51 @@ _braid_EvalObjective_diff(braid_Core core)
    return 0;
 }
 
+
+braid_Int
+_braid_InitAdjoint(braid_Core   core, 
+                   _braid_Grid *fine_grid)
+{
+
+   braid_Vector    *adjoints  = NULL; 
+   braid_VectorBar *tapeinput = NULL; 
+   braid_BaseVector u; 
+   braid_VectorBar  bar_copy;
+   braid_Vector     mybar;
+   braid_Int ic, clower, iupper, cfactor, ncpoints, iclocal, sflag;
+
+   ncpoints  = _braid_GridElt(fine_grid, ncpoints);
+   clower    = _braid_GridElt(fine_grid, clower);
+   iupper    = _braid_GridElt(fine_grid, iupper);
+   cfactor   = _braid_GridElt(fine_grid, cfactor);
+   adjoints  = _braid_CTAlloc(braid_Vector, ncpoints);
+   tapeinput = _braid_CTAlloc(braid_VectorBar, ncpoints);
+
+   /* Loop over all C-points */
+   for (ic=clower; ic <= iupper; ic += cfactor)
+   {
+      if( _braid_IsCPoint(ic, cfactor))
+      {
+         _braid_UGetVectorRef(core, 0, ic, &u);
+         _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
+
+         /* Initialize adjoint variables with zeros */
+         _braid_CoreFcn(core, init)(_braid_CoreElt(core, app), _braid_CoreElt(core, tstart), &mybar);
+         _braid_CoreFcn(core, sum)(_braid_CoreElt(core, app), -1.0, mybar, 1.0, mybar);
+         adjoints[iclocal] = mybar;
+
+         /* Initialize the tapeinput pointer with u_bar */
+         _braid_VectorBarCopy(u->bar, &bar_copy);
+         tapeinput[iclocal] = bar_copy;
+      }
+   }
+
+   /* Pass the adjoints to the optimization structure */
+   _braid_CoreElt(core, optim)->adjoints  = adjoints;
+   _braid_CoreElt(core, optim)->tapeinput = tapeinput;
+
+   return _braid_error_flag;
+}                
 
 /*----------------------------------------------------------------------------
  * Macros used below

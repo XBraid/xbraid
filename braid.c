@@ -460,7 +460,6 @@ braid_Drive(braid_Core  core)
    braid_Real    *ta;
    _braid_Grid   *grid;
    braid_Real     localtime, globaltime;
-   braid_Optim    optim;
    braid_Real     rnorm_adj;
    braid_Int      update_flag;
 
@@ -517,26 +516,9 @@ braid_Drive(braid_Core  core)
    _braid_InitGuess(core, 0);
 
 
-   /* if adjoint: initialize optimization */
-   if (_braid_CoreElt(core, adjoint))
-   {
-      _braid_OptimInit( core, grid, &optim);
-      _braid_CoreElt(core, optim) = optim; 
+   /* Initialize and allocate the adjoint variables */
+   _braid_InitAdjoint(core, grid);
 
-      /* If not set already: set default tolerance for adjoint residual norm, gradient norm, designupdates */
-      if (_braid_CoreElt(core, tol_adj) == braid_INVALID_RNORM)
-      {
-         _braid_CoreElt(core, tol_adj)  = _braid_CoreElt(core, tol);
-      }
-      if (_braid_CoreElt(core, tol_grad) == braid_INVALID_RNORM)
-      {
-         _braid_CoreElt(core, tol_grad) = _braid_CoreElt(core, tol);
-      }
-      if (_braid_CoreElt(core, tol_designupdate) == braid_INVALID_RNORM)
-      {
-         _braid_CoreElt(core, tol_designupdate) = _braid_CoreElt(core, tol);
-      }
-   }
 
    /* Initialize cycle state */
    _braid_DriveInitCycle(core, &cycle);
@@ -956,16 +938,20 @@ braid_Init(MPI_Comm               comm_world,
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 braid_Int
-braid_Init_Adjoint(braid_PtFcnObjectiveT        objectiveT,
-                   braid_PtFcnStepDiff          step_diff, 
-                   braid_PtFcnObjectiveTDiff    objT_diff,
-                   braid_PtFcnAllreduceGradient allreduce_gradient,
-                   braid_PtFcnResetGradient     reset_gradient,
-                   braid_PtFcnAccessGradient    access_gradient,
-                   braid_PtFcnComputeGNorm      compute_gnorm,
-                   braid_PtFcnUpdateDesign      update_design,
-                   braid_Core                  *core_ptr)
+braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
+                       braid_PtFcnStepDiff          step_diff, 
+                       braid_PtFcnObjectiveTDiff    objT_diff,
+                       braid_PtFcnAllreduceGradient allreduce_gradient,
+                       braid_PtFcnResetGradient     reset_gradient,
+                       braid_PtFcnAccessGradient    access_gradient,
+                       braid_PtFcnComputeGNorm      compute_gnorm,
+                       braid_PtFcnUpdateDesign      update_design,
+                       braid_Core                  *core_ptr)
 {
+   braid_Optim optim;
+   braid_Int   myid     = _braid_CoreElt(*core_ptr, myid);
+   braid_Int   io_level = _braid_CoreElt(*core_ptr, io_level);
+   braid_Real  tol      = _braid_CoreElt(*core_ptr, tol);
 
   if( _braid_CoreElt(*core_ptr, refine) )
   {
@@ -986,7 +972,7 @@ braid_Init_Adjoint(braid_PtFcnObjectiveT        objectiveT,
    _braid_TapeInit( _braid_CoreElt(*core_ptr, barTape) );
 
 
-   /* Additional user functions */
+   /* Set the user functions */
    _braid_CoreElt(*core_ptr, objectiveT)        = objectiveT;
    _braid_CoreElt(*core_ptr, step_diff)         = step_diff;
    _braid_CoreElt(*core_ptr, objT_diff)         = objT_diff;
@@ -995,7 +981,41 @@ braid_Init_Adjoint(braid_PtFcnObjectiveT        objectiveT,
    _braid_CoreElt(*core_ptr, access_gradient)   = access_gradient;
    _braid_CoreElt(*core_ptr, compute_gnorm)     = compute_gnorm;
    _braid_CoreElt(*core_ptr, update_design)     = update_design;
+
+   /* Set default tolerance values */
+   _braid_CoreElt(*core_ptr, tol_adj)          = tol;
+   _braid_CoreElt(*core_ptr, tol_grad)         = tol;
+   _braid_CoreElt(*core_ptr, tol_designupdate) = tol;
   
+   /* Allocate memory for the optimization structure */
+   optim = (braid_Optim) malloc(11*sizeof(braid_Real) + sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE));
+
+   /* Set the some optimization variables */
+   optim->adjoints     = NULL;  // will be initialized in braid_Drive()
+   optim->tapeinput    = NULL;  // will be initialized in braid_Drive()
+   optim->objective    = 0.0;
+   optim->timeavg      = 0.0;
+   optim->tstart_obj   = _braid_CoreElt(*core_ptr, tstart);     /* default value */
+   optim->tstop_obj    = _braid_CoreElt(*core_ptr, tstop);      /* default value */
+   optim->f_bar        = 0.0;
+   optim->rnorm_adj    = -1.;
+   optim->rnorm0_adj   = braid_INVALID_RNORM;
+   optim->rnorm        = -1.;
+   optim->rnorm0       = braid_INVALID_RNORM;
+   optim->gnorm        = -1.;
+   optim->gnorm0       = braid_INVALID_RNORM;
+   optim->iter         = 0;
+
+   /* Open optimization output file */
+   if (myid == 0 && io_level>=1)
+   {
+      optim->outfile = fopen("braid.out.optim", "w");
+      _braid_ParFprintfFlush(optim->outfile, myid, "#    || r ||              || r_adj ||          || Gradient ||          Objective\n");
+   }
+
+   /* Store the optim structure in the core */
+   _braid_CoreElt( *core_ptr, optim) = optim; 
+
 
    return _braid_error_flag;
 }

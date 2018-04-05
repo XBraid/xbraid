@@ -854,14 +854,6 @@ _braid_VectorBarCopy(braid_VectorBar bar, braid_VectorBar *bar_ptr);
 void
 _braid_VectorBarDelete(braid_Core core, braid_VectorBar bar);
 
-/**
- * Initialize the optimization structure:
- * Allocate memory and set the variables 
- */
-braid_Int
-_braid_OptimInit( braid_Core  core,               
-                  _braid_Grid *fine_grid,
-                  braid_Optim *optim_ptr);
 
 /**
  * Free memory of the optimization structure 
@@ -913,6 +905,15 @@ _braid_EvalObjective(braid_Core core);
  */
 braid_Int
 _braid_EvalObjective_diff(braid_Core core);
+
+
+/**
+ * Allocate and initialize the optimization adjoint variables 
+ */
+braid_Int
+_braid_InitAdjoint(braid_Core   core, 
+                   _braid_Grid *fine_grid);
+
 
 #ifdef __cplusplus
 }
