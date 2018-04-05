@@ -486,7 +486,7 @@ int main (int argc, char *argv[])
    // braid_SetGradientAccessLevel(core, 1);   
    // braid_SetTolAdjoint(core, 1e-9);        
    // braid_SetTolGradient(core, 1e-9);
-   // braid_SetTolDesignUpdate(core, 1e-8);
+   braid_SetThresholdDesignUpdate(core, 1e-4);
 
    /* debug: don't skip work on downcycle for comparison with adjoint run.*/
    braid_SetSkip(core, 0);

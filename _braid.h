@@ -83,7 +83,7 @@ struct _braid_Optimization_struct
    braid_Real     gnorm0;           /**< initial norm of the gradient */
    braid_Real     tol_adj;          /**< tolerance of adjoint residual */
    braid_Real     tol_grad;         /**< tolerance for the gradient norm */
-   braid_Real     tol_designupdate;  /**< perform design updates only if state and adjoint residuals are below this tolerance */
+   braid_Real     threshold_design;  /**< update design only if state and adjoint residuals are below this threshold */
  
    braid_Int      iter;              /**< counts the number of design updates (i.e. optimization cycles) */
    FILE          *outfile;          /**< Outputfile for state / adjoint residuals, objective function value, etc. */ 

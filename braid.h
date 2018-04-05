@@ -978,7 +978,7 @@ braid_SetTolAdjoint(braid_Core core,       /**< braid_Core (_braid_Core) struct 
                    );
 
 /**
- * Set the tolerance for gradient norm (default is same as primal one)
+ * Set a tolerance for gradient norm (default is same as primal one)
  * This is an absolute or relative stopping criterion depending on what has been chosen for the primal run. 
  */
 braid_Int
@@ -987,13 +987,12 @@ braid_SetTolGradient(braid_Core core,       /**< braid_Core (_braid_Core) struct
                     );
 
 /*
- * Update the design only if state and adjoint residual norms are below this tolerance.
- * Default value is the tolerance specified for state residual norm. 
- * Choose a higher tolerance for One-shot optimization.
+ * Set a threshold for design updates: Only update design if state and adjoint residual norms are below this threshold.
+ * Default value is the tolerance specified for state residual norm, i.e. reduced-space optimization. Choose a higher tolerance for One-shot optimization.
  */
 braid_Int
-braid_SetTolDesignUpdate(braid_Core core,             /**< braid_Core struct */
-                         braid_Real tol_designupdate  /**< tolerance for state and adjoint residual norms */
+braid_SetThresholdDesignUpdate(braid_Core core,        /**< braid_Core struct */
+                         braid_Real threshold_design   /**< threshold for design updates */
                         );
 
 /**

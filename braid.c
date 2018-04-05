@@ -539,9 +539,9 @@ braid_Drive(braid_Core  core)
       {
           optim->tol_grad = _braid_CoreElt(core, tol);
       }
-      if (optim->tol_designupdate == -1)
+      if (optim->threshold_design == -1)
       {
-          optim->tol_designupdate = _braid_CoreElt(core, tol);
+          optim->threshold_design = _braid_CoreElt(core, tol);
       }
    }
 
@@ -1028,7 +1028,7 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    optim->tstop_obj    = tstop_obj; 
    optim->tol_adj      = -1.;       /* will be set in braid_Drive() */
    optim->tol_grad     = -1.;       /* will be set in braid_Drive() */
-   optim->tol_designupdate = -1.;       /* will be set in braid_Drive() */
+   optim->threshold_design = -1.;       /* will be set in braid_Drive() */
 
    /* Open and prepare optimization output file */
    if (myid == 0 && io_level>=1)
@@ -1886,10 +1886,10 @@ braid_SetTolGradient(braid_Core core,
 }
 
 braid_Int
-braid_SetTolDesignUpdate(braid_Core core, 
-                         braid_Real tol_designupdate)
+braid_SetThresholdDesignUpdate(braid_Core core, 
+                              braid_Real threshold_design)
 {
-   _braid_CoreElt(core, optim)->tol_designupdate = tol_designupdate;
+   _braid_CoreElt(core, optim)->threshold_design = threshold_design;
 
    return _braid_error_flag;
 }
