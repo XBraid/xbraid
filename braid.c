@@ -244,8 +244,8 @@ _braid_DriveCheckConvergence(braid_Core  core,
    braid_Int            max_iter        = _braid_CoreElt(core, max_iter);
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
    braid_Int            tight_fine_tolx = _braid_CoreElt(core, tight_fine_tolx);
-   braid_Int            maxoptimiter    = _braid_CoreElt(core, maxoptimiter);
    braid_Optim          optim           = _braid_CoreElt(core, optim);
+   braid_Int            maxoptimiter    = optim->maxiter;
    braid_Int            optimiter;
    braid_Real           rnorm, rnorm0;
    braid_Real           rnorm_adj, rnorm0_adj, gnorm, gnorm0;
@@ -844,7 +844,6 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              adjoint         = 0;              /* Default adjoint run: Turned off */
    braid_Int              record          = 0;              /* Default action recording: Turned off */
    braid_Int              verbose         = 0;              /* Default verbosity Turned off */
-   braid_Int              maxoptimiter    = 100;            /* Default value for max. optimization iterations */
    braid_Int              gradient_access_level = 1;        /* Default gradient access level */
 
    braid_Int              myid_world,  myid;
@@ -924,7 +923,6 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, adjoint)               = adjoint;
    _braid_CoreElt(core, record)                = record;
    _braid_CoreElt(core, verbose)               = verbose;
-   _braid_CoreElt(core, maxoptimiter)          = maxoptimiter;
    _braid_CoreElt(core, gradient_access_level) = gradient_access_level;
    _braid_CoreElt(core, actionTape)            = NULL;
    _braid_CoreElt(core, userVectorTape)        = NULL;
@@ -975,60 +973,40 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    braid_Int   myid       = _braid_CoreElt(*core_ptr, myid);
    braid_Int   io_level   = _braid_CoreElt(*core_ptr, io_level);
 
-   /* Default values */
-   braid_Real  tstart_obj = _braid_CoreElt(*core_ptr, tstart);
-   braid_Real  tstop_obj  = _braid_CoreElt(*core_ptr, tstop);
-
-  if( _braid_CoreElt(*core_ptr, refine) )
-  {
-    printf("ERROR: Adjoint of FRefine not supported yet!\n");
-    exit(1);
-  }
-
-   /* Set the adjoint flag */ 
+   /* Set adjoint flags */ 
    _braid_CoreElt(*core_ptr, adjoint) = 1;
-   _braid_CoreElt(*core_ptr, record) = 1;
+   _braid_CoreElt(*core_ptr, record)  = 1;
+   _braid_CoreElt(*core_ptr, skip)    = 0;
 
-  /* Turn off skip on downcycle */
-  _braid_CoreElt(*core_ptr, skip) = 0;
+   /* Define default values */
+   braid_Real  tstart_obj   = _braid_CoreElt(*core_ptr, tstart);
+   braid_Real  tstop_obj    = _braid_CoreElt(*core_ptr, tstop);
+   braid_Int   maxoptimiter = 100;
 
-   /* Initialize the tapes */
-   _braid_TapeInit( _braid_CoreElt(*core_ptr, actionTape) );
-   _braid_TapeInit( _braid_CoreElt(*core_ptr, userVectorTape) );
-   _braid_TapeInit( _braid_CoreElt(*core_ptr, barTape) );
-
-   /* Set the user functions */
-   _braid_CoreElt(*core_ptr, objectiveT)        = objectiveT;
-   _braid_CoreElt(*core_ptr, step_diff)         = step_diff;
-   _braid_CoreElt(*core_ptr, objT_diff)         = objT_diff;
-   _braid_CoreElt(*core_ptr, allreduce_gradient) = allreduce_gradient;
-   _braid_CoreElt(*core_ptr, reset_gradient)    = reset_gradient;
-   _braid_CoreElt(*core_ptr, access_gradient)   = access_gradient;
-   _braid_CoreElt(*core_ptr, compute_gnorm)     = compute_gnorm;
-   _braid_CoreElt(*core_ptr, update_design)     = update_design;
-
-  
    /* Allocate memory for the optimization structure */
-   optim = (braid_Optim) malloc(14*sizeof(braid_Real) + sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE));
+   optim = (braid_Optim) malloc(15*sizeof(braid_Real) + sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE));
 
-   /* Set the optimization variables */
-   optim->adjoints     = NULL;  // will be initialized in braid_Drive()
-   optim->tapeinput    = NULL;  // will be initialized in braid_Drive()
+   /* Set optimization variables */
    optim->objective    = 0.0;
    optim->timeavg      = 0.0;
    optim->f_bar        = 0.0;
    optim->iter         = 0;
+   optim->tstart_obj   = tstart_obj;
+   optim->tstop_obj    = tstop_obj; 
+   optim->maxiter      = maxoptimiter;
    optim->rnorm_adj    = braid_INVALID_RNORM;
    optim->rnorm0_adj   = braid_INVALID_RNORM;
    optim->rnorm        = braid_INVALID_RNORM;
    optim->rnorm0       = braid_INVALID_RNORM;
    optim->gnorm        = braid_INVALID_RNORM;
    optim->gnorm0       = braid_INVALID_RNORM;
-   optim->tstart_obj   = tstart_obj;
-   optim->tstop_obj    = tstop_obj; 
-   optim->tol_adj      = -1.;       /* will be set in braid_Drive() */
-   optim->tol_grad     = -1.;       /* will be set in braid_Drive() */
-   optim->threshold_design = -1.;       /* will be set in braid_Drive() */
+
+   /* Others will be set in braid_Drive() because they depend on user parameters */
+   optim->adjoints         = NULL; 
+   optim->tapeinput        = NULL;    
+   optim->tol_adj          = -1.;     
+   optim->tol_grad         = -1.;     
+   optim->threshold_design = -1.; 
 
    /* Open and prepare optimization output file */
    if (myid == 0 && io_level>=1)
@@ -1039,6 +1017,28 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
 
    /* Store the optim structure in the core */
    _braid_CoreElt( *core_ptr, optim) = optim; 
+
+   /* Initialize the tapes */
+   _braid_TapeInit( _braid_CoreElt(*core_ptr, actionTape) );
+   _braid_TapeInit( _braid_CoreElt(*core_ptr, userVectorTape) );
+   _braid_TapeInit( _braid_CoreElt(*core_ptr, barTape) );
+
+   /* Set the user functions */
+   _braid_CoreElt(*core_ptr, objectiveT)         = objectiveT;
+   _braid_CoreElt(*core_ptr, step_diff)          = step_diff;
+   _braid_CoreElt(*core_ptr, objT_diff)          = objT_diff;
+   _braid_CoreElt(*core_ptr, allreduce_gradient) = allreduce_gradient;
+   _braid_CoreElt(*core_ptr, reset_gradient)     = reset_gradient;
+   _braid_CoreElt(*core_ptr, access_gradient)    = access_gradient;
+   _braid_CoreElt(*core_ptr, compute_gnorm)      = compute_gnorm;
+   _braid_CoreElt(*core_ptr, update_design)      = update_design;
+
+   /* Sanity check for non-supported features */
+   if( _braid_CoreElt(*core_ptr, refine) )
+   {
+     printf("ERROR: Adjoint of FRefine not supported yet!\n");
+     exit(1);
+   }
 
    return _braid_error_flag;
 }
@@ -1905,11 +1905,11 @@ braid_SetGradientAccessLevel(braid_Core  core,
 }
 
 braid_Int
-braid_SetMaxOptimIter(braid_Core core,             /**< braid_Core struct */
-                      braid_Int  maxoptimiter /**< tolerance for state and adjoint residual norms */
+braid_SetMaxOptimIter(braid_Core core,        /**< braid_Core struct */
+                      braid_Int  maxiter /**< maximal number of optimization iterations */
                      )
 {
-   _braid_CoreElt(core, maxoptimiter) = maxoptimiter;
+   _braid_CoreElt(core, optim)->maxiter = maxiter;
 
    return _braid_error_flag;
 }                  

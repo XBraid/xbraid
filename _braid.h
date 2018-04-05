@@ -70,27 +70,25 @@ typedef struct _braid_BaseVector_struct *braid_BaseVector;
  */
 struct _braid_Optimization_struct
 {
-   braid_Real     timeavg;          /**< time-averaged objective function */
-   braid_Real     objective;        /**< objective function of the optimization  problem. Postprocess of time-averaged objective */
-   braid_Real     tstart_obj;       /**< time for starting the time-average of  the objective  function */
-   braid_Real     tstop_obj;        /**< time for stopping the time-average of  the objective  function */
-   braid_Real     f_bar;            /**< contains the seed for tape evaluation  */
-   braid_Real     rnorm_adj;        /**< norm of the adjoint residual */
-   braid_Real     rnorm0_adj;       /**< initial norm of the adjoint residual */
-   braid_Real     rnorm;            /**< norm of the state residual */
-   braid_Real     rnorm0;           /**< initial norm of the state residual */
-   braid_Real     gnorm;            /**< norm of the gradient */
-   braid_Real     gnorm0;           /**< initial norm of the gradient */
-   braid_Real     tol_adj;          /**< tolerance of adjoint residual */
-   braid_Real     tol_grad;         /**< tolerance for the gradient norm */
-   braid_Real     threshold_design;  /**< update design only if state and adjoint residuals are below this threshold */
- 
-   braid_Int      iter;              /**< counts the number of design updates (i.e. optimization cycles) */
-   FILE          *outfile;          /**< Outputfile for state / adjoint residuals, objective function value, etc. */ 
-
-   braid_Vector  *adjoints;          /**< vector for the adjoint optimization variables */
-
-   braid_VectorBar *tapeinput;         /**< helper: store pointer to input of one braid iteration */
+   braid_Real       timeavg;          /**< time-averaged objective function */
+   braid_Real       objective;        /**< objective function of the optimization  problem. Postprocess of time-averaged objective */
+   braid_Real       tstart_obj;       /**< time for starting the time-average of  the objective  function */
+   braid_Real       tstop_obj;        /**< time for stopping the time-average of  the objective  function */
+   braid_Real       f_bar;            /**< contains the seed for tape evaluation  */
+   braid_Real       rnorm_adj;        /**< norm of the adjoint residual */
+   braid_Real       rnorm0_adj;       /**< initial norm of the adjoint residual */
+   braid_Real       rnorm;            /**< norm of the state residual */
+   braid_Real       rnorm0;           /**< initial norm of the state residual */
+   braid_Real       gnorm;            /**< norm of the gradient */
+   braid_Real       gnorm0;           /**< initial norm of the gradient */
+   braid_Real       tol_adj;          /**< tolerance of adjoint residual */
+   braid_Real       tol_grad;         /**< tolerance for the gradient norm */
+   braid_Real       threshold_design; /**< threshold for design updates */
+   braid_Int        iter;             /**< counts the number of design updates (i.e. optimization cycles) */
+   braid_Int        maxiter;          /**< maximum number of optimization iterations */
+   FILE            *outfile;          /**< Outputfile for optimization history */ 
+   braid_Vector    *adjoints;         /**< vector for the adjoint optimization variables */
+   braid_VectorBar *tapeinput;        /**< helper: store pointer to input of one braid iteration */
 };
 typedef struct _braid_Optimization_struct *braid_Optim;
 
@@ -134,20 +132,20 @@ typedef struct
    braid_Int          ncpoints;      /**< number of C points */
 
    braid_Int          nupoints;      /**< number of unknown vector points */
-   braid_BaseVector      *ua;            /**< unknown vectors            (C-points at least)*/
+   braid_BaseVector  *ua;            /**< unknown vectors            (C-points at least)*/
    braid_Real        *ta;            /**< time values                (all points) */
-   braid_BaseVector      *va;            /**< restricted unknown vectors (all points, NULL on level 0) */
-   braid_BaseVector      *fa;            /**< rhs vectors f              (all points, NULL on level 0) */
+   braid_BaseVector  *va;            /**< restricted unknown vectors (all points, NULL on level 0) */
+   braid_BaseVector  *fa;            /**< rhs vectors f              (all points, NULL on level 0) */
 
    braid_Int          recv_index;    /**<  -1 means no receive */
    braid_Int          send_index;    /**<  -1 means no send */
    _braid_CommHandle *recv_handle;   /**<  Handle for nonblocking receives of braid_BaseVectors */
    _braid_CommHandle *send_handle;   /**<  Handle for nonblocking sends of braid_BaseVectors */
 
-   braid_BaseVector      *ua_alloc;      /**< original memory allocation for ua */
+   braid_BaseVector  *ua_alloc;      /**< original memory allocation for ua */
    braid_Real        *ta_alloc;      /**< original memory allocation for ta */
-   braid_BaseVector      *va_alloc;      /**< original memory allocation for va */
-   braid_BaseVector      *fa_alloc;      /**< original memory allocation for fa */
+   braid_BaseVector  *va_alloc;      /**< original memory allocation for va */
+   braid_BaseVector  *fa_alloc;      /**< original memory allocation for fa */
 
 } _braid_Grid;
 
@@ -232,17 +230,16 @@ typedef struct _braid_Core_struct
    braid_Real             globaltime;       /**< global wall time for braid_Drive() */
 
    /* Data for adjoint and optimization */
-   braid_Int              maxoptimiter;      /**< maximum number of optimization iterations */
-   braid_Int              adjoint;          /**< determines if adjoint run is performed (1) or not (0) */
-   braid_Int              record;           /**< determines if actions are recorded to the tape or not */
-   braid_Int              verbose;          /**< verbosity of the adjoint code */
+   braid_Optim            optim;             /**< structure that stores optimization variables (objective function, etc.) */ 
+   braid_Int              adjoint;           /**< determines if adjoint run is performed (1) or not (0) */
+   braid_Int              record;            /**< determines if actions are recorded to the tape or not */
+   braid_Int              verbose;           /**< verbosity of the adjoint code */
    braid_Int              gradient_access_level; /**< determines how often the user's access_gradient function is called */
 
    _braid_Tape*          actionTape;         /**< tape storing the actions while recording */
    _braid_Tape*          userVectorTape;     /**< tape storing primal braid_vectors while recording */
    _braid_Tape*          barTape;            /**< tape storing intermediate AD-bar variables while recording */
  
-   braid_Optim                     optim;              /**< structure that stores optimization variables (objective function, etc.) */ 
    braid_PtFcnObjectiveT           objectiveT;         /**< User function: evaluate objective function at time t */
    braid_PtFcnAllreduceGradient    allreduce_gradient; /**< User function: Invoke an MPI_Allreduce call for the gradient */
    braid_PtFcnResetGradient        reset_gradient;     /**< User function: Set the gradient to zero. Is called before each iteration */
