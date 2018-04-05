@@ -949,9 +949,11 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
                        braid_Core                  *core_ptr)
 {
    braid_Optim optim;
-   braid_Int   myid     = _braid_CoreElt(*core_ptr, myid);
-   braid_Int   io_level = _braid_CoreElt(*core_ptr, io_level);
-   braid_Real  tol      = _braid_CoreElt(*core_ptr, tol);
+   braid_Int   myid       = _braid_CoreElt(*core_ptr, myid);
+   braid_Int   io_level   = _braid_CoreElt(*core_ptr, io_level);
+   braid_Real  tol        = _braid_CoreElt(*core_ptr, tol);
+   braid_Real  tstart_obj = _braid_CoreElt(*core_ptr, tstart);
+   braid_Real  tstop_obj  = _braid_CoreElt(*core_ptr, tstop);
 
   if( _braid_CoreElt(*core_ptr, refine) )
   {
@@ -970,7 +972,6 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    _braid_TapeInit( _braid_CoreElt(*core_ptr, actionTape) );
    _braid_TapeInit( _braid_CoreElt(*core_ptr, userVectorTape) );
    _braid_TapeInit( _braid_CoreElt(*core_ptr, barTape) );
-
 
    /* Set the user functions */
    _braid_CoreElt(*core_ptr, objectiveT)        = objectiveT;
@@ -995,18 +996,18 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    optim->tapeinput    = NULL;  // will be initialized in braid_Drive()
    optim->objective    = 0.0;
    optim->timeavg      = 0.0;
-   optim->tstart_obj   = _braid_CoreElt(*core_ptr, tstart);     /* default value */
-   optim->tstop_obj    = _braid_CoreElt(*core_ptr, tstop);      /* default value */
    optim->f_bar        = 0.0;
-   optim->rnorm_adj    = -1.;
-   optim->rnorm0_adj   = braid_INVALID_RNORM;
-   optim->rnorm        = -1.;
-   optim->rnorm0       = braid_INVALID_RNORM;
-   optim->gnorm        = -1.;
-   optim->gnorm0       = braid_INVALID_RNORM;
    optim->iter         = 0;
+   optim->rnorm_adj    = braid_INVALID_RNORM;
+   optim->rnorm0_adj   = braid_INVALID_RNORM;
+   optim->rnorm        = braid_INVALID_RNORM;
+   optim->rnorm0       = braid_INVALID_RNORM;
+   optim->gnorm        = braid_INVALID_RNORM;
+   optim->gnorm0       = braid_INVALID_RNORM;
+   optim->tstart_obj   = tstart_obj;
+   optim->tstop_obj    = tstop_obj; 
 
-   /* Open optimization output file */
+   /* Open and prepare optimization output file */
    if (myid == 0 && io_level>=1)
    {
       optim->outfile = fopen("braid.out.optim", "w");
