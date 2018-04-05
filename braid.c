@@ -467,7 +467,7 @@ braid_Drive(braid_Core  core)
                     _braid_CoreElt(core, gupper));
       if (_braid_CoreElt(core, adjoint))
       {
-         _braid_printf("  Braid:     || r ||      || r_adj ||   || gradient ||  Objective\n");
+         _braid_printf("  Braid:            || r ||      || r_adj ||   || gradient ||  Objective\n");
          _braid_printf("  Braid: ------------------------------------------------------------\n");
       }                 
    }

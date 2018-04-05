@@ -55,6 +55,7 @@ typedef struct _braid_App_struct
    double *gradient;  /* Holds the gradient vector */
    double  gamma;     /* Relaxation parameter for objective function */
    int     ntime;     /* number of time-steps */
+   int     stepsize;  /* Stepsize used for design-updates */
 
 } my_App;
 
@@ -411,11 +412,33 @@ my_AllreduceGradient(braid_App app, MPI_Comm comm)
    return 0;
 }
 
+int
+my_GradientNorm(braid_App app,
+                double   *gradient_norm_prt)
+
+{
+   int    ts;
+   double gnorm = 0.0;
+
+   /* Norm of gradient */
+   for(ts = 0; ts < app->ntime; ts++) 
+   {
+      gnorm += (app->gradient[ts])*(app->gradient[ts]) ;
+   }
+   gnorm = sqrt(gnorm);
+
+   /* Return the gradient norm */
+   *gradient_norm_prt = gnorm;
+
+   return 0;
+}
+
 
 int 
 my_ResetGradient(braid_App app)
 {
    int ts;
+
    /* Set the gradient to zero */
    for(ts = 0; ts < app->ntime; ts++) 
    {
@@ -429,11 +452,20 @@ int
 my_UpdateDesign(braid_App app, 
                 double    objective,
                 double    rnorm,
-                double    rnorm_adj,
-                double   *gradient_norm_ptr)
+                double    rnorm_adj)
 {
+   int ts;
+
+   /*TODO: Hessian approximation */
+
+   /* Update the design */
+   for(ts = 0; ts < app->ntime; ts++) 
+   {
+      app->design[ts] -= app->stepsize * app->gradient[ts];
+   }
+   printf("\n");
+
    
-   *gradient_norm_ptr = 0.0;
    return 0;
 }
 
@@ -451,6 +483,7 @@ int main (int argc, char *argv[])
    double   gamma;
    double  *design; 
    double  *gradient; 
+   double   stepsize;
    int      rank;
 
    /* Define time domain */
@@ -459,21 +492,17 @@ int main (int argc, char *argv[])
    tstop  = 1.0;
 
    /* Define some optimization parameters */
-   gamma = 0.005;          /* Relaxation parameter */
+   gamma    = 0.005;          /* Relaxation parameter */
+   stepsize = 50.0;            /* Step size for design updates */
 
    /* Initialize optimization */
    design   = (double*) malloc( ntime*sizeof(double) ); /* design vector */
    gradient = (double*) malloc( ntime*sizeof(double) ); /* gradient vector */
-
-   /* Initialize the optimization variables */
    for (ts = 0; ts < ntime; ts++)
    {
       design[ts]   = 0.;
       gradient[ts] = 0.;
    }
-
-   /* DEBUG gradient */
-   // design[9] += 1e-8;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -487,12 +516,13 @@ int main (int argc, char *argv[])
    app->design   = design;
    app->gradient = gradient;
    app->gamma    = gamma;
+   app->stepsize = stepsize;
 
    /* Initialize XBraid */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app, my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
 
    /* Initialize adjoint XBraid */
-   braid_Init_Adjoint( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_AllreduceGradient, my_ResetGradient, my_AccessGradient, my_UpdateDesign, &core);
+   braid_Init_Adjoint( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_AllreduceGradient, my_ResetGradient, my_AccessGradient, my_GradientNorm, my_UpdateDesign, &core);
 
    /* Set some Braid parameters */
    braid_SetPrintLevel( core, 1);
@@ -501,7 +531,8 @@ int main (int argc, char *argv[])
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 1);
    braid_SetMaxIter(core, 10);
-   // braid_SetGradientAccessLevel(core, 2);
+   braid_SetMaxOptimIter(core, 500);
+   braid_SetGradientAccessLevel(core, 0);
 
    // /* debug: never skip work on downcycle for comparing primal and adjoint run.*/
    braid_SetSkip(core, 0);
@@ -510,6 +541,12 @@ int main (int argc, char *argv[])
    /* Run a Braid simulation */
    braid_Drive(core);
 
+   /* Print final design */
+   printf("Final design:");
+   for (ts = 0; ts<ntime; ts++)
+   {
+      printf("%d %1.14e\n", ts, app->design[ts]);
+   }
 
    /* Clean up */
    free(design);
