@@ -462,6 +462,7 @@ braid_Drive(braid_Core  core)
    braid_App            app             = _braid_CoreElt(core, app);
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
    braid_Optim          optim           = _braid_CoreElt(core, optim);
+   braid_Real           tol             = _braid_CoreElt(core, tol);
 
    braid_Int     *nrels, nrel0;
    braid_Int      nlevels;
@@ -533,15 +534,25 @@ braid_Drive(braid_Core  core)
       /* Set default tolerance, if not set already */
       if (optim->tol_adj == -1)
       {
-          optim->tol_adj = _braid_CoreElt(core, tol);
+         /* Default is primal tolerance */
+         optim->tol_adj = tol; 
       }
       if (optim->tol_grad == -1)
       {
-          optim->tol_grad = _braid_CoreElt(core, tol);
+         /* Default is primal tolerance */
+         optim->tol_grad = tol; 
       }
       if (optim->threshold_design == -1)
       {
-          optim->threshold_design = _braid_CoreElt(core, tol);
+         /* Default is minimum of state and adjoint tolerance */
+         if (tol < optim->tol_adj )
+         {
+            optim->threshold_design = tol;
+         }
+         else
+         {
+            optim->threshold_design = optim->tol_adj;
+         }
       }
    }
 
