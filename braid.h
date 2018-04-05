@@ -432,7 +432,7 @@ typedef braid_Int
  * Update the design variable 
  */
 typedef braid_Int
-(*braid_PtFcnUpdateDesign)(braid_App   app,         /**< user-defined _braid_App structure */ 
+(*braid_PtFcnDesignUpdate)(braid_App   app,         /**< user-defined _braid_App structure */ 
                            braid_Real  objective,   /**< objective function value */
                            braid_Real  rnorm,       /**< norm of the state residual */
                            braid_Real  rnorm_adj    /**< norm of the adjoint residual */
@@ -908,7 +908,7 @@ braid_InitOptimization( braid_PtFcnObjectiveT        objT,               /**< Ev
                     braid_PtFcnResetGradient     reset_gradient,     /**< Set the gradient to zero */
                     braid_PtFcnAccessGradient    access_gradient,    /**< Access the gradient, i.e. for output */
                     braid_PtFcnComputeGNorm      compute_gnorm,      /**< Compute norm of the gradient */
-                    braid_PtFcnUpdateDesign      update_design,      /**< Update the design for optimization */
+                    braid_PtFcnDesignUpdate      update_design,      /**< Update the design for optimization */
                     braid_Core                  *core_ptr            /**< Pointer to braid_Core (_braid_Core) struct */   
                   );
 

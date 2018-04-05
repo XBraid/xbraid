@@ -247,7 +247,7 @@ typedef struct _braid_Core_struct
    braid_PtFcnAllreduceGradient    allreduce_gradient; /**< User function: Invoke an MPI_Allreduce call for the gradient */
    braid_PtFcnResetGradient        reset_gradient;     /**< User function: Set the gradient to zero. Is called before each iteration */
    braid_PtFcnAccessGradient       access_gradient;    /**< User function: Access the gradient for output or optimization. */
-   braid_PtFcnUpdateDesign         update_design;      /**< User function: Update the design */
+   braid_PtFcnDesignUpdate         update_design;      /**< User function: Update the design */
    braid_PtFcnComputeGNorm         compute_gnorm;      /**< User function: Return the norm of the gradient */
    braid_PtFcnPostprocessObjective postprocess_obj; /**< Optional user function: Modify the time-averaged objective function, e.g. for inverse design problems, adding relaxation term etc. */
    braid_PtFcnPostprocessObjective_diff postprocess_obj_diff; /**< Optional user function: Derivative of postprocessing function  */

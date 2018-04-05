@@ -401,7 +401,7 @@ my_GradientNorm(braid_App app,
              
 
 int 
-my_UpdateDesign(braid_App app, 
+my_DesignUpdate(braid_App app, 
                 double    objective,
                 double    rnorm,
                 double    rnorm_adj)
@@ -472,8 +472,7 @@ int main (int argc, char *argv[])
 
 
    /* Initialize adjoint XBraid */
-   // braid_Init_Adjoint( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_AllreduceGradient, my_ResetGradient, my_AccessGradient, my_GradientNorm, my_UpdateDesign, &core);
-   braid_InitOptimization( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_AllreduceGradient, my_ResetGradient, my_AccessGradient, my_GradientNorm, NULL, &core);
+   braid_InitOptimization( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_AllreduceGradient, my_ResetGradient, my_AccessGradient, my_GradientNorm, my_DesignUpdate, &core);
    
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);

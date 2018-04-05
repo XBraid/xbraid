@@ -702,7 +702,7 @@ braid_Drive(braid_Core  core)
                if (!done)
                {
                   update_flag = 0;
-                  _braid_BaseUpdateDesign(core, &update_flag);
+                  _braid_BaseDesignUpdate(core, &update_flag);
 
                   /* Reset the iteration counter if update has been performed */
                   if (update_flag)
@@ -968,7 +968,7 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
                        braid_PtFcnResetGradient     reset_gradient,
                        braid_PtFcnAccessGradient    access_gradient,
                        braid_PtFcnComputeGNorm      compute_gnorm,
-                       braid_PtFcnUpdateDesign      update_design,
+                       braid_PtFcnDesignUpdate      update_design,
                        braid_Core                  *core_ptr)
 {
    braid_Optim optim;
