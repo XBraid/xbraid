@@ -184,7 +184,8 @@ _braid_BaseBufUnpack_diff(_braid_Action *action);
 
 braid_Int
 _braid_BaseDesignUpdate(braid_Core  core,
-                        braid_Int  *update_flag);
+                        braid_Int  *update_flag,
+                        braid_Int  *done_ptr);
 
 
 braid_Int

@@ -862,7 +862,8 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
 
 braid_Int
 _braid_BaseDesignUpdate(braid_Core  core,
-                        braid_Int   *update_flag)
+                        braid_Int   *update_flag,
+                        braid_Int   *done_ptr)
 {
    braid_App   app              = _braid_CoreElt(core, app);
    braid_Optim optim            = _braid_CoreElt(core, optim);
@@ -873,11 +874,23 @@ _braid_BaseDesignUpdate(braid_Core  core,
    braid_Real  rnorm            = optim->rnorm;
    braid_Real  rnorm_adj        = optim->rnorm_adj;
    braid_Real  gnorm            = optim->gnorm;
+   braid_Int   optimiter        = optim->iter;
+   braid_Int   maxoptimiter     = optim->maxiter;
+   braid_Int   done             = *done_ptr;
+
 
    /* Call the users update_design function, if state and adjoint residual norms are below the tolerance */
    if ( rnorm     < threshold_design && 
         rnorm_adj < threshold_design )
    {
+
+      /* Stop optimization if maximum number of optim iterations is reached. */
+      if (optimiter == maxoptimiter)
+      {
+         done = 1;
+         printf("\n Max. optimization iterations reached.\n\n");
+      }
+      
       /* Never update the design at first few iterations because initialization error can be big. */
       if ( !(optim->iter == 0 && iter <= 2))
       {
@@ -891,6 +904,8 @@ _braid_BaseDesignUpdate(braid_Core  core,
          *update_flag = 1;
       }
    }   
+
+   *done_ptr = done;
 
    return 0;
 }

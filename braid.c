@@ -245,8 +245,6 @@ _braid_DriveCheckConvergence(braid_Core  core,
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
    braid_Int            tight_fine_tolx = _braid_CoreElt(core, tight_fine_tolx);
    braid_Optim          optim           = _braid_CoreElt(core, optim);
-   braid_Int            maxoptimiter    = optim->maxiter;
-   braid_Int            optimiter;
    braid_Real           rnorm, rnorm0;
    braid_Real           rnorm_adj, rnorm0_adj, gnorm, gnorm0;
    braid_Real           tol_adj, tol_grad;
@@ -279,7 +277,6 @@ _braid_DriveCheckConvergence(braid_Core  core,
       gnorm0     = optim->gnorm0;
       tol_adj    = optim->tol_adj;
       tol_grad   = optim->tol_grad;
-      optimiter  = optim->iter;
    }
 
    /* If using a relative tolerance, adjust tol */
@@ -306,16 +303,9 @@ _braid_DriveCheckConvergence(braid_Core  core,
          }
 
          /* Keep iterating, if gradient norm not converged yet. */
-         if ( ! (gnorm < tol_grad) )
+         if ( optim->maxiter > 0 &&  !(gnorm < tol_grad) )
          {
             done = 0;
-         }
-
-         /* Stop if maximum number of optim iterations is reached. */
-         if (optimiter == maxoptimiter)
-         {
-            done = 1;
-            printf("\n Max. optimization iterations reached.\n\n");
          }
       }
    } 
@@ -682,11 +672,7 @@ braid_Drive(braid_Core  core)
             {
                /* Check convergence */
                _braid_DriveCheckConvergence(core, iter, &done);
-
-               iter++;
-               _braid_CoreElt(core, niter) = iter;
             }
-
 
             if (_braid_CoreElt(core, adjoint))
             {
@@ -701,7 +687,7 @@ braid_Drive(braid_Core  core)
                if (!done)
                {
                   update_flag = 0;
-                  _braid_BaseDesignUpdate(core, &update_flag);
+                  _braid_BaseDesignUpdate(core, &update_flag, &done);
 
                   /* Reset the iteration counter if update has been performed */
                   if (update_flag)
@@ -716,6 +702,12 @@ braid_Drive(braid_Core  core)
                _braid_CoreElt(core, optim)->objective = 0.0;
                _braid_CoreElt(core, optim)->timeavg   = 0.0;
                _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
+            }
+
+            if (!refined)
+            {
+               iter++;
+               _braid_CoreElt(core, niter) = iter;
             }
          }
       }
