@@ -1754,7 +1754,7 @@ braid_SetSeqSoln(braid_Core  core,
 * Optimization 
 *-----------------------------------------------------------------------------*/
 braid_Int
-braid_SetTStartTimeaverage(braid_Core core, 
+braid_SetTStartObjective(braid_Core core, 
                            braid_Real tstart_obj)
 {
    if ( !(_braid_CoreElt(core, adjoint)))
@@ -1775,7 +1775,7 @@ braid_SetTStartTimeaverage(braid_Core core,
 }
 
 braid_Int
-braid_GetTStartTimeaverage(braid_Core core,
+braid_GetTStartObjective(braid_Core core,
                            braid_Real *tstart_obj_ptr)
 {
    if ( !(_braid_CoreElt(core, adjoint)) )
@@ -1789,7 +1789,7 @@ braid_GetTStartTimeaverage(braid_Core core,
 }
 
 braid_Int
-braid_SetTStopTimeaverage(braid_Core core, 
+braid_SetTStopObjective(braid_Core core, 
                           braid_Real tstop_obj)
 {
    if ( !(_braid_CoreElt(core, adjoint)) )
@@ -1811,7 +1811,7 @@ braid_SetTStopTimeaverage(braid_Core core,
 }
 
 braid_Int
-braid_GetTStopTimeaverage(braid_Core core,
+braid_GetTStopObjective(braid_Core core,
                           braid_Real *tstop_obj_ptr)
 {
    if ( !(_braid_CoreElt(core, adjoint)) )

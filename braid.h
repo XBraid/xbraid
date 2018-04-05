@@ -918,14 +918,14 @@ braid_InitOptimization( braid_PtFcnObjectiveT        objT,               /**< Ev
  * Default is tstart of the primal braid run
  */
 braid_Int
-braid_SetTStartTimeaverage(braid_Core core, 
+braid_SetTStartObjective(braid_Core core, 
                            braid_Real tstart_obj);
 
 /**
  * Return the time that starts the time-average of objective function 
  */
 braid_Int
-braid_GetTStartTimeaverage(braid_Core core,
+braid_GetTStartObjective(braid_Core core,
                            braid_Real *tstart_obj);
 
 
@@ -934,7 +934,7 @@ braid_GetTStartTimeaverage(braid_Core core,
  * Default is tstop of the primal braid run
  */
 braid_Int
-braid_SetTStopTimeaverage(braid_Core core, 
+braid_SetTStopObjective(braid_Core core, 
                           braid_Real tstop_obj);
 
 
@@ -942,7 +942,7 @@ braid_SetTStopTimeaverage(braid_Core core,
  * Return the time that starts the time-average of objective function 
  */
 braid_Int
-braid_GetTStopTimeaverage(braid_Core core,
+braid_GetTStopObjective(braid_Core core,
                           braid_Real *tstop_obj);
 
 /*

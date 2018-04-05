@@ -483,13 +483,13 @@ int main (int argc, char *argv[])
    braid_SetMaxIter(core, 20);
 
    /* Optional optimization parameters */
-   braid_SetMaxOptimIter(core, 100);
+   braid_SetMaxOptimIter(core, 0);
    braid_SetGradientAccessLevel(core, 1);   
    braid_SetTolAdjoint(core, 1e-6);        
    braid_SetTolGradient(core, 1e-6);
 
-   // braid_SetTStartTimeaverage( core, 1.0);
-   // braid_SetTStopTimeaverage( core, tstop);
+   braid_SetTStartObjective( core, 1.0);
+   braid_SetTStopObjective( core, 222.0);
 
    /* debug: don't skip work on downcycle for comparison with adjoint run.*/
    braid_SetSkip(core, 0);
