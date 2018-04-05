@@ -483,7 +483,7 @@ int main (int argc, char *argv[])
    braid_SetMaxIter(core, 20);
 
    /* Optional optimization parameters */
-   braid_SetMaxOptimIter(core, 1);
+   braid_SetMaxOptimIter(core, 0);
    // braid_SetThresholdDesignUpdate(core, 1e-6);
    // braid_SetGradientAccessLevel(core, 1);   
 

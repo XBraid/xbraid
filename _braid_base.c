@@ -874,12 +874,6 @@ _braid_BaseDesignUpdate(braid_Core  core,
    braid_Real  rnorm_adj        = optim->rnorm_adj;
    braid_Real  gnorm            = optim->gnorm;
 
-   /* Return if no update_design function has been specified -> only gradient computation */
-   if (_braid_CoreElt(core, update_design) == NULL)
-   {
-      return 0;
-   }
-
    /* Call the users update_design function, if state and adjoint residual norms are below the tolerance */
    if ( rnorm     < threshold_design && 
         rnorm_adj < threshold_design )
@@ -912,15 +906,7 @@ _braid_BaseComputeGNorm(braid_Core core,
    /* Call the users update_design function */
    _braid_CoreFcn(core, compute_gnorm)(app, &gnorm);
 
-   /* If no design updates are performed, set gradient to zero
-    * This ensures, that stopping criterion is based only on state and adjoint residuals. 
-    */
-   if (_braid_CoreElt(core, update_design) == NULL)
-   {
-      gnorm = 0.0;
-   }
-
-   /* Store the gradient norm in the optim structure */
+   /* Set the norm of the gradient */
    _braid_SetGradientNorm(core, iter, gnorm);
 
    return 0;
