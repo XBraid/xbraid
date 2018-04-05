@@ -483,11 +483,11 @@ int main (int argc, char *argv[])
    braid_SetMaxIter(core, 20);
 
    /* Optional optimization parameters */
-   // braid_SetMaxOptimIter(core, 200);
-   braid_SetThresholdDesignUpdate(core, 1e-6);
+   braid_SetMaxOptimIter(core, 1);
+   // braid_SetThresholdDesignUpdate(core, 1e-6);
    // braid_SetGradientAccessLevel(core, 1);   
 
-   // braid_SetTolAdjoint(core, 1e-10);        
+   // braid_SetTolAdjoint(core, 1e-0);        
    // braid_SetTolGradient(core, 1e-9);
    // braid_SetTStartTimeaverage( core, 1.0);
    // braid_SetTStopTimeaverage( core, tstop);

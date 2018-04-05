@@ -531,6 +531,8 @@ int main (int argc, char *argv[])
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 1);
    braid_SetMaxIter(core, 10);
+
+   /* Optional optimization parameters */
    braid_SetMaxOptimIter(core, 500);
    braid_SetGradientAccessLevel(core, 0);
 

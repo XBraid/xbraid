@@ -1011,6 +1011,7 @@ braid_SetGradientAccessLevel(braid_Core  core,           /**< braid_Core struct 
 
 /*
  * Set maximum number of optimization iterations.
+ * Choose maxiter = 0, if only gradients are computed. 
  */
 braid_Int
 braid_SetMaxOptimIter(braid_Core core,      /**< braid_Core struct */

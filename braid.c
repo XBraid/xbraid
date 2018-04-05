@@ -310,6 +310,13 @@ _braid_DriveCheckConvergence(braid_Core  core,
          {
             done = 0;
          }
+
+         /* Stop if maximum number of optim iterations is reached. */
+         if (optimiter == maxoptimiter)
+         {
+            done = 1;
+            printf("\n Max. optimization iterations reached.\n\n");
+         }
       }
    } 
    else if ( braid_isnan(rnorm) )
@@ -326,11 +333,6 @@ _braid_DriveCheckConvergence(braid_Core  core,
       done = 1;
       printf("\n Max. state iterations reached.\n\n");
    } 
-   if (optimiter == maxoptimiter -1)
-   {
-      done = 1;
-      printf("\n Max. optimization iterations reached.\n\n");
-   }
 
    *done_ptr = done;
 
