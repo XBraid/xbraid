@@ -480,19 +480,21 @@ int main (int argc, char *argv[])
    braid_SetAbsTol(core, 1.0e-06);
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 1);
-   braid_SetMaxIter(core, 10);
-   braid_SetMaxOptimIter(core, 100);
+   braid_SetMaxIter(core, 20);
+
+   /* Optional optimization parameters */
+   // braid_SetMaxOptimIter(core, 200);
+   braid_SetThresholdDesignUpdate(core, 1e-6);
    // braid_SetGradientAccessLevel(core, 1);   
-   // braid_SetTolAdjoint(core, 1e-9);        
+
+   // braid_SetTolAdjoint(core, 1e-10);        
    // braid_SetTolGradient(core, 1e-9);
-   braid_SetThresholdDesignUpdate(core, 1e-4);
+   // braid_SetTStartTimeaverage( core, 1.0);
+   // braid_SetTStopTimeaverage( core, tstop);
 
    /* debug: don't skip work on downcycle for comparison with adjoint run.*/
    braid_SetSkip(core, 0);
 
-   /* Optional: Set the time for starting time-average */
-   // braid_SetTStartTimeaverage( core, 1.0);
-   // braid_SetTStopTimeaverage( core, tstop);
 
    /* Optional: Set the tracking type objective function and derivative */
    braid_SetPostprocessObjective(core, my_PostprocessObjective);

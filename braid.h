@@ -999,14 +999,14 @@ braid_SetThresholdDesignUpdate(braid_Core core,        /**< braid_Core struct */
  * This controls how often the user's gradient access routine is called.
  * 
  * - Level 0:  Never 
- * - Level 1:  Only after the Braid (optimization) iterations have terminated
+ * - Level 1:  Only after the optimization iterations
  * - Level 2:  After each iteration
  * 
  * Default is level 1.
  **/
 braid_Int
-braid_SetGradientAccessLevel(braid_Core  core,                 /**< braid_Core struct */
-                             braid_Int   gradient_access_level /**< desired level for accessing the gradient */
+braid_SetGradientAccessLevel(braid_Core  core,           /**< braid_Core struct */
+                             braid_Int   acc_grad_level  /**< desired level for accessing the gradient */
                             );
 
 /*

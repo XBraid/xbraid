@@ -692,9 +692,9 @@ braid_Drive(braid_Core  core)
             if (_braid_CoreElt(core, adjoint))
             {
                /* Allow the user to access the gradient if acces level is high enough */
-               if (  _braid_CoreElt(core, gradient_access_level) >= 1 )
+               if (  optim->acc_grad_level >= 1 )
                {
-                  if ( done || _braid_CoreElt(core, gradient_access_level) == 2 )
+                  if ( done || optim->acc_grad_level == 2 )
                   _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
                }
 
@@ -774,7 +774,7 @@ braid_Drive(braid_Core  core)
       _braid_CoreFcn(core, allreduce_gradient)(_braid_CoreElt(core, app), _braid_CoreElt(core, comm));
 
       /* Allow the user to access the gradient */
-      if (_braid_CoreElt(core, gradient_access_level) >= 1)
+      if (optim->acc_grad_level >= 1)
       {
          _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
       }
@@ -844,7 +844,6 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              adjoint         = 0;              /* Default adjoint run: Turned off */
    braid_Int              record          = 0;              /* Default action recording: Turned off */
    braid_Int              verbose         = 0;              /* Default verbosity Turned off */
-   braid_Int              gradient_access_level = 1;        /* Default gradient access level */
 
    braid_Int              myid_world,  myid;
 
@@ -923,7 +922,6 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, adjoint)               = adjoint;
    _braid_CoreElt(core, record)                = record;
    _braid_CoreElt(core, verbose)               = verbose;
-   _braid_CoreElt(core, gradient_access_level) = gradient_access_level;
    _braid_CoreElt(core, actionTape)            = NULL;
    _braid_CoreElt(core, userVectorTape)        = NULL;
    _braid_CoreElt(core, barTape)               = NULL;
@@ -979,28 +977,30 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    _braid_CoreElt(*core_ptr, skip)    = 0;
 
    /* Define default values */
-   braid_Real  tstart_obj   = _braid_CoreElt(*core_ptr, tstart);
-   braid_Real  tstop_obj    = _braid_CoreElt(*core_ptr, tstop);
-   braid_Int   maxoptimiter = 100;
+   braid_Real  tstart_obj     = _braid_CoreElt(*core_ptr, tstart);
+   braid_Real  tstop_obj      = _braid_CoreElt(*core_ptr, tstop);
+   braid_Int   maxoptimiter   = 100;
+   braid_Int   acc_grad_level = 1;
 
    /* Allocate memory for the optimization structure */
-   optim = (braid_Optim) malloc(15*sizeof(braid_Real) + sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE));
+   optim = (braid_Optim) malloc(15*sizeof(braid_Real) + 2*sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE));
 
    /* Set optimization variables */
-   optim->objective    = 0.0;
-   optim->timeavg      = 0.0;
-   optim->f_bar        = 0.0;
-   optim->iter         = 0;
-   optim->tstart_obj   = tstart_obj;
-   optim->tstop_obj    = tstop_obj; 
-   optim->maxiter      = maxoptimiter;
-   optim->rnorm_adj    = braid_INVALID_RNORM;
-   optim->rnorm0_adj   = braid_INVALID_RNORM;
-   optim->rnorm        = braid_INVALID_RNORM;
-   optim->rnorm0       = braid_INVALID_RNORM;
-   optim->gnorm        = braid_INVALID_RNORM;
-   optim->gnorm0       = braid_INVALID_RNORM;
-
+   optim->objective      = 0.0;
+   optim->timeavg        = 0.0;
+   optim->f_bar          = 0.0;
+   optim->iter           = 0;
+   optim->tstart_obj     = tstart_obj;
+   optim->tstop_obj      = tstop_obj; 
+   optim->maxiter        = maxoptimiter;
+   optim->acc_grad_level = acc_grad_level;
+   optim->rnorm_adj      = braid_INVALID_RNORM;
+   optim->rnorm0_adj     = braid_INVALID_RNORM;
+   optim->rnorm          = braid_INVALID_RNORM;
+   optim->rnorm0         = braid_INVALID_RNORM;
+   optim->gnorm          = braid_INVALID_RNORM;
+   optim->gnorm0         = braid_INVALID_RNORM;
+  
    /* Others will be set in braid_Drive() because they depend on user parameters */
    optim->adjoints         = NULL; 
    optim->tapeinput        = NULL;    
@@ -1897,9 +1897,9 @@ braid_SetThresholdDesignUpdate(braid_Core core,
 
 braid_Int
 braid_SetGradientAccessLevel(braid_Core  core,
-                             braid_Int   gradient_access_level)
+                             braid_Int   acc_grad_level)
 {
-   _braid_CoreElt(core, gradient_access_level) = gradient_access_level;
+   _braid_CoreElt(core, optim)->acc_grad_level = acc_grad_level;
 
    return _braid_error_flag;
 }
