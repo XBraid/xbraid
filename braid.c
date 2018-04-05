@@ -381,7 +381,14 @@ _braid_DrivePrintStatus(braid_Core  core,
       }
       else
       {
-         _braid_printf("  Braid: %3d %3d   %1.6e  %1.6e  %1.6e  %1.6e\n", optimiter, iter, rnorm, iter,  rnorm_adj, gnorm, objective);
+         if (_braid_CoreElt(core, update_design) == NULL)
+         {
+            _braid_printf("  Braid: %3d %3d   %1.6e  %1.6e  %1.14e\n", optimiter, iter, rnorm, iter,  rnorm_adj, objective);
+         }
+         else
+         {
+            _braid_printf("  Braid: %3d %3d   %1.6e  %1.6e  %1.6e  %1.6e\n", optimiter, iter, rnorm, iter,  rnorm_adj, gnorm, objective);
+         }
       }
    }
    else
@@ -467,7 +474,14 @@ braid_Drive(braid_Core  core)
                     _braid_CoreElt(core, gupper));
       if (_braid_CoreElt(core, adjoint))
       {
-         _braid_printf("  Braid:            || r ||      || r_adj ||   || gradient ||  Objective\n");
+         if (_braid_CoreElt(core, update_design) == NULL)
+         {
+            _braid_printf("  Braid:            || r ||      || r_adj ||   Objective\n");
+         }
+         else
+         {
+            _braid_printf("  Braid:            || r ||      || r_adj ||   || gradient ||  Objective\n");
+         }
          _braid_printf("  Braid: ------------------------------------------------------------\n");
       }                 
    }
