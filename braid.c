@@ -457,7 +457,7 @@ braid_Drive(braid_Core  core)
    _braid_Grid   *grid;
    braid_Real     localtime, globaltime;
    braid_Real     rnorm_adj;
-   braid_Int      update_flag;
+   braid_Int      update_flag = 0;
 
    /* Cycle state variables */
    _braid_CycleState  cycle;
@@ -666,14 +666,13 @@ braid_Drive(braid_Core  core)
                   update_flag = 0;
                   _braid_BaseDesignUpdate(core, &update_flag, &done);
 
-                  /* Reset the iteration counter if update has been performed */
                   if (update_flag)
                   {
-                     iter = 0;
+                     iter = -1;
                      _braid_CoreElt(core, niter) = iter;
                   }
                }
-            
+
                /* Prepare for the next iteration */ 
                _braid_TapeResetInput(core);
                _braid_CoreElt(core, optim)->objective = 0.0;
@@ -681,11 +680,10 @@ braid_Drive(braid_Core  core)
                _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
             }
 
-            if (!refined)
-            {
-               iter++;
-               _braid_CoreElt(core, niter) = iter;
-            }
+            /* Increase MGRIT iteration counter */
+            iter++;
+            _braid_CoreElt(core, niter) = iter;
+
          }
       }
    }
