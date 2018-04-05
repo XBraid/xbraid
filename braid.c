@@ -1781,22 +1781,32 @@ braid_Int
 braid_SetTStartTimeaverage(braid_Core core, 
                            braid_Real tstart_obj)
 {
-  _braid_CoreElt(core, optim->tstart_obj) = tstart_obj;
-  
-  /* Sanity check */
-  if ( tstart_obj < _braid_CoreElt(core, tstart) )
-  {
-    _braid_printf("\n WARNING: tstart_objective < tstart ! Using default tstart now.\n\n");
-    _braid_CoreElt(core, optim->tstart_obj) = _braid_CoreElt(core, tstart);
-  }
+   if ( !(_braid_CoreElt(core, adjoint)))
+   {
+      return _braid_error_flag;
+   }  
 
-  return _braid_error_flag;
+   _braid_CoreElt(core, optim->tstart_obj) = tstart_obj;
+   
+   /* Sanity check */
+   if ( tstart_obj < _braid_CoreElt(core, tstart) )
+   {
+     _braid_printf("\n WARNING: tstart_objective < tstart ! Using default tstart now.\n\n");
+     _braid_CoreElt(core, optim->tstart_obj) = _braid_CoreElt(core, tstart);
+   }
+ 
+   return _braid_error_flag;
 }
 
 braid_Int
 braid_GetTStartTimeaverage(braid_Core core,
                            braid_Real *tstart_obj_ptr)
 {
+   if ( !(_braid_CoreElt(core, adjoint)) )
+   {
+      return _braid_error_flag;
+   }  
+
   *tstart_obj_ptr = _braid_CoreElt(core, optim->tstart_obj);
 
   return _braid_error_flag;
@@ -1806,14 +1816,19 @@ braid_Int
 braid_SetTStopTimeaverage(braid_Core core, 
                           braid_Real tstop_obj)
 {
-  _braid_CoreElt(core, optim->tstop_obj) = tstop_obj;
-  
-  /* Sanity check */
-  if ( tstop_obj > _braid_CoreElt(core, tstop) )
-  {
-    _braid_printf("\n WARNING: tstop_objective > tstop ! Using default tstop now.\n\n");
-    _braid_CoreElt(core, optim->tstop_obj) = _braid_CoreElt(core, tstop);
-  }
+   if ( !(_braid_CoreElt(core, adjoint)) )
+   {
+      return _braid_error_flag;
+   }  
+
+   _braid_CoreElt(core, optim->tstop_obj) = tstop_obj;
+   
+   /* Sanity check */
+   if ( tstop_obj > _braid_CoreElt(core, tstop) )
+   {
+     _braid_printf("\n WARNING: tstop_objective > tstop ! Using default tstop now.\n\n");
+     _braid_CoreElt(core, optim->tstop_obj) = _braid_CoreElt(core, tstop);
+   }
 
 
   return _braid_error_flag;
@@ -1823,9 +1838,14 @@ braid_Int
 braid_GetTStopTimeaverage(braid_Core core,
                           braid_Real *tstop_obj_ptr)
 {
-  *tstop_obj_ptr = _braid_CoreElt(core, optim->tstop_obj);
+   if ( !(_braid_CoreElt(core, adjoint)) )
+   {
+      return _braid_error_flag;
+   }  
 
-  return _braid_error_flag;
+   *tstop_obj_ptr = _braid_CoreElt(core, optim->tstop_obj);
+ 
+   return _braid_error_flag;
 }
 
 braid_Int
@@ -1842,6 +1862,11 @@ braid_Int
 braid_SetPostprocessObjective(braid_Core                      core,     
                               braid_PtFcnPostprocessObjective post_fcn )
 {
+    if ( !(_braid_CoreElt(core, adjoint)) )
+   {
+      return _braid_error_flag;
+   }  
+
    _braid_CoreElt(core, postprocess_obj) = post_fcn;
 
    return _braid_error_flag;
@@ -1851,6 +1876,10 @@ braid_Int
 braid_SetPostprocessObjective_diff(braid_Core                           core,         
                                    braid_PtFcnPostprocessObjective_diff post_fcn_diff )
 {
+   if ( !(_braid_CoreElt(core, adjoint)) )
+   {
+      return _braid_error_flag;
+   }  
 
    _braid_CoreElt(core, postprocess_obj_diff) = post_fcn_diff;
    return _braid_error_flag;
@@ -1861,6 +1890,11 @@ braid_Int
 braid_SetTolAdjoint(braid_Core core, 
                 braid_Real tol_adj)
 {
+   if ( !(_braid_CoreElt(core, adjoint)) )
+   {
+      return _braid_error_flag;
+   }  
+
    _braid_CoreElt(core, optim)->tol_adj = tol_adj;
 
    return _braid_error_flag;
@@ -1871,6 +1905,11 @@ braid_Int
 braid_SetTolGradient(braid_Core core, 
                      braid_Real tol_grad)
 {
+   if ( !(_braid_CoreElt(core, adjoint)) )
+   {
+      return _braid_error_flag;
+   }  
+
    _braid_CoreElt(core, optim)->tol_grad = tol_grad;
 
    return _braid_error_flag;
@@ -1880,6 +1919,11 @@ braid_Int
 braid_SetThresholdDesignUpdate(braid_Core core, 
                               braid_Real threshold_design)
 {
+   if ( !(_braid_CoreElt(core, adjoint)) )
+   {
+      return _braid_error_flag;
+   }  
+
    _braid_CoreElt(core, optim)->threshold_design = threshold_design;
 
    return _braid_error_flag;
@@ -1890,6 +1934,11 @@ braid_Int
 braid_SetGradientAccessLevel(braid_Core  core,
                              braid_Int   acc_grad_level)
 {
+   if ( !(_braid_CoreElt(core, adjoint)) )
+   {
+      return _braid_error_flag;
+   }  
+
    _braid_CoreElt(core, optim)->acc_grad_level = acc_grad_level;
 
    return _braid_error_flag;
@@ -1900,6 +1949,11 @@ braid_SetMaxOptimIter(braid_Core core,     /**< braid_Core struct */
                       braid_Int  maxiter   /**< maximal number of optimization iterations */
                      )
 {
+   if ( !(_braid_CoreElt(core, adjoint)) )
+   {
+      return _braid_error_flag;
+   }  
+
    _braid_CoreElt(core, optim)->maxiter = maxiter;
 
    return _braid_error_flag;
