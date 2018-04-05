@@ -179,17 +179,4 @@ braid_Int
 _braid_BaseBufUnpack_diff(_braid_Action *action);
 
 
-
-/*---- User routines for Optimization ---- */
-
-braid_Int
-_braid_BaseDesignUpdate(braid_Core  core,
-                        braid_Int  *update_flag,
-                        braid_Int  *done_ptr);
-
-
-braid_Int
-_braid_BaseComputeGNorm(braid_Core core,
-                        braid_Int  iter);
-
 #endif

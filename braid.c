@@ -636,12 +636,11 @@ braid_Drive(braid_Core  core)
                _braid_CoreFcn(core, allreduce_gradient)(_braid_CoreElt(core, app), _braid_CoreElt(core, comm));
 
                /* Set the norm of the gradient */
-               _braid_BaseComputeGNorm(core, iter);
+               _braid_ComputeGNorm(core, iter);
             }
 
             /* Print current status */
             _braid_DrivePrintStatus(core, level, iter, refined, localtime);
-
 
 
             /* If no refinement was done, check for convergence */
@@ -664,7 +663,7 @@ braid_Drive(braid_Core  core)
                if (!done)
                {
                   update_flag = 0;
-                  _braid_BaseDesignUpdate(core, &update_flag, &done);
+                  _braid_DesignUpdate(core, &update_flag, &done);
 
                   if (update_flag)
                   {

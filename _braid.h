@@ -912,6 +912,25 @@ _braid_InitAdjoint(braid_Core   core,
                    _braid_Grid *fine_grid);
 
 
+
+/**
+ * Update the design, if desired.
+ * Calls the users design update routine, if state and adjoint residual norms are below their given tolerance.
+ * Sets update_flag == 1, if an updates has occurred. 
+ * Sets done_ptr == 1, if maximum number of optimization iterations has been reached. 
+ */
+braid_Int
+_braid_DesignUpdate(braid_Core  core,
+                        braid_Int  *update_flag,
+                        braid_Int  *done_ptr);
+
+/** 
+ * Compute the gradient norm from call to users gradient_norm routine. 
+ */
+braid_Int
+_braid_ComputeGNorm(braid_Core core,
+                        braid_Int  iter);
+
 #ifdef __cplusplus
 }
 #endif
