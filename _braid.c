@@ -93,7 +93,7 @@ _braid_OptimInit( braid_Core   core,
    cfactor   = _braid_GridElt(fine_grid, cfactor);
 
    /* Allocate memory for the optimization structure */
-   optim = (braid_Optim) malloc(10*sizeof(braid_Real) + sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE*));
+   optim = (braid_Optim) malloc(11*sizeof(braid_Real) + sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE*));
    adjoints  = _braid_CTAlloc(braid_Vector, ncpoints);
    tapeinput = _braid_CTAlloc(braid_VectorBar, ncpoints);
 
@@ -117,20 +117,20 @@ _braid_OptimInit( braid_Core   core,
    }
 
    /* Set the some optimization variables */
-   optim->adjoints   = adjoints;
-   optim->tapeinput  = tapeinput;
-   optim->objective  = 0.0;
-   optim->timeavg    = 0.0;
-   optim->tstart_obj = _braid_CoreElt(core, tstart);     /* default value */
-   optim->tstop_obj  = _braid_CoreElt(core, tstop);      /* default value */
-   optim->f_bar      = 0.0;
-   optim->rnorm_adj  = -1.;
-   optim->rnorm0_adj = braid_INVALID_RNORM;
-   optim->rnorm      = -1.;
-   optim->rnorm0     = braid_INVALID_RNORM;
-   optim->gnorm      = -1.;
-   optim->gnorm0     = braid_INVALID_RNORM;
-   optim->iter       = 0;
+   optim->adjoints     = adjoints;
+   optim->tapeinput    = tapeinput;
+   optim->objective    = 0.0;
+   optim->timeavg      = 0.0;
+   optim->tstart_obj   = _braid_CoreElt(core, tstart);     /* default value */
+   optim->tstop_obj    = _braid_CoreElt(core, tstop);      /* default value */
+   optim->f_bar        = 0.0;
+   optim->rnorm_adj    = -1.;
+   optim->rnorm0_adj   = braid_INVALID_RNORM;
+   optim->rnorm        = -1.;
+   optim->rnorm0       = braid_INVALID_RNORM;
+   optim->gnorm        = -1.;
+   optim->gnorm0       = braid_INVALID_RNORM;
+   optim->iter         = 0;
 
    /* Open optimization output file */
    if (myid == 0 && io_level>=1)

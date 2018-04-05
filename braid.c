@@ -244,7 +244,9 @@ _braid_DriveCheckConvergence(braid_Core  core,
    braid_Int            max_iter        = _braid_CoreElt(core, max_iter);
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
    braid_Int            tight_fine_tolx = _braid_CoreElt(core, tight_fine_tolx);
+   braid_Int            maxoptimiter    = _braid_CoreElt(core, maxoptimiter);
    braid_Optim          optim           = _braid_CoreElt(core, optim);
+   braid_Int            optimiter       = optim->iter;
    braid_Real           rnorm, rnorm0;
    braid_Real           rnorm_adj, rnorm0_adj, gnorm, gnorm0;
    braid_Real           tol_adj, tol_grad;
@@ -317,7 +319,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
       done = 1; 
    }
    
-   if (iter == max_iter-1)
+   if (iter == max_iter-1 || optimiter == maxoptimiter -1)
    {
       done = 1;
    } 
@@ -379,7 +381,7 @@ _braid_DrivePrintStatus(braid_Core  core,
       }
       else
       {
-         _braid_printf("  Braid: %3d %3d %1.6e  %1.6e  %1.6e  %1.6e\n", optimiter, iter, rnorm, iter,  rnorm_adj, gnorm, objective);
+         _braid_printf("  Braid: %3d %3d   %1.6e  %1.6e  %1.6e  %1.6e\n", optimiter, iter, rnorm, iter,  rnorm_adj, gnorm, objective);
       }
    }
    else
@@ -453,6 +455,7 @@ braid_Drive(braid_Core  core)
    braid_Real     localtime, globaltime;
    braid_Optim    optim;
    braid_Real     rnorm_adj;
+   braid_Int      update_flag;
 
    /* Cycle state variables */
    _braid_CycleState  cycle;
@@ -676,7 +679,15 @@ braid_Drive(braid_Core  core)
                /* Update the design, if desired */
                if (!done)
                {
-                  _braid_BaseUpdateDesign(core);
+                  update_flag = 0;
+                  _braid_BaseUpdateDesign(core, &update_flag);
+
+                  /* Reset the iteration counter if update has been performed */
+                  if (update_flag)
+                  {
+                     iter = 0;
+                     _braid_CoreElt(core, niter) = iter;
+                  }
                }
             
                /* Prepare for the next iteration */ 
@@ -811,6 +822,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              adjoint         = 0;              /* Default adjoint run: Turned off */
    braid_Int              record          = 0;              /* Default action recording: Turned off */
    braid_Int              verbose         = 0;              /* Default verbosity Turned off */
+   braid_Int              maxoptimiter    = 100;            /* Default value for max. optimization iterations */
    braid_Int              gradient_access_level = 1;        /* Default gradient access level */
 
    braid_Int              myid_world,  myid;
@@ -893,6 +905,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, adjoint)               = adjoint;
    _braid_CoreElt(core, record)                = record;
    _braid_CoreElt(core, verbose)               = verbose;
+   _braid_CoreElt(core, maxoptimiter)          = maxoptimiter;
    _braid_CoreElt(core, gradient_access_level) = gradient_access_level;
    _braid_CoreElt(core, actionTape)            = NULL;
    _braid_CoreElt(core, userVectorTape)        = NULL;
@@ -1833,3 +1846,13 @@ braid_SetGradientAccessLevel(braid_Core  core,
 
    return _braid_error_flag;
 }
+
+braid_Int
+braid_SetMaxOptimIter(braid_Core core,             /**< braid_Core struct */
+                      braid_Int  maxoptimiter /**< tolerance for state and adjoint residual norms */
+                     )
+{
+   _braid_CoreElt(core, maxoptimiter) = maxoptimiter;
+
+   return _braid_error_flag;
+}                  

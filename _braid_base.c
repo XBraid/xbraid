@@ -861,7 +861,8 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
 
 
 braid_Int
-_braid_BaseUpdateDesign(braid_Core core)
+_braid_BaseUpdateDesign(braid_Core  core,
+                        braid_Int   *update_flag)
 {
    braid_App   app              = _braid_CoreElt(core, app);
    braid_Optim optim            = _braid_CoreElt(core, optim);
@@ -872,7 +873,6 @@ _braid_BaseUpdateDesign(braid_Core core)
    braid_Real  rnorm            = optim->rnorm;
    braid_Real  rnorm_adj        = optim->rnorm_adj;
    braid_Real  gnorm            = optim->gnorm;
-
 
    /* Return if no update_design function has been specified -> only gradient computation */
    if (_braid_CoreElt(core, update_design) == NULL)
@@ -894,6 +894,7 @@ _braid_BaseUpdateDesign(braid_Core core)
          _braid_ParFprintfFlush(optim->outfile, myid, "%03d  %1.14e %1.14e %1.14e %1.14e\n", optim->iter, rnorm, rnorm_adj, gnorm, objective);
          /* Increase optimization counter */
          optim->iter++;
+         *update_flag = 1;
       }
    }   
 

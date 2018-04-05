@@ -1010,6 +1010,14 @@ braid_SetGradientAccessLevel(braid_Core  core,                 /**< braid_Core s
                              braid_Int   gradient_access_level /**< desired level for accessing the gradient */
                             );
 
+/*
+ * Set maximum number of optimization iterations.
+ */
+braid_Int
+braid_SetMaxOptimIter(braid_Core core,             /**< braid_Core struct */
+                      braid_Int  maxoptimiter /**< tolerance for state and adjoint residual norms */
+                     );
+
 
                           
 #ifdef __cplusplus
