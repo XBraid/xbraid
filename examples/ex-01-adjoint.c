@@ -413,7 +413,7 @@ my_UpdateDesign(braid_App app,
 
    /* Design update */
    app->design = app->design - (app->stepsize) * Hinv * (app->gradient);
-   printf("Design update: %1.14e\n", app->design);
+   printf("Design: %1.14e\n", app->design);
 
    return 0;
 }             
@@ -445,7 +445,7 @@ int main (int argc, char *argv[])
    gradient         = 0.0;                  // Initial gradient
    target           = 1.15231184218078e-01; // Inverse Design Target: precomputed from design = -0.2, ntime=50
    relax            = 0.0005;               // Relaxation parameter
-   stepsize         = 10.0;                  // Stepsize for design updates 
+   stepsize         = 6.0;                  // Stepsize for design updates 
 
    /* DEBUG gradient */
    // design += 1e-8;
@@ -482,7 +482,7 @@ int main (int argc, char *argv[])
    braid_SetAccessLevel(core, 1);
    braid_SetVerbosity(core, 0);
    braid_SetMaxIter(core, 10);
-   braid_SetMaxOptimIter(core, 1);
+   braid_SetMaxOptimIter(core, 100);
    // braid_SetGradientAccessLevel(core, 1);   
    // braid_SetTolAdjoint(core, 1e-9);        
    // braid_SetTolGradient(core, 1e-9);
