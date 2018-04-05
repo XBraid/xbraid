@@ -532,17 +532,17 @@ braid_Drive(braid_Core  core)
       _braid_InitAdjoint(core, grid);
 
       /* Set default tolerance, if not set already */
-      if (optim->tol_adj == -1)
+      if (optim->tol_adj == braid_INVALID_RNORM)
       {
          /* Default is primal tolerance */
          optim->tol_adj = tol; 
       }
-      if (optim->tol_grad == -1)
+      if (optim->tol_grad == braid_INVALID_RNORM)
       {
          /* Default is primal tolerance */
          optim->tol_grad = tol; 
       }
-      if (optim->threshold_design == -1)
+      if (optim->threshold_design == braid_INVALID_RNORM)
       {
          /* Default is minimum of state and adjoint tolerance */
          if (tol < optim->tol_adj )
@@ -1015,9 +1015,9 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    /* Others will be set in braid_Drive() because they depend on user parameters */
    optim->adjoints         = NULL; 
    optim->tapeinput        = NULL;    
-   optim->tol_adj          = -1.;     
-   optim->tol_grad         = -1.;     
-   optim->threshold_design = -1.; 
+   optim->tol_adj          = braid_INVALID_RNORM;     
+   optim->tol_grad         = braid_INVALID_RNORM;     
+   optim->threshold_design = braid_INVALID_RNORM; 
 
    /* Open and prepare optimization output file */
    if (myid == 0 && io_level>=1)
@@ -1916,8 +1916,8 @@ braid_SetGradientAccessLevel(braid_Core  core,
 }
 
 braid_Int
-braid_SetMaxOptimIter(braid_Core core,        /**< braid_Core struct */
-                      braid_Int  maxiter /**< maximal number of optimization iterations */
+braid_SetMaxOptimIter(braid_Core core,     /**< braid_Core struct */
+                      braid_Int  maxiter   /**< maximal number of optimization iterations */
                      )
 {
    _braid_CoreElt(core, optim)->maxiter = maxiter;
