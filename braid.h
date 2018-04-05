@@ -986,15 +986,6 @@ braid_SetTolGradient(braid_Core core,       /**< braid_Core (_braid_Core) struct
                      braid_Real tol_grad    /**< tolerance for the gradient norm */
                     );
 
-/*
- * Set a threshold for design updates: Only update design if state and adjoint residual norms are below this threshold.
- * Default value is the tolerance specified for state residual norm, i.e. reduced-space optimization. Choose a higher tolerance for One-shot optimization.
- */
-braid_Int
-braid_SetThresholdDesignUpdate(braid_Core core,        /**< braid_Core struct */
-                         braid_Real threshold_design   /**< threshold for design updates */
-                        );
-
 /**
  * This controls how often the user's gradient access routine is called.
  * 

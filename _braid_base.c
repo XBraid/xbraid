@@ -869,19 +869,20 @@ _braid_BaseDesignUpdate(braid_Core  core,
    braid_Optim optim            = _braid_CoreElt(core, optim);
    braid_Int   myid             = _braid_CoreElt(core, myid);
    braid_Int   iter             = _braid_CoreElt(core, niter);
-   braid_Real  threshold_design = optim->threshold_design;
    braid_Real  objective        = optim->objective;
    braid_Real  rnorm            = optim->rnorm;
    braid_Real  rnorm_adj        = optim->rnorm_adj;
    braid_Real  gnorm            = optim->gnorm;
    braid_Int   optimiter        = optim->iter;
    braid_Int   maxoptimiter     = optim->maxiter;
+   braid_Real  tol_adj          = optim->tol_adj;
+   braid_Real  tol              = _braid_CoreElt(core, tol);
    braid_Int   done             = *done_ptr;
 
 
    /* Call the users update_design function, if state and adjoint residual norms are below the tolerance */
-   if ( rnorm     < threshold_design && 
-        rnorm_adj < threshold_design )
+   if ( rnorm     < tol && 
+        rnorm_adj < tol_adj)
    {
 
       /* Stop optimization if maximum number of optim iterations is reached. */

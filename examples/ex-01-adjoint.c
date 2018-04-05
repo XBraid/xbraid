@@ -472,23 +472,22 @@ int main (int argc, char *argv[])
 
 
    /* Initialize adjoint XBraid */
-   // braid_InitOptimization( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_AllreduceGradient, my_ResetGradient, my_AccessGradient, my_GradientNorm, my_DesignUpdate, &core);
+   braid_InitOptimization( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_AllreduceGradient, my_ResetGradient, my_AccessGradient, my_GradientNorm, my_DesignUpdate, &core);
    
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);
    braid_SetMaxLevels(core, 2);
-   braid_SetAbsTol(core, 1.0e-03);
+   braid_SetAbsTol(core, 1e-06);
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 1);
    braid_SetMaxIter(core, 20);
 
    /* Optional optimization parameters */
-   braid_SetMaxOptimIter(core, 3);
-   // braid_SetThresholdDesignUpdate(core, 1e-6);
-   // braid_SetGradientAccessLevel(core, 1);   
-   braid_SetTolAdjoint(core, 1e-1);        
+   braid_SetMaxOptimIter(core, 100);
+   braid_SetGradientAccessLevel(core, 1);   
+   braid_SetTolAdjoint(core, 1e-6);        
+   braid_SetTolGradient(core, 1e-6);
 
-   // braid_SetTolGradient(core, 1e-9);
    // braid_SetTStartTimeaverage( core, 1.0);
    // braid_SetTStopTimeaverage( core, tstop);
 
@@ -497,8 +496,8 @@ int main (int argc, char *argv[])
 
 
    /* Optional: Set the tracking type objective function and derivative */
-   // braid_SetPostprocessObjective(core, my_PostprocessObjective);
-   // braid_SetPostprocessObjective_diff(core, my_PostprocessObjective_diff);
+   braid_SetPostprocessObjective(core, my_PostprocessObjective);
+   braid_SetPostprocessObjective_diff(core, my_PostprocessObjective_diff);
 
 
    /* Run simulation */

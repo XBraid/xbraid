@@ -83,7 +83,6 @@ struct _braid_Optimization_struct
    braid_Real       gnorm0;           /**< initial norm of the gradient */
    braid_Real       tol_adj;          /**< tolerance of adjoint residual */
    braid_Real       tol_grad;         /**< tolerance for the gradient norm */
-   braid_Real       threshold_design; /**< threshold for design updates */
    braid_Int        iter;             /**< counts the number of design updates (i.e. optimization cycles) */
    braid_Int        maxiter;          /**< maximum number of optimization iterations */
    braid_Int        acc_grad_level;   /**< determines how often the user's access_gradient function is called */

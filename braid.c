@@ -449,7 +449,6 @@ braid_Drive(braid_Core  core)
    braid_App            app             = _braid_CoreElt(core, app);
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
    braid_Optim          optim           = _braid_CoreElt(core, optim);
-   braid_Real           tol             = _braid_CoreElt(core, tol);
 
    braid_Int     *nrels, nrel0;
    braid_Int      nlevels;
@@ -510,30 +509,6 @@ braid_Drive(braid_Core  core)
    {
       /* Initialize and allocate the adjoint variables */
       _braid_InitAdjoint(core, grid);
-
-      /* Set default tolerance, if not set already */
-      if (optim->tol_adj == braid_INVALID_RNORM)
-      {
-         /* Default is primal tolerance */
-         optim->tol_adj = tol; 
-      }
-      if (optim->tol_grad == braid_INVALID_RNORM)
-      {
-         /* Default is primal tolerance */
-         optim->tol_grad = tol; 
-      }
-      if (optim->threshold_design == braid_INVALID_RNORM)
-      {
-         /* Default is minimum of state and adjoint tolerance */
-         if (tol < optim->tol_adj )
-         {
-            optim->threshold_design = tol;
-         }
-         else
-         {
-            optim->threshold_design = optim->tol_adj;
-         }
-      }
    }
 
 
@@ -960,9 +935,10 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
                        braid_PtFcnDesignUpdate      update_design,
                        braid_Core                  *core_ptr)
 {
-   braid_Optim optim;
    braid_Int   myid       = _braid_CoreElt(*core_ptr, myid);
    braid_Int   io_level   = _braid_CoreElt(*core_ptr, io_level);
+   braid_Optim optim;
+
 
    /* Set adjoint flags */ 
    _braid_CoreElt(*core_ptr, adjoint) = 1;
@@ -974,11 +950,15 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    braid_Real  tstop_obj      = _braid_CoreElt(*core_ptr, tstop);
    braid_Int   maxoptimiter   = 100;
    braid_Int   acc_grad_level = 1;
+   braid_Real  tol_adj        = 1e-8;
+   braid_Real  tol_grad       = 1e-8;
 
    /* Allocate memory for the optimization structure */
-   optim = (braid_Optim) malloc(15*sizeof(braid_Real) + 2*sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE));
+   optim = (braid_Optim) malloc(14*sizeof(braid_Real) + 2*sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE));
 
    /* Set optimization variables */
+   optim->adjoints       = NULL;    /* will be allocated in InitAdjoint() */
+   optim->tapeinput      = NULL;    /* will be allocated in InitAdjoint() */   
    optim->objective      = 0.0;
    optim->timeavg        = 0.0;
    optim->f_bar          = 0.0;
@@ -987,6 +967,8 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    optim->tstop_obj      = tstop_obj; 
    optim->maxiter        = maxoptimiter;
    optim->acc_grad_level = acc_grad_level;
+   optim->tol_adj        = tol_adj;     
+   optim->tol_grad       = tol_grad;     
    optim->rnorm_adj      = braid_INVALID_RNORM;
    optim->rnorm0_adj     = braid_INVALID_RNORM;
    optim->rnorm          = braid_INVALID_RNORM;
@@ -994,12 +976,6 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    optim->gnorm          = braid_INVALID_RNORM;
    optim->gnorm0         = braid_INVALID_RNORM;
   
-   /* Others will be set in braid_Drive() because they depend on user parameters */
-   optim->adjoints         = NULL; 
-   optim->tapeinput        = NULL;    
-   optim->tol_adj          = braid_INVALID_RNORM;     
-   optim->tol_grad         = braid_INVALID_RNORM;     
-   optim->threshold_design = braid_INVALID_RNORM; 
 
    /* Open and prepare optimization output file */
    if (myid == 0 && io_level>=1)
@@ -1913,20 +1889,6 @@ braid_SetTolGradient(braid_Core core,
    }  
 
    _braid_CoreElt(core, optim)->tol_grad = tol_grad;
-
-   return _braid_error_flag;
-}
-
-braid_Int
-braid_SetThresholdDesignUpdate(braid_Core core, 
-                              braid_Real threshold_design)
-{
-   if ( !(_braid_CoreElt(core, adjoint)) )
-   {
-      return _braid_error_flag;
-   }  
-
-   _braid_CoreElt(core, optim)->threshold_design = threshold_design;
 
    return _braid_error_flag;
 }
