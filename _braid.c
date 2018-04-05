@@ -93,7 +93,7 @@ _braid_OptimInit( braid_Core   core,
    cfactor   = _braid_GridElt(fine_grid, cfactor);
 
    /* Allocate memory for the optimization structure */
-   optim = (braid_Optim) malloc(11*sizeof(braid_Real) + sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE*));
+   optim = (braid_Optim) malloc(11*sizeof(braid_Real) + sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE));
    adjoints  = _braid_CTAlloc(braid_Vector, ncpoints);
    tapeinput = _braid_CTAlloc(braid_VectorBar, ncpoints);
 
