@@ -8,6 +8,7 @@
 
 #include "_braid.h"
 #include "_braid_status.h"
+#include "_util.c"
 
 
 braid_Int 
@@ -864,14 +865,14 @@ _braid_BaseUpdateDesign(braid_Core core)
 {
    braid_App   app              = _braid_CoreElt(core, app);
    braid_Optim optim            = _braid_CoreElt(core, optim);
+   braid_Int   myid             = _braid_CoreElt(core, myid);
    braid_Real  tol_designupdate = _braid_CoreElt(core, tol_designupdate);
    braid_Int   iter             = _braid_CoreElt(core, niter);
    braid_Real  objective        = optim->objective;
+   braid_Real  rnorm            = optim->rnorm;
    braid_Real  rnorm_adj        = optim->rnorm_adj;
-   braid_Real  rnorm;
+   braid_Real  gnorm            = optim->gnorm;
 
-   /* Get primal braid norm */
-   _braid_GetRNorm(core, -1, &rnorm);
 
    /* Return if no update_design function has been specified -> only gradient computation */
    if (_braid_CoreElt(core, update_design) == NULL)
@@ -886,7 +887,13 @@ _braid_BaseUpdateDesign(braid_Core core)
       /* Never update the design at first few iterations because initialization error can be big. */
       if (iter > 2)
       {
+         /* Update design */
          _braid_CoreFcn(core, update_design)(app, objective, rnorm, rnorm_adj);
+
+         /* Write to optimization outfile */
+         _braid_ParFprintfFlush(optim->outfile, myid, "%03d  %1.14e %1.14e %1.14e %1.14e\n", optim->iter, rnorm, rnorm_adj, gnorm, objective);
+         /* Increase optimization counter */
+         optim->iter++;
       }
    }   
 

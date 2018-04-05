@@ -262,6 +262,9 @@ _braid_DriveCheckConvergence(braid_Core  core,
       _braid_GetRNorm(core, -1, &rnorm);
       rnorm0 = _braid_CoreElt(core, rnorm0);
    }
+   /* Store state norm in the optimization structure */
+   optim->rnorm  = rnorm;
+   optim->rnorm0 = rnorm0;
 
    /* Get adjoint residual and gradient norm and stopping tolerances */
    if (_braid_CoreElt(core, adjoint))
@@ -272,6 +275,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
       gnorm0     = optim->gnorm0;
       tol_adj    = _braid_CoreElt(core, tol_adj);
       tol_grad   = _braid_CoreElt(core, tol_grad);
+
    }
 
    /* If using a relative tolerance, adjust tol */
@@ -340,6 +344,7 @@ _braid_DrivePrintStatus(braid_Core  core,
    braid_Int            rstopped        = _braid_CoreElt(core, rstopped);
    braid_Int            print_level     = _braid_CoreElt(core, print_level);
    braid_Optim          optim           = _braid_CoreElt(core, optim);
+   braid_Int            optimiter       = optim->iter;
    braid_Real           rnorm, rnorm_prev, cfactor, wtime;
    braid_Real           rnorm_adj, objective, gnorm;
 
@@ -374,10 +379,7 @@ _braid_DrivePrintStatus(braid_Core  core,
       }
       else
       {
-         _braid_printf("  Braid: %3d  %1.6e  %1.6e  %1.6e  %1.6e\n", iter, rnorm, iter,  rnorm_adj, gnorm, objective);
-
-         /* Write to optimization outfile */
-         _braid_ParFprintfFlush(optim->outfile, myid, "%03d  %1.14e %1.14e %1.14e %1.14e\n", iter, rnorm, rnorm_adj, gnorm, objective);
+         _braid_printf("  Braid: %3d %3d %1.6e  %1.6e  %1.6e  %1.6e\n", optimiter, iter, rnorm, iter,  rnorm_adj, gnorm, objective);
       }
    }
    else
@@ -649,6 +651,8 @@ braid_Drive(braid_Core  core)
             /* Print current status */
             _braid_DrivePrintStatus(core, level, iter, refined, localtime);
 
+
+
             /* If no refinement was done, check for convergence */
             if (!refined)
             {
@@ -675,7 +679,6 @@ braid_Drive(braid_Core  core)
                   _braid_BaseUpdateDesign(core);
                }
             
-
                /* Prepare for the next iteration */ 
                _braid_TapeResetInput(core);
                _braid_CoreElt(core, optim)->objective = 0.0;
