@@ -29,6 +29,7 @@ _braid_BaseStep(braid_Core       core,
    braid_Int        verbose   = _braid_CoreElt(core, verbose);
    braid_Int        record    = _braid_CoreElt(core, record);
    braid_Int        tidx      = _braid_CoreElt(core, idx);
+   braid_Int        adjoint   = _braid_CoreElt(core, adjoint);
 
    if (verbose) printf("%d: STEP %.4f to %.4f, %d\n", myid, t, tnext, tidx);
 
@@ -82,6 +83,7 @@ _braid_BaseInit(braid_Core        core,
    braid_Int         myid    = _braid_CoreElt(core, myid);
    braid_Int         verbose = _braid_CoreElt(core, verbose);
    braid_Int         record  = _braid_CoreElt(core, record);
+   braid_Int         adjoint = _braid_CoreElt(core, adjoint);
 
    if (verbose) printf("%d INIT\n", myid);
 
@@ -94,7 +96,7 @@ _braid_BaseInit(braid_Core        core,
    _braid_CoreFcn(core, init)(app, t, &(u->userVector));
    
    /* Allocate and initialize the bar vector */
-   if ( _braid_CoreElt(core, adjoint) )
+   if ( adjoint ) 
    {
       ubar = (braid_VectorBar)malloc(sizeof(braid_Vector)+sizeof(int));
       ubar->useCount = 1;
@@ -135,6 +137,7 @@ _braid_BaseClone(braid_Core         core,
    braid_Int         myid       = _braid_CoreElt(core, myid);
    braid_Int         verbose    = _braid_CoreElt(core, verbose);
    braid_Int         record     = _braid_CoreElt(core, record);
+   braid_Int         adjoint    = _braid_CoreElt(core, adjoint);
 
    if (verbose) printf("%d: CLONE\n", myid);
 
@@ -147,7 +150,7 @@ _braid_BaseClone(braid_Core         core,
    _braid_CoreFcn(core, clone)(app, u->userVector, &(v->userVector) );
 
    /* Allocate and initialize the bar vector to zero*/
-   if (_braid_CoreElt(core, adjoint))
+   if ( adjoint )
    {
       ubar = (braid_VectorBar)malloc(sizeof(braid_Vector)+sizeof(int));
       ubar->useCount = 1;

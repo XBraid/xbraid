@@ -77,18 +77,15 @@ _braid_VectorBarDelete(braid_Core core, braid_VectorBar bar)
 braid_Int
 _braid_OptimDestroy( braid_Core core)
 {
-   braid_Optim  optim;
-   _braid_Grid *fine_grid; 
-   braid_Int    myid, io_level;
-   braid_Int    clower, iupper, cfactor, sflag, iclocal, ic;
-
-   optim       = _braid_CoreElt(core, optim);
-   fine_grid   = _braid_CoreElt(core, grids)[0];
-   myid        = _braid_CoreElt(core, myid);
-   io_level    = _braid_CoreElt(core, io_level);
-   clower      = _braid_GridElt(fine_grid, clower);
-   iupper      = _braid_GridElt(fine_grid, iupper);
-   cfactor     = _braid_GridElt(fine_grid, cfactor);
+   braid_App    app        = _braid_CoreElt(core, app);
+   braid_Optim  optim      = _braid_CoreElt(core, optim);
+   _braid_Grid *fine_grid  = _braid_CoreElt(core, grids)[0];
+   braid_Int    myid       = _braid_CoreElt(core, myid);
+   braid_Int    io_level   = _braid_CoreElt(core, io_level);
+   braid_Int    clower     = _braid_GridElt(fine_grid, clower);
+   braid_Int    iupper     = _braid_GridElt(fine_grid, iupper);
+   braid_Int    cfactor    = _braid_GridElt(fine_grid, cfactor);
+   braid_Int    ic, iclocal, sflag;
 
    /* Free the adjoint variables and tapeinput */
    for (ic=clower; ic <= iupper; ic += cfactor)
@@ -96,7 +93,7 @@ _braid_OptimDestroy( braid_Core core)
       if( _braid_IsCPoint(ic, cfactor))
       {
          _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
-         _braid_CoreFcn(core, free)(_braid_CoreElt(core, app), optim->adjoints[iclocal]);
+         _braid_CoreFcn(core, free)( app, optim->adjoints[iclocal]);
          _braid_VectorBarDelete(core, optim->tapeinput[iclocal] );
       }
    }
@@ -117,23 +114,18 @@ braid_Int
 _braid_UpdateAdjoint(braid_Core core,
                      braid_Real *rnorm_adj_ptr)
 {
-   MPI_Comm         comm;
-   _braid_Grid     *fine_grid;
-   braid_Vector     tape_vec, adjoint_vec;
-   braid_Int        clower, iupper, cfactor, iclocal, sflag, ic, tnorm;
-   braid_App        app;
-   braid_Optim      optim;
-   braid_Real       rnorm_adj, rnorm_temp, global_rnorm;
-
-   comm      = _braid_CoreElt(core, comm);
-   app       = _braid_CoreElt(core, app);
-   optim     = _braid_CoreElt(core, optim);
-   tnorm     = _braid_CoreElt(core, tnorm);
-   fine_grid = _braid_CoreElt(core, grids)[0];
-   clower    = _braid_GridElt(fine_grid, clower);
-   iupper    = _braid_GridElt(fine_grid, iupper);
-   cfactor   = _braid_GridElt(fine_grid, cfactor);
-
+   braid_App    app       = _braid_CoreElt(core, app);
+   MPI_Comm     comm      = _braid_CoreElt(core, comm);
+   braid_Optim  optim     = _braid_CoreElt(core, optim);
+   braid_Int    tnorm     = _braid_CoreElt(core, tnorm);
+   _braid_Grid *fine_grid = _braid_CoreElt(core, grids)[0];
+   braid_Int    clower    = _braid_GridElt(fine_grid, clower);
+   braid_Int    iupper    = _braid_GridElt(fine_grid, iupper);
+   braid_Int    cfactor   = _braid_GridElt(fine_grid, cfactor);
+   braid_Int    ic, iclocal, sflag;
+   braid_Real   rnorm_adj, rnorm_temp, global_rnorm;
+   braid_Vector tape_vec, adjoint_vec;
+ 
    rnorm_adj    = 0.;
    global_rnorm = 0.;
    /* Loop over all C-point on the fine grid */
@@ -202,15 +194,17 @@ _braid_SetRNormAdjoint(braid_Core core,
                        braid_Int iter, 
                        braid_Real rnorm_adj)
 {
+   braid_Optim optim = _braid_CoreElt(core, optim);
 
-   _braid_CoreElt(core, optim)->rnorm_adj = rnorm_adj;
+   /* Set the adjoint norm */
+   optim->rnorm_adj = rnorm_adj;
 
-   /* Set initial adjoint residual and gradient norm if not already set */
+   /* Set initial norm if not already set */
    if (iter == 0)
    {
-      if (_braid_CoreElt(core, optim)->rnorm0_adj == braid_INVALID_RNORM)
+      if (optim->rnorm0_adj == braid_INVALID_RNORM)
       {
-         _braid_CoreElt(core, optim)->rnorm0_adj = rnorm_adj;
+         optim->rnorm0_adj = rnorm_adj;
       }
    }
 
@@ -221,15 +215,16 @@ braid_Int
 _braid_SetGradientNorm(braid_Core core, 
                        braid_Real gnorm)
 {
-   braid_Int optimiter = _braid_CoreElt(core, optim)->iter;
+   braid_Optim optim   = _braid_CoreElt(core, optim);
+   braid_Int optimiter = optim->iter;
 
    /* Set gnorm  */
-   _braid_CoreElt(core, optim)->gnorm = gnorm;
+   optim->gnorm = gnorm;
 
    /* Set initial gnorm0*/
    if (optimiter == 0)
    {
-      _braid_CoreElt(core, optim)->gnorm0 = gnorm;
+      optim->gnorm0 = gnorm;
    }
 
    return _braid_error_flag;
@@ -241,11 +236,12 @@ _braid_AddToTimeavg(braid_Core           core,
                       braid_BaseVector   u, 
                       braid_AccessStatus astatus)
 {
-   braid_App  app        = _braid_CoreElt(core, app);
-   braid_Real tstart_obj = _braid_CoreElt(core, optim)->tstart_obj;
-   braid_Real tstop_obj  = _braid_CoreElt(core, optim)->tstop_obj;
-   braid_Real objT_tmp;
-   braid_Real t;
+   braid_App   app        = _braid_CoreElt(core, app);
+   braid_Optim optim     = _braid_CoreElt(core, optim);
+   braid_Real  tstart_obj = optim->tstart_obj;
+   braid_Real  tstop_obj  = optim->tstop_obj;
+   braid_Real  objT_tmp;
+   braid_Real  t;
 
    braid_AccessStatusGetT(astatus, &t);
    if ( tstart_obj <= t && t <= tstop_obj )
@@ -254,7 +250,7 @@ _braid_AddToTimeavg(braid_Core           core,
      _braid_BaseObjectiveT(core, app, u, astatus, &objT_tmp);
 
      /* Add to the time-averaged objective function */
-     _braid_CoreElt(core, optim)->timeavg += objT_tmp;
+     optim->timeavg += objT_tmp;
    }
 
    return _braid_error_flag;
@@ -263,11 +259,12 @@ _braid_AddToTimeavg(braid_Core           core,
 braid_Int
 _braid_EvalObjective(braid_Core core)
 {
+   MPI_Comm    comm    = _braid_CoreElt(core, comm);
+   braid_App   app     = _braid_CoreElt(core, app);
+   braid_Optim optim   = _braid_CoreElt(core, optim);
+   braid_Real  timeavg = optim->timeavg;
    braid_Real localtimeavg, globaltimeavg, posttmp;
    braid_Real objective;
-   MPI_Comm comm      = _braid_CoreElt(core, comm);
-   braid_App app      = _braid_CoreElt(core, app);
-   braid_Real timeavg = _braid_CoreElt(core, optim)->timeavg;
    
    /* Compute the global time average */
    localtimeavg = timeavg;
@@ -285,8 +282,8 @@ _braid_EvalObjective(braid_Core core)
    }
 
    /* Store the timeaverage and objective function in the optim structure */
-   _braid_CoreElt(core, optim)->timeavg   = globaltimeavg;
-   _braid_CoreElt(core, optim)->objective = objective;
+   optim->timeavg   = globaltimeavg;
+   optim->objective = objective;
 
    return _braid_error_flag;
 }
@@ -298,9 +295,11 @@ _braid_EvalObjective(braid_Core core)
 braid_Int
 _braid_EvalObjective_diff(braid_Core core)
 {
-   braid_Real timeavg_bar;
-   braid_Real timeavg = _braid_CoreElt(core, optim)->timeavg;
-   braid_App app      = _braid_CoreElt(core, app);
+   braid_Optim optim   = _braid_CoreElt(core, optim);
+   braid_App   app     = _braid_CoreElt(core, app);
+   braid_Int   myid    = _braid_CoreElt(core, myid); 
+   braid_Real  timeavg = optim->timeavg;
+   braid_Real  timeavg_bar;
 
    /* Differentiate the postprocessing objective, if set */
    if (_braid_CoreElt(core, postprocess_obj_diff != NULL))
@@ -313,11 +312,11 @@ _braid_EvalObjective_diff(braid_Core core)
    }
 
    /* Differentiate the time average */
-   _braid_CoreElt(core, optim)->f_bar = timeavg_bar;
+   optim->f_bar = timeavg_bar;
 
 
    /* Reset the gradient on all but one processor (one should hold the differentiated relaxation term) */
-   if (_braid_CoreElt(core, myid) != 0)
+   if ( myid != 0)
    {
       _braid_CoreFcn(core, reset_gradient)(app);
    }
@@ -331,21 +330,25 @@ _braid_InitAdjoint(braid_Core   core,
                    _braid_Grid *fine_grid)
 {
 
+   braid_Real       tstart   = _braid_CoreElt(core, tstart);
+   braid_App        app      = _braid_CoreElt(core, app);
+   braid_Int        ncpoints  = _braid_GridElt(fine_grid, ncpoints);
+   braid_Int        clower    = _braid_GridElt(fine_grid, clower);
+   braid_Int        iupper    = _braid_GridElt(fine_grid, iupper);
+   braid_Int        cfactor   = _braid_GridElt(fine_grid, cfactor);
    braid_Vector    *adjoints  = NULL; 
    braid_VectorBar *tapeinput = NULL; 
    braid_BaseVector u; 
    braid_VectorBar  bar_copy;
    braid_Vector     mybar;
-   braid_Int ic, clower, iupper, cfactor, ncpoints, iclocal, sflag;
+   braid_Int        ic, iclocal, sflag;
 
-   ncpoints  = _braid_GridElt(fine_grid, ncpoints);
-   clower    = _braid_GridElt(fine_grid, clower);
-   iupper    = _braid_GridElt(fine_grid, iupper);
-   cfactor   = _braid_GridElt(fine_grid, cfactor);
-   adjoints  = _braid_CTAlloc(braid_Vector, ncpoints);
-   tapeinput = _braid_CTAlloc(braid_VectorBar, ncpoints);
 
-   /* Loop over all C-points */
+   /* Allocate the adjoint variables and pointer to input variables */
+   adjoints            = _braid_CTAlloc(braid_Vector, ncpoints);
+   tapeinput           = _braid_CTAlloc(braid_VectorBar, ncpoints);
+
+   /* Initialize */
    for (ic=clower; ic <= iupper; ic += cfactor)
    {
       if( _braid_IsCPoint(ic, cfactor))
@@ -354,8 +357,8 @@ _braid_InitAdjoint(braid_Core   core,
          _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
 
          /* Initialize adjoint variables with zeros */
-         _braid_CoreFcn(core, init)(_braid_CoreElt(core, app), _braid_CoreElt(core, tstart), &mybar);
-         _braid_CoreFcn(core, sum)(_braid_CoreElt(core, app), -1.0, mybar, 1.0, mybar);
+         _braid_CoreFcn(core, init)(app, tstart, &mybar);
+         _braid_CoreFcn(core, sum)( app, -1.0, mybar, 1.0, mybar);
          adjoints[iclocal] = mybar;
 
          /* Initialize the tapeinput pointer with u_bar */
@@ -364,7 +367,7 @@ _braid_InitAdjoint(braid_Core   core,
       }
    }
 
-   /* Pass the adjoints to the optimization structure */
+   /* Pass to the optimization structure */
    _braid_CoreElt(core, optim)->adjoints  = adjoints;
    _braid_CoreElt(core, optim)->tapeinput = tapeinput;
 
@@ -394,7 +397,6 @@ _braid_DesignUpdate(braid_Core  core,
    braid_Real  tol              = _braid_CoreElt(core, tol);
    braid_Int   rtol             = _braid_CoreElt(core, rtol);
    braid_Int   done             = *done_ptr;
-
 
 
    /* If using a relative tolerance, adjust tolerance */
