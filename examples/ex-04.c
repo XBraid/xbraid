@@ -299,6 +299,10 @@ my_ObjectiveT(braid_App          app,
       /* Evaluate objective */
       objT = evalObjectiveT( u->values, design, deltaT, app->gamma);
    }
+   else
+   {
+      objT = 0.0;
+   }
 
    *objectiveT_ptr = objT;
    
@@ -530,11 +534,13 @@ int main (int argc, char *argv[])
    braid_SetAbsTol(core, 1.0e-06);
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 1);
-   braid_SetMaxIter(core, 10);
+   braid_SetMaxIter(core, 20);
 
    /* Optional optimization parameters */
    braid_SetMaxOptimIter(core, 500);
    braid_SetGradientAccessLevel(core, 0);
+   braid_SetTolAdjoint(core, 1e-6);
+   braid_SetTolGradient(core, 1.e-6);
 
    // /* debug: never skip work on downcycle for comparing primal and adjoint run.*/
    braid_SetSkip(core, 0);
@@ -544,14 +550,14 @@ int main (int argc, char *argv[])
    braid_Drive(core);
 
    /* Print final design */
-   if (rank == 0)
-   {
-      printf("Final design:\n");
-      for (ts = 0; ts<ntime; ts++)
-      {
-         printf("%d %1.14e\n", ts, app->design[ts]);
-      }
-   }
+   // if (rank == 0)
+   // {
+      // printf("Final design:\n");
+      // for (ts = 0; ts<ntime; ts++)
+      // {
+      //    printf("%d %1.14e\n", ts, app->design[ts]);
+      // }
+   // }
 
    /* Clean up */
    free(design);
