@@ -69,7 +69,7 @@ typedef struct _braid_Action_struct
  * Initialize the tape
  * Set head to NULL
  **/
-void 
+braid_Int 
 _braid_TapeInit(_braid_Tape* head);
 
 /**

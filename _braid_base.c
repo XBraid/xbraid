@@ -8,6 +8,7 @@
 
 #include "_braid.h"
 #include "_braid_status.h"
+#include "braid_defs.h"
 #include "_util.c"
 
 
@@ -64,7 +65,7 @@ _braid_BaseStep(braid_Core       core,
       /* TODO: Check the fstop feature! */
       _braid_CoreFcn(core, step)(app, ustop->userVector, fstop->userVector, u->userVector, status);
    }
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -117,7 +118,7 @@ _braid_BaseInit(braid_Core        core,
    /* Set the return pointer */
    *u_ptr = u;
 
-   return 0;
+   return _braid_error_flag;
 }
 
 braid_Int
@@ -175,7 +176,7 @@ _braid_BaseClone(braid_Core         core,
 
    *v_ptr = v;
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -216,7 +217,7 @@ _braid_BaseFree(braid_Core       core,
    /* Free the braid_BaseVector */
    free(u);
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -259,7 +260,7 @@ _braid_BaseSum(braid_Core        core,
     /* Sum up the user's vector */
    _braid_CoreFcn(core, sum)(app, alpha, x->userVector, beta, y->userVector);
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -273,7 +274,7 @@ _braid_BaseSpatialNorm(braid_Core        core,
    /* Compute the spatial norm of the user's vector */
    _braid_CoreFcn(core, spatialnorm)(app, u->userVector, norm_ptr);
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -307,7 +308,7 @@ _braid_BaseAccess(braid_Core          core,
    /* Access the user's vector */
    _braid_CoreFcn(core, access)(app, u->userVector, status);
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -325,7 +326,7 @@ _braid_BaseBufSize(braid_Core          core,
    /* Call the users BufSize function */
    _braid_CoreFcn(core, bufsize)(app, size_ptr, status);
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -364,7 +365,7 @@ _braid_BaseBufPack(braid_Core          core,
    /* BufPack the user's vector */
    _braid_CoreFcn(core, bufpack)(app, u->userVector, buffer, status);
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -424,7 +425,7 @@ _braid_BaseBufUnpack(braid_Core          core,
   
    *u_ptr = u;
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -473,7 +474,7 @@ _braid_BaseObjectiveT(braid_Core          core,
    /* Evaluate the objective function at time t */
    _braid_CoreFcn(core, objectiveT)(app, u->userVector, astatus,objT_ptr);
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -492,7 +493,7 @@ _braid_BaseResidual(braid_Core        core,
       /* Call the users Residual function */
    _braid_CoreFcn(core, residual)(app, ustop->userVector, r->userVector, status);
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -516,7 +517,7 @@ _braid_BaseSCoarsen(braid_Core              core,
 
    *cu_ptr = cu;
 
-   return 0;
+   return _braid_error_flag;
 }
 
 braid_Int
@@ -539,7 +540,7 @@ _braid_BaseSRefine(braid_Core                 core,
 
    *fu_ptr = fu;
 
-   return 0;
+   return _braid_error_flag;
 }                      
 
 
@@ -562,7 +563,7 @@ _braid_BaseSInit(braid_Core        core,
 
    *u_ptr = u;
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -586,7 +587,7 @@ _braid_BaseSClone(braid_Core        core,
 
    *v_ptr = v;
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -606,7 +607,7 @@ _braid_BaseSFree(braid_Core      core,
 
    free(u);
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -625,7 +626,7 @@ _braid_BaseTimeGrid(braid_Core  core,
    /* Call the users timegrid function */
    _braid_CoreFcn(core, tgrid)(app, ta, ilower, iupper);
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -663,7 +664,7 @@ _braid_BaseStep_diff(_braid_Action *action)
    _braid_VectorBarDelete(core, ubar);
    _braid_CoreFcn(core, free)(app, u);
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -697,7 +698,7 @@ _braid_BaseClone_diff(_braid_Action *action)
    _braid_VectorBarDelete(core, u_bar);
    _braid_VectorBarDelete(core, v_bar);
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -734,7 +735,7 @@ _braid_BaseSum_diff(_braid_Action *action)
    _braid_VectorBarDelete(core, y_bar);
    _braid_VectorBarDelete(core, x_bar);
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -768,7 +769,7 @@ _braid_BaseObjectiveT_diff(_braid_Action *action)
    _braid_CoreFcn(core, free)(app, u);
    _braid_VectorBarDelete(core, ubar);
 
-   return 0;
+   return _braid_error_flag;
 }
 
 braid_Int
@@ -813,7 +814,7 @@ _braid_BaseBufPack_diff(_braid_Action *action )
    _braid_CoreFcn(core, free)(app, u);
    free(buffer);
 
-   return 0;
+   return _braid_error_flag;
 }
 
 braid_Int
@@ -856,7 +857,7 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
    _braid_VectorBarDelete(core, ubar);
 
 
-   return 0;
+   return _braid_error_flag;
 }
 
 

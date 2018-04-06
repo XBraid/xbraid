@@ -5,6 +5,7 @@
 
 #include "_braid.h"
 #include "_braid_tape.h"
+#include "braid_defs.h"
 #include "_braid_base.h"
 
 #ifndef DEBUG
@@ -12,10 +13,12 @@
 #endif
 
 
-void 
+braid_Int 
 _braid_TapeInit(_braid_Tape* head)
 {
    head = NULL;
+
+   return _braid_error_flag;
 }
 
 _braid_Tape* 
@@ -56,8 +59,14 @@ _braid_TapeIsEmpty(_braid_Tape* head)
 braid_Int
 _braid_TapeGetSize(_braid_Tape* head)
 {
-    if ( _braid_TapeIsEmpty(head) ) return 0;
-    else return head->size;
+   braid_Int size = 0;
+
+   if ( ! _braid_TapeIsEmpty(head) ) 
+   {
+      size = head->size;
+   }
+
+   return size;
 }
 
 
@@ -82,7 +91,7 @@ _braid_TapeDisplayBackwards(braid_Core core, _braid_Tape* head, void (*displayfc
        printf("Tape is empty\n");
    }
   
-  return 0;
+  return _braid_error_flag;
 }
 
 
@@ -110,7 +119,7 @@ _braid_TapeEvaluate(braid_Core core)
    /* Update the actionTape in the core */
    _braid_CoreElt(core, actionTape) = actionTape;
 
-   return 0;
+   return _braid_error_flag;
 }
 
 braid_Int
@@ -167,7 +176,7 @@ _braid_DiffCall(_braid_Action* action)
       }
    }
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -198,7 +207,7 @@ _braid_TapeSetSeed(braid_Core core)
       }
    }
 
-   return 0;
+   return _braid_error_flag;
 }
 
 braid_Int
@@ -227,7 +236,7 @@ _braid_TapeResetInput(braid_Core core)
       }
    }
 
-   return 0;
+   return _braid_error_flag;
 }
 
 

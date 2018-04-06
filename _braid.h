@@ -840,7 +840,7 @@ _braid_DeleteLastResidual(braid_Core  core);
 /**
  * This copies a braid_VectorBar shared pointer, i.e. it increases its useCount by one. 
  */
-void 
+braid_Int
 _braid_VectorBarCopy(braid_VectorBar bar, braid_VectorBar *bar_ptr);
 
 
@@ -848,7 +848,7 @@ _braid_VectorBarCopy(braid_VectorBar bar, braid_VectorBar *bar_ptr);
  * This reduces the useCount of a braid_VectorBar shared pointer 
  * If (usecount==0) : memory of bar is free'd
  */ 
-void
+braid_Int
 _braid_VectorBarDelete(braid_Core core, braid_VectorBar bar);
 
 

@@ -42,32 +42,36 @@ braid_Int _braid_error_flag = 0;
 FILE    *_braid_printfile  = NULL;
 
 
-void 
+braid_Int 
 _braid_VectorBarCopy(braid_VectorBar bar, braid_VectorBar *bar_ptr)
 {
   bar->useCount++;
   *bar_ptr= bar;
+
+  return _braid_error_flag;
 }
 
-void
+braid_Int
 _braid_VectorBarDelete(braid_Core core, braid_VectorBar bar)
 {
-  /* Decrease the useCount */
-  bar->useCount--;
+   /* Decrease the useCount */
+   bar->useCount--;
 
-  /* Free memory, if no pointer is left */
-  if (bar->useCount==0)
-  {
-      _braid_CoreFcn(core, free)(_braid_CoreElt(core, app), bar->userVector);
-      free(bar);
-  }
-
-  /* Sanity check */
-  else if (bar->useCount < 0)
-  {
-    printf("ERROR: useCount < 0 !\n");
-    exit(0);
-  }
+   /* Free memory, if no pointer is left */
+   if (bar->useCount==0)
+   {
+       _braid_CoreFcn(core, free)(_braid_CoreElt(core, app), bar->userVector);
+       free(bar);
+   }
+ 
+   /* Sanity check */
+   else if (bar->useCount < 0)
+   {
+     printf("ERROR: useCount < 0 !\n");
+     exit(0);
+   }
+ 
+   return _braid_error_flag;
 }
 
 braid_Int
@@ -106,7 +110,7 @@ _braid_OptimDestroy( braid_Core core)
       fclose(optim->outfile);
    }
 
-   return 0;
+   return _braid_error_flag;
 }
 
 braid_Int
@@ -190,12 +194,13 @@ _braid_UpdateAdjoint(braid_Core core,
 
    *rnorm_adj_ptr = global_rnorm;
 
-   return 0;
+   return _braid_error_flag;
 }
 
-braid_Int _braid_SetRNormAdjoint(braid_Core core, 
-                                 braid_Int iter, 
-                                 braid_Real rnorm_adj)
+braid_Int 
+_braid_SetRNormAdjoint(braid_Core core, 
+                       braid_Int iter, 
+                       braid_Real rnorm_adj)
 {
 
    _braid_CoreElt(core, optim)->rnorm_adj = rnorm_adj;
@@ -209,12 +214,13 @@ braid_Int _braid_SetRNormAdjoint(braid_Core core,
       }
    }
 
-   return 0;
+   return _braid_error_flag;
 }                           
 
-braid_Int _braid_SetGradientNorm(braid_Core core, 
-                                 braid_Int  iter, 
-                                 braid_Real gnorm)
+braid_Int 
+_braid_SetGradientNorm(braid_Core core, 
+                       braid_Int  iter, 
+                       braid_Real gnorm)
 {
 
    _braid_CoreElt(core, optim)->gnorm = gnorm;
@@ -228,7 +234,7 @@ braid_Int _braid_SetGradientNorm(braid_Core core,
       }
    }
 
-   return 0;
+   return _braid_error_flag;
 }                           
 
 
@@ -253,7 +259,7 @@ _braid_AddToTimeavg(braid_Core           core,
      _braid_CoreElt(core, optim)->timeavg += objT_tmp;
    }
 
-   return 0;
+   return _braid_error_flag;
 }
 
 braid_Int
@@ -284,7 +290,7 @@ _braid_EvalObjective(braid_Core core)
    _braid_CoreElt(core, optim)->timeavg   = globaltimeavg;
    _braid_CoreElt(core, optim)->objective = objective;
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -318,7 +324,7 @@ _braid_EvalObjective_diff(braid_Core core)
       _braid_CoreFcn(core, reset_gradient)(app);
    }
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -416,7 +422,7 @@ _braid_DesignUpdate(braid_Core  core,
 
    *done_ptr = done;
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
@@ -433,7 +439,7 @@ _braid_ComputeGNorm(braid_Core core,
    /* Set the norm of the gradient */
    _braid_SetGradientNorm(core, iter, gnorm);
 
-   return 0;
+   return _braid_error_flag;
 }
 
 
