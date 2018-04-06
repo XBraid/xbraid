@@ -665,18 +665,18 @@ braid_Drive(braid_Core  core)
                   update_flag = 0;
                   _braid_DesignUpdate(core, &update_flag, &done);
 
+                  /* Prepare for the next iteration */ 
+                  _braid_CoreElt(core, optim)->objective = 0.0;
+                  _braid_CoreElt(core, optim)->timeavg   = 0.0;
+                  _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
                   if (update_flag)
                   {
                      iter = -1;
                      _braid_CoreElt(core, niter) = iter;
                   }
                }
-
-               /* Prepare for the next iteration */ 
+               /* Reset the pointer to input variables */
                _braid_TapeResetInput(core);
-               _braid_CoreElt(core, optim)->objective = 0.0;
-               _braid_CoreElt(core, optim)->timeavg   = 0.0;
-               _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
             }
 
             /* Increase MGRIT iteration counter */
