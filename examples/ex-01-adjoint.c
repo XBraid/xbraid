@@ -480,12 +480,12 @@ int main (int argc, char *argv[])
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 1);
    braid_SetMaxIter(core, 20);
-   braid_SetRelTol(core, 1e-01);
+   braid_SetAbsTol(core, 1e-06);
 
    /* Optional optimization parameters */
-   braid_SetRelTolAdjoint(core, 1e-2);        
-   braid_SetRelTolGradient(core, 1e-5);
-   braid_SetMaxOptimIter(core, 5);
+   braid_SetAbsTolAdjoint(core, 1e-6);        
+   braid_SetAbsTolGradient(core, 1e-6);
+   braid_SetMaxOptimIter(core, 0);
    braid_SetGradientAccessLevel(core, 1);   
 
    // braid_SetTStartObjective( core, 1.0);

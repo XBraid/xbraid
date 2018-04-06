@@ -1093,9 +1093,23 @@ braid_PrintStats(braid_Core  core)
    braid_Real    globaltime    = _braid_CoreElt(core, globaltime);
    braid_PtFcnResidual fullres = _braid_CoreElt(core, full_rnorm_res);
    _braid_Grid **grids         = _braid_CoreElt(core, grids);
+   braid_Int     adjoint       = _braid_CoreElt(core, adjoint);
+   braid_Optim   optim         = _braid_CoreElt(core, optim);
 
-   braid_Real    rnorm;
+   braid_Real    tol_adj, tol_grad;
+   braid_Int     rtol_adj, rtol_grad;
+   braid_Real    rnorm, rnorm_adj, gnorm;
    braid_Int     level;
+
+   if (adjoint)
+   {
+      tol_adj   = optim->tol_adj;
+      tol_grad  = optim->tol_grad;
+      rtol_adj  = optim->rtol_adj;
+      rtol_grad = optim->rtol_grad;
+      rnorm_adj = optim->rnorm_adj;
+      gnorm     = optim->gnorm;
+   }
 
    _braid_GetRNorm(core, -1, &rnorm);
    
@@ -1109,11 +1123,30 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  use seq soln?         = %d\n", seq_soln);
       _braid_printf("  storage               = %d\n", storage);
       _braid_printf("\n");
-      _braid_printf("  stopping tolerance    = %e\n", tol);
-      _braid_printf("  use relative tol?     = %d\n", rtol);
-      _braid_printf("  max iterations        = %d\n", max_iter);
-      _braid_printf("  iterations            = %d\n", niter);
-      _braid_printf("  residual norm         = %e\n", rnorm);
+      if ( adjoint )
+      {
+         _braid_printf("  max optim iterations  = %d\n", optim->maxiter);
+         _braid_printf("  iterations taken      = %d\n", optim->iter);
+         _braid_printf("\n");
+         _braid_printf("  abs. state   res. norm  =  %e", rnorm);
+         if ( rtol ) _braid_printf("  (-> rel. tol. = %1.2e)\n", tol);
+         else        _braid_printf("  (-> abs. tol. = %1.2e)\n", tol); 
+         _braid_printf("  abs. adjoint res. norm  =  %e", rnorm_adj);
+         if (rtol_adj ) _braid_printf("  (-> rel. tol. = %1.2e)\n", tol_adj);
+         else           _braid_printf("  (-> abs. tol. = %1.2e)\n", tol_adj); 
+         _braid_printf("  abs. gradient norm      =  %e", gnorm);
+         if ( rtol_grad ) _braid_printf("  (-> rel. tol. = %1.2e)\n", tol_grad);
+         else             _braid_printf("  (-> abs. tol. = %1.2e)\n", tol_grad);
+      }
+      else
+      {
+         _braid_printf("  stopping tolerance    = %e\n", tol);
+         _braid_printf("  use relative tol?     = %d\n", rtol);
+         _braid_printf("  max iterations        = %d\n", max_iter);
+         _braid_printf("  iterations            = %d\n", niter);
+         _braid_printf("  residual norm         = %e\n", rnorm);
+      }
+
       if (tnorm == 1)
       {
          _braid_printf("                         --> 1-norm TemporalNorm \n");
