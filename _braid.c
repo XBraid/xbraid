@@ -219,19 +219,17 @@ _braid_SetRNormAdjoint(braid_Core core,
 
 braid_Int 
 _braid_SetGradientNorm(braid_Core core, 
-                       braid_Int  iter, 
                        braid_Real gnorm)
 {
+   braid_Int optimiter = _braid_CoreElt(core, optim)->iter;
 
+   /* Set gnorm  */
    _braid_CoreElt(core, optim)->gnorm = gnorm;
 
-   /* Set initial adjoint residual and gradient norm if not already set */
-   if (iter == 0)
+   /* Set initial gnorm0*/
+   if (optimiter == 0)
    {
-      if (_braid_CoreElt(core, optim)->gnorm0 == braid_INVALID_RNORM)
-      {
-         _braid_CoreElt(core, optim)->gnorm0 = gnorm;
-      }
+      _braid_CoreElt(core, optim)->gnorm0 = gnorm;
    }
 
    return _braid_error_flag;
@@ -385,16 +383,34 @@ _braid_DesignUpdate(braid_Core  core,
    braid_Int   iter             = _braid_CoreElt(core, niter);
    braid_Real  objective        = optim->objective;
    braid_Real  rnorm            = optim->rnorm;
+   braid_Real  rnorm0           = optim->rnorm0;
    braid_Real  rnorm_adj        = optim->rnorm_adj;
+   braid_Real  rnorm0_adj       = optim->rnorm0_adj;
    braid_Real  gnorm            = optim->gnorm;
    braid_Int   optimiter        = optim->iter;
    braid_Int   maxoptimiter     = optim->maxiter;
    braid_Real  tol_adj          = optim->tol_adj;
+   braid_Int   rtol_adj         = optim->rtol_adj;
    braid_Real  tol              = _braid_CoreElt(core, tol);
+   braid_Int   rtol             = _braid_CoreElt(core, rtol);
    braid_Int   done             = *done_ptr;
 
 
-   /* Call the users update_design function, if state and adjoint residual norms are below the tolerance */
+
+   /* If using a relative tolerance, adjust tolerance */
+   if (rtol)
+   {
+      tol *= rnorm0;
+   }
+   if (_braid_CoreElt(core, adjoint))
+   {
+      if (rtol_adj)
+      {
+         tol_adj  *= rnorm0_adj;
+      }
+   }
+
+   /* Update design only if state and adjoint residual norms are below the tolerance */
    if ( rnorm     < tol && 
         rnorm_adj < tol_adj)
    {
@@ -427,8 +443,7 @@ _braid_DesignUpdate(braid_Core  core,
 
 
 braid_Int
-_braid_ComputeGNorm(braid_Core core,
-                        braid_Int  iter)
+_braid_ComputeGNorm(braid_Core core)
 {
    braid_App   app       = _braid_CoreElt(core, app);
    braid_Real  gnorm;
@@ -437,7 +452,7 @@ _braid_ComputeGNorm(braid_Core core,
    _braid_CoreFcn(core, compute_gnorm)(app, &gnorm);
 
    /* Set the norm of the gradient */
-   _braid_SetGradientNorm(core, iter, gnorm);
+   _braid_SetGradientNorm(core, gnorm);
 
    return _braid_error_flag;
 }

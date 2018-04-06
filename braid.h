@@ -969,22 +969,39 @@ braid_SetPostprocessObjective_diff(braid_Core                           core,   
                                    ); 
 
 /**
- * Set the adjoint residual tolerance (default is same as primal one)
- * This is an absolute or relative stopping criterion depending on what has been chosen for the primal run. 
+ * Set absolute stopping tolerance for adjoint residuals. 
  */
 braid_Int
-braid_SetTolAdjoint(braid_Core core,       /**< braid_Core (_braid_Core) struct */
-                    braid_Real tol_adj     /**< tolerance for the adjoint residual */
-                   );
+braid_SetAbsTolAdjoint(braid_Core core,       /**< braid_Core (_braid_Core) struct */
+                       braid_Real tol_adj     /**< absolute stopping tolerance */
+                      );
 
 /**
- * Set a tolerance for gradient norm (default is same as primal one)
- * This is an absolute or relative stopping criterion depending on what has been chosen for the primal run. 
+ * Set relative stopping tolerance for adjoint residuals.  Be 
+ * careful.  If initial guess for adjoint is all zero, then the initial residual
+ * may be zero, and this will skew the
+ * relative tolerance.  Absolute tolerances are recommended.
+ **/
+braid_Int
+braid_SetRelTolAdjoint(braid_Core  core,           /**< braid_Core (_braid_Core) struct*/
+                       braid_Real  rtol_adj        /**< relative stopping tolerance */
+                      );
+
+/**
+ * Set absolute stopping tolerance for gradient norm.
  */
 braid_Int
-braid_SetTolGradient(braid_Core core,       /**< braid_Core (_braid_Core) struct */
-                     braid_Real tol_grad    /**< tolerance for the gradient norm */
-                    );
+braid_SetAbsTolGradient(braid_Core core,       /**< braid_Core (_braid_Core) struct */
+                        braid_Real tol_grad    /**< absolute tolerance tolerance */
+                       );
+/**
+ * Set relative stopping tolerance for the gradient. Be careful if first gradient is close to zero. 
+ **/
+braid_Int
+braid_SetRelTolGradient(braid_Core  core,           /**< braid_Core (_braid_Core) struct*/
+                        braid_Real  rtol_grad       /**< relative stopping tolerance */
+                       );
+
 
 /**
  * This controls how often the user's gradient access routine is called.

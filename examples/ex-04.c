@@ -537,10 +537,10 @@ int main (int argc, char *argv[])
    braid_SetMaxIter(core, 20);
 
    /* Optional optimization parameters */
-   braid_SetMaxOptimIter(core, 500);
+   braid_SetMaxOptimIter(core, 1);
    braid_SetGradientAccessLevel(core, 0);
-   braid_SetTolAdjoint(core, 1e-6);
-   braid_SetTolGradient(core, 1.e-6);
+   braid_SetAbsTolAdjoint(core, 1e-6);
+   braid_SetAbsTolGradient(core, 1.e-6);
 
    // /* debug: never skip work on downcycle for comparing primal and adjoint run.*/
    braid_SetSkip(core, 0);

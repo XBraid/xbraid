@@ -477,16 +477,16 @@ int main (int argc, char *argv[])
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);
    braid_SetMaxLevels(core, 2);
-   braid_SetAbsTol(core, 1e-06);
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 1);
    braid_SetMaxIter(core, 20);
+   braid_SetRelTol(core, 1e-01);
 
    /* Optional optimization parameters */
-   braid_SetMaxOptimIter(core, 50);
+   braid_SetRelTolAdjoint(core, 1e-2);        
+   braid_SetRelTolGradient(core, 1e-5);
+   braid_SetMaxOptimIter(core, 5);
    braid_SetGradientAccessLevel(core, 1);   
-   braid_SetTolAdjoint(core, 1e-6);        
-   braid_SetTolGradient(core, 1e-6);
 
    // braid_SetTStartObjective( core, 1.0);
    // braid_SetTStopObjective( core, tstop);

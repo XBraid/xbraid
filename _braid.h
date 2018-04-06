@@ -82,7 +82,9 @@ struct _braid_Optimization_struct
    braid_Real       gnorm;            /**< norm of the gradient */
    braid_Real       gnorm0;           /**< initial norm of the gradient */
    braid_Real       tol_adj;          /**< tolerance of adjoint residual */
+   braid_Int        rtol_adj;         /**< flag: use relative tolerance for adjoint */
    braid_Real       tol_grad;         /**< tolerance for the gradient norm */
+   braid_Int        rtol_grad;        /**< flag: use relative tolerance for gradient */
    braid_Int        iter;             /**< counts the number of design updates (i.e. optimization cycles) */
    braid_Int        maxiter;          /**< maximum number of optimization iterations */
    braid_Int        acc_grad_level;   /**< determines how often the user's access_gradient function is called */
@@ -872,16 +874,17 @@ _braid_UpdateAdjoint(braid_Core  core,
 /**
  * Set adjoint residual norm 
  */
-braid_Int _braid_SetRNormAdjoint(braid_Core  core, 
-                                 braid_Int   iter, 
-                                 braid_Real  rnorm_adj);
+braid_Int 
+_braid_SetRNormAdjoint(braid_Core  core, 
+                       braid_Int   iter, 
+                       braid_Real  rnorm_adj);
 
 /**
  * Set the gradient norm 
  */
-braid_Int _braid_SetGradientNorm(braid_Core  core, 
-                                 braid_Int   iter, 
-                                 braid_Real  gnorm);
+braid_Int 
+_braid_SetGradientNorm(braid_Core  core, 
+                       braid_Real  gnorm);
 /**
  * Evaluate the user's local objective function at time t and add it to the time-averaged objective function
  */
@@ -929,8 +932,7 @@ _braid_DesignUpdate(braid_Core  core,
  * Compute the gradient norm from call to users gradient_norm routine. 
  */
 braid_Int
-_braid_ComputeGNorm(braid_Core core,
-                    braid_Int  iter);
+_braid_ComputeGNorm(braid_Core core);
 
 #ifdef __cplusplus
 }

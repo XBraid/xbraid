@@ -248,6 +248,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
    braid_Real           rnorm, rnorm0;
    braid_Real           rnorm_adj, rnorm0_adj, gnorm, gnorm0;
    braid_Real           tol_adj, tol_grad;
+   braid_Int            rtol_adj, rtol_grad;
 
    braid_Int            done = *done_ptr;
 
@@ -277,15 +278,23 @@ _braid_DriveCheckConvergence(braid_Core  core,
       gnorm0     = optim->gnorm0;
       tol_adj    = optim->tol_adj;
       tol_grad   = optim->tol_grad;
+      rtol_adj   = optim->rtol_adj;
+      rtol_grad  = optim->rtol_grad;
    }
 
    /* If using a relative tolerance, adjust tol */
    if (rtol)
    {
       tol *= rnorm0;
-      if (_braid_CoreElt(core, adjoint))
+   }
+   if (_braid_CoreElt(core, adjoint))
+   {
+      if (rtol_adj)
       {
          tol_adj  *= rnorm0_adj;
+      }
+      if (rtol_grad)
+      {
          tol_grad *= gnorm0;
       }
    }
@@ -636,7 +645,7 @@ braid_Drive(braid_Core  core)
                _braid_CoreFcn(core, allreduce_gradient)(_braid_CoreElt(core, app), _braid_CoreElt(core, comm));
 
                /* Set the norm of the gradient */
-               _braid_ComputeGNorm(core, iter);
+               _braid_ComputeGNorm(core);
             }
 
             /* Print current status */
@@ -705,7 +714,7 @@ braid_Drive(braid_Core  core)
       _braid_FRestrict(core, level);
    }
 
-   /* Stop adjoint recording, unless sequential time stepping */
+   /* Don't record final FAccess, unless sequential time stepping */
    if (max_levels > 1)
    {
       _braid_CoreElt(core, record) = 0;
@@ -713,10 +722,6 @@ braid_Drive(braid_Core  core)
 
    /* Allow final access to Braid by carrying out an F-relax to generate points */
    _braid_FAccess(core, 0, 1);
-
-   /* Stop adjoint recording */
-   _braid_CoreElt(core, record) = 0; 
-
 
    /* If sequential time-marching, evaluate the tape */
    if (_braid_CoreElt(core, adjoint) && max_levels <= 1 )
@@ -949,9 +954,11 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    braid_Int   acc_grad_level = 1;
    braid_Real  tol_adj        = 1e-8;
    braid_Real  tol_grad       = 1e-8;
+   braid_Int   rtol_adj       = 1;
+   braid_Int   rtol_grad      = 1;
 
    /* Allocate memory for the optimization structure */
-   optim = (braid_Optim) malloc(14*sizeof(braid_Real) + 2*sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE));
+   optim = (braid_Optim) malloc(16*sizeof(braid_Real) + 2*sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE));
 
    /* Set optimization variables */
    optim->adjoints       = NULL;    /* will be allocated in InitAdjoint() */
@@ -966,6 +973,8 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    optim->acc_grad_level = acc_grad_level;
    optim->tol_adj        = tol_adj;     
    optim->tol_grad       = tol_grad;     
+   optim->rtol_adj       = rtol_adj;     
+   optim->rtol_grad      = rtol_grad;     
    optim->rnorm_adj      = braid_INVALID_RNORM;
    optim->rnorm0_adj     = braid_INVALID_RNORM;
    optim->rnorm          = braid_INVALID_RNORM;
@@ -1862,30 +1871,63 @@ braid_SetPostprocessObjective_diff(braid_Core                           core,
 
 
 braid_Int
-braid_SetTolAdjoint(braid_Core core, 
-                braid_Real tol_adj)
+braid_SetAbsTolAdjoint(braid_Core core, 
+                       braid_Real tol_adj)
 {
    if ( !(_braid_CoreElt(core, adjoint)) )
    {
       return _braid_error_flag;
    }  
 
-   _braid_CoreElt(core, optim)->tol_adj = tol_adj;
+   _braid_CoreElt(core, optim)->tol_adj  = tol_adj;
+   _braid_CoreElt(core, optim)->rtol_adj = 0;
+
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_SetRelTolAdjoint(braid_Core core, 
+                       braid_Real tol_adj)
+{
+   if ( !(_braid_CoreElt(core, adjoint)) )
+   {
+      return _braid_error_flag;
+   }  
+
+   _braid_CoreElt(core, optim)->tol_adj  = tol_adj;
+   _braid_CoreElt(core, optim)->rtol_adj = 1;
 
    return _braid_error_flag;
 }
 
 
 braid_Int
-braid_SetTolGradient(braid_Core core, 
-                     braid_Real tol_grad)
+braid_SetAbsTolGradient(braid_Core core, 
+                        braid_Real tol_grad)
 {
    if ( !(_braid_CoreElt(core, adjoint)) )
    {
       return _braid_error_flag;
    }  
 
-   _braid_CoreElt(core, optim)->tol_grad = tol_grad;
+   _braid_CoreElt(core, optim)->tol_grad  = tol_grad;
+   _braid_CoreElt(core, optim)->rtol_grad = 0;
+
+   return _braid_error_flag;
+}
+
+
+braid_Int
+braid_SetRelTolGradient(braid_Core core, 
+                        braid_Real tol_grad)
+{
+   if ( !(_braid_CoreElt(core, adjoint)) )
+   {
+      return _braid_error_flag;
+   }  
+
+   _braid_CoreElt(core, optim)->tol_grad  = tol_grad;
+   _braid_CoreElt(core, optim)->rtol_grad = 1;
 
    return _braid_error_flag;
 }
