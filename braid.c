@@ -937,10 +937,16 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
                        braid_PtFcnDesignUpdate      update_design,
                        braid_Core                  *core_ptr)
 {
-   braid_Int   myid       = _braid_CoreElt(*core_ptr, myid);
-   braid_Int   io_level   = _braid_CoreElt(*core_ptr, io_level);
-   braid_Optim optim;
-
+   braid_Int            myid      = _braid_CoreElt(*core_ptr, myid);
+   braid_Int            io_level  = _braid_CoreElt(*core_ptr, io_level);
+   braid_PtFcnResidual  residual  = _braid_CoreElt(*core_ptr, residual);
+   braid_PtFcnSCoarsen  scoarsen  = _braid_CoreElt(*core_ptr, scoarsen);
+   braid_PtFcnSRefine   srefine   = _braid_CoreElt(*core_ptr, srefine);
+   braid_PtFcnTimeGrid  tgrid     = _braid_CoreElt(*core_ptr, tgrid);
+   braid_Int            storage   = _braid_CoreElt(*core_ptr, storage);  
+   braid_Int            useshell  = _braid_CoreElt(*core_ptr, useshell);
+   braid_Int            trefine    = _braid_CoreElt(*core_ptr, refine);
+   braid_Optim          optim;
 
    /* Set adjoint flags */ 
    _braid_CoreElt(*core_ptr, adjoint) = 1;
@@ -1009,11 +1015,19 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    _braid_CoreElt(*core_ptr, update_design)      = update_design;
 
    /* Sanity check for non-supported features */
-   if( _braid_CoreElt(*core_ptr, refine) )
+   if ( residual != NULL ||
+        scoarsen != NULL ||
+        srefine  != NULL ||
+        tgrid    != NULL ||
+        useshell  ||
+        trefine   ||
+        (storage >= 0 ) )
+          // r_space?
    {
-     printf("ERROR: Adjoint of FRefine not supported yet!\n");
-     exit(1);
+      _braid_printf(" \n ERROR! One of your requested features is not yet supported for optimziation.\n\n"); 
+      exit(1);
    }
+   
 
    return _braid_error_flag;
 }

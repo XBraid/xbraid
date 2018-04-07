@@ -29,7 +29,6 @@ _braid_BaseStep(braid_Core       core,
    braid_Int        verbose   = _braid_CoreElt(core, verbose);
    braid_Int        record    = _braid_CoreElt(core, record);
    braid_Int        tidx      = _braid_CoreElt(core, idx);
-   braid_Int        adjoint   = _braid_CoreElt(core, adjoint);
 
    if (verbose) printf("%d: STEP %.4f to %.4f, %d\n", myid, t, tnext, tidx);
 
