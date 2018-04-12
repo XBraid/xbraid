@@ -1340,7 +1340,7 @@ _braid_Step(braid_Core     core,
 
    if (level == 0)
    {
-      _braid_BaseStep(core, app,  ustop, NULL, u, status);
+      _braid_BaseStep(core, app,  ustop, NULL, u, level, status);
       rfactors[ii] = _braid_StatusElt(status, rfactor);
       if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
             _braid_CoreElt(core, r_space) = 1;
@@ -1349,7 +1349,7 @@ _braid_Step(braid_Core     core,
    {
       if ( _braid_CoreElt(core, residual) == NULL )
       {
-         _braid_BaseStep(core, app,  ustop, NULL, u, status);
+         _braid_BaseStep(core, app,  ustop, NULL, u, level, status);
          if(fa[ii] != NULL)
          {
             _braid_BaseSum(core, app,  1.0, fa[ii], 1.0, u);
@@ -1357,7 +1357,7 @@ _braid_Step(braid_Core     core,
       }
       else
       {
-         _braid_BaseStep(core, app,  ustop, fa[ii], u, status);
+         _braid_BaseStep(core, app,  ustop, fa[ii], u, level, status);
       }
    }
 
@@ -1395,7 +1395,7 @@ _braid_Residual(braid_Core     core,
    {
       /* By default: r = ustop - \Phi(ustart)*/
       _braid_GetUInit(core, level, index, r, &rstop);
-      _braid_BaseStep(core, app,  rstop, NULL, r, status);
+      _braid_BaseStep(core, app,  rstop, NULL, r, level, status);
       _braid_BaseSum(core, app,  1.0, ustop, -1.0, r);
       if (level == 0)
       {

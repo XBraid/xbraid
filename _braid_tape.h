@@ -54,16 +54,18 @@ typedef struct _braid_Action_struct
    braid_Real        inTime;           /**< time of the input vector */
    braid_Real        outTime;          /**< time of the output vector */
    braid_Int         inTimeIdx;        /**< index of time of input vector */
-   braid_Status      status;           /**< braid's status used in step and access */
    braid_Real        sum_alpha;        /**< first coefficient of my_sum */
    braid_Real        sum_beta;         /**< second coefficient of my_sum */
    braid_Int         send_recv_rank;   /**< processor rank of sender / receiver in my_bufpack / my_bufunpack */
    braid_Int         braid_iter;       /**< iteration number of xBraid */
    braid_Int         myid;             /**< processors id */
+   braid_Int         level;            /**< current level in Braid */
+   braid_Int         nrefine;          /**< number of refinements done */
+   braid_Int         gupper;           /**< global size of the fine grid */
+   braid_Real        tol;              /**< primal stopping tolerance */      
 
 } _braid_Action;
  
-
 
 /**
  * Initialize the tape
