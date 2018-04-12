@@ -481,3 +481,36 @@ _braid_BufferStatusInit(braid_Int        messagetype,
 }
 ACCESSOR_FUNCTION_GET1(Buffer, MessageType, Int)
 ACCESSOR_FUNCTION_SET1(Buffer, Size,        Real)
+
+
+/*--------------------------------------------------------------------------
+ * ObjectiveStatus Routines
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+_braid_ObjectiveStatusInit(braid_Real            tstart,
+                           braid_Int             idx,
+                           braid_Int             iter,
+                           braid_Int             level,
+                           braid_Int             nrefine,
+                           braid_Int             gupper,
+                           braid_ObjectiveStatus status)
+{
+
+   _braid_StatusElt(status, t)         = tstart;
+   _braid_StatusElt(status, idx)       = idx;
+   _braid_StatusElt(status, niter)     = iter;
+   _braid_StatusElt(status, level)     = level;
+   _braid_StatusElt(status, nrefine)   = nrefine;
+   _braid_StatusElt(status, gupper)    = gupper;
+
+   return _braid_error_flag;
+}
+ACCESSOR_FUNCTION_GET1(Objective, T,             Real)
+ACCESSOR_FUNCTION_GET1(Objective, TIndex,        Int)
+ACCESSOR_FUNCTION_GET1(Objective, Iter,          Int)
+ACCESSOR_FUNCTION_GET1(Objective, Level,         Int)
+ACCESSOR_FUNCTION_GET1(Objective, NLevels,       Int)
+ACCESSOR_FUNCTION_GET1(Objective, NRefine,       Int)
+ACCESSOR_FUNCTION_GET1(Objective, NTPoints,      Int)
+ACCESSOR_FUNCTION_GET1(Objective, Tol,           Real)

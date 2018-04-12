@@ -889,9 +889,9 @@ _braid_SetGradientNorm(braid_Core  core,
  * Evaluate the user's local objective function at time t and add it to the time-averaged objective function
  */
 braid_Int
-_braid_AddToTimeavg(braid_Core            core, 
-                      braid_BaseVector    u, 
-                      braid_AccessStatus  astatus);
+_braid_AddToTimeavg(braid_Core               core, 
+                    braid_BaseVector       u, 
+                    braid_ObjectiveStatus  ostatus);
 
 /**
  * Evaluate the objective function :

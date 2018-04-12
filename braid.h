@@ -370,10 +370,10 @@ typedef braid_Int
  * Evaluate the local objective function at time t 
  **/
 typedef braid_Int
-(*braid_PtFcnObjectiveT)(braid_App           app,              /**< user-defined _braid_App structure */
-                         braid_Vector        u,                /**< primal vector */
-                         braid_AccessStatus  astatus,           /**< status structure for querying time, index, etc. */
-                         braid_Real         *objectiveT_ptr    /**< output: objective function f(u(t)) at current time */
+(*braid_PtFcnObjectiveT)(braid_App             app,              /**< user-defined _braid_App structure */
+                         braid_Vector          u,                /**< primal vector */
+                         braid_ObjectiveStatus ostatus,           /**< status structure for querying time, index, etc. */
+                         braid_Real           *objectiveT_ptr    /**< output: objective function f(u(t)) at current time */
                         );
 
 /**

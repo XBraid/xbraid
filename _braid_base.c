@@ -24,11 +24,11 @@ _braid_BaseStep(braid_Core       core,
    _braid_Action   *action;
    braid_Vector     u_copy;
    braid_VectorBar  bar_copy;
-   braid_Real       t         = _braid_CoreElt(core, t);
-   braid_Real       tnext     = _braid_CoreElt(core, tnext);
    braid_Int        myid      = _braid_CoreElt(core, myid);
    braid_Int        verbose   = _braid_CoreElt(core, verbose);
    braid_Int        record    = _braid_CoreElt(core, record);
+   braid_Real       t         = _braid_CoreElt(core, t);
+   braid_Real       tnext     = _braid_CoreElt(core, tnext);
    braid_Int        tidx      = _braid_CoreElt(core, idx);
    braid_Int        iter      = _braid_CoreElt(core, niter);
    braid_Int        nrefine   = _braid_CoreElt(core, nrefine);
@@ -54,8 +54,6 @@ _braid_BaseStep(braid_Core       core,
       action->gupper     = gupper;
       action->tol        = tol;
       _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
-
-      // printf("Stepstatus %f %f %d %f %d %d %d %d\n", t, tnext, tidx, tol, iter, level, nrefine, gupper);
 
       /* Push a copy of the primal vector to the primal tape */
       _braid_CoreFcn(core, clone)(app, u->userVector, &u_copy);  // this will accolate memory for the copy!
@@ -442,36 +440,41 @@ _braid_BaseBufUnpack(braid_Core          core,
 
 
 braid_Int
-_braid_BaseObjectiveT(braid_Core          core,
-                      braid_App           app,
-                      braid_BaseVector    u,
-                      braid_AccessStatus  astatus,
-                      braid_Real         *objT_ptr )
+_braid_BaseObjectiveT(braid_Core             core,
+                      braid_App              app,
+                      braid_BaseVector       u,
+                      braid_ObjectiveStatus  ostatus,
+                      braid_Real            *objT_ptr )
 {
    _braid_Action   *action;
    braid_Vector     u_copy;
    braid_VectorBar  ubar_copy;
-   braid_Int        verbose  = _braid_CoreElt(core, verbose);
-   braid_Int        record   = _braid_CoreElt(core, record);
-   braid_Int        myid     = _braid_CoreElt(core, myid);
-   braid_Real       t;
-   braid_Int        tidx;
+   braid_Int        verbose   = _braid_CoreElt(core, verbose);
+   braid_Int        record    = _braid_CoreElt(core, record);
+   braid_Int        myid      = _braid_CoreElt(core, myid);
+   braid_Real       t         = _braid_CoreElt(core, t);
+   braid_Int        idx       = _braid_CoreElt(core, idx);
+   braid_Int        iter      = _braid_CoreElt(core, niter);
+   braid_Int        level     = _braid_CoreElt(core, level);
+   braid_Int        nrefine   = _braid_CoreElt(core, nrefine);
+   braid_Int        gupper    = _braid_CoreElt(core, gupper);
    
    if ( verbose ) printf("%d: OBJECTIVET\n", myid);
 
    /* if bar: Record to the tape */
    if ( record )
    {
-      braid_AccessStatusGetT(astatus, &t);
-      braid_AccessStatusGetTIndex(astatus, &tidx);
-
       /* Set up and push the action */
-      action            = _braid_CTAlloc(_braid_Action, 1);
-      action->braidCall = OBJECTIVET;
-      action->inTime    = t;
-      action->inTimeIdx = tidx;
-      action->core      = core;
-      action->myid      = myid;
+      action             = _braid_CTAlloc(_braid_Action, 1);
+      action->braidCall  = OBJECTIVET;
+      action->core       = core;
+      action->myid       = myid;
+      action->inTime     = t;
+      action->inTimeIdx  = idx;
+      action->braid_iter = iter;
+      action->level      = level;
+      action->nrefine    = nrefine;
+      action->gupper     = gupper;
       _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
 
       /* Push a copy of the user's vector to the userVector tape */
@@ -484,7 +487,7 @@ _braid_BaseObjectiveT(braid_Core          core,
    }
 
    /* Evaluate the objective function at time t */
-   _braid_CoreFcn(core, objectiveT)(app, u->userVector, astatus,objT_ptr);
+   _braid_CoreFcn(core, objectiveT)(app, u->userVector, ostatus,objT_ptr);
 
    return _braid_error_flag;
 }
@@ -672,8 +675,6 @@ _braid_BaseStep_diff(_braid_Action *action)
    /* Set up the status structure */
    _braid_StepStatusInit(inTime, outTime, tidx, tol, iter, level, nrefine, gupper, status);
 
-   // printf("Stepstatus %f %f %d %f %d %d %d %d\n", inTime, outTime, tidx, tol, iter, level, nrefine, gupper);
-
    /* Call the users's differentiated step function */
    _braid_CoreFcn(core, step_diff)(app, u, ubar->userVector, status);
 
@@ -759,15 +760,20 @@ _braid_BaseSum_diff(_braid_Action *action)
 braid_Int
 _braid_BaseObjectiveT_diff(_braid_Action *action)
 {
-   braid_Vector    u;
-   braid_VectorBar ubar;
-   braid_Core      core    = action->core;
-   braid_Int       t       = action->inTime;
-   braid_Int       tidx    = action->inTimeIdx;
-   braid_App       app     = _braid_CoreElt(core, app);
-   braid_Int       verbose = _braid_CoreElt(core, verbose);
-   braid_Int       myid    = _braid_CoreElt(core, myid);
-   braid_Real      f_bar   = _braid_CoreElt(core, optim)->f_bar;
+   braid_Vector           u; 
+   braid_VectorBar        ubar; 
+   braid_Int              myid     = action->myid;
+   braid_Core             core     = action->core;
+   braid_Real             t        = action->inTime;
+   braid_Int              idx      = action->inTimeIdx;
+   braid_Int              iter     = action->braid_iter;
+   braid_Int              level    = action->level;
+   braid_Int              nrefine  = action->nrefine;
+   braid_Int              gupper   = action->gupper;
+   braid_App              app      = _braid_CoreElt(core, app);
+   braid_Int              verbose  = _braid_CoreElt(core, verbose);
+   braid_Real             f_bar    = _braid_CoreElt(core, optim)->f_bar;
+   braid_ObjectiveStatus  ostatus  = (braid_ObjectiveStatus) action->core;
 
    if ( verbose ) printf("%d: OBJT_DIFF\n", myid);
 
@@ -780,7 +786,9 @@ _braid_BaseObjectiveT_diff(_braid_Action *action)
    _braid_CoreElt(core, barTape)        = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
   /* Call the users's differentiated objective function */
-   _braid_CoreFcn(core, objT_diff)( app, u, ubar->userVector, f_bar, t, tidx);
+   _braid_ObjectiveStatusInit(t, idx, iter, level, nrefine, gupper, ostatus);
+
+   _braid_CoreFcn(core, objT_diff)( app, u, ubar->userVector, f_bar, t, idx);
 
    /* Free primal and bar vectors */
    _braid_CoreFcn(core, free)(app, u);

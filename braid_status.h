@@ -104,6 +104,14 @@ typedef struct _braid_CoarsenRefStatus_struct *braid_CoarsenRefStatus;
  */
 typedef struct _braid_BufferStatus_struct *braid_BufferStatus;
 
+/**
+ * The user's objectiveT and PostprocessObjective will receive an ObjectiveStatus structure, which
+ * defines the status of XBraid at a given instance of evaluating the objective function.  The user accesses it
+ * through _braid_ObjectiveStatusGet**()_ functions. This is just a pointer to the braid_Status.
+ */
+typedef struct _braid_ObjectiveStatus_struct *braid_ObjectiveStatus;
+
+
 /** @}*/
 
 
@@ -479,6 +487,20 @@ ACCESSOR_HEADER_SET1(Step, RSpace,        Real)
 
 ACCESSOR_HEADER_GET1(Buffer, MessageType, Int)
 ACCESSOR_HEADER_SET1(Buffer, Size,        Real)
+
+/*--------------------------------------------------------------------------
+ * ObjectiveStatus Prototypes: They just wrap the corresponding Status accessors
+ *--------------------------------------------------------------------------*/
+
+ACCESSOR_HEADER_GET1(Objective, T,             Real)
+ACCESSOR_HEADER_GET1(Objective, TIndex,        Int)
+ACCESSOR_HEADER_GET1(Objective, Iter,          Int)
+ACCESSOR_HEADER_GET1(Objective, Level,         Int)
+ACCESSOR_HEADER_GET1(Objective, NLevels,       Int)
+ACCESSOR_HEADER_GET1(Objective, NRefine,       Int)
+ACCESSOR_HEADER_GET1(Objective, NTPoints,      Int)
+ACCESSOR_HEADER_GET1(Objective, Tol,           Real)
+
 
 /** @}*/
 

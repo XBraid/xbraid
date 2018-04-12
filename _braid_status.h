@@ -71,6 +71,11 @@ struct _braid_BufferStatus_struct
    _braid_Status status;
 };
 
+struct _braid_ObjectiveStatus_struct
+{
+   _braid_Status status;
+};
+
 
 /*--------------------------------------------------------------------------
  * Begin headers for internal Braid Status functions, like Destroy, and StatusInit
@@ -136,6 +141,18 @@ _braid_BufferStatusInit(braid_Int           messagetype,  /**< message type, 0: 
                         braid_Int           size,         /**< if set by user, size of send buffer is "size" bytes */
                         braid_BufferStatus  status        /**< structure to initialize */
                         );
+
+
+/**
+ * Initialize a braid_ObjectiveStatus structure */
+braid_Int
+_braid_ObjectiveStatusInit(braid_Real            tstart,
+                           braid_Int             idx,
+                           braid_Int             iter,
+                           braid_Int             level,
+                           braid_Int             nrefine,
+                           braid_Int             gupper,
+                           braid_ObjectiveStatus status);                     
 
 #ifdef __cplusplus
 }

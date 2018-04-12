@@ -239,7 +239,7 @@ my_BufUnpack(braid_App          app,
 int 
 my_ObjectiveT(braid_App          app,
               braid_Vector       u,
-              braid_AccessStatus astatus,
+              braid_ObjectiveStatus ostatus,
               double            *objectiveT_ptr)
 {
    /* 1/N * f(u(t),lambda) = 1/N * u(t)**2 */
