@@ -788,7 +788,7 @@ _braid_BaseObjectiveT_diff(_braid_Action *action)
   /* Call the users's differentiated objective function */
    _braid_ObjectiveStatusInit(t, idx, iter, level, nrefine, gupper, ostatus);
 
-   _braid_CoreFcn(core, objT_diff)( app, u, ubar->userVector, f_bar, t, idx);
+   _braid_CoreFcn(core, objT_diff)( app, u, ubar->userVector, f_bar, ostatus);
 
    /* Free primal and bar vectors */
    _braid_CoreFcn(core, free)(app, u);

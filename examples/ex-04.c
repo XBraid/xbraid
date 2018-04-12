@@ -277,10 +277,10 @@ my_BufUnpack(braid_App           app,
 }
 
 int 
-my_ObjectiveT(braid_App          app,
-              braid_Vector       u,
-              braid_AccessStatus astatus,
-              double            *objectiveT_ptr)
+my_ObjectiveT(braid_App              app,
+              braid_Vector           u,
+              braid_ObjectiveStatus  ostatus,
+              double                *objectiveT_ptr)
 {
    double objT;
    double design;
@@ -288,7 +288,7 @@ my_ObjectiveT(braid_App          app,
    double deltaT = 1./app->ntime;
 
    /* Get the time index*/
-   braid_AccessStatusGetTIndex(astatus, &index);
+   braid_ObjectiveStatusGetTIndex(ostatus, &index);
 
    /* Evaluate the objective function after first step */
    if ( index > 0)
@@ -311,18 +311,19 @@ my_ObjectiveT(braid_App          app,
 
 
 int
-my_ObjectiveT_diff(braid_App         app,
-                  braid_Vector       u,
-                  braid_Vector       u_bar,
-                  braid_Real         f_bar,
-                  braid_Real         t, 
-                  braid_Int          index)
+my_ObjectiveT_diff(braid_App            app,
+                  braid_Vector          u,
+                  braid_Vector          u_bar,
+                  braid_Real            f_bar,
+                  braid_ObjectiveStatus ostatus)
 {
-   double deltaT = 1. / app->ntime;
+   double  deltaT = 1. / app->ntime;
    double  ddesign; 
+   int     index;
    double *du = (double*) malloc(2*sizeof(double));
 
    /* Compute derivative if time index > 0 */
+   braid_ObjectiveStatusGetTIndex(ostatus, &index);
    if ( index > 0 )
    {
       /* Transposed derivative of objectiveT wrt u times f_bar */

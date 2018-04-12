@@ -237,10 +237,10 @@ my_BufUnpack(braid_App          app,
 }
 
 int 
-my_ObjectiveT(braid_App          app,
-              braid_Vector       u,
-              braid_ObjectiveStatus ostatus,
-              double            *objectiveT_ptr)
+my_ObjectiveT(braid_App              app,
+              braid_Vector           u,
+              braid_ObjectiveStatus  ostatus,
+              double                *objectiveT_ptr)
 {
    /* 1/N * f(u(t),lambda) = 1/N * u(t)**2 */
    double objT = 1. / (app->ntime) * (u->value) * (u->value);
@@ -323,12 +323,11 @@ my_Step_diff(braid_App              app,
 
 
 int
-my_ObjectiveT_diff(braid_App         app,
-                  braid_Vector       u,
-                  braid_Vector       u_bar,
-                  braid_Real         f_bar,
-                  braid_Real         t, 
-                  braid_Int          tidx)
+my_ObjectiveT_diff(braid_App            app,
+                  braid_Vector          u,
+                  braid_Vector          u_bar,
+                  braid_Real            f_bar,
+                  braid_ObjectiveStatus ostatus)
 {
    double du, ddesign; 
 
@@ -476,17 +475,17 @@ int main (int argc, char *argv[])
    
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);
-   braid_SetMaxLevels(core, 2);
+   braid_SetMaxLevels(core, 3);
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 1);
    braid_SetMaxIter(core, 20);
    braid_SetAbsTol(core, 1e-06);
 
    /* Optional optimization parameters */
+   braid_SetMaxOptimIter(core, 1);
    braid_SetAbsTolAdjoint(core, 1e-6);        
    braid_SetAbsTolGradient(core, 1e-6);
-   braid_SetMaxOptimIter(core, 0);
-   braid_SetGradientAccessLevel(core, 1);   
+   braid_SetGradientAccessLevel(core, 1);
 
    // braid_SetTStartObjective( core, 1.0);
    // braid_SetTStopObjective( core, tstop);

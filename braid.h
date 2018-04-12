@@ -358,12 +358,11 @@ typedef braid_Int
  * Differentiated objective at time t 
  **/
 typedef braid_Int
-(*braid_PtFcnObjectiveTDiff)(braid_App          app,       /**< user-defined _braid_App structure */
-                             braid_Vector       u,         /**< primal vector */
-                             braid_Vector       u_bar,     /**< adjoint vector */
-                             braid_Real         f_bar,     /**< contains the AD-seed for the costfunction */
-                             braid_Real         t,         /**< current time */
-                             braid_Int          tidx       /**< index of current time */
+(*braid_PtFcnObjectiveTDiff)(braid_App             app,       /**< user-defined _braid_App structure */
+                             braid_Vector          u,         /**< primal vector */
+                             braid_Vector          u_bar,     /**< adjoint vector */
+                             braid_Real            f_bar,     /**< contains the AD-seed for the costfunction */
+                             braid_ObjectiveStatus ostatus    /**< query this struc for information (e.g. t, tindex, etc) */
                             );
 
 /**
