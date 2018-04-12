@@ -423,9 +423,10 @@ my_GradientNorm(braid_App app,
 
 {
    int    ts;
-   double gnorm = 0.0;
+   double gnorm;
 
    /* Norm of gradient */
+   gnorm = 0.0;
    for(ts = 0; ts < app->ntime; ts++) 
    {
       gnorm += (app->gradient[ts])*(app->gradient[ts]) ;
@@ -538,8 +539,8 @@ int main (int argc, char *argv[])
    braid_SetMaxIter(core, 20);
 
    /* Optional optimization parameters */
-   braid_SetMaxOptimIter(core, 1);
-   braid_SetGradientAccessLevel(core, 0);
+   braid_SetMaxOptimIter(core, 500);
+   braid_SetGradientAccessLevel(core, 1);
    braid_SetAbsTolAdjoint(core, 1e-6);
    braid_SetAbsTolGradient(core, 1.e-6);
 

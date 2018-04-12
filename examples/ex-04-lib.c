@@ -123,16 +123,16 @@ evalGradientT(double* w,       /* adjoint at current time */
 
 /* Write state or adjoint vector to file */
 void 
-write_vec(char*   varname,  /* Name of the vector that is to be written */
-      double* var0,     /* first components of the vector */
-      double* var1,     /* second components of the vector */
-      int     ntime )   /* total number of time steps */
+write_vec(char*   name,     /* Filename extension (ex-04.out.name) */
+          double* var0,     /* first components of the vector */
+          double* var1,     /* second components of the vector */
+          int     ntime )   /* total number of time steps */
 {
    char  filename[255];
    FILE *file;
 
    /* Open file for output  */
-   sprintf(filename, "ex-04.out.%s", varname);
+   sprintf(filename, "ex-04.out.%s", name);
    file = fopen(filename, "w");
    for (int ts = 0; ts < ntime; ts++)
    {

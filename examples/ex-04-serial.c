@@ -44,7 +44,8 @@
 int main (int argc, char *argv[])
 {
    double   tstart, tstop, deltaT;
-   int      ntime;
+   int      ntime, maxiter;
+   int      iter;
    int      ts;
    double  *u, *w;
    double  *design; 
@@ -53,6 +54,9 @@ int main (int argc, char *argv[])
    double   objective;
    double   gamma;
    double  *gradient;
+   double   gnorm;
+   double   gtol;
+   double   stepsize;
    
    /* Define time domain */
    ntime  = 20;
@@ -61,7 +65,11 @@ int main (int argc, char *argv[])
    deltaT = ( tstop - tstart ) / ntime;
 
    /* Define some optimization parameters */
-   gamma = 0.005;          /* Relaxation parameter */
+   gamma    = 0.005;          /* Relaxation parameter */
+   maxiter  = 300;            /* Maximum number of optimization iterations */
+   stepsize = 50.0;           /* Stepsize for design updates */
+   gtol     = 1e-6;           /* Stopping criterion for the gradient norm */
+   
 
    /* Allocate memory */
    u0 = (double*) malloc( ntime*sizeof(double) );   /* state, 1st component */
@@ -84,56 +92,92 @@ int main (int argc, char *argv[])
       gradient[ts] = 0.;
    }
 
-   /* Set the state initial condition */
-   u[0] =  0.0;
-   u[1] = -1.0;
 
-   /* Main forward time-stepping loop */
-   objective = 0.0;
-   for (ts = 1; ts <= ntime; ts++)
+   /* Prepare output */
+   printf("\n#    Objective             || Gradient ||\n");
+
+   /* Optimization iteration */
+   for (iter = 0; iter < maxiter; iter++)
    {
-      /* Take the step */
-      take_step(u, design[ts-1], deltaT );
 
-      /* Add to the objective function */
-      objective += evalObjectiveT(u, design[ts-1], deltaT, gamma);
+      /* Set the state initial condition */
+      u[0] =  0.0;
+      u[1] = -1.0;
 
-      /* Store the state variable */
-      u0[ts-1] = u[0];
-      u1[ts-1] = u[1];
+      /* Main forward time-stepping loop */
+      objective = 0.0;
+      for (ts = 1; ts <= ntime; ts++)
+      {
+         /* Take the step */
+         take_step(u, design[ts-1], deltaT );
 
+         /* Add to the objective function */
+         objective += evalObjectiveT(u, design[ts-1], deltaT, gamma);
+
+         /* Store the state variable */
+         u0[ts-1] = u[0];
+         u1[ts-1] = u[1];
+      }
+
+      /* Set the adjoint terminal condition */
+      w[0] = 0.0;
+      w[1] = 0.0;
+
+      /* Main backward adjoint time-stepping loop */
+      for (ts = ntime; ts >= 1; ts--)
+      {
+         /* Take adjoint step */
+         take_adjoint_step(w, u0[ts-1], u1[ts-1], deltaT);
+
+         /* Evaluate the gradient */
+         gradient[ts-1] = evalGradientT(w, design[ts-1], deltaT, gamma);
+      }
+
+      /* Compute norm of gradient */
+      gnorm = 0.0;
+      for (ts = 0; ts < ntime; ts++)
+      {
+         gnorm += gradient[ts]*gradient[ts];
+      }
+      gnorm = sqrt(gnorm);
+
+
+      /* Output */
+      printf("%3d  %1.14e  %1.14e\n", iter, objective, gnorm);
+
+      /* Check convergence */
+      if (gnorm < gtol)
+      {
+         break;
+      }
+
+      for(ts = 0; ts < ntime; ts++) 
+      {
+         design[ts] -= stepsize * gradient[ts];
+      }
    }
 
-   /* Output */
+   if (iter == maxiter)
+   {
+      printf("\n Max. number of iterations reached.\n\n");
+   }
+   else
+   {
+      printf("\n Optimization has converged.\n\n");
+   }
+
+   /* Write final state to file */
    write_vec("state", u0, u1, ntime);
-   printf("\n Objective: %1.14e\n\n", objective);
 
-   /* Set the adjoint terminal condition */
-   w[0] = 0.0;
-   w[1] = 0.0;
-
-   /* Main backward adjoint time-stepping loop */
-   for (ts = ntime; ts >= 1; ts--)
-   {
-      /* Take adjoint step */
-      take_adjoint_step(w, u0[ts-1], u1[ts-1], deltaT);
-
-      /* Evaluate the gradient */
-      gradient[ts-1] = evalGradientT(w, design[ts-1], deltaT, gamma);
-
-      /* Store the adjoint variable */
-      w0[ts-1] = w[0];
-      w1[ts-1] = w[1];
-   }
-
-   /* Output */
-   write_vec("adjoint", w0, w1, ntime);
+   /* Write final design to file */
+   FILE *designfile;
+   designfile = fopen("ex-04.out.design","w");
    for (ts = 0; ts < ntime; ts++)
    {
-      printf(" Gradient %d %1.14e\n", ts, gradient[ts]);
+      fprintf(designfile, "%1.14e\n", design[ts]);
    }
-
-
+   fflush(designfile);
+   fclose(designfile);
 
    /* Free memory */
    free(design);
