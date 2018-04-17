@@ -1016,7 +1016,7 @@ braid_SetGradientAccessLevel(braid_Core  core,           /**< braid_Core struct 
                              braid_Int   acc_grad_level  /**< desired level for accessing the gradient */
                             );
 
-/*
+/**
  * Set maximum number of optimization iterations.
  * Choose maxiter = 0, if only gradients are computed. 
  */
@@ -1025,6 +1025,14 @@ braid_SetMaxOptimIter(braid_Core core,      /**< braid_Core struct */
                       braid_Int  maxiter    /**< maximal optimization iterations */
                      );
 
+
+/**
+ * This returns  the objective function value
+ */
+braid_Int
+braid_GetObjective(braid_Core  core,           /**< braid_Core struct */
+                   braid_Real *objective_ptr   /**< return: value of the objective function */
+                  ); 
 
                           
 #ifdef __cplusplus

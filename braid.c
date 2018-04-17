@@ -2002,9 +2002,8 @@ braid_SetGradientAccessLevel(braid_Core  core,
 }
 
 braid_Int
-braid_SetMaxOptimIter(braid_Core core,     /**< braid_Core struct */
-                      braid_Int  maxiter   /**< maximal number of optimization iterations */
-                     )
+braid_SetMaxOptimIter(braid_Core core,    
+                      braid_Int  maxiter)
 {
    if ( !(_braid_CoreElt(core, adjoint)) )
    {
@@ -2015,3 +2014,19 @@ braid_SetMaxOptimIter(braid_Core core,     /**< braid_Core struct */
 
    return _braid_error_flag;
 }                  
+
+
+braid_Int
+braid_GetObjective(braid_Core  core,          
+                   braid_Real *objective_ptr )
+{
+   if ( !(_braid_CoreElt(core, adjoint)) )
+   {
+      return _braid_error_flag;
+   }  
+
+   *objective_ptr = _braid_CoreElt(core, optim)->objective;
+
+   return _braid_error_flag;
+}                
+
