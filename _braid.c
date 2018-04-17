@@ -3259,14 +3259,14 @@ _braid_FAccess(braid_Core     core,
             _braid_AccessStatusInit( ta[fi-ilower], fi, rnorm, iter, level, nrefine, gupper,
                                      done, 0, braid_ASCaller_FAccess, astatus);
             _braid_AccessVector(core, astatus, u);
+         }
 
-            /* Evaluate the user's local objective function at FPoints on finest grid */
-            if ( _braid_CoreElt(core, adjoint) && 
-                 _braid_CoreElt(core, max_levels <=1) ) 
-            {
-               _braid_ObjectiveStatusInit(ta[fi-ilower], fi, iter, level, nrefine, gupper, ostatus);
-               _braid_AddToTimeavg(core, u, ostatus);
-            }
+         /* If time-serial run: Evaluate the user's local objective function at FPoints on finest grid */
+         if ( _braid_CoreElt(core, adjoint) && 
+              _braid_CoreElt(core, max_levels <=1) ) 
+         {
+            _braid_ObjectiveStatusInit(ta[fi-ilower], fi, iter, level, nrefine, gupper, ostatus);
+            _braid_AddToTimeavg(core, u, ostatus);
          }
       }
       if (flo <= fhi)
@@ -3275,14 +3275,18 @@ _braid_FAccess(braid_Core     core,
       }
 
       /* Give access at C-points */
-      if ((ci > -1) && (access_level >= 1))
+      if ( ci > -1 )
       {
          _braid_UGetVectorRef(core, level, ci, &u);
-         _braid_AccessStatusInit( ta[ci-ilower], ci, rnorm, iter, level, nrefine, gupper,
-                                  done, 0, braid_ASCaller_FAccess, astatus);
-         _braid_AccessVector(core, astatus, u);
 
-         /* Evaluate the user's local objective function at CPoints on finest grid */
+         if ( access_level >= 1 )
+         {
+            _braid_AccessStatusInit( ta[ci-ilower], ci, rnorm, iter, level, nrefine, gupper,
+                                     done, 0, braid_ASCaller_FAccess, astatus);
+            _braid_AccessVector(core, astatus, u);
+         }
+
+         /* If time-serial: Evaluate the user's local objective function at CPoints on finest grid */
          if ( _braid_CoreElt(core, adjoint) && 
                  _braid_CoreElt(core, max_levels <=1) ) 
          {

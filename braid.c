@@ -721,7 +721,7 @@ braid_Drive(braid_Core  core)
       _braid_FRestrict(core, level);
    }
 
-   /* Don't record final FAccess, unless sequential time stepping */
+   /* Record final FAccess only if sequential time stepping */
    if (max_levels > 1)
    {
       _braid_CoreElt(core, record) = 0;
