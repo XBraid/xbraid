@@ -476,10 +476,17 @@ braid_Drive(braid_Core  core)
    { 
       _braid_printf("  Braid: Begin simulation, %d time steps\n\n",
                     _braid_CoreElt(core, gupper));
-      if (_braid_CoreElt(core, adjoint))
+      if (_braid_CoreElt(core, adjoint) )
       {
-         _braid_printf("  Braid:            || r ||      || r_adj ||   || gradient ||  Objective\n");
-         _braid_printf("  Braid: ------------------------------------------------------------\n");
+         if (_braid_CoreElt(core, max_levels) > 1)
+         {
+           _braid_printf("  Braid:            || r ||      || r_adj ||  || gradient ||  Objective\n");
+           _braid_printf("  Braid:-----------------------------------------------------------\n");
+         }
+         else
+         {
+            _braid_printf("  Braid: Serial time-stepping. \n\n");
+         }
       }                 
    }
 
