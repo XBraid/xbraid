@@ -202,9 +202,16 @@ _braid_SetRNormAdjoint(braid_Core core,
    /* Set initial norm if not already set */
    if (iter == 0)
    {
-      if (optim->rnorm0_adj == braid_INVALID_RNORM)
+      if (optim->rnorm0_adj == braid_INVALID_RNORM )
       {
-         optim->rnorm0_adj = rnorm_adj;
+         if (rnorm_adj > 0)
+         {
+            optim->rnorm0_adj = rnorm_adj;
+         }
+         else
+         {
+            optim->rnorm0_adj = 1.0;
+         }
       }
    }
 
@@ -397,7 +404,6 @@ _braid_DesignUpdate(braid_Core  core,
    braid_Int   rtol             = _braid_CoreElt(core, rtol);
    braid_Int   done             = *done_ptr;
 
-
    /* If using a relative tolerance, adjust tolerance */
    if (rtol)
    {
@@ -415,6 +421,7 @@ _braid_DesignUpdate(braid_Core  core,
    if ( rnorm     < tol && 
         rnorm_adj < tol_adj)
    {
+  
 
       /* Stop optimization if maximum number of optim iterations is reached. */
       if (optimiter == maxoptimiter)
@@ -447,7 +454,7 @@ braid_Int
 _braid_ComputeGNorm(braid_Core core)
 {
    braid_App   app       = _braid_CoreElt(core, app);
-   braid_Real  gnorm;
+   braid_Real  gnorm     = braid_INVALID_RNORM;
 
    /* Call the users update_design function */
    _braid_CoreFcn(core, compute_gnorm)(app, &gnorm);

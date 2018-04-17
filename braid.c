@@ -958,8 +958,8 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    braid_Real  tstop_obj      = _braid_CoreElt(*core_ptr, tstop);
    braid_Int   maxoptimiter   = 100;
    braid_Int   acc_grad_level = 1;
-   braid_Real  tol_adj        = 1e-8;
-   braid_Real  tol_grad       = 1e-8;
+   braid_Real  tol_adj        = 1e-6;
+   braid_Real  tol_grad       = 1e-6;
    braid_Int   rtol_adj       = 1;
    braid_Int   rtol_grad      = 1;
 
@@ -987,7 +987,7 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    optim->rnorm0         = braid_INVALID_RNORM;
    optim->gnorm          = braid_INVALID_RNORM;
    optim->gnorm0         = braid_INVALID_RNORM;
-  
+
 
    /* Open and prepare optimization output file */
    if (myid == 0 && io_level>=1)
