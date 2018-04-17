@@ -722,6 +722,8 @@ braid_Drive(braid_Core  core)
 
    /* Allow final access to Braid by carrying out an F-relax to generate points */
    _braid_FAccess(core, 0, 1);
+   
+   _braid_CoreElt(core, record) = 0;
 
    /* If sequential time-marching, evaluate the tape */
    if (_braid_CoreElt(core, adjoint) && max_levels <= 1 )
