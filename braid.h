@@ -393,50 +393,6 @@ typedef braid_Int
                                         braid_Real   timeavg,         /**< Time-averaged objective function */
                                         braid_Real  *timeavg_bar    /**< output: derivative of postprocessing objective */
                                    );
-
-
-/**
- * Invoke an MPI_Allreduce call in order to collect gradient information from all time-processors.  
- */
-typedef braid_Int
-(*braid_PtFcnAllreduceGradient)(braid_App app,  /**< user-defined _braid_App structure */
-                                MPI_Comm   comm /**< Communicator for temporal dimension*/
-                                );             
-
-
-
-/**
- * Set the gradient to zero
- */
-typedef braid_Int
-(*braid_PtFcnResetGradient)(braid_App app );     /**< user-defined _braid_App structure */
-
-
-/**
- * Access the gradient, used for printing etc.
- */
-typedef braid_Int
-(*braid_PtFcnAccessGradient)(braid_App app );    /**< user-defined _braid_App structure */
-
-/**
- * Compute the norm of the gradient 
- */
-typedef braid_Int
-(*braid_PtFcnComputeGNorm)(braid_App   app,     /**< user-defined _braid_App structure */
-                           braid_Real *gnorm_ptr    /**< Return value: Norm of the gradient */
-                          );
-
-
-/** 
- * Update the design variable 
- */
-typedef braid_Int
-(*braid_PtFcnDesignUpdate)(braid_App   app,         /**< user-defined _braid_App structure */ 
-                           braid_Real  objective,   /**< objective function value */
-                           braid_Real  rnorm,       /**< norm of the state residual */
-                           braid_Real  rnorm_adj    /**< norm of the adjoint residual */
-                          );
-
 /** @}*/
 
 /*--------------------------------------------------------------------------
