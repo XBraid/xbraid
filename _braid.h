@@ -242,15 +242,10 @@ typedef struct _braid_Core_struct
    _braid_Tape*          barTape;            /**< tape storing intermediate AD-bar variables while recording */
       
    braid_PtFcnObjectiveT                objectiveT;           /**< User function: evaluate objective function at time t */
-   braid_PtFcnAllreduceGradient         allreduce_gradient;   /**< User function: Invoke an MPI_Allreduce call for the gradient */
-   braid_PtFcnResetGradient             reset_gradient;       /**< User function: Set the gradient to zero. Is called before each iteration */
-   braid_PtFcnAccessGradient            access_gradient;      /**< User function: Access the gradient for output or optimization. */
-   braid_PtFcnDesignUpdate              update_design;        /**< User function: Update the design */
-   braid_PtFcnComputeGNorm              compute_gnorm;        /**< User function: Return the norm of the gradient */
-   braid_PtFcnPostprocessObjective      postprocess_obj;      /**< Optional user function: Modify the time-averaged objective function, e.g. for inverse design problems, adding relaxation term etc. */
-   braid_PtFcnPostprocessObjective_diff postprocess_obj_diff; /**< Optional user function: Derivative of postprocessing function  */
    braid_PtFcnStepDiff                  step_diff;            /**< User function: apply differentiated step function */
    braid_PtFcnObjectiveTDiff            objT_diff;            /**< User function: apply differentiated access function */
+   braid_PtFcnPostprocessObjective      postprocess_obj;      /**< Optional user function: Modify the time-averaged objective function, e.g. for inverse design problems, adding relaxation term etc. */
+   braid_PtFcnPostprocessObjective_diff postprocess_obj_diff; /**< Optional user function: Derivative of postprocessing function  */
 
    /** Data elements required for the Status structures */
    /** Common Status properties */
@@ -915,24 +910,6 @@ braid_Int
 _braid_InitAdjoint(braid_Core   core, 
                    _braid_Grid *fine_grid);
 
-
-
-/**
- * Update the design, if desired.
- * Calls the users design update routine, if state and adjoint residual norms are below their given tolerance.
- * Sets update_flag == 1, if an updates has occurred. 
- * Sets done_ptr == 1, if maximum number of optimization iterations has been reached. 
- */
-braid_Int
-_braid_DesignUpdate(braid_Core  core,
-                    braid_Int  *update_flag,
-                    braid_Int  *done_ptr);
-
-/** 
- * Compute the gradient norm from call to users gradient_norm routine. 
- */
-braid_Int
-_braid_ComputeGNorm(braid_Core core);
 
 #ifdef __cplusplus
 }

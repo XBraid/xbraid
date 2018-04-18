@@ -303,7 +303,6 @@ _braid_EvalObjective_diff(braid_Core core)
 {
    braid_Optim optim   = _braid_CoreElt(core, optim);
    braid_App   app     = _braid_CoreElt(core, app);
-   braid_Int   myid    = _braid_CoreElt(core, myid); 
    braid_Real  timeavg = optim->timeavg;
    braid_Real  timeavg_bar;
 
@@ -319,13 +318,6 @@ _braid_EvalObjective_diff(braid_Core core)
 
    /* Differentiate the time average */
    optim->f_bar = timeavg_bar;
-
-
-   /* Reset the gradient on all but one processor (one should hold the differentiated relaxation term) */
-   if ( myid != 0)
-   {
-      _braid_CoreFcn(core, reset_gradient)(app);
-   }
 
    return _braid_error_flag;
 }
@@ -379,91 +371,6 @@ _braid_InitAdjoint(braid_Core   core,
 
    return _braid_error_flag;
 }                
-
-
-braid_Int
-_braid_DesignUpdate(braid_Core  core,
-                        braid_Int   *update_flag,
-                        braid_Int   *done_ptr)
-{
-   braid_App   app              = _braid_CoreElt(core, app);
-   braid_Optim optim            = _braid_CoreElt(core, optim);
-   braid_Int   myid             = _braid_CoreElt(core, myid);
-   braid_Int   iter             = _braid_CoreElt(core, niter);
-   braid_Real  objective        = optim->objective;
-   braid_Real  rnorm            = optim->rnorm;
-   braid_Real  rnorm0           = optim->rnorm0;
-   braid_Real  rnorm_adj        = optim->rnorm_adj;
-   braid_Real  rnorm0_adj       = optim->rnorm0_adj;
-   braid_Real  gnorm            = optim->gnorm;
-   braid_Int   optimiter        = optim->iter;
-   braid_Int   maxoptimiter     = optim->maxiter;
-   braid_Real  tol_adj          = optim->tol_adj;
-   braid_Int   rtol_adj         = optim->rtol_adj;
-   braid_Real  tol              = _braid_CoreElt(core, tol);
-   braid_Int   rtol             = _braid_CoreElt(core, rtol);
-   braid_Int   done             = *done_ptr;
-
-   /* If using a relative tolerance, adjust tolerance */
-   if (rtol)
-   {
-      tol *= rnorm0;
-   }
-   if (_braid_CoreElt(core, adjoint))
-   {
-      if (rtol_adj)
-      {
-         tol_adj  *= rnorm0_adj;
-      }
-   }
-
-   /* Update design only if state and adjoint residual norms are below the tolerance */
-   if ( rnorm     < tol && 
-        rnorm_adj < tol_adj)
-   {
-  
-
-      /* Stop optimization if maximum number of optim iterations is reached. */
-      if (optimiter == maxoptimiter)
-      {
-         done = 1;
-         printf("\n Max. optimization iterations reached.\n\n");
-      }
-      
-      /* Never update the design at first few iterations because initialization error can be big. */
-      if ( !(optim->iter == 0 && iter <= 2))
-      {
-         /* Update design */
-         _braid_CoreFcn(core, update_design)(app, objective, rnorm, rnorm_adj);
-
-         /* Write to optimization outfile */
-         _braid_ParFprintfFlush(optim->outfile, myid, "%03d  %1.14e %1.14e %1.14e %1.14e\n", optim->iter, rnorm, rnorm_adj, gnorm, objective);
-         /* Increase optimization counter */
-         optim->iter++;
-         *update_flag = 1;
-      }
-   }   
-
-   *done_ptr = done;
-
-   return _braid_error_flag;
-}
-
-
-braid_Int
-_braid_ComputeGNorm(braid_Core core)
-{
-   braid_App   app       = _braid_CoreElt(core, app);
-   braid_Real  gnorm     = braid_INVALID_RNORM;
-
-   /* Call the users update_design function */
-   _braid_CoreFcn(core, compute_gnorm)(app, &gnorm);
-
-   /* Set the norm of the gradient */
-   _braid_SetGradientNorm(core, gnorm);
-
-   return _braid_error_flag;
-}
 
 
 /*----------------------------------------------------------------------------

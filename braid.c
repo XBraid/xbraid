@@ -648,8 +648,6 @@ braid_Drive(braid_Core  core)
                {
                   _braid_CoreElt(core, optim)->objective = 0.0;
                   _braid_CoreElt(core, optim)->timeavg   = 0.0;
-                  _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
-
                }
 
                /* Reset the pointer to input variables */
@@ -858,14 +856,9 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, userVectorTape)        = NULL;
    _braid_CoreElt(core, barTape)               = NULL;
    _braid_CoreElt(core, optim)                 = NULL;
-   _braid_CoreElt(core, step_diff)             = NULL;
-   _braid_CoreElt(core, objT_diff)             = NULL;
    _braid_CoreElt(core, objectiveT)            = NULL;
-   _braid_CoreElt(core, allreduce_gradient)    = NULL;
-   _braid_CoreElt(core, reset_gradient)        = NULL;
-   _braid_CoreElt(core, access_gradient)       = NULL;
-   _braid_CoreElt(core, compute_gnorm)         = NULL;
-   _braid_CoreElt(core, update_design)         = NULL;
+   _braid_CoreElt(core, objT_diff)             = NULL;
+   _braid_CoreElt(core, step_diff)             = NULL;
    _braid_CoreElt(core, postprocess_obj)       = NULL;
    _braid_CoreElt(core, postprocess_obj_diff)  = NULL;
    
@@ -907,7 +900,7 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    braid_PtFcnTimeGrid  tgrid     = _braid_CoreElt(*core_ptr, tgrid);
    braid_Int            storage   = _braid_CoreElt(*core_ptr, storage);  
    braid_Int            useshell  = _braid_CoreElt(*core_ptr, useshell);
-   braid_Int            trefine    = _braid_CoreElt(*core_ptr, refine);
+   braid_Int            trefine   = _braid_CoreElt(*core_ptr, refine);
    braid_Optim          optim;
 
    /* Set adjoint flags */ 
@@ -964,11 +957,6 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    _braid_CoreElt(*core_ptr, objectiveT)         = objectiveT;
    _braid_CoreElt(*core_ptr, step_diff)          = step_diff;
    _braid_CoreElt(*core_ptr, objT_diff)          = objT_diff;
-   _braid_CoreElt(*core_ptr, allreduce_gradient) = allreduce_gradient;
-   _braid_CoreElt(*core_ptr, reset_gradient)     = reset_gradient;
-   _braid_CoreElt(*core_ptr, access_gradient)    = access_gradient;
-   _braid_CoreElt(*core_ptr, compute_gnorm)      = compute_gnorm;
-   _braid_CoreElt(*core_ptr, update_design)      = update_design;
 
    /* Sanity check for non-supported features */
    if ( residual != NULL ||
