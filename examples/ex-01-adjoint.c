@@ -405,10 +405,10 @@ int main (int argc, char *argv[])
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 0);
    braid_SetMaxIter(core, 20);
-   braid_SetAbsTol(core, 1e-06);
+   braid_SetAbsTol(core, 1e-13);
 
    /* Optional adjoint parameters */
-   braid_SetRelTolAdjoint(core, 1e-3);        
+   braid_SetRelTolAdjoint(core, 1e-13);        
 
    // braid_SetTStartObjective( core, 1.0);
    // braid_SetTStopObjective( core, tstop);
@@ -424,6 +424,7 @@ int main (int argc, char *argv[])
 
    /* Run simulation */
    braid_Drive(core);
+   printf("Gradient: %1.14e\n", app->gradient);
 
 
    /* Clean up */

@@ -687,10 +687,9 @@ braid_Drive(braid_Core  core)
    }
 
    /* Allow final access to Braid by carrying out an F-relax to generate points */
-   _braid_FAccess(core, 0, 1);
+   /* TODO: If (!warm_restart && serialrun) */
+   // _braid_FAccess(core, 0, 1);
    
-   _braid_CoreElt(core, record) = 0;
-
    /* If sequential time-marching, evaluate the tape */
    if (_braid_CoreElt(core, adjoint) && max_levels <= 1 )
    {
@@ -975,7 +974,9 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
 
+
       /* Destroy the optimization structure */
+      _braid_CoreElt(core, record) = 0;
       if (_braid_CoreElt(core, adjoint))
       {
          _braid_OptimDestroy( core );
