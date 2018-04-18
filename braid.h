@@ -987,46 +987,6 @@ braid_SetRelTolAdjoint(braid_Core  core,           /**< braid_Core (_braid_Core)
                       );
 
 /**
- * Set absolute stopping tolerance for gradient norm.
- */
-braid_Int
-braid_SetAbsTolGradient(braid_Core core,       /**< braid_Core (_braid_Core) struct */
-                        braid_Real tol_grad    /**< absolute tolerance tolerance */
-                       );
-/**
- * Set relative stopping tolerance for the gradient. Be careful if first gradient is close to zero. 
- **/
-braid_Int
-braid_SetRelTolGradient(braid_Core  core,           /**< braid_Core (_braid_Core) struct*/
-                        braid_Real  rtol_grad       /**< relative stopping tolerance */
-                       );
-
-
-/**
- * This controls how often the user's gradient access routine is called.
- * 
- * - Level 0:  Never 
- * - Level 1:  Only after the optimization iterations
- * - Level 2:  After each iteration
- * 
- * Default is level 1.
- **/
-braid_Int
-braid_SetGradientAccessLevel(braid_Core  core,           /**< braid_Core struct */
-                             braid_Int   acc_grad_level  /**< desired level for accessing the gradient */
-                            );
-
-/**
- * Set maximum number of optimization iterations.
- * Choose maxiter = 0, if only gradients are computed. 
- */
-braid_Int
-braid_SetMaxOptimIter(braid_Core core,      /**< braid_Core struct */
-                      braid_Int  maxiter    /**< maximal optimization iterations */
-                     );
-
-
-/**
  * This returns  the objective function value
  */
 braid_Int

@@ -1898,67 +1898,6 @@ braid_SetRelTolAdjoint(braid_Core core,
 
 
 braid_Int
-braid_SetAbsTolGradient(braid_Core core, 
-                        braid_Real tol_grad)
-{
-   if ( !(_braid_CoreElt(core, adjoint)) )
-   {
-      return _braid_error_flag;
-   }  
-
-   _braid_CoreElt(core, optim)->tol_grad  = tol_grad;
-   _braid_CoreElt(core, optim)->rtol_grad = 0;
-
-   return _braid_error_flag;
-}
-
-
-braid_Int
-braid_SetRelTolGradient(braid_Core core, 
-                        braid_Real tol_grad)
-{
-   if ( !(_braid_CoreElt(core, adjoint)) )
-   {
-      return _braid_error_flag;
-   }  
-
-   _braid_CoreElt(core, optim)->tol_grad  = tol_grad;
-   _braid_CoreElt(core, optim)->rtol_grad = 1;
-
-   return _braid_error_flag;
-}
-
-
-braid_Int
-braid_SetGradientAccessLevel(braid_Core  core,
-                             braid_Int   acc_grad_level)
-{
-   if ( !(_braid_CoreElt(core, adjoint)) )
-   {
-      return _braid_error_flag;
-   }  
-
-   _braid_CoreElt(core, optim)->acc_grad_level = acc_grad_level;
-
-   return _braid_error_flag;
-}
-
-braid_Int
-braid_SetMaxOptimIter(braid_Core core,    
-                      braid_Int  maxiter)
-{
-   if ( !(_braid_CoreElt(core, adjoint)) )
-   {
-      return _braid_error_flag;
-   }  
-
-   _braid_CoreElt(core, optim)->maxiter = maxiter;
-
-   return _braid_error_flag;
-}                  
-
-
-braid_Int
 braid_GetObjective(braid_Core  core,          
                    braid_Real *objective_ptr )
 {
