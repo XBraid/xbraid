@@ -246,9 +246,8 @@ _braid_DriveCheckConvergence(braid_Core  core,
    braid_Int            tight_fine_tolx = _braid_CoreElt(core, tight_fine_tolx);
    braid_Optim          optim           = _braid_CoreElt(core, optim);
    braid_Real           rnorm, rnorm0;
-   braid_Real           rnorm_adj, rnorm0_adj, gnorm, gnorm0;
-   braid_Real           tol_adj, tol_grad;
-   braid_Int            rtol_adj, rtol_grad;
+   braid_Real           rnorm_adj, rnorm0_adj;
+   braid_Real           tol_adj, rtol_adj;
 
    braid_Int            done = *done_ptr;
 
@@ -274,12 +273,8 @@ _braid_DriveCheckConvergence(braid_Core  core,
       /* Get information from the optim structure */ 
       rnorm_adj  = optim->rnorm_adj;
       rnorm0_adj = optim->rnorm0_adj;
-      gnorm      = optim->gnorm;
-      gnorm0     = optim->gnorm0;
       tol_adj    = optim->tol_adj;
-      tol_grad   = optim->tol_grad;
       rtol_adj   = optim->rtol_adj;
-      rtol_grad  = optim->rtol_grad;
    }
 
    /* If using a relative tolerance, adjust tol */
@@ -293,10 +288,6 @@ _braid_DriveCheckConvergence(braid_Core  core,
       {
          tol_adj  *= rnorm0_adj;
       }
-      if (rtol_grad)
-      {
-         tol_grad *= gnorm0;
-      }
    }
 
    if ( (rnorm != braid_INVALID_RNORM) && (rnorm < tol) && (tight_fine_tolx == 1) )
@@ -307,12 +298,6 @@ _braid_DriveCheckConvergence(braid_Core  core,
       {
          /* Keep iterating, if adjoint not converged yet. */
          if ( ! (rnorm_adj < tol_adj) )
-         {
-            done = 0;
-         }
-
-         /* Keep iterating, if gradient norm not converged yet. */
-         if ( optim->maxiter > 0 &&  !(gnorm < tol_grad) )
          {
             done = 0;
          }
@@ -355,9 +340,8 @@ _braid_DrivePrintStatus(braid_Core  core,
    braid_Int            rstopped        = _braid_CoreElt(core, rstopped);
    braid_Int            print_level     = _braid_CoreElt(core, print_level);
    braid_Optim          optim; 
-   braid_Int            optimiter;
    braid_Real           rnorm, rnorm_prev, cfactor, wtime;
-   braid_Real           rnorm_adj, objective, gnorm;
+   braid_Real           rnorm_adj, objective;
 
    /* If my processor is not 0, or if print_level is not set high enough, return */
    if ((myid != 0) || (print_level < 1))
@@ -370,10 +354,8 @@ _braid_DrivePrintStatus(braid_Core  core,
    if (_braid_CoreElt(core, adjoint))
    {
       optim           = _braid_CoreElt(core, optim);
-      optimiter       = optim->iter;
       rnorm_adj = optim->rnorm_adj;
       objective = optim->objective;
-      gnorm     = optim->gnorm;
    }
 
    _braid_GetRNorm(core, -1, &rnorm);
@@ -392,7 +374,7 @@ _braid_DrivePrintStatus(braid_Core  core,
       }
       else
       {
-         _braid_printf("  Braid: %3d %3d   %1.6e  %1.6e  %1.6e  %1.6e\n", optimiter, iter, rnorm, iter,  rnorm_adj, gnorm, objective);
+         _braid_printf("  Braid: %3d  %1.6e  %1.6e  %1.6e\n", iter, rnorm, rnorm_adj, objective);
       }
    }
    else
@@ -457,7 +439,6 @@ braid_Drive(braid_Core  core)
    braid_Int            access_level    = _braid_CoreElt(core, access_level);
    braid_App            app             = _braid_CoreElt(core, app);
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
-   braid_Optim          optim           = _braid_CoreElt(core, optim);
 
    braid_Int     *nrels, nrel0;
    braid_Int      nlevels;
@@ -466,7 +447,6 @@ braid_Drive(braid_Core  core)
    _braid_Grid   *grid;
    braid_Real     localtime, globaltime;
    braid_Real     rnorm_adj;
-   braid_Int      update_flag = 0;
 
    /* Cycle state variables */
    _braid_CycleState  cycle;
@@ -480,8 +460,8 @@ braid_Drive(braid_Core  core)
       {
          if (_braid_CoreElt(core, max_levels) > 1)
          {
-           _braid_printf("  Braid:            || r ||      || r_adj ||  || gradient ||  Objective\n");
-           _braid_printf("  Braid:-----------------------------------------------------------\n");
+           _braid_printf("  Braid:      || r ||      || r_adj ||     Objective\n");
+           _braid_printf("  Braid:---------------------------------------------\n");
          }
          else
          {
@@ -648,11 +628,6 @@ braid_Drive(braid_Core  core)
                _braid_UpdateAdjoint(core, &rnorm_adj);
                _braid_SetRNormAdjoint(core, iter, rnorm_adj);
 
-               /* Collect gradient from all temporal processors */
-               _braid_CoreFcn(core, allreduce_gradient)(_braid_CoreElt(core, app), _braid_CoreElt(core, comm));
-
-               /* Set the norm of the gradient */
-               _braid_ComputeGNorm(core);
             }
 
             /* Print current status */
@@ -668,29 +643,15 @@ braid_Drive(braid_Core  core)
 
             if (_braid_CoreElt(core, adjoint))
             {
-               /* Allow the user to access the gradient if acces level is high enough */
-               if (  optim->acc_grad_level >= 1 )
-               {
-                  if ( done || optim->acc_grad_level == 2 )
-                  _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
-               }
-
-               /* Update the design, if desired */
+               /* Prepare for the next iteration */ 
                if (!done)
                {
-                  update_flag = 0;
-                  _braid_DesignUpdate(core, &update_flag, &done);
-
-                  /* Prepare for the next iteration */ 
                   _braid_CoreElt(core, optim)->objective = 0.0;
                   _braid_CoreElt(core, optim)->timeavg   = 0.0;
                   _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
-                  if (update_flag)
-                  {
-                     iter = -1;
-                     _braid_CoreElt(core, niter) = iter;
-                  }
+
                }
+
                /* Reset the pointer to input variables */
                _braid_TapeResetInput(core);
             }
@@ -749,14 +710,6 @@ braid_Drive(braid_Core  core)
       /* Evaluate (and clear) the action tape */
       _braid_TapeEvaluate(core);
 
-      /* Collect sensitivities from all temporal processors */
-      _braid_CoreFcn(core, allreduce_gradient)(_braid_CoreElt(core, app), _braid_CoreElt(core, comm));
-
-      /* Allow the user to access the gradient */
-      if (optim->acc_grad_level >= 1)
-      {
-         _braid_CoreFcn(core, access_gradient)(_braid_CoreElt(core, app));
-      }
    }
 
    /* End cycle */
@@ -968,9 +921,7 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    braid_Int   maxoptimiter   = 100;
    braid_Int   acc_grad_level = 1;
    braid_Real  tol_adj        = 1e-6;
-   braid_Real  tol_grad       = 1e-6;
    braid_Int   rtol_adj       = 1;
-   braid_Int   rtol_grad      = 1;
 
    /* Allocate memory for the optimization structure */
    optim = (braid_Optim) malloc(16*sizeof(braid_Real) + 2*sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE));
@@ -987,22 +938,18 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    optim->maxiter        = maxoptimiter;
    optim->acc_grad_level = acc_grad_level;
    optim->tol_adj        = tol_adj;     
-   optim->tol_grad       = tol_grad;     
    optim->rtol_adj       = rtol_adj;     
-   optim->rtol_grad      = rtol_grad;     
    optim->rnorm_adj      = braid_INVALID_RNORM;
    optim->rnorm0_adj     = braid_INVALID_RNORM;
    optim->rnorm          = braid_INVALID_RNORM;
    optim->rnorm0         = braid_INVALID_RNORM;
-   optim->gnorm          = braid_INVALID_RNORM;
-   optim->gnorm0         = braid_INVALID_RNORM;
 
 
    /* Open and prepare optimization output file */
    if (myid == 0 && io_level>=1)
    {
       optim->outfile = fopen("braid.out.optim", "w");
-      _braid_ParFprintfFlush(optim->outfile, myid, "#    || r ||              || r_adj ||          || Gradient ||          Objective\n");
+      _braid_ParFprintfFlush(optim->outfile, myid, "#    || r ||              || r_adj ||          Objective\n");
    }
 
    /* Store the optim structure in the core */
@@ -1119,19 +1066,16 @@ braid_PrintStats(braid_Core  core)
    braid_Int     adjoint       = _braid_CoreElt(core, adjoint);
    braid_Optim   optim         = _braid_CoreElt(core, optim);
 
-   braid_Real    tol_adj, tol_grad;
-   braid_Int     rtol_adj, rtol_grad;
-   braid_Real    rnorm, rnorm_adj, gnorm;
+   braid_Real    tol_adj;
+   braid_Int     rtol_adj;
+   braid_Real    rnorm, rnorm_adj;
    braid_Int     level;
 
    if (adjoint)
    {
       tol_adj   = optim->tol_adj;
-      tol_grad  = optim->tol_grad;
       rtol_adj  = optim->rtol_adj;
-      rtol_grad = optim->rtol_grad;
       rnorm_adj = optim->rnorm_adj;
-      gnorm     = optim->gnorm;
    }
 
    _braid_GetRNorm(core, -1, &rnorm);
@@ -1148,26 +1092,18 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("\n");
       if ( adjoint )
       {
-         _braid_printf("  max optim iterations  = %d\n", optim->maxiter);
-         _braid_printf("  iterations taken      = %d\n", optim->iter);
-         _braid_printf("\n");
-         _braid_printf("  abs. state   res. norm  =  %e", rnorm);
-         if ( rtol ) _braid_printf("  (-> rel. tol. = %1.2e)\n", tol);
-         else        _braid_printf("  (-> abs. tol. = %1.2e)\n", tol); 
-         _braid_printf("  abs. adjoint res. norm  =  %e", rnorm_adj);
-         if (rtol_adj ) _braid_printf("  (-> rel. tol. = %1.2e)\n", tol_adj);
-         else           _braid_printf("  (-> abs. tol. = %1.2e)\n", tol_adj); 
-         _braid_printf("  abs. gradient norm      =  %e", gnorm);
-         if ( rtol_grad ) _braid_printf("  (-> rel. tol. = %1.2e)\n", tol_grad);
-         else             _braid_printf("  (-> abs. tol. = %1.2e)\n", tol_grad);
+         _braid_printf("  state   residual norm =  %e", rnorm);
+         if ( rtol ) _braid_printf("  (-> rel. stopping tol. = %1.2e)\n", tol);
+         else        _braid_printf("  (-> abs. stopping tol. = %1.2e)\n", tol); 
+         _braid_printf("  adjoint residual norm =  %e", rnorm_adj);
+         if (rtol_adj ) _braid_printf("  (-> rel. stopping tol. = %1.2e)\n", tol_adj);
+         else           _braid_printf("  (-> abs. stopping tol. = %1.2e)\n", tol_adj); 
       }
       else
       {
+         _braid_printf("  residual norm         = %e\n", rnorm);
          _braid_printf("  stopping tolerance    = %e\n", tol);
          _braid_printf("  use relative tol?     = %d\n", rtol);
-         _braid_printf("  max iterations        = %d\n", max_iter);
-         _braid_printf("  iterations            = %d\n", niter);
-         _braid_printf("  residual norm         = %e\n", rnorm);
       }
 
       if (tnorm == 1)
@@ -1187,6 +1123,10 @@ braid_PrintStats(braid_Core  core)
          _braid_GetFullRNorm(core, -1, &rnorm);
          _braid_printf("  Global res 2-norm     = %e\n", rnorm);
       }
+
+      _braid_printf("\n");
+      _braid_printf("  max iterations        = %d\n", max_iter);
+      _braid_printf("  iterations            = %d\n", niter);
       _braid_printf("\n");
 
       _braid_printf("  use fmg?              = %d\n", fmg);
