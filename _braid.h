@@ -907,8 +907,8 @@ _braid_EvalObjective_diff(braid_Core core);
  * Allocate and initialize the optimization adjoint variables 
  */
 braid_Int
-_braid_InitAdjoint(braid_Core   core, 
-                   _braid_Grid *fine_grid);
+_braid_InitAdjointVars(braid_Core   core, 
+                       _braid_Grid *fine_grid);
 
 
 #ifdef __cplusplus

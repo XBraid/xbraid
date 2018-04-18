@@ -900,15 +900,10 @@ braid_SetSeqSoln(braid_Core  core,          /**< braid_Core (_braid_Core) struct
  *
  **/
 braid_Int
-braid_InitOptimization( braid_PtFcnObjectiveT        objT,               /**< Evaluate the local objective function at time t  */
-                    braid_PtFcnStepDiff          step_diff,          /**< Differentiated version of the step function */
-                    braid_PtFcnObjectiveTDiff    objT_diff,          /**< differentiated version of the objT function  */
-                    braid_PtFcnAllreduceGradient allreduce_gradient, /**< Invoke an MPI_Allreduce call for the gradient */
-                    braid_PtFcnResetGradient     reset_gradient,     /**< Set the gradient to zero */
-                    braid_PtFcnAccessGradient    access_gradient,    /**< Access the gradient, i.e. for output */
-                    braid_PtFcnComputeGNorm      compute_gnorm,      /**< Compute norm of the gradient */
-                    braid_PtFcnDesignUpdate      update_design,      /**< Update the design for optimization */
-                    braid_Core                  *core_ptr            /**< Pointer to braid_Core (_braid_Core) struct */   
+braid_InitAdjoint(braid_PtFcnObjectiveT        objT,               /**< Evaluate the local objective function at time t  */
+                  braid_PtFcnObjectiveTDiff    objT_diff,          /**< differentiated version of the objT function  */
+                  braid_PtFcnStepDiff          step_diff,          /**< Differentiated version of the step function */
+                  braid_Core                  *core_ptr            /**< Pointer to braid_Core (_braid_Core) struct */   
                   );
 
 

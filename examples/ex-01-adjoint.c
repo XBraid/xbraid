@@ -344,80 +344,6 @@ my_ObjectiveT_diff(braid_App            app,
    return 0;
 }
 
-int 
-my_AccessGradient(braid_App app)
-{
-   /* Print the gradient */
-   if (app->myid==0)
-   {
-     printf("Gradient: %1.14e\n", app->gradient);
-   } 
-
-   return 0;
-}
-
-int
-my_AllreduceGradient(braid_App app, 
-                     MPI_Comm comm)
-{
-   double localgradient;
-   double globalgradient;
-
-   /* Collect sensitivities from all time-processors */
-   localgradient = app->gradient;
-   MPI_Allreduce(&localgradient, &globalgradient, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-   /* Broadcast the global gradient to all processor */
-   app->gradient = globalgradient; 
-
-   return 0;
-}                  
-
-
-int 
-my_ResetGradient(braid_App app)
-{
-   /* Set the gradient to zero */
-   app->gradient = 0.0;
-
-   return 0;
-}
-
-int
-my_GradientNorm(braid_App app,
-                double   *gradient_norm_prt)
-
-{
-   double gnorm;
-
-   /* Norm of gradient */
-   gnorm = sqrt( (app->gradient)*(app->gradient) );
-
-   /* Return the gradient norm */
-   *gradient_norm_prt = gnorm;
-
-   return 0;
-}
-             
-
-int 
-my_DesignUpdate(braid_App app, 
-                double    objective,
-                double    rnorm,
-                double    rnorm_adj)
-{
-   double Hinv;
-
-   /* Hessian approximation */
-   Hinv = 1. ;
-
-   /* Design update */
-   app->design = app->design - (app->stepsize) * Hinv * (app->gradient);
-   printf("Design: %1.14e\n", app->design);
-
-   return 0;
-}             
-
-
 /*--------------------------------------------------------------------------
  * Main driver
  *--------------------------------------------------------------------------*/
@@ -471,21 +397,18 @@ int main (int argc, char *argv[])
 
 
    /* Initialize adjoint XBraid */
-   braid_InitOptimization( my_ObjectiveT, my_Step_diff, my_ObjectiveT_diff, my_AllreduceGradient, my_ResetGradient, my_AccessGradient, my_GradientNorm, my_DesignUpdate, &core);
+   braid_InitAdjoint( my_ObjectiveT, my_ObjectiveT_diff, my_Step_diff, &core);
    
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);
-   braid_SetMaxLevels(core, 3);
+   braid_SetMaxLevels(core, 2);
    braid_SetCFactor(core, -1, 2);
-   braid_SetAccessLevel(core, 1);
+   braid_SetAccessLevel(core, 0);
    braid_SetMaxIter(core, 20);
    braid_SetAbsTol(core, 1e-06);
 
-   /* Optional optimization parameters */
-   braid_SetMaxOptimIter(core, 1);
-   braid_SetAbsTolAdjoint(core, 1e-6);        
-   braid_SetAbsTolGradient(core, 1e-6);
-   braid_SetGradientAccessLevel(core, 1);
+   /* Optional adjoint parameters */
+   braid_SetRelTolAdjoint(core, 1e-3);        
 
    // braid_SetTStartObjective( core, 1.0);
    // braid_SetTStopObjective( core, tstop);

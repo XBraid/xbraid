@@ -324,8 +324,8 @@ _braid_EvalObjective_diff(braid_Core core)
 
 
 braid_Int
-_braid_InitAdjoint(braid_Core   core, 
-                   _braid_Grid *fine_grid)
+_braid_InitAdjointVars(braid_Core   core, 
+                       _braid_Grid *fine_grid)
 {
 
    braid_Real       tstart   = _braid_CoreElt(core, tstart);

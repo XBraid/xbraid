@@ -504,7 +504,7 @@ braid_Drive(braid_Core  core)
    if (_braid_CoreElt(core, adjoint))
    {
       /* Initialize and allocate the adjoint variables */
-      _braid_InitAdjoint(core, grid);
+      _braid_InitAdjointVars(core, grid);
    }
 
 
@@ -882,15 +882,10 @@ braid_Init(MPI_Comm               comm_world,
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 braid_Int
-braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
-                       braid_PtFcnStepDiff          step_diff, 
-                       braid_PtFcnObjectiveTDiff    objT_diff,
-                       braid_PtFcnAllreduceGradient allreduce_gradient,
-                       braid_PtFcnResetGradient     reset_gradient,
-                       braid_PtFcnAccessGradient    access_gradient,
-                       braid_PtFcnComputeGNorm      compute_gnorm,
-                       braid_PtFcnDesignUpdate      update_design,
-                       braid_Core                  *core_ptr)
+braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
+                  braid_PtFcnObjectiveTDiff    objT_diff,
+                  braid_PtFcnStepDiff          step_diff, 
+                  braid_Core                  *core_ptr)
 {
    braid_Int            myid      = _braid_CoreElt(*core_ptr, myid);
    braid_Int            io_level  = _braid_CoreElt(*core_ptr, io_level);
@@ -920,8 +915,8 @@ braid_InitOptimization(braid_PtFcnObjectiveT        objectiveT,
    optim = (braid_Optim) malloc(16*sizeof(braid_Real) + 2*sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE));
 
    /* Set optimization variables */
-   optim->adjoints       = NULL;    /* will be allocated in InitAdjoint() */
-   optim->tapeinput      = NULL;    /* will be allocated in InitAdjoint() */   
+   optim->adjoints       = NULL;    /* will be allocated in InitAdjointVars() */
+   optim->tapeinput      = NULL;    /* will be allocated in InitAdjointVars() */   
    optim->objective      = 0.0;
    optim->timeavg        = 0.0;
    optim->f_bar          = 0.0;
