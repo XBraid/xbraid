@@ -80,8 +80,6 @@ _braid_OptimDestroy( braid_Core core)
    braid_App    app        = _braid_CoreElt(core, app);
    braid_Optim  optim      = _braid_CoreElt(core, optim);
    _braid_Grid *fine_grid  = _braid_CoreElt(core, grids)[0];
-   braid_Int    myid       = _braid_CoreElt(core, myid);
-   braid_Int    io_level   = _braid_CoreElt(core, io_level);
    braid_Int    clower     = _braid_GridElt(fine_grid, clower);
    braid_Int    iupper     = _braid_GridElt(fine_grid, iupper);
    braid_Int    cfactor    = _braid_GridElt(fine_grid, cfactor);
@@ -100,12 +98,6 @@ _braid_OptimDestroy( braid_Core core)
    free(optim->adjoints);
    free(optim->tapeinput);
 
-
-   /* Close optimization output file */
-   if (myid == 0 && io_level>=1)
-   {
-      fclose(optim->outfile);
-   }
 
    return _braid_error_flag;
 }
@@ -213,25 +205,6 @@ _braid_SetRNormAdjoint(braid_Core core,
             optim->rnorm0_adj = 1.0;
          }
       }
-   }
-
-   return _braid_error_flag;
-}                           
-
-braid_Int 
-_braid_SetGradientNorm(braid_Core core, 
-                       braid_Real gnorm)
-{
-   braid_Optim optim   = _braid_CoreElt(core, optim);
-   braid_Int optimiter = optim->iter;
-
-   /* Set gnorm  */
-   optim->gnorm = gnorm;
-
-   /* Set initial gnorm0*/
-   if (optimiter == 0)
-   {
-      optim->gnorm0 = gnorm;
    }
 
    return _braid_error_flag;

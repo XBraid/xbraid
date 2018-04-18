@@ -887,8 +887,6 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
                   braid_PtFcnStepDiff          step_diff, 
                   braid_Core                  *core_ptr)
 {
-   braid_Int            myid      = _braid_CoreElt(*core_ptr, myid);
-   braid_Int            io_level  = _braid_CoreElt(*core_ptr, io_level);
    braid_PtFcnResidual  residual  = _braid_CoreElt(*core_ptr, residual);
    braid_PtFcnSCoarsen  scoarsen  = _braid_CoreElt(*core_ptr, scoarsen);
    braid_PtFcnSRefine   srefine   = _braid_CoreElt(*core_ptr, srefine);
@@ -906,13 +904,11 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
    /* Define default values */
    braid_Real  tstart_obj     = _braid_CoreElt(*core_ptr, tstart);
    braid_Real  tstop_obj      = _braid_CoreElt(*core_ptr, tstop);
-   braid_Int   maxoptimiter   = 100;
-   braid_Int   acc_grad_level = 1;
    braid_Real  tol_adj        = 1e-6;
    braid_Int   rtol_adj       = 1;
 
    /* Allocate memory for the optimization structure */
-   optim = (braid_Optim) malloc(16*sizeof(braid_Real) + 2*sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE));
+   optim = (braid_Optim) malloc(10*sizeof(braid_Real) + sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE));
 
    /* Set optimization variables */
    optim->adjoints       = NULL;    /* will be allocated in InitAdjointVars() */
@@ -920,25 +916,14 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
    optim->objective      = 0.0;
    optim->timeavg        = 0.0;
    optim->f_bar          = 0.0;
-   optim->iter           = 0;
    optim->tstart_obj     = tstart_obj;
    optim->tstop_obj      = tstop_obj; 
-   optim->maxiter        = maxoptimiter;
-   optim->acc_grad_level = acc_grad_level;
    optim->tol_adj        = tol_adj;     
    optim->rtol_adj       = rtol_adj;     
    optim->rnorm_adj      = braid_INVALID_RNORM;
    optim->rnorm0_adj     = braid_INVALID_RNORM;
    optim->rnorm          = braid_INVALID_RNORM;
    optim->rnorm0         = braid_INVALID_RNORM;
-
-
-   /* Open and prepare optimization output file */
-   if (myid == 0 && io_level>=1)
-   {
-      optim->outfile = fopen("braid.out.optim", "w");
-      _braid_ParFprintfFlush(optim->outfile, myid, "#    || r ||              || r_adj ||          Objective\n");
-   }
 
    /* Store the optim structure in the core */
    _braid_CoreElt( *core_ptr, optim) = optim; 
@@ -954,16 +939,16 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
    _braid_CoreElt(*core_ptr, objT_diff)          = objT_diff;
 
    /* Sanity check for non-supported features */
-   if ( residual != NULL ||
-        scoarsen != NULL ||
-        srefine  != NULL ||
-        tgrid    != NULL ||
-        useshell  ||
-        trefine   ||
-        (storage >= 0 ) )
+   if ( (residual != NULL) ||
+        (scoarsen != NULL) ||
+        (srefine  != NULL) ||
+        (tgrid    != NULL) ||
+        useshell           ||
+        trefine            ||
+        (storage  >= 0 )      )
           // r_space?
    {
-      _braid_printf(" \n ERROR! One of your requested features is not yet supported for optimziation.\n\n"); 
+      _braid_printf(" \n ERROR! One of your requested features is not yet supported for adjoint sensitivities.\n\n"); 
       exit(1);
    }
    

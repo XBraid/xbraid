@@ -79,16 +79,8 @@ struct _braid_Optimization_struct
    braid_Real       rnorm0_adj;       /**< initial norm of the adjoint residual */
    braid_Real       rnorm;            /**< norm of the state residual */
    braid_Real       rnorm0;           /**< initial norm of the state residual */
-   braid_Real       gnorm;            /**< norm of the gradient */
-   braid_Real       gnorm0;           /**< initial norm of the gradient */
    braid_Real       tol_adj;          /**< tolerance of adjoint residual */
    braid_Int        rtol_adj;         /**< flag: use relative tolerance for adjoint */
-   braid_Real       tol_grad;         /**< tolerance for the gradient norm */
-   braid_Int        rtol_grad;        /**< flag: use relative tolerance for gradient */
-   braid_Int        iter;             /**< counts the number of design updates (i.e. optimization cycles) */
-   braid_Int        maxiter;          /**< maximum number of optimization iterations */
-   braid_Int        acc_grad_level;   /**< determines how often the user's access_gradient function is called */
-   FILE            *outfile;          /**< Outputfile for optimization history */ 
    braid_Vector    *adjoints;         /**< vector for the adjoint optimization variables */
    braid_VectorBar *tapeinput;        /**< helper: store pointer to input of one braid iteration */
 };
@@ -874,12 +866,6 @@ _braid_SetRNormAdjoint(braid_Core  core,
                        braid_Int   iter, 
                        braid_Real  rnorm_adj);
 
-/**
- * Set the gradient norm 
- */
-braid_Int 
-_braid_SetGradientNorm(braid_Core  core, 
-                       braid_Real  gnorm);
 /**
  * Evaluate the user's local objective function at time t and add it to the time-averaged objective function
  */
