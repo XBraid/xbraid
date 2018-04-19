@@ -433,6 +433,8 @@ int main (int argc, char *argv[])
    braid_SetPostprocessObjective_diff(core, my_PostprocessObjective_diff);
 
 
+   braid_SetObjectiveOnly(core, 1);
+
    /* Run simulation */
    braid_Drive(core);
 
@@ -452,6 +454,7 @@ int main (int argc, char *argv[])
 
 
    /* Next iteration */
+   braid_SetObjectiveOnly(core, 0);
 
    braid_Drive(core);
 

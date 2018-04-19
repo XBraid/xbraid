@@ -661,11 +661,8 @@ braid_Drive(braid_Core  core)
                _braid_TapeEvaluate(core);
 
                /* Update adjoints and compute residual norm */
-               if ( !obj_only )
-               {
                   _braid_UpdateAdjoint(core, &rnorm_adj);
                   _braid_SetRNormAdjoint(core, iter, rnorm_adj);
-               }
             }
 
             /* Print current status */
