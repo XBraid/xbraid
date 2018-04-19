@@ -435,6 +435,7 @@ braid_Drive(braid_Core  core)
    braid_Int            ntime           = _braid_CoreElt(core, ntime);
    braid_Int            skip            = _braid_CoreElt(core, skip);
    braid_Int            max_levels      = _braid_CoreElt(core, max_levels);
+   braid_Int            warm_restart    = _braid_CoreElt(core, warm_restart);
    braid_Int            print_level     = _braid_CoreElt(core, print_level);
    braid_Int            access_level    = _braid_CoreElt(core, access_level);
    braid_App            app             = _braid_CoreElt(core, app);
@@ -454,7 +455,7 @@ braid_Drive(braid_Core  core)
 
    if (myid == 0)
    { 
-      _braid_printf("  Braid: Begin simulation, %d time steps\n\n",
+      _braid_printf("\n  Braid: Begin simulation, %d time steps\n\n",
                     _braid_CoreElt(core, gupper));
       if (_braid_CoreElt(core, adjoint) )
       {
@@ -473,39 +474,51 @@ braid_Drive(braid_Core  core)
    /* Start timer */
    localtime = MPI_Wtime();
 
-   /* Create fine grid */
-   _braid_GetDistribution(core, &ilower, &iupper);
-   _braid_GridInit(core, 0, ilower, iupper, &grid);
+   if ( !warm_restart )
+   {
+      /* Create fine grid */
+      _braid_GetDistribution(core, &ilower, &iupper);
+      _braid_GridInit(core, 0, ilower, iupper, &grid);
 
-   /* Set t values */
-   ta = _braid_GridElt(grid, ta);
-   if ( _braid_CoreElt(core, tgrid) != NULL )
-   {
-      /* Call the user's time grid routine */
-      _braid_BaseTimeGrid(core, app, ta, &ilower, &iupper);
-   }
-   else
-   {
-      for (i = ilower; i <= iupper; i++)
+      /* Set t values */
+      ta = _braid_GridElt(grid, ta);
+      if ( _braid_CoreElt(core, tgrid) != NULL )
       {
-         ta[i-ilower] = tstart + (((braid_Real)i)/ntime)*(tstop-tstart);
+         /* Call the user's time grid routine */
+         _braid_BaseTimeGrid(core, app, ta, &ilower, &iupper);
       }
+      else
+      {
+         for (i = ilower; i <= iupper; i++)
+         {
+            ta[i-ilower] = tstart + (((braid_Real)i)/ntime)*(tstop-tstart);
+         }
+      }
+
+      /* Create a grid hierarchy */
+      _braid_InitHierarchy(core, grid, 0);
+
+
+      /* Set initial values */
+      _braid_InitGuess(core, 0);
+
+      /* Turn on warm_restart, so that further calls to braid_drive() don't initialize the grid again. */
+      _braid_CoreElt(core, warm_restart) = 1;
+
    }
-
-   /* Create a grid hierarchy */
-   _braid_InitHierarchy(core, grid, 0);
    nlevels = _braid_CoreElt(core, nlevels);
-
-
-   /* Set initial values */
-   _braid_InitGuess(core, 0);
 
 
    if (_braid_CoreElt(core, adjoint))
    {
-      /* Initialize and allocate the adjoint variables */
-      _braid_InitAdjointVars(core, grid);
+      if (!warm_restart)
+      {
+         /* Initialize and allocate the adjoint variables */
+         _braid_InitAdjointVars(core, grid);
+      }
+      _braid_CoreElt(core, record) = 1;
    }
+
 
 
    /* Initialize cycle state */
@@ -643,12 +656,9 @@ braid_Drive(braid_Core  core)
 
             if (_braid_CoreElt(core, adjoint))
             {
-               /* Prepare for the next iteration */ 
-               if (!done)
-               {
-                  _braid_CoreElt(core, optim)->objective = 0.0;
-                  _braid_CoreElt(core, optim)->timeavg   = 0.0;
-               }
+               /* Prepare for the next iteration */
+               _braid_CoreElt(core, optim)->objective = 0.0;
+               _braid_CoreElt(core, optim)->timeavg   = 0.0;
 
                /* Reset the pointer to input variables */
                _braid_TapeResetInput(core);
@@ -680,15 +690,13 @@ braid_Drive(braid_Core  core)
       _braid_FRestrict(core, level);
    }
 
-   /* Record final FAccess only if sequential time stepping */
+   /* Allow final access to Braid by carrying out an F-relax to generate points */
+   /* Record it only if sequential time stepping */
    if (max_levels > 1)
    {
       _braid_CoreElt(core, record) = 0;
    }
-
-   /* Allow final access to Braid by carrying out an F-relax to generate points */
-   /* TODO: If (!warm_restart && serialrun) */
-   // _braid_FAccess(core, 0, 1);
+   _braid_FAccess(core, 0, 1);
    
    /* If sequential time-marching, evaluate the tape */
    if (_braid_CoreElt(core, adjoint) && max_levels <= 1 )
@@ -719,7 +727,7 @@ braid_Drive(braid_Core  core)
    _braid_CoreElt(core, globaltime) = globaltime;
 
    /* Print statistics for this run */
-   if ( (print_level > 0) && (myid == 0) )
+   if ( (print_level > 1) && (myid == 0) )
    {
       braid_PrintStats(core);
    }
@@ -766,6 +774,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              access_level    = 1;              /* Default access level */
    braid_Int              tnorm           = 2;              /* Default temporal norm */
    braid_Real             tol             = 1.0e-09;        /* Default absolute tolerance */
+   braid_Int              warm_restart    = 0;              /* Default is no warm restart */
    braid_Int              rtol            = 1;              /* Use relative tolerance */
    braid_Int              skip            = 1;              /* Default skip value, skips all work on first down-cycle */
    braid_Int              max_refinements = 200;            /* Maximum number of F-refinements */
@@ -817,6 +826,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, seq_soln)        = seq_soln;
    _braid_CoreElt(core, tol)             = tol;
    _braid_CoreElt(core, rtol)            = rtol;
+   _braid_CoreElt(core, warm_restart)    = warm_restart;
 
    _braid_CoreElt(core, nrels)           = NULL; /* Set with SetMaxLevels() below */
    _braid_CoreElt(core, nrdefault)       = nrdefault;
@@ -896,9 +906,9 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
    braid_Optim          optim;
 
    /* Set adjoint flags */ 
-   _braid_CoreElt(*core_ptr, adjoint) = 1;
-   _braid_CoreElt(*core_ptr, record)  = 1;
-   _braid_CoreElt(*core_ptr, skip)    = 0;
+   _braid_CoreElt(*core_ptr, adjoint)      = 1;
+   _braid_CoreElt(*core_ptr, record)       = 1;
+   _braid_CoreElt(*core_ptr, skip)         = 0;
 
    /* Define default values */
    braid_Real  tstart_obj     = _braid_CoreElt(*core_ptr, tstart);

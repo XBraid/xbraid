@@ -187,12 +187,13 @@ my_Access(braid_App          app,
    char       filename[255];
    FILE      *file;
    
-   braid_AccessStatusGetTIndex(astatus, &index);
-   sprintf(filename, "%s.%04d.%03d", "ex-01.out", index, app->rank);
-   file = fopen(filename, "w");
-   fprintf(file, "%.14e\n", (u->value));
-   fflush(file);
-   fclose(file);
+   // braid_AccessStatusGetTIndex(astatus, &index);
+   // sprintf(filename, "%s.%04d.%03d", "ex-01.out", index, app->rank);
+   // file = fopen(filename, "w");
+   // fprintf(file, "%.14e\n", (u->value));
+   // fflush(file);
+   // fclose(file);
+   printf("value %1.14e\n", u->value);
 
    return 0;
 }
@@ -404,11 +405,12 @@ int main (int argc, char *argv[])
    braid_SetMaxLevels(core, 2);
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 0);
-   braid_SetMaxIter(core, 20);
+   braid_SetMaxIter(core, 5);
    braid_SetAbsTol(core, 1e-13);
 
    /* Optional adjoint parameters */
-   braid_SetRelTolAdjoint(core, 1e-13);        
+   braid_SetAbsTolAdjoint(core, 1e-13);
+   braid_SetVerbosity(core, 0);
 
    // braid_SetTStartObjective( core, 1.0);
    // braid_SetTStopObjective( core, tstop);
@@ -425,6 +427,8 @@ int main (int argc, char *argv[])
    /* Run simulation */
    braid_Drive(core);
    printf("Gradient: %1.14e\n", app->gradient);
+
+   braid_Drive(core);
 
 
    /* Clean up */
