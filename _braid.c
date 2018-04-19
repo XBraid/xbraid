@@ -212,7 +212,7 @@ _braid_SetRNormAdjoint(braid_Core core,
 
 
 braid_Int
-_braid_AddToTimeavg(braid_Core              core, 
+_braid_AddToObjective(braid_Core              core, 
                       braid_BaseVector      u, 
                       braid_ObjectiveStatus ostatus)
 {
@@ -221,15 +221,15 @@ _braid_AddToTimeavg(braid_Core              core,
    braid_Real  t          = _braid_CoreElt(core, t);
    braid_Real  tstart_obj = optim->tstart_obj;
    braid_Real  tstop_obj  = optim->tstop_obj;
-   braid_Real  objT_tmp;
+   braid_Real  objT;
 
    if ( tstart_obj <= t && t <= tstop_obj )
    {
       /* Evaluate objective at time t */
-     _braid_BaseObjectiveT(core, app, u, ostatus, &objT_tmp);
+     _braid_BaseObjectiveT(core, app, u, ostatus, &objT);
 
      /* Add to the time-averaged objective function */
-     optim->timeavg += objT_tmp;
+     optim->sum_user_obj += objT;
    }
 
    return _braid_error_flag;
@@ -238,31 +238,31 @@ _braid_AddToTimeavg(braid_Core              core,
 braid_Int
 _braid_EvalObjective(braid_Core core)
 {
-   MPI_Comm    comm    = _braid_CoreElt(core, comm);
-   braid_App   app     = _braid_CoreElt(core, app);
-   braid_Optim optim   = _braid_CoreElt(core, optim);
-   braid_Real  timeavg = optim->timeavg;
-   braid_Real localtimeavg, globaltimeavg, posttmp;
+   MPI_Comm    comm         = _braid_CoreElt(core, comm);
+   braid_App   app          = _braid_CoreElt(core, app);
+   braid_Optim optim        = _braid_CoreElt(core, optim);
+   braid_Real  sum_user_obj = optim->sum_user_obj;
+   braid_Real localsum, globalsum, posttmp;
    braid_Real objective;
    
    /* Compute the global time average */
-   localtimeavg = timeavg;
-   MPI_Allreduce(&localtimeavg, &globaltimeavg, 1, braid_MPI_REAL, MPI_SUM, comm);
+   localsum = sum_user_obj;
+   MPI_Allreduce(&localsum, &globalsum, 1, braid_MPI_REAL, MPI_SUM, comm);
 
-    /* Compute the postprocess objective function, if set */
+   /* Compute the global objective function, if set */
    if (_braid_CoreElt(core, postprocess_obj) != NULL)
    {
-      _braid_CoreFcn(core, postprocess_obj) (app, globaltimeavg, &posttmp);
+      _braid_CoreFcn(core, postprocess_obj) (app, globalsum, &posttmp);
       objective = posttmp;
    }
    else
    {
-      objective = globaltimeavg;
+      objective = globalsum;
    }
 
    /* Store the timeaverage and objective function in the optim structure */
-   optim->timeavg   = globaltimeavg;
-   optim->objective = objective;
+   optim->sum_user_obj = globalsum;
+   optim->objective    = objective;
 
    return _braid_error_flag;
 }
@@ -274,23 +274,23 @@ _braid_EvalObjective(braid_Core core)
 braid_Int
 _braid_EvalObjective_diff(braid_Core core)
 {
-   braid_Optim optim   = _braid_CoreElt(core, optim);
-   braid_App   app     = _braid_CoreElt(core, app);
-   braid_Real  timeavg = optim->timeavg;
-   braid_Real  timeavg_bar;
+   braid_Optim optim        = _braid_CoreElt(core, optim);
+   braid_App   app          = _braid_CoreElt(core, app);
+   braid_Real  sum_user_obj = optim->sum_user_obj;
+   braid_Real  sum_user_obj_bar;
 
    /* Differentiate the postprocessing objective, if set */
    if (_braid_CoreElt(core, postprocess_obj_diff != NULL))
    {
-      _braid_CoreFcn(core, postprocess_obj_diff)(app, timeavg, &timeavg_bar);
+      _braid_CoreFcn(core, postprocess_obj_diff)(app, sum_user_obj, &sum_user_obj_bar);
    }
    else
    {
-      timeavg_bar = 1.0;
+      sum_user_obj_bar = 1.0;
    }
 
    /* Differentiate the time average */
-   optim->f_bar = timeavg_bar;
+   optim->f_bar = sum_user_obj_bar;
 
    return _braid_error_flag;
 }
@@ -1983,7 +1983,7 @@ _braid_FRestrict(braid_Core   core,
          if ( _braid_CoreElt(core, adjoint) && level == 0)
          {
             _braid_ObjectiveStatusInit(ta[fi-f_ilower], fi, iter, level, nrefine, gupper, ostatus);
-            _braid_AddToTimeavg(core, r, ostatus);
+            _braid_AddToObjective(core, r, ostatus);
          }
 
       }
@@ -2002,7 +2002,7 @@ _braid_FRestrict(braid_Core   core,
       {
          _braid_ObjectiveStatusInit(ta[ci-f_ilower], ci, iter, level, nrefine, gupper, ostatus);
          _braid_UGetVectorRef(core, 0, ci, &u);
-         _braid_AddToTimeavg(core, u, ostatus);
+         _braid_AddToObjective(core, u, ostatus);
       }
          
       
@@ -3146,7 +3146,7 @@ _braid_FAccess(braid_Core     core,
               _braid_CoreElt(core, max_levels <=1) ) 
          {
             _braid_ObjectiveStatusInit(ta[fi-ilower], fi, iter, level, nrefine, gupper, ostatus);
-            _braid_AddToTimeavg(core, u, ostatus);
+            _braid_AddToObjective(core, u, ostatus);
          }
       }
       if (flo <= fhi)
@@ -3171,7 +3171,7 @@ _braid_FAccess(braid_Core     core,
                  _braid_CoreElt(core, max_levels <=1) ) 
          {
             _braid_ObjectiveStatusInit(ta[ci-ilower], ci, iter, level, nrefine, gupper, ostatus);
-            _braid_AddToTimeavg(core, u, ostatus);
+            _braid_AddToObjective(core, u, ostatus);
          }
        }
    }

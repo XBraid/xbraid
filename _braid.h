@@ -70,10 +70,10 @@ typedef struct _braid_BaseVector_struct *braid_BaseVector;
  */
 struct _braid_Optimization_struct
 {
-   braid_Real       timeavg;          /**< time-averaged objective function */
-   braid_Real       objective;        /**< objective function of the optimization  problem. Postprocess of time-averaged objective */
-   braid_Real       tstart_obj;       /**< time for starting the time-average of  the objective  function */
-   braid_Real       tstop_obj;        /**< time for stopping the time-average of  the objective  function */
+   braid_Real       sum_user_obj;     /**< sum of user's objective function values over time */
+   braid_Real       objective;        /**< global objective function value */
+   braid_Real       tstart_obj;       /**< starting time for evaluating the user's local objective */
+   braid_Real       tstop_obj;        /**< stopping time for evaluating the user's local objective */
    braid_Real       f_bar;            /**< contains the seed for tape evaluation  */
    braid_Real       rnorm_adj;        /**< norm of the adjoint residual */
    braid_Real       rnorm0_adj;       /**< initial norm of the adjoint residual */
@@ -871,9 +871,9 @@ _braid_SetRNormAdjoint(braid_Core  core,
  * Evaluate the user's local objective function at time t and add it to the time-averaged objective function
  */
 braid_Int
-_braid_AddToTimeavg(braid_Core               core, 
-                    braid_BaseVector       u, 
-                    braid_ObjectiveStatus  ostatus);
+_braid_AddToObjective(braid_Core               core, 
+                      braid_BaseVector       u, 
+                      braid_ObjectiveStatus  ostatus);
 
 /**
  * Evaluate the objective function :

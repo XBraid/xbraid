@@ -380,18 +380,18 @@ typedef braid_Int
  * E.g. for inverse design problems: Choose a tracking-type objective function and/or add relaxation term
  **/
 typedef braid_Int
-(*braid_PtFcnPostprocessObjective)(braid_App    app,              /**< user-defined _braid_App structure */
-                                   braid_Real   timeavg,         /**< Time-averaged objective function */
-                                   braid_Real  *post_ptr    /**< output: Postprocessed objective, e.g. tracking type function */
+(*braid_PtFcnPostprocessObjective)(braid_App    app,        /**< user-defined _braid_App structure */
+                                   braid_Real   sum_obj,    /**< Sum of the objective function values over time */
+                                   braid_Real  *post_ptr    /**< output: Postprocessed objective , e.g. tracking type function */
                                    );
 
 /**
  * Differentiated Postprocessing function 
  **/
 typedef braid_Int
-(*braid_PtFcnPostprocessObjective_diff)(braid_App    app,              /**< user-defined _braid_App structure */
-                                        braid_Real   timeavg,         /**< Time-averaged objective function */
-                                        braid_Real  *timeavg_bar    /**< output: derivative of postprocessing objective */
+(*braid_PtFcnPostprocessObjective_diff)(braid_App    app,          /**< user-defined _braid_App structure */
+                                        braid_Real   sum_obj,      /**< Sum of the objective function values over time */
+                                        braid_Real  *sum_obj_bar   /**< output: derivative of postprocessing objective */
                                    );
 /** @}*/
 
@@ -938,7 +938,7 @@ braid_SetRelTolAdjoint(braid_Core  core,           /**< braid_Core (_braid_Core)
                       );
 
 /**
- * This returns  the objective function value
+ * After braid_drive() has finished, this returns the objective function value
  */
 braid_Int
 braid_GetObjective(braid_Core  core,           /**< braid_Core struct */

@@ -453,10 +453,13 @@ braid_Drive(braid_Core  core)
    _braid_CycleState  cycle;
    braid_Int          iter, level, done, refined;
 
-   if (myid == 0)
+   if (myid == 0 )
    { 
-      _braid_printf("\n  Braid: Begin simulation, %d time steps\n\n",
+      if (!warm_restart) 
+      {
+         _braid_printf("\n  Braid: Begin simulation, %d time steps\n\n",
                     _braid_CoreElt(core, gupper));
+      }
       if (_braid_CoreElt(core, adjoint) )
       {
          if (_braid_CoreElt(core, max_levels) > 1)
@@ -516,7 +519,14 @@ braid_Drive(braid_Core  core)
          /* Initialize and allocate the adjoint variables */
          _braid_InitAdjointVars(core, grid);
       }
-      _braid_CoreElt(core, record) = 1;
+      else
+      {
+         /* Reset adjoint in case of warm_restart */
+         _braid_CoreElt(core, record)               = 1;
+         _braid_CoreElt(core, optim)->sum_user_obj  = 0.0;
+         _braid_CoreElt(core, optim)->f_bar         = 0.0;
+      }
+
    }
 
 
@@ -657,8 +667,8 @@ braid_Drive(braid_Core  core)
             if (_braid_CoreElt(core, adjoint))
             {
                /* Prepare for the next iteration */
-               _braid_CoreElt(core, optim)->objective = 0.0;
-               _braid_CoreElt(core, optim)->timeavg   = 0.0;
+               _braid_CoreElt(core, optim)->sum_user_obj = 0.0;
+               _braid_CoreElt(core, optim)->f_bar        = 0.0;
 
                /* Reset the pointer to input variables */
                _braid_TapeResetInput(core);
@@ -706,7 +716,7 @@ braid_Drive(braid_Core  core)
       _braid_EvalObjective(core);
       if (myid == 0)
       {
-         _braid_printf(" Braid: Obj = %1.14e\n", _braid_CoreElt(core, optim)->objective);
+         _braid_printf(" Braid: Objective = %1.14e\n", _braid_CoreElt(core, optim)->objective);
       }
              
       /* Compute differentiated objective function */
@@ -923,7 +933,7 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
    optim->adjoints       = NULL;    /* will be allocated in InitAdjointVars() */
    optim->tapeinput      = NULL;    /* will be allocated in InitAdjointVars() */   
    optim->objective      = 0.0;
-   optim->timeavg        = 0.0;
+   optim->sum_user_obj   = 0.0;
    optim->f_bar          = 0.0;
    optim->tstart_obj     = tstart_obj;
    optim->tstop_obj      = tstop_obj; 

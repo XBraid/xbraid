@@ -183,9 +183,9 @@ my_Access(braid_App          app,
           braid_Vector       u,
           braid_AccessStatus astatus)
 {
-   int        index;
-   char       filename[255];
-   FILE      *file;
+   // int        index;
+   // char       filename[255];
+   // FILE      *file;
    
    // braid_AccessStatusGetTIndex(astatus, &index);
    // sprintf(filename, "%s.%04d.%03d", "ex-01.out", index, app->rank);
@@ -253,14 +253,14 @@ my_ObjectiveT(braid_App              app,
 
 int
 my_PostprocessObjective(braid_App   app,
-                        braid_Real  timeavg,
+                        braid_Real  sum_objective,
                         double     *postprocess
                         )
 {
    double J;
 
    /* Tracking-type function */
-   J  = 1./2. * pow(timeavg - app->target,2);
+   J  = 1./2. * pow(sum_objective - app->target,2);
    /* Regularization term */
    J += + 1./2. * (app->relax) * pow(app->design,2);
 
@@ -271,19 +271,19 @@ my_PostprocessObjective(braid_App   app,
 
 int
 my_PostprocessObjective_diff(braid_App   app,
-                             braid_Real  timeavg,
-                             double     *timeavg_bar
+                             braid_Real  sum_objective,
+                             double     *sum_objective_bar
                              )
 {
-   double J_bar;
+   double J_bar = 0;
 
    /* Derivative of tracking type function */
-   J_bar = timeavg - app->target;
+   J_bar = sum_objective - app->target;
 
    /* Derivative of regularization term */
    app->gradient = (app->relax) * (app->design);
 
-   *timeavg_bar= J_bar;
+   *sum_objective_bar= J_bar;
 
    return 0;
 }
@@ -360,6 +360,8 @@ int main (int argc, char *argv[])
    double        target;
    double        relax;
    double        stepsize;
+   double        mygradient;
+   double        objective;
 
    /* Define time domain: ntime intervals */
    ntime  = 50;
@@ -405,7 +407,7 @@ int main (int argc, char *argv[])
    braid_SetMaxLevels(core, 2);
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 0);
-   braid_SetMaxIter(core, 5);
+   braid_SetMaxIter(core, 10);
    braid_SetAbsTol(core, 1e-13);
 
    /* Optional adjoint parameters */
@@ -426,9 +428,25 @@ int main (int argc, char *argv[])
 
    /* Run simulation */
    braid_Drive(core);
-   printf("Gradient: %1.14e\n", app->gradient);
+
+   braid_GetObjective(core, &objective);
+   printf("Objective: %1.14e\n", objective);
+
+   /* Collect sensitivities from all processors */
+   mygradient = app->gradient;
+   MPI_Allreduce(&mygradient, &(app->gradient), 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+   if ( rank == 0 ) printf("Gradient: %1.14e\n", app->gradient);
+
+   /* Reset the gradient for the next iteration */
+   app->gradient = 0.0;
 
    braid_Drive(core);
+   printf("Objective: %1.14e\n", objective);
+
+   /* Collect sensitivities from all processors */
+   mygradient = app->gradient;
+   MPI_Allreduce(&mygradient, &(app->gradient), 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+   if ( rank == 0 ) printf("Gradient: %1.14e\n", app->gradient);
 
 
    /* Clean up */
