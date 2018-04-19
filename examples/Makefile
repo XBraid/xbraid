@@ -46,7 +46,7 @@ MFEM_LIB_FILE = mfem_is_not_built
 BRAID_FLAGS = -I$(BRAID_DIR)
 BRAID_LIB_FILE = $(BRAID_DIR)/libbraid.a
 
-C_NOHYPRE = ex-01 ex-01-adjoint ex-01-refinement ex-01-expanded ex-01-expanded-bdf2 ex-02 ex-04 ex-04-serial
+C_NOHYPRE = ex-01 ex-01-adjoint ex-01-optimization ex-01-refinement ex-01-expanded ex-01-expanded-bdf2 ex-02 ex-04 ex-04-serial
 F_NOHYPRE = ex-01-expanded-f
 C_EXAMPLES = ex-03 ex-03-serial
 # Note: .cpp examples will be linked with mfem
@@ -64,11 +64,17 @@ all: $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES)
 ex-01: ex-01.c $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
 	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
-	#
+	
 # Rule for building ex-01-adjoint
 ex-01-adjoint: ex-01-adjoint.c $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
 	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+	
+# Rule for building ex-01-optimization
+ex-01-optimization: ex-01-optimization.c $(BRAID_LIB_FILE)
+	@echo "Building" $@ "..."
+	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+
 
 # Rule for building ex-01-refinement
 ex-01-refinement: ex-01-refinement.c $(BRAID_LIB_FILE)
