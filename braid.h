@@ -400,6 +400,28 @@ typedef braid_Int
 typedef braid_Int
 (*braid_PtFcnResetGradient)(braid_App app );     /**< user-defined _braid_App structure */
 
+
+/**
+ * Update the design variable
+ */
+typedef braid_Int
+(*braid_PtFcnDesignUpdate)(braid_App app );     /**< user-defined _braid_App structure */
+
+/**
+ *  Collect gradient information from all processors
+ *  This typically involves an MPI_Allreduce call for all gradient elements. 
+ */
+typedef braid_Int
+(*braid_PtFcnGradientAllreduce)(braid_App app );     /**< user-defined _braid_App structure */
+
+/**
+ * Compute the norm of the gradient 
+ */
+typedef braid_Int
+(*braid_PtFcnGradientNorm)(braid_App   app,
+                           braid_Real *gnorm_ptr );     /**< user-defined _braid_App structure */
+
+
 /** @}*/
 
 /*--------------------------------------------------------------------------
@@ -968,6 +990,68 @@ braid_Int
 braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
                       braid_Real  *rnorm_adj   /**< output, holds adjoint residual norm of last iteration */
                      );
+
+
+/**
+ * Runs a basic optimization cycle. 
+ * See source code in braid_optim.c for more information.
+ */
+braid_Int
+braid_DriveOptimization(braid_Core core,    /**< braid_Core (_braid_Core) struct*/
+                        braid_App  app,
+                        MPI_Comm   comm,
+                        braid_PtFcnDesignUpdate,
+                        braid_PtFcnGradientNorm,
+                        braid_PtFcnGradientAllreduce
+                        );
+
+/**
+ * Set the maximum number of optimization iterations. 
+ */                     
+braid_Int
+braid_SetMaxOptimIter(braid_Core core,
+                      braid_Int  maxoptimiter
+                     );
+
+/**
+ * Get the maximum number of optimization iterations. 
+ */                  
+braid_Int
+braid_GetMaxOptimIter(braid_Core core,
+                      braid_Int *maxoptimiter_ptr
+                     );
+
+/**
+ * Set optimization stopping criterion: tolerance on the absolute gradient norm
+ */
+braid_Int
+braid_SetAbsTolOptim(braid_Core core,
+                     braid_Real gnorm_tol
+                    );
+
+/**
+ * Set optimization stopping criterion: tolerance on relative drop of the gradient norm
+ */
+braid_Int
+braid_SetRelTolOptim(braid_Core core,
+                     braid_Real gnorm_tol
+                     );
+
+/**
+ * Get the optimization tolerance on the gradient norm.
+ */
+braid_Int
+braid_GetTolOptim(braid_Core  core,
+                  braid_Real *tol_gnorm_ptr
+                 );
+
+/**
+ * Check if optimization tolerance is relative (1) or absolute (0) stopping criterion. 
+ */
+braid_Int
+braid_IsRelTolOptim(braid_Core core,
+                    braid_Int *rel_tol
+                  );
                           
 #ifdef __cplusplus
 }

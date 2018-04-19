@@ -81,6 +81,9 @@ struct _braid_Optimization_struct
    braid_Real       rnorm0;           /**< initial norm of the state residual */
    braid_Real       tol_adj;          /**< tolerance of adjoint residual */
    braid_Int        rtol_adj;         /**< flag: use relative tolerance for adjoint */
+   braid_Real       tol_gnorm;        /**< stopping tolerance on the gradient norm */
+   braid_Int        rtol_gnorm;       /**< flag: use relative tolerance for gradient norm */
+   braid_Int        maxoptimiter;     /**< maximum number of optimization iterations */
    braid_Vector    *adjoints;         /**< vector for the adjoint variables */
    braid_VectorBar *tapeinput;        /**< helper: store pointer to input of one braid iteration */
 };

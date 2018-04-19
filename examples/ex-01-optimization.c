@@ -72,6 +72,7 @@ typedef struct _braid_App_struct
    double    gradient;        /* Store the gradient in the app - should be of same size as design! */
    double    target;          /* Target for tracking type objective function (inverse design) */
    double    gamma;           /* Relaxation parameter for the tracking type objective function */
+   double    stepsize;        /* Step size for design updates */
 
    int       rank;            /* Rank of the processor */
    double    ntime;           /* Total number of time-steps */
@@ -350,6 +351,36 @@ my_ResetGradient(braid_App app)
    return 0;
 }
 
+int
+my_DesignUpdate(braid_App app )
+{
+   app->design -= app->stepsize * app->gradient;
+
+   return 0;
+}
+
+int
+my_GradientNorm(braid_App app,
+                double    *gnorm_ptr)
+{
+   *gnorm_ptr = sqrt((app->gradient)*(app->gradient));
+
+   return 0;
+}
+
+int
+my_GradientAllreduce(braid_App app)
+{
+   double mygradient = app->gradient;
+   double gradient; 
+
+   /* Collect sensitivities from all processors and broadcast it */
+   MPI_Allreduce(&mygradient, &gradient, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+   app->gradient = gradient;
+
+   return 0;
+}
+
 /*--------------------------------------------------------------------------
  * Main driver
  *--------------------------------------------------------------------------*/
@@ -362,9 +393,6 @@ int main (int argc, char *argv[])
    int           ntime, rank;
    double        design; 
    double        gamma, target;
-   double        objective;
-   int           iter, maxiter;
-   double        gnorm, gnorm_tol;
    double        stepsize;
 
    /* Define time domain: ntime intervals */
@@ -376,8 +404,6 @@ int main (int argc, char *argv[])
    design           = -1.0;                  /* Initial design  */
    target           = 1.15231184218078e-01;  /* Precomputed target for inverse design optimization */
    gamma            = 0.0005;                /* Relaxation parameter for the objective function */
-   gnorm_tol        = 1e-6;                  /* Optimization stopping criterion for the gradient norm */
-   maxiter          = 300;                   /* Maximum number of optimization iterations */
    stepsize         = 6.0;                   /* Step size for design updates */
 
 
@@ -393,6 +419,7 @@ int main (int argc, char *argv[])
    app->ntime       = ntime;
    app->target      = target;
    app->gamma       = gamma;
+   app->stepsize    = stepsize;
 
    /* Initialize XBraid */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
@@ -416,47 +443,12 @@ int main (int argc, char *argv[])
    braid_SetAbsTolAdjoint(core, 1e-6);      /* Tolerance on adjoint residual norm */
 
 
-   /* Optimization iteration */
-   for (iter = 0; iter < maxiter; iter++)
-   {
-      /* Run adjoint XBraid to compute objective function and gradient */
-      braid_Drive(core);
-  
-      /* Get the objective function value from XBraid */
-      braid_GetObjective(core, &objective);
+   /* Set some optimization parameters */
+   braid_SetMaxOptimIter(core, 100);
+   braid_SetAbsTolOptim(core, 1e-6);
 
-      /* Collect sensitivities from all processors and compute the gradient norm */
-      double mygradient = app->gradient;
-      MPI_Allreduce(&mygradient, &(app->gradient), 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-      gnorm = sqrt((app->gradient)*(app->gradient));
-
-
-      /* Output */
-      if (rank == 0) 
-      {
-         printf("\n %3d: Objective = %1.14e Gradient = %1.14e\n", iter, objective, app->gradient);
-      }
-
-      /* Check optimization convergence */
-      if (gnorm < gnorm_tol)
-      {
-         break;
-      }
-
-      /* Design update */
-      app->design -= stepsize * app->gradient;
-
-   }
-
-
-   if (iter == maxiter)
-   {
-      printf("\n Max. number of iterations reached.\n\n");
-   }
-   else
-   {
-      printf("\n Optimization has converged.\n\n");
-   }
+   /* Start the optimization */
+   braid_DriveOptimization(core, app, MPI_COMM_WORLD, my_DesignUpdate, my_GradientNorm, my_GradientAllreduce);
 
 
    /* Clean up */
