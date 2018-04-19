@@ -1052,7 +1052,15 @@ braid_Int
 braid_IsRelTolOptim(braid_Core core,
                     braid_Int *rel_tol
                   );
-                          
+
+/**
+ * Output: *myid_ptr holds the processor's rank
+ */                       
+braid_Int
+braid_GetMyID(braid_Core core, 
+              braid_Int *myid_ptr
+             );
+
 #ifdef __cplusplus
 }
 #endif

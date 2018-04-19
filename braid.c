@@ -2043,4 +2043,14 @@ braid_IsRelTolOptim(braid_Core core,
 
    return _braid_error_flag;
 }                 
-                   
+
+braid_Int
+braid_GetMyID(braid_Core core, 
+              braid_Int *myid_ptr)
+{
+   *myid_ptr = _braid_CoreElt(core, myid);
+    
+   return _braid_error_flag;
+}           
+
+                  

@@ -22,13 +22,15 @@ braid_DriveOptimization(braid_Core                   core,    /**< braid_Core (_
    braid_Int  myid;
 
    /* Get processor id */
-   MPI_Comm_rank(comm, &myid);
+   braid_GetMyID(core, &myid);
 
    /* Get maximum number of iterations */
    braid_GetMaxOptimIter(core,&maxiter);
 
-   /* Get stopping criterion for optimization */
+   /* Get stopping tolerance for optimization */
    braid_GetTolOptim(core, &gnorm_tol);
+
+   /* Check if this is relative or absolute criterion */
    braid_IsRelTolOptim(core, &rtol);
 
    /* Optimization iteration */
@@ -57,7 +59,7 @@ braid_DriveOptimization(braid_Core                   core,    /**< braid_Core (_
       }
       
       /* Adjust the tolerance, if relative stopping criterion is used */
-      if (rtol && iter > 0)
+      if (rtol)
       {
          tol = gnorm_tol * gnorm0; 
       }

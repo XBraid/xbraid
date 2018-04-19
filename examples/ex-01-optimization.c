@@ -445,7 +445,8 @@ int main (int argc, char *argv[])
 
    /* Set some optimization parameters */
    braid_SetMaxOptimIter(core, 100);
-   braid_SetAbsTolOptim(core, 1e-6);
+   // braid_SetAbsTolOptim(core, 1e-6);
+   braid_SetRelTolOptim(core, 1e-2);
 
    /* Start the optimization */
    braid_DriveOptimization(core, app, MPI_COMM_WORLD, my_DesignUpdate, my_GradientNorm, my_GradientAllreduce);
