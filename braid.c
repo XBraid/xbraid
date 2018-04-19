@@ -728,20 +728,14 @@ braid_Drive(braid_Core  core)
    /* If sequential time-marching, evaluate the tape */
    if (_braid_CoreElt(core, adjoint) && max_levels <= 1 )
    {
-
       /* Compute the objective function */
       _braid_EvalObjective(core);
-      if (myid == 0)
-      {
-         _braid_printf(" Braid: Objective = %1.14e\n", _braid_CoreElt(core, optim)->objective);
-      }
-             
+
       /* Compute differentiated objective function */
       _braid_EvalObjective_diff(core);
 
       /* Evaluate (and clear) the action tape */
       _braid_TapeEvaluate(core);
-
    }
 
    /* End cycle */
