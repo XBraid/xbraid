@@ -460,15 +460,16 @@ braid_Drive(braid_Core  core)
    { 
       if (!warm_restart) 
       {
-         _braid_printf("\n  Braid: Begin simulation, %d time steps\n\n",
+         _braid_printf("\n  Braid: Begin simulation, %d time steps\n",
                     _braid_CoreElt(core, gupper));
       }
       if (_braid_CoreElt(core, adjoint) )
       {
          if (_braid_CoreElt(core, max_levels) > 1)
          {
-           _braid_printf("  Braid:      || r ||      || r_adj ||     Objective\n");
-           _braid_printf("  Braid:---------------------------------------------\n");
+            _braid_printf("\n");
+            _braid_printf("  Braid:      || r ||      || r_adj ||     Objective\n");
+            _braid_printf("  Braid:---------------------------------------------\n");
          }
          else
          {
@@ -651,7 +652,7 @@ braid_Drive(braid_Core  core)
                /* Evaluate (and clear) the action tape */
                _braid_TapeEvaluate(core);
 
-               /* Update optimization adjoints and compute residual norm */
+               /* Update adjoints and compute residual norm */
                _braid_UpdateAdjoint(core, &rnorm_adj);
                _braid_SetRNormAdjoint(core, iter, rnorm_adj);
 
@@ -1756,9 +1757,9 @@ braid_SetSeqSoln(braid_Core  core,
 }
 
 
-/*----------------------------------------------------------------------------
-* Optimization 
-*-----------------------------------------------------------------------------*/
+/**----------------------------------------------------------------------------
+ * Adjoint  
+ *-----------------------------------------------------------------------------*/
 braid_Int
 braid_SetTStartObjective(braid_Core core, 
                            braid_Real tstart_obj)

@@ -151,7 +151,7 @@ _braid_UpdateAdjoint(braid_Core core,
                rnorm_adj += (rnorm_temp*rnorm_temp);
             }
 
-            /* Update the optimization adjoints */
+            /* Update the adjoint variables */
             _braid_CoreFcn(core, sum)(app, 1., tape_vec , 0., adjoint_vec);
          }
 

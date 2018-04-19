@@ -697,7 +697,7 @@ braid_SetPrintLevel(braid_Core  core,          /**< braid_Core (_braid_Core) str
  * saved to files .
  *
  * - Level 0: no output
- * - Level 1: save the cycle in braid.out.cycle and optimization history in braid.out.optim
+ * - Level 1: save the cycle in braid.out.cycle
  *
  * Default is level 1.
  **/

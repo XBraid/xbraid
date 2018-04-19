@@ -202,7 +202,7 @@ _braid_TapeSetSeed(braid_Core core)
          _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
          _braid_UGetVectorRef(core, 0, ic, &u_out);
 
-         /* Set the seed using the optimization adjoints */
+         /* Set the seed using the adjoint variables */
          _braid_CoreFcn(core, sum)(app, 1.0, optim->adjoints[iclocal], 0.0, u_out->bar->userVector);
       }
    }

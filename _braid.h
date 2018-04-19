@@ -81,7 +81,7 @@ struct _braid_Optimization_struct
    braid_Real       rnorm0;           /**< initial norm of the state residual */
    braid_Real       tol_adj;          /**< tolerance of adjoint residual */
    braid_Int        rtol_adj;         /**< flag: use relative tolerance for adjoint */
-   braid_Vector    *adjoints;         /**< vector for the adjoint optimization variables */
+   braid_Vector    *adjoints;         /**< vector for the adjoint variables */
    braid_VectorBar *tapeinput;        /**< helper: store pointer to input of one braid iteration */
 };
 typedef struct _braid_Optimization_struct *braid_Optim;
@@ -852,7 +852,7 @@ _braid_OptimDestroy( braid_Core core);
 
 
 /**
- * Update the optimization adjoint variables and compute adjoint residual norm
+ * Update the adjoint variables and compute adjoint residual norm
  * Returns the tnorm of adjoint residual
  */
 braid_Int
@@ -892,7 +892,7 @@ _braid_EvalObjective_diff(braid_Core core);
 
 
 /**
- * Allocate and initialize the optimization adjoint variables 
+ * Allocate and initialize the adjoint variables 
  */
 braid_Int
 _braid_InitAdjointVars(braid_Core   core, 

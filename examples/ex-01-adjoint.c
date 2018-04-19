@@ -384,9 +384,7 @@ int main (int argc, char *argv[])
    relax            = 0.0005;               // Relaxation parameter
    stepsize         = 6.0;                  // Stepsize for design updates 
 
-   /* DEBUG gradient */
-   // design += 1e-8;
-   
+
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -438,22 +436,38 @@ int main (int argc, char *argv[])
    /* Run simulation */
    braid_Drive(core);
 
+   /* Get the objective function value */
    braid_GetObjective(core, &objective);
-   if (rank == 0) printf("Objective: %1.14e\n", objective);
 
    /* Collect sensitivities from all processors */
    mygradient = app->gradient;
    MPI_Allreduce(&mygradient, &(app->gradient), 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-   if ( rank == 0 ) printf("Gradient: %1.14e\n", app->gradient);
 
+
+   /* Output */
+   if (rank == 0) 
+   {
+      printf(" Objective = %1.14e\n Gradient  = %1.14e\n", objective, app->gradient);
+   }
+
+
+   /* Next iteration */
 
    braid_Drive(core);
-   if (rank == 0) printf("Objective: %1.14e\n", objective);
+
+   /* Get the objective function value */
+   braid_GetObjective(core, &objective);
 
    /* Collect sensitivities from all processors */
    mygradient = app->gradient;
    MPI_Allreduce(&mygradient, &(app->gradient), 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-   if ( rank == 0 ) printf("Gradient: %1.14e\n", app->gradient);
+
+   /* Output */
+   if (rank == 0) 
+   {
+      printf(" Objective = %1.14e\n Gradient  = %1.14e\n", objective, app->gradient);
+   }
+
 
 
    /* Clean up */
