@@ -997,68 +997,67 @@ braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
  * See source code in braid_optim.c for more information.
  */
 braid_Int
-braid_DriveOptimization(braid_Core core,    /**< braid_Core (_braid_Core) struct*/
-                        braid_App  app,
-                        MPI_Comm   comm,
-                        braid_PtFcnDesignUpdate,
-                        braid_PtFcnGradientNorm,
-                        braid_PtFcnGradientAllreduce
+braid_DriveOptimization(braid_Core core,              /**< braid_Core (_braid_Core) struct*/
+                        braid_App  app,               /**< braid_App structure */
+                        braid_PtFcnDesignUpdate,      /**< user routine: update the design */
+                        braid_PtFcnGradientNorm,      /**< user routine: compute the norm of the gradient */
+                        braid_PtFcnGradientAllreduce  /**< user routine: invoke an MPI_Allreduce call on the gradient */
                         );
 
 /**
  * Set the maximum number of optimization iterations. 
  */                     
 braid_Int
-braid_SetMaxOptimIter(braid_Core core,
-                      braid_Int  maxoptimiter
+braid_SetMaxOptimIter(braid_Core core,               /**< braid_Core (_braid_Core) struce */
+                      braid_Int  maxoptimiter        /**< Maximum number of optimization iterations */
                      );
 
 /**
  * Get the maximum number of optimization iterations. 
  */                  
 braid_Int
-braid_GetMaxOptimIter(braid_Core core,
-                      braid_Int *maxoptimiter_ptr
+braid_GetMaxOptimIter(braid_Core core,                /**< braid_Core (_braid_Core) struct */
+                      braid_Int *maxoptimiter_ptr     /**< output: holds the maximum number of optimization iterations */
                      );
 
 /**
  * Set optimization stopping criterion: tolerance on the absolute gradient norm
  */
 braid_Int
-braid_SetAbsTolOptim(braid_Core core,
-                     braid_Real gnorm_tol
+braid_SetAbsTolOptim(braid_Core core,           /**< braid_Core (_braid_Core) struct */
+                     braid_Real gnorm_tol       /**< absolute stopping tolerance for the gradient norm */
                     );
 
 /**
  * Set optimization stopping criterion: tolerance on relative drop of the gradient norm
  */
 braid_Int
-braid_SetRelTolOptim(braid_Core core,
-                     braid_Real gnorm_tol
+braid_SetRelTolOptim(braid_Core core,           /**< braid_Core (_braid_Core) struct */
+                     braid_Real gnorm_tol       /**< relative stopping tolerance for the gradient norm */
                      );
 
 /**
- * Get the optimization tolerance on the gradient norm.
+ * Get the optimization tolerance.
  */
 braid_Int
-braid_GetTolOptim(braid_Core  core,
-                  braid_Real *tol_gnorm_ptr
+braid_GetTolOptim(braid_Core  core,             /**< braid_Core (_braid_Core) struct */
+                  braid_Real *tol_gnorm_ptr     /**< output: holds the stopping tolerance */ 
                  );
 
 /**
  * Check if optimization tolerance is relative (1) or absolute (0) stopping criterion. 
  */
 braid_Int
-braid_IsRelTolOptim(braid_Core core,
-                    braid_Int *rel_tol
+braid_IsRelTolOptim(braid_Core core,            /**< braid_Core (_braid_Core) struct */
+                    braid_Int *rel_tol          /**< output: 1 if optimization tolerance is relative, 0 if it is absolute. */
                   );
 
 /**
- * Output: *myid_ptr holds the processor's rank
+ * Get the processor's rank.
  */                       
 braid_Int
-braid_GetMyID(braid_Core core, 
-              braid_Int *myid_ptr
+braid_GetMyID(braid_Core core,           /**< braid_Core (_braid_Core) struct */
+              braid_Int *myid_ptr        /**< output: rank of the processor. */
              );
 
 #ifdef __cplusplus

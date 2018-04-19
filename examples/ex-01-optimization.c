@@ -32,7 +32,7 @@
  *
  * Help with:     This implements a simple optimization iteration for the 
  *                simple ODE example in ex-01 with gradient computation 
- *                in ex-01-adjoint. Read the source for more information. 
+ *                in ex-01-adjoint. Read the source for more information.
  *
  * Sample run:    mpirun -np 2 ex-01-optimization
  *
@@ -445,11 +445,10 @@ int main (int argc, char *argv[])
 
    /* Set some optimization parameters */
    braid_SetMaxOptimIter(core, 100);
-   // braid_SetAbsTolOptim(core, 1e-6);
-   braid_SetRelTolOptim(core, 1e-2);
+   braid_SetAbsTolOptim(core, 1e-6);
 
    /* Start the optimization */
-   braid_DriveOptimization(core, app, MPI_COMM_WORLD, my_DesignUpdate, my_GradientNorm, my_GradientAllreduce);
+   braid_DriveOptimization(core, app, my_DesignUpdate, my_GradientNorm, my_GradientAllreduce);
 
 
    /* Clean up */

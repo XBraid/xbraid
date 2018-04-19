@@ -1,14 +1,16 @@
-/**
- *  Source file implementing the optimization routines. 
- **/
 
+/**
+ * Optimization template. 
+ * 
+ * Implements a simple parallel-in-time optimization loop. 
+ *  
+ **/
 
 #include "braid.h"
 
 braid_Int
 braid_DriveOptimization(braid_Core                   core,    /**< braid_Core (_braid_Core) struct*/
                         braid_App                    app,
-                        MPI_Comm                     comm,
                         braid_PtFcnDesignUpdate      design_update,
                         braid_PtFcnGradientNorm      gradient_norm,
                         braid_PtFcnGradientAllreduce gradient_allreduce

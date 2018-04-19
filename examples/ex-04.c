@@ -37,9 +37,11 @@
  *                  s.t.  d/dt u_1(t) = u_2(t)
  *                        d/dt u_2(t) = -u_2(t) + c(t)
  * 
- *                 with initial condition u_1(0) = 0, u_2(0) = -1
- *                 and piecewise constant control c(t).  
+ *               with initial condition u_1(0) = 0, u_2(0) = -1
+ *               and piecewise constant control c(t).  
  *
+ *               Implements simple steepest-descent optimization iteration
+ *               using fixed step size for design updates.   
  **/
 
 
