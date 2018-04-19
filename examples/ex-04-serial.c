@@ -135,11 +135,7 @@ int main (int argc, char *argv[])
       }
 
       /* Compute norm of gradient */
-      gnorm = 0.0;
-      for (ts = 0; ts < ntime; ts++)
-      {
-         gnorm += gradient[ts]*gradient[ts];
-      }
+      gnorm = compute_sqnorm(gradient, ntime);
       gnorm = sqrt(gnorm);
 
 

@@ -23,7 +23,7 @@
 
 /**
  *
- * This file contains library functions for ex-04-adjoint.c and ex-04-adjoint.serial.c. 
+ * This file contains library functions for ex-04.c and ex-04.serial.c. 
  * Together, these files solve a simple optimal control problem. 
  * 
  **/
@@ -37,11 +37,13 @@
  * Routines for solving the ODE constraint and evaluating the objective
  *--------------------------------------------------------------------------*/
 
-/* Advance a state vector u forward in time */
+
+/* Advance a state vector u forward in time 
+ * Implements simple explicite Euler integration scheme */
 void 
-take_step(double* u,        /* state at current time */
-          double design,    /* design at current time */
-          double deltaT )   /* time step size */
+take_step(double* u,         /* state at current time */
+          double  design,    /* design at current time */
+          double  deltaT )   /* time step size */
 {
    double du0, du1;
 
@@ -55,12 +57,12 @@ take_step(double* u,        /* state at current time */
 
 }
 
-/* Evaluate the local objective function at the current time */
+/* Evaluate the time-dependent objective function at the current time */
 double 
-evalObjectiveT(double* u,       /* state at current time */
-               double design,   /* design at current time */
-               double deltaT,   /* time step size */
-               double gamma)    /* relaxation parameter */
+evalObjectiveT(double* u,        /* state at current time */
+               double  design,   /* design at current time */
+               double  deltaT,   /* time step size */
+               double  gamma)    /* relaxation parameter */
 {
    double objectiveT;
 
@@ -78,9 +80,9 @@ evalObjectiveT(double* u,       /* state at current time */
 /* Advance an adjoint variable backwards in time */
 void 
 take_adjoint_step(double *w,      /* adjoint at current time */
-                  double u0,      /* 1st component of state */
-                  double u1,      /* 2nd omponent of state */
-                  double deltaT ) /* time step size */
+                  double  u0,      /* 1st component of state */
+                  double  u1,      /* 2nd omponent of state */
+                  double  deltaT ) /* time step size */
 {
    double dw0, dw1;
    
@@ -98,7 +100,7 @@ take_adjoint_step(double *w,      /* adjoint at current time */
 }
 
 
-/* Evaluate the local gradient at the current time */
+/* Evaluate the gradient at the current time */
 double 
 evalGradientT(double* w,       /* adjoint at current time */
               double  design,  /* design  at current time */
@@ -107,10 +109,10 @@ evalGradientT(double* w,       /* adjoint at current time */
 {
    double gradient;
 
-   /* Derivative of the step wrt design times w*/
+   /* Transposed derivative of the step wrt design times w */
    gradient = - deltaT * w[1];
 
-   /* Derivative of objective wrt design */
+   /* Transposed derivative of objective wrt design */
    gradient += 2.* deltaT * gamma * design;
 
    return gradient;
@@ -141,3 +143,20 @@ write_vec(char*   name,     /* Filename extension (ex-04.out.name) */
    fflush(file);
    fclose(file);
 }              
+
+/* Compute the squared norm of a vector */
+double 
+compute_sqnorm(double *vector, 
+               int     size)
+
+{
+   double norm = 0.0;
+
+   for(int i = 0; i < size; i++) 
+   {
+      norm += (vector[i]) * (vector[i]) ;
+   }
+
+   return norm;
+}
+

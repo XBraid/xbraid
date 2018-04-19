@@ -961,6 +961,13 @@ braid_GetObjective(braid_Core  core,           /**< braid_Core struct */
                    braid_Real *objective_ptr   /**< return: value of the objective function */
                   ); 
 
+/**
+ * After braid_drive() has finished, this return the adjoint residual norm of the last iteration 
+ */
+braid_Int
+braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
+                      braid_Real  *rnorm_adj   /**< output, holds adjoint residual norm of last iteration */
+                     );
                           
 #ifdef __cplusplus
 }

@@ -426,6 +426,8 @@ int main (int argc, char *argv[])
    double  *gradient; 
    double   stepsize;
    double   mygnorm, gnorm;
+   double   rnorm, rnorm_adj;
+   int      nreq;
    double   gtol;
 
    /* Define time domain */
@@ -475,34 +477,32 @@ int main (int argc, char *argv[])
    braid_SetAbsTol(core, 1.0e-06);
    braid_SetAbsTolAdjoint(core, 1e-6);
 
+
    /* Prepare optimization output */
-   printf("\n#    Objective             || Gradient ||\n");
+   printf("\n#    || r ||         || r_adj ||     Objective             || Gradient ||\n");
+
 
    /* Optimization iteration */
    for (iter = 0; iter < maxiter; iter++)
    {
-      /* Parallel-in-time simulation and gradient computation */
+
+      /* XBraid iterations: Parallel-in-time simulation and gradient computation */
       braid_Drive(core);
 
-      /* Get information from XBraid */
+      /* Get objective function value and state and adjoint residual norms from XBraid */
+      nreq = -1;
       braid_GetObjective(core, &objective);
-      // braid_GetRNorm(core, rnorm);
-      // braid_GetRNormAdj(core, rnorm_adj);
+      braid_GetRNorms(core, &nreq, &rnorm);
+      braid_GetRNormAdjoint(core, &rnorm_adj);
 
       /* Compute norm of the gradient */
-      mygnorm = 0.0;
-      for (ts = 0; ts < ntime; ts++)
-      {
-         mygnorm += gradient[ts]*gradient[ts];
-      }
+      mygnorm = compute_sqnorm(app->gradient, ntime);
       MPI_Allreduce(&mygnorm, &gnorm, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
       gnorm = sqrt(gnorm);
 
-
       /* Output */
-      printf("%3d  %1.14e  %1.14e\n", iter, objective, gnorm);
+      printf("%3d  %1.8e  %1.8e  %1.14e  %1.14e\n", iter, rnorm, rnorm_adj, objective, gnorm);
 
-      
       /* Check optimization convergence */
       if (gnorm < gtol)
       {

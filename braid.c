@@ -1930,4 +1930,19 @@ braid_SetObjectiveOnly(braid_Core core,
    _braid_CoreElt(core, obj_only) = obj_only;
 
    return _braid_error_flag;
-}                    
+}
+
+
+braid_Int
+braid_GetRNormAdjoint(braid_Core  core,  
+                      braid_Real  *rnorm_adj)
+{
+   if ( !(_braid_CoreElt(core, adjoint)) )
+   {
+      return _braid_error_flag;
+   }  
+
+   *rnorm_adj = _braid_CoreElt(core, optim)->rnorm_adj;
+
+   return _braid_error_flag;
+}                   
