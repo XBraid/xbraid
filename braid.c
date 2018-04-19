@@ -459,12 +459,12 @@ braid_Drive(braid_Core  core)
 
    if (myid == 0 )
    { 
-      if (!warm_restart) 
+      if (!warm_restart && _braid_CoreElt(core, print_level) > 0) 
       {
          _braid_printf("\n  Braid: Begin simulation, %d time steps\n",
                     _braid_CoreElt(core, gupper));
       }
-      if (_braid_CoreElt(core, adjoint) )
+      if (_braid_CoreElt(core, adjoint) && _braid_CoreElt(core, print_level) > 0 )
       {
          if (_braid_CoreElt(core, max_levels) > 1)
          {
