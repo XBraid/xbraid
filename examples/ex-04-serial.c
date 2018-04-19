@@ -22,15 +22,24 @@
  ***********************************************************************EHEADER*/
 
 /**
- * Example:       ex-04-adjoint-serial.c
+ * Example:       ex-04-serial.c
  *
  * Interface:     C
  * 
  * Requires:      only C-language support     
  *
- * Compile with:  make ex-04-adjoint-serial
+ * Compile with:  make ex-04-serial
  *
- * Description:   TODO: Describtion
+ * 
+ * Description:  Solves a simple optimal control problem in time-serial:
+ * 
+ *                 min   \int_0^1 u_1(t)^2 + u_2(t)^2 + gamma c(t)^2  dt
+ * 
+ *                  s.t.  d/dt u_1(t) = u_2(t)
+ *                        d/dt u_2(t) = -u_2(t) + c(t)
+ * 
+ *                 with initial condition u_1(0) = 0, u_2(0) = -1
+ *                 and piecewise constant control c(t).  
  * 
  **/
 
@@ -44,63 +53,55 @@
 int main (int argc, char *argv[])
 {
    double   tstart, tstop, deltaT;
-   int      ntime, maxiter;
-   int      iter;
-   int      ts;
-   double  *u, *w;
-   double  *design; 
-   double  *u0, *u1;
-   double  *w0, *w1;
+   int      ntime, ts;
+   int      maxiter,iter;
    double   objective;
    double   gamma;
+   double  *u, *w;
+   double  *u0, *u1;
+   double  *design; 
    double  *gradient;
    double   gnorm;
    double   gtol;
    double   stepsize;
    
    /* Define time domain */
-   ntime  = 20;
-   tstart = 0.0;
-   tstop  = 1.0;
-   deltaT = ( tstop - tstart ) / ntime;
+   ntime  = 20;                   /* Total number of time-steps */
+   tstart = 0.0;                  /* Beginning of time-domain */
+   tstop  = 1.0;                  /* End of time-domain */
+   deltaT = ( tstop - tstart ) / ntime;  /* Time-step size */
 
    /* Define some optimization parameters */
-   gamma    = 0.005;          /* Relaxation parameter */
+   gamma    = 0.005;          /* Relaxation parameter in the objective function */
+   stepsize = 50.0;           /* Step size for design updates */
    maxiter  = 300;            /* Maximum number of optimization iterations */
-   stepsize = 50.0;           /* Stepsize for design updates */
-   gtol     = 1e-6;           /* Stopping criterion for the gradient norm */
+   gtol     = 1e-6;           /* Stopping criterion on the gradient norm */
    
 
-   /* Allocate memory */
-   u0 = (double*) malloc( ntime*sizeof(double) );   /* state, 1st component */
-   u1 = (double*) malloc( ntime*sizeof(double) );   /* state, 2nd component */
-   w0 = (double*) malloc( ntime*sizeof(double) );   /* adjoint, 1st component */
-   w1 = (double*) malloc( ntime*sizeof(double) );   /* adjoint, 2nd component */
-   design   = (double*) malloc( ntime*sizeof(double) ); /* design vector */
-   gradient = (double*) malloc( ntime*sizeof(double) ); /* gradient vector */
-   u  = (double*) malloc( 2*sizeof(double) );       /* Temporary state */
-   w  = (double*) malloc( 2*sizeof(double) );       /* Temporary adjoint */
-
    /* Initialize the optimization variables */
+   u        = (double*) malloc( 2*sizeof(double) );      /* State at on time-step */
+   w        = (double*) malloc( 2*sizeof(double) );      /* Adjoint at on time-step */
+   u0       = (double*) malloc( ntime*sizeof(double) );  /* Stores the space-time state, 1st component */
+   u1       = (double*) malloc( ntime*sizeof(double) );  /* Stores the space-time state, 2nd component */
+   design   = (double*) malloc( ntime*sizeof(double) );  /* design vector (control c) */
+   gradient = (double*) malloc( ntime*sizeof(double) );  /* gradient vector */
+
    for (ts = 0; ts < ntime; ts++)
    {
-      u0[ts] = 0.;
-      u1[ts] = 0.;
-      w0[ts] = 0.;
-      w1[ts] = 0.;
-      design[ts]  = 0.;
+      u0[ts]       = 0.;
+      u1[ts]       = 0.;
+      design[ts]   = 0.;
       gradient[ts] = 0.;
    }
 
-
-   /* Prepare output */
+   /* Prepare optimization output */
    printf("\n#    Objective             || Gradient ||\n");
 
    /* Optimization iteration */
    for (iter = 0; iter < maxiter; iter++)
    {
 
-      /* Set the state initial condition */
+      /* Set initial condition for the state */
       u[0] =  0.0;
       u[1] = -1.0;
 
@@ -119,7 +120,7 @@ int main (int argc, char *argv[])
          u1[ts-1] = u[1];
       }
 
-      /* Set the adjoint terminal condition */
+      /* Set terminal condition for the adjoint */
       w[0] = 0.0;
       w[1] = 0.0;
 
@@ -145,12 +146,14 @@ int main (int argc, char *argv[])
       /* Output */
       printf("%3d  %1.14e  %1.14e\n", iter, objective, gnorm);
 
-      /* Check convergence */
+
+      /* Check optimization convergence */
       if (gnorm < gtol)
       {
          break;
       }
 
+      /* Design update */
       for(ts = 0; ts < ntime; ts++) 
       {
          design[ts] -= stepsize * gradient[ts];
@@ -185,8 +188,6 @@ int main (int argc, char *argv[])
    free(u1);
    free(u);
    free(gradient);
-   free(w0);
-   free(w1);
    free(w);
 
    return (0);
