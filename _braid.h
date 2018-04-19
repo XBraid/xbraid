@@ -228,6 +228,7 @@ typedef struct _braid_Core_struct
    braid_Optim            optim;             /**< structure that stores optimization variables (objective function, etc.) */ 
    braid_Int              adjoint;           /**< determines if adjoint run is performed (1) or not (0) */
    braid_Int              record;            /**< determines if actions are recorded to the tape or not */
+   braid_Int              obj_only;          /**< determines if adjoint code computes ONLY objective, no gradients. */
    braid_Int              verbose;           /**< verbosity of the adjoint code */
 
    _braid_Tape*          actionTape;         /**< tape storing the actions while recording */

@@ -946,6 +946,14 @@ braid_SetRelTolAdjoint(braid_Core  core,           /**< braid_Core (_braid_Core)
                       );
 
 /**
+ * If obj_ony is set to 1, one braid_drive() will skip the gradient computation and computes the state and objective function value only. 
+ */
+braid_Int
+braid_SetObjectiveOnly(braid_Core core,          /**< braid_Core (_braid_Core) struct */
+                       braid_Int  obj_only       /**< flag that determines, if only objective function is computed (no sensitivities) */
+                      );                   
+
+/**
  * After braid_drive() has finished, this returns the objective function value
  */
 braid_Int

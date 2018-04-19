@@ -443,6 +443,7 @@ braid_Drive(braid_Core  core)
    braid_Int            access_level    = _braid_CoreElt(core, access_level);
    braid_App            app             = _braid_CoreElt(core, app);
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
+   braid_Int            obj_only        = _braid_CoreElt(core, obj_only);
 
    braid_Int     *nrels, nrel0;
    braid_Int      nlevels;
@@ -509,11 +510,7 @@ braid_Drive(braid_Core  core)
       /* Set initial values */
       _braid_InitGuess(core, 0);
 
-      /* Turn on warm_restart, so that further calls to braid_drive() don't initialize the grid again. */
-      _braid_CoreElt(core, warm_restart) = 1;
-
    }
-   nlevels = _braid_CoreElt(core, nlevels);
 
 
    if (_braid_CoreElt(core, adjoint))
@@ -526,19 +523,30 @@ braid_Drive(braid_Core  core)
       else
       {
          /* Prepare for next adjoint iteration in case of warm_restart */
-         _braid_CoreElt(core, record)               = 1;
          _braid_CoreElt(core, optim)->sum_user_obj  = 0.0;
          _braid_CoreElt(core, optim)->f_bar         = 0.0;
          _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
       }
 
+      if ( obj_only )
+      {
+         _braid_CoreElt(core, record) = 0;
+      }
+      else
+      {
+         _braid_CoreElt(core, record) = 1;
+      }
    }
 
+
+   /* Turn on warm_restart, so that further calls to braid_drive() don't initialize the grid again. */
+   _braid_CoreElt(core, warm_restart) = 1;
 
 
    /* Initialize cycle state */
    _braid_DriveInitCycle(core, &cycle);
    
+   nlevels = _braid_CoreElt(core, nlevels);
    done  = 0;
    if (max_levels <= 1)
    {
@@ -653,9 +661,11 @@ braid_Drive(braid_Core  core)
                _braid_TapeEvaluate(core);
 
                /* Update adjoints and compute residual norm */
-               _braid_UpdateAdjoint(core, &rnorm_adj);
-               _braid_SetRNormAdjoint(core, iter, rnorm_adj);
-
+               if ( !obj_only )
+               {
+                  _braid_UpdateAdjoint(core, &rnorm_adj);
+                  _braid_SetRNormAdjoint(core, iter, rnorm_adj);
+               }
             }
 
             /* Print current status */
@@ -801,6 +811,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              tpoints_cutoff  = braid_Int_Max;  /* Maximum number of time steps, controls FRefine()*/ 
    braid_Int              adjoint         = 0;              /* Default adjoint run: Turned off */
    braid_Int              record          = 0;              /* Default action recording: Turned off */
+   braid_Int              obj_only        = 0;              /* Default objective only: Turned off */
    braid_Int              verbose         = 0;              /* Default verbosity Turned off */
 
    braid_Int              myid_world,  myid;
@@ -880,6 +891,7 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, adjoint)               = adjoint;
    _braid_CoreElt(core, record)                = record;
+   _braid_CoreElt(core, obj_only)              = obj_only;
    _braid_CoreElt(core, verbose)               = verbose;
    _braid_CoreElt(core, actionTape)            = NULL;
    _braid_CoreElt(core, userVectorTape)        = NULL;
@@ -1914,3 +1926,17 @@ braid_GetObjective(braid_Core  core,
    return _braid_error_flag;
 }                
 
+
+braid_Int
+braid_SetObjectiveOnly(braid_Core core,       
+                       braid_Int  obj_only)
+{
+   if ( !(_braid_CoreElt(core, adjoint)) )
+   {
+      return _braid_error_flag;
+   }  
+
+   _braid_CoreElt(core, obj_only) = obj_only;
+
+   return _braid_error_flag;
+}                    
