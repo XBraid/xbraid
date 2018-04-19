@@ -276,6 +276,7 @@ _braid_EvalObjective_diff(braid_Core core)
 {
    braid_Optim optim        = _braid_CoreElt(core, optim);
    braid_App   app          = _braid_CoreElt(core, app);
+   braid_Int   myid         = _braid_CoreElt(core, myid);
    braid_Real  sum_user_obj = optim->sum_user_obj;
    braid_Real  sum_user_obj_bar;
 
@@ -291,6 +292,16 @@ _braid_EvalObjective_diff(braid_Core core)
 
    /* Differentiate the time average */
    optim->f_bar = sum_user_obj_bar;
+
+   /* Reset the gradient on all but one processor (one should hold the differentiated relaxation term) */
+   if ( myid != 0)
+   {
+      _braid_CoreFcn(core, reset_gradient)(app);
+   }
+
+;
+
+
 
    return _braid_error_flag;
 }

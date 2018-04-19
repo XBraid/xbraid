@@ -393,6 +393,13 @@ typedef braid_Int
                                         braid_Real   sum_obj,      /**< Sum of the objective function values over time */
                                         braid_Real  *sum_obj_bar   /**< output: derivative of postprocessing objective */
                                    );
+
+/**
+ * Set the gradient to zero
+ */
+typedef braid_Int
+(*braid_PtFcnResetGradient)(braid_App app );     /**< user-defined _braid_App structure */
+
 /** @}*/
 
 /*--------------------------------------------------------------------------
@@ -859,6 +866,7 @@ braid_Int
 braid_InitAdjoint(braid_PtFcnObjectiveT        objT,               /**< Evaluate the local objective function at time t  */
                   braid_PtFcnObjectiveTDiff    objT_diff,          /**< differentiated version of the objT function  */
                   braid_PtFcnStepDiff          step_diff,          /**< Differentiated version of the step function */
+                  braid_PtFcnResetGradient     reset_gradient,     /**< Set the gradient to zero */
                   braid_Core                  *core_ptr            /**< Pointer to braid_Core (_braid_Core) struct */   
                   );
 

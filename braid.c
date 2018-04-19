@@ -314,8 +314,11 @@ _braid_DriveCheckConvergence(braid_Core  core,
    
    if (iter == max_iter-1 )
    {
+      if (myid == 0)
+      {
+         _braid_printf("  Braid: Max. state iterations reached.\n\n");
+      }
       done = 1;
-      printf("\n Max. state iterations reached.\n\n");
    } 
 
    *done_ptr = done;
@@ -521,10 +524,11 @@ braid_Drive(braid_Core  core)
       }
       else
       {
-         /* Reset adjoint in case of warm_restart */
+         /* Prepare for next adjoint iteration in case of warm_restart */
          _braid_CoreElt(core, record)               = 1;
          _braid_CoreElt(core, optim)->sum_user_obj  = 0.0;
          _braid_CoreElt(core, optim)->f_bar         = 0.0;
+         _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
       }
 
    }
@@ -669,6 +673,11 @@ braid_Drive(braid_Core  core)
                /* Prepare for the next iteration */
                _braid_CoreElt(core, optim)->sum_user_obj = 0.0;
                _braid_CoreElt(core, optim)->f_bar        = 0.0;
+
+               if (!done)
+               {
+                  _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
+               }
 
                /* Reset the pointer to input variables */
                _braid_TapeResetInput(core);
@@ -878,6 +887,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, objectiveT)            = NULL;
    _braid_CoreElt(core, objT_diff)             = NULL;
    _braid_CoreElt(core, step_diff)             = NULL;
+   _braid_CoreElt(core, reset_gradient)        = NULL;
    _braid_CoreElt(core, postprocess_obj)       = NULL;
    _braid_CoreElt(core, postprocess_obj_diff)  = NULL;
    
@@ -904,6 +914,7 @@ braid_Int
 braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
                   braid_PtFcnObjectiveTDiff    objT_diff,
                   braid_PtFcnStepDiff          step_diff, 
+                  braid_PtFcnResetGradient     reset_gradient,
                   braid_Core                  *core_ptr)
 {
    braid_PtFcnResidual  residual  = _braid_CoreElt(*core_ptr, residual);
@@ -953,9 +964,11 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
    _braid_TapeInit( _braid_CoreElt(*core_ptr, barTape) );
 
    /* Set the user functions */
-   _braid_CoreElt(*core_ptr, objectiveT)         = objectiveT;
-   _braid_CoreElt(*core_ptr, step_diff)          = step_diff;
-   _braid_CoreElt(*core_ptr, objT_diff)          = objT_diff;
+   _braid_CoreElt(*core_ptr, objectiveT)     = objectiveT;
+   _braid_CoreElt(*core_ptr, step_diff)      = step_diff;
+   _braid_CoreElt(*core_ptr, objT_diff)      = objT_diff;
+   _braid_CoreElt(*core_ptr, reset_gradient) = reset_gradient;
+
 
    /* Sanity check for non-supported features */
    if ( (residual != NULL) ||

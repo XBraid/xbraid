@@ -345,6 +345,15 @@ my_ObjectiveT_diff(braid_App            app,
    return 0;
 }
 
+int 
+my_ResetGradient(braid_App app)
+{
+   /* Set the gradient to zero */
+   app->gradient = 0.0;
+
+   return 0;
+}
+
 /*--------------------------------------------------------------------------
  * Main driver
  *--------------------------------------------------------------------------*/
@@ -400,7 +409,7 @@ int main (int argc, char *argv[])
 
 
    /* Initialize adjoint XBraid */
-   braid_InitAdjoint( my_ObjectiveT, my_ObjectiveT_diff, my_Step_diff, &core);
+   braid_InitAdjoint( my_ObjectiveT, my_ObjectiveT_diff, my_Step_diff, my_ResetGradient, &core);
    
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);
@@ -430,18 +439,16 @@ int main (int argc, char *argv[])
    braid_Drive(core);
 
    braid_GetObjective(core, &objective);
-   printf("Objective: %1.14e\n", objective);
+   if (rank == 0) printf("Objective: %1.14e\n", objective);
 
    /* Collect sensitivities from all processors */
    mygradient = app->gradient;
    MPI_Allreduce(&mygradient, &(app->gradient), 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
    if ( rank == 0 ) printf("Gradient: %1.14e\n", app->gradient);
 
-   /* Reset the gradient for the next iteration */
-   app->gradient = 0.0;
 
    braid_Drive(core);
-   printf("Objective: %1.14e\n", objective);
+   if (rank == 0) printf("Objective: %1.14e\n", objective);
 
    /* Collect sensitivities from all processors */
    mygradient = app->gradient;
