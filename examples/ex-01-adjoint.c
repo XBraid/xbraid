@@ -62,8 +62,7 @@
 typedef struct _braid_App_struct
 {
    int       rank;            /* Rank of the processor */
-
-   double    lambda;          /* Store the design variables in the app */
+   double    design;          /* Store the design variables in the app */
    double    gradient;        /* Store the gradient in the app - should be of same size as design! */
 
 } my_App;
@@ -86,7 +85,7 @@ my_Step(braid_App        app,
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
 
    /* Get the design variable from the app */
-   double lambda = app->lambda;
+   double lambda = app->design;
 
    /* Use backward Euler to propagate solution */
    (u->value) = 1./(1. - lambda * (tstop-tstart))*(u->value);
@@ -287,7 +286,7 @@ my_Step_diff(braid_App              app,
    double ddesign;  /* Derivative wrt design */
 
    /* Get the design from the app */
-   double lambda = app->lambda;
+   double lambda = app->design;
 
    /* Transposed derivative of step wrt u times u_bar */
    ddu = 1./(1. - lambda * deltat) * (u_bar->value);
@@ -298,7 +297,6 @@ my_Step_diff(braid_App              app,
    /* Update u_bar and gradient */
    u_bar->value      = ddu;              // Make sure to do "=" here, not "+="! 
    app->gradient    += ddesign;
-
 
    return 0;
 }
@@ -333,7 +331,7 @@ int main (int argc, char *argv[])
    tstop  = tstart + ntime/2.;
 
    /* Initialize the design variable */
-   lambda = -1.0 + 1e-8; 
+   lambda = -1.0; 
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -342,7 +340,7 @@ int main (int argc, char *argv[])
    /* set up app structure */
    app = (my_App *) malloc(sizeof(my_App));
    app->rank        = rank;
-   app->lambda      = lambda;
+   app->design      = lambda;
    app->gradient    = 0.0;
 
    /* Initialize XBraid */

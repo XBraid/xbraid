@@ -664,6 +664,41 @@ Wrapping and debugging a code with XBraid typically follows a few steps.
   processors in time (and space if possible).
 - Congratulations!  Your code is now verified.
 
+# Adjoint-based sensitivities with XBraid_Adjoint {#adjointcodeoverview}
+
+XBraid_Adjoint is a consistent discrete adjoint solver which provides sensitivity information of output quantities with respect to design parameter changes. 
+The ability to compute sensitivities can improve and enhance the simulation tool, as for example through parameter estimation for validation and verification purposes, error estimation and adaptive grid refinement or uncertainty quantification techniques. 
+Further, it broadens the application range from pure simulation to optimization as for example in an optimal control or shape optimization framework.
+
+Let's assume, that the general system of ODE's depends on some design parameter \f$\rho\f$:
+   \f[
+   \Xux^{\prime}(t) = \Xfx(t, \Xux(t), \rho), ~~~ \Xux(0) = \Xux_0, ~~~ t \in [0,T]. 
+   \f]
+where \f$\rho\f$ can be any time-dependent or time-independent parameters that uniquely determine the solution $u(t)$ of the ODE (e.g. boundary conditions, material coefficients, etc.). 
+An objctive function \f[J(u(t), \rho) \in \mathrm{R}\f] then quantifies the solution of the ODE. Typical objective functions involve an integral of some time-dependent quantity of interest as well as time-independent postprocessing function \f$F\f$ and an additional relaxation term \f$R\f$ in the following way:
+\f[
+   J =  F\left( \int_{t_0}^{t^1} f(u(t),\rho)  \right) + R\left(\rho\right)
+\f]
+for some time-domain \f$[t_0, t_1]\f$.
+
+Adjoint-based sensitivities compute the derivative of \f$J\f$ with respect to the design \f$\rho\f$ by solving additional so-called adjoint equations:
+\f[
+   adjoint equation comes here
+\f]
+and computing the derivative from 
+\f[
+   reduced gradient comes here.
+\f]
+
+... More text and all...
+Change to discretized setting! 
+
+- XBraid_Adjoint computes sensitivities alongside the primal computations.
+- Techniques from AD. 
+- Piggy-back iteration for state and adjoint. 
+
+
+
 # Citing XBraid {#braidcite}
 
 To cite XBraid, please state in your text the version number from the 
