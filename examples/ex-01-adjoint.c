@@ -38,7 +38,7 @@
  *                   u' = lambda u, 
  *                   with design parameter lambda and initial condition y(0) = 1
  *                Evaluate the objective function:
- *                   J = 1/2 * ( 1/T \int_0^T || u ||^2 dt - Target )^2  + \gamma/2 || lamba ||^2
+ *                   J = 1/T \int_0^T || u(t) ||^2 dt
  *                   witch Target being a precomputed target value. 
  *                Compute the total derivative:
  *                   dJ / d lambda
@@ -61,13 +61,11 @@
 /* App structure contains information needed for time-stepping and evaluating the objective funcion */
 typedef struct _braid_App_struct
 {
-   double    design;          /* Store the design variables in the app */
-   double    gradient;        /* Store the gradient in the app - should be of same size as design! */
-   double    target;          /* Target for tracking type objective function (inverse design) */
-   double    gamma;           /* Relaxation parameter for the tracking type objective function */
-
    int       rank;            /* Rank of the processor */
-   double    ntime;           /* Total number of time-steps */
+
+   double    lambda;          /* Store the design variables in the app */
+   double    gradient;        /* Store the gradient in the app - should be of same size as design! */
+
 } my_App;
 
 /* Vector structure holds the state variable at one time-step */
@@ -88,10 +86,10 @@ my_Step(braid_App        app,
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
 
    /* Get the design variable from the app */
-   double lambda = app->design;
+   double lambda = app->lambda;
 
    /* Use backward Euler to propagate solution */
-   (u->value) = 1./(1. - lambda* (tstop-tstart))*(u->value);
+   (u->value) = 1./(1. - lambda * (tstop-tstart))*(u->value);
    
    return 0;
 }
@@ -227,51 +225,19 @@ my_ObjectiveT(braid_App              app,
               braid_ObjectiveStatus  ostatus,
               double                *objectiveT_ptr)
 {
-   /* 1/N * f(u(t),lambda) = 1/N * u(t)**2 */
-   double objT = 1. / (app->ntime) * (u->value) * (u->value);
+   double objT;
+   int    ntime;
+
+   /* Get the total number of time-steps */
+   braid_ObjectiveStatusGetNTPoints(ostatus, &ntime);
+
+   /* Evaluate the local objective: 1/N * u(t)**2 */
+   objT = 1. / ntime * (u->value) * (u->value);
 
    *objectiveT_ptr = objT;
-   
    return 0;
 }
 
-/* Evaluate the time-independent part of the objective function */
-int
-my_PostprocessObjective(braid_App   app,
-                        double      sum_objective,
-                        double     *postprocess
-                        )
-{
-   double J;
-
-   /* Tracking-type functional */
-   J  = 1./2. * pow(sum_objective - app->target,2);
-   /* Regularization term */
-   J += (app->gamma) / 2. * pow(app->design,2);
-
-   *postprocess = J;
-
-   return 0;
-}
-
-int
-my_PostprocessObjective_diff(braid_App   app,
-                             double      sum_objective,
-                             double     *sum_objective_bar
-                             )
-{
-   double J_bar = 0;
-
-   /* Derivative of tracking type function */
-   J_bar = sum_objective - app->target;
-
-   /* Derivative of regularization term */
-   app->gradient = (app->gamma) * (app->design);
-
-   *sum_objective_bar = J_bar;
-
-   return 0;
-}
 
 /* Transposed partial derivatives of objectiveT times f_bar */
 int
@@ -281,11 +247,15 @@ my_ObjectiveT_diff(braid_App            app,
                   braid_Real            f_bar,
                   braid_ObjectiveStatus ostatus)
 {
+   int    ntime;
    double ddu;      /* Derivative wrt u */
    double ddesign;  /* Derivative wrt design */
 
+   /* Get the total number of time-steps */
+   braid_ObjectiveStatusGetNTPoints(ostatus, &ntime);
+
    /* Partial derivative with respect to u times f_bar */
-   ddu = 2. / (app->ntime) * u->value * f_bar;
+   ddu = 2. / ntime * u->value * f_bar;
 
    /* Partial derivative with respect to design times f_bar*/
    ddesign = 0.0 * f_bar;
@@ -317,7 +287,7 @@ my_Step_diff(braid_App              app,
    double ddesign;  /* Derivative wrt design */
 
    /* Get the design from the app */
-   double lambda = app->design;
+   double lambda = app->lambda;
 
    /* Transposed derivative of step wrt u times u_bar */
    ddu = 1./(1. - lambda * deltat) * (u_bar->value);
@@ -352,9 +322,9 @@ int main (int argc, char *argv[])
    braid_Core    core;
    my_App       *app;
    double        tstart, tstop;
-   int           ntime, rank;
-   double        design; 
-   double        gamma, target;
+   int           ntime;
+   int           rank;
+   double        lambda; 
    double        objective;
 
    /* Define time domain: ntime intervals */
@@ -362,11 +332,8 @@ int main (int argc, char *argv[])
    tstart = 0.0;
    tstop  = tstart + ntime/2.;
 
-   /* Initialize optimization variables */
-   design           = -1.0;                  /* Initial design  */
-   target           = 1.15231184218078e-01;  /* Precomputed target for inverse design optimization */
-   gamma            = 0.0005;                /* Relaxation parameter for the objective function */
-
+   /* Initialize the design variable */
+   lambda = -1.0 + 1e-8; 
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -375,11 +342,8 @@ int main (int argc, char *argv[])
    /* set up app structure */
    app = (my_App *) malloc(sizeof(my_App));
    app->rank        = rank;
-   app->design      = design;
+   app->lambda      = lambda;
    app->gradient    = 0.0;
-   app->ntime       = ntime;
-   app->target      = target;
-   app->gamma       = gamma;
 
    /* Initialize XBraid */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
@@ -389,10 +353,7 @@ int main (int argc, char *argv[])
   /* Initialize adjoint-based gradient computation */
    braid_InitAdjoint( my_ObjectiveT, my_ObjectiveT_diff, my_Step_diff, my_ResetGradient, &core);
 
-   /* Optional: Set the tracking type objective function and derivative */
-   braid_SetPostprocessObjective(core, my_PostprocessObjective);
-   braid_SetPostprocessObjective_diff(core, my_PostprocessObjective_diff);
-  
+ 
    /* Set some typical Braid parameters */
    braid_SetMaxLevels(core, 2);             /* Number of time-grid levels */
    braid_SetCFactor(core, -1, 2);           /* Coarsening factor on all levels */
