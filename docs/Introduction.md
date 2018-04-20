@@ -696,8 +696,14 @@ Change to discretized setting!
 - XBraid_Adjoint computes sensitivities alongside the primal computations.
 - Techniques from AD. 
 - Piggy-back iteration for state and adjoint. 
+- User defines the derivative terms for \f$\Phi\f$ and \f$J\f$
 
-
+# Optimization Template
+- `braid_optimization.c`
+- Simple reduced space optimization iteration
+- User defines design update 
+- Line-search
+- Modify for your own needs. 
 
 # Citing XBraid {#braidcite}
 

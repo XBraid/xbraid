@@ -575,7 +575,7 @@ Talk about:
             return 0;
          }  
 
-In addition to the user functions defines in `examples/ex-01.c`, the user must define the following routines:
+In addition to the user's routines in in `examples/ex-01.c`, the user must define the following routines:
 
 1. **ObjectiveT**: This function evaluates the time-dependent part of the objective function at a local time \f$t_i\f$. 
 
@@ -596,13 +596,13 @@ In addition to the user functions defines in `examples/ex-01.c`, the user must d
          }
 
    The `ObjectiveStatus` can be queried for information about the current status of XBraid (time, time-index, number of time-steps, current iteration number, etc.)
-   XBraid_Adjoint calls the `ObjectiveT` function on the finest time-grid level during the down-cycle of the multig-grid algorithm. 
+   XBraid_Adjoint calls the `ObjectiveT` function on the finest time-grid level during the down-cycle of the multig-grid algorithm and adds the value to the global objective function value.  
 
-2. **ObjectiveT_diff**: This provide XBraid with the transposed partial derivatives of the `ObjectiveT` routine multiplied with the scalar input value `f_bar`. I.e. if `ObjectiveT` evaluates a function \f[ f(u_i,\rho) \f], then `ObjectiveT_diff` returns
+2. **ObjectiveT_diff**: This provide XBraid with the transposed partial derivatives of the `ObjectiveT` routine multiplied with the scalar input `f_bar`. I.e. if `ObjectiveT` evaluates a function \f[ f(u_i,\rho) \f] then `ObjectiveT_diff` computes
 \f[  
    \bar u_i += \frac{\partial f(u_i, \lambda)}{\partial u_i}^T \bar f 
 \f]
-and update the gradient with
+and updates the gradient (stored in the `app`) with
 \f[
    \bar \rho += \frac{\partial f(u_i, \lambda)}{\partial \rho}^T \bar f
 \f]
@@ -639,10 +639,10 @@ and update the gradient with
 \f[
    u_{i+1} = \Phi(u_i, \rho)
 \f]
-then `Step_diff` returns
+then `Step_diff` updates
 \f[
    \bar u_{i+1} = \frac{\partial \Phi(u_i, \rho)}{\partial u_i}^T\bar u_i
-\f] (note the `=` instead of `+=`) and updates the gradient with
+\f] (note the `=` instead of `+=`) and updates the gradient in the `app` with
 \f[
    \bar \rho += \frac{\partial \Phi(u_i, \rho)}{\partial \rho}^T\bar u_i
 \f]
@@ -680,7 +680,7 @@ then `Step_diff` returns
             return 0;
          }
 
-4. **ResetGradient**: This routine must reset the gradient to zero:
+4. **ResetGradient**: This routine sets the gradient to zero. XBraid_Adjoint calls this routine before each iteration such that old gradient information is removed properly.
 
          int 
          my_ResetGradient(braid_App app)
@@ -690,12 +690,153 @@ then `Step_diff` returns
          }
 
 ## Running XBraid_Adjoint for this example
-- Init()
-- InitAdjoint()
-- Set options
-- Drive()      
+The workflow for computing adjoint sensitivities with XBraid_Adjoint alongside the primal state computation closely follows XBraid's workflow. 
+The user's *main* file will first set up the app structure, holding the additional information on an initial design and zero gradient and call the same `braid_Init(...)` function as before in order to set up XBraid. 
 
-After XBraid_Adjoint has finished, the user is responsible to collect sensitivities from all time-processors, if necessary. This usually involves an `MPI_Allreduce` call for the gradient. 
+In addition to that, the user then initializes XBraid_Adjoint by calling
+
+        /* Initialize adjoint-based gradient computation */
+         braid_InitAdjoint( my_ObjectiveT, my_ObjectiveT_diff, my_Step_diff, my_ResetGradient, &core);
+
+which passes the additional user routines to XBraid_Adjoint.  
+
+In addition to the usual XBraid options for controlling the multigrid iterations, the adjoint solver's accuracy is set by calling 
+
+      braid_SetAbsTolAdjoint(core, 1e-6);
+
+Other XBraid_Adjoint options are listed in \ref{list_adjoint_options}. 
+
+After that, one call to 
+
+      /* Run simulation and adjoint-based gradient computation */
+      braid_Drive(core);
+
+runs multigrid iterations with additional adjoint sensitivity computations. 
+
+After it finishes, the objective function value can be accessed by calling
+
+      /* Get the objective function value from XBraid */
+      braid_GetObjective(core, &objective);
+
+Further, the gradient stored in the `app` holds the gradient information \f$ dJ/d\rho \f$. As this information is local to all the time-processors, the user is responsible for summing up the gradients from all time-processors, if necessary. This usually involves an `MPI_Allreduce` call for the gradient as in 
+
+      /* Collect sensitivities from all processors */
+      double mygradient = app->gradient;
+      MPI_Allreduce(&mygradient, &(app->gradient), 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD); 
+
+
+# Optimization with the Simplest Example {#exampleoneoptimization}
+``examples/ex-01-optimization.c`` implements a simple optimization iteration for solving an inverse design problem for the simple scalar ODE example:
+
+\f[
+  \begin{matrix} \min ~ \frac 1 2 \left( \int_0^T \frac{1}{T}  \| u(t) \|^2 dt - J_{\text{Target}} \right)^2 + \frac{\gamma}{2} \| \lambda \|^2 \\ \\
+  \text{s.t. } \quad \frac{\partial}{\partial t}u(t) = \lambda u(t) \quad \forall t \in (0,T) \quad
+  \end{matrix}
+\f]
+where \f$ J_{\text{Target}} \f$ is a fixed and precomputed target value and \f$\gamma >0 \f$ is a fixed relaxation parameter.  Those fixed values are stored within the `app`. 
+
+In order to compute evaluate the time-independent part of the objective function and its derivative, two additional user routines are neccessary:
+
+1. **PostprocessObjective**: This function evaluates the tracking-type objective function and the regularization term. The input variable `sum_objective` contains the integral-part of the objective (\f$J\f$) and return the objective that is to be minimized: 
+
+
+         /* Evaluate the time-independent part of the objective function */
+         int
+         my_PostprocessObjective(braid_App   app,
+                              double      sum_objective,
+                              double     *postprocess
+                              )
+         {
+            double F;
+
+            /* Tracking-type functional */
+            F  = 1./2. * pow(sum_objective - app->target,2);
+            
+            /* Regularization term */
+            F += (app->gamma) / 2. * pow(app->design,2);
+
+            *postprocess = F;
+             return 0;
+         }
+
+2. **PostprocessObjective_diff**: This provides XBraid_Adjoint with the partial derivatives of the `PostprocessObjective` routine. I.e. if `PostprocessObjective` computes \f$ F(I) + R(\lambda) \f$, then `PostprocessObjective_diff` returns
+\f[
+   \bar F = \frac{\partial F(I)}{\partial I}
+\f] and updates the gradient with 
+\f[
+   \bar \rho = \frac{\partial R(\lambda)}{\partial \lambda} 
+\f]
+
+         int
+         my_PostprocessObjective_diff(braid_App   app,
+                                      double      sum_objective,
+                                      double     *F_bar
+                                      )
+         {
+
+            /* Derivative of tracking type function */
+            *F_bar = sum_objective - app->target;
+
+            /* Derivative of regularization term */
+            app->gradient = (app->gamma) * (app->design);
+            return 0;
+         }
+
+3. **DesignUpdate**: ...
+
+         int
+         my_DesignUpdate(braid_App app )
+         {
+            app->design -= app->stepsize * app->gradient;
+
+            return 0;
+         }
+
+4. **GradientNorm**
+
+         int
+         my_GradientNorm(braid_App app,
+                         double    *gnorm_ptr)
+         {
+            *gnorm_ptr = sqrt((app->gradient)*(app->gradient));
+
+            return 0;
+         }
+
+
+5. **GradientAllreduce**
+
+         int
+         my_GradientAllreduce(braid_App app)
+         {
+            double mygradient = app->gradient;
+            double gradient; 
+
+            /* Collect sensitivities from all processors and broadcast it */
+            MPI_Allreduce(&mygradient, &gradient, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+            app->gradient = gradient;
+
+            return 0;
+         }
+
+The `PostprocessObjective` and `PostprocessObjective_diff` routines are optional. Therefore, they need to be passed to XBraid_Adjoint after the initialization with `braid_Init(...)` and `braid_InitAdjoint(...)` in the user's *main* file:
+
+      /* Optional: Set the tracking type objective function and derivative */
+      braid_SetPostprocessObjective(core, my_PostprocessObjective);
+      braid_SetPostprocessObjective_diff(core, my_PostprocessObjective_diff);
+
+
+Additional options for controling the optimization iteration are then set with 
+
+      /* Set some optimization parameters */
+      braid_SetMaxOptimIter(core, 100);
+      braid_SetAbsTolOptim(core, 1e-6);
+
+The optimization iteration is started by calling
+
+      /* Start the optimization */
+      braid_DriveOptimization(core, app, my_DesignUpdate, my_GradientNorm, my_GradientAllreduce);
+
 
 # One-Dimensional Heat Equation {#exampletwo}
 

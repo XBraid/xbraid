@@ -317,12 +317,12 @@ my_ObjectiveT(braid_App              app,
 }
 
 
-/* Transposed partial derivatives of time-dependent objective times f_bar */ 
+/* Transposed partial derivatives of time-dependent objective times J_bar */ 
 int
 my_ObjectiveT_diff(braid_App            app,
                   braid_Vector          u,
                   braid_Vector          u_bar,
-                  braid_Real            f_bar,
+                  braid_Real            J_bar,
                   braid_ObjectiveStatus ostatus)
 {
    int     index;
@@ -337,12 +337,12 @@ my_ObjectiveT_diff(braid_App            app,
 
    if ( index > 0 )
    {
-      /* Transposed derivative of objectiveT wrt u times f_bar */
-      ddu[0] = -2. * deltaT * u->values[0] * f_bar;
-      ddu[1] = -2. * deltaT * u->values[1] * f_bar;
+      /* Transposed derivative of objectiveT wrt u times J_bar */
+      ddu[0] = -2. * deltaT * u->values[0] * J_bar;
+      ddu[1] = -2. * deltaT * u->values[1] * J_bar;
 
-      /* Transposed derivative of objective wrt design times f_bar */
-      ddesign = 2. * deltaT * app->gamma * app->design[index-1] * f_bar;
+      /* Transposed derivative of objective wrt design times J_bar */
+      ddesign = 2. * deltaT * app->gamma * app->design[index-1] * J_bar;
 
       /* Update u_bar and gradient */
       u_bar->values[0]       += ddu[0];

@@ -228,6 +228,7 @@ my_BufUnpack(braid_App          app,
    return 0;
 }
 
+
 /* Evaluate the time-dependent summand of the discretized objective function */
 int 
 my_ObjectiveT(braid_App              app,
@@ -235,13 +236,19 @@ my_ObjectiveT(braid_App              app,
               braid_ObjectiveStatus  ostatus,
               double                *objectiveT_ptr)
 {
-   /* 1/N * f(u(t),lambda) = 1/N * u(t)**2 */
-   double objT = 1. / (app->ntime) * (u->value) * (u->value);
+   double objT;
+   int    ntime;
+
+   /* Get the total number of time-steps */
+   braid_ObjectiveStatusGetNTPoints(ostatus, &ntime);
+
+   /* Evaluate the local objective: 1/N * u(t)**2 */
+   objT = 1. / ntime * (u->value) * (u->value);
 
    *objectiveT_ptr = objT;
-   
    return 0;
 }
+
 
 /* Evaluate the time-independent part of the objective function */
 int
@@ -250,14 +257,15 @@ my_PostprocessObjective(braid_App   app,
                         double     *postprocess
                         )
 {
-   double J;
+   double F;
 
    /* Tracking-type functional */
-   J  = 1./2. * pow(sum_objective - app->target,2);
+   F  = 1./2. * pow(sum_objective - app->target,2);
+   
    /* Regularization term */
-   J += (app->gamma) / 2. * pow(app->design,2);
+   F += (app->gamma) / 2. * pow(app->design,2);
 
-   *postprocess = J;
+   *postprocess = F;
 
    return 0;
 }
@@ -265,21 +273,19 @@ my_PostprocessObjective(braid_App   app,
 int
 my_PostprocessObjective_diff(braid_App   app,
                              double      sum_objective,
-                             double     *sum_objective_bar
+                             double     *F_bar
                              )
 {
-   double J_bar = 0;
 
    /* Derivative of tracking type function */
-   J_bar = sum_objective - app->target;
+   *F_bar = sum_objective - app->target;
 
    /* Derivative of regularization term */
    app->gradient = (app->gamma) * (app->design);
 
-   *sum_objective_bar = J_bar;
-
    return 0;
 }
+
 
 /* Transposed partial derivatives of objectiveT times f_bar */
 int
@@ -289,11 +295,15 @@ my_ObjectiveT_diff(braid_App            app,
                   braid_Real            f_bar,
                   braid_ObjectiveStatus ostatus)
 {
+   int    ntime;
    double ddu;      /* Derivative wrt u */
    double ddesign;  /* Derivative wrt design */
 
+   /* Get the total number of time-steps */
+   braid_ObjectiveStatusGetNTPoints(ostatus, &ntime);
+
    /* Partial derivative with respect to u times f_bar */
-   ddu = 2. / (app->ntime) * u->value * f_bar;
+   ddu = 2. / ntime * u->value * f_bar;
 
    /* Partial derivative with respect to design times f_bar*/
    ddesign = 0.0 * f_bar;
@@ -304,7 +314,6 @@ my_ObjectiveT_diff(braid_App            app,
 
    return 0;
 }
-
 
 /* Transposed partial derivatives of the step routine times u_bar */
 int
