@@ -361,7 +361,7 @@ typedef braid_Int
 (*braid_PtFcnObjectiveTDiff)(braid_App             app,       /**< user-defined _braid_App structure */
                              braid_Vector          u,         /**< primal vector */
                              braid_Vector          u_bar,     /**< adjoint vector */
-                             braid_Real            f_bar,     /**< contains the AD-seed for the costfunction */
+                             braid_Real            f_bar,     /**< scalar input, multiply the derivative with this  */
                              braid_ObjectiveStatus ostatus    /**< query this struc for information (e.g. t, tindex, etc) */
                             );
 
@@ -382,7 +382,7 @@ typedef braid_Int
 typedef braid_Int
 (*braid_PtFcnPostprocessObjective)(braid_App    app,        /**< user-defined _braid_App structure */
                                    braid_Real   sum_obj,    /**< Sum of the objective function values over time */
-                                   braid_Real  *post_ptr    /**< output: Postprocessed objective , e.g. tracking type function */
+                                   braid_Real  *F_bar       /**< output: Postprocessed objective , e.g. tracking type function */
                                    );
 
 /**
@@ -877,7 +877,18 @@ braid_Int
 braid_SetSeqSoln(braid_Core  core,          /**< braid_Core (_braid_Core) struct*/
                  braid_Int   seq_soln       /**< 1: Init with sequential time stepping soln, 0: Use user's Init()*/
                  );
-/** @}*/
+
+
+
+/** \defgroup adjointinterface Adjoint and Optimization Interface routines
+ *  \ingroup userinterface
+ *
+ *  These are interface routines for adjoint sensitivity computation and optimization, e.g., routines to initialize and 
+ *  run an adjoint XBraid solver as well as drive and control an optimization iteration. 
+ *
+ *  @{
+ */
+
 
 
 /**
@@ -991,7 +1002,6 @@ braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
                       braid_Real  *rnorm_adj   /**< output, holds adjoint residual norm of last iteration */
                      );
 
-
 /**
  * Runs a basic optimization cycle. 
  * See source code in braid_optim.c for more information.
@@ -1059,6 +1069,9 @@ braid_Int
 braid_GetMyID(braid_Core core,           /**< braid_Core (_braid_Core) struct */
               braid_Int *myid_ptr        /**< output: rank of the processor. */
              );
+
+
+/** @}*/
 
 #ifdef __cplusplus
 }
