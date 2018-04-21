@@ -22,6 +22,7 @@ braid_DriveOptimization(braid_Core                   core,    /**< braid_Core (_
    braid_Real gnorm_tol, tol;
    braid_Int  rtol;
    braid_Int  myid;
+   braid_Real stepsize;
 
    /* Get processor id */
    braid_GetMyID(core, &myid);
@@ -34,6 +35,9 @@ braid_DriveOptimization(braid_Core                   core,    /**< braid_Core (_
 
    /* Check if this is relative or absolute criterion */
    braid_IsRelTolOptim(core, &rtol);
+
+   /* Get the initial stepsize */
+   braid_GetStepsize(core, &stepsize);
 
    /* Optimization iteration */
    for (iter = 0; iter < maxiter; iter++)
@@ -77,7 +81,7 @@ braid_DriveOptimization(braid_Core                   core,    /**< braid_Core (_
       }
 
       /* Design update */
-      design_update(app);
+      design_update(app, stepsize);
    }
   
 

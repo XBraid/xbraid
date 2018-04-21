@@ -361,9 +361,10 @@ my_ResetGradient(braid_App app)
 }
 
 int
-my_DesignUpdate(braid_App app )
+my_DesignUpdate(braid_App app, 
+                double    stepsize )
 {
-   app->design -= app->stepsize * app->gradient;
+   app->design -= stepsize * app->gradient;
 
    return 0;
 }
@@ -452,9 +453,12 @@ int main (int argc, char *argv[])
    braid_SetAbsTolAdjoint(core, 1e-6);      /* Tolerance on adjoint residual norm */
 
 
-   /* Set some optimization parameters */
+   /* Set maximum number of optimization iterations */
    braid_SetMaxOptimIter(core, 100);
+   /* Set absolute stopping criterion for the norm of the gradient */
    braid_SetAbsTolOptim(core, 1e-6);
+   /* Set initial step size */
+   braid_SetStepsize(core, 6.0);
 
    /* Start the optimization */
    braid_DriveOptimization(core, app, my_DesignUpdate, my_GradientNorm, my_GradientAllreduce);

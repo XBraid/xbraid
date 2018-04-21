@@ -943,9 +943,10 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
    braid_Int   rtol_adj       = 1;
    braid_Int   rtol_gnorm     = 1;
    braid_Int   maxoptimiter   = 500;
+   braid_Real  stepsize       = 1.0;
 
    /* Allocate memory for the optimization structure */
-   optim = (braid_Optim) malloc(11*sizeof(braid_Real) + 3*sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE));
+   optim = (braid_Optim) malloc(12*sizeof(braid_Real) + 3*sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE));
 
    /* Set optimization variables */
    optim->adjoints       = NULL;    /* will be allocated in InitAdjointVars() */
@@ -964,6 +965,7 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
    optim->rnorm          = braid_INVALID_RNORM;
    optim->rnorm0         = braid_INVALID_RNORM;
    optim->maxoptimiter   = maxoptimiter;
+   optim->stepsize       = stepsize;
 
    /* Store the optim structure in the core */
    _braid_CoreElt( *core_ptr, optim) = optim; 
@@ -2053,4 +2055,31 @@ braid_GetMyID(braid_Core core,
    return _braid_error_flag;
 }           
 
-                  
+braid_Int
+braid_SetStepsize(braid_Core core, 
+                  braid_Real stepsize)
+
+{
+   if ( !(_braid_CoreElt(core, adjoint)) )
+   {
+      return _braid_error_flag;
+   }  
+
+   _braid_CoreElt(core, optim)->stepsize = stepsize;
+    
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_GetStepsize(braid_Core core, 
+                  braid_Real *stepsize)
+{
+   if ( !(_braid_CoreElt(core, adjoint)) )
+   {
+      return _braid_error_flag;
+   }  
+
+   *stepsize = _braid_CoreElt(core, optim)->stepsize;
+    
+   return _braid_error_flag;
+}   

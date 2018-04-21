@@ -405,7 +405,8 @@ typedef braid_Int
  * Update the design variable
  */
 typedef braid_Int
-(*braid_PtFcnDesignUpdate)(braid_App app );     /**< user-defined _braid_App structure */
+(*braid_PtFcnDesignUpdate)(braid_App  app,         /**< user-defined _braid_App structure */
+                           braid_Real stepsize);   /**< step size for updating the design */  
 
 /**
  *  Collect gradient information from all processors
@@ -879,6 +880,15 @@ braid_SetSeqSoln(braid_Core  core,          /**< braid_Core (_braid_Core) struct
                  );
 
 
+/**
+ * Get the processor's rank.
+ */                       
+braid_Int
+braid_GetMyID(braid_Core core,           /**< braid_Core (_braid_Core) struct */
+              braid_Int *myid_ptr        /**< output: rank of the processor. */
+             );
+
+
 
 /** \defgroup adjointinterface Adjoint and Optimization Interface routines
  *  \ingroup userinterface
@@ -1062,14 +1072,14 @@ braid_IsRelTolOptim(braid_Core core,            /**< braid_Core (_braid_Core) st
                     braid_Int *rel_tol          /**< output: 1 if optimization tolerance is relative, 0 if it is absolute. */
                   );
 
-/**
- * Get the processor's rank.
- */                       
 braid_Int
-braid_GetMyID(braid_Core core,           /**< braid_Core (_braid_Core) struct */
-              braid_Int *myid_ptr        /**< output: rank of the processor. */
-             );
+braid_SetStepsize(braid_Core core,        /**< braid_Core (_braid_Core) struct */
+                  braid_Real stepsize);   /**< Set the initial step size for design updates in DriveOptimization() */
 
+
+braid_Int
+braid_GetStepsize(braid_Core core,        /**< braid_Core (_braid_Core) struct */
+                  braid_Real *stepsize);  /**< output: initial stepsize for design updates */
 
 /** @}*/
 
