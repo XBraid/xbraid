@@ -74,7 +74,7 @@ int main (int argc, char *argv[])
    /* Define some optimization parameters */
    gamma    = 0.005;          /* Relaxation parameter in the objective function */
    stepsize = 50.0;           /* Step size for design updates */
-   maxiter  = 1;            /* Maximum number of optimization iterations */
+   maxiter  = 300;            /* Maximum number of optimization iterations */
    gtol     = 1e-6;           /* Stopping criterion on the gradient norm */
    
 

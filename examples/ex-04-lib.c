@@ -90,7 +90,7 @@ take_step_diff(double *w,
    ddu[1] = w[1] + deltaT * w[0] - deltaT * w[1];
 
    /* derivative with respect to c  */
-   gradientT = -deltaT * w[1];
+   gradientT = deltaT * w[1];
 
    /* Update adjoint */
    w[0] = ddu[0];
@@ -109,15 +109,20 @@ evalObjectiveT_diff(double *w,
                     double  gamma,
                     double  deltaT)
 {
-   double gradientT;
+   double  gradientT;
+   double *ddu = (double*)malloc(2*sizeof(double));
 
    /* derivative with respect to u */
-   w[0] -= 2. * deltaT * u[0];
-   w[1] -= 2. * deltaT * u[1];
+   ddu[0] = 2. * deltaT * u[0];
+   ddu[1] = 2. * deltaT * u[1];
+
+   /* Update the adjoint */
+   w[0] += ddu[0];
+   w[1] += ddu[1];
 
    /* derivative with respect to c */
    gradientT = 2.* deltaT * gamma * design;
-   
+
    return gradientT;
 }
 
@@ -132,11 +137,11 @@ take_adjoint_step(double *w,         /* adjoint variable that gets propagated ba
 {
    double gradientT = 0.0;
 
-   /* transposed derivatives of take_step times w */
-   gradientT += take_step_diff(w, deltaT);
-
    /* transposed derivatives of evalObjectiveT */
    gradientT += evalObjectiveT_diff(w, u, design, gamma, deltaT);
+
+   /* transposed derivatives of take_step times w */
+   gradientT += take_step_diff(w, deltaT);
 
    return gradientT;
 }                 
