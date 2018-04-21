@@ -243,7 +243,7 @@ int
 my_ObjectiveT_diff(braid_App            app,
                   braid_Vector          u,
                   braid_Vector          u_bar,
-                  braid_Real            f_bar,
+                  braid_Real            F_bar,
                   braid_ObjectiveStatus ostatus)
 {
    int    ntime;
@@ -254,10 +254,10 @@ my_ObjectiveT_diff(braid_App            app,
    braid_ObjectiveStatusGetNTPoints(ostatus, &ntime);
 
    /* Partial derivative with respect to u times f_bar */
-   ddu = 2. / ntime * u->value * f_bar;
+   ddu = 2. / ntime * u->value * F_bar;
 
-   /* Partial derivative with respect to design times f_bar*/
-   ddesign = 0.0 * f_bar;
+   /* Partial derivative with respect to design times F_bar */
+   ddesign = 0.0 * F_bar;
 
    /* Update u_bar and gradient */
    u_bar->value  += ddu;
@@ -378,6 +378,7 @@ int main (int argc, char *argv[])
    {
       printf("\n Objective = %1.14e\n Gradient  = %1.14e\n", objective, app->gradient);
    }
+
 
 
    /* Clean up */

@@ -323,7 +323,7 @@ int
 my_ObjectiveT_diff(braid_App            app,
                   braid_Vector          u,
                   braid_Vector          u_bar,
-                  braid_Real            J_bar,
+                  braid_Real            F_bar,
                   braid_ObjectiveStatus ostatus)
 {
    int     index;

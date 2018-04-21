@@ -253,32 +253,32 @@ my_ObjectiveT(braid_App              app,
 /* Evaluate the time-independent part of the objective function */
 int
 my_PostprocessObjective(braid_App   app,
-                        double      sum_objective,
-                        double     *postprocess
+                        double      integral,
+                        double     *postprocess_ptr
                         )
 {
-   double F;
+   double J;
 
    /* Tracking-type functional */
-   F  = 1./2. * pow(sum_objective - app->target,2);
+   J  = 1./2. * pow(integral - app->target,2);
    
    /* Regularization term */
-   F += (app->gamma) / 2. * pow(app->design,2);
+   J += (app->gamma) / 2. * pow(app->design,2);
 
-   *postprocess = F;
+   *postprocess_ptr = J;
 
    return 0;
 }
 
 int
 my_PostprocessObjective_diff(braid_App   app,
-                             double      sum_objective,
-                             double     *F_bar
+                             double      integral,
+                             double     *F_bar_ptr
                              )
 {
 
    /* Derivative of tracking type function */
-   *F_bar = sum_objective - app->target;
+   *F_bar_ptr = integral - app->target;
 
    /* Derivative of regularization term */
    app->gradient = (app->gamma) * (app->design);
@@ -287,12 +287,12 @@ my_PostprocessObjective_diff(braid_App   app,
 }
 
 
-/* Transposed partial derivatives of objectiveT times f_bar */
+/* Transposed partial derivatives of objectiveT times F_bar */
 int
 my_ObjectiveT_diff(braid_App            app,
                   braid_Vector          u,
                   braid_Vector          u_bar,
-                  braid_Real            f_bar,
+                  braid_Real            F_bar,
                   braid_ObjectiveStatus ostatus)
 {
    int    ntime;
@@ -302,11 +302,11 @@ my_ObjectiveT_diff(braid_App            app,
    /* Get the total number of time-steps */
    braid_ObjectiveStatusGetNTPoints(ostatus, &ntime);
 
-   /* Partial derivative with respect to u times f_bar */
-   ddu = 2. / ntime * u->value * f_bar;
+   /* Partial derivative with respect to u times F_bar */
+   ddu = 2. / ntime * u->value * F_bar;
 
-   /* Partial derivative with respect to design times f_bar*/
-   ddesign = 0.0 * f_bar;
+   /* Partial derivative with respect to design times F_bar*/
+   ddesign = 0.0 * F_bar;
 
    /* Update u_bar and gradient */
    u_bar->value  += ddu;

@@ -343,16 +343,15 @@ typedef braid_Int
 
 
 /**
- * Differentiated time-stepping routine 
+ * Evaluate the local objective function at time t 
  **/
 typedef braid_Int
-(*braid_PtFcnStepDiff)(braid_App        app,      /**< user-defined _braid_App structure */
-                     //  braid_Vector     ustop,  /**< input, u vector at *tstop* */
-                     //  braid_Vector     fstop,  /**< input, right-hand-side at *tstop* */
-                       braid_Vector     u,         /**< primal vector */
-                       braid_Vector     u_bar,     /**< adjoint vector */
-                       braid_StepStatus status     /**< query this struct for info about u (e.g., tstart and tstop), allows for steering (e.g., set rfactor) */ 
-                      );
+(*braid_PtFcnObjectiveT)(braid_App             app,              /**< user-defined _braid_App structure */
+                         braid_Vector          u,                /**< primal vector */
+                         braid_ObjectiveStatus ostatus,           /**< status structure for querying time, index, etc. */
+                         braid_Real           *objectiveT_ptr    /**< output: objective function at current time */
+                        );
+
 
 /**
  * Differentiated objective at time t 
@@ -361,37 +360,39 @@ typedef braid_Int
 (*braid_PtFcnObjectiveTDiff)(braid_App             app,       /**< user-defined _braid_App structure */
                              braid_Vector          u,         /**< primal vector */
                              braid_Vector          u_bar,     /**< adjoint vector */
-                             braid_Real            f_bar,     /**< scalar input, multiply the derivative with this  */
+                             braid_Real            F_bar,     /**< scalar input, multiply the derivative with this  */
                              braid_ObjectiveStatus ostatus    /**< query this struc for information (e.g. t, tindex, etc) */
                             );
 
 /**
- * Evaluate the local objective function at time t 
+ * Differentiated time-stepping routine 
  **/
 typedef braid_Int
-(*braid_PtFcnObjectiveT)(braid_App             app,              /**< user-defined _braid_App structure */
-                         braid_Vector          u,                /**< primal vector */
-                         braid_ObjectiveStatus ostatus,           /**< status structure for querying time, index, etc. */
-                         braid_Real           *objectiveT_ptr    /**< output: objective function f(u(t)) at current time */
-                        );
+(*braid_PtFcnStepDiff)(braid_App        app,       /**< user-defined _braid_App structure */
+                     //  braid_Vector     ustop,   /**< input, u vector at *tstop* */
+                     //  braid_Vector     fstop,   /**< input, right-hand-side at *tstop* */
+                       braid_Vector     u,         /**< primal vector */
+                       braid_Vector     u_bar,     /**< adjoint vector */
+                       braid_StepStatus status     /**< query this struct for info about u (e.g., tstart and tstop) */ 
+                      );
 
 /**
  * This function can be used to postprocess the time-averaged objective function 
  * E.g. for inverse design problems: Choose a tracking-type objective function and/or add relaxation term
  **/
 typedef braid_Int
-(*braid_PtFcnPostprocessObjective)(braid_App    app,        /**< user-defined _braid_App structure */
-                                   braid_Real   sum_obj,    /**< Sum of the objective function values over time */
-                                   braid_Real  *F_bar       /**< output: Postprocessed objective , e.g. tracking type function */
+(*braid_PtFcnPostprocessObjective)(braid_App    app,             /**< user-defined _braid_App structure */
+                                   braid_Real   sum_obj,         /**< Sum of the objective function values over time */
+                                   braid_Real  *postprocess_ptr  /**< output: Postprocessed objective , e.g. tracking type function */
                                    );
 
 /**
  * Differentiated Postprocessing function 
  **/
 typedef braid_Int
-(*braid_PtFcnPostprocessObjective_diff)(braid_App    app,          /**< user-defined _braid_App structure */
-                                        braid_Real   sum_obj,      /**< Sum of the objective function values over time */
-                                        braid_Real  *sum_obj_bar   /**< output: derivative of postprocessing objective */
+(*braid_PtFcnPostprocessObjective_diff)(braid_App    app,        /**< user-defined _braid_App structure */
+                                        braid_Real   sum_obj,    /**< Sum of the objective function values over time */
+                                        braid_Real  *F_bar_ptr   /**< output: derivative of postprocessing objective */
                                    );
 
 /**
