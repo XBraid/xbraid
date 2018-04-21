@@ -74,7 +74,7 @@ int main (int argc, char *argv[])
    /* Define some optimization parameters */
    gamma    = 0.005;          /* Relaxation parameter in the objective function */
    stepsize = 50.0;           /* Step size for design updates */
-   maxiter  = 300;            /* Maximum number of optimization iterations */
+   maxiter  = 1;            /* Maximum number of optimization iterations */
    gtol     = 1e-6;           /* Stopping criterion on the gradient norm */
    
 
@@ -127,21 +127,20 @@ int main (int argc, char *argv[])
       /* Main backward adjoint time-stepping loop */
       for (ts = ntime; ts >= 1; ts--)
       {
-         /* Take adjoint step */
-         take_adjoint_step(w, u0[ts-1], u1[ts-1], deltaT);
+         /* Restore the state variable */
+         u[0] = u0[ts-1];
+         u[1] = u1[ts-1];
 
-         /* Evaluate the gradient */
-         gradient[ts-1] = evalGradientT(w, design[ts-1], deltaT, gamma);
+         /* Take adjoint step and evaluate gradient */
+         gradient[ts-1] = take_adjoint_step(w, u, design[ts-1], gamma, deltaT);
       }
 
       /* Compute norm of gradient */
       gnorm = compute_sqnorm(gradient, ntime);
       gnorm = sqrt(gnorm);
 
-
       /* Output */
       printf("%3d  %1.14e  %1.14e\n", iter, objective, gnorm);
-
 
       /* Check optimization convergence */
       if (gnorm < gtol)

@@ -40,7 +40,7 @@
  *               with initial condition u_1(0) = 0, u_2(0) = -1
  *               and piecewise constant control c(t).  
  *
- *               Implements simple steepest-descent optimization iteration
+ *               Implements a steepest-descent optimization iteration
  *               using fixed step size for design updates.   
  **/
 
@@ -61,7 +61,7 @@
 typedef struct _braid_App_struct
 {
    int     myid;        /* Rank of the processor */
-   double *design;      /* Holds the vector of time-dependent design (i.e. control) variable */
+   double *design;      /* Holds time-dependent design (i.e. control) vector */
    double *gradient;    /* Holds the gradient vector */
    double  gamma;       /* Relaxation parameter for objective function */
    int     ntime;       /* Total number of time-steps */
@@ -71,7 +71,7 @@ typedef struct _braid_App_struct
 /* Define the state vector at one time-step */
 typedef struct _braid_Vector_struct
 {
-   double *values;     /* Holds the R^2 state vector (x_1, x_2) */
+   double *values;     /* Holds the R^2 state vector (u_1, u_2) */
 
 } my_Vector;
 
@@ -293,6 +293,7 @@ my_ObjectiveT(braid_App              app,
    double design;
    int    index;
    double deltaT = 1./app->ntime;
+   double gamma  = app->gamma;
 
    /* Get the time index*/
    braid_ObjectiveStatusGetTIndex(ostatus, &index);
@@ -300,11 +301,11 @@ my_ObjectiveT(braid_App              app,
    /* Evaluate the objective function after the first step */
    if ( index > 0)
    {
-      /* Get the current design */
+      /* Get the design from the app */
       design = app->design[index-1];
 
       /* Evaluate objective */
-      objT = evalObjectiveT( u->values, design, deltaT, app->gamma);
+      objT = evalObjectiveT( u->values, design, deltaT, gamma);
    }
    else
    {
@@ -317,7 +318,7 @@ my_ObjectiveT(braid_App              app,
 }
 
 
-/* Transposed partial derivatives of time-dependent objective times J_bar */ 
+/* Transposed partial derivatives of objectiveT */ 
 int
 my_ObjectiveT_diff(braid_App            app,
                   braid_Vector          u,
@@ -326,36 +327,26 @@ my_ObjectiveT_diff(braid_App            app,
                   braid_ObjectiveStatus ostatus)
 {
    int     index;
-   double  ddesign;   /* Derivative wrt design */
-   double *ddu;       /* Derivative wrt state */
+   double  design;
+   double  gamma   = app->gamma;
    double  deltaT  = 1. / app->ntime;
    
-   ddu = (double*) malloc(2*sizeof(double));
-
-   /*  index > 0 */
+   /* Get the design from the app */
    braid_ObjectiveStatusGetTIndex(ostatus, &index);
 
    if ( index > 0 )
    {
-      /* Transposed derivative of objectiveT wrt u times J_bar */
-      ddu[0] = -2. * deltaT * u->values[0] * J_bar;
-      ddu[1] = -2. * deltaT * u->values[1] * J_bar;
+      /* Get the design from the app */
+      design = app->design[index-1];
 
-      /* Transposed derivative of objective wrt design times J_bar */
-      ddesign = 2. * deltaT * app->gamma * app->design[index-1] * J_bar;
-
-      /* Update u_bar and gradient */
-      u_bar->values[0]       += ddu[0];
-      u_bar->values[1]       += ddu[1];
-      app->gradient[index-1] += ddesign;
+      /* Partial derivatives of objective */
+      app->gradient[index-1] += evalObjectiveT_diff(u_bar->values, u->values, design, gamma, deltaT);
    }
    
-   free(ddu);
-
    return 0;
 }
 
-/* Transposed partial derivatives of the step routine times u_bar */
+/* Transposed partial derivatives of step times u_bar */
 int
 my_Step_diff(braid_App              app,
                 // braid_Vector     ustop,
@@ -365,31 +356,17 @@ my_Step_diff(braid_App              app,
                 braid_StepStatus    status)
 {
 
-   double  tstop, tstart, deltaT;
+   double  tstop, tstart;
    int     tidx;
-   double *ddu;      /* Derivative wrt state */
-   double  ddesign;  /* Derivative wrt design */
 
    /* Get time and time index  */
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
    braid_StepStatusGetTIndex(status, &tidx);
-   deltaT = tstop - tstart;
+   double deltaT = tstop - tstart;
 
-   /* Transposed derivative of step wrt u times u_bar */
-   ddu = (double*) malloc(2*sizeof(double));
-   ddu[0] = u_bar->values[0];
-   ddu[1] = u_bar->values[1] + deltaT * u_bar->values[0] - deltaT * u_bar->values[1];
+   /* transposed derivative of take_step times u_bar */
+   app->gradient[tidx] += take_step_diff(u_bar->values, deltaT);
 
-   /* Transposed derivative of step wrt design times u_bar */
-   ddesign = - deltaT * u_bar->values[1];
-
-   /* Update u_bar and gradient */
-   u_bar->values[0]     = ddu[0];      /* use "=" here, not += ! */
-   u_bar->values[1]     = ddu[1];      /* use "=" here, not += ! */
-   app->gradient[tidx] += ddesign;
-
-
-   free(ddu);
    return 0;
 }
 
@@ -428,9 +405,9 @@ int main (int argc, char *argv[])
    double  *gradient; 
    double   stepsize;
    double   mygnorm, gnorm;
+   double   gtol;
    double   rnorm, rnorm_adj;
    int      nreq;
-   double   gtol;
 
    /* Define time domain */
    ntime  = 20;              /* Total number of time-steps */
@@ -438,10 +415,10 @@ int main (int argc, char *argv[])
    tstop  = 1.0;             /* End of time domain*/
 
    /* Define some optimization parameters */
-   gamma    = 0.005;          /* Relaxation parameter in the objective function */
-   stepsize = 50.0;           /* Step size for design updates */
-   maxiter  = 300;            /* Maximum number of optimization iterations */
-   gtol     = 1e-6;           /* Stopping criterion on the gradient norm */
+   gamma    = 0.005;         /* Relaxation parameter in the objective function */
+   stepsize = 50.0;          /* Step size for design updates */
+   maxiter  = 500;           /* Maximum number of optimization iterations */
+   gtol     = 1e-6;          /* Stopping criterion on the gradient norm */
 
    /* Initialize optimization */
    design   = (double*) malloc( ntime*sizeof(double) );    /* design vector (control c) */
@@ -467,10 +444,10 @@ int main (int argc, char *argv[])
    /* Initialize XBraid */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app, my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
 
-  /* Initialize adjoint-based gradient computation */
+  /* Initialize XBraid_Adjoint */
    braid_InitAdjoint( my_ObjectiveT, my_ObjectiveT_diff, my_Step_diff, my_ResetGradient, &core);
 
-   /* Set some XBraid parameters */
+   /* Set some XBraid(_Adjoint) parameters */
    braid_SetMaxLevels(core, 2);
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 0);
@@ -488,16 +465,18 @@ int main (int argc, char *argv[])
    for (iter = 0; iter < maxiter; iter++)
    {
 
-      /* XBraid iterations: Parallel-in-time simulation and gradient computation */
+      /* Parallel-in-time simulation and gradient computation */
       braid_Drive(core);
 
-      /* Get objective function value and state and adjoint residual norms from XBraid */
+      /* Get objective function value */
       nreq = -1;
       braid_GetObjective(core, &objective);
+
+      /* Get the state and adjoint residual norms */
       braid_GetRNorms(core, &nreq, &rnorm);
       braid_GetRNormAdjoint(core, &rnorm_adj);
 
-      /* Compute norm of the gradient */
+      /* Compute the norm of the gradient */
       mygnorm = compute_sqnorm(app->gradient, ntime);
       MPI_Allreduce(&mygnorm, &gnorm, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
       gnorm = sqrt(gnorm);

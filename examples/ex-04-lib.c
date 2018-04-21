@@ -77,46 +77,69 @@ evalObjectiveT(double* u,        /* state at current time */
  * Routines for solving the adjoint equation 
  *--------------------------------------------------------------------------*/
 
-/* Advance an adjoint variable backwards in time */
-void 
-take_adjoint_step(double *w,      /* adjoint at current time */
-                  double  u0,      /* 1st component of state */
-                  double  u1,      /* 2nd omponent of state */
-                  double  deltaT ) /* time step size */
+/* Compute the transposed partial derivative of take_step multiplied with current adjoint w */
+double
+take_step_diff(double *w, 
+               double  deltaT)
 {
-   double dw0, dw1;
+   double *ddu = (double*)malloc(2*sizeof(double));
+   double gradientT;
+
+   /* derivative with respect to u  */
+   ddu[0] = w[0];
+   ddu[1] = w[1] + deltaT * w[0] - deltaT * w[1];
+
+   /* derivative with respect to c  */
+   gradientT = -deltaT * w[1];
+
+   /* Update adjoint */
+   w[0] = ddu[0];
+   w[1] = ddu[1];
+
+   free(ddu);
+
+   return gradientT;
+}            
+
+/* Partial derivative of the objective */
+double
+evalObjectiveT_diff(double *w, 
+                    double *u, 
+                    double  design,
+                    double  gamma,
+                    double  deltaT)
+{
+   double gradientT;
+
+   /* derivative with respect to u */
+   w[0] -= 2. * deltaT * u[0];
+   w[1] -= 2. * deltaT * u[1];
+
+   /* derivative with respect to c */
+   gradientT = 2.* deltaT * gamma * design;
    
-   /* Transposed derivative of step wrt u times w */
-   dw0  = w[0];
-   dw1  = w[1] + deltaT * w[0] - deltaT * w[1];
-
-   /* Transposed derivative of the objective wrt u */
-   dw0 -= 2. * deltaT * u0;
-   dw1 -= 2. * deltaT * u1;
-
-   /* Update */
-   w[0] = dw0;
-   w[1] = dw1;
+   return gradientT;
 }
 
-
-/* Evaluate the gradient at the current time */
-double 
-evalGradientT(double* w,       /* adjoint at current time */
-              double  design,  /* design  at current time */
-              double  deltaT,  /* time-step size */
-              double  gamma )  /* relaxation parameter */
+/* Advance an adjoint variable backwards in time 
+ * and evaluate local gradient at that time step */
+double
+take_adjoint_step(double *w,         /* adjoint variable that gets propagated backwards */
+                  double *u,         /* state variable at the current time */
+                  double  design,    /* design variable at the current time */
+                  double  gamma,     /* relaxation parameter in the objective function */
+                  double  deltaT)    /* time step size */
 {
-   double gradient;
+   double gradientT = 0.0;
 
-   /* Transposed derivative of the step wrt design times w */
-   gradient = - deltaT * w[1];
+   /* transposed derivatives of take_step times w */
+   gradientT += take_step_diff(w, deltaT);
 
-   /* Transposed derivative of objective wrt design */
-   gradient += 2.* deltaT * gamma * design;
+   /* transposed derivatives of evalObjectiveT */
+   gradientT += evalObjectiveT_diff(w, u, design, gamma, deltaT);
 
-   return gradient;
-}
+   return gradientT;
+}                 
 
 
 /*--------------------------------------------------------------------------
