@@ -534,322 +534,6 @@ The goal here is to show more advanced features of XBraid.
    - ``examples/ex-01-refinement.c``: same as ex-01.c, but adds the refinement feature
      of XBraid. The refinement can be arbitrary or based on error estimate.
 
-# Adjoint Sensitivites for the Simplest Example {#exampleoneadjoint}
-``examples/ex-01-adjoint.c`` extends the simple scalar ODE example in ``ex-01.c`` for computing adjoint-based sensitivities. 
-
-Talk about:
-- design variable \f$\lambda\f$
-- objective function 
-\f[ J(u,\lambda) = \int_0^T \frac{1}{T}  \| u(t) \|^2 dt \f]. 
-
-
-- The user's `App` structure now holds two additional elements: the design variable and the gradient. 
-         
-         typedef struct _braid_App_struct
-         {
-            int       rank;
-            double    design;
-            double    gradient;
-         } my_App;
-
-
-- The user's `Step` routine now queries the app to get the design:
-
-         int
-         my_Step(braid_App        app,
-                 braid_Vector     ustop,
-                 braid_Vector     fstop,
-                 braid_Vector     u,
-                 braid_StepStatus status)
-         {
-            double tstart;             /* current time */
-            double tstop;              /* evolve to this time*/
-            braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
-
-            /* Get the design variable from the app */
-            double lambda = app->design;
-
-            /* Use backward Euler to propagate solution */
-            (u->value) = 1./(1. - lambda * (tstop-tstart))*(u->value);
-            
-            return 0;
-         }  
-
-In addition to the user's routines in in `examples/ex-01.c`, the user must define the following routines:
-
-1. **ObjectiveT**: This function evaluates the time-dependent part of the objective function at a local time \f$t_i\f$. 
-
-         int 
-         my_ObjectiveT(braid_App              app,
-                       braid_Vector           u,
-                       braid_ObjectiveStatus  ostatus,
-                       double                *objectiveT_ptr)
-         {
-            /* Get the total number of time-steps */
-            braid_ObjectiveStatusGetNTPoints(ostatus, &ntime);
-
-            /* Evaluate the local objective: 1/N u(t)^2 */
-            objT = 1. / ntime * (u->value) * (u->value);
-
-            *objectiveT_ptr = objT;
-            return 0;
-         }
-
-   The `ObjectiveStatus` can be queried for information about the current status of XBraid (time, time-index, number of time-steps, current iteration number, etc.)
-   XBraid_Adjoint calls the `ObjectiveT` function on the finest time-grid level during the down-cycle of the multig-grid algorithm and adds the value to the global objective function value.  
-
-2. **ObjectiveT_diff**: This provide XBraid with the transposed partial derivatives of the `ObjectiveT` routine multiplied with the scalar input `F_bar`. I.e. if `ObjectiveT` evaluates a function \f[ f(u_i,\rho) \f] then `ObjectiveT_diff` computes
-\f[  
-   \bar u_i += \frac{\partial f(u_i, \lambda)}{\partial u_i}^T \bar F 
-\f]
-and updates the gradient (stored in the `app`) with
-\f[
-   \bar \rho += \frac{\partial f(u_i, \lambda)}{\partial \rho}^T \bar F
-\f]
-The scalar input \f$\bar F\f$ is \f$1.0\f$ for this simple example, but might contain sensitivity information in cases where the time-integral part of the objective function is further modified (see e.g. `examples/ex-01-optimization.c`). 
-
-         int
-         my_ObjectiveT_diff(braid_App            app,
-                           braid_Vector          u,
-                           braid_Vector          u_bar,
-                           braid_Real            F_bar,
-                           braid_ObjectiveStatus ostatus)
-         {
-            int    ntime;
-            double ddu;      /* Derivative wrt u */
-            double ddesign;  /* Derivative wrt design */
-
-            /* Get the total number of time-steps */
-            braid_ObjectiveStatusGetNTPoints(ostatus, &ntime);
-
-            /* Partial derivative with respect to u times F_bar */
-            ddu = 2. / ntime * u->value * F_bar;
-
-            /* Partial derivative with respect to design times F_bar*/
-            ddesign = 0.0 * F_bar;
-
-            /* Update u_bar and gradient */
-            u_bar->value  += ddu;
-            app->gradient += ddesign;
-
-            return 0;
-         }
-   In this simple example, the local objective at one time-step does not depend explicitely on the design, therefore, the gradient update is zero. See ``examples/ex-01-optimization.c`` or ``examples/ex-04.c`` for local objective functions that incorporate the design. 
-
-3. **Step_diff**: This function computes transposed partial derivatives of the `Step` routine multiplied with the vector `u_bar`. I.e. if `Step` performes
-\f[
-   u_{i+1} = \Phi(u_i, \rho)
-\f]
-then `Step_diff` updates
-\f[
-   \bar u_{i+1} = \frac{\partial \Phi(u_i, \rho)}{\partial u_i}^T\bar u_i
-\f] (note the `=` instead of `+=`) and updates the gradient in the `app` with
-\f[
-   \bar \rho += \frac{\partial \Phi(u_i, \rho)}{\partial \rho}^T\bar u_i
-\f]
-
-         int
-         my_Step_diff(braid_App              app,
-                         // braid_Vector     ustop,
-                         // braid_Vector     fstop,
-                         braid_Vector        u,
-                         braid_Vector        u_bar,
-                         braid_StepStatus    status)
-         {
-
-            /* Get the time step size */
-            double tstop, tstart, deltat;
-            braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
-            deltat = tstop - tstart;
-
-            double ddu;      /* Derivative wrt u */
-            double ddesign;  /* Derivative wrt design */
-
-            /* Get the design from the app */
-            double lambda = app->design;
-
-            /* Transposed derivative of step wrt u times u_bar */
-            ddu = 1./(1. - lambda * deltat) * (u_bar->value);
-          
-            /* Transposed derivative of step wrt design times u_bar */
-            ddesign = (deltat * (u->value)) / pow(1. - deltat*lambda,2) * (u_bar->value);
-
-            /* Update u_bar and gradient */
-            u_bar->value      = ddu;              // Make sure to do "=" here, not "+="! 
-            app->gradient    += ddesign;
-
-            return 0;
-         }
-
-4. **ResetGradient**: This routine sets the gradient to zero. XBraid_Adjoint calls this routine before each iteration such that old gradient information is removed properly.
-
-         int 
-         my_ResetGradient(braid_App app)
-         {
-            app->gradient = 0.0;
-            return 0;
-         }
-
-## Running XBraid_Adjoint for this example
-The workflow for computing adjoint sensitivities with XBraid_Adjoint alongside the primal state computation closely follows XBraid's workflow. 
-The user's *main* file will first set up the app structure, holding the additional information on an initial design and zero gradient and call the same `braid_Init(...)` function as before in order to set up XBraid. 
-
-In addition to that, the user then initializes XBraid_Adjoint by calling
-
-        /* Initialize adjoint-based gradient computation */
-         braid_InitAdjoint( my_ObjectiveT, my_ObjectiveT_diff, my_Step_diff, my_ResetGradient, &core);
-
-which passes the additional user routines to XBraid_Adjoint.  
-
-In addition to the usual XBraid options for controlling the multigrid iterations, the adjoint solver's accuracy is set by calling 
-
-      braid_SetAbsTolAdjoint(core, 1e-6);
-
-Other XBraid_Adjoint options are listed in \ref{list_adjoint_options}. 
-
-After that, one call to 
-
-      /* Run simulation and adjoint-based gradient computation */
-      braid_Drive(core);
-
-runs multigrid iterations with additional adjoint sensitivity computations. 
-
-After it finishes, the objective function value can be accessed by calling
-
-      /* Get the objective function value from XBraid */
-      braid_GetObjective(core, &objective);
-
-Further, the gradient stored in the `app` holds the gradient information \f$ dJ/d\rho \f$. As this information is local to all the time-processors, the user is responsible for summing up the gradients from all time-processors, if necessary. This usually involves an `MPI_Allreduce` call for the gradient as in 
-
-      /* Collect sensitivities from all processors */
-      double mygradient = app->gradient;
-      MPI_Allreduce(&mygradient, &(app->gradient), 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD); 
-
-
-# Optimization with the Simplest Example {#exampleoneoptimization}
-``examples/ex-01-optimization.c`` implements a simple optimization iteration for solving an inverse design problem for the simple scalar ODE example:
-
-\f[
-  \begin{matrix} \min ~ \frac 1 2 \left( \int_0^T \frac{1}{T}  \| u(t) \|^2 dt - J_{\text{Target}} \right)^2 + \frac{\gamma}{2} \| \lambda \|^2 \\ \\
-  \text{s.t. } \quad \frac{\partial}{\partial t}u(t) = \lambda u(t) \quad \forall t \in (0,T) \quad
-  \end{matrix}
-\f]
-where \f$ J_{\text{Target}} \f$ is a fixed and precomputed target value and \f$\gamma >0 \f$ is a fixed relaxation parameter.  Those fixed values are stored within the `app`. 
-
-In order to compute evaluate the time-independent part of the objective function and its derivative, two additional user routines are neccessary:
-
-1. **PostprocessObjective**: This function evaluates the tracking-type objective function and the regularization term. The input variable `integral` contains the integral-part of the objective and returns the objective that is to be minimized: 
-
-
-         /* Evaluate the time-independent part of the objective function */
-         int
-         my_PostprocessObjective(braid_App  app,
-                              double        integral,
-                              double       *postprocess
-                              )
-         {
-            double F;
-
-            /* Tracking-type functional */
-            F  = 1./2. * pow(integral - app->target,2);
-            
-            /* Regularization term */
-            F += (app->gamma) / 2. * pow(app->design,2);
-
-            *postprocess = F;
-             return 0;
-         }
-
-2. **PostprocessObjective_diff**: This provides XBraid_Adjoint with the partial derivatives of the `PostprocessObjective` routine. I.e. if `PostprocessObjective` computes \f$ F(I) + R(\lambda) \f$, then `PostprocessObjective_diff` returns
-\f[
-   \bar F = \frac{\partial F(I)}{\partial I}
-\f] and updates the gradient with 
-\f[
-   \bar \rho = \frac{\partial R(\lambda)}{\partial \lambda} 
-\f]
-
-         int
-         my_PostprocessObjective_diff(braid_App   app,
-                                      double      integral,
-                                      double     *F_bar
-                                      )
-         {
-
-            /* Derivative of tracking type function */
-            *F_bar = integral - app->target;
-
-            /* Derivative of regularization term */
-            app->gradient = (app->gamma) * (app->design);
-            return 0;
-         }
-
-Those routines are optional for XBraid_Adjoint. Therefore, they need to be passed to XBraid_Adjoint after the initialization with `braid_Init(...)` and `braid_InitAdjoint(...)` in the user's *main* file:
-
-
-      /* Optional: Set the tracking type objective function and derivative */
-      braid_SetPostprocessObjective(core, my_PostprocessObjective);
-      braid_SetPostprocessObjective_diff(core, my_PostprocessObjective_diff);
-
-A simple call to `braid_Drive()` will compute the ODE solution, objective function and its gradient with respect to the design. The user can implement an optimization iteration around that which updates the design using the gradient. 
-
-Alternatively, the user can use (and possibly modify) the optimization cycle in `braid_optimization.c`. In that case, the following routines need to be provided:
-
-1. **DesignUpdate**: This tells XBraid_Adjoint how to update the design using the gradient information and a given stepsize which is the result of a backtracking line-search procedure. Typically, updating the design will involve an approximation to the Hessian of the objective function, e.g. using a BFGS-update scheme. As this is a simple example, only a steepest descent updating scheme is applied here. 
-
-         int
-         my_DesignUpdate(braid_App app,
-                         double    stepsize )
-         {
-            app->design -= stepsize * app->gradient;
-
-            return 0;
-         }
-
-2. **GradientNorm**: This routine return the norm of the gradient. The stopping criterion of the optimization iteration will be based on this.
-
-         int
-         my_GradientNorm(braid_App app,
-                         double    *gnorm_ptr)
-         {
-            *gnorm_ptr = sqrt((app->gradient)*(app->gradient));
-
-            return 0;
-         }
-
-
-3. **GradientAllreduce**: This routine collects sensitivity information from all time-processors and broadcasts the sum back. If the communicator has been split into spacial and temporal one, it should be passed to this function through the app. For time-dependent design variables, summing over all processors might not be necessary since in formation is needed only locally in time. This routine can be left empty in that case. 
-
-         int
-         my_GradientAllreduce(braid_App app)
-         {
-            double mygradient = app->gradient;
-            double gradient; 
-
-            /* Collect sensitivities from all processors and broadcast it */
-            MPI_Allreduce(&mygradient, &gradient, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-            app->gradient = gradient;
-
-            return 0;
-         }
-
-
-In the user's *main* file, some additional options for controlling the optimization iterations can be set: 
-
-      /* Set maximum number of optimization iterations */
-      braid_SetMaxOptimIter(core, 100);
-
-      /* Set absolute stopping criterion for the norm of the gradient */
-      braid_SetAbsTolOptim(core, 1e-6);
-
-      /* Set initial step size */
-      braid_SetStepsize(core, 6.0);
-
-Then, the optimization iteration is started by calling
-
-      /* Start the optimization */
-      braid_DriveOptimization(core, app, my_DesignUpdate, my_GradientNorm, my_GradientAllreduce);
-
-
 # One-Dimensional Heat Equation {#exampletwo}
 
 In this example, we assume familiarity with @ref exampleone.  This example is a
@@ -1204,6 +888,325 @@ Regarding the performance, we can say
 Achieving the best speedup can require some tuning, and it is recommended to read
 [Parallel Time Integration with Multigrid](https://computation.llnl.gov/project/linear_solvers/pubs/mgritPaper-2014.pdf)
 where this 2D heat equation example is explored in much more detail.
+
+
+
+# Simplest XBraid_Adjoint example {#exampleoneadjoint}
+``examples/ex-01-adjoint.c`` extends the simple scalar ODE example in ``ex-01.c`` for computing adjoint-based sensitivities. 
+
+Talk about:
+- design variable \f$\lambda\f$
+- objective function 
+\f[ J(u,\lambda) = \int_0^T \frac{1}{T}  \| u(t) \|^2 dt \f]. 
+
+
+- The user's `App` structure now holds two additional elements: the design variable and the gradient. 
+         
+         typedef struct _braid_App_struct
+         {
+            int       rank;
+            double    design;
+            double    gradient;
+         } my_App;
+
+
+- The user's `Step` routine now queries the app to get the design:
+
+         int
+         my_Step(braid_App        app,
+                 braid_Vector     ustop,
+                 braid_Vector     fstop,
+                 braid_Vector     u,
+                 braid_StepStatus status)
+         {
+            double tstart;             /* current time */
+            double tstop;              /* evolve to this time*/
+            braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+
+            /* Get the design variable from the app */
+            double lambda = app->design;
+
+            /* Use backward Euler to propagate solution */
+            (u->value) = 1./(1. - lambda * (tstop-tstart))*(u->value);
+            
+            return 0;
+         }  
+
+In addition to the user's routines in in `examples/ex-01.c`, the user must define the following routines:
+
+1. **ObjectiveT**: This function evaluates the time-dependent part of the objective function at a local time \f$t_i\f$. 
+
+         int 
+         my_ObjectiveT(braid_App              app,
+                       braid_Vector           u,
+                       braid_ObjectiveStatus  ostatus,
+                       double                *objectiveT_ptr)
+         {
+            /* Get the total number of time-steps */
+            braid_ObjectiveStatusGetNTPoints(ostatus, &ntime);
+
+            /* Evaluate the local objective: 1/N u(t)^2 */
+            objT = 1. / ntime * (u->value) * (u->value);
+
+            *objectiveT_ptr = objT;
+            return 0;
+         }
+
+   The `ObjectiveStatus` can be queried for information about the current status of XBraid (time, time-index, number of time-steps, current iteration number, etc.)
+   XBraid_Adjoint calls the `ObjectiveT` function on the finest time-grid level during the down-cycle of the multig-grid algorithm and adds the value to the global objective function value.  
+
+2. **ObjectiveT_diff**: This provide XBraid with the transposed partial derivatives of the `ObjectiveT` routine multiplied with the scalar input `F_bar`. I.e. if `ObjectiveT` evaluates a function \f[ f(u_i,\rho) \f] then `ObjectiveT_diff` computes
+\f[  
+   \bar u_i += \frac{\partial f(u_i, \lambda)}{\partial u_i}^T \bar F 
+\f]
+and updates the gradient (stored in the `app`) with
+\f[
+   \bar \rho += \frac{\partial f(u_i, \lambda)}{\partial \rho}^T \bar F
+\f]
+The scalar input \f$\bar F\f$ is \f$1.0\f$ for this simple example, but might contain sensitivity information in cases where the time-integral part of the objective function is further modified (see e.g. `examples/ex-01-optimization.c`). 
+
+         int
+         my_ObjectiveT_diff(braid_App            app,
+                           braid_Vector          u,
+                           braid_Vector          u_bar,
+                           braid_Real            F_bar,
+                           braid_ObjectiveStatus ostatus)
+         {
+            int    ntime;
+            double ddu;      /* Derivative wrt u */
+            double ddesign;  /* Derivative wrt design */
+
+            /* Get the total number of time-steps */
+            braid_ObjectiveStatusGetNTPoints(ostatus, &ntime);
+
+            /* Partial derivative with respect to u times F_bar */
+            ddu = 2. / ntime * u->value * F_bar;
+
+            /* Partial derivative with respect to design times F_bar*/
+            ddesign = 0.0 * F_bar;
+
+            /* Update u_bar and gradient */
+            u_bar->value  += ddu;
+            app->gradient += ddesign;
+
+            return 0;
+         }
+   In this simple example, the local objective at one time-step does not depend explicitely on the design, therefore, the gradient update is zero. See ``examples/ex-01-optimization.c`` or ``examples/ex-04.c`` for local objective functions that incorporate the design. 
+
+3. **Step_diff**: This function computes transposed partial derivatives of the `Step` routine multiplied with the vector `u_bar`. I.e. if `Step` performes
+\f[
+   u_{i+1} = \Phi(u_i, \rho)
+\f]
+then `Step_diff` updates
+\f[
+   \bar u_{i+1} = \frac{\partial \Phi(u_i, \rho)}{\partial u_i}^T\bar u_i
+\f] (note the `=` instead of `+=`) and updates the gradient in the `app` with
+\f[
+   \bar \rho += \frac{\partial \Phi(u_i, \rho)}{\partial \rho}^T\bar u_i
+\f]
+
+         int
+         my_Step_diff(braid_App              app,
+                         // braid_Vector     ustop,
+                         // braid_Vector     fstop,
+                         braid_Vector        u,
+                         braid_Vector        u_bar,
+                         braid_StepStatus    status)
+         {
+
+            /* Get the time step size */
+            double tstop, tstart, deltat;
+            braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+            deltat = tstop - tstart;
+
+            double ddu;      /* Derivative wrt u */
+            double ddesign;  /* Derivative wrt design */
+
+            /* Get the design from the app */
+            double lambda = app->design;
+
+            /* Transposed derivative of step wrt u times u_bar */
+            ddu = 1./(1. - lambda * deltat) * (u_bar->value);
+          
+            /* Transposed derivative of step wrt design times u_bar */
+            ddesign = (deltat * (u->value)) / pow(1. - deltat*lambda,2) * (u_bar->value);
+
+            /* Update u_bar and gradient */
+            u_bar->value      = ddu;              // Make sure to do "=" here, not "+="! 
+            app->gradient    += ddesign;
+
+            return 0;
+         }
+
+4. **ResetGradient**: This routine sets the gradient to zero. XBraid_Adjoint calls this routine before each iteration such that old gradient information is removed properly.
+
+         int 
+         my_ResetGradient(braid_App app)
+         {
+            app->gradient = 0.0;
+            return 0;
+         }
+
+## Running XBraid_Adjoint for this example
+The workflow for computing adjoint sensitivities with XBraid_Adjoint alongside the primal state computation closely follows XBraid's workflow. 
+The user's *main* file will first set up the app structure, holding the additional information on an initial design and zero gradient and call the same `braid_Init(...)` function as before in order to set up XBraid. 
+
+In addition to that, the user then initializes XBraid_Adjoint by calling
+
+        /* Initialize adjoint-based gradient computation */
+         braid_InitAdjoint( my_ObjectiveT, my_ObjectiveT_diff, my_Step_diff, my_ResetGradient, &core);
+
+which passes the additional user routines to XBraid_Adjoint.  
+
+In addition to the usual XBraid options for controlling the multigrid iterations, the adjoint solver's accuracy is set by calling 
+
+      braid_SetAbsTolAdjoint(core, 1e-6);
+
+Other XBraid_Adjoint options are listed in \ref{list_adjoint_options}. 
+
+After that, one call to 
+
+      /* Run simulation and adjoint-based gradient computation */
+      braid_Drive(core);
+
+runs multigrid iterations with additional adjoint sensitivity computations. 
+
+After it finishes, the objective function value can be accessed by calling
+
+      /* Get the objective function value from XBraid */
+      braid_GetObjective(core, &objective);
+
+Further, the gradient stored in the `app` holds the gradient information \f$ dJ/d\rho \f$. As this information is local to all the time-processors, the user is responsible for summing up the gradients from all time-processors, if necessary. This usually involves an `MPI_Allreduce` call for the gradient as in 
+
+      /* Collect sensitivities from all processors */
+      double mygradient = app->gradient;
+      MPI_Allreduce(&mygradient, &(app->gradient), 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD); 
+
+
+# Optimization with the Simplest Example {#exampleoneoptimization}
+``examples/ex-01-optimization.c`` implements a simple optimization iteration for solving an inverse design problem for the simple scalar ODE example:
+
+\f[
+  \begin{matrix} \min ~ \frac 1 2 \left( \int_0^T \frac{1}{T}  \| u(t) \|^2 dt - J_{\text{Target}} \right)^2 + \frac{\gamma}{2} \| \lambda \|^2 \\ \\
+  \text{s.t. } \quad \frac{\partial}{\partial t}u(t) = \lambda u(t) \quad \forall t \in (0,T) \quad
+  \end{matrix}
+\f]
+where \f$ J_{\text{Target}} \f$ is a fixed and precomputed target value and \f$\gamma >0 \f$ is a fixed relaxation parameter.  Those fixed values are stored within the `app`. 
+
+In order to compute evaluate the time-independent part of the objective function and its derivative, two additional user routines are neccessary:
+
+1. **PostprocessObjective**: This function evaluates the tracking-type objective function and the regularization term. The input variable `integral` contains the integral-part of the objective and returns the objective that is to be minimized: 
+
+
+         /* Evaluate the time-independent part of the objective function */
+         int
+         my_PostprocessObjective(braid_App  app,
+                              double        integral,
+                              double       *postprocess
+                              )
+         {
+            double F;
+
+            /* Tracking-type functional */
+            F  = 1./2. * pow(integral - app->target,2);
+            
+            /* Regularization term */
+            F += (app->gamma) / 2. * pow(app->design,2);
+
+            *postprocess = F;
+             return 0;
+         }
+
+2. **PostprocessObjective_diff**: This provides XBraid_Adjoint with the partial derivatives of the `PostprocessObjective` routine. I.e. if `PostprocessObjective` computes \f$ F(I) + R(\lambda) \f$, then `PostprocessObjective_diff` returns
+\f[
+   \bar F = \frac{\partial F(I)}{\partial I}
+\f] and updates the gradient with 
+\f[
+   \bar \rho = \frac{\partial R(\lambda)}{\partial \lambda} 
+\f]
+
+         int
+         my_PostprocessObjective_diff(braid_App   app,
+                                      double      integral,
+                                      double     *F_bar
+                                      )
+         {
+
+            /* Derivative of tracking type function */
+            *F_bar = integral - app->target;
+
+            /* Derivative of regularization term */
+            app->gradient = (app->gamma) * (app->design);
+            return 0;
+         }
+
+Those routines are optional for XBraid_Adjoint. Therefore, they need to be passed to XBraid_Adjoint after the initialization with `braid_Init(...)` and `braid_InitAdjoint(...)` in the user's *main* file:
+
+
+      /* Optional: Set the tracking type objective function and derivative */
+      braid_SetPostprocessObjective(core, my_PostprocessObjective);
+      braid_SetPostprocessObjective_diff(core, my_PostprocessObjective_diff);
+
+A simple call to `braid_Drive()` will compute the ODE solution, objective function and its gradient with respect to the design. The user can implement an optimization iteration around that which updates the design using the gradient. 
+
+Alternatively, the user can use (and possibly modify) the optimization cycle in `braid_optimization.c`. In that case, the following routines need to be provided:
+
+1. **DesignUpdate**: This tells XBraid_Adjoint how to update the design using the gradient information and a given stepsize which is the result of a backtracking line-search procedure. Typically, updating the design will involve an approximation to the Hessian of the objective function, e.g. using a BFGS-update scheme. As this is a simple example, only a steepest descent updating scheme is applied here. 
+
+         int
+         my_DesignUpdate(braid_App app,
+                         double    stepsize )
+         {
+            app->design -= stepsize * app->gradient;
+
+            return 0;
+         }
+
+2. **GradientNorm**: This routine return the norm of the gradient. The stopping criterion of the optimization iteration will be based on this.
+
+         int
+         my_GradientNorm(braid_App app,
+                         double    *gnorm_ptr)
+         {
+            *gnorm_ptr = sqrt((app->gradient)*(app->gradient));
+
+            return 0;
+         }
+
+
+3. **GradientAllreduce**: This routine collects sensitivity information from all time-processors and broadcasts the sum back. If the communicator has been split into spacial and temporal one, it should be passed to this function through the app. For time-dependent design variables, summing over all processors might not be necessary since in formation is needed only locally in time. This routine can be left empty in that case. 
+
+         int
+         my_GradientAllreduce(braid_App app)
+         {
+            double mygradient = app->gradient;
+            double gradient; 
+
+            /* Collect sensitivities from all processors and broadcast it */
+            MPI_Allreduce(&mygradient, &gradient, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+            app->gradient = gradient;
+
+            return 0;
+         }
+
+
+In the user's *main* file, some additional options for controlling the optimization iterations can be set: 
+
+      /* Set maximum number of optimization iterations */
+      braid_SetMaxOptimIter(core, 100);
+
+      /* Set absolute stopping criterion for the norm of the gradient */
+      braid_SetAbsTolOptim(core, 1e-6);
+
+      /* Set initial step size */
+      braid_SetStepsize(core, 6.0);
+
+Then, the optimization iteration is started by calling
+
+      /* Start the optimization */
+      braid_DriveOptimization(core, app, my_DesignUpdate, my_GradientNorm, my_GradientAllreduce);
+
+
 
 # A Simple Optimal Control Problem {#optimalcontrolexample}
 

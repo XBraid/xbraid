@@ -666,53 +666,51 @@ Wrapping and debugging a code with XBraid typically follows a few steps.
 
 # Computing Derivatives with XBraid_Adjoint {#xbraid_adjoint}
 
-XBraid_Adjoint is a consistent discrete adjoint solver for XBraid which provides sensitivity information of output quantities with respect to design parameter changes. 
-The ability to compute sensitivities can improve and enhance the simulation tool, as for example through parameter estimation for validation and verification purposes, error estimation or uncertainty quantification techniques. 
-Further, it broadens the application range from pure simulation to optimization as for example in an optimal control or shape optimization framework.
+XBraid_Adjoint is a consistent discrete adjoint solver for XBraid which provides sensitivity information of output quantities with respect to some user-defined design parameters. 
+The ability to compute sensitivities can greatly improve and enhance the simulation tool, as for example for solving design optimization or optimal control problems, parameter estimation for validation and verification purposes, error estimation or uncertainty quantification techniques. 
 
 ## Short Introduction to Adjoint-based Sensitivity Computation {#adjointoverview}
 
-Let's assume, that the solution of the ODE system is driven by some independent design parameters \f$\rho\f$, where \f$\rho\f$ can be any time-dependent or time-independent parameters that uniquely determine the solution of the ODE (e.g. a boundary condition, material coefficients, etc.). In discretized setting, the user's time-stepping routine might then be written as
-
-
+Let's assume, that the solution of the ODE system is driven by some independent design parameters \f$\rho\f$, where \f$\rho\f$ can be any time-dependent or time-independent parameters that uniquely determine the solution of the ODE (e.g. a boundary condition, material coefficients, etc.). In a discretized ODE setting, the user's time-stepping routine might then be written as
 \f[
    u_i = \Phi_i(u_{i-1}, \rho), \quad \forall i=1, \dots N
 \f]
-where \f$\Phi_i\f$ propagates a state at a time \f$t_{i-1}\f$ to the next time-step at \f$t_i\f$ using fixed design parameters \f$\rho\f$. An objective function can then be set up that measures the quality of the ODE solution  
+where the time-stepper \f$\Phi_i\f$, which propagates a state at a time \f$t_{i-1}\f$ to the next time-step at \f$t_i\f$, now depends on the design parameters \f$\rho\f$. In order to quantify the simulation output for the given design, an real-valued objective function can then be set up that measures the quality of the ODE solution and design:   
 \f[
    J(\mathbf{u}, \rho) \in \mathrm{R}.
 \f] 
-where \f$\mathbf{u} =  (u_0, \dots, u_N)\f$ is the space-time state vector. 
+where \f$\mathbf{u} =  (u_0, \dots, u_N)\f$ denotes the space-time state solution which itself depends to the design \f$\rho\f$ through the time-stepping algorithm.
 
-Adjoint-based sensitivities compute the total derivative of \f$J\f$ with respect to changes in the design parameters \f$\rho\f$ by solving additional so-called adjoint equations. We will briefly introduce the idea here. General information of the adjoint method can be found e.g. here \cite{adjointmethod}.
+Adjoint-based sensitivities compute the total derivative of \f$J\f$ with respect to changes in the design parameters \f$\rho\f$ by solving additional so-called adjoint equations. We will briefly introduce the idea in the following. You can skip this section, if you are familiar with adjoint sensitivity computation in general and move to @ref xbraid_adjointalgorithm immedately. In-depth information of the adjoint method can be found e.g. in \cite{adjointmethod}.
 
 Consider an augmented (so-called *Lagrange*) funtion  
 \f[
    L(\mathbf{u}, \rho) = J(\mathbf{u}, \rho) + \mathbf{\bar u}^TA(\mathbf{u}, \rho)
 \f]
-where the discretized ODE equations in 
+where the discretized time-stepping ODE equations in 
 \f[
-   A(\mathbf{u},\rho) = \begin{pmatrix} \Phi_1(u_0,\rho) - u_1 \\ 
+   A(\mathbf{u},\rho) := \begin{pmatrix} \Phi_1(u_0,\rho) - u_1 \\ 
                                        \vdots \\
                                        \Phi_N(u_{N-1}, \rho) - u_{N}
                         \end{pmatrix}
 \f]
-have been added to the objective function value, multiplied with the so-called *adjoint* variables \f$\mathbf{\bar u} = ({\bar u_1 , \dots, \bar u_N}) \f$. Since the added term is zero for all design and state variables that satisfy the discrete ODE, the total derivative of \f$J\f$ and \f$L\f$ match. Using the chain rule of differentiation we get
+have been added to the objective function, multiplied with so-called *adjoint* variables \f$\mathbf{\bar u} = ({\bar u_1 , \dots, \bar u_N}) \f$. Since the added term is zero for all design and state variables that satisfy the discrete ODE equations, the total derivative of \f$J\f$ and \f$L\f$ with respect to the design match. Using the chain rule of differentiation, this derivative can be expresses as
 \f[
-    \frac{\mathrm{d}J}{\mathrm{d}\rho} = \frac{\mathrm{d}L}{\mathrm{d}\rho} = \frac{\partial J}{\partial {\mathbf u} }\textcolor{red}{\frac{\mathrm{d}\mathbf u}{\mathrm{d}\rho}} + \frac{\partial J}{\partial \rho} + \bar{\mathbf u}^T \left( \frac{\partial L}{\partial \mathbf u}  \textcolor{red}{\frac{\mathrm{d}\mathbf u}{\mathrm{d}\rho}} +  \frac{ \partial L}{\partial \rho} \right)
+    \frac{\mathrm{d}J}{\mathrm{d}\rho} = \frac{\mathrm{d}L}{\mathrm{d}\rho} = \frac{\partial J}{\partial {\mathbf u} }\textcolor{red}{\frac{\mathrm{d}\mathbf u}{\mathrm{d}\rho}} + \frac{\partial J}{\partial \rho} + \bar{\mathbf u}^T \left( \frac{\partial A}{\partial \mathbf u}  \textcolor{red}{\frac{\mathrm{d}\mathbf u}{\mathrm{d}\rho}} +  \frac{ \partial A}{\partial \rho} \right)
 \f]
+where \f$\partial\f$ denotes partial derivatives, in contrast to the total derivative (i.e. the sensitivity) denoted by \f$\mathrm{d}\f$.
 
-When computing this derivative, the terms in red are the ones that are computationally most expensive. In fact, the cost for computing those scale lineary with the number of design parameters, i.e. the dimension of \f$\rho\f$ (consider e.g. a Finite Differences setting, where a recomputation of the state would be necessary for each perturbations of the design into all unit direction of the design space). In order to avoid these costs, the adjoint methods aims at setting the adjoint variable \f$\mathbf{\bar u}\f$ such that these red terms add up to zero in the above expression. Hence, when solving 
+When computing this derivative, the terms in red are the ones that are computationally most expensive. In fact, the cost for computing these sensitivities scale lineary with the number of design parameters, i.e. the dimension of \f$\rho\f$ (consider e.g. a Finite Differences setting, where a recomputation of the state would be necessary for each perturbations of the design into all unit direction of the design space). In order to avoid these costs, the adjoint methods aims at setting the adjoint variable \f$\mathbf{\bar u}\f$ such that these red terms add up to zero in the above expression. Hence, when solving 
 \f[
-  \left(\frac{ \partial J}{\partial \mathbf u}\right)^T + \left(\frac{\partial L}{\partial \mathbf u}\right)^T \bar {\mathbf u} = 0  
+  \left(\frac{ \partial J}{\partial \mathbf u}\right)^T + \left(\frac{\partial A}{\partial \mathbf u}\right)^T \bar {\mathbf u} = 0  
 \f]
-for \f$\mathbf{\bar u}\f$ the adjoint variable, the *reduced gradient* of \f$J\f$, which is the transpose of the total derivative of \f$J\f$ with respect to design changes is given by 
+for the adjoint variable \f$\mathbf{\bar u}\f$, the so-called *reduced gradient* of \f$J\f$, which is the transpose of the total derivative of \f$J\f$ with respect to design changes is given by 
 \f[
-   \left(\frac{\mathrm{d}J}{\mathrm{d}\rho}\right)^T = \left(\frac{\partial J} {\partial \rho}\right)^T  + \left(\frac{\partial L}{\partial \rho}\right)\bar{\mathbf u}
+   \left(\frac{\mathrm{d}J}{\mathrm{d}\rho}\right)^T = \left(\frac{\partial J} {\partial \rho}\right)^T  + \left(\frac{\partial A}{\partial \rho}\right)^T\bar{\mathbf u}
 \f]
-Therefore, in order to compute the sensitivity of \f$J\f$ with respect to design changes, the adjoint method only requires the solution of one additional (adjoint) equation for \f$\mathbf{\bar u}\f$ as well as  evaluation of partial derivatives. The computational costs therefore do not scale with the number of design parameters. 
+The advantage of this strategy is, that in order to compute the sensitivity of \f$J\f$ with respect to \f$\rho\f$, only the solution to one one additional equation for \f$\mathbf{\bar u}\f$ is required in addition to evaluating partial derivatives. The computational cost for computing \f$\mathrm{d}J/\mathrm{d}\rho\f$ therefore does not scale anymore with the number of design parameters. 
 
-The adjoint equation for the time-dependent discrete ODE problem reads
+For the time-dependent discrete ODE problem, the adjoint equation reads
 \f[
  \text{\textcolor{red}{unsteady adjoint:}}\qquad \quad u_i = \partial_{u_i} J(\mathbf{u}, \rho)^T + \left(\partial_{u_i}\Phi_{i+1}(u_i, \rho)\right)^T\bar u_{i+1} \qquad \forall i = N\dots, 1
 \f]
@@ -724,60 +722,115 @@ with the terminal condition \f$u_{N+1} := 0 \f$. The reduced gradient is given b
 
 ## Overview of the XBraid_Adjoint Algorithm {#xbraid_adjointalgorithm}
 
-The unsteady adjoint equations can in principle be solved ``backwards in time'' in a time-serial manner, starting from the terminal condition \f$\bar u_{N+1} = 0\f$. 
-However, in order to achieve a time-parallel adjoint algorithm, XBraid_Adjoint utilizes techniques from Automatic Differentiation (AD) in order to compute parallel-in-time adjoint sensitivities alongside the primal multigrid iterations. 
-To that end, each multigrid iteration is augmented by updates for the space-time adjoint variable \f$\mathbf{\bar u}\f$, while each adjoint iteration runs backwards though the primal multigrid cycle concatenating partial derivatives of XBraid's actions in reverse order. The resulting adjoint iteration is fully consistent to the primal state update and is executed immediately after the state update:
+The unsteady adjoint equations can in principle be solved ``backwards in time'' in a time-serial manner, starting from the terminal condition \f$\bar u_{N+1} = 0\f$. However, the parallel-in-time XBraid_Adjoint solver offers speedup by distributing the backwards-in-time phase
+onto multiple processors along the time domain. Its implementation is based on techniques of the reverse-mode of Automatic Differentiation applied to one primal XBraid iteration. To that end, each primal iteration is augmented by updates for the space-time adjoint variable \f$\mathbf{\bar u}\f$, as well as evaluation of the current objective function and gradient evaluation (denoted by \f$\bar\rho\f$ leading to the following so-called *piggy-back* iteration:
 
-1. XBraid's: multigrid cycle to update the state and evaluate the objective
+1. **XBraid**: update the state and evaluate the objective function
    \f[
-      \mathbf{u}_{k+1} \leftarrow \text{XBraid}(\mathbf{u}_k, \rho), \quad
-      J \leftarrow J(\mathbf{u}_k, \rho) 
+      \mathbf{u}^{(k+1)} \leftarrow \text{XBraid}(\mathbf{u}^{(k)}, \rho), \quad
+      J \leftarrow J(\mathbf{u}^{(k)}, \rho) 
    \f]
-2. XBraid_Adjoint: backwards multigrid cycle to update adjoint and evaluate the current gradient. 
+2. **XBraid_Adjoint**: update the adjoint and evaluate the reduced gradient
    \f[
-      \mathbf{\bar u}_{k+1} \leftarrow \text{XBraid\_Adjoint}(\mathbf{u}_k, \mathbf{\bar u}_k \rho),  \quad
-      \bar \rho \leftarrow \frac{\partial J(\mathbf u_k, \rho)}{\partial \rho}
+      \mathbf{\bar u}^{(k+1)} \leftarrow \text{XBraid\_Adjoint}(\mathbf{u}^{(k)}, \mathbf{\bar u}^{(k)} \rho),  \quad
+      \bar \rho \leftarrow \frac{\mathrm{d} J(\mathbf u^{(k)}, \rho)}{\mathrm{d} \rho}
    \f]
 
+XBraid_Adjoint updates the adjoint variables by moving backwards though the primal XBraid multigrid cycle, while local partial derivatives of elemental operations are collected in reverse order and concatenated using the chain rule of differentiation - this is the basic idea of the reverse mode of Automatic Differentiation tools. 
+It yields a consistent discrete adjoint code that inherits parallel scaling properties from the primal solver. 
 
-After each primal and adjoint iteration, an approximation to the objective function as well as the current reduced gradient (denoted by \f$ \bar \rho\f$) is available.
-The adjoint variables convergence to the same convergence rate as the primal variables, whoever a time-lag will be observed.
-More information on convergence results and the implementation details of XBraid_Adjoint can be found in \cite{PinTAdjointPaper}.
+Further, XBraid_Adjoint is non-intrusive to existing adjoint sequential time marching schemes. It adds additional user routines to the primal XBraid interface which provide the propagation of sensitivities of the forward time stepper backwards in time and the evaluatiion of partial derivatives of the local objective function at each time step. 
+In cases where a time-serial unsteady adjoint solver is already available, this backwards time stepping capability can be easily wrapped into the adjoint user interface with little extra coding.
+
+The adjoint update in the above piggy-back iteration converge at the same convergence rate as the primal state variables. However since the adjoint equations depend on the state solutions, the adjoint convergence will slightly lag behind the convergence of the state variables.
+More information on convergence results and implementational details for XBraid_Adjoint can be found in \cite{PinTAdjointPaper}.
 
 
 ## Overview of the XBraid_Adjoint Code {#xbraid_adjointcode}
 
-XBraid_Adjoint offers a non-intrusive approach for time-parallelization of existing time-serial adjoint codes. Similar to XBraid's primal user-interface, existing adjoint solvers can be integrated through an extended user-interface that allows the user to wrap their existing adjoint time-marching scheme as well as gradient evaluations into routines that are provided to XBraid_Adjoint. 
+XBraid_Adjoint offers a non-intrusive approach for time-parallelization of existing time-serial adjoint codes. Existing adjoint solvers can be integrated through an extended user-interface that allows the user to wrap their code for evaluating the objective function, adjoint time-marching and partial derivative evaluation into routines and pass to XBraid_Adjoint.
 
 ### Objective function evaluation 
 
-Typical objective functions measuring the quality of a state solution involve a time-integral of some time-dependent quantity of interest as well as a time-independent (*postprocessing*) routine that further modifies the time-integral part:
+The user-interface for XBraid_Adjoint allows for objective functions of the following type:
 \f[
-   J =  F\left( \int_{t_0}^{t^1} f(u(t),\rho)  \right)
+   J =  F\left( \int_{t_0}^{t^1} f(u(t),\rho) ~ \mathrm{d}t \right)
 \f]
-for a time (sub-) interval \f$[t_0, t_1]\f$. The postprocessing routine \f$F\f$ might be used e.g. for implementing a tracking-type objective function (substract a target and square it), or adding relaxation or penalty terms. 
-Discretized:
+It involves a time-integral part of some time-dependent quantity of interest \f$f\f$ as well as a *postprocessing* function \f$F\f$ that enable the user to further modify the time-integral, e.g. for setting up a tracking-type objective function (substracting a target value, etc.), or adding relaxation or penalty terms.
+While \f$f\f$ is mandatory for XBraid_Adjoint, the postprocessing routine \f$F\f$ is optional and is passed to XBraid_Adjoint though the optional [braid_SetPostprocessObjective](@ref braid_SetPostprocessObjective) routine. The time-interval boundaries \f$[t_0,t_1]\f$ can be set using the options [braid_SetTStartObjective](@ref braid_SetTStartObjective) and [braid_SetTStopObjective](@ref braid_SetTStopObjective). Note that this also allows for evaluating \f$f\f$ only at one specific time instance (e.g. in cases where only the last time-step is of interest) by setting \f$t_0 = t_1\f$. XBraid_Adjoint will perform the time-integration by summing over the time-dependent \f$f\f$ evaluations:
 \f[
    I \leftarrow \sum_{i = i_0}^{i_1} f(u_i, \rho) 
 \f]
+followed by a call to the postprocessing function \f$F\f$, if set. 
 \f[
    J \leftarrow F\left( I, \rho \right)
 \f]
-- Options for \f$t_0, t_1, F\f$...
 
-### Wrapping adjoint time-stepping codes
-- User defines the derivative terms for \f$\Phi\f$ and \f$J\f$. 
 
-### Adjoint options
-- Halting tolerance, 
-- ... 
+### Adjoint interface routines
+The user needs to provide the derivatives of the time-stepper \f$\Phi\f$ and function evaluation \f$f\f$ (and potentially \f$F\f$) for XBraid_Adjoint.
+Those are provided in terms of transposed matrix-vector products in the following way:
+
+1. **Derivatives of objective function** \f$J\f$:
+
+   - **Time-dependent part** \f$f\f$: The user provides a routine that evaluates the following transposed partial derivatives of \f$f\f$ multiplied with the scalar input \f$\bar F\f$:
+   \f[  
+      \bar u_i \leftarrow \frac{\partial f(u_i, \lambda)}{\partial u_i}^T \bar F 
+   \f]
+   \f[
+      \bar \rho \leftarrow \bar \rho + \frac{\partial f(u_i, \lambda)}{\partial \rho}^T \bar F
+   \f]
+   The scalar input \f$\bar F\f$ equals \f$1.0\f$ only if no postpocessing objective function \f$F\f$ is given. 
+
+   - **Postprocessing** \f$F\f$: If the postprocessing routine has been set, the user needs to provide it's transposed partial derivatives in the following way:
+   \f[
+      \bar F \leftarrow \frac{\partial F(I, \lambda)}{\partial I}
+   \f] 
+   \f[
+      \bar \rho \leftarrow \rho + \frac{\partial F(I,\lambda)}{\partial \lambda} 
+   \f]
+
+
+2. **Derivatives of the time-stepper** \f$\Phi_i\f$:
+   The user provides a routine that computes the following transposed partial derivatives of \f$\Phi_i\f$ multiplied with the adjoint input vector \f$\bar u_i\f$:
+   \f[
+      \bar u_{i} \leftarrow \frac{\partial \Phi(u_i, \rho)}{\partial u_i}^T\bar u_i
+   \f]
+   \f[
+      \bar \rho \leftarrow \bar \rho +  \frac{\partial \Phi(u_i, \rho)}{\partial \rho}^T\bar u_i
+   \f]
+
+Note that the partial derivative with respect to \f$\rho\f$ always *updates* the reduced gradient instead of overwriting it (i.e. \f$\mathop{+}=\f$). This necessetates to reset the gradient to zero before each iteration of XBraid_Adjoint which is taken care of by calling a additional user-defined routine `braid_PtFcnResetDesign`. 
+
+
+Depending on the nature of the design variables, it might be neccessary to gather gradient information in \f$\bar \rho\f$ from all time-processors after XBraid_Adjoint has finished. It is the user's responsibility to do that, if needed, e.g. through a call to MPI_Allreduce.   
+
+In order to initiate sensitivities computations with XBraid_Adjoint alongside the primal XBraid computations, a call to [braid_InitAdjoint](@ref braid_InitAdjoint) is required. This passes the mandatory user routines to XBraid_Adjoint and initiates the adjoint mode. 
+
+There's an option for running XBraid_Adjoint in `ObjectiveOnly` mode. This allows for evalution of the objective function only without computing its derivative, see [braid_SetObjectiveOnly](@ref braid_SetObjectiveOnly). 
+
+### Halting tolerance
+Similar to the primal XBraid algorithm, the user can choose a halting tolerance based on the adjoint residual norm. An absolute tolerance ([braid_SetAbsTolAdjoint](@ref braid_SetAbsTolAdjoint)) 
+   \f[
+      \|\bar{\mathbf{u}}^{(k)} - \bar{\mathbf{u}}^{(k-1)} \|_{\text{space\_time}} < \text{tol\_adjoint}
+   \f]
+   or a relative tolerance ([braid_SetRelTolAdjoint](@ref braid_SetRelTolAdjoint))
+   \f[
+      \frac{\|\bar{\mathbf{u}}^{(k)} - \bar{\mathbf{u}}^{(k-1)} \|_{\text{space\_time}}}{\|\bar{\mathbf{u}}^{(1)} - \bar{\mathbf{u}}^{(0)} \|_{\text{space\_time}}} < \text{tol\_adjoint}
+   \f]
+   can be chosen.
+
 
 ## Optimization with XBraid_Adjoint {#optimization} 
-- `braid_optimization.c`
-- Simple reduced space optimization iteration
-- User defines design update 
-- Line-search
-- Modify for your own needs. 
+   A template for using the gradient information from XBraid_Adjoint in an outer optimization cycle is provided in `braid_optimization.c`.
+   This file can serve as a starting point for performing adjoint-based parallel-in-time optimization with XBraid and can be modified and adapted to the user's needs.
+   To that end, the user provides his own `DesignUpdate' routine, which performes an update to the design \f$\rho\f$, based on the gradient information provided from XBraid_Adjoint. Here, the user is free to integrate a Hessian approximation in order to precondition the design iteration. 
+
+   The outer optimization iteration is implemented in 
+   [braid_DriveOptimization](@ref braid_DriveOptimization) which calles the user's `DesignUpdate` routine after solving (or approximating) the state and adjoint equations with XBraid and XBraid_Adjoint. A halting tolerance based on the norm of the gradient can be set with [braid_SetAbsTolOptim](@ref braid_SetAbsTolOptim) or [braid_SetRelTolOptim](@ref braid_SetRelTolOptim). An initial step size for design update can be set with [braid_SetStepsize](@ref braid_SetStepsize), while further step sizes are the result on a simple back-tracking line-search. Compare `examples/ex-01-optimization.c` for an example of an easy reduced-space steepest-descent optimization. 
+
+   Increasing the tolerance for state and adjoint residuals while  optimizating might speed up the overall time-to-solution significantly. This speedup is in addition to, or rather multiplies the speedup that is expected from the time-parallel state and adjoint computation. Performing only a few, say one to three, updates for the state and the adjoint variables in each outer optimization iteration has been analyzes in [PinTOneshotPaper] where significant speedup over a time-serial method has been shown. Reducing the accuracy of state and adjoint solvers during optimization is often referred to as *simultaneous* or *One-shot* optimization. Literature on that can be found e.g. in \cite{oneshot}.
+   
 
 # Citing XBraid {#braidcite}
 
