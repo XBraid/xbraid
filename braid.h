@@ -378,7 +378,7 @@ typedef braid_Int
 
 /**
  * This function can be used to postprocess the time-averaged objective function 
- * E.g. for inverse design problems: Choose a tracking-type objective function and/or add relaxation term
+ * E.g. for inverse design problems: Choose a tracking-type objective function and/or add relaxation / penalty terms
  **/
 typedef braid_Int
 (*braid_PtFcnPostprocessObjective)(braid_App    app,             /**< user-defined _braid_App structure */
@@ -946,16 +946,9 @@ braid_SetTStopObjective(braid_Core core,
 braid_Int
 braid_GetTStopObjective(braid_Core core,
                           braid_Real *tstop_obj);
-
-/*
- * Switch for displaying the actions while iterating. Used for debugging only. 
- */
-braid_Int
-braid_SetVerbosity(braid_Core  core,
-                    braid_Int   verbose);
-
+                          
 /**
- * Set the postprocessing objective function 
+ * Pass the postprocessing objective function F to XBraid_Adjoint.
  **/
 braid_Int
 braid_SetPostprocessObjective(braid_Core                      core,     /**< braid_Core (_braid_Core) struct*/
