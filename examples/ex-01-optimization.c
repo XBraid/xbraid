@@ -308,8 +308,8 @@ my_ObjectiveT_diff(braid_App            app,
    /* Partial derivative with respect to design times F_bar*/
    ddesign = 0.0 * F_bar;
 
-   /* Update u_bar and gradient */
-   u_bar->value  += ddu;
+   /* Update u_bar and add to gradient */
+   u_bar->value  = ddu;
    app->gradient += ddesign;
 
    return 0;
@@ -342,7 +342,7 @@ my_Step_diff(braid_App              app,
    /* Transposed derivative of step wrt design times u_bar */
    ddesign = (deltat * (u->value)) / pow(1. - deltat*lambda,2) * (u_bar->value);
 
-   /* Update u_bar and gradient */
+   /* Update u_bar and add to gradient */
    u_bar->value      = ddu;              // Make sure to do "=" here, not "+="! 
    app->gradient    += ddesign;
 

@@ -785,10 +785,19 @@ _braid_BaseObjectiveT_diff(_braid_Action *action)
    _braid_CoreElt(core, userVectorTape) = _braid_TapePop( _braid_CoreElt(core, userVectorTape) );
    _braid_CoreElt(core, barTape)        = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
+   /* Store the values of the adjoint */
+   braid_Vector userbarCopy;
+   _braid_CoreFcn(core, clone)(app, ubar->userVector, &userbarCopy);
+
   /* Call the users's differentiated objective function */
    _braid_ObjectiveStatusInit(t, idx, iter, level, nrefine, gupper, ostatus);
-
    _braid_CoreFcn(core, objT_diff)( app, u, ubar->userVector, f_bar, ostatus);
+
+   /* Add the stored value */
+   _braid_CoreFcn(core, sum)(app, 1., userbarCopy, 1., ubar->userVector);
+
+   /* Free the stores value */
+   _braid_CoreFcn(core, free)(app, userbarCopy);
 
    /* Free primal and bar vectors */
    _braid_CoreFcn(core, free)(app, u);
