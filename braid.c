@@ -445,6 +445,7 @@ braid_Drive(braid_Core  core)
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
    braid_Int            obj_only        = _braid_CoreElt(core, obj_only);
 
+
    braid_Int     *nrels, nrel0;
    braid_Int      nlevels;
    braid_Int      ilower, iupper, i;
@@ -456,6 +457,9 @@ braid_Drive(braid_Core  core)
    /* Cycle state variables */
    _braid_CycleState  cycle;
    braid_Int          iter, level, done, refined;
+
+   /* Check for non-supported adjoint features */
+   _braid_AdjointFeatureCheck(core);
 
    if (myid == 0 )
    { 
@@ -921,13 +925,6 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
                   braid_PtFcnResetGradient     reset_gradient,
                   braid_Core                  *core_ptr)
 {
-   braid_PtFcnResidual  residual  = _braid_CoreElt(*core_ptr, residual);
-   braid_PtFcnSCoarsen  scoarsen  = _braid_CoreElt(*core_ptr, scoarsen);
-   braid_PtFcnSRefine   srefine   = _braid_CoreElt(*core_ptr, srefine);
-   braid_PtFcnTimeGrid  tgrid     = _braid_CoreElt(*core_ptr, tgrid);
-   braid_Int            storage   = _braid_CoreElt(*core_ptr, storage);  
-   braid_Int            useshell  = _braid_CoreElt(*core_ptr, useshell);
-   braid_Int            trefine   = _braid_CoreElt(*core_ptr, refine);
    braid_Optim          optim;
 
    /* Set adjoint flags */ 
@@ -982,20 +979,6 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
    _braid_CoreElt(*core_ptr, reset_gradient) = reset_gradient;
 
 
-   /* Sanity check for non-supported features */
-   if ( (residual != NULL) ||
-        (scoarsen != NULL) ||
-        (srefine  != NULL) ||
-        (tgrid    != NULL) ||
-        useshell           ||
-        trefine            ||
-        (storage  >= 0 )      )
-          // r_space?
-   {
-      _braid_printf(" \n ERROR! One of your requested features is not yet supported for adjoint sensitivities.\n\n"); 
-      exit(1);
-   }
-   
 
    return _braid_error_flag;
 }

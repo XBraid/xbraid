@@ -366,6 +366,73 @@ _braid_SetVerbosity(braid_Core  core,
 }
 
 
+braid_Int
+_braid_AdjointFeatureCheck(braid_Core core)
+{
+
+   braid_PtFcnResidual  residual  = _braid_CoreElt(core, residual);
+   braid_PtFcnResidual  fullres   = _braid_CoreElt(core, full_rnorm_res);
+   braid_PtFcnSCoarsen  scoarsen  = _braid_CoreElt(core, scoarsen);
+   braid_PtFcnSRefine   srefine   = _braid_CoreElt(core, srefine);
+   braid_PtFcnTimeGrid  tgrid     = _braid_CoreElt(core, tgrid);
+   braid_Int            storage   = _braid_CoreElt(core, storage);  
+   braid_Int            useshell  = _braid_CoreElt(core, useshell);
+   braid_Int            trefine   = _braid_CoreElt(core, refine);
+   braid_Int err;
+   char* err_char;
+
+   err = 0;
+   if ( residual != NULL ) 
+   {
+      err_char = "User-defined residual" ;
+      err = 1;
+   }
+   if ( fullres  != NULL ) 
+   {
+      err_char = "User-defined full residual";
+      err = 1;
+   }
+   if ( scoarsen != NULL ) 
+   {
+      err_char = "Spatial coarsening";
+      err = 1;
+   }
+   if ( srefine  != NULL ) 
+   {
+      err_char = "Spatial refinement";
+      err = 1;
+   }
+   if ( tgrid    != NULL ) 
+   {
+      err_char = "User-defined time grid";
+      err = 1;
+   }
+   if ( useshell ) 
+   {
+      err_char = "Shell-vector feature";
+      err = 1;
+   }
+   if ( trefine )  
+   {
+      err_char = "Time refinement";
+      err = 1;
+   }
+   if (storage  >= 0 ) 
+   {
+      err_char = "Storage >= 0";
+      err = 1;
+   } 
+    // r_space?
+   if ( err )
+   {
+      _braid_printf(" \n\n WARNING! %s is not yet supported for adjoint sensitivities (or at least not tested).\n", err_char); 
+      _braid_printf("          If the code still runs, check the derivatives carefully!\n\n\n", err_char); 
+   }
+
+   return _braid_error_flag;
+}
+
+
 /*----------------------------------------------------------------------------
  * Macros used below
  *----------------------------------------------------------------------------*/

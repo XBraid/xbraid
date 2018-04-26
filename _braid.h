@@ -904,12 +904,18 @@ _braid_InitAdjointVars(braid_Core   core,
                        _braid_Grid *fine_grid);
 
 
-/*
+/**
  * Switch for displaying the XBraid actions. Used for debugging only. 
  */
 braid_Int
 _braid_SetVerbosity(braid_Core  core,
                     braid_Int   verbose);
+
+/**
+ * Sanity check for non-supported adjoint features
+ */
+braid_Int
+_braid_AdjointFeatureCheck(braid_Core core);
 
 
 #ifdef __cplusplus
