@@ -184,19 +184,42 @@ braid_Int
 _braid_TapeSetSeed(braid_Core core)
 {
    braid_BaseVector u_out;
-   braid_Int        iclocal, sflag; 
+   braid_Int        iclocal, sflag, increment, ic, seed_flag;
+   braid_Int        storage   = _braid_CoreElt(core, storage);
    _braid_Grid     *fine_grid = _braid_CoreElt(core, grids)[0];
    braid_Int        clower    = _braid_GridElt(fine_grid, clower);
    braid_Int        iupper    = _braid_GridElt(fine_grid, iupper);
+   braid_Int        ilower    = _braid_GridElt(fine_grid, ilower);
    braid_Int        cfactor   = _braid_GridElt(fine_grid, cfactor);
    braid_Optim      optim     = _braid_CoreElt(core, optim);
    braid_App        app       = _braid_CoreElt(core, app);
 
 
-   /* Loop over all C-points */
-   for (braid_Int ic=clower; ic <= iupper; ic += cfactor)
+   /* Get the number of adjoint vectors on finest level */
+   if (storage < 0 ) 
    {
-      if( _braid_IsCPoint(ic, cfactor))
+      /* Only C-point storage */
+      ilower    = clower;
+      increment = cfactor;
+   }
+   else
+   {
+      /* All points */
+      increment = 1;
+   }
+ 
+   /* Loop over all adjoint vectors */
+   for (ic=ilower; ic <= iupper; ic += increment)
+   {
+      seed_flag = 1;
+
+      /* if only C-point storage, set seed only at C-points */
+      if (storage < 0 &&  !(_braid_IsCPoint(ic, cfactor)) )
+      {
+         seed_flag = 0;
+      } 
+
+      if (seed_flag)
       {
          /* Get the vector and its local index in ua */
          _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
@@ -215,16 +238,39 @@ _braid_TapeResetInput(braid_Core core)
 {
    braid_BaseVector u;
    braid_VectorBar  ubar_copy;
-   braid_Int        iclocal, sflag, ic;
+   braid_Int        iclocal, sflag, ic, increment, reset_flag;
+   braid_Int        storage   = _braid_CoreElt(core, storage);
    _braid_Grid     *fine_grid = _braid_CoreElt(core, grids)[0];
    braid_Int        clower    = _braid_GridElt(fine_grid, clower);
    braid_Int        iupper    = _braid_GridElt(fine_grid, iupper);
+   braid_Int        ilower    = _braid_GridElt(fine_grid, ilower);
    braid_Int        cfactor   = _braid_GridElt(fine_grid, cfactor);
  
-   /* Loop over all C-points */
-   for (ic=clower; ic <= iupper; ic += cfactor)
+   /* Get the number of adjoint vectors on finest level */
+   if (storage < 0 ) 
    {
-      if( _braid_IsCPoint(ic, cfactor))
+      /* Only C-point storage */
+      ilower    = clower;
+      increment = cfactor;
+   }
+   else
+   {
+      /* All points */
+      increment = 1;
+   }
+ 
+   /* Loop over all adjoint vectors */
+   for (ic=ilower; ic <= iupper; ic += increment)
+   {
+      reset_flag = 1;
+
+      /* if only C-point storage, reset only at C-points */
+      if (storage < 0 &&  !(_braid_IsCPoint(ic, cfactor)) )
+      {
+         reset_flag = 0;
+      } 
+
+      if (reset_flag)
       {
          /* Get the vector and its local index in ua */
          _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);

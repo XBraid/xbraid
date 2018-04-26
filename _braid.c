@@ -80,15 +80,38 @@ _braid_OptimDestroy( braid_Core core)
    braid_App    app        = _braid_CoreElt(core, app);
    braid_Optim  optim      = _braid_CoreElt(core, optim);
    _braid_Grid *fine_grid  = _braid_CoreElt(core, grids)[0];
+   braid_Int    storage    = _braid_CoreElt(core, storage);
    braid_Int    clower     = _braid_GridElt(fine_grid, clower);
    braid_Int    iupper     = _braid_GridElt(fine_grid, iupper);
+   braid_Int    ilower     = _braid_GridElt(fine_grid, ilower);
    braid_Int    cfactor    = _braid_GridElt(fine_grid, cfactor);
-   braid_Int    ic, iclocal, sflag;
+   braid_Int    ic, iclocal, sflag, increment, destroy_flag;
+
+   /* Get the number of adjoint vectors on finest level */
+   if (storage < 0 ) 
+   {
+      /* Only C-point storage */
+      ilower    = clower;
+      increment = cfactor;
+   }
+   else
+   {
+      /* All points */
+      increment = 1;
+   }
 
    /* Free the adjoint variables and tapeinput */
-   for (ic=clower; ic <= iupper; ic += cfactor)
+   for (ic=ilower; ic <= iupper; ic += increment)
    {
-      if( _braid_IsCPoint(ic, cfactor))
+      destroy_flag = 1;
+
+      /* if only C-point storage, destroy only at C-points */
+      if (storage < 0 &&  !(_braid_IsCPoint(ic, cfactor)) )
+      {
+         destroy_flag = 0;
+      } 
+
+      if (destroy_flag)
       {
          _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
          _braid_CoreFcn(core, free)( app, optim->adjoints[iclocal]);
@@ -110,25 +133,60 @@ _braid_UpdateAdjoint(braid_Core core,
    MPI_Comm     comm      = _braid_CoreElt(core, comm);
    braid_Optim  optim     = _braid_CoreElt(core, optim);
    braid_Int    tnorm     = _braid_CoreElt(core, tnorm);
+   braid_Int    storage   = _braid_CoreElt(core, storage);
+   braid_Int    iter      = _braid_CoreElt(core, niter);
    _braid_Grid *fine_grid = _braid_CoreElt(core, grids)[0];
    braid_Int    clower    = _braid_GridElt(fine_grid, clower);
    braid_Int    iupper    = _braid_GridElt(fine_grid, iupper);
+   braid_Int    ilower    = _braid_GridElt(fine_grid, ilower);
    braid_Int    cfactor   = _braid_GridElt(fine_grid, cfactor);
-   braid_Int    ic, iclocal, sflag;
    braid_Real   rnorm_adj, rnorm_temp, global_rnorm;
    braid_Vector tape_vec, adjoint_vec;
+   braid_Int    ic, iclocal, sflag, increment, upd_flag;
  
    rnorm_adj    = 0.;
    global_rnorm = 0.;
-   /* Loop over all C-point on the fine grid */
-   for (ic=clower; ic <= iupper; ic += cfactor)
+
+   /* Get the number of adjoint vectors on finest level */
+   if (storage < 0 ) 
    {
-      if( _braid_IsCPoint(ic, cfactor))
+      /* Only C-point storage */
+      ilower    = clower;
+      increment = cfactor;
+   }
+   else
+   {
+      /* All points */
+      increment = 1;
+   }
+
+   /* Loop over all adjoint vectors on the fine grid */
+   for (ic=ilower; ic <= iupper; ic += increment)
+   {
+      upd_flag = 1;
+      
+      /* If first iteration, update only C-points */
+      if (iter == 0)
       {
-         /* Get the local index of the C-points */
+         if (!_braid_IsCPoint(ic, cfactor))
+         {
+            upd_flag = 0;
+         }
+      }
+
+      /* If only c-point storage, update only c-points, else update all */
+      if (storage < 0 && !_braid_IsCPoint(ic, cfactor) )
+      {
+         upd_flag = 0;
+      }
+
+      /* Compute norm and update */
+      if(upd_flag)
+      {
+         /* Get the local index of the points */
          _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
 
-         tape_vec    = optim->tapeinput[iclocal]->userVector;  
+         tape_vec    = optim->tapeinput[iclocal]->userVector;   
          adjoint_vec = optim->adjoints[iclocal];
 
          if (ic > 0)
@@ -136,8 +194,6 @@ _braid_UpdateAdjoint(braid_Core core,
             /* Compute the norm of the adjoint residual */
             _braid_CoreFcn(core, sum)(app, 1., tape_vec, -1., adjoint_vec);
             _braid_CoreFcn(core, spatialnorm)(app, adjoint_vec, &rnorm_temp);
-            // printf(" rnorm at ic %d iclocal %d: %1.14e\n", ic, iclocal, rnorm_temp);
-
             if(tnorm == 1)       /* one-norm */ 
             {  
                rnorm_adj += rnorm_temp;
@@ -160,7 +216,6 @@ _braid_UpdateAdjoint(braid_Core core,
       }
    }
 
- 
    /* Compute global residual norm. */
    if(tnorm == 1)       /* one-norm reduction */
    {  
@@ -314,28 +369,59 @@ _braid_InitAdjointVars(braid_Core   core,
 
    braid_Real       tstart   = _braid_CoreElt(core, tstart);
    braid_App        app      = _braid_CoreElt(core, app);
+   braid_Int        storage   = _braid_CoreElt(core, storage);
    braid_Int        ncpoints  = _braid_GridElt(fine_grid, ncpoints);
    braid_Int        clower    = _braid_GridElt(fine_grid, clower);
    braid_Int        iupper    = _braid_GridElt(fine_grid, iupper);
+   braid_Int        ilower    = _braid_GridElt(fine_grid, ilower);
    braid_Int        cfactor   = _braid_GridElt(fine_grid, cfactor);
    braid_Vector    *adjoints  = NULL; 
    braid_VectorBar *tapeinput = NULL; 
    braid_BaseVector u; 
    braid_VectorBar  bar_copy;
    braid_Vector     mybar;
-   braid_Int        ic, iclocal, sflag;
+   braid_Int        ic, iclocal, sflag, nupoints, increment;
 
+
+   /* Get the number of adjoint vectors on finest level */
+   if (storage < 0 ) 
+   {
+      /* Only C-point storage */
+      nupoints  = ncpoints;
+      ilower    = clower;
+      increment = cfactor;
+   }
+   else
+   {
+      /* All points */
+      nupoints  = iupper-ilower+1; 
+      increment = 1;
+   }
 
    /* Allocate the adjoint variables and pointer to input variables */
-   adjoints            = _braid_CTAlloc(braid_Vector, ncpoints);
-   tapeinput           = _braid_CTAlloc(braid_VectorBar, ncpoints);
+   adjoints            = _braid_CTAlloc(braid_Vector, nupoints);
+   tapeinput           = _braid_CTAlloc(braid_VectorBar, nupoints);
 
-   /* Initialize */
-   for (ic=clower; ic <= iupper; ic += cfactor)
+   /* Initialize adjoints and tapeinput*/
+   braid_Int store = 0;
+   for (ic=ilower; ic <= iupper; ic += increment)
    {
-      if( _braid_IsCPoint(ic, cfactor))
+      if (storage < 0)
       {
-         _braid_UGetVectorRef(core, 0, ic, &u);
+         /* Init only C-points  */
+         if( _braid_IsCPoint(ic, cfactor))
+         {
+            store = 1;
+         }
+      }
+      else
+      {
+         /* Init all */
+         store = 1;
+      }
+
+      if (store)
+      {
          _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
 
          /* Initialize adjoint variables with zeros */
@@ -343,9 +429,14 @@ _braid_InitAdjointVars(braid_Core   core,
          _braid_CoreFcn(core, sum)( app, -1.0, mybar, 1.0, mybar);
          adjoints[iclocal] = mybar;
 
-         /* Initialize the tapeinput pointer with u_bar */
-         _braid_VectorBarCopy(u->bar, &bar_copy);
-         tapeinput[iclocal] = bar_copy;
+         /* initialize the tapeinput with u_bar only at C-points */
+         /* TODO: Warm-restart might not work here. It needs a tapeinput everywhere then. Maybe just check if u->bar != NULL! */
+         if( _braid_IsCPoint(ic, cfactor))
+         {
+            _braid_UGetVectorRef(core, 0, ic, &u);
+            _braid_VectorBarCopy(u->bar, &bar_copy);
+            tapeinput[iclocal] = bar_copy;
+         }
       }
    }
 
@@ -417,9 +508,9 @@ _braid_AdjointFeatureCheck(braid_Core core)
       err_char = "Time refinement";
       err = 1;
    }
-   if (storage  >= 0 ) 
+   if (storage  >= 1 ) 
    {
-      err_char = "Storage >= 0";
+      err_char = "Storage >= 1";
       err = 1;
    } 
     // r_space?
@@ -1227,16 +1318,16 @@ _braid_AccessVector(braid_Core          core,
  *----------------------------------------------------------------------------*/
 
 braid_Int
-_braid_GetUInit(braid_Core     core,
-                braid_Int      level,
-                braid_Int      index,
+_braid_GetUInit(braid_Core         core,
+                braid_Int          level,
+                braid_Int          index,
                 braid_BaseVector   u,
                 braid_BaseVector  *ustop_ptr)
 {
    _braid_Grid    **grids    = _braid_CoreElt(core, grids);
    braid_Int        ilower   = _braid_GridElt(grids[level], ilower);
    braid_Int        storage  = _braid_CoreElt(core, storage);
-   braid_BaseVector    *va       = _braid_GridElt(grids[level], va);
+   braid_BaseVector    *va   = _braid_GridElt(grids[level], va);
 
    braid_BaseVector     ustop = *ustop_ptr;
    braid_Int        ii;
@@ -3462,6 +3553,7 @@ _braid_InitHierarchy(braid_Core    core,
       {
          nupoints = iupper-ilower+1;                  /* all points */
       }
+
       ua = _braid_CTAlloc(braid_BaseVector, nupoints+1);
       _braid_GridElt(grid, nupoints)  = nupoints;
       _braid_GridElt(grid, ua_alloc)  = ua;
