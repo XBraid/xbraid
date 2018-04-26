@@ -1908,10 +1908,12 @@ braid_GetObjective(braid_Core  core,
 {
    if ( !(_braid_CoreElt(core, adjoint)) )
    {
-      return _braid_error_flag;
+      *objective_ptr = 0.0;
    }  
-
-   *objective_ptr = _braid_CoreElt(core, optim)->objective;
+   else
+   {
+      *objective_ptr = _braid_CoreElt(core, optim)->objective;
+   }
 
    return _braid_error_flag;
 }                
