@@ -349,10 +349,10 @@ my_ObjectiveT_diff(braid_App            app,
 /* Transposed partial derivatives of step times u_bar */
 int
 my_Step_diff(braid_App              app,
-                // braid_Vector     ustop,
-                // braid_Vector     fstop,
+                braid_Vector        ustop,
                 braid_Vector        u,
                 braid_Vector        u_bar,
+                braid_Vector        ustop_bar,
                 braid_StepStatus    status)
 {
 

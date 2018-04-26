@@ -22,8 +22,8 @@ _braid_BaseStep(braid_Core       core,
                 braid_StepStatus status )
 {
    _braid_Action   *action;
-   braid_Vector     u_copy;
-   braid_VectorBar  bar_copy;
+   braid_Vector     u_copy, ustop_copy;
+   braid_VectorBar  bar_copy, ustopbar_copy;
    braid_Int        myid      = _braid_CoreElt(core, myid);
    braid_Int        verbose   = _braid_CoreElt(core, verbose);
    braid_Int        record    = _braid_CoreElt(core, record);
@@ -55,13 +55,17 @@ _braid_BaseStep(braid_Core       core,
       action->tol        = tol;
       _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
 
-      /* Push a copy of the primal vector to the primal tape */
-      _braid_CoreFcn(core, clone)(app, u->userVector, &u_copy);  // this will accolate memory for the copy!
+      /* Copy & push u & ustop to primal tape */
+      _braid_CoreFcn(core, clone)(app, u->userVector, &u_copy); 
+      _braid_CoreFcn(core, clone)(app, ustop->userVector, &ustop_copy);  
       _braid_CoreElt(core, userVectorTape) = _braid_TapePush( _braid_CoreElt(core, userVectorTape), u_copy);
+      _braid_CoreElt(core, userVectorTape) = _braid_TapePush( _braid_CoreElt(core, userVectorTape), ustop_copy);
 
-      /* Push a copy of the bar vector to the bartape */
+      /* Copy & push ubar & ustopbar to bar tape */
       _braid_VectorBarCopy(u->bar, &bar_copy);
+      _braid_VectorBarCopy(ustop->bar, &ustopbar_copy);
       _braid_CoreElt(core, barTape) = _braid_TapePush(_braid_CoreElt(core, barTape), bar_copy);
+      _braid_CoreElt(core, barTape) = _braid_TapePush(_braid_CoreElt(core, barTape), ustopbar_copy);
   }
 
    /* Call the users Step function */
@@ -648,8 +652,8 @@ _braid_BaseTimeGrid(braid_Core  core,
 braid_Int
 _braid_BaseStep_diff(_braid_Action *action)
 {
-   braid_Vector     u;
-   braid_VectorBar  ubar;
+   braid_Vector     u, ustop;
+   braid_VectorBar  ubar, ustopbar;
    braid_Core       core     = action->core;
    braid_StepStatus status   = (braid_StepStatus) action->core;
    braid_Real       inTime   = action->inTime;
@@ -666,21 +670,30 @@ _braid_BaseStep_diff(_braid_Action *action)
 
    if ( verbose ) printf("%d: STEP_DIFF %.4f to %.4f, %d\n", myid, inTime, outTime, tidx);
 
-   /* Get the priamal and bar vectors and pop them from the tapes */
+   /* Pop ustop & u from primal tape */
+   ustop    = (braid_Vector)    (_braid_CoreElt(core, userVectorTape)->data_ptr);
+   _braid_CoreElt(core, userVectorTape) = _braid_TapePop( _braid_CoreElt(core, userVectorTape) );
    u    = (braid_Vector)    (_braid_CoreElt(core, userVectorTape)->data_ptr);
+   _braid_CoreElt(core, userVectorTape) = _braid_TapePop( _braid_CoreElt(core, userVectorTape) );
+
+   /* Pop ustopbar & ubar from bar tape */
+   ustopbar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
+   _braid_CoreElt(core, barTape)        = _braid_TapePop( _braid_CoreElt(core, barTape) );
    ubar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
    _braid_CoreElt(core, barTape)        = _braid_TapePop( _braid_CoreElt(core, barTape) );
-   _braid_CoreElt(core, userVectorTape) = _braid_TapePop( _braid_CoreElt(core, userVectorTape) );
+
 
    /* Set up the status structure */
    _braid_StepStatusInit(inTime, outTime, tidx, tol, iter, level, nrefine, gupper, status);
 
    /* Call the users's differentiated step function */
-   _braid_CoreFcn(core, step_diff)(app, u, ubar->userVector, status);
+   _braid_CoreFcn(core, step_diff)(app, ustop, u, ubar->userVector, ustopbar->userVector, status);
 
    /* Free memory of the primal and bar vectors */
    _braid_VectorBarDelete(core, ubar);
+   _braid_VectorBarDelete(core, ustopbar);
    _braid_CoreFcn(core, free)(app, u);
+   _braid_CoreFcn(core, free)(app, ustop);
 
    return _braid_error_flag;
 }

@@ -358,8 +358,8 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnObjectiveTDiff)(braid_App             app,       /**< user-defined _braid_App structure */
-                             braid_Vector          u,         /**< primal vector */
-                             braid_Vector          u_bar,     /**< adjoint vector */
+                             braid_Vector          u,         /**< input: state vector at current time */
+                             braid_Vector          u_bar,     /**< output: adjoint vector */
                              braid_Real            F_bar,     /**< scalar input, multiply the derivative with this  */
                              braid_ObjectiveStatus ostatus    /**< query this struc for information (e.g. t, tindex, etc) */
                             );
@@ -369,10 +369,10 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnStepDiff)(braid_App        app,       /**< user-defined _braid_App structure */
-                     //  braid_Vector     ustop,   /**< input, u vector at *tstop* */
-                     //  braid_Vector     fstop,   /**< input, right-hand-side at *tstop* */
-                       braid_Vector     u,         /**< primal vector */
-                       braid_Vector     u_bar,     /**< adjoint vector */
+                       braid_Vector     ustop,     /**< input, u vector at *tstop* */
+                       braid_Vector     u,         /**< input, u vector at *tstart* */
+                       braid_Vector     u_bar,     /**< outpu, adjoint vector for u */
+                       braid_Vector     ustop_bar, /**< output, adjoint vector for ustop */
                        braid_StepStatus status     /**< query this struct for info about u (e.g., tstart and tstop) */ 
                       );
 

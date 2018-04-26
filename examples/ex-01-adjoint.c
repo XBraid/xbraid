@@ -270,10 +270,10 @@ my_ObjectiveT_diff(braid_App            app,
 /* Transposed partial derivatives of the step routine times u_bar */
 int
 my_Step_diff(braid_App              app,
-                // braid_Vector     ustop,
-                // braid_Vector     fstop,
+                braid_Vector        ustop,
                 braid_Vector        u,
                 braid_Vector        u_bar,
+                braid_Vector        ustop_bar,
                 braid_StepStatus    status)
 {
 
@@ -343,6 +343,7 @@ int main (int argc, char *argv[])
    app->design      = lambda;
    app->gradient    = 0.0;
 
+
    /* Initialize XBraid */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
              my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
@@ -355,12 +356,14 @@ int main (int argc, char *argv[])
    /* Set some typical Braid parameters */
    braid_SetMaxLevels(core, 2);             /* Number of time-grid levels */
    braid_SetCFactor(core, -1, 2);           /* Coarsening factor on all levels */
-   braid_SetMaxIter(core, 10);              /* Maximum number of state and adjoint iterations */
+   braid_SetMaxIter(core, 20);              /* Maximum number of state and adjoint iterations */
    braid_SetAccessLevel(core, 1);           /* Access level: only after drive() finishes */
    braid_SetPrintLevel( core, 1);           /* Print level: report norms of state and adjoint while iterating in drive() */
    braid_SetAbsTol(core, 1e-6);             /* Tolerance on state residual norm */
    braid_SetAbsTolAdjoint(core, 1e-6);      /* Tolerance on adjoint residual norm */
 
+   // braid_SetStorage(core, 1);
+   // _braid_SetVerbosity(core, 1);
 
    /* Run simulation and adjoint-based gradient computation */
    braid_Drive(core);
