@@ -371,8 +371,8 @@ typedef braid_Int
 (*braid_PtFcnStepDiff)(braid_App        app,       /**< user-defined _braid_App structure */
                        braid_Vector     ustop,     /**< input, u vector at *tstop* */
                        braid_Vector     u,         /**< input, u vector at *tstart* */
-                       braid_Vector     u_bar,     /**< outpu, adjoint vector for u */
                        braid_Vector     ustop_bar, /**< output, adjoint vector for ustop */
+                       braid_Vector     u_bar,     /**< output, adjoint vector for u */
                        braid_StepStatus status     /**< query this struct for info about u (e.g., tstart and tstop) */ 
                       );
 

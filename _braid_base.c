@@ -687,7 +687,7 @@ _braid_BaseStep_diff(_braid_Action *action)
    _braid_StepStatusInit(inTime, outTime, tidx, tol, iter, level, nrefine, gupper, status);
 
    /* Call the users's differentiated step function */
-   _braid_CoreFcn(core, step_diff)(app, ustop, u, ubar->userVector, ustopbar->userVector, status);
+   _braid_CoreFcn(core, step_diff)(app, ustop, u, ustopbar->userVector, ubar->userVector, status);
 
    /* Free memory of the primal and bar vectors */
    _braid_VectorBarDelete(core, ubar);
