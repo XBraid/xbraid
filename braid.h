@@ -628,10 +628,13 @@ braid_SetNFMGVcyc(braid_Core  core,         /**< braid_Core (_braid_Core) struct
 
 /**
  * Sets the storage properties of the code.
+ *  -1     : Default, store only C-points
+ *   0     : Full storage of C- and F-Points on all levels
+ *   x > 0 : Full storage on all levels >= x 
  **/
 braid_Int
 braid_SetStorage(braid_Core  core,          /**< braid_Core (_braid_Core) struct*/
-                 braid_Int   storage        /**< store C-points (0), all points (1) */
+                 braid_Int   storage        /**< storage property */
                 );
 
 /** 
