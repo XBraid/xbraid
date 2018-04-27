@@ -1,12 +1,13 @@
-
 /**
- * Optimization template. 
+ * Optimization template - Implements a simple parallel-in-time optimization loop.
  * 
- * Implements a simple parallel-in-time optimization loop. 
+ * Calls the user's design_update routine in each outer optimization iteration. 
+ * A line-search procedure should be added by the user. 
  *  
  **/
 
 #include "braid.h"
+
 
 braid_Int
 braid_DriveOptimization(braid_Core                   core,    /**< braid_Core (_braid_Core) struct*/
@@ -80,6 +81,8 @@ braid_DriveOptimization(braid_Core                   core,    /**< braid_Core (_
          break;
       }
 
+      /*** Implement your favorite line-search procedure here! ***/
+
       /* Design update */
       design_update(app, stepsize);
    }
@@ -97,5 +100,6 @@ braid_DriveOptimization(braid_Core                   core,    /**< braid_Core (_
 
    return 0;
 }                    
+
 
 
