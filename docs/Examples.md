@@ -1030,10 +1030,10 @@ Note that \f$\bar u_i\f$ gets overwritten (''\f$=\f$''), wheras \f$\rho\f$ is up
             return 0;
          }
 
-   **Important note on the usage of ustop**: If the `Step` routine uses the input vector `ustop` instead of `u` for initializing a (non-)linear solve within \f$\Phi\f$, then `Step_diff` must update `ustop_bar` instead of `u_bar` and set `u_bar` to zero, i.e.
+   **Important note on the usage of ustop**: If the `Step` routine uses the input vector `ustop` instead of `u` for initializing a (non-)linear solve within \f$\Phi\f$, then `Step_diff` must update `ustop_bar` instead of `u_bar` and set `u_bar` to zero:
    \f[
-      \overline{ustop}  \leftarrow \left(\frac{\partial \Phi(ustop,\rho)}{\partial ustop}\right) ^T \bar u;
-      \quad \text{and} \quad \bar u \leftarrow 0.0;
+      \overline{ustop}  += \left(\frac{\partial \Phi(ustop,\rho)}{\partial ustop}\right) ^T \bar u;
+      \quad \text{and} \quad \bar u = 0.0;
    \f]
 
 4. **ResetGradient**: This routine sets the gradient to zero. 
