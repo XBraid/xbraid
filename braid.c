@@ -245,6 +245,8 @@ _braid_DriveCheckConvergence(braid_Core  core,
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
    braid_Int            tight_fine_tolx = _braid_CoreElt(core, tight_fine_tolx);
    braid_Optim          optim           = _braid_CoreElt(core, optim);
+   braid_Int            adjoint         = _braid_CoreElt(core, adjoint);
+   braid_Int            obj_only        = _braid_CoreElt(core, obj_only);
    braid_Real           rnorm, rnorm0;
    braid_Real           rnorm_adj, rnorm0_adj;
    braid_Real           tol_adj, rtol_adj;
@@ -264,7 +266,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
    }
 
 
-   if (_braid_CoreElt(core, adjoint))
+   if ( adjoint )
    {
       /* Store state norm in the optimization structure */
       optim->rnorm  = rnorm;
@@ -282,7 +284,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
    {
       tol *= rnorm0;
    }
-   if (_braid_CoreElt(core, adjoint))
+   if ( adjoint )
    {
       if (rtol_adj)
       {
@@ -294,7 +296,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
    {
       done = 1;
 
-      if (_braid_CoreElt(core, adjoint))
+      if ( adjoint && !obj_only )
       {
          /* Keep iterating, if adjoint not converged yet. */
          if ( ! (rnorm_adj < tol_adj) )
@@ -359,6 +361,10 @@ _braid_DrivePrintStatus(braid_Core  core,
       optim           = _braid_CoreElt(core, optim);
       rnorm_adj = optim->rnorm_adj;
       objective = optim->objective;
+      if (_braid_CoreElt(core, obj_only))
+      {
+         rnorm_adj = 0.0;
+      }
    }
 
    _braid_GetRNorm(core, -1, &rnorm);
