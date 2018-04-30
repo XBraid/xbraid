@@ -1080,6 +1080,7 @@ Further, the reduced gradient, which is stored in the user's `App` structure, ho
       double mygradient = app->gradient;
       MPI_Allreduce(&mygradient, &(app->gradient), 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD); 
 
+Look at the source code to see how the gradient is verified using Finite Differences. 
 
 # Optimization with the Simplest Example {#exampleoneoptimization}
 ``examples/ex-01-optimization.c`` implements a simple optimization iteration for solving an inverse design problem for the simple scalar ODE example:

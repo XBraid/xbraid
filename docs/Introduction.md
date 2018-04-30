@@ -836,9 +836,17 @@ Similar to the primal XBraid algorithm, the user can choose a halting tolerance 
    \f]
    can be chosen.
 
-### Addtional options 
+### Finite Difference Testing 
+You can verify the gradient computed from XBraid\_Adjoint using Finite Differences. Let \f$e_i\f$ denote the \f$i\f$-th unit vector in the design space, then the i-th entry of the gradient should match with 
+\f[
+   i\text{-th Finite Difference: } \quad \frac{J(\bold u_{\rho + he_i}, \rho + he_i) - J(\bold u, \rho)}{h} 
+\f]
+for a small perturbation \f$h>0\f$. Here, \f$\bold u_{\rho + he_i}\f$ denotes the new state solution for the perturbed design variable. 
+Keep in mind, that round-up errors have to be considered when computing the Finite Differences for very small perturbations \f$h \to 0\f$. Hence, you should vary the parameter to find the best fit. 
 
-- There's an option for running XBraid_Adjoint in `ObjectiveOnly` mode, see [braid_SetObjectiveOnly](@ref braid_SetObjectiveOnly). When in this mode, XBraid and XBraid_Adjoint will only solve the ODE system and evaluate the objective function, without actually computing its derivative. This might be useful for Finite-Difference testing of the derivative, or when implementing a line-search within an optimization algorithm. 
+In order to save some computational work while computing the perturbed objective function value, XBraid_Adjoint can run in `ObjectiveOnly` mode, see [braid_SetObjectiveOnly](@ref braid_SetObjectiveOnly). When in this mode, XBraid_Adjoint will only solve the ODE system and evaluate the objective function, without actually computing its derivative. This option might also be useful within an optimization framework e.g. for implementing a line-search procedure.  
+
+
 
 ### Getting  started
 
