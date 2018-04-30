@@ -912,7 +912,7 @@ where \f$\lambda\f$ is considered the design variable. We consider an objective 
          } my_App;
 
 
-- The user's **Step** routine queries the app to get the design and propagates the `braid_Vector` forward in time for one time-step:
+- The user's **Step** routine queries the app to get the design and propagates the `braid_Vector` forward in time for one time step:
 
          int
          my_Step(braid_App        app,
@@ -944,7 +944,7 @@ Other primal user routines for XBraid stay the same as in `examples/ex-01.c`. In
                        braid_ObjectiveStatus  ostatus,
                        double                *objectiveT_ptr)
          {
-            /* Get the total number of time-steps */
+            /* Get the total number of time steps */
             braid_ObjectiveStatusGetNTPoints(ostatus, &ntime);
 
             /* Evaluate the local objective: 1/N u(t)^2 */
@@ -954,7 +954,7 @@ Other primal user routines for XBraid stay the same as in `examples/ex-01.c`. In
             return 0;
          }
 
-   The `ObjectiveStatus` can be queried for information about the current status of XBraid (time, time-index, number of time-steps, current iteration number, etc.)
+   The `ObjectiveStatus` can be queried for information about the current status of XBraid (time, time-index, number of time steps, current iteration number, etc.)
    XBraid_Adjoint calls the `ObjectiveT` function on the finest time-grid level during the down-cycle of the multig-grid algorithm and adds the value to a global objective function value.  
 
 2. **ObjectiveT_diff**: 
@@ -976,7 +976,7 @@ Note that \f$\bar u_i\f$ gets overwritten (''\f$=\f$''), wheras \f$\rho\f$ is up
             double ddu;      /* Derivative wrt u */
             double ddesign;  /* Derivative wrt design */
 
-            /* Get the total number of time-steps */
+            /* Get the total number of time steps */
             braid_ObjectiveStatusGetNTPoints(ostatus, &ntime);
 
             /* Partial derivative with respect to u times F_bar */

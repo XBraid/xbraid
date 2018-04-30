@@ -670,14 +670,17 @@ In many application scenarios, the ODE system is driven by some independent desi
 \f[
    u_i = \Phi_i(u_{i-1}, \rho), \quad \forall i=1, \dots N
 \f]
-where the time-stepper \f$\Phi_i\f$, which propagates a state at a time \f$t_{i-1}\f$ to the next time-step at \f$t_i\f$, now also depends on the design parameters \f$\rho\f$. In order to quantify the simulation output for the given design, a real-valued objective function can then be set up that measures the quality of the ODE solution:   
+where the time-stepper \f$\Phi_i\f$, which propagates a state at a time \f$t_{i-1}\f$ to the next time step at \f$t_i\f$, now also depends on the design parameters \f$\rho\f$. In order to quantify the simulation output for the given design, a real-valued objective function can then be set up that measures the quality of the ODE solution:   
 \f[
    J(\mathbf{u}, \rho) \in \mathrm{R}.
 \f] 
 Here, \f$\mathbf{u} =  (u_0, \dots, u_N)\f$ denotes the space-time state solution for a given design. 
 
 XBraid_Adjoint is a consistent discrete time-parallel adjoint solver for XBraid which provides sensitivity information of the output quantity \f$J\f$ with respect to the user-defined design parameters \f$\rho\f$.
-The ability to compute sensitivities can greatly improve and enhance the simulation tool, as for example for solving design optimization or optimal control problems, parameter estimation for validation and verification purposes, error estimation or uncertainty quantification techniques. 
+The ability to compute sensitivities can greatly improve and enhance the simulation tool, as for example for solving design optimization or optimal control problems, parameter estimation for validation and verification purposes, error estimation or uncertainty quantification techniques. XBraid_Adjoint is non-intrusive with respect to the adjoint time-stepping scheme so that existing time-serial adjoint codes can be integrated easily though an extended user-interface. 
+
+XBraid_Adjoint has been developed in collaboration with the Scientific Computing group at TU Kaiserslautern, Germany. 
+
 
 
 ## Short Introduction to Adjoint-based Sensitivity Computation {#adjointoverview}
@@ -769,7 +772,7 @@ The user-interface for XBraid_Adjoint allows for objective functions of the foll
    J =  F\left( \int_{t_0}^{t^1} f(u(t),\rho) ~ \mathrm{d}t \right)
 \f]
 It involves a time-integral part of some time-dependent quantity of interest \f$f\f$ as well as a *postprocessing* function \f$F\f$. 
-The time-interval boundaries \f$t_0,t_1\f$ can be set using the options [braid_SetTStartObjective](@ref braid_SetTStartObjective) and [braid_SetTStopObjective](@ref braid_SetTStopObjective), otherwise the entire time domain will be considered. Note that these options can be used for objective functions that are only evaluated at one specific time instance  by setting \f$t_0 = t_1\f$ (e.g. in cases where only the last time-step is of interest). 
+The time-interval boundaries \f$t_0,t_1\f$ can be set using the options [braid_SetTStartObjective](@ref braid_SetTStartObjective) and [braid_SetTStopObjective](@ref braid_SetTStopObjective), otherwise the entire time domain will be considered. Note that these options can be used for objective functions that are only evaluated at one specific time instance  by setting \f$t_0 = t_1\f$ (e.g. in cases where only the last time step is of interest). 
 The postprocessing function \f$F\f$ offers the possibility to further modify the time-integral, e.g. for setting up a tracking-type objective function (substract a target value and square), or adding relaxation or penalty terms.
 While \f$f\f$ is mandatory for XBraid_Adjoint, the postprocessing routine \f$F\f$ is optional and is passed to XBraid_Adjoint though the optional [braid_SetPostprocessObjective](@ref braid_SetPostprocessObjective) routine. 
 XBraid_Adjoint will perform the time-integration by summing up the \f$f\f$ evaluations in the given time-domain
