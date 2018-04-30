@@ -383,7 +383,7 @@ _braid_DrivePrintStatus(braid_Core  core,
       }
       else
       {
-         _braid_printf("  Braid: %3d  %1.6e  %1.6e  %1.6e\n", iter, rnorm, rnorm_adj, objective);
+         _braid_printf("  Braid: %3d  %1.6e  %1.6e  %1.8e\n", iter, rnorm, rnorm_adj, objective);
       }
    }
    else

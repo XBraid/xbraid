@@ -343,6 +343,7 @@ int main (int argc, char *argv[])
    app->design      = lambda;
    app->gradient    = 0.0;
 
+   // app->design += 1e-8;
 
    /* Initialize XBraid */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
@@ -382,6 +383,36 @@ int main (int argc, char *argv[])
       printf("\n Objective = %1.14e\n Gradient  = %1.14e\n", objective, app->gradient);
    }
 
+   
+
+   /* --- Check the gradient with Finite Differences --- */
+   
+   double EPS = 1e-5;
+   double objective_ref, gradient_ref;
+   double finite_differences, err;
+
+   /* Store objective and gradient */
+   objective_ref = objective;
+   gradient_ref  = app->gradient;
+
+   /* Perturb the design */
+   app->design += EPS;
+
+   /* Compute a new solution and objective function value */
+   braid_SetObjectiveOnly(core, 1);
+   braid_Drive(core);
+   braid_GetObjective(core, &objective);
+
+   /* Compute finite differences and relative error */
+   finite_differences = (objective - objective_ref) / EPS;
+   err = (gradient_ref - finite_differences) / finite_differences;
+
+   /* Output */
+   if (rank == 0)
+   {
+      printf("\n Finite Differences: %1.14e\n", finite_differences);
+      printf(" Relative gradient error: %1.6f\n", err);
+   }
 
 
    /* Clean up */
