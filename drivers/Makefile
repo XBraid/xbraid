@@ -34,7 +34,7 @@ include $(BRAID_DIR)/makefile.inc
 # Build exmaples 
 ##################################################################
 
-HYPRE_DIR = $(BRAID_DIR)/../hypre-2.11.2/src/hypre
+HYPRE_DIR = $(BRAID_DIR)/../hypre/src/hypre
 HYPRE_FLAGS = -I$(HYPRE_DIR)/include
 HYPRE_LIB = -L$(HYPRE_DIR)/lib -lHYPRE
 
