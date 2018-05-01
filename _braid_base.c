@@ -515,6 +515,25 @@ _braid_BaseResidual(braid_Core        core,
    return _braid_error_flag;
 }
 
+braid_Int
+_braid_BaseFullResidual(braid_Core        core,
+                        braid_App         app,    
+                        braid_BaseVector  r,      
+                        braid_BaseVector  u,  
+                        braid_StepStatus  status )
+{
+   braid_Int        verbose  = _braid_CoreElt(core, verbose);
+   braid_Int        myid     = _braid_CoreElt(core, myid);
+
+   if ( verbose ) printf("%d: FULLRESIDUAL\n", myid);
+
+   /* Call the users Residual function */
+   _braid_CoreFcn(core, full_rnorm_res)(app, r->userVector, u->userVector, status);
+
+   return _braid_error_flag;
+}
+
+
 
 braid_Int
 _braid_BaseSCoarsen(braid_Core              core,

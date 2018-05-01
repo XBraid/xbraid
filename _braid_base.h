@@ -111,6 +111,15 @@ _braid_BaseResidual(braid_Core       core,
                     braid_StepStatus status  /**< query this struct for info about u (e.g., tstart and tstop) */ 
                     );
 
+
+braid_Int
+_braid_BaseFullResidual(braid_Core        core,
+                        braid_App         app,    
+                        braid_BaseVector  r,      
+                        braid_BaseVector  u,  
+                        braid_StepStatus  status );
+
+
 braid_Int
 _braid_BaseSCoarsen(braid_Core              core,
                     braid_App               app,    /**< user-defined _braid_App structure */
