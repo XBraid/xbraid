@@ -125,7 +125,7 @@ void braid_F90_Name(braid_init_vec_f90, BRAID_INIT_VEC_F90)(braid_F90_ObjPtr, br
 braid_Int
 braid_Init_Vec_F90_Iface(braid_App      app,           /**< user-defined _braid_App structure */
                          braid_Real     t,             /**< time value for *u_ptr* */
-                         braid_BaseVector  *u_ptr          /**< output, newly allocated and initialized vector */
+                         braid_Vector  *u_ptr          /**< output, newly allocated and initialized vector */
                          )
 {
    /* Temporary scalar so that the calling function's alpha and beta are not overwritten */
@@ -144,7 +144,7 @@ braid_Init_Vec_F90_Iface(braid_App      app,           /**< user-defined _braid_
 void braid_F90_Name(braid_access_f90, BRAID_ACCESS_F90)(braid_F90_ObjPtr, braid_F90_ObjPtr, braid_F90_ObjPtr);
 braid_Int
 braid_Access_F90_Iface(braid_App           app,              /**< user-defined _braid_App structure */
-                       braid_BaseVector        u,                /**< vector to be accessed */
+                       braid_Vector        u,                /**< vector to be accessed */
                        braid_AccessStatus  status            /**< can be querried for info like the current XBraid Iteration */
                        )
 {
@@ -162,7 +162,7 @@ braid_Access_F90_Iface(braid_App           app,              /**< user-defined _
 void braid_F90_Name(braid_free_f90, BRAID_FREE_F90)(braid_F90_ObjPtr, braid_F90_ObjPtr);
 braid_Int
 braid_Free_F90_Iface(braid_App     app,            /**< user-defined _braid_App structure */
-                     braid_BaseVector  u               /**< vector to free */
+                     braid_Vector  u               /**< vector to free */
                      )
 {
    /* Pass the address of u.  Fortran must have a pointer here so that it can deallocate u */
@@ -181,8 +181,8 @@ braid_Free_F90_Iface(braid_App     app,            /**< user-defined _braid_App 
 void braid_F90_Name(braid_clone_f90, BRAID_CLONE_F90)(braid_F90_ObjPtr, braid_F90_ObjPtr,  braid_F90_ObjPtr);
 braid_Int
 braid_Clone_F90_Iface(braid_App      app,          /**< user-defined _braid_App structure */
-                      braid_BaseVector   u,            /**< vector to clone */ 
-                      braid_BaseVector  *v_ptr         /**< output, newly allocated and cloned vector */
+                      braid_Vector   u,            /**< vector to clone */ 
+                      braid_Vector  *v_ptr         /**< output, newly allocated and cloned vector */
                       )
 {
    braid_F90_Name(braid_clone_f90, BRAID_CLONE_F90)( braid_PassF90_Obj(    app),  
@@ -202,9 +202,9 @@ void braid_F90_Name(braid_sum_f90, BRAID_SUM_F90)(braid_F90_ObjPtr, braid_F90_Re
 braid_Int
 braid_Sum_F90_Iface(braid_App     app,             /**< user-defined _braid_App structure */
                     braid_Real    alpha,           /**< scalar for AXPY */
-                    braid_BaseVector  x,               /**< vector for AXPY */
+                    braid_Vector  x,               /**< vector for AXPY */
                     braid_Real    beta,            /**< scalar for AXPY */
-                    braid_BaseVector  y                /**< output and vector for AXPY */
+                    braid_Vector  y                /**< output and vector for AXPY */
                     )
 {
    /* Temporary scalars so that the calling function's alpha and beta are not overwritten */
@@ -228,8 +228,8 @@ braid_Sum_F90_Iface(braid_App     app,             /**< user-defined _braid_App 
 void braid_F90_Name(braid_spatialnorm_f90, BRAID_SPATIALNORM_F90)(braid_F90_ObjPtr, braid_F90_ObjPtr,  braid_F90_Real *);
 braid_Int
 braid_SpatialNorm_F90_Iface(braid_App      app,                /**< user-defined _braid_App structure */
-                            braid_BaseVector   u,                  /**< vector to norm */
-                            braid_Real    *norm_ptr            /**< output, norm of braid_BaseVector (this is a spatial norm) */ 
+                            braid_Vector   u,                  /**< vector to norm */
+                            braid_Real    *norm_ptr            /**< output, norm of braid_Vector (this is a spatial norm) */ 
                             )
 {
    braid_F90_Name(braid_spatialnorm_f90, BRAID_SPATIALNORM_F90)( 
@@ -249,9 +249,9 @@ braid_SpatialNorm_F90_Iface(braid_App      app,                /**< user-defined
 void braid_F90_Name(braid_step_f90, BRAID_STEP_F90)(braid_F90_ObjPtr, braid_F90_ObjPtr, braid_F90_ObjPtr,  braid_F90_Int *, braid_F90_ObjPtr, braid_F90_ObjPtr);
 braid_Int
 braid_Step_F90_Iface(braid_App        app,    /**< user-defined _braid_App structure */
-                     braid_BaseVector     ustop,  /**< input, u vector at *tstop* */
-                     braid_BaseVector     fstop,  /**< input, right-hand-side at *tstop* */
-                     braid_BaseVector     u     , /**< output, u vector at *tstop* */
+                     braid_Vector     ustop,  /**< input, u vector at *tstop* */
+                     braid_Vector     fstop,  /**< input, right-hand-side at *tstop* */
+                     braid_Vector     u     , /**< output, u vector at *tstop* */
                      braid_StepStatus status  /**< query this struct for info about (e.g., tstart and tstop), allows for steering (e.g., set rfactor) */ 
                      )
 {
@@ -302,7 +302,7 @@ braid_BufSize_F90_Iface(braid_App           app,              /**< user-defined 
 void braid_F90_Name(braid_bufpack_f90, BRAID_BUFPACK_F90)(braid_F90_ObjPtr, braid_F90_ObjPtr, braid_F90_Void *, braid_F90_ObjPtr);
 braid_Int
 braid_BufPack_F90_Iface(braid_App      app,            /**< user-defined _braid_App structure */
-                        braid_BaseVector   u,              /**< vector to back into buffer */
+                        braid_Vector   u,              /**< vector to back into buffer */
                         void          *buffer,         /**< output, MPI buffer containing u */
                         braid_BufferStatus status      /**< querry this struct for info on the message type */
                         )
@@ -326,7 +326,7 @@ void braid_F90_Name(braid_bufunpack_f90, BRAID_BUFUNPACK_F90)(braid_F90_ObjPtr, 
 braid_Int
 braid_BufUnpack_F90_Iface(braid_App      app,          /**< user-defined _braid_App structure */
                           void          *buffer,       /**< MPI Buffer to unpack and place in u_ptr */
-                          braid_BaseVector  *u_ptr,         /**< output, braid_BaseVector containing buffer's data */
+                          braid_Vector  *u_ptr,         /**< output, braid_Vector containing buffer's data */
                           braid_BufferStatus  status   /**< querry this structure for info on the message type */
                           )
 {
@@ -349,8 +349,8 @@ braid_BufUnpack_F90_Iface(braid_App      app,          /**< user-defined _braid_
 void braid_F90_Name(braid_residual_f90, BRAID_RESIDUAL_F90)(braid_F90_ObjPtr, braid_F90_ObjPtr, braid_F90_ObjPtr, braid_F90_ObjPtr);
 braid_Int
 braid_Residual_F90_Iface(braid_App               app,        /**< user-defined _braid_App structure */
-                         braid_BaseVector            ustop,      /**< braid_BaseVector to compute residual with*/                       
-                         braid_BaseVector            r,          /**< output, residual vector */   
+                         braid_Vector            ustop,      /**< braid_Vector to compute residual with*/                       
+                         braid_Vector            r,          /**< output, residual vector */   
                          braid_StepStatus        status      /**< query this struct for info about the current status, like tstop and tstart */
                          )
 {
@@ -404,8 +404,8 @@ braid_TimeGrid_F90_Iface(braid_App               app,       /**< user-defined _b
 void braid_F90_Name(braid_coarsen_f90, BRAID_COARSEN_F90)(braid_F90_ObjPtr, braid_F90_ObjPtr, braid_F90_ObjPtr, braid_F90_ObjPtr);
 braid_Int
 braid_Coarsen_F90_Iface(braid_App               app,         /**< user-defined _braid_App structure */
-                        braid_BaseVector            fu,          /**< braid_BaseVector to refine*/                       
-                        braid_BaseVector           *cu_ptr,      /**< output, refined vector */   
+                        braid_Vector            fu,          /**< braid_Vector to refine*/                       
+                        braid_Vector           *cu_ptr,      /**< output, refined vector */   
                         braid_CoarsenRefStatus  status       /**< query this struct for info about fu and cu (e.g., where in time fu and cu are)  */ 
                         )
 {
@@ -427,8 +427,8 @@ braid_Coarsen_F90_Iface(braid_App               app,         /**< user-defined _
 void braid_F90_Name(braid_refine_f90, BRAID_REFINE_F90)(braid_F90_ObjPtr, braid_F90_ObjPtr, braid_F90_ObjPtr, braid_F90_ObjPtr);
 braid_Int
 braid_Refine_F90_Iface(braid_App               app,    /**< user-defined _braid_App structure */
-                       braid_BaseVector            cu,     /**< braid_BaseVector to refine*/                       
-                       braid_BaseVector           *fu_ptr, /**< output, refined vector */       
+                       braid_Vector            cu,     /**< braid_Vector to refine*/                       
+                       braid_Vector           *fu_ptr, /**< output, refined vector */       
                        braid_CoarsenRefStatus  status  /**< query this struct for info about fu and cu (e.g., where in time fu and cu are)  */ 
                        )
 {
