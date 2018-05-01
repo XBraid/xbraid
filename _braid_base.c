@@ -69,7 +69,7 @@ _braid_BaseStep(braid_Core       core,
   }
 
    /* Call the users Step function */
-   if ( _braid_CoreElt(core, residual) == NULL )
+   if ( fstop == NULL )
    {
       _braid_CoreFcn(core, step)(app, ustop->userVector, NULL, u->userVector, status);
    }
@@ -509,7 +509,7 @@ _braid_BaseResidual(braid_Core        core,
 
    if ( verbose ) printf("%d: RESIDUAL\n", myid);
 
-      /* Call the users Residual function */
+   /* Call the users Residual function */
    _braid_CoreFcn(core, residual)(app, ustop->userVector, r->userVector, status);
 
    return _braid_error_flag;
