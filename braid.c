@@ -450,6 +450,7 @@ braid_Drive(braid_Core  core)
    braid_App            app             = _braid_CoreElt(core, app);
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
    braid_Int            obj_only        = _braid_CoreElt(core, obj_only);
+   braid_Int            adjoint         = _braid_CoreElt(core, adjoint);
 
 
    braid_Int     *nrels, nrel0;
@@ -465,7 +466,10 @@ braid_Drive(braid_Core  core)
    braid_Int          iter, level, done, refined;
 
    /* Check for non-supported adjoint features */
-   _braid_AdjointFeatureCheck(core);
+   if (adjoint)
+   {
+      _braid_AdjointFeatureCheck(core);
+   }
 
    if (myid == 0 )
    { 
@@ -474,7 +478,7 @@ braid_Drive(braid_Core  core)
          _braid_printf("\n  Braid: Begin simulation, %d time steps\n",
                     _braid_CoreElt(core, gupper));
       }
-      if (_braid_CoreElt(core, adjoint) && _braid_CoreElt(core, print_level) > 0 )
+      if ( adjoint && _braid_CoreElt(core, print_level) > 0 )
       {
          if (_braid_CoreElt(core, max_levels) > 1)
          {
@@ -523,7 +527,7 @@ braid_Drive(braid_Core  core)
    }
 
 
-   if (_braid_CoreElt(core, adjoint))
+   if ( adjoint)
    {
       if (!warm_restart)
       {
@@ -656,7 +660,7 @@ braid_Drive(braid_Core  core)
             _braid_FRefine(core, &refined);
             nlevels = _braid_CoreElt(core, nlevels);
 
-            if (_braid_CoreElt(core,adjoint))
+            if ( adjoint )
             {
                /* Compute the objective function */
                _braid_EvalObjective(core);
@@ -686,7 +690,7 @@ braid_Drive(braid_Core  core)
                _braid_DriveCheckConvergence(core, iter, &done);
             }
 
-            if (_braid_CoreElt(core, adjoint))
+            if ( adjoint)
             {
                /* Prepare for the next iteration */
                _braid_CoreElt(core, optim)->sum_user_obj = 0.0;
@@ -736,7 +740,7 @@ braid_Drive(braid_Core  core)
    _braid_FAccess(core, 0, 1);
    
    /* If sequential time-marching, evaluate the tape */
-   if (_braid_CoreElt(core, adjoint) && max_levels <= 1 )
+   if ( adjoint && max_levels <= 1 )
    {
       /* Compute the objective function */
       _braid_EvalObjective(core);
@@ -890,7 +894,7 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, skip)            = skip;
 
-   _braid_CoreElt(core, adjoint)               = adjoint;
+    adjoint               = adjoint;
    _braid_CoreElt(core, record)                = record;
    _braid_CoreElt(core, obj_only)              = obj_only;
    _braid_CoreElt(core, verbose)               = verbose;
