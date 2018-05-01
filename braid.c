@@ -706,9 +706,11 @@ braid_Drive(braid_Core  core)
             }
 
             /* Increase MGRIT iteration counter */
-            iter++;
-            _braid_CoreElt(core, niter) = iter;
-
+            if (!refined)
+            {
+               iter++;
+               _braid_CoreElt(core, niter) = iter;
+            }
          }
       }
    }
