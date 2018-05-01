@@ -758,7 +758,7 @@ braid_Drive(braid_Core  core)
    _braid_CoreElt(core, globaltime) = globaltime;
 
    /* Print statistics for this run */
-   if ( (print_level > 1) && (myid == 0) )
+   if ( (print_level >= 1) && (myid == 0) )
    {
       braid_PrintStats(core);
    }
@@ -1093,6 +1093,11 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  use seq soln?         = %d\n", seq_soln);
       _braid_printf("  storage               = %d\n", storage);
       _braid_printf("\n");
+
+      _braid_printf("  max iterations        = %d\n", max_iter);
+      _braid_printf("  iterations            = %d\n", niter);
+      _braid_printf("\n");
+      
       if ( adjoint )
       {
          _braid_printf("  state   residual norm =  %e", rnorm);
@@ -1128,10 +1133,6 @@ braid_PrintStats(braid_Core  core)
       }
 
       _braid_printf("\n");
-      _braid_printf("  max iterations        = %d\n", max_iter);
-      _braid_printf("  iterations            = %d\n", niter);
-      _braid_printf("\n");
-
       _braid_printf("  use fmg?              = %d\n", fmg);
       if ( fmg )
       {
