@@ -643,8 +643,6 @@ _braid_BaseSFree(braid_Core      core,
    /* Call the users sfree */
    _braid_CoreFcn(core, sfree)(app, u->userVector);
 
-   free(u);
-
    return _braid_error_flag;
 }
 
