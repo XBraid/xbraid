@@ -204,13 +204,4 @@ Finished braid_TestAll: no fails detected, however some results must be
   iterations            = 4
   residual norm         = 7.013544e-08
   number of levels      = 12
-# Begin Test 31
-  time steps = 50
-  iterations            = 6
-  state   residual norm =  8.359592e-08  (-> abs. stopping tol. = 1.00e-06)
-  adjoint residual norm =  4.482596e-07  (-> abs. stopping tol. = 1.00e-06)
-  number of levels      = 2
-# Begin Test 32
-  Objective function value = 9.97999467e-06
-  Gradient norm            = 1.72042601e-07
-  optimization iterations  = 47
+

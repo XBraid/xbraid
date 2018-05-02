@@ -35,9 +35,9 @@ case $1 in
 
    where: -h|-help   prints this usage information and exits
 
-   This script runs basic tests of Braid for a constant coefficient 2D heat 
-   equation. The output is written to $scriptname.out, $scriptname.err and 
-   $scriptname.dir. This test passes if $scriptname.err is empty.
+   This script runs basic tests of XBraid_Adjoint. The output 
+   is written to $scriptname.out, $scriptname.err and $scriptname.dir. 
+   This test passes if $scriptname.err is empty.
 
    Example usage: ./test.sh $0 
 
@@ -76,45 +76,16 @@ mkdir -p $output_dir
 echo "Compiling regression test drivers"
 cd $example_dir
 make clean
-make ex-01 
-make ex-01-expanded
-make ex-01-refinement
-make ex-01-expanded-f &> /dev/null
+make ex-01-adjoint
+make ex-01-optimization
+make ex-04
 cd $test_dir
 
 
 # Run the following regression tests 
-TESTS=( "$RunString -np 1 $example_dir/ex-01" \
-        "$RunString -np 1 $example_dir/ex-01-expanded -ml 1" \
-        "$RunString -np 1 $example_dir/ex-01-expanded-f -ml 1" \
-        "$RunString -np 1 $example_dir/ex-01-expanded-f -wrapper_tests" \
-        "$RunString -np 1 $example_dir/ex-01-expanded-f -ml 2" \
-        "$RunString -np 1 $example_dir/ex-01-expanded-f -ml 2 -cf0 2 -cf 2" \
-        "$RunString -np 2 $example_dir/ex-01-expanded-f -ml 2 -cf0 2 -cf 2" \
-        "$RunString -np 4 $example_dir/ex-01-expanded-f -ml 2 -cf0 2 -cf 2" \
-        "$RunString -np 1 $example_dir/ex-01-expanded-f -tg 0 -ml 1" \
-        "$RunString -np 1 $example_dir/ex-01-expanded-f -tg 1 -ml 1" \
-        "$RunString -np 1 $example_dir/ex-01-expanded-f -tg 2 -ml 1" \
-        "$RunString -np 1 $example_dir/ex-01-expanded-f -tg 2 -ml 2 -cf0 2 -cf 2" \
-        "$RunString -np 2 $example_dir/ex-01-expanded-f -tg 2 -ml 2 -cf0 2 -cf 2" \
-        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 0" \
-        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 1" \
-        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 2" \
-        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 10" \
-        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor -1" \
-        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 1 -storage 0" \
-        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 2 -storage 0" \
-        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 10 -storage 0" \
-        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor -1 -storage 0" \
-        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 1 -fmg" \
-        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 2 -fmg" \
-        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 10 -fmg" \
-        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor -1 -fmg" \
-        "$RunString -np 1 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 4" \
-        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 4" \
-        "$RunString -np 3 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 4" \
-        "$RunString -np 4 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 4" \
-        "$RunString -np 5 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 4" )
+TESTS=( "$RunString -np 4 $example_dir/ex-01-adjoint" \
+        "$RunString -np 4 $example_dir/ex-01-optimization" \
+        "$RunString -np 4 $example_dir/ex-04" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 

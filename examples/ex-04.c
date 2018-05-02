@@ -448,7 +448,7 @@ int main (int argc, char *argv[])
    braid_InitAdjoint( my_ObjectiveT, my_ObjectiveT_diff, my_Step_diff, my_ResetGradient, &core);
 
    /* Set some XBraid(_Adjoint) parameters */
-   braid_SetMaxLevels(core, 2);
+   braid_SetMaxLevels(core, 4);
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 0);
    braid_SetPrintLevel( core, 0);       
@@ -458,7 +458,10 @@ int main (int argc, char *argv[])
 
 
    /* Prepare optimization output */
-   printf("\n#    || r ||         || r_adj ||     Objective             || Gradient ||\n");
+   if (rank == 0)
+   {
+      printf("\n#    || r ||         || r_adj ||     Objective             || Gradient ||\n");
+   }
 
 
    /* Optimization iteration */
@@ -482,7 +485,10 @@ int main (int argc, char *argv[])
       gnorm = sqrt(gnorm);
 
       /* Output */
-      printf("%3d  %1.8e  %1.8e  %1.14e  %1.14e\n", iter, rnorm, rnorm_adj, objective, gnorm);
+      if (rank == 0)
+      {
+         printf("%3d  %1.8e  %1.8e  %1.14e  %1.14e\n", iter, rnorm, rnorm_adj, objective, gnorm);
+      }
 
       /* Check optimization convergence */
       if (gnorm < gtol)
@@ -499,14 +505,30 @@ int main (int argc, char *argv[])
    }
 
    
-   if (iter == maxiter)
+   /* Output */
+   if (rank == 0)
    {
-      printf("\n Max. number of iterations reached.\n\n");
+      if (iter == maxiter)
+      {
+         printf("\n Max. number of iterations reached! \n\n"); 
+      }
+      else
+      {
+         /* Print some statistics about the optimization run */
+         printf("\n");
+         printf("  Optimization has converged.\n");
+         printf("\n"); 
+         printf("  Objective function value = %1.8e\n", objective);
+         printf("  Gradient norm            = %1.8e\n", gnorm);
+         printf("\n");
+         printf("  optimization iterations  = %d\n", iter);
+         printf("  max optim iterations     = %d\n", maxiter);
+         printf("  gradient norm tolerance  = %1.1e\n", gtol);
+         printf("\n");
+      }
    }
-   else
-   {
-      printf("\n Optimization has converged.\n\n");
-   }
+
+
 
 
    /* Write final design to file */
