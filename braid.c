@@ -1789,20 +1789,6 @@ braid_SetTStartObjective(braid_Core core,
 }
 
 braid_Int
-braid_GetTStartObjective(braid_Core core,
-                           braid_Real *tstart_obj_ptr)
-{
-   if ( !(_braid_CoreElt(core, adjoint)) )
-   {
-      return _braid_error_flag;
-   }  
-
-  *tstart_obj_ptr = _braid_CoreElt(core, optim->tstart_obj);
-
-  return _braid_error_flag;
-}
-
-braid_Int
 braid_SetTStopObjective(braid_Core core, 
                           braid_Real tstop_obj)
 {
@@ -1822,20 +1808,6 @@ braid_SetTStopObjective(braid_Core core,
 
 
   return _braid_error_flag;
-}
-
-braid_Int
-braid_GetTStopObjective(braid_Core core,
-                          braid_Real *tstop_obj_ptr)
-{
-   if ( !(_braid_CoreElt(core, adjoint)) )
-   {
-      return _braid_error_flag;
-   }  
-
-   *tstop_obj_ptr = _braid_CoreElt(core, optim->tstop_obj);
- 
-   return _braid_error_flag;
 }
 
 
