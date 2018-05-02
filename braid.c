@@ -763,8 +763,8 @@ braid_Drive(braid_Core  core)
    _braid_CoreElt(core, localtime)  = localtime;
    _braid_CoreElt(core, globaltime) = globaltime;
 
-   /* Print statistics for this run */
-   if ( (print_level >= 1) && (myid == 0) )
+   /* Print statistics for this run, if primal XBraid. */
+   if ( (print_level >= 1) && (myid == 0) && !(adjoint))
    {
       braid_PrintStats(core);
    }

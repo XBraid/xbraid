@@ -383,9 +383,16 @@ int main (int argc, char *argv[])
       printf("\n Objective = %1.14e\n Gradient  = %1.14e\n", objective, app->gradient);
    }
 
-   
+   /* Print XBraid statistics for this run. */
+   braid_PrintStats(core);
+
+
 
    /* --- Check the gradient with Finite Differences --- */
+   if (rank == 0)
+   {
+      printf("\n\n --- FINITE DIFFERENCE TESTING ---\n");
+   }
    
    double EPS = 1e-5;
    double objective_ref, gradient_ref;
@@ -397,6 +404,9 @@ int main (int argc, char *argv[])
 
    /* Perturb the design */
    app->design += EPS;
+
+   /* Remove output of XBraid_Adjoint */
+   braid_SetPrintLevel(core, 0);
 
    /* Compute a new solution and objective function value */
    braid_SetObjectiveOnly(core, 1);
@@ -411,7 +421,7 @@ int main (int argc, char *argv[])
    if (rank == 0)
    {
       printf("\n Finite Differences: %1.14e\n", finite_differences);
-      printf(" Relative gradient error: %1.6f\n", err);
+      printf(" Relative gradient error: %1.6f\n\n", err);
    }
 
 
