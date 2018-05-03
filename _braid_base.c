@@ -75,7 +75,7 @@ _braid_BaseStep(braid_Core       core,
    }
    else
    {
-      /* TODO: Check the fstop feature! */
+      /* fstop not supported by adjoint! */
       _braid_CoreFcn(core, step)(app, ustop->userVector, fstop->userVector, u->userVector, status);
    }
    return _braid_error_flag;
@@ -368,6 +368,8 @@ _braid_BaseBufPack(braid_Core          core,
       action->braidCall      = BUFPACK;
       action->core           = core;
       action->send_recv_rank = sender; 
+      action->messagetype    = _braid_StatusElt(status, messagetype);
+      action->size_buffer    = _braid_StatusElt(status, size_buffer);
       action->myid           = myid;
       _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
 
@@ -430,6 +432,8 @@ _braid_BaseBufUnpack(braid_Core          core,
       action->core           = core;
       action->send_recv_rank = receiver;
       action->myid           = myid;
+      action->messagetype    = _braid_StatusElt(status, messagetype);
+      action->size_buffer    = _braid_StatusElt(status, size_buffer);
       _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
 
       /* Copy and push the bar vector to the bar tape */
@@ -845,6 +849,8 @@ _braid_BaseBufPack_diff(_braid_Action *action )
    braid_VectorBar    ubar;
    braid_Core         core            = action->core;
    braid_Real         send_recv_rank  = action->send_recv_rank;
+   braid_Int          messagetype     = action->messagetype;
+   braid_Int          size_buffer     = action->size_buffer;
    braid_App          app             = _braid_CoreElt(core, app);
    braid_Int          verbose         = _braid_CoreElt(core, verbose);
    braid_Int          myid            = _braid_CoreElt(core, myid);
@@ -857,15 +863,14 @@ _braid_BaseBufPack_diff(_braid_Action *action )
    _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
    /* Allocate the buffer */
-   _braid_BufferStatusInit( 0, 0, bstatus);
    _braid_CoreFcn(core, bufsize)(app, &size, bstatus);
    buffer = malloc(size);
 
-   /* Receive the buffer 
-    * TODO: Add CommHandle / status check!!
-    * WHY blocking Recv ? 
-    */
+   /* Receive the buffer */
    MPI_Recv(buffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), MPI_STATUS_IGNORE); 
+
+   /* Initialize the bstatus */
+   _braid_BufferStatusInit( messagetype, size_buffer, bstatus);
 
    /* Unpack the buffer into u */
    _braid_CoreFcn(core, bufunpack)(app, buffer, &u, bstatus);
@@ -890,6 +895,8 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
    MPI_Request        *requests;
    braid_Core          core           = action->core;;
    braid_Real          send_recv_rank = action->send_recv_rank;
+   braid_Int           messagetype    = action->messagetype;
+   braid_Int           size_buffer    = action->size_buffer;
    braid_BufferStatus  bstatus        = (braid_BufferStatus) core;
    braid_App           app            = _braid_CoreElt(core, app);
    braid_Int           verbose        = _braid_CoreElt(core, verbose);
@@ -902,9 +909,11 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
    _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
   /* Allocate buffer */
-   _braid_BufferStatusInit( 0, 0, bstatus);
    _braid_CoreFcn(core, bufsize)(app, &size, bstatus);
    buffer = malloc(size); 
+
+   /* Initialize the bufferstatus */
+   _braid_BufferStatusInit( messagetype, size_buffer, bstatus);
 
    /* Pack the buffer */
    _braid_CoreFcn(core, bufpack)( app, ubar->userVector, buffer, bstatus);

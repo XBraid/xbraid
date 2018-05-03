@@ -63,6 +63,8 @@ typedef struct _braid_Action_struct
    braid_Int         nrefine;          /**< number of refinements done */
    braid_Int         gupper;           /**< global size of the fine grid */
    braid_Real        tol;              /**< primal stopping tolerance */      
+   braid_Int         messagetype;      /**< message type, 0: for Step(), 1: for load balancing */
+   braid_Int         size_buffer;      /**< if set by user, size of send buffer is "size" bytes */
 
 } _braid_Action;
  
