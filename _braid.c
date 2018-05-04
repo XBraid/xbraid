@@ -430,7 +430,6 @@ _braid_InitAdjointVars(braid_Core   core,
          adjoints[iclocal] = mybar;
 
          /* initialize the tapeinput with u_bar only at C-points */
-         /* TODO: Warm-restart might not work here. It needs a tapeinput everywhere then. Maybe just check if u->bar != NULL! */
          if( _braid_IsCPoint(ic, cfactor))
          {
             _braid_UGetVectorRef(core, 0, ic, &u);
