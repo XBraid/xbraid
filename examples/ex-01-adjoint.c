@@ -343,7 +343,6 @@ int main (int argc, char *argv[])
    app->design      = lambda;
    app->gradient    = 0.0;
 
-   // app->design += 1e-8;
 
    /* Initialize XBraid */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
@@ -362,9 +361,6 @@ int main (int argc, char *argv[])
    braid_SetPrintLevel( core, 1);           /* Print level: report norms of state and adjoint while iterating in drive() */
    braid_SetAbsTol(core, 1e-6);             /* Tolerance on state residual norm */
    braid_SetAbsTolAdjoint(core, 1e-6);      /* Tolerance on adjoint residual norm */
-
-   // braid_SetStorage(core, 1);
-   // _braid_SetVerbosity(core, 1);
 
    /* Run simulation and adjoint-based gradient computation */
    braid_Drive(core);
