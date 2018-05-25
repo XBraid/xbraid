@@ -494,7 +494,7 @@ int main (int argc, char *argv[])
             printf("   -print_level <l>     : sets the print_level (default: 1) \n");
             printf("                          0 - no output to standard out \n");
             printf("                          2 - Basic convergence information and hierarchy statistics\n");
-            printf("                          2 - Debug level output \n");
+            printf("                          3 - Debug level output \n");
             printf("   -access_level <l>    : sets the access_level (default: 1) \n");
             printf("                          0 - never call access \n");
             printf("                          1 - call access only after completion \n");

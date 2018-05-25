@@ -378,6 +378,9 @@ int main (int argc, char *argv[])
    {
       printf("\n Objective = %1.14e\n Gradient  = %1.14e\n", objective, app->gradient);
    }
+   /* Print XBraid statistics for this run. */
+   braid_PrintStats(core);
+
 
    /* --- Check the gradient with Finite Differences --- */
    if (rank == 0)
@@ -414,7 +417,6 @@ int main (int argc, char *argv[])
       printf("\n Finite Differences: %1.14e\n", finite_differences);
       printf(" Relative gradient error: %1.6f\n\n", err);
    }
-   braid_PrintStats(core);
 
    /* Clean up */
    free(app);

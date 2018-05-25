@@ -4,12 +4,25 @@
   state   residual norm =  8.359592e-08  (-> abs. stopping tol. = 1.00e-06)
   adjoint residual norm =  4.482596e-07  (-> abs. stopping tol. = 1.00e-06)
   number of levels      = 2
+
 # Begin Test 1
   Objective function value = 9.97999467e-06
   Gradient norm            = 1.72042601e-07
   optimization iterations  = 47
+  time steps = 50
+  iterations            = 2
+  state   residual norm =  9.168879e-07  (-> abs. stopping tol. = 1.00e-06)
+  adjoint residual norm =  7.963396e-07  (-> abs. stopping tol. = 1.00e-06)
+  number of levels      = 2
+
 # Begin Test 2
   Objective function value = 5.06187713e-02
   Gradient norm            = 9.87815292e-07
   optimization iterations  = 229
+  time steps = 20
+  iterations            = 1
+  state   residual norm =  4.136338e-07  (-> abs. stopping tol. = 1.00e-06)
+  adjoint residual norm =  1.171565e-07  (-> abs. stopping tol. = 1.00e-06)
+  number of levels      = 4
+
 
