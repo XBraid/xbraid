@@ -39,7 +39,6 @@
  *                   with design parameter lambda and initial condition y(0) = 1
  *                Evaluate the objective function:
  *                   J = 1/T \int_0^T || u(t) ||^2 dt
- *                   witch Target being a precomputed target value. 
  *                Compute the total derivative:
  *                   dJ / d lambda
  * 
@@ -217,7 +216,8 @@ my_BufUnpack(braid_App          app,
    return 0;
 }
 
-/* Evaluate the time-dependent summand of the discretized objective function */
+/* Evaluate one term of the time-dependent discretized objective function for
+ * vector u.  The result over all time values will be summed by Braid. */
 int 
 my_ObjectiveT(braid_App              app,
               braid_Vector           u,
@@ -238,7 +238,7 @@ my_ObjectiveT(braid_App              app,
 }
 
 
-/* Transposed partial derivatives of objectiveT times f_bar */
+/* Transposed partial derivatives of objectiveT times F_bar */
 int
 my_ObjectiveT_diff(braid_App            app,
                   braid_Vector          u,
@@ -253,7 +253,7 @@ my_ObjectiveT_diff(braid_App            app,
    /* Get the total number of time-steps */
    braid_ObjectiveStatusGetNTPoints(ostatus, &ntime);
 
-   /* Partial derivative with respect to u times f_bar */
+   /* Partial derivative with respect to u times F_bar */
    ddu = 2. / ntime * u->value * F_bar;
 
    /* Partial derivative with respect to design times F_bar */
@@ -379,11 +379,6 @@ int main (int argc, char *argv[])
       printf("\n Objective = %1.14e\n Gradient  = %1.14e\n", objective, app->gradient);
    }
 
-   /* Print XBraid statistics for this run. */
-   braid_PrintStats(core);
-
-
-
    /* --- Check the gradient with Finite Differences --- */
    if (rank == 0)
    {
@@ -419,7 +414,7 @@ int main (int argc, char *argv[])
       printf("\n Finite Differences: %1.14e\n", finite_differences);
       printf(" Relative gradient error: %1.6f\n\n", err);
    }
-
+   braid_PrintStats(core);
 
    /* Clean up */
    free(app);

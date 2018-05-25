@@ -484,7 +484,7 @@ int main (int argc, char *argv[])
              my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
              my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
 
-   braid_SetPrintLevel( core, 1);
+   braid_SetPrintLevel( core, 2);
    braid_SetMaxLevels(core, max_levels);
    braid_SetNRelax(core, -1, nrelax);
    if (nrelax0 > -1)

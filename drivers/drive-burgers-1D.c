@@ -1083,7 +1083,7 @@ int main (int argc, char *argv[])
    /* Scale tol by domain */
    tol = tol/( sqrt((tstop - tstart)/(ntime-1))*sqrt((xstop - xstart)/(nspace-1)) );
 
-   braid_SetPrintLevel( core, 1);
+   braid_SetPrintLevel( core, 2);
    braid_SetMaxLevels(core, max_levels);
    braid_SetSkip(core, skip);
    braid_SetNRelax(core, -1, nrelax);

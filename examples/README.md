@@ -71,6 +71,7 @@ To run the examples, type
    is a more sophisticated version of this simple example that supports
    explicit time stepping and spatial coarsening.
 
-4. ex-04 solves an optimal control problem with time-dependent design variable using a simple steepest-descent optimization iteration. 
+4. ex-04 solves a simple optimal control problem with time-dependent design variable
+   using a simple steepest-descent optimization iteration.  
    
 

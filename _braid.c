@@ -2228,7 +2228,7 @@ _braid_FRestrict(braid_Core   core,
 
    /* If debug printing, print out tnorm_a for this interval. This
     * should show the serial propagation of the exact solution */
-   if ((print_level >= 2) && (level == 0) )
+   if ((print_level > 2) && (level == 0) )
    {
       _braid_PrintSpatialNorms(core, tnorm_a, ncpoints);
    }

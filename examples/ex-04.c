@@ -283,6 +283,8 @@ my_BufUnpack(braid_App           app,
    return 0;
 }
 
+/* Evaluate one term of the time-dependent discretized objective function for
+ * vector u.  The result over all time values will be summed by Braid. */
 int 
 my_ObjectiveT(braid_App              app,
               braid_Vector           u,
@@ -394,20 +396,14 @@ int main (int argc, char *argv[])
 
    braid_Core core;
    my_App     *app;
-
-   int      rank;          
+         
    double   tstart, tstop; 
-   int      ntime, ts;
-   int      iter, maxiter;
-   double   objective;
-   double   gamma;
+   int      rank, ntime, ts, iter, maxiter, nreq, arg_index;
    double  *design; 
    double  *gradient; 
-   double   stepsize;
-   double   mygnorm, gnorm;
-   double   gtol;
-   double   rnorm, rnorm_adj;
-   int      nreq;
+   double   objective, gamma, stepsize, mygnorm, gnorm, gtol, rnorm, rnorm_adj;
+   int      max_levels, cfactor, access_level, print_level, braid_maxiter;
+   double   braid_tol, braid_adjtol;
 
    /* Define time domain */
    ntime  = 20;              /* Total number of time-steps */
@@ -419,6 +415,108 @@ int main (int argc, char *argv[])
    stepsize = 50.0;          /* Step size for design updates */
    maxiter  = 500;           /* Maximum number of optimization iterations */
    gtol     = 1e-6;          /* Stopping criterion on the gradient norm */
+
+   /* Define some Braid parameters */
+   max_levels     = 4;
+   braid_maxiter  = 10;
+   cfactor        = 2;
+   braid_tol      = 1.0e-6;
+   braid_adjtol   = 1.0e-6;
+   access_level   = 1;
+   print_level    = 1;
+   
+
+   /* Parse command line */
+   arg_index = 1;
+   while (arg_index < argc)
+   {
+      if ( strcmp(argv[arg_index], "-help") == 0 )
+      {
+         printf("\n");
+         printf(" Solves a simple optimal control problem in time-serial on [0, 1] \n\n");
+         printf("  min   \\int_0^1 u_1(t)^2 + u_2(t)^2 + gamma c(t)^2  dt \n\n");
+         printf("  s.t.  d/dt u_1(t) = u_2(t) \n");
+         printf("        d/dt u_2(t) = -u_2(t) + c(t) \n\n");
+         printf("  -ntime <ntime>          : set num points in time\n");
+         printf("  -gamma <gamma>          : Relaxation parameter in the objective function \n");
+         printf("  -stepsize <stepsize>    : Step size for design updates \n");
+         printf("  -mi <maxiter>           : Maximum number of optimization iterations \n");
+         printf("  -gtol <gtol>            : Stopping criterion on the gradient norm \n");
+         printf("  -ml <max_levels>        : Max number of braid levels \n");
+         printf("  -bmi <braid_maxiter>    : Braid max_iter \n");
+         printf("  -cf <cfactor>           : Coarsening factor \n");
+         printf("  -btol <braid_tol>       : Braid halting tolerance \n");
+         printf("  -batol <braid_adjtol>   : Braid adjoint halting tolerance \n");
+         printf("  -access <access_level>  : Braid access level \n");
+         printf("  -print <print_level>    : Braid print level \n");
+         exit(1);
+      }
+      else if ( strcmp(argv[arg_index], "-ntime") == 0 )
+      {
+         arg_index++;
+         ntime = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-gamma") == 0 )
+      {
+         arg_index++;
+         gamma = atof(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-stepsize") == 0 )
+      {
+         arg_index++;
+         stepsize = atof(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-mi") == 0 )
+      {
+         arg_index++;
+         maxiter = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-gtol") == 0 )
+      {
+         arg_index++;
+         gtol = atof(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-ml") == 0 )
+      {
+         arg_index++;
+         max_levels = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-bmi") == 0 )
+      {
+         arg_index++;
+         braid_maxiter = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-cf") == 0 )
+      {
+         arg_index++;
+         cfactor = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-btol") == 0 )
+      {
+         arg_index++;
+         braid_tol = atof(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-batol") == 0 )
+      {
+         arg_index++;
+         braid_adjtol = atof(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-access") == 0 )
+      {
+         arg_index++;
+         access_level = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-print") == 0 )
+      {
+         arg_index++;
+         print_level = atoi(argv[arg_index++]);
+      }
+      else
+      {
+         printf("ABORTING: incorrect command line parameter %s\n", argv[arg_index]);
+         return (0);
+      }
+   }
 
    /* Initialize optimization */
    design   = (double*) malloc( ntime*sizeof(double) );    /* design vector (control c) */
@@ -448,14 +546,13 @@ int main (int argc, char *argv[])
    braid_InitAdjoint( my_ObjectiveT, my_ObjectiveT_diff, my_Step_diff, my_ResetGradient, &core);
 
    /* Set some XBraid(_Adjoint) parameters */
-   braid_SetMaxLevels(core, 4);
-   braid_SetCFactor(core, -1, 2);
-   braid_SetAccessLevel(core, 0);
-   braid_SetPrintLevel( core, 0);       
-   braid_SetMaxIter(core, 10);
-   braid_SetAbsTol(core, 1.0e-06);
-   braid_SetAbsTolAdjoint(core, 1e-6);
-
+   braid_SetMaxLevels(core, max_levels);
+   braid_SetCFactor(core, -1, cfactor);
+   braid_SetAccessLevel(core, access_level);
+   braid_SetPrintLevel( core, print_level);       
+   braid_SetMaxIter(core, braid_maxiter);
+   braid_SetAbsTol(core, braid_tol);
+   braid_SetAbsTolAdjoint(core, braid_adjtol);
 
    /* Prepare optimization output */
    if (rank == 0)
@@ -527,25 +624,18 @@ int main (int argc, char *argv[])
          printf("\n");
       }
    }
-
+   braid_PrintStats(core);
 
 
 
    /* Write final design to file */
-   FILE *designfile;
-   designfile = fopen("ex-04.out.design","w");
-   for (ts = 0; ts < ntime; ts++)
-   {
-      fprintf(designfile, "%1.14e\n", app->design[ts]);
-   }
-   fflush(designfile);
-   fclose(designfile);
+   write_design_vec("design", design, ntime);
 
    /* Clean up */
    free(design);
    free(gradient);
    free(app);
-
+   
    braid_Destroy(core);
    MPI_Finalize();
 

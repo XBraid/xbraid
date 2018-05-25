@@ -954,7 +954,7 @@ int main(int argc, char *argv[])
             app.SetExactSolution(&exact_sol);
 
          core.SetAccessLevel(access_level);
-         core.SetPrintLevel(1);
+         core.SetPrintLevel(2);
          core.SetMaxLevels(max_levels);
          core.SetMinCoarse(min_coarse);
          core.SetNRelax(-1, nrelax);

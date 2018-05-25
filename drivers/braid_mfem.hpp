@@ -895,7 +895,7 @@ BraidOptions::BraidOptions(int argc, char *argv[])
    nfmg_Vcyc        = 0;     // if > 0, enable FMG and use as nfmg_Vcyc
    spatial_coarsen  = false; // if true, enable spatial coarsening
    access_level     = 1;
-   print_level      = 1;
+   print_level      = 2;
    use_seq_soln     = 0;
 
    AddOption(&t_start, "-ts", "--t-start", "Start time.");

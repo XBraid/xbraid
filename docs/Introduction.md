@@ -651,7 +651,7 @@ Wrapping and debugging a code with XBraid typically follows a few steps.
   XBraid and a (hopefully!) correct implementation.  The residual may be on
   the order of machine epsilon (or smaller).  Repeat this test for multiple
   processors in time (and space if possible).
-- A similar test turns on debug level printing by passing a print level of 2 
+- A similar test turns on debug level printing by passing a print level of 3 
   to [braid_SetPrintLevel](@ref braid_SetPrintLevel).  This will print out
   the residual norm at each C-point.  XBraid with FCF-relaxation has the property
   that the exact solution is propagated forward two C-points each iteration.
@@ -679,7 +679,7 @@ Here, \f$\mathbf{u} =  (u_0, \dots, u_N)\f$ denotes the space-time state solutio
 XBraid_Adjoint is a consistent discrete time-parallel adjoint solver for XBraid which provides sensitivity information of the output quantity \f$J\f$ with respect to the user-defined design parameters \f$\rho\f$.
 The ability to compute sensitivities can greatly improve and enhance the simulation tool, as for example for solving design optimization or optimal control problems, parameter estimation for validation and verification purposes, error estimation or uncertainty quantification techniques. XBraid_Adjoint is non-intrusive with respect to the adjoint time-stepping scheme so that existing time-serial adjoint codes can be integrated easily though an extended user-interface. 
 
-XBraid_Adjoint has been developed in collaboration with the Scientific Computing group at TU Kaiserslautern, Germany. 
+XBraid_Adjoint has been developed in collaboration with the Scientific Computing group at TU Kaiserslautern, Germany, and in particular with Dr. Stefanie Guenther and Prof. Nicolas Gauger.
 
 
 

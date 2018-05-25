@@ -41,6 +41,8 @@
  *                 with initial condition u_1(0) = 0, u_2(0) = -1
  *                 and piecewise constant control c(t).  
  * 
+ *               Implements a steepest-descent optimization iteration
+ *               using fixed step size for design updates.   
  **/
 
 #include <stdlib.h>
@@ -53,7 +55,7 @@
 int main (int argc, char *argv[])
 {
    double   tstart, tstop, deltaT;
-   int      ntime, ts;
+   int      ntime, ts, arg_index;
    int      maxiter,iter;
    double   objective;
    double   gamma;
@@ -66,21 +68,71 @@ int main (int argc, char *argv[])
    double   stepsize;
    
    /* Define time domain */
-   ntime  = 20;                   /* Total number of time-steps */
-   tstart = 0.0;                  /* Beginning of time-domain */
-   tstop  = 1.0;                  /* End of time-domain */
-   deltaT = ( tstop - tstart ) / ntime;  /* Time-step size */
+   ntime  = 20;                         /* Total number of time-steps */
+   tstart = 0.0;                        /* Beginning of time-domain */
+   tstop  = 1.0;                        /* End of time-domain */
+   deltaT = (tstop - tstart) / ntime;   /* Time-step size */
 
-   /* Define some optimization parameters */
-   gamma    = 0.005;          /* Relaxation parameter in the objective function */
-   stepsize = 50.0;           /* Step size for design updates */
-   maxiter  = 300;            /* Maximum number of optimization iterations */
-   gtol     = 1e-6;           /* Stopping criterion on the gradient norm */
+   /* Define optimization parameters */
+   gamma    = 0.005;                    /* Relaxation parameter in the objective function */
+   stepsize = 50.0;                     /* Step size for design updates */
+   maxiter  = 500;                      /* Maximum number of optimization iterations */
+   gtol     = 1e-6;                     /* Stopping criterion on the gradient norm */
    
+   /* Parse command line */
+   arg_index = 1;
+   while (arg_index < argc)
+   {
+      if ( strcmp(argv[arg_index], "-help") == 0 )
+      {
+         printf("\n");
+         printf(" Solves a simple optimal control problem in time-serial on [0, 1] \n\n");
+         printf("  min   \\int_0^1 u_1(t)^2 + u_2(t)^2 + gamma c(t)^2  dt \n\n");
+         printf("  s.t.  d/dt u_1(t) = u_2(t) \n");
+         printf("        d/dt u_2(t) = -u_2(t) + c(t) \n\n");
+         printf("  -ntime <ntime>       : set num points in time\n");
+         printf("  -gamma <gamma>       : Relaxation parameter in the objective function \n");
+         printf("  -stepsize <stepsize> : Step size for design updates \n");
+         printf("  -maxiter <maxiter>   : Maximum number of optimization iterations \n");
+         printf("  -gtol <gtol>         : Stopping criterion on the gradient norm \n");
+         exit(1);
+      }
+      else if ( strcmp(argv[arg_index], "-ntime") == 0 )
+      {
+         arg_index++;
+         ntime = atoi(argv[arg_index++]);
+         deltaT = (tstop - tstart) / ntime;  /* recompute */
+      }
+      else if ( strcmp(argv[arg_index], "-gamma") == 0 )
+      {
+         arg_index++;
+         gamma = atof(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-stepsize") == 0 )
+      {
+         arg_index++;
+         stepsize = atof(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-maxiter") == 0 )
+      {
+         arg_index++;
+         maxiter = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-gtol") == 0 )
+      {
+         arg_index++;
+         gtol = atof(argv[arg_index++]);
+      }
+      else
+      {
+         printf("ABORTING: incorrect command line parameter %s\n", argv[arg_index]);
+         return (0);
+      }
+   }
 
    /* Initialize the optimization variables */
-   u        = (double*) malloc( 2*sizeof(double) );      /* State at on time-step */
-   w        = (double*) malloc( 2*sizeof(double) );      /* Adjoint at on time-step */
+   u        = (double*) malloc( 2*sizeof(double) );      /* State at a time-step */
+   w        = (double*) malloc( 2*sizeof(double) );      /* Adjoint at a time-step */
    u0       = (double*) malloc( ntime*sizeof(double) );  /* Stores the space-time state, 1st component */
    u1       = (double*) malloc( ntime*sizeof(double) );  /* Stores the space-time state, 2nd component */
    design   = (double*) malloc( ntime*sizeof(double) );  /* design vector (control c) */
@@ -164,18 +216,9 @@ int main (int argc, char *argv[])
       printf("\n Optimization has converged.\n\n");
    }
 
-   /* Write final state to file */
+   /* Write final state and design to file */
    write_vec("state", u0, u1, ntime);
-
-   /* Write final design to file */
-   FILE *designfile;
-   designfile = fopen("ex-04.out.design","w");
-   for (ts = 0; ts < ntime; ts++)
-   {
-      fprintf(designfile, "%1.14e\n", design[ts]);
-   }
-   fflush(designfile);
-   fclose(designfile);
+   write_design_vec("design", design, ntime);
 
    /* Free memory */
    free(design);

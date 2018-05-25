@@ -39,7 +39,7 @@
 
 
 /* Advance a state vector u forward in time 
- * Implements simple explicite Euler integration scheme */
+ * Implements simple explicit Euler integration scheme */
 void 
 take_step(double* u,         /* state at current time */
           double  design,    /* design at current time */
@@ -156,7 +156,7 @@ void
 write_vec(char*   name,     /* Filename extension (ex-04.out.name) */
           double* var0,     /* first components of the vector */
           double* var1,     /* second components of the vector */
-          int     ntime )   /* total number of time steps */
+          int     ntime )   /* total number of time steps (length of vector) */
 {
    char  filename[255];
    FILE *file;
@@ -171,6 +171,26 @@ write_vec(char*   name,     /* Filename extension (ex-04.out.name) */
    fflush(file);
    fclose(file);
 }              
+
+/* Write design vector to file */
+void 
+write_design_vec(char*   name,     /* Filename extension (ex-04.out.name) */
+                 double* vec,      /* vector */
+                 int     ntime )   /* total number of time steps (length of vector) */
+{
+   char  filename[255];
+   FILE *file;
+
+   /* Open file for output  */
+   sprintf(filename, "ex-04.out.%s", name);
+   file = fopen(filename, "w");
+   for (int ts = 0; ts < ntime; ts++)
+   {
+      fprintf(file, "%1.14e\n", vec[ts]);
+   }
+   fflush(file);
+   fclose(file);
+}    
 
 /* Compute the squared norm of a vector */
 double 

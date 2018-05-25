@@ -375,7 +375,7 @@ int main (int argc, char *argv[])
              my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
    
    /* Set some typical Braid parameters */
-   braid_SetPrintLevel( core, 1);
+   braid_SetPrintLevel( core, 2);
    braid_SetMaxLevels(core, 15);
    braid_SetAbsTol(core, tol);
    braid_SetCFactor(core, -1, 2);

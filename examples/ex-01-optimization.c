@@ -229,7 +229,8 @@ my_BufUnpack(braid_App          app,
 }
 
 
-/* Evaluate the time-dependent summand of the discretized objective function */
+/* Evaluate one term of the time-dependent discretized objective function for
+ * vector u.  The result over all time values will be summed by Braid. */
 int 
 my_ObjectiveT(braid_App              app,
               braid_Vector           u,
@@ -276,7 +277,6 @@ my_PostprocessObjective_diff(braid_App   app,
                              double     *F_bar_ptr
                              )
 {
-
    /* Derivative of tracking type function */
    *F_bar_ptr = integral - app->target;
 
@@ -360,6 +360,7 @@ my_ResetGradient(braid_App app)
    return 0;
 }
 
+/* Function to update the design variable */
 int
 my_DesignUpdate(braid_App app, 
                 double    stepsize )
@@ -369,6 +370,7 @@ my_DesignUpdate(braid_App app,
    return 0;
 }
 
+/* Return the norm of the gradient */
 int
 my_GradientNorm(braid_App app,
                 double    *gnorm_ptr)
@@ -378,6 +380,7 @@ my_GradientNorm(braid_App app,
    return 0;
 }
 
+/* Function to allow for the computation of the gradient */
 int
 my_GradientAllreduce(braid_App app)
 {
@@ -444,13 +447,13 @@ int main (int argc, char *argv[])
    braid_SetPostprocessObjective_diff(core, my_PostprocessObjective_diff);
   
    /* Set some typical Braid parameters */
-   braid_SetMaxLevels(core, 2);             /* Number of time-grid levels */
-   braid_SetCFactor(core, -1, 2);           /* Coarsening factor on all levels */
-   braid_SetMaxIter(core, 10);              /* Maximum number of state and adjoint iterations */
-   braid_SetAccessLevel(core, 1);           /* Access level: only after drive() finishes */
-   braid_SetPrintLevel( core, 1);           /* Print level: report norms of state and adjoint while iterating in drive() */
-   braid_SetAbsTol(core, 1e-6);             /* Tolerance on state residual norm */
-   braid_SetAbsTolAdjoint(core, 1e-6);      /* Tolerance on adjoint residual norm */
+   braid_SetMaxLevels(core, 2);            /* Number of time-grid levels */
+   braid_SetCFactor(core, -1, 2);          /* Coarsening factor on all levels */
+   braid_SetMaxIter(core, 10);             /* Maximum number of state and adjoint iterations */
+   braid_SetAccessLevel(core, 1);          /* Access level: only after drive() finishes */
+   braid_SetPrintLevel( core, 1);          /* Print level: output level for convergence of state and adjoint */
+   braid_SetAbsTol(core, 1e-6);            /* Tolerance on state residual norm */
+   braid_SetAbsTolAdjoint(core, 1e-6);     /* Tolerance on adjoint residual norm */
 
 
    /* Set maximum number of optimization iterations */
@@ -462,7 +465,7 @@ int main (int argc, char *argv[])
 
    /* Start the optimization */
    braid_DriveOptimization(core, app, my_DesignUpdate, my_GradientNorm, my_GradientAllreduce);
-
+   braid_PrintStats(core);
 
    /* Clean up */
    free(app);

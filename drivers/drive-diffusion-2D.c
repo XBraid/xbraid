@@ -1954,7 +1954,7 @@ int main (int argc, char *argv[])
    max_iter_x[1]       = 50;
    tol_x[0]            = 1.0e-09;
    tol_x[1]            = 1.0e-09;
-   print_level         = 1;
+   print_level         = 2;
    access_level        = 1;
    run_wrapper_tests   = 0;
 
@@ -2187,7 +2187,7 @@ int main (int argc, char *argv[])
       printf(" -------------------------\n");
       printf("  -print_level <l>                : sets the print_level (default: 1) \n");
       printf("                                    0 - no output to standard out \n");
-      printf("                                    1 - Basic convergence information and hierarchy statistics\n");
+      printf("                                    2 - Basic convergence information and hierarchy statistics\n");
       printf("                                    2 - Debug level output \n");
       printf("  -access_level <l>               : sets the access_level (default: 1) \n");
       printf("                                    0 - never call access \n");

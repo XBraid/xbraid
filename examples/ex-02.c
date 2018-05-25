@@ -456,7 +456,7 @@ int main (int argc, char *argv[])
    int       scoarsen      = 0;
    int       res           = 0;
    int       wrapper_tests = 0;
-   int       print_level   = 1;
+   int       print_level   = 2;
    int       access_level  = 1;
    int       use_sequential= 0;
 
@@ -493,7 +493,7 @@ int main (int argc, char *argv[])
             printf("   -res                 : use my residual\n\n");
             printf("   -print_level <l>     : sets the print_level (default: 1) \n");
             printf("                          0 - no output to standard out \n");
-            printf("                          1 - Basic convergence information and hierarchy statistics\n");
+            printf("                          2 - Basic convergence information and hierarchy statistics\n");
             printf("                          2 - Debug level output \n");
             printf("   -access_level <l>    : sets the access_level (default: 1) \n");
             printf("                          0 - never call access \n");

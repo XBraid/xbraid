@@ -741,9 +741,9 @@ braid_SetSpatialRefine(braid_Core         core,   /**< braid_Core (_braid_Core) 
  * printed to the XBraid print file (@ref braid_SetPrintFile).
  * 
  * - Level 0: no output
- * - Level 1: print typical information like a residual history, 
- *    number of levels in the XBraid hierarchy, and so on.
- * - Level 2: level 1 output, plus debug level output.
+ * - Level 1: print runtime information like the residual history 
+ * - Level 2: level 1 output, plus post-Braid run statistics (default)
+ * - Level 3: level 2 output, plus debug level output.
  * 
  * Default is level 1.
  **/

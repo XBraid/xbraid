@@ -1059,7 +1059,7 @@ BraidOptions::BraidOptions(int argc, char *argv[])
     nfmg_Vcyc       = 0;
     spatial_coarsen = false;
     access_level    = 1;
-    print_level     = 1;
+    print_level     = 2;
     storage         = -1;
     res             = 0;
 

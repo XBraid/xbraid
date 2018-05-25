@@ -309,7 +309,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
    {
       if (myid == 0)
       {
-         _braid_printf("  Iterations diverged.\n");
+         _braid_printf("  Braid: Iterations diverged.\n");
       }
       done = 1; 
    }
@@ -473,12 +473,12 @@ braid_Drive(braid_Core  core)
 
    if (myid == 0 )
    { 
-      if (!warm_restart && _braid_CoreElt(core, print_level) > 0) 
+      if (!warm_restart && print_level > 0) 
       {
          _braid_printf("\n  Braid: Begin simulation, %d time steps\n",
                     _braid_CoreElt(core, gupper));
       }
-      if ( adjoint && _braid_CoreElt(core, print_level) > 0 )
+      if ( adjoint && print_level > 0 )
       {
          if (_braid_CoreElt(core, max_levels) > 1)
          {
@@ -763,8 +763,8 @@ braid_Drive(braid_Core  core)
    _braid_CoreElt(core, localtime)  = localtime;
    _braid_CoreElt(core, globaltime) = globaltime;
 
-   /* Print statistics for this run, if primal XBraid. */
-   if ( (print_level >= 1) && (myid == 0) && !(adjoint))
+   /* Print statistics for this run */
+   if ( (print_level > 1) && (myid == 0) )
    {
       braid_PrintStats(core);
    }
@@ -806,7 +806,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              max_levels      = 30;             /* Default max_levels */
    braid_Int              min_coarse      = 2;              /* Default min_coarse */
    braid_Int              seq_soln        = 0;              /* Default initial guess is from user's Init() function */
-   braid_Int              print_level     = 1;              /* Default print level */
+   braid_Int              print_level     = 2;              /* Default print level */
    braid_Int              io_level        = 1;              /* Default output-to-file level */
    braid_Int              access_level    = 1;              /* Default access level */
    braid_Int              tnorm           = 2;              /* Default temporal norm */
@@ -896,7 +896,7 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, skip)            = skip;
 
-    adjoint               = adjoint;
+   _braid_CoreElt(core, adjoint)               = adjoint;
    _braid_CoreElt(core, record)                = record;
    _braid_CoreElt(core, obj_only)              = obj_only;
    _braid_CoreElt(core, verbose)               = verbose;
@@ -1092,6 +1092,7 @@ braid_PrintStats(braid_Core  core)
    if ( myid == 0 )
    {
       _braid_printf("\n");
+      _braid_printf("  Braid Solver Stats:\n");
       _braid_printf("  start time = %e\n", tstart);
       _braid_printf("  stop time  = %e\n", tstop);
       _braid_printf("  time steps = %d\n", gupper);
@@ -1122,15 +1123,15 @@ braid_PrintStats(braid_Core  core)
 
       if (tnorm == 1)
       {
-         _braid_printf("                         --> 1-norm TemporalNorm \n");
+         _braid_printf("                                          --> 1-norm TemporalNorm \n");
       }
       else if (tnorm == 2)
       {
-         _braid_printf("                         --> 2-norm TemporalNorm \n");
+         _braid_printf("                                          --> 2-norm TemporalNorm \n");
       }
       else if (tnorm == 3)
       {
-         _braid_printf("                         --> Inf-norm TemporalNorm \n");
+         _braid_printf("                                          --> Inf-norm TemporalNorm \n");
       }
       if (fullres != NULL)
       {
@@ -1276,7 +1277,7 @@ braid_SetPrintFile(braid_Core     core,
    {
       if ((_braid_printfile = fopen(printfile_name, "w")) == NULL)
       {
-         printf("Error: can't open output file %s\n", printfile_name);
+         printf("  Braid: Error: can't open output file %s\n", printfile_name);
          exit(1);
       }
    }
@@ -1781,7 +1782,7 @@ braid_SetTStartObjective(braid_Core core,
    /* Sanity check */
    if ( tstart_obj < _braid_CoreElt(core, tstart) )
    {
-     _braid_printf("\n WARNING: tstart_objective < tstart ! Using default tstart now.\n\n");
+     _braid_printf("\n  Braid: WARNING: tstart_objective < tstart ! Using default tstart now.\n\n");
      _braid_CoreElt(core, optim->tstart_obj) = _braid_CoreElt(core, tstart);
    }
  
@@ -1802,7 +1803,7 @@ braid_SetTStopObjective(braid_Core core,
    /* Sanity check */
    if ( tstop_obj > _braid_CoreElt(core, tstop) )
    {
-     _braid_printf("\n WARNING: tstop_objective > tstop ! Using default tstop now.\n\n");
+     _braid_printf("\n  Braid: WARNING: tstop_objective > tstop ! Using default tstop now.\n\n");
      _braid_CoreElt(core, optim->tstop_obj) = _braid_CoreElt(core, tstop);
    }
 
