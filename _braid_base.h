@@ -24,12 +24,15 @@
 
  /** \file _braid_base.h
  *  \brief Define headers for wrapper routines of user-defined functions. 
- * 
- *  Routines defined here wrap the user-defined routines. If this is a primal 
- * XBraid run, they just call the user's routines. If this is an XBraid_Adjoint
- * run, they also record themselves to the action tape and push state
- * and bar vectors to the primal and the bar tape, respectively. *_diff routines 
- * then pop these vectors from the tape and perform the differentiated actions.
+ *
+ *  Routines defined here wrap the user-defined routines. If this is a primal
+ *  XBraid run, the wrappers serve no function, and just call the user's
+ *  routines. If this is an XBraid_Adjoint run, then these routines record
+ *  themselves to the action tape and push state and bar vectors to the primal
+ *  and the bar tape, respectively.  These vectors are then later popped from 
+ *  the tape and passed to the user *diff* routines in order to compute the
+ *  differentiated actions.  This is a form of automatic differentiation to
+ *  compute the adjoint cycle.
  **/
 
 
@@ -46,31 +49,29 @@
 braid_Int 
 _braid_BaseStep(braid_Core       core,       /**< braid_Core structure */                 
                 braid_App        app,        /**< user-defined _braid_App structure */  
-                braid_BaseVector ustop,      /**< input, u vector at *tstop* */
+                braid_BaseVector ustop,      /**< input, *u* vector at *tstop* */
                 braid_BaseVector fstop,      /**< input, right-hand-side at *tstop* */
-                braid_BaseVector u,          /**< input/output, initially u vector at *tstart*, upon exit, u vector at *tstop* */   
+                braid_BaseVector u,          /**< input/output, initially *u* vector at *tstart*, upon exit, *u* vector at *tstop* */   
                 braid_Int        level,      /**< current time grid level */ 
                 braid_StepStatus status );   /**< braid_Status structure (pointer to the core) */    
 
 
 /**
- * This initializes a braid_BaseVector and calls the user's 
- * init routine. 
+ * This initializes a braid_BaseVector and calls the user's init routine. 
  * If (adjoint): record the action, initialize barVector with zero and push to the bar tape. 
  */
 braid_Int
 _braid_BaseInit(braid_Core         core,     /**< braid_Core structure */
                 braid_App          app,      /**< user-defined _braid_App structure */ 
-                braid_Real         t,        /**< current time value for (*u_ptr) */
+                braid_Real         t,        /**< current time value for *u_ptr* */
                 braid_BaseVector  *u_ptr     /**< output, newly allocated and initialized vector */
                 );
 
 /**
- * This initializes a braid_BaseVector and calls the user's 
- * clone routine.
- * If (adjoint): record the action, initialize a barVector with 
- * zero and push to the bar tape
- */ 
+ * This initializes a braid_BaseVector and calls the user's clone routine.
+ * If (adjoint): record the action, initialize a barVector with zero and push
+ * to the bar tape
+ */
 braid_Int
 _braid_BaseClone(braid_Core         core,     /**< braid_Core structure */
                  braid_App          app,      /**< user-defined _braid_App structure */ 
@@ -128,7 +129,7 @@ braid_Int
 _braid_BaseBufSize(braid_Core          core,          /**< braid_Core structure */
                    braid_App           app,           /**< user-defined _braid_App structure */
                    braid_Int          *size_ptr,      /**< upper bound on vector size in bytes */
-                   braid_BufferStatus  status         /**< can be querried for info on the message type */
+                   braid_BufferStatus  status         /**< can be querried for info about the message type */
                    );      
 
 
@@ -139,9 +140,9 @@ _braid_BaseBufSize(braid_Core          core,          /**< braid_Core structure 
 braid_Int
 _braid_BaseBufPack(braid_Core          core,      /**< braid_Core structure */
                    braid_App           app,       /**< user-defined _braid_App structure */
-                   braid_BaseVector    u,         /**< vector to back into buffer */
+                   braid_BaseVector    u,         /**< vector to pack into buffer */
                    void               *buffer,    /**< output, MPI buffer containing u */
-                   braid_BufferStatus  status     /**< can be queeried for info on the message type required */
+                   braid_BufferStatus  status     /**< can be querried for info about the message */
                    );
 
 /** 
@@ -154,7 +155,7 @@ _braid_BaseBufUnpack(braid_Core           core,      /**< braid_Core structure *
                      braid_App            app,       /**< user-defined _braid_App structure */    
                      void                *buffer,    /**< MPI Buffer to unpack and place in u_ptr */ 
                      braid_BaseVector    *u_ptr,     /**< output, braid_Vector containing buffer's data */
-                     braid_BufferStatus   status     /**< braid_Status structure (pointer to the core) */
+                     braid_BufferStatus   status     /**< can be querried for info about the message type */
                      );
 
 /** 
@@ -176,7 +177,7 @@ _braid_BaseObjectiveT(braid_Core             core,     /**< braid_Core structure
 braid_Int
 _braid_BaseResidual(braid_Core       core,             /**< braid_Core structure */
                     braid_App        app,              /**< user-defined _braid_App structure */
-                    braid_BaseVector ustop,            /**< input, u vector at *tstop* */
+                    braid_BaseVector ustop,            /**< input, *u* vector at *tstop* */
                     braid_BaseVector r,                /**< output, residual at *tstop* (at input, equals *u* at *tstart*) */
                     braid_StepStatus status            /**< braid_Status structure (pointer to the core) */ 
                     );
@@ -188,7 +189,7 @@ braid_Int
 _braid_BaseFullResidual(braid_Core        core,        /**< braid_Core structure */
                         braid_App         app,         /**< user-defined _braid_App structure */
                         braid_BaseVector  r,           /**< output, residual at *tstop* */
-                        braid_BaseVector  u,           /**< input, u vector at *tstop* */
+                        braid_BaseVector  u,           /**< input, *u* vector at *tstop* */
                         braid_StepStatus  status       /**< braid_Status structure (pointer to the core) */ 
                        );    
 
@@ -215,7 +216,7 @@ _braid_BaseSRefine(braid_Core              core,      /**< braid_Core structure 
                    );
 
 /**
- * This initializes a baseVector and call's the user's SInit routine.
+ * This initializes a shell baseVector and call's the user's SInit routine.
  */
 braid_Int
 _braid_BaseSInit(braid_Core        core,        /**< braid_Core structure */
@@ -225,7 +226,7 @@ _braid_BaseSInit(braid_Core        core,        /**< braid_Core structure */
                  );
 
 /**
- * This initializes a baseVector and call's the user's SClone routine.
+ * This clones a shell baseVector and call's the user's SClone routine.
  */
 braid_Int
 _braid_BaseSClone(braid_Core         core,      /**< braid_Core structure */ 
@@ -235,7 +236,7 @@ _braid_BaseSClone(braid_Core         core,      /**< braid_Core structure */
                   );
 
 /**
- * This call's the user's SFree routine.
+ * Call the user's shell free (SFree) routine.
  */
 braid_Int
 _braid_BaseSFree(braid_Core        core,        /**< braid_Core structure */
@@ -244,8 +245,9 @@ _braid_BaseSFree(braid_Core        core,        /**< braid_Core structure */
                  );
 
 
-/**
- * This calls the user's TimeGrid routine. 
+/** 
+ * This calls the user's TimeGrid routine, which allows the user to explicitly
+ * define the initial time grid.
  */
 braid_Int
 _braid_BaseTimeGrid(braid_Core   core,      /**< braid_Core structure */
@@ -261,18 +263,18 @@ _braid_BaseTimeGrid(braid_Core   core,      /**< braid_Core structure */
  *-----------------------------------------------------------*/
 
 /**
- * This pops state and bar vectors from the tape and calls the user's
- * differentiated step routine (step_diff):
+ * This pops state and bar vectors from the tape, and then calls 
+ * the user's differentiated step routine (step_diff) using those
+ * vectors as input.
  * ubar = ( d(step)/d(u) )^T * ubar
  */
 braid_Int
 _braid_BaseStep_diff(_braid_Action *action      /**< _braid_Action structure, holds information about the primal XBraid action */
                      );
 
-
 /**
- * This pops bar vectors from the tape and performs the 
- * differentiated clone action:
+ * This pops bar vectors from the tape, and then performs the 
+ * differentiated clone action using those vectors as input:
  *  ubar += vbar
  *  vbar  = 0.0
  */ 
@@ -281,8 +283,8 @@ _braid_BaseClone_diff(_braid_Action *action      /**< _braid_Action structure, h
                       );
 
 /**
- * This pops bar vectors from the tape and performs the 
- * differentiated sum action:
+ * This pops bar vectors from the tape, and then performs the 
+ * differentiated sum action using those vectors as input:
  *  xbar += alpha * ybar
  *  ybar  = beta  * ybar
  */ 
@@ -291,17 +293,18 @@ _braid_BaseSum_diff(_braid_Action *action      /**< _braid_Action structure, hol
                     );
 
 /**
- * This pops state and bar vectors from the tape and calls the user's
- * differentiated ObjectiveT routine (objT_diff):
+ * This pops state and bar vectors from the tape, and then 
+ * calls the user's differentiated ObjectiveT routine 
+ * (objT_diff) using those vectors as input:
  * ubar = ( d(objectiveT)/d(u) )^T * f_bar
  */ 
 braid_Int
 _braid_BaseObjectiveT_diff(_braid_Action *action      /**< _braid_Action structure, holds information about the primal XBraid action */
                            );
 
-
 /**
- * This pops the bar vector from the tape and performs the differentiated BufPack action:
+ * This pops the bar vector from the tape, and then performs the
+ * differentiated BufPack action using that vector as input:
  * MPI_Recv(utmp)
  * ubar += utmp
  */ 
@@ -310,7 +313,8 @@ _braid_BaseBufPack_diff(_braid_Action *action      /**< _braid_Action structure,
                         );
 
 /**
- * This pops the bar vector from the tape and performs the differentiated BufUnPack action:
+ * This pops the bar vector from the tape, and then performs the 
+ * differentiated BufUnPack action using that vector as input:
  * MPI_Send(ubar);
  * ubar = 0.0
  */ 
@@ -318,10 +322,10 @@ braid_Int
 _braid_BaseBufUnpack_diff(_braid_Action *action      /**< _braid_Action structure, holds information about the primal XBraid action */
                           );
 
-
 /**
- * This pops the bar vector from the tape and call's the user's
- * differentiated init routine (init_diff), if set.
+ * This pops the bar vector from the tape, and then call's the 
+ * user's differentiated init routine (init_diff) using that vector
+ * as input.  Note: init_diff is optional for the user. 
  */ 
 braid_Int
 _braid_BaseInit_diff(_braid_Action *action      /**< _braid_Action structure, holds information about the primal XBraid action */

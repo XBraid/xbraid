@@ -100,7 +100,7 @@ _braid_BaseInit(braid_Core        core,
    if (verbose) printf("%d INIT\n", myid);
 
    /* Allocate the braid_BaseVector */
-   u = (braid_BaseVector)malloc(sizeof(braid_Vector)+sizeof(braid_VectorBar));
+   u = (braid_BaseVector) malloc(sizeof(braid_Vector) + sizeof(braid_VectorBar));
    u->userVector = NULL;
    u->bar        = NULL;
 
@@ -110,7 +110,7 @@ _braid_BaseInit(braid_Core        core,
    /* Allocate and initialize the bar vector */
    if ( adjoint ) 
    {
-      ubar = (braid_VectorBar)malloc(sizeof(braid_Vector)+sizeof(int));
+      ubar = (braid_VectorBar) malloc(sizeof(braid_Vector) + sizeof(int));
       ubar->useCount = 1;
       _braid_CoreFcn(core, init)(app, t, &(ubar->userVector));
       _braid_CoreFcn(core, sum)(app, -1.0, ubar->userVector, 1.0, ubar->userVector);
@@ -154,17 +154,17 @@ _braid_BaseClone(braid_Core         core,
    if (verbose) printf("%d: CLONE\n", myid);
 
    /* Allocate the braid_BaseVector */
-   v = (braid_BaseVector)malloc(sizeof(braid_Vector)+sizeof(braid_VectorBar));
+   v = (braid_BaseVector) malloc(sizeof(braid_Vector) + sizeof(braid_VectorBar));
    v->userVector  = NULL;
    v->bar = NULL;
 
-   /* Allocate and and copy the userVector */
+   /* Allocate and copy the userVector */
    _braid_CoreFcn(core, clone)(app, u->userVector, &(v->userVector) );
 
    /* Allocate and initialize the bar vector to zero*/
    if ( adjoint )
    {
-      ubar = (braid_VectorBar)malloc(sizeof(braid_Vector)+sizeof(int));
+      ubar = (braid_VectorBar) malloc(sizeof(braid_Vector) + sizeof(int));
       ubar->useCount = 1;
       _braid_CoreFcn(core, clone)(app, u->bar->userVector, &(ubar->userVector));
       _braid_CoreFcn(core, sum)(app, -1.0, ubar->userVector, 1.0, ubar->userVector);
@@ -406,7 +406,7 @@ _braid_BaseBufUnpack(braid_Core          core,
    if ( verbose ) printf("%d: BUFUNPACK\n", myid);
 
    /* Allocate the braid_BaseVector */
-   u = (braid_BaseVector)malloc(sizeof(braid_Vector)+sizeof(braid_VectorBar));
+   u = (braid_BaseVector) malloc(sizeof(braid_Vector) + sizeof(braid_VectorBar));
    u->userVector  = NULL;
    u->bar = NULL;
 
@@ -416,7 +416,7 @@ _braid_BaseBufUnpack(braid_Core          core,
    if ( adjoint )
    {
       /* Allocate and initialize the bar vector with zero*/
-      ubar = (braid_VectorBar)malloc(sizeof(braid_Vector)+sizeof(int));
+      ubar = (braid_VectorBar) malloc(sizeof(braid_Vector) + sizeof(int));
       ubar->useCount = 1;
       _braid_CoreFcn(core, init)(app, tstart, &(ubar->userVector));
       _braid_CoreFcn(core, sum)(app, -1.0, ubar->userVector, 1.0, ubar->userVector);
@@ -424,7 +424,7 @@ _braid_BaseBufUnpack(braid_Core          core,
    }
 
    /* Record to the tape */
-   if (  record )
+   if ( record )
    {
       /* Set up and push the action */
       action                 = _braid_CTAlloc(_braid_Action, 1);
@@ -552,7 +552,7 @@ _braid_BaseSCoarsen(braid_Core              core,
 
    if ( verbose ) printf("%d: SCOARSEN\n", myid);
 
-   cu = (braid_BaseVector)malloc(sizeof(braid_BaseVector));
+   cu = (braid_BaseVector) malloc(sizeof(braid_BaseVector));
 
    /* Call the users SCoarsen Function */
    _braid_CoreFcn(core, scoarsen)(app, fu->userVector, &(cu->userVector), status);
@@ -575,7 +575,7 @@ _braid_BaseSRefine(braid_Core                 core,
 
    if ( verbose ) printf("%d: SREFINE\n", myid);
 
-   fu = (braid_BaseVector)malloc(sizeof(braid_BaseVector));
+   fu = (braid_BaseVector) malloc(sizeof(braid_BaseVector));
 
    /* Call the users SRefine */
    _braid_CoreFcn(core, srefine)(app, cu->userVector, &(fu->userVector), status);
@@ -598,7 +598,7 @@ _braid_BaseSInit(braid_Core        core,
 
    if ( verbose ) printf("%d: SINIT\n", myid);
 
-   u = (braid_BaseVector)malloc(sizeof(braid_BaseVector));
+   u = (braid_BaseVector) malloc(sizeof(braid_BaseVector));
 
    /* Call the users SInit */
    _braid_CoreFcn(core, sinit)(app, t, &(u->userVector));
@@ -622,7 +622,7 @@ _braid_BaseSClone(braid_Core        core,
 
    if ( verbose ) printf("%d: SCLONE\n", myid);
 
-   v = (braid_BaseVector)malloc(sizeof(braid_BaseVector));
+   v = (braid_BaseVector) malloc(sizeof(braid_BaseVector));
 
    /* Call the users SClone */
    _braid_CoreFcn(core, sclone)(app, u->userVector, &(v->userVector));
@@ -692,16 +692,16 @@ _braid_BaseStep_diff(_braid_Action *action)
    if ( verbose ) printf("%d: STEP_DIFF %.4f to %.4f, %d\n", myid, inTime, outTime, tidx);
 
    /* Pop ustop & u from primal tape */
-   ustop    = (braid_Vector)    (_braid_CoreElt(core, userVectorTape)->data_ptr);
+   ustop = (braid_Vector)    (_braid_CoreElt(core, userVectorTape)->data_ptr);
    _braid_CoreElt(core, userVectorTape) = _braid_TapePop( _braid_CoreElt(core, userVectorTape) );
-   u    = (braid_Vector)    (_braid_CoreElt(core, userVectorTape)->data_ptr);
+   u = (braid_Vector)    (_braid_CoreElt(core, userVectorTape)->data_ptr);
    _braid_CoreElt(core, userVectorTape) = _braid_TapePop( _braid_CoreElt(core, userVectorTape) );
 
    /* Pop ustopbar & ubar from bar tape */
    ustopbar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
-   _braid_CoreElt(core, barTape)        = _braid_TapePop( _braid_CoreElt(core, barTape) );
+   _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
    ubar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
-   _braid_CoreElt(core, barTape)        = _braid_TapePop( _braid_CoreElt(core, barTape) );
+   _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
 
    /* Set up the status structure */

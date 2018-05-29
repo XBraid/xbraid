@@ -873,16 +873,17 @@ _braid_SetRNormAdjoint(braid_Core  core,
                        braid_Int   iter, 
                        braid_Real  rnorm_adj);
 
-/**
- * Evaluate the user's local objective function at time t and add it to the time-averaged objective function
+/** 
+ * Evaluate the user's local objective function at time *t* and add it to the
+ * time-averaged objective function
  */
 braid_Int
-_braid_AddToObjective(braid_Core               core, 
+_braid_AddToObjective(braid_Core             core, 
                       braid_BaseVector       u, 
                       braid_ObjectiveStatus  ostatus);
 
 /**
- * Evaluate the objective function :
+ * Evaluate the objective function:
  * MPI_Allreduce the time average and postprocess the objective 
  */
 braid_Int
