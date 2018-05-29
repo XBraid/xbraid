@@ -423,7 +423,7 @@ int main (int argc, char *argv[])
    braid_tol      = 1.0e-6;
    braid_adjtol   = 1.0e-6;
    access_level   = 0;
-   print_level    = 1;
+   print_level    = 0;
    
 
    /* Parse command line */
@@ -557,7 +557,7 @@ int main (int argc, char *argv[])
    /* Prepare optimization output */
    if (rank == 0)
    {
-      printf("\n#    || r ||         || r_adj ||     Objective             || Gradient ||\n");
+      printf("\nOptimization:         || r ||        || r_adj ||        Objective           || Gradient ||\n");
    }
 
 
@@ -584,7 +584,7 @@ int main (int argc, char *argv[])
       /* Output */
       if (rank == 0)
       {
-         printf("%3d  %1.8e  %1.8e  %1.14e  %1.14e\n", iter, rnorm, rnorm_adj, objective, gnorm);
+         printf("Optimization: %3d  %1.8e  %1.8e  %1.14e  %1.14e\n", iter, rnorm, rnorm_adj, objective, gnorm);
       }
 
       /* Check optimization convergence */

@@ -26,3 +26,68 @@
   number of levels      = 4
 
 
+# Begin Test 3
+  time steps = 256
+  iterations            = 3
+  state   residual norm =  4.134784e-12  (-> abs. stopping tol. = 1.00e-06)
+  adjoint residual norm =  3.076058e-09  (-> abs. stopping tol. = 1.00e-06)
+  number of levels      = 2
+
+# Begin Test 4
+  time steps = 256
+  iterations            = 4
+  state   residual norm =  1.977239e-10  (-> abs. stopping tol. = 1.00e-06)
+  adjoint residual norm =  1.134360e-07  (-> abs. stopping tol. = 1.00e-06)
+  number of levels      = 4
+
+# Begin Test 5
+  time steps = 256
+  iterations            = 3
+  state   residual norm =  5.827566e-10  (-> abs. stopping tol. = 1.00e-06)
+  adjoint residual norm =  6.303468e-08  (-> abs. stopping tol. = 1.00e-06)
+  number of levels      = 4
+
+# Begin Test 6
+  Objective function value = 5.15523025e-01
+  Gradient norm            = 5.86267427e-05
+  optimization iterations  = 3
+  time steps = 256
+  iterations            = 3
+  state   residual norm =  3.830225e-09  (-> abs. stopping tol. = 1.00e-06)
+  adjoint residual norm =  3.662471e-07  (-> abs. stopping tol. = 1.00e-06)
+  number of levels      = 4
+
+# Begin Test 7
+  time steps = 256
+  iterations            = 1
+  state   residual norm =  4.832546e-03  (-> abs. stopping tol. = 1.00e-06)
+  adjoint residual norm =  2.050891e-02  (-> abs. stopping tol. = 1.00e-06)
+  number of levels      = 4
+
+# Begin Test 8
+  time steps = 256
+  iterations            = 1
+  state   residual norm =  4.832546e-03  (-> abs. stopping tol. = 1.00e+02)
+  adjoint residual norm =  2.050891e-02  (-> abs. stopping tol. = 1.00e+01)
+  number of levels      = 4
+
+
+# Begin Test 9
+  Objective function value = 5.15523026e-01
+  Gradient norm            = 5.86488247e-05
+  optimization iterations  = 3
+  time steps = 256
+  iterations            = 4
+  state   residual norm =  4.825536e-11  (-> abs. stopping tol. = 1.00e-06)
+  adjoint residual norm =  1.711811e-07  (-> abs. stopping tol. = 1.00e-06)
+  number of levels      = 3
+
+# Begin Test 10
+  3  3.59640284796968e-01  1.00164146520641e-02
+255  6.62381806690908e-02  9.89797788690525e-07
+
+
+# Begin Test 11
+  3  4.47685578622637e-01  1.08521319818560e-03
+
+
