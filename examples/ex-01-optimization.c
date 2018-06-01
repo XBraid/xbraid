@@ -72,7 +72,6 @@ typedef struct _braid_App_struct
    double    gradient;        /* Store the gradient in the app - should be of same size as design! */
    double    target;          /* Target for tracking type objective function (inverse design) */
    double    gamma;           /* Relaxation parameter for the tracking type objective function */
-   double    stepsize;        /* Step size for design updates */
 
    int       rank;            /* Rank of the processor */
    double    ntime;           /* Total number of time-steps */
@@ -362,9 +361,10 @@ my_ResetGradient(braid_App app)
 
 /* Function to update the design variable */
 int
-my_DesignUpdate(braid_App app, 
-                double    stepsize )
+design_update(braid_App app, 
+              double    stepsize )
 {
+   /* Using simple steepest descent method with fixed stepsize */
    app->design -= stepsize * app->gradient;
 
    return 0;
@@ -372,8 +372,8 @@ my_DesignUpdate(braid_App app,
 
 /* Return the norm of the gradient */
 int
-my_GradientNorm(braid_App app,
-                double    *gnorm_ptr)
+gradient_norm(braid_App app,
+              double    *gnorm_ptr)
 {
    *gnorm_ptr = sqrt((app->gradient)*(app->gradient));
 
@@ -382,7 +382,7 @@ my_GradientNorm(braid_App app,
 
 /* Function to allow for the computation of the gradient */
 int
-my_GradientAllreduce(braid_App app)
+gradient_allreduce(braid_App app)
 {
    double mygradient = app->gradient;
    double gradient; 
@@ -405,19 +405,23 @@ int main (int argc, char *argv[])
    double        tstart, tstop;
    int           ntime, rank;
    double        design; 
-   double        gamma, target;
+   double        objective, gamma, target;
+   double        gnorm, gtol;
    double        stepsize;
+   int           iter, maxiter;
 
    /* Define time domain: ntime intervals */
    ntime  = 50;
-   tstart = 0.0;
+   tstart = 0.0;                             
    tstop  = tstart + ntime/2.;
 
-   /* Initialize optimization variables */
+   /* Set optimization variables */
    design           = -1.0;                  /* Initial design  */
    target           = 1.15231184218078e-01;  /* Precomputed target for inverse design optimization */
    gamma            = 0.0005;                /* Relaxation parameter for the objective function */
    stepsize         = 6.0;                   /* Step size for design updates */
+   maxiter          = 100;                   /* Maximum number of optimization iterations */
+   gtol             = 1e-6;                  /* Stopping criterion on the gradient norm */
 
 
    /* Initialize MPI */
@@ -432,7 +436,6 @@ int main (int argc, char *argv[])
    app->ntime       = ntime;
    app->target      = target;
    app->gamma       = gamma;
-   app->stepsize    = stepsize;
 
    /* Initialize XBraid */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
@@ -456,15 +459,61 @@ int main (int argc, char *argv[])
    braid_SetAbsTolAdjoint(core, 1e-6);     /* Tolerance on adjoint residual norm */
 
 
-   /* Set maximum number of optimization iterations */
-   braid_SetMaxOptimIter(core, 100);
-   /* Set absolute stopping criterion for the norm of the gradient */
-   braid_SetAbsTolOptim(core, 1e-6);
-   /* Set initial step size */
-   braid_SetStepsize(core, 6.0);
+   /* Optimization iteration */
+   for (iter = 0; iter < maxiter; iter++)
+   {
+      /* Run adjoint XBraid to compute objective function and gradient */
+      braid_Drive(core);
 
-   /* Start the optimization */
-   braid_DriveOptimization(core, app, my_DesignUpdate, my_GradientNorm, my_GradientAllreduce);
+      /* Get the objective function value */
+      braid_GetObjective(core, &objective);
+
+      /* Collect sensitivities from all processors */
+      gradient_allreduce(app);
+
+      /* Compute norm of the gradient */
+      gradient_norm(app, &gnorm);
+
+      /* Output */
+      if (rank == 0) 
+      {
+         printf("\n %3d: Objective = %1.8e,  || Gradient || = %1.8e\n", iter, objective, gnorm);
+      }
+
+      /* Check optimization convergence */
+      if (gnorm < gtol)
+      {
+         break;
+      }
+
+      /* Design update */
+      design_update(app, stepsize);
+   }
+
+
+   /* Print some statistics about the optimization run */
+   if (rank == 0)
+   {
+      if (iter == maxiter)
+      {
+         printf("\n Max. number of iterations reached! \n\n"); 
+      }
+      else
+      {
+         printf("\n");
+         printf("  Optimization has converged.\n");
+         printf("\n"); 
+         printf("  Objective function value = %1.8e\n", objective);
+         printf("  Gradient norm            = %1.8e\n", gnorm);
+         printf("\n");
+         printf("  optimization iterations  = %d\n", iter);
+         printf("  max optim iterations     = %d\n", maxiter);
+         printf("  gradient norm tolerance  = %1.1e", gtol);
+         printf("\n");
+      }
+   }
+
+   /* Print XBraid statistics */
    braid_PrintStats(core);
 
    /* Clean up */
