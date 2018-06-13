@@ -44,18 +44,22 @@ extern "C" {
 #endif
 
 /**
- * Shared pointer implentation for storing the intermediat AD-bar variables while taping
+ * Shared pointer implementation for storing the intermediat AD-bar variables while taping.
+ * This is essentially the same as a userVector, except we need shared pointer 
+ * capabilities to know when to delete.
  */
 struct _braid_VectorBar_struct
 {
-   braid_Vector userVector;            /**< holds the u_bar data */
-   braid_Int    useCount;                 /**< counts the number of pointers to this struct */
+   braid_Vector userVector;         /**< holds the u_bar data */
+   braid_Int    useCount;           /**< counts the number of pointers to this struct */
 }; 
 typedef struct _braid_VectorBar_struct *braid_VectorBar;
 
-/**
- * Augmented braid vector, that stores both the users primal vector and its associated bar vector 
- * if adjoint: bar contains intermediate AD-vector, else bar=NULL
+/** 
+ * Braid vector used for storage of all state and (if needed) adjoint
+ * information.  Stores both the user's primal vector (braid_Vector type) and
+ * the associated bar vector (braid_VectorBar type) if the adjoint
+ * functionality is being used.  If adjoint is not being used, bar==NULL. 
  */
 struct _braid_BaseVector_struct
 {
@@ -241,7 +245,7 @@ typedef struct _braid_Core_struct
       
    braid_PtFcnObjectiveT                objectiveT;           /**< User function: evaluate objective function at time t */
    braid_PtFcnStepDiff                  step_diff;            /**< User function: apply differentiated step function */
-   braid_PtFcnObjectiveTDiff            objT_diff;            /**< User function: apply differentiated access function */
+   braid_PtFcnObjectiveTDiff            objT_diff;            /**< User function: apply differentiated objective function */
    braid_PtFcnResetGradient             reset_gradient;       /**< User function: Set the gradient to zero. Is called before each iteration */
    braid_PtFcnPostprocessObjective      postprocess_obj;      /**< Optional user function: Modify the time-averaged objective function, e.g. for inverse design problems, adding relaxation term etc. */
    braid_PtFcnPostprocessObjective_diff postprocess_obj_diff; /**< Optional user function: Derivative of postprocessing function  */
@@ -832,8 +836,8 @@ _braid_DeleteLastResidual(braid_Core  core);
 
 
 /**
- * This copies a braid_VectorBar shared pointer:
- * Copy the pointer and increase its useCount by one. 
+ * Shallow copy a braid_VectorBar shared pointer, bar_ptr is set to bar
+ * and the useCount is incremented by one.
  */
 braid_Int
 _braid_VectorBarCopy(braid_VectorBar  bar,       

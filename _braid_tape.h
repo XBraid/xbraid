@@ -1,6 +1,6 @@
 
 /** \file _braid_tape.h
- * \brief Define headers for tape routines.
+ * \brief Define headers for the tape routines (linked list for AD)
  *
  */
 
@@ -125,8 +125,9 @@ _braid_TapeEvaluate(braid_Core core);
 braid_Int
 _braid_DiffCall(_braid_Action* action);
 
-/**
- * Set the adjoint seed for tape evaluation (u_bar at output variables)
+/** 
+ * Set the adjoint seed for tape evaluation, i.e., set u->bar at stored points
+ * on level 0 to the values contained in core->optim->adjoints
  */
 braid_Int
 _braid_TapeSetSeed(braid_Core core);
