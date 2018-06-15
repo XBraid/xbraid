@@ -371,12 +371,13 @@ typedef braid_Int
 /**
  * This is the differentiated version of the ObjectiveT routine. 
  * It provides the derivatives of ObjectiveT() multiplied by the scalar input F_bar. 
- * The derivative with respect to the state vector must be returned to
- * XBraid_Adjoint in u_bar. The derivative with respect to the design 
- * updates the gradient, which is stored in the app. 
+ * First output: the derivative with respect to the state vector must be returned 
+ * to XBraid_Adjoint in u_bar. 
+ * Second output: The derivative with respect to the design updates the gradient, 
+ * which is stored in the app. 
  **/
 typedef braid_Int
-(*braid_PtFcnObjectiveTDiff)(braid_App             app,       /**< user-defined _braid_App structure */
+(*braid_PtFcnObjectiveTDiff)(braid_App             app,       /**< input / output: user-defined _braid_App structure, used to store gradient */
                              braid_Vector          u,         /**< input: state vector at current time */
                              braid_Vector          u_bar,     /**< output: adjoint vector, holding the derivative wrt u */
                              braid_Real            F_bar,     /**< scalar input, multiply the derivative with this  */
@@ -410,12 +411,14 @@ typedef braid_Int
 /**
  * This is the differentiated version of the time-stepping routine. 
  * It provides the transposed derivatives of Step() multiplied by the adjoint 
- * input vector u_bar (or ustop_bar). The derivative with respect to the state
- * updates the adjoint vector u_bar (or ustop_bar). The derivative with respect 
- * the design updates the gradient, which is stored in the app. 
+ * input vector u_bar (or ustop_bar). 
+ * First output: the derivative with respect to the state updates the adjoint 
+ * vector u_bar (or ustop_bar). 
+ * Second output: The derivative with respect the design updates the gradient, 
+ * which is stored in the app. 
  **/
 typedef braid_Int
-(*braid_PtFcnStepDiff)(braid_App        app,       /**< user-defined _braid_App structure */
+(*braid_PtFcnStepDiff)(braid_App        app,       /**< input / output: user-defined _braid_App structure, used to store gradient */
                        braid_Vector     ustop,     /**< input, u vector at *tstop* */
                        braid_Vector     u,         /**< input, u vector at *tstart* */
                        braid_Vector     ustop_bar, /**< input / output, adjoint vector for ustop */
@@ -429,7 +432,7 @@ typedef braid_Int
  * Set the gradient to zero.
  */
 typedef braid_Int
-(*braid_PtFcnResetGradient)(braid_App app );     /**< user-defined _braid_App structure */
+(*braid_PtFcnResetGradient)(braid_App app );     /**< output: user-defined _braid_App structure, used to store gradient */
 
 
 /**
@@ -438,7 +441,7 @@ typedef braid_Int
  * Hessian approximation should go here. 
  */
 typedef braid_Int
-(*braid_PtFcnDesignUpdate)(braid_App  app,         /**< user-defined _braid_App structure */
+(*braid_PtFcnDesignUpdate)(braid_App  app,         /**< input / output: user-defined _braid_App structure, used to store gradient */
                            braid_Real stepsize);   /**< step size for updating the design */  
 
 /**
@@ -446,13 +449,13 @@ typedef braid_Int
  * This typically involves an MPI_Allreduce call for all gradient elements. 
  */
 typedef braid_Int
-(*braid_PtFcnGradientAllreduce)(braid_App app );      /**< user-defined _braid_App structure */
+(*braid_PtFcnGradientAllreduce)(braid_App app );      /**< input / output: user-defined _braid_App structure, used to store gradient */
 
 /**
  * (Optional) Compute the norm of the gradient 
  */
 typedef braid_Int
-(*braid_PtFcnGradientNorm)(braid_App   app,           /**< user-defined _braid_App structure */
+(*braid_PtFcnGradientNorm)(braid_App   app,           /**< input : user-defined _braid_App structure, used to store gradient */
                            braid_Real *gnorm_ptr );   /**< output: norm of the gradient */
 
 
@@ -954,7 +957,7 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,         /**< user-rou
 
 /**
  * Set a start time for integrating the objective function over time.
- * Default is tstart of the primal Xbraid run.
+ * Default is tstart of the primal XBraid run.
  */
 braid_Int
 braid_SetTStartObjective(braid_Core core,                   /**< braid_Core (_braid_Core) struct*/
@@ -962,8 +965,8 @@ braid_SetTStartObjective(braid_Core core,                   /**< braid_Core (_br
 
 
 /**
- * Set the ent-time for integrating the objective function over time.  
- * Default is tstop of the primal Xbraid run
+ * Set the end-time for integrating the objective function over time.  
+ * Default is tstop of the primal XBraid run
  */
 braid_Int
 braid_SetTStopObjective(braid_Core core,               /**< braid_Core (_braid_Core) struct*/ 
@@ -983,7 +986,7 @@ braid_SetPostprocessObjective(braid_Core                      core,     /**< bra
  **/
 braid_Int
 braid_SetPostprocessObjective_diff(braid_Core                           core,          /**< braid_Core (_braid_Core) struct*/
-                                   braid_PtFcnPostprocessObjective_diff post_fcn_diff  /**< function pointer to postprocessing routine */
+                                   braid_PtFcnPostprocessObjective_diff post_fcn_diff  /**< function pointer to postprocessing_diff routine */
                                    ); 
 
 /**
@@ -1007,13 +1010,12 @@ braid_SetRelTolAdjoint(braid_Core  core,           /**< braid_Core (_braid_Core)
                        braid_Real  rtol_adj        /**< relative stopping tolerance */
                       );
 
-/**
- * If set to 1, a call to braid_Drive() will skip the gradient computation and compute 
- * the ODE solution and objective function value only. 
+/** 
+ * Set braid_Drive() to skip the gradient computation and compute the ODE
+ * solution and objective function value only. 
  */
 braid_Int
-braid_SetObjectiveOnly(braid_Core core,          /**< braid_Core (_braid_Core) struct */
-                       braid_Int  obj_only       /**< flag that determines, if only objective function is computed (1), i.e. no sensitivities, or not (0) */
+braid_SetObjectiveOnly(braid_Core core           /**< braid_Core (_braid_Core) struct */
                       );                   
 
 /**

@@ -313,12 +313,20 @@ _braid_DriveCheckConvergence(braid_Core  core,
       }
       done = 1; 
    }
+   else if ( braid_isnan(rnorm_adj) )
+   {
+      if (myid == 0)
+      {
+         _braid_printf("  Braid: Adjoint iterations diverged.\n");
+      }
+      done = 1; 
+   }
    
    if (iter == max_iter-1 )
    {
       if (myid == 0)
       {
-         _braid_printf("  Braid: Max. state iterations reached.\n\n");
+         _braid_printf("  Braid: Max. iterations reached.\n\n");
       }
       done = 1;
    } 
@@ -358,12 +366,12 @@ _braid_DrivePrintStatus(braid_Core  core,
 
    if (_braid_CoreElt(core, adjoint))
    {
-      optim           = _braid_CoreElt(core, optim);
+      optim     = _braid_CoreElt(core, optim);
       rnorm_adj = optim->rnorm_adj;
       objective = optim->objective;
       if (_braid_CoreElt(core, obj_only))
       {
-         rnorm_adj = 0.0;
+         rnorm_adj = -1.0;
       }
    }
 
@@ -675,8 +683,8 @@ braid_Drive(braid_Core  core)
                _braid_TapeEvaluate(core);
 
                /* Update adjoints and compute residual norm */
-                  _braid_UpdateAdjoint(core, &rnorm_adj);
-                  _braid_SetRNormAdjoint(core, iter, rnorm_adj);
+               _braid_UpdateAdjoint(core, &rnorm_adj);
+               _braid_SetRNormAdjoint(core, iter, rnorm_adj);
             }
 
             /* Print current status */
@@ -1889,15 +1897,14 @@ braid_GetObjective(braid_Core  core,
 
 
 braid_Int
-braid_SetObjectiveOnly(braid_Core core,       
-                       braid_Int  obj_only)
+braid_SetObjectiveOnly(braid_Core core)       
 {
    if ( !(_braid_CoreElt(core, adjoint)) )
    {
       return _braid_error_flag;
    }  
 
-   _braid_CoreElt(core, obj_only) = obj_only;
+   _braid_CoreElt(core, obj_only) = 1; 
 
    return _braid_error_flag;
 }

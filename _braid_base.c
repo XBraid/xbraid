@@ -495,7 +495,7 @@ _braid_BaseObjectiveT(braid_Core             core,
    }
 
    /* Evaluate the objective function at time t */
-   _braid_CoreFcn(core, objectiveT)(app, u->userVector, ostatus,objT_ptr);
+   _braid_CoreFcn(core, objectiveT)(app, u->userVector, ostatus, objT_ptr);
 
    return _braid_error_flag;
 }

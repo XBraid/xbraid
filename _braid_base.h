@@ -25,14 +25,14 @@
  /** \file _braid_base.h
  *  \brief Define headers for wrapper routines of user-defined functions. 
  *
- *  Routines defined here wrap the user-defined routines. If this is a primal
- *  XBraid run, the wrappers serve no function, and just call the user's
- *  routines. If this is an XBraid_Adjoint run, then these routines record
- *  themselves to the action tape and push state and bar vectors to the primal
- *  and the bar tape, respectively.  These vectors are then later popped from 
- *  the tape and passed to the user *diff* routines in order to compute the
- *  differentiated actions.  This is a form of automatic differentiation to
- *  compute the adjoint cycle.
+ *  Routines defined here wrap the user-defined routines. If this is a normal
+ *  XBraid run (i.e., no adjoint), then the wrappers serve no function, and
+ *  just call the user's routines. If this is an XBraid_Adjoint run, then these
+ *  routines record themselves to the action tape and push state and bar
+ *  vectors to the primal and the bar tape, respectively.  These vectors are
+ *  then later popped from the tape and passed to the user *diff* routines in
+ *  order to compute the differentiated actions.  This is a form of automatic
+ *  differentiation to compute the adjoint cycle.
  **/
 
 
@@ -44,7 +44,7 @@
 
 /**
  * This calls the user's step routine.
- * If (adjoint): record the action, and push state and bar vector to primal and bar tapes. 
+ * If (adjoint): also record the action, and push state and bar vector to primal and bar tapes. 
  */
 braid_Int 
 _braid_BaseStep(braid_Core       core,       /**< braid_Core structure */                 
@@ -58,7 +58,7 @@ _braid_BaseStep(braid_Core       core,       /**< braid_Core structure */
 
 /**
  * This initializes a braid_BaseVector and calls the user's init routine. 
- * If (adjoint): record the action, initialize barVector with zero and push to the bar tape. 
+ * If (adjoint): also record the action, initialize barVector with zero and push to the bar tape. 
  */
 braid_Int
 _braid_BaseInit(braid_Core         core,     /**< braid_Core structure */
@@ -69,7 +69,7 @@ _braid_BaseInit(braid_Core         core,     /**< braid_Core structure */
 
 /**
  * This initializes a braid_BaseVector and calls the user's clone routine.
- * If (adjoint): record the action, initialize a barVector with zero and push
+ * If (adjoint): also record the action, initialize a barVector with zero and push
  * to the bar tape
  */
 braid_Int
@@ -80,7 +80,7 @@ _braid_BaseClone(braid_Core         core,     /**< braid_Core structure */
                  );
 /**
  * This calls the user's free routine.
- * If (adjoint): record the action, and free the bar vector. 
+ * If (adjoint): also record the action, and free the bar vector. 
  */ 
 braid_Int
 _braid_BaseFree(braid_Core        core,      /**< braid_Core structure */
@@ -90,7 +90,7 @@ _braid_BaseFree(braid_Core        core,      /**< braid_Core structure */
 
 /**
  * This calls the user's sum routine.
- * If (adjoint): record the action, and push to the bar tape. 
+ * If (adjoint): also record the action, and push to the bar tape. 
  */ 
 braid_Int
 _braid_BaseSum(braid_Core        core,       /**< braid_Core structure */
@@ -103,6 +103,7 @@ _braid_BaseSum(braid_Core        core,       /**< braid_Core structure */
 
 /**
  * This calls the user's SpatialNorm routine. 
+ * If (adjoint): nothing
  */ 
 braid_Int
 _braid_BaseSpatialNorm(braid_Core        core,      /**< braid_Core structure */
@@ -113,7 +114,7 @@ _braid_BaseSpatialNorm(braid_Core        core,      /**< braid_Core structure */
 
 /**
  * This calls the user's Access routine. 
- * If (adjoint): record the action
+ * If (adjoint): also record the action
  */
 braid_Int
 _braid_BaseAccess(braid_Core          core,        /**< braid_Core structure */
@@ -124,6 +125,7 @@ _braid_BaseAccess(braid_Core          core,        /**< braid_Core structure */
 
 /** 
  * This calls the user's BufSize routine.
+ * If (adjoint): nothing
  */
 braid_Int
 _braid_BaseBufSize(braid_Core          core,          /**< braid_Core structure */
@@ -135,7 +137,7 @@ _braid_BaseBufSize(braid_Core          core,          /**< braid_Core structure 
 
 /** 
  * This calls the user's BufPack routine.
- * If (adjoint): record the action, and push to the bar tape. 
+ * If (adjoint): also record the action, and push to the bar tape. 
  */
 braid_Int
 _braid_BaseBufPack(braid_Core          core,      /**< braid_Core structure */
@@ -147,8 +149,7 @@ _braid_BaseBufPack(braid_Core          core,      /**< braid_Core structure */
 
 /** 
  * This calls the user's BufUnPack routine.
- * If (adjoint): record the action, initialize the bar vector 
- * with zero and push it to the bar tape. 
+ * If (adjoint): also record the action, initialize the bar vector with zero and push it to the bar tape. 
  */
 braid_Int
 _braid_BaseBufUnpack(braid_Core           core,      /**< braid_Core structure */   
@@ -159,20 +160,22 @@ _braid_BaseBufUnpack(braid_Core           core,      /**< braid_Core structure *
                      );
 
 /** 
- * If (adjoint): This calls the user's ObjectiveT routine.
- * Further: record the action, push to the state and bar tapes. 
+ * If (adjoint): This calls the user's ObjectiveT routine, records the action, and 
+ *               pushes to the state and bar tapes. 
  */
+
 braid_Int
 _braid_BaseObjectiveT(braid_Core             core,     /**< braid_Core structure */
                       braid_App              app,      /**< user-defined _braid_App structure */
-                      braid_BaseVector       u,        /**< input: state vector at current time */
+                      braid_BaseVector       u,        /**< input, state vector at current time */
                       braid_ObjectiveStatus  ostatus,  /**< status structure for querying time, index, etc. */
-                      braid_Real            *objT_ptr  /**< output: objective function value at current time */
+                      braid_Real            *objT_ptr  /**< output, objective function value at current time */
                       );
 
 
 /** 
  * This calls the user's Residual routine.
+ * If (adjoint): nothing
  */
 braid_Int
 _braid_BaseResidual(braid_Core       core,             /**< braid_Core structure */
@@ -184,6 +187,7 @@ _braid_BaseResidual(braid_Core       core,             /**< braid_Core structure
 
 /** 
  * This calls the user's FullResidual routine (full_rnorm_res).
+ * If (adjoint): nothing
  */
 braid_Int
 _braid_BaseFullResidual(braid_Core        core,        /**< braid_Core structure */
@@ -195,6 +199,7 @@ _braid_BaseFullResidual(braid_Core        core,        /**< braid_Core structure
 
 /**
  * This initializes a baseVector and calls the user's SCoarsen routine. 
+ * If (adjoint): nothing
  */
 braid_Int
 _braid_BaseSCoarsen(braid_Core              core,      /**< braid_Core structure */
@@ -206,6 +211,7 @@ _braid_BaseSCoarsen(braid_Core              core,      /**< braid_Core structure
 
 /**
  * This initializes a baseVector and calls the user's SRefine routine. 
+ * If (adjoint): nothing
  */
 braid_Int
 _braid_BaseSRefine(braid_Core              core,      /**< braid_Core structure */
@@ -217,6 +223,7 @@ _braid_BaseSRefine(braid_Core              core,      /**< braid_Core structure 
 
 /**
  * This initializes a shell baseVector and call's the user's SInit routine.
+ * If (adjoint): nothing
  */
 braid_Int
 _braid_BaseSInit(braid_Core        core,        /**< braid_Core structure */
@@ -227,6 +234,7 @@ _braid_BaseSInit(braid_Core        core,        /**< braid_Core structure */
 
 /**
  * This clones a shell baseVector and call's the user's SClone routine.
+ * If (adjoint): nothing
  */
 braid_Int
 _braid_BaseSClone(braid_Core         core,      /**< braid_Core structure */ 
@@ -237,6 +245,7 @@ _braid_BaseSClone(braid_Core         core,      /**< braid_Core structure */
 
 /**
  * Call the user's shell free (SFree) routine.
+ * If (adjoint): nothing
  */
 braid_Int
 _braid_BaseSFree(braid_Core        core,        /**< braid_Core structure */
@@ -248,6 +257,7 @@ _braid_BaseSFree(braid_Core        core,        /**< braid_Core structure */
 /** 
  * This calls the user's TimeGrid routine, which allows the user to explicitly
  * define the initial time grid.
+ * If (adjoint): nothing
  */
 braid_Int
 _braid_BaseTimeGrid(braid_Core   core,      /**< braid_Core structure */
