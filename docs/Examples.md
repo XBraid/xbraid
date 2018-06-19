@@ -1143,64 +1143,29 @@ These routines are optional for XBraid_Adjoint. Therefore, they need to be passe
       braid_SetPostprocessObjective(core, my_PostprocessObjective);
       braid_SetPostprocessObjective_diff(core, my_PostprocessObjective_diff);
 
-In order to use the optimization template provided in `braid_optimization.c`, following routines are required:
+The optimization cycle consists of the following steps:
+* First, we run XBraid_Adjoint to solve the primal and adjoint dynamics:
 
-1. **DesignUpdate**: This tells XBraid_Adjoint how to update the design using the gradient information and a given stepsize. Typically, updating the design will involve an approximation to the Hessian of the objective function, e.g. using a BFGS-update scheme. As this is a simple example, only a steepest descent updating scheme is applied. 
+      braid_Drive(core);
 
-         int
-         my_DesignUpdate(braid_App app,
-                         double    stepsize )
-         {
-            app->design -= stepsize * app->gradient;
+* Get the value of the objective function with 
 
-            return 0;
-         }
+      braid_GetObjective(core, &objective);
 
-2. **GradientNorm**: This routine returns the norm of the gradient. The stopping criterion of the optimization iteration will be based on this.
+* Since the gradient is local to all temporal processors, we need to invoke an `MPI_Allreduce` call which sums up the local sensitivities:
+      
+      mygradient = app->gradient;
+      MPI_Allreduce(&mygradient, &app->gradient, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD); 
 
-         int
-         my_GradientNorm(braid_App app,
-                         double    *gnorm_ptr)
-         {
-            *gnorm_ptr = sqrt((app->gradient)*(app->gradient));
+   **Note**: For time-dependent design variables, summing over all processors might not be necessary at this point since information is needed only locally in time. See `examples/ex-04.c` for a time-dependent design example. 
 
-            return 0;
-         }
+* Update the design variable using the gradient information. Here, we implement a simple steepest descent update into the direction of the negative gradient:
 
+      app->design -= stepsize * app->gradient;
 
-3. **GradientAllreduce**: This routine collects sensitivity information from all time-processors and broadcasts the sum. 
+   Here, a fixed step size is used to update the design variable. Usually, a line-search proceduce should be implemented in order to find a suitable step length that minimizes the objective function along the update direction. In order to re-evaluate the objective function for a different design, the option [braid_SetObjectiveOnly(core, 1)](@ref braid_SetObjectiveOnly) can be used: Any further call to `braid_Drive(core)` will then only run a primal XBraid simulation and objective function evaluation, without computing another gradient, which saves some computational time. Make sure to reset XBraid_Adjoint for gradient computation with `braid_SetObjectiveOnly(core, 0)` afterwards. 
 
-         int
-         my_GradientAllreduce(braid_App app)
-         {
-            double mygradient = app->gradient;
-            double gradient; 
-
-            /* Collect sensitivities from all processors and broadcast it */
-            MPI_Allreduce(&mygradient, &gradient, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-            app->gradient = gradient;
-
-            return 0;
-         }
-   If the communicator has been split into spacial and temporal one, the temporal communicator should be passed to this function through the app. For time-dependent design variables, summing over all processors might not be necessary since information is needed only locally in time. This routine can be left empty in that case. 
-
-In the user's *main* file, some additional options for controlling the optimization iterations can be set: 
-
-      /* Set maximum number of optimization iterations */
-      braid_SetMaxOptimIter(core, 100);
-
-      /* Set absolute stopping criterion for the norm of the gradient */
-      braid_SetAbsTolOptim(core, 1e-6);
-
-      /* Set initial step size */
-      braid_SetStepsize(core, 6.0);
-
-Then, the optimization iteration is started by calling
-
-      /* Start the optimization */
-      braid_DriveOptimization(core, app, my_DesignUpdate, my_GradientNorm, my_GradientAllreduce);
-
-
+* The optimization iterations are stopped when the norm of the gradient is below a prescribed tolerance. 
 
 # A Simple Optimal Control Problem {#optimalcontrolexample}
 
