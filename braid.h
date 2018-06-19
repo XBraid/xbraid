@@ -987,12 +987,14 @@ braid_SetRelTolAdjoint(braid_Core  core,           /**< braid_Core (_braid_Core)
                       );
 
 /** 
- * Set braid_Drive() to skip the gradient computation and compute the ODE
- * solution and objective function value only. 
+ * Use this option with boolean = 1 to let braid_Drive(core) skip the gradient computation and 
+ * compute the ODE solution and objective function value only. 
+ * Reset it to include gradient computation with boolean = 0.
  */
 braid_Int
-braid_SetObjectiveOnly(braid_Core core           /**< braid_Core (_braid_Core) struct */
-                      );                   
+braid_ObjectiveOnly(braid_Core core,         /**< braid_Core (_braid_Core) struct */
+                    braid_Int  boolean       /**< set to '1' for computing objective function only, '0' for objective function and gradient computation  */
+                    );                   
 
 /**
  * After braid_drive() has finished, this returns the objective function value

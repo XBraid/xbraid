@@ -1163,7 +1163,7 @@ The optimization cycle consists of the following steps:
 
       app->design -= stepsize * app->gradient;
 
-   Here, a fixed step size is used to update the design variable. Usually, a line-search proceduce should be implemented in order to find a suitable step length that minimizes the objective function along the update direction. In order to re-evaluate the objective function for a different design, the option [braid_SetObjectiveOnly(core, 1)](@ref braid_SetObjectiveOnly) can be used: Any further call to `braid_Drive(core)` will then only run a primal XBraid simulation and objective function evaluation, without computing another gradient, which saves some computational time. Make sure to reset XBraid_Adjoint for gradient computation with `braid_SetObjectiveOnly(core, 0)` afterwards. 
+   Here, a fixed step size is used to update the design variable. Usually, a line-search proceduce should be implemented in order to find a suitable step length that minimizes the objective function along the update direction. In order to re-evaluate the objective function for a different design, the option [braid_ObjectiveOnly(core, 1)](@ref braid_ObjectiveOnly) can be used: Any further call to `braid_Drive(core)` will then only run a primal XBraid simulation and objective function evaluation, without computing another gradient, which saves some computational time. Make sure to reset XBraid_Adjoint for gradient computation with `braid_ObjectiveOnly(core, 0)` afterwards. 
 
 * The optimization iterations are stopped when the norm of the gradient is below a prescribed tolerance. 
 

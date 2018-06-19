@@ -1889,14 +1889,15 @@ braid_GetObjective(braid_Core  core,
 
 
 braid_Int
-braid_SetObjectiveOnly(braid_Core core)       
+braid_ObjectiveOnly(braid_Core core,
+                    braid_Int  boolean)
 {
    if ( !(_braid_CoreElt(core, adjoint)) )
    {
       return _braid_error_flag;
    }  
 
-   _braid_CoreElt(core, obj_only) = 1; 
+   _braid_CoreElt(core, obj_only) = boolean; 
 
    return _braid_error_flag;
 }
