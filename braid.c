@@ -956,14 +956,10 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
    braid_Real  tstart_obj     = _braid_CoreElt(*core_ptr, tstart);
    braid_Real  tstop_obj      = _braid_CoreElt(*core_ptr, tstop);
    braid_Real  tol_adj        = 1e-6;
-   braid_Real  tol_gnorm      = 1e-6;
    braid_Int   rtol_adj       = 1;
-   braid_Int   rtol_gnorm     = 1;
-   braid_Int   maxoptimiter   = 500;
-   braid_Real  stepsize       = 1.0;
 
    /* Allocate memory for the optimization structure */
-   optim = (braid_Optim) malloc(12*sizeof(braid_Real) + 3*sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(FILE));
+   optim = (braid_Optim) malloc(10*sizeof(braid_Real) + 1*sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) );
 
    /* Set optimization variables */
    optim->adjoints       = NULL;    /* will be allocated in InitAdjointVars() */
@@ -974,15 +970,11 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
    optim->tstart_obj     = tstart_obj;
    optim->tstop_obj      = tstop_obj; 
    optim->tol_adj        = tol_adj;     
-   optim->tol_gnorm      = tol_gnorm;     
    optim->rtol_adj       = rtol_adj;     
-   optim->rtol_gnorm     = rtol_gnorm;     
    optim->rnorm_adj      = braid_INVALID_RNORM;
    optim->rnorm0_adj     = braid_INVALID_RNORM;
    optim->rnorm          = braid_INVALID_RNORM;
    optim->rnorm0         = braid_INVALID_RNORM;
-   optim->maxoptimiter   = maxoptimiter;
-   optim->stepsize       = stepsize;
 
    /* Store the optim structure in the core */
    _braid_CoreElt( *core_ptr, optim) = optim; 
@@ -1926,96 +1918,6 @@ braid_GetRNormAdjoint(braid_Core  core,
 
 
 braid_Int
-braid_SetMaxOptimIter(braid_Core core,
-                      braid_Int  maxoptimiter
-                     )
-{
-   if ( !(_braid_CoreElt(core, adjoint)))
-   {
-      return _braid_error_flag;
-   }
-
-   _braid_CoreElt(core, optim)->maxoptimiter = maxoptimiter;
-   return _braid_error_flag;
-}                  
-
-
-braid_Int
-braid_GetMaxOptimIter(braid_Core core,
-                      braid_Int *maxoptimiter_ptr
-                     )
-{
-   if ( !(_braid_CoreElt(core, adjoint)))
-   {
-      return _braid_error_flag;
-   }
-
-   *maxoptimiter_ptr = _braid_CoreElt(core, optim)->maxoptimiter;
-
-   return _braid_error_flag;
-}
-
-braid_Int
-braid_SetAbsTolOptim(braid_Core core,
-                     braid_Real tol_gnorm)
-{
-   if ( !(_braid_CoreElt(core, adjoint)))
-   {
-      return _braid_error_flag;
-   }
-
-   _braid_CoreElt(core, optim)->tol_gnorm = tol_gnorm;
-   _braid_CoreElt(core, optim)->rtol_gnorm = 0;
-
-   return _braid_error_flag;
-}         
-
-braid_Int
-braid_SetRelTolOptim(braid_Core core,
-                     braid_Real tol_gnorm)
-{
-
-   if ( !(_braid_CoreElt(core, adjoint)) )
-   {
-      return _braid_error_flag;
-   }  
-
-   _braid_CoreElt(core, optim)->tol_gnorm  = tol_gnorm;
-   _braid_CoreElt(core, optim)->rtol_gnorm = 1;
-
-   return _braid_error_flag;
-}                 
-
-braid_Int
-braid_GetTolOptim(braid_Core  core,
-                     braid_Real *tol_gnorm_ptr)
-{
-   if ( !(_braid_CoreElt(core, adjoint)))
-   {
-      return _braid_error_flag;
-   }
-
-   *tol_gnorm_ptr = _braid_CoreElt(core, optim)->tol_gnorm;
-
-   return _braid_error_flag;
-}        
-
-braid_Int
-braid_IsRelTolOptim(braid_Core core,
-                    braid_Int *rel_tol)
-{
-
-   if ( !(_braid_CoreElt(core, adjoint)) )
-   {
-      return _braid_error_flag;
-   }  
-
-   *rel_tol = _braid_CoreElt(core, optim)->rtol_gnorm;
-
-   return _braid_error_flag;
-}                 
-
-braid_Int
 braid_GetMyID(braid_Core core, 
               braid_Int *myid_ptr)
 {
@@ -2023,32 +1925,3 @@ braid_GetMyID(braid_Core core,
     
    return _braid_error_flag;
 }           
-
-braid_Int
-braid_SetStepsize(braid_Core core, 
-                  braid_Real stepsize)
-
-{
-   if ( !(_braid_CoreElt(core, adjoint)) )
-   {
-      return _braid_error_flag;
-   }  
-
-   _braid_CoreElt(core, optim)->stepsize = stepsize;
-    
-   return _braid_error_flag;
-}
-
-braid_Int
-braid_GetStepsize(braid_Core core, 
-                  braid_Real *stepsize)
-{
-   if ( !(_braid_CoreElt(core, adjoint)) )
-   {
-      return _braid_error_flag;
-   }  
-
-   *stepsize = _braid_CoreElt(core, optim)->stepsize;
-    
-   return _braid_error_flag;
-}   

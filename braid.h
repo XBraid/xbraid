@@ -435,30 +435,6 @@ typedef braid_Int
 (*braid_PtFcnResetGradient)(braid_App app );     /**< output: user-defined _braid_App structure, used to store gradient */
 
 
-/**
- * (Optional) Update the design variable within an optimization framework. 
- * The app holds the gradient information that can be used to update the design. 
- * Hessian approximation should go here. 
- */
-typedef braid_Int
-(*braid_PtFcnDesignUpdate)(braid_App  app,         /**< input / output: user-defined _braid_App structure, used to store gradient */
-                           braid_Real stepsize);   /**< step size for updating the design */  
-
-/**
- * (Optional) Collect gradient information from all temporal processors.
- * This typically involves an MPI_Allreduce call for all gradient elements. 
- */
-typedef braid_Int
-(*braid_PtFcnGradientAllreduce)(braid_App app );      /**< input / output: user-defined _braid_App structure, used to store gradient */
-
-/**
- * (Optional) Compute the norm of the gradient 
- */
-typedef braid_Int
-(*braid_PtFcnGradientNorm)(braid_App   app,           /**< input : user-defined _braid_App structure, used to store gradient */
-                           braid_Real *gnorm_ptr );   /**< output: norm of the gradient */
-
-
 /** @}*/
 
 
@@ -1036,91 +1012,6 @@ braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
 
 /** @}*/
 
-/** \defgroup optiminterface Interface routines for optimization with XBraid_Adjoint
- *  \ingroup userinterface
- *
- *  These are interface routines that are useful for optimization with XBraid_Adjoint.
- * 
- *  @{
- */
-
-/**
- * Runs a basic optimization cycle. Use it as a template for your favorite optimization algorithm.
- * Compare the source code in braid_optimization.c for more information.
- */
-braid_Int
-braid_DriveOptimization(braid_Core core,              /**< braid_Core (_braid_Core) struct*/
-                        braid_App  app,               /**< braid_App structure */
-                        braid_PtFcnDesignUpdate,      /**< user routine: update the design */
-                        braid_PtFcnGradientNorm,      /**< user routine: compute the norm of the gradient */
-                        braid_PtFcnGradientAllreduce  /**< user routine: invoke an MPI_Allreduce call on the gradient */
-                        );
-
-/**
- * Set the maximum number of optimization iterations. 
- */                     
-braid_Int
-braid_SetMaxOptimIter(braid_Core core,               /**< braid_Core (_braid_Core) struce */
-                      braid_Int  maxoptimiter        /**< Maximum number of optimization iterations */
-                     );
-
-/**
- * Get the maximum number of optimization iterations. 
- */                  
-braid_Int
-braid_GetMaxOptimIter(braid_Core core,                /**< braid_Core (_braid_Core) struct */
-                      braid_Int *maxoptimiter_ptr     /**< output: holds the maximum number of optimization iterations */
-                     );
-
-/**
- * Set optimization stopping criterion: tolerance on the absolute gradient norm
- */
-braid_Int
-braid_SetAbsTolOptim(braid_Core core,           /**< braid_Core (_braid_Core) struct */
-                     braid_Real gnorm_tol       /**< absolute stopping tolerance for the gradient norm */
-                    );
-
-/**
- * Set optimization stopping criterion: tolerance on relative drop of the gradient norm
- */
-braid_Int
-braid_SetRelTolOptim(braid_Core core,           /**< braid_Core (_braid_Core) struct */
-                     braid_Real gnorm_tol       /**< relative stopping tolerance for the gradient norm */
-                     );
-
-/**
- * Get the optimization tolerance.
- */
-braid_Int
-braid_GetTolOptim(braid_Core  core,             /**< braid_Core (_braid_Core) struct */
-                  braid_Real *tol_gnorm_ptr     /**< output: holds the stopping tolerance */ 
-                 );
-
-/**
- * Check if optimization tolerance is relative (1) or absolute (0) stopping criterion. 
- */
-braid_Int
-braid_IsRelTolOptim(braid_Core core,            /**< braid_Core (_braid_Core) struct */
-                    braid_Int *rel_tol          /**< output: 1 if optimization tolerance is relative, 0 if it is absolute. */
-                  );
-
-/**
- * Set the initial step size for design updates.
- */               
-braid_Int
-braid_SetStepsize(braid_Core core,        /**< braid_Core (_braid_Core) struct */
-                  braid_Real stepsize     /**< design update step size */
-                 );
-
-/**
- * Get the step size for design updates 
- */
-braid_Int
-braid_GetStepsize(braid_Core core,        /**< braid_Core (_braid_Core) struct */
-                  braid_Real *stepsize    /**< output: step size for design updates */
-                 );
-
-/** @}*/
 
 #ifdef __cplusplus
 }
