@@ -359,26 +359,6 @@ my_ResetGradient(braid_App app)
    return 0;
 }
 
-/* Function to update the design variable */
-int
-design_update(braid_App app, 
-              double    stepsize )
-{
-   /* Using simple steepest descent method with fixed stepsize */
-   app->design -= stepsize * app->gradient;
-
-   return 0;
-}
-
-/* Return the norm of the gradient */
-int
-gradient_norm(braid_App app,
-              double    *gnorm_ptr)
-{
-   *gnorm_ptr = sqrt((app->gradient)*(app->gradient));
-
-   return 0;
-}
 
 /* Function to allow for the computation of the gradient */
 int
@@ -409,6 +389,7 @@ int main (int argc, char *argv[])
    double        gnorm, gtol;
    double        stepsize;
    int           iter, maxiter;
+   double        mygradient;
 
    /* Define time domain: ntime intervals */
    ntime  = 50;
@@ -468,11 +449,12 @@ int main (int argc, char *argv[])
       /* Get the objective function value */
       braid_GetObjective(core, &objective);
 
-      /* Collect sensitivities from all processors */
-      gradient_allreduce(app);
+      /* Collect sensitivities from all processors and broadcast the sum */
+      mygradient = app->gradient;
+      MPI_Allreduce(&mygradient, &app->gradient, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
       /* Compute norm of the gradient */
-      gradient_norm(app, &gnorm);
+      gnorm = sqrt((app->gradient)*(app->gradient));
 
       /* Output */
       if (rank == 0) 
@@ -486,8 +468,8 @@ int main (int argc, char *argv[])
          break;
       }
 
-      /* Design update */
-      design_update(app, stepsize);
+      /* Design update using simple steepest descent method with fixed stepsize */
+      app->design -= stepsize * app->gradient;
    }
 
 
