@@ -443,9 +443,9 @@ _braid_InitAdjointVars(braid_Core   core,
 
 braid_Int
 _braid_SetVerbosity(braid_Core  core,
-                    braid_Int   verbose)
+                    braid_Int   verbose_adj)
 {
-   _braid_CoreElt(core, verbose) = verbose;
+   _braid_CoreElt(core, verbose_adj) = verbose_adj;
 
    return _braid_error_flag;
 }

@@ -827,7 +827,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              adjoint         = 0;              /* Default adjoint run: Turned off */
    braid_Int              record          = 0;              /* Default action recording: Turned off */
    braid_Int              obj_only        = 0;              /* Default objective only: Turned off */
-   braid_Int              verbose         = 0;              /* Default verbosity Turned off */
+   braid_Int              verbose_adj     = 0;              /* Default adjoint verbosity Turned off */
 
    braid_Int              myid_world,  myid;
 
@@ -907,7 +907,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, adjoint)               = adjoint;
    _braid_CoreElt(core, record)                = record;
    _braid_CoreElt(core, obj_only)              = obj_only;
-   _braid_CoreElt(core, verbose)               = verbose;
+   _braid_CoreElt(core, verbose_adj)           = verbose_adj;
    _braid_CoreElt(core, actionTape)            = NULL;
    _braid_CoreElt(core, userVectorTape)        = NULL;
    _braid_CoreElt(core, barTape)               = NULL;

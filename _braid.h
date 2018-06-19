@@ -233,7 +233,7 @@ typedef struct _braid_Core_struct
    braid_Int              adjoint;           /**< determines if adjoint run is performed (1) or not (0) */
    braid_Int              record;            /**< determines if actions are recorded to the tape or not */
    braid_Int              obj_only;          /**< determines if adjoint code computes ONLY objective, no gradients. */
-   braid_Int              verbose;           /**< verbosity of the adjoint code */
+   braid_Int              verbose_adj;       /**< verbosity of the adjoint tape, displays the actions that are pushed / popped to the tape*/
 
    _braid_Tape*          actionTape;         /**< tape storing the actions while recording */
    _braid_Tape*          userVectorTape;     /**< tape storing primal braid_vectors while recording */
@@ -910,7 +910,7 @@ _braid_InitAdjointVars(braid_Core   core,
  */
 braid_Int
 _braid_SetVerbosity(braid_Core  core,
-                    braid_Int   verbose);
+                    braid_Int   verbose_adj);
 
 /**
  * Sanity check for non-supported adjoint features
