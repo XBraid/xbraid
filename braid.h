@@ -406,7 +406,7 @@ typedef braid_Int
  * (Optional) Differentiated version of the Postprocessing routine. 
  *
  * First output: Return the derivative of the @ref braid_PtFcnPostprocessObjective 
- * routine with respect to the state value in *sum_obj*, placing the result in the 
+ * routine with respect to the current state, and placing the result in the 
  * scalar value *F_bar_ptr*
  *
  * Second output: Update the gradient with the derivative with respect to 
@@ -418,7 +418,7 @@ typedef braid_Int
 typedef braid_Int
 (*braid_PtFcnPostprocessObjective_diff)(braid_App    app,        /**< user-defined _braid_App structure */
                                         braid_Real   sum_obj,    /**< Sum over time of the local time-dependent ObjectiveT values */
-                                        braid_Real  *F_bar_ptr   /**< output: derivative of postprocessing objective */
+                                        braid_Real  *F_bar_ptr   /**< input / output: derivative of postprocessing objective */
                                        );
 
 

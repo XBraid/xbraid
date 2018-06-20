@@ -892,7 +892,8 @@ where this 2D heat equation example is explored in much more detail.
 
 
 # Simplest XBraid_Adjoint example {#exampleoneadjoint}
-``examples/ex-01-adjoint.c`` extends the simple scalar ODE example in ``ex-01.c`` for computing adjoint-based sensitivities. The scalar ODE is 
+
+The file ``examples/ex-01-adjoint.c`` extends the simple scalar ODE example in ``ex-01.c`` for computing adjoint-based sensitivities. The scalar ODE is 
 \f[
    u_t(t) = \lambda u(t) \quad \forall t \in (0,T)
 \f]
