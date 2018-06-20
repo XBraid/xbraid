@@ -403,7 +403,7 @@ int main (int argc, char *argv[])
    braid_SetPrintLevel(core, 0);
 
    /* Compute a new solution and objective function value */
-   braid_ObjectiveOnly(core, 1);
+   braid_SetObjectiveOnly(core, 1);
    braid_Drive(core);
    braid_GetObjective(core, &objective);
 

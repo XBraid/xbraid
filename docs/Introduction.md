@@ -383,7 +383,6 @@ In summary, a few points are
    \latexonly
    \begin{figure}[!ht] \centering 
        \subfloat{\includegraphics[width=0.6\textwidth]{../img/3_levels.pdf}}
-       \label{img:FrelaxDetail}
    \end{figure}
    \endlatexonly
    
@@ -430,7 +429,6 @@ XBraid
    \latexonly
    \begin{figure}[!ht] \centering 
        \subfloat{\includegraphics[width=0.75\textwidth]{../img/parallel_timeline.pdf}}
-       \label{img:data_layout}
    \end{figure}
    \endlatexonly
    XBraid distributes intervals evenly on the finest grid.
@@ -466,7 +464,6 @@ is depicted next, and is a simple recursive application of the @ref twogrid.
   \latexonly
    \begin{figure}[!ht] \centering 
        \subfloat{\includegraphics[width=0.1\textwidth]{../img/VCycle.pdf}}
-       \label{img:overlap}
    \end{figure}
    \endlatexonly
 
@@ -482,7 +479,6 @@ The cycling strategy of an F-cycle is depicted next.
   \latexonly
    \begin{figure}[!ht] \centering 
        \subfloat{\includegraphics[width=0.27\textwidth]{../img/FCycle.pdf}}
-       \label{img:overlap}
    \end{figure}
    \endlatexonly
 
@@ -765,7 +761,8 @@ More information on convergence results and implementational details for XBraid_
 
 XBraid_Adjoint offers a non-intrusive approach for time-parallelization of existing time-serial adjoint codes. To that end, an extended user-interface allows the user to wrap their existing code for evaluating the objective function and performing a backwards-in-time adjoint step into routines that are passed to XBraid_Adjoint.
 
-### Objective function evaluation 
+### Objective function evaluation {#xbraid_adjoint_objective}
+
 
 The user-interface for XBraid_Adjoint allows for objective functions of the following type:
 \f[
@@ -844,7 +841,7 @@ You can verify the gradient computed from XBraid\_Adjoint using Finite Differenc
 for a small perturbation \f$h>0\f$. Here, \f$\bold u_{\rho + he_i}\f$ denotes the new state solution for the perturbed design variable. 
 Keep in mind, that round-up errors have to be considered when computing the Finite Differences for very small perturbations \f$h \to 0\f$. Hence, you should vary the parameter to find the best fit. 
 
-In order to save some computational work while computing the perturbed objective function value, XBraid_Adjoint can run in `ObjectiveOnly` mode, see [braid_ObjectiveOnly](@ref braid_ObjectiveOnly). When in this mode, XBraid_Adjoint will only solve the ODE system and evaluate the objective function, without actually computing its derivative. This option might also be useful within an optimization framework e.g. for implementing a line-search procedure.  
+In order to save some computational work while computing the perturbed objective function value, XBraid_Adjoint can run in `ObjectiveOnly` mode, see [braid_SetObjectiveOnly](@ref braid_SetObjectiveOnly). When in this mode, XBraid_Adjoint will only solve the ODE system and evaluate the objective function, without actually computing its derivative. This option might also be useful within an optimization framework e.g. for implementing a line-search procedure.  
 
 
 
