@@ -4,7 +4,7 @@
   - Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
   - Dobrev, et al. LLNL-CODE-660355. All rights reserved.
   - 
-  - This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+  - This file is part of XBraid. For support, post issues to the XBraid Github page.
   - 
   - This program is free software; you can redistribute it and/or modify it under
   - the terms of the GNU General Public License (as published by the Free Software
@@ -486,7 +486,8 @@ be implemented in some of the following examples.
    There are many strategies for handling the coarse time-grids with BDF
    methods (dropping the BDF order, adjusting time-point spacings inside the
    lumped vectors, etc...).  Prospective users are encouraged to contact
-   xbraid-support@llnl.gov because this is active research.
+   the devlopers through the XBraid Github page and issue tracker.  This area
+   is active research.
 
    See ``examples/ex-01-expanded-bdf2.c``.
 

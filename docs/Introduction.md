@@ -4,7 +4,7 @@
   - Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
   - Dobrev, et al. LLNL-CODE-660355. All rights reserved.
   - 
-  - This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+  - This file is part of XBraid. For support, post issues to the XBraid Github page.
   - 
   - This program is free software; you can redistribute it and/or modify it under
   - the terms of the GNU General Public License (as published by the Free Software
@@ -43,9 +43,7 @@ That being said, we strongly encourage new users to try our code for
 their application.  Every new application has its own issues to address and
 this will help us to improve both the algorithm and the software.
 
-For support, please email `xbraid-support@llnl.gov`.  This email address
-automically interfaces with our issue tracker and notifies all developers of the
-pending support request.
+For support, please post issues to the XBraid Github issue tracker. 
 
 # Overview of the XBraid Algorithm {#braidoverview}
 
