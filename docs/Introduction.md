@@ -685,7 +685,7 @@ XBraid_Adjoint is non-intrusive with respect to the adjoint time-stepping scheme
 
 ## Short Introduction to Adjoint-based Sensitivity Computation {#adjointoverview}
 
-Adjoint-based sensitivities compute the total derivative of \f$J\f$ with respect to changes in the design parameters \f$\rho\f$ by solving additional so-called adjoint equations. We will briefly introduce the idea in the following. You can skip this section, if you are familiar with adjoint sensitivity computation in general and move to @ref xbraid_adjointalgorithm immedately. Information on the adjoint method  can be found in [Giles, Pierce, 2000]
+Adjoint-based sensitivities compute the total derivative of \f$J\f$ with respect to changes in the design parameters \f$\rho\f$ by solving additional so-called adjoint equations. We will briefly introduce the idea in the following. You can skip this section, if you are familiar with adjoint sensitivity computation in general and move to @ref xbraid_adjointalgorithm immedately. Information on the adjoint method can be found in [Giles, Pierce, 2000]
   \latexonly
    \footnote{ 
      Giles, M.B., Pierce, N.A.: ''An introduction to the adjoint approach to design.'' Flow, Turbulence and Combustion 65(3), 393–415 (2000)
@@ -746,7 +746,7 @@ onto multiple processors along the time domain. Its implementation is based on t
       \bar \rho \leftarrow \left(\frac{\mathrm{d} J(\mathbf u^{(k)}, \rho)}{\mathrm{d} \rho}\right)^T
    \f]
 
-Each XBraid_Adjoint iteration moves backwards though the primal XBraid multigrid cycle. It collects local partial derivatives of the elemental XBraid operations in reverse order and concatenates them using the chain rule of differentiation.  This is the basic idea of the reverse mode of automatic differentiation (AD). 
+Each XBraid_Adjoint iteration moves backwards though the primal XBraid multigrid cycle. It collects local partial derivatives of the elemental XBraid operations in reverse order and concatenates them using the chain rule of differentiation.  This is the basic idea of the reverse mode of Automatic Differentiation (AD). 
 This yields a consistent discrete time-parallel adjoint solver that inherits the parallel scaling properties of the primal XBraid solver. 
 
 Further, XBraid_Adjoint is non-intrusive for existing adjoint methods based on sequential time marching schemes. It adds additional user-defined routines to the primal XBraid interface, in order to define the propagation of sensitivities of the forward time stepper backwards-in-time and the evaluation of partial derivatives of the local objective function at each time step. 

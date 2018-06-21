@@ -352,7 +352,7 @@ typedef braid_Int
  *  
  *  These are all the user-written routines needed to use XBraid_Adjoint. 
  *  There are no new user-written data structures here.  But, the @ref braid_App
- *  structure will typically be used to store some things like gradients.  
+ *  structure will typically be used to store some things like optimization parameters and gradients.  
  *
  *  @{
  */
@@ -418,7 +418,7 @@ typedef braid_Int
 typedef braid_Int
 (*braid_PtFcnPostprocessObjective_diff)(braid_App    app,        /**< user-defined _braid_App structure */
                                         braid_Real   sum_obj,    /**< Sum over time of the local time-dependent ObjectiveT values */
-                                        braid_Real  *F_bar_ptr   /**< input / output: derivative of postprocessing objective */
+                                        braid_Real  *F_bar_ptr   /**< output: derivative of postprocessing objective */
                                        );
 
 
@@ -935,11 +935,11 @@ braid_GetMyID(braid_Core core,           /**< braid_Core (_braid_Core) struct */
 
 /**
  * Initialize the XBraid_Adjoint solver for computing adjoint sensitivities.  Once this 
- * function is called, braid_Drive() will then compute gradient information alongside 
+ * function is called, @ref braid_Drive will then compute gradient information alongside 
  * the primal XBraid computations. 
  **/
 braid_Int
-braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,         /**< user-routine: that evaluates the time-dependent objective function value at time *t* */
+braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,         /**< user-routine: evaluates the time-dependent objective function value at time *t* */
                   braid_PtFcnObjectiveTDiff    objectiveT_diff,    /**< user-routine: differentiated version of the objectiveT function  */
                   braid_PtFcnStepDiff          step_diff,          /**< user-routine: differentiated version of the step function */
                   braid_PtFcnResetGradient     reset_gradient,     /**< user-routine: set the gradient to zero (storage location of gradient up to user) */
