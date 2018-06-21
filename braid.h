@@ -398,27 +398,27 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnPostprocessObjective)(braid_App    app,             /**< user-defined _braid_App structure */
-                                   braid_Real   sum_obj,         /**< Sum over time of the local time-dependent ObjectiveT values */
+                                   braid_Real   sum_obj,         /**< input: sum over time of the local time-dependent ObjectiveT values */
                                    braid_Real  *postprocess_ptr  /**< output: Postprocessed objective, e.g. tracking type function */
                                    );
 
 /**
  * (Optional) Differentiated version of the Postprocessing routine. 
  *
- * First output: Return the derivative of the @ref braid_PtFcnPostprocessObjective 
- * routine with respect to the current state, and placing the result in the 
+ * First output: Return the partial derivative of the @ref braid_PtFcnPostprocessObjective 
+ * routine with respect to the time-integral objective function, and placing the result in the 
  * scalar value *F_bar_ptr*
  *
- * Second output: Update the gradient with the derivative with respect to 
- * the design.  Gradients are usually stored in @ref braid_App .
+ * Second output: Update the gradient with the partial derivative with respect to 
+ * the design. Gradients are usually stored in @ref braid_App .
  *
  * For a description of the postprocessing routine, see the 
  * Section @ref xbraid_adjoint_objective .
  **/
 typedef braid_Int
 (*braid_PtFcnPostprocessObjective_diff)(braid_App    app,        /**< user-defined _braid_App structure */
-                                        braid_Real   sum_obj,    /**< Sum over time of the local time-dependent ObjectiveT values */
-                                        braid_Real  *F_bar_ptr   /**< output: derivative of postprocessing objective */
+                                        braid_Real   sum_obj,    /**< input: sum over time of the local time-dependent ObjectiveT values */
+                                        braid_Real  *F_bar_ptr   /**< output: partial derivative of the postprocessed objective with respect to sum_obj */
                                        );
 
 
