@@ -323,7 +323,7 @@ my_Step(braid_App        app,
    int iters_taken = -1;
    
    /* This debug output is mostly for regression testing */
-   if(print_level == 2)
+   if(print_level == 3)
    {
       braid_GetSpatialAccuracy( status, 1e-2, 1e-9, &temp_double);
       printf("  braid_GetSpatialAccuracy:  %1.2e\n", temp_double);
@@ -2547,7 +2547,7 @@ int main (int argc, char *argv[])
       braid_Drive(core);
       
       /* Debug level printing for regression testing */
-      if(print_level == 2)
+      if(print_level == 3)
       {
          int nrequest, num_iter, num_iter2;
          braid_GetNumIter(core, &num_iter);

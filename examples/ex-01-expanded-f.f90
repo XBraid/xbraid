@@ -477,7 +477,7 @@ program ex01_f90
    !   This parameter controls the minimum coarse grid size
    min_coarse    = 2
    !   These two parameters control access and printing of output 
-   print_level   = 1
+   print_level   = 2
    access_level  = 1
    !   This parameter runs XBraid wrapper tests of the XBraid-User interface
    wrapper_tests = 0

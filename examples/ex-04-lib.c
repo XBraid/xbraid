@@ -160,11 +160,12 @@ write_vec(char*   name,     /* Filename extension (ex-04.out.name) */
 {
    char  filename[255];
    FILE *file;
+   int ts;
 
    /* Open file for output  */
    sprintf(filename, "ex-04.out.%s", name);
    file = fopen(filename, "w");
-   for (int ts = 0; ts < ntime; ts++)
+   for(ts = 0; ts < ntime; ts++)
    {
       fprintf(file, "%1.14e  %1.14e\n", var0[ts], var1[ts]);
    }
@@ -180,11 +181,12 @@ write_design_vec(char*   name,     /* Filename extension (ex-04.out.name) */
 {
    char  filename[255];
    FILE *file;
+   int ts;
 
    /* Open file for output  */
    sprintf(filename, "ex-04.out.%s", name);
    file = fopen(filename, "w");
-   for (int ts = 0; ts < ntime; ts++)
+   for(ts = 0; ts < ntime; ts++)
    {
       fprintf(file, "%1.14e\n", vec[ts]);
    }
@@ -199,8 +201,9 @@ compute_sqnorm(double *vector,
 
 {
    double norm = 0.0;
+   int i;
 
-   for(int i = 0; i < size; i++) 
+   for(i = 0; i < size; i++) 
    {
       norm += (vector[i]) * (vector[i]) ;
    }

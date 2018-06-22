@@ -248,8 +248,9 @@ my_BufPack(braid_App           app,
            braid_BufferStatus  bstatus)
 {
    double *dbuffer = buffer;
-   
-   for (int i = 0; i < 2; i++)
+   int i;
+
+   for(i = 0; i < 2; i++)
    {
       dbuffer[i] = (u->values)[i];
    }
@@ -268,13 +269,14 @@ my_BufUnpack(braid_App           app,
 {
    my_Vector *u = NULL;
    double    *dbuffer = buffer;
+   int i;
 
    /* Allocate memory */
    u = (my_Vector *) malloc(sizeof(my_Vector));
    u->values = (double*) malloc( 2*sizeof(double) );
 
    /* Unpack the buffer */
-   for (int i = 0; i < 2; i++)
+   for(i = 0; i < 2; i++)
    {
       (u->values)[i] = dbuffer[i];
    }
