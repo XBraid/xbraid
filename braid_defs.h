@@ -105,7 +105,7 @@ void _braid_ErrorHandler(const char *filename, braid_Int line, braid_Int ierr, c
 ( free((char *)ptr), ptr = NULL )
 
 /*--------------------------------------------------------------------------
- * Miscellaneous macros (RDF - Is this the right file location?)
+ * Miscellaneous macros and functions 
  *--------------------------------------------------------------------------*/
 
 #ifndef _braid_max
@@ -118,6 +118,12 @@ void _braid_ErrorHandler(const char *filename, braid_Int line, braid_Int ierr, c
 #define braid_isnan(a) (a != a)
 #endif
 
+/**
+ * Machine independent pseudo-random number generator is defined in Braid.c
+ */
+#ifndef braid_RAND_MAX
+#define braid_RAND_MAX 32768
+#endif
 
 #ifdef __cplusplus
 }

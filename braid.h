@@ -1030,7 +1030,12 @@ braid_Int
 braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
                       braid_Real  *rnorm_adj   /**< output: adjoint residual norm of last iteration */
                      );
-
+/**
+ * Define a machine independent random number generator
+ */
+braid_Int
+braid_Rand(void                                /**< Take no arguments, to mimic C-standard rand() */
+      );
 
 /** @}*/
 

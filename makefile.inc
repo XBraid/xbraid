@@ -71,26 +71,11 @@ ifeq ($(findstring tux408,$(HOSTNAME)),tux408)
    ifeq ($(lvalgrind),YES)
       #only needed for openmpi: LFLAGS += /usr/lib64/valgrind/libmpiwrap-amd64-linux.so 
    endif
-else ifeq ($(findstring fourier,$(HOSTNAME)),fourier)
-   # for Anders' laptop
+else ifeq ($(findstring kullat,$(HOSTNAME)),kullat)
+   # for Jacob's laptop
    CC = gcc
    MPICC = mpicc
    MPICXX = mpicxx
-   MPIF90 = mpif90
-   LFLAGS = -lm
-   ifeq ($(optlevel),DEBUG)
-      CFLAGS = -g -Wall
-      CXXFLAGS = -g -Wall
-      FORTFLAGS = -Og -Wall
-   else
-      CFLAGS = -O -Wall
-      CXXFLAGS = -O -Wall
-      FORTFLAGS = -O1 -Wall
-   endif
-else ifeq ($(findstring sierra,$(HOSTNAME)),sierra)
-   # for Sierra
-   MPICC = mpiicc
-   MPICXX = mpiicpc
    MPIF90 = mpif90
    LFLAGS = -lm
    ifeq ($(optlevel),DEBUG)

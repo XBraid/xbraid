@@ -158,7 +158,7 @@ my_Init(braid_App     app,
       srand(0);
       for(i=0; i < nspace; i++)
       {
-         (u->values)[i] = ((double)rand())/RAND_MAX;
+         (u->values)[i] = ((double)braid_Rand())/braid_RAND_MAX;
       }
    }
 

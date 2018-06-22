@@ -64,6 +64,7 @@
 //              Hypre BOOMERAMG is used as the linear solver
 
 #include "braid_mfem.hpp"
+#include "_braid.h"
 #include <fstream>
 #include <iostream>
 
@@ -100,7 +101,7 @@ namespace hypre
          return -1;
       }
 
-      marker = hypre_CTAlloc(HYPRE_Int, ncols_A);
+      marker = _braid_CTAlloc(HYPRE_Int, ncols_A);
       for (ia = 0; ia < ncols_A; ia++)
          marker[ia] = -1;
 
@@ -121,7 +122,7 @@ namespace hypre
          }
       }
 
-      hypre_TFree(marker);
+      _braid_TFree(marker);
       return 0;
    }
 
@@ -167,7 +168,7 @@ namespace hypre
       /* Add diagonals, off-diagonals, copy cmap. */
       C_diag = hypre_CSRMatrixAdd(A_diag, B_diag);
       C_offd = hypre_CSRMatrixAdd(A_offd, B_offd);
-      C_cmap = hypre_TAlloc(HYPRE_Int, A_cmap_size);
+      C_cmap = _braid_TAlloc(HYPRE_Int, A_cmap_size);
       for (im = 0; im < A_cmap_size; im++)
          C_cmap[im] = A_cmap[im];
 

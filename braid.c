@@ -1925,4 +1925,15 @@ braid_GetMyID(braid_Core core,
    *myid_ptr = _braid_CoreElt(core, myid);
     
    return _braid_error_flag;
-}           
+}
+
+
+static unsigned long int _braid_rand_next = 1;
+braid_Int 
+braid_Rand(void) 
+{
+   _braid_rand_next = _braid_rand_next * 1103515245 + 12345;
+   return (unsigned int) (_braid_rand_next/65536) % braid_RAND_MAX;
+}
+
+

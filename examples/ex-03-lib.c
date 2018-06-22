@@ -36,6 +36,7 @@
 #include "_hypre_utilities.h"
 #include "HYPRE_sstruct_ls.h"
 #include "_hypre_sstruct_mv.h"
+#include "braid.h"
 
 #include "vis.c"
 
@@ -303,7 +304,7 @@ int set_initial_condition(simulation_manager   *man,
    }
    else if (t < 0.0){
       for( m = 0; m < (man->nlx)*(man->nly); m++ )
-            values[m] = ((double)rand())/RAND_MAX;
+            values[m] = ((double)braid_Rand())/braid_RAND_MAX;
    }
    else{
       for( m = 0; m < (man->nlx)*(man->nly); m++ )
