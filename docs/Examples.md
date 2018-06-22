@@ -1061,8 +1061,8 @@ app structure continues to be the first argument to every function.
 
    **Important note on the usage of ustop**: If the `Step` routine uses the input vector `ustop` instead of `u` (typically for initializing a (non-)linear solve within \f$\Phi\f$), then `Step_diff` must update `ustop_bar` instead of `u_bar` and set `u_bar` to zero:
    \f[
-      \overline{ustop}\,  += \left(\frac{\partial \Phi_{i+1}(ustop,\rho)}{\partial\, ustop}\right) ^T \bar u
-      \quad \text{and} \quad \bar u = 0.0 .
+      \overline{ustop}\,  += \left(\frac{\partial \Phi_{i+1}(ustop,\rho)}{\partial\, ustop}\right) ^T \bar u_i
+      \quad \text{and} \quad \bar u_i = 0.0 .
    \f]
 
 6. **ResetGradient**: This new routine sets the gradient to zero. 
@@ -1111,7 +1111,7 @@ Further, the reduced gradient, which is stored in the user's `App` structure, ho
       double mygradient = app->gradient;
       MPI_Allreduce(&mygradient, &(app->gradient), 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD); 
 
-Lastly, the XBraid_Adjoint run is verified using Finite Differences.  See the source code ``examples/ex-01-optimization.c`` for details. 
+Lastly, the gradient computed with XBraid_Adjoint is verified using Finite Differences.  See the source code ``examples/ex-01-adjoint.c`` for details. 
 
 
 # Optimization with the Simplest Example {#exampleoneoptimization}
@@ -1195,7 +1195,7 @@ cycle consists of the following steps:
 
          braid_GetObjective(core, &objective);
 
-3. Since the gradient is local to all temporal processors, we need to invoke an `MPI_Allreduce` call which sums up the local sensitivities:
+3. Gradient information is stored in the `app` structure. Since it is local to all temporal processors, we need to invoke an `MPI_Allreduce` call which sums up the local sensitivities:
       
          mygradient = app->gradient;
          MPI_Allreduce(&mygradient, &app->gradient, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
