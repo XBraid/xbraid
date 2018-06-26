@@ -130,7 +130,7 @@
 
 # Begin Test 26
 
-  residual norm         = 1.723837e-10
+  residual norm         = 1.034948e-12
                          --> 2-norm TemporalNorm 
 
 # Begin Test 27
@@ -140,7 +140,7 @@
 
 # Begin Test 28
 
-  residual norm         = 3.216823e-10
+  residual norm         = 1.931302e-12
                          --> 2-norm TemporalNorm 
 # Begin Test 29 -- Use Skip 1
 
