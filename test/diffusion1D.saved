@@ -31,7 +31,7 @@
 # Begin Test 5
 
   time steps = 256
-  iterations           = 7
+  iterations           = 8
   number of levels     = 7
 
 # Begin Test 6
@@ -178,7 +178,7 @@ Starting braid_TestSpatialNorm
    braid_TestSpatialNorm:   spatialnorm(u)
    braid_TestSpatialNorm:   spatialnorm(w)
    braid_TestSpatialNorm:   Test 2 Passed
-   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 6.77e+00 / 3.39e+00 = 2.00e+00 
+   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 6.75e+00 / 3.37e+00 = 2.00e+00 
    braid_TestSpatialNorm:   expected output:  spatialnorm(w) / spatialnorm(u) = 2.0 
    braid_TestSpatialNorm:   Starting Test 3
    braid_TestSpatialNorm:   free(w)
@@ -187,7 +187,7 @@ Starting braid_TestSpatialNorm
    braid_TestSpatialNorm:   spatialnorm(u)
    braid_TestSpatialNorm:   spatialnorm(w)
    braid_TestSpatialNorm:   Test 3 Passed
-   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 1.69e+00 / 3.39e+00 = 5.00e-01 
+   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 1.69e+00 / 3.37e+00 = 5.00e-01 
    braid_TestSpatialNorm:   expected output:  spatialnorm(w) / spatialnorm(u) = 0.5 
    braid_TestSpatialNorm:   free(u)
    braid_TestSpatialNorm:   free(v)
@@ -278,7 +278,7 @@ Starting braid_TestResidual
    braid_TestResidual:   r = residual(unext, u) 
    braid_TestResidual:   r = fstop - r 
    braid_TestResidual:   spatialnorm(r)
-   braid_TestResidual:   actual output:    spatialnorm(r) = 2.03e-14 
+   braid_TestResidual:   actual output:    spatialnorm(r) = 2.45e-14 
    braid_TestResidual:   expected output:  spatialnorm(r) approx. 0.0 
    braid_TestResidual:   free(u)
    braid_TestResidual:   free(unext)

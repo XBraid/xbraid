@@ -155,7 +155,6 @@ my_Init(braid_App     app,
    else
    {
       /* Use random values for u(t>0), this measures asymptotic convergence rate */
-      srand(0);
       for(i=0; i < nspace; i++)
       {
          (u->values)[i] = ((double)braid_Rand())/braid_RAND_MAX;
