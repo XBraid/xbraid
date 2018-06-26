@@ -98,51 +98,51 @@ cd $test_dir
 # Run the following regression tests 
 # These tests run 5 different processor configurations in time and make sure that the exact same residual
 # norm is returned in all cases.  The three different temporal norm options are all tested.  
-TESTS=( "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 0" \
-        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 0" \
-        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 0" \
-        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 0 -cf0 1" \
-        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 0 -cf0 1" \
-        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 0 -cf0 1" \
-        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 0 -cf 4" \
-        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 0 -cf 4" \
-        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 0 -cf 4" \
-        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 1" \
-        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 1" \
-        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 1" \
-        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 1 -res" \
-        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 1 -res" \
-        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 1 -res" \
-        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 0" \
-        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 0" \
-        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 0" \
-        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 0 -cf0 1" \
-        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 0 -cf0 1" \
-        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 0 -cf0 1" \
-        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 0 -cf 4" \
-        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 0 -cf 4" \
-        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 0 -cf 4" \
-        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 1" \
-        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 1" \
-        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 1" \
-        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 1 -res" \
-        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 1 -res" \
-        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 1 -res" \
-        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 0" \
-        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 0" \
-        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 0" \
-        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 0 -cf0 1" \
-        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 0 -cf0 1" \
-        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 0 -cf0 1" \
-        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 0 -cf 4" \
-        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 0 -cf 4" \
-        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 0 -cf 4" \
-        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 1" \
-        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 1" \
-        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 1" \
-        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 1 -res" \
-        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 1 -res" \
-        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 1 -res" )
+TESTS=( "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 0 -use_rand 0" \
+        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 0 -use_rand 0" \
+        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 0 -use_rand 0" \
+        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 0 -cf0 1 -use_rand 0" \
+        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 0 -cf0 1 -use_rand 0" \
+        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 0 -cf0 1 -use_rand 0" \
+        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 0 -cf 4 -use_rand 0" \
+        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 0 -cf 4 -use_rand 0" \
+        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 0 -cf 4 -use_rand 0" \
+        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 1 -use_rand 0" \
+        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 1 -use_rand 0" \
+        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 1 -use_rand 0" \
+        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 1 -res -use_rand 0" \
+        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 1 -res -use_rand 0" \
+        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage -1 -skip 1 -res -use_rand 0" \
+        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 0 -use_rand 0" \
+        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 0 -use_rand 0" \
+        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 0 -use_rand 0" \
+        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 0 -cf0 1 -use_rand 0" \
+        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 0 -cf0 1 -use_rand 0" \
+        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 0 -cf0 1 -use_rand 0" \
+        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 0 -cf 4 -use_rand 0" \
+        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 0 -cf 4 -use_rand 0" \
+        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 0 -cf 4 -use_rand 0" \
+        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 1 -use_rand 0" \
+        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 1 -use_rand 0" \
+        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 1 -use_rand 0" \
+        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 1 -res -use_rand 0" \
+        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 1 -res -use_rand 0" \
+        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 0 -skip 1 -res -use_rand 0" \
+        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 0 -use_rand 0" \
+        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 0 -use_rand 0" \
+        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 0 -use_rand 0" \
+        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 0 -cf0 1 -use_rand 0" \
+        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 0 -cf0 1 -use_rand 0" \
+        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 0 -cf0 1 -use_rand 0" \
+        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 0 -cf 4 -use_rand 0" \
+        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 0 -cf 4 -use_rand 0" \
+        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 0 -cf 4 -use_rand 0" \
+        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 1 -use_rand 0" \
+        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 1 -use_rand 0" \
+        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 1 -use_rand 0" \
+        "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 1 -res -use_rand 0" \
+        "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 1 -res -use_rand 0" \
+        "$RunString -np 5  $driver_dir/drive-diffusion-2D -pgrid 1 1 5 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 7 -storage 1 -skip 1 -res -use_rand 0" )
 
 
 # The below commands will then dump each of the tests to the output files 
