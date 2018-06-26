@@ -562,7 +562,6 @@ my_Init(braid_App     app,
    }
    else if (app->use_rand){
       /* Sets u_ptr as uniformly random, for reproducibility use a seed */
-      srand(0);
       t = -1.0;
    }
    else{

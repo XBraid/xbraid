@@ -1,309 +1,219 @@
-# Begin Test 0 -- begin 2-norm tests over np=1 to np=5, residual norms should all agree
-  
-  residual norm        = 7.381599e-02
-                        --> 2-norm TemporalNorm 
+# Begin Test 0
 
+  residual norm        = 2.146943e-02
+                        --> 2-norm TemporalNorm 
+                        
 # Begin Test 1
-  
-  residual norm        = 7.381599e-02
+
+  residual norm        = 2.146943e-02
                         --> 2-norm TemporalNorm 
+                        
 # Begin Test 2
-  
-  residual norm        = 7.381599e-02
+
+  residual norm        = 2.146943e-02
                         --> 2-norm TemporalNorm 
+                        
 # Begin Test 3
-  
-  residual norm        = 7.381599e-02
+
+  residual norm        = 2.146943e-02
                         --> 2-norm TemporalNorm 
+                        
 # Begin Test 4
 
-  residual norm        = 7.381599e-02
-                        --> 2-norm TemporalNorm 
-                        
-# Begin Test 5 -- here we stop using a random initial guess, so the resid norm changes
-
   residual norm        = 2.146943e-02
                         --> 2-norm TemporalNorm 
                         
-# Begin Test 6
+# Begin Test 5
 
   residual norm        = 2.146943e-02
+                        --> 2-norm TemporalNorm 
+
+# Begin Test 6 -- Next test battery 
+
+  residual norm        = 1.066077e-02
                         --> 2-norm TemporalNorm 
                         
 # Begin Test 7
 
-  residual norm        = 2.146943e-02
+  residual norm        = 1.066077e-02
                         --> 2-norm TemporalNorm 
                         
 # Begin Test 8
 
-  residual norm        = 2.146943e-02
+  residual norm        = 1.066077e-02
                         --> 2-norm TemporalNorm 
                         
 # Begin Test 9
 
-  residual norm        = 2.146943e-02
+  residual norm        = 1.066077e-02
                         --> 2-norm TemporalNorm 
                         
 # Begin Test 10
 
-  residual norm        = 2.146943e-02
+  residual norm        = 1.066077e-02
+                        --> 2-norm TemporalNorm 
+                        
+# Begin Test 11
+
+  residual norm        = 1.066077e-02
                         --> 2-norm TemporalNorm 
 
-# Begin Test 11 -- begin 2-norm tests over np=1 to np=5, with cf0=1, residual norms should all agree
-  
-  residual norm        = 6.500312e-02
-                        --> 2-norm TemporalNorm 
+# Begin Test 12 -- Next test battery
 
-# Begin Test 12
-  
-  residual norm        = 6.500312e-02
-                        --> 2-norm TemporalNorm 
+  residual norm        = 4.078268e-01
+                        --> 1-norm TemporalNorm 
+
 # Begin Test 13
-  
-  residual norm        = 6.500312e-02
-                        --> 2-norm TemporalNorm 
+
+  residual norm        = 4.078268e-01
+                        --> 1-norm TemporalNorm 
+
 # Begin Test 14
-  
-  residual norm        = 6.500312e-02
-                        --> 2-norm TemporalNorm 
+
+  residual norm        = 4.078268e-01
+                        --> 1-norm TemporalNorm 
+
 # Begin Test 15
 
-  residual norm        = 6.500312e-02
-                        --> 2-norm TemporalNorm 
-                        
-# Begin Test 16 -- here we stop using a random initial guess, so the resid norm changes
+  residual norm        = 4.078268e-01
+                        --> 1-norm TemporalNorm 
 
-  residual norm        = 1.066077e-02
-                        --> 2-norm TemporalNorm 
-                        
+# Begin Test 16
+
+  residual norm        = 4.078268e-01
+                        --> 1-norm TemporalNorm 
+
 # Begin Test 17
 
-  residual norm        = 1.066077e-02
-                        --> 2-norm TemporalNorm 
-                        
-# Begin Test 18
+  residual norm        = 4.078268e-01
+                        --> 1-norm TemporalNorm 
 
-  residual norm        = 1.066077e-02
-                        --> 2-norm TemporalNorm 
-                        
+# Begin Test 18 -- next test battery
+
+  residual norm        = 3.885386e-01
+                        --> Inf-norm TemporalNorm 
+
 # Begin Test 19
 
-  residual norm        = 1.066077e-02
-                        --> 2-norm TemporalNorm 
-                        
+  residual norm        = 3.885386e-01
+                        --> Inf-norm TemporalNorm 
+
 # Begin Test 20
 
-  residual norm        = 1.066077e-02
-                        --> 2-norm TemporalNorm 
-                        
+  residual norm        = 3.885386e-01
+                        --> Inf-norm TemporalNorm 
+
 # Begin Test 21
 
-  residual norm        = 1.066077e-02
-                        --> 2-norm TemporalNorm 
+  residual norm        = 3.885386e-01
+                        --> Inf-norm TemporalNorm 
 
-                        
-# Begin Test 22 -- begin 1-norm tests over np=1 to np=5, residual norms should all agree
-  
-  residual norm        = 1.616449e-01
-                        --> 1-norm TemporalNorm 
+# Begin Test 22
+
+  residual norm        = 3.885386e-01
+                        --> Inf-norm TemporalNorm 
 
 # Begin Test 23
-  
-  residual norm        = 1.616449e-01
-                        --> 1-norm TemporalNorm 
 
-# Begin Test 24
-  
-  residual norm        = 1.616449e-01
-                        --> 1-norm TemporalNorm 
+  residual norm        = 3.885386e-01
+                        --> Inf-norm TemporalNorm 
+
+# Begin Test 24 -- next test battery 
+
+  residual norm         = 0.000000e+00
+                         --> 2-norm TemporalNorm 
 
 # Begin Test 25
-  
-  residual norm        = 1.616449e-01
-                        --> 1-norm TemporalNorm 
+
+  residual norm         = 0.000000e+00
+                         --> 2-norm TemporalNorm 
 
 # Begin Test 26
 
-  residual norm        = 1.616449e-01
-                        --> 1-norm TemporalNorm 
+  residual norm         = 1.723837e-10
+                         --> 2-norm TemporalNorm 
 
-# Begin Test 27 -- here we stop using a random initial guess, so the resid norm changes
+# Begin Test 27
 
-  residual norm        = 4.078268e-01
-                        --> 1-norm TemporalNorm 
+  residual norm         = 0.000000e+00
+                         --> 2-norm TemporalNorm 
 
 # Begin Test 28
 
-  residual norm        = 4.078268e-01
-                        --> 1-norm TemporalNorm 
+  residual norm         = 3.216823e-10
+                         --> 2-norm TemporalNorm 
+# Begin Test 29 -- Use Skip 1
 
-# Begin Test 29
-
-  residual norm        = 4.078268e-01
-                        --> 1-norm TemporalNorm 
-
+  residual norm         = 4.234270e-02
+                         --> 2-norm TemporalNorm 
 # Begin Test 30
 
-  residual norm        = 4.078268e-01
-                        --> 1-norm TemporalNorm 
+  residual norm         = 4.234270e-02
+                         --> 2-norm TemporalNorm 
 
 # Begin Test 31
 
-  residual norm        = 4.078268e-01
-                        --> 1-norm TemporalNorm 
+  residual norm         = 4.234270e-02
+                         --> 2-norm TemporalNorm 
 
 # Begin Test 32
 
-  residual norm        = 4.078268e-01
-                        --> 1-norm TemporalNorm 
+  residual norm         = 4.234270e-02
+                         --> 2-norm TemporalNorm 
 
-# Begin Test 33 -- begin Inf-norm tests over np=1 to np=5, residual norms should all agree
-  
-  residual norm        = 4.553268e-02
-                        --> Inf-norm TemporalNorm 
+# Begin Test 33
 
-# Begin Test 34
-  
-  residual norm        = 4.553268e-02
-                        --> Inf-norm TemporalNorm 
+  residual norm         = 4.234270e-02
+                         --> 2-norm TemporalNorm 
 
+# Begin Test 34 -- Use user residual routine
+
+  residual norm         = 4.427659e-02
+                         --> 2-norm TemporalNorm 
 # Begin Test 35
-  
-  residual norm        = 4.553268e-02
-                        --> Inf-norm TemporalNorm 
+
+  residual norm         = 4.427659e-02
+                         --> 2-norm TemporalNorm 
 
 # Begin Test 36
-  
-  residual norm        = 4.553268e-02
-                        --> Inf-norm TemporalNorm 
 
-# Begin Test 37 -- here we stop using a random initial guess, so the resid norm changes
+  residual norm         = 4.427659e-02
+                         --> 2-norm TemporalNorm 
 
-  residual norm        = 3.885386e-01
-                        --> Inf-norm TemporalNorm 
+# Begin Test 37
+
+  residual norm         = 4.427659e-02
+                         --> 2-norm TemporalNorm 
 
 # Begin Test 38
 
-  residual norm        = 3.885386e-01
-                        --> Inf-norm TemporalNorm 
+  residual norm         = 4.427659e-02
+                         --> 2-norm TemporalNorm 
 
-# Begin Test 39
+# Begin Test 39 -- Use full residual with user routine
 
-  residual norm        = 3.885386e-01
-                        --> Inf-norm TemporalNorm 
-
+  Braid: Full || r_1 || = 4.427659e-02, conv factor = 1.00e+00
+  residual norm         = 3.552895e-04
+                         --> 2-norm TemporalNorm 
 # Begin Test 40
 
-  residual norm        = 3.885386e-01
-                        --> Inf-norm TemporalNorm 
+  Braid: Full || r_1 || = 4.427659e-02, conv factor = 1.00e+00
+  residual norm         = 3.552895e-04
+                         --> 2-norm TemporalNorm 
 
 # Begin Test 41
 
-  residual norm        = 3.885386e-01
-                        --> Inf-norm TemporalNorm 
+  Braid: Full || r_1 || = 4.427659e-02, conv factor = 1.00e+00
+  residual norm         = 3.552895e-04
+                         --> 2-norm TemporalNorm 
 
 # Begin Test 42
 
-  residual norm        = 3.885386e-01
-                        --> Inf-norm TemporalNorm 
-
-# Begin Test 43 -- Use the sequential time stepping solution (should be 0.0 in many cases) 
-
-  residual norm         = 0.000000e+00
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 44
-
-  residual norm         = 0.000000e+00
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 45
-
-  residual norm         = 1.723838e-10
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 46
-
-  residual norm         = 0.000000e+00
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 47
-
-  residual norm         = 3.216824e-10
-                         --> 2-norm TemporalNorm 
-# Begin Test 48 -- Use Skip 1
-
-  residual norm         = 4.234270e-02
-                         --> 2-norm TemporalNorm 
-# Begin Test 49
-
-  residual norm         = 4.234270e-02
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 50
-
-  residual norm         = 4.234270e-02
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 51
-
-  residual norm         = 4.234270e-02
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 52
-
-  residual norm         = 4.234270e-02
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 53 -- Use user residual routine
-
-  residual norm         = 4.427659e-02
-                         --> 2-norm TemporalNorm 
-# Begin Test 54
-
-  residual norm         = 4.427659e-02
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 55
-
-  residual norm         = 4.427659e-02
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 56
-
-  residual norm         = 4.427659e-02
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 57
-
-  residual norm         = 4.427659e-02
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 58 -- Use full residual with user routine
-
-  Braid: Full || r_1 || = 4.427659e-02, conv factor = 1.00e+00
-  residual norm         = 3.552895e-04
-                         --> 2-norm TemporalNorm 
-# Begin Test 59
-
   Braid: Full || r_1 || = 4.427659e-02, conv factor = 1.00e+00
   residual norm         = 3.552895e-04
                          --> 2-norm TemporalNorm 
 
-# Begin Test 60
-
-  Braid: Full || r_1 || = 4.427659e-02, conv factor = 1.00e+00
-  residual norm         = 3.552895e-04
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 61
-
-  Braid: Full || r_1 || = 4.427659e-02, conv factor = 1.00e+00
-  residual norm         = 3.552895e-04
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 62
+# Begin Test 43
 
   Braid: Full || r_1 || = 4.427659e-02, conv factor = 1.00e+00
   residual norm         = 3.552895e-04
