@@ -278,7 +278,7 @@ Starting braid_TestResidual
    braid_TestResidual:   r = residual(unext, u) 
    braid_TestResidual:   r = fstop - r 
    braid_TestResidual:   spatialnorm(r)
-   braid_TestResidual:   actual output:    spatialnorm(r) = 2.45e-14 
+   braid_TestResidual:   actual output:    spatialnorm(r) approx. 1.0e-14 
    braid_TestResidual:   expected output:  spatialnorm(r) approx. 0.0 
    braid_TestResidual:   free(u)
    braid_TestResidual:   free(unext)

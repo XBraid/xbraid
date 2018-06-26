@@ -12,50 +12,48 @@
 
 # Begin Test 3 -- begin 3-level Braid
   
-  Discretization error at final time:  9.7632e-02
-  residual norm         = 6.944644e-02
+  Discretization error at final time:  9.7826e-02
+  residual norm         = 6.805108e-02
   
 # Begin Test 4
 
- 
-  Discretization error at final time:  9.7632e-02
-  residual norm         = 6.944644e-02
+  Discretization error at final time:  9.7826e-02
+  residual norm         = 6.760904e-02
                         
 # Begin Test 5 
 
-  Discretization error at final time:  9.7632e-02
-  residual norm         = 6.944644e-02
+  Discretization error at final time:  9.8095e-02
+  residual norm         = 6.119744e-02
                        
 # Begin Test 6 -- begin 3-level Braid with FMG
 
-  Discretization error at final time:  9.7729e-02
-  residual norm         = 6.831611e-02
+  Discretization error at final time:  9.7817e-02
+  residual norm         = 6.816609e-02
 
-                       
 # Begin Test 7
 
-  Discretization error at final time:  9.7729e-02
-  residual norm         = 6.831611e-02
+  Discretization error at final time:  9.7817e-02
+  residual norm         = 6.772471e-02
                         
 # Begin Test 8
 
-  Discretization error at final time:  9.7729e-02
-  residual norm         = 6.831611e-02
+  Discretization error at final time:  9.8086e-02
+  residual norm         = 6.130059e-02
                         
 # Begin Test 9 -- begin 3-level Braid with spatial coarsening
 
-  Discretization error at final time:  5.4755e-02
-  residual norm         = 1.198403e-01
+  Discretization error at final time:  5.4765e-02
+  residual norm         = 1.243093e-01
                         
 # Begin Test 10
 
-  Discretization error at final time:  5.4755e-02
-  residual norm         = 1.198403e-01
+  Discretization error at final time:  5.4976e-02
+  residual norm         = 1.167181e-01
  
 # Begin Test 11
   
-  Discretization error at final time:  5.4755e-02
-  residual norm         = 1.198403e-01
+  Discretization error at final time:  5.4926e-02
+  residual norm         = 1.274759e-01
 
 # Begin Test 12  -- begin 3-level Braid with sequential time stepping as initial guess
   
