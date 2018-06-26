@@ -130,22 +130,23 @@
 
 # Begin Test 26
 
-  residual norm         = 1.034948e-12
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 27
-
   residual norm         = 0.000000e+00
                          --> 2-norm TemporalNorm 
 
-# Begin Test 28
-
-  residual norm         = 1.931302e-12
-                         --> 2-norm TemporalNorm 
-# Begin Test 29 -- Use Skip 1
+# Begin Test 27 -- Use Skip 1
 
   residual norm         = 4.234270e-02
                          --> 2-norm TemporalNorm 
+# Begin Test 28
+
+  residual norm         = 4.234270e-02
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 29
+
+  residual norm         = 4.234270e-02
+                         --> 2-norm TemporalNorm 
+
 # Begin Test 30
 
   residual norm         = 4.234270e-02
@@ -156,20 +157,20 @@
   residual norm         = 4.234270e-02
                          --> 2-norm TemporalNorm 
 
-# Begin Test 32
-
-  residual norm         = 4.234270e-02
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 33
-
-  residual norm         = 4.234270e-02
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 34 -- Use user residual routine
+# Begin Test 32 -- Use user residual routine
 
   residual norm         = 4.427659e-02
                          --> 2-norm TemporalNorm 
+# Begin Test 33
+
+  residual norm         = 4.427659e-02
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 34
+
+  residual norm         = 4.427659e-02
+                         --> 2-norm TemporalNorm 
+
 # Begin Test 35
 
   residual norm         = 4.427659e-02
@@ -180,21 +181,23 @@
   residual norm         = 4.427659e-02
                          --> 2-norm TemporalNorm 
 
-# Begin Test 37
-
-  residual norm         = 4.427659e-02
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 38
-
-  residual norm         = 4.427659e-02
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 39 -- Use full residual with user routine
+# Begin Test 37 -- Use full residual with user routine
 
   Braid: Full || r_1 || = 4.427659e-02, conv factor = 1.00e+00
   residual norm         = 3.552895e-04
                          --> 2-norm TemporalNorm 
+# Begin Test 38
+
+  Braid: Full || r_1 || = 4.427659e-02, conv factor = 1.00e+00
+  residual norm         = 3.552895e-04
+                         --> 2-norm TemporalNorm 
+
+# Begin Test 39
+
+  Braid: Full || r_1 || = 4.427659e-02, conv factor = 1.00e+00
+  residual norm         = 3.552895e-04
+                         --> 2-norm TemporalNorm 
+
 # Begin Test 40
 
   Braid: Full || r_1 || = 4.427659e-02, conv factor = 1.00e+00
@@ -202,18 +205,6 @@
                          --> 2-norm TemporalNorm 
 
 # Begin Test 41
-
-  Braid: Full || r_1 || = 4.427659e-02, conv factor = 1.00e+00
-  residual norm         = 3.552895e-04
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 42
-
-  Braid: Full || r_1 || = 4.427659e-02, conv factor = 1.00e+00
-  residual norm         = 3.552895e-04
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 43
 
   Braid: Full || r_1 || = 4.427659e-02, conv factor = 1.00e+00
   residual norm         = 3.552895e-04

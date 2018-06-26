@@ -129,9 +129,7 @@ TESTS=(
         "$RunString -np 18 $driver_dir/drive-diffusion-2D -pgrid 3 3 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 3 -use_rand 0 -scoarsen 2 -storage -2 -skip 0" \
         "$RunString -np 2  $example_dir/ex-03   -pgrid 1 1 2 -ml 3 -nt 16 -storage -2 -mi 3 -tol -1.0 -skip 0 -nu 0 -pfmg_tol 1e-18 -use_seq_soln 1" \
         "$RunString -np 2  $example_dir/ex-03   -pgrid 1 1 2 -ml 3 -nt 16 -storage -1 -mi 3 -tol -1.0 -skip 0 -nu 0 -pfmg_tol 1e-18 -use_seq_soln 1" \
-        "$RunString -np 2  $example_dir/ex-03   -pgrid 1 1 2 -ml 3 -nt 16 -storage -1 -mi 3 -tol -1.0 -skip 0 -nu 0 -pfmg_tol 1e-11 -use_seq_soln 1" \
         "$RunString -np 2  $example_dir/ex-03   -pgrid 1 1 2 -ml 3 -nt 16 -storage  0 -mi 3 -tol -1.0 -skip 0 -nu 0 -pfmg_tol 1e-18 -use_seq_soln 1" \
-        "$RunString -np 2  $example_dir/ex-03   -pgrid 1 1 2 -ml 3 -nt 16 -storage  0 -mi 3 -tol -1.0 -skip 0 -nu 0 -pfmg_tol 1e-11 -use_seq_soln 1" \
         "$RunString -np 1  $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 2 -storage -2 -skip 1" \
         "$RunString -np 2  $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 2 -storage -2 -skip 1" \
         "$RunString -np 3  $driver_dir/drive-diffusion-2D -pgrid 1 1 3 -nt 16 -nx 9 9 -nu 1 -nu0 1 -ml 3 -mi 2 -tnorm 2 -storage -2 -skip 1" \
