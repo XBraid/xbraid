@@ -30,194 +30,149 @@
 
 # Begin Test 6
 
-  residual norm         = 4.476789e-13
+  residual norm         = 7.816896e-11
                          --> 2-norm TemporalNorm 
 
 # Begin Test 7
 
-  residual norm         = 4.469000e-13
+  residual norm         = 7.816904e-11
                          --> 2-norm TemporalNorm 
 
 # Begin Test 8
 
-  residual norm         = 4.468065e-13
+  residual norm         = 7.816862e-11
                          --> 2-norm TemporalNorm 
 
 # Begin Test 9
 
-  residual norm         = 7.816896e-11
+  residual norm         = 2.812678e-09
                          --> 2-norm TemporalNorm 
 
 # Begin Test 10
 
-  residual norm         = 7.816904e-11
+  residual norm         = 2.812678e-09
                          --> 2-norm TemporalNorm 
 
 # Begin Test 11
 
-  residual norm         = 7.816862e-11
+  residual norm         = 2.812678e-09
                          --> 2-norm TemporalNorm 
 
-# Begin Test 12
+# Begin Test 12 -- Begin storage = 0 tests
 
-  residual norm         = 2.812678e-09
+  residual norm         = 1.344434e-08
                          --> 2-norm TemporalNorm 
 
 # Begin Test 13
 
-  residual norm         = 2.812678e-09
+  residual norm         = 1.344434e-08
                          --> 2-norm TemporalNorm 
 
 # Begin Test 14
 
-  residual norm         = 2.812678e-09
+  residual norm         = 1.344434e-08
                          --> 2-norm TemporalNorm 
 
-# Begin Test 15 -- Begin storage = 0 tests
+# Begin Test 15
 
-  residual norm         = 1.344434e-08
+  residual norm         = 4.897099e-13
                          --> 2-norm TemporalNorm 
 
 # Begin Test 16
 
-  residual norm         = 1.344434e-08
+  residual norm         = 4.897313e-13
                          --> 2-norm TemporalNorm 
 
 # Begin Test 17
 
-  residual norm         = 1.344434e-08
+  residual norm         = 4.896425e-13
                          --> 2-norm TemporalNorm 
 
 # Begin Test 18
 
-  residual norm         = 4.897099e-13
+  residual norm         = 2.856378e-10
                          --> 2-norm TemporalNorm 
 
 # Begin Test 19
 
-  residual norm         = 4.897313e-13
+  residual norm         = 2.856376e-10
                          --> 2-norm TemporalNorm 
 
 # Begin Test 20
 
-  residual norm         = 4.896425e-13
+  residual norm         = 2.856377e-10
                          --> 2-norm TemporalNorm 
 
 # Begin Test 21
 
-  residual norm         = 4.895912e-12
+  residual norm         = 2.440768e-09
                          --> 2-norm TemporalNorm 
 
 # Begin Test 22
 
-  residual norm         = 4.895581e-12
+  residual norm         = 2.440768e-09
                          --> 2-norm TemporalNorm 
 
 # Begin Test 23
 
-  residual norm         = 4.895458e-12
+  residual norm         = 2.440768e-09
                          --> 2-norm TemporalNorm 
 
-# Begin Test 24
-
-  residual norm         = 2.856378e-10
+# Begin Test 24 -- Begin storage = 1 tests
+  residual norm         = 1.361100e-08
                          --> 2-norm TemporalNorm 
 
 # Begin Test 25
 
-  residual norm         = 2.856376e-10
+  residual norm         = 1.361100e-08
                          --> 2-norm TemporalNorm 
 
 # Begin Test 26
 
-  residual norm         = 2.856377e-10
+  residual norm         = 1.361100e-08
                          --> 2-norm TemporalNorm 
 
 # Begin Test 27
 
-  residual norm         = 2.440768e-09
+  residual norm         = 4.897099e-13
                          --> 2-norm TemporalNorm 
 
 # Begin Test 28
 
-  residual norm         = 2.440768e-09
+  residual norm         = 4.897313e-13
                          --> 2-norm TemporalNorm 
 
 # Begin Test 29
 
-  residual norm         = 2.440768e-09
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 30 -- Begin storage = 1 tests
-  residual norm         = 1.361100e-08
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 31
-
-  residual norm         = 1.361100e-08
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 32
-
-  residual norm         = 1.361100e-08
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 33
-
-  residual norm         = 4.897099e-13
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 34
-
-  residual norm         = 4.897313e-13
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 35
-
   residual norm         = 4.896425e-13
                          --> 2-norm TemporalNorm 
 
-# Begin Test 36
-
-  residual norm         = 4.476789e-13
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 37
-
-  residual norm         = 4.469000e-13
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 38
-
-  residual norm         = 4.468065e-13
-                         --> 2-norm TemporalNorm 
-
-# Begin Test 39
+# Begin Test 30
 
   residual norm         = 7.814410e-11
                          --> 2-norm TemporalNorm 
 
-# Begin Test 40
+# Begin Test 31
 
   residual norm         = 7.814438e-11
                          --> 2-norm TemporalNorm 
 
-# Begin Test 41
+# Begin Test 32
 
   residual norm         = 7.814420e-11
                          --> 2-norm TemporalNorm 
 
-# Begin Test 42
+# Begin Test 33
 
   residual norm         = 2.329103e-09
                          --> 2-norm TemporalNorm 
 
-# Begin Test 43
+# Begin Test 34
 
   residual norm         = 2.329103e-09
                          --> 2-norm TemporalNorm 
 
-# Begin Test 44
+# Begin Test 35
 
   residual norm         = 2.329103e-09
                          --> 2-norm TemporalNorm 
