@@ -67,7 +67,9 @@ TESTS=( "diffusion1D.sh " \
         "mfem.sh" \
         "ode1D.sh" \
         "machine-tux-checkout-compile.sh " \
-        "docs.sh" \
+        "adjoint.sh " \
+        "shellvector_bdf2.sh "\
+        "docs.sh " \
         "memcheck-tux-jacob.sh ")
 
 # Run regression tests

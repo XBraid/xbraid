@@ -84,12 +84,9 @@ mkdir -p $output_dir
 
 # compile the regression test drivers 
 echo "Compiling regression test drivers"
-cd $example_dir
-make clean
-make 
 cd $driver_dir
 make clean
-make 
+make drive-diffusion-2D 
 cd $test_dir
     
 # Run the following regression tests 
