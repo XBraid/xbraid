@@ -4,7 +4,7 @@
  * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
  * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
  * 
- * This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+ * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License (as published by the Free Software
@@ -36,6 +36,7 @@
 #include "_hypre_utilities.h"
 #include "HYPRE_sstruct_ls.h"
 #include "_hypre_sstruct_mv.h"
+#include "braid.h"
 
 #include "vis.c"
 
@@ -303,7 +304,7 @@ int set_initial_condition(simulation_manager   *man,
    }
    else if (t < 0.0){
       for( m = 0; m < (man->nlx)*(man->nly); m++ )
-            values[m] = ((double)rand())/RAND_MAX;
+            values[m] = ((double)braid_Rand())/braid_RAND_MAX;
    }
    else{
       for( m = 0; m < (man->nlx)*(man->nly); m++ )

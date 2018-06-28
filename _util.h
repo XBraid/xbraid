@@ -4,7 +4,7 @@
  * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
  * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
  * 
- * This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+ * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License (as published by the Free Software
@@ -71,7 +71,7 @@ _braid_printf( const char *format, ...);
 braid_Int
 _braid_ParFprintfFlush(FILE * file, 
                        braid_Int myid,
-                       char * message, 
+                       const char * message, 
                        ...);
 
 /**
@@ -99,5 +99,5 @@ _braid_GetNEntries(braid_Real   *_array,
                    braid_Real   *array);
 
 
-#endif
 
+#endif

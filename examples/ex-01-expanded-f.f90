@@ -4,7 +4,7 @@
 ! Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
 ! Dobrev, et al. LLNL-CODE-660355. All rights reserved.
 ! 
-! This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+! This file is part of XBraid. For support, post issues to the XBraid Github page.
 ! 
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License (as published by the Free Software
@@ -477,7 +477,7 @@ program ex01_f90
    !   This parameter controls the minimum coarse grid size
    min_coarse    = 2
    !   These two parameters control access and printing of output 
-   print_level   = 1
+   print_level   = 2
    access_level  = 1
    !   This parameter runs XBraid wrapper tests of the XBraid-User interface
    wrapper_tests = 0

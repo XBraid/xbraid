@@ -4,7 +4,7 @@
  * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
  * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
  * 
- * This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+ * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License (as published by the Free Software
@@ -37,10 +37,59 @@
 #include <math.h>
 
 #include "braid.h"
+#include "_braid_tape.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * Shared pointer implementation for storing the intermediat AD-bar variables while taping.
+ * This is essentially the same as a userVector, except we need shared pointer 
+ * capabilities to know when to delete.
+ */
+struct _braid_VectorBar_struct
+{
+   braid_Vector userVector;         /**< holds the u_bar data */
+   braid_Int    useCount;           /**< counts the number of pointers to this struct */
+}; 
+typedef struct _braid_VectorBar_struct *braid_VectorBar;
+
+/** 
+ * Braid vector used for storage of all state and (if needed) adjoint
+ * information.  Stores both the user's primal vector (braid_Vector type) and
+ * the associated bar vector (braid_VectorBar type) if the adjoint
+ * functionality is being used.  If adjoint is not being used, bar==NULL. 
+ */
+struct _braid_BaseVector_struct
+{
+   braid_Vector    userVector;      /**< holds the users primal vector */
+   braid_VectorBar bar;             /**< holds the bar vector (shared pointer implementation) */
+};
+typedef struct _braid_BaseVector_struct *braid_BaseVector;
+
+
+/** 
+ * Data structure for storing the optimization variables
+ */
+struct _braid_Optimization_struct
+{
+   braid_Real       sum_user_obj;     /**< sum of user's objective function values over time */
+   braid_Real       objective;        /**< global objective function value */
+   braid_Real       tstart_obj;       /**< starting time for evaluating the user's local objective */
+   braid_Real       tstop_obj;        /**< stopping time for evaluating the user's local objective */
+   braid_Real       f_bar;            /**< contains the seed for tape evaluation  */
+   braid_Real       rnorm_adj;        /**< norm of the adjoint residual */
+   braid_Real       rnorm0_adj;       /**< initial norm of the adjoint residual */
+   braid_Real       rnorm;            /**< norm of the state residual */
+   braid_Real       rnorm0;           /**< initial norm of the state residual */
+   braid_Real       tol_adj;          /**< tolerance of adjoint residual */
+   braid_Int        rtol_adj;         /**< flag: use relative tolerance for adjoint */
+   braid_Vector    *adjoints;         /**< vector for the adjoint variables */
+   braid_VectorBar *tapeinput;        /**< helper: store pointer to input of one braid iteration */
+};
+typedef struct _braid_Optimization_struct *braid_Optim;
+
 
 /*--------------------------------------------------------------------------
  * Main data structures and accessor macros
@@ -50,16 +99,16 @@ extern "C" {
  * XBraid comm handle structure
  *
  * Used for initiating and completing nonblocking communication to pass
- * braid_Vectors between processors.
+ * braid_BaseVectors between processors.
  **/
 typedef struct
 {
-   braid_Int       request_type;    /**< two values: recv type = 1, and send type = 0 */
-   braid_Int       num_requests;    /**< number of active requests for this handle, usually 1 */
-   MPI_Request    *requests;        /**< MPI request structure */
-   MPI_Status     *status;          /**< MPI status */
-   void           *buffer;          /**< Buffer for message */
-   braid_Vector   *vector_ptr;      /**< braid_vector being sent/received */
+   braid_Int         request_type;    /**< two values: recv type = 1, and send type = 0 */
+   braid_Int         num_requests;    /**< number of active requests for this handle, usually 1 */
+   MPI_Request      *requests;        /**< MPI request structure */
+   MPI_Status       *status;          /**< MPI status */
+   void             *buffer;          /**< Buffer for message */
+   braid_BaseVector *vector_ptr;      /**< braid_vector being sent/received */
    
 } _braid_CommHandle;
 
@@ -81,20 +130,20 @@ typedef struct
    braid_Int          ncpoints;      /**< number of C points */
 
    braid_Int          nupoints;      /**< number of unknown vector points */
-   braid_Vector      *ua;            /**< unknown vectors            (C-points at least)*/
+   braid_BaseVector  *ua;            /**< unknown vectors            (C-points at least)*/
    braid_Real        *ta;            /**< time values                (all points) */
-   braid_Vector      *va;            /**< restricted unknown vectors (all points, NULL on level 0) */
-   braid_Vector      *fa;            /**< rhs vectors f              (all points, NULL on level 0) */
+   braid_BaseVector  *va;            /**< restricted unknown vectors (all points, NULL on level 0) */
+   braid_BaseVector  *fa;            /**< rhs vectors f              (all points, NULL on level 0) */
 
    braid_Int          recv_index;    /**<  -1 means no receive */
    braid_Int          send_index;    /**<  -1 means no send */
-   _braid_CommHandle *recv_handle;   /**<  Handle for nonblocking receives of braid_Vectors */
-   _braid_CommHandle *send_handle;   /**<  Handle for nonblocking sends of braid_Vectors */
+   _braid_CommHandle *recv_handle;   /**<  Handle for nonblocking receives of braid_BaseVectors */
+   _braid_CommHandle *send_handle;   /**<  Handle for nonblocking sends of braid_BaseVectors */
 
-   braid_Vector      *ua_alloc;      /**< original memory allocation for ua */
+   braid_BaseVector  *ua_alloc;      /**< original memory allocation for ua */
    braid_Real        *ta_alloc;      /**< original memory allocation for ta */
-   braid_Vector      *va_alloc;      /**< original memory allocation for va */
-   braid_Vector      *fa_alloc;      /**< original memory allocation for fa */
+   braid_BaseVector  *va_alloc;      /**< original memory allocation for va */
+   braid_BaseVector  *fa_alloc;      /**< original memory allocation for fa */
 
 } _braid_Grid;
 
@@ -115,14 +164,14 @@ typedef struct _braid_Core_struct
    braid_App              app;              /**< application data for the user */
 
    braid_PtFcnStep        step;             /**< apply step function */
-   braid_PtFcnInit        init;             /**< return an initialized braid_Vector */
-   braid_PtFcnSInit       sinit;            /**< (optional) return an initialized shell of braid_Vector */
+   braid_PtFcnInit        init;             /**< return an initialized braid_BaseVector */
+   braid_PtFcnSInit       sinit;            /**< (optional) return an initialized shell of braid_BaseVector */
    braid_PtFcnClone       clone;            /**< clone a vector */
    braid_PtFcnSClone      sclone;           /**< (optional) clone the shell of a vector */
    braid_PtFcnFree        free;             /**< free up a vector */
    braid_PtFcnSFree       sfree;            /**< (optional) free up the data of a vector, keep the shell */
    braid_PtFcnSum         sum;              /**< vector sum */
-   braid_PtFcnSpatialNorm spatialnorm;      /**< Compute norm of a braid_Vector, this is a norm only over space */
+   braid_PtFcnSpatialNorm spatialnorm;      /**< Compute norm of a braid_BaseVector, this is a norm only over space */
    braid_PtFcnAccess      access;           /**< user access function to XBraid and current vector */
    braid_PtFcnBufSize     bufsize;          /**< return buffer size */
    braid_PtFcnBufPack     bufpack;          /**< pack a buffer */
@@ -133,7 +182,7 @@ typedef struct _braid_Core_struct
    braid_PtFcnTimeGrid    tgrid;            /**< (optional) return time point values on level 0 */
 
    braid_Int              access_level;     /**< determines how often to call the user's access routine */ 
-   braid_Int              print_level;      /**< determines amount of output printed to screen (0,1,2) */
+   braid_Int              print_level;      /**< determines amount of output printed to screen (0,1,2,3) */
    braid_Int              io_level;         /**< determines amount of output printed to files (0,1) */
    braid_Int              seq_soln;         /**< boolean, controls if the initial guess is from sequential time stepping*/
    braid_Int              max_levels;       /**< maximum number of temporal grid levels */
@@ -149,6 +198,7 @@ typedef struct _braid_Core_struct
    braid_Int              fmg;              /**< use FMG cycle */
    braid_Int              nfmg;             /**< number of fmg cycles to do initially before switching to V-cycles */
    braid_Int              nfmg_Vcyc;        /**< number of V-cycle calls at each level in FMG */
+   braid_Int              warm_restart;     /**< boolean, indicates whether this is a warm restart of an existing braid_Core */
    braid_Int              tnorm;            /**< choice of temporal norm */
    braid_Real            *tnorm_a;          /**< local array of residual norms on a proc's interval, used for inf-norm */
    braid_Real             rnorm0;           /**< initial residual norm */
@@ -178,6 +228,24 @@ typedef struct _braid_Core_struct
    braid_Real             localtime;        /**< local wall time for braid_Drive() */
    braid_Real             globaltime;       /**< global wall time for braid_Drive() */
 
+   /* Data for adjoint and optimization */
+   braid_Optim            optim;             /**< structure that stores optimization variables (objective function, etc.) */ 
+   braid_Int              adjoint;           /**< determines if adjoint run is performed (1) or not (0) */
+   braid_Int              record;            /**< determines if actions are recorded to the tape or not */
+   braid_Int              obj_only;          /**< determines if adjoint code computes ONLY objective, no gradients. */
+   braid_Int              verbose_adj;       /**< verbosity of the adjoint tape, displays the actions that are pushed / popped to the tape*/
+
+   _braid_Tape*          actionTape;         /**< tape storing the actions while recording */
+   _braid_Tape*          userVectorTape;     /**< tape storing primal braid_vectors while recording */
+   _braid_Tape*          barTape;            /**< tape storing intermediate AD-bar variables while recording */
+      
+   braid_PtFcnObjectiveT                objectiveT;           /**< User function: evaluate objective function at time t */
+   braid_PtFcnStepDiff                  step_diff;            /**< User function: apply differentiated step function */
+   braid_PtFcnObjectiveTDiff            objT_diff;            /**< User function: apply differentiated objective function */
+   braid_PtFcnResetGradient             reset_gradient;       /**< User function: Set the gradient to zero. Is called before each iteration */
+   braid_PtFcnPostprocessObjective      postprocess_obj;      /**< Optional user function: Modify the time-averaged objective function, e.g. for inverse design problems, adding relaxation term etc. */
+   braid_PtFcnPostprocessObjective_diff postprocess_obj_diff; /**< Optional user function: Derivative of postprocessing function  */
+
    /** Data elements required for the Status structures */
    /** Common Status properties */
    braid_Real    t;                /**< current time */
@@ -201,6 +269,7 @@ typedef struct _braid_Core_struct
    /** BufferStatus properties */
    braid_Int    messagetype;       /**< message type, 0: for Step(), 1: for load balancing */
    braid_Int    size_buffer;       /**< if set by user, send buffer will be "size" bytes in length */
+   braid_Int    send_recv_rank;    /***< holds the rank of the source / receiver from MPI_Send / MPI_Recv calls. */
 } _braid_Core;
 
 /*--------------------------------------------------------------------------
@@ -340,7 +409,7 @@ braid_Int
 _braid_CommRecvInit(braid_Core           core,
                     braid_Int            level,
                     braid_Int            index,
-                    braid_Vector        *vector_ptr,
+                    braid_BaseVector    *vector_ptr,
                     _braid_CommHandle  **handle_ptr);
 
 /**
@@ -352,7 +421,7 @@ braid_Int
 _braid_CommSendInit(braid_Core           core,
                     braid_Int            level,
                     braid_Int            index,
-                    braid_Vector         vector,
+                    braid_BaseVector     vector,
                     _braid_CommHandle  **handle_ptr);
 
 /**
@@ -360,7 +429,7 @@ _braid_CommSendInit(braid_Core           core,
  * has completed
  */
 braid_Int
-_braid_CommWait(braid_Core          core,
+_braid_CommWait(braid_Core         core,
                _braid_CommHandle **handle_ptr);
 
 /**
@@ -381,20 +450,20 @@ _braid_UGetIndex(braid_Core   core,
  * If the u-vector is not stored, returns NULL.
  */
 braid_Int
-_braid_UGetVectorRef(braid_Core     core,
-                     braid_Int      level,
-                     braid_Int      index,
-                     braid_Vector  *u_ptr);
+_braid_UGetVectorRef(braid_Core        core,
+                     braid_Int         level,
+                     braid_Int         index,
+                     braid_BaseVector *u_ptr);
 
 /**
  * Stores a reference to the local u-vector on grid *level* at point *index*.
  * If the u-vector is not stored, nothing is done.
  */
 braid_Int
-_braid_USetVectorRef(braid_Core    core,
-                     braid_Int     level,
-                     braid_Int     index,
-                     braid_Vector  u);
+_braid_USetVectorRef(braid_Core       core,
+                     braid_Int        level,
+                     braid_Int        index,
+                     braid_BaseVector u);
 
 /**
  * Returns a copy of the u-vector on grid *level* at point *index*.  If *index*
@@ -403,10 +472,10 @@ _braid_USetVectorRef(braid_Core    core,
  * is returned.
  */
 braid_Int
-_braid_UGetVector(braid_Core     core,
-                  braid_Int      level,
-                  braid_Int      index,
-                  braid_Vector  *u_ptr);
+_braid_UGetVector(braid_Core        core,
+                  braid_Int         level,
+                  braid_Int         index,
+                  braid_BaseVector *u_ptr);
 
 /**
  * Stores the u-vector on grid *level* at point *index*.  If *index* is my "send
@@ -415,11 +484,11 @@ _braid_UGetVector(braid_Core     core,
  * not stored, nothing is done.
  */
 braid_Int
-_braid_USetVector(braid_Core    core,
-                  braid_Int     level,
-                  braid_Int     index,
-                  braid_Vector  u,
-                  braid_Int     move);
+_braid_USetVector(braid_Core        core,
+                  braid_Int         level,
+                  braid_Int         index,
+                  braid_BaseVector  u,
+                  braid_Int         move);
 
 /**
  * Basic communication (from the left, to the right).  Arguments *recv_msg* and
@@ -488,7 +557,7 @@ _braid_GetInterval(braid_Core   core,
 braid_Int
 _braid_AccessVector(braid_Core         core,
                     braid_AccessStatus status,
-                    braid_Vector       u);
+                    braid_BaseVector   u);
 
 /**
  * Return an initial guess in *ustop_ptr* to use in the step routine for
@@ -496,41 +565,41 @@ _braid_AccessVector(braid_Core         core,
  * If the return value is NULL, no initial guess is available.
  */
 braid_Int
-_braid_GetUInit(braid_Core     core,
-                braid_Int      level,
-                braid_Int      index,
-                braid_Vector   u,
-                braid_Vector  *ustop_ptr);
+_braid_GetUInit(braid_Core         core,
+                braid_Int          level,
+                braid_Int          index,
+                braid_BaseVector   u,
+                braid_BaseVector  *ustop_ptr);
 
 /**
  * Integrate one time step at time step *index* to time step *index*+1.
  */
 braid_Int
-_braid_Step(braid_Core     core,
-            braid_Int      level,
-            braid_Int      index,
-            braid_Vector   ustop,
-            braid_Vector   u);
+_braid_Step(braid_Core        core,
+            braid_Int         level,
+            braid_Int         index,
+            braid_BaseVector  ustop,
+            braid_BaseVector  u);
 
 /**
  * Compute residual *r*
  */
 braid_Int
-_braid_Residual(braid_Core     core,
-                braid_Int      level,
-                braid_Int      index,
-                braid_Vector   ustop,
-                braid_Vector   r);
+_braid_Residual(braid_Core       core,
+                braid_Int        level,
+                braid_Int        index,
+                braid_BaseVector ustop,
+                braid_BaseVector r);
 
 /**
  * Compute FAS residual = f - residual
  */
 braid_Int
-_braid_FASResidual(braid_Core     core,
-                   braid_Int      level,
-                   braid_Int      index,
-                   braid_Vector   ustop,
-                   braid_Vector   r);
+_braid_FASResidual(braid_Core       core,
+                   braid_Int        level,
+                   braid_Int        index,
+                   braid_BaseVector ustop,
+                   braid_BaseVector r);
 
 /**
  * Coarsen in space on *level* by calling the user's coarsen function.
@@ -539,23 +608,23 @@ _braid_FASResidual(braid_Core     core,
  * The output goes in *cvector* and the input vector is *fvector*.
  */
 braid_Int
-_braid_Coarsen(braid_Core     core,
-               braid_Int      level,    /* coarse level */
-               braid_Int      f_index,  /* fine index */
-               braid_Int      c_index,  /* coarse index */
-               braid_Vector   fvector,
-               braid_Vector  *cvector);
+_braid_Coarsen(braid_Core        core,
+               braid_Int         level,    /* coarse level */
+               braid_Int         f_index,  /* fine index */
+               braid_Int         c_index,  /* coarse index */
+               braid_BaseVector  fvector,
+               braid_BaseVector *cvector);
 
 /**
  * Refine in space (basic routine)
  */
 braid_Int
-_braid_RefineBasic(braid_Core     core,
-                   braid_Int      level,    /* fine level */
-                   braid_Real    *f_ta,     /* pointer into fine time array */
-                   braid_Real    *c_ta,     /* pointer into coarse time array */
-                   braid_Vector   cvector,
-                   braid_Vector  *fvector);
+_braid_RefineBasic(braid_Core        core,
+                   braid_Int         level,    /* fine level */
+                   braid_Real       *f_ta,     /* pointer into fine time array */
+                   braid_Real       *c_ta,     /* pointer into coarse time array */
+                   braid_BaseVector  cvector,
+                   braid_BaseVector *fvector);
 
 /**
  * Refine in space on *level* by calling the user's refine function.
@@ -565,12 +634,12 @@ _braid_RefineBasic(braid_Core     core,
 
  */
 braid_Int
-_braid_Refine(braid_Core     core,
-              braid_Int      level,    /* fine level */
-              braid_Int      f_index,  /* fine index */
-              braid_Int      c_index,  /* coarse index */
-              braid_Vector   cvector,
-              braid_Vector  *fvector);
+_braid_Refine(braid_Core        core,
+              braid_Int         level,    /* fine level */
+              braid_Int         f_index,  /* fine index */
+              braid_Int         c_index,  /* coarse index */
+              braid_BaseVector  cvector,
+              braid_BaseVector *fvector);
 
 /**
  * Create a new grid object *grid_ptr* with level indicator *level*.  Arguments
@@ -759,6 +828,96 @@ _braid_GetFullRNorm(braid_Core  core,
  */
 braid_Int
 _braid_DeleteLastResidual(braid_Core  core);
+
+
+
+/**
+ * Shallow copy a braid_VectorBar shared pointer, bar_ptr is set to bar
+ * and the useCount is incremented by one.
+ */
+braid_Int
+_braid_VectorBarCopy(braid_VectorBar  bar,       
+                     braid_VectorBar *bar_ptr);  
+
+
+/**
+ * Reduce the useCount of a braid_VectorBar shared pointer 
+ * Free the pointer memory if useCount is zero.  
+ */ 
+braid_Int
+_braid_VectorBarDelete(braid_Core      core, 
+                       braid_VectorBar bar);
+
+
+/**
+ * Free memory of the optimization structure 
+ */
+braid_Int
+_braid_OptimDestroy( braid_Core core);
+
+
+/**
+ * Update the adjoint variables and compute adjoint residual norm
+ * Returns the tnorm of adjoint residual
+ */
+braid_Int
+_braid_UpdateAdjoint(braid_Core  core,
+                     braid_Real *rnorm_adj_ptr);
+
+
+/**
+ * Set adjoint residual norm 
+ */
+braid_Int 
+_braid_SetRNormAdjoint(braid_Core  core, 
+                       braid_Int   iter, 
+                       braid_Real  rnorm_adj);
+
+/** 
+ * Evaluate the user's local objective function at time *t* and add it to the
+ * time-averaged objective function
+ */
+braid_Int
+_braid_AddToObjective(braid_Core             core, 
+                      braid_BaseVector       u, 
+                      braid_ObjectiveStatus  ostatus);
+
+/**
+ * Evaluate the objective function:
+ * MPI_Allreduce the time average and postprocess the objective 
+ */
+braid_Int
+_braid_EvalObjective(braid_Core core);
+
+
+/** 
+ * Differentiated objective function 
+ */
+braid_Int
+_braid_EvalObjective_diff(braid_Core core);
+
+
+/**
+ * Allocate and initialize the adjoint variables 
+ */
+braid_Int
+_braid_InitAdjointVars(braid_Core   core, 
+                       _braid_Grid *fine_grid);
+
+
+/**
+ * Switch for displaying the XBraid actions. Used for debugging only. 
+ */
+braid_Int
+_braid_SetVerbosity(braid_Core  core,
+                    braid_Int   verbose_adj);
+
+/**
+ * Sanity check for non-supported adjoint features
+ */
+braid_Int
+_braid_AdjointFeatureCheck(braid_Core core);
+
 
 #ifdef __cplusplus
 }

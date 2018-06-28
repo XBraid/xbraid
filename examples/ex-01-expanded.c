@@ -4,7 +4,7 @@
  * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
  * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
  * 
- * This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+ * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License (as published by the Free Software
@@ -486,7 +486,7 @@ int main (int argc, char *argv[])
              my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
              my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
 
-   braid_SetPrintLevel( core, 1);
+   braid_SetPrintLevel( core, 2);
    braid_SetMaxLevels(core, max_levels);
    braid_SetNRelax(core, -1, nrelax);
    if (nrelax0 > -1)

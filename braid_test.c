@@ -4,7 +4,7 @@
  * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
  * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
  * 
- * This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+ * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License (as published by the Free Software
@@ -660,7 +660,7 @@ braid_TestResidual( braid_App              app,
  {   
    braid_Vector            u, unext, ustop, fstop;
    braid_Real              result1;
-   braid_Int               myid_x;
+   braid_Int               myid_x, result_int;
    braid_Status            status  = _braid_CTAlloc(_braid_Status, 1);
    braid_AccessStatus      astatus = (braid_AccessStatus)status;
    braid_StepStatus        sstatus = (braid_StepStatus)status;
@@ -729,7 +729,8 @@ braid_TestResidual( braid_App              app,
    }
 
    /* We expect the result to be close to zero */
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   actual output:    spatialnorm(r) = %1.2e \n", result1);
+   result_int = (braid_Int) round(-log10(result1));
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   actual output:    spatialnorm(r) approx. 1.0e-%d \n", result_int);
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   expected output:  spatialnorm(r) approx. 0.0 \n\n");
 
    /* Free variables */

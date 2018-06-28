@@ -5,7 +5,7 @@
 # Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
 # Dobrev, et al. LLNL-CODE-660355. All rights reserved.
 # 
-# This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+# This file is part of XBraid. For support, post issues to the XBraid Github page.
 # 
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License (as published by the Free Software
@@ -34,7 +34,7 @@ include $(BRAID_DIR)/makefile.inc
 # Build exmaples 
 ##################################################################
 
-HYPRE_DIR = $(BRAID_DIR)/../linear_solvers/src/hypre
+HYPRE_DIR = $(BRAID_DIR)/../hypre/src/hypre
 HYPRE_FLAGS = -I$(HYPRE_DIR)/include
 HYPRE_LIB = -L$(HYPRE_DIR)/lib -lHYPRE
 

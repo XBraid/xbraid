@@ -4,7 +4,7 @@
  * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
  * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
  * 
- * This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+ * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License (as published by the Free Software
@@ -92,7 +92,7 @@ extern "C" {
  *--------------------------------------------------------------------------*/
 /** \defgroup userwritten User-written routines
  *  
- *  These are all user-written data structures and routines.  There are two
+ *  These are all the user-written data structures and routines.  There are two
  *  data structures (@ref braid_App and @ref braid_Vector) for the user to define.
  *  And, there are a variety of function interfaces (defined through function pointer
  *  declarations) that the user must implement.
@@ -222,7 +222,7 @@ typedef braid_Int
  **/
 typedef braid_Int
 (*braid_PtFcnBufSize)(braid_App   app,               /**< user-defined _braid_App structure */
-                      braid_Int  *size_ptr,           /**< upper bound on vector size in bytes */
+                      braid_Int  *size_ptr,          /**< upper bound on vector size in bytes */
                       braid_BufferStatus  status     /**< can be querried for info on the message type */
                       );      
 
@@ -317,7 +317,7 @@ typedef braid_Int
  * Shell clone (optional)
  **/
 typedef braid_Int
-(*braid_PtFcnSClone)(braid_App      app,          /**< user-defined _braid_App structure */
+(*braid_PtFcnSClone)(braid_App      app,         /**< user-defined _braid_App structure */
                     braid_Vector   u,            /**< vector to clone */ 
                     braid_Vector  *v_ptr         /**< output, newly allocated and cloned vector shell */
                     );
@@ -340,7 +340,119 @@ typedef braid_Int
                        braid_Int        *iupper     /**< upper time index value for this processor */
                        );
 
+
 /** @}*/
+
+/*--------------------------------------------------------------------------
+ * User Interface Routines for XBraid_Adjoint
+ *--------------------------------------------------------------------------*/
+
+/** \defgroup adjointuserwritten User-written routines for XBraid_Adjoint
+ *  \ingroup userwritten
+ *  
+ *  These are all the user-written routines needed to use XBraid_Adjoint. 
+ *  There are no new user-written data structures here.  But, the @ref braid_App
+ *  structure will typically be used to store some things like optimization parameters and gradients.  
+ *
+ *  @{
+ */
+
+/**
+ * This routine evaluates the time-dependent part of the objective function, 
+ * at a current time *t*, i.e. the integrand. Query the @ref braid_ObjectiveStatus 
+ * structure for information about the current time and status of XBraid_Adjoint. 
+ **/
+typedef braid_Int
+(*braid_PtFcnObjectiveT)(braid_App             app,              /**< user-defined _braid_App structure */
+                         braid_Vector          u,                /**< input: state vector at current time */
+                         braid_ObjectiveStatus ostatus,          /**< status structure for querying time, index, etc. */
+                         braid_Real           *objectiveT_ptr    /**< output: objective function at current time */
+                        );
+
+
+/**
+ * This is the differentiated version of the @ref braid_PtFcnObjectiveT routine. 
+ * It provides the derivatives of ObjectiveT() multiplied by the scalar input *F_bar*.
+ *
+ * First output: the derivative with respect to the state vector must be returned 
+ * to XBraid_Adjoint in *u_bar*.
+ * 
+ * Second output: The derivative with respect to the design must update the gradient, 
+ * which is stored in the @ref braid_App. 
+ **/
+typedef braid_Int
+(*braid_PtFcnObjectiveTDiff)(braid_App             app,       /**< input / output: user-defined _braid_App structure, used to store gradient */
+                             braid_Vector          u,         /**< input: state vector at current time */
+                             braid_Vector          u_bar,     /**< output: adjoint vector, holding the derivative wrt u */
+                             braid_Real            F_bar,     /**< scalar input, multiply the derivative with this  */
+                             braid_ObjectiveStatus ostatus    /**< query this for about t, tindex, etc */
+                            );
+
+/** 
+ * (Optional) This function can be used to postprocess the time-integral
+ * objective function.  For example, when inverse design problems are
+ * considered, you can use a tracking-type objective function by substracting a
+ * target value from *postprocess_ptr*, and squaring the result.  Relaxation or
+ * penalty terms can also be added to *postprocess_ptr*.  For a description of
+ * the postprocessing routine, see the Section @ref xbraid_adjoint_objective .
+ **/
+typedef braid_Int
+(*braid_PtFcnPostprocessObjective)(braid_App    app,             /**< user-defined _braid_App structure */
+                                   braid_Real   sum_obj,         /**< input: sum over time of the local time-dependent ObjectiveT values */
+                                   braid_Real  *postprocess_ptr  /**< output: Postprocessed objective, e.g. tracking type function */
+                                   );
+
+/**
+ * (Optional) Differentiated version of the Postprocessing routine. 
+ *
+ * First output: Return the partial derivative of the @ref braid_PtFcnPostprocessObjective 
+ * routine with respect to the time-integral objective function, and placing the result in the 
+ * scalar value *F_bar_ptr*
+ *
+ * Second output: Update the gradient with the partial derivative with respect to 
+ * the design. Gradients are usually stored in @ref braid_App .
+ *
+ * For a description of the postprocessing routine, see the 
+ * Section @ref xbraid_adjoint_objective .
+ **/
+typedef braid_Int
+(*braid_PtFcnPostprocessObjective_diff)(braid_App    app,        /**< user-defined _braid_App structure */
+                                        braid_Real   sum_obj,    /**< input: sum over time of the local time-dependent ObjectiveT values */
+                                        braid_Real  *F_bar_ptr   /**< output: partial derivative of the postprocessed objective with respect to sum_obj */
+                                       );
+
+
+/**
+ * This is the differentiated version of the time-stepping routine. 
+ * It provides the transposed derivatives of *Step()* multiplied by the adjoint 
+ * input vector *u_bar* (or *ustop_bar*). 
+ * 
+ * First output: the derivative with respect to the state *u* updates the adjoint 
+ * vector *u_bar* (or *ustop_bar*).
+ * 
+ * Second output: The derivative with respect to the design must update the gradient, 
+ * which is stored in @ref braid_App . 
+ **/
+typedef braid_Int
+(*braid_PtFcnStepDiff)(braid_App        app,       /**< input / output: user-defined _braid_App structure, used to store gradient */
+                       braid_Vector     ustop,     /**< input, u vector at *tstop* */
+                       braid_Vector     u,         /**< input, u vector at *tstart* */
+                       braid_Vector     ustop_bar, /**< input / output, adjoint vector for ustop */
+                       braid_Vector     u_bar,     /**< input / output, adjoint vector for u */
+                       braid_StepStatus status     /**< query this struct for info about u (e.g., tstart and tstop) */ 
+                      );
+
+
+
+/**
+ * Set the gradient to zero, which is usually stored in @ref braid_App .
+ */
+typedef braid_Int
+(*braid_PtFcnResetGradient)(braid_App app          /**< output: user-defined _braid_App structure, used to store gradient */
+                           );
+
+/** @}*/
+
 
 /*--------------------------------------------------------------------------
  * User Interface Routines
@@ -351,7 +463,7 @@ typedef braid_Int
  *  @{
  */
 /** @}*/
-
+  
 /** \defgroup generalinterface General Interface routines
  *  \ingroup userinterface
  *
@@ -397,7 +509,7 @@ braid_Init(MPI_Comm               comm_world,  /**< Global communicator for spac
            );
 
 /**
- * Carry out a simulation with XBraid.  Integrate in time.
+ * Carry out a simulation with XBraid. Integrate in time.
  **/
 braid_Int
 braid_Drive(braid_Core  core                /**< braid_Core (_braid_Core) struct*/
@@ -544,10 +656,13 @@ braid_SetNFMGVcyc(braid_Core  core,         /**< braid_Core (_braid_Core) struct
 
 /**
  * Sets the storage properties of the code.
+ *  -1     : Default, store only C-points
+ *   0     : Full storage of C- and F-Points on all levels
+ *   x > 0 : Full storage on all levels >= x 
  **/
 braid_Int
 braid_SetStorage(braid_Core  core,          /**< braid_Core (_braid_Core) struct*/
-                 braid_Int   storage        /**< store C-points (0), all points (1) */
+                 braid_Int   storage        /**< storage property */
                 );
 
 /** 
@@ -621,9 +736,9 @@ braid_SetSpatialRefine(braid_Core         core,   /**< braid_Core (_braid_Core) 
  * printed to the XBraid print file (@ref braid_SetPrintFile).
  * 
  * - Level 0: no output
- * - Level 1: print typical information like a residual history, 
- *    number of levels in the XBraid hierarchy, and so on.
- * - Level 2: level 1 output, plus debug level output.
+ * - Level 1: print runtime information like the residual history 
+ * - Level 2: level 1 output, plus post-Braid run statistics (default)
+ * - Level 3: level 2 output, plus debug level output.
  * 
  * Default is level 1.
  **/
@@ -634,7 +749,7 @@ braid_SetPrintLevel(braid_Core  core,          /**< braid_Core (_braid_Core) str
 
 /**
  * Set output level for XBraid.  This controls how much information is
- * saved to files (only braid.out.cycle for now).
+ * saved to files .
  *
  * - Level 0: no output
  * - Level 1: save the cycle in braid.out.cycle
@@ -795,7 +910,135 @@ braid_Int
 braid_SetSeqSoln(braid_Core  core,          /**< braid_Core (_braid_Core) struct*/
                  braid_Int   seq_soln       /**< 1: Init with sequential time stepping soln, 0: Use user's Init()*/
                  );
+
+
+/**
+ * Get the processor's rank.
+ */                       
+braid_Int
+braid_GetMyID(braid_Core core,           /**< braid_Core (_braid_Core) struct */
+              braid_Int *myid_ptr        /**< output: rank of the processor. */
+             );
+
+
 /** @}*/
+
+/** \defgroup adjointinterface Interface routines for XBraid_Adjoint
+ *  \ingroup userinterface
+ *
+ *  These are interface routines for computing adjoint sensitivities, i.e., adjoint-based gradients.
+ *  These routines initialize the XBraid_Adjoint solver, and allow the user to set XBraid_Adjoint solver parameters. 
+ *
+ *  @{
+ */
+
+
+/**
+ * Initialize the XBraid_Adjoint solver for computing adjoint sensitivities.  Once this 
+ * function is called, @ref braid_Drive will then compute gradient information alongside 
+ * the primal XBraid computations. 
+ **/
+braid_Int
+braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,         /**< user-routine: evaluates the time-dependent objective function value at time *t* */
+                  braid_PtFcnObjectiveTDiff    objectiveT_diff,    /**< user-routine: differentiated version of the objectiveT function  */
+                  braid_PtFcnStepDiff          step_diff,          /**< user-routine: differentiated version of the step function */
+                  braid_PtFcnResetGradient     reset_gradient,     /**< user-routine: set the gradient to zero (storage location of gradient up to user) */
+                  braid_Core                  *core_ptr            /**< pointer to braid_Core (_braid_Core) struct */   
+                  );
+
+
+/**
+ * Set a start time for integrating the objective function over time.
+ * Default is *tstart* of the primal XBraid run.
+ */
+braid_Int
+braid_SetTStartObjective(braid_Core core,                   /**< braid_Core (_braid_Core) struct*/
+                         braid_Real tstart_obj              /**< time value for starting the time-integration of the objective function */
+                         );
+
+/**
+ * Set the end-time for integrating the objective function over time.  
+ * Default is *tstop* of the primal XBraid run
+ */
+braid_Int
+braid_SetTStopObjective(braid_Core core,               /**< braid_Core (_braid_Core) struct*/ 
+                        braid_Real tstop_obj           /**< time value for stopping the time-integration of the objective function */        
+                        );
+                         
+/**
+ * Pass the postprocessing objective function *F* to XBraid_Adjoint. For a description of *F*, see
+ * the Section @ref xbraid_adjoint_objective .
+ **/
+braid_Int
+braid_SetPostprocessObjective(braid_Core                      core,     /**< braid_Core (_braid_Core) struct*/
+                              braid_PtFcnPostprocessObjective post_fcn  /**< function pointer to postprocessing routine */
+                              ); 
+
+/**
+ * Pass the differentiated version of the postprocessing objective function *F* to XBraid_Adjoint. 
+ * For a description of *F*, see the Section @ref xbraid_adjoint_objective .
+ **/
+braid_Int
+braid_SetPostprocessObjective_diff(braid_Core                           core,          /**< braid_Core (_braid_Core) struct*/
+                                   braid_PtFcnPostprocessObjective_diff post_fcn_diff  /**< function pointer to differentiated postprocessing routine */
+                                   ); 
+
+/**
+ * Set an absolute halting tolerance for the adjoint residuals. 
+ * XBraid_Adjoint stops iterating when the adjoint residual is below this value.
+ */
+braid_Int
+braid_SetAbsTolAdjoint(braid_Core core,       /**< braid_Core (_braid_Core) struct */
+                       braid_Real tol_adj     /**< absolute stopping tolerance for adjoint solve */
+                      );
+
+/** 
+ * Set a relative stopping tolerance for adjoint residuals. XBraid_Adjoint
+ * will stop iterating when the relative residual drops below this value.  Be
+ * careful when using a relative stopping criterion. The initial residual may
+ * already be close to zero, and this will skew the relative tolerance.
+ * Absolute tolerances are recommended.
+ **/
+braid_Int
+braid_SetRelTolAdjoint(braid_Core  core,           /**< braid_Core (_braid_Core) struct*/
+                       braid_Real  rtol_adj        /**< relative stopping tolerance for adjoint solve*/
+                      );
+
+/** 
+ * Set this option with *boolean = 1*, and then *braid_Drive(core)* will skip the gradient 
+ * computation and only compute the forward ODE solution and objective function value.  
+ * Reset this option with *boolean = 0* to turn the adjoint solve and gradient computations 
+ * back on.
+ */
+braid_Int
+braid_SetObjectiveOnly(braid_Core core,         /**< braid_Core (_braid_Core) struct */
+                       braid_Int  boolean       /**< set to '1' for computing objective function only, '0' for computing objective function AND gradients */
+                       );                   
+
+/**
+ * After @ref braid_Drive has finished, this returns the objective function value.
+ */
+braid_Int
+braid_GetObjective(braid_Core  core,           /**< braid_Core struct */
+                   braid_Real *objective_ptr   /**< output: value of the objective function */
+                  ); 
+
+/**
+ * After @ref braid_Drive has finished, this returns the residual norm after the last XBraid iteration.
+ */
+braid_Int
+braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
+                      braid_Real  *rnorm_adj   /**< output: adjoint residual norm of last iteration */
+                     );
+/**
+ * Define a machine independent random number generator
+ */
+braid_Int
+braid_Rand(void                                /**< Take no arguments, to mimic C-standard rand() */
+      );
+
+/** @}*/
+
 
 #ifdef __cplusplus
 }

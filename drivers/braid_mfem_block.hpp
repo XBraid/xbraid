@@ -3,7 +3,7 @@
 // Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin
 // Dobrev, et al. LLNL-CODE-660355. All rights reserved.
 //
-// This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+// This file is part of XBraid. For support, post issues to the XBraid Github page.
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License (as published by the Free Software
@@ -556,6 +556,7 @@ void MFEMBraidApp::InitMultilevelApp(ParMesh *pmesh, int pref, bool scoarsen)
         pmesh->SetState(Mesh::NORMAL);
 #else
         pmesh->UniformRefinement();
+        pfes->SetUpdateOperatorType(Operator::MFEM_SPARSEMAT);
         pfes->Update();
         P[l-1] = dynamic_cast<const SparseMatrix*>(pfes->GetUpdateOperator());
         MFEM_VERIFY(P[l-1] != NULL, "update operator is not a SparseMatrix");
@@ -1059,7 +1060,7 @@ BraidOptions::BraidOptions(int argc, char *argv[])
     nfmg_Vcyc       = 0;
     spatial_coarsen = false;
     access_level    = 1;
-    print_level     = 1;
+    print_level     = 2;
     storage         = -1;
     res             = 0;
 

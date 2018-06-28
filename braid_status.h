@@ -4,7 +4,7 @@
  * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
  * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
  * 
- * This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+ * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License (as published by the Free Software
@@ -103,6 +103,14 @@ typedef struct _braid_CoarsenRefStatus_struct *braid_CoarsenRefStatus;
  * through _braid_BufferStatusGet**()_ functions. This is just a pointer to the braid_Status.
  */
 typedef struct _braid_BufferStatus_struct *braid_BufferStatus;
+
+/**
+ * The user's objectiveT and PostprocessObjective will receive an ObjectiveStatus structure, which
+ * defines the status of XBraid at a given instance of evaluating the objective function.  The user accesses it
+ * through _braid_ObjectiveStatusGet**()_ functions. This is just a pointer to the braid_Status.
+ */
+typedef struct _braid_ObjectiveStatus_struct *braid_ObjectiveStatus;
+
 
 /** @}*/
 
@@ -479,6 +487,20 @@ ACCESSOR_HEADER_SET1(Step, RSpace,        Real)
 
 ACCESSOR_HEADER_GET1(Buffer, MessageType, Int)
 ACCESSOR_HEADER_SET1(Buffer, Size,        Real)
+
+/*--------------------------------------------------------------------------
+ * ObjectiveStatus Prototypes: They just wrap the corresponding Status accessors
+ *--------------------------------------------------------------------------*/
+
+ACCESSOR_HEADER_GET1(Objective, T,             Real)
+ACCESSOR_HEADER_GET1(Objective, TIndex,        Int)
+ACCESSOR_HEADER_GET1(Objective, Iter,          Int)
+ACCESSOR_HEADER_GET1(Objective, Level,         Int)
+ACCESSOR_HEADER_GET1(Objective, NLevels,       Int)
+ACCESSOR_HEADER_GET1(Objective, NRefine,       Int)
+ACCESSOR_HEADER_GET1(Objective, NTPoints,      Int)
+ACCESSOR_HEADER_GET1(Objective, Tol,           Real)
+
 
 /** @}*/
 

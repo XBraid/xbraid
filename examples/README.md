@@ -5,7 +5,7 @@
   - Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
   - Dobrev, et al. LLNL-CODE-660355. All rights reserved.
   - 
-  - This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+  - This file is part of XBraid. For support, post issues to the XBraid Github page.
   - 
   - This program is free software; you can redistribute it and/or modify it under
   - the terms of the GNU General Public License (as published by the Free Software
@@ -34,7 +34,7 @@ To run the examples, type
 
 1. ex-01 is the simplest example.  It implements a scalar ODE and can be
   compiled and run with no outside dependencies.  See Section (@ref exampleone)
-  for more discussion of this example.  There are five versions of this example,
+  for more discussion of this example.  There are seven versions of this example,
   
     + *ex-01.c*:  simplest possible implementation, start reading this example first
     
@@ -46,6 +46,10 @@ To run the examples, type
     + *ex-01-expanded-f.f90*:  same as ex-01-expanded.c, but implemented in f90
 
     + *ex-01-refinement.c*: same as ex-01.c, but adds the refinement feature
+
+    + *ex-01-adjoint.c*: adds adjoint-based gradient computation to ex-01.c
+
+    + *ex-01-optimization.c*: gradient-based optimization cycle for ex-01-c
 
 2. ex-02 implements the 1D heat equation on a regular grid, using a very simple
    implementation.  This is the next example to read after the various ex-01
@@ -67,5 +71,7 @@ To run the examples, type
    is a more sophisticated version of this simple example that supports
    explicit time stepping and spatial coarsening.
 
+4. ex-04 solves a simple optimal control problem with time-dependent design variable
+   using a simple steepest-descent optimization iteration.  
    
 

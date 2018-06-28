@@ -5,7 +5,7 @@
 # Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
 # Dobrev, et al. LLNL-CODE-660355. All rights reserved.
 # 
-# This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+# This file is part of XBraid. For support, post issues to the XBraid Github page.
 # 
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License (as published by the Free Software
@@ -34,9 +34,9 @@ include makefile.inc
 # Targets
 ##################################################################
 
-BRAID_HEADERS = _braid.h braid.h _util.h braid_test.h braid_status.h braid_defs.h
+BRAID_HEADERS = _braid.h braid.h _util.h braid_test.h braid_status.h braid_defs.h _braid_base.h _braid_tape.h
 
-BRAID_FILES = _util.c braid.c _braid.c braid_test.c _braid_status.c braid_F90_iface.c
+BRAID_FILES = _util.c braid.c _braid.c braid_test.c _braid_status.c braid_F90_iface.c _braid_base.c  _braid_tape.c
 
 ifeq ($(sequential),yes)
 	BRAID_HEADERS += mpistubs.h

@@ -3,7 +3,7 @@
 // Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
 // Dobrev, et al. LLNL-CODE-660355. All rights reserved.
 // 
-// This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+// This file is part of XBraid. For support, post issues to the XBraid Github page.
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License (as published by the Free Software
@@ -954,7 +954,7 @@ int main(int argc, char *argv[])
             app.SetExactSolution(&exact_sol);
 
          core.SetAccessLevel(access_level);
-         core.SetPrintLevel(1);
+         core.SetPrintLevel(2);
          core.SetMaxLevels(max_levels);
          core.SetMinCoarse(min_coarse);
          core.SetNRelax(-1, nrelax);

@@ -3,7 +3,7 @@
 // Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin
 // Dobrev, et al. LLNL-CODE-660355. All rights reserved.
 //
-// This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+// This file is part of XBraid. For support, post issues to the XBraid Github page.
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License (as published by the Free Software
@@ -486,8 +486,8 @@ DiffusionODE::DiffusionODE(ParBilinearForm *_a,
       HypreParMatrix  *_M,
       ParLinearForm   *_b_form,
       DiffusionOptions *_opts) :
-   a(_a), M(_M), b_form(_b_form), b_coeff(_opts->prob->source), b_vcoeff(_opts->prob->nbc),
-   d_coeff(_opts->prob->dc), opts(_opts)
+   opts(_opts), a(_a), b_form(_b_form), b_coeff(_opts->prob->source), b_vcoeff(_opts->prob->nbc),
+   d_coeff(_opts->prob->dc), M(_M)
 {        
    d_coeff->SetTime(GetTime());
    a->Assemble();

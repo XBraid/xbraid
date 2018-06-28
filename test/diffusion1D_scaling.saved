@@ -85,13 +85,13 @@
 # Begin Test 14
   
   time steps = 512
-  iterations           = 9
+  iterations           = 8
   number of levels     = 2
 
 # Begin Test 15
   
   time steps = 2048
-  iterations           = 9
+  iterations           = 8
   number of levels     = 2
 
 # Begin Test 16 -- Begin multilvel-level V-cycle F-relaxation tests
@@ -115,19 +115,19 @@
 # Begin Test 19
 
   time steps = 2048
-  iterations           = 22
+  iterations           = 23
   number of levels     = 10
 
 # Begin Test 20 -- Begin multilvel-level F-cycle F-relaxation tests
   
   time steps = 32
-  iterations           = 9
+  iterations           = 8
   number of levels     = 4
 
 # Begin Test 21
   
   time steps = 128
-  iterations           = 9
+  iterations           = 8
   number of levels     = 6
 
 # Begin Test 22

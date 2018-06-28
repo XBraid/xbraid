@@ -56,9 +56,9 @@
 
 # Begin Test 7
 
-  my_Access() called, iter= 10, level= 0
+  my_Access() called, iter= 11, level= 0
   time steps = 256
-  iterations           = 10
+  iterations           = 11
   number of levels     = 7
  Fine level spatial problem size  : 17 x 17
 
@@ -636,7 +636,7 @@ Starting braid_TestSpatialNorm
    braid_TestSpatialNorm:   spatialnorm(u)
    braid_TestSpatialNorm:   spatialnorm(w)
    braid_TestSpatialNorm:   Test 2 Passed
-   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 2.03e+01 / 1.01e+01 = 2.00e+00 
+   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 1.93e+01 / 9.67e+00 = 2.00e+00 
    braid_TestSpatialNorm:   expected output:  spatialnorm(w) / spatialnorm(u) = 2.0 
    braid_TestSpatialNorm:   Starting Test 3
    braid_TestSpatialNorm:   free(w)
@@ -645,7 +645,7 @@ Starting braid_TestSpatialNorm
    braid_TestSpatialNorm:   spatialnorm(u)
    braid_TestSpatialNorm:   spatialnorm(w)
    braid_TestSpatialNorm:   Test 3 Passed
-   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 5.07e+00 / 1.01e+01 = 5.00e-01 
+   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 4.83e+00 / 9.67e+00 = 5.00e-01 
    braid_TestSpatialNorm:   expected output:  spatialnorm(w) / spatialnorm(u) = 0.5 
    braid_TestSpatialNorm:   free(u)
    braid_TestSpatialNorm:   free(v)
@@ -694,9 +694,9 @@ Finished braid_TestBuf: all tests passed successfully
 
 # Begin Test 21
 
-  my_Access() called, iter= 8, level= 0
+  my_Access() called, iter= 7, level= 0
   time steps = 128
-  iterations           = 8
+  iterations           = 7
   number of levels     = 2
  Fine level spatial problem size  : 17 x 17
 

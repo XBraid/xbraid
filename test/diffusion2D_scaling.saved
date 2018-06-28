@@ -112,9 +112,9 @@
 
 # Begin Test 14
   
-  my_Access() called, iter= 23, level= 0
+  my_Access() called, iter= 22, level= 0
   time steps = 512
-  iterations           = 23
+  iterations           = 22
   number of levels     = 8
  Fine level spatial problem size  : 65 x 65
 

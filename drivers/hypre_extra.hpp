@@ -3,7 +3,7 @@
 // Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin
 // Dobrev, et al. LLNL-CODE-660355. All rights reserved.
 //
-// This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+// This file is part of XBraid. For support, post issues to the XBraid Github page.
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License (as published by the Free Software
@@ -23,6 +23,7 @@
 #define braid_hypre_extra_HEADER
 
 #include "_hypre_parcsr_mv.h"
+#include "_braid.h"
 
 // Additional "HYPRE" functions
 namespace hypre
@@ -56,7 +57,7 @@ namespace hypre
          return -1;
       }
 
-      marker = hypre_CTAlloc(HYPRE_Int, ncols_A);
+      marker = _braid_CTAlloc(HYPRE_Int, ncols_A);
       for (ia = 0; ia < ncols_A; ia++)
          marker[ia] = -1;
 
@@ -77,7 +78,7 @@ namespace hypre
          }
       }
 
-      hypre_TFree(marker);
+      _braid_TFree(marker);
       return 0;
    }
 
@@ -123,7 +124,7 @@ namespace hypre
       /* Add diagonals, off-diagonals, copy cmap. */
       C_diag = hypre_CSRMatrixAdd(A_diag, B_diag);
       C_offd = hypre_CSRMatrixAdd(A_offd, B_offd);
-      C_cmap = hypre_TAlloc(HYPRE_Int, A_cmap_size);
+      C_cmap = _braid_TAlloc(HYPRE_Int, A_cmap_size);
       for (im = 0; im < A_cmap_size; im++)
          C_cmap[im] = A_cmap[im];
 

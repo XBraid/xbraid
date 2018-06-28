@@ -4,7 +4,7 @@
  * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
  * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
  * 
- * This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+ * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License (as published by the Free Software
@@ -323,7 +323,7 @@ my_Step(braid_App        app,
    int iters_taken = -1;
    
    /* This debug output is mostly for regression testing */
-   if(print_level == 2)
+   if(print_level == 3)
    {
       braid_GetSpatialAccuracy( status, 1e-2, 1e-9, &temp_double);
       printf("  braid_GetSpatialAccuracy:  %1.2e\n", temp_double);
@@ -562,7 +562,6 @@ my_Init(braid_App     app,
    }
    else if (app->use_rand){
       /* Sets u_ptr as uniformly random, for reproducibility use a seed */
-      srand(0);
       t = -1.0;
    }
    else{
@@ -1954,7 +1953,7 @@ int main (int argc, char *argv[])
    max_iter_x[1]       = 50;
    tol_x[0]            = 1.0e-09;
    tol_x[1]            = 1.0e-09;
-   print_level         = 1;
+   print_level         = 2;
    access_level        = 1;
    run_wrapper_tests   = 0;
 
@@ -2187,7 +2186,7 @@ int main (int argc, char *argv[])
       printf(" -------------------------\n");
       printf("  -print_level <l>                : sets the print_level (default: 1) \n");
       printf("                                    0 - no output to standard out \n");
-      printf("                                    1 - Basic convergence information and hierarchy statistics\n");
+      printf("                                    2 - Basic convergence information and hierarchy statistics\n");
       printf("                                    2 - Debug level output \n");
       printf("  -access_level <l>               : sets the access_level (default: 1) \n");
       printf("                                    0 - never call access \n");
@@ -2547,7 +2546,7 @@ int main (int argc, char *argv[])
       braid_Drive(core);
       
       /* Debug level printing for regression testing */
-      if(print_level == 2)
+      if(print_level == 3)
       {
          int nrequest, num_iter, num_iter2;
          braid_GetNumIter(core, &num_iter);

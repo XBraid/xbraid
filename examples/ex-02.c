@@ -4,7 +4,7 @@
  * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
  * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
  * 
- * This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+ * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License (as published by the Free Software
@@ -155,10 +155,9 @@ my_Init(braid_App     app,
    else
    {
       /* Use random values for u(t>0), this measures asymptotic convergence rate */
-      srand(0);
       for(i=0; i < nspace; i++)
       {
-         (u->values)[i] = ((double)rand())/RAND_MAX;
+         (u->values)[i] = ((double)braid_Rand())/braid_RAND_MAX;
       }
    }
 
@@ -456,7 +455,7 @@ int main (int argc, char *argv[])
    int       scoarsen      = 0;
    int       res           = 0;
    int       wrapper_tests = 0;
-   int       print_level   = 1;
+   int       print_level   = 2;
    int       access_level  = 1;
    int       use_sequential= 0;
 
@@ -493,8 +492,8 @@ int main (int argc, char *argv[])
             printf("   -res                 : use my residual\n\n");
             printf("   -print_level <l>     : sets the print_level (default: 1) \n");
             printf("                          0 - no output to standard out \n");
-            printf("                          1 - Basic convergence information and hierarchy statistics\n");
-            printf("                          2 - Debug level output \n");
+            printf("                          2 - Basic convergence information and hierarchy statistics\n");
+            printf("                          3 - Debug level output \n");
             printf("   -access_level <l>    : sets the access_level (default: 1) \n");
             printf("                          0 - never call access \n");
             printf("                          1 - call access only after completion \n");

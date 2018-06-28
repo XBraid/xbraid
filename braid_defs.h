@@ -4,7 +4,7 @@
  * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
  * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
  * 
- * This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+ * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License (as published by the Free Software
@@ -105,7 +105,7 @@ void _braid_ErrorHandler(const char *filename, braid_Int line, braid_Int ierr, c
 ( free((char *)ptr), ptr = NULL )
 
 /*--------------------------------------------------------------------------
- * Miscellaneous macros (RDF - Is this the right file location?)
+ * Miscellaneous macros and functions 
  *--------------------------------------------------------------------------*/
 
 #ifndef _braid_max
@@ -118,6 +118,12 @@ void _braid_ErrorHandler(const char *filename, braid_Int line, braid_Int ierr, c
 #define braid_isnan(a) (a != a)
 #endif
 
+/**
+ * Machine independent pseudo-random number generator is defined in Braid.c
+ */
+#ifndef braid_RAND_MAX
+#define braid_RAND_MAX 32768
+#endif
 
 #ifdef __cplusplus
 }

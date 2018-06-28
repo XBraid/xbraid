@@ -4,7 +4,7 @@
  * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
  * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
  * 
- * This file is part of XBraid. Email xbraid-support@llnl.gov for support.
+ * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License (as published by the Free Software
@@ -283,8 +283,7 @@ my_Init(braid_App     app,
       t = 0.0;
    }
    else if (app->use_rand){
-      /* Sets u_ptr as uniformly random, for reproducibility use a seed */
-      srand(0);
+      /* This t-value will tell set_initial_condition() below to make u_ptr uniformly random */
       t = -1.0;
    }
    else{
@@ -551,7 +550,7 @@ int main (int argc, char *argv[])
    fmg                 = 0;               /* Boolean, if 1, do FMG cycle.  If 0, use a V cycle */
    res                 = 0;               /* Boolean, if 1, use my residual */
    storage             = -1;              /* Full storage on levels >= 'storage' */
-   print_level         = 1;               /* Level of XBraid printing to the screen */
+   print_level         = 2;               /* Level of XBraid printing to the screen */
    access_level        = 1;               /* Frequency of calls to access routine: 1 is for only after simulation */
    run_wrapper_tests   = 0;               /* Run no simulation, only run wrapper tests */
    fullrnorm           = 0;               /* Do not compute full residual from user routine each iteration */
@@ -737,7 +736,7 @@ int main (int argc, char *argv[])
       printf(" -------------------------\n");
       printf("  -print_level <l>                : sets the print_level (default: 1) \n");
       printf("                                    0 - no output to standard out \n");
-      printf("                                    1 - Basic convergence information and hierarchy statistics\n");
+      printf("                                    2 - Basic convergence information and hierarchy statistics\n");
       printf("                                    2 - Debug level output \n");
       printf("  -access_level <l>               : sets the access_level (default: 1) \n");
       printf("                                    0 - never call access \n");
