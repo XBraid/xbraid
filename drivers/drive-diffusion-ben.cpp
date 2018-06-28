@@ -486,8 +486,8 @@ DiffusionODE::DiffusionODE(ParBilinearForm *_a,
       HypreParMatrix  *_M,
       ParLinearForm   *_b_form,
       DiffusionOptions *_opts) :
-   a(_a), M(_M), b_form(_b_form), b_coeff(_opts->prob->source), b_vcoeff(_opts->prob->nbc),
-   d_coeff(_opts->prob->dc), opts(_opts)
+   opts(_opts), a(_a), b_form(_b_form), b_coeff(_opts->prob->source), b_vcoeff(_opts->prob->nbc),
+   d_coeff(_opts->prob->dc), M(_M)
 {        
    d_coeff->SetTime(GetTime());
    a->Assemble();

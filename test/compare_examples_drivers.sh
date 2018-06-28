@@ -46,31 +46,27 @@ EOF
       ;;
 esac
 
-# Determine mpi command and mpi setup for this machine
-HOST=`hostname`
-case $HOST in
-   tux*) 
+# Determine csplit and mpirun command for this machine 
+OS=`uname`
+case $OS in
+   Linux*) 
       MACHINES_FILE="hostname"
       if [ ! -f $MACHINES_FILE ] ; then
          hostname > $MACHINES_FILE
       fi
       RunString="mpirun -machinefile $MACHINES_FILE $*"
+      csplitcommand="csplit"
       ;;
-      *) 
-         RunString="mpirun"
-         ;;
-esac
-
-# Determine csplit command for this machine
-OS=`uname`
-case $OS in
    Darwin*)
       csplitcommand="gcsplit"
+      RunString="mpirun --hostfile ~/.machinefile_mac"
       ;;
    *)
+      RunString="mpirun"
       csplitcommand="csplit"
       ;;
 esac
+
 
 # Setup
 example_dir="../examples"
@@ -85,10 +81,11 @@ mkdir -p $output_dir
 echo "Compiling regression test drivers"
 cd $example_dir
 make clean
-make 
+make ex-03
+make ex-03-serial
 cd $driver_dir
 make clean
-make 
+make drive-diffusion-2D
 cd $test_dir
 
 
@@ -109,8 +106,8 @@ TESTS=( "$RunString -np 1 $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 128 -n
         "$RunString -np 2 $example_dir/ex-03   -pgrid 1 1 2 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2 -skip 0" \
         "$RunString -np 3 $driver_dir/drive-diffusion-2D -pgrid 1 1 3 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2 -skip 0" \
         "$RunString -np 3 $example_dir/ex-03   -pgrid 1 1 3 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2 -skip 0" \
-        "$RunString -np 12 $driver_dir/drive-diffusion-2D -pgrid 2 2 3 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2 -skip 0" \
-        "$RunString -np 12 $example_dir/ex-03   -pgrid 2 2 3 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2 -skip 0" \
+        "$RunString -np 4 $example_dir/ex-03   -pgrid 1 1 4 -nt 128 -nx 17 17 -cfl 0.5 -mi 2 -storage -2 -skip 0" \
         "$RunString -np 8 $driver_dir/drive-diffusion-2D -pgrid 1 1 8 -nt 128 -nx 17 17 -cfl 1.5 -mi 2 -storage -2 -skip 0" \
         "$RunString -np 8 $example_dir/ex-03   -pgrid 1 1 8 -nt 128 -nx 17 17 -cfl 1.5 -mi 2 -storage -2 -skip 0" \
         "$RunString -np 8 $driver_dir/drive-diffusion-2D -pgrid 1 1 8 -nt 128 -nx 17 17 -ml 2 -mi 2 -storage -2 -skip 0" \
@@ -194,5 +191,5 @@ done
 
 # remove machinefile, if created
 if [ -n $MACHINES_FILE ] ; then
-   rm $MACHINES_FILE
+   rm $MACHINES_FILE 2> /dev/null
 fi

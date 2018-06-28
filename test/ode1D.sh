@@ -46,28 +46,23 @@ EOF
       ;;
 esac
 
-# Determine mpi command and mpi setup for this machine
-HOST=`hostname`
-case $HOST in
-   tux*) 
+# Determine csplit and mpirun command for this machine 
+OS=`uname`
+case $OS in
+   Linux*) 
       MACHINES_FILE="hostname"
       if [ ! -f $MACHINES_FILE ] ; then
          hostname > $MACHINES_FILE
       fi
       RunString="mpirun -machinefile $MACHINES_FILE $*"
+      csplitcommand="csplit"
       ;;
-      *) 
-         RunString="mpirun"
-         ;;
-esac
-
-# Determine csplit command for this machine
-OS=`uname`
-case $OS in
    Darwin*)
       csplitcommand="gcsplit"
+      RunString="mpirun --hostfile ~/.machinefile_mac"
       ;;
    *)
+      RunString="mpirun"
       csplitcommand="csplit"
       ;;
 esac

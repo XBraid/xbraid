@@ -454,6 +454,7 @@ void MFEMBraidApp::InitMultilevelApp(ParMesh *pmesh, int pref, bool scoarsen)
       pmesh->SetState(Mesh::NORMAL);
 #else
       pmesh->UniformRefinement();
+      pfes->SetUpdateOperatorType(Operator::MFEM_SPARSEMAT);
       pfes->Update();
       P[l-1] = dynamic_cast<const SparseMatrix*>(pfes->GetUpdateOperator());
       MFEM_VERIFY(P[l-1] != NULL, "update operator is not a SparseMatrix");

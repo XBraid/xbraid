@@ -46,28 +46,23 @@ EOF
       ;;
 esac
 
-# Determine mpi command and mpi setup for this machine
-HOST=`hostname`
-case $HOST in
-    tux*) 
-        MACHINES_FILE="hostname"
-        if [ ! -f $MACHINES_FILE ] ; then
-            hostname > $MACHINES_FILE
-        fi
-        RunString="mpirun -machinefile $MACHINES_FILE $*"
-        ;;
-    *) 
-        RunString="mpirun"
-        ;;
-esac
-
-# Determine csplit command for this machine
+# Determine csplit and mpirun command for this machine 
 OS=`uname`
 case $OS in
+   Linux*) 
+      MACHINES_FILE="hostname"
+      if [ ! -f $MACHINES_FILE ] ; then
+         hostname > $MACHINES_FILE
+      fi
+      RunString="mpirun -machinefile $MACHINES_FILE $*"
+      csplitcommand="csplit"
+      ;;
    Darwin*)
       csplitcommand="gcsplit"
+      RunString="mpirun --hostfile ~/.machinefile_mac"
       ;;
    *)
+      RunString="mpirun"
       csplitcommand="csplit"
       ;;
 esac
@@ -148,7 +143,7 @@ done
 
 # remove machinefile, if created, and output files
 if [ -n $MACHINES_FILE ] ; then
-   rm $MACHINES_FILE
+   rm $MACHINES_FILE 2> /dev/null
 fi
 rm braid.out.cycle 2> /dev/null
 rm ex-01*.out.* 2> /dev/null

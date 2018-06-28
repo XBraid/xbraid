@@ -46,31 +46,27 @@ EOF
       ;;
 esac
 
-# Determine mpi command and mpi setup for this machine
-HOST=`hostname`
-case $HOST in
-   tux*) 
+# Determine csplit and mpirun command for this machine 
+OS=`uname`
+case $OS in
+   Linux*) 
       MACHINES_FILE="hostname"
       if [ ! -f $MACHINES_FILE ] ; then
          hostname > $MACHINES_FILE
       fi
       RunString="mpirun -machinefile $MACHINES_FILE $*"
+      csplitcommand="csplit"
       ;;
-      *) 
-         RunString="mpirun"
-         ;;
-esac
-
-# Determine csplit command for this machine
-OS=`uname`
-case $OS in
    Darwin*)
       csplitcommand="gcsplit"
+      RunString="mpirun --hostfile ~/.machinefile_mac"
       ;;
    *)
+      RunString="mpirun"
       csplitcommand="csplit"
       ;;
 esac
+
 
 # Setup
 example_dir="../examples"
@@ -85,10 +81,10 @@ mkdir -p $output_dir
 echo "Compiling regression test drivers"
 cd $example_dir
 make clean
-make 
+make ex-03
 cd $driver_dir
 make clean
-make 
+make drive-diffusion-2D
 cd $test_dir
 
 # Run the following regression tests -- here we run a comparison of ex-03 and
@@ -170,5 +166,5 @@ done
 
 # remove machinefile, if created
 if [ -n $MACHINES_FILE ] ; then
-   rm $MACHINES_FILE
+   rm $MACHINES_FILE 2> /dev/null
 fi
