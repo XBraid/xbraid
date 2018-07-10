@@ -959,7 +959,7 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
    braid_Int   rtol_adj       = 1;
 
    /* Allocate memory for the optimization structure */
-   optim = (braid_Optim) malloc(10*sizeof(braid_Real) + 1*sizeof(braid_Int) + sizeof(braid_Vector) + sizeof(braid_VectorBar) );
+   optim = (struct _braid_Optimization_struct*) malloc(sizeof(struct _braid_Optimization_struct));
 
    /* Set optimization variables */
    optim->adjoints       = NULL;    /* will be allocated in InitAdjointVars() */
