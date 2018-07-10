@@ -1,3 +1,5 @@
+![](docs/img/logo_with_subtext_2_inch.png)
+
 ## Building XBraid
 <!--
   - Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
