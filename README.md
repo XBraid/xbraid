@@ -1,6 +1,3 @@
-![](docs/img/logo_with_subtext_2_inch.png)
-
-## Building XBraid
 <!--
   - Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
   - Produced at the Lawrence Livermore National Laboratory. Written by 
@@ -23,8 +20,39 @@
   - Temple Place, Suite 330, Boston, MA 02111-1307 USA
  -->
 
-- Copyright information and licensing restrictions can be found in the files 
-  COPYRIGHT and LICENSE.
+![](docs/img/logo_with_subtext_2_inch.png)
+
+## What is XBraid ?
+
+This package implements an optimal-scaling multigrid solver for the (non)linear
+systems that arise from the discretization of problems with evolutionary
+behavior. Typically, solution algorithms for evolution equations are based on a
+time- marching approach, solving sequentially for one time step after the
+other. Parallelism in these traditional time-integration techniques is limited
+to spatial parallelism. However, current trends in computer architectures are
+leading towards systems with more, but not faster, processors, i.e., clock
+speeds are stagnate. Therefore, faster overall runtimes must come from greater
+parallelism. One approach to achieve parallelism in time is with multigrid, but
+extending classical multigrid methods for elliptic operators to this setting is
+a significant achievement. In this software, we implement a non- intrusive,
+optimal-scaling time-parallel method based on multigrid reduction techniques.
+The examples in the package demonstrate optimality of our
+multigrid-reduction-in-time algorithm (MGRIT) for solving a variety of
+equations in two and three spatial dimensions. These examples can also be used
+to show that MGRIT can achieve significant speedup in comparison to sequential
+time marching on modern architectures.
+
+## Documentation
+
+- For examples of using XBraid, see the examples/ and drivers/ directories, and 
+  in particular examples/ex-01-*.c
+
+- See the [release](https://github.com/XBraid/xbraid/releases) page for links
+  to precompiled documentation PDFs that go through, step-by-step how to use
+  XBraid 
+
+
+## Building XBraid
 
 -  To specify the compilers, flags and options for your machine, edit
    makefile.inc.  For now, we keep it simple and avoid using configure or
@@ -58,3 +86,12 @@
        MPICC = mpicc
        MPICXX = mpiCC
        LFLAGS = -lm
+
+
+## License
+
+This project is released under the LGPL v2.1 license. See files COPYRIGHT and
+LICENSE file for full details.
+
+LLNL Release Number: LLNL-CODE-660355
+
