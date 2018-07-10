@@ -26,20 +26,20 @@
 # Import machine specific compilers, options, flags, etc.. 
 ##################################################################
 
-BRAID_DIR=..
-include $(BRAID_DIR)/makefile.inc
+BRAID_DIR=../braid
+include ../makefile.inc
 
 
 ##################################################################
 # Build exmaples 
 ##################################################################
 
-HYPRE_DIR = $(BRAID_DIR)/../hypre/src/hypre
+HYPRE_DIR = ../../hypre/src/hypre
 HYPRE_FLAGS = -I$(HYPRE_DIR)/include
 HYPRE_LIB = -L$(HYPRE_DIR)/lib -lHYPRE
 
-MFEM_INTERFACE = ./braid_mfem.hpp ./braid_mfem_block.hpp ../braid.hpp
-MFEM_DIR = $(BRAID_DIR)/../mfem
+MFEM_INTERFACE = ./braid_mfem.hpp ./braid_mfem_block.hpp ../braid/braid.hpp
+MFEM_DIR = ../../mfem
 MFEM_CONFIG_MK = $(MFEM_DIR)/config/config.mk
 MFEM_LIB_FILE = mfem_is_not_built
 -include $(MFEM_CONFIG_MK)
@@ -75,7 +75,7 @@ all: $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES)
 %: %.cpp $(BRAID_LIB_FILE) $(MFEM_LIB_FILE) $(MFEM_CONFIG_MK) $(MFEM_INTERFACE)
 	@echo "Building" $@ "..."
 	$(MPICXX) $(CXXFLAGS) $(BRAID_FLAGS) $(MFEM_FLAGS) \
-	$< -o $@ $(MFEM_LIBS) $(BRAID_LIB_FILE) $(LFLAGS)
+ $< -o $@ $(MFEM_LIBS) $(BRAID_LIB_FILE) $(LFLAGS)
 
 # Generate an error message if the MFEM library is not built and exit
 $(MFEM_LIB_FILE):

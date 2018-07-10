@@ -131,6 +131,9 @@ else ifeq ($(shell uname -s),Linux)
       CXXFLAGS = -O -Wall
       FORTFLAGS = -O1 -Wall
    endif
+##
+# Add your machine name here
+##
 else
    MPICC = mpicc
    MPICXX = mpiCC
@@ -164,12 +167,3 @@ ifeq ($(sequential),YES)
    endif
 endif
 
-# Rob's flags for running against a memory checker
-
-# MPICC    = insure -g
-# MPICXX   = insure -g
-# CFLAGS   = -I/home/falgout/codes/mpich2-1.4.1-install/include
-# CXXFLAGS = -I/home/falgout/codes/mpich2-1.4.1-install/include
-# LFLAGS   = -L/home/falgout/codes/mpich2-1.4.1-install/lib -Wl,-rpath,/home/falgout/codes/mpich2-1.4.1-install/lib -lmpich -lopa -lmpl -lrt -lpthread  -lstdc++ -lm
-
--include $(BRAID_DIR)/makefile.user
