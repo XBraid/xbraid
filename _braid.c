@@ -79,45 +79,52 @@ _braid_OptimDestroy( braid_Core core)
 {
    braid_App    app        = _braid_CoreElt(core, app);
    braid_Optim  optim      = _braid_CoreElt(core, optim);
-   _braid_Grid *fine_grid  = _braid_CoreElt(core, grids)[0];
-   braid_Int    storage    = _braid_CoreElt(core, storage);
-   braid_Int    clower     = _braid_GridElt(fine_grid, clower);
-   braid_Int    iupper     = _braid_GridElt(fine_grid, iupper);
-   braid_Int    ilower     = _braid_GridElt(fine_grid, ilower);
-   braid_Int    cfactor    = _braid_GridElt(fine_grid, cfactor);
-   braid_Int    ic, iclocal, sflag, increment, destroy_flag;
 
-   /* Get the number of adjoint vectors on finest level */
-   if (storage < 0 ) 
+
+   if (_braid_CoreElt(core, grids)[0] != NULL)
    {
-      /* Only C-point storage */
-      ilower    = clower;
-      increment = cfactor;
-   }
-   else
-   {
-      /* All points */
-      increment = 1;
+     _braid_Grid *fine_grid  = _braid_CoreElt(core, grids)[0];
+     braid_Int    storage    = _braid_CoreElt(core, storage);
+     braid_Int    clower     = _braid_GridElt(fine_grid, clower);
+     braid_Int    iupper     = _braid_GridElt(fine_grid, iupper);
+     braid_Int    ilower     = _braid_GridElt(fine_grid, ilower);
+     braid_Int    cfactor    = _braid_GridElt(fine_grid, cfactor);
+     braid_Int    ic, iclocal, sflag, increment, destroy_flag;
+
+     /* Get the number of adjoint vectors on finest level */
+     if (storage < 0 ) 
+     {
+        /* Only C-point storage */
+        ilower    = clower;
+        increment = cfactor;
+     }
+     else
+     {
+        /* All points */
+        increment = 1;
+     }
+
+     /* Free the adjoint variables and tapeinput */
+     for (ic=ilower; ic <= iupper; ic += increment)
+     {
+        destroy_flag = 1;
+
+        /* if only C-point storage, destroy only at C-points */
+        if (storage < 0 &&  !(_braid_IsCPoint(ic, cfactor)) )
+        {
+           destroy_flag = 0;
+        } 
+
+        if (destroy_flag)
+        {
+           _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
+           _braid_CoreFcn(core, free)( app, optim->adjoints[iclocal]);
+           _braid_VectorBarDelete(core, optim->tapeinput[iclocal] );
+        }
+     }
+
    }
 
-   /* Free the adjoint variables and tapeinput */
-   for (ic=ilower; ic <= iupper; ic += increment)
-   {
-      destroy_flag = 1;
-
-      /* if only C-point storage, destroy only at C-points */
-      if (storage < 0 &&  !(_braid_IsCPoint(ic, cfactor)) )
-      {
-         destroy_flag = 0;
-      } 
-
-      if (destroy_flag)
-      {
-         _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
-         _braid_CoreFcn(core, free)( app, optim->adjoints[iclocal]);
-         _braid_VectorBarDelete(core, optim->tapeinput[iclocal] );
-      }
-   }
    free(optim->adjoints);
    free(optim->tapeinput);
 
