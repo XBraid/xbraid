@@ -334,6 +334,12 @@ _braid_EvalObjective_diff(braid_Core core)
    braid_Real  sum_user_obj = optim->sum_user_obj;
    braid_Real  sum_user_obj_bar;
 
+   /* Don't evaluate derivative if objective_only mode. */
+   if (_braid_CoreElt(core, obj_only))
+   {
+     return 0;
+   }
+
    /* Differentiate the postprocessing objective, if set */
    if (_braid_CoreElt(core, postprocess_obj_diff != NULL))
    {
