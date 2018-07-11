@@ -23,12 +23,12 @@
 ![](docs/img/logo_with_subtext_2_inch.png)
 
 ### Table of Contents
-**<a href="#WhatIsBraid">What is XBraid?</a>**  
-**<a href="#AboutXBraid">About XBraid</a>**  
-**<a href="#Docs">Documentation</a>**  
-**<a href="#UserAdvice">Advice to Users</a>**  
-**<a href="#BuildingXBraid">Building XBraid</a>**  
-**<a href="#License">Software License</a>**  
+1. **<a href="#WhatIsBraid">What is XBraid?</a>**  
+1. **<a href="#AboutXBraid">About XBraid</a>**  
+1. **<a href="#Docs">Documentation</a>**  
+1. **<a href="#UserAdvice">Advice to Users</a>**  
+1. **<a href="#BuildingXBraid">Building XBraid</a>**  
+1. **<a href="#License">Software License</a>**  
 
 
 <a name="WhatIsBraid"></a> 
