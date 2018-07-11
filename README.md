@@ -38,9 +38,8 @@ XBraid is a parallel-in-time software package.  It implements an
 optimal-scaling multigrid solver for the (non)linear systems that arise from
 the discretization of problems with evolutionary behavior. 
 
-This code and associated algorithms are developed at Lawrence Livermore
-National Laboratory 
-(see [website](https://computation.llnl.gov/projects/parallel-time-integration-multigrid/),
+This code and associated algorithms are developed at [Lawrence Livermore
+National Laboratory](https://computation.llnl.gov/projects/parallel-time-integration-multigrid/),
 and at collaborating [academic institutions](https://github.com/XBraid/xbraid/wiki/Team). 
 
 For our publication list, please go [here](https://github.com/XBraid/xbraid/wiki/Project-Publications).
