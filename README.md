@@ -22,17 +22,17 @@
 
 ![](docs/img/logo_with_subtext_2_inch.png)
 
-Table of Contents
+### Table of Contents
 **<a href="#WhatIsBraid">What is XBraid?</a>**  
-**<a href="#AboutXBraid">About XBraid</a>**
-**<a href="#Docs">Documentation</a>**
-**<a href="#UserAdvice">Advice to Users</a>**
-**<a href="#BuildingXBraid">Building XBraid</a>**
-**<a href="#License">Software License</a>**
+**<a href="#AboutXBraid">About XBraid</a>**  
+**<a href="#Docs">Documentation</a>**  
+**<a href="#UserAdvice">Advice to Users</a>**  
+**<a href="#BuildingXBraid">Building XBraid</a>**  
+**<a href="#License">Software License</a>**  
 
 
 <a name="WhatIsBraid"></a> 
-## What is XBraid?
+### What is XBraid?
 
 XBraid is a parallel-in-time software package.  It implements an
 optimal-scaling multigrid solver for the (non)linear systems that arise from
@@ -84,7 +84,7 @@ MGRIT).  A few important points about XBraid are as follows.
 
 
 <a name="Docs"></a> 
-## Documentation
+### Documentation
 
 - For examples of using XBraid, see the
   [examples/](https://github.com/XBraid/xbraid/tree/master/examples) and
@@ -102,7 +102,7 @@ MGRIT).  A few important points about XBraid are as follows.
 
 
 <a name="UserAdvice"></a> 
-## Advice to Users
+### Advice to Users
 
 The field of parallel-in-time methods is in many ways under development, and
 success has been shown primarily for problems with some parabolic character.
@@ -121,7 +121,7 @@ implementation, compiler, and any error messages produced.
 
 
 <a name="BuildingXBraid"></a> 
-## Building XBraid
+### Building XBraid
 
 -  To specify the compilers, flags and options for your machine, edit
    makefile.inc.  For now, we keep it simple and avoid using configure or
@@ -158,7 +158,7 @@ implementation, compiler, and any error messages produced.
 
 
 <a name="License"></a> 
-## License
+### License
 
 This project is released under the LGPL v2.1 license. See files COPYRIGHT and
 LICENSE file for full details.
