@@ -22,35 +22,68 @@
 
 ![](docs/img/logo_with_subtext_2_inch.png)
 
-## What is XBraid ?
+## What is XBraid?
 
-This package implements an optimal-scaling multigrid solver for the (non)linear
-systems that arise from the discretization of problems with evolutionary
-behavior. Typically, solution algorithms for evolution equations are based on a
-time- marching approach, solving sequentially for one time step after the
-other. Parallelism in these traditional time-integration techniques is limited
-to spatial parallelism. However, current trends in computer architectures are
+XBraid is a parallel-in-time software package.  It implements an
+optimal-scaling multigrid solver for the (non)linear systems that arise from
+the discretization of problems with evolutionary behavior. 
+
+This code and associated algorithms are developed at Lawrence Livermore
+National Laboratory 
+(see [website](https://computation.llnl.gov/projects/parallel-time-integration-multigrid/),
+and at collaborating [academic institutions](https://github.com/XBraid/xbraid/wiki/Team). 
+
+For our publication list, please go [here](https://github.com/XBraid/xbraid/wiki/Project-Publications).
+
+### About XBraid
+
+Typically, solution algorithms for evolution equations are based on a
+time-marching approach, solving sequentially for one time step after the other.
+Parallelism in these traditional time-integration techniques is limited to
+spatial parallelism.  However, current trends in computer architectures are
 leading towards systems with more, but not faster, processors, i.e., clock
-speeds are stagnate. Therefore, faster overall runtimes must come from greater
-parallelism. One approach to achieve parallelism in time is with multigrid, but
-extending classical multigrid methods for elliptic operators to this setting is
-a significant achievement. In this software, we implement a non- intrusive,
-optimal-scaling time-parallel method based on multigrid reduction techniques.
-The examples in the package demonstrate optimality of our
-multigrid-reduction-in-time algorithm (MGRIT) for solving a variety of
-equations in two and three spatial dimensions. These examples can also be used
-to show that MGRIT can achieve significant speedup in comparison to sequential
-time marching on modern architectures.
+speeds are stagnate.  Therefore, faster overall runtimes must come from greater
+parallelism. Our approach to achieve such parallelism in time is with multigrid.
+
+In this software, we implement a non-intrusive, optimal-scaling time-parallel
+method based on multigrid reduction techniques (multigrid-reduction-in-time or
+MGRIT).  A few important points about XBraid are as follows.
+
+- The algorithm enables a scalable parallel-in-time approach by applying multigrid to the time dimension.
+
+- It is designed to be nonintrusive. That is, users apply their existing
+  sequential time-stepping code according to our interface, and then XBraid
+  does the rest. Users have spent years, sometimes decades, developing the
+  right time-stepping scheme for their problem. XBraid allows users to keep
+  their schemes, but enjoy parallelism in the time dimension.
+
+- XBraid solves exactly the same problem that the existing sequential
+  time-stepping scheme does.
+
+- XBraid is flexible, allowing for a variety of time stepping, relaxation, and
+  temporal and spatial coarsening options.
+
+- The full approximation scheme multigrid approach is used to accommodate
+  nonlinear problems.
+
+- XBraid written in MPI/C with C++ and Fortran 90 interfaces.
+
+- XBraid is released under LGPL 2.1.
+
 
 ## Documentation
 
-- For examples of using XBraid, see the examples/ and drivers/ directories, and 
-  in particular examples/ex-01-*.c
+- For examples of using XBraid, see the
+  [examples/](https://github.com/XBraid/xbraid/tree/master/examples) and
+  [drivers/](https://github.com/XBraid/xbraid/tree/master/drivers) directories,
+  and in particular examples/ex-01-*.c
 
 - See the [release](https://github.com/XBraid/xbraid/releases) page for links
   to precompiled documentation PDFs that go through, step-by-step how to use
   XBraid 
 
+- For tutorials, see the bottom of our publications 
+[page](https://github.com/XBraid/xbraid/wiki/Project-Publications).
 
 ## Building XBraid
 
