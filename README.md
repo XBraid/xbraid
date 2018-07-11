@@ -91,11 +91,11 @@ MGRIT).  A few important points about XBraid are as follows.
   and in particular examples/ex-01-*.c
 
 - See the [release](https://github.com/XBraid/xbraid/releases) page for links
-  to precompiled documentation PDFs that go through, step-by-step how to use
-  XBraid 
+  to precompiled documentation PDFs that go through, step-by-step, how to use
+  XBraid.
 
 - For tutorials, see the bottom of our publications 
-[page](https://github.com/XBraid/xbraid/wiki/Project-Publications).
+[page](https://github.com/XBraid/xbraid/wiki/Project-Publications#Tutorials).
 
 - For citing XBraid, see [here](https://github.com/XBraid/xbraid/wiki/Citing-XBraid).
 
