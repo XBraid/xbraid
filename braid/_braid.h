@@ -43,6 +43,23 @@
 extern "C" {
 #endif
 
+/** 
+ * Braid Vector Structures:
+ *
+ * There are three vector structures
+ *   _braid_VectorBar      Defined below
+ *   braid_Vector          Defiend in braid.h
+ *   braid_BaseVector      Defined below
+ *
+ * The braid_BaseVector is the main internal Vector class, which is 
+ * stored at each time point.  It basically wraps the Vector and 
+ * braid_VectorBar (see below).  The braid_VectorBar is only used if the
+ * adjoint capability is used, when it stores adjoint variables.  It's 
+ * basically a smart pointer wrapper around a braid_Vector. Note that it
+ * is always the braid_Vector that's passed to user-routines.   
+ *
+ */
+
 /**
  * Shared pointer implementation for storing the intermediat AD-bar variables while taping.
  * This is essentially the same as a userVector, except we need shared pointer 
@@ -231,7 +248,10 @@ typedef struct _braid_Core_struct
    /* Data for adjoint and optimization */
    braid_Optim            optim;             /**< structure that stores optimization variables (objective function, etc.) */ 
    braid_Int              adjoint;           /**< determines if adjoint run is performed (1) or not (0) */
-   braid_Int              record;            /**< determines if actions are recorded to the tape or not */
+   braid_Int              record;            /**< determines if actions are recorded to the tape or not.  This separate 
+                                                  flag from adjoint is needed, because the final FAccess call should 
+                                                  not be recorded unless nlevels==1, but the adjoint flag must be true 
+                                                  even if nlevels==1. */
    braid_Int              obj_only;          /**< determines if adjoint code computes ONLY objective, no gradients. */
    braid_Int              verbose_adj;       /**< verbosity of the adjoint tape, displays the actions that are pushed / popped to the tape*/
 

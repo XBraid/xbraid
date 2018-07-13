@@ -1,4 +1,29 @@
 ----------------------------
+Version 2.3.0, 7/11/2018
+----------------------------
+
+- New adjoint feature added by Stefanie Guenther, allowing for
+  the solution of PDE-constrained optimization problems.  This 
+  feature allows XBraid to compute sensitivities (i.e., gradients)
+  to be used in an outer optimization loop.  See the new examples 
+  examples/ex-01-adjoint.c
+  examples/ex-01-optimization.c
+  examples/ex-04.c
+
+- Cleaned up root source directory
+    - Moved source files into braid/braid directory
+    - Moved user_utils directory into `misc` folder
+
+- Added regression test for MacBooks (especially Jacob's MacBook)
+  test/machine-mac.sh
+
+- Updated documentation, and moved code hosting to GitHub
+
+- Fixed some small bugs in the examples and drivers
+
+- Removed limitations on the temporal refinement factor
+
+----------------------------
 Version 2.2.0, 10/02/2017
 ----------------------------
 

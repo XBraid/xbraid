@@ -26,19 +26,19 @@
 # Import machine specific compilers, options, flags, etc.. 
 ##################################################################
 
-BRAID_DIR=..
-include $(BRAID_DIR)/makefile.inc
+BRAID_DIR=../braid
+include ../makefile.inc
 
 
 ##################################################################
 # Build exmaples 
 ##################################################################
 
-HYPRE_DIR = $(BRAID_DIR)/../hypre/src/hypre
+HYPRE_DIR = ../../hypre/src/hypre
 HYPRE_FLAGS = -I$(HYPRE_DIR)/include
 HYPRE_LIB = -L$(HYPRE_DIR)/lib -lHYPRE
 
-MFEM_DIR = $(BRAID_DIR)/../mfem
+MFEM_DIR = ../../mfem
 MFEM_CONFIG_MK = $(MFEM_DIR)/config/config.mk
 MFEM_LIB_FILE = mfem_is_not_built
 -include $(MFEM_CONFIG_MK)

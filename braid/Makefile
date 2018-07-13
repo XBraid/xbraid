@@ -26,29 +26,41 @@
 # Import machine specific compilers, options, flags, etc.. 
 ##################################################################
 
-.PHONY: all braid clean
+include ../makefile.inc
 
-all: braid examples drivers
+##################################################################
+# Targets
+##################################################################
 
-braid: 
-	cd braid; $(MAKE)
+BRAID_HEADERS = _braid.h braid.h _util.h braid_test.h braid_status.h braid_defs.h _braid_base.h _braid_tape.h
 
-examples: ./braid/libbraid.a
-	cd examples; $(MAKE)
+BRAID_FILES = _util.c braid.c _braid.c braid_test.c _braid_status.c braid_F90_iface.c _braid_base.c  _braid_tape.c
 
-drivers: ./braid/libbraid.a
-	cd drivers; $(MAKE)
+ifeq ($(sequential),yes)
+	BRAID_HEADERS += mpistubs.h
+	BRAID_FILES += mpistubs.c
+	SEQFLAGS = -Dbraid_SEQUENTIAL
+else
+	SEQFLAGS = 
+endif
+
+BRAID_OBJ = $(BRAID_FILES:.c=.o)
+
+.PHONY: all clean
+.SUFFIXES:
+.SUFFIXES: .c .o
+
+# Rule for compiling .c files
+%.o: %.c $(BRAID_HEADERS)
+	$(MPICC) $(SEQFLAGS) $(CFLAGS) -c $< -o $@
+
+libbraid.a: $(BRAID_HEADERS) $(BRAID_OBJ)
+	@echo "Building" $@ "..."
+	ar cruv libbraid.a $(BRAID_OBJ)
+	ranlib libbraid.a
+
+all: libbraid.a 
 
 clean:
-	cd examples; $(MAKE) clean
-	cd drivers; $(MAKE) clean
-	cd braid; $(MAKE) clean
+	rm -f *.o libbraid.a
 
-info:
-	@echo "MPICC     = `which $(MPICC)`"
-	@echo "MPICXX    = `which $(MPICXX)`"
-	@echo "MPIF90    = `which $(MPIF90)`"
-	@echo "CFLAGS    = $(CFLAGS)"
-	@echo "CXXFLAGS  = $(CXXFLAGS)"
-	@echo "FORTFLAGS = $(FORTFLAGS)"
-	@echo "LFLAGS    = $(LFLAGS)"
