@@ -80,7 +80,8 @@ _braid_OptimDestroy( braid_Core core)
    braid_App    app        = _braid_CoreElt(core, app);
    braid_Optim  optim      = _braid_CoreElt(core, optim);
 
-
+   /* Only deallocate if braid_Drive() has been called, i.e., a grid structure 
+    * has been created */
    if (_braid_CoreElt(core, grids)[0] != NULL)
    {
      _braid_Grid *fine_grid  = _braid_CoreElt(core, grids)[0];
@@ -341,7 +342,8 @@ _braid_EvalObjective_diff(braid_Core core)
    braid_Real  sum_user_obj = optim->sum_user_obj;
    braid_Real  sum_user_obj_bar;
 
-   /* Don't evaluate derivative if objective_only mode. */
+   /* Don't evaluate derivative if objective_only mode.
+    * This function may not be defined by the user.*/
    if (_braid_CoreElt(core, obj_only))
    {
      return 0;
