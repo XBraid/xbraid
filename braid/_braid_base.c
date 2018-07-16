@@ -92,6 +92,7 @@ _braid_BaseInit(braid_Core        core,
    _braid_Action    *action;
    braid_BaseVector  u;
    braid_VectorBar   ubar;
+   braid_VectorBar   ubar_copy;
    braid_Int         myid        = _braid_CoreElt(core, myid);
    braid_Int         verbose_adj = _braid_CoreElt(core, verbose_adj);
    braid_Int         record      = _braid_CoreElt(core, record);
@@ -127,6 +128,10 @@ _braid_BaseInit(braid_Core        core,
       action->inTime    = t;
       action->myid      = myid;
       _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
+
+      /* Copy and push the bar vector to the bartape */
+      _braid_VectorBarCopy(u->bar, &ubar_copy);
+      _braid_CoreElt(core, barTape) = _braid_TapePush(_braid_CoreElt(core, barTape), ubar_copy);
    }
 
    /* Set the return pointer */
@@ -718,6 +723,28 @@ _braid_BaseStep_diff(_braid_Action *action)
 
    return _braid_error_flag;
 }
+
+braid_Int
+_braid_BaseInit_diff(_braid_Action *action)
+{
+   braid_VectorBar u_bar;
+   braid_Core      core        = action->core;
+   braid_Int       verbose_adj = _braid_CoreElt(core, verbose_adj);
+   braid_Int       myid        = _braid_CoreElt(core, myid);
+
+   if ( verbose_adj ) printf("%d: INIT_DIFF\n", myid);
+
+   /* Get and pop ubar from the tape */
+   u_bar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
+   _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
+
+   /* TODO: Perform differentiated action */
+
+   _braid_VectorBarDelete(core, u_bar);
+
+  return _braid_error_flag;
+}
+
 
 
 braid_Int

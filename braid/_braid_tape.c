@@ -137,6 +137,7 @@ _braid_DiffCall(_braid_Action* action)
       case INIT: 
       {
          /* TODO: so something, if design is part of  initial conditions!!  */
+         _braid_BaseInit_diff(action);
          break;
       }
       case CLONE: 
