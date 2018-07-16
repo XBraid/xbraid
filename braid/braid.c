@@ -559,6 +559,9 @@ braid_Drive(braid_Core  core)
       {
          _braid_CoreElt(core, record) = 1;
       }
+
+      /* Push initial condition to the tape */
+      _braid_TapePushInitialCondition(core);
    }
 
 

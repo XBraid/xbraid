@@ -89,13 +89,10 @@ _braid_BaseInit(braid_Core        core,
                 braid_Real        t,   
                 braid_BaseVector *u_ptr )
 {
-   _braid_Action    *action;
    braid_BaseVector  u;
    braid_VectorBar   ubar;
-   braid_VectorBar   ubar_copy;
    braid_Int         myid        = _braid_CoreElt(core, myid);
    braid_Int         verbose_adj = _braid_CoreElt(core, verbose_adj);
-   braid_Int         record      = _braid_CoreElt(core, record);
    braid_Int         adjoint     = _braid_CoreElt(core, adjoint);
     
    if (verbose_adj) printf("%d INIT\n", myid);
@@ -116,21 +113,6 @@ _braid_BaseInit(braid_Core        core,
       _braid_CoreFcn(core, init)(app, t, &(ubar->userVector));
       _braid_CoreFcn(core, sum)(app, -1.0, ubar->userVector, 1.0, ubar->userVector);
       u->bar = ubar;
-   }
-
-   /* Record to the tape, if derivative wrt initial condition is desired */
-   if ( record && (_braid_CoreElt(core, init_diff) != NULL))
-   {
-      /* Set up and push the action */
-      action            = _braid_CTAlloc(_braid_Action, 1);
-      action->braidCall = INIT;
-      action->core      = core;
-      action->inTime    = t;
-      _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
-
-      /* Copy and push the bar vector to the bartape */
-      _braid_VectorBarCopy(u->bar, &ubar_copy);
-      _braid_CoreElt(core, barTape) = _braid_TapePush(_braid_CoreElt(core, barTape), ubar_copy);
    }
 
    /* Set the return pointer */
