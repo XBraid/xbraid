@@ -528,13 +528,10 @@ braid_Drive(braid_Core  core)
       /* Create a grid hierarchy */
       _braid_InitHierarchy(core, grid, 0);
 
-
-      /* Set initial values */
-      _braid_InitGuess(core, 0);
-
    }
 
-
+    /* Set initial values */
+    _braid_InitGuess(core, 0);
 
    if ( adjoint)
    {

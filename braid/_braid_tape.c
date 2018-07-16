@@ -300,7 +300,6 @@ _braid_TapePushInitialCondition(braid_Core core)
 
    if (_braid_CoreElt(core, record))
    {
-       printf("Push INIT cond\n");
        /* Set up and push an INIT action at t=0.0 */
        action            = _braid_CTAlloc(_braid_Action, 1);
        action->braidCall = INIT;
