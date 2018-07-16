@@ -136,7 +136,6 @@ _braid_DiffCall(_braid_Action* action)
       }
       case INIT: 
       {
-         /* TODO: so something, if design is part of  initial conditions!!  */
          _braid_BaseInit_diff(action);
          break;
       }
@@ -286,6 +285,37 @@ _braid_TapeResetInput(braid_Core core)
    return _braid_error_flag;
 }
 
+
+braid_Int
+_braid_TapePushInitialCondition(braid_Core core)
+{
+   _braid_Action    *action;
+   braid_BaseVector  u;
+   braid_VectorBar   ubar_copy;
+
+   if (_braid_CoreElt(core, init_diff) == NULL)
+   {
+       return _braid_error_flag;
+   }
+
+   if (_braid_CoreElt(core, record))
+   {
+       printf("Push INIT cond\n");
+       /* Set up and push an INIT action at t=0.0 */
+       action            = _braid_CTAlloc(_braid_Action, 1);
+       action->braidCall = INIT;
+       action->core      = core;
+       action->inTime    = 0.0;
+       _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
+
+       /* Get the braid_vector at t==0 and copy-push it's bar vector to the tape */
+       _braid_UGetVectorRef(core, 0, 0, &u);
+       _braid_VectorBarCopy(u->bar, &ubar_copy);
+       _braid_CoreElt(core, barTape) = _braid_TapePush(_braid_CoreElt(core, barTape), ubar_copy);
+   }
+   
+   return _braid_error_flag;
+}
 
 const char* _braid_CallGetName(_braid_Call call)
 {

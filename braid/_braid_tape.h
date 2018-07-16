@@ -139,6 +139,13 @@ braid_Int
 _braid_TapeResetInput(braid_Core core);
 
 /**
+ * Push an INIT-action to the tape.
+ * This is called before each braid iteration in order to get the derivative with respect to initial condition. 
+ */
+braid_Int 
+_braid_TapePushInitialCondition(braid_Core core);
+
+/**
  * Return the name of a _braid_Call (action name)
  */
 const char* _braid_CallGetName(_braid_Call call);

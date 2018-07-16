@@ -118,15 +118,14 @@ _braid_BaseInit(braid_Core        core,
       u->bar = ubar;
    }
 
-   /* Record to the tape */
-   if ( record )
+   /* Record to the tape, if derivative wrt initial condition is desired */
+   if ( record && (_braid_CoreElt(core, init_diff) != NULL))
    {
       /* Set up and push the action */
       action            = _braid_CTAlloc(_braid_Action, 1);
       action->braidCall = INIT;
       action->core      = core;
       action->inTime    = t;
-      action->myid      = myid;
       _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
 
       /* Copy and push the bar vector to the bartape */
@@ -740,10 +739,7 @@ _braid_BaseInit_diff(_braid_Action *action)
    _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
    /* Call the user's differentiated init action */
-   if (_braid_CoreElt(core, init_diff) != NULL)
-   {
-     _braid_CoreFcn(core, init_diff)(_braid_CoreElt(core,app), t, u_bar->userVector);
-   }
+   _braid_CoreFcn(core, init_diff)(_braid_CoreElt(core,app), t, u_bar->userVector);
 
    _braid_VectorBarDelete(core, u_bar);
 
