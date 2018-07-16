@@ -102,8 +102,7 @@ my_Init(braid_App     app,
    u = (my_Vector *) malloc(sizeof(my_Vector));
    if (t == 0.0) /* Initial condition */
    {
-//       (u->value) = 1.0;
-        u->value = app->design * -1.0;
+      (u->value) = 1.0;
    }
    else /* All other time points set to arbitrary value */
    {
@@ -112,20 +111,6 @@ my_Init(braid_App     app,
    *u_ptr = u;
 
    return 0;
-}
-
-
-int 
-my_init_diff(braid_App  app,
-             braid_Real t,
-             braid_Vector u_bar)
-{
-
-    if (t==0.0)
-    {
-        app->gradient += -1.0 * u_bar->value;
-    }
-    return 0;
 }
 
 int
@@ -367,7 +352,6 @@ int main (int argc, char *argv[])
   /* Initialize adjoint-based gradient computation */
    braid_InitAdjoint( my_ObjectiveT, my_ObjectiveT_diff, my_Step_diff, my_ResetGradient, &core);
 
-   braid_SetInit_diff(core, my_init_diff);
  
    /* Set some typical Braid parameters */
    braid_SetMaxLevels(core, 2);             /* Number of time-grid levels */
