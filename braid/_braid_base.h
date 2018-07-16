@@ -283,11 +283,6 @@ _braid_BaseStep_diff(_braid_Action *action      /**< _braid_Action structure, ho
                      );
 
 
-braid_Int
-_braid_BaseInit_diff(_braid_Action *action);
-
-
-
 /**
  * This pops bar vectors from the tape, and then performs the 
  * differentiated clone action using those vectors as input:

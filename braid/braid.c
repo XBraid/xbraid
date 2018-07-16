@@ -535,6 +535,7 @@ braid_Drive(braid_Core  core)
    }
 
 
+
    if ( adjoint)
    {
       if (!warm_restart)
@@ -915,6 +916,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, objectiveT)            = NULL;
    _braid_CoreElt(core, objT_diff)             = NULL;
    _braid_CoreElt(core, step_diff)             = NULL;
+   _braid_CoreElt(core, init_diff)             = NULL;
    _braid_CoreElt(core, reset_gradient)        = NULL;
    _braid_CoreElt(core, postprocess_obj)       = NULL;
    _braid_CoreElt(core, postprocess_obj_diff)  = NULL;
@@ -1839,6 +1841,18 @@ braid_SetPostprocessObjective_diff(braid_Core                           core,
    return _braid_error_flag;
 }
 
+braid_Int
+braid_SetInit_diff(braid_Core core,         
+                   braid_PtFcnInitDiff init_diff )
+{
+   if ( !(_braid_CoreElt(core, adjoint)) )
+   {
+      return _braid_error_flag;
+   }  
+
+   _braid_CoreElt(core, init_diff) = init_diff;
+   return _braid_error_flag;
+}
 
 braid_Int
 braid_SetAbsTolAdjoint(braid_Core core, 

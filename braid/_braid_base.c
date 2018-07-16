@@ -729,6 +729,7 @@ _braid_BaseInit_diff(_braid_Action *action)
 {
    braid_VectorBar u_bar;
    braid_Core      core        = action->core;
+   braid_Real      t           = action->inTime;
    braid_Int       verbose_adj = _braid_CoreElt(core, verbose_adj);
    braid_Int       myid        = _braid_CoreElt(core, myid);
 
@@ -738,7 +739,8 @@ _braid_BaseInit_diff(_braid_Action *action)
    u_bar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
    _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
-   /* TODO: Perform differentiated action */
+   /* Call the user's differentiated init action */
+   _braid_CoreFcn(core, init_diff)(_braid_CoreElt(core,app), t, u_bar->userVector);
 
    _braid_VectorBarDelete(core, u_bar);
 

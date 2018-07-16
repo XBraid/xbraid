@@ -443,6 +443,12 @@ typedef braid_Int
                       );
 
 
+typedef braid_Int
+(*braid_PtFcnInitDiff)(braid_App        app,       /**< input / output: user-defined _braid_App structure, used to store gradient */
+                       braid_Real       t,
+                       braid_Vector     u_bar     /**< input / output, adjoint vector for u */
+                      );
+
 
 /**
  * Set the gradient to zero, which is usually stored in @ref braid_App .
@@ -982,6 +988,14 @@ braid_Int
 braid_SetPostprocessObjective_diff(braid_Core                           core,          /**< braid_Core (_braid_Core) struct*/
                                    braid_PtFcnPostprocessObjective_diff post_fcn_diff  /**< function pointer to differentiated postprocessing routine */
                                    ); 
+
+
+
+braid_Int
+braid_SetInit_diff(braid_Core core,          /**< braid_Core (_braid_Core) struct*/
+                   braid_PtFcnInitDiff init_diff  /**< function pointer to differentiated postprocessing routine */
+                   ); 
+
 
 /**
  * Set an absolute halting tolerance for the adjoint residuals. 

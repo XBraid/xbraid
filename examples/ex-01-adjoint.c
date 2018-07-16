@@ -102,7 +102,8 @@ my_Init(braid_App     app,
    u = (my_Vector *) malloc(sizeof(my_Vector));
    if (t == 0.0) /* Initial condition */
    {
-      (u->value) = 1.0;
+//       (u->value) = 1.0;
+        u->value = app->design * -1.0;
    }
    else /* All other time points set to arbitrary value */
    {
@@ -111,6 +112,21 @@ my_Init(braid_App     app,
    *u_ptr = u;
 
    return 0;
+}
+
+
+int 
+my_init_diff(braid_App  app,
+             braid_Real t,
+             braid_Vector u_bar)
+{
+
+    if (t==0.0)
+    {
+        app->gradient += -1.0 * u_bar->value;
+        printf("%1.14e\n", u_bar->value);
+    }
+    return 0;
 }
 
 int
@@ -306,6 +322,7 @@ my_Step_diff(braid_App              app,
 int 
 my_ResetGradient(braid_App app)
 {
+   printf("RESETTING GRADIENT\n");
    app->gradient = 0.0;
 
    return 0;
@@ -326,7 +343,7 @@ int main (int argc, char *argv[])
    double        objective;
 
    /* Define time domain: ntime intervals */
-   ntime  = 50;
+   ntime  = 5;
    tstart = 0.0;
    tstop  = tstart + ntime/2.;
 
@@ -343,6 +360,7 @@ int main (int argc, char *argv[])
    app->design      = lambda;
    app->gradient    = 0.0;
 
+//    app->design += 1e-8;
 
    /* Initialize XBraid */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
@@ -352,15 +370,17 @@ int main (int argc, char *argv[])
   /* Initialize adjoint-based gradient computation */
    braid_InitAdjoint( my_ObjectiveT, my_ObjectiveT_diff, my_Step_diff, my_ResetGradient, &core);
 
+   braid_SetInit_diff(core, my_init_diff);
  
    /* Set some typical Braid parameters */
    braid_SetMaxLevels(core, 2);             /* Number of time-grid levels */
    braid_SetCFactor(core, -1, 2);           /* Coarsening factor on all levels */
-   braid_SetMaxIter(core, 20);              /* Maximum number of state and adjoint iterations */
+   braid_SetMaxIter(core, 10);              /* Maximum number of state and adjoint iterations */
    braid_SetAccessLevel(core, 1);           /* Access level: only after drive() finishes */
    braid_SetPrintLevel( core, 1);           /* Print level: report norms of state and adjoint while iterating in drive() */
    braid_SetAbsTol(core, 1e-6);             /* Tolerance on state residual norm */
    braid_SetAbsTolAdjoint(core, 1e-6);      /* Tolerance on adjoint residual norm */
+   _braid_SetVerbosity(core, 0);
 
    /* Run simulation and adjoint-based gradient computation */
    braid_Drive(core);
@@ -382,41 +402,41 @@ int main (int argc, char *argv[])
    braid_PrintStats(core);
 
 
-   /* --- Check the gradient with Finite Differences --- */
-   if (rank == 0)
-   {
-      printf("\n\n --- FINITE DIFFERENCE TESTING ---\n");
-   }
+//    /* --- Check the gradient with Finite Differences --- */
+//    if (rank == 0)
+//    {
+//       printf("\n\n --- FINITE DIFFERENCE TESTING ---\n");
+//    }
    
-   double EPS = 1e-5;
-   double objective_ref, gradient_ref;
-   double finite_differences, err;
+//    double EPS = 1e-5;
+//    double objective_ref, gradient_ref;
+//    double finite_differences, err;
 
-   /* Store objective and gradient */
-   objective_ref = objective;
-   gradient_ref  = app->gradient;
+//    /* Store objective and gradient */
+//    objective_ref = objective;
+//    gradient_ref  = app->gradient;
 
-   /* Perturb the design */
-   app->design += EPS;
+//    /* Perturb the design */
+//    app->design += EPS;
 
-   /* Remove output of XBraid_Adjoint */
-   braid_SetPrintLevel(core, 0);
+//    /* Remove output of XBraid_Adjoint */
+//    braid_SetPrintLevel(core, 0);
 
-   /* Compute a new solution and objective function value */
-   braid_SetObjectiveOnly(core, 1);
-   braid_Drive(core);
-   braid_GetObjective(core, &objective);
+//    /* Compute a new solution and objective function value */
+//    braid_SetObjectiveOnly(core, 1);
+//    braid_Drive(core);
+//    braid_GetObjective(core, &objective);
 
-   /* Compute finite differences and relative error */
-   finite_differences = (objective - objective_ref) / EPS;
-   err = (gradient_ref - finite_differences) / finite_differences;
+//    /* Compute finite differences and relative error */
+//    finite_differences = (objective - objective_ref) / EPS;
+//    err = (gradient_ref - finite_differences) / finite_differences;
 
-   /* Output */
-   if (rank == 0)
-   {
-      printf("\n Finite Differences: %1.14e\n", finite_differences);
-      printf(" Relative gradient error: %1.6f\n\n", err);
-   }
+//    /* Output */
+//    if (rank == 0)
+//    {
+//       printf("\n Finite Differences: %1.14e\n", finite_differences);
+//       printf(" Relative gradient error: %1.6f\n\n", err);
+//    }
 
    /* Clean up */
    free(app);
