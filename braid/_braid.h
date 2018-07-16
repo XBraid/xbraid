@@ -261,9 +261,9 @@ typedef struct _braid_Core_struct
       
    braid_PtFcnObjectiveT                objectiveT;           /**< User function: evaluate objective function at time t */
    braid_PtFcnStepDiff                  step_diff;            /**< User function: apply differentiated step function */
-   braid_PtFcnInitDiff                  init_diff;            /**< User function: apply differentiated init function */
    braid_PtFcnObjectiveTDiff            objT_diff;            /**< User function: apply differentiated objective function */
    braid_PtFcnResetGradient             reset_gradient;       /**< User function: Set the gradient to zero. Is called before each iteration */
+   braid_PtFcnInitDiff                  init_diff;            /**< Optional user function: apply differentiated init function */
    braid_PtFcnPostprocessObjective      postprocess_obj;      /**< Optional user function: Modify the time-averaged objective function, e.g. for inverse design problems, adding relaxation term etc. */
    braid_PtFcnPostprocessObjective_diff postprocess_obj_diff; /**< Optional user function: Derivative of postprocessing function  */
 

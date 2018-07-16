@@ -442,7 +442,12 @@ typedef braid_Int
                        braid_StepStatus status     /**< query this struct for info about u (e.g., tstart and tstop) */ 
                       );
 
-
+/**
+ * (Optional) Differentiated version of the *Init()* routine. 
+ *
+ * If the derivative with respect to the initial conditions is desired, this routine  provides 
+ * the transposed derivative of *Init()* multiplied by the adjoint input vector *u_bar*. 
+ **/ 
 typedef braid_Int
 (*braid_PtFcnInitDiff)(braid_App        app,       /**< input / output: user-defined _braid_App structure, used to store gradient */
                        braid_Real       t,

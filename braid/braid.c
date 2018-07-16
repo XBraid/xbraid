@@ -716,7 +716,6 @@ braid_Drive(braid_Core  core)
 
                /* Reset the pointer to input variables */
                _braid_TapeResetInput(core);
-
             }
 
             /* Increase MGRIT iteration counter */
