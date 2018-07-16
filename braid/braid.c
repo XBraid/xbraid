@@ -712,6 +712,28 @@ braid_Drive(braid_Core  core)
 
                /* Reset the pointer to input variables */
                _braid_TapeResetInput(core);
+
+               /* If init_diff: Push another init action at t==0 */
+               if (_braid_CoreElt(core, init_diff) != NULL)
+               {
+                //  _braid_PushInit(core);
+
+                 _braid_Action    *action;
+                 braid_BaseVector  u;
+                 braid_VectorBar   ubar_copy;
+   
+                  action            = _braid_CTAlloc(_braid_Action, 1);
+                  action->braidCall = INIT;
+                  action->core      = core;
+                  action->inTime    = 0.0;
+                  action->myid      = myid;
+                  _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
+
+                  /* Copy and push the bar vector to the bartape */
+                  _braid_UGetVectorRef(core, 0, 0, &u);
+                  _braid_VectorBarCopy(u->bar, &ubar_copy);
+                  _braid_CoreElt(core, barTape) = _braid_TapePush(_braid_CoreElt(core, barTape), ubar_copy);
+               }
             }
 
             /* Increase MGRIT iteration counter */

@@ -740,7 +740,10 @@ _braid_BaseInit_diff(_braid_Action *action)
    _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
    /* Call the user's differentiated init action */
-   _braid_CoreFcn(core, init_diff)(_braid_CoreElt(core,app), t, u_bar->userVector);
+   if (_braid_CoreElt(core, init_diff) != NULL)
+   {
+     _braid_CoreFcn(core, init_diff)(_braid_CoreElt(core,app), t, u_bar->userVector);
+   }
 
    _braid_VectorBarDelete(core, u_bar);
 

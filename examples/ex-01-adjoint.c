@@ -360,7 +360,7 @@ int main (int argc, char *argv[])
    app->design      = lambda;
    app->gradient    = 0.0;
 
-//    app->design += 1e-8;
+   app->design += 1e-8;
 
    /* Initialize XBraid */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
@@ -373,7 +373,7 @@ int main (int argc, char *argv[])
    braid_SetInit_diff(core, my_init_diff);
  
    /* Set some typical Braid parameters */
-   braid_SetMaxLevels(core, 2);             /* Number of time-grid levels */
+   braid_SetMaxLevels(core, 10);             /* Number of time-grid levels */
    braid_SetCFactor(core, -1, 2);           /* Coarsening factor on all levels */
    braid_SetMaxIter(core, 10);              /* Maximum number of state and adjoint iterations */
    braid_SetAccessLevel(core, 1);           /* Access level: only after drive() finishes */
