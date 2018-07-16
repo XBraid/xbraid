@@ -292,13 +292,16 @@ _braid_TapePushInitialCondition(braid_Core core)
    _braid_Action    *action;
    braid_BaseVector  u;
    braid_VectorBar   ubar_copy;
+   _braid_Grid      **grids    = _braid_CoreElt(core, grids);
+   braid_Int          ilower   = _braid_GridElt(grids[0], ilower);
 
    if (_braid_CoreElt(core, init_diff) == NULL)
    {
        return _braid_error_flag;
    }
 
-   if (_braid_CoreElt(core, record))
+   /* If first processor: Record to the tape */
+   if (_braid_CoreElt(core, record) && ilower == 0)
    {
        /* Set up and push an INIT action at t=0.0 */
        action            = _braid_CTAlloc(_braid_Action, 1);
