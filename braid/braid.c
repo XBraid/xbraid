@@ -461,13 +461,14 @@ braid_Drive(braid_Core  core)
    braid_Int            adjoint         = _braid_CoreElt(core, adjoint);
 
 
-   braid_Int     *nrels, nrel0;
-   braid_Int      nlevels;
-   braid_Int      ilower, iupper, i;
-   braid_Real    *ta;
-   _braid_Grid   *grid;
-   braid_Real     localtime, globaltime;
-   braid_Real     rnorm_adj;
+   braid_BaseVector u;
+   braid_Int       *nrels, nrel0;
+   braid_Int        nlevels;
+   braid_Int        ilower, iupper, i;
+   braid_Real      *ta;
+   _braid_Grid     *grid;
+   braid_Real       localtime, globaltime;
+   braid_Real       rnorm_adj;
 
    /* Cycle state variables */
    _braid_CycleState  cycle;
@@ -528,10 +529,22 @@ braid_Drive(braid_Core  core)
       /* Create a grid hierarchy */
       _braid_InitHierarchy(core, grid, 0);
 
+      /* Set initial values */
+      _braid_InitGuess(core, 0);
+   }
+   else
+   {
+      /* Reload the initial condition at t==0 */
+      _braid_GetDistribution(core, &ilower, &iupper);
+      if (ilower == 0)
+      {
+         _braid_BaseInit(core, app,  0.0, &u);
+         _braid_USetVector(core, 0, 0, u, 1);
+      }
+   
    }
 
-    /* Set initial values */
-    _braid_InitGuess(core, 0);
+
 
    if ( adjoint)
    {
