@@ -110,7 +110,7 @@ _braid_BaseInit(braid_Core        core,
    {
       ubar = (braid_VectorBar) malloc(sizeof(braid_Vector) + sizeof(int));
       ubar->useCount = 1;
-      _braid_CoreFcn(core, init)(app, t, &(ubar->userVector));
+      _braid_CoreFcn(core, init)(app, -1.0, &(ubar->userVector));
       _braid_CoreFcn(core, sum)(app, -1.0, ubar->userVector, 1.0, ubar->userVector);
       u->bar = ubar;
    }
@@ -387,7 +387,6 @@ _braid_BaseBufUnpack(braid_Core          core,
    braid_Int        adjoint      = _braid_CoreElt(core, adjoint);
    braid_Int        record       = _braid_CoreElt(core, record);
    braid_Int        receiver     = _braid_CoreElt(core, send_recv_rank);
-   braid_Real       tstart       = _braid_CoreElt(core, tstart);
 
    if ( verbose_adj ) printf("%d: BUFUNPACK\n", myid);
 
@@ -404,7 +403,7 @@ _braid_BaseBufUnpack(braid_Core          core,
       /* Allocate and initialize the bar vector with zero*/
       ubar = (braid_VectorBar) malloc(sizeof(braid_Vector) + sizeof(int));
       ubar->useCount = 1;
-      _braid_CoreFcn(core, init)(app, tstart, &(ubar->userVector));
+      _braid_CoreFcn(core, init)(app, -1.0, &(ubar->userVector));
       _braid_CoreFcn(core, sum)(app, -1.0, ubar->userVector, 1.0, ubar->userVector);
       u->bar = ubar;
    }

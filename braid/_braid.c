@@ -377,7 +377,6 @@ _braid_InitAdjointVars(braid_Core   core,
                        _braid_Grid *fine_grid)
 {
 
-   braid_Real       tstart   = _braid_CoreElt(core, tstart);
    braid_App        app      = _braid_CoreElt(core, app);
    braid_Int        storage   = _braid_CoreElt(core, storage);
    braid_Int        ncpoints  = _braid_GridElt(fine_grid, ncpoints);
@@ -435,7 +434,7 @@ _braid_InitAdjointVars(braid_Core   core,
          _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
 
          /* Initialize adjoint variables with zeros */
-         _braid_CoreFcn(core, init)(app, tstart, &mybar);
+         _braid_CoreFcn(core, init)(app, -1.0, &mybar);
          _braid_CoreFcn(core, sum)( app, -1.0, mybar, 1.0, mybar);
          adjoints[iclocal] = mybar;
 
