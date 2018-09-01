@@ -547,7 +547,10 @@ braid_Drive(braid_Core  core)
          /* Prepare for next adjoint iteration in case of warm_restart */
          _braid_CoreElt(core, optim)->sum_user_obj  = 0.0;
          _braid_CoreElt(core, optim)->f_bar         = 0.0;
-         _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
+         if (!obj_only)
+         {
+           _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
+         }
       }
 
       if ( obj_only )
