@@ -707,7 +707,7 @@ braid_Drive(braid_Core  core)
                _braid_CoreElt(core, optim)->sum_user_obj = 0.0;
                _braid_CoreElt(core, optim)->f_bar        = 0.0;
 
-               if (!done)
+               if (!done && !obj_only)
                {
                   _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
                }
