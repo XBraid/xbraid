@@ -862,9 +862,9 @@ _braid_BaseBufPack_diff(_braid_Action *action )
    ubar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
    _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
-   /* Allocate the buffer */
+   /* Get the buffer */
    _braid_CoreFcn(core, bufsize)(app, &size, bstatus);
-   buffer = malloc(size);
+   buffer = _braid_CoreElt(core, optim)->buffer;
 
    /* Receive the buffer */
    MPI_Recv(buffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), MPI_STATUS_IGNORE); 
@@ -881,7 +881,6 @@ _braid_BaseBufPack_diff(_braid_Action *action )
    /* Free the vectors */
    _braid_VectorBarDelete(core, ubar);
    _braid_CoreFcn(core, free)(app, u);
-   free(buffer);
 
    return _braid_error_flag;
 }
@@ -908,9 +907,9 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
    ubar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
    _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
-  /* Allocate buffer */
+   /* Get the buffer */
    _braid_CoreFcn(core, bufsize)(app, &size, bstatus);
-   buffer = malloc(size); 
+   buffer = _braid_CoreElt(core, optim)->buffer;
 
    /* Initialize the bufferstatus */
    _braid_BufferStatusInit( messagetype, size_buffer, bstatus);

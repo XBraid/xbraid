@@ -104,6 +104,7 @@ struct _braid_Optimization_struct
    braid_Int        rtol_adj;         /**< flag: use relative tolerance for adjoint */
    braid_Vector    *adjoints;         /**< vector for the adjoint variables */
    braid_VectorBar *tapeinput;        /**< helper: store pointer to input of one braid iteration */
+   void            *buffer;           /**< helper: Memory for BufUnPackDiff communication */
 };
 typedef struct _braid_Optimization_struct *braid_Optim;
 
