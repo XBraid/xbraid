@@ -844,7 +844,7 @@ braid_Int
 _braid_BaseBufPack_diff(_braid_Action *action )
 {
    braid_Int          size;
-   void              *recvbuffer;
+   void              *buffer;
    braid_Vector       u;
    braid_VectorBar    ubar;
    braid_Core         core            = action->core;
@@ -864,16 +864,17 @@ _braid_BaseBufPack_diff(_braid_Action *action )
 
    /* Get the buffer */
    _braid_CoreFcn(core, bufsize)(app, &size, bstatus);
-   recvbuffer = _braid_CoreElt(core, optim)->recvbuffer;
+   buffer = malloc(size);
 
    /* Receive the buffer */
-   MPI_Recv(recvbuffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), MPI_STATUS_IGNORE); 
+   MPI_Recv(buffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), MPI_STATUS_IGNORE); 
 
    /* Initialize the bstatus */
    _braid_BufferStatusInit( messagetype, size_buffer, bstatus);
 
    /* Unpack the buffer into u */
-   _braid_CoreFcn(core, bufunpack)(app, recvbuffer, &u, bstatus);
+   _braid_CoreFcn(core, bufunpack)(app, buffer, &u, bstatus);
+   free(buffer);
 
    /* Update ubar with u */
    _braid_CoreFcn(core, sum)( app, 1., u, 1., ubar->userVector);

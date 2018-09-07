@@ -105,7 +105,6 @@ struct _braid_Optimization_struct
    braid_Vector    *adjoints;         /**< vector for the adjoint variables */
    braid_VectorBar *tapeinput;        /**< helper: store pointer to input of one braid iteration */
    void            *sendbuffer;       /**< helper: Memory for BufUnPackDiff communication */
-   void            *recvbuffer;       /**< helper: Memory for BufPackDiff communication */
 };
 typedef struct _braid_Optimization_struct *braid_Optim;
 
