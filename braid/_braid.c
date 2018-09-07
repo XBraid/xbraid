@@ -126,7 +126,8 @@ _braid_OptimDestroy( braid_Core core)
 
    }
 
-   free(optim->buffer);
+   free(optim->sendbuffer);
+   free(optim->recvbuffer);
    free(optim->adjoints);
    free(optim->tapeinput);
 
@@ -394,7 +395,8 @@ _braid_InitAdjointVars(braid_Core   core,
    braid_Vector        mybar;
    braid_Int           ic, iclocal, sflag, nupoints, increment;
    braid_Int           bufsize;
-   void*               buffer;
+   void*               sendbuffer;
+   void*               recvbuffer;
   
 
    /* Get the number of adjoint vectors on finest level */
@@ -455,12 +457,14 @@ _braid_InitAdjointVars(braid_Core   core,
 
    /* Allocate a buffer for BufUnpackDiff*/
    _braid_CoreFcn(core, bufsize)(app, &bufsize, bstatus);
-   buffer = malloc(bufsize); 
+   sendbuffer = malloc(bufsize); 
+   recvbuffer = malloc(bufsize); 
 
    /* Pass to the optimization structure */
-   _braid_CoreElt(core, optim)->buffer    = buffer;
-   _braid_CoreElt(core, optim)->adjoints  = adjoints;
-   _braid_CoreElt(core, optim)->tapeinput = tapeinput;
+   _braid_CoreElt(core, optim)->sendbuffer = sendbuffer;
+   _braid_CoreElt(core, optim)->recvbuffer = recvbuffer;
+   _braid_CoreElt(core, optim)->adjoints   = adjoints;
+   _braid_CoreElt(core, optim)->tapeinput  = tapeinput;
 
    return _braid_error_flag;
 }                

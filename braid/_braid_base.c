@@ -844,7 +844,7 @@ braid_Int
 _braid_BaseBufPack_diff(_braid_Action *action )
 {
    braid_Int          size;
-   void              *buffer;
+   void              *recvbuffer;
    braid_Vector       u;
    braid_VectorBar    ubar;
    braid_Core         core            = action->core;
@@ -864,16 +864,16 @@ _braid_BaseBufPack_diff(_braid_Action *action )
 
    /* Get the buffer */
    _braid_CoreFcn(core, bufsize)(app, &size, bstatus);
-   buffer = _braid_CoreElt(core, optim)->buffer;
+   recvbuffer = _braid_CoreElt(core, optim)->recvbuffer;
 
    /* Receive the buffer */
-   MPI_Recv(buffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), MPI_STATUS_IGNORE); 
+   MPI_Recv(recvbuffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), MPI_STATUS_IGNORE); 
 
    /* Initialize the bstatus */
    _braid_BufferStatusInit( messagetype, size_buffer, bstatus);
 
    /* Unpack the buffer into u */
-   _braid_CoreFcn(core, bufunpack)(app, buffer, &u, bstatus);
+   _braid_CoreFcn(core, bufunpack)(app, recvbuffer, &u, bstatus);
 
    /* Update ubar with u */
    _braid_CoreFcn(core, sum)( app, 1., u, 1., ubar->userVector);
@@ -889,7 +889,7 @@ braid_Int
 _braid_BaseBufUnpack_diff(_braid_Action *action)
 {
    braid_VectorBar     ubar;
-   void               *buffer;
+   void               *sendbuffer;
    braid_Int           size;
    MPI_Request        *requests;
    braid_Core          core           = action->core;;
@@ -909,17 +909,17 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
 
    /* Get the buffer */
    _braid_CoreFcn(core, bufsize)(app, &size, bstatus);
-   buffer = _braid_CoreElt(core, optim)->buffer;
+   sendbuffer = _braid_CoreElt(core, optim)->sendbuffer;
 
    /* Initialize the bufferstatus */
    _braid_BufferStatusInit( messagetype, size_buffer, bstatus);
 
    /* Pack the buffer */
-   _braid_CoreFcn(core, bufpack)( app, ubar->userVector, buffer, bstatus);
+   _braid_CoreFcn(core, bufpack)( app, ubar->userVector, sendbuffer, bstatus);
 
    /* Send the buffer  */
    requests = _braid_CTAlloc(MPI_Request, 1);
-   MPI_Isend(buffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), &requests[0]);
+   MPI_Isend(sendbuffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), &requests[0]);
    MPI_Request_free(requests);
    
    /* Set ubar to zero */
