@@ -455,7 +455,7 @@ _braid_InitAdjointVars(braid_Core   core,
 
    /* Allocate a buffer for BufUnpackDiff*/
    _braid_CoreFcn(core, bufsize)(app, &bufsize, bstatus);
-   sendbuffer = malloc(bufsize); 
+   sendbuffer = malloc(bufsize*sizeof(double)); 
 
    /* Pass to the optimization structure */
    _braid_CoreElt(core, optim)->sendbuffer = sendbuffer;
