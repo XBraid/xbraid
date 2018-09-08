@@ -395,6 +395,7 @@ _braid_InitAdjointVars(braid_Core   core,
    braid_Int           ic, iclocal, sflag, nupoints, increment;
    braid_Int           bufsize;
    void*               sendbuffer;
+   MPI_Request*        request;
   
 
    /* Get the number of adjoint vectors on finest level */
@@ -456,9 +457,11 @@ _braid_InitAdjointVars(braid_Core   core,
    /* Allocate a buffer for BufUnpackDiff*/
    _braid_CoreFcn(core, bufsize)(app, &bufsize, bstatus);
    sendbuffer = malloc(bufsize*sizeof(double)); 
+   request = NULL;
 
    /* Pass to the optimization structure */
    _braid_CoreElt(core, optim)->sendbuffer = sendbuffer;
+   _braid_CoreElt(core, optim)->request= request;
    _braid_CoreElt(core, optim)->adjoints   = adjoints;
    _braid_CoreElt(core, optim)->tapeinput  = tapeinput;
 
