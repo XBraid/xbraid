@@ -929,7 +929,7 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
    /* Send the buffer  */
    requests = _braid_CTAlloc(MPI_Request, 1);
    MPI_Isend(sendbuffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), &requests[0]);
-   request = requests;
+   _braid_CoreElt(core, optim)->request = requests;
    
    /* Set ubar to zero */
    _braid_CoreFcn(core, sum)(app, -1., ubar->userVector, 1., ubar->userVector );
