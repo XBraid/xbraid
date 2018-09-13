@@ -967,6 +967,8 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
    /* Set optimization variables */
    optim->adjoints       = NULL;    /* will be allocated in InitAdjointVars() */
    optim->tapeinput      = NULL;    /* will be allocated in InitAdjointVars() */   
+   optim->sendbuffer     = NULL;    /* will be allocated in InitAdjointVars() */   
+   optim->request        = NULL;    /* will be allocated in InitAdjointVars() */   
    optim->objective      = 0.0;
    optim->sum_user_obj   = 0.0;
    optim->f_bar          = 0.0;
