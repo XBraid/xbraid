@@ -461,9 +461,9 @@ _braid_InitAdjointVars(braid_Core   core,
 
    /* Pass to the optimization structure */
    _braid_CoreElt(core, optim)->sendbuffer = sendbuffer;
-   _braid_CoreElt(core, optim)->request= request;
-   _braid_CoreElt(core, optim)->adjoints   = adjoints;
-   _braid_CoreElt(core, optim)->tapeinput  = tapeinput;
+   _braid_CoreElt(core, optim)->request    = request;
+   _braid_CoreElt(core, optim)->adjoints  = adjoints;
+   _braid_CoreElt(core, optim)->tapeinput = tapeinput;
 
    return _braid_error_flag;
 }                

@@ -862,7 +862,7 @@ _braid_BaseBufPack_diff(_braid_Action *action )
    ubar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
    _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
-   /* Get the buffer */
+   /* Allocate the buffer */
    _braid_CoreFcn(core, bufsize)(app, &size, bstatus);
    buffer = malloc(size);
 
@@ -874,7 +874,6 @@ _braid_BaseBufPack_diff(_braid_Action *action )
 
    /* Unpack the buffer into u */
    _braid_CoreFcn(core, bufunpack)(app, buffer, &u, bstatus);
-   free(buffer);
 
    /* Update ubar with u */
    _braid_CoreFcn(core, sum)( app, 1., u, 1., ubar->userVector);
@@ -882,6 +881,7 @@ _braid_BaseBufPack_diff(_braid_Action *action )
    /* Free the vectors */
    _braid_VectorBarDelete(core, ubar);
    _braid_CoreFcn(core, free)(app, u);
+   free(buffer);
 
    return _braid_error_flag;
 }
@@ -908,10 +908,10 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
    ubar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
    _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
-   /* Get the buffer */
+   /* Get the buffer size */
    _braid_CoreFcn(core, bufsize)(app, &size, bstatus);
 
-  /* Wait */
+  /* Wait for previous send request to finish */
    MPI_Request *request = _braid_CoreElt(core, optim)->request;
    MPI_Status *mpistatus = malloc(sizeof(MPI_Status));
    if (request != NULL)
@@ -929,6 +929,8 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
    /* Send the buffer  */
    requests = _braid_CTAlloc(MPI_Request, 1);
    MPI_Isend(sendbuffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), &requests[0]);
+
+   /* Store the request */
    _braid_CoreElt(core, optim)->request = requests;
    
    /* Set ubar to zero */
