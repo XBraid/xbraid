@@ -20,7 +20,11 @@ void vdp_eval(double y, double z, double beta, double* rhs)
 typedef struct _braid_App_struct
 {
    int       rank;
+   int       iter;
    double    beta;
+
+   double*   statesy;  
+   double*   statesz;  
 } my_App;
 
 /* Vector structure can contain anything, and be name anything as well */
@@ -160,25 +164,29 @@ my_Access(braid_App          app,
           braid_Vector       u,
           braid_AccessStatus astatus)
 {
-   int        index, iter, level;
+   int        index, level;
    double     t;
    char       filename[255];
    FILE      *file;
    
    braid_AccessStatusGetT(astatus, &t);
    braid_AccessStatusGetTIndex(astatus, &index);
-   braid_AccessStatusGetIter(astatus, &iter);
    braid_AccessStatusGetLevel(astatus, &level);
 
    if( level == 0 ) 
    {
-      sprintf(filename, "%s.%05d", "rescaleVDP.out", iter);
+      sprintf(filename, "%s.%05d", "states.out", app->iter);
       file = fopen(filename, "a");
       fprintf(file, "%d %1.14e    %1.14e %1.14e", index, t, u->y, u->z);
       fprintf(file, "\n");
       fflush(file);
       fclose(file);
    }
+
+   /* store in app */
+   (app->statesy)[index] = u->y;
+   (app->statesz)[index] = u->z;
+
 
    return 0;
 }
@@ -233,7 +241,13 @@ int main (int argc, char *argv[])
    braid_Core    core;
    my_App       *app;
    double        tstart, tstop, dt;
+   double*      states[2];
+   double*      time;
+   double       dot, norm, deltat;
+   double       rhs_vdp[2];
    int           ntime, rank;
+   FILE*        timefile;
+   char         filename[255];
 
    /* Define time domain: ntime intervals */
    ntime  = 40000;
@@ -243,6 +257,9 @@ int main (int argc, char *argv[])
    
    /* Define VDP */
    double beta = 2.0;
+   states[0] = (double*) malloc(ntime*sizeof(double));
+   states[1] = (double*) malloc(ntime*sizeof(double));
+   time      = (double*) malloc(ntime*sizeof(double));
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -252,6 +269,8 @@ int main (int argc, char *argv[])
    app = (my_App *) malloc(sizeof(my_App));
    (app->rank)   = rank;
    (app->beta)   = beta;
+   app->statesy  = states[0];
+   app->statesz  = states[1];
    
    /* initialize XBraid and set options */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
@@ -259,18 +278,57 @@ int main (int argc, char *argv[])
              my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
    
    /* Set some typical Braid parameters */
-   braid_SetPrintLevel( core, 2);
+   braid_SetPrintLevel( core, 1);
    braid_SetMaxLevels(core, 5);
    braid_SetAbsTol(core, 1.0e-06);
    braid_SetCFactor(core, -1, 2);
    braid_SetAccessLevel(core, 2);
    braid_SetSkip(core, 0);
+   braid_SetMaxIter(core, 1);
+   
    
    // /* Run simulation, and then clean up */
-   braid_Drive(core);
+   for (int i = 0; i < 13; i++)
+   {
+        braid_Drive(core);
+        // int ts = 40000-1;
+        // printf("%d %1.14e\n", ts, app->statesy[ts]);
+        
+        /* rescaling */
+        sprintf(filename, "%s.%05d", "rescaled.out", i);
+        timefile = fopen(filename, "a");
+        time[0] = tstart;
+        for (int ts = 0; ts < ntime; ts++)
+        {
+                app->iter = i;
+                /* get right hand side */
+                vdp_eval(app->statesy[ts], app->statesz[ts], beta, rhs_vdp);
+
+                /* Dotproduct */
+                dot  = (app->statesy[ts+1] - app->statesy[ts]) * rhs_vdp[0];
+                dot += (app->statesz[ts+1] - app->statesz[ts]) * rhs_vdp[1];
+
+                /* norm */
+                norm  = (app->statesz[ts+1] - app->statesz[ts]) * (app->statesz[ts+1] - app->statesz[ts]);
+                norm += (app->statesy[ts+1] - app->statesy[ts]) * (app->statesy[ts+1] - app->statesy[ts]);
+
+                /* update */
+                deltat = norm / dot;
+                time[ts+1] = time[ts] + deltat; 
+
+                fprintf(timefile, "%d %1.14e %1.14e    %1.14e %1.14e", ts, ts*dt, time[ts], 
+                        app->statesy[ts], app->statesz[ts]);
+                fprintf(timefile, "\n");
+                fflush(timefile);
+        }
+        fclose(timefile);
+   }
 
    braid_Destroy(core);
    free(app);
+   free(time);     
+   free(states[0]);
+   free(states[1]);
    MPI_Finalize();
 
    return (0);
