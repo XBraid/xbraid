@@ -64,6 +64,11 @@ all: $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES)
 ex-01: ex-01.c $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
 	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+
+# Rule for building ex-01
+rescalingVDP: rescalingVDP.c $(BRAID_LIB_FILE)
+	@echo "Building" $@ "..."
+	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
 	
 # Rule for building ex-01-adjoint
 ex-01-adjoint: ex-01-adjoint.c $(BRAID_LIB_FILE)
@@ -146,6 +151,7 @@ $(MFEM_LIB_FILE):
 clean: cleanout
 	rm -f *.o $(C_NOHYPRE) $(F_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES) $(F_EXAMPLES) *ror_norm* *_err_* *_mesh* *_sol_*
 	rm -rf *.dSYM
+	rm -rf *.out.*
 
 cleanout:
 	rm -f ex*.out.*
