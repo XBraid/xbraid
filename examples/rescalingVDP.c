@@ -338,6 +338,11 @@ int main (int argc, char *argv[])
         time[0] = tstart;
 
         double tnorm = 0.0;
+
+        for (int ts = 0; ts < ntime; ts++)
+        {
+                time0[ts+1] = time[ts+1]; 
+        }
         for (int ts = 0; ts < ntime; ts++)
         {
                 app->iter = i;
@@ -354,7 +359,6 @@ int main (int argc, char *argv[])
 
                 /* update */
                 deltat = norm / dot;
-                // time0[ts+1] = time[ts+1]; 
                 time[ts+1] = time[ts] + deltat; 
 
                 fprintf(timefile, "%d %1.14e %1.14e    %1.14e %1.14e", ts, ts*dt, time[ts], 
@@ -363,21 +367,24 @@ int main (int argc, char *argv[])
                 fflush(timefile);
 
                 /* norm */
-                if (ts > 0)
-                {
-                        double deltay = (app->statesy[ts] - app->statesy[ts-1]) * (time0[ts]-time0[ts-1]) ;
-                        double deltaz = (app->statesz[ts] - app->statesz[ts-1]) * (time0[ts]-time0[ts-1]) ;
-                        double scaledy = app->statesy[ts] + deltay * (time[ts] - time0[ts]);
-                        double scaledz = app->statesz[ts] + deltaz * (time[ts] - time0[ts]);
-                        tnorm += (scaledy - states0[0][ts]) * (scaledy - states0[0][ts]);
-                        tnorm += (scaledz - states0[1][ts]) * (scaledz - states0[1][ts]);
+                
+                
+                        //double dydt = (app->statesy[ts+1] - app->statesy[ts]) / (time0[ts+1]-time0[ts]) ;
+                        //double dzdt = (app->statesz[ts+1] - app->statesz[ts]) / (time0[ts+1]-time0[ts]) ;
+                        double dydt = rhs_vdp[0] ;
+                        double dzdt = rhs_vdp[1] ;
+                        double scaledy = app->statesy[ts+1] - dydt * (deltat);
+                        double scaledz = app->statesz[ts+1] - dzdt * (deltat);
+                        tnorm += (scaledy - states0[0][ts+1]) * (scaledy - states0[0][ts+1]);
+                        tnorm += (scaledz - states0[1][ts+1]) * (scaledz - states0[1][ts+1]);
                 
                         // tnorm += (app->statesy[ts] - states0[0][ts]) * (app->statesy[ts] - states0[0][ts]);
                         // tnorm += (app->statesz[ts] - states0[1][ts]) * (app->statesz[ts] - states0[1][ts]);
 
-                        states0[0][ts] = app->statesy[ts];
-                        states0[1][ts] = app->statesz[ts];
-                }
+                        states0[0][ts+1] = app->statesy[ts+1];
+                        states0[1][ts+1] = app->statesz[ts+1];
+                
+        //       printf("%1.14e %1.14e %1.14e\n", scaledy - states0[0][ts], dydt, deltat);
         }
         fclose(timefile);
         tnorm = sqrt(tnorm)/ntime;
