@@ -534,6 +534,38 @@ braid_Drive(braid_Core  core)
 
    }
 
+   if ( _braid_CoreElt(core, tgrid) != NULL )
+   {
+
+      _braid_GetDistribution(core, &ilower, &iupper);
+      grid = _braid_CoreElt(core, grids)[0];
+      ta = _braid_GridElt(grid, ta);
+      _braid_BaseTimeGrid(core, app, ta, &ilower, &iupper);
+
+      _braid_Grid   **grids;
+      grids = _braid_CoreElt(core, grids);
+      for (level = 0; level < max_levels; level++)
+      {
+          grid = _braid_CoreElt(core, grids)[level];
+          ilower = _braid_GridElt(grid, ilower);
+          iupper = _braid_GridElt(grid, iupper);
+          if (level > 0)
+          {
+            /* Copy ta info from level-1 grid */
+            ta       = _braid_GridElt(grid, ta);
+            int f_ilower = _braid_GridElt(grids[level-1], ilower);
+            double* f_ta     = _braid_GridElt(grids[level-1], ta);
+            int cfactor  = _braid_GridElt(grids[level-1], cfactor);
+            for (i = ilower; i <= iupper; i++)
+            {
+              int f_i;
+                _braid_MapCoarseToFine(i, cfactor, f_i);
+                ta[i-ilower] = f_ta[f_i-f_ilower];
+            }
+          }
+      }
+
+   }
 
    if ( adjoint)
    {

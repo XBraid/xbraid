@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "braid.h"
+#include "_braid.h"
 
 
 void vdp_eval(double y, double z, double beta, double* rhs)
@@ -21,7 +22,9 @@ typedef struct _braid_App_struct
 {
    int       rank;
    int       iter;
+   int       ntimes;
    double    beta;
+   double*   time;  
 
    double*   statesy;  
    double*   statesz;  
@@ -45,7 +48,9 @@ my_Step(braid_App        app,
    double tstart;             /* current time */
    double tstop;              /* evolve to this time*/
    double dt;
+   int ts;
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+   braid_StepStatusGetTIndex(status, &ts);
    dt = tstop - tstart;
 
    double rhs[2], rhso[2];
@@ -81,7 +86,7 @@ my_Step(braid_App        app,
 
   // convergence control
   if (k >= maxiter - 1){
-          printf("NO CONVERGENCE!\n");
+          printf("NO CONVERGENCE! %d  %1.14e  %1.14e\n", ts, tstop, tstart);
   }
 
    
@@ -232,6 +237,24 @@ my_BufUnpack(braid_App          app,
    return 0;
 }
 
+int
+my_TimeGrid(braid_App         app,       /**< user-defined _braid_App structure */
+            braid_Real       *ta,        /**< temporal grid on level 0 (slice per processor) */
+            braid_Int        *ilower,    /**< lower time index value for this processor */
+            braid_Int        *iupper)    /**< upper time index value for this processor */
+{
+        for (int ts = 0; ts <= app->ntimes; ts++)
+        {
+                ta[ts]  = app->time[ts];
+        }
+        // *ilower = 0;
+        // *iupper = app->ntimes-1;
+        printf("hi\n");
+
+        return 0;
+}
+            
+
 /*--------------------------------------------------------------------------
  * Main driver
  *--------------------------------------------------------------------------*/
@@ -242,7 +265,9 @@ int main (int argc, char *argv[])
    my_App       *app;
    double        tstart, tstop, dt;
    double*      states[2];
+   double*      states0[2];
    double*      time;
+   double*      time0;
    double       dot, norm, deltat;
    double       rhs_vdp[2];
    int           ntime, rank;
@@ -259,7 +284,17 @@ int main (int argc, char *argv[])
    double beta = 2.0;
    states[0] = (double*) malloc(ntime*sizeof(double));
    states[1] = (double*) malloc(ntime*sizeof(double));
-   time      = (double*) malloc(ntime*sizeof(double));
+   states0[0] = (double*) malloc(ntime*sizeof(double));
+   states0[1] = (double*) malloc(ntime*sizeof(double));
+   time0     = (double*) malloc((ntime+1)*sizeof(double));
+   time      = (double*) malloc((ntime+1)*sizeof(double));
+   for (int ts = 0; ts <= ntime; ts++)
+   {
+           time[ts]  = ts*dt;
+           time0[ts] = ts*dt;
+           states0[0][ts] = 0.0;
+           states0[1][ts] = 0.0;
+   }
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -271,11 +306,14 @@ int main (int argc, char *argv[])
    (app->beta)   = beta;
    app->statesy  = states[0];
    app->statesz  = states[1];
+   app->ntimes   = ntime;
+   app->time     = time;
    
    /* initialize XBraid and set options */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
              my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
              my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
+//    braid_SetTimeGrid(core, my_TimeGrid);
    
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 1);
@@ -298,6 +336,8 @@ int main (int argc, char *argv[])
         sprintf(filename, "%s.%05d", "rescaled.out", i);
         timefile = fopen(filename, "a");
         time[0] = tstart;
+
+        double tnorm = 0.0;
         for (int ts = 0; ts < ntime; ts++)
         {
                 app->iter = i;
@@ -314,14 +354,35 @@ int main (int argc, char *argv[])
 
                 /* update */
                 deltat = norm / dot;
+                // time0[ts+1] = time[ts+1]; 
                 time[ts+1] = time[ts] + deltat; 
 
                 fprintf(timefile, "%d %1.14e %1.14e    %1.14e %1.14e", ts, ts*dt, time[ts], 
                         app->statesy[ts], app->statesz[ts]);
                 fprintf(timefile, "\n");
                 fflush(timefile);
+
+                /* norm */
+                if (ts > 0)
+                {
+                        double deltay = (app->statesy[ts] - app->statesy[ts-1]) * (time0[ts]-time0[ts-1]) ;
+                        double deltaz = (app->statesz[ts] - app->statesz[ts-1]) * (time0[ts]-time0[ts-1]) ;
+                        double scaledy = app->statesy[ts] + deltay * (time[ts] - time0[ts]);
+                        double scaledz = app->statesz[ts] + deltaz * (time[ts] - time0[ts]);
+                        tnorm += (scaledy - states0[0][ts]) * (scaledy - states0[0][ts]);
+                        tnorm += (scaledz - states0[1][ts]) * (scaledz - states0[1][ts]);
+                
+                        // tnorm += (app->statesy[ts] - states0[0][ts]) * (app->statesy[ts] - states0[0][ts]);
+                        // tnorm += (app->statesz[ts] - states0[1][ts]) * (app->statesz[ts] - states0[1][ts]);
+
+                        states0[0][ts] = app->statesy[ts];
+                        states0[1][ts] = app->statesz[ts];
+                }
         }
         fclose(timefile);
+        tnorm = sqrt(tnorm)/ntime;
+        printf("tnorm %1.14e\n", tnorm);
+
    }
 
    braid_Destroy(core);
