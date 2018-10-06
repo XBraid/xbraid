@@ -152,6 +152,7 @@ clean: cleanout
 	rm -f *.o $(C_NOHYPRE) $(F_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES) $(F_EXAMPLES) *ror_norm* *_err_* *_mesh* *_sol_*
 	rm -rf *.dSYM
 	rm -rf *.out.*
+	rm -rf rescalingVDP
 
 cleanout:
 	rm -f ex*.out.*
