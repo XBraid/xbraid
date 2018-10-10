@@ -71,7 +71,7 @@ ifeq ($(findstring tux408,$(HOSTNAME)),tux408)
    ifeq ($(lvalgrind),YES)
       #only needed for openmpi: LFLAGS += /usr/lib64/valgrind/libmpiwrap-amd64-linux.so 
    endif
-else ifeq ($(findstring kullat,$(HOSTNAME)),kullat)
+else ifeq ($(findstring ASTechs,$(HOSTNAME)),ASTechs)
    # for Jacob's laptop
    CC = gcc
    MPICC = mpicc
