@@ -28,7 +28,7 @@
 
 .PHONY: all braid clean
 
-all: braid examples drivers
+all: braid examples
 
 braid: 
 	cd braid; $(MAKE)

@@ -37,6 +37,7 @@ include ../makefile.inc
 HYPRE_DIR = ../../hypre/src/hypre
 HYPRE_FLAGS = -I$(HYPRE_DIR)/include
 HYPRE_LIB = -L$(HYPRE_DIR)/lib -lHYPRE
+HYPRE_LIB_FILE = $(HYPRE_DIR)/lib/libHYPRE.a
 
 MFEM_DIR = ../../mfem
 MFEM_CONFIG_MK = $(MFEM_DIR)/config/config.mk
@@ -107,13 +108,13 @@ ex-02-serial: ex-02-serial.c $(BRAID_LIB_FILE) ex-02-lib.c
 	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
 
 # Rule for building ex-03
-ex-03: ex-03.c $(BRAID_LIB_FILE) ex-03-lib.c
+ex-03: ex-03.c $(BRAID_LIB_FILE) $(HYPRE_LIB_FILE) ex-03-lib.c
 	@echo "Building" $@ "..."
 	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(HYPRE_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(HYPRE_LIB) $(LFLAGS)
 
 
 # Rule for building ex-03-serial
-ex-03-serial: ex-03-serial.c $(BRAID_LIB_FILE) ex-03-lib.c
+ex-03-serial: ex-03-serial.c $(BRAID_LIB_FILE) $(HYPRE_LIB_FILE) ex-03-lib.c
 	@echo "Building" $@ "..."
 	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(HYPRE_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(HYPRE_LIB) $(LFLAGS)
 
@@ -142,6 +143,10 @@ ex-04-serial: ex-04-serial.c $(BRAID_LIB_FILE) ex-04-lib.c
 # Generate an error message if the MFEM library is not built and exit
 $(MFEM_LIB_FILE):
 	$(error The MFEM library is not built)
+
+# Generate an error message if the Hypre library is not built and exit
+$(HYPRE_LIB_FILE):
+	$(error The Hypre library is not built, unable to build ex-03)
 
 clean: cleanout
 	rm -f *.o $(C_NOHYPRE) $(F_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES) $(F_EXAMPLES) *ror_norm* *_err_* *_mesh* *_sol_*
