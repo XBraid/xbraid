@@ -215,10 +215,10 @@ MPI_Allgather( void               *sendbuf,
       } 
       break;
 
-      case MPI_REAL:
+      case MPI_FLOAT:
       {
-         double *crecvbuf = (double *)recvbuf;
-         double *csendbuf = (double *)sendbuf;
+         float *crecvbuf = (float *)recvbuf;
+         float *csendbuf = (float *)sendbuf;
          for (i = 0; i < sendcount; i++)
          {
 	    crecvbuf[i] = csendbuf[i];
