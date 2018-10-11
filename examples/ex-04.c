@@ -157,25 +157,6 @@ my_Init(braid_App     app,
 }
 
 int
-my_InitShell(braid_App     app,
-             double        t,
-             braid_Vector *u_ptr)
-{
-   /* Init a shell only */
-   my_Vector* u = (my_Vector *) malloc(sizeof(my_Vector));
-   u->values = NULL;
-
-   /* Initialize the shell part (design) */
-   int ts = t * app->ntime / app->tstop;  // Get time step 
-   int localindex = GetLocalDesignIndex(app, ts);
-   u->design = app->design[localindex];                   // Set initial design 
-
-   *u_ptr = u;
-   return 0;
-   
-}     
-
-int
 my_Clone(braid_App     app,
          braid_Vector  u,
          braid_Vector *v_ptr)
@@ -195,20 +176,6 @@ my_Clone(braid_App     app,
    return 0;
 }
 
-/* Cloning only the shell part of the vector*/
-int
-my_CloneShell(braid_App     app,
-              braid_Vector  u,
-              braid_Vector *v_ptr)
-{
-   my_Vector* v = (my_Vector *) malloc(sizeof(my_Vector));
-   v->values = NULL;
-   v->design = u->design;
-
-   *v_ptr = v;
-   return 0;
-}
-
 
 int
 my_Free(braid_App    app,
@@ -221,18 +188,6 @@ my_Free(braid_App    app,
    return 0;
 }
 
-/* Free only the non-shell part of the vector, but keep the shell part*/
-int
-my_FreeShell(braid_App    app,
-             braid_Vector u)
-{
-   if (u->values !=NULL)
-   {
-      free(u->values);
-   }
-   u->values = NULL;
-   return 0;
-}     
 
 
 int
@@ -655,8 +610,6 @@ int main (int argc, char *argv[])
    braid_SetAbsTol(core, braid_tol);
 //    braid_SetAbsTolAdjoint(core, braid_adjtol);
 
-   braid_SetShell(core, my_InitShell, my_CloneShell, my_FreeShell);
-   braid_SetStorage(core, -1);
 
    /* Get processor distribution */
 
