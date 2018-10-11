@@ -93,15 +93,17 @@ my_Step(braid_App        app,
         braid_Vector     u,
         braid_StepStatus status)
 {
-   int    ts;
+   int    ts_start, ts_stop;
    double tstart, tstop;
    double design;
    double deltaT;
    
-   /* Get the time-step size */
+   /* Get the time-steps */
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
-   braid_StepStatusGetTIndex(status, &ts);
-   deltaT = tstop - tstart;
+   braid_StepStatusGetTIndex(status, &ts_start);
+   ts_start = GetTimeStepIndex(app, tstart); 
+   ts_stop  = GetTimeStepIndex(app, tstop); 
+   deltaT   = tstop - tstart;
 
    /* Get the current design from the shell part of the vector */
    design = u->design;
@@ -109,11 +111,12 @@ my_Step(braid_App        app,
    /* Take one step */
    take_step(u->values, design, deltaT);
 
+
    /* Get new design from the app */
-   ts = tstop * app->ntime / app->tstop;
-   int localindex = GetLocalDesignIndex(app, ts);
+   int localindex = GetLocalDesignIndex(app, ts_stop);
    u->design = app->design[localindex];
-//    printf("%d: Step %f -> %f, ts %d, design %f\n", app->myid, tstart, tstop, ts, app->design[localindex] );
+
+//    printf("%d: Step %d,%f -> %d,%f,  design %1.14e -> %d,%1.14e, uvalue[0] %f\n", app->myid, ts_start, tstart, ts_stop, tstop, design, localindex, u->design, u->values[0] );
 
    /* no refinement */
    braid_StepStatusSetRFactor(status, 1);
@@ -146,10 +149,10 @@ my_Init(braid_App     app,
       u->values[1] = 0.0;
    }
 
-   /* Initialize the shell part (design) */
-   int ts = t * app->ntime / app->tstop;  // Get time step 
-   int localindex = GetLocalDesignIndex(app, ts);
-   u->design = app->design[localindex];                   // Get design from the app
+   /* Initialize the design */
+   int ts  = GetTimeStepIndex(app, t); 
+   int idx = GetLocalDesignIndex(app, ts);
+   u->design = app->design[idx];
 
    *u_ptr = u;
 
@@ -274,6 +277,7 @@ my_BufPack(braid_App           app,
       dbuffer[i] = (u->values)[i];
    }
    dbuffer[2] = u->design;
+//    printf("%d: Send design %1.14e\n", app->myid, u->design);
 
    braid_BufferStatusSetSize( bstatus,  3*sizeof(double));
 
@@ -301,6 +305,7 @@ my_BufUnpack(braid_App           app,
       (u->values)[i] = dbuffer[i];
    }
    u->design = dbuffer[2];
+//    printf("%d: Receive design %1.14e\n", app->myid, u->design);
 
    *u_ptr = u;
    return 0;
@@ -416,7 +421,12 @@ int GetLocalDesignIndex(braid_App app,
         return ts - app->ilower;
 }
 
-
+int GetTimeStepIndex(braid_App app,
+                     double    t)
+{
+   int ts = t * app->ntime / app->tstop; 
+   return ts;
+}             
 /*--------------------------------------------------------------------------
  * Main driver
  *--------------------------------------------------------------------------*/
@@ -562,8 +572,6 @@ int main (int argc, char *argv[])
    app = (my_App *) malloc(sizeof(my_App));
    app->myid     = rank;
    app->ntime    = ntime;
-//    app->design   = design;
-//    app->gradient = gradient;
    app->gamma    = gamma;
    app->tstop    = tstop;
 
@@ -574,9 +582,6 @@ int main (int argc, char *argv[])
    /* Get xbraid's grid distribution */
    int ilower, iupper;
    _braid_GetDistribution(core, &ilower, &iupper);
-   ilower -= 1;
-   iupper -= 1;
-   if (ilower <= 0) ilower = 0;
    printf("%d: %d %d\n", rank, ilower, iupper);
 
    /* Initialize local design vector and store it in the app */
@@ -594,7 +599,7 @@ int main (int argc, char *argv[])
    for (int i=0; i<ndesign; i++)
    {
         int ts = i + ilower;
-        printf("%d: design[%d] = %1.14e\n", rank, ts, app->design[i]);
+        printf("%d: design[%d] = %1.14e , ndesign %d\n", rank, ts, app->design[i], ndesign);
    }
 
   /* Initialize XBraid_Adjoint */
@@ -610,8 +615,6 @@ int main (int argc, char *argv[])
    braid_SetAbsTol(core, braid_tol);
 //    braid_SetAbsTolAdjoint(core, braid_adjtol);
 
-
-   /* Get processor distribution */
 
 
    /* Prepare optimization output */
