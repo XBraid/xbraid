@@ -224,6 +224,7 @@ MPI_Allgather( void               *sendbuf,
 	    crecvbuf[i] = csendbuf[i];
          }
       } 
+      break;
 
       case MPI_FLOAT:
       {
