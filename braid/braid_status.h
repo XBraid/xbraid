@@ -486,7 +486,9 @@ ACCESSOR_HEADER_SET1(Step, RSpace,        Real)
  *--------------------------------------------------------------------------*/
 
 ACCESSOR_HEADER_GET1(Buffer, MessageType, Int)
+ACCESSOR_HEADER_GET1(Buffer, TIndex,      Int)
 ACCESSOR_HEADER_SET1(Buffer, Size,        Real)
+ACCESSOR_HEADER_GET1(Buffer, Size,        Real)
 
 /*--------------------------------------------------------------------------
  * ObjectiveStatus Prototypes: They just wrap the corresponding Status accessors

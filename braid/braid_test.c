@@ -392,7 +392,7 @@ braid_TestBuf( braid_App              app,
    
    braid_Status            status = _braid_CTAlloc(_braid_Status, 1);
    braid_BufferStatus      bstatus = (braid_BufferStatus)status;
-   _braid_BufferStatusInit( 0, 0, bstatus );
+   _braid_BufferStatusInit( 0, 0, -1, bstatus );
    /* Initialize the correct flag */
    correct = 1;
 

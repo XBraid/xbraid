@@ -340,6 +340,15 @@ braid_StatusSetSize(braid_Status status,
    return _braid_error_flag;
 }
 
+braid_Int
+braid_StatusGetSize(braid_Status status,
+                    braid_Real  *size
+                    )
+{
+   *size = _braid_StatusElt(status, size_buffer);
+   return _braid_error_flag;
+}
+
 /*--------------------------------------------------------------------------
  * AccessStatus Routines
  *--------------------------------------------------------------------------*/
@@ -471,15 +480,19 @@ ACCESSOR_FUNCTION_SET1(Step, RSpace,        Real)
  *--------------------------------------------------------------------------*/
 
 braid_Int
-_braid_BufferStatusInit(braid_Int        messagetype,
-                        braid_Int        size,
+_braid_BufferStatusInit(braid_Int         messagetype,
+                        braid_Int         size,
+                        braid_Int         index,
                         braid_BufferStatus status)
 {
    _braid_StatusElt(status, messagetype)    = messagetype;
    _braid_StatusElt(status, size_buffer)    = size;
+   _braid_StatusElt(status, idx)            = index;
    return _braid_error_flag;
 }
 ACCESSOR_FUNCTION_GET1(Buffer, MessageType, Int)
+ACCESSOR_FUNCTION_GET1(Buffer, TIndex,      Int)
+ACCESSOR_FUNCTION_GET1(Buffer, Size,        Real)
 ACCESSOR_FUNCTION_SET1(Buffer, Size,        Real)
 
 

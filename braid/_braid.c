@@ -455,7 +455,8 @@ _braid_InitAdjointVars(braid_Core   core,
    }
 
    /* Allocate a buffer for BufUnpackDiff*/
-   _braid_CoreFcn(core, bufsize)(app, &bufsize, bstatus);
+   _braid_BufferStatusInit( 0, 0, -1, bstatus );
+   _braid_BaseBufSize(core, app,  &bufsize, bstatus);
    sendbuffer = malloc(bufsize); 
    request = NULL;
 
@@ -724,7 +725,7 @@ _braid_CommRecvInit(braid_Core           core,
       handle = _braid_TAlloc(_braid_CommHandle, 1);
 
       /* Allocate buffer through user routine */
-      _braid_BufferStatusInit( 0, 0, bstatus );
+      _braid_BufferStatusInit( 0, 0, index, bstatus );
       _braid_BaseBufSize(core, app,  &size, bstatus);
       buffer = malloc(size);
 
@@ -772,7 +773,7 @@ _braid_CommSendInit(braid_Core           core,
       handle = _braid_TAlloc(_braid_CommHandle, 1);
 
       /* Allocate buffer through user routine */
-      _braid_BufferStatusInit( 0, 0, bstatus );
+      _braid_BufferStatusInit( 0, 0, index, bstatus );
       _braid_BaseBufSize(core, app,  &size, bstatus);
       buffer = malloc(size);
 
@@ -824,7 +825,7 @@ _braid_CommWait(braid_Core          core,
       
       if (request_type == 1) /* recv type */
       {
-         _braid_BufferStatusInit( 0, 0, bstatus );
+         _braid_BufferStatusInit( 0, 0, -1, bstatus );
          braid_BaseVector  *vector_ptr = _braid_CommHandleElt(handle, vector_ptr);
          
          /* Store the sender rank the bufferStatus */   
@@ -3063,7 +3064,7 @@ _braid_FRefine(braid_Core   core,
    requests = _braid_CTAlloc(MPI_Request, (nsends+nrecvs));
    statuses = _braid_CTAlloc(MPI_Status,  (nsends+nrecvs));
 
-   _braid_BufferStatusInit( 1, 0, bstatus );
+   _braid_BufferStatusInit( 1, 0, -1, bstatus );
    _braid_BaseBufSize(core, app,  &max_usize, bstatus); /* max buffer size */
    _braid_NBytesToNReals(max_usize, max_usize);
 
