@@ -25,6 +25,7 @@ typedef struct _braid_App_struct
    int       ntimes;
    double    beta;
    double*   time;  
+   double    dt;
 
    double*   statesy;  
    double*   statesz;  
@@ -52,6 +53,12 @@ my_Step(braid_App        app,
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
    braid_StepStatusGetTIndex(status, &ts);
    dt = tstop - tstart;
+
+   /* Get scaled time */
+   // Get index of tstop! 
+   // - get braid current level
+   // - get braid cfactor
+   // compute idx_tstop = tdx_tstart + cfactor^currentlevel
 
    double rhs[2], rhso[2];
    double res_vdp[2];
@@ -189,9 +196,10 @@ my_Access(braid_App          app,
    }
 
    /* store in app */
-   (app->statesy)[index] = u->y;
-   (app->statesz)[index] = u->z;
-
+   if (index != app->ntimes){
+        (app->statesy)[index] = u->y;
+        (app->statesz)[index] = u->z;
+   }
 
    return 0;
 }
@@ -272,6 +280,7 @@ int main (int argc, char *argv[])
    double       rhs_vdp[2];
    int           ntime, rank;
    FILE*        timefile;
+   FILE*        deltafile;
    char         filename[255];
 
    /* Define time domain: ntime intervals */
@@ -286,14 +295,14 @@ int main (int argc, char *argv[])
    states[1] = (double*) malloc(ntime*sizeof(double));
    states0[0] = (double*) malloc(ntime*sizeof(double));
    states0[1] = (double*) malloc(ntime*sizeof(double));
-   time0     = (double*) malloc((ntime+1)*sizeof(double));
-   time      = (double*) malloc((ntime+1)*sizeof(double));
-   for (int ts = 0; ts <= ntime; ts++)
+   time0     = (double*) malloc((ntime)*sizeof(double));
+   time      = (double*) malloc((ntime)*sizeof(double));
+   for (int ts = 0; ts < ntime; ts++)
    {
            time[ts]  = ts*dt;
            time0[ts] = ts*dt;
-           states0[0][ts] = 0.0;
-           states0[1][ts] = 0.0;
+           states0[0][ts] = 1.30865;
+           states0[1][ts] = 0.201522;
    }
 
    /* Initialize MPI */
@@ -307,6 +316,7 @@ int main (int argc, char *argv[])
    app->statesy  = states[0];
    app->statesz  = states[1];
    app->ntimes   = ntime;
+   app->dt       = dt;
    app->time     = time;
    
    /* initialize XBraid and set options */
@@ -328,26 +338,32 @@ int main (int argc, char *argv[])
    // /* Run simulation, and then clean up */
    for (int i = 0; i < 13; i++)
    {
+        app->iter = i;
         braid_Drive(core);
         // int ts = 40000-1;
         // printf("%d %1.14e\n", ts, app->statesy[ts]);
         
         /* rescaling */
         sprintf(filename, "%s.%05d", "rescaled.out", i);
-        timefile = fopen(filename, "a");
+        timefile = fopen(filename, "w");
         time[0] = tstart;
 
-        double tnorm = 0.0;
+        sprintf(filename, "%s.%05d", "deltafile.out", i);
+        deltafile = fopen(filename, "w");
 
+        /* Store old time values */
         for (int ts = 0; ts < ntime; ts++)
-        {
-                time0[ts+1] = time[ts+1]; 
+        {       
+                time0[ts] = time[ts];
         }
-        for (int ts = 0; ts < ntime; ts++)
+
+        double scalednorm   = 0.0;
+        double unscalednorm = 0.0;
+        int idx = 0;
+        for (int ts = 0; ts < ntime-1; ts++)
         {
-                app->iter = i;
                 /* get right hand side */
-                vdp_eval(app->statesy[ts], app->statesz[ts], beta, rhs_vdp);
+                vdp_eval(app->statesy[ts+1], app->statesz[ts+1], beta, rhs_vdp);
 
                 /* Dotproduct */
                 dot  = (app->statesy[ts+1] - app->statesy[ts]) * rhs_vdp[0];
@@ -359,6 +375,7 @@ int main (int argc, char *argv[])
 
                 /* update */
                 deltat = norm / dot;
+
                 time[ts+1] = time[ts] + deltat; 
 
                 fprintf(timefile, "%d %1.14e %1.14e    %1.14e %1.14e", ts, ts*dt, time[ts], 
@@ -366,29 +383,53 @@ int main (int argc, char *argv[])
                 fprintf(timefile, "\n");
                 fflush(timefile);
 
-                /* norm */
-                
-                
-                        //double dydt = (app->statesy[ts+1] - app->statesy[ts]) / (time0[ts+1]-time0[ts]) ;
-                        //double dzdt = (app->statesz[ts+1] - app->statesz[ts]) / (time0[ts+1]-time0[ts]) ;
-                        double dydt = rhs_vdp[0] ;
-                        double dzdt = rhs_vdp[1] ;
-                        double scaledy = app->statesy[ts+1] - dydt * (deltat);
-                        double scaledz = app->statesz[ts+1] - dzdt * (deltat);
-                        tnorm += (scaledy - states0[0][ts+1]) * (scaledy - states0[0][ts+1]);
-                        tnorm += (scaledz - states0[1][ts+1]) * (scaledz - states0[1][ts+1]);
-                
-                        // tnorm += (app->statesy[ts] - states0[0][ts]) * (app->statesy[ts] - states0[0][ts]);
-                        // tnorm += (app->statesz[ts] - states0[1][ts]) * (app->statesz[ts] - states0[1][ts]);
 
-                        states0[0][ts+1] = app->statesy[ts+1];
-                        states0[1][ts+1] = app->statesz[ts+1];
-                
-        //       printf("%1.14e %1.14e %1.14e\n", scaledy - states0[0][ts], dydt, deltat);
+                /* Get interval */
+                int a;
+                for (a = idx; a < ntime-1; a++)
+                {
+                        if (time0[a] < time[ts+1] && time[ts+1] < time0[a+1])
+                        {
+                            idx = a;
+                            break;
+                        }
+                }
+                if (a != ntime)
+                {
+
+                        /* Get u-delta from k-iteration */
+                        double deltay = (states0[0][idx] - app->statesy[ts+1]);
+                        double deltaz = (states0[1][idx] - app->statesz[ts+1]);
+
+                        /* Get derivative */
+                        double dydt = (states0[0][idx+1] - states0[0][idx]) / (time0[idx+1]-time0[idx]) ;
+                        double dzdt = (states0[1][idx+1] - states0[1][idx]) / (time0[idx+1]-time0[idx]) ;
+
+                        /* Get time difference*/
+                        double timediff = time[ts+1] - time0[idx];
+
+                        /* Compute norm  */
+                        double tmpy,tmpz;
+                        tmpy = pow(deltay + dydt * timediff,2);
+                        tmpz = pow(deltaz + dzdt * timediff,2);
+                        scalednorm   += tmpy;
+                        // unscalednorm += pow(deltay,2) + pow(deltaz,2);
+
+                        fprintf(deltafile, "%d %1.14e %1.14e    %1.14e %1.14e\n", ts, pow(deltay,2), pow(deltaz,2), tmpy, tmpz); 
+                }
         }
         fclose(timefile);
-        tnorm = sqrt(tnorm)/ntime;
-        printf("tnorm %1.14e\n", tnorm);
+        fclose(deltafile);
+
+        scalednorm   = sqrt(scalednorm)/ntime;
+        // unscalednorm = sqrt(unscalednorm)/ntime;
+        printf("tnorm %1.14e \n", scalednorm);
+
+        for (int ts = 0; ts < ntime; ts++)
+        {
+                states0[0][ts] = app->statesy[ts];
+                states0[1][ts] = app->statesz[ts];
+        }
 
    }
 
