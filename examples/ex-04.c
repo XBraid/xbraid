@@ -69,6 +69,7 @@ typedef struct _braid_App_struct
    int     ilower;       /* index of first time point on this processor */
    int     iupper;       /* index of last time point on this processor */
    double  constdesign;   /* Testing adjoint solve with xbraid using constant design variable */
+   double  constgradient;   /* Testing adjoint solve with xbraid using constant design variable */
    braid_Core primalcore; 
 } my_App;
 
@@ -82,6 +83,14 @@ typedef struct _braid_Vector_struct
    /* The Vector part holds the R^2 state vector (u_1, u_2) at one time step */
    double *values;    
 
+   /* If adjoint core: Pointer to the primal state values, else: NULL */
+   double* primal;
+
+   /* If adjoint: Flag that determines if the primal has just been received, i.e. should be free'd after usage (flag > 0) */
+   double sendflag;  
+
+   /* Store the local gradient in u. Sum over all time steps after adjoint run. */
+   double gradient;
 } my_Vector;
 
 
@@ -137,24 +146,72 @@ my_Step(braid_App        app,
 //    printf("%d: Step %d,%f -> %d,%f,  design %1.14e -> %d,%1.14e, uvalue[0] %f\n", app->myid, ts_start, tstart, ts_stop, tstop, design, localindex, u->design, u->values[0] );
 
 
-   /* Get the primal value from the core */
-   braid_BaseVector uprimal;
-   _braid_UGetVectorRef(app->primalcore, 0, app->ntime - ts_stop , &uprimal);
-   if (uprimal !=NULL)
-   {
-      printf("%d: Step %d -> %d, adjstate %1.14e, primalstate %1.14e\n", app->myid, ts_start, ts_stop,u->values[0], uprimal->userVector->values[0]);
-   }
-   else
-   {
-      printf("%d: Step %d -> %d, adjstate %1.14e, primalstate %1.14e\n", app->myid, ts_start, ts_stop,u->values[0], -1.0);
-   }
-
    /* no refinement */
    braid_StepStatusSetRFactor(status, 1);
 
    return 0;
 }   
 
+
+int 
+my_Step_Adj(braid_App        app,
+            braid_Vector     ustop,
+            braid_Vector     fstop,
+            braid_Vector     u,
+            braid_StepStatus status)
+{
+   int    ts_start, ts_stop;
+   double tstart, tstop;
+   double design;
+   double deltaT;
+   double localgrad = 0.0;
+   
+   /* Get the time-steps */
+   braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+   braid_StepStatusGetTIndex(status, &ts_start);
+   ts_start = GetTimeStepIndex(app, tstart); 
+   ts_stop  = GetTimeStepIndex(app, tstop); 
+   deltaT   = tstop - tstart;
+
+   /* Get the current design from the shell part of the vector */
+//    design = u->design;
+   design = app->constdesign;
+
+
+   /* Add the costfunction part */
+   u->values[0] += 2 * u->primal[0];
+   u->values[1] += 2 * u->primal[1];
+   
+   /* Take one step backwards */
+   localgrad = take_step_diff(u->values, deltaT);
+   
+
+   /* Store local gradient */
+   u->gradient = localgrad;
+
+   /* Get new design from the app */
+   int localindex = GetLocalDesignIndex(app, ts_stop);
+   u->design = app->design[localindex];
+
+//    printf("%d: Step_adj %d -> %d,  uvalue[1] %1.14e using primal value %1.14e, grad %1.14e\n", app->myid, ts_start, ts_stop, u->values[1], u->primal[0], localgrad );
+
+   /* Free primal value, if it has just been send to this processor */
+   if (u->sendflag > 0.0)
+   {
+      free(u->primal);
+   }
+
+   /* Get the new primal value from the core */
+   braid_BaseVector uprimal;
+   _braid_UGetVectorRef(app->primalcore, 0, app->ntime - ts_stop , &uprimal);
+   u->primal   = uprimal->userVector->values;
+   u->sendflag = -1.0;
+
+   /* no refinement */
+   braid_StepStatusSetRFactor(status, 1);
+
+   return 0;
+}  
 
 int
 my_Init(braid_App     app,
@@ -166,7 +223,8 @@ my_Init(braid_App     app,
 
    /* Allocate the vector */
    u = (my_Vector *) malloc(sizeof(my_Vector));
-   u->values = (double*) malloc( 2*sizeof(double) );
+   u->values     = (double*) malloc( 2*sizeof(double) );
+   u->primal = NULL;
 
    /* Initialize the vector */
    if (t == 0.0)
@@ -184,6 +242,44 @@ my_Init(braid_App     app,
    int ts  = GetTimeStepIndex(app, t); 
    int idx = GetLocalDesignIndex(app, ts);
    u->design = app->design[idx];
+
+   
+
+   *u_ptr = u;
+
+   return 0;
+}
+
+
+int
+my_Init_Adj(braid_App     app,
+            double        t,
+            braid_Vector *u_ptr)
+{
+
+   my_Vector *u;
+
+   /* Allocate the vector */
+   u = (my_Vector *) malloc(sizeof(my_Vector));
+   u->values     = (double*) malloc( 2*sizeof(double) );
+   u->primal     = NULL;
+
+   /* Initialize the adjoint vector with zero */
+   u->values[0] = 0.0;
+   u->values[1] = 0.0;
+
+   /* Initialize the design */
+   int ts  = GetTimeStepIndex(app, t); 
+   int idx = GetLocalDesignIndex(app, ts);
+   u->design = app->design[idx];
+
+   /* Set a pointer to the primal variable */
+   braid_BaseVector uprimal;
+   _braid_UGetVectorRef(app->primalcore, 0, app->ntime - ts, &uprimal);
+   u->primal = uprimal->userVector->values;
+   u->sendflag = -1.0;
+
+//    printf("%d: Init %d, using primal value %1.14e\n", app->myid, ts, u->primal[0] );
 
    *u_ptr = u;
 
@@ -205,6 +301,9 @@ my_Clone(braid_App     app,
    v->values[0] = u->values[0];
    v->values[1] = u->values[1];
    v->design    = u->design;
+   v->primal    = u->primal;
+   v->sendflag  = u->sendflag;
+   v->gradient  = u->gradient;
 
    *v_ptr = v;
    return 0;
@@ -217,6 +316,7 @@ my_Free(braid_App    app,
 {
    free(u->values);
    u->values = NULL;
+   u->primal = NULL;
    free(u);
 
    return 0;
@@ -283,6 +383,31 @@ my_Access(braid_App          app,
    return 0;
 }
 
+int
+my_Access_Adj(braid_App          app,
+              braid_Vector       u,
+              braid_AccessStatus astatus)
+{
+   int   done, index;
+   char  filename[255];
+   FILE * file;
+
+   /* Print solution to file if simulation is over */
+   braid_AccessStatusGetDone(astatus, &done);
+
+   if (done)
+   {
+      braid_AccessStatusGetTIndex(astatus, &index);
+      sprintf(filename, "%s.%04d.%03d", "ex-04.out.adjoint", index, app->myid);
+      file = fopen(filename, "w");
+      fprintf(file, "%1.14e, %1.14e, %1.14e\n", (u->values)[0], (u->values)[1], u->design);
+      fflush(file);
+      fclose(file);
+   }
+
+
+   return 0;
+}
 
 int
 my_BufSize(braid_App           app,
@@ -290,6 +415,15 @@ my_BufSize(braid_App           app,
            braid_BufferStatus  bstatus)
 {
    *size_ptr = 3*sizeof(double);
+   return 0;
+}
+
+int
+my_BufSize_Adj(braid_App           app,
+               int                 *size_ptr,
+               braid_BufferStatus  bstatus)
+{
+   *size_ptr = 5*sizeof(double) ;
    return 0;
 }
 
@@ -308,6 +442,7 @@ my_BufPack(braid_App           app,
       dbuffer[i] = (u->values)[i];
    }
    dbuffer[2] = u->design;
+
 //    printf("%d: Send design %1.14e\n", app->myid, u->design);
 
    braid_BufferStatusSetSize( bstatus,  3*sizeof(double));
@@ -315,6 +450,30 @@ my_BufPack(braid_App           app,
    return 0;
 }
 
+int
+my_BufPack_Adj(braid_App           app,
+               braid_Vector        u,
+               void               *buffer,
+               braid_BufferStatus  bstatus)
+{
+   double *dbuffer = buffer;
+   int i;
+
+   for(i = 0; i < 2; i++)
+   {
+      dbuffer[i] = (u->values)[i];
+   }
+   dbuffer[2] = u->design;
+
+   dbuffer[3] = u->primal[0];
+   dbuffer[4] = u->primal[1];
+
+//    printf("%d: Send design %1.14e\n", app->myid, u->design);
+
+   braid_BufferStatusSetSize( bstatus,  5*sizeof(double));
+
+   return 0;
+}
 
 int
 my_BufUnpack(braid_App           app,
@@ -329,6 +488,7 @@ my_BufUnpack(braid_App           app,
    /* Allocate memory */
    u = (my_Vector *) malloc(sizeof(my_Vector));
    u->values = (double*) malloc( 2*sizeof(double) );
+   u->primal = NULL;
 
    /* Unpack the buffer */
    for(i = 0; i < 2; i++)
@@ -342,108 +502,36 @@ my_BufUnpack(braid_App           app,
    return 0;
 }
 
-// /* Evaluate one term of the time-dependent discretized objective function for
-//  * vector u.  The result over all time values will be summed by Braid. */
-// int 
-// my_ObjectiveT(braid_App              app,
-//               braid_Vector           u,
-//               braid_ObjectiveStatus  ostatus,
-//               double                *objectiveT_ptr)
-// {
-//    double objT;
-//    double design;
-//    int    index;
-//    double deltaT = 1./app->ntime;
-//    double gamma  = app->gamma;
+int
+my_BufUnpack_Adj(braid_App           app,
+                 void               *buffer,
+                 braid_Vector       *u_ptr,
+                 braid_BufferStatus  bstatus)
+{
+   my_Vector *u = NULL;
+   double    *dbuffer = buffer;
+   int i;
 
-//    /* Get the time index*/
-//    braid_ObjectiveStatusGetTIndex(ostatus, &index);
+   /* Allocate memory */
+   u = (my_Vector *) malloc(sizeof(my_Vector));
+   u->values = (double*) malloc( 2*sizeof(double) );
+   u->primal = (double*) malloc( 2*sizeof(double) );
 
-//    /* Evaluate the objective function after the first step */
-//    if ( index > 0)
-//    {
-//       /* Get the design from the app */
-//       design = app->design[index-1];
+   /* Unpack the buffer */
+   for(i = 0; i < 2; i++)
+   {
+      (u->values)[i] = dbuffer[i];
+   }
+   u->design = dbuffer[2];
 
-//       /* Evaluate objective */
-//       objT = evalObjectiveT( u->values, design, deltaT, gamma);
-//    }
-//    else
-//    {
-//       objT = 0.0;
-//    }
+   u->primal[0] = dbuffer[3];
+   u->primal[1] = dbuffer[4];
+   u->sendflag  = 1.0;
+//    printf("%d: Receive design %1.14e\n", app->myid, u->design);
 
-//    *objectiveT_ptr = objT;
-   
-//    return 0;
-// }
-
-
-// /* Transposed partial derivatives of objectiveT */ 
-// int
-// my_ObjectiveT_diff(braid_App            app,
-//                   braid_Vector          u,
-//                   braid_Vector          u_bar,
-//                   braid_Real            F_bar,
-//                   braid_ObjectiveStatus ostatus)
-// {
-//    int     index;
-//    double  design;
-//    double  gamma   = app->gamma;
-//    double  deltaT  = 1. / app->ntime;
-   
-//    /* Get the design from the app */
-//    braid_ObjectiveStatusGetTIndex(ostatus, &index);
-
-//    if ( index > 0 )
-//    {
-//       /* Get the design from the app */
-//       design = app->design[index-1];
-
-//       /* Partial derivatives of objective */
-//       app->gradient[index-1] += evalObjectiveT_diff(u_bar->values, u->values, design, gamma, deltaT);
-//    }
-   
-//    return 0;
-// }
-
-// /* Transposed partial derivatives of step times u_bar */
-// int
-// my_Step_diff(braid_App              app,
-//                 braid_Vector        ustop,
-//                 braid_Vector        u,
-//                 braid_Vector        ustop_bar,
-//                 braid_Vector        u_bar,
-//                 braid_StepStatus    status)
-// {
-
-//    double  tstop, tstart;
-//    int     tidx;
-
-//    /* Get time and time index  */
-//    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
-//    braid_StepStatusGetTIndex(status, &tidx);
-//    double deltaT = tstop - tstart;
-
-//    /* transposed derivative of take_step times u_bar */
-//    app->gradient[tidx] += take_step_diff(u_bar->values, deltaT);
-
-//    return 0;
-// }
-
-// /* Set the gradient to zero */
-// int 
-// my_ResetGradient(braid_App app)
-// {
-//    int ts;
-
-//    for(ts = 0; ts < app->ntime; ts++) 
-//    {
-//       app->gradient[ts] = 0.0;
-//    }
-
-//    return 0;
-// }
+   *u_ptr = u;
+   return 0;
+}
 
 
            
@@ -616,7 +704,8 @@ int main (int argc, char *argv[])
    app->design = design;
    app->ilower = ilower;
    app->iupper = iupper;
-   app->constdesign = 2.0;
+   double EPS = 1e-7;
+   app->constdesign = 2.0 + EPS;
 
    printf("%d: %d -> %d, total: %d\n", rank, ilower, iupper, ndesign);
 
@@ -663,10 +752,9 @@ int main (int argc, char *argv[])
           /* Compute objective */
           if (u != NULL) // this is only true on one processor (the one that stores u)
           {
-             obj = pow(u->userVector->values[0],2); // + pow(u->userVector->values[1],2);
-             obj = sqrt(obj);
+             obj = pow(u->userVector->values[0],2) + pow(u->userVector->values[1],2);
         //      printf("%d: obj(%d) = %1.14e\n", rank, n, obj);
-             printf("%d: (%d) u->values[0] = %1.14e\n", rank, n, u->userVector->values[0]);
+        //      printf("%d: (%d) u->values[0] = %1.14e\n", rank, n, u->userVector->values[0]);
 
              objective += obj;
           }
@@ -679,7 +767,7 @@ int main (int argc, char *argv[])
 
      /* Set up adjoint core */
      braid_Core core_adj;
-     braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app, my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core_adj);
+     braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app, my_Step_Adj, my_Init_Adj, my_Clone, my_Free, my_Sum, my_SpatialNorm, my_Access_Adj, my_BufSize_Adj, my_BufPack_Adj, my_BufUnpack_Adj, &core_adj);
 
      /* Set some XBraid parameters */
      braid_SetMaxLevels(core_adj, max_levels);
@@ -694,19 +782,39 @@ int main (int argc, char *argv[])
      /* Tell XBraid to use reverted processor ranks */
      braid_SetRevertedRanks(core_adj, 1);
 
+     /* Store all points */
+     braid_SetStorage(core_adj, 0);
+
     /* Get xbraid's grid distribution */
      _braid_GetDistribution(core_adj, &ilower, &iupper);
      ndesign = iupper - ilower + 1;
-     printf("%d: reverted %d -> %d, total %d\n", rank, ilower, iupper, ndesign);
+//      printf("%d: reverted %d -> %d, total %d\n", rank, ilower, iupper, ndesign);
 
      app->ilower = ilower;
      app->iupper = iupper;
      app->constdesign = 2.0;
+     app->constgradient = 0.0;
 
 
      printf("\n");
      printf("RUN REVERSE \n");
      braid_Drive(core_adj);
+
+     /* Get gradient from adjoint u */
+     double gradient = 0.0;
+     for (int n = 1; n <= ntime; n++)
+     {
+          /* Get braid vector at this time step */
+          _braid_UGetVectorRef(core_adj, 0, n, &u);
+          /* Compute objective */
+          if (u != NULL) // this is only true on one processor (the one that stores u)
+          {
+        //      printf("%d: (%d) u->gradient = %1.14e\n", rank, n, u->userVector->gradient);
+             gradient += u->userVector->gradient;
+          }
+     }
+     MPI_Allreduce(&gradient, &gradient, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+     printf("%d: Gradient %1.14e\n", rank, gradient);
 
 //      for (int n=0; n <=ntime; n++)
 //      {
