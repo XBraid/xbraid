@@ -69,6 +69,7 @@ typedef struct _braid_App_struct
    int     ilower;       /* index of first time point on this processor */
    int     iupper;       /* index of last time point on this processor */
    double  constdesign;   /* Testing adjoint solve with xbraid using constant design variable */
+   braid_Core primalcore; 
 } my_App;
 
 
@@ -134,6 +135,19 @@ my_Step(braid_App        app,
    u->design = app->design[localindex];
 
 //    printf("%d: Step %d,%f -> %d,%f,  design %1.14e -> %d,%1.14e, uvalue[0] %f\n", app->myid, ts_start, tstart, ts_stop, tstop, design, localindex, u->design, u->values[0] );
+
+
+   /* Get the primal value from the core */
+   braid_BaseVector uprimal;
+   _braid_UGetVectorRef(app->primalcore, 0, app->ntime - ts_stop , &uprimal);
+   if (uprimal !=NULL)
+   {
+      printf("%d: Step %d -> %d, adjstate %1.14e, primalstate %1.14e\n", app->myid, ts_start, ts_stop,u->values[0], uprimal->userVector->values[0]);
+   }
+   else
+   {
+      printf("%d: Step %d -> %d, adjstate %1.14e, primalstate %1.14e\n", app->myid, ts_start, ts_stop,u->values[0], -1.0);
+   }
 
    /* no refinement */
    braid_StepStatusSetRFactor(status, 1);
@@ -630,13 +644,9 @@ int main (int argc, char *argv[])
 
 
 
-   /* Prepare optimization output */
-   if (rank == 0)
-   {
-      printf("\nOptimization:         || r ||        || r_adj ||        Objective           || Gradient ||\n");
-   }
 
-
+     /* Store the primal core in the app in order to access the primal values from xbraid */
+     app->primalcore = core;
 
       /* Parallel-in-time simulation and gradient computation */
       braid_Drive(core);
@@ -656,12 +666,13 @@ int main (int argc, char *argv[])
              obj = pow(u->userVector->values[0],2); // + pow(u->userVector->values[1],2);
              obj = sqrt(obj);
         //      printf("%d: obj(%d) = %1.14e\n", rank, n, obj);
+             printf("%d: (%d) u->values[0] = %1.14e\n", rank, n, u->userVector->values[0]);
 
              objective += obj;
           }
      }
      MPI_Allreduce(&objective, &objective, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-//      printf("%d: objective = %1.14e\n", rank, objective);
+     printf("%d: objective = %1.14e\n", rank, objective);
 
 
 
@@ -685,14 +696,16 @@ int main (int argc, char *argv[])
 
     /* Get xbraid's grid distribution */
      _braid_GetDistribution(core_adj, &ilower, &iupper);
-     /* Initialize local design vector and store it in the app */
      ndesign = iupper - ilower + 1;
+     printf("%d: reverted %d -> %d, total %d\n", rank, ilower, iupper, ndesign);
+
      app->ilower = ilower;
      app->iupper = iupper;
      app->constdesign = 2.0;
-     printf("%d: reverted %d -> %d, total %d\n", rank, ilower, iupper, ndesign);
 
 
+     printf("\n");
+     printf("RUN REVERSE \n");
      braid_Drive(core_adj);
 
 //      for (int n=0; n <=ntime; n++)
@@ -769,8 +782,8 @@ int main (int argc, char *argv[])
 //    free(design);
 //    free(gradient);
    free(app);
-     braid_Destroy(core);
-     braid_Destroy(core_adj);
+   braid_Destroy(core);
+   braid_Destroy(core_adj);
    
    MPI_Finalize();
 
