@@ -226,6 +226,17 @@ MPI_Allgather( void               *sendbuf,
       } 
       break;
 
+      case MPI_FLOAT:
+      {
+         float *crecvbuf = (float *)recvbuf;
+         float *csendbuf = (float *)sendbuf;
+         for (i = 0; i < sendcount; i++)
+         {
+	    crecvbuf[i] = csendbuf[i];
+         }
+      } 
+      break;
+
    }
 
    return(0);
