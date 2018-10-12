@@ -1015,6 +1015,11 @@ braid_SetObjectiveOnly(braid_Core core,         /**< braid_Core (_braid_Core) st
                        braid_Int  boolean       /**< set to '1' for computing objective function only, '0' for computing objective function AND gradients */
                        );                   
 
+
+braid_Int
+braid_SetRevertedRanks(braid_Core core,
+                       braid_Int  boolean);
+
 /**
  * After @ref braid_Drive has finished, this returns the objective function value.
  */

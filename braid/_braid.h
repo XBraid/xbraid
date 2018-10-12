@@ -255,6 +255,7 @@ typedef struct _braid_Core_struct
                                                   not be recorded unless nlevels==1, but the adjoint flag must be true 
                                                   even if nlevels==1. */
    braid_Int              obj_only;          /**< determines if adjoint code computes ONLY objective, no gradients. */
+   braid_Int              reverted_ranks;    
    braid_Int              verbose_adj;       /**< verbosity of the adjoint tape, displays the actions that are pushed / popped to the tape*/
 
    _braid_Tape*          actionTape;         /**< tape storing the actions while recording */

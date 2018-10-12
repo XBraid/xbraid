@@ -629,15 +629,30 @@ _braid_GetDistribution(braid_Core   core,
                        braid_Int   *ilower_ptr,
                        braid_Int   *iupper_ptr)
 {
-   MPI_Comm   comm    = _braid_CoreElt(core, comm);
-   braid_Int  gupper = _braid_CoreElt(core, gupper);
+   MPI_Comm   comm           = _braid_CoreElt(core, comm);
+   braid_Int  gupper         = _braid_CoreElt(core, gupper);
+   braid_Int  reverted_ranks = _braid_CoreElt(core, reverted_ranks);
    braid_Int  npoints, nprocs, proc;
+   braid_Int ilower, iupper;
 
    npoints = gupper + 1;
    MPI_Comm_size(comm, &nprocs);
    MPI_Comm_rank(comm, &proc);
+ 
 
-   _braid_GetBlockDistInterval(npoints, nprocs, proc, ilower_ptr, iupper_ptr);
+   _braid_GetBlockDistInterval(npoints, nprocs, proc, &ilower, &iupper);
+
+   /* revert ranks */
+   if (reverted_ranks)
+   {
+     *ilower_ptr = npoints-1 - iupper;
+     *iupper_ptr = npoints-1 - ilower;
+   }
+   else
+   {
+     *ilower_ptr = ilower;
+     *iupper_ptr = iupper;
+   }
 
    return _braid_error_flag;
 }
@@ -653,9 +668,10 @@ _braid_GetProc(braid_Core   core,
                braid_Int    index,
                braid_Int   *proc_ptr)
 {
-   MPI_Comm       comm   = _braid_CoreElt(core, comm);
-   _braid_Grid  **grids  = _braid_CoreElt(core, grids);
-   braid_Int      gupper = _braid_CoreElt(core, gupper);
+   MPI_Comm       comm       = _braid_CoreElt(core, comm);
+   _braid_Grid  **grids      = _braid_CoreElt(core, grids);
+   braid_Int      gupper     = _braid_CoreElt(core, gupper);
+   braid_Int  reverted_ranks = _braid_CoreElt(core, reverted_ranks);
    braid_Int      npoints, nprocs;
    braid_Int      l, cfactor;
 
@@ -666,6 +682,11 @@ _braid_GetProc(braid_Core   core,
    {
       cfactor = _braid_GridElt(grids[l], cfactor);
       _braid_MapCoarseToFine(index, cfactor, index);
+   }
+
+   if (reverted_ranks)
+   {
+     index = npoints -1 - index;
    }
 
    _braid_GetBlockDistProc(npoints, nprocs, index, proc_ptr);

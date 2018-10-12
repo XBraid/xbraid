@@ -50,6 +50,7 @@
 #include <string.h>
 
 #include "braid.h"
+#include "_braid.h"
 #include "braid_test.h"
 #include "ex-04-lib.c"
 
@@ -67,6 +68,7 @@ typedef struct _braid_App_struct
    double* design;       /* Local design vector (local on thit processor ) */
    int     ilower;       /* index of first time point on this processor */
    int     iupper;       /* index of last time point on this processor */
+   double  constdesign;   /* Testing adjoint solve with xbraid using constant design variable */
 } my_App;
 
 
@@ -81,6 +83,20 @@ typedef struct _braid_Vector_struct
 
 } my_Vector;
 
+
+
+int GetLocalDesignIndex(braid_App app,
+                        int       ts)
+{
+        return ts - app->ilower;
+}
+
+int GetTimeStepIndex(braid_App app,
+                     double    t)
+{
+   int ts = t * app->ntime / app->tstop; 
+   return ts;
+}  
 
 /*--------------------------------------------------------------------------
  * Integration routines
@@ -106,7 +122,8 @@ my_Step(braid_App        app,
    deltaT   = tstop - tstart;
 
    /* Get the current design from the shell part of the vector */
-   design = u->design;
+//    design = u->design;
+   design = app->constdesign;
 
    /* Take one step */
    take_step(u->values, design, deltaT);
@@ -116,7 +133,7 @@ my_Step(braid_App        app,
    int localindex = GetLocalDesignIndex(app, ts_stop);
    u->design = app->design[localindex];
 
-   printf("%d: Step %d,%f -> %d,%f,  design %1.14e -> %d,%1.14e, uvalue[0] %f\n", app->myid, ts_start, tstart, ts_stop, tstop, design, localindex, u->design, u->values[0] );
+//    printf("%d: Step %d,%f -> %d,%f,  design %1.14e -> %d,%1.14e, uvalue[0] %f\n", app->myid, ts_start, tstart, ts_stop, tstop, design, localindex, u->design, u->values[0] );
 
    /* no refinement */
    braid_StepStatusSetRFactor(status, 1);
@@ -415,18 +432,7 @@ my_BufUnpack(braid_App           app,
 // }
 
 
-int GetLocalDesignIndex(braid_App app,
-                        int       ts)
-{
-        return ts - app->ilower;
-}
-
-int GetTimeStepIndex(braid_App app,
-                     double    t)
-{
-   int ts = t * app->ntime / app->tstop; 
-   return ts;
-}             
+           
 /*--------------------------------------------------------------------------
  * Main driver
  *--------------------------------------------------------------------------*/
@@ -437,7 +443,8 @@ int main (int argc, char *argv[])
    my_App     *app;
          
    double   tstart, tstop; 
-   int      rank, ntime, ts, iter, maxiter, nreq, arg_index;
+   int      rank, size, arg_index;
+   int      ntime, ts, iter, maxiter, nreq;
    double   objective, gamma, stepsize, mygnorm, gnorm, gtol, rnorm, rnorm_adj;
    int      max_levels, cfactor, access_level, print_level, braid_maxiter;
    double   braid_tol, braid_adjtol;
@@ -567,6 +574,7 @@ int main (int argc, char *argv[])
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
    /* Set up the app structure */
    app = (my_App *) malloc(sizeof(my_App));
@@ -594,6 +602,7 @@ int main (int argc, char *argv[])
    app->design = design;
    app->ilower = ilower;
    app->iupper = iupper;
+   app->constdesign = 2.0;
 
    printf("%d: %d -> %d, total: %d\n", rank, ilower, iupper, ndesign);
 
@@ -628,12 +637,72 @@ int main (int argc, char *argv[])
    }
 
 
-   /* Optimization iteration */
-   for (iter = 0; iter < maxiter; iter++)
-   {
 
       /* Parallel-in-time simulation and gradient computation */
       braid_Drive(core);
+
+
+     /* Evaluate objective */
+     braid_BaseVector u;
+     double obj;
+     objective = 0.0;
+     for (int n = 0; n <= ntime; n++)
+     {
+          /* Get braid vector at this time step */
+          _braid_UGetVectorRef(core, 0, n, &u);
+          /* Compute objective */
+          if (u != NULL) // this is only true on one processor (the one that stores u)
+          {
+             obj = pow(u->userVector->values[0],2); // + pow(u->userVector->values[1],2);
+             obj = sqrt(obj);
+        //      printf("%d: obj(%d) = %1.14e\n", rank, n, obj);
+
+             objective += obj;
+          }
+     }
+     MPI_Allreduce(&objective, &objective, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+//      printf("%d: objective = %1.14e\n", rank, objective);
+
+
+
+
+     /* Set up adjoint core */
+     braid_Core core_adj;
+     braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app, my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core_adj);
+
+     /* Set some XBraid parameters */
+     braid_SetMaxLevels(core_adj, max_levels);
+     braid_SetSkip(core_adj, 0);
+     braid_SetCFactor(core_adj, -1, cfactor);
+     braid_SetAccessLevel(core_adj, access_level);
+     braid_SetPrintLevel( core_adj, print_level);       
+     braid_SetMaxIter(core_adj, braid_maxiter);
+     braid_SetAbsTol(core_adj, braid_tol);
+
+
+     /* Tell XBraid to use reverted processor ranks */
+     braid_SetRevertedRanks(core_adj, 1);
+
+    /* Get xbraid's grid distribution */
+     _braid_GetDistribution(core_adj, &ilower, &iupper);
+     /* Initialize local design vector and store it in the app */
+     ndesign = iupper - ilower + 1;
+     app->ilower = ilower;
+     app->iupper = iupper;
+     app->constdesign = 2.0;
+     printf("%d: reverted %d -> %d, total %d\n", rank, ilower, iupper, ndesign);
+
+
+     braid_Drive(core_adj);
+
+//      for (int n=0; n <=ntime; n++)
+//      {
+//         int proc;
+//         _braid_GetProc(core_adj, 0, n, &proc);
+//         printf("%d: GetProc(%d) = %d\n", rank, n, proc );
+//      }
+
+
 
       /* Get objective function value */
 //       nreq = -1;
@@ -665,8 +734,6 @@ int main (int argc, char *argv[])
 //       {
 //          app->design[ts] -= stepsize * app->gradient[ts];
 //       }
-
-   }
 
    
 //    /* Output */
@@ -702,8 +769,9 @@ int main (int argc, char *argv[])
 //    free(design);
 //    free(gradient);
    free(app);
+     braid_Destroy(core);
+     braid_Destroy(core_adj);
    
-   braid_Destroy(core);
    MPI_Finalize();
 
    return (0);
