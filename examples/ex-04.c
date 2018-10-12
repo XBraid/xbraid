@@ -116,7 +116,7 @@ my_Step(braid_App        app,
    int localindex = GetLocalDesignIndex(app, ts_stop);
    u->design = app->design[localindex];
 
-//    printf("%d: Step %d,%f -> %d,%f,  design %1.14e -> %d,%1.14e, uvalue[0] %f\n", app->myid, ts_start, tstart, ts_stop, tstop, design, localindex, u->design, u->values[0] );
+   printf("%d: Step %d,%f -> %d,%f,  design %1.14e -> %d,%1.14e, uvalue[0] %f\n", app->myid, ts_start, tstart, ts_stop, tstop, design, localindex, u->design, u->values[0] );
 
    /* no refinement */
    braid_StepStatusSetRFactor(status, 1);
@@ -582,7 +582,6 @@ int main (int argc, char *argv[])
    /* Get xbraid's grid distribution */
    int ilower, iupper;
    _braid_GetDistribution(core, &ilower, &iupper);
-   printf("%d: %d %d\n", rank, ilower, iupper);
 
    /* Initialize local design vector and store it in the app */
    int ndesign = iupper - ilower + 1;
@@ -596,11 +595,16 @@ int main (int argc, char *argv[])
    app->ilower = ilower;
    app->iupper = iupper;
 
-   for (int i=0; i<ndesign; i++)
-   {
-        int ts = i + ilower;
-        printf("%d: design[%d] = %1.14e , ndesign %d\n", rank, ts, app->design[i], ndesign);
-   }
+   printf("%d: %d -> %d, total: %d\n", rank, ilower, iupper, ndesign);
+
+//    for (int i=0; i<ndesign; i++)
+//    {
+        // int ts = i + ilower;
+        // printf("%d: design[%d] = %1.14e , ndesign %d\n", rank, ts, app->design[i], ndesign);
+//    }
+
+   /* Store all points (needed for adjoint) */
+   braid_SetStorage(core, 0);
 
   /* Initialize XBraid_Adjoint */
 //    braid_InitAdjoint( my_ObjectiveT, my_ObjectiveT_diff, my_Step_diff, my_ResetGradient, &core);
