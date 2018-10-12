@@ -227,15 +227,15 @@ _braid_UpdateAdjoint(braid_Core core,
    /* Compute global residual norm. */
    if(tnorm == 1)       /* one-norm reduction */
    {  
-      MPI_Allreduce(&rnorm_adj, &global_rnorm, 1, MPI_DOUBLE, MPI_SUM, comm);
+      MPI_Allreduce(&rnorm_adj, &global_rnorm, 1, braid_MPI_REAL, MPI_SUM, comm);
    }
    else if(tnorm == 3)  /* inf-norm reduction */
    {  
-      MPI_Allreduce(&rnorm_adj, &global_rnorm, 1, MPI_DOUBLE, MPI_MAX, comm);
+      MPI_Allreduce(&rnorm_adj, &global_rnorm, 1, braid_MPI_REAL, MPI_MAX, comm);
    }
    else                 /* default two-norm reduction */
    {  
-      MPI_Allreduce(&rnorm_adj, &global_rnorm, 1, MPI_DOUBLE, MPI_SUM, comm);
+      MPI_Allreduce(&rnorm_adj, &global_rnorm, 1, braid_MPI_REAL, MPI_SUM, comm);
       global_rnorm = sqrt(global_rnorm);
    }
 
@@ -2003,15 +2003,15 @@ _braid_ComputeFullRNorm(braid_Core  core,
    /* Compute global residual norm. */
    if(tnorm == 1)       /* one-norm reduction */
    {  
-      MPI_Allreduce(&rnorm, &global_rnorm, 1, MPI_DOUBLE, MPI_SUM, comm);
+      MPI_Allreduce(&rnorm, &global_rnorm, 1, braid_MPI_REAL, MPI_SUM, comm);
    }
    else if(tnorm == 3)  /* inf-norm reduction */
    {  
-      MPI_Allreduce(&rnorm, &global_rnorm, 1, MPI_DOUBLE, MPI_MAX, comm);
+      MPI_Allreduce(&rnorm, &global_rnorm, 1, braid_MPI_REAL, MPI_MAX, comm);
    }
    else                 /* default two-norm reduction */
    {  
-      MPI_Allreduce(&rnorm, &global_rnorm, 1, MPI_DOUBLE, MPI_SUM, comm);
+      MPI_Allreduce(&rnorm, &global_rnorm, 1, braid_MPI_REAL, MPI_SUM, comm);
       global_rnorm = sqrt(global_rnorm);
    }
 
