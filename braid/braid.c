@@ -313,7 +313,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
       }
       done = 1; 
    }
-   else if ( braid_isnan(rnorm_adj) )
+   else if ( adjoint && braid_isnan(rnorm_adj) )
    {
       if (myid == 0)
       {
