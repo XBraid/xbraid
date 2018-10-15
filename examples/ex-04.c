@@ -68,8 +68,7 @@ typedef struct _braid_App_struct
    double* design;       /* Local design vector (local on thit processor ) */
    int     ilower;       /* index of first time point on this processor */
    int     iupper;       /* index of last time point on this processor */
-   double  constdesign;   /* Testing adjoint solve with xbraid using constant design variable */
-   double  constgradient;   /* Testing adjoint solve with xbraid using constant design variable */
+
    braid_Core primalcore; 
 } my_App;
 
@@ -79,6 +78,8 @@ typedef struct _braid_Vector_struct
 {
    /* The Shell part consists of the design variable c at one time step */
    double  design;
+   /* Store the local gradient in u. */
+   double gradient;
 
    /* The Vector part holds the R^2 state vector (u_1, u_2) at one time step */
    double *values;    
@@ -89,8 +90,6 @@ typedef struct _braid_Vector_struct
    /* If adjoint: Flag that determines if the primal has just been received, i.e. should be free'd after usage (flag > 0) */
    double sendflag;  
 
-   /* Store the local gradient in u. Sum over all time steps after adjoint run. */
-   double gradient;
 } my_Vector;
 
 
@@ -132,8 +131,7 @@ my_Step(braid_App        app,
    deltaT   = tstop - tstart;
 
    /* Get the current design from the shell part of the vector */
-//    design = u->design;
-   design = app->constdesign;
+   design = u->design;
 
    /* Take one step */
    take_step(u->values, design, deltaT);
@@ -174,8 +172,7 @@ my_Step_Adj(braid_App        app,
    deltaT   = tstop - tstart;
 
    /* Get the current design from the shell part of the vector */
-//    design = u->design;
-   design = app->constdesign;
+   design = u->design;
 
 
    /* Add the costfunction part */
@@ -272,6 +269,7 @@ my_Init_Adj(braid_App     app,
    int ts  = GetTimeStepIndex(app, t); 
    int idx = GetLocalDesignIndex(app, ts);
    u->design = app->design[idx];
+   u->gradient = 0.0;
 
    /* Set a pointer to the primal variable */
    braid_BaseVector uprimal;
@@ -704,22 +702,14 @@ int main (int argc, char *argv[])
    app->design = design;
    app->ilower = ilower;
    app->iupper = iupper;
-   double EPS = 1e-7;
-   app->constdesign = 2.0 + EPS;
 
    printf("%d: %d -> %d, total: %d\n", rank, ilower, iupper, ndesign);
 
-//    for (int i=0; i<ndesign; i++)
-//    {
-        // int ts = i + ilower;
-        // printf("%d: design[%d] = %1.14e , ndesign %d\n", rank, ts, app->design[i], ndesign);
-//    }
+
 
    /* Store all points (needed for adjoint) */
    braid_SetStorage(core, 0);
 
-  /* Initialize XBraid_Adjoint */
-//    braid_InitAdjoint( my_ObjectiveT, my_ObjectiveT_diff, my_Step_diff, my_ResetGradient, &core);
 
    /* Set some XBraid(_Adjoint) parameters */
    braid_SetMaxLevels(core, max_levels);
@@ -729,13 +719,14 @@ int main (int argc, char *argv[])
    braid_SetPrintLevel( core, print_level);       
    braid_SetMaxIter(core, braid_maxiter);
    braid_SetAbsTol(core, braid_tol);
-//    braid_SetAbsTolAdjoint(core, braid_adjtol);
-
-
 
 
      /* Store the primal core in the app in order to access the primal values from xbraid */
      app->primalcore = core;
+
+     /* Perturb design */
+//      double EPS = 1e-8;
+//      if (rank == 0) app->design[0] += EPS;
 
       /* Parallel-in-time simulation and gradient computation */
       braid_Drive(core);
@@ -753,16 +744,11 @@ int main (int argc, char *argv[])
           if (u != NULL) // this is only true on one processor (the one that stores u)
           {
              obj = pow(u->userVector->values[0],2) + pow(u->userVector->values[1],2);
-        //      printf("%d: obj(%d) = %1.14e\n", rank, n, obj);
-        //      printf("%d: (%d) u->values[0] = %1.14e\n", rank, n, u->userVector->values[0]);
-
              objective += obj;
           }
      }
      MPI_Allreduce(&objective, &objective, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
      printf("%d: objective = %1.14e\n", rank, objective);
-
-
 
 
      /* Set up adjoint core */
@@ -792,8 +778,7 @@ int main (int argc, char *argv[])
 
      app->ilower = ilower;
      app->iupper = iupper;
-     app->constdesign = 2.0;
-     app->constgradient = 0.0;
+
 
 
      printf("\n");
@@ -802,19 +787,19 @@ int main (int argc, char *argv[])
 
      /* Get gradient from adjoint u */
      double gradient = 0.0;
-     for (int n = 1; n <= ntime; n++)
+     for (int n = 0; n <= ntime; n++)
      {
           /* Get braid vector at this time step */
           _braid_UGetVectorRef(core_adj, 0, n, &u);
           /* Compute objective */
           if (u != NULL) // this is only true on one processor (the one that stores u)
           {
-        //      printf("%d: (%d) u->gradient = %1.14e\n", rank, n, u->userVector->gradient);
-             gradient += u->userVector->gradient;
+             printf("%d: (%d) u->gradient = %1.14e\n", rank, ntime - n, u->userVector->gradient);
+        //      gradient += u->userVector->gradient;
           }
      }
-     MPI_Allreduce(&gradient, &gradient, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-     printf("%d: Gradient %1.14e\n", rank, gradient);
+//      MPI_Allreduce(&gradient, &gradient, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+//      printf("%d: Gradient %1.14e\n", rank, gradient);
 
 //      for (int n=0; n <=ntime; n++)
 //      {
