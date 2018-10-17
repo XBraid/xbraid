@@ -418,7 +418,7 @@ _braid_BaseBufUnpack(braid_Core          core,
       /* Allocate and initialize the bar vector with zero*/
       ubar = (braid_VectorBar) malloc(sizeof(braid_Vector) + sizeof(int));
       ubar->useCount = 1;
-      _braid_CoreFcn(core, init)(app, tstart, &(ubar->userVector));
+      _braid_CoreFcn(core, init)(app, -1.0, &(ubar->userVector));
       _braid_CoreFcn(core, sum)(app, -1.0, ubar->userVector, 1.0, ubar->userVector);
       u->bar = ubar;
    }
