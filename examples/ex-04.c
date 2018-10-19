@@ -237,7 +237,6 @@ my_Init(braid_App     app,
    int idx = GetLocalDesignIndex(app, ts);
    u->design = app->design[idx];
 
-   
 
    *u_ptr = u;
 
@@ -251,6 +250,7 @@ my_Init_Adj(braid_App     app,
             braid_Vector *u_ptr)
 {
 
+   int ts  = GetTimeStepIndex(app, t); 
    my_Vector *u;
 
    /* Allocate the vector */
@@ -263,8 +263,6 @@ my_Init_Adj(braid_App     app,
    u->values[1] = 0.0;
 
    /* Initialize the design */
-   int ts  = GetTimeStepIndex(app, t); 
-   int idx = GetLocalDesignIndex(app, ts);
    u->design   = 0.0;
    u->gradient = 0.0;
 
@@ -456,22 +454,23 @@ my_BufPack_Adj(braid_App           app,
                void               *buffer,
                braid_BufferStatus  bstatus)
 {
-   double *dbuffer = buffer;
    int i;
+   int size, idx;
 
    /* Pack primal */
-   dbuffer[0] = u->primal_vec->values[0];
-   dbuffer[1] = u->primal_vec->values[1];
-   dbuffer[2] = u->primal_vec->design;
-
+   my_BufPack(app, u->primal_vec, buffer, bstatus);
+   my_BufSize(app, &size, bstatus);
 
    /* Pack adjoint */
-   dbuffer[3] = u->values[0];
-   dbuffer[4] = u->values[1];
+   double *dbuffer = buffer;
+   idx = size / sizeof(double);
+   dbuffer[idx]   = u->values[0];
+   dbuffer[idx+1] = u->values[1];
 
 //    printf("%d: Send design %1.14e\n", app->myid, u->primal_vec->design);
 
-   braid_BufferStatusSetSize( bstatus,  5*sizeof(double));
+   size += 2* sizeof(double);
+   braid_BufferStatusSetSize( bstatus, size);
 
    return 0;
 }
@@ -510,22 +509,20 @@ my_BufUnpack_Adj(braid_App           app,
 {
    my_Vector *u = NULL;
    double    *dbuffer = buffer;
-   int i;
+   int i, size, idx;
 
    /* Allocate the vector */
    u = (my_Vector *) malloc(sizeof(my_Vector));
 
    /* Unpack the primal */
-   u->primal_vec = (my_Vector *) malloc(sizeof(my_Vector));
-   u->primal_vec->values = (double*) malloc( 2*sizeof(double) );
-   u->primal_vec->values[0] = dbuffer[0];
-   u->primal_vec->values[1] = dbuffer[1];
-   u->primal_vec->design    = dbuffer[2];
+   my_BufUnpack(app, buffer, &u->primal_vec, bstatus);
+   my_BufSize(app, &size, bstatus);
 
    /* Unpack adjoint */
    u->values = (double*) malloc( 2*sizeof(double) );
-   u->values[0] = dbuffer[3];
-   u->values[1] = dbuffer[4];
+   idx = size / sizeof(double);
+   u->values[0] = dbuffer[idx];
+   u->values[1] = dbuffer[idx+1];
 
    /* Mark the primal vector so that it gets deleted after next usage */
    u->sendflag  = 1.0;
