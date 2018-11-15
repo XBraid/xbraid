@@ -177,6 +177,7 @@ class BraidAccessStatus
       void GetTIndex(braid_Int *tindex_ptr)     { braid_AccessStatusGetTIndex(astatus, tindex_ptr); }
       void GetDone(braid_Int *done_ptr)         { braid_AccessStatusGetDone(astatus, done_ptr); }
       void GetLevel(braid_Int *level_ptr)       { braid_AccessStatusGetLevel(astatus, level_ptr); }
+      void GetNLevels(braid_Int *nlevels_ptr)   { braid_AccessStatusGetNLevels(astatus, nlevels_ptr);}
       void GetIter(braid_Int *iter_ptr)         { braid_AccessStatusGetIter(astatus, iter_ptr); }
       void GetWrapperTest(braid_Int *wtest_ptr) { braid_AccessStatusGetWrapperTest(astatus, wtest_ptr); }
       void GetResidual(braid_Real *rnorm_ptr)   { braid_AccessStatusGetResidual(astatus, rnorm_ptr); }
@@ -208,6 +209,7 @@ class BraidStepStatus
       void GetTstop(braid_Real *tstop_ptr)               { braid_StepStatusGetTstop(pstatus, tstop_ptr); }
       void GetTIndex(braid_Int *tindex_ptr)              { braid_StepStatusGetTIndex(pstatus, tindex_ptr); }
       void GetLevel(braid_Int *level_ptr)                { braid_StepStatusGetLevel(pstatus, level_ptr); }
+      void GetNLevels(braid_Int *nlevels_ptr)            { braid_StepStatusGetNLevels(pstatus, nlevels_ptr); }
       void GetNRefine(braid_Int *nrefine_ptr)            { braid_StepStatusGetNRefine(pstatus, nrefine_ptr); }
       void SetRFactor(braid_Int rfactor)                 { braid_StepStatusSetRFactor(pstatus, rfactor); }
       void SetRSpace(braid_Int rspace)                   { braid_StepStatusSetRSpace(pstatus, rspace); }
@@ -247,11 +249,13 @@ class BraidCoarsenRefStatus
             c_tprior_ptr, c_tstop_ptr);
       }
       void GetT(braid_Real *tstart_ptr)         { braid_CoarsenRefStatusGetT(cstatus, tstart_ptr); }
+      void GetTIndex(braid_Int *tindex_ptr)     { braid_CoarsenRefStatusGetTIndex(cstatus, tindex_ptr); }
       void GetFTstop(braid_Real *f_tstop_ptr)   { braid_CoarsenRefStatusGetFTstop(cstatus, f_tstop_ptr); }
       void GetFTprior(braid_Real *f_tprior_ptr) { braid_CoarsenRefStatusGetFTprior(cstatus, f_tprior_ptr); }
       void GetCTstop(braid_Real *c_tstop_ptr)   { braid_CoarsenRefStatusGetCTstop(cstatus, c_tstop_ptr); }
       void GetCTprior(braid_Real *c_tprior_ptr) { braid_CoarsenRefStatusGetCTprior(cstatus, c_tprior_ptr); }
       void GetLevel(braid_Int *level_ptr)       { braid_CoarsenRefStatusGetLevel(cstatus, level_ptr); }
+      void GetNLevels(braid_Int *nlevels_ptr)   { braid_CoarsenRefStatusGetNLevels(cstatus, nlevels_ptr); }
       void GetNRefine(braid_Int *nrefine_ptr)   { braid_CoarsenRefStatusGetNRefine(cstatus, nrefine_ptr); }
 
       // The braid_CoarsenRefStatus structure is deallocated inside of Braid
@@ -487,6 +491,10 @@ public:
    void SetNFMGVcyc(braid_Int nfmg_Vcyc) { braid_SetNFMGVcyc(core, nfmg_Vcyc); }
 
    void SetStorage(braid_Int storage) { braid_SetStorage(core, storage); }
+
+   void SetRefine(braid_Int refine) {braid_SetRefine(core, refine);}
+
+   void SetMaxRefinements(braid_Int max_refinements) {braid_SetMaxRefinements(core, max_refinements);}
 
    void GetNumIter(braid_Int *niter_ptr) { braid_GetNumIter(core, niter_ptr); }
 
