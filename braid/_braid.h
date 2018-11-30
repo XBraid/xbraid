@@ -164,6 +164,8 @@ typedef struct
    braid_BaseVector  *va_alloc;      /**< original memory allocation for va */
    braid_BaseVector  *fa_alloc;      /**< original memory allocation for fa */
 
+   braid_BaseVector ulast;          /**< if serial: stores last time step */
+
 } _braid_Grid;
 
 /**
@@ -941,6 +943,10 @@ _braid_SetVerbosity(braid_Core  core,
 braid_Int
 _braid_AdjointFeatureCheck(braid_Core core);
 
+
+braid_Int
+_braid_UGetLast(braid_Core        core,
+                braid_BaseVector *u_ptr);
 
 #ifdef __cplusplus
 }
