@@ -967,7 +967,8 @@ _braid_UGetLast(braid_Core        core,
    int                 ntime = _braid_CoreElt(core, ntime);
    braid_BaseVector    ulast;
 
-   if (_braid_CoreElt(core, max_levels) <= 1)
+   /* Get last time step */
+   if (_braid_CoreElt(core, storage) < 0 )
    {
       ulast  = _braid_GridElt(grids[0], ulast);
    }
@@ -3395,18 +3396,17 @@ _braid_FAccess(braid_Core     core,
             _braid_AddToObjective(core, u, ostatus);
          }
 
-         /* If time-serial: store last time step */
-         if (_braid_CoreElt(core, max_levels) <= 1 &&
-              _braid_CoreElt(core, storage) < 0 )
+         /* store last time step */
+         if (_braid_CoreElt(core, storage) < 0 && level == 0 )
          {
             if (fi == _braid_CoreElt(core, ntime))
             {
-              if (_braid_GridElt(grids[0], ulast) != NULL)
+              if (_braid_GridElt(grids[level], ulast) != NULL)
               {
-                _braid_BaseFree(core, app, _braid_GridElt(grids[0], ulast));
-                _braid_GridElt(grids[0], ulast) = NULL;
+                _braid_BaseFree(core, app, _braid_GridElt(grids[level], ulast));
+                _braid_GridElt(grids[level], ulast) = NULL;
               }
-              _braid_BaseClone(core, app,  u, &(_braid_GridElt(grids[0], ulast)));
+              _braid_BaseClone(core, app,  u, &(_braid_GridElt(grids[level], ulast)));
             }
          }
       }

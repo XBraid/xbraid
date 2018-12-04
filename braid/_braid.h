@@ -164,7 +164,7 @@ typedef struct
    braid_BaseVector  *va_alloc;      /**< original memory allocation for va */
    braid_BaseVector  *fa_alloc;      /**< original memory allocation for fa */
 
-   braid_BaseVector ulast;          /**< if serial: stores last time step */
+   braid_BaseVector ulast;          /**< stores last time step */
 
 } _braid_Grid;
 
