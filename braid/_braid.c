@@ -3430,11 +3430,25 @@ _braid_FAccess(braid_Core     core,
          }
 
          /* If time-serial: Evaluate the user's local objective function at CPoints on finest grid */
-         if ( _braid_CoreElt(core, adjoint) && 
-                 _braid_CoreElt(core, max_levels <=1) ) 
+         if ( _braid_CoreElt(core, adjoint)   && 
+              _braid_CoreElt(core, max_levels <=1) ) 
          {
             _braid_ObjectiveStatusInit(ta[ci-ilower], ci, iter, level, nrefine, gupper, ostatus);
             _braid_AddToObjective(core, u, ostatus);
+         }
+
+         /* store last time step */
+         if (_braid_CoreElt(core, storage) < 0 && level == 0 )
+         {
+            if (ci == _braid_CoreElt(core, ntime))
+            {
+              if (_braid_GridElt(grids[level], ulast) != NULL)
+              {
+                _braid_BaseFree(core, app, _braid_GridElt(grids[level], ulast));
+                _braid_GridElt(grids[level], ulast) = NULL;
+              }
+              _braid_BaseClone(core, app,  u, &(_braid_GridElt(grids[level], ulast)));
+            }
          }
        }
    }
