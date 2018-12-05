@@ -54,16 +54,16 @@ typedef int    braid_Int;
  * Defines floating point type
  * Switch beween single and double precision by un-/commenting lines. 
  **/
-typedef float braid_Real;
-// typedef double braid_Real;
+// typedef float braid_Real;
+typedef double braid_Real;
 
 /*--------------------------------------------------------------------------
  * MPI stuff
  *--------------------------------------------------------------------------*/
 
  /* Switch beween single and double precision by un-/commenting lines. */
-#define braid_MPI_REAL  MPI_FLOAT
-// #define braid_MPI_REAL  MPI_DOUBLE
+// #define braid_MPI_REAL  MPI_FLOAT
+#define braid_MPI_REAL  MPI_DOUBLE
 #define braid_MPI_INT   MPI_INT
 
 /*--------------------------------------------------------------------------
