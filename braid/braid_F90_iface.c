@@ -1115,6 +1115,19 @@ braid_F90_Name(braid_set_print_level_f90, BRAID_SET_PRINT_LEVEL_F90)(
    return 0;
 }
 
+/* braid_SetPrintFile( ) */
+braid_Int
+braid_F90_Name(braid_set_print_file_f90, BRAID_SET_PRINT_FILE_F90)(
+                   braid_F90_ObjPtr  *core,          /**< braid_Core (_braid_Core) struct*/
+                   char              *fname,         /**< name of string to set */
+                   braid_F90_Int     *ll             /**< string length */
+                   )
+{
+   braid_SetPrintFile(braid_TakeF90_ObjDeref(braid_Core,  core),
+                                                          fname);
+   return 0;
+}
+
 /* braid_SetDefaultPrintFile( ) */
 braid_Int
 braid_F90_Name(braid_set_default_print_file_f90, braid_set_default_print_file_F90)(
