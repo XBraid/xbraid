@@ -1115,7 +1115,13 @@ braid_F90_Name(braid_set_print_level_f90, BRAID_SET_PRINT_LEVEL_F90)(
    return 0;
 }
 
-/* braid_SetPrintFile( ) */
+/* braid_SetPrintFile( )
+ *
+ * User advice: Null-terminate the string fname in your Fortran code, e.g.,
+ * if braidLogFile is of type character(len=128) and braid_spacetime_rank is of type integer:
+ *
+ * write(braidLogFile, "('braid_log.',I0.12,A)") braid_spacetime_rank, char(0)
+*/
 braid_Int
 braid_F90_Name(braid_set_print_file_f90, BRAID_SET_PRINT_FILE_F90)(
                    braid_F90_ObjPtr  *core,          /**< braid_Core (_braid_Core) struct*/
