@@ -1573,7 +1573,7 @@ _braid_Coarsen(braid_Core        core,
       /* Call the user's coarsening routine */
       _braid_CoarsenRefStatusInit(f_ta[f_ii], f_ta[f_ii-1], f_ta[f_ii+1], 
                                   c_ta[c_ii-1], c_ta[c_ii+1],
-                                  level-1, nrefine, gupper, cstatus);
+                                  level-1, nrefine, gupper, c_index, cstatus);
       _braid_BaseSCoarsen(core, app, fvector, cvector, cstatus);
    }
    return _braid_error_flag;
@@ -1586,6 +1586,7 @@ _braid_Coarsen(braid_Core        core,
 braid_Int
 _braid_RefineBasic(braid_Core        core,
                    braid_Int         level,    /* fine level */
+                   braid_Int         c_index,  /* coarse time index */
                    braid_Real       *f_ta,     /* pointer into fine time array */
                    braid_Real       *c_ta,     /* pointer into coarse time array */
                    braid_BaseVector  cvector,
@@ -1605,7 +1606,7 @@ _braid_RefineBasic(braid_Core        core,
    {
       /* Call the user's refinement routine */
       _braid_CoarsenRefStatusInit(f_ta[0], f_ta[-1], f_ta[+1], c_ta[-1], c_ta[+1],
-                                  level, nrefine, gupper, cstatus);
+                                  level, nrefine, gupper, c_index, cstatus);
       _braid_BaseSRefine(core,  app, cvector, fvector, cstatus);
    }
 
@@ -1633,7 +1634,7 @@ _braid_Refine(braid_Core        core,
    braid_Int      c_ii = c_index-c_ilower;
    braid_Int      f_ii = f_index-f_ilower;
 
-   _braid_RefineBasic(core, level, &f_ta[f_ii], &c_ta[c_ii], cvector, fvector);
+   _braid_RefineBasic(core, level, c_index, &f_ta[f_ii], &c_ta[c_ii], cvector, fvector);
 
    return _braid_error_flag;
 }
@@ -2450,7 +2451,7 @@ _braid_FRefineSpace(braid_Core   core,
              
             if ( c_vec != NULL )
             {
-               _braid_RefineBasic(core, -1, &ta[ii], &ta[ii], c_vec, &f_vec);
+               _braid_RefineBasic(core, -1, i, &ta[ii], &ta[ii], c_vec, &f_vec);
                _braid_USetVectorRef(core, 0, i, f_vec);
             }
          }                       
@@ -2466,7 +2467,7 @@ _braid_FRefineSpace(braid_Core   core,
          if ( ilower == 0 && r_space == 0 )
          {
             _braid_UGetVectorRef(core, 0, 0, &c_vec);
-            _braid_RefineBasic(core, -1, &ta[0], &ta[0], c_vec, &f_vec);
+            _braid_RefineBasic(core, -1, 0, &ta[0], &ta[0], c_vec, &f_vec);
             _braid_USetVectorRef(core, 0, 0, f_vec);     
          }       
                 
@@ -2979,7 +2980,7 @@ _braid_FRefine(braid_Core   core,
             r_ii = r_fa[ii] - r_ilower;
             if (r_ca[r_ii] > -1)
             {
-               _braid_RefineBasic(core, -1, &r_ta[r_ii], &ta[ii], u, &send_ua[ii]);
+               _braid_RefineBasic(core, -1, fi, &r_ta[r_ii], &ta[ii], u, &send_ua[ii]);
             }
 
             /* Allow user to process current vector */
@@ -3003,7 +3004,7 @@ _braid_FRefine(braid_Core   core,
          r_ii = r_fa[ii] - r_ilower;
          if (r_ca[r_ii] > -1)
          {
-            _braid_RefineBasic(core, -1, &r_ta[r_ii], &ta[ii], u, &send_ua[ii]);
+            _braid_RefineBasic(core, -1, ci, &r_ta[r_ii], &ta[ii], u, &send_ua[ii]);
          }
 
          /* Allow user to process current vector */
