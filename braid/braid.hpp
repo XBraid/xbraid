@@ -502,6 +502,8 @@ public:
    
    void GetNLevels(braid_Int *nlevels_ptr) { braid_GetNLevels(core, nlevels_ptr); }
 
+   braid_Core GetCore() { return core; };
+
    void Drive() { braid_Drive(core); }
 
    ~BraidCore() { braid_Destroy(core); }
