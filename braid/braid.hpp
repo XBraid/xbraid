@@ -492,6 +492,8 @@ public:
 
    void SetStorage(braid_Int storage) { braid_SetStorage(core, storage); }
 
+   void SetRevertedRanks(braid_Int reverted_ranks) { braid_SetStorage(core, reverted_ranks); }
+
    void SetRefine(braid_Int refine) {braid_SetRefine(core, refine);}
 
    void SetMaxRefinements(braid_Int max_refinements) {braid_SetMaxRefinements(core, max_refinements);}
