@@ -506,6 +506,8 @@ public:
 
    braid_Core GetCore() { return core; };
 
+   braid_Int GetWarmRestart() { return _braid_CoreElt(core, warm_restart); };
+
    void GetDistribution(braid_Int *ilower_ptr, braid_Int *iupper_ptr) { _braid_GetDistribution(core, ilower_ptr, iupper_ptr); };
 
    void Drive() { braid_Drive(core); }
