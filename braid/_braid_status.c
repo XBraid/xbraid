@@ -347,6 +347,7 @@ braid_StatusSetSize(braid_Status status,
 braid_Int
 _braid_AccessStatusInit(braid_Real           t,
                         braid_Int            idx,
+                        braid_Int            ichunk,
                         braid_Real           rnorm,
                         braid_Int            iter,
                         braid_Int            level,
@@ -358,7 +359,7 @@ _braid_AccessStatusInit(braid_Real           t,
                         braid_AccessStatus   status)
 {
    _braid_StatusElt(status, t)            = t;
-   _braid_StatusElt(status, idx)          = idx;
+   _braid_StatusElt(status, idx)          = idx  + ichunk * gupper;
    _braid_StatusElt(status, level)        = level;
    _braid_StatusElt(status, nrefine)      = nrefine;
    _braid_StatusElt(status, gupper)       = gupper;
@@ -429,6 +430,7 @@ braid_Int
 _braid_StepStatusInit(braid_Real       tstart,
                       braid_Real       tstop,
                       braid_Int        idx,
+                      braid_Int        ichunk,
                       braid_Real       tol,
                       braid_Int        iter,
                       braid_Int        level,
@@ -438,7 +440,7 @@ _braid_StepStatusInit(braid_Real       tstart,
 {
    _braid_StatusElt(status, t)         = tstart;
    _braid_StatusElt(status, tnext)     = tstop;
-   _braid_StatusElt(status, idx)       = idx;
+   _braid_StatusElt(status, idx)       = idx + ichunk * gupper;
    _braid_StatusElt(status, tol)       = tol;
    _braid_StatusElt(status, niter)     = iter;
    _braid_StatusElt(status, level)     = level;
@@ -490,6 +492,7 @@ ACCESSOR_FUNCTION_SET1(Buffer, Size,        Real)
 braid_Int
 _braid_ObjectiveStatusInit(braid_Real            tstart,
                            braid_Int             idx,
+                           braid_Int             ichunk,
                            braid_Int             iter,
                            braid_Int             level,
                            braid_Int             nrefine,
@@ -498,7 +501,7 @@ _braid_ObjectiveStatusInit(braid_Real            tstart,
 {
 
    _braid_StatusElt(status, t)         = tstart;
-   _braid_StatusElt(status, idx)       = idx;
+   _braid_StatusElt(status, idx)       = idx + ichunk * gupper;
    _braid_StatusElt(status, niter)     = iter;
    _braid_StatusElt(status, level)     = level;
    _braid_StatusElt(status, nrefine)   = nrefine;

@@ -688,6 +688,7 @@ _braid_BaseStep_diff(_braid_Action *action)
    braid_App        app          = _braid_CoreElt(core, app);
    braid_Int        verbose_adj  = _braid_CoreElt(core, verbose_adj);
    braid_Int        myid         = _braid_CoreElt(core, myid);
+   braid_Int        ichunk       = _braid_CoreElt(core, ichunk);
 
    if ( verbose_adj ) printf("%d: STEP_DIFF %.4f to %.4f, %d\n", myid, inTime, outTime, tidx);
 
@@ -705,7 +706,7 @@ _braid_BaseStep_diff(_braid_Action *action)
 
 
    /* Set up the status structure */
-   _braid_StepStatusInit(inTime, outTime, tidx, tol, iter, level, nrefine, gupper, status);
+   _braid_StepStatusInit(inTime, outTime, ichunk, tidx, tol, iter, level, nrefine, gupper, status);
 
    /* Call the users's differentiated step function */
    _braid_CoreFcn(core, step_diff)(app, ustop, u, ustopbar->userVector, ubar->userVector, status);
@@ -808,6 +809,7 @@ _braid_BaseObjectiveT_diff(_braid_Action *action)
    braid_Int              verbose_adj  = _braid_CoreElt(core, verbose_adj);
    braid_Real             f_bar        = _braid_CoreElt(core, optim)->f_bar;
    braid_ObjectiveStatus  ostatus      = (braid_ObjectiveStatus) action->core;
+   braid_Int              ichunk       = _braid_CoreElt(core, ichunk);
 
    if ( verbose_adj ) printf("%d: OBJT_DIFF\n", myid);
 
@@ -824,7 +826,7 @@ _braid_BaseObjectiveT_diff(_braid_Action *action)
    _braid_CoreFcn(core, clone)(app, ubar->userVector, &userbarCopy);
 
   /* Call the users's differentiated objective function */
-   _braid_ObjectiveStatusInit(t, idx, iter, level, nrefine, gupper, ostatus);
+   _braid_ObjectiveStatusInit(t, idx, ichunk, iter, level, nrefine, gupper, ostatus);
    _braid_CoreFcn(core, objT_diff)( app, u, ubar->userVector, f_bar, ostatus);
 
    /* Add the stored value */

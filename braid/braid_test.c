@@ -48,7 +48,7 @@ braid_TestInitAccess( braid_App           app,
    braid_AccessStatus    astatus = (braid_AccessStatus)status;
    braid_Int             myid_x = 0;
    
-   _braid_AccessStatusInit(t, 0, 0.0, 0, 0, 0, 0, 0, 1, -1, astatus);
+   _braid_AccessStatusInit(t, 0, 0, 0.0, 0, 0, 0, 0, 0, 1, -1, astatus);
    MPI_Comm_rank( comm_x, &myid_x );
 
    /* Print intro */
@@ -93,7 +93,7 @@ braid_TestClone( braid_App        app,
    braid_AccessStatus  astatus = (braid_AccessStatus)status;
    braid_Int           myid_x;
    
-   _braid_AccessStatusInit(t, 0, 0.0, 0, 0, 0, 0, 0, 1, -1, astatus);
+   _braid_AccessStatusInit(t, 0, 0, 0.0, 0, 0, 0, 0, 0, 1, -1, astatus);
    MPI_Comm_rank( comm_x, &myid_x );
 
    /* Print intro */
@@ -152,7 +152,7 @@ braid_TestSum( braid_App        app,
    braid_AccessStatus  astatus = (braid_AccessStatus)status;
    braid_Int           myid_x;
    
-   _braid_AccessStatusInit(t, 0, 0.0, 0, 0, 0, 0, 0, 1, -1, astatus);
+   _braid_AccessStatusInit(t, 0, 0, 0.0, 0, 0, 0, 0, 0, 1, -1, astatus);
    MPI_Comm_rank( comm_x, &myid_x );
 
    /* Print intro */
@@ -520,12 +520,12 @@ braid_TestCoarsenRefine( braid_App           app,
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   access(uc) \n");
       level = 1;
-      _braid_AccessStatusInit(t, 0, 0.0, 0, level, 0, 0, 0, 1, -1, astatus);
+      _braid_AccessStatusInit(t, 0, 0, 0.0, 0, level, 0, 0, 0, 1, -1, astatus);
       myaccess(app, uc, astatus);
 
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   access(u) \n");
       level = 0;
-      _braid_AccessStatusInit(t, 0, 0.0, 0, level, 0, 0, 0, 1, -1, astatus);
+      _braid_AccessStatusInit(t, 0, 0, 0.0, 0, level, 0, 0, 0, 1, -1, astatus);
       myaccess(app, u, astatus);
    }
 
@@ -665,8 +665,8 @@ braid_TestResidual( braid_App              app,
    braid_AccessStatus      astatus = (braid_AccessStatus)status;
    braid_StepStatus        sstatus = (braid_StepStatus)status;
    
-   _braid_StepStatusInit(t, t+dt, 0, 1e-16, 0, 0, 0, 2, sstatus);
-   _braid_AccessStatusInit(t, 0, 0.0, 0, 0, 0, 2, 0, 1, -1, astatus);
+   _braid_StepStatusInit(t, t+dt, 0, 0, 1e-16, 0, 0, 0, 2, sstatus);
+   _braid_AccessStatusInit(t, 0,0 , 0.0, 0, 0, 0, 2, 0, 1, -1, astatus);
 
    MPI_Comm_rank( comm_x, &myid_x );
 

@@ -188,6 +188,8 @@ braid_Drive(braid_Core core)
    /* Loop over all time chunks */
    for (int ichunk = 0; ichunk < nchunks; ichunk++)
    {
+      _braid_CoreElt(core, ichunk) = ichunk;
+
       /* current time chunk values */
       _braid_CoreElt(core,tstart) = tstart0 + ichunk * dt_chunk;    /* start time of current chunk */   
       _braid_CoreElt(core,tstop)  = _braid_CoreElt(core, tstart) + dt_chunk;    /* end time of current chunk */
@@ -324,6 +326,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, tstop)           = tstop;
    _braid_CoreElt(core, ntime)           = ntime;
    _braid_CoreElt(core, nchunks)         = nchunks;
+   _braid_CoreElt(core, ichunk)          = 0;
    _braid_CoreElt(core, app)             = app;
 
    _braid_CoreElt(core, step)            = step;

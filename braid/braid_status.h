@@ -147,7 +147,7 @@ braid_StatusGetT(braid_Status status,                      /**< structure contai
  **/
 braid_Int
 braid_StatusGetTIndex(braid_Status status,                  /**< structure containing current simulation info */
-                      braid_Int   *idx_ptr                  /**< output, global index value corresponding to current time value */
+                      braid_Int   *idx_ptr                  /**< output, global index value corresponding to current time value on the current grid */
                       );
 
 /**

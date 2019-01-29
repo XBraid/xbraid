@@ -91,7 +91,8 @@ _braid_StatusDestroy(braid_Status status);
  */
 braid_Int
 _braid_AccessStatusInit(braid_Real          t,                /**< current time */
-                        braid_Int           idx,              /**< time point index value corresponding to t on the global time grid */
+                        braid_Int           idx,              /**< time point index value corresponding to t on the current time chunk grid */
+                        braid_Int           ichunk,           /**< current time chunk index */
                         braid_Real          rnorm,            /**< current residual norm in XBraid */
                         braid_Int           iter,             /**< current iteration in XBraid*/
                         braid_Int           level,            /**< current level in XBraid */
@@ -124,7 +125,8 @@ _braid_CoarsenRefStatusInit(braid_Real              tstart,      /**< time value
 braid_Int
 _braid_StepStatusInit(braid_Real        tstart,      /**< current time value  */
                       braid_Real        tstop,       /**< time value to evolve towards, time value to the right of tstart */
-                      braid_Int         idx,         /**< time point index value corresponding to tstart on the global time grid */
+                      braid_Int         idx,         /**< time point index value corresponding to tstart on the current time chunk grid */
+                      braid_Int         ichunk,           /**< current time chunk index */
                       braid_Real        tol,         /**< Current XBraid stopping tolerance */
                       braid_Int         iter,        /**< Current XBraid iteration (also equal to length of rnorms) */
                       braid_Int         level,       /**< current level in XBraid */
@@ -148,6 +150,7 @@ _braid_BufferStatusInit(braid_Int           messagetype,  /**< message type, 0: 
 braid_Int
 _braid_ObjectiveStatusInit(braid_Real            tstart,
                            braid_Int             idx,
+                           braid_Int             ichunk,     /**< current time chunk index */
                            braid_Int             iter,
                            braid_Int             level,
                            braid_Int             nrefine,

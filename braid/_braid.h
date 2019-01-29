@@ -184,6 +184,8 @@ typedef struct _braid_Core_struct
    braid_Int              ntime;            /**< initial number of time intervals */
    braid_App              app;              /**< application data for the user */
    braid_Int              nchunks;          /**< number of time chunks */
+   braid_Int              ichunk;           /**< Current time chunk index */
+
 
    braid_PtFcnStep        step;             /**< apply step function */
    braid_PtFcnInit        init;             /**< return an initialized braid_BaseVector */
