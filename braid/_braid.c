@@ -937,6 +937,30 @@ _braid_UGetVectorRef(braid_Core         core,
    return _braid_error_flag;
 }
 
+
+braid_Int
+_braid_UGetLast(braid_Core        core,
+                braid_BaseVector *u_ptr)
+{
+   _braid_Grid        **grids = _braid_CoreElt(core, grids);
+   int                 ntime = _braid_CoreElt(core, ntime);
+   braid_BaseVector    ulast;
+
+   if (_braid_CoreElt(core, max_levels) <= 1)
+   {
+      ulast  = _braid_GridElt(grids[0], ulast);
+   }
+   else
+   {
+     _braid_UGetVectorRef(core, 0, ntime, &ulast);
+   }
+
+  *u_ptr = ulast;
+
+   return _braid_error_flag;
+}
+
+
 /*----------------------------------------------------------------------------
  * Stores a reference to the local u-vector on grid 'level' at point 'index'.
  * If the shellvector feature is used, the u-vector might be emptied so that
@@ -1665,6 +1689,9 @@ _braid_GridInit(braid_Core     core,
    ta = _braid_CTAlloc(braid_Real, iupper-ilower+3);
    _braid_GridElt(grid, ta_alloc) = ta;
    _braid_GridElt(grid, ta)       = ta+1;  /* shift */
+
+   /* Initialize last time step storage with NULL */
+   _braid_GridElt(grid, ulast) = NULL;
    
    *grid_ptr = grid;
 
@@ -3695,9 +3722,26 @@ _braid_FAccess(braid_Core     core,
             _braid_ObjectiveStatusInit(ta[fi-ilower], fi, iter, level, nrefine, gupper, ostatus);
             _braid_AddToObjective(core, u, ostatus);
          }
+
+         /* If time-serial: store last time step */
+         if (_braid_CoreElt(core, max_levels) <= 1 &&
+              _braid_CoreElt(core, storage) < 0 )
+         {
+            if (fi == _braid_CoreElt(core, ntime))
+            {
+              if (_braid_GridElt(grids[0], ulast) != NULL)
+              {
+                _braid_BaseFree(core, app, _braid_GridElt(grids[0], ulast));
+                _braid_GridElt(grids[0], ulast) = NULL;
+              }
+              _braid_BaseClone(core, app,  u, &(_braid_GridElt(grids[0], ulast)));
+            }
+         }
       }
+
       if (flo <= fhi)
       {
+         /* Free u */
          _braid_BaseFree(core, app,  u);
       }
 

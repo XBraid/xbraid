@@ -164,6 +164,8 @@ typedef struct
    braid_BaseVector  *va_alloc;      /**< original memory allocation for va */
    braid_BaseVector  *fa_alloc;      /**< original memory allocation for fa */
 
+   braid_BaseVector ulast;          /**< if serial: stores last time step */
+
 } _braid_Grid;
 
 /**
@@ -960,7 +962,6 @@ braid_Int
 _braid_AdjointFeatureCheck(braid_Core core);
 
 
-
 /* Call braid driver */
 braid_Int
 _braid_DriveChunk(braid_Core core);
@@ -995,6 +996,9 @@ braid_Int
 _braid_DriveEndCycle(braid_Core          core,
                      _braid_CycleState  *cycle_ptr);
 
+braid_Int
+_braid_UGetLast(braid_Core        core,
+                braid_BaseVector *u_ptr);
 
 #ifdef __cplusplus
 }

@@ -315,6 +315,7 @@ braid_Destroy(braid_Core  core)
 {
    if (core)
    {
+      braid_App               app        = _braid_CoreElt(core, app);
       braid_Int               nlevels    = _braid_CoreElt(core, nlevels);
       _braid_Grid           **grids      = _braid_CoreElt(core, grids);
       braid_Int               level;
@@ -334,11 +335,22 @@ braid_Destroy(braid_Core  core)
          _braid_OptimDestroy( core );
          _braid_TFree(_braid_CoreElt(core, optim));
       }
-      
+
+      /* Free last time step, if set */
+      if (_braid_CoreElt(core, max_levels) <= 1 &&
+          _braid_CoreElt(core, storage) < 0 )
+      {
+         if (_braid_GridElt(grids[0], ulast) != NULL)
+         {
+           _braid_BaseFree(core, app, _braid_GridElt(grids[0], ulast));
+         }
+      }
+
       for (level = 0; level < nlevels; level++)
       {
          _braid_GridDestroy(core, grids[level]);
       }
+
       _braid_TFree(grids);
 
       _braid_TFree(core);
