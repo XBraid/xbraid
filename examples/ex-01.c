@@ -253,9 +253,14 @@ int main (int argc, char *argv[])
    braid_SetMaxLevels(core, 2);
    braid_SetAbsTol(core, 1.0e-06);
    braid_SetCFactor(core, -1, 2);
+
+   braid_SetNChunks(core, 2);
+   braid_SetSkip(core, 0);
+   // _braid_SetVerbosity(core,1);
    
    /* Run simulation, and then clean up */
    braid_Drive(core);
+
 
    braid_Destroy(core);
    free(app);

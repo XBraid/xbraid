@@ -181,6 +181,7 @@ typedef struct _braid_Core_struct
    braid_Real             tstop;            /**< stop time */
    braid_Int              ntime;            /**< initial number of time intervals */
    braid_App              app;              /**< application data for the user */
+   braid_Int              nchunks;          /**< number of time chunks */
 
    braid_PtFcnStep        step;             /**< apply step function */
    braid_PtFcnInit        init;             /**< return an initialized braid_BaseVector */
@@ -293,6 +294,24 @@ typedef struct _braid_Core_struct
    braid_Int    size_buffer;       /**< if set by user, send buffer will be "size" bytes in length */
    braid_Int    send_recv_rank;    /***< holds the rank of the source / receiver from MPI_Send / MPI_Recv calls. */
 } _braid_Core;
+
+
+
+/*--------------------------------------------------------------------------
+ * Cycle state structure
+ *--------------------------------------------------------------------------*/
+
+typedef struct
+{
+   braid_Int  down;
+   braid_Int  try_refine;
+   braid_Int  fmglevel;
+   braid_Int  fmg_Vcyc;
+   FILE      *outfile;
+
+} _braid_CycleState;
+
+
 
 /*--------------------------------------------------------------------------
  * Accessor macros 
@@ -939,6 +958,42 @@ _braid_SetVerbosity(braid_Core  core,
  */
 braid_Int
 _braid_AdjointFeatureCheck(braid_Core core);
+
+
+
+/* Call braid driver */
+braid_Int
+_braid_DriveChunk(braid_Core core);
+
+
+
+braid_Int
+_braid_DriveInitCycle(braid_Core          core,
+                      _braid_CycleState  *cycle_ptr);
+
+braid_Int
+_braid_DriveUpdateCycle(braid_Core          core,
+                        braid_Int           level,
+                        braid_Int           iter,
+                        _braid_CycleState  *cycle_ptr);
+
+braid_Int
+_braid_DrivePrintStatus(braid_Core  core,
+                        braid_Int   level,
+                        braid_Int   iter,
+                        braid_Int   refined,
+                        braid_Real  localtime);
+
+
+braid_Int
+_braid_DriveCheckConvergence(braid_Core  core,
+                             braid_Int   iter,
+                             braid_Int  *done_ptr);
+
+
+braid_Int
+_braid_DriveEndCycle(braid_Core          core,
+                     _braid_CycleState  *cycle_ptr);
 
 
 #ifdef __cplusplus

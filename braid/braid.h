@@ -1040,6 +1040,15 @@ braid_Rand(void                                /**< Take no arguments, to mimic 
 /** @}*/
 
 
+/**
+ * Set the number of time chunks 
+ */
+braid_Int
+braid_SetNChunks(braid_Core core,
+                 braid_Int  nchunks
+                 );
+
+
 #ifdef __cplusplus
 }
 #endif
