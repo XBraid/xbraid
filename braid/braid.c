@@ -55,8 +55,9 @@ braid_Drive(braid_Core core)
    
    printf("Global time: [%f, %f], ntime =%d\n", tstart0, tstop0, ntime0);
    
-   /* number of time steps per chunk (global) */
+   /* Trick braid with new number of time steps per chunk (global) */
    _braid_CoreElt(core, ntime)   = (int) (ntime0 / nchunks);  
+   _braid_CoreElt(core, gupper)  = _braid_CoreElt(core, ntime);
 
    /* elapsed time per chunk */
    braid_Real dt_chunk = (tstop0 - tstart0 ) / nchunks;  
@@ -372,7 +373,7 @@ braid_PrintStats(braid_Core  core)
    braid_Int     myid          = _braid_CoreElt(core, myid_world);
    braid_Real    tstart        = _braid_CoreElt(core, tstart);
    braid_Real    tstop         = _braid_CoreElt(core, tstop);
-   braid_Int     ntime         = _braid_CoreElt(core, ntime);
+   braid_Int     gupper        = _braid_CoreElt(core, gupper);
    braid_Int     nchunks       = _braid_CoreElt(core, nchunks);
    braid_Int     max_levels    = _braid_CoreElt(core, max_levels);
    braid_Int     min_coarse    = _braid_CoreElt(core, min_coarse);
@@ -419,7 +420,7 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  Braid Solver Stats:\n");
       _braid_printf("  start time  = %e\n", tstart);
       _braid_printf("  stop time   = %e\n", tstop);
-      _braid_printf("  time steps  = %d\n", ntime);
+      _braid_printf("  time steps  = %d\n", gupper);
       _braid_printf("  time chunks = %d\n", nchunks);
       _braid_printf("\n");
       _braid_printf("  use seq soln?         = %d\n", seq_soln);
