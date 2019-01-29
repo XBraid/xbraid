@@ -40,15 +40,28 @@
 braid_Int
 braid_Drive(braid_Core core)
 {
-   braid_Real tstart0  = _braid_CoreElt(core, tstart);
-   braid_Real tstop0   = _braid_CoreElt(core, tstop);
-   braid_Int  ntime0   = _braid_CoreElt(core, ntime);
-   braid_Int  nchunks  = _braid_CoreElt(core, nchunks);
-   braid_Int  myid     = _braid_CoreElt(core, myid);
+   MPI_Comm             comm_world      = _braid_CoreElt(core, comm_world);
+   braid_Int            myid            = _braid_CoreElt(core, myid_world);
+   braid_Real           tstart          = _braid_CoreElt(core, tstart);
+   braid_Real           tstop           = _braid_CoreElt(core, tstop);
+   braid_Int            ntime           = _braid_CoreElt(core, ntime);
+   braid_Int            warm_restart    = _braid_CoreElt(core, warm_restart);
+   braid_Int            print_level     = _braid_CoreElt(core, print_level);
+   braid_App            app             = _braid_CoreElt(core, app);
+   braid_Int            obj_only        = _braid_CoreElt(core, obj_only);
+   braid_Int            adjoint         = _braid_CoreElt(core, adjoint);
+   braid_Real           tstart0         = _braid_CoreElt(core, tstart);
+   braid_Real           tstop0          = _braid_CoreElt(core, tstop);
+   braid_Int            ntime0          = _braid_CoreElt(core, ntime);
+   braid_Int            nchunks         = _braid_CoreElt(core, nchunks);
+   _braid_Grid        **grids           = _braid_CoreElt(core, grids);
 
-
+   braid_Int      i;
+   _braid_Grid   *grid;
+   braid_Real* ta;
    braid_BaseVector ulast;
-   braid_BaseVector ufirst;
+   braid_Int ilower, iupper;
+   braid_Real     localtime, globaltime;
 
    /* Sanity check */
    if (ntime0 % nchunks != 0)
@@ -57,6 +70,7 @@ braid_Drive(braid_Core core)
       exit(1);
 
    }
+
    
    if (myid == 0) printf("Global time: [%f, %f], ntime =%d\n", tstart0, tstop0, ntime0);
    
@@ -66,6 +80,110 @@ braid_Drive(braid_Core core)
 
    /* elapsed time per chunk */
    braid_Real dt_chunk = (tstop0 - tstart0 ) / nchunks;  
+
+
+
+   /* -------------- some init shit ----------------*/
+
+   /* Check for non-supported adjoint features */
+   if (adjoint)
+   {
+      _braid_AdjointFeatureCheck(core);
+   }
+
+   if (myid == 0 )
+   { 
+      if (!warm_restart && print_level > 0) 
+      {
+         _braid_printf("\n  Braid: Begin simulation, %d time steps\n",
+                    _braid_CoreElt(core, gupper));
+      }
+      if ( adjoint && print_level > 0 )
+      {
+         if (_braid_CoreElt(core, max_levels) > 1)
+         {
+            _braid_printf("\n");
+            _braid_printf("  Braid:      || r ||      || r_adj ||     Objective\n");
+            _braid_printf("  Braid:---------------------------------------------\n");
+         }
+         else
+         {
+            _braid_printf("  Braid: Serial time-stepping. \n\n");
+         }
+      }                 
+   }
+
+   /* Start timer */
+   localtime = MPI_Wtime();
+
+   if ( !warm_restart )
+   {
+      /* Create fine grid */
+      _braid_GetDistribution(core, &ilower, &iupper);
+      _braid_GridInit(core, 0, ilower, iupper, &grid);
+
+      /* Set t values */
+      ta = _braid_GridElt(grid, ta);
+      if ( _braid_CoreElt(core, tgrid) != NULL )
+      {
+         /* Call the user's time grid routine */
+         _braid_BaseTimeGrid(core, app, ta, &ilower, &iupper);
+      }
+      else
+      {
+         for (i = ilower; i <= iupper; i++)
+         {
+            ta[i-ilower] = tstart + (((braid_Real)i)/ntime)*(tstop-tstart);
+         }
+      }
+
+      /* Create a grid hierarchy */
+      _braid_InitHierarchy(core, grid, 0);
+
+
+      /* Set initial values */
+      _braid_InitGuess(core, 0);
+
+   }
+
+
+   if ( adjoint)
+   {
+      if (!warm_restart)
+      {
+         /* Initialize and allocate the adjoint variables */
+         _braid_InitAdjointVars(core, grid);
+      }
+      else
+      {
+         /* Prepare for next adjoint iteration in case of warm_restart */
+         _braid_CoreElt(core, optim)->sum_user_obj  = 0.0;
+         _braid_CoreElt(core, optim)->f_bar         = 0.0;
+         if (!obj_only)
+         {
+           _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
+         }
+      }
+
+      if ( obj_only )
+      {
+         _braid_CoreElt(core, record) = 0;
+      }
+      else
+      {
+         _braid_CoreElt(core, record) = 1;
+      }
+   }
+
+
+   /* Turn on warm_restart, so that further calls to braid_drive() don't initialize the grid again. */
+   _braid_CoreElt(core, warm_restart) = 1;
+
+
+   /* ------------ end of init shit ---------------*/
+
+
+
 
    /* Loop over all time chunks */
    for (int ichunk = 0; ichunk < nchunks; ichunk++)
@@ -99,15 +217,39 @@ braid_Drive(braid_Core core)
 
          braid_Int firstindex = 0;
          _braid_USetVector(core, 0, firstindex, ulast, 0); // is that enough or do we have to do that on all levels???
+
+         /* ToDo MPI_WaitAll */
+
+         /* Set new time vector ta on all levels */
+         for (int level = 0; level < _braid_CoreElt(core, nlevels); level++)
+         {
+            ta = _braid_GridElt(grids[level], ta);
+            ilower = _braid_GridElt(grids[level], ilower);
+            iupper = _braid_GridElt(grids[level], iupper);
+            for (int i = ilower; i <= iupper; i++)
+            {
+               ta[i-ilower] += dt_chunk ;
+            } 
+         }
+
       }
-
-      /* ToDo MPI_WaitAll */
-
-      /* ToDo: Set new time vector ta */
-
 
       /* Solve this time chunk */
       _braid_DriveChunk(core);
+
+
+      /* Stop timer */
+      localtime = MPI_Wtime() - localtime;
+      MPI_Allreduce(&localtime, &globaltime, 1, braid_MPI_REAL, MPI_MAX, comm_world);
+      _braid_CoreElt(core, localtime)  = localtime;
+      _braid_CoreElt(core, globaltime) = globaltime;
+
+      /* Print statistics for this run */
+      if ( (print_level > 1) && (myid == 0) )
+      {
+         braid_PrintStats(core);
+      }
+
 
    }
 

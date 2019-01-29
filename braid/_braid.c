@@ -1903,17 +1903,9 @@ _braid_InitGuess(braid_Core  core,
 braid_Int
 _braid_DriveChunk(braid_Core  core)
 {
-   MPI_Comm             comm_world      = _braid_CoreElt(core, comm_world);
-   braid_Int            myid            = _braid_CoreElt(core, myid_world);
-   braid_Real           tstart          = _braid_CoreElt(core, tstart);
-   braid_Real           tstop           = _braid_CoreElt(core, tstop);
-   braid_Int            ntime           = _braid_CoreElt(core, ntime);
    braid_Int            skip            = _braid_CoreElt(core, skip);
    braid_Int            max_levels      = _braid_CoreElt(core, max_levels);
-   braid_Int            warm_restart    = _braid_CoreElt(core, warm_restart);
-   braid_Int            print_level     = _braid_CoreElt(core, print_level);
    braid_Int            access_level    = _braid_CoreElt(core, access_level);
-   braid_App            app             = _braid_CoreElt(core, app);
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
    braid_Int            obj_only        = _braid_CoreElt(core, obj_only);
    braid_Int            adjoint         = _braid_CoreElt(core, adjoint);
@@ -1921,112 +1913,12 @@ _braid_DriveChunk(braid_Core  core)
 
    braid_Int     *nrels, nrel0;
    braid_Int      nlevels;
-   braid_Int      ilower, iupper, i;
-   braid_Real    *ta;
-   _braid_Grid   *grid;
-   braid_Real     localtime, globaltime;
+   braid_Int      ilower, iupper;
    braid_Real     rnorm_adj;
 
    /* Cycle state variables */
    _braid_CycleState  cycle;
    braid_Int          iter, level, done, refined;
-
-   /* Check for non-supported adjoint features */
-   if (adjoint)
-   {
-      _braid_AdjointFeatureCheck(core);
-   }
-
-   if (myid == 0 )
-   { 
-      if (!warm_restart && print_level > 0) 
-      {
-         _braid_printf("\n  Braid: Begin simulation, %d time steps\n",
-                    _braid_CoreElt(core, gupper));
-      }
-      if ( adjoint && print_level > 0 )
-      {
-         if (_braid_CoreElt(core, max_levels) > 1)
-         {
-            _braid_printf("\n");
-            _braid_printf("  Braid:      || r ||      || r_adj ||     Objective\n");
-            _braid_printf("  Braid:---------------------------------------------\n");
-         }
-         else
-         {
-            _braid_printf("  Braid: Serial time-stepping. \n\n");
-         }
-      }                 
-   }
-
-   /* Start timer */
-   localtime = MPI_Wtime();
-
-   if ( !warm_restart )
-   {
-      /* Create fine grid */
-      _braid_GetDistribution(core, &ilower, &iupper);
-      _braid_GridInit(core, 0, ilower, iupper, &grid);
-
-      /* Set t values */
-      ta = _braid_GridElt(grid, ta);
-      if ( _braid_CoreElt(core, tgrid) != NULL )
-      {
-         /* Call the user's time grid routine */
-         _braid_BaseTimeGrid(core, app, ta, &ilower, &iupper);
-      }
-      else
-      {
-         for (i = ilower; i <= iupper; i++)
-         {
-            ta[i-ilower] = tstart + (((braid_Real)i)/ntime)*(tstop-tstart);
-         }
-      }
-
-      /* Create a grid hierarchy */
-      _braid_InitHierarchy(core, grid, 0);
-
-
-      /* Set initial values */
-      _braid_InitGuess(core, 0);
-
-   }
-
-
-   if ( adjoint)
-   {
-      if (!warm_restart)
-      {
-         /* Initialize and allocate the adjoint variables */
-         _braid_InitAdjointVars(core, grid);
-      }
-      else
-      {
-         /* Prepare for next adjoint iteration in case of warm_restart */
-         _braid_CoreElt(core, optim)->sum_user_obj  = 0.0;
-         _braid_CoreElt(core, optim)->f_bar         = 0.0;
-         if (!obj_only)
-         {
-           _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
-         }
-      }
-
-      if ( obj_only )
-      {
-         _braid_CoreElt(core, record) = 0;
-      }
-      else
-      {
-         _braid_CoreElt(core, record) = 1;
-      }
-   }
-
-   
-
-
-   /* Turn on warm_restart, so that further calls to braid_drive() don't initialize the grid again. */
-   _braid_CoreElt(core, warm_restart) = 1;
-
 
    /* Initialize cycle state */
    _braid_DriveInitCycle(core, &cycle);
@@ -2151,6 +2043,7 @@ _braid_DriveChunk(braid_Core  core)
             }
 
             /* Print current status */
+            braid_Real localtime = -1000.0;
             _braid_DrivePrintStatus(core, level, iter, refined, localtime);
 
 
@@ -2227,18 +2120,6 @@ _braid_DriveChunk(braid_Core  core)
 
    /* End cycle */
    _braid_DriveEndCycle(core, &cycle);
-
-   /* Stop timer */
-   localtime = MPI_Wtime() - localtime;
-   MPI_Allreduce(&localtime, &globaltime, 1, braid_MPI_REAL, MPI_MAX, comm_world);
-   _braid_CoreElt(core, localtime)  = localtime;
-   _braid_CoreElt(core, globaltime) = globaltime;
-
-   /* Print statistics for this run */
-   if ( (print_level > 1) && (myid == 0) )
-   {
-      braid_PrintStats(core);
-   }
 
    return _braid_error_flag;
 }

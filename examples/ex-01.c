@@ -88,6 +88,7 @@ my_Step(braid_App        app,
    double tstart;             /* current time */
    double tstop;              /* evolve to this time*/
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+   printf("Step from %f to %f\n", tstart, tstop);
 
    /* Use backward Euler to propagate solution */
    (u->value) = 1./(1. + tstop-tstart)*(u->value);
@@ -256,7 +257,7 @@ int main (int argc, char *argv[])
 
    braid_SetNChunks(core, 2);
    braid_SetSkip(core, 0);
-   braid_SetMaxLevels(core, 10);
+   braid_SetMaxLevels(core, 1);
    // _braid_SetVerbosity(core,1);
    
    /* Run simulation, and then clean up */
