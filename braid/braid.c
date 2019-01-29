@@ -337,8 +337,7 @@ braid_Destroy(braid_Core  core)
       }
 
       /* Free last time step, if set */
-      if (_braid_CoreElt(core, max_levels) <= 1 &&
-          _braid_CoreElt(core, storage) < 0 )
+      if (_braid_CoreElt(core, storage) < 0 )
       {
          if (_braid_GridElt(grids[0], ulast) != NULL)
          {
