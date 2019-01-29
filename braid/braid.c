@@ -44,6 +44,11 @@ braid_Drive(braid_Core core)
    braid_Real tstop0   = _braid_CoreElt(core, tstop);
    braid_Int  ntime0   = _braid_CoreElt(core, ntime);
    braid_Int  nchunks  = _braid_CoreElt(core, nchunks);
+   braid_Int  myid     = _braid_CoreElt(core, myid);
+
+
+   braid_BaseVector ulast;
+   braid_BaseVector ufirst;
 
    /* Sanity check */
    if (ntime0 % nchunks != 0)
@@ -53,7 +58,7 @@ braid_Drive(braid_Core core)
 
    }
    
-   printf("Global time: [%f, %f], ntime =%d\n", tstart0, tstop0, ntime0);
+   if (myid == 0) printf("Global time: [%f, %f], ntime =%d\n", tstart0, tstop0, ntime0);
    
    /* Trick braid with new number of time steps per chunk (global) */
    _braid_CoreElt(core, ntime)   = (int) (ntime0 / nchunks);  
@@ -69,19 +74,42 @@ braid_Drive(braid_Core core)
       _braid_CoreElt(core,tstart) = tstart0 + ichunk * dt_chunk;    /* start time of current chunk */   
       _braid_CoreElt(core,tstop)  = _braid_CoreElt(core, tstart) + dt_chunk;    /* end time of current chunk */
 
-      printf("Chunk %d: [%f, %f], ntime =%d, dt_chunk = %f\n", ichunk, _braid_CoreElt(core, tstart), _braid_CoreElt(core, tstop), _braid_CoreElt(core,ntime), dt_chunk);
+      if (myid == 0) _braid_printf("Chunk %d: [%f, %f], ntime =%d, dt_chunk = %f\n", ichunk, _braid_CoreElt(core, tstart), _braid_CoreElt(core, tstop), _braid_CoreElt(core,ntime), dt_chunk);
 
-      // if (_braid_CoreElt(core,warm_restart) ) // && not last chunk
-      // {
-         /* Set new initial condition */
 
-         /* Set new time vector ta */
-      // }
+      /* Set new initial condition */
+      if ( ichunk > 0 )
+      {
+         /* Send last time step */
+         _braid_UGetLast(core, &ulast);   
+         // if (ulast != NULL)     // only true on last processor 
+         // {
+         //    /* ToDo: MPI_Isend to processor that stores u0 */
+         //    printf("%d: sending ulast \n",  myid);
+         // }
+
+         // /* Receive last time step and set it as u0 */
+         // if (ufirst != NULL)   // only true on first processor 
+         // {
+         //    /* ToDo: MPI_Irecv from last processor */
+         //    printf("%d: receiving ulast \n",  myid);
+
+         //    /* ToDo: Move ufirst to u0 */
+         // }
+
+         braid_Int firstindex = 0;
+         _braid_USetVector(core, 0, firstindex, ulast, 0); // is that enough or do we have to do that on all levels???
+      }
+
+      /* ToDo MPI_WaitAll */
+
+      /* ToDo: Set new time vector ta */
+
+
+      /* Solve this time chunk */
       _braid_DriveChunk(core);
 
    }
-
-   printf("warm_restart %d\n", _braid_CoreElt(core, warm_restart));
 
 
    return _braid_error_flag;

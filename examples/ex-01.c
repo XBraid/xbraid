@@ -249,13 +249,14 @@ int main (int argc, char *argv[])
              my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
    
    /* Set some typical Braid parameters */
-   braid_SetPrintLevel( core, 2);
+   braid_SetPrintLevel( core, 1);
    braid_SetMaxLevels(core, 2);
    braid_SetAbsTol(core, 1.0e-06);
    braid_SetCFactor(core, -1, 2);
 
    braid_SetNChunks(core, 2);
    braid_SetSkip(core, 0);
+   braid_SetMaxLevels(core, 10);
    // _braid_SetVerbosity(core,1);
    
    /* Run simulation, and then clean up */
