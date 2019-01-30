@@ -62,13 +62,8 @@ braid_Drive(braid_Core core)
    braid_Real     localtime, globaltime;
    braid_Int ilower, iupper;
 
-   /* Sanity check */
-   if (ntime0 % nchunks != 0)
-   {
-      _braid_printf("\n Error: ntimes must be a multiple of nchunks!\n");
-      exit(1);
-
-   }
+   /* Check for non-supported features */
+   _braid_FeatureCheck(core);
 
    
    if (myid == 0) printf("Global time: [%f, %f], ntime =%d\n", tstart0, tstop0, ntime0);
@@ -79,11 +74,6 @@ braid_Drive(braid_Core core)
    _braid_CoreElt(core, dt_chunk) = (tstop0 - tstart0 ) / nchunks;  
 
 
-   /* Check for non-supported adjoint features */
-   if (adjoint)
-   {
-      _braid_AdjointFeatureCheck(core);
-   }
 
    if (myid == 0 )
    { 

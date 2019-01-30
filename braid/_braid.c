@@ -545,6 +545,55 @@ _braid_AdjointFeatureCheck(braid_Core core)
 }
 
 
+
+braid_Int
+_braid_ChunkFeatureCheck(braid_Core core)
+{
+   braid_Int            nchunks   = _braid_CoreElt(core, nchunks);
+   braid_Int            ntime0    = _braid_CoreElt(core, ntime);
+   braid_Int            useshell  = _braid_CoreElt(core, useshell);
+   braid_PtFcnTimeGrid  tgrid     = _braid_CoreElt(core, tgrid);
+
+
+
+   /* Sanity check */
+   if (ntime0 % nchunks != 0)
+   {
+      _braid_printf("\n Error: ntimes must be a multiple of nchunks!\n");
+      exit(1);
+   }
+   if ( tgrid != NULL && nchunks > 1 ) 
+   {
+      _braid_printf("\nUser-defined time grid not supported with more than one time chunk!\n");
+      exit(1);
+   }
+   if ( useshell && nchunks > 1) 
+   {
+      _braid_printf("\nShell-vector feature not supported with more than one time chunk!\n");
+      exit(1);
+   }
+   return _braid_error_flag;
+}
+
+braid_Int
+_braid_FeatureCheck(braid_Core core)
+{
+   braid_Int adjoint = _braid_CoreElt(core, adjoint);
+   braid_Int nchunks = _braid_CoreElt(core, nchunks);
+
+   if (adjoint)
+   {
+      _braid_AdjointFeatureCheck(core);
+   }
+   if (nchunks > 1)
+   {
+      _braid_ChunkFeatureCheck(core);
+   }
+  
+
+   return _braid_error_flag;
+}
+
 /*----------------------------------------------------------------------------
  * Macros used below
  *----------------------------------------------------------------------------*/
