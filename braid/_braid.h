@@ -967,7 +967,8 @@ _braid_AdjointFeatureCheck(braid_Core core);
 
 /* Call braid driver */
 braid_Int
-_braid_DriveChunk(braid_Core core);
+_braid_DriveChunk(braid_Core core, 
+                  braid_Real localtime);
 
 
 

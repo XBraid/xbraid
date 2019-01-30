@@ -107,9 +107,6 @@ braid_Drive(braid_Core core)
       }                 
    }
 
-   /* Start timer */
-   localtime = MPI_Wtime();
-
    if ( !warm_restart )
    {
       /* Create fine grid */
@@ -134,10 +131,8 @@ braid_Drive(braid_Core core)
       /* Create a grid hierarchy */
       _braid_InitHierarchy(core, grid, 0);
 
-
       /* Set initial values */
       _braid_InitGuess(core, 0);
-
    }
 
 
@@ -173,8 +168,9 @@ braid_Drive(braid_Core core)
    /* Turn on warm_restart, so that further calls to braid_drive() don't initialize the grid again. */
    _braid_CoreElt(core, warm_restart) = 1;
 
+   /* Start timer */
+   localtime = MPI_Wtime();
 
- 
    /* Loop over all time chunks */
    for (int ichunk = 0; ichunk < nchunks; ichunk++)
    {
@@ -195,13 +191,13 @@ braid_Drive(braid_Core core)
       }
 
       /* Solve this time chunk */
-      _braid_DriveChunk(core);
+      _braid_DriveChunk(core, localtime);
 
 
-      /* Stop timer */
-      localtime = MPI_Wtime() - localtime;
-      MPI_Allreduce(&localtime, &globaltime, 1, braid_MPI_REAL, MPI_MAX, comm_world);
-      _braid_CoreElt(core, localtime)  = localtime;
+      /* timer */
+      braid_Real mytimediff = MPI_Wtime() - localtime;
+      MPI_Allreduce(&mytimediff, &globaltime, 1, braid_MPI_REAL, MPI_MAX, comm_world);
+      _braid_CoreElt(core, localtime)  = mytimediff;
       _braid_CoreElt(core, globaltime) = globaltime;
 
       /* Print statistics for this run */

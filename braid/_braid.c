@@ -1903,7 +1903,8 @@ _braid_InitGuess(braid_Core  core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-_braid_DriveChunk(braid_Core  core)
+_braid_DriveChunk(braid_Core  core, 
+                  braid_Real  localtime)
 {
    braid_Int            skip            = _braid_CoreElt(core, skip);
    braid_Int            max_levels      = _braid_CoreElt(core, max_levels);
@@ -2045,7 +2046,6 @@ _braid_DriveChunk(braid_Core  core)
             }
 
             /* Print current status */
-            braid_Real localtime = -1000.0;
             _braid_DrivePrintStatus(core, level, iter, refined, localtime);
 
 
