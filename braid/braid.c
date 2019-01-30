@@ -43,9 +43,6 @@ braid_Drive(braid_Core core)
 {
    MPI_Comm             comm_world      = _braid_CoreElt(core, comm_world);
    braid_Int            myid            = _braid_CoreElt(core, myid_world);
-   braid_Real           tstart          = _braid_CoreElt(core, tstart);
-   braid_Real           tstop           = _braid_CoreElt(core, tstop);
-   braid_Int            ntime           = _braid_CoreElt(core, ntime);
    braid_Int            warm_restart    = _braid_CoreElt(core, warm_restart);
    braid_Int            print_level     = _braid_CoreElt(core, print_level);
    braid_App            app             = _braid_CoreElt(core, app);
@@ -55,32 +52,24 @@ braid_Drive(braid_Core core)
    braid_Real           tstop0          = _braid_CoreElt(core, tstop);
    braid_Int            ntime0          = _braid_CoreElt(core, ntime);
    braid_Int            nchunks         = _braid_CoreElt(core, nchunks);
+   _braid_Grid        **grids           = _braid_CoreElt(core, grids);
 
-   braid_Int      i;
+   braid_Int      i, ichunk;
    _braid_Grid   *grid;
    braid_Real    *ta;
+   braid_Real     dt_chunk;
    braid_Real     localtime, globaltime;
    braid_Int ilower, iupper;
 
    /* Check for non-supported features */
    _braid_FeatureCheck(core);
 
-   
-   if (myid == 0) printf("Global time: [%f, %f], ntime =%d\n", tstart0, tstop0, ntime0);
-   
-   /* Trick braid with new number of times per chunk */
-   _braid_CoreElt(core, ntime)    = (int) (ntime0 / nchunks);  
-   _braid_CoreElt(core, gupper)   = _braid_CoreElt(core, ntime);
-   _braid_CoreElt(core, dt_chunk) = (tstop0 - tstart0 ) / nchunks;  
-
-
-
+   /* Some initial output */
    if (myid == 0 )
    { 
       if (!warm_restart && print_level > 0) 
       {
-         _braid_printf("\n  Braid: Begin simulation, %d time steps\n",
-                    _braid_CoreElt(core, gupper));
+         _braid_printf("\n  Braid: Begin simulation, time [%f, %f], %d time steps, %d chunks\n", tstart0, tstop0, ntime0, nchunks);
       }
       if ( adjoint && print_level > 0 )
       {
@@ -97,6 +86,13 @@ braid_Drive(braid_Core core)
       }                 
    }
 
+   /* Set chunk size */
+   _braid_CoreElt(core, ntime)    = (int) (ntime0 / nchunks);  
+   _braid_CoreElt(core, gupper)   = _braid_CoreElt(core, ntime);
+   dt_chunk = (tstop0 - tstart0 ) / nchunks;  
+
+
+   /* Allocate and initialize grids */
    if ( !warm_restart )
    {
       /* Create fine grid */
@@ -114,7 +110,7 @@ braid_Drive(braid_Core core)
       {
          for (i = ilower; i <= iupper; i++)
          {
-            ta[i-ilower] = tstart + (((braid_Real)i)/ntime)*(tstop-tstart);
+            ta[i-ilower] = tstart0 + (((braid_Real)i)/_braid_CoreElt(core,ntime))*(dt_chunk);
          }
       }
 
@@ -125,8 +121,8 @@ braid_Drive(braid_Core core)
       _braid_InitGuess(core, 0);
    }
 
-
-   if ( adjoint)
+   /* Initialize sensitivity computation */
+   if ( adjoint )
    {
       if (!warm_restart)
       {
@@ -155,36 +151,47 @@ braid_Drive(braid_Core core)
    }
 
 
-   /* Turn on warm_restart, so that further calls to braid_drive() don't initialize the grid again. */
+   /* Turn on warm_restart, so that further calls to braid_drive() don't initialize the grid and adjoint again. */
    _braid_CoreElt(core, warm_restart) = 1;
 
    /* Start timer */
    localtime = MPI_Wtime();
 
    /* Loop over all time chunks */
-   for (int ichunk = 0; ichunk < nchunks; ichunk++)
+   for (ichunk = 0; ichunk < nchunks; ichunk++)
    {
       _braid_CoreElt(core, ichunk) = ichunk;
 
-      /* current time chunk values */
-      braid_Real dt_chunk = _braid_CoreElt(core, dt_chunk);
-      _braid_CoreElt(core,tstart) = tstart0 + ichunk * dt_chunk;    /* start time of current chunk */   
-      _braid_CoreElt(core,tstop)  = _braid_CoreElt(core, tstart) + dt_chunk;    /* end time of current chunk */
-
-      if (myid == 0) _braid_printf("\n  Braid Chunk %d: [%f, %f], ntime =%d, dt_chunk = %f\n\n", ichunk, _braid_CoreElt(core, tstart), _braid_CoreElt(core, tstop), _braid_CoreElt(core,ntime), dt_chunk);
+      /* Set start and end time values of current time chunk */
+      _braid_CoreElt(core,tstart) = tstart0 + ichunk * dt_chunk;
+      _braid_CoreElt(core,tstop)  = _braid_CoreElt(core, tstart) + dt_chunk;
+      if (myid == 0) _braid_printf("\n  Braid Chunk %d: [%f, %f], %d time steps\n", ichunk, _braid_CoreElt(core, tstart), _braid_CoreElt(core, tstop), _braid_CoreElt(core,ntime));
 
 
-      /* Set new initial condition */
+      /* Initialize the chunk */
       if ( ichunk > 0 )
       {
-         _braid_ChunkInit(core);
+         /* Set new initial condition */
+         _braid_ChunkSetInitialCondition(core);
+
+         /* Set new time vector ta on all levels */
+         for (int level = 0; level < _braid_CoreElt(core, nlevels); level++)
+         {
+            ta = _braid_GridElt(grids[level], ta);
+            ilower = _braid_GridElt(grids[level], ilower);
+            iupper = _braid_GridElt(grids[level], iupper);
+            for (int i = ilower-1; i <= iupper+1; i++)
+            {
+               ta[i-ilower] += dt_chunk ;
+            } 
+         }
       }
 
       /* Solve this time chunk */
-      _braid_DriveChunk(core, localtime);
+      _braid_ChunkDrive(core, localtime);
 
 
-      /* timer */
+      /* Get the time */
       braid_Real mytimediff = MPI_Wtime() - localtime;
       MPI_Allreduce(&mytimediff, &globaltime, 1, braid_MPI_REAL, MPI_MAX, comm_world);
       _braid_CoreElt(core, localtime)  = mytimediff;

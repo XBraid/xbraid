@@ -965,9 +965,16 @@ braid_Int
 _braid_AdjointFeatureCheck(braid_Core core);
 
 
+braid_Int
+_braid_FeatureCheck(braid_Core core);
+
+
+braid_Int
+_braid_ChunkFeatureCheck(braid_Core core);
+
 /* Call braid driver */
 braid_Int
-_braid_DriveChunk(braid_Core core, 
+_braid_ChunkDrive(braid_Core core, 
                   braid_Real localtime);
 
 
@@ -1006,11 +1013,11 @@ _braid_UGetLast(braid_Core        core,
 
 
 /**
- * Initialize the new time chunk. 
+ * Set the initial condition for a time chunk. 
  * Communicates the last time step from last processor to first one and set it as new initial condition for the new time chunk.
  */
 braid_Int
-_braid_ChunkInit(braid_Core core);
+_braid_ChunkSetInitialCondition(braid_Core core);
 
 
 #ifdef __cplusplus

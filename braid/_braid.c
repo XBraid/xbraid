@@ -533,7 +533,8 @@ _braid_AdjointFeatureCheck(braid_Core core)
    {
       err_char = "Storage >= 1";
       err = 1;
-   } 
+   }
+
     // r_space?
    if ( err )
    {
@@ -1952,7 +1953,7 @@ _braid_InitGuess(braid_Core  core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-_braid_DriveChunk(braid_Core  core, 
+_braid_ChunkDrive(braid_Core  core, 
                   braid_Real  localtime)
 {
    braid_Int            skip            = _braid_CoreElt(core, skip);
@@ -4683,15 +4684,13 @@ _braid_DrivePrintStatus(braid_Core  core,
 
 
 braid_Int
-_braid_ChunkInit(braid_Core core)
+_braid_ChunkSetInitialCondition(braid_Core core)
 {
    
    braid_App            app       = _braid_CoreElt(core, app);
    braid_Int            myid      = _braid_CoreElt(core, myid_world);
    braid_Int            ntime     = _braid_CoreElt(core, ntime);
    MPI_Comm             comm      = _braid_CoreElt(core, comm);
-   braid_Real           dt_chunk  = _braid_CoreElt(core, dt_chunk);
-   _braid_Grid        **grids     = _braid_CoreElt(core, grids);
    braid_BufferStatus   bstatus   = (braid_BufferStatus)core;
    void           *sendbuffer;
    void           *recvbuffer;
@@ -4701,10 +4700,8 @@ _braid_ChunkInit(braid_Core core)
    braid_Int      size;
    braid_Int      sender, receiver;
    braid_Int      num_requests = 0;
-   braid_Real    *ta;
    braid_BaseVector ulast;
    braid_BaseVector ufirst;
-   braid_Int ilower, iupper;
    braid_Int nprocs;
 
    MPI_Comm_size(comm, &nprocs);
@@ -4746,18 +4743,6 @@ _braid_ChunkInit(braid_Core core)
       _braid_GetProc(core, 0, ntime, &sender);
       recvrequests = _braid_CTAlloc(MPI_Request, num_requests);
       MPI_Irecv(recvbuffer, size, MPI_BYTE, sender, 0, comm, &recvrequests[0]);
-   }
-
-   /* Set new time vector ta on all levels */
-   for (int level = 0; level < _braid_CoreElt(core, nlevels); level++)
-   {
-      ta = _braid_GridElt(grids[level], ta);
-      ilower = _braid_GridElt(grids[level], ilower);
-      iupper = _braid_GridElt(grids[level], iupper);
-      for (int i = ilower-1; i <= iupper+1; i++)
-      {
-         ta[i-ilower] += dt_chunk ;
-      } 
    }
 
    /* Set the new initial condition */
