@@ -4631,3 +4631,112 @@ _braid_DrivePrintStatus(braid_Core  core,
    return _braid_error_flag;
 }
 
+
+
+braid_Int
+_braid_ChunkInit(braid_Core core)
+{
+   
+   braid_App            app       = _braid_CoreElt(core, app);
+   braid_Int            myid      = _braid_CoreElt(core, myid_world);
+   braid_Int            ntime     = _braid_CoreElt(core, ntime);
+   MPI_Comm             comm      = _braid_CoreElt(core, comm);
+   braid_Real           dt_chunk  = _braid_CoreElt(core, dt_chunk);
+   _braid_Grid        **grids     = _braid_CoreElt(core, grids);
+   braid_BufferStatus   bstatus   = (braid_BufferStatus)core;
+   void           *buffer;
+   MPI_Request    *requests;
+   MPI_Status     *status;
+   braid_Int      size;
+   braid_Int      sender, receiver;
+   braid_Int      num_requests = 0;
+   braid_Real    *ta;
+   braid_BaseVector ulast;
+   braid_BaseVector ufirst;
+   braid_Int ilower, iupper;
+   braid_Int nprocs;
+
+   MPI_Comm_size(comm, &nprocs);
+
+   // /* Send last time step to first processor*/
+   if (myid == nprocs - 1)     // only true on last processor 
+   {
+      printf("%d: sending ulast \n",  myid);
+
+      /* Get vector at last time point of this chunk */
+      _braid_UGetLast(core, &ulast);   
+
+      /* Allocate buffer through user routine */
+      _braid_BufferStatusInit( 0, 0, bstatus );
+      _braid_BaseBufSize(core, app,  &size, bstatus);
+      buffer = malloc(size);
+
+      /* Pack the buffer. Note that bufpack may return a size smaller than bufsize */ 
+      _braid_StatusElt(bstatus, size_buffer) = size;
+      _braid_BaseBufPack(core, app,  ulast, buffer, bstatus);
+      size = _braid_StatusElt( bstatus, size_buffer );
+
+      /* Send the buffer */
+      num_requests = 1;
+      requests = _braid_CTAlloc(MPI_Request, num_requests);
+      status   = _braid_CTAlloc(MPI_Status, num_requests);
+      _braid_GetProc(core, 0, 0, &receiver);
+      MPI_Isend(buffer, size, MPI_BYTE, receiver, 0, comm, &requests[0]);
+
+   }
+
+   /* Receive last time step from last processor */
+   if (myid == 0)
+   {
+      /* MPI_Irecv from last processor */
+      printf("%d: receiving ulast \n",  myid);
+
+      /* Allocate buffer through user routine */
+      _braid_BufferStatusInit( 0, 0, bstatus );
+      _braid_BaseBufSize(core, app,  &size, bstatus);
+      buffer = malloc(size);
+
+      /* Receive the buffer */
+      num_requests = 1;
+      _braid_GetProc(core, 0, ntime, &sender);
+      requests = _braid_CTAlloc(MPI_Request, num_requests);
+      status   = _braid_CTAlloc(MPI_Status, num_requests);
+      MPI_Irecv(buffer, size, MPI_BYTE, sender, 0, comm, &requests[0]);
+   }
+
+   /* Set new time vector ta on all levels */
+   for (int level = 0; level < _braid_CoreElt(core, nlevels); level++)
+   {
+      ta = _braid_GridElt(grids[level], ta);
+      ilower = _braid_GridElt(grids[level], ilower);
+      iupper = _braid_GridElt(grids[level], iupper);
+      for (int i = ilower-1; i <= iupper+1; i++)
+      {
+         ta[i-ilower] += dt_chunk ;
+      } 
+   }
+
+   /* Wait for communication to finish */
+   MPI_Waitall(num_requests, requests, status);
+ 
+   /* Set the new initial condition */
+   if (myid == 0)
+   {
+
+      /* Unpack the buffer into first time step */
+      _braid_BufferStatusInit( 0, 0, bstatus );
+      _braid_BaseBufUnpack(core, app,  buffer, &ufirst, bstatus);
+
+     _braid_USetVector(core, 0, 0, ufirst, 0);  
+   }
+
+   /* Free the buffer */
+   if (myid == 0 || myid == nprocs - 1)
+   {
+      _braid_TFree(buffer);
+      _braid_TFree(requests);
+      _braid_TFree(status);
+   }
+
+   return _braid_error_flag;
+}

@@ -27,6 +27,7 @@
  */
 
 #include "_braid.h"
+#include "_braid_status.h"
 #include "braid_defs.h"
 #include "_braid_tape.h"
 #include "_util.h"
@@ -54,14 +55,12 @@ braid_Drive(braid_Core core)
    braid_Real           tstop0          = _braid_CoreElt(core, tstop);
    braid_Int            ntime0          = _braid_CoreElt(core, ntime);
    braid_Int            nchunks         = _braid_CoreElt(core, nchunks);
-   _braid_Grid        **grids           = _braid_CoreElt(core, grids);
 
    braid_Int      i;
    _braid_Grid   *grid;
-   braid_Real* ta;
-   braid_BaseVector ulast;
-   braid_Int ilower, iupper;
+   braid_Real    *ta;
    braid_Real     localtime, globaltime;
+   braid_Int ilower, iupper;
 
    /* Sanity check */
    if (ntime0 % nchunks != 0)
@@ -74,12 +73,10 @@ braid_Drive(braid_Core core)
    
    if (myid == 0) printf("Global time: [%f, %f], ntime =%d\n", tstart0, tstop0, ntime0);
    
-   /* Trick braid with new number of time steps per chunk (global) */
-   _braid_CoreElt(core, ntime)   = (int) (ntime0 / nchunks);  
-   _braid_CoreElt(core, gupper)  = _braid_CoreElt(core, ntime);
-
-   /* elapsed time per chunk */
-   braid_Real dt_chunk = (tstop0 - tstart0 ) / nchunks;  
+   /* Trick braid with new number of times per chunk */
+   _braid_CoreElt(core, ntime)    = (int) (ntime0 / nchunks);  
+   _braid_CoreElt(core, gupper)   = _braid_CoreElt(core, ntime);
+   _braid_CoreElt(core, dt_chunk) = (tstop0 - tstart0 ) / nchunks;  
 
 
 
@@ -181,16 +178,14 @@ braid_Drive(braid_Core core)
 
 
    /* ------------ end of init shit ---------------*/
-
-
-
-
+ 
    /* Loop over all time chunks */
    for (int ichunk = 0; ichunk < nchunks; ichunk++)
    {
       _braid_CoreElt(core, ichunk) = ichunk;
 
       /* current time chunk values */
+      braid_Real dt_chunk = _braid_CoreElt(core, dt_chunk);
       _braid_CoreElt(core,tstart) = tstart0 + ichunk * dt_chunk;    /* start time of current chunk */   
       _braid_CoreElt(core,tstop)  = _braid_CoreElt(core, tstart) + dt_chunk;    /* end time of current chunk */
 
@@ -200,40 +195,7 @@ braid_Drive(braid_Core core)
       /* Set new initial condition */
       if ( ichunk > 0 )
       {
-         /* Send last time step */
-         _braid_UGetLast(core, &ulast);   
-         // if (ulast != NULL)     // only true on last processor 
-         // {
-         //    /* ToDo: MPI_Isend to processor that stores u0 */
-         //    printf("%d: sending ulast \n",  myid);
-         // }
-
-         // /* Receive last time step and set it as u0 */
-         // if (ufirst != NULL)   // only true on first processor 
-         // {
-         //    /* ToDo: MPI_Irecv from last processor */
-         //    printf("%d: receiving ulast \n",  myid);
-
-         //    /* ToDo: Move ufirst to u0 */
-         // }
-
-         braid_Int firstindex = 0;
-         _braid_USetVector(core, 0, firstindex, ulast, 0); // is that enough or do we have to do that on all levels???
-
-         /* ToDo MPI_WaitAll */
-
-         /* Set new time vector ta on all levels */
-         for (int level = 0; level < _braid_CoreElt(core, nlevels); level++)
-         {
-            ta = _braid_GridElt(grids[level], ta);
-            ilower = _braid_GridElt(grids[level], ilower);
-            iupper = _braid_GridElt(grids[level], iupper);
-            for (int i = ilower; i <= iupper; i++)
-            {
-               ta[i-ilower] += dt_chunk ;
-            } 
-         }
-
+         _braid_ChunkInit(core);
       }
 
       /* Solve this time chunk */
@@ -327,6 +289,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, ntime)           = ntime;
    _braid_CoreElt(core, nchunks)         = nchunks;
    _braid_CoreElt(core, ichunk)          = 0;
+   _braid_CoreElt(core, dt_chunk)        = tstop - tstart;
    _braid_CoreElt(core, app)             = app;
 
    _braid_CoreElt(core, step)            = step;

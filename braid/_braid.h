@@ -184,7 +184,8 @@ typedef struct _braid_Core_struct
    braid_Int              ntime;            /**< initial number of time intervals */
    braid_App              app;              /**< application data for the user */
    braid_Int              nchunks;          /**< number of time chunks */
-   braid_Int              ichunk;           /**< Current time chunk index */
+   braid_Int              ichunk;           /**< current time chunk index */
+   braid_Real             dt_chunk;         /**< time per chunk */
 
 
    braid_PtFcnStep        step;             /**< apply step function */
@@ -1001,6 +1002,15 @@ _braid_DriveEndCycle(braid_Core          core,
 braid_Int
 _braid_UGetLast(braid_Core        core,
                 braid_BaseVector *u_ptr);
+
+
+/**
+ * Initialize the new time chunk. 
+ * Communicates the last time step from last processor to first one and set it as new initial condition for the new time chunk.
+ */
+braid_Int
+_braid_ChunkInit(braid_Core core);
+
 
 #ifdef __cplusplus
 }
