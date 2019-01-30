@@ -4644,9 +4644,11 @@ _braid_ChunkInit(braid_Core core)
    braid_Real           dt_chunk  = _braid_CoreElt(core, dt_chunk);
    _braid_Grid        **grids     = _braid_CoreElt(core, grids);
    braid_BufferStatus   bstatus   = (braid_BufferStatus)core;
-   void           *buffer;
-   MPI_Request    *requests;
-   MPI_Status     *status;
+   void           *sendbuffer;
+   void           *recvbuffer;
+   MPI_Request    *sendrequests;
+   MPI_Request    *recvrequests;
+   MPI_Status     status;
    braid_Int      size;
    braid_Int      sender, receiver;
    braid_Int      num_requests = 0;
@@ -4669,19 +4671,18 @@ _braid_ChunkInit(braid_Core core)
       /* Allocate buffer through user routine */
       _braid_BufferStatusInit( 0, 0, bstatus );
       _braid_BaseBufSize(core, app,  &size, bstatus);
-      buffer = malloc(size);
+      sendbuffer= malloc(size);
 
       /* Pack the buffer. Note that bufpack may return a size smaller than bufsize */ 
       _braid_StatusElt(bstatus, size_buffer) = size;
-      _braid_BaseBufPack(core, app,  ulast, buffer, bstatus);
+      _braid_BaseBufPack(core, app,  ulast, sendbuffer, bstatus);
       size = _braid_StatusElt( bstatus, size_buffer );
 
       /* Send the buffer */
       num_requests = 1;
-      requests = _braid_CTAlloc(MPI_Request, num_requests);
-      status   = _braid_CTAlloc(MPI_Status, num_requests);
+      sendrequests = _braid_CTAlloc(MPI_Request, num_requests);
       _braid_GetProc(core, 0, 0, &receiver);
-      MPI_Isend(buffer, size, MPI_BYTE, receiver, 0, comm, &requests[0]);
+      MPI_Isend(sendbuffer, size, MPI_BYTE, receiver, 0, comm, &sendrequests[0]);
 
    }
 
@@ -4694,14 +4695,13 @@ _braid_ChunkInit(braid_Core core)
       /* Allocate buffer through user routine */
       _braid_BufferStatusInit( 0, 0, bstatus );
       _braid_BaseBufSize(core, app,  &size, bstatus);
-      buffer = malloc(size);
+      recvbuffer = malloc(size);
 
       /* Receive the buffer */
       num_requests = 1;
       _braid_GetProc(core, 0, ntime, &sender);
-      requests = _braid_CTAlloc(MPI_Request, num_requests);
-      status   = _braid_CTAlloc(MPI_Status, num_requests);
-      MPI_Irecv(buffer, size, MPI_BYTE, sender, 0, comm, &requests[0]);
+      recvrequests = _braid_CTAlloc(MPI_Request, num_requests);
+      MPI_Irecv(recvbuffer, size, MPI_BYTE, sender, 0, comm, &recvrequests[0]);
    }
 
    /* Set new time vector ta on all levels */
@@ -4716,26 +4716,28 @@ _braid_ChunkInit(braid_Core core)
       } 
    }
 
-   /* Wait for communication to finish */
-   MPI_Waitall(num_requests, requests, status);
- 
    /* Set the new initial condition */
    if (myid == 0)
    {
-
       /* Unpack the buffer into first time step */
+      MPI_Wait(recvrequests, &status);
       _braid_BufferStatusInit( 0, 0, bstatus );
-      _braid_BaseBufUnpack(core, app,  buffer, &ufirst, bstatus);
+      _braid_BaseBufUnpack(core, app,  recvbuffer, &ufirst, bstatus);
 
-     _braid_USetVector(core, 0, 0, ufirst, 0);  
+      /* Set initial condition */
+      _braid_USetVector(core, 0, 0, ufirst, 1);    // Move or not?? Do it on all levels??
+
+      /* Free the buffer */
+      _braid_TFree(recvbuffer);
+      _braid_TFree(recvrequests);
    }
 
-   /* Free the buffer */
-   if (myid == 0 || myid == nprocs - 1)
+   /* Free the send buffer */
+   if (myid == nprocs - 1) 
    {
-      _braid_TFree(buffer);
-      _braid_TFree(requests);
-      _braid_TFree(status);
+      MPI_Wait(sendrequests, &status);
+      _braid_TFree(sendbuffer);
+      _braid_TFree(sendrequests);
    }
 
    return _braid_error_flag;
