@@ -79,9 +79,6 @@ braid_Drive(braid_Core core)
    _braid_CoreElt(core, dt_chunk) = (tstop0 - tstart0 ) / nchunks;  
 
 
-
-   /* -------------- some init shit ----------------*/
-
    /* Check for non-supported adjoint features */
    if (adjoint)
    {
@@ -177,7 +174,6 @@ braid_Drive(braid_Core core)
    _braid_CoreElt(core, warm_restart) = 1;
 
 
-   /* ------------ end of init shit ---------------*/
  
    /* Loop over all time chunks */
    for (int ichunk = 0; ichunk < nchunks; ichunk++)
@@ -189,7 +185,7 @@ braid_Drive(braid_Core core)
       _braid_CoreElt(core,tstart) = tstart0 + ichunk * dt_chunk;    /* start time of current chunk */   
       _braid_CoreElt(core,tstop)  = _braid_CoreElt(core, tstart) + dt_chunk;    /* end time of current chunk */
 
-      if (myid == 0) _braid_printf("Chunk %d: [%f, %f], ntime =%d, dt_chunk = %f\n", ichunk, _braid_CoreElt(core, tstart), _braid_CoreElt(core, tstop), _braid_CoreElt(core,ntime), dt_chunk);
+      if (myid == 0) _braid_printf("\n  Braid Chunk %d: [%f, %f], ntime =%d, dt_chunk = %f\n\n", ichunk, _braid_CoreElt(core, tstart), _braid_CoreElt(core, tstop), _braid_CoreElt(core,ntime), dt_chunk);
 
 
       /* Set new initial condition */
@@ -213,8 +209,6 @@ braid_Drive(braid_Core core)
       {
          braid_PrintStats(core);
       }
-
-
    }
 
 

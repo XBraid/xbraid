@@ -4660,11 +4660,9 @@ _braid_ChunkInit(braid_Core core)
 
    MPI_Comm_size(comm, &nprocs);
 
-   // /* Send last time step to first processor*/
+   /* Send last time step to first processor*/
    if (myid == nprocs - 1)     // only true on last processor 
    {
-      printf("%d: sending ulast \n",  myid);
-
       /* Get vector at last time point of this chunk */
       _braid_UGetLast(core, &ulast);   
 
@@ -4678,7 +4676,7 @@ _braid_ChunkInit(braid_Core core)
       _braid_BaseBufPack(core, app,  ulast, sendbuffer, bstatus);
       size = _braid_StatusElt( bstatus, size_buffer );
 
-      /* Send the buffer */
+      /* Send the buffer to first processor*/
       num_requests = 1;
       sendrequests = _braid_CTAlloc(MPI_Request, num_requests);
       _braid_GetProc(core, 0, 0, &receiver);
@@ -4689,9 +4687,6 @@ _braid_ChunkInit(braid_Core core)
    /* Receive last time step from last processor */
    if (myid == 0)
    {
-      /* MPI_Irecv from last processor */
-      printf("%d: receiving ulast \n",  myid);
-
       /* Allocate buffer through user routine */
       _braid_BufferStatusInit( 0, 0, bstatus );
       _braid_BaseBufSize(core, app,  &size, bstatus);
@@ -4725,8 +4720,9 @@ _braid_ChunkInit(braid_Core core)
       _braid_BaseBufUnpack(core, app,  recvbuffer, &ufirst, bstatus);
 
       /* Set initial condition */
-      _braid_USetVector(core, 0, 0, ufirst, 1);    // Move or not?? Do it on all levels??
-
+      _braid_USetVector(core, 0, 0, ufirst, 1);    // copy or move?
+      // _braid_BaseFree(core, app,  ufirst);
+      
       /* Free the buffer */
       _braid_TFree(recvbuffer);
       _braid_TFree(recvrequests);

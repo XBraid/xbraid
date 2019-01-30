@@ -94,7 +94,7 @@ my_Step(braid_App        app,
    int ntpoints, level;
    braid_StepStatusGetNTPoints(status, &ntpoints);
    braid_StepStatusGetLevel(status, &level);
-   printf("%d: Step %d: %1.1f->%1.1f, pre-value %1.14e\n", app->rank, tindex, tstart, tstop, u->value);
+   // printf("%d: Step %d: %1.1f->%1.1f, pre-value %1.14e\n", app->rank, tindex, tstart, tstop, u->value);
 
    /* Use backward Euler to propagate solution */
    (u->value) = 1./(1. + tstop-tstart)*(u->value);
@@ -183,7 +183,7 @@ my_Access(braid_App          app,
    braid_AccessStatusGetT(astatus, &t);
    int tindex;
    braid_AccessStatusGetTIndex(astatus, &tindex);
-   printf("%d: access %d val = %1.14e\n", app->rank, tindex, u->value);
+   // printf("%d: access %d val = %1.14e\n", app->rank, tindex, u->value);
    sprintf(filename, "%s.%04d.%03d", "ex-01.out", index, app->rank);
    file = fopen(filename, "w");
    fprintf(file, "%.14e\n", (u->value));
@@ -267,8 +267,8 @@ int main (int argc, char *argv[])
    braid_SetAbsTol(core, 1.0e-06);
    braid_SetCFactor(core, -1, 2);
 
-   braid_SetNChunks(core, 5);
-   braid_SetSkip(core, 0);
+   braid_SetNChunks(core, 2);
+   braid_SetSkip(core, 1);
    braid_SetMaxLevels(core, 20);
    // _braid_SetVerbosity(core,1);
    
