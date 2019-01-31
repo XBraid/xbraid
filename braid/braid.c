@@ -165,6 +165,8 @@ braid_Drive(braid_Core core)
       /* Set start and end time values of current time chunk */
       _braid_CoreElt(core,tstart) = tstart0 + ichunk * dt_chunk;
       _braid_CoreElt(core,tstop)  = _braid_CoreElt(core, tstart) + dt_chunk;
+
+      /* Output */
       if (myid == 0) _braid_printf("\n  Braid Chunk %d: [%f, %f], %d time steps\n", ichunk, _braid_CoreElt(core, tstart), _braid_CoreElt(core, tstop), _braid_CoreElt(core,ntime));
 
 

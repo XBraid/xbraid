@@ -4688,7 +4688,6 @@ _braid_ChunkSetInitialCondition(braid_Core core)
 {
    
    braid_App            app       = _braid_CoreElt(core, app);
-   braid_Int            myid      = _braid_CoreElt(core, myid_world);
    braid_Int            ntime     = _braid_CoreElt(core, ntime);
    MPI_Comm             comm      = _braid_CoreElt(core, comm);
    braid_BufferStatus   bstatus   = (braid_BufferStatus)core;
@@ -4702,8 +4701,9 @@ _braid_ChunkSetInitialCondition(braid_Core core)
    braid_Int      num_requests = 0;
    braid_BaseVector ulast;
    braid_BaseVector ufirst;
-   braid_Int nprocs;
+   braid_Int nprocs, myid;
 
+   MPI_Comm_rank(comm, &myid);
    MPI_Comm_size(comm, &nprocs);
 
    /* Send last time step to first processor*/
@@ -4727,7 +4727,6 @@ _braid_ChunkSetInitialCondition(braid_Core core)
       sendrequests = _braid_CTAlloc(MPI_Request, num_requests);
       _braid_GetProc(core, 0, 0, &receiver);
       MPI_Isend(sendbuffer, size, MPI_BYTE, receiver, 0, comm, &sendrequests[0]);
-
    }
 
    /* Receive last time step from last processor */
