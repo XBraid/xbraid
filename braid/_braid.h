@@ -958,6 +958,12 @@ braid_Int
 _braid_SetVerbosity(braid_Core  core,
                     braid_Int   verbose_adj);
 
+/** 
+ * Check for supported features 
+ */
+braid_Int
+_braid_FeatureCheck(braid_Core core);
+
 /**
  * Sanity check for non-supported adjoint features
  */
@@ -965,30 +971,54 @@ braid_Int
 _braid_AdjointFeatureCheck(braid_Core core);
 
 
-braid_Int
-_braid_FeatureCheck(braid_Core core);
-
-
+/**
+ * Sanity check for non-supported chunk features 
+ */
 braid_Int
 _braid_ChunkFeatureCheck(braid_Core core);
 
-/* Call braid driver */
+/**
+ * Main loop of xbraid's multigrid iterations
+ */
 braid_Int
 _braid_ChunkDrive(braid_Core core, 
                   braid_Real localtime);
 
 
-
+/** 
+ * Initialize multigrid cycling
+ */
 braid_Int
 _braid_DriveInitCycle(braid_Core          core,
                       _braid_CycleState  *cycle_ptr);
 
+/**
+ * This routine determines the cycle direction (down or up) based on the current
+ * grid level, iteration number, and cycle state.  The resulting cycle direction
+ * is expected to produce three basic actions as follows:
+ *
+ *   Direction   Level                 Expected Action
+ *   down        0...(nlevels-2)       relaxation/restriction
+ *   up          1...(nlevels-1)       interpolation
+ *   up          0                     refine or check convergence
+ */
 braid_Int
 _braid_DriveUpdateCycle(braid_Core          core,
                         braid_Int           level,
                         braid_Int           iter,
                         _braid_CycleState  *cycle_ptr);
 
+/** 
+ * Helper function for braid_DriveChunk()
+ */
+braid_Int
+_braid_DriveEndCycle(braid_Core          core,
+                     _braid_CycleState  *cycle_ptr);
+
+
+/**
+ * Print out some statistics for current multigrid iteration
+ */
 braid_Int
 _braid_DrivePrintStatus(braid_Core  core,
                         braid_Int   level,
@@ -996,17 +1026,18 @@ _braid_DrivePrintStatus(braid_Core  core,
                         braid_Int   refined,
                         braid_Real  localtime);
 
-
+/**
+ * Check convergence criterion
+ */
 braid_Int
 _braid_DriveCheckConvergence(braid_Core  core,
                              braid_Int   iter,
                              braid_Int  *done_ptr);
 
-
-braid_Int
-_braid_DriveEndCycle(braid_Core          core,
-                     _braid_CycleState  *cycle_ptr);
-
+/**
+ * Returns a reference to the vector at the last time step.
+ * Return NULL if it is not stored on this processor.
+ */
 braid_Int
 _braid_UGetLast(braid_Core        core,
                 braid_BaseVector *u_ptr);

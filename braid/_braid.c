@@ -988,6 +988,10 @@ _braid_UGetVectorRef(braid_Core         core,
 }
 
 
+/*----------------------------------------------------------------------------
+ * Returns a reference to the vector at the last time step.
+ * Return NULL if it is not stored on this processor.
+ *---------------------------------------------------------------------------*/
 braid_Int
 _braid_UGetLast(braid_Core        core,
                 braid_BaseVector *u_ptr)
@@ -4292,11 +4296,6 @@ _braid_ErrorHandler(const char *filename,
 }
 
 
-/*--------------------------------------------------------------------------
- * This is a locally scoped helper function for braid_Drive(), not a user 
- * function.
- *--------------------------------------------------------------------------*/
-
 braid_Int
 _braid_DriveInitCycle(braid_Core          core,
                       _braid_CycleState  *cycle_ptr)
@@ -4329,20 +4328,6 @@ _braid_DriveInitCycle(braid_Core          core,
 
    return _braid_error_flag;
 }
-
-/*--------------------------------------------------------------------------
- * This is a locally scoped helper function for braid_Drive(), not a user 
- * function.
- * 
- * This routine determines the cycle direction (down or up) based on the current
- * grid level, iteration number, and cycle state.  The resulting cycle direction
- * is expected to produce three basic actions as follows:
- *
- *   Direction   Level                 Expected Action
- *   down        0...(nlevels-2)       relaxation/restriction
- *   up          1...(nlevels-1)       interpolation
- *   up          0                     refine or check convergence
- *--------------------------------------------------------------------------*/
 
 braid_Int
 _braid_DriveUpdateCycle(braid_Core          core,
@@ -4445,10 +4430,6 @@ _braid_DriveUpdateCycle(braid_Core          core,
    return _braid_error_flag;
 }
 
-/*--------------------------------------------------------------------------
- * This is a locally scoped helper function for braid_Drive(), not a user 
- * function.
- *--------------------------------------------------------------------------*/
 
 braid_Int
 _braid_DriveEndCycle(braid_Core          core,
@@ -4470,10 +4451,6 @@ _braid_DriveEndCycle(braid_Core          core,
    return _braid_error_flag;
 }
 
-/*--------------------------------------------------------------------------
- * This is a locally scoped helper function for braid_Drive(), not a user 
- * function.
- *--------------------------------------------------------------------------*/
 
 braid_Int
 _braid_DriveCheckConvergence(braid_Core  core,
@@ -4577,11 +4554,6 @@ _braid_DriveCheckConvergence(braid_Core  core,
 
    return _braid_error_flag;
 }
-
-/*--------------------------------------------------------------------------
- * This is a locally scoped helper function for braid_Drive(), not a user 
- * function.
- *--------------------------------------------------------------------------*/
 
 braid_Int
 _braid_DrivePrintStatus(braid_Core  core,

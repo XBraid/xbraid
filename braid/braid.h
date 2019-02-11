@@ -1030,6 +1030,19 @@ braid_Int
 braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
                       braid_Real  *rnorm_adj   /**< output: adjoint residual norm of last iteration */
                      );
+
+
+/**
+ * Set the number of time chunks. 
+ * This splits up the time domain into nchunk sub-domains and runs xbraid's multigrid iterations separately for each sub-doimain - one after another. 
+ */
+braid_Int
+braid_SetNChunks(braid_Core core,             /**< braid_Core struct */
+                 braid_Int  nchunks           /**< Number of time chunks */
+                 );
+
+
+
 /**
  * Define a machine independent random number generator
  */
@@ -1038,15 +1051,6 @@ braid_Rand(void                                /**< Take no arguments, to mimic 
       );
 
 /** @}*/
-
-
-/**
- * Set the number of time chunks 
- */
-braid_Int
-braid_SetNChunks(braid_Core core,
-                 braid_Int  nchunks
-                 );
 
 
 #ifdef __cplusplus
