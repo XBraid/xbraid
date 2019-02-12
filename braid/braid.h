@@ -1034,7 +1034,7 @@ braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
 
 /**
  * Set the number of time chunks. 
- * This splits up the time domain into nchunk sub-domains and runs xbraid's multigrid iterations separately for each sub-doimain - one after another. 
+ * This option splits up the global time domain into multiple sub-domains and runs xbraid's multigrid iterations separately for each of the sub-doimain - one after another. This might be beneficial in cases where xbraid's convergence deteriorates due to very long time domain. 
  */
 braid_Int
 braid_SetNChunks(braid_Core core,             /**< braid_Core struct */
