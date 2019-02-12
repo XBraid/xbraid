@@ -706,7 +706,7 @@ _braid_BaseStep_diff(_braid_Action *action)
 
 
    /* Set up the status structure */
-   _braid_StepStatusInit(inTime, outTime, ichunk, tidx, tol, iter, level, nrefine, gupper, status);
+   _braid_StepStatusInit(inTime, outTime, tidx, ichunk, tol, iter, level, nrefine, gupper, status);
 
    /* Call the users's differentiated step function */
    _braid_CoreFcn(core, step_diff)(app, ustop, u, ustopbar->userVector, ubar->userVector, status);
