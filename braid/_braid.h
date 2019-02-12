@@ -977,16 +977,8 @@ _braid_AdjointFeatureCheck(braid_Core core);
 braid_Int
 _braid_ChunkFeatureCheck(braid_Core core);
 
-/**
- * Main loop of xbraid's multigrid iterations
- */
-braid_Int
-_braid_ChunkDrive(braid_Core core, 
-                  braid_Real localtime);
-
-
 /** 
- * Initialize multigrid cycling
+ * Initialize cycling struct
  */
 braid_Int
 _braid_DriveInitCycle(braid_Core          core,
@@ -1009,7 +1001,7 @@ _braid_DriveUpdateCycle(braid_Core          core,
                         _braid_CycleState  *cycle_ptr);
 
 /** 
- * Helper function for braid_DriveChunk()
+ * Finish up with cycle struct
  */
 braid_Int
 _braid_DriveEndCycle(braid_Core          core,
@@ -1049,6 +1041,15 @@ _braid_UGetLast(braid_Core        core,
  */
 braid_Int
 _braid_ChunkSetInitialCondition(braid_Core core);
+
+
+/**
+ * Main loop of xbraid's multigrid iterations
+ */
+braid_Int
+_braid_ChunkDrive(braid_Core core, 
+                  braid_Real localtime);
+
 
 
 #ifdef __cplusplus
