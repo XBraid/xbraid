@@ -1777,6 +1777,7 @@ _braid_InitGuess(braid_Core  core,
 {
    braid_App          app      = _braid_CoreElt(core, app);
    braid_Int          seq_soln = _braid_CoreElt(core, seq_soln);
+   braid_Int          nrefine  = _braid_CoreElt(core,nrefine);
    _braid_Grid      **grids    = _braid_CoreElt(core, grids);
    braid_Int          ilower   = _braid_GridElt(grids[level], ilower);
    braid_Int          iupper   = _braid_GridElt(grids[level], iupper);
@@ -1794,8 +1795,16 @@ _braid_InitGuess(braid_Core  core,
       /* If first processor, grab initial condition */
       if(ilower == 0)
       {
-         _braid_BaseInit(core, app,  ta[0], &u);
-         _braid_USetVector(core, 0, 0, u, 0);
+         /* If we have already refined, then an initial init has already been done */
+         if(nrefine > 0)
+         {
+            _braid_UGetVector(core, 0, 0, &u);    /* Get stored vector */
+         }
+         else
+         {
+            _braid_BaseInit(core, app,  ta[0], &u);
+            _braid_USetVector(core, 0, 0, u, 0);
+         }
          ilower += 1;
       }
       /* Else, receive point to the left */
