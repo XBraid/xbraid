@@ -1246,6 +1246,19 @@ braid_F90_Name(braid_set_seq_soln_f90, BRAID_SET_SEQ_SOLN_F90)(
    return 0;
 }
 
+/* braid_SetNChunks( ) */
+braid_Int
+braid_F90_Name(braid_set_nchunks_f90, BRAID_SET_NCHUNKS_F90)(
+                                  braid_F90_ObjPtr      *core_ptr,     /**< braid_Core (_braid_Core) struct*/
+                                  braid_F90_Int         *nchunks_ptr   /**< Number of time chunks */
+                                  )
+{
+   braid_SetNChunks(braid_TakeF90_ObjDeref(braid_Core, core_ptr),
+                    braid_TakeF90_Int(                 nchunks_ptr) );
+   return 0;
+}
+
+
 
 
 #endif
