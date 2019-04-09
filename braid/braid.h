@@ -920,6 +920,23 @@ braid_GetMyID(braid_Core core,           /**< braid_Core (_braid_Core) struct */
               braid_Int *myid_ptr        /**< output: rank of the processor. */
              );
 
+/**
+ * Set the number of time chunks. 
+ * This option splits up the global time domain into multiple sub-domains and runs xbraid's multigrid iterations separately for each of the sub-doimain - one after another. This might be beneficial in cases where xbraid's convergence deteriorates due to very long time domain. 
+ */
+braid_Int
+braid_SetNChunks(braid_Core core,             /**< braid_Core struct */
+                 braid_Int  nchunks           /**< Number of time chunks */
+                 );
+
+
+/**
+ * Define a machine independent random number generator
+ */
+braid_Int
+braid_Rand(void                                /**< Take no arguments, to mimic C-standard rand() */
+      );
+
 
 /** @}*/
 
@@ -1031,24 +1048,6 @@ braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
                       braid_Real  *rnorm_adj   /**< output: adjoint residual norm of last iteration */
                      );
 
-
-/**
- * Set the number of time chunks. 
- * This option splits up the global time domain into multiple sub-domains and runs xbraid's multigrid iterations separately for each of the sub-doimain - one after another. This might be beneficial in cases where xbraid's convergence deteriorates due to very long time domain. 
- */
-braid_Int
-braid_SetNChunks(braid_Core core,             /**< braid_Core struct */
-                 braid_Int  nchunks           /**< Number of time chunks */
-                 );
-
-
-
-/**
- * Define a machine independent random number generator
- */
-braid_Int
-braid_Rand(void                                /**< Take no arguments, to mimic C-standard rand() */
-      );
 
 /** @}*/
 
