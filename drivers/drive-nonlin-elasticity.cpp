@@ -157,8 +157,8 @@ class BeamApp : public MFEMBraidApp
 {
 protected:
 
-	BeamOptions &opts; 
 	H1_FECollection fe_coll;
+	BeamOptions &opts; 
 
 	virtual void AllocLevels(int num_space_levels);
 	virtual ParFiniteElementSpace *ConstructFESpace(ParMesh *pmesh);
