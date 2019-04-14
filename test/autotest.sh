@@ -152,7 +152,7 @@ case $1 in
       # Create Summary File
       cd $remote_subdir
       echo "To: $email_list"           >  $summary_file
-      echo "From: Jacob Schroder <schroder2@llnl.gov>" >>  $summary_file
+      echo "From: Jacob Schroder <jbschroder@unm.edu>" >>  $summary_file
       echo "Subject: $summary_subject" >> $summary_file
       echo "Content-Type: text/html"   >> $summary_file
       echo "MIME-Version: 1.0"         >> $summary_file
