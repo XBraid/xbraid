@@ -250,6 +250,7 @@ class BraidCoarsenRefStatus
       }
       void GetT(braid_Real *tstart_ptr)         { braid_CoarsenRefStatusGetT(cstatus, tstart_ptr); }
       void GetTIndex(braid_Int *tindex_ptr)     { braid_CoarsenRefStatusGetTIndex(cstatus, tindex_ptr); }
+      void GetIter(braid_Int *iter_ptr)         { braid_CoarsenRefStatusGetIter(cstatus, iter_ptr); }
       void GetFTstop(braid_Real *f_tstop_ptr)   { braid_CoarsenRefStatusGetFTstop(cstatus, f_tstop_ptr); }
       void GetFTprior(braid_Real *f_tprior_ptr) { braid_CoarsenRefStatusGetFTprior(cstatus, f_tprior_ptr); }
       void GetCTstop(braid_Real *c_tstop_ptr)   { braid_CoarsenRefStatusGetCTstop(cstatus, c_tstop_ptr); }

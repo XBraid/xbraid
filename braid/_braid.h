@@ -643,6 +643,7 @@ _braid_Coarsen(braid_Core        core,
 braid_Int
 _braid_RefineBasic(braid_Core        core,
                    braid_Int         level,    /* fine level */
+                   braid_Int         c_index,  /* coarse time index */
                    braid_Real       *f_ta,     /* pointer into fine time array */
                    braid_Real       *c_ta,     /* pointer into coarse time array */
                    braid_BaseVector  cvector,
