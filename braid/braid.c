@@ -459,6 +459,7 @@ braid_Drive(braid_Core  core)
    braid_PtFcnResidual  fullres         = _braid_CoreElt(core, full_rnorm_res);
    braid_Int            obj_only        = _braid_CoreElt(core, obj_only);
    braid_Int            adjoint         = _braid_CoreElt(core, adjoint);
+   braid_Int            seq_soln        = _braid_CoreElt(core, seq_soln);
 
 
    braid_Int     *nrels, nrel0;
@@ -670,6 +671,14 @@ braid_Drive(braid_Core  core)
             /* Finest grid - refine grid if desired */
             _braid_FRefine(core, &refined);
             nlevels = _braid_CoreElt(core, nlevels);
+
+            // If we are done refining and doing a fixed point test,
+            // then compute the sequential solution on the finest grid
+            braid_Int rstopped = _braid_CoreElt(core, rstopped);
+            if( (rstopped > -1) && (rstopped == iter) && (seq_soln == 1) )
+            {
+               _braid_InitGuess(core, 0);
+            }
 
             if ( adjoint )
             {

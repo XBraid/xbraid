@@ -149,8 +149,8 @@ class MovingApp : public MFEMBraidApp
 {
 protected:
 
-   MovingOptions &opts;
    H1_FECollection fe_coll; 
+   MovingOptions &opts;
 
    // Allocate data structures for the given number of spatial levels. Used by
    // InitMultilevelApp.
