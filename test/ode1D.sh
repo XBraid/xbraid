@@ -84,6 +84,7 @@ echo "Compiling regression test drivers"
 cd $example_dir
 make clean
 make ex-01 
+make ex-01-pp 
 make ex-01-expanded
 make ex-01-refinement
 make ex-01-expanded-f &> /dev/null
@@ -120,7 +121,9 @@ TESTS=( "$RunString -np 1 $example_dir/ex-01" \
         "$RunString -np 1 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 4" \
         "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 4" \
         "$RunString -np 3 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 4" \
-        "$RunString -np 4 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 4" )
+        "$RunString -np 4 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 4" \
+        "$RunString -np 1 $example_dir/ex-01-pp" \
+        "$RunString -np 2 $example_dir/ex-01-pp" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 
