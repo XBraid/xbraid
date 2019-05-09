@@ -922,11 +922,11 @@ braid_GetMyID(braid_Core core,           /**< braid_Core (_braid_Core) struct */
 
 /**
  * Set the number of time chunks. 
- * This option splits up the global time domain into multiple sub-domains and runs xbraid's multigrid iterations separately for each of the sub-doimain - one after another. This might be beneficial in cases where xbraid's convergence deteriorates due to very long time domain. 
+ * This option splits the global time domain into multiple sub-domains and runs XBraid's multigrid iterations separately for each of the sub-domains one after another. This can be beneficial in cases where XBraid's convergence deteriorates due to very long global time domains. 
  */
 braid_Int
 braid_SetNChunks(braid_Core core,             /**< braid_Core struct */
-                 braid_Int  nchunks           /**< Number of time chunks */
+                 braid_Int  nchunks           /**< Number of time chunks. Must be a divisor of ntime */
                  );
 
 
