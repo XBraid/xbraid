@@ -396,9 +396,11 @@ _braid_CoarsenRefStatusInit(braid_Real              tstart,
                             braid_Int               level,
                             braid_Int               nrefine,
                             braid_Int               gupper,
+                            braid_Int               c_index,
                             braid_CoarsenRefStatus  status)
 {
    _braid_StatusElt(status, t)        = tstart;
+   _braid_StatusElt(status, idx)      = c_index;
    _braid_StatusElt(status, f_tprior) = f_tprior;
    _braid_StatusElt(status, f_tstop)  = f_tstop;
    _braid_StatusElt(status, c_tprior) = c_tprior;

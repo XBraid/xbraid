@@ -487,7 +487,7 @@ braid_TestCoarsenRefine( braid_App           app,
    braid_AccessStatus      astatus = (braid_AccessStatus)status;
    braid_CoarsenRefStatus  cstatus = (braid_CoarsenRefStatus)status;
    
-   _braid_CoarsenRefStatusInit(t, t-fdt, t+fdt, t-cdt, t+cdt, 0, 0, 0, cstatus);
+   _braid_CoarsenRefStatusInit(t, t-fdt, t+fdt, t-cdt, t+cdt, 0, 0, 0, 0, cstatus);
    MPI_Comm_rank( comm_x, &myid_x );
 
    /* Initialize the correct flag */

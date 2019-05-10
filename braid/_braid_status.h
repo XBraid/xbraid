@@ -116,6 +116,7 @@ _braid_CoarsenRefStatusInit(braid_Real              tstart,      /**< time value
                             braid_Int               level,       /**< current fine level in XBraid */
                             braid_Int               nrefine,     /**< number of refinements done */
                             braid_Int               gupper,      /**< global size of the fine grid */
+                            braid_Int               c_index,     /**< coarse time index refining from */
                             braid_CoarsenRefStatus  status       /**< structure to initialize */
                             );
 

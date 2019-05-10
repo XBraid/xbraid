@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #BHEADER**********************************************************************
 #
 # Copyright (c) 2013, Lawrence Livermore National Security, LLC. 

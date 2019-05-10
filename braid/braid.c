@@ -1,20 +1,20 @@
 /*BHEADER**********************************************************************
- * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
- * Produced at the Lawrence Livermore National Laboratory. Written by 
- * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
+ * Copyright (c) 2013, Lawrence Livermore National Security, LLC.
+ * Produced at the Lawrence Livermore National Laboratory. Written by
+ * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin
  * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
- * 
+ *
  * This file is part of XBraid. For support, post issues to the XBraid Github page.
- * 
+ *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License (as published by the Free Software
  * Foundation) version 2.1 dated February 1999.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE. See the terms and conditions of the GNU General Public
  * License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License along
  * with this program; if not, write to the Free Software Foundation, Inc., 59
  * Temple Place, Suite 330, Boston, MA 02111-1307 USA
@@ -38,7 +38,7 @@
 #endif
 
 braid_Int
-braid_Drive(braid_Core core)
+braid_Drive(braid_Core  core)
 {
    MPI_Comm             comm_world      = _braid_CoreElt(core, comm_world);
    braid_Int            myid            = _braid_CoreElt(core, myid_world);
@@ -65,10 +65,11 @@ braid_Drive(braid_Core core)
 
    /* Some initial output */
    if (myid == 0 )
-   { 
-      if (!warm_restart && print_level > 0) 
+   {
+      if (!warm_restart && print_level > 0)
       {
-         _braid_printf("\n  Braid: Begin simulation, time [%f, %f], %d time steps, %d chunks\n", tstart0, tstop0, ntime0, nchunks);
+         _braid_printf("\n  Braid: Begin simulation, time [%f, %f], %d time steps, %d chunks\n",
+                       tstart0, tstop0, ntime0, nchunks);
       }
       if ( adjoint && print_level > 0 )
       {
@@ -82,13 +83,13 @@ braid_Drive(braid_Core core)
          {
             _braid_printf("  Braid: Serial time-stepping. \n\n");
          }
-      }                 
+      }
    }
 
    /* Set chunk size */
-   _braid_CoreElt(core, ntime)    = (int) (ntime0 / nchunks);  
+   _braid_CoreElt(core, ntime)    = (int) (ntime0 / nchunks);
    _braid_CoreElt(core, gupper)   = _braid_CoreElt(core, ntime);
-   dt_chunk = (tstop0 - tstart0 ) / nchunks;  
+   dt_chunk = (tstop0 - tstart0 ) / nchunks;
 
    /* Allocate and initialize grids */
    if ( !warm_restart )
@@ -134,7 +135,7 @@ braid_Drive(braid_Core core)
          _braid_CoreElt(core, optim)->f_bar         = 0.0;
          if (!obj_only)
          {
-           _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
+            _braid_CoreFcn(core, reset_gradient)(_braid_CoreElt(core, app));
          }
       }
 
@@ -187,7 +188,7 @@ braid_Drive(braid_Core core)
             for (i = ilower-1; i <= iupper+1; i++)
             {
                ta[i-ilower] += dt_chunk ;
-            } 
+            }
          }
       }
 
@@ -254,7 +255,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              rtol            = 1;              /* Use relative tolerance */
    braid_Int              skip            = 1;              /* Default skip value, skips all work on first down-cycle */
    braid_Int              max_refinements = 200;            /* Maximum number of F-refinements */
-   braid_Int              tpoints_cutoff  = braid_Int_Max;  /* Maximum number of time steps, controls FRefine()*/ 
+   braid_Int              tpoints_cutoff  = braid_Int_Max;  /* Maximum number of time steps, controls FRefine()*/
    braid_Int              adjoint         = 0;              /* Default adjoint run: Turned off */
    braid_Int              record          = 0;              /* Default action recording: Turned off */
    braid_Int              obj_only        = 0;              /* Default objective only: Turned off */
@@ -352,7 +353,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, reset_gradient)        = NULL;
    _braid_CoreElt(core, postprocess_obj)       = NULL;
    _braid_CoreElt(core, postprocess_obj_diff)  = NULL;
-   
+
    /* Residual history and accuracy tracking for StepStatus*/
    _braid_CoreElt(core, rnorm0)              = braid_INVALID_RNORM;
    _braid_CoreElt(core, rnorms)              = NULL; /* Set with SetMaxIter() below */
@@ -372,16 +373,17 @@ braid_Init(MPI_Comm               comm_world,
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
+
 braid_Int
 braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
                   braid_PtFcnObjectiveTDiff    objT_diff,
-                  braid_PtFcnStepDiff          step_diff, 
+                  braid_PtFcnStepDiff          step_diff,
                   braid_PtFcnResetGradient     reset_gradient,
                   braid_Core                  *core_ptr)
 {
    braid_Optim          optim;
 
-   /* Set adjoint flags */ 
+   /* Set adjoint flags */
    _braid_CoreElt(*core_ptr, adjoint)      = 1;
    _braid_CoreElt(*core_ptr, record)       = 1;
    _braid_CoreElt(*core_ptr, skip)         = 0;
@@ -397,23 +399,23 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
 
    /* Set optimization variables */
    optim->adjoints       = NULL;    /* will be allocated in InitAdjointVars() */
-   optim->tapeinput      = NULL;    /* will be allocated in InitAdjointVars() */   
-   optim->sendbuffer     = NULL;    /* will be allocated in InitAdjointVars() */   
-   optim->request        = NULL;    /* will be allocated in InitAdjointVars() */   
+   optim->tapeinput      = NULL;    /* will be allocated in InitAdjointVars() */
+   optim->sendbuffer     = NULL;    /* will be allocated in InitAdjointVars() */
+   optim->request        = NULL;    /* will be allocated in InitAdjointVars() */
    optim->objective      = 0.0;
    optim->sum_user_obj   = 0.0;
    optim->f_bar          = 0.0;
    optim->tstart_obj     = tstart_obj;
-   optim->tstop_obj      = tstop_obj; 
-   optim->tol_adj        = tol_adj;     
-   optim->rtol_adj       = rtol_adj;     
+   optim->tstop_obj      = tstop_obj;
+   optim->tol_adj        = tol_adj;
+   optim->rtol_adj       = rtol_adj;
    optim->rnorm_adj      = braid_INVALID_RNORM;
    optim->rnorm0_adj     = braid_INVALID_RNORM;
    optim->rnorm          = braid_INVALID_RNORM;
    optim->rnorm0         = braid_INVALID_RNORM;
 
    /* Store the optim structure in the core */
-   _braid_CoreElt( *core_ptr, optim) = optim; 
+   _braid_CoreElt( *core_ptr, optim) = optim;
 
    /* Initialize the tapes */
    _braid_TapeInit( _braid_CoreElt(*core_ptr, actionTape) );
@@ -425,8 +427,6 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
    _braid_CoreElt(*core_ptr, step_diff)      = step_diff;
    _braid_CoreElt(*core_ptr, objT_diff)      = objT_diff;
    _braid_CoreElt(*core_ptr, reset_gradient) = reset_gradient;
-
-
 
    return _braid_error_flag;
 }
@@ -451,7 +451,6 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
 
-
       /* Destroy the optimization structure */
       _braid_CoreElt(core, record) = 0;
       if (_braid_CoreElt(core, adjoint))
@@ -465,7 +464,7 @@ braid_Destroy(braid_Core  core)
       {
          if (_braid_GridElt(grids[0], ulast) != NULL)
          {
-           _braid_BaseFree(core, app, _braid_GridElt(grids[0], ulast));
+            _braid_BaseFree(core, app, _braid_GridElt(grids[0], ulast));
          }
       }
 
@@ -510,13 +509,13 @@ braid_PrintStats(braid_Core  core)
    braid_Int     nrefine       = _braid_CoreElt(core, nrefine);
    braid_Int     niter         = _braid_CoreElt(core, niter);
    braid_Int     nlevels       = _braid_CoreElt(core, nlevels);
-   braid_Int     tnorm         = _braid_CoreElt(core, tnorm); 
-   braid_Int     fmg           = _braid_CoreElt(core, fmg); 
-   braid_Int     nfmg          = _braid_CoreElt(core, nfmg); 
-   braid_Int     nfmg_Vcyc     = _braid_CoreElt(core, nfmg_Vcyc); 
-   braid_Int     access_level  = _braid_CoreElt(core, access_level); 
-   braid_Int     print_level   = _braid_CoreElt(core, print_level); 
-   braid_Int     skip          = _braid_CoreElt(core, skip); 
+   braid_Int     tnorm         = _braid_CoreElt(core, tnorm);
+   braid_Int     fmg           = _braid_CoreElt(core, fmg);
+   braid_Int     nfmg          = _braid_CoreElt(core, nfmg);
+   braid_Int     nfmg_Vcyc     = _braid_CoreElt(core, nfmg_Vcyc);
+   braid_Int     access_level  = _braid_CoreElt(core, access_level);
+   braid_Int     print_level   = _braid_CoreElt(core, print_level);
+   braid_Int     skip          = _braid_CoreElt(core, skip);
    braid_Real    globaltime    = _braid_CoreElt(core, globaltime);
    braid_PtFcnResidual fullres = _braid_CoreElt(core, full_rnorm_res);
    _braid_Grid **grids         = _braid_CoreElt(core, grids);
@@ -536,14 +535,14 @@ braid_PrintStats(braid_Core  core)
    }
 
    _braid_GetRNorm(core, -1, &rnorm);
-   
+
    if ( myid == 0 )
    {
       _braid_printf("\n");
       _braid_printf("  Braid Solver Stats:\n");
-      _braid_printf("  start time  = %e\n", tstart);
-      _braid_printf("  stop time   = %e\n", tstop);
-      _braid_printf("  time steps  = %d\n", gupper);
+      _braid_printf("  start time = %e\n", tstart);
+      _braid_printf("  stop time  = %e\n", tstop);
+      _braid_printf("  time steps = %d\n", gupper);
       _braid_printf("  time chunks = %d\n", nchunks);
       _braid_printf("\n");
       _braid_printf("  use seq soln?         = %d\n", seq_soln);
@@ -553,15 +552,15 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  max iterations        = %d\n", max_iter);
       _braid_printf("  iterations            = %d\n", niter);
       _braid_printf("\n");
-      
+
       if ( adjoint )
       {
          _braid_printf("  state   residual norm =  %e", rnorm);
          if ( rtol ) _braid_printf("  (-> rel. stopping tol. = %1.2e)\n", tol);
-         else        _braid_printf("  (-> abs. stopping tol. = %1.2e)\n", tol); 
+         else        _braid_printf("  (-> abs. stopping tol. = %1.2e)\n", tol);
          _braid_printf("  adjoint residual norm =  %e", rnorm_adj);
          if (rtol_adj ) _braid_printf("  (-> rel. stopping tol. = %1.2e)\n", tol_adj);
-         else           _braid_printf("  (-> abs. stopping tol. = %1.2e)\n", tol_adj); 
+         else           _braid_printf("  (-> abs. stopping tol. = %1.2e)\n", tol_adj);
       }
       else
       {
@@ -599,7 +598,7 @@ braid_PrintStats(braid_Core  core)
          }
          else
          {
-            _braid_printf("  fmg-cycles for all iteratons\n");         
+            _braid_printf("  fmg-cycles for all iteratons\n");
          }
       }
       _braid_printf("  access_level          = %d\n", access_level);
@@ -614,12 +613,12 @@ braid_PrintStats(braid_Core  core)
       for (level = 0; level < nlevels-1; level++)
       {
          _braid_printf("  % 5d  % 8d  % 7d   % 6d\n",
-                      level, _braid_GridElt(grids[level], gupper), 
-                      _braid_GridElt(grids[level], cfactor), nrels[level]);
+                       level, _braid_GridElt(grids[level], gupper),
+                       _braid_GridElt(grids[level], cfactor), nrels[level]);
       }
       /* Print out coarsest level information */
       _braid_printf("  % 5d  % 8d  \n",
-                      level, _braid_GridElt(grids[level], gupper) );
+                    level, _braid_GridElt(grids[level], gupper) );
       _braid_printf("\n");
       _braid_printf("  wall time = %f\n", globaltime);
       _braid_printf("\n");
@@ -721,7 +720,7 @@ braid_SetPrintFile(braid_Core     core,
                    const char    *printfile_name)
 {
    braid_Int  myid = _braid_CoreElt(core, myid_world);
-   
+
    if (myid == 0)
    {
       if ((_braid_printfile = fopen(printfile_name, "w")) == NULL)
@@ -741,7 +740,7 @@ braid_Int
 braid_SetDefaultPrintFile(braid_Core     core)
 {
    const char fname[] = "braid_runtime.out";
-   braid_SetPrintFile(core, fname); 
+   braid_SetPrintFile(core, fname);
    return _braid_error_flag;
 }
 
@@ -922,7 +921,7 @@ braid_SetMaxRefinements(braid_Core  core,
 
 braid_Int
 braid_SetTPointsCutoff(braid_Core  core,
-                    braid_Int   tpoints_cutoff)
+                       braid_Int   tpoints_cutoff)
 {
    _braid_CoreElt(core, tpoints_cutoff) = tpoints_cutoff;
 
@@ -992,7 +991,7 @@ braid_SetTemporalNorm(braid_Core  core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_SetResidual(braid_Core          core, 
+braid_SetResidual(braid_Core          core,
                   braid_PtFcnResidual residual)
 {
    _braid_CoreElt(core, residual) = residual;
@@ -1004,7 +1003,7 @@ braid_SetResidual(braid_Core          core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_SetFullRNormRes(braid_Core          core, 
+braid_SetFullRNormRes(braid_Core          core,
                       braid_PtFcnResidual residual)
 {
    _braid_CoreElt(core, full_rnorm_res) = residual;
@@ -1018,10 +1017,10 @@ braid_SetFullRNormRes(braid_Core          core,
 braid_Int
 braid_SetTimeGrid(braid_Core          core,
                   braid_PtFcnTimeGrid tgrid
-                  )
+   )
 {
    _braid_CoreElt(core, tgrid) = tgrid;
-   
+
    return _braid_error_flag;
 }
 
@@ -1029,7 +1028,7 @@ braid_SetTimeGrid(braid_Core          core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_SetSpatialCoarsen(braid_Core          core, 
+braid_SetSpatialCoarsen(braid_Core          core,
                         braid_PtFcnSCoarsen scoarsen)
 {
    _braid_CoreElt(core, scoarsen) = scoarsen;
@@ -1075,7 +1074,7 @@ braid_GetNumIter(braid_Core   core,
 {
    *niter_ptr =  _braid_CoreElt(core, niter);
    return _braid_error_flag;
-} 
+}
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
@@ -1087,10 +1086,10 @@ braid_GetRNorms(braid_Core   core,
 {
    braid_Real  *rnorms_all = _braid_CoreElt(core, rnorms);
    braid_Int    rnorms_len = _braid_CoreElt(core, niter) + 1;
-   
+
    _braid_GetNEntries(rnorms_all, rnorms_len, nrequest_ptr, rnorms);
    return _braid_error_flag;
-} 
+}
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
@@ -1117,8 +1116,8 @@ braid_GetSpatialAccuracy( braid_StepStatus  status,
    braid_Real stol, tol, rnorm, rnorm0, old_fine_tolx;
    braid_Int level;
    braid_Real l_rnorm, l_ltol, l_ttol, l_tol;
-   braid_Real *rnorms = (braid_Real *) malloc( 2*sizeof(braid_Real) ); 
-   
+   braid_Real *rnorms = (braid_Real *) malloc( 2*sizeof(braid_Real) );
+
    braid_StepStatusGetTol(status, &tol);
    braid_StepStatusGetLevel(status, &level);
    braid_StepStatusGetOldFineTolx(status, &old_fine_tolx);
@@ -1140,7 +1139,7 @@ braid_GetSpatialAccuracy( braid_StepStatus  status,
    else{
       rnorm = rnorms[1];
    }
- 
+
 
    if ( (level > 0) || (nrequest == 0) || (rnorm0 == -1.0) )
    {
@@ -1156,7 +1155,7 @@ braid_GetSpatialAccuracy( braid_StepStatus  status,
       l_tol   = -log10(tol / rnorm0);
       l_ltol  = -log10(loose_tol);
       l_ttol  = -log10(tight_tol);
-         
+
       if ( l_rnorm >= (7.0/8.0)*l_tol )
       {
          /* Close to convergence, return tight_tol */
@@ -1175,25 +1174,25 @@ braid_GetSpatialAccuracy( braid_StepStatus  status,
          }
       }
    }
-   
+
    if (level == 0)
    {
       /* Store this fine grid tolerance */
       braid_StepStatusSetOldFineTolx(status, (*tol_ptr));
-      
+
       /* If we've reached the "tight tolerance", then indicate to Braid that we can halt */
       if ( *tol_ptr == tight_tol )
       {
-        braid_StepStatusSetTightFineTolx(status, 1); 
+         braid_StepStatusSetTightFineTolx(status, 1);
       }
       else
       {
-        braid_StepStatusSetTightFineTolx(status, 0); 
+         braid_StepStatusSetTightFineTolx(status, 0);
       }
    }
 
    free(rnorms);
-    /* printf( "lev: %d, accuracy: %1.2e, nreq: %d, rnorm: %1.2e, rnorm0: %1.2e, loose: %1.2e, tight: %1.2e, old: %1.2e, braid_tol: %1.2e \n", level, *tol_ptr, nrequest, rnorm, rnorm0, loose_tol, tight_tol, old_fine_tolx, tol); */
+   /* printf( "lev: %d, accuracy: %1.2e, nreq: %d, rnorm: %1.2e, rnorm0: %1.2e, loose: %1.2e, tight: %1.2e, old: %1.2e, braid_tol: %1.2e \n", level, *tol_ptr, nrequest, rnorm, rnorm0, loose_tol, tight_tol, old_fine_tolx, tol); */
    return _braid_error_flag;
 }
 
@@ -1213,27 +1212,27 @@ braid_SetSeqSoln(braid_Core  core,
 }
 
 /**----------------------------------------------------------------------------
- * Adjoint  
+ * Adjoint
  *-----------------------------------------------------------------------------*/
 
 braid_Int
-braid_SetTStartObjective(braid_Core core, 
-                           braid_Real tstart_obj)
+braid_SetTStartObjective(braid_Core core,
+                         braid_Real tstart_obj)
 {
    if ( !(_braid_CoreElt(core, adjoint)))
    {
       return _braid_error_flag;
-   }  
+   }
 
    _braid_CoreElt(core, optim->tstart_obj) = tstart_obj;
-   
+
    /* Sanity check */
    if ( tstart_obj < _braid_CoreElt(core, tstart) )
    {
-     _braid_printf("\n  Braid: WARNING: tstart_objective < tstart ! Using default tstart now.\n\n");
-     _braid_CoreElt(core, optim->tstart_obj) = _braid_CoreElt(core, tstart);
+      _braid_printf("\n  Braid: WARNING: tstart_objective < tstart ! Using default tstart now.\n\n");
+      _braid_CoreElt(core, optim->tstart_obj) = _braid_CoreElt(core, tstart);
    }
- 
+
    return _braid_error_flag;
 }
 
@@ -1241,55 +1240,55 @@ braid_SetTStartObjective(braid_Core core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_SetTStopObjective(braid_Core core, 
-                          braid_Real tstop_obj)
+braid_SetTStopObjective(braid_Core core,
+                        braid_Real tstop_obj)
 {
    if ( !(_braid_CoreElt(core, adjoint)) )
    {
       return _braid_error_flag;
-   }  
+   }
 
    _braid_CoreElt(core, optim->tstop_obj) = tstop_obj;
-   
+
    /* Sanity check */
    if ( tstop_obj > _braid_CoreElt(core, tstop) )
    {
-     _braid_printf("\n  Braid: WARNING: tstop_objective > tstop ! Using default tstop now.\n\n");
-     _braid_CoreElt(core, optim->tstop_obj) = _braid_CoreElt(core, tstop);
+      _braid_printf("\n  Braid: WARNING: tstop_objective > tstop ! Using default tstop now.\n\n");
+      _braid_CoreElt(core, optim->tstop_obj) = _braid_CoreElt(core, tstop);
    }
 
 
-  return _braid_error_flag;
+   return _braid_error_flag;
 }
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_SetPostprocessObjective(braid_Core                      core,     
+braid_SetPostprocessObjective(braid_Core                      core,
                               braid_PtFcnPostprocessObjective post_fcn )
 {
-    if ( !(_braid_CoreElt(core, adjoint)) )
+   if ( !(_braid_CoreElt(core, adjoint)) )
    {
       return _braid_error_flag;
-   }  
+   }
 
    _braid_CoreElt(core, postprocess_obj) = post_fcn;
 
    return _braid_error_flag;
-}                            
+}
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_SetPostprocessObjective_diff(braid_Core                           core,         
+braid_SetPostprocessObjective_diff(braid_Core                           core,
                                    braid_PtFcnPostprocessObjective_diff post_fcn_diff )
 {
    if ( !(_braid_CoreElt(core, adjoint)) )
    {
       return _braid_error_flag;
-   }  
+   }
 
    _braid_CoreElt(core, postprocess_obj_diff) = post_fcn_diff;
    return _braid_error_flag;
@@ -1299,13 +1298,13 @@ braid_SetPostprocessObjective_diff(braid_Core                           core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_SetAbsTolAdjoint(braid_Core core, 
+braid_SetAbsTolAdjoint(braid_Core core,
                        braid_Real tol_adj)
 {
    if ( !(_braid_CoreElt(core, adjoint)) )
    {
       return _braid_error_flag;
-   }  
+   }
 
    _braid_CoreElt(core, optim)->tol_adj  = tol_adj;
    _braid_CoreElt(core, optim)->rtol_adj = 0;
@@ -1317,13 +1316,13 @@ braid_SetAbsTolAdjoint(braid_Core core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_SetRelTolAdjoint(braid_Core core, 
+braid_SetRelTolAdjoint(braid_Core core,
                        braid_Real tol_adj)
 {
    if ( !(_braid_CoreElt(core, adjoint)) )
    {
       return _braid_error_flag;
-   }  
+   }
 
    _braid_CoreElt(core, optim)->tol_adj  = tol_adj;
    _braid_CoreElt(core, optim)->rtol_adj = 1;
@@ -1335,20 +1334,20 @@ braid_SetRelTolAdjoint(braid_Core core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_GetObjective(braid_Core  core,          
+braid_GetObjective(braid_Core  core,
                    braid_Real *objective_ptr )
 {
    if ( !(_braid_CoreElt(core, adjoint)) )
    {
       *objective_ptr = 0.0;
-   }  
+   }
    else
    {
       *objective_ptr = _braid_CoreElt(core, optim)->objective;
    }
 
    return _braid_error_flag;
-}                
+}
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
@@ -1360,9 +1359,9 @@ braid_SetObjectiveOnly(braid_Core core,
    if ( !(_braid_CoreElt(core, adjoint)) )
    {
       return _braid_error_flag;
-   }  
+   }
 
-   _braid_CoreElt(core, obj_only) = boolean; 
+   _braid_CoreElt(core, obj_only) = boolean;
 
    return _braid_error_flag;
 }
@@ -1371,13 +1370,13 @@ braid_SetObjectiveOnly(braid_Core core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_GetRNormAdjoint(braid_Core  core,  
+braid_GetRNormAdjoint(braid_Core  core,
                       braid_Real  *rnorm_adj)
 {
    if ( !(_braid_CoreElt(core, adjoint)) )
    {
       return _braid_error_flag;
-   }  
+   }
 
    *rnorm_adj = _braid_CoreElt(core, optim)->rnorm_adj;
 
@@ -1388,11 +1387,11 @@ braid_GetRNormAdjoint(braid_Core  core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_GetMyID(braid_Core core, 
+braid_GetMyID(braid_Core core,
               braid_Int *myid_ptr)
 {
    *myid_ptr = _braid_CoreElt(core, myid);
-    
+
    return _braid_error_flag;
 }
 
@@ -1400,8 +1399,8 @@ braid_GetMyID(braid_Core core,
  *--------------------------------------------------------------------------*/
 
 static unsigned long int _braid_rand_next = 1;
-braid_Int 
-braid_Rand(void) 
+braid_Int
+braid_Rand(void)
 {
    _braid_rand_next = _braid_rand_next * 1103515245 + 12345;
    return (unsigned int) (_braid_rand_next/65536) % braid_RAND_MAX;
@@ -1417,4 +1416,4 @@ braid_SetNChunks(braid_Core core,
    _braid_CoreElt(core, nchunks) = nchunks;
 
    return _braid_error_flag;
-}              
+}
