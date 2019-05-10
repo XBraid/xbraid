@@ -21,7 +21,6 @@
  *
  ***********************************************************************EHEADER*/
  
-
 /** \file _braid.h
  * \brief Define headers for developer routines.
  *
@@ -85,7 +84,6 @@ struct _braid_BaseVector_struct
 };
 typedef struct _braid_BaseVector_struct *braid_BaseVector;
 
-
 /** 
  * Data structure for storing the optimization variables
  */
@@ -108,7 +106,6 @@ struct _braid_Optimization_struct
    MPI_Request     *request;          /**< helper: Storing the MPI request of BufUnPackDiff */
 };
 typedef struct _braid_Optimization_struct *braid_Optim;
-
 
 /*--------------------------------------------------------------------------
  * Main data structures and accessor macros
@@ -299,24 +296,6 @@ typedef struct _braid_Core_struct
    braid_Int    size_buffer;       /**< if set by user, send buffer will be "size" bytes in length */
    braid_Int    send_recv_rank;    /***< holds the rank of the source / receiver from MPI_Send / MPI_Recv calls. */
 } _braid_Core;
-
-
-
-/*--------------------------------------------------------------------------
- * Cycle state structure
- *--------------------------------------------------------------------------*/
-
-typedef struct
-{
-   braid_Int  down;
-   braid_Int  try_refine;
-   braid_Int  fmglevel;
-   braid_Int  fmg_Vcyc;
-   FILE      *outfile;
-
-} _braid_CycleState;
-
-
 
 /*--------------------------------------------------------------------------
  * Accessor macros 
@@ -875,8 +854,6 @@ _braid_GetFullRNorm(braid_Core  core,
 braid_Int
 _braid_DeleteLastResidual(braid_Core  core);
 
-
-
 /**
  * Shallow copy a braid_VectorBar shared pointer, bar_ptr is set to bar
  * and the useCount is incremented by one.
@@ -884,7 +861,6 @@ _braid_DeleteLastResidual(braid_Core  core);
 braid_Int
 _braid_VectorBarCopy(braid_VectorBar  bar,       
                      braid_VectorBar *bar_ptr);  
-
 
 /**
  * Reduce the useCount of a braid_VectorBar shared pointer 
@@ -894,13 +870,11 @@ braid_Int
 _braid_VectorBarDelete(braid_Core      core, 
                        braid_VectorBar bar);
 
-
 /**
  * Free memory of the optimization structure 
  */
 braid_Int
 _braid_OptimDestroy( braid_Core core);
-
 
 /**
  * Update the adjoint variables and compute adjoint residual norm
@@ -909,7 +883,6 @@ _braid_OptimDestroy( braid_Core core);
 braid_Int
 _braid_UpdateAdjoint(braid_Core  core,
                      braid_Real *rnorm_adj_ptr);
-
 
 /**
  * Set adjoint residual norm 
@@ -935,13 +908,11 @@ _braid_AddToObjective(braid_Core             core,
 braid_Int
 _braid_EvalObjective(braid_Core core);
 
-
 /** 
  * Differentiated objective function 
  */
 braid_Int
 _braid_EvalObjective_diff(braid_Core core);
-
 
 /**
  * Allocate and initialize the adjoint variables 
@@ -949,7 +920,6 @@ _braid_EvalObjective_diff(braid_Core core);
 braid_Int
 _braid_InitAdjointVars(braid_Core   core, 
                        _braid_Grid *fine_grid);
-
 
 /**
  * Switch for displaying the XBraid actions. Used for debugging only. 
@@ -970,61 +940,11 @@ _braid_FeatureCheck(braid_Core core);
 braid_Int
 _braid_AdjointFeatureCheck(braid_Core core);
 
-
 /**
  * Sanity check for non-supported chunk features 
  */
 braid_Int
 _braid_ChunkFeatureCheck(braid_Core core);
-
-/** 
- * Initialize cycling struct
- */
-braid_Int
-_braid_DriveInitCycle(braid_Core          core,
-                      _braid_CycleState  *cycle_ptr);
-
-/**
- * This routine determines the cycle direction (down or up) based on the current
- * grid level, iteration number, and cycle state.  The resulting cycle direction
- * is expected to produce three basic actions as follows:
- *
- *   Direction   Level                 Expected Action
- *   down        0...(nlevels-2)       relaxation/restriction
- *   up          1...(nlevels-1)       interpolation
- *   up          0                     refine or check convergence
- */
-braid_Int
-_braid_DriveUpdateCycle(braid_Core          core,
-                        braid_Int           level,
-                        braid_Int           iter,
-                        _braid_CycleState  *cycle_ptr);
-
-/** 
- * Finish up with cycle struct
- */
-braid_Int
-_braid_DriveEndCycle(braid_Core          core,
-                     _braid_CycleState  *cycle_ptr);
-
-
-/**
- * Print out some statistics for current multigrid iteration
- */
-braid_Int
-_braid_DrivePrintStatus(braid_Core  core,
-                        braid_Int   level,
-                        braid_Int   iter,
-                        braid_Int   refined,
-                        braid_Real  localtime);
-
-/**
- * Check convergence criterion
- */
-braid_Int
-_braid_DriveCheckConvergence(braid_Core  core,
-                             braid_Int   iter,
-                             braid_Int  *done_ptr);
 
 /**
  * Returns a reference to the vector at the last time step.
@@ -1034,7 +954,6 @@ braid_Int
 _braid_UGetLast(braid_Core        core,
                 braid_BaseVector *u_ptr);
 
-
 /**
  * Set the initial condition for a time chunk. 
  * Communicates the last time step from last processor to first one and set it as new initial condition for the new time chunk.
@@ -1042,15 +961,12 @@ _braid_UGetLast(braid_Core        core,
 braid_Int
 _braid_ChunkSetInitialCondition(braid_Core core);
 
-
 /**
  * Main loop of xbraid's multigrid iterations
  */
 braid_Int
-_braid_ChunkDrive(braid_Core core, 
-                  braid_Real localtime);
-
-
+_braid_Drive(braid_Core core, 
+             braid_Real localtime);
 
 #ifdef __cplusplus
 }

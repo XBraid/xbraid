@@ -340,13 +340,11 @@ typedef braid_Int
                        braid_Int        *iupper     /**< upper time index value for this processor */
                        );
 
-
 /** @}*/
 
 /*--------------------------------------------------------------------------
  * User Interface Routines for XBraid_Adjoint
  *--------------------------------------------------------------------------*/
-
 /** \defgroup adjointuserwritten User-written routines for XBraid_Adjoint
  *  \ingroup userwritten
  *  
@@ -368,7 +366,6 @@ typedef braid_Int
                          braid_ObjectiveStatus ostatus,          /**< status structure for querying time, index, etc. */
                          braid_Real           *objectiveT_ptr    /**< output: objective function at current time */
                         );
-
 
 /**
  * This is the differentiated version of the @ref braid_PtFcnObjectiveT routine. 
@@ -421,7 +418,6 @@ typedef braid_Int
                                         braid_Real  *F_bar_ptr   /**< output: partial derivative of the postprocessed objective with respect to sum_obj */
                                        );
 
-
 /**
  * This is the differentiated version of the time-stepping routine. 
  * It provides the transposed derivatives of *Step()* multiplied by the adjoint 
@@ -442,8 +438,6 @@ typedef braid_Int
                        braid_StepStatus status     /**< query this struct for info about u (e.g., tstart and tstop) */ 
                       );
 
-
-
 /**
  * Set the gradient to zero, which is usually stored in @ref braid_App .
  */
@@ -452,7 +446,6 @@ typedef braid_Int
                            );
 
 /** @}*/
-
 
 /*--------------------------------------------------------------------------
  * User Interface Routines
@@ -1048,9 +1041,7 @@ braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
                       braid_Real  *rnorm_adj   /**< output: adjoint residual norm of last iteration */
                      );
 
-
 /** @}*/
-
 
 #ifdef __cplusplus
 }

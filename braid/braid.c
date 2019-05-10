@@ -37,7 +37,6 @@
 #define DEBUG 0
 #endif
 
-
 braid_Int
 braid_Drive(braid_Core core)
 {
@@ -54,12 +53,12 @@ braid_Drive(braid_Core core)
    braid_Int            nchunks         = _braid_CoreElt(core, nchunks);
    _braid_Grid        **grids           = _braid_CoreElt(core, grids);
 
-   braid_Int      i, ichunk;
+   braid_Int      ichunk;
    _braid_Grid   *grid;
    braid_Real    *ta;
    braid_Real     dt_chunk;
    braid_Real     localtime, globaltime;
-   braid_Int ilower, iupper;
+   braid_Int      level, ilower, iupper, i;
 
    /* Check for non-supported features */
    _braid_FeatureCheck(core);
@@ -90,7 +89,6 @@ braid_Drive(braid_Core core)
    _braid_CoreElt(core, ntime)    = (int) (ntime0 / nchunks);  
    _braid_CoreElt(core, gupper)   = _braid_CoreElt(core, ntime);
    dt_chunk = (tstop0 - tstart0 ) / nchunks;  
-
 
    /* Allocate and initialize grids */
    if ( !warm_restart )
@@ -150,8 +148,8 @@ braid_Drive(braid_Core core)
       }
    }
 
-
-   /* Turn on warm_restart, so that further calls to braid_drive() don't initialize the grid and adjoint again. */
+   /* Turn on warm_restart, so that further calls to braid_drive() don't
+    * initialize the grid and adjoint again. */
    _braid_CoreElt(core, warm_restart) = 1;
 
    /* Start timer */
@@ -167,8 +165,12 @@ braid_Drive(braid_Core core)
       _braid_CoreElt(core,tstop)  = _braid_CoreElt(core, tstart) + dt_chunk;
 
       /* Output */
-      if (myid == 0) _braid_printf("\n  Braid Chunk %d: [%f, %f], %d time steps\n", ichunk, _braid_CoreElt(core, tstart), _braid_CoreElt(core, tstop), _braid_CoreElt(core,ntime));
-
+      if (myid == 0)
+      {
+         _braid_printf("\n  Braid Chunk %d: [%f, %f], %d time steps\n",
+                       ichunk, _braid_CoreElt(core, tstart), _braid_CoreElt(core, tstop),
+                       _braid_CoreElt(core,ntime));
+      }
 
       /* Initialize the chunk */
       if ( ichunk > 0 )
@@ -177,12 +179,12 @@ braid_Drive(braid_Core core)
          _braid_ChunkSetInitialCondition(core);
 
          /* Set new time vector ta on all levels */
-         for (int level = 0; level < _braid_CoreElt(core, nlevels); level++)
+         for (level = 0; level < _braid_CoreElt(core, nlevels); level++)
          {
             ta = _braid_GridElt(grids[level], ta);
             ilower = _braid_GridElt(grids[level], ilower);
             iupper = _braid_GridElt(grids[level], iupper);
-            for (int i = ilower-1; i <= iupper+1; i++)
+            for (i = ilower-1; i <= iupper+1; i++)
             {
                ta[i-ilower] += dt_chunk ;
             } 
@@ -190,8 +192,7 @@ braid_Drive(braid_Core core)
       }
 
       /* Solve this time chunk */
-      _braid_ChunkDrive(core, localtime);
-
+      _braid_Drive(core, localtime);
 
       /* Get the time */
       braid_Real mytimediff = MPI_Wtime() - localtime;
@@ -206,11 +207,8 @@ braid_Drive(braid_Core core)
       }
    }
 
-
    return _braid_error_flag;
 }
-
-
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
@@ -782,7 +780,6 @@ braid_SplitCommworld(const MPI_Comm  *comm_world,
    return _braid_error_flag;
 }
 
-
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 
@@ -1215,10 +1212,10 @@ braid_SetSeqSoln(braid_Core  core,
    return _braid_error_flag;
 }
 
-
 /**----------------------------------------------------------------------------
  * Adjoint  
  *-----------------------------------------------------------------------------*/
+
 braid_Int
 braid_SetTStartObjective(braid_Core core, 
                            braid_Real tstart_obj)
@@ -1239,6 +1236,9 @@ braid_SetTStartObjective(braid_Core core,
  
    return _braid_error_flag;
 }
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
 
 braid_Int
 braid_SetTStopObjective(braid_Core core, 
@@ -1262,6 +1262,8 @@ braid_SetTStopObjective(braid_Core core,
   return _braid_error_flag;
 }
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
 
 braid_Int
 braid_SetPostprocessObjective(braid_Core                      core,     
@@ -1277,6 +1279,9 @@ braid_SetPostprocessObjective(braid_Core                      core,
    return _braid_error_flag;
 }                            
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
 braid_Int
 braid_SetPostprocessObjective_diff(braid_Core                           core,         
                                    braid_PtFcnPostprocessObjective_diff post_fcn_diff )
@@ -1290,6 +1295,8 @@ braid_SetPostprocessObjective_diff(braid_Core                           core,
    return _braid_error_flag;
 }
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
 
 braid_Int
 braid_SetAbsTolAdjoint(braid_Core core, 
@@ -1306,6 +1313,9 @@ braid_SetAbsTolAdjoint(braid_Core core,
    return _braid_error_flag;
 }
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
 braid_Int
 braid_SetRelTolAdjoint(braid_Core core, 
                        braid_Real tol_adj)
@@ -1321,6 +1331,8 @@ braid_SetRelTolAdjoint(braid_Core core,
    return _braid_error_flag;
 }
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
 
 braid_Int
 braid_GetObjective(braid_Core  core,          
@@ -1338,6 +1350,8 @@ braid_GetObjective(braid_Core  core,
    return _braid_error_flag;
 }                
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
 
 braid_Int
 braid_SetObjectiveOnly(braid_Core core,
@@ -1353,6 +1367,8 @@ braid_SetObjectiveOnly(braid_Core core,
    return _braid_error_flag;
 }
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
 
 braid_Int
 braid_GetRNormAdjoint(braid_Core  core,  
@@ -1368,6 +1384,8 @@ braid_GetRNormAdjoint(braid_Core  core,
    return _braid_error_flag;
 }
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
 
 braid_Int
 braid_GetMyID(braid_Core core, 
@@ -1378,6 +1396,8 @@ braid_GetMyID(braid_Core core,
    return _braid_error_flag;
 }
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
 
 static unsigned long int _braid_rand_next = 1;
 braid_Int 
@@ -1387,6 +1407,8 @@ braid_Rand(void)
    return (unsigned int) (_braid_rand_next/65536) % braid_RAND_MAX;
 }
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
 
 braid_Int
 braid_SetNChunks(braid_Core core,

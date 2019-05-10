@@ -9,7 +9,7 @@
 #include "_braid.h"
 #include "_braid_status.h"
 #include "braid_defs.h"
-#include "_util.c"
+#include "_util.h"
 
 
 braid_Int 
