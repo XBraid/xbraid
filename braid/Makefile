@@ -38,7 +38,6 @@ BRAID_HEADERS =\
  _braid_status.h\
  _braid_tape.h\
  _util.h\
- braid_defs.h\
  braid.h\
  braid_status.h\
  braid_test.h
@@ -46,13 +45,28 @@ BRAID_HEADERS =\
 BRAID_FILES =\
  _braid_base.c\
  _braid.c\
- _braid_status.c\
  _braid_tape.c\
  _util.c\
+ access.c\
  braid.c\
  braid_F90_iface.c\
+ braid_status.c\
  braid_test.c\
- drive.c
+ communication.c\
+ distribution.c\
+ drive.c\
+ grid.c\
+ hierarchy.c\
+ interp.c\
+ mpistubs.c\
+ norm.c\
+ refine.c\
+ relax.c\
+ residual.c\
+ restrict.c\
+ space.c\
+ step.c\
+ uvector.c
 
 ifeq ($(sequential),yes)
 	BRAID_HEADERS += mpistubs.h

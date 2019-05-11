@@ -26,7 +26,6 @@
  * \brief Define XBraid test routines.
  */
 
-#include "_braid_status.h"
 #include "_braid.h"
 #include "_util.h"
 
@@ -244,7 +243,7 @@ braid_TestSpatialNorm( braid_App              app,
       zero_flag = 1;
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Warning:  spatialnorm(u) = 0.0\n"); 
    }
-   else if( braid_isnan(result1) )
+   else if( _braid_isnan(result1) )
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Warning:  spatialnorm(u) = nan\n"); 
       correct = 0;
@@ -258,7 +257,7 @@ braid_TestSpatialNorm( braid_App              app,
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   spatialnorm(v) \n");
    spatialnorm(app, v, &result1);
-   if( (fabs(result1) > wiggle) || braid_isnan(result1) )
+   if( (fabs(result1) > wiggle) || _braid_isnan(result1) )
    {
       correct = 0;
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Test 1 Failed\n");
@@ -284,7 +283,7 @@ braid_TestSpatialNorm( braid_App              app,
    
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   spatialnorm(w)\n");
    spatialnorm(app, w, &result2);
-   if( (fabs(result2/result1 - 2.0) > wiggle) || braid_isnan(result2/result1) )
+   if( (fabs(result2/result1 - 2.0) > wiggle) || _braid_isnan(result2/result1) )
    {
       correct = 0;
       if(zero_flag)
@@ -321,7 +320,7 @@ braid_TestSpatialNorm( braid_App              app,
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   spatialnorm(w)\n");
    spatialnorm(app, w, &result2);
    /* Check Result */
-   if( (fabs(result2/result1 - 0.5) > wiggle) || braid_isnan(result2/result1) )
+   if( (fabs(result2/result1 - 0.5) > wiggle) || _braid_isnan(result2/result1) )
 
    {
       correct = 0;
@@ -410,7 +409,7 @@ braid_TestBuf( braid_App              app,
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   Warning:  spatialnorm(u) = 0.0\n"); 
    }
-   else if( braid_isnan(result1) )
+   else if( _braid_isnan(result1) )
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   Warning:  spatialnorm(u) = nan\n"); 
       correct = 0;
@@ -435,7 +434,7 @@ braid_TestBuf( braid_App              app,
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   spatialnorm(v) \n");
    spatialnorm(app, v, &result1);
-   if( (fabs(result1) > wiggle) || braid_isnan(result1) )
+   if( (fabs(result1) > wiggle) || _braid_isnan(result1) )
 
    {
       correct = 0;
@@ -507,7 +506,7 @@ braid_TestCoarsenRefine( braid_App           app,
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   Warning:  spatialnorm(u) = 0.0\n"); 
    }
-   else if( braid_isnan(result1) )
+   else if( _braid_isnan(result1) )
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   Warning:  spatialnorm(u) = nan\n"); 
       correct = 0;
@@ -550,7 +549,7 @@ braid_TestCoarsenRefine( braid_App           app,
    spatialnorm(app, wc, &result1);
    
    /* We expect exact equality between uc and vc */
-   if( (fabs(result1) != 0.0) || braid_isnan(result1) )
+   if( (fabs(result1) != 0.0) || _braid_isnan(result1) )
    {
       correct = 0;
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   Test 2 Failed\n");
@@ -587,7 +586,7 @@ braid_TestCoarsenRefine( braid_App           app,
    spatialnorm(app, v, &result1);
    
    /* We expect exact equality between u and v */
-   if( (fabs(result1) != 0.0) || braid_isnan(result1) )
+   if( (fabs(result1) != 0.0) || _braid_isnan(result1) )
    {
       correct = 0;
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   Test 3 Failed\n");
@@ -684,7 +683,7 @@ braid_TestResidual( braid_App              app,
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   Warning:  spatialnorm(u) = 0.0\n"); 
    }
-   else if( braid_isnan(result1) )
+   else if( _braid_isnan(result1) )
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   Warning:  spatialnorm(u) = nan\n"); 
    }

@@ -42,6 +42,62 @@
 extern "C" {
 #endif
 
+/*--------------------------------------------------------------------------
+ * Error handling
+ *--------------------------------------------------------------------------*/
+
+/** 
+ * This is the global XBraid error flag.  If it is ever nonzero, an error has 
+ * occurred. 
+ **/
+extern braid_Int _braid_error_flag;
+
+void _braid_ErrorHandler(const char *filename, braid_Int line, braid_Int ierr, const char *msg);
+#define _braid_Error(IERR, msg)       _braid_ErrorHandler(__FILE__, __LINE__, IERR, msg)
+#define _braid_ErrorInArg(IARG, msg)  _braid_Error(HYPRE_ERROR_ARG | IARG<<3, msg)
+
+/*--------------------------------------------------------------------------
+ * Memory allocation macros
+ *--------------------------------------------------------------------------*/
+
+/** 
+ * Allocation macro 
+ **/
+#define _braid_TAlloc(type, count) \
+( (type *)malloc((size_t)(sizeof(type) * (count))) )
+
+/** 
+ * Allocation macro 
+ **/
+#define _braid_CTAlloc(type, count) \
+( (type *)calloc((size_t)(count), (size_t)sizeof(type)) )
+
+/** 
+ * Re-allocation macro 
+ **/
+#define _braid_TReAlloc(ptr, type, count) \
+( (type *)realloc((char *)ptr, (size_t)(sizeof(type) * (count))) )
+
+/** 
+ * Free memory macro 
+ **/
+#define _braid_TFree(ptr) \
+( free((char *)ptr), ptr = NULL )
+
+/*--------------------------------------------------------------------------
+ * Miscellaneous macros and functions 
+ *--------------------------------------------------------------------------*/
+
+#ifndef _braid_max
+#define _braid_max(a,b)  (((a)<(b)) ? (b) : (a))
+#endif
+#ifndef _braid_min
+#define _braid_min(a,b)  (((a)<(b)) ? (a) : (b))
+#endif
+#ifndef _braid_isnan
+#define _braid_isnan(a) (a != a)
+#endif
+
 /** 
  * Braid Vector Structures:
  *
@@ -972,6 +1028,9 @@ _braid_Drive(braid_Core core,
 #ifdef __cplusplus
 }
 #endif
+
+#include "_braid_status.h"
+#include "_braid_base.h"
 
 #endif
 

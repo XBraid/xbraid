@@ -7,8 +7,6 @@
 #define _braid_base_HEADER
 
 #include "_braid.h"
-#include "_braid_status.h"
-#include "braid_defs.h"
 #include "_util.h"
 
 

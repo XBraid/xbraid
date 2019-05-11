@@ -4,9 +4,6 @@
  */
 
 #include "_braid.h"
-#include "_braid_tape.h"
-#include "braid_defs.h"
-#include "_braid_base.h"
 
 #ifndef DEBUG
 #define DEBUG 0

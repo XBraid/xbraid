@@ -27,11 +27,7 @@
  */
 
 #include "_braid.h"
-#include "_braid_status.h"
-#include "braid_defs.h"
-#include "_braid_tape.h"
 #include "_util.h"
-#include "_braid_base.h"
 
 #ifndef DEBUG
 #define DEBUG 0

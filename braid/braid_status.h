@@ -31,7 +31,7 @@
 #ifndef braid_status_HEADER
 #define braid_status_HEADER
 
-#include "braid_defs.h"
+#include "braid.h"
 
 #ifdef __cplusplus
 extern "C" {

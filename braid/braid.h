@@ -69,7 +69,6 @@ extern "C" {
 
 /** @} */
 
-
 /*--------------------------------------------------------------------------
  * Error Codes 
  *--------------------------------------------------------------------------*/
@@ -922,6 +921,13 @@ braid_SetNChunks(braid_Core core,             /**< braid_Core struct */
                  braid_Int  nchunks           /**< Number of time chunks. Must be a divisor of ntime */
                  );
 
+
+/**
+ * Machine independent pseudo-random number generator is defined in Braid.c
+ */
+#ifndef braid_RAND_MAX
+#define braid_RAND_MAX 32768
+#endif
 
 /**
  * Define a machine independent random number generator
