@@ -216,12 +216,12 @@ _braid_UGetVector(braid_Core         core,
       _braid_UGetIndex(core, level, index, &iu, &sflag);
       if (sflag == 0)
       {
-         _braid_BaseClone(core, app,  ua[iu], &u);
+         _braid_BaseClone(core, app, ua[iu], &u);
       }
       else if (sflag == -1)
       {
          // In this case, sclone != NULL
-         _braid_BaseSClone(core,  app, ua[iu], &u);
+         _braid_BaseSClone(core, app, ua[iu], &u);
       }
    }
 

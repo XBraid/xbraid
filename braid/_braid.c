@@ -29,6 +29,9 @@
 #include "_braid.h"
 #include "_util.h"
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
 braid_Int _braid_error_flag = 0;
 FILE    *_braid_printfile  = NULL;
 
@@ -40,6 +43,9 @@ _braid_VectorBarCopy(braid_VectorBar bar, braid_VectorBar *bar_ptr)
 
   return _braid_error_flag;
 }
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_VectorBarDelete(braid_Core core, braid_VectorBar bar)
@@ -63,6 +69,9 @@ _braid_VectorBarDelete(braid_Core core, braid_VectorBar bar)
  
    return _braid_error_flag;
 }
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_OptimDestroy( braid_Core core)
@@ -122,6 +131,9 @@ _braid_OptimDestroy( braid_Core core)
 
    return _braid_error_flag;
 }
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_UpdateAdjoint(braid_Core core,
@@ -234,6 +246,9 @@ _braid_UpdateAdjoint(braid_Core core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
 braid_Int 
 _braid_SetRNormAdjoint(braid_Core core, 
                        braid_Int iter, 
@@ -263,6 +278,9 @@ _braid_SetRNormAdjoint(braid_Core core,
    return _braid_error_flag;
 }                           
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
 braid_Int
 _braid_AddToObjective(braid_Core              core, 
                       braid_BaseVector      u, 
@@ -286,6 +304,9 @@ _braid_AddToObjective(braid_Core              core,
 
    return _braid_error_flag;
 }
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_EvalObjective(braid_Core core)
@@ -319,9 +340,10 @@ _braid_EvalObjective(braid_Core core)
    return _braid_error_flag;
 }
 
-/** 
+/*----------------------------------------------------------------------------
  * Differentiated objective function 
- */
+ *----------------------------------------------------------------------------*/
+
 braid_Int
 _braid_EvalObjective_diff(braid_Core core)
 {
@@ -359,6 +381,9 @@ _braid_EvalObjective_diff(braid_Core core)
 
    return _braid_error_flag;
 }
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_InitAdjointVars(braid_Core   core, 
@@ -454,6 +479,9 @@ _braid_InitAdjointVars(braid_Core   core,
    return _braid_error_flag;
 }                
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
 braid_Int
 _braid_SetVerbosity(braid_Core  core,
                     braid_Int   verbose_adj)
@@ -462,6 +490,9 @@ _braid_SetVerbosity(braid_Core  core,
 
    return _braid_error_flag;
 }
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_AdjointFeatureCheck(braid_Core core)
@@ -530,6 +561,9 @@ _braid_AdjointFeatureCheck(braid_Core core)
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
 braid_Int
 _braid_ChunkFeatureCheck(braid_Core core)
 {
@@ -559,11 +593,44 @@ _braid_ChunkFeatureCheck(braid_Core core)
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ * ZTODO: Should we use the error handling facility here and above?
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_TriMGRITFeatureCheck(braid_Core core)
+{
+#if 0
+   braid_Int  nchunks  = _braid_CoreElt(core, nchunks );
+   braid_Int  seq_soln = _braid_CoreElt(core, seq_soln);
+   braid_Int  fmg      = _braid_CoreElt(core, fmg     );
+   braid_Int  storage  = _braid_CoreElt(core, storage );
+   braid_Int  useshell = _braid_CoreElt(core, useshell);
+   braid_Int  refine   = _braid_CoreElt(core, refine  );
+   braid_Int  r_space  = _braid_CoreElt(core, r_space );
+   braid_Int  skip     = _braid_CoreElt(core, skip    );
+
+   braid_Int  err = 0;
+   char      *err_char;
+
+   if ( err )
+   {
+      _braid_printf(" \n\n WARNING! %s is not yet supported\n", err_char); 
+   }
+#endif
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
 braid_Int
 _braid_FeatureCheck(braid_Core core)
 {
-   braid_Int adjoint = _braid_CoreElt(core, adjoint);
-   braid_Int nchunks = _braid_CoreElt(core, nchunks);
+   braid_Int adjoint  = _braid_CoreElt(core, adjoint);
+   braid_Int nchunks  = _braid_CoreElt(core, nchunks);
+   braid_Int trimgrit = _braid_CoreElt(core, trimgrit);
 
    if (adjoint)
    {
@@ -573,7 +640,10 @@ _braid_FeatureCheck(braid_Core core)
    {
       _braid_ChunkFeatureCheck(core);
    }
-  
+   if (trimgrit)
+   {
+      _braid_TriMGRITFeatureCheck(core);
+   }  
 
    return _braid_error_flag;
 }
@@ -666,6 +736,18 @@ _braid_InitGuess(braid_Core  core,
 
    braid_BaseVector  u;
    braid_Int         i, iu, sflag;
+
+   if ( _braid_CoreElt(core, trimgrit) )
+   {
+      /* Initialize and store all points (only called from level 0) */
+      for (i = ilower; i <= iupper; i++)
+      {
+         _braid_BaseInit(core, app, ta[i-ilower], &u);
+         _braid_USetVectorRef(core, level, i, u);
+      }
+
+      return _braid_error_flag;
+   }
 
    if ( (level == 0) && (seq_soln == 1) )
    {
@@ -832,7 +914,8 @@ _braid_ErrorHandler(const char *filename,
 #endif
 }
 
-
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_ChunkSetInitialCondition(braid_Core core)

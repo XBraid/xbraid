@@ -9,13 +9,15 @@
 #include "_braid.h"
 #include "_util.h"
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
-braid_Int 
+braid_Int
 _braid_BaseStep(braid_Core       core,
-                braid_App        app,    
+                braid_App        app,
                 braid_BaseVector ustop,
-                braid_BaseVector fstop, 
-                braid_BaseVector u, 
+                braid_BaseVector fstop,
+                braid_BaseVector u,
                 braid_Int        level,
                 braid_StepStatus status )
 {
@@ -54,8 +56,8 @@ _braid_BaseStep(braid_Core       core,
       _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
 
       /* Copy & push u & ustop to primal tape */
-      _braid_CoreFcn(core, clone)(app, u->userVector, &u_copy); 
-      _braid_CoreFcn(core, clone)(app, ustop->userVector, &ustop_copy);  
+      _braid_CoreFcn(core, clone)(app, u->userVector, &u_copy);
+      _braid_CoreFcn(core, clone)(app, ustop->userVector, &ustop_copy);
       _braid_CoreElt(core, userVectorTape) = _braid_TapePush( _braid_CoreElt(core, userVectorTape), u_copy);
       _braid_CoreElt(core, userVectorTape) = _braid_TapePush( _braid_CoreElt(core, userVectorTape), ustop_copy);
 
@@ -79,12 +81,13 @@ _braid_BaseStep(braid_Core       core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
-                        
 braid_Int
 _braid_BaseInit(braid_Core        core,
-                braid_App         app, 
-                braid_Real        t,   
+                braid_App         app,
+                braid_Real        t,
                 braid_BaseVector *u_ptr )
 {
    _braid_Action    *action;
@@ -94,7 +97,7 @@ _braid_BaseInit(braid_Core        core,
    braid_Int         verbose_adj = _braid_CoreElt(core, verbose_adj);
    braid_Int         record      = _braid_CoreElt(core, record);
    braid_Int         adjoint     = _braid_CoreElt(core, adjoint);
-    
+
    if (verbose_adj) printf("%d INIT\n", myid);
 
    /* Allocate the braid_BaseVector */
@@ -104,9 +107,9 @@ _braid_BaseInit(braid_Core        core,
 
    /* Allocate and initialize the userVector */
    _braid_CoreFcn(core, init)(app, t, &(u->userVector));
-   
+
    /* Allocate and initialize the bar vector */
-   if ( adjoint ) 
+   if ( adjoint )
    {
       ubar = (braid_VectorBar) malloc(sizeof(braid_Vector) + sizeof(int));
       ubar->useCount = 1;
@@ -133,10 +136,13 @@ _braid_BaseInit(braid_Core        core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
 braid_Int
 _braid_BaseClone(braid_Core         core,
-                 braid_App          app,  
-                 braid_BaseVector   u,    
+                 braid_App          app,
+                 braid_BaseVector   u,
                  braid_BaseVector  *v_ptr )
 {
    _braid_Action    *action;
@@ -167,11 +173,11 @@ _braid_BaseClone(braid_Core         core,
       _braid_CoreFcn(core, clone)(app, u->bar->userVector, &(ubar->userVector));
       _braid_CoreFcn(core, sum)(app, -1.0, ubar->userVector, 1.0, ubar->userVector);
       v->bar = ubar;
-   } 
+   }
 
 
    /* Record to the tape */
-   if ( record ) 
+   if ( record )
    {
       /* Set up and push the action */
       action            = _braid_CTAlloc(_braid_Action, 1);
@@ -192,6 +198,8 @@ _braid_BaseClone(braid_Core         core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseFree(braid_Core       core,
@@ -217,7 +225,7 @@ _braid_BaseFree(braid_Core       core,
       action->myid      = myid;
       _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
    }
- 
+
    /* Free the user's vector */
    _braid_CoreFcn(core, free)(app, u->userVector);
 
@@ -233,13 +241,15 @@ _braid_BaseFree(braid_Core       core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSum(braid_Core        core,
-               braid_App         app,    
-               braid_Real        alpha,  
-               braid_BaseVector  x,      
-               braid_Real        beta,   
+               braid_App         app,
+               braid_Real        alpha,
+               braid_BaseVector  x,
+               braid_Real        beta,
                braid_BaseVector  y )
 {
    _braid_Action   *action;
@@ -276,25 +286,28 @@ _braid_BaseSum(braid_Core        core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSpatialNorm(braid_Core        core,
-                       braid_App         app,      
-                       braid_BaseVector  u,    
+                       braid_App         app,
+                       braid_BaseVector  u,
                        braid_Real       *norm_ptr )
 {
-
    /* Compute the spatial norm of the user's vector */
    _braid_CoreFcn(core, spatialnorm)(app, u->userVector, norm_ptr);
 
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseAccess(braid_Core          core,
-                  braid_App           app,   
-                  braid_BaseVector    u,     
+                  braid_App           app,
+                  braid_BaseVector    u,
                   braid_AccessStatus  status )
 {
    _braid_Action   *action;
@@ -302,7 +315,7 @@ _braid_BaseAccess(braid_Core          core,
    braid_Int        myid          = _braid_CoreElt(core, myid);
    braid_Int        verbose_adj   = _braid_CoreElt(core, verbose_adj);
    braid_Int        record        = _braid_CoreElt(core, record);
-   
+
    if ( verbose_adj ) printf("%d: ACCESS\n", myid);
 
    /* Record to the tape */
@@ -323,12 +336,14 @@ _braid_BaseAccess(braid_Core          core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseBufSize(braid_Core          core,
-                   braid_App           app,      
-                   braid_Int          *size_ptr, 
-                   braid_BufferStatus  status ) 
+                   braid_App           app,
+                   braid_Int          *size_ptr,
+                   braid_BufferStatus  status )
 {
    braid_Int  myid         = _braid_CoreElt(core, myid);
    braid_Int  verbose_adj  = _braid_CoreElt(core, verbose_adj);
@@ -341,12 +356,14 @@ _braid_BaseBufSize(braid_Core          core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseBufPack(braid_Core          core,
-                   braid_App           app,       
-                   braid_BaseVector    u,         
-                   void               *buffer,    
+                   braid_App           app,
+                   braid_BaseVector    u,
+                   void               *buffer,
                    braid_BufferStatus  status )
 {
    _braid_Action   *action;
@@ -365,7 +382,7 @@ _braid_BaseBufPack(braid_Core          core,
       action                 = _braid_CTAlloc(_braid_Action, 1);
       action->braidCall      = BUFPACK;
       action->core           = core;
-      action->send_recv_rank = sender; 
+      action->send_recv_rank = sender;
       action->messagetype    = _braid_StatusElt(status, messagetype);
       action->size_buffer    = _braid_StatusElt(status, size_buffer);
       action->myid           = myid;
@@ -375,19 +392,21 @@ _braid_BaseBufPack(braid_Core          core,
       _braid_VectorBarCopy(u->bar, &ubar_copy);
       _braid_CoreElt(core, barTape) = _braid_TapePush(_braid_CoreElt(core, barTape), ubar_copy);
    }
-   
+
    /* BufPack the user's vector */
    _braid_CoreFcn(core, bufpack)(app, u->userVector, buffer, status);
 
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseBufUnpack(braid_Core          core,
-                     braid_App           app,    
-                     void               *buffer, 
-                     braid_BaseVector   *u_ptr,  
+                     braid_App           app,
+                     void               *buffer,
+                     braid_BaseVector   *u_ptr,
                      braid_BufferStatus  status )
 {
    _braid_Action   *action;
@@ -438,12 +457,14 @@ _braid_BaseBufUnpack(braid_Core          core,
       _braid_VectorBarCopy(u->bar, &ubar_copy);
       _braid_CoreElt(core, barTape) = _braid_TapePush(_braid_CoreElt(core, barTape), ubar_copy);
     }
-  
+
    *u_ptr = u;
 
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseObjectiveT(braid_Core             core,
@@ -464,7 +485,7 @@ _braid_BaseObjectiveT(braid_Core             core,
    braid_Int        level         = _braid_CoreElt(core, level);
    braid_Int        nrefine       = _braid_CoreElt(core, nrefine);
    braid_Int        gupper        = _braid_CoreElt(core, gupper);
-   
+
    if ( verbose_adj ) printf("%d: OBJECTIVET\n", myid);
 
    /* if bar: Record to the tape */
@@ -498,12 +519,14 @@ _braid_BaseObjectiveT(braid_Core             core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseResidual(braid_Core        core,
-                    braid_App         app,    
-                    braid_BaseVector  ustop,  
-                    braid_BaseVector  r,      
+                    braid_App         app,
+                    braid_BaseVector  ustop,
+                    braid_BaseVector  r,
                     braid_StepStatus  status )
 {
    braid_Int        verbose_adj  = _braid_CoreElt(core, verbose_adj);
@@ -517,11 +540,14 @@ _braid_BaseResidual(braid_Core        core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
 braid_Int
 _braid_BaseFullResidual(braid_Core        core,
-                        braid_App         app,    
-                        braid_BaseVector  r,      
-                        braid_BaseVector  u,  
+                        braid_App         app,
+                        braid_BaseVector  r,
+                        braid_BaseVector  u,
                         braid_StepStatus  status )
 {
    braid_Int        verbose_adj  = _braid_CoreElt(core, verbose_adj);
@@ -535,12 +561,13 @@ _braid_BaseFullResidual(braid_Core        core,
    return _braid_error_flag;
 }
 
-
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSCoarsen(braid_Core              core,
-                    braid_App               app,   
-                    braid_BaseVector        fu,    
+                    braid_App               app,
+                    braid_BaseVector        fu,
                     braid_BaseVector       *cu_ptr,
                     braid_CoarsenRefStatus  status )
 {
@@ -560,11 +587,14 @@ _braid_BaseSCoarsen(braid_Core              core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
 braid_Int
 _braid_BaseSRefine(braid_Core                 core,
-                   braid_App                  app,    
-                      braid_BaseVector        cu,     
-                      braid_BaseVector       *fu_ptr, 
+                   braid_App                  app,
+                      braid_BaseVector        cu,
+                      braid_BaseVector       *fu_ptr,
                       braid_CoarsenRefStatus  status )
 {
    braid_BaseVector fu;
@@ -581,13 +611,15 @@ _braid_BaseSRefine(braid_Core                 core,
    *fu_ptr = fu;
 
    return _braid_error_flag;
-}                      
+}
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSInit(braid_Core        core,
-                 braid_App         app,  
-                 braid_Real        t,    
+                 braid_App         app,
+                 braid_Real        t,
                  braid_BaseVector *u_ptr )
 {
    braid_BaseVector u;
@@ -606,11 +638,13 @@ _braid_BaseSInit(braid_Core        core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
-_braid_BaseSClone(braid_Core        core, 
-                 braid_App          app,  
-                 braid_BaseVector   u,    
+_braid_BaseSClone(braid_Core        core,
+                 braid_App          app,
+                 braid_BaseVector   u,
                  braid_BaseVector  *v_ptr )
 {
 
@@ -630,16 +664,18 @@ _braid_BaseSClone(braid_Core        core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSFree(braid_Core      core,
                  braid_App        app,
                  braid_BaseVector u )
 {
- 
+
    braid_Int  verbose_adj  = _braid_CoreElt(core, verbose_adj);
    braid_Int  myid         = _braid_CoreElt(core, myid);
- 
+
    if ( verbose_adj ) printf("%d: SFREE\n", myid);
 
    /* Call the users sfree */
@@ -648,17 +684,19 @@ _braid_BaseSFree(braid_Core      core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseTimeGrid(braid_Core  core,
-                    braid_App   app,    
-                    braid_Real *ta,     
-                    braid_Int  *ilower, 
+                    braid_App   app,
+                    braid_Real *ta,
+                    braid_Int  *ilower,
                     braid_Int  *iupper )
 {
    braid_Int  verbose_adj  = _braid_CoreElt(core, verbose_adj);
    braid_Int  myid         = _braid_CoreElt(core, myid);
- 
+
    if ( verbose_adj ) printf("%d: TIMEGRID\n", myid);
 
    /* Call the users timegrid function */
@@ -667,6 +705,8 @@ _braid_BaseTimeGrid(braid_Core  core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseStep_diff(_braid_Action *action)
@@ -718,6 +758,8 @@ _braid_BaseStep_diff(_braid_Action *action)
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseClone_diff(_braid_Action *action)
@@ -752,6 +794,8 @@ _braid_BaseClone_diff(_braid_Action *action)
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSum_diff(_braid_Action *action)
@@ -775,7 +819,7 @@ _braid_BaseSum_diff(_braid_Action *action)
    x_bar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
    _braid_CoreElt(core, barTape) = _braid_TapePop( _braid_CoreElt(core, barTape) );
 
-   /* Perform the differentiated sum action: 
+   /* Perform the differentiated sum action:
    *  xb += alpha * yb
    *  yb  = beta  * yb
    */
@@ -789,12 +833,14 @@ _braid_BaseSum_diff(_braid_Action *action)
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseObjectiveT_diff(_braid_Action *action)
 {
-   braid_Vector           u; 
-   braid_VectorBar        ubar; 
+   braid_Vector           u;
+   braid_VectorBar        ubar;
    braid_Int              myid         = action->myid;
    braid_Core             core         = action->core;
    braid_Real             t            = action->inTime;
@@ -840,6 +886,9 @@ _braid_BaseObjectiveT_diff(_braid_Action *action)
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
 braid_Int
 _braid_BaseBufPack_diff(_braid_Action *action )
 {
@@ -867,7 +916,7 @@ _braid_BaseBufPack_diff(_braid_Action *action )
    buffer = malloc(size);
 
    /* Receive the buffer */
-   MPI_Recv(buffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), MPI_STATUS_IGNORE); 
+   MPI_Recv(buffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), MPI_STATUS_IGNORE);
 
    /* Initialize the bstatus */
    _braid_BufferStatusInit( messagetype, size_buffer, bstatus);
@@ -885,6 +934,9 @@ _braid_BaseBufPack_diff(_braid_Action *action )
 
    return _braid_error_flag;
 }
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseBufUnpack_diff(_braid_Action *action)
@@ -932,7 +984,7 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
 
    /* Store the request */
    _braid_CoreElt(core, optim)->request = requests;
-   
+
    /* Set ubar to zero */
    _braid_CoreFcn(core, sum)(app, -1., ubar->userVector, 1., ubar->userVector );
 
@@ -943,6 +995,61 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
+braid_Int
+_braid_BaseTriSolve(braid_Core       core,
+                    braid_App        app,
+                    braid_BaseVector uleft,
+                    braid_BaseVector uright,
+                    braid_BaseVector f,
+                    braid_BaseVector u,
+                    braid_Int        level,
+                    braid_TriStatus  status )
+{
+   /* Call the users TriSolve function */
+   if ( f == NULL )
+   {
+      _braid_CoreFcn(core, trisolve)(app, uleft->userVector, uright->userVector,
+                                     NULL, u->userVector, status);
+   }
+   else
+   {
+      _braid_CoreFcn(core, trisolve)(app, uleft->userVector, uright->userVector,
+                                     f->userVector, u->userVector, status);
+   }
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_BaseTriResidual(braid_Core       core,
+                       braid_App        app,
+                       braid_BaseVector uleft,
+                       braid_BaseVector uright,
+                       braid_BaseVector f,
+                       braid_BaseVector r,
+                       braid_Int        level,
+                       braid_TriStatus  status )
+{
+   /* Call the users TriSolve function */
+   if ( f == NULL )
+   {
+      _braid_CoreFcn(core, triresidual)(app, uleft->userVector, uright->userVector,
+                                        NULL, r->userVector, status);
+   }
+   else
+   {
+      _braid_CoreFcn(core, triresidual)(app, uleft->userVector, uright->userVector,
+                                        f->userVector, r->userVector, status);
+   }
+
+   return _braid_error_flag;
+}
 
 #endif
+

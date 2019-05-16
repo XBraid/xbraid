@@ -654,4 +654,96 @@ _braid_Drive(braid_Core  core,
    return _braid_error_flag;
 }
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+_braid_TriDrive(braid_Core  core, 
+                braid_Real  localtime)
+{
+   braid_Int  access_level = _braid_CoreElt(core, access_level);
+   braid_Int  nlevels;
+
+   /* Cycle state variables */
+   _braid_CycleState  cycle;
+   braid_Int          iter, level, done;
+
+   /* Initialize cycle state */
+   _braid_DriveInitCycle(core, &cycle);
+   nlevels = _braid_CoreElt(core, nlevels);
+
+   done  = 0;
+   level = 0;
+   iter = 0;
+   _braid_CoreElt(core, niter) = iter;
+   while (!done)
+   {
+      /* Update cycle state and direction based on level and iter */
+      _braid_DriveUpdateCycle(core, level, iter, &cycle);
+
+      if (cycle.down)
+      {
+         /* Down cycle */
+
+         /* FCF-relaxation */
+         _braid_TriFCFRelax(core, level, -1);
+
+         /* Restrict using injection */
+         _braid_TriRestrict(core, level);
+            
+         level++;
+      }
+      else
+      {
+         /* Up cycle */
+
+         if (level > 0)
+         {
+            if (level == (nlevels-1))
+            {
+               /* Coarsest grid solve (TODO: set nrelax for this level) */
+               _braid_TriFCFRelax(core, level, -1);
+            }
+
+            /* Interpolate with approximate ideal (injection then F-relaxation) */
+            _braid_TriInterp(core, level);
+
+            level--;
+         }
+         else
+         {
+            /* Finest grid level */
+
+            if (access_level >= 2)
+            {
+               /* Output the solution at the end of each cycle */
+               _braid_TriAccess(core, 0, 0);
+            }
+
+            /* Print current status */
+            _braid_DrivePrintStatus(core, level, iter, 0, localtime);
+
+            /* Check convergence */
+            _braid_DriveCheckConvergence(core, iter, &done);
+
+            /* Increase TriMGRIT iteration counter */
+            iter++;
+            _braid_CoreElt(core, niter) = iter;
+         }
+      }
+   }
+
+   /* By default, set the final residual norm to be the same as the previous */
+   {
+      braid_Real  rnorm;
+      _braid_GetRNorm(core, -2, &rnorm);
+      _braid_SetRNorm(core, -1, rnorm);
+   }
+   _braid_TriAccess(core, 0, 1);
+   
+   /* End cycle */
+   _braid_DriveEndCycle(core, &cycle);
+
+   return _braid_error_flag;
+}
 

@@ -447,6 +447,47 @@ typedef braid_Int
 /** @}*/
 
 /*--------------------------------------------------------------------------
+ * User Interface Routines for TriMGRIT
+ *--------------------------------------------------------------------------*/
+/** \defgroup trimgrituserwritten User-written routines for TriMGRIT
+ *  \ingroup userwritten
+ *  
+ *  These are all the user-written routines needed to use TriMGRIT.
+ *
+ *  @{
+ */
+
+/**
+ * This routine computes A(u) - f at time point 'idx'.  The vector 'r' initially
+ * holds u at time 'idx' and returns the residual.
+ * The rhs vector 'f' may be NULL, which represents a zero value.
+ **/
+typedef braid_Int
+(*braid_PtFcnTriSolve)(braid_App       app,    /**< user-defined _braid_App structure */
+                       braid_Vector    uleft,  /**< input: vector at idx-1 */
+                       braid_Vector    uright, /**< input: vector at idx+1 */
+                       braid_Vector    f,      /**< input, rhs at idx (may be NULL) */
+                       braid_Vector    r,      /**< input/output, vector at idx */
+                       braid_TriStatus status  /**< query this struct for info */ 
+                        );
+
+/**
+ * This routine solves A(u) = f at time point 'idx'.  The vector 'u' holds an
+ * initial value for u at time 'idx' and returns the (approximate) solution.
+ * The rhs vector 'f' may be NULL, which represents a zero value.
+ **/
+typedef braid_Int
+(*braid_PtFcnTriResidual)(braid_App       app,    /**< user-defined _braid_App structure */
+                          braid_Vector    uleft,  /**< input: vector at idx-1 */
+                          braid_Vector    uright, /**< input: vector at idx+1 */
+                          braid_Vector    f,      /**< input, rhs at idx (may be NULL) */
+                          braid_Vector    u,      /**< input/output, vector at idx */
+                          braid_TriStatus status  /**< query this struct for info */ 
+   );
+
+/** @}*/
+
+/*--------------------------------------------------------------------------
  * User Interface Routines
  *--------------------------------------------------------------------------*/
 /** \defgroup userinterface User interface routines

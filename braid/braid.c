@@ -189,7 +189,16 @@ braid_Drive(braid_Core  core)
       }
 
       /* Solve this time chunk */
-      _braid_Drive(core, localtime);
+      if ( _braid_CoreElt(core, trimgrit) )
+      {
+         /* TriMGRIT */
+         _braid_TriDrive(core, localtime);
+      }
+      else
+      {
+         /* MGRIT */
+         _braid_Drive(core, localtime);
+      }
 
       /* Get the time */
       braid_Real mytimediff = MPI_Wtime() - localtime;
@@ -411,7 +420,7 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
    optim->rnorm0         = braid_INVALID_RNORM;
 
    /* Store the optim structure in the core */
-   _braid_CoreElt( *core_ptr, optim) = optim;
+   _braid_CoreElt(*core_ptr, optim) = optim;
 
    /* Initialize the tapes */
    _braid_TapeInit( _braid_CoreElt(*core_ptr, actionTape) );
@@ -423,6 +432,58 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
    _braid_CoreElt(*core_ptr, step_diff)      = step_diff;
    _braid_CoreElt(*core_ptr, objT_diff)      = objT_diff;
    _braid_CoreElt(*core_ptr, reset_gradient) = reset_gradient;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_InitTriMGRIT(MPI_Comm               comm_world,
+                   MPI_Comm               comm,
+                   braid_Real             tstart,
+                   braid_Real             tstop,
+                   braid_Int              ntime,
+                   braid_App              app,
+                   braid_PtFcnTriSolve    trisolve,
+                   braid_PtFcnTriResidual triresidual,
+                   braid_PtFcnInit        init,
+                   braid_PtFcnClone       clone,
+                   braid_PtFcnFree        free,
+                   braid_PtFcnSum         sum,
+                   braid_PtFcnSpatialNorm spatialnorm,
+                   braid_PtFcnAccess      access,
+                   braid_PtFcnBufSize     bufsize,
+                   braid_PtFcnBufPack     bufpack,
+                   braid_PtFcnBufUnpack   bufunpack,
+                   braid_Core            *core_ptr)
+{
+   _braid_Core      *core;
+
+   braid_PtFcnStep   step = NULL;
+
+   /* Use normal braid init function (for MGRIT), then modify for TriMGRIT */
+   braid_Init(comm_world, comm, tstart, tstop, ntime,
+              app, step, init, clone, free, sum, spatialnorm, access,
+              bufsize, bufpack, bufunpack, &core);
+
+   /* These are all set to 0 or NULL in the CTAlloc of core in braid_Init() */
+   _braid_CoreElt(core, trimgrit)    = 1;
+   _braid_CoreElt(core, trisolve)    = trisolve;
+   _braid_CoreElt(core, triresidual) = triresidual;
+
+   /* These are the only values currently supported for TriMGRIT */
+   _braid_CoreElt(core, nchunks)  = 1;
+   _braid_CoreElt(core, seq_soln) = 0;
+   _braid_CoreElt(core, fmg)      = 0;
+   _braid_CoreElt(core, storage)  = 0;  /* Store all points on all levels */
+   _braid_CoreElt(core, useshell) = 0;
+   _braid_CoreElt(core, refine)   = 0;  /* Time refinement off (for now) */
+   _braid_CoreElt(core, r_space)  = 0;  /* No refinement (for now) */
+   _braid_CoreElt(core, skip)     = 0;
+
+   *core_ptr = core;
 
    return _braid_error_flag;
 }

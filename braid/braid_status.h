@@ -111,6 +111,10 @@ typedef struct _braid_BufferStatus_struct *braid_BufferStatus;
  */
 typedef struct _braid_ObjectiveStatus_struct *braid_ObjectiveStatus;
 
+/**
+ * Status structure for TriMGRIT routines TriSolve and TriResidual.
+ */
+typedef struct _braid_TriStatus_struct *braid_TriStatus;
 
 /** @}*/
 
@@ -517,12 +521,14 @@ ACCESSOR_HEADER_GET1(Objective, Tol,           Real)
 
 /** When CallingFunction equals 0, Braid is in FInterp */
 #define braid_ASCaller_FInterp   0
-/** When CallingFunction equals 0, Braid is in FRestrict */
+/** When CallingFunction equals 1, Braid is in FRestrict */
 #define braid_ASCaller_FRestrict 1
-/** When CallingFunction equals 0, Braid is in FRefine */
+/** When CallingFunction equals 2, Braid is in FRefine */
 #define braid_ASCaller_FRefine   2
-/** When CallingFunction equals 0, Braid is in FAccess */
+/** When CallingFunction equals 3, Braid is in FAccess */
 #define braid_ASCaller_FAccess   3
+/** When CallingFunction equals 4, Braid is in TriAccess */
+#define braid_ASCaller_TriAccess 4
 
 /** @}*/
 

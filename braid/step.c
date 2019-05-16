@@ -1,20 +1,20 @@
 /*BHEADER**********************************************************************
- * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
- * Produced at the Lawrence Livermore National Laboratory. Written by 
- * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
+ * Copyright (c) 2013, Lawrence Livermore National Security, LLC.
+ * Produced at the Lawrence Livermore National Laboratory. Written by
+ * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin
  * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
- * 
+ *
  * This file is part of XBraid. For support, post issues to the XBraid Github page.
- * 
+ *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License (as published by the Free Software
  * Foundation) version 2.1 dated February 1999.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE. See the terms and conditions of the GNU General Public
  * License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License along
  * with this program; if not, write to the Free Software Foundation, Inc., 59
  * Temple Place, Suite 330, Boston, MA 02111-1307 USA
@@ -65,7 +65,7 @@ _braid_Step(braid_Core         core,
       rfactors[ii] = _braid_StatusElt(status, rfactor);
       if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
             _braid_CoreElt(core, r_space) = 1;
-   }     
+   }
    else
    {
       if ( _braid_CoreElt(core, residual) == NULL )
@@ -136,6 +136,55 @@ _braid_GetUInit(braid_Core         core,
    }
 
    *ustop_ptr = ustop;
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
+ * Solve A(u) for time step 'index' on grid 'level'
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_TriSolve(braid_Core  core,
+                braid_Int   level,
+                braid_Int   index)
+{
+   braid_App          app      = _braid_CoreElt(core, app);
+   _braid_Grid      **grids    = _braid_CoreElt(core, grids);
+   braid_TriStatus    status   = (braid_TriStatus)core;
+   braid_Int          ilower   = _braid_GridElt(grids[level], ilower);
+   braid_Real        *ta       = _braid_GridElt(grids[level], ta);
+   braid_BaseVector  *fa       = _braid_GridElt(grids[level], fa);
+
+   braid_BaseVector   u, uleft, uright;
+
+   braid_Int          ii;
+
+   /* Update status (core) */
+   ii = index-ilower;
+   _braid_StatusElt(status, t)     = ta[ii];
+   _braid_StatusElt(status, tprev) = ta[ii-1];
+   _braid_StatusElt(status, tnext) = ta[ii+1];
+   _braid_StatusElt(status, idx)   = index;
+   _braid_StatusElt(status, level) = level;
+
+   /* Solve A(u) */
+
+   _braid_UGetVectorRef(core, level, index-1, &uleft);
+   _braid_UGetVectorRef(core, level, index+1, &uright);
+   _braid_UGetVectorRef(core, level, index, &u);
+
+   if (level == 0)
+   {
+      /* No FAS rhs */
+      _braid_BaseTriSolve(core, app, uleft, uright, NULL, u, level, status);
+   }
+   else
+   {
+      _braid_BaseTriSolve(core, app, uleft, uright, fa[ii], u, level, status);
+   }
+
+   _braid_USetVectorRef(core, level, index, u);
 
    return _braid_error_flag;
 }

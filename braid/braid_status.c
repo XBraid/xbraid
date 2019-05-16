@@ -517,3 +517,25 @@ ACCESSOR_FUNCTION_GET1(Objective, NLevels,       Int)
 ACCESSOR_FUNCTION_GET1(Objective, NRefine,       Int)
 ACCESSOR_FUNCTION_GET1(Objective, NTPoints,      Int)
 ACCESSOR_FUNCTION_GET1(Objective, Tol,           Real)
+
+/*--------------------------------------------------------------------------
+ * TriStatus Status Routines (for TriSolve and TriResidual)
+ *--------------------------------------------------------------------------*/
+
+ACCESSOR_FUNCTION_GET1(Tri, T,             Real)
+ACCESSOR_FUNCTION_GET1(Tri, TIndex,        Int)
+ACCESSOR_FUNCTION_GET1(Tri, Iter,          Int)
+ACCESSOR_FUNCTION_GET1(Tri, Level,         Int)
+ACCESSOR_FUNCTION_GET1(Tri, NLevels,       Int)
+ACCESSOR_FUNCTION_GET1(Tri, NRefine,       Int)
+ACCESSOR_FUNCTION_GET1(Tri, NTPoints,      Int)
+ACCESSOR_FUNCTION_GET1(Tri, Tstop,         Real)
+ACCESSOR_FUNCTION_GET2(Tri, TstartTstop,   Real, Real)
+ACCESSOR_FUNCTION_GET1(Tri, Tol,           Real)
+ACCESSOR_FUNCTION_GET2(Tri, RNorms,        Int,  Real)
+ACCESSOR_FUNCTION_GET1(Tri, OldFineTolx,   Real)
+ACCESSOR_FUNCTION_SET1(Tri, OldFineTolx,   Real)
+ACCESSOR_FUNCTION_SET1(Tri, TightFineTolx, Real)
+ACCESSOR_FUNCTION_SET1(Tri, RFactor,       Real)
+ACCESSOR_FUNCTION_SET1(Tri, RSpace,        Real)
+

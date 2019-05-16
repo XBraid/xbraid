@@ -68,6 +68,7 @@ _braid_InitHierarchy(braid_Core    core,
    braid_Int     *rfactors   = _braid_CoreElt(core, rfactors);
    braid_Int      nlevels    = _braid_CoreElt(core, nlevels);
    _braid_Grid  **grids      = _braid_CoreElt(core, grids);
+   braid_Int      trimgrit   = _braid_CoreElt(core, trimgrit);
 
    /**
     * These are some common index names used to refer to intervals and
@@ -184,25 +185,28 @@ _braid_InitHierarchy(braid_Core    core,
       else
       {
          /* This is the coarsest level */
-         if ( (level > 0) || (!refined) )
+         if (!trimgrit)
          {
-            /* If this is a true coarse level (it has a fine grid above it in
-             * the current hierarchy) or it is a fine level that was not built
-             * by refining a coarser grid, then do serial time integration by
-             * setting only one C-point and the rest F-points */
-            if (ilower == 0)
+            if ( (level > 0) || (!refined) )
             {
-               ncpoints = 1;
+               /* If this is a true coarse level (it has a fine grid above it in
+                * the current hierarchy) or it is a fine level that was not built
+                * by refining a coarser grid, then do serial time integration by
+                * setting only one C-point and the rest F-points */
+               if (ilower == 0)
+               {
+                  ncpoints = 1;
+               }
+               else
+               {
+                  ncpoints = 0;
+               }
+               /* clower > cupper indicates empty interval */
+               _braid_GridElt(grid, clower)   = ilower;
+               _braid_GridElt(grid, cupper)   = 0;
+               _braid_GridElt(grid, cfactor)  = gupper+1;
+               _braid_GridElt(grid, ncpoints) = ncpoints;
             }
-            else
-            {
-               ncpoints = 0;
-            }
-            /* clower > cupper indicates empty interval */
-            _braid_GridElt(grid, clower)   = ilower;
-            _braid_GridElt(grid, cupper)   = 0;
-            _braid_GridElt(grid, cfactor)  = gupper+1;
-            _braid_GridElt(grid, ncpoints) = ncpoints;
          }
 
          /* Stop coarsening */
@@ -246,7 +250,7 @@ _braid_InitHierarchy(braid_Core    core,
          nupoints = iupper-ilower+1;                  /* all points */
       }
 
-      ua = _braid_CTAlloc(braid_BaseVector, nupoints+1);
+      ua = _braid_CTAlloc(braid_BaseVector, nupoints+2);  /* need left & right for TriMGRIT */
       _braid_GridElt(grid, nupoints)  = nupoints;
       _braid_GridElt(grid, ua_alloc)  = ua;
       _braid_GridElt(grid, ua)        = ua+1;  /* shift */
