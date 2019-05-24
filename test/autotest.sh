@@ -31,14 +31,15 @@
 test_dir=`pwd`
 source_dir=`cd ..; pwd`
 finished_dir="autotest_finished"
-remote_dir="/usr/casc/hypre/braid/testing/"
+#remote_dir="/usr/casc/hypre/braid/testing/"
+remote_dir="/home/jbschroder/joint_repos/braid_test_history/"
 remote_subdir="AUTOTEST-`date +%Y.%m.%d-%a`"
 
 # Email Setup
 summary_file="Braid_SUMMARY.html"
 summary_subject="Braid Autotest Summary `date +%Y-%m-%d`"
-email_list="tzanio@llnl.gov, schroder2@llnl.gov, rfalgout@llnl.gov"
-#email_list="schroder2@llnl.gov"
+email_list="jbschroder@unm.edu, rfalgout@llnl.gov"
+#email_list="jbschroder@unm.edu"
 timebraid_logo="______           _     _ 
 | ___ \         (_)   | |
 | |_/ /_ __ __ _ _  __| |
@@ -61,13 +62,14 @@ case $1 in
       -{test}             Run a single indicated test associated with a specific
                           machine name (e.g., -tux343, -vulcan).
       -remote-copy        Copy the autotest results to the remote archive in
-                          /usr/casc/hypre/braid/testing.  A second argument can be
-                          passed in this instance that tells autotest to tunnel
-                          through a machine during the copy.
+                          /home/jbschroder/joint_repos/braid_test_history".  
+                          A second argument can be passed in this instance 
+                          that tells autotest to tunnel through a machine during 
+                          the copy.
       -summary-email      Sends out a summary email to the developers for all the 
                           tests run today.  This command cannot be run over ssh, 
                           and must be run from a machine with direct access to 
-                          /usr/casc/hypre/braid/testing.
+                          /home/jbschroder/joint_repos/braid_test_history
       -create-tarball     Creates a nice share-able tarball of braid, with 
                           unnecessary files removed, fresh documentation and a
                           VERSION file to identify this checkout
@@ -150,7 +152,7 @@ case $1 in
       # Create Summary File
       cd $remote_subdir
       echo "To: $email_list"           >  $summary_file
-      echo "From: Jacob Schroder <schroder2@llnl.gov>" >>  $summary_file
+      echo "From: Jacob Schroder <jbschroder@unm.edu>" >>  $summary_file
       echo "Subject: $summary_subject" >> $summary_file
       echo "Content-Type: text/html"   >> $summary_file
       echo "MIME-Version: 1.0"         >> $summary_file
@@ -161,7 +163,7 @@ case $1 in
       
       # echo logo
       echo "$timebraid_logo" >> $summary_file
-      echo -e "\n"     >> $summary_file
+      echo  " "     >> $summary_file
       echo $summary_subject            >> $summary_file
       echo ""         >> $summary_file
 
@@ -176,7 +178,7 @@ case $1 in
 
       # all top-level tests with non-empty error files are reported as "failed",
       # including the cron autotest logs
-      echo -e "\n"     >> $summary_file
+      echo " "     >> $summary_file
       echo "[FAILED]" >> $summary_file
       for test in $( find . -maxdepth 1 ! -size 0 -name "*.err" )
       do
@@ -189,12 +191,12 @@ case $1 in
       done
 
       # keep a time stamp of last runs and report if more than 10 days
-      echo -e "\n"     >> $summary_file
+      echo " "     >> $summary_file
       echo "[DETAILS]" >> $summary_file
       egrep "began at|ended at" *.out >> $summary_file
 
       # list all non-empty error files in today's output directory
-      echo -e "\n"     >> $summary_file
+      echo "  "     >> $summary_file
       echo "[ERROR FILES]" >> $summary_file
       output_dir="$remote_dir$remote_subdir" 
       for test in $( find $output_dir ! -size 0 -name "*.err" | sort -r )
