@@ -205,6 +205,7 @@ typedef struct _braid_Core_struct
    braid_Int              io_level;         /**< determines amount of output printed to files (0,1) */
    braid_Int              seq_soln;         /**< boolean, controls if the initial guess is from sequential time stepping*/
    braid_Int              max_levels;       /**< maximum number of temporal grid levels */
+   braid_Int              max_levels_after_refine; /**< maximum number of temporal grid levels after refinement */
    braid_Int              min_coarse;       /**< minimum possible coarse grid size */
    braid_Real             tol;              /**< stopping tolerance */
    braid_Int              rtol;             /**< use relative tolerance */

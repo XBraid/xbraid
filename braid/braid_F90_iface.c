@@ -901,6 +901,18 @@ braid_F90_Name(braid_set_max_levels_f90, BRAID_SET_MAX_LEVELS_F90)(
    return 0;
 }
 
+/*  braid_SetMaxLevelsAfterRefine( ) */
+braid_Int
+braid_F90_Name(braid_set_max_levels_after_refine_f90, BRAID_SET_MAX_LEVELS_AFTER_REFINE_F90)(
+   braid_F90_ObjPtr  *core,                   /**< braid_Core (_braid_Core) struct*/
+   braid_F90_Int     *max_levels_after_refine /**< maximum levels to allow after refinement */
+   )
+{
+   braid_SetMaxLevels(braid_TakeF90_ObjDeref(braid_Core,  core) ,
+                      braid_TakeF90_Int(                  max_levels_after_refine) );
+   return 0;
+}
+
 /*  braid_SetSkip( ) */
 braid_Int
 braid_F90_Name(braid_set_skip_f90, BRAID_SET_SKIP_F90)(
