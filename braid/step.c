@@ -170,7 +170,7 @@ _braid_TriSolve(braid_Core  core,
 
    /* Solve A(u) */
 
-   _braid_UGetVectorRef(core, level, index-1, &uleft);
+   _braid_UGetVectorRef(core, level, index-1, &uleft); // ZTODO: GetVector (i.e., clone first)?
    _braid_UGetVectorRef(core, level, index+1, &uright);
    _braid_UGetVectorRef(core, level, index, &u);
 
