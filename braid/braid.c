@@ -881,7 +881,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, print_level)     = print_level;
    _braid_CoreElt(core, io_level)        = io_level;
    _braid_CoreElt(core, max_levels)      = 0; /* Set with SetMaxLevels() below */
-   _braid_CoreElt(core, max_levels_after_refine) = 0; /* Set with SetMaxLevels() below */
+   _braid_CoreElt(core, max_levels_after_refine) = max_levels_after_refine;
    _braid_CoreElt(core, min_coarse)      = min_coarse;
    _braid_CoreElt(core, seq_soln)        = seq_soln;
    _braid_CoreElt(core, tol)             = tol;
