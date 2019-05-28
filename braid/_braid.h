@@ -329,8 +329,8 @@ typedef struct _braid_Core_struct
 
    /* Data for TriMGRIT */
    braid_Int              trimgrit;      /**< using TriMGRIT algorithm (1) or not (0)? */
-   braid_PtFcnTriSolve    trisolve;      /**< solve for time point i */
    braid_PtFcnTriResidual triresidual;   /**< compute residual at time point i */
+   braid_PtFcnTriSolve    trisolve;      /**< solve for time point i */
 
    /** Data elements required for the Status structures */
    /** Common Status properties */

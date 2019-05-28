@@ -446,8 +446,8 @@ braid_InitTriMGRIT(MPI_Comm               comm_world,
                    braid_Real             tstop,
                    braid_Int              ntime,
                    braid_App              app,
-                   braid_PtFcnTriSolve    trisolve,
                    braid_PtFcnTriResidual triresidual,
+                   braid_PtFcnTriSolve    trisolve,
                    braid_PtFcnInit        init,
                    braid_PtFcnClone       clone,
                    braid_PtFcnFree        free,
@@ -470,8 +470,8 @@ braid_InitTriMGRIT(MPI_Comm               comm_world,
 
    /* These are all set to 0 or NULL in the CTAlloc of core in braid_Init() */
    _braid_CoreElt(core, trimgrit)    = 1;
-   _braid_CoreElt(core, trisolve)    = trisolve;
    _braid_CoreElt(core, triresidual) = triresidual;
+   _braid_CoreElt(core, trisolve)    = trisolve;
 
    /* These are the only values currently supported for TriMGRIT */
    _braid_CoreElt(core, nchunks)  = 1;

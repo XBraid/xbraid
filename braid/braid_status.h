@@ -46,6 +46,8 @@ extern "C" {
   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1);
 #define ACCESSOR_HEADER_GET2(stype,param,vtype1,vtype2) \
   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2);
+#define ACCESSOR_HEADER_GET3(stype,param,vtype1,vtype2,vtype3) \
+  braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2, braid_##vtype3 *v3);
 #define ACCESSOR_HEADER_GET4(stype,param,vtype1,vtype2,vtype3,vtype4) \
   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2, braid_##vtype3 *v3, braid_##vtype4 *v4);
 #define ACCESSOR_HEADER_GET5(stype,param,vtype1,vtype2,vtype3,vtype4,vtype5) \
@@ -412,6 +414,18 @@ braid_Int
 braid_StatusSetSize(braid_Status status,                   /**< structure containing current simulation info */
                     braid_Real   size                      /**< input, size of the send buffer */
                     );
+
+/**
+ * Return XBraid status for the current simulation. Three values are returned,
+ * t, tprev, and tnext.
+ **/
+braid_Int
+braid_StatusGetTriT(braid_Status status,
+                    braid_Real  *t_ptr,
+                    braid_Real  *tprev_ptr,
+                    braid_Real  *tnext_ptr
+   );
+
 /** @}*/
 
 
@@ -505,6 +519,27 @@ ACCESSOR_HEADER_GET1(Objective, NRefine,       Int)
 ACCESSOR_HEADER_GET1(Objective, NTPoints,      Int)
 ACCESSOR_HEADER_GET1(Objective, Tol,           Real)
 
+/*--------------------------------------------------------------------------
+ * TriStatus Prototypes: They just wrap the corresponding Status accessors
+ *--------------------------------------------------------------------------*/
+
+ACCESSOR_HEADER_GET1(Tri, T,             Real)
+ACCESSOR_HEADER_GET1(Tri, TIndex,        Int)
+ACCESSOR_HEADER_GET1(Tri, Iter,          Int)
+ACCESSOR_HEADER_GET1(Tri, Level,         Int)
+ACCESSOR_HEADER_GET1(Tri, NLevels,       Int)
+ACCESSOR_HEADER_GET1(Tri, NRefine,       Int)
+ACCESSOR_HEADER_GET1(Tri, NTPoints,      Int)
+ACCESSOR_HEADER_GET1(Tri, Tstop,         Real)
+ACCESSOR_HEADER_GET2(Tri, TstartTstop,   Real, Real)
+ACCESSOR_HEADER_GET3(Tri, TriT,          Real, Real, Real)
+ACCESSOR_HEADER_GET1(Tri, Tol,           Real)
+ACCESSOR_HEADER_GET2(Tri, RNorms,        Int,  Real)
+ACCESSOR_HEADER_GET1(Tri, OldFineTolx,   Real)
+ACCESSOR_HEADER_SET1(Tri, OldFineTolx,   Real)
+ACCESSOR_HEADER_SET1(Tri, TightFineTolx, Real)
+ACCESSOR_HEADER_SET1(Tri, RFactor,       Real)
+ACCESSOR_HEADER_SET1(Tri, RSpace,        Real)
 
 /** @}*/
 

@@ -40,6 +40,9 @@
 #define ACCESSOR_FUNCTION_GET2(stype,param,vtype1,vtype2) \
    braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2) \
    {return braid_StatusGet##param((braid_Status)s, v1, v2);}
+#define ACCESSOR_FUNCTION_GET3(stype,param,vtype1,vtype2,vtype3) \
+   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2, braid_##vtype3 *v3) \
+   {return braid_StatusGet##param((braid_Status)s, v1, v2, v3);}
 #define ACCESSOR_FUNCTION_GET4(stype,param,vtype1,vtype2,vtype3,vtype4) \
    braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2, braid_##vtype3 *v3, braid_##vtype4 *v4) \
    {return braid_StatusGet##param((braid_Status)s, v1, v2, v3, v4);}
@@ -49,7 +52,6 @@
 #define ACCESSOR_FUNCTION_SET1(stype,param,vtype1) \
    braid_Int braid_##stype##StatusSet##param(braid_##stype##Status s, braid_##vtype1 v1) \
    {return braid_StatusSet##param((braid_Status)s, v1);}
-
 
 braid_Int
 _braid_StatusDestroy(braid_Status status)
@@ -338,6 +340,19 @@ braid_StatusSetSize(braid_Status status,
    return _braid_error_flag;
 }
 
+braid_Int
+braid_StatusGetTriT(braid_Status status,
+                    braid_Real  *t_ptr,
+                    braid_Real  *tprev_ptr,
+                    braid_Real  *tnext_ptr
+   )
+{
+   *t_ptr = _braid_StatusElt(status, t);
+   *tprev_ptr = _braid_StatusElt(status, tprev);
+   *tnext_ptr = _braid_StatusElt(status, tnext);
+   return _braid_error_flag;
+}
+
 /*--------------------------------------------------------------------------
  * AccessStatus Routines
  *--------------------------------------------------------------------------*/
@@ -531,6 +546,7 @@ ACCESSOR_FUNCTION_GET1(Tri, NRefine,       Int)
 ACCESSOR_FUNCTION_GET1(Tri, NTPoints,      Int)
 ACCESSOR_FUNCTION_GET1(Tri, Tstop,         Real)
 ACCESSOR_FUNCTION_GET2(Tri, TstartTstop,   Real, Real)
+ACCESSOR_FUNCTION_GET3(Tri, TriT,          Real, Real, Real)
 ACCESSOR_FUNCTION_GET1(Tri, Tol,           Real)
 ACCESSOR_FUNCTION_GET2(Tri, RNorms,        Int,  Real)
 ACCESSOR_FUNCTION_GET1(Tri, OldFineTolx,   Real)
