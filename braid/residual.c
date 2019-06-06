@@ -123,6 +123,7 @@ braid_Int
 _braid_TriResidual(braid_Core         core,
                    braid_Int          level,
                    braid_Int          index,
+                   braid_Int          fas,          /* FAS residual? */ 
                    braid_BaseVector  *r_ptr)
 {
    braid_App          app      = _braid_CoreElt(core, app);
@@ -134,10 +135,9 @@ _braid_TriResidual(braid_Core         core,
 
    braid_BaseVector   u, uleft, uright, r;
 
-   braid_Int          ii;
+   braid_Int          ii = index-ilower, homogeneous = 0;
 
    /* Update status (core) */
-   ii = index-ilower;
    _braid_StatusElt(status, t)     = ta[ii];
    _braid_StatusElt(status, tprev) = ta[ii-1];
    _braid_StatusElt(status, tnext) = ta[ii+1];
@@ -151,14 +151,20 @@ _braid_TriResidual(braid_Core         core,
    _braid_UGetVectorRef(core, level, index, &u);
    _braid_BaseClone(core, app, u, &r);
 
-   if (level == 0)
+
+   if (level > 0)
+   {
+      homogeneous = 1;
+   }
+
+   if ( (level == 0) || (!fas) )
    {
       /* No FAS rhs */
-      _braid_BaseTriResidual(core, app, uleft, uright, NULL, r, level, status);
+      _braid_BaseTriResidual(core, app, uleft, uright, NULL, r, homogeneous, status);
    }
    else
    {
-      _braid_BaseTriResidual(core, app, uleft, uright, fa[ii], r, level, status);
+      _braid_BaseTriResidual(core, app, uleft, uright, fa[ii], r, homogeneous, status);
    }
 
    *r_ptr = r;

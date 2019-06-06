@@ -274,7 +274,6 @@ _braid_FRestrict(braid_Core   core,
 }
 
 /*----------------------------------------------------------------------------
- * ZTODO: Update access status
  *----------------------------------------------------------------------------*/
 
 braid_Int
@@ -284,6 +283,8 @@ _braid_TriRestrict(braid_Core   core,
    MPI_Comm             comm    = _braid_CoreElt(core, comm);
    braid_App            app     = _braid_CoreElt(core, app);
    _braid_Grid        **grids   = _braid_CoreElt(core, grids);
+   braid_TriStatus      status  = (braid_TriStatus)core;
+   braid_Int            ilower  = _braid_GridElt(grids[level], ilower);
    braid_Int            clower  = _braid_GridElt(grids[level], clower);
    braid_Int            cupper  = _braid_GridElt(grids[level], cupper);
    braid_Int            cfactor = _braid_GridElt(grids[level], cfactor);
@@ -299,6 +300,11 @@ _braid_TriRestrict(braid_Core   core,
    braid_Int            ci;
    braid_BaseVector     u, r, c_r;
    braid_Real           rnorm;
+
+   /* Update status (core) */
+   _braid_GetRNorm(core, -1, &rnorm);
+   _braid_StatusElt(status, rnorm) = rnorm;
+   _braid_StatusElt(status, level) = level;
 
    c_level  = level+1;
    c_ilower = _braid_GridElt(grids[c_level], ilower);
@@ -316,8 +322,17 @@ _braid_TriRestrict(braid_Core   core,
 
    for (ci = clower; ci <= cupper; ci += cfactor)
    {
+      braid_Real  *ta = _braid_GridElt(grids[level], ta);
+      braid_Int    ii = ci-ilower;
+
+      /* Update status (core) */
+      _braid_StatusElt(status, t)     = ta[ii];
+      _braid_StatusElt(status, tprev) = ta[ii-1];
+      _braid_StatusElt(status, tnext) = ta[ii+1];
+      _braid_StatusElt(status, idx)   = ci;
+
       _braid_UGetVectorRef(core, level, ci, &u);
-      _braid_TriResidual(core, level, ci, &r);
+      _braid_TriResidual(core, level, ci, 1, &r);  /* A(u) - f */
 
       /* Compute rnorm (only on level 0) */
       if (level == 0)
@@ -354,13 +369,15 @@ _braid_TriRestrict(braid_Core   core,
    /* Finish FAS right-hand-side: A_c(u_c) = R(f - A(u)) + A_c(R(u))
     * Currently, the rhs holds R(A(u) - f) */
 
+   _braid_StatusElt(status, level) = c_level;
+
    /* Communicate c_u boundaries (don't worry about communication overlap yet) */
    _braid_TriCommInit(core, c_level, &nrequests, &requests, &statuses, &buffers);
    _braid_TriCommWait(core, c_level,  nrequests, &requests, &statuses, &buffers);
 
    for (c_i = c_ilower; c_i <= c_iupper; c_i++)
    {
-      _braid_TriResidual(core, c_level, c_i, &c_r);
+      _braid_TriResidual(core, c_level, c_i, 0, &c_r);  /* A_c(u) */
       _braid_BaseSum(core, app, 1.0, c_r, -1.0, c_fa[c_i - c_ilower]);
       _braid_BaseFree(core, app, c_r);
    }

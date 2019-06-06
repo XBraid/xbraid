@@ -662,6 +662,8 @@ _braid_TriDrive(braid_Core  core,
                 braid_Real  localtime)
 {
    braid_Int  access_level = _braid_CoreElt(core, access_level);
+   braid_Int *nrels        = _braid_CoreElt(core, nrels);
+   braid_Int  maxlevels    = _braid_CoreElt(core, max_levels);
    braid_Int  nlevels;
 
    /* Cycle state variables */
@@ -701,8 +703,8 @@ _braid_TriDrive(braid_Core  core,
          {
             if (level == (nlevels-1))
             {
-               /* Coarsest grid solve (TODO: set nrelax for this level) */
-               _braid_TriFCFRelax(core, level, -1);
+               /* Coarsest grid solve */
+               _braid_TriFCFRelax(core, level, nrels[maxlevels-1]);
             }
 
             /* Interpolate with approximate ideal (injection then F-relaxation) */
@@ -713,6 +715,12 @@ _braid_TriDrive(braid_Core  core,
          else
          {
             /* Finest grid level */
+
+            if (nlevels == 1)
+            {
+               /* Just do relaxation for one-level solve */
+               _braid_TriFCFRelax(core, level, -1);
+            }
 
             if (access_level >= 2)
             {

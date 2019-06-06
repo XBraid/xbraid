@@ -1086,12 +1086,15 @@ _braid_TriSolve(braid_Core  core,
                 braid_Int   index);
 
 /**
- * TriMGRIT solve routine.  Compute residual A(u) for time step 'index' on grid 'level'.
+ * TriMGRIT solve routine.  Compute residual for time step 'index' on grid 'level':
+ *    A(u)    (if 'fas' == 0)
+ *    A(u)-f  (if 'fas' == 1)
  */
 braid_Int
 _braid_TriResidual(braid_Core         core,
                    braid_Int          level,
                    braid_Int          index,
+                   braid_Int          fas,          /* FAS residual? */ 
                    braid_BaseVector  *r_ptr);
 
 /**

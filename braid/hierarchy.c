@@ -230,8 +230,8 @@ _braid_InitHierarchy(braid_Core    core,
       iupper = _braid_GridElt(grid, iupper);
       if (level > 0)
       {
-         va = _braid_CTAlloc(braid_BaseVector, iupper-ilower+2);
-         fa = _braid_CTAlloc(braid_BaseVector, iupper-ilower+2);
+         va = _braid_CTAlloc(braid_BaseVector, iupper-ilower+3);  /* left & right for TriMGRIT */
+         fa = _braid_CTAlloc(braid_BaseVector, iupper-ilower+3);  /* left & right for TriMGRIT */
          _braid_GridElt(grid, va_alloc) = va;
          _braid_GridElt(grid, fa_alloc) = fa;
          _braid_GridElt(grid, va)       = va+1;  /* shift */
@@ -250,7 +250,7 @@ _braid_InitHierarchy(braid_Core    core,
          nupoints = iupper-ilower+1;                  /* all points */
       }
 
-      ua = _braid_CTAlloc(braid_BaseVector, nupoints+2);  /* need left & right for TriMGRIT */
+      ua = _braid_CTAlloc(braid_BaseVector, nupoints+2);  /* left & right for TriMGRIT */
       _braid_GridElt(grid, nupoints)  = nupoints;
       _braid_GridElt(grid, ua_alloc)  = ua;
       _braid_GridElt(grid, ua)        = ua+1;  /* shift */

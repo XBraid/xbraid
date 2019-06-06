@@ -133,7 +133,6 @@ _braid_FInterp(braid_Core  core,
 }
 
 /*----------------------------------------------------------------------------
- * ZTODO: Update access status
  *----------------------------------------------------------------------------*/
 
 braid_Int
@@ -142,22 +141,41 @@ _braid_TriInterp(braid_Core   core,
 {
    braid_App            app     = _braid_CoreElt(core, app);
    _braid_Grid        **grids   = _braid_CoreElt(core, grids);
+   braid_TriStatus      status  = (braid_TriStatus)core;
    braid_Int            ilower  = _braid_GridElt(grids[level], ilower);
    braid_Int            iupper  = _braid_GridElt(grids[level], iupper);
    braid_BaseVector    *va      = _braid_GridElt(grids[level], va);
+   braid_BaseVector    *fa      = _braid_GridElt(grids[level], fa);
 
-   braid_Int            f_level, f_cfactor, f_i;
+   braid_Real           rnorm;
+   braid_Int            f_level, f_ilower, f_iupper, f_cfactor, f_i;
    braid_BaseVector     f_u, f_e;
 
    braid_Int            i;
    braid_BaseVector     u, e;
 
+   /* Update status (core) */
+   _braid_GetRNorm(core, -1, &rnorm);
+   _braid_StatusElt(status, rnorm) = rnorm;
+   _braid_StatusElt(status, level) = level;
+
    f_level   = level-1;
+   f_ilower  = _braid_GridElt(grids[f_level], ilower);
+   f_iupper  = _braid_GridElt(grids[f_level], iupper);
    f_cfactor = _braid_GridElt(grids[f_level], cfactor);
 
-   /* Update u at C-points on the fine grid */
+   /* Update u at C-points on the fine grid, store error corrections in fa temporarily */
    for (i = ilower; i <= iupper; i++)
    {
+      braid_Real  *ta = _braid_GridElt(grids[level], ta);
+      braid_Int    ii = i-ilower;
+
+      /* Update status (core) */
+      _braid_StatusElt(status, t)     = ta[ii];
+      _braid_StatusElt(status, tprev) = ta[ii-1];
+      _braid_StatusElt(status, tnext) = ta[ii+1];
+      _braid_StatusElt(status, idx)   = i;
+
       e = va[i-ilower];
       _braid_UGetVectorRef(core, level, i, &u);
       _braid_BaseSum(core, app, 1.0, u, -1.0, e);          // e = u - u0
@@ -166,12 +184,51 @@ _braid_TriInterp(braid_Core   core,
       _braid_UGetVectorRef(core, f_level, f_i, &f_u);
       _braid_BaseSum(core, app, 1.0, f_e, 1.0, f_u);       // f_u = f_u + f_e
       _braid_USetVectorRef(core, f_level, f_i, f_u);
-      _braid_BaseFree(core, app, f_e);
+
+      /* Store error correction in fa */
+      _braid_BaseFree(core, app, fa[i-ilower]);
+      fa[i-ilower] = f_e;
    }
 
-   /* Update u at F-points with F-relaxation */
-   _braid_TriFCFRelax(core, f_level, 0);
-  
+   /* ZTODO: Communicate fa boundary values here */
+   /* ZTODO: This only works for cfactor 2 at the moment.  It would be nice to
+    * be able to just do F-relaxation with _braid_TriFCFRelax() on a grid with
+    * the error corrections at C-points, zero at F-points initially, and using a
+    * homogeneous problem with no FAS rhs. */
+
+   /* Update u at F-points on the fine grid */
+   _braid_StatusElt(status, level) = f_level;
+   for (f_i = f_ilower; f_i <= f_iupper; f_i++)
+   {
+      if ( _braid_IsFPoint(f_i, f_cfactor) )
+      {
+         braid_Real  *f_ta = _braid_GridElt(grids[f_level], ta);
+         braid_Int    f_ii = f_i-f_ilower;
+
+         /* Update status (core) */
+         _braid_StatusElt(status, t)     = f_ta[f_ii];
+         _braid_StatusElt(status, tprev) = f_ta[f_ii-1];
+         _braid_StatusElt(status, tnext) = f_ta[f_ii+1];
+         _braid_StatusElt(status, idx)   = f_i;
+
+         /* Create zero initial correction vector */
+         _braid_UGetVectorRef(core, f_level, f_i, &f_u);
+         _braid_BaseClone(core, app,  f_u, &f_e);
+         _braid_BaseSum(core, app, 0.0, f_u, 0.0, f_e);    // f_e = 0
+
+         /* Homogeneous solve at F-point with initial guess of zero */
+         _braid_MapFineToCoarse(f_i-1, f_cfactor, i);
+         _braid_BaseTriSolve(core, app, fa[i-ilower], fa[i+1-ilower], NULL, f_e, 1, status);
+
+         _braid_BaseSum(core, app, 1.0, f_e, 1.0, f_u);    // f_u = f_u + f_e
+         _braid_USetVectorRef(core, f_level, f_i, f_u);
+         _braid_BaseFree(core, app, f_e);
+      }
+   }
+
+   /* Clean up */
+   _braid_GridClean(core, grids[level]);
+
    return _braid_error_flag;
 }
 
