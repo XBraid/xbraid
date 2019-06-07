@@ -58,9 +58,12 @@
 
 typedef struct _braid_App_struct
 {
-   int     myid;        /* Rank of the processor */
-   double  gamma;       /* Relaxation parameter for objective function */
-   int     ntime;       /* Total number of time-steps (starting at time 0) */
+   int      myid;        /* Rank of the processor */
+   double   gamma;       /* Relaxation parameter for objective function */
+   int      ntime;       /* Total number of time-steps (starting at time 0) */
+
+   double **w;           /* Adjoint vectors at each time point on my proc */
+
 } my_App;
 
 
@@ -111,6 +114,18 @@ vec_axpy(int size, double alpha, double *x, double *y)
    }
 }
 
+/*------------------------------------*/
+
+void
+vec_scale(int size, double alpha, double *x)
+{
+   int i;
+   for (i = 0; i < size; i++)
+   {
+      x[i] = alpha*x[i];
+   }
+}
+
 /*--------------------------------------------------------------------------
  * KKT component routines
  *--------------------------------------------------------------------------*/
@@ -155,7 +170,7 @@ apply_D(double dt, double *v, double *w)
 {
    double vtmp = v[0];
    w[0] = 0.0;
-   w[1] = dt*vtmp;
+   w[1] = -dt*vtmp;
 }
 
 /*------------------------------------*/
@@ -164,7 +179,7 @@ apply_D(double dt, double *v, double *w)
 void
 apply_DAdjoint(double dt, double *w, double *v)
 {
-   v[0] = dt*w[1];
+   v[0] = -dt*w[1];
 }
 
 /*--------------------------------------------------------------------------
@@ -434,25 +449,43 @@ my_Access(braid_App          app,
           braid_AccessStatus astatus)
 {
    int   done, index;
-   char  filename[255];
-   FILE *file;
 
    /* Print solution to file if simulation is over */
    braid_AccessStatusGetDone(astatus, &done);
 
-//   if (done)
+   if (done)
    {
-      int  iter;
-      braid_AccessStatusGetIter(astatus, &iter);
+      /* Allocate w array in app (ZTODO: This only works on one proc right now) */
+      if ((app->w) == NULL)
+      {
+         int  ntpoints;
+         braid_AccessStatusGetNTPoints(astatus, &ntpoints);
+         ntpoints++;  /* ntpoints is really the gupper index */
+         (app->w) = (double **) calloc(ntpoints, sizeof(double *));
+      }
 
       braid_AccessStatusGetTIndex(astatus, &index);
-//      sprintf(filename, "%s.%04d.%03d", "ex-04.out", index, app->myid);
-      sprintf(filename, "%s.%02d.%04d.%03d", "ex-04.out", iter, index, app->myid);
-      file = fopen(filename, "w");
-      fprintf(file, "%1.14e, %1.14e\n", (u->values)[0], (u->values)[1]);
-      fflush(file);
-      fclose(file);
+      if (app->w[index] != NULL)
+      {
+         free(app->w[index]);
+      }
+      vec_create(2, &(app->w[index]));
+      vec_copy(2, (u->values), (app->w[index]));
    }
+
+//   {
+//      char  filename[255];
+//      FILE *file;
+//      int  iter;
+//      braid_AccessStatusGetIter(astatus, &iter);
+//
+//      braid_AccessStatusGetTIndex(astatus, &index);
+//      sprintf(filename, "%s.%02d.%04d.%03d", "ex-04.out", iter, index, app->myid);
+//      file = fopen(filename, "w");
+//      fprintf(file, "%1.14e, %1.14e\n", (u->values)[0], (u->values)[1]);
+//      fflush(file);
+//      fclose(file);
+//   }
 
 
    return 0;
@@ -547,11 +580,11 @@ main(int argc, char *argv[])
    /* Define some Braid parameters */
    max_levels     = 30;
    nrelax         = 1;
-   nrelaxc        = 1;
+   nrelaxc        = 7;
    maxiter        = 20;
    cfactor        = 2;
    tol            = 1.0e-6;
-   access_level   = 0;
+   access_level   = 1;
    print_level    = 0;
 
    /* Parse command line */
@@ -643,6 +676,7 @@ main(int argc, char *argv[])
    app->myid     = rank;
    app->ntime    = ntime;
    app->gamma    = gamma;
+   app->w        = NULL;
 
    /* Initialize XBraid */
    braid_InitTriMGRIT(MPI_COMM_WORLD, MPI_COMM_WORLD, dt, tstop, ntime-1, app,
@@ -666,20 +700,85 @@ main(int argc, char *argv[])
    /* Parallel-in-time TriMGRIT simulation */
    braid_Drive(core);
 
-//    /* Get the state and adjoint residual norms */
-//    braid_GetRNorms(core, &nreq, &rnorm);
-//    braid_GetRNormAdjoint(core, &rnorm_adj);
-   
-//   /* Output */
-//   if (rank == 0)
-//   {
-//      /* Print some statistics about the optimization run */
-//      printf("\n");
-//      printf("  Optimization has converged.\n");
-//      printf("\n"); 
-//      printf("  Objective function value = %1.8e\n", objective);
-//      printf("\n");
-//   }
+   if (access_level > 0)
+   {
+      /* Print adjoint w to file */
+      {
+         char  filename[255];
+         FILE *file;
+         int   i;
+
+         sprintf(filename, "%s.%03d", "ex-04.out.w", (app->myid));
+         file = fopen(filename, "w");
+         for (i = 0; i < (app->ntime); i++)
+         {
+            double **w = (app->w);
+
+            fprintf(file, "%05d: % 1.14e, % 1.14e\n", (i+1), w[i][0], w[i][1]);
+         }
+         fflush(file);
+         fclose(file);
+      }
+
+      /* Compute state u from adjoint w and print to file */
+      {
+         char    filename[255];
+         FILE   *file;
+         int     i;
+         double *u;
+
+         sprintf(filename, "%s.%03d", "ex-04.out.u", (app->myid));
+         file = fopen(filename, "w");
+         vec_create(2, &u);
+         for (i = 0; i < (app->ntime); i++)
+         {
+            double **w = (app->w);
+
+            if ((i+1) < (app->ntime))
+            {
+               vec_copy(2, w[i+1], u);
+               apply_PhiAdjoint(dt, u);
+               vec_axpy(2, -1.0, w[i], u);
+            }
+            else
+            {
+               vec_copy(2, w[i], u);
+               vec_scale(2, -1.0, u);
+            }
+            apply_Uinv(dt, u);
+
+            fprintf(file, "%05d: % 1.14e, % 1.14e\n", (i+1), u[0], u[1]);
+         }
+         vec_destroy(u);
+         fflush(file);
+         fclose(file);
+      }
+
+      /* Compute control v from adjoint w and print to file */
+      {
+         char    filename[255];
+         FILE   *file;
+         int     i;
+         double *v;
+
+         sprintf(filename, "%s.%03d", "ex-04.out.v", (app->myid));
+         file = fopen(filename, "w");
+         vec_create(2, &v);
+         for (i = 0; i < (app->ntime); i++)
+         {
+            double **w = (app->w);
+
+            apply_DAdjoint(dt, w[i], v);
+            vec_scale(1, -1.0, v);
+            apply_Vinv(dt, (app->gamma), v);
+
+            fprintf(file, "%05d: % 1.14e\n", (i+1), v[0]);
+         }
+         vec_destroy(v);
+         fflush(file);
+         fclose(file);
+      }
+   }
 
    braid_PrintStats(core);
 
