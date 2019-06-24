@@ -68,13 +68,13 @@ BRAID_FILES =\
  step.c\
  uvector.c
 
-ifeq ($(sequential),yes)
-	BRAID_HEADERS += mpistubs.h
-	BRAID_FILES += mpistubs.c
-	SEQFLAGS = -Dbraid_SEQUENTIAL
-else
-	SEQFLAGS = 
-endif
+#ifeq ($(sequential),yes)
+#	BRAID_HEADERS += mpistubs.h
+#	BRAID_FILES += mpistubs.c
+#	SEQFLAGS = -Dbraid_SEQUENTIAL
+#else
+#	SEQFLAGS = 
+#endif
 
 BRAID_OBJ = $(BRAID_FILES:.c=.o)
 

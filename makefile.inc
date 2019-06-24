@@ -153,7 +153,7 @@ else
 endif
 
 # Compiler options when compiling without MPI
-ifeq ($(sequential),YES)
+ifeq ($(sequential),yes)
    MPICC = gcc
    MPICXX = g++
    MPIF90 = gfortran
