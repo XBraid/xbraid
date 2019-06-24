@@ -101,9 +101,15 @@ _braid_InitHierarchy(braid_Core    core,
                     
    MPI_Request       request1, request2;
    MPI_Status        status;
-   braid_Int         left_proc, right_proc;
+   braid_Int         left_proc, right_proc, set_ta_right = 0;
 
    grids[0] = fine_grid;
+
+   /* Should we store a ta value for index iupper+1? */
+   if ( (_braid_CoreElt(core, scoarsen) != NULL) || (trimgrit) )
+   {
+      set_ta_right = 1;
+   }
 
    /* Do sequential time marching if min_coarse is already reached */
    if ( gupper <= min_coarse )
@@ -177,7 +183,7 @@ _braid_InitHierarchy(braid_Core    core,
       _braid_GridElt(grid, cfactor)  = cfactor;
       _braid_GridElt(grid, ncpoints) = ncpoints;
       if ( (gclower < gcupper) && (max_levels > level+1) &&
-           ((gcupper - gclower) >= min_coarse) )
+           ((gcupper - gclower) >= min_coarse) )  // RDF: Is min_coarse = num time intervals?
       {
          /* Initialize the coarse grid */
          _braid_GridInit(core, level+1, clo, chi, &grids[level+1]);
@@ -281,7 +287,7 @@ _braid_InitHierarchy(braid_Core    core,
             ta[-1] = ta[0]; 
          }
          /* Post receive to set ta[iupper-ilower+1] on each processor */
-         if ( _braid_CoreElt(core, scoarsen) != NULL )
+         if ( set_ta_right )
          {
             if (right_proc > -1)
             {
@@ -290,7 +296,7 @@ _braid_InitHierarchy(braid_Core    core,
             }
             else
             {
-               /* Place a repeat value to indicate the end the time-line for this level */
+               /* Place a repeat value to indicate the end of the time-line for this level */
                ta[iupper-ilower+1] = ta[iupper-ilower];
             }
          }
@@ -302,7 +308,7 @@ _braid_InitHierarchy(braid_Core    core,
                      right_proc, 1, comm);
          }
          /* Post send that sets ta[iupper-ilower+1] on each processor */
-         if ( (left_proc > -1) && ( _braid_CoreElt(core, scoarsen) != NULL ) )
+         if ( (left_proc > -1) && ( set_ta_right ) )
          {
             MPI_Send(&ta[0], sizeof(braid_Real), MPI_BYTE, left_proc, 1, comm);
          }
@@ -312,7 +318,7 @@ _braid_InitHierarchy(braid_Core    core,
          {
             MPI_Wait(&request1, &status);
          }
-         if ( (right_proc > -1) && ( _braid_CoreElt(core, scoarsen) != NULL ) )
+         if ( (right_proc > -1) && ( set_ta_right ) )
          {
             MPI_Wait(&request2, &status);
          }

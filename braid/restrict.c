@@ -377,7 +377,7 @@ _braid_TriRestrict(braid_Core   core,
 
    for (c_i = c_ilower; c_i <= c_iupper; c_i++)
    {
-      _braid_TriResidual(core, c_level, c_i, 0, &c_r);  /* A_c(u) */
+      _braid_TriResidual(core, c_level, c_i, 0, &c_r);  /* A_c(R(u)) */
       _braid_BaseSum(core, app, 1.0, c_r, -1.0, c_fa[c_i - c_ilower]);
       _braid_BaseFree(core, app, c_r);
    }

@@ -50,7 +50,6 @@
 
 #include "braid.h"
 #include "braid_test.h"
-#include "ex-04-lib.c"
 
 /*--------------------------------------------------------------------------
  * My App and Vector structures
@@ -335,8 +334,17 @@ my_TriSolve(braid_App       app,
     *                   |  0    ( 1/dt + dt/(2*gamma) ) |
     */
    rtmp = (u->values);
-   rtmp[0] = -rtmp[0]*dt;
-   rtmp[1] = -rtmp[1]/(1/dt + dt/(2*gamma));
+   if (uleft != NULL)
+   {
+      rtmp[0] = -rtmp[0]*dt;
+      rtmp[1] = -rtmp[1]/(1/dt + dt/(2*gamma));
+   }
+   else
+   {
+      /* At the leftmost point, use a different center coefficient approximation */
+      rtmp[0] = -rtmp[0]*(2*dt);
+      rtmp[1] = -rtmp[1]/(1/(2*dt) + dt/(2*gamma));
+   }
 
    /* Complete residual update */
    vec_axpy(2, 1.0, utmp, (u->values));
@@ -562,7 +570,8 @@ main(int argc, char *argv[])
    double      tstart, tstop, dt; 
    int         rank, ntime, arg_index;
    double      gamma;
-   int         max_levels, nrelax, nrelaxc, cfactor, access_level, print_level, maxiter;
+   int         max_levels, min_coarse, nrelax, nrelaxc, cfactor, maxiter;
+   int         access_level, print_level;
    double      tol;
 
    /* Initialize MPI */
@@ -579,13 +588,14 @@ main(int argc, char *argv[])
 
    /* Define some Braid parameters */
    max_levels     = 30;
+   min_coarse     = 1;
    nrelax         = 1;
    nrelaxc        = 7;
    maxiter        = 20;
    cfactor        = 2;
    tol            = 1.0e-6;
    access_level   = 1;
-   print_level    = 0;
+   print_level    = 2;
 
    /* Parse command line */
    arg_index = 1;
@@ -686,6 +696,7 @@ main(int argc, char *argv[])
 
    /* Set some XBraid(_Adjoint) parameters */
    braid_SetMaxLevels(core, max_levels);
+   braid_SetMinCoarse(core, min_coarse);
    braid_SetNRelax(core, -1, nrelax);
    if (max_levels > 1)
    {
@@ -779,8 +790,6 @@ main(int argc, char *argv[])
          fclose(file);
       }
    }
-
-   braid_PrintStats(core);
 
    free(app);
    
