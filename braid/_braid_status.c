@@ -430,6 +430,8 @@ ACCESSOR_FUNCTION_GET5(CoarsenRef, TpriorTstop, Real, Real, Real, Real, Real)
 braid_Int
 _braid_StepStatusInit(braid_Real       tstart,
                       braid_Real       tstop,
+                      braid_Real       c_tprior,
+                      braid_Real       c_tstop,
                       braid_Int        idx,
                       braid_Real       tol,
                       braid_Int        iter,
@@ -440,6 +442,8 @@ _braid_StepStatusInit(braid_Real       tstart,
 {
    _braid_StatusElt(status, t)         = tstart;
    _braid_StatusElt(status, tnext)     = tstop;
+   _braid_StatusElt(status, c_tprior)  = c_tprior;
+   _braid_StatusElt(status, c_tstop)   = c_tstop;
    _braid_StatusElt(status, idx)       = idx;
    _braid_StatusElt(status, tol)       = tol;
    _braid_StatusElt(status, niter)     = iter;
@@ -460,6 +464,8 @@ ACCESSOR_FUNCTION_GET1(Step, NRefine,       Int)
 ACCESSOR_FUNCTION_GET1(Step, NTPoints,      Int)
 ACCESSOR_FUNCTION_GET1(Step, Tstop,         Real)
 ACCESSOR_FUNCTION_GET2(Step, TstartTstop,   Real, Real)
+ACCESSOR_FUNCTION_GET1(Step, CTprior,       Real)
+ACCESSOR_FUNCTION_GET1(Step, CTstop,        Real)
 ACCESSOR_FUNCTION_GET1(Step, Tol,           Real)
 ACCESSOR_FUNCTION_GET2(Step, RNorms,        Int,  Real)
 ACCESSOR_FUNCTION_GET1(Step, OldFineTolx,   Real)

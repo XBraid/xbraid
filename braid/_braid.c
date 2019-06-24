@@ -1402,6 +1402,7 @@ _braid_Step(braid_Core         core,
    braid_App          app      = _braid_CoreElt(core, app);
    braid_Real         tol      = _braid_CoreElt(core, tol);
    braid_Int          iter     = _braid_CoreElt(core, niter);
+   braid_Int          nlevels  = _braid_CoreElt(core, nlevels);
    braid_Int         *rfactors = _braid_CoreElt(core, rfactors);
    _braid_Grid      **grids    = _braid_CoreElt(core, grids);
    braid_StepStatus   status   = (braid_StepStatus)core;
@@ -1411,10 +1412,29 @@ _braid_Step(braid_Core         core,
    braid_Real        *ta       = _braid_GridElt(grids[level], ta);
    braid_BaseVector  *fa       = _braid_GridElt(grids[level], fa);
 
+   braid_Int c_index;
+   braid_Real c_tprior, c_tstop;
+
+   /* Only get next/prior cpoint if not on coarsest level
+    * Initialize coarse times to some invalid time in case on coarsest level. */
+   c_tprior = -1;
+   c_tstop = -1;
+   if (level < nlevels-1)
+   {
+      braid_Int   cfactor = _braid_GridElt(grids[level], cfactor);
+      braid_Real *c_ta     = _braid_GridElt(grids[level+1], ta);
+      braid_Int   c_ilower = _braid_GridElt(grids[level+1], ilower);
+
+      _braid_MapFineToCoarse(index-1, cfactor, c_index);
+      braid_Int c_ii = c_index-c_ilower;
+      c_tprior = c_ta[c_ii];
+      c_tstop = c_ta[c_ii+1];
+   }
+
    braid_Int        ii;
 
    ii = index-ilower;
-   _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, status);
+   _braid_StepStatusInit(ta[ii-1], ta[ii], c_tprior, c_tstop, index-1, tol, iter, level, nrefine, gupper, status);
 
    /* If ustop is set to NULL, use a default approach for setting it */
    if (ustop == NULL)
@@ -1462,6 +1482,7 @@ _braid_Residual(braid_Core        core,
    braid_App        app      = _braid_CoreElt(core, app);
    braid_Real       tol      = _braid_CoreElt(core, tol);
    braid_Int        iter     = _braid_CoreElt(core, niter);
+   braid_Int        nlevels  = _braid_CoreElt(core, nlevels);
    braid_Int       *rfactors = _braid_CoreElt(core, rfactors);
    _braid_Grid    **grids    = _braid_CoreElt(core, grids);
    braid_StepStatus status   = (braid_StepStatus)core;
@@ -1473,8 +1494,27 @@ _braid_Residual(braid_Core        core,
    braid_BaseVector rstop;
    braid_Int        ii;
 
+   braid_Int c_index;
+   braid_Real c_tprior, c_tstop;
+
+/* Only get next/prior cpoint if not on coarsest level
+ * Initialize coarse times to some invalid time in case on coarsest level. */
+   c_tprior = -1;
+   c_tstop = -1;
+   if (level < nlevels-1)
+   {
+      braid_Int   cfactor = _braid_GridElt(grids[level], cfactor);
+      braid_Real *c_ta     = _braid_GridElt(grids[level+1], ta);
+      braid_Int   c_ilower = _braid_GridElt(grids[level+1], ilower);
+
+      _braid_MapFineToCoarse(index-1, cfactor, c_index);
+      braid_Int c_ii = c_index-c_ilower;
+      c_tprior = c_ta[c_ii];
+      c_tstop = c_ta[c_ii+1];
+   }
+
    ii = index-ilower;
-   _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, status);
+   _braid_StepStatusInit(ta[ii-1], ta[ii], c_tprior, c_tstop, index-1, tol, iter, level, nrefine, gupper, status);
    if ( _braid_CoreElt(core, residual) == NULL )
    {
       /* By default: r = ustop - \Phi(ustart)*/
@@ -1891,6 +1931,7 @@ _braid_ComputeFullRNorm(braid_Core  core,
    braid_Real         tol         = _braid_CoreElt(core, tol);
    braid_Int          iter        = _braid_CoreElt(core, niter);
    _braid_Grid      **grids       = _braid_CoreElt(core, grids);
+   braid_Int          nlevels     = _braid_CoreElt(core, nlevels);
    braid_StepStatus   status      = (braid_StepStatus)core;
    braid_Int          nrefine     = _braid_CoreElt(core, nrefine);
    braid_Int          gupper      = _braid_CoreElt(core, gupper);
@@ -1904,6 +1945,9 @@ _braid_ComputeFullRNorm(braid_Core  core,
    braid_Int         flo, fhi, fi, ci, ii, interval;
    braid_Real        rnorm_temp, rnorm = 0, global_rnorm = 0;
    braid_BaseVector  u, r;
+
+   braid_Int         c_index;
+   braid_Real        c_tprior, c_tstop;
 
    _braid_UCommInit(core, level);
 
@@ -1927,8 +1971,25 @@ _braid_ComputeFullRNorm(braid_Core  core,
          _braid_Step(core, level, fi, NULL, u);
 
          /* Update local processor norm. */
+
+         /* Only get next/prior cpoint if not on coarsest level
+          * Initialize coarse times to some invalid time in case on coarsest level. */
+         c_tprior = -1;
+         c_tstop = -1;
+         if (level < nlevels-1)
+         {
+            braid_Int   cfactor = _braid_GridElt(grids[level], cfactor);
+            braid_Real *c_ta     = _braid_GridElt(grids[level+1], ta);
+            braid_Int   c_ilower = _braid_GridElt(grids[level+1], ilower);
+
+            _braid_MapFineToCoarse(fi-1, cfactor, c_index);
+            braid_Int c_ii = c_index-c_ilower;
+            c_tprior = c_ta[c_ii];
+            c_tstop = c_ta[c_ii+1];
+         }
+
          ii = fi-ilower;
-         _braid_StepStatusInit(ta[ii-1], ta[ii], fi-1, tol, iter, level, nrefine, gupper, status);
+         _braid_StepStatusInit(ta[ii-1], ta[ii], c_tprior, c_tstop, fi-1, tol, iter, level, nrefine, gupper, status);
          _braid_BaseFullResidual(core, app, u, r, status);
          _braid_BaseSpatialNorm(core, app,  r, &rnorm_temp); 
          if(tnorm == 1)       /* one-norm */ 
@@ -1960,8 +2021,23 @@ _braid_ComputeFullRNorm(braid_Core  core,
       if (ci > 0)
       {
          /* Update local processor norm. */
+
+         c_tprior = -1;
+         c_tstop = -1;
+         if (level < nlevels-1)
+         {
+            braid_Int   cfactor = _braid_GridElt(grids[level], cfactor);
+            braid_Real *c_ta     = _braid_GridElt(grids[level+1], ta);
+            braid_Int   c_ilower = _braid_GridElt(grids[level+1], ilower);
+
+            _braid_MapFineToCoarse(ci-1, cfactor, c_index);
+            braid_Int c_ii = c_index-c_ilower;
+            c_tprior = c_ta[c_ii];
+            c_tstop = c_ta[c_ii+1];
+         }
+
          ii = ci-ilower;
-         _braid_StepStatusInit(ta[ii-1], ta[ii], ci-1, tol, iter, level, nrefine, gupper, status);
+         _braid_StepStatusInit(ta[ii-1], ta[ii], c_tprior, c_tstop, ci-1, tol, iter, level, nrefine, gupper, status);
          _braid_UGetVector(core, level, ci, &r);
          _braid_BaseFullResidual(core, app, r, u, status);
          _braid_BaseSpatialNorm(core, app,  u, &rnorm_temp);

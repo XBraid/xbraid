@@ -125,6 +125,8 @@ _braid_CoarsenRefStatusInit(braid_Real              tstart,      /**< time value
 braid_Int
 _braid_StepStatusInit(braid_Real        tstart,      /**< current time value  */
                       braid_Real        tstop,       /**< time value to evolve towards, time value to the right of tstart */
+                      braid_Real        c_tprior,    /**< time value at or to the left of tstart on coarse grid */
+                      braid_Real        c_tstop,     /**< time value to the right of tstart on coarse grid */
                       braid_Int         idx,         /**< time point index value corresponding to tstart on the global time grid */
                       braid_Real        tol,         /**< Current XBraid stopping tolerance */
                       braid_Int         iter,        /**< Current XBraid iteration (also equal to length of rnorms) */

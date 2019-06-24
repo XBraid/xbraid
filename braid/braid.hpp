@@ -207,6 +207,8 @@ class BraidStepStatus
       { braid_StepStatusGetTstartTstop(pstatus, tstart_ptr, tstop_ptr); }
       void GetT(braid_Real *tstart_ptr)                  { braid_StepStatusGetT(pstatus, tstart_ptr); }
       void GetTstop(braid_Real *tstop_ptr)               { braid_StepStatusGetTstop(pstatus, tstop_ptr); }
+      void GetCTprior(braid_Real *c_tprior_ptr)          { braid_StepStatusGetCTprior(pstatus, c_tprior_ptr); }
+      void GetCTstop(braid_Real *c_tstop_ptr)            { braid_StepStatusGetCTstop(pstatus, c_tstop_ptr); }
       void GetTIndex(braid_Int *tindex_ptr)              { braid_StepStatusGetTIndex(pstatus, tindex_ptr); }
       void GetLevel(braid_Int *level_ptr)                { braid_StepStatusGetLevel(pstatus, level_ptr); }
       void GetNLevels(braid_Int *nlevels_ptr)            { braid_StepStatusGetNLevels(pstatus, nlevels_ptr); }
