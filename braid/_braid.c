@@ -1334,6 +1334,25 @@ _braid_AccessVector(braid_Core          core,
 }
 
 /*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_Sync(braid_Core        core,
+            braid_SyncStatus  status)
+{
+   braid_Int useSync = _braid_CoreElt(core, useSync);
+   if(useSync == 0)
+   {
+      return _braid_error_flag;
+   }
+   braid_App app = _braid_CoreElt(core, app);
+
+   _braid_BaseSync(core, app, status);
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
  * Get an initial guess for ustop to use in the step routine (implicit schemes)
  * This vector may just be a shell. User should be able to deal with it
  *----------------------------------------------------------------------------*/
@@ -2600,6 +2619,7 @@ _braid_FRefine(braid_Core   core,
    braid_Int          tpoints_cutoff  = _braid_CoreElt(core, tpoints_cutoff);
    braid_AccessStatus astatus         = (braid_AccessStatus)core;
    braid_BufferStatus bstatus         = (braid_BufferStatus)core;
+   braid_SyncStatus   sstatus         = (braid_SyncStatus)core;
    braid_Int          access_level    = _braid_CoreElt(core, access_level);
    _braid_Grid      **grids           = _braid_CoreElt(core, grids);
    braid_Int          ncpoints        = _braid_GridElt(grids[0], ncpoints);
@@ -3215,6 +3235,10 @@ _braid_FRefine(braid_Core   core,
    _braid_CoreElt(core, nrefine) += 1;
    /*braid_SetCFactor(core,  0, cfactor);*/ /* RDF HACKED TEST */
    _braid_InitHierarchy(core, f_grid, 1);
+
+   _braid_SyncStatusInit(f_ta[f_iupper-f_ilower], f_ta[0], iter, 0, nrefine,
+                         f_gupper, 0, braid_ASCaller_FRefine_AfterInitHier, sstatus);
+   _braid_Sync(core, sstatus);
 
    /* Initialize communication */
    recv_msg = 0;

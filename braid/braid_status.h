@@ -82,6 +82,14 @@ typedef struct _braid_Status_struct *braid_Status;
 typedef struct _braid_AccessStatus_struct *braid_AccessStatus;
 
 /**
+ * SyncStatus structure which provides the status of XBraid at a given instant
+ * on some level during a run. This is vector independent and called once per
+ * processor. The user accesses it through _braid_SyncStatusGet**()_ functions.
+ * This is just a pointer to the braid_Status.
+ */
+ typedef struct _braid_SyncStatus_struct *braid_SyncStatus;
+
+/**
  * The user's step routine routine will receive a StepStatus structure, which
  * defines the status of XBraid at the given instant for step evaluation on some level
  * during a run.  The user accesses it through _braid_StepStatusGet**()_ functions.
@@ -208,6 +216,16 @@ braid_Int
 braid_StatusGetDone(braid_Status status,                   /**< structure containing current simulation info */
                     braid_Int   *done_ptr                  /**< output,  =1 if XBraid has finished, else =0 */
                     );
+
+/**
+ * Returns upper and lower time values on this processor. Two
+ * values are returned.
+ **/
+   braid_Int
+   braid_StatusGetTUpperLower(braid_Status status,         /**< structure containing current simulation info */
+                              braid_Real  *t_upper,        /**< output, the upper time value on this processor */
+                              braid_Real  *t_lower         /**< output, the lower time value on this processor */
+                              );
 
 /**
  * Return XBraid status for the current simulation. Four values are 
@@ -444,6 +462,19 @@ ACCESSOR_HEADER_GET1(Access, WrapperTest,     Int)
 ACCESSOR_HEADER_GET1(Access, CallingFunction, Int)
 
 /*--------------------------------------------------------------------------
+ * SyncStatus Prototypes: They just wrap the corresponding Status accessors
+ *--------------------------------------------------------------------------*/
+
+ACCESSOR_HEADER_GET2(Sync, TUpperLower,      Real, Real)
+ACCESSOR_HEADER_GET1(Sync, Iter,             Int)
+ACCESSOR_HEADER_GET1(Sync, Level,            Int)
+ACCESSOR_HEADER_GET1(Sync, NLevels,          Int)
+ACCESSOR_HEADER_GET1(Sync, NRefine,          Int)
+ACCESSOR_HEADER_GET1(Sync, NTPoints,         Int)
+ACCESSOR_HEADER_GET1(Sync, Done,             Int)
+ACCESSOR_HEADER_GET1(Sync, CallingFunction,  Int)
+
+/*--------------------------------------------------------------------------
  * CoarsenRefStatus Prototypes: They just wrap the corresponding Status accessors
  *--------------------------------------------------------------------------*/
 
@@ -523,6 +554,9 @@ ACCESSOR_HEADER_GET1(Objective, Tol,           Real)
 #define braid_ASCaller_FRefine   2
 /** When CallingFunction equals 0, Braid is in FAccess */
 #define braid_ASCaller_FAccess   3
+/** When CallingFunction equals 4, Braid is inside FRefine after the new finest
+ * level has been initialized */
+#define braid_ASCaller_FRefine_AfterInitHier   4
 
 /** @}*/
 

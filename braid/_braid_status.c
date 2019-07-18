@@ -149,6 +149,16 @@ braid_StatusGetDone(braid_Status status,
 }
 
 braid_Int
+braid_StatusGetTUpperLower(braid_Status status,
+                           braid_Real  *t_upper,
+                           braid_Real  *t_lower)
+{
+   *t_upper = _braid_StatusElt(status, tupper);
+   *t_lower = _braid_StatusElt(status, tlower);
+   return _braid_error_flag;
+}
+
+braid_Int
 braid_StatusGetTILD(braid_Status status,
                     braid_Real  *t_ptr,
                     braid_Int   *iter_ptr,
@@ -381,6 +391,40 @@ ACCESSOR_FUNCTION_GET1(Access, Done,            Int)
 ACCESSOR_FUNCTION_GET4(Access, TILD,            Real, Int, Int, Int)
 ACCESSOR_FUNCTION_GET1(Access, WrapperTest,     Int)
 ACCESSOR_FUNCTION_GET1(Access, CallingFunction, Int)
+
+/*--------------------------------------------------------------------------
+ * SyncStatus Routines
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+_braid_SyncStatusInit(braid_Real           t_upper,
+                      braid_Real           t_lower,
+                      braid_Int            iter,
+                      braid_Int            level,
+                      braid_Int            nrefine,
+                      braid_Int            gupper,
+                      braid_Int            done,
+                      braid_Int            calling_function,
+                      braid_SyncStatus     status)
+{
+   _braid_StatusElt(status, tupper)       = t_upper;
+   _braid_StatusElt(status, tlower)       = t_lower;
+   _braid_StatusElt(status, level)        = level;
+   _braid_StatusElt(status, nrefine)      = nrefine;
+   _braid_StatusElt(status, gupper)       = gupper;
+   _braid_StatusElt(status, done)         = done;
+   _braid_StatusElt(status, niter)        = iter;
+   _braid_StatusElt(status, calling_function) = calling_function;
+   return _braid_error_flag;
+}
+ACCESSOR_FUNCTION_GET2(Sync, TUpperLower,      Real, Real)
+ACCESSOR_FUNCTION_GET1(Sync, Iter,             Int)
+ACCESSOR_FUNCTION_GET1(Sync, Level,            Int)
+ACCESSOR_FUNCTION_GET1(Sync, NLevels,          Int)
+ACCESSOR_FUNCTION_GET1(Sync, NRefine,          Int)
+ACCESSOR_FUNCTION_GET1(Sync, NTPoints,         Int)
+ACCESSOR_FUNCTION_GET1(Sync, Done,             Int)
+ACCESSOR_FUNCTION_GET1(Sync, CallingFunction,  Int)
 
 /*--------------------------------------------------------------------------
  * CoarsenRefStatus Routines

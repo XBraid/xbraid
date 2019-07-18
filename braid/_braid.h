@@ -198,6 +198,7 @@ typedef struct _braid_Core_struct
    braid_PtFcnResidual    residual;         /**< (optional) compute residual */
    braid_PtFcnSCoarsen    scoarsen;         /**< (optional) return a spatially coarsened vector */
    braid_PtFcnSRefine     srefine;          /**< (optional) return a spatially refined vector */
+   braid_PtFcnSync        sync;             /**< (optional) user access to app once-per-processor */
    braid_PtFcnTimeGrid    tgrid;            /**< (optional) return time point values on level 0 */
 
    braid_Int              access_level;     /**< determines how often to call the user's access routine */ 
@@ -238,6 +239,7 @@ typedef struct _braid_Core_struct
    braid_Int              nrefine;          /**< number of refinements done */
    braid_Int              max_refinements;  /**< maximum number of refinements */
    braid_Int              tpoints_cutoff;   /**< refinements halt after the number of time steps exceed this value */
+   braid_Int              useSync;          /**< Enable calling the sync function */
 
    braid_Int              skip;             /**< boolean, controls skipping any work on first down-cycle */
 
@@ -278,6 +280,9 @@ typedef struct _braid_Core_struct
    braid_Int     done;             /**< boolean describing whether XBraid has finished */
    braid_Int     wrapper_test;     /**< boolean describing whether this call is only a wrapper test */
    braid_Int     calling_function; /**< from which function are we accessing the vector */
+   /** SyncStatus properties */
+   braid_Real    tupper;           /**< largest time value on the current processor */
+   braid_Real    tlower;           /**< smallest time value on the current processor */
    /** CoarsenRefStatus properties*/
    braid_Real    f_tprior;         /**< time value to the left of tstart on fine grid */
    braid_Real    f_tstop;          /**< time value to the right of tstart  on fine grid */
@@ -580,6 +585,16 @@ braid_Int
 _braid_AccessVector(braid_Core         core,
                     braid_AccessStatus status,
                     braid_BaseVector   u);
+
+/**
+ * Call user's sync function in order to give access to XBraid and the user's
+ * app. This is called once-per-processor at various points in XBraid in
+ * order to allow the user to perform any book-keeping operations. *status*
+ * provides state information about the current XBraid status and processor.
+ */
+braid_Int
+_braid_Sync(braid_Core       core,
+            braid_SyncStatus status);
 
 /**
  * Return an initial guess in *ustop_ptr* to use in the step routine for
