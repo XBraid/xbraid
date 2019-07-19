@@ -743,6 +743,13 @@ braid_SetSpatialRefine(braid_Core         core,   /**< braid_Core (_braid_Core) 
 
 /**
  * Set sync routine with user-defined routine.
+ * Sync gives user access to XBraid and the user's pap at various points
+ * (primarily once per iteration inside FRefine and outside in the main
+ * cycle loop). This function is called once per-processor (instead of for
+ * every state vector on the processor, like access). The use case is to
+ * allow the user to update their app once-per iteration based on information
+ * from XBraid, for example to maintain the space-time grid when doing
+ * time-space adaptivity.
  * Default is no sync routine.
  **/
 braid_Int
