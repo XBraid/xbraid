@@ -216,9 +216,10 @@ typedef braid_Int
                      );
 
 /**
- * Gives user access to XBraid and to the user's app at various points.  This
- * function is called once-per-processor and is independent of vectors. Allows
- * the user to make changes to their app based on information from XBraid.
+ * Gives user access to XBraid and to the user's app at various points (primarily
+ * once per iteration inside FRefine and outside in the main cycle loop).  This
+ * function is called once per-processor (not for every state vector stored on the
+ * processor, like access).
  **/
 typedef braid_Int
 (*braid_PtFcnSync)(braid_App         app,              /**< user-defined _braid_App structure */
