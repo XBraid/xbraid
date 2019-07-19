@@ -3235,7 +3235,8 @@ _braid_FRefine(braid_Core   core,
    _braid_CoreElt(core, nrefine) += 1;
    /*braid_SetCFactor(core,  0, cfactor);*/ /* RDF HACKED TEST */
    _braid_InitHierarchy(core, f_grid, 1);
-   _braid_SyncStatusInit(f_ta[f_iupper-f_ilower], f_ta[0], iter, 0, newrefine,
+   nrefine = _braid_CoreElt(core, nrefine);
+   _braid_SyncStatusInit(f_ta[f_iupper-f_ilower], f_ta[0], iter, 0, nrefine,
                          f_gupper, 0, braid_ASCaller_FRefine_AfterInitHier, sstatus);
    _braid_Sync(core, sstatus);
 
