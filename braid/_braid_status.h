@@ -151,6 +151,8 @@ _braid_StepStatusInit(braid_Real        tstart,      /**< current time value  */
                       braid_Int         level,       /**< current level in XBraid */
                       braid_Int         nrefine,     /**< number of refinements done */
                       braid_Int         gupper,      /**< global size of the fine grid */
+                      braid_Real        tloc_upper,  /**< local processor's maximum time value */
+                      braid_Real        tloc_lower,  /**< local processor's minimum time value */
                       braid_StepStatus  status       /**< structure to initialize */
                       );
 

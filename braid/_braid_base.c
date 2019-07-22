@@ -701,6 +701,12 @@ _braid_BaseStep_diff(_braid_Action *action)
    braid_Int        level        = action->level;
    braid_Int        nrefine      = action->nrefine;
    braid_Int        gupper       = action->gupper;
+   _braid_Grid    **grids        = _braid_CoreElt(core, grids);
+   braid_Int        iloc_upper   = _braid_GridElt(grids[level], iupper);
+   braid_Int        iloc_lower   = _braid_GridElt(grids[level], ilower);
+   braid_Real      *ta           = _braid_GridElt(grids[level], ta);
+   braid_Real       tloc_upper   = ta[iloc_upper-iloc_lower];
+   braid_Real       tloc_lower   = ta[0];
    braid_App        app          = _braid_CoreElt(core, app);
    braid_Int        verbose_adj  = _braid_CoreElt(core, verbose_adj);
    braid_Int        myid         = _braid_CoreElt(core, myid);
@@ -721,7 +727,7 @@ _braid_BaseStep_diff(_braid_Action *action)
 
 
    /* Set up the status structure */
-   _braid_StepStatusInit(inTime, outTime, tidx, tol, iter, level, nrefine, gupper, status);
+   _braid_StepStatusInit(inTime, outTime, tidx, tol, iter, level, nrefine, gupper, tloc_upper, tloc_lower, status);
 
    /* Call the users's differentiated step function */
    _braid_CoreFcn(core, step_diff)(app, ustop, u, ustopbar->userVector, ubar->userVector, status);

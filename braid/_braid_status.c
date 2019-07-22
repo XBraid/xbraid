@@ -153,8 +153,8 @@ braid_StatusGetTUpperLower(braid_Status status,
                            braid_Real  *t_upper,
                            braid_Real  *t_lower)
 {
-   *t_upper = _braid_StatusElt(status, tupper);
-   *t_lower = _braid_StatusElt(status, tlower);
+   *t_upper = _braid_StatusElt(status, tloc_upper);
+   *t_lower = _braid_StatusElt(status, tloc_lower);
    return _braid_error_flag;
 }
 
@@ -407,8 +407,8 @@ _braid_SyncStatusInit(braid_Real           t_upper,
                       braid_Int            calling_function,
                       braid_SyncStatus     status)
 {
-   _braid_StatusElt(status, tupper)       = t_upper;
-   _braid_StatusElt(status, tlower)       = t_lower;
+   _braid_StatusElt(status, tloc_upper)   = t_upper;
+   _braid_StatusElt(status, tloc_lower)   = t_lower;
    _braid_StatusElt(status, level)        = level;
    _braid_StatusElt(status, nrefine)      = nrefine;
    _braid_StatusElt(status, gupper)       = gupper;
@@ -480,18 +480,22 @@ _braid_StepStatusInit(braid_Real       tstart,
                       braid_Int        level,
                       braid_Int        nrefine,
                       braid_Int        gupper,
+                      braid_Real       tloc_upper,
+                      braid_Real       tloc_lower,
                       braid_StepStatus status)
 {
-   _braid_StatusElt(status, t)         = tstart;
-   _braid_StatusElt(status, tnext)     = tstop;
-   _braid_StatusElt(status, idx)       = idx;
-   _braid_StatusElt(status, tol)       = tol;
-   _braid_StatusElt(status, niter)     = iter;
-   _braid_StatusElt(status, level)     = level;
-   _braid_StatusElt(status, nrefine)   = nrefine;
-   _braid_StatusElt(status, gupper)    = gupper;
-   _braid_StatusElt(status, rfactor)   = 1;
-   _braid_StatusElt(status, r_space)   = 0;
+   _braid_StatusElt(status, t)          = tstart;
+   _braid_StatusElt(status, tnext)      = tstop;
+   _braid_StatusElt(status, idx)        = idx;
+   _braid_StatusElt(status, tol)        = tol;
+   _braid_StatusElt(status, niter)      = iter;
+   _braid_StatusElt(status, level)      = level;
+   _braid_StatusElt(status, nrefine)    = nrefine;
+   _braid_StatusElt(status, gupper)     = gupper;
+   _braid_StatusElt(status, tloc_upper) = tloc_upper;
+   _braid_StatusElt(status, tloc_lower) = tloc_lower;
+   _braid_StatusElt(status, rfactor)    = 1;
+   _braid_StatusElt(status, r_space)    = 0;
 
    return _braid_error_flag;
 }

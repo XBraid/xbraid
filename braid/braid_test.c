@@ -665,7 +665,7 @@ braid_TestResidual( braid_App              app,
    braid_AccessStatus      astatus = (braid_AccessStatus)status;
    braid_StepStatus        sstatus = (braid_StepStatus)status;
    
-   _braid_StepStatusInit(t, t+dt, 0, 1e-16, 0, 0, 0, 2, sstatus);
+   _braid_StepStatusInit(t, t+dt, 0, 1e-16, 0, 0, 0, 2, t+dt, t, sstatus);
    _braid_AccessStatusInit(t, 0, 0.0, 0, 0, 0, 2, 0, 1, -1, astatus);
 
    MPI_Comm_rank( comm_x, &myid_x );
