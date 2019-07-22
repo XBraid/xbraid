@@ -487,6 +487,7 @@ _braid_AdjointFeatureCheck(braid_Core core)
    braid_PtFcnSCoarsen  scoarsen  = _braid_CoreElt(core, scoarsen);
    braid_PtFcnSRefine   srefine   = _braid_CoreElt(core, srefine);
    braid_PtFcnTimeGrid  tgrid     = _braid_CoreElt(core, tgrid);
+   braid_PtFcnSync      sync      = _braid_CoreElt(core, sync);
    braid_Int            storage   = _braid_CoreElt(core, storage);  
    braid_Int            useshell  = _braid_CoreElt(core, useshell);
    braid_Int            trefine   = _braid_CoreElt(core, refine);
@@ -533,7 +534,12 @@ _braid_AdjointFeatureCheck(braid_Core core)
    {
       err_char = "Storage >= 1";
       err = 1;
-   } 
+   }
+   if ( sync != NULL )
+   {
+      err_char = "Sync";
+      err = 1;
+   }
     // r_space?
    if ( err )
    {
