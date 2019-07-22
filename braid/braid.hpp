@@ -215,6 +215,17 @@ class BraidSyncStatus
       void GetTUpperLower(braid_Real *t_upper,
                           braid_Real *t_lower)
       { braid_SyncStatusGetTUpperLower(sstatus, t_upper, t_lower); }
+      void GetNLevels(braid_Int *nlevels_ptr)   { braid_SyncStatusGetNLevels(sstatus, nlevels_ptr);}
+      void GetIter(braid_Int *iter_ptr)         { braid_SyncStatusGetIter(sstatus, iter_ptr); }
+      void GetLevel(braid_Int *level_ptr)       { braid_SyncStatusGetLevel(sstatus, level_ptr); }
+      void GetNRefine(braid_Int *nrefine_ptr)   { braid_SyncStatusGetNRefine(sstatus, nrefine_ptr); }
+      void GetNTPoints(braid_Int *ntpoints_ptr) { braid_SyncStatusGetNTPoints(sstatus, ntpoints_ptr); }
+      void GetDone(braid_Int *done_ptr)         { braid_SyncStatusGetDone(sstatus, done_ptr); }
+      void GetCallingFunction(braid_Int *callingfcn_ptr)
+      {
+         braid_SyncStatusGetCallingFunction(sstatus, callingfcn_ptr);
+      }
+
       // The braid_SyncStatus structure is deallocated inside of Braid
       // This class is just to make code consistently look object oriented
       ~BraidSyncStatus() { }
