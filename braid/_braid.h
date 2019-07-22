@@ -239,7 +239,6 @@ typedef struct _braid_Core_struct
    braid_Int              nrefine;          /**< number of refinements done */
    braid_Int              max_refinements;  /**< maximum number of refinements */
    braid_Int              tpoints_cutoff;   /**< refinements halt after the number of time steps exceed this value */
-   braid_Int              useSync;          /**< Enable calling the sync function */
 
    braid_Int              skip;             /**< boolean, controls skipping any work on first down-cycle */
 

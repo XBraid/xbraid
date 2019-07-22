@@ -1346,8 +1346,7 @@ braid_Int
 _braid_Sync(braid_Core        core,
             braid_SyncStatus  status)
 {
-   braid_Int useSync = _braid_CoreElt(core, useSync);
-   if(useSync == 0)
+   if ( _braid_CoreElt(core, sync) == NULL)
    {
       return _braid_error_flag;
    }

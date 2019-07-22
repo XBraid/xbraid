@@ -905,7 +905,6 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, gupper)          = ntime;
 
    _braid_CoreElt(core, refine)          = 0;  /* Time refinement off by default */
-   _braid_CoreElt(core, useSync)         = 0;  /* Do not use Sync by default */
    _braid_CoreElt(core, rfactors)        = NULL;
    _braid_CoreElt(core, r_space)         = 0;
    _braid_CoreElt(core, rstopped)        = -1;
@@ -1624,7 +1623,6 @@ braid_Int
 braid_SetSync(braid_Core      core,
               braid_PtFcnSync sync)
 {
-   _braid_CoreElt(core, useSync) = 1;
    _braid_CoreElt(core, sync) = sync;
 
    return _braid_error_flag;
