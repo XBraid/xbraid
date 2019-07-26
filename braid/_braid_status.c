@@ -42,6 +42,9 @@
 #define ACCESSOR_FUNCTION_GET2(stype,param,vtype1,vtype2) \
    braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2) \
    {return braid_StatusGet##param((braid_Status)s, v1, v2);}
+#define ACCESSOR_FUNCTION_GET3(stype,param,vtype1,vtype2,vtype3) \
+   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2, braid_##vtype3 *v3) \
+   {return braid_StatusGet##param((braid_Status)s, v1, v2, v3);}
 #define ACCESSOR_FUNCTION_GET4(stype,param,vtype1,vtype2,vtype3,vtype4) \
    braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2, braid_##vtype3 *v3, braid_##vtype4 *v4) \
    {return braid_StatusGet##param((braid_Status)s, v1, v2, v3, v4);}
@@ -51,9 +54,6 @@
 #define ACCESSOR_FUNCTION_SET1(stype,param,vtype1) \
    braid_Int braid_##stype##StatusSet##param(braid_##stype##Status s, braid_##vtype1 v1) \
    {return braid_StatusSet##param((braid_Status)s, v1);}
-#define ACCESSOR_FUNCTION_GETRANGE(stype,param,vtype1,vtype2,vtype3) \
-   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 v2, braid_##vtype3 v3) \
-   {return braid_StatusGet##param((braid_Status)s, v1, v2, v3);}
 
 braid_Int
 _braid_StatusDestroy(braid_Status status)
@@ -153,15 +153,16 @@ braid_StatusGetDone(braid_Status status,
 braid_Int
 braid_StatusGetTUpperLower(braid_Status status,
                            braid_Real  *t_upper,
-                           braid_Real  *t_lower)
+                           braid_Real  *t_lower,
+                           braid_Int   *level_ptr
+                           )
 {
    _braid_Grid **grids = _braid_StatusElt(status, grids);
-   braid_Int iupper, ilower, level;
+   braid_Int iupper, ilower;
    braid_Real *ta;
-   level = _braid_StatusElt(status, level);
-   iupper = _braid_GridElt(grids[level], iupper);
-   ilower = _braid_GridElt(grids[level], ilower);
-   ta = _braid_GridElt(grids[level], ta);
+   iupper = _braid_GridElt(grids[*level_ptr], iupper);
+   ilower = _braid_GridElt(grids[*level_ptr], ilower);
+   ta = _braid_GridElt(grids[*level_ptr], ta);
 
    *t_upper = ta[iupper-ilower];
    *t_lower = ta[0];
@@ -171,33 +172,34 @@ braid_StatusGetTUpperLower(braid_Status status,
 braid_Int
 braid_StatusGetTIUL(braid_Status status,
                     braid_Int   *iloc_upper,
-                    braid_Int   *iloc_lower)
+                    braid_Int   *iloc_lower,
+                    braid_Int   *level_ptr
+                    )
 {
    _braid_Grid **grids = _braid_StatusElt(status, grids);
-   braid_Int level = _braid_StatusElt(status, level);
 
-   *iloc_upper = _braid_GridElt(grids[level], iupper);
-   *iloc_lower = _braid_GridElt(grids[level], ilower);
+   *iloc_upper = _braid_GridElt(grids[*level_ptr], iupper);
+   *iloc_lower = _braid_GridElt(grids[*level_ptr], ilower);
    return _braid_error_flag;
 }
 
 braid_Int
 braid_StatusGetTimeValues(braid_Status status,
                           braid_Real **tvalues_ptr,
-                          braid_Int    i_upper,
-                          braid_Int    i_lower
+                          braid_Int   *i_upper,
+                          braid_Int   *i_lower,
+                          braid_Int   *level_ptr
                           )
 {
    /* We assume user has allocated enough space in tvalues_ptr */
-   braid_Int iloc_lower, cpy_lower, cpy_size, level;
+   braid_Int iloc_lower, cpy_lower, cpy_size;
    braid_Real *ta;
    _braid_Grid **grids = _braid_StatusElt(status, grids);
-   level = _braid_StatusElt(status, level);
-   iloc_lower = _braid_GridElt(grids[level], ilower);
-   ta = _braid_GridElt(grids[level], ta);
+   iloc_lower = _braid_GridElt(grids[*level_ptr], ilower);
+   ta = _braid_GridElt(grids[*level_ptr], ta);
 
-   cpy_lower = i_lower-iloc_lower;
-   cpy_size = i_upper-i_lower+1;
+   cpy_lower = (*i_lower)-iloc_lower;
+   cpy_size = (*i_upper)-(*i_lower)+1;
 
    memcpy(*tvalues_ptr+cpy_lower, ta+cpy_lower, cpy_size*sizeof(braid_Real));
    return _braid_error_flag;
@@ -458,9 +460,9 @@ _braid_SyncStatusInit(braid_Int            iter,
    _braid_StatusElt(status, calling_function) = calling_function;
    return _braid_error_flag;
 }
-ACCESSOR_FUNCTION_GET2(Sync, TUpperLower,      Real, Real)
-ACCESSOR_FUNCTION_GET2(Sync, TIUL,             Int, Int)
-ACCESSOR_FUNCTION_GETRANGE(Sync, TimeValues,   Real*, Int, Int)
+ACCESSOR_FUNCTION_GET3(Sync, TUpperLower,      Real, Real, Int)
+ACCESSOR_FUNCTION_GET3(Sync, TIUL,             Int, Int, Int)
+ACCESSOR_FUNCTION_GET4(Sync, TimeValues,       Real*, Int, Int, Int)
 ACCESSOR_FUNCTION_GET1(Sync, Iter,             Int)
 ACCESSOR_FUNCTION_GET1(Sync, Level,            Int)
 ACCESSOR_FUNCTION_GET1(Sync, NLevels,          Int)
@@ -546,7 +548,7 @@ ACCESSOR_FUNCTION_GET1(Step, NLevels,       Int)
 ACCESSOR_FUNCTION_GET1(Step, NRefine,       Int)
 ACCESSOR_FUNCTION_GET1(Step, NTPoints,      Int)
 ACCESSOR_FUNCTION_GET1(Step, Tstop,         Real)
-ACCESSOR_FUNCTION_GET2(Step, TUpperLower,   Real, Real)
+ACCESSOR_FUNCTION_GET3(Step, TUpperLower,   Real, Real, Int)
 ACCESSOR_FUNCTION_GET2(Step, TstartTstop,   Real, Real)
 ACCESSOR_FUNCTION_GET1(Step, Tol,           Real)
 ACCESSOR_FUNCTION_GET2(Step, RNorms,        Int,  Real)
