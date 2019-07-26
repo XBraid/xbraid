@@ -52,6 +52,8 @@ extern "C" {
   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2, braid_##vtype3 *v3, braid_##vtype4 *v4, braid_##vtype5 *v5);
 #define ACCESSOR_HEADER_SET1(stype,param,vtype1) \
   braid_Int braid_##stype##StatusSet##param(braid_##stype##Status s, braid_##vtype1 v1);
+#define ACCESSOR_HEADER_GETRANGE(stype,param,vtype1,vtype2,vtype3) \
+  braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 v2, braid_##vtype3 v3);
 
 /*----------------------------------------------------------------------------------
  * Define Status Structure. The `base' class is braid_Status, and all the other
@@ -221,11 +223,32 @@ braid_StatusGetDone(braid_Status status,                   /**< structure contai
  * Returns upper and lower time values on this processor. Two
  * values are returned.
  **/
-   braid_Int
-   braid_StatusGetTUpperLower(braid_Status status,         /**< structure containing current simulation info */
-                              braid_Real  *t_upper,        /**< output, the upper time value on this processor */
-                              braid_Real  *t_lower         /**< output, the lower time value on this processor */
-                              );
+braid_Int
+braid_StatusGetTUpperLower(braid_Status status,            /**< structure containing current simulation info */
+                           braid_Real  *t_upper,           /**< output, the upper time value on this processor */
+                           braid_Real  *t_lower            /**< output, the lower time value on this processor */
+                           );
+
+/**
+ * Returns upper and lower time values on this processor. Two
+ * values are returned.
+ **/
+braid_Int
+braid_StatusGetTIUL(braid_Status status,                   /**< structure containing current simulation info */
+                    braid_Int   *iloc_upper,               /**< output, the upper time point index on this processor */
+                    braid_Int   *iloc_lower                /**< output, the lower time point index on this processor */
+                    );
+
+/**
+ * Returns upper and lower time values on this processor. Two
+ * values are returned.
+ **/
+braid_Int
+braid_StatusGetTimeValues(braid_Status status,             /**< structure containing current simulation info */
+                          braid_Real **tvalues_ptr,        /**< output, time point values for the requested range of indices */
+                          braid_Int    i_upper,            /**< input, upper index of the desired time value range (inclusive) */
+                          braid_Int    i_lower             /**< input, lower index of the desired time value range (inclusive) */
+                          );
 
 /**
  * Return XBraid status for the current simulation. Four values are 
@@ -466,6 +489,8 @@ ACCESSOR_HEADER_GET1(Access, CallingFunction, Int)
  *--------------------------------------------------------------------------*/
 
 ACCESSOR_HEADER_GET2(Sync, TUpperLower,      Real, Real)
+ACCESSOR_HEADER_GET2(Sync, TIUL,             Int, Int)
+ACCESSOR_HEADER_GETRANGE(Sync, TimeValues,   Real*, Int, Int)
 ACCESSOR_HEADER_GET1(Sync, Iter,             Int)
 ACCESSOR_HEADER_GET1(Sync, Level,            Int)
 ACCESSOR_HEADER_GET1(Sync, NLevels,          Int)

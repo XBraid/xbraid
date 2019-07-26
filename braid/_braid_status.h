@@ -112,9 +112,7 @@ _braid_AccessStatusInit(braid_Real          t,                /**< current time 
  * Initialize a braid_SyncStatus structure
  */
 braid_Int
-_braid_SyncStatusInit(braid_Real          t_upper,          /**< largest time value on this processor*/
-                      braid_Real          t_lower,          /**< smallest time value on this processor*/
-                      braid_Int           iter,             /**< current iteration in XBraid*/
+_braid_SyncStatusInit(braid_Int           iter,             /**< current iteration in XBraid*/
                       braid_Int           level,            /**< current level in XBraid */
                       braid_Int           nrefine,          /**< number of refinements done */
                       braid_Int           gupper,           /**< global size of the fine grid */
@@ -151,8 +149,6 @@ _braid_StepStatusInit(braid_Real        tstart,      /**< current time value  */
                       braid_Int         level,       /**< current level in XBraid */
                       braid_Int         nrefine,     /**< number of refinements done */
                       braid_Int         gupper,      /**< global size of the fine grid */
-                      braid_Real        tloc_upper,  /**< local processor's maximum time value */
-                      braid_Real        tloc_lower,  /**< local processor's minimum time value */
                       braid_StepStatus  status       /**< structure to initialize */
                       );
 

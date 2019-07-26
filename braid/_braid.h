@@ -279,9 +279,6 @@ typedef struct _braid_Core_struct
    braid_Int     done;             /**< boolean describing whether XBraid has finished */
    braid_Int     wrapper_test;     /**< boolean describing whether this call is only a wrapper test */
    braid_Int     calling_function; /**< from which function are we accessing the vector */
-   /** SyncStatus properties */
-   braid_Real    tloc_upper;       /**< largest time value on the current processor */
-   braid_Real    tloc_lower;       /**< smallest time value on the current processor */
    /** CoarsenRefStatus properties*/
    braid_Real    f_tprior;         /**< time value to the left of tstart on fine grid */
    braid_Real    f_tstop;          /**< time value to the right of tstart  on fine grid */

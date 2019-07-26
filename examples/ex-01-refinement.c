@@ -270,16 +270,6 @@ int
 my_Sync(braid_App app,
         braid_SyncStatus status)
 {
-   braid_Real tupper, tlower;
-   braid_Int iter, level, nlevels, nrefine, ntpoints, done, calling;
-   braid_SyncStatusGetTUpperLower(status, &tupper, &tlower);
-   braid_SyncStatusGetIter(status, &iter);
-   braid_SyncStatusGetLevel(status, &level);
-   braid_SyncStatusGetNLevels(status, &nlevels);
-   braid_SyncStatusGetNRefine(status, &nrefine);
-   braid_SyncStatusGetNTPoints(status, &ntpoints);
-   braid_SyncStatusGetDone(status, &done);
-   braid_SyncStatusGetCallingFunction(status, &calling);
    app->num_syncs += 1;
    return 0;
 }
