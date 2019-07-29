@@ -270,8 +270,12 @@ int
 my_Sync(braid_App app,
         braid_SyncStatus status)
 {
-   app->num_syncs += 1;
-   return 0;
+   braid_Int calling_fcn;
+   braid_SyncStatusGetCallingFunction(status, &calling_fcn);
+
+   if(calling_fcn == braid_ASCaller_FRefine_AfterInitHier)
+      app->num_syncs += 1;
+    return 0;
 }
 
 /*--------------------------------------------------------------------------
@@ -383,8 +387,7 @@ int main (int argc, char *argv[])
    (app->limit_rfactor)   = limit_rfactor;
    (app->refine) = refine;
    (app->tol) = tol;
-   if (sync)
-      (app->num_syncs) = 0;
+   (app->num_syncs) = 0;
 
    /* initialize XBraid and set options */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,

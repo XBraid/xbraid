@@ -583,6 +583,8 @@ ACCESSOR_HEADER_GET1(Objective, Tol,           Real)
 /** When CallingFunction equals 4, Braid is inside FRefine after the new finest
  * level has been initialized */
 #define braid_ASCaller_FRefine_AfterInitHier   4
+/** When CallingFunction equals 5, Braid is at the top of the cycle */
+#define braid_ASCaller_Drive_TopCycle   5
 
 /** @}*/
 
