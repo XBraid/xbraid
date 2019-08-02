@@ -31,6 +31,7 @@
 #include "_braid_tape.h"
 #include "_util.h"
 #include "_braid_base.h"
+#include "_braid_status.h"
 
 #ifndef DEBUG
 #define DEBUG 0
@@ -460,7 +461,9 @@ braid_Drive(braid_Core  core)
    braid_Int            obj_only        = _braid_CoreElt(core, obj_only);
    braid_Int            adjoint         = _braid_CoreElt(core, adjoint);
    braid_Int            seq_soln        = _braid_CoreElt(core, seq_soln);
-
+   braid_Int            nrefine         = _braid_CoreElt(core, nrefine);
+   braid_Int            gupper          = _braid_CoreElt(core, gupper);
+   braid_SyncStatus     sstatus         = (braid_SyncStatus)core;
 
    braid_Int     *nrels, nrel0;
    braid_Int      nlevels;
@@ -474,6 +477,7 @@ braid_Drive(braid_Core  core)
    _braid_CycleState  cycle;
    braid_Int          iter, level, done, refined;
 
+
    /* Check for non-supported adjoint features */
    if (adjoint)
    {
@@ -484,8 +488,7 @@ braid_Drive(braid_Core  core)
    { 
       if (!warm_restart && print_level > 0) 
       {
-         _braid_printf("\n  Braid: Begin simulation, %d time steps\n",
-                    _braid_CoreElt(core, gupper));
+         _braid_printf("\n  Braid: Begin simulation, %d time steps\n", gupper);
       }
       if ( adjoint && print_level > 0 )
       {
@@ -643,6 +646,9 @@ braid_Drive(braid_Core  core)
          }
          else
          {
+            _braid_SyncStatusInit(iter, level, nrefine, gupper, done,
+                                  braid_ASCaller_Drive_TopCycle, sstatus);
+            _braid_Sync(core, sstatus);
 
             // Output the solution at the end of each cycle
             // Copy the rfactors because the call to FAccess will modify them
