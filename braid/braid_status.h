@@ -173,6 +173,15 @@ braid_StatusGetLevel(braid_Status status,                  /**< structure contai
                      );
 
 /**
+ * Return the lower and upper index for this process from the Status structure.
+ **/
+braid_Int
+braid_StatusGetILowerUpper(braid_Status status,                  /**< structure containing current simulation info */
+                           braid_Int   *ilower_ptr,              /**< output, lower index */
+                           braid_Int   *iupper_ptr               /**< output, upper index */
+   );
+
+/**
  * Return the total number of XBraid levels from the Status structure.
  **/
 braid_Int
@@ -452,6 +461,7 @@ ACCESSOR_HEADER_GET1(Access, T,               Real)
 ACCESSOR_HEADER_GET1(Access, TIndex,          Int)
 ACCESSOR_HEADER_GET1(Access, Iter,            Int)
 ACCESSOR_HEADER_GET1(Access, Level,           Int)
+ACCESSOR_HEADER_GET2(Access, ILowerUpper,   Int, Int)
 ACCESSOR_HEADER_GET1(Access, NLevels,         Int)
 ACCESSOR_HEADER_GET1(Access, NRefine,         Int)
 ACCESSOR_HEADER_GET1(Access, NTPoints,        Int)

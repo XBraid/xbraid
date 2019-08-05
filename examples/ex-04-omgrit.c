@@ -61,6 +61,9 @@ typedef struct _braid_App_struct
    double   gamma;       /* Relaxation parameter for objective function */
    int      ntime;       /* Total number of time-steps (starting at time 0) */
 
+   int      ilower;      /* Lower index for my proc */
+   int      iupper;      /* Upper index for my proc */
+   int      npoints;     /* Number of time points on my proc */
    double **w;           /* Adjoint vectors at each time point on my proc */
 
 } my_App;
@@ -352,6 +355,9 @@ my_TriSolve(braid_App       app,
    /* no refinement */
    braid_TriStatusSetRFactor(status, 1);
 
+   /* Destroy temporary vectors */
+   vec_destroy(utmp);
+
    return 0;
 }   
 
@@ -370,6 +376,8 @@ my_Init(braid_App     app,
    u = (my_Vector *) malloc(sizeof(my_Vector));
    vec_create(2, &(u->values));
 
+//   u->values[0] = 1.0;
+//   u->values[1] = 0.0;
    u->values[0] = ((double)braid_Rand())/braid_RAND_MAX;
    u->values[1] = ((double)braid_Rand())/braid_RAND_MAX;
 
@@ -449,36 +457,35 @@ my_SpatialNorm(braid_App     app,
 
 /*------------------------------------*/
 
-// ZTODO: Need to compute u from adjoint and it reqires communication
-
 int
 my_Access(braid_App          app,
           braid_Vector       u,
           braid_AccessStatus astatus)
 {
-   int   done, index;
+   int   done, index, ii;
 
    /* Print solution to file if simulation is over */
    braid_AccessStatusGetDone(astatus, &done);
 
    if (done)
    {
-      /* Allocate w array in app (ZTODO: This only works on one proc right now) */
+      braid_AccessStatusGetILowerUpper(astatus, &(app->ilower), &(app->iupper));
+      (app->npoints) = (app->iupper) - (app->ilower) + 1;
+
+      /* Allocate w array in app */
       if ((app->w) == NULL)
       {
-         int  ntpoints;
-         braid_AccessStatusGetNTPoints(astatus, &ntpoints);
-         ntpoints++;  /* ntpoints is really the gupper index */
-         (app->w) = (double **) calloc(ntpoints, sizeof(double *));
+         (app->w) = (double **) calloc((app->npoints), sizeof(double *));
       }
 
       braid_AccessStatusGetTIndex(astatus, &index);
-      if (app->w[index] != NULL)
+      ii = index - (app->ilower);
+      if (app->w[ii] != NULL)
       {
-         free(app->w[index]);
+         free(app->w[ii]);
       }
-      vec_create(2, &(app->w[index]));
-      vec_copy(2, (u->values), (app->w[index]));
+      vec_create(2, &(app->w[ii]));
+      vec_copy(2, (u->values), (app->w[ii]));
    }
 
 //   {
@@ -494,7 +501,6 @@ my_Access(braid_App          app,
 //      fflush(file);
 //      fclose(file);
 //   }
-
 
    return 0;
 }
@@ -713,39 +719,38 @@ main(int argc, char *argv[])
 
    if (access_level > 0)
    {
+      char  filename[255];
+      FILE *file;
+      int   i, index;
+
       /* Print adjoint w to file */
       {
-         char  filename[255];
-         FILE *file;
-         int   i;
-
          sprintf(filename, "%s.%03d", "ex-04.out.w", (app->myid));
          file = fopen(filename, "w");
-         for (i = 0; i < (app->ntime); i++)
+         for (i = 0; i < (app->npoints); i++)
          {
             double **w = (app->w);
 
-            fprintf(file, "%05d: % 1.14e, % 1.14e\n", (i+1), w[i][0], w[i][1]);
+            index = (app->ilower) + i + 1;
+            fprintf(file, "%05d: % 1.14e, % 1.14e\n", index, w[i][0], w[i][1]);
          }
          fflush(file);
          fclose(file);
       }
 
       /* Compute state u from adjoint w and print to file */
+      /* ZTODO: This requires communication to do correctly */
       {
-         char    filename[255];
-         FILE   *file;
-         int     i;
          double *u;
 
          sprintf(filename, "%s.%03d", "ex-04.out.u", (app->myid));
          file = fopen(filename, "w");
          vec_create(2, &u);
-         for (i = 0; i < (app->ntime); i++)
+         for (i = 0; i < (app->npoints); i++)
          {
             double **w = (app->w);
 
-            if ((i+1) < (app->ntime))
+            if ((i+1) < (app->npoints))
             {
                vec_copy(2, w[i+1], u);
                apply_PhiAdjoint(dt, u);
@@ -758,7 +763,8 @@ main(int argc, char *argv[])
             }
             apply_Uinv(dt, u);
 
-            fprintf(file, "%05d: % 1.14e, % 1.14e\n", (i+1), u[0], u[1]);
+            index = (app->ilower) + i + 1;
+            fprintf(file, "%05d: % 1.14e, % 1.14e\n", index, u[0], u[1]);
          }
          vec_destroy(u);
          fflush(file);
@@ -767,15 +773,12 @@ main(int argc, char *argv[])
 
       /* Compute control v from adjoint w and print to file */
       {
-         char    filename[255];
-         FILE   *file;
-         int     i;
          double *v;
 
          sprintf(filename, "%s.%03d", "ex-04.out.v", (app->myid));
          file = fopen(filename, "w");
          vec_create(2, &v);
-         for (i = 0; i < (app->ntime); i++)
+         for (i = 0; i < (app->npoints); i++)
          {
             double **w = (app->w);
 
@@ -783,12 +786,20 @@ main(int argc, char *argv[])
             vec_scale(1, -1.0, v);
             apply_Vinv(dt, (app->gamma), v);
 
-            fprintf(file, "%05d: % 1.14e\n", (i+1), v[0]);
+            index = (app->ilower) + i + 1;
+            fprintf(file, "%05d: % 1.14e\n", index, v[0]);
          }
          vec_destroy(v);
          fflush(file);
          fclose(file);
+
+         for (i = 0; i < (app->npoints); i++)
+         {
+            free(app->w[i]);
+         }
+         free(app->w);
       }
+
    }
 
    free(app);

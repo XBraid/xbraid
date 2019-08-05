@@ -145,10 +145,9 @@ _braid_TriInterp(braid_Core   core,
    braid_Int            ilower  = _braid_GridElt(grids[level], ilower);
    braid_Int            iupper  = _braid_GridElt(grids[level], iupper);
    braid_BaseVector    *va      = _braid_GridElt(grids[level], va);
-   braid_BaseVector    *fa      = _braid_GridElt(grids[level], fa);
 
    braid_Real           rnorm;
-   braid_Int            f_level, f_ilower, f_iupper, f_cfactor, f_i;
+   braid_Int            f_level, f_cfactor, f_i;
    braid_BaseVector     f_u, f_e;
 
    braid_Int            i;
@@ -160,9 +159,34 @@ _braid_TriInterp(braid_Core   core,
    _braid_StatusElt(status, level) = level;
 
    f_level   = level-1;
+   f_cfactor = _braid_GridElt(grids[f_level], cfactor);
+
+#if 1
+{
+   /* Update u at C-points on the fine grid */
+   for (i = ilower; i <= iupper; i++)
+   {
+      e = va[i-ilower];
+      _braid_UGetVectorRef(core, level, i, &u);
+      _braid_BaseSum(core, app, 1.0, u, -1.0, e);          // e = u - u0
+      _braid_MapCoarseToFine(i, f_cfactor, f_i);
+      _braid_Refine(core, f_level, f_i, i, e, &f_e);       // f_e = P_space e
+      _braid_UGetVectorRef(core, f_level, f_i, &f_u);
+      _braid_BaseSum(core, app, 1.0, f_e, 1.0, f_u);       // f_u = f_u + f_e
+      _braid_USetVectorRef(core, f_level, f_i, f_u);
+      _braid_BaseFree(core, app, f_e);
+   }
+
+   /* Update u at F-points with F-relaxation */
+   _braid_TriFCFRelax(core, f_level, 0);
+}
+#else
+{
+   braid_BaseVector    *fa      = _braid_GridElt(grids[level], fa);
+   braid_Int            f_ilower, f_iupper;
+
    f_ilower  = _braid_GridElt(grids[f_level], ilower);
    f_iupper  = _braid_GridElt(grids[f_level], iupper);
-   f_cfactor = _braid_GridElt(grids[f_level], cfactor);
 
    /* Update u at C-points on the fine grid, store error corrections in fa temporarily */
    for (i = ilower; i <= iupper; i++)
@@ -225,6 +249,8 @@ _braid_TriInterp(braid_Core   core,
          _braid_BaseFree(core, app, f_e);
       }
    }
+}
+#endif
 
    /* Clean up */
    _braid_GridClean(core, grids[level]);

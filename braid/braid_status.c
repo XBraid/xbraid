@@ -105,6 +105,18 @@ braid_StatusGetLevel(braid_Status status,
 }
 
 braid_Int
+braid_StatusGetILowerUpper(braid_Status status,
+                           braid_Int   *ilower_ptr,
+                           braid_Int   *iupper_ptr
+                           )
+{
+   _braid_Grid  **grids = _braid_StatusElt(status, grids);
+   *ilower_ptr = _braid_GridElt(grids[0], ilower);
+   *iupper_ptr = _braid_GridElt(grids[0], iupper);
+   return _braid_error_flag;
+}
+
+braid_Int
 braid_StatusGetNLevels(braid_Status status,
                        braid_Int   *nlevels_ptr
                        )
@@ -387,6 +399,7 @@ ACCESSOR_FUNCTION_GET1(Access, T,               Real)
 ACCESSOR_FUNCTION_GET1(Access, TIndex,          Int)
 ACCESSOR_FUNCTION_GET1(Access, Iter,            Int)
 ACCESSOR_FUNCTION_GET1(Access, Level,           Int)
+ACCESSOR_FUNCTION_GET2(Access, ILowerUpper,     Int, Int)
 ACCESSOR_FUNCTION_GET1(Access, NLevels,         Int)
 ACCESSOR_FUNCTION_GET1(Access, NRefine,         Int)
 ACCESSOR_FUNCTION_GET1(Access, NTPoints,        Int)

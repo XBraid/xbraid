@@ -109,6 +109,12 @@ _braid_TriFCFRelax(braid_Core  core,
 
    braid_Int      nu, i;
 
+   if (ilower > iupper)
+   {
+      /* No data for this process on this level */
+      return _braid_error_flag;
+   }
+
    if (nrelax < 0)
    {
       /* use preset nrelax values */
@@ -134,7 +140,7 @@ _braid_TriFCFRelax(braid_Core  core,
       {
          _braid_TriSolve(core, level, ilower);
       }
-      if ( _braid_IsFPoint(iupper, cfactor) )
+      if ( (iupper > ilower) && _braid_IsFPoint(iupper, cfactor) )
       {
          _braid_TriSolve(core, level, iupper);
       }
@@ -158,7 +164,7 @@ _braid_TriFCFRelax(braid_Core  core,
          {
             _braid_TriSolve(core, level, ilower);
          }
-         if ( _braid_IsCPoint(iupper, cfactor) )
+         if ( (iupper > ilower) && _braid_IsCPoint(iupper, cfactor) )
          {
             _braid_TriSolve(core, level, iupper);
          }

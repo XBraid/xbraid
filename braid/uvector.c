@@ -44,7 +44,7 @@ _braid_UGetIndex(braid_Core   core,
 
    uindex = -1;
    store_flag = -2;
-   if ((index >= ilower) && (index <= iupper))
+   if ((index >= ilower-1) && (index <= iupper+1))
    {
       if ( _braid_CoreElt(core, useshell) == 1)
       {

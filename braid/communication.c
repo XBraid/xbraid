@@ -187,18 +187,22 @@ _braid_TriCommInit(braid_Core     core,
    braid_Int          iupper  = _braid_GridElt(grids[level], iupper);
    braid_BufferStatus bstatus = (braid_BufferStatus)core;
 
-   braid_Int          nrequests;
+   braid_Int          nrequests = 0;
    MPI_Request       *requests;
    MPI_Status        *statuses;
    void             **buffers;
    braid_BaseVector   u;
    braid_Int          k, index, proc, size;
 
+   if (ilower > iupper)
+   {
+      /* No data for this process on this level */
+      return _braid_error_flag;
+   }
+
    requests = _braid_CTAlloc(MPI_Request, 4); /* upper bound */
    statuses = _braid_CTAlloc(MPI_Status,  4); /* upper bound */
    buffers  = _braid_CTAlloc(void *,      4); /* upper bound */
-
-   nrequests = 0;
 
    /* post receives */
    _braid_BufferStatusInit(1, 0, bstatus);
@@ -273,6 +277,12 @@ _braid_TriCommWait(braid_Core     core,
    braid_BaseVector   u;
    braid_Int          k, index, proc;
 
+   if (ilower > iupper)
+   {
+      /* No data for this process on this level */
+      return _braid_error_flag;
+   }
+
    MPI_Waitall(nrequests, requests, statuses);
 
    nrequests = 0;
@@ -295,6 +305,7 @@ _braid_TriCommWait(braid_Core     core,
             _braid_BaseFree(core, app, u);
          }
          _braid_BaseBufUnpack(core, app, buffers[nrequests], &u, bstatus);
+         _braid_USetVectorRef(core, level, index, u);
 
          nrequests++;
       }
