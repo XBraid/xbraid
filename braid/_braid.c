@@ -3529,7 +3529,7 @@ _braid_InitHierarchy(braid_Core    core,
       else
       {
          /* This is the coarsest level */
-         if ( (level > 0) || (!refined) )
+         if ( (level > 0) || (!refined) || (max_levels <= 1) )
          {
             /* If this is a true coarse level (it has a fine grid above it in
              * the current hierarchy) or it is a fine level that was not built
