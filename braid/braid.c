@@ -452,6 +452,7 @@ braid_Drive(braid_Core  core)
    braid_Int            ntime           = _braid_CoreElt(core, ntime);
    braid_Int            skip            = _braid_CoreElt(core, skip);
    braid_Int            max_levels      = _braid_CoreElt(core, max_levels);
+   braid_Int            incr_max_levels = _braid_CoreElt(core, incr_max_levels);
    braid_Int            warm_restart    = _braid_CoreElt(core, warm_restart);
    braid_Int            print_level     = _braid_CoreElt(core, print_level);
    braid_Int            access_level    = _braid_CoreElt(core, access_level);
@@ -574,7 +575,7 @@ braid_Drive(braid_Core  core)
    
    nlevels = _braid_CoreElt(core, nlevels);
    done  = 0;
-   if (max_levels <= 1)
+   if (max_levels <= 1 && incr_max_levels == 0)
    {
       /* Just do sequential time marching */
       done = 1;
