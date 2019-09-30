@@ -3213,6 +3213,15 @@ _braid_FRefine(braid_Core   core,
    /* Initialize new hierarchy */
    _braid_CoreElt(core, gupper)  = f_gupper;
    _braid_CoreElt(core, nrefine) += 1;
+
+   braid_Int incr_max_levels = _braid_CoreElt(core, incr_max_levels);
+   if(incr_max_levels == 1)
+   {
+      braid_Int new_max_levels = _braid_CoreElt(core, max_levels);
+      ++new_max_levels;
+      _braid_CoreElt(core, max_levels) = new_max_levels;
+   }
+
    /*braid_SetCFactor(core,  0, cfactor);*/ /* RDF HACKED TEST */
    _braid_InitHierarchy(core, f_grid, 1);
 

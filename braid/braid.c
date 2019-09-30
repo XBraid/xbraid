@@ -824,6 +824,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              nfmg_Vcyc       = 1;              /* Default num V-cycles at each fmg level is 1 */
    braid_Int              max_iter        = 100;            /* Default max_iter */
    braid_Int              max_levels      = 30;             /* Default max_levels */
+   braid_Int              incr_max_levels = 0;              /* Default increment max levels is false */
    braid_Int              min_coarse      = 2;              /* Default min_coarse */
    braid_Int              seq_soln        = 0;              /* Default initial guess is from user's Init() function */
    braid_Int              print_level     = 2;              /* Default print level */
@@ -880,6 +881,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, print_level)     = print_level;
    _braid_CoreElt(core, io_level)        = io_level;
    _braid_CoreElt(core, max_levels)      = 0; /* Set with SetMaxLevels() below */
+   _braid_CoreElt(core, incr_max_levels) = incr_max_levels;
    _braid_CoreElt(core, min_coarse)      = min_coarse;
    _braid_CoreElt(core, seq_soln)        = seq_soln;
    _braid_CoreElt(core, tol)             = tol;
@@ -1220,6 +1222,18 @@ braid_SetMaxLevels(braid_Core  core,
    _braid_CoreElt(core, nrels)    = nrels;
    _braid_CoreElt(core, cfactors) = cfactors;
    _braid_CoreElt(core, grids)    = grids;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetIncrMaxLevels(braid_Core  core,
+                       braid_Int   incr_max_levels)
+{
+   _braid_CoreElt(core, incr_max_levels) = incr_max_levels;
 
    return _braid_error_flag;
 }
