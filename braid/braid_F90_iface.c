@@ -74,6 +74,7 @@ typedef braid_Real     braid_F90_Real;
 #define braid_TakeF90_IntPtr(arg)        ((braid_Int *) arg)
 #define braid_TakeF90_Real(arg)          ((braid_Real) *arg)
 #define braid_TakeF90_RealPtr(arg)       ((braid_Real *) arg)
+#define braid_TakeF90_RealPtrPtr(arg)    ((braid_Real **) arg)
 #define braid_TakeF90_Obj(obj, arg)      ((obj) arg)
 #define braid_TakeF90_ObjDeref(obj, arg) ((obj) *arg)
 #define braid_TakeF90_ObjPtr(obj, arg)   ((obj *) arg)
@@ -152,6 +153,26 @@ braid_Access_F90_Iface(braid_App           app,              /**< user-defined _
    return 0;
 }
 
+#if (braid_Fortran_Sync == 1)
+
+/**
+ * braid_Sync
+ *
+ * Fortran interface, first we define the prototype for the user-defined function and then we
+ * provide the C-wrapper around the user-written Fortran function
+ * */
+void braid_F90_Name(braid_sync_f90, BRAID_SYNC_F90)(braid_F90_ObjPtr, braid_F90_ObjPtr);
+braid_Int
+braid_Sync_F90_Iface(braid_App         app,              /**< user-defined _braid_App structure */
+                     braid_SyncStatus  status            /**< can be querried for info like the current XBraid Iteration */
+                     )
+{
+  braid_F90_Name(braid_sync_f90, BRAID_SYNC_F90)( braid_PassF90_Obj(app),
+                                                  braid_PassF90_Obj(status));
+  return 0;
+}
+
+#endif
 
 /**
  * braid_Free
@@ -821,6 +842,124 @@ braid_F90_Name(braid_buffer_status_set_size_f90, BRAID_BUFFER_STATUS_SET_SIZE_F9
    return 0;
 }
 
+/* Wrap braid_SyncStatusGetTIUL( ) */
+braid_Int
+braid_F90_Name(braid_sync_status_get_tiul_f90, BRAID_SNYC_STATUS_GET_TIUL_F90)(
+                              braid_F90_ObjPtr  status,            /**< structure containing current simulation info */
+                              braid_F90_Int     *iloc_upper,       /**< output, upper time point index on this processor */
+                              braid_F90_Int     *iloc_lower,       /**< output, lower time point index on this processor */
+                              braid_F90_Int     *level_ptr         /**< input, level for the desired time values */
+                                                                                   )
+{
+  braid_SyncStatusGetTIUL(braid_TakeF90_Obj(braid_SyncStatus, status),
+                          braid_TakeF90_IntPtr(               iloc_upper),
+                          braid_TakeF90_IntPtr(               iloc_lower),
+                          braid_TakeF90_IntPtr(               level_ptr) );
+  return 0;
+}
+
+/* Wrap braid_SyncStatusGetTimeValues( ) */
+braid_Int
+braid_F90_Name(braid_sync_status_get_timevalues_f90, BRAID_SNYC_STATUS_GET_TIMEVALUES_F90)(
+                              braid_F90_ObjPtr  status,           /**< structure containing current simulation info */
+                              braid_F90_Real   **tvalues_ptr,     /**< output, time point values for the requested range of indices */
+                              braid_F90_Int     *i_upper,         /**< input, upper index of the desired time range (inclusive) */
+                              braid_F90_Int     *i_lower,         /**< input, lower index of the desired time range (inclusive) */
+                              braid_F90_Int     *level_ptr        /**< input, level for the desired time values */
+                                                                                          )
+{
+  braid_SyncStatusGetTimeValues(braid_TakeF90_Obj(braid_SyncStatus, status),
+                                braid_TakeF90_RealPtrPtr(           tvalues_ptr),
+                                braid_TakeF90_IntPtr(               i_upper),
+                                braid_TakeF90_IntPtr(               i_lower),
+                                braid_TakeF90_IntPtr(               level_ptr) );
+  return 0;
+}
+
+/* Wrap braid_SyncStatusGetIter( ) */
+braid_Int
+braid_F90_Name(braid_sync_status_get_iter_f90, BRAID_SNYC_STATUS_GET_ITER_F90)(
+                              braid_F90_ObjPtr  status,            /**< structure containing current simulation info */
+                              braid_F90_Int     *iter_ptr          /**< output, current iteration in XBraid */
+                                                                                   )
+{
+  braid_SyncStatusGetIter(braid_TakeF90_Obj(braid_SyncStatus, status),
+                          braid_TakeF90_IntPtr(               iter_ptr) );
+  return 0;
+}
+
+/* Wrap braid_SyncStatusGetLevel( ) */
+braid_Int
+braid_F90_Name(braid_sync_status_get_level_f90, BRAID_SNYC_STATUS_GET_LEVEL_F90)(
+                              braid_F90_ObjPtr  status,            /**< structure containing current simulation info */
+                              braid_F90_Int     *level_ptr          /**< output, level Sync is being called from */
+                                                                               )
+{
+  braid_SyncStatusGetLevel(braid_TakeF90_Obj(braid_SyncStatus, status),
+                           braid_TakeF90_IntPtr(               level_ptr) );
+  return 0;
+}
+
+/* Wrap braid_SyncStatusGetNLevels( ) */
+braid_Int
+braid_F90_Name(braid_sync_status_get_nlevels_f90, BRAID_SNYC_STATUS_GET_NLEVELS_F90)(
+                              braid_F90_ObjPtr  status,            /**< structure containing current simulation info */
+                              braid_F90_Int     *nlevels_ptr       /**< output, number of levels in XBraid */
+                                                                                     )
+{
+  braid_SyncStatusGetNLevels(braid_TakeF90_Obj(braid_SyncStatus, status),
+                             braid_TakeF90_IntPtr(               nlevels_ptr) );
+  return 0;
+}
+
+/* Wrap braid_SyncStatusGetNRefine( ) */
+braid_Int
+braid_F90_Name(braid_sync_status_get_nrefine_f90, BRAID_SNYC_STATUS_GET_NREFINE_F90)(
+                              braid_F90_ObjPtr  status,            /**< structure containing current simulation info */
+                              braid_F90_Int     *nrefine_ptr       /**< output, number of refinements done */
+                                                                                 )
+{
+  braid_SyncStatusGetNRefine(braid_TakeF90_Obj(braid_SyncStatus, status),
+                             braid_TakeF90_IntPtr(               nrefine_ptr) );
+  return 0;
+}
+
+/* Wrap braid_SyncStatusGetNTPoints( ) */
+braid_Int
+braid_F90_Name(braid_sync_status_get_ntpoints_f90, BRAID_SNYC_STATUS_GET_NTPOINTS_F90)(
+                              braid_F90_ObjPtr  status,            /**< structure containing current simulation info */
+                              braid_F90_Int     *ntpoints_ptr      /**< output, number of time points on the fine grid */
+                                                                                     )
+{
+  braid_SyncStatusGetNTPoints(braid_TakeF90_Obj(braid_SyncStatus, status),
+                              braid_TakeF90_IntPtr(               ntpoints_ptr) );
+  return 0;
+}
+
+/* Wrap braid_SyncStatusGetDone( ) */
+braid_Int
+braid_F90_Name(braid_sync_status_get_done_f90, BRAID_SNYC_STATUS_GET_DONE_F90)(
+                              braid_F90_ObjPtr  status,            /**< structure containing current simulation info */
+                              braid_F90_Int     *done_ptr          /**< output, =1 if XBraid has finished, else =0 */
+                                                                                       )
+{
+  braid_SyncStatusGetDone(braid_TakeF90_Obj(braid_SyncStatus, status),
+                          braid_TakeF90_IntPtr(               done_ptr) );
+  return 0;
+}
+
+/* Wrap braid_SyncStatusGetCallingFunction( ) */
+braid_Int
+braid_F90_Name(braid_sync_status_get_callingfunction_f90, BRAID_SNYC_STATUS_GET_CALLINGFUNCTION_F90)(
+                              braid_F90_ObjPtr  status,            /**< structure containing current simulation info */
+                              braid_F90_Int    *cfunction_ptr     /**< function number (0=FInterp, 1=FRestrict, 2=FRefine, 3=FAccess, 4=FRefine after refinement, 5=Drive Top of Cycle) */
+                                                                               )
+{
+  braid_SyncStatusGetCallingFunction(braid_TakeF90_Obj(braid_SyncStatus, status),
+                                     braid_TakeF90_IntPtr(               cfunction_ptr) );
+  return 0;
+}
+
 /*--------------------------------------------------------------------------
  * Wrap XBraid User Interface Functions
  *--------------------------------------------------------------------------*/
@@ -1246,7 +1385,20 @@ braid_F90_Name(braid_set_seq_soln_f90, BRAID_SET_SEQ_SOLN_F90)(
    return 0;
 }
 
+#if (braid_Fortran_Sync == 1)
 
+/* braid_SetSync( ) */
+braid_Int
+braid_F90_Name(braid_set_sync_f90, BRAID_SET_SYNC_F90)(
+                                                       braid_F90_ObjPtr   *core        /**< braid_Core (_braid_Core) struct*/
+                                                       )
+{
+  braid_SetSync(braid_TakeF90_ObjDeref(braid_Core,  core) ,
+                (braid_PtFcnSync) braid_F90_Name(braid_sync_f90,   BRAID_SYNC_F90) );
+  return 0;
+}
+
+#endif
 
 #endif
 

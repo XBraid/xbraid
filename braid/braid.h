@@ -66,6 +66,8 @@ extern "C" {
 #define braid_Fortran_Residual 1
 /** Turn on the optional user-defined time-grid function */ 
 #define braid_Fortran_TimeGrid 1
+/** Turn on the optional user-defined sync function */
+#define braid_Fortran_Sync 1
 
 /** @} */
 

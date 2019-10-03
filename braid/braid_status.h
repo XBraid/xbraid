@@ -250,7 +250,7 @@ braid_StatusGetTimeValues(braid_Status status,             /**< structure contai
                           braid_Real **tvalues_ptr,        /**< output, time point values for the requested range of indices */
                           braid_Int   *i_upper,            /**< input, upper index of the desired time value range (inclusive) */
                           braid_Int   *i_lower,            /**< input, lower index of the desired time value range (inclusive) */
-                          braid_Int   *level_ptr           /**< input, level for the desired indices */
+                          braid_Int   *level_ptr           /**< input, level for the desired time values */
                           );
 
 /**
@@ -285,7 +285,7 @@ braid_StatusGetWrapperTest(braid_Status status,            /**< structure contai
  **/
 braid_Int
 braid_StatusGetCallingFunction(braid_Status status,        /**< structure containing current simulation info */
-                               braid_Int   *cfunction_ptr  /**< output, function number (0=FInterp, 1=FRestrict, 2=FRefine, 3=FAccess) */
+                               braid_Int   *cfunction_ptr  /**< output, function number (0=FInterp, 1=FRestrict, 2=FRefine, 3=FAccess, 4=FRefine after refinement, 5=Drive Top of Cycle) */
                                );
 
 /**

@@ -77,6 +77,7 @@ module braid_types
       integer                       :: mydt
       integer                       :: ntime
       integer                       :: rank
+      integer                       :: numsyncs
    end type my_app
    
    ! Many Fortran compilers have a sizeof( ) function but its not part of the
@@ -421,6 +422,33 @@ subroutine braid_BufUnPack_F90(app, buffer, u_ptr, bstatus)
 
 end subroutine braid_BufUnPack_F90
 
+subroutine braid_Sync_F90(app, sstatus)
+
+   ! Braid types
+   use braid_types
+   implicit none
+   integer (kind=8) :: sstatus
+   type(my_app)     :: app
+
+   integer          :: iter, level, done, iupper, ilower, nrefine
+   integer          :: nlevel, ntpoints, cfunction
+
+   app%numsyncs = app%numsyncs + 1
+   call braid_sync_status_get_iter_f90(sstatus, iter)
+   call braid_sync_status_get_level_f90(sstatus, level)
+   call braid_sync_status_get_tiul_f90(sstatus, iupper, ilower, level)
+   call braid_sync_status_get_nrefine_f90(sstatus, nrefine)
+   call braid_sync_status_get_ntpoints_f90(sstatus, ntpoints)
+   call braid_sync_status_get_nlevels_f90(sstatus, nlevel)
+   call braid_sync_status_get_callingfunction_f90(sstatus, cfunction)
+   call braid_sync_status_get_done_f90(sstatus,done)
+
+   print *,'SYNC values: Iupper',iupper,'Ilower',ilower,'Level',level
+   print *,'nrefine',nrefine,'ntpoints',ntpoints,'nlevels',nlevel
+   print *,'cfuncton',cfunction,'done',done,'iter',iter,'num_syncs',app%numsyncs
+
+end subroutine braid_Sync_F90
+
 !--------------------------------------------------------------------------
 !   Main driver
 !--------------------------------------------------------------------------
@@ -445,7 +473,7 @@ program ex01_f90
    double precision t, tol, tstart, tstop
    integer ierr, rc, max_levels, nrelax, nrelax0, cfactor, cfactor0
    integer max_iter, fmg, wrapper_tests, print_help, i, numarg
-   integer min_coarse, print_level, access_level, nfmg_Vcyc, res
+   integer min_coarse, print_level, access_level, nfmg_Vcyc, res, sync
    integer mydt, ntime, rank
    character (len = 255) arg
    
@@ -466,6 +494,7 @@ program ex01_f90
    fmg           = 0
    nfmg_Vcyc     = 1
    res           = 0
+   sync          = 0
    mydt          = 0
    print_help    = 0
    
@@ -528,6 +557,9 @@ program ex01_f90
       else if (arg == '-res') then
          i = i+1; call getarg ( i, arg); i = i+1
          res = 1
+      else if (arg == '-sync') then
+         i = i+1; call getarg ( i, arg); i = i+1
+         sync = 1
       else if (arg == '-print_level') then
          i = i+1; call getarg ( i, arg); i = i+1
          read(arg,*) print_level
@@ -557,6 +589,7 @@ program ex01_f90
          print *, "  -fmg <nfmg_Vcyc>    : use FMG cycling, nfmg_Vcyc  V-cycles at each fmg level"
          print *, "  -res                : use my residual"
          print *, "                        must compile with correct option in braid.h "
+         print *, "  -sync               : use sync function"
          print *, "  -tg <mydt>          : use user-specified time grid as global fine time grid, options are"
          print *, "                        1 - uniform time grid"
          print *, "                        2 - nonuniform time grid, dt*0.5 for n = 1, ..., nt/2; dt*1.5 for n = nt/2+1, ..., nt"
@@ -587,6 +620,7 @@ program ex01_f90
       app%tstop     = tstart + ntime/2.0
       app%ntime     = ntime
       app%rank      = rank
+      app%numsyncs  = 0
 
       if (wrapper_tests == 1) then
          ! Call Braid Test Routines
@@ -623,7 +657,9 @@ program ex01_f90
          endif
          call braid_set_min_coarse_f90(braid_core, min_coarse)
          call braid_set_access_level_f90( braid_core, access_level)
-
+         if (sync > 0) then
+            call braid_set_sync_f90(braid_core)
+         endif
          ! Run simulation, and then clean up
          call braid_drive_f90(braid_core)
          call braid_destroy_f90(braid_core)
