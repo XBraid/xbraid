@@ -224,17 +224,6 @@ braid_StatusGetDone(braid_Status status,                   /**< structure contai
  * values are returned.
  **/
 braid_Int
-braid_StatusGetTUpperLower(braid_Status status,            /**< structure containing current simulation info */
-                           braid_Real  *t_upper,           /**< output, the upper time value on this processor */
-                           braid_Real  *t_lower,           /**< output, the lower time value on this processor */
-                           braid_Int   *level_ptr          /**< input, level for the desired time values  */
-                           );
-
-/**
- * Returns upper and lower time values on this processor. Two
- * values are returned.
- **/
-braid_Int
 braid_StatusGetTIUL(braid_Status status,                   /**< structure containing current simulation info */
                     braid_Int   *iloc_upper,               /**< output, the upper time point index on this processor */
                     braid_Int   *iloc_lower,               /**< output, the lower time point index on this processor */
@@ -491,7 +480,6 @@ ACCESSOR_HEADER_GET1(Access, CallingFunction, Int)
  * SyncStatus Prototypes: They just wrap the corresponding Status accessors
  *--------------------------------------------------------------------------*/
 
-ACCESSOR_HEADER_GET3(Sync, TUpperLower,      Real, Real, Int)
 ACCESSOR_HEADER_GET3(Sync, TIUL,             Int, Int, Int)
 ACCESSOR_HEADER_GET4(Sync, TimeValues,       Real*, Int, Int, Int)
 ACCESSOR_HEADER_GET1(Sync, Iter,             Int)
@@ -531,7 +519,6 @@ ACCESSOR_HEADER_GET1(Step, NLevels,       Int)
 ACCESSOR_HEADER_GET1(Step, NRefine,       Int)
 ACCESSOR_HEADER_GET1(Step, NTPoints,      Int)
 ACCESSOR_HEADER_GET1(Step, Tstop,         Real)
-ACCESSOR_HEADER_GET3(Step, TUpperLower,   Real, Real, Int)
 ACCESSOR_HEADER_GET2(Step, TstartTstop,   Real, Real)
 ACCESSOR_HEADER_GET1(Step, Tol,           Real)
 ACCESSOR_HEADER_GET2(Step, RNorms,        Int,  Real)

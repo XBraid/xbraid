@@ -212,10 +212,6 @@ class BraidSyncStatus
       {
          sstatus = _sstatus;
       }
-      void GetTUpperLower(braid_Real *t_upper,
-                          braid_Real *t_lower,
-                          braid_Int  *level_ptr)
-      { braid_SyncStatusGetTUpperLower(sstatus, t_upper, t_lower, level_ptr); }
       void GetTIUL(braid_Int *i_upper,
                    braid_Int *i_lower,
                    braid_Int *level_ptr)
