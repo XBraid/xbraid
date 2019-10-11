@@ -475,7 +475,6 @@ braid_Drive(braid_Core  core)
    _braid_CycleState  cycle;
    braid_Int          iter, level, done, refined;
 
-
    /* Check for non-supported adjoint features */
    if (adjoint)
    {
