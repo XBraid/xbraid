@@ -848,13 +848,13 @@ braid_F90_Name(braid_sync_status_get_tiul_f90, BRAID_SNYC_STATUS_GET_TIUL_F90)(
                               braid_F90_ObjPtr  status,            /**< structure containing current simulation info */
                               braid_F90_Int     *iloc_upper,       /**< output, upper time point index on this processor */
                               braid_F90_Int     *iloc_lower,       /**< output, lower time point index on this processor */
-                              braid_F90_Int     *level_ptr         /**< input, level for the desired time values */
+                              braid_F90_Int     *level             /**< input, level for the desired time values */
                                                                                    )
 {
   braid_SyncStatusGetTIUL(braid_TakeF90_Obj(braid_SyncStatus, status),
                           braid_TakeF90_IntPtr(               iloc_upper),
                           braid_TakeF90_IntPtr(               iloc_lower),
-                          braid_TakeF90_IntPtr(               level_ptr) );
+                          braid_TakeF90_Int(                  level) );
   return 0;
 }
 

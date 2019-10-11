@@ -214,8 +214,8 @@ class BraidSyncStatus
       }
       void GetTIUL(braid_Int *i_upper,
                    braid_Int *i_lower,
-                   braid_Int *level_ptr)
-      { braid_SyncStatusGetTIUL(sstatus, i_upper, i_lower, level_ptr); }
+                   braid_Int  level)
+      { braid_SyncStatusGetTIUL(sstatus, i_upper, i_lower, level); }
       void GetTimeValues(braid_Real **tvalues_ptr,
                          braid_Int   *i_upper,
                          braid_Int   *i_lower,

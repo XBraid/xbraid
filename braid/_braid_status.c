@@ -42,6 +42,9 @@
 #define ACCESSOR_FUNCTION_GET2(stype,param,vtype1,vtype2) \
    braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2) \
    {return braid_StatusGet##param((braid_Status)s, v1, v2);}
+#define ACCESSOR_FUNCTION_GET2_IN1(stype,param,vtype1,vtype2,vtype3) \
+   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2, braid_##vtype3 v3) \
+   {return braid_StatusGet##param((braid_Status)s, v1, v2, v3);}
 #define ACCESSOR_FUNCTION_GET3(stype,param,vtype1,vtype2,vtype3) \
    braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2, braid_##vtype3 *v3) \
    {return braid_StatusGet##param((braid_Status)s, v1, v2, v3);}
@@ -154,13 +157,13 @@ braid_Int
 braid_StatusGetTIUL(braid_Status status,
                     braid_Int   *iloc_upper,
                     braid_Int   *iloc_lower,
-                    braid_Int   *level_ptr
+                    braid_Int    level
                     )
 {
    _braid_Grid **grids = _braid_StatusElt(status, grids);
 
-   *iloc_upper = _braid_GridElt(grids[*level_ptr], iupper);
-   *iloc_lower = _braid_GridElt(grids[*level_ptr], ilower);
+   *iloc_upper = _braid_GridElt(grids[level], iupper);
+   *iloc_lower = _braid_GridElt(grids[level], ilower);
    return _braid_error_flag;
 }
 
@@ -441,7 +444,7 @@ _braid_SyncStatusInit(braid_Int            iter,
    _braid_StatusElt(status, calling_function) = calling_function;
    return _braid_error_flag;
 }
-ACCESSOR_FUNCTION_GET3(Sync, TIUL,             Int, Int, Int)
+ACCESSOR_FUNCTION_GET2_IN1(Sync, TIUL,         Int, Int, Int)
 ACCESSOR_FUNCTION_GET4(Sync, TimeValues,       Real*, Int, Int, Int)
 ACCESSOR_FUNCTION_GET1(Sync, Iter,             Int)
 ACCESSOR_FUNCTION_GET1(Sync, Level,            Int)

@@ -46,6 +46,8 @@ extern "C" {
   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1);
 #define ACCESSOR_HEADER_GET2(stype,param,vtype1,vtype2) \
   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2);
+#define ACCESSOR_HEADER_GET2_IN1(stype,param,vtype1,vtype2,vtype3) \
+   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2, braid_##vtype3 v3);
 #define ACCESSOR_HEADER_GET3(stype,param,vtype1,vtype2,vtype3) \
   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2, braid_##vtype3 *v3);
 #define ACCESSOR_HEADER_GET4(stype,param,vtype1,vtype2,vtype3,vtype4) \
@@ -228,7 +230,7 @@ braid_Int
 braid_StatusGetTIUL(braid_Status status,                   /**< structure containing current simulation info */
                     braid_Int   *iloc_upper,               /**< output, the upper time point index on this processor */
                     braid_Int   *iloc_lower,               /**< output, the lower time point index on this processor */
-                    braid_Int   *level_ptr                 /**< input, level for the desired indices */
+                    braid_Int    level                     /**< input, level for the desired indices */
                     );
 
 /**
@@ -488,7 +490,7 @@ ACCESSOR_HEADER_GET1(Access, CallingFunction, Int)
  * SyncStatus Prototypes: They just wrap the corresponding Status accessors
  *--------------------------------------------------------------------------*/
 
-ACCESSOR_HEADER_GET3(Sync, TIUL,             Int, Int, Int)
+ACCESSOR_HEADER_GET2_IN1(Sync, TIUL,         Int, Int, Int)
 ACCESSOR_HEADER_GET4(Sync, TimeValues,       Real*, Int, Int, Int)
 ACCESSOR_HEADER_GET1(Sync, Iter,             Int)
 ACCESSOR_HEADER_GET1(Sync, Level,            Int)
