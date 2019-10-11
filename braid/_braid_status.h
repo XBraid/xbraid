@@ -117,7 +117,7 @@ _braid_SyncStatusInit(braid_Int           iter,             /**< current iterati
                       braid_Int           nrefine,          /**< number of refinements done */
                       braid_Int           gupper,           /**< global size of the fine grid */
                       braid_Int           done,             /**< boolean describing whether XBraid has finished */
-                      braid_Int           calling_function, /**< from which function are we accessing the vector */
+                      braid_Int           calling_function, /**< from which function are we accessing braid */
                       braid_SyncStatus    status            /**< structure to initialize */
                       );
 
