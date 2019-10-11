@@ -217,10 +217,10 @@ class BraidSyncStatus
                    braid_Int  level)
       { braid_SyncStatusGetTIUL(sstatus, i_upper, i_lower, level); }
       void GetTimeValues(braid_Real **tvalues_ptr,
-                         braid_Int   *i_upper,
-                         braid_Int   *i_lower,
-                         braid_Int   *level_ptr)
-      { braid_SyncStatusGetTimeValues(sstatus, tvalues_ptr, i_upper, i_lower, level_ptr); }
+                         braid_Int    i_upper,
+                         braid_Int    i_lower,
+                         braid_Int    level)
+      { braid_SyncStatusGetTimeValues(sstatus, tvalues_ptr, i_upper, i_lower, level); }
       void GetNLevels(braid_Int *nlevels_ptr)   { braid_SyncStatusGetNLevels(sstatus, nlevels_ptr);}
       void GetIter(braid_Int *iter_ptr)         { braid_SyncStatusGetIter(sstatus, iter_ptr); }
       void GetLevel(braid_Int *level_ptr)       { braid_SyncStatusGetLevel(sstatus, level_ptr); }

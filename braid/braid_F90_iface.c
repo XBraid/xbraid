@@ -865,14 +865,14 @@ braid_F90_Name(braid_sync_status_get_timevalues_f90, BRAID_SNYC_STATUS_GET_TIMEV
                               braid_F90_Real   **tvalues_ptr,     /**< output, time point values for the requested range of indices */
                               braid_F90_Int     *i_upper,         /**< input, upper index of the desired time range (inclusive) */
                               braid_F90_Int     *i_lower,         /**< input, lower index of the desired time range (inclusive) */
-                              braid_F90_Int     *level_ptr        /**< input, level for the desired time values */
+                              braid_F90_Int     *level            /**< input, level for the desired time values */
                                                                                           )
 {
   braid_SyncStatusGetTimeValues(braid_TakeF90_Obj(braid_SyncStatus, status),
                                 braid_TakeF90_RealPtrPtr(           tvalues_ptr),
-                                braid_TakeF90_IntPtr(               i_upper),
-                                braid_TakeF90_IntPtr(               i_lower),
-                                braid_TakeF90_IntPtr(               level_ptr) );
+                                braid_TakeF90_Int(                  i_upper),
+                                braid_TakeF90_Int(                  i_lower),
+                                braid_TakeF90_Int(                  level) );
   return 0;
 }
 

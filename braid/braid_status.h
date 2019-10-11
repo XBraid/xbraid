@@ -44,6 +44,8 @@ extern "C" {
 /** Macros allowing for auto-generation of `inherited' StatusGet functions */
 #define ACCESSOR_HEADER_GET1(stype,param,vtype1) \
   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1);
+#define ACCESSOR_HEADER_GET1_IN3(stype,param,vtype1,vtype2,vtype3,vtype4) \
+   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 v2, braid_##vtype3 v3, braid_##vtype4 v4);
 #define ACCESSOR_HEADER_GET2(stype,param,vtype1,vtype2) \
   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2);
 #define ACCESSOR_HEADER_GET2_IN1(stype,param,vtype1,vtype2,vtype3) \
@@ -247,9 +249,9 @@ braid_StatusGetTIUL(braid_Status status,                   /**< structure contai
 braid_Int
 braid_StatusGetTimeValues(braid_Status status,             /**< structure containing current simulation info */
                           braid_Real **tvalues_ptr,        /**< output, time point values for the requested range of indices */
-                          braid_Int   *i_upper,            /**< input, upper index of the desired time value range (inclusive) */
-                          braid_Int   *i_lower,            /**< input, lower index of the desired time value range (inclusive) */
-                          braid_Int   *level_ptr           /**< input, level for the desired time values */
+                          braid_Int    i_upper,            /**< input, upper index of the desired time value range (inclusive) */
+                          braid_Int    i_lower,            /**< input, lower index of the desired time value range (inclusive) */
+                          braid_Int    level               /**< input, level for the desired time values */
                           );
 
 /**
@@ -491,7 +493,7 @@ ACCESSOR_HEADER_GET1(Access, CallingFunction, Int)
  *--------------------------------------------------------------------------*/
 
 ACCESSOR_HEADER_GET2_IN1(Sync, TIUL,         Int, Int, Int)
-ACCESSOR_HEADER_GET4(Sync, TimeValues,       Real*, Int, Int, Int)
+ACCESSOR_HEADER_GET1_IN3(Sync, TimeValues,   Real*, Int, Int, Int)
 ACCESSOR_HEADER_GET1(Sync, Iter,             Int)
 ACCESSOR_HEADER_GET1(Sync, Level,            Int)
 ACCESSOR_HEADER_GET1(Sync, NLevels,          Int)
