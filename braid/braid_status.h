@@ -220,8 +220,9 @@ braid_StatusGetDone(braid_Status status,                   /**< structure contai
                     );
 
 /**
- * Returns upper and lower time values on this processor. Two
- * values are returned.
+ * Returns upper and lower time point indices on this processor. Two
+ * values are returned. Requires the user to specify which level they
+ * want the time point indices from.
  **/
 braid_Int
 braid_StatusGetTIUL(braid_Status status,                   /**< structure containing current simulation info */
@@ -231,8 +232,15 @@ braid_StatusGetTIUL(braid_Status status,                   /**< structure contai
                     );
 
 /**
- * Returns upper and lower time values on this processor. Two
- * values are returned.
+ * Returns an array of time values corresponding to the given inputs.
+ * The inputs are the level you want the time values from, the upper
+ * time point index you want the value of, and the lower time point
+ * index you want the time value of. The output is then filled with
+ * all time values from the upper index to the lower index, inclusive.
+ *
+ * The caller is responsible for allocating and managing the memory
+ * for the array. Time values are filled in so that tvalues_ptr[0]
+ * corresponds to the lower time index.
  **/
 braid_Int
 braid_StatusGetTimeValues(braid_Status status,             /**< structure containing current simulation info */
