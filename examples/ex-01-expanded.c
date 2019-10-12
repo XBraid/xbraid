@@ -78,6 +78,7 @@ typedef struct _braid_App_struct
    int       mydt;
    int       ntime;
    int       rank;
+   int       num_syncs;
 
 } my_App;
 
@@ -355,6 +356,16 @@ my_BufUnpack(braid_App          app,
    return 0;
 }
 
+int my_Sync(braid_App        app,
+            braid_SyncStatus status)
+{
+   braid_Int calling_fcn;
+   braid_SyncStatusGetCallingFunction(status, &calling_fcn);
+   if(calling_fcn == braid_ASCaller_Drive_TopCycle)
+      app->num_syncs += 1;
+
+   return 0;
+}
 /*--------------------------------------------------------------------------
  * Main driver
  *--------------------------------------------------------------------------*/
@@ -376,6 +387,7 @@ int main (int argc, char *argv[])
    int           fmg        = 0;
    int           res        = 0;
    int           mydt       = 0;
+   int           sync       = 0;
 
    int           arg_index;
    int           rank;
@@ -408,6 +420,7 @@ int main (int argc, char *argv[])
             printf("  -mi  <max_iter>   : set max iterations\n");
             printf("  -fmg              : use FMG cycling\n");
             printf("  -res              : use my residual\n");
+            printf("  -sync             : enable calls to the sync function\n");
             printf("  -tg <mydt>        : use user-specified time grid as global fine time grid, options are\n");
             printf("                      1 - uniform time grid\n");
             printf("                      2 - nonuniform time grid, where dt*0.5 for n = 1, ..., nt/2; dt*1.5 for n = nt/2+1, ..., nt\n\n");
@@ -465,6 +478,11 @@ int main (int argc, char *argv[])
          arg_index++;
          mydt = atoi(argv[arg_index++]);
       }
+      else if( strcmp(argv[arg_index], "-sync") == 0 )
+      {
+         arg_index++;
+         sync = 1;
+      }
       else
       {
          arg_index++;
@@ -480,6 +498,7 @@ int main (int argc, char *argv[])
    (app->tstop)  = tstop;
    (app->ntime)  = ntime;
    (app->rank)   = rank;
+   (app->num_syncs) = 0;
 
    /* initialize XBraid and set options */
    braid_Init(comm, comm, tstart, tstop, ntime, app,
@@ -509,9 +528,16 @@ int main (int argc, char *argv[])
       init_TimeSteps(app);
       braid_SetTimeGrid(core, my_timegrid);
    }
+   if (sync)
+   {
+      braid_SetSync(core, my_Sync);
+   }
 
    /* Run simulation, and then clean up */
    braid_Drive(core);
+
+   if (sync && rank == 0)
+      printf("  num_syncs             = %d\n\n", (app->num_syncs));
 
    braid_Destroy(core);
    MPI_Finalize();

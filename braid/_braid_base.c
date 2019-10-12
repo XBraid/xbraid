@@ -325,6 +325,22 @@ _braid_BaseAccess(braid_Core          core,
    return _braid_error_flag;
 }
 
+braid_Int
+_braid_BaseSync(braid_Core          core,
+                braid_App           app,
+                braid_SyncStatus    status)
+{
+   braid_Int        myid          = _braid_CoreElt(core, myid);
+   braid_Int        verbose_adj   = _braid_CoreElt(core, verbose_adj);
+   if( verbose_adj ) printf("%d: SNYC\n", myid);
+
+   /* Do adjoint stuff here */
+
+   /* Call the user's sync function */
+   _braid_CoreFcn(core, sync)(app, status);
+
+   return _braid_error_flag;
+}
 
 braid_Int
 _braid_BaseBufSize(braid_Core          core,

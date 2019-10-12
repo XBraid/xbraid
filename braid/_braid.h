@@ -198,6 +198,7 @@ typedef struct _braid_Core_struct
    braid_PtFcnResidual    residual;         /**< (optional) compute residual */
    braid_PtFcnSCoarsen    scoarsen;         /**< (optional) return a spatially coarsened vector */
    braid_PtFcnSRefine     srefine;          /**< (optional) return a spatially refined vector */
+   braid_PtFcnSync        sync;             /**< (optional) user access to app once-per-processor */
    braid_PtFcnTimeGrid    tgrid;            /**< (optional) return time point values on level 0 */
 
    braid_Int              access_level;     /**< determines how often to call the user's access routine */ 
@@ -580,6 +581,16 @@ braid_Int
 _braid_AccessVector(braid_Core         core,
                     braid_AccessStatus status,
                     braid_BaseVector   u);
+
+/**
+ * Call user's sync function in order to give access to XBraid and the user's
+ * app. This is called once-per-processor at various points in XBraid in
+ * order to allow the user to perform any book-keeping operations. *status*
+ * provides state information about the current XBraid status and processor.
+ */
+braid_Int
+_braid_Sync(braid_Core       core,
+            braid_SyncStatus status);
 
 /**
  * Return an initial guess in *ustop_ptr* to use in the step routine for

@@ -487,6 +487,7 @@ _braid_AdjointFeatureCheck(braid_Core core)
    braid_PtFcnSCoarsen  scoarsen  = _braid_CoreElt(core, scoarsen);
    braid_PtFcnSRefine   srefine   = _braid_CoreElt(core, srefine);
    braid_PtFcnTimeGrid  tgrid     = _braid_CoreElt(core, tgrid);
+   braid_PtFcnSync      sync      = _braid_CoreElt(core, sync);
    braid_Int            storage   = _braid_CoreElt(core, storage);  
    braid_Int            useshell  = _braid_CoreElt(core, useshell);
    braid_Int            trefine   = _braid_CoreElt(core, refine);
@@ -533,7 +534,12 @@ _braid_AdjointFeatureCheck(braid_Core core)
    {
       err_char = "Storage >= 1";
       err = 1;
-   } 
+   }
+   if ( sync != NULL )
+   {
+      err_char = "Sync";
+      err = 1;
+   }
     // r_space?
    if ( err )
    {
@@ -1329,6 +1335,24 @@ _braid_AccessVector(braid_Core          core,
    braid_App      app    = _braid_CoreElt(core, app);
 
    _braid_BaseAccess(core, app,  u, status);
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_Sync(braid_Core        core,
+            braid_SyncStatus  status)
+{
+   if ( _braid_CoreElt(core, sync) == NULL)
+   {
+      return _braid_error_flag;
+   }
+   braid_App app = _braid_CoreElt(core, app);
+
+   _braid_BaseSync(core, app, status);
 
    return _braid_error_flag;
 }
@@ -2600,6 +2624,7 @@ _braid_FRefine(braid_Core   core,
    braid_Int          tpoints_cutoff  = _braid_CoreElt(core, tpoints_cutoff);
    braid_AccessStatus astatus         = (braid_AccessStatus)core;
    braid_BufferStatus bstatus         = (braid_BufferStatus)core;
+   braid_SyncStatus   sstatus         = (braid_SyncStatus)core;
    braid_Int          access_level    = _braid_CoreElt(core, access_level);
    _braid_Grid      **grids           = _braid_CoreElt(core, grids);
    braid_Int          ncpoints        = _braid_GridElt(grids[0], ncpoints);
@@ -3215,6 +3240,10 @@ _braid_FRefine(braid_Core   core,
    _braid_CoreElt(core, nrefine) += 1;
    /*braid_SetCFactor(core,  0, cfactor);*/ /* RDF HACKED TEST */
    _braid_InitHierarchy(core, f_grid, 1);
+   nrefine = _braid_CoreElt(core, nrefine);
+    _braid_SyncStatusInit(iter, 0, nrefine, f_gupper, 0,
+                         braid_ASCaller_FRefine_AfterInitHier, sstatus);
+   _braid_Sync(core, sstatus);
 
    /* Initialize communication */
    recv_msg = 0;
