@@ -47,6 +47,9 @@ import os
 #
 #    This should yield the same output as ex-01.c
 #
+# 3) For parallel runs, try
+#
+#    $$ mpirun -np K  python3 ex_01_run.py
 ## 
 
 ##
