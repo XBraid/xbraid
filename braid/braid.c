@@ -669,7 +669,10 @@ braid_Drive(braid_Core  core)
             }
 
             /* Finest grid - refine grid if desired */
+            _braid_CoreElt(core, calling_function) = braid_ASCaller_FRefine;
             _braid_FRefine(core, &refined);
+            _braid_CoreElt(core, calling_function) = -1; // unknown. Hope this will be set before used...
+
             nlevels = _braid_CoreElt(core, nlevels);
 
             // If we are done refining and doing a fixed point test,
@@ -905,6 +908,8 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, refine)          = 0;  /* Time refinement off by default */
    _braid_CoreElt(core, rfactors)        = NULL;
+   _braid_CoreElt(core, rdtvalues)       = NULL;
+   _braid_CoreElt(core, rdtalloc)        = NULL;
    _braid_CoreElt(core, r_space)         = 0;
    _braid_CoreElt(core, rstopped)        = -1;
    _braid_CoreElt(core, nrefine)         = 0;
@@ -1028,6 +1033,8 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
 
+      /* TODO: FREE THE rdt[i] values, if set! */
+      _braid_TFree(_braid_CoreElt(core, rdtvalues));
 
       /* Destroy the optimization structure */
       _braid_CoreElt(core, record) = 0;
@@ -1191,6 +1198,43 @@ braid_PrintStats(braid_Core  core)
    }
 
    return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_FlushConvHistory(braid_Core core,    
+                       const char* filename)
+{
+  FILE* braidlog;
+  int niter, ntime, nlevels;
+  int cfactor;
+
+  /* Get some general information from the core */
+  ntime = _braid_CoreElt(core, ntime); 
+  braid_GetNLevels(core, &nlevels);
+  _braid_GetCFactor(core, 0, &cfactor);
+
+  /* Get braid's residual norms for all iterations */
+  braid_GetNumIter(core, &niter);
+  double *norms = (double*) malloc(niter*sizeof(double));
+  braid_GetRNorms(core, &niter, norms);
+
+  /* Write to file */
+  braidlog = fopen(filename, "w");
+  fprintf(braidlog,"# ntime %d\n", (int) ntime);
+  fprintf(braidlog,"# cfactor %d\n", (int) cfactor);
+  fprintf(braidlog,"# nlevels %d\n", (int) nlevels);
+  for (int i=0; i<niter; i++)
+  {
+    fprintf(braidlog, "%d  %1.14e\n", i, norms[i]);
+  }
+  fprintf(braidlog, "\n\n\n");
+
+  free(norms);
+  
+  return _braid_error_flag;
 }
 
 /*--------------------------------------------------------------------------

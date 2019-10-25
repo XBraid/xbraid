@@ -313,6 +313,32 @@ braid_StatusSetRFactor(braid_Status status,
 }
 
 braid_Int
+braid_StatusSetDtValues(braid_Status status,
+                        braid_Real   rfactor,
+                       braid_Real*   rdtarray
+                       )
+{
+  /* Set refinement factor */
+  _braid_StatusElt(status, rfactor) = rfactor;
+
+  /* Store dt values */
+  if (rfactor > 1) {
+
+    braid_Real* rdtalloc = _braid_CTAlloc(braid_Real, rfactor-1);
+    for (int j = 0; j<rfactor-1; j++)
+    {
+      // printf("Braid: I'll place a point with dt=%f\n", rdtarray[j]);
+      rdtalloc[j] = rdtarray[j];
+    }
+    _braid_StatusElt(status, rdtalloc) = rdtalloc;
+
+  }
+
+  return _braid_error_flag;
+}
+
+
+braid_Int
 braid_StatusSetRSpace(braid_Status status,
                       braid_Real   r_space
                       )

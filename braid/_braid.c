@@ -1403,6 +1403,7 @@ _braid_Step(braid_Core         core,
    braid_Real         tol      = _braid_CoreElt(core, tol);
    braid_Int          iter     = _braid_CoreElt(core, niter);
    braid_Int         *rfactors = _braid_CoreElt(core, rfactors);
+   braid_Real       **rdtvalues = _braid_CoreElt(core, rdtvalues);
    _braid_Grid      **grids    = _braid_CoreElt(core, grids);
    braid_StepStatus   status   = (braid_StepStatus)core;
    braid_Int          nrefine  = _braid_CoreElt(core, nrefine);
@@ -1428,6 +1429,19 @@ _braid_Step(braid_Core         core,
       rfactors[ii] = _braid_StatusElt(status, rfactor);
       if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
             _braid_CoreElt(core, r_space) = 1;
+
+      /* If NOT called from within FRefine, store the user's dtvalues, if set */
+      braid_Int caller = _braid_CoreElt(core, calling_function);
+      if (caller != braid_ASCaller_FRefine)  
+      {
+        /* Copy pointer for user's local rdtvalues */
+        if (rdtvalues[ii] != NULL) {
+          _braid_TFree(rdtvalues[ii]);
+          // printf("BaseStep free's a rdtvalues pointer!\n");
+        }
+        rdtvalues[ii] = _braid_StatusElt(status, rdtalloc);
+        _braid_StatusElt(status, rdtalloc) = NULL;
+      }
    }     
    else
    {
@@ -1463,6 +1477,7 @@ _braid_Residual(braid_Core        core,
    braid_Real       tol      = _braid_CoreElt(core, tol);
    braid_Int        iter     = _braid_CoreElt(core, niter);
    braid_Int       *rfactors = _braid_CoreElt(core, rfactors);
+   braid_Real     **rdtvalues= _braid_CoreElt(core, rdtvalues);
    _braid_Grid    **grids    = _braid_CoreElt(core, grids);
    braid_StepStatus status   = (braid_StepStatus)core;
    braid_Int        nrefine  = _braid_CoreElt(core, nrefine);
@@ -1488,6 +1503,19 @@ _braid_Residual(braid_Core        core,
          /* TODO : Remove these two lines, which are now useless since core==status */
          if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
                _braid_CoreElt(core, r_space) = 1;
+
+        /* If NOT called from within FRefine, store the user's dtvalues, if set */
+        braid_Int caller = _braid_CoreElt(core, calling_function);
+        if (caller != braid_ASCaller_FRefine)  
+        {
+          /* Copy pointer for user's local rdtvalues */
+          if (rdtvalues[ii] != NULL) {
+            _braid_TFree(rdtvalues[ii]);
+            // printf("BaseStep free's a rdtvalues pointer!\n");
+          }
+          rdtvalues[ii] = _braid_StatusElt(status, rdtalloc);
+          _braid_StatusElt(status, rdtalloc) = NULL;
+        }
       }
    }
    else
@@ -2595,6 +2623,7 @@ _braid_FRefine(braid_Core   core,
    braid_Int          iter            = _braid_CoreElt(core, niter);
    braid_Int          refine          = _braid_CoreElt(core, refine);
    braid_Int         *rfactors        = _braid_CoreElt(core, rfactors);
+   braid_Real       **rdtvalues       = _braid_CoreElt(core, rdtvalues);
    braid_Int          nrefine         = _braid_CoreElt(core, nrefine);
    braid_Int          max_refinements = _braid_CoreElt(core, max_refinements);
    braid_Int          tpoints_cutoff  = _braid_CoreElt(core, tpoints_cutoff);
@@ -2627,6 +2656,7 @@ _braid_FRefine(braid_Core   core,
                    
    _braid_Grid      *f_grid;
    braid_Int         cfactor, rfactor, m, interval, flo, fhi, fi, ci, f_hi, f_ci;
+   braid_Real       *rdtvalue;
 
 #if DEBUG
    braid_Int  myproc;
@@ -2641,6 +2671,7 @@ _braid_FRefine(braid_Core   core,
       return _braid_error_flag;
    }
 
+
    gupper  = _braid_CoreElt(core, gupper);
    ilower  = _braid_GridElt(grids[0], ilower);
    iupper  = _braid_GridElt(grids[0], iupper);
@@ -2654,6 +2685,7 @@ _braid_FRefine(braid_Core   core,
       _braid_FRefineSpace(core, refined_ptr);
       return _braid_error_flag;
    }
+
 
    /*-----------------------------------------------------------------------*/
    /* 1. Compute f_gupper and the local interval extents for both the refined
@@ -2695,6 +2727,8 @@ _braid_FRefine(braid_Core   core,
    {
       _braid_CoreElt(core, r_space) = 0;
    }
+
+   printf("\nEnter FRefine\n");
       
    /* Compute r_ilower and r_iupper */
    MPI_Scan(&r_npoints, &r_iupper, 1, braid_MPI_INT, MPI_SUM, comm);
@@ -2726,14 +2760,24 @@ _braid_FRefine(braid_Core   core,
    {
       ii = i-ilower;
       rfactor = rfactors[ii+1];
+      rdtvalue = rdtvalues[ii+1];
 
       for (j = 1; j <= rfactor; j++)
       {
          if (j < rfactor)
          {
             r_ca[r_ii] = -1;
-            /* This works because we have ta[-1] */
-            r_ta[r_ii] = ta[ii] + (((braid_Real)j)/rfactor)*(ta[ii+1]-ta[ii]);
+            if (rdtvalue != NULL) 
+            {
+              r_ta[r_ii] = r_ta[r_ii-1] + rdtvalue[j-1];
+              printf("Braid: DT-refine in [%1.12f,?], set a point at r_ta[%d]=%1.12f, dt=%1.12f\n", ta[ii], r_ii, r_ta[r_ii], rdtvalue[j-1]);
+            } 
+            else 
+            {
+              /* This works because we have ta[-1] */
+              r_ta[r_ii] = ta[ii] + (((braid_Real)j)/rfactor)*(ta[ii+1]-ta[ii]);
+              // printf("Braid: normal refine at r_ta[%d]=%f\n", r_ii, r_ta[r_ii]);
+            }
          }
          else
          {
@@ -2743,6 +2787,12 @@ _braid_FRefine(braid_Core   core,
          }
 
          r_ii++;
+      }
+
+      /* Free rdtvalue */
+      if (rdtvalue != NULL) {
+        _braid_TFree(rdtvalues[ii+1]);
+        rdtvalues[ii+1] = NULL;
       }
    }
 
@@ -3190,6 +3240,7 @@ _braid_FRefine(braid_Core   core,
    {
       braid_Int  level, nlevels = _braid_CoreElt(core, nlevels);
       _braid_TFree(_braid_CoreElt(core, rfactors));
+      _braid_TFree(_braid_CoreElt(core, rdtvalues)); // TODO: Make sure, that rdtvalues[i] have been free'd!
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
 
       for (level = 0; level < nlevels; level++)
@@ -3295,6 +3346,7 @@ _braid_FRefine(braid_Core   core,
 
    *refined_ptr = 1;
 
+   printf("\nExit FRefine\n");
    return _braid_error_flag;
 }
 
@@ -3404,6 +3456,7 @@ _braid_InitHierarchy(braid_Core    core,
    braid_Int      nrdefault  = _braid_CoreElt(core, nrdefault);
    braid_Int      gupper     = _braid_CoreElt(core, gupper);
    braid_Int     *rfactors   = _braid_CoreElt(core, rfactors);
+   braid_Real   **rdtvalues  = _braid_CoreElt(core, rdtvalues);
    braid_Int      nlevels    = _braid_CoreElt(core, nlevels);
    _braid_Grid  **grids      = _braid_CoreElt(core, grids);
 
@@ -3460,6 +3513,13 @@ _braid_InitHierarchy(braid_Core    core,
       rfactors[i] = 1; 
    }
    _braid_CoreElt(core, rfactors) = rfactors;
+
+   /* Allocate array of refiment dt values */
+   rdtvalues = _braid_CTAlloc(braid_Real*, iupper-ilower+2); /* Ensures non-NULL (TODO: +2 needed? */
+   for(i = 0; i < iupper-ilower+2; i++) {
+     rdtvalues[i] = NULL;
+   }
+   _braid_CoreElt(core, rdtvalues) = rdtvalues;
 
    /* Set up nrels array */
    for (level = 0; level < max_levels; level++)

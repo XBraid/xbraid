@@ -381,6 +381,18 @@ braid_StatusSetRFactor(braid_Status status,                /**< structure contai
                        braid_Real   rfactor                /**< input, user-determined desired rfactor */
                        );
 
+
+/**
+ * Set time step sizes for refining this interval.
+ **/
+braid_Int
+braid_StatusSetDtValues(braid_Status status,                /**< structure containing current simulation info */
+                       braid_Real   rfactor,                /**< input, number of subintervals */
+                       braid_Real*   dtarray                /**< input, array of dt values for refinement */
+                       );
+
+
+
 /**
  * Set the r_space flag. When set = 1, spatial coarsening will be called,
  * for all local time points, following the  completion of the current
