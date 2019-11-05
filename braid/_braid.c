@@ -2728,7 +2728,7 @@ _braid_FRefine(braid_Core   core,
       _braid_CoreElt(core, r_space) = 0;
    }
 
-   printf("\nEnter FRefine\n");
+   //printf("\nEnter FRefine\n");
       
    /* Compute r_ilower and r_iupper */
    MPI_Scan(&r_npoints, &r_iupper, 1, braid_MPI_INT, MPI_SUM, comm);
@@ -3346,7 +3346,7 @@ _braid_FRefine(braid_Core   core,
 
    *refined_ptr = 1;
 
-   printf("\nExit FRefine\n");
+   //printf("\nExit FRefine\n");
    return _braid_error_flag;
 }
 
