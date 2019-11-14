@@ -327,7 +327,6 @@ braid_StatusSetRefinementDtValues(braid_Status status,
     braid_Real* rdtalloc = _braid_CTAlloc(braid_Real, rfactor-1);
     for (int j = 0; j<rfactor-1; j++)
     {
-      // printf("Braid: I'll place a point with dt=%f\n", rdtarray[j]);
       rdtalloc[j] = rdtarray[j];
     }
     _braid_StatusElt(status, rdtalloc) = rdtalloc;

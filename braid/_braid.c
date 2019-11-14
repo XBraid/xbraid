@@ -1437,7 +1437,6 @@ _braid_Step(braid_Core         core,
         /* Copy pointer for user's local rdtvalues */
         if (rdtvalues[ii] != NULL) {
           _braid_TFree(rdtvalues[ii]);
-          // printf("BaseStep free's a rdtvalues pointer!\n");
         }
         rdtvalues[ii] = _braid_StatusElt(status, rdtalloc);
         _braid_StatusElt(status, rdtalloc) = NULL;
@@ -1511,7 +1510,6 @@ _braid_Residual(braid_Core        core,
           /* Copy pointer for user's local rdtvalues */
           if (rdtvalues[ii] != NULL) {
             _braid_TFree(rdtvalues[ii]);
-            // printf("BaseStep free's a rdtvalues pointer!\n");
           }
           rdtvalues[ii] = _braid_StatusElt(status, rdtalloc);
           _braid_StatusElt(status, rdtalloc) = NULL;
@@ -2671,7 +2669,6 @@ _braid_FRefine(braid_Core   core,
       return _braid_error_flag;
    }
 
-
    gupper  = _braid_CoreElt(core, gupper);
    ilower  = _braid_GridElt(grids[0], ilower);
    iupper  = _braid_GridElt(grids[0], iupper);
@@ -2685,7 +2682,6 @@ _braid_FRefine(braid_Core   core,
       _braid_FRefineSpace(core, refined_ptr);
       return _braid_error_flag;
    }
-
 
    /*-----------------------------------------------------------------------*/
    /* 1. Compute f_gupper and the local interval extents for both the refined
@@ -2727,8 +2723,6 @@ _braid_FRefine(braid_Core   core,
    {
       _braid_CoreElt(core, r_space) = 0;
    }
-
-   //printf("\nEnter FRefine\n");
       
    /* Compute r_ilower and r_iupper */
    MPI_Scan(&r_npoints, &r_iupper, 1, braid_MPI_INT, MPI_SUM, comm);
@@ -3240,7 +3234,7 @@ _braid_FRefine(braid_Core   core,
    {
       braid_Int  level, nlevels = _braid_CoreElt(core, nlevels);
       _braid_TFree(_braid_CoreElt(core, rfactors));
-      _braid_TFree(_braid_CoreElt(core, rdtvalues)); // TODO: Make sure, that rdtvalues[i] have been free'd!
+      _braid_TFree(_braid_CoreElt(core, rdtvalues));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
 
       for (level = 0; level < nlevels; level++)
@@ -3346,7 +3340,6 @@ _braid_FRefine(braid_Core   core,
 
    *refined_ptr = 1;
 
-   //printf("\nExit FRefine\n");
    return _braid_error_flag;
 }
 
@@ -3515,7 +3508,7 @@ _braid_InitHierarchy(braid_Core    core,
    _braid_CoreElt(core, rfactors) = rfactors;
 
    /* Allocate array of refiment dt values */
-   rdtvalues = _braid_CTAlloc(braid_Real*, iupper-ilower+2); /* Ensures non-NULL (TODO: +2 needed? */
+   rdtvalues = _braid_CTAlloc(braid_Real*, iupper-ilower+2); /* TODO: +2 needed? */
    for(i = 0; i < iupper-ilower+2; i++) {
      rdtvalues[i] = NULL;
    }

@@ -671,7 +671,7 @@ braid_Drive(braid_Core  core)
             /* Finest grid - refine grid if desired */
             _braid_CoreElt(core, calling_function) = braid_ASCaller_FRefine;
             _braid_FRefine(core, &refined);
-            _braid_CoreElt(core, calling_function) = -1; // unknown. Hope this will be set before used...
+            _braid_CoreElt(core, calling_function) = -1; // TODO: Will calling_function be set correctly before next use?
 
             nlevels = _braid_CoreElt(core, nlevels);
 
@@ -1032,8 +1032,6 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, cfactors));
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
-
-      /* TODO: FREE THE rdt[i] values, if set! */
       _braid_TFree(_braid_CoreElt(core, rdtvalues));
 
       /* Destroy the optimization structure */
