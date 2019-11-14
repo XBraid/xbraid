@@ -529,6 +529,15 @@ braid_Int
 braid_PrintStats(braid_Core  core           /**< braid_Core (_braid_Core) struct*/
                  );
 
+
+/**
+ * After XBraid finishes, this function can be called to print out the convergence history (residuals for each iteration) to a file.
+ **/
+braid_Int
+braid_FlushConvHistory(braid_Core core,      /**< braid_Core (_braid_Core) struct */
+                       const char* filename  /**< Output file name */
+                       );
+
 /**
  * Set max number of multigrid levels.
  **/
