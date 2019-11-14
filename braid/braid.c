@@ -1202,43 +1202,6 @@ braid_PrintStats(braid_Core  core)
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_FlushConvHistory(braid_Core core,    
-                       const char* filename)
-{
-  FILE* braidlog;
-  int niter, ntime, nlevels;
-  int cfactor;
-
-  /* Get some general information from the core */
-  ntime = _braid_CoreElt(core, ntime); 
-  braid_GetNLevels(core, &nlevels);
-  _braid_GetCFactor(core, 0, &cfactor);
-
-  /* Get braid's residual norms for all iterations */
-  braid_GetNumIter(core, &niter);
-  double *norms = (double*) malloc(niter*sizeof(double));
-  braid_GetRNorms(core, &niter, norms);
-
-  /* Write to file */
-  braidlog = fopen(filename, "w");
-  fprintf(braidlog,"# ntime %d\n", (int) ntime);
-  fprintf(braidlog,"# cfactor %d\n", (int) cfactor);
-  fprintf(braidlog,"# nlevels %d\n", (int) nlevels);
-  for (int i=0; i<niter; i++)
-  {
-    fprintf(braidlog, "%d  %1.14e\n", i, norms[i]);
-  }
-  fprintf(braidlog, "\n\n\n");
-
-  free(norms);
-  
-  return _braid_error_flag;
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-
-braid_Int
 braid_SetMaxLevels(braid_Core  core,
                    braid_Int   max_levels)
 {
