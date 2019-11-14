@@ -2769,14 +2769,14 @@ _braid_FRefine(braid_Core   core,
             r_ca[r_ii] = -1;
             if (rdtvalue != NULL) 
             {
+              /* Non-uniform refinement. Add points based on dt values. */
               r_ta[r_ii] = r_ta[r_ii-1] + rdtvalue[j-1];
-              printf("Braid: DT-refine in [%1.12f,?], set a point at r_ta[%d]=%1.12f, dt=%1.12f\n", ta[ii], r_ii, r_ta[r_ii], rdtvalue[j-1]);
             } 
             else 
             {
-              /* This works because we have ta[-1] */
+              /* Refine uniformly based on rfactor. */
               r_ta[r_ii] = ta[ii] + (((braid_Real)j)/rfactor)*(ta[ii+1]-ta[ii]);
-              // printf("Braid: normal refine at r_ta[%d]=%f\n", r_ii, r_ta[r_ii]);
+              /* This works because we have ta[-1] */
             }
          }
          else
