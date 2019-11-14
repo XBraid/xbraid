@@ -372,9 +372,9 @@ braid_StatusSetTightFineTolx(braid_Status status,          /**< structure contai
                              );
 
 /**
- * Set the rfactor, a desired refinement factor for this interval.  rfactor=1
- * indicates no refinement, otherwise, this inteval is subdivided rfactor
- * times. 
+ * Set the rfactor, a desired refinement factor for this interval (uniform 
+ * refinement). rfactor=1 indicates no refinement, otherwise, this inteval is 
+ * subdivided rfactor times. 
  **/
 braid_Int
 braid_StatusSetRFactor(braid_Status status,                /**< structure containing current simulation info */
@@ -383,13 +383,13 @@ braid_StatusSetRFactor(braid_Status status,                /**< structure contai
 
 
 /**
- * Set time step sizes for refining this interval.
+ * Set time step sizes for refining the time interval non-uniformly.
  **/
 braid_Int
-braid_StatusSetDtValues(braid_Status status,                /**< structure containing current simulation info */
-                       braid_Real   rfactor,                /**< input, number of subintervals */
-                       braid_Real*   dtarray                /**< input, array of dt values for refinement */
-                       );
+braid_StatusSetRefinementDtValues(braid_Status status,      /**< structure containing current simulation info */
+                                  braid_Real   rfactor,     /**< input, number of subintervals */
+                                  braid_Real*   dtarray     /**< input, array of dt values for non-uniform refinement */
+                                  );
 
 
 

@@ -313,10 +313,10 @@ braid_StatusSetRFactor(braid_Status status,
 }
 
 braid_Int
-braid_StatusSetDtValues(braid_Status status,
-                        braid_Real   rfactor,
-                       braid_Real*   rdtarray
-                       )
+braid_StatusSetRefinementDtValues(braid_Status status,
+                                  braid_Real   rfactor,
+                                  braid_Real*   rdtarray
+                                  )
 {
   /* Set refinement factor */
   _braid_StatusElt(status, rfactor) = rfactor;
