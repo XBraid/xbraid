@@ -1200,32 +1200,52 @@ braid_Int
 braid_FlushConvHistory(braid_Core core,    
                        const char* filename)
 {
-  FILE* braidlog;
-  int niter, ntime, nlevels;
-  int cfactor;
+   braid_Int     myid          = _braid_CoreElt(core, myid_world);
+   braid_Real    tstart        = _braid_CoreElt(core, tstart);
+   braid_Real    tstop         = _braid_CoreElt(core, tstop);
+   braid_Int     gupper        = _braid_CoreElt(core, gupper);
+   braid_Int     nlevels       = _braid_CoreElt(core, nlevels);
+   _braid_Grid **grids         = _braid_CoreElt(core, grids);
 
-  /* Get some general information from the core */
-  ntime = _braid_CoreElt(core, ntime); 
-  braid_GetNLevels(core, &nlevels);
-  _braid_GetCFactor(core, 0, &cfactor);
+   FILE* braidlog;
+   braid_Int niter, iter;
+   int cfac, gupp, level;
+   double* resnorms;
 
-  /* Get braid's residual norms for all iterations */
-  braid_GetNumIter(core, &niter);
-  double *norms = (double*) malloc(niter*sizeof(double));
-  braid_GetRNorms(core, &niter, norms);
+   if (myid == 0) {
 
-  /* Write to file */
-  braidlog = fopen(filename, "w");
-  fprintf(braidlog,"# ntime %d\n", (int) ntime);
-  fprintf(braidlog,"# cfactor %d\n", (int) cfactor);
-  fprintf(braidlog,"# nlevels %d\n", (int) nlevels);
-  for (int i=0; i<niter; i++)
-  {
-    fprintf(braidlog, "%d  %1.14e\n", i, norms[i]);
+     /* Write some general information file */
+     braidlog = fopen(filename, "w");
+     fprintf(braidlog,"# start time       = %e\n", tstart);
+     fprintf(braidlog,"# stop time        = %e\n", tstop);
+     fprintf(braidlog,"# time steps       = %d\n", (int) gupper);
+     fprintf(braidlog,"# number of levels = %d\n", nlevels);
+     fprintf(braidlog, "#  level   time-pts   cfactor\n");
+     for (level = 0; level < nlevels-1; level++)
+     {
+       cfac = _braid_GridElt(grids[level], cfactor);
+       gupp = _braid_GridElt(grids[level], gupper);
+       fprintf(braidlog, "#  % 5d  % 8d  % 7d\n", level, gupp , cfac);
+     }
+     /* Print out coarsest level information */
+     gupp = _braid_GridElt(grids[level], gupper);
+     fprintf(braidlog, "#  % 5d  % 8d  \n\n", level, gupp);
+
+
+     /* Get and write residuals for all iterations */
+     braid_GetNumIter(core, &niter);
+     resnorms = _braid_CTAlloc(double, niter);
+     braid_GetRNorms(core, &niter, resnorms);
+     fprintf(braidlog, "# iter   residual norm\n");
+     for (iter=0; iter<niter; iter++)
+     {
+       fprintf(braidlog, "%03d      %1.14e\n", iter, resnorms[iter]);
+     }
+
+     /* Cleanup */
+     fclose(braidlog);
+     _braid_TFree(resnorms);
   }
-  fprintf(braidlog, "\n\n\n");
-
-  free(norms);
   
   return _braid_error_flag;
 }
