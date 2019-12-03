@@ -3235,6 +3235,7 @@ _braid_FRefine(braid_Core   core,
       braid_Int  level, nlevels = _braid_CoreElt(core, nlevels);
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, rdtvalues));
+      if (_braid_CoreElt(core, rdtalloc) != NULL) _braid_TFree(_braid_CoreElt(core, rdtalloc));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
 
       for (level = 0; level < nlevels; level++)
