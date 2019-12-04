@@ -1432,7 +1432,7 @@ _braid_Step(braid_Core         core,
 
       /* If NOT called from within FRefine, store the user's dtvalues, if set */
       braid_Int caller = _braid_CoreElt(core, calling_function);
-      if (caller != braid_ASCaller_FRefine)  
+      // if (caller != braid_ASCaller_FRefine)  
       {
         /* Copy pointer for user's local rdtvalues */
         if (rdtvalues[ii] != NULL) {
@@ -1505,7 +1505,7 @@ _braid_Residual(braid_Core        core,
 
         /* If NOT called from within FRefine, store the user's dtvalues, if set */
         braid_Int caller = _braid_CoreElt(core, calling_function);
-        if (caller != braid_ASCaller_FRefine)  
+        // if (caller != braid_ASCaller_FRefine)  
         {
           /* Copy pointer for user's local rdtvalues */
           if (rdtvalues[ii] != NULL) {
@@ -3209,6 +3209,19 @@ _braid_FRefine(braid_Core   core,
       }
    }
 
+
+
+   /* Free refinement dt values, if set */
+   for(ii = 0; ii < iupper-ilower+2; ii++) 
+   {
+      if ( rdtvalues[ii] != NULL) 
+      {
+        _braid_TFree(rdtvalues[ii]);
+        printf("FREE a remaining rdtvalues[x]\n");
+      }
+      rdtvalues[ii] = NULL;
+   }
+
    /* Free up some memory */
    _braid_TFree(send_ua);
    _braid_TFree(send_procs);
@@ -3315,6 +3328,14 @@ _braid_FRefine(braid_Core   core,
             {
                _braid_USetVector(core, 0, f_j, u, 0);
                _braid_Step(core, 0, f_j+1, NULL, u);
+               /* Free rdtvalue if it has just been set */
+               int iii = f_j+1 - f_ilower;
+               if (_braid_CoreElt(core, rdtvalues)[iii] !=NULL)
+               {
+                 printf("FREE rdtvalues[%d]\n", iii);
+                 _braid_TFree(_braid_CoreElt(core, rdtvalues)[iii]);
+                 _braid_CoreElt(core, rdtvalues)[iii] = NULL;
+               }
             }
          }
          _braid_USetVector(core, 0, f_j, u, 1);

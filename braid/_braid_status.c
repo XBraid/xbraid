@@ -329,7 +329,6 @@ braid_StatusSetRefinementDtValues(braid_Status status,
     {
       rdtalloc[j] = rdtarray[j];
     }
-    if (_braid_StatusElt(status, rdtalloc) != NULL) _braid_TFree(_braid_StatusElt(status,rdtalloc));
     _braid_StatusElt(status, rdtalloc) = rdtalloc;
 
   }
