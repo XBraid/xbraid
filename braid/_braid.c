@@ -1430,17 +1430,10 @@ _braid_Step(braid_Core         core,
       if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
             _braid_CoreElt(core, r_space) = 1;
 
-      /* If NOT called from within FRefine, store the user's dtvalues, if set */
-      braid_Int caller = _braid_CoreElt(core, calling_function);
-      // if (caller != braid_ASCaller_FRefine)  
-      {
-        /* Copy pointer for user's local rdtvalues */
-        if (rdtvalues[ii] != NULL) {
-          _braid_TFree(rdtvalues[ii]);
-        }
-        rdtvalues[ii] = _braid_StatusElt(status, rdtalloc);
-        _braid_StatusElt(status, rdtalloc) = NULL;
-      }
+      /* Store pointer to refinement rdtvalues */
+      if (rdtvalues[ii] != NULL) _braid_TFree(rdtvalues[ii]);
+      rdtvalues[ii] = _braid_StatusElt(status, rdtalloc);
+      _braid_StatusElt(status, rdtalloc) = NULL;
    }     
    else
    {
@@ -1503,17 +1496,10 @@ _braid_Residual(braid_Core        core,
          if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
                _braid_CoreElt(core, r_space) = 1;
 
-        /* If NOT called from within FRefine, store the user's dtvalues, if set */
-        braid_Int caller = _braid_CoreElt(core, calling_function);
-        // if (caller != braid_ASCaller_FRefine)  
-        {
-          /* Copy pointer for user's local rdtvalues */
-          if (rdtvalues[ii] != NULL) {
-            _braid_TFree(rdtvalues[ii]);
-          }
-          rdtvalues[ii] = _braid_StatusElt(status, rdtalloc);
-          _braid_StatusElt(status, rdtalloc) = NULL;
-        }
+         /* Store pointer to refinement rdtvalues */
+         if (rdtvalues[ii] != NULL) _braid_TFree(rdtvalues[ii]);
+         rdtvalues[ii] = _braid_StatusElt(status, rdtalloc);
+         _braid_StatusElt(status, rdtalloc) = NULL;
       }
    }
    else
@@ -3214,11 +3200,7 @@ _braid_FRefine(braid_Core   core,
    /* Free refinement dt values, if set */
    for(ii = 0; ii < iupper-ilower+2; ii++) 
    {
-      if ( rdtvalues[ii] != NULL) 
-      {
-        _braid_TFree(rdtvalues[ii]);
-        printf("FREE a remaining rdtvalues[x]\n");
-      }
+      if ( rdtvalues[ii] != NULL)  _braid_TFree(rdtvalues[ii]);
       rdtvalues[ii] = NULL;
    }
 
@@ -3248,7 +3230,6 @@ _braid_FRefine(braid_Core   core,
       braid_Int  level, nlevels = _braid_CoreElt(core, nlevels);
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, rdtvalues));
-      if (_braid_CoreElt(core, rdtalloc) != NULL) _braid_TFree(_braid_CoreElt(core, rdtalloc));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
 
       for (level = 0; level < nlevels; level++)
@@ -3332,7 +3313,6 @@ _braid_FRefine(braid_Core   core,
                int iii = f_j+1 - f_ilower;
                if (_braid_CoreElt(core, rdtvalues)[iii] !=NULL)
                {
-                 printf("FREE rdtvalues[%d]\n", iii);
                  _braid_TFree(_braid_CoreElt(core, rdtvalues)[iii]);
                  _braid_CoreElt(core, rdtvalues)[iii] = NULL;
                }

@@ -669,9 +669,7 @@ braid_Drive(braid_Core  core)
             }
 
             /* Finest grid - refine grid if desired */
-            _braid_CoreElt(core, calling_function) = braid_ASCaller_FRefine;
             _braid_FRefine(core, &refined);
-            _braid_CoreElt(core, calling_function) = -1; // TODO: Will calling_function be set correctly before next use?
 
             nlevels = _braid_CoreElt(core, nlevels);
 
