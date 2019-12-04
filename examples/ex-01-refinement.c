@@ -128,6 +128,22 @@ my_Step(braid_App        app,
       {
          rf = (int)(ceil(sqrt(0.5*LTE/(u->value)/(app->tol))));
       }
+      else if (app->refine == 3)
+      {
+         if (dt>0.001)
+            if ( (tstart<=2.5+0.00001)&&(2.5-0.00001<=tstop) )
+            {
+               rf = 2;
+               double newdt = dt / (double) rf;
+               double* dtvalues = (double*) malloc((rf-1)*sizeof(double));
+               for (int i=0; i<rf-1; i++)
+               {
+                 dtvalues[i] = newdt;
+               }
+               braid_StatusSetRefinementDtValues((braid_Status)status, rf, dtvalues);
+               free(dtvalues);
+            }
+      }
 
       rf = (rf < 1) ? 1 : rf;
       if (app->limit_rfactor > 0)
@@ -348,6 +364,7 @@ int main (int argc, char *argv[])
       printf("                                     : 0 - no refinement\n");
       printf("                                     : 1 - arbitrary refinement around t=2.5\n");
       printf("                                     : 2 - refinement based on local truncation error\n");
+      printf("                                     : 3 - arbitrary refinement around t=2.5, specifying the new time-step sizes\n");
       printf("  -max_rfactor <lim>                 : limit the refinement factor (default: -1)\n");
       printf("  -fmg                               : use FMG cycling\n");
       printf("  -storage <level>                   : full storage on levels >= level\n");
