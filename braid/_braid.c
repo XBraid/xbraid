@@ -2658,10 +2658,11 @@ _braid_FRefine(braid_Core   core,
 
    braid_BaseVector *send_ua, *recv_ua, u;
    braid_Int        *send_procs, *recv_procs, *send_unums, *recv_unums, *iptr;
+   braid_Int        *send_iis,   *recv_f_iis;
    braid_Real       *send_buffer, *recv_buffer, **send_buffers, **recv_buffers, *bptr;
    void             *buffer;
    braid_Int         send_size, recv_size, *send_sizes, size, isize, max_usize;
-   braid_Int         ncomms, nsends, nrecvs, nreceived, nprocs, proc, prevproc;
+   braid_Int         ncomms, nsends, nrecvs, nreceived, nprocs, myproc, proc, prevproc;
    braid_Int         unum, send_msg, recv_msg;
    MPI_Request      *requests, request;
    MPI_Status       *statuses, status;
@@ -2670,10 +2671,11 @@ _braid_FRefine(braid_Core   core,
    braid_Int         cfactor, rfactor, m, interval, flo, fhi, fi, ci, f_hi, f_ci;
 
 #if DEBUG
-   braid_Int  myproc;
    /*cfactor = 6;*/ /* RDF HACKED TEST */
-   MPI_Comm_rank(comm, &myproc);
 #endif
+
+   MPI_Comm_size(comm, &nprocs);
+   MPI_Comm_rank(comm, &myproc);
 
    /* Only refine if refinement is turned on */
    if(refine == 0)
@@ -2743,9 +2745,7 @@ _braid_FRefine(braid_Core   core,
    r_iupper = r_iupper - 1;
 
    /* Compute f_ilower, f_iupper, and f_npoints for the final distribution */
-   MPI_Comm_size(comm, &nprocs);
-   MPI_Comm_rank(comm, &proc);
-   _braid_GetBlockDistInterval((f_gupper+1), nprocs, proc, &f_ilower, &f_iupper);
+   _braid_GetBlockDistInterval((f_gupper+1), nprocs, myproc, &f_ilower, &f_iupper);
    f_npoints = f_iupper - f_ilower + 1;
 
    /* Initialize the new fine grid */
@@ -3000,11 +3000,13 @@ _braid_FRefine(braid_Core   core,
    send_ua = _braid_CTAlloc(braid_BaseVector, npoints);
    send_procs = _braid_CTAlloc(braid_Int, npoints);
    send_unums = _braid_CTAlloc(braid_Int, npoints);
+   send_iis   = _braid_CTAlloc(braid_Int, npoints);
    send_buffers = _braid_CTAlloc(braid_Real *, npoints);
 
    recv_ua = _braid_CTAlloc(braid_BaseVector, f_npoints);
    recv_procs = _braid_CTAlloc(braid_Int, f_npoints);
    recv_unums = _braid_CTAlloc(braid_Int, f_npoints);
+   recv_f_iis = _braid_CTAlloc(braid_Int, f_npoints);
    recv_buffers = _braid_CTAlloc(braid_Real *, f_npoints);
 
    _braid_GetRNorm(core, -1, &rnorm);
@@ -3080,17 +3082,24 @@ _braid_FRefine(braid_Core   core,
          _braid_GetBlockDistProc((f_gupper+1), nprocs, r_i, &proc);
          if (proc != prevproc)
          {
-            nsends++;
-            send_procs[nsends] = proc;
-            send_unums[nsends] = 0;
-            prevproc = proc;
+            if (proc != myproc)
+            {
+               nsends++;
+               send_procs[nsends] = proc;
+               send_unums[nsends] = 0;
+               send_iis[nsends]   = ii;
+               prevproc = proc;
+            }
          }
-         send_unums[nsends]++;
+         if (proc != myproc)
+         {
+            send_unums[nsends]++;
+         }
       }
    }
    nsends++;
 
-   /* Compute nrecvs, recv_procs, and recv_unums from f_ca array */
+   /* Compute nrecvs, recv_procs, recv_unums, and recv_f_iis from f_ca array */
    nrecvs = -1;
    prevproc = -1;
    for (f_ii = 0; f_ii < f_npoints; f_ii++)
@@ -3101,12 +3110,25 @@ _braid_FRefine(braid_Core   core,
          _braid_GetBlockDistProc((gupper+1), nprocs, i, &proc);
          if (proc != prevproc)
          {
-            nrecvs++;
-            recv_procs[nrecvs] = proc;
-            recv_unums[nrecvs] = 0;
-            prevproc = proc;
+            if (proc != myproc)
+            {
+               nrecvs++;
+               recv_procs[nrecvs] = proc;
+               recv_unums[nrecvs] = 0;
+               recv_f_iis[nrecvs] = f_ii;
+               prevproc = proc;
+            }
          }
-         recv_unums[nrecvs]++;
+         if (proc != myproc)
+         {
+            recv_unums[nrecvs]++;
+         }
+         else
+         {
+            /* send_ua vector is already on myproc, so put it directly into recv_ua */
+            ii = i - ilower;
+            recv_ua[f_ii] = send_ua[ii];
+         }
       }
    }
    nrecvs++;
@@ -3135,10 +3157,10 @@ _braid_FRefine(braid_Core   core,
    }
   
    /* Post u-vector sends */
-   ii = 0;
    for (m = 0; m < nsends; m++)
    {
       unum = send_unums[m]; /* Number of u-vectors being sent */
+      ii   = send_iis[m];
       send_size = unum*(1 + max_usize);
       send_buffers[m] = _braid_CTAlloc(braid_Real, send_size);
       send_size = 0; /* Recompute send_size and realloc buffer */
@@ -3186,10 +3208,10 @@ _braid_FRefine(braid_Core   core,
 #endif
 
    /* Unpack u-vectors */
-   f_ii = 0;
    for (m = 0; m < nrecvs; m++)
    {
       unum = recv_unums[m];
+      f_ii = recv_f_iis[m];
       bptr = recv_buffers[m];
       while (unum > 0)
       {
@@ -3210,6 +3232,7 @@ _braid_FRefine(braid_Core   core,
    _braid_TFree(send_ua);
    _braid_TFree(send_procs);
    _braid_TFree(send_unums);
+   _braid_TFree(send_iis);
    for (m = 0; m < nsends; m++)
    {
       _braid_TFree(send_buffers[m]);
@@ -3217,6 +3240,7 @@ _braid_FRefine(braid_Core   core,
    _braid_TFree(send_buffers);
    _braid_TFree(recv_procs);
    _braid_TFree(recv_unums);
+   _braid_TFree(recv_f_iis);
    for (m = 0; m < nrecvs; m++)
    {
       _braid_TFree(recv_buffers[m]);
