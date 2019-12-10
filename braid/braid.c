@@ -31,6 +31,7 @@
 #include "_braid_tape.h"
 #include "_util.h"
 #include "_braid_base.h"
+#include "_braid_status.h"
 
 #ifndef DEBUG
 #define DEBUG 0
@@ -460,7 +461,7 @@ braid_Drive(braid_Core  core)
    braid_Int            obj_only        = _braid_CoreElt(core, obj_only);
    braid_Int            adjoint         = _braid_CoreElt(core, adjoint);
    braid_Int            seq_soln        = _braid_CoreElt(core, seq_soln);
-
+   braid_SyncStatus     sstatus         = (braid_SyncStatus)core;
 
    braid_Int     *nrels, nrel0;
    braid_Int      nlevels;
@@ -485,7 +486,7 @@ braid_Drive(braid_Core  core)
       if (!warm_restart && print_level > 0) 
       {
          _braid_printf("\n  Braid: Begin simulation, %d time steps\n",
-                    _braid_CoreElt(core, gupper));
+                       _braid_CoreElt(core, gupper));
       }
       if ( adjoint && print_level > 0 )
       {
@@ -643,6 +644,10 @@ braid_Drive(braid_Core  core)
          }
          else
          {
+           _braid_SyncStatusInit(iter, level, _braid_CoreElt(core, nrefine),
+                                 _braid_CoreElt(core, gupper), done,
+                                 braid_ASCaller_Drive_TopCycle, sstatus);
+            _braid_Sync(core, sstatus);
 
             // Output the solution at the end of each cycle
             // Copy the rfactors because the call to FAccess will modify them
@@ -875,6 +880,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, scoarsen)        = NULL;
    _braid_CoreElt(core, srefine)         = NULL;
    _braid_CoreElt(core, tgrid)           = NULL;
+   _braid_CoreElt(core, sync)            = NULL;
 
    _braid_CoreElt(core, access_level)    = access_level;
    _braid_CoreElt(core, tnorm)           = tnorm;
@@ -1614,6 +1620,18 @@ braid_SetSpatialRefine(braid_Core         core,
                        braid_PtFcnSRefine srefine)
 {
    _braid_CoreElt(core, srefine) = srefine;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetSync(braid_Core      core,
+              braid_PtFcnSync sync)
+{
+   _braid_CoreElt(core, sync) = sync;
 
    return _braid_error_flag;
 }

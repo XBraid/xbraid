@@ -78,6 +78,7 @@ typedef struct _braid_App_struct
    int       limit_rfactor;
    int       refine;
    double    tol;
+   int       num_syncs;
 } my_App;
 
 /* Vector structure can contain anything, and be name anything as well */
@@ -125,7 +126,7 @@ my_Step(braid_App        app,
             if ( (tstart<=2.5+0.00001)&&(2.5-0.00001<=tstop) )
             {
                rf = 100;
-            }
+      }
          }
       }
       else if (app->refine == 2)
@@ -292,6 +293,19 @@ my_BufUnpack(braid_App          app,
    return 0;
 }
 
+/* Sync status */
+int
+my_Sync(braid_App app,
+        braid_SyncStatus status)
+{
+   braid_Int calling_fcn;
+   braid_SyncStatusGetCallingFunction(status, &calling_fcn);
+
+   if(calling_fcn == braid_ASCaller_FRefine_AfterInitHier)
+      app->num_syncs += 1;
+   return 0;
+}
+
 /*--------------------------------------------------------------------------
  * Main driver
  *--------------------------------------------------------------------------*/
@@ -302,7 +316,7 @@ int main (int argc, char *argv[])
    my_App       *app;
    double        tstart, tstop, tol;
    int           ntime, rank, limit_rfactor, arg_index, print_usage;
-   int           refine, output, storage, fmg;
+   int           refine, output, storage, fmg, sync;
 
    /* Define time domain: ntime intervals */
    ntime  = 100;
@@ -315,6 +329,7 @@ int main (int argc, char *argv[])
    output = 1;
    storage = -1;
    fmg = 0;   
+   sync = 0;
    
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -358,6 +373,11 @@ int main (int argc, char *argv[])
          arg_index++;
          storage = atoi(argv[arg_index++]);
       }
+      else if( strcmp(argv[arg_index], "-sync") == 0 )
+      {
+         arg_index++;
+         sync = 1;
+      }
       else if ( strcmp(argv[arg_index], "-fmg") == 0 )
       {
          arg_index++;
@@ -390,6 +410,7 @@ int main (int argc, char *argv[])
       printf("  -max_rfactor <lim>                 : limit the refinement factor (default: -1)\n");
       printf("  -fmg                               : use FMG cycling\n");
       printf("  -storage <level>                   : full storage on levels >= level\n");
+      printf("  -sync                              : enable calls to the sync function\n");
       printf("  -no_output                         : do not save the solution in output files\n");
       printf("  -help                              : print this help and exit\n");
       printf("\n");
@@ -407,6 +428,7 @@ int main (int argc, char *argv[])
    (app->limit_rfactor)   = limit_rfactor;
    (app->refine) = refine;
    (app->tol) = tol;
+   (app->num_syncs) = 0;
 
    /* initialize XBraid and set options */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
@@ -430,10 +452,18 @@ int main (int argc, char *argv[])
    if (!output)
    {
       braid_SetAccessLevel(core, 0);
+   if (sync)
+   {
+      braid_SetSync(core, my_Sync);
    }
    
    /* Run simulation, and then clean up */
    braid_Drive(core);
+
+   if (sync && rank == 0)
+   {
+      printf("  num_syncs             = %d\n\n", (app->num_syncs));
+   }
 
    braid_Destroy(core);
    free(app);

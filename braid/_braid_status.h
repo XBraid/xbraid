@@ -56,6 +56,11 @@ struct _braid_AccessStatus_struct
    _braid_Status status;
 };
 
+struct _braid_SyncStatus_struct
+{
+   _braid_Status status;
+};
+
 struct _braid_StepStatus_struct
 {
    _braid_Status status;
@@ -102,6 +107,19 @@ _braid_AccessStatusInit(braid_Real          t,                /**< current time 
                         braid_Int           calling_function, /**< from which function are we accessing the vector */
                         braid_AccessStatus  status            /**< structure to initialize */
                         );
+
+/**
+ * Initialize a braid_SyncStatus structure
+ */
+braid_Int
+_braid_SyncStatusInit(braid_Int           iter,             /**< current iteration in XBraid*/
+                      braid_Int           level,            /**< current level in XBraid */
+                      braid_Int           nrefine,          /**< number of refinements done */
+                      braid_Int           gupper,           /**< global size of the fine grid */
+                      braid_Int           done,             /**< boolean describing whether XBraid has finished */
+                      braid_Int           calling_function, /**< from which function are we accessing braid */
+                      braid_SyncStatus    status            /**< structure to initialize */
+                      );
 
 /**
  * Initialize a braid_CoarsenRefStatus structure
