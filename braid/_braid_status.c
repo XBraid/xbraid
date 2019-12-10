@@ -61,7 +61,6 @@
    braid_Int braid_##stype##StatusSet##param(braid_##stype##Status s, braid_##vtype1 v1) \
    {return braid_StatusSet##param((braid_Status)s, v1);}
 
-
 braid_Int
 _braid_StatusDestroy(braid_Status status)
 {

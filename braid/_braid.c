@@ -3156,7 +3156,6 @@ _braid_FRefine(braid_Core   core,
    }
 
    /* Post u-vector sends */
-   ii = 0;
    for (m = 0; m < nsends; m++)
    {
       unum = send_unums[m]; /* Number of u-vectors being sent */
@@ -3208,7 +3207,6 @@ _braid_FRefine(braid_Core   core,
 #endif
 
    /* Unpack u-vectors */
-   f_ii = 0;
    for (m = 0; m < nrecvs; m++)
    {
       unum = recv_unums[m];
