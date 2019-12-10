@@ -576,7 +576,6 @@ _braid_StepStatusInit(braid_Real       tstart,
    _braid_StatusElt(status, level)     = level;
    _braid_StatusElt(status, nrefine)   = nrefine;
    _braid_StatusElt(status, gupper)    = gupper;
-   _braid_StatusElt(status, rfactor)   = 1;
    _braid_StatusElt(status, r_space)   = 0;
 
    return _braid_error_flag;

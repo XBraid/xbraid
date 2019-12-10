@@ -1,20 +1,20 @@
 /*BHEADER**********************************************************************
- * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
- * Produced at the Lawrence Livermore National Laboratory. Written by 
- * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
+ * Copyright (c) 2013, Lawrence Livermore National Security, LLC.
+ * Produced at the Lawrence Livermore National Laboratory. Written by
+ * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin
  * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
- * 
+ *
  * This file is part of XBraid. For support, post issues to the XBraid Github page.
- * 
+ *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License (as published by the Free Software
  * Foundation) version 2.1 dated February 1999.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE. See the terms and conditions of the GNU General Public
  * License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License along
  * with this program; if not, write to the Free Software Foundation, Inc., 59
  * Temple Place, Suite 330, Boston, MA 02111-1307 USA
@@ -25,8 +25,8 @@
  * Example:       ex-01-refinement.c
  *
  * Interface:     C
- * 
- * Requires:      only C-language support     
+ *
+ * Requires:      only C-language support
  *
  * Compile with:  make ex-01
  *
@@ -34,11 +34,11 @@
  *
  * Sample run:    mpirun -np 2 ex-01
  *
- * Description:   solve the scalar ODE 
- *                   u' = lambda u, 
+ * Description:   solve the scalar ODE
+ *                   u' = lambda u,
  *                   with lambda=-1 and y(0) = 1
  *                in a very simplified XBraid setting.
- *                
+ *
  *                When run with the default 10 time steps and no refinement, the solution is:
  *                $ ./ex-01
  *                $ cat ex-01.out.00*
@@ -113,9 +113,9 @@ my_Step(braid_App        app,
    int level, nrefine;
    braid_StepStatusGetLevel(status, &level);
    braid_StepStatusGetNRefine(status, &nrefine);
-   
+
    /* XBraid only accepts refinements on level 0, and it's also a good idea to
-    * cap the number of possible refinements (here capped at 8) */ 
+    * cap the number of possible refinements (here capped at 8) */
    if ((level == 0) && (nrefine < 8))
    {
       int rf = 1;
@@ -126,7 +126,7 @@ my_Step(braid_App        app,
             if ( (tstart<=2.5+0.00001)&&(2.5-0.00001<=tstop) )
             {
                rf = 100;
-      }
+            }
          }
       }
       else if (app->refine == 2)
@@ -147,7 +147,7 @@ my_Step(braid_App        app,
                dtvalues = (double*) malloc((rf-1)*sizeof(double));
                for (i=0; i<rf-1; i++)
                {
-                 dtvalues[i] = newdt;
+                  dtvalues[i] = newdt;
                }
                braid_StatusSetRefinementDtValues((braid_Status)status, rf, dtvalues);
                free(dtvalues);
@@ -162,7 +162,6 @@ my_Step(braid_App        app,
       }
       braid_StepStatusSetRFactor(status, rf);
    }
-
 
    return 0;
 }
@@ -242,7 +241,7 @@ my_Access(braid_App          app,
    char       filename[255];
    FILE      *file;
    double     t;
-   
+
    braid_AccessStatusGetT(astatus, &t);
    braid_AccessStatusGetTIndex(astatus, &index);
    sprintf(filename, "%s.%04d.%03d", "ex-01-refinement.out", index, app->rank);
@@ -302,7 +301,9 @@ my_Sync(braid_App app,
    braid_SyncStatusGetCallingFunction(status, &calling_fcn);
 
    if(calling_fcn == braid_ASCaller_FRefine_AfterInitHier)
+   {
       app->num_syncs += 1;
+   }
    return 0;
 }
 
@@ -328,16 +329,17 @@ int main (int argc, char *argv[])
    refine = 0;
    output = 1;
    storage = -1;
-   fmg = 0;   
+   fmg = 0;
    sync = 0;
-   
+
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-   
+
    /* Parse command line */
    arg_index = 0;
-   while( arg_index < argc ){
+   while( arg_index < argc )
+   {
       if( strcmp(argv[arg_index], "-nt") == 0 )
       {
          arg_index++;
@@ -400,7 +402,7 @@ int main (int argc, char *argv[])
       printf("\n");
       printf(" General XBraid configuration parameters\n");
       printf(" ---------------------------------------\n");
-      printf("  -nt  <n>                           : number of time steps (default: 100)\n"); 
+      printf("  -nt  <n>                           : number of time steps (default: 100)\n");
       printf("  -tol <tol>                         : set the stopping tolerance (default: 1e-6)\n");
       printf("  -refine <n>                        : set the type of temporal refinement (default: 0)\n");
       printf("                                     : 0 - no refinement\n");
@@ -432,9 +434,9 @@ int main (int argc, char *argv[])
 
    /* initialize XBraid and set options */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
-             my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
+             my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm,
              my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
-   
+
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 2);
    braid_SetMaxLevels(core, 15);
@@ -452,11 +454,12 @@ int main (int argc, char *argv[])
    if (!output)
    {
       braid_SetAccessLevel(core, 0);
+   }
    if (sync)
    {
       braid_SetSync(core, my_Sync);
    }
-   
+
    /* Run simulation, and then clean up */
    braid_Drive(core);
 
