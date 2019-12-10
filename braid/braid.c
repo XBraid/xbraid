@@ -913,7 +913,6 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, refine)          = 0;  /* Time refinement off by default */
    _braid_CoreElt(core, rfactors)        = NULL;
    _braid_CoreElt(core, rdtvalues)       = NULL;
-   _braid_CoreElt(core, rdtalloc)        = NULL;
    _braid_CoreElt(core, r_space)         = 0;
    _braid_CoreElt(core, rstopped)        = -1;
    _braid_CoreElt(core, nrefine)         = 0;

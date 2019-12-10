@@ -235,7 +235,6 @@ typedef struct _braid_Core_struct
    braid_Int              refine;           /**< refine in time (refine = 1) */
    braid_Int             *rfactors;         /**< refinement factors for finest grid (if any) */
    braid_Real           **rdtvalues;        /**< Array of pointers to arrays of dt values for non-uniform refinement  */
-   braid_Real            *rdtalloc;         /**< Temporary array for storing refinement dt values at one time step */
    braid_Int              r_space;          /**< spatial refinment flag */
    braid_Int              rstopped;         /**< refinement stopped at iteration rstopped */
    braid_Int              nrefine;          /**< number of refinements done */
