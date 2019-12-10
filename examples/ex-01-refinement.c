@@ -121,8 +121,12 @@ my_Step(braid_App        app,
       if (app->refine == 1)
       {
          if (dt>0.001)
+         {
             if ( (tstart<=2.5+0.00001)&&(2.5-0.00001<=tstop) )
+            {
                rf = 100;
+            }
+         }
       }
       else if (app->refine == 2)
       {
@@ -131,23 +135,30 @@ my_Step(braid_App        app,
       else if (app->refine == 3)
       {
          if (dt>0.001)
+         {
             if ( (tstart<=2.5+0.00001)&&(2.5-0.00001<=tstop) )
             {
+               double newdt, *dtvalues;
+               int    i;
+
                rf = 2;
-               double newdt = dt / (double) rf;
-               double* dtvalues = (double*) malloc((rf-1)*sizeof(double));
-               for (int i=0; i<rf-1; i++)
+               newdt = dt / (double) rf;
+               dtvalues = (double*) malloc((rf-1)*sizeof(double));
+               for (i=0; i<rf-1; i++)
                {
                  dtvalues[i] = newdt;
                }
                braid_StatusSetRefinementDtValues((braid_Status)status, rf, dtvalues);
                free(dtvalues);
             }
+         }
       }
 
       rf = (rf < 1) ? 1 : rf;
       if (app->limit_rfactor > 0)
+      {
          rf = (rf < app->limit_rfactor) ? rf : app->limit_rfactor;
+      }
       braid_StepStatusSetRFactor(status, rf);
    }
 
@@ -312,47 +323,58 @@ int main (int argc, char *argv[])
    /* Parse command line */
    arg_index = 0;
    while( arg_index < argc ){
-      if( strcmp(argv[arg_index], "-nt") == 0 ){
+      if( strcmp(argv[arg_index], "-nt") == 0 )
+      {
          arg_index++;
          ntime = atoi(argv[arg_index++]);
       }
-      else if( strcmp(argv[arg_index], "-max_rfactor") == 0 ){
+      else if( strcmp(argv[arg_index], "-max_rfactor") == 0 )
+      {
          arg_index++;
          limit_rfactor = atoi(argv[arg_index++]);
       }
-      else if( strcmp(argv[arg_index], "-refine") == 0 ){
+      else if( strcmp(argv[arg_index], "-refine") == 0 )
+      {
          arg_index++;
          refine = atoi(argv[arg_index++]);
       }
-      else if( strcmp(argv[arg_index], "-tol") == 0 ){
+      else if( strcmp(argv[arg_index], "-tol") == 0 )
+      {
          arg_index++;
          tol = atof(argv[arg_index++]);
       }
-      else if( strcmp(argv[arg_index], "-no_output") == 0 ){
+      else if( strcmp(argv[arg_index], "-no_output") == 0 )
+      {
          arg_index++;
          output = 0;
       }
-      else if( strcmp(argv[arg_index], "-help") == 0 ){
+      else if( strcmp(argv[arg_index], "-help") == 0 )
+      {
          print_usage = 1;
          break;
       }
-      else if ( strcmp(argv[arg_index], "-storage") == 0 ){
+      else if ( strcmp(argv[arg_index], "-storage") == 0 )
+      {
          arg_index++;
          storage = atoi(argv[arg_index++]);
       }
-      else if ( strcmp(argv[arg_index], "-fmg") == 0 ){
+      else if ( strcmp(argv[arg_index], "-fmg") == 0 )
+      {
          arg_index++;
          fmg = 1;
       }
-      else{
-         if(arg_index > 1){
+      else
+      {
+         if(arg_index > 1)
+         {
             printf("UNUSED command line paramter %s\n", argv[arg_index]);
          }
          arg_index++;
       }
    }
 
-   if((print_usage) && (rank == 0)){
+   if((print_usage) && (rank == 0))
+   {
       printf("\n");
       printf("Usage: %s [<options>]\n", argv[0]);
       printf("\n");
@@ -373,11 +395,11 @@ int main (int argc, char *argv[])
       printf("\n");
    }
 
-   if( print_usage ){
+   if( print_usage )
+   {
       MPI_Finalize();
       return (0);
    }
-
 
    /* set up app structure */
    app = (my_App *) malloc(sizeof(my_App));
@@ -398,11 +420,17 @@ int main (int argc, char *argv[])
    braid_SetCFactor(core, -1, 2);
    braid_SetRefine(core, 1);
    if (fmg)
+   {
       braid_SetFMG(core);
+   }
    if (storage >= -2)
+   {
       braid_SetStorage(core, storage);
+   }
    if (!output)
+   {
       braid_SetAccessLevel(core, 0);
+   }
    
    /* Run simulation, and then clean up */
    braid_Drive(core);

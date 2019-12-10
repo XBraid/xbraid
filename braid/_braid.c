@@ -534,7 +534,7 @@ _braid_AdjointFeatureCheck(braid_Core core)
       err_char = "Storage >= 1";
       err = 1;
    } 
-    // r_space?
+   // r_space?
    if ( err )
    {
       _braid_printf(" \n\n WARNING! %s is not yet supported for adjoint sensitivities (or at least not tested).\n", err_char); 
@@ -1402,8 +1402,6 @@ _braid_Step(braid_Core         core,
    braid_App          app      = _braid_CoreElt(core, app);
    braid_Real         tol      = _braid_CoreElt(core, tol);
    braid_Int          iter     = _braid_CoreElt(core, niter);
-   braid_Int         *rfactors = _braid_CoreElt(core, rfactors);
-   braid_Real       **rdtvalues = _braid_CoreElt(core, rdtvalues);
    _braid_Grid      **grids    = _braid_CoreElt(core, grids);
    braid_StepStatus   status   = (braid_StepStatus)core;
    braid_Int          nrefine  = _braid_CoreElt(core, nrefine);
@@ -1426,14 +1424,6 @@ _braid_Step(braid_Core         core,
    if (level == 0)
    {
       _braid_BaseStep(core, app,  ustop, NULL, u, level, status);
-      rfactors[ii] = _braid_StatusElt(status, rfactor);
-      if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
-            _braid_CoreElt(core, r_space) = 1;
-
-      /* Store pointer to refinement rdtvalues */
-      if (rdtvalues[ii] != NULL) _braid_TFree(rdtvalues[ii]);
-      rdtvalues[ii] = _braid_StatusElt(status, rdtalloc);
-      _braid_StatusElt(status, rdtalloc) = NULL;
    }     
    else
    {
@@ -1468,8 +1458,6 @@ _braid_Residual(braid_Core        core,
    braid_App        app      = _braid_CoreElt(core, app);
    braid_Real       tol      = _braid_CoreElt(core, tol);
    braid_Int        iter     = _braid_CoreElt(core, niter);
-   braid_Int       *rfactors = _braid_CoreElt(core, rfactors);
-   braid_Real     **rdtvalues= _braid_CoreElt(core, rdtvalues);
    _braid_Grid    **grids    = _braid_CoreElt(core, grids);
    braid_StepStatus status   = (braid_StepStatus)core;
    braid_Int        nrefine  = _braid_CoreElt(core, nrefine);
@@ -1488,19 +1476,6 @@ _braid_Residual(braid_Core        core,
       _braid_GetUInit(core, level, index, r, &rstop);
       _braid_BaseStep(core, app,  rstop, NULL, r, level, status);
       _braid_BaseSum(core, app,  1.0, ustop, -1.0, r);
-      if (level == 0)
-      {
-         /*TODO Remove this line after modifing the _braid_StatusSetRFactor to set the rfactor in the array directly */
-         rfactors[ii] = _braid_StatusElt(status, rfactor);
-         /* TODO : Remove these two lines, which are now useless since core==status */
-         if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
-               _braid_CoreElt(core, r_space) = 1;
-
-         /* Store pointer to refinement rdtvalues */
-         if (rdtvalues[ii] != NULL) _braid_TFree(rdtvalues[ii]);
-         rdtvalues[ii] = _braid_StatusElt(status, rdtalloc);
-         _braid_StatusElt(status, rdtalloc) = NULL;
-      }
    }
    else
    {
@@ -2768,12 +2743,6 @@ _braid_FRefine(braid_Core   core,
 
          r_ii++;
       }
-
-      /* Free rdtvalue */
-      if (rdtvalue != NULL) {
-        _braid_TFree(rdtvalues[ii+1]);
-        rdtvalues[ii+1] = NULL;
-      }
    }
 
    /* Get the next r_fa value to my right */
@@ -3195,12 +3164,13 @@ _braid_FRefine(braid_Core   core,
       }
    }
 
-
-
    /* Free refinement dt values, if set */
    for(ii = 0; ii < iupper-ilower+2; ii++) 
    {
-      if ( rdtvalues[ii] != NULL)  _braid_TFree(rdtvalues[ii]);
+      if (rdtvalues[ii] != NULL)
+      {
+         _braid_TFree(rdtvalues[ii]);
+      }
       rdtvalues[ii] = NULL;
    }
 
@@ -3311,7 +3281,7 @@ _braid_FRefine(braid_Core   core,
                _braid_Step(core, 0, f_j+1, NULL, u);
                /* Free rdtvalue if it has just been set */
                int iii = f_j+1 - f_ilower;
-               if (_braid_CoreElt(core, rdtvalues)[iii] !=NULL)
+               if (_braid_CoreElt(core, rdtvalues)[iii] != NULL)
                {
                  _braid_TFree(_braid_CoreElt(core, rdtvalues)[iii]);
                  _braid_CoreElt(core, rdtvalues)[iii] = NULL;
@@ -3509,11 +3479,8 @@ _braid_InitHierarchy(braid_Core    core,
    }
    _braid_CoreElt(core, rfactors) = rfactors;
 
-   /* Allocate array of refiment dt values */
+   /* Allocate array of refiment dt values, initialized with NULL */
    rdtvalues = _braid_CTAlloc(braid_Real*, iupper-ilower+2); /* TODO: +2 needed? */
-   for(i = 0; i < iupper-ilower+2; i++) {
-     rdtvalues[i] = NULL;
-   }
    _braid_CoreElt(core, rdtvalues) = rdtvalues;
 
    /* Set up nrels array */
