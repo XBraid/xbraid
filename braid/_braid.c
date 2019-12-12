@@ -3549,7 +3549,7 @@ _braid_InitHierarchy(braid_Core    core,
    _braid_CoreElt(core, rfactors) = rfactors;
 
    /* Allocate array of refiment dt values, initialized with NULL */
-   rdtvalues = _braid_CTAlloc(braid_Real*, iupper-ilower+2); /* TODO: +2 needed? */
+   rdtvalues = _braid_CTAlloc(braid_Real*, iupper-ilower+2); /* Ensures non-NULL */
    _braid_CoreElt(core, rdtvalues) = rdtvalues;
 
    /* Set up nrels array */
