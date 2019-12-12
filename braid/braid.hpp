@@ -536,6 +536,8 @@ public:
       braid_SetSpatialRefine(core, _BraidAppRefine);
    }
 
+   void SetPeriodic(braid_Int periodic) { braid_SetPeriodic(core, periodic); }
+
    void SetSync() { braid_SetSync(core, _BraidAppSync); }
 
    void SetResidual() { braid_SetResidual(core, _BraidAppResidual); }
