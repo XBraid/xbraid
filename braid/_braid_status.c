@@ -396,6 +396,12 @@ braid_StatusSetRefinementDtValues(braid_Status  status,
          braid_Real  **rdtvalues = _braid_StatusElt(status, rdtvalues);
          braid_Int     j;
 
+         if (rdtvalues[ii] != NULL)
+         {
+            /* This essentially forces a realloc in case rfactor has changed.
+             * Note that TFree() sets rdtvalues[ii] to NULL. */
+            _braid_TFree(rdtvalues[ii]);
+         }
          if (rdtvalues[ii] == NULL)
          {
             rdtvalues[ii] = _braid_CTAlloc(braid_Real, (rfactor-1));
