@@ -419,12 +419,24 @@ braid_StatusSetTightFineTolx(braid_Status status,          /**< structure contai
 /**
  * Set the rfactor, a desired refinement factor for this interval.  rfactor=1
  * indicates no refinement, otherwise, this inteval is subdivided rfactor
- * times. 
+ * times (uniform refinement).
  **/
 braid_Int
 braid_StatusSetRFactor(braid_Status status,                /**< structure containing current simulation info */
                        braid_Real   rfactor                /**< input, user-determined desired rfactor */
                        );
+
+
+/**
+ * Set time step sizes for refining the time interval non-uniformly.
+ **/
+braid_Int
+braid_StatusSetRefinementDtValues(braid_Status status,      /**< structure containing current simulation info */
+                                  braid_Real   rfactor,     /**< input, number of subintervals */
+                                  braid_Real*   dtarray     /**< input, array of dt values for non-uniform refinement */
+                                  );
+
+
 
 /**
  * Set the r_space flag. When set = 1, spatial coarsening will be called,
