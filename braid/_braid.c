@@ -32,6 +32,9 @@
 #include "_braid_status.h"
 #include "_braid_base.h"
 
+#define _braid_SendIndexOff -2
+#define _braid_RecvIndexOff -2
+
 #define DEBUG 0
 
 #if DEBUG
@@ -40,7 +43,6 @@ braid_Int  FRefine_count = 0;
 
 braid_Int _braid_error_flag = 0;
 FILE    *_braid_printfile  = NULL;
-
 
 braid_Int 
 _braid_VectorBarCopy(braid_VectorBar bar, braid_VectorBar *bar_ptr)
@@ -595,9 +597,16 @@ braid_Int
 _braid_GetBlockDistProc(braid_Int   npoints,
                         braid_Int   nprocs,
                         braid_Int   index,
+                        braid_Int   periodic,
                         braid_Int  *proc_ptr)
 {
    braid_Int      proc, quo, rem, p, q;
+
+   /* If periodic, adjust the index based on the periodicity */
+   if (periodic > 0)
+   {
+      index = (index+npoints) % npoints;  /* this also handles negative indexes */
+   }
 
    /* Compute processor number */
    if ((index < 0) || (index > (npoints-1)))
@@ -674,7 +683,7 @@ _braid_GetProc(braid_Core   core,
       _braid_MapCoarseToFine(index, cfactor, index);
    }
 
-   _braid_GetBlockDistProc(npoints, nprocs, index, proc_ptr);
+   _braid_GetBlockDistProc(npoints, nprocs, index, _braid_CoreElt(core, periodic), proc_ptr);
 
    return _braid_error_flag;
 }
@@ -1000,10 +1009,10 @@ _braid_UGetVector(braid_Core         core,
    if (index == recv_index)
    {
       /* If a recv was initiated, receive u value from neighbor processor */
-      if (recv_index > -1)
+      if (recv_index > _braid_RecvIndexOff)
       {
          _braid_CommWait(core, &recv_handle);
-         _braid_GridElt(grids[level], recv_index)  = -1;
+         _braid_GridElt(grids[level], recv_index)  = _braid_RecvIndexOff;
          _braid_GridElt(grids[level], recv_handle) = recv_handle;
          u = ua[-1];
       }
@@ -1053,7 +1062,7 @@ _braid_USetVector(braid_Core        core,
    {
       /* Post send to neighbor processor */
       _braid_CommSendInit(core, level, index, u, &send_handle);
-      _braid_GridElt(grids[level], send_index)  = -1;
+      _braid_GridElt(grids[level], send_index)  = _braid_SendIndexOff;
       _braid_GridElt(grids[level], send_handle) = send_handle;
    }
 
@@ -1113,8 +1122,8 @@ _braid_UCommInitBasic(braid_Core  core,
    braid_Int            ilower      = _braid_GridElt(grids[level], ilower);
    braid_Int            iupper      = _braid_GridElt(grids[level], iupper);
    braid_BaseVector    *ua          = _braid_GridElt(grids[level], ua);
-   braid_Int            recv_index  = -1;
-   braid_Int            send_index  = -1;
+   braid_Int            recv_index  = _braid_RecvIndexOff;
+   braid_Int            send_index  = _braid_SendIndexOff;
    _braid_CommHandle   *recv_handle = NULL;
    _braid_CommHandle   *send_handle = NULL;
    braid_Int            iu, sflag;
@@ -1139,7 +1148,7 @@ _braid_UCommInitBasic(braid_Core  core,
             abort();
          }
          _braid_CommSendInit(core, level, send_index, ua[iu], &send_handle);
-         send_index = -1;
+         send_index = _braid_SendIndexOff;
       }
    }
 
@@ -1164,8 +1173,8 @@ _braid_UCommInit(braid_Core  core,
    braid_Int            iupper      = _braid_GridElt(grids[level], iupper);
    braid_Int            cfactor     = _braid_GridElt(grids[level], cfactor);
    braid_BaseVector    *ua          = _braid_GridElt(grids[level], ua);
-   braid_Int            recv_index  = -1;
-   braid_Int            send_index  = -1;
+   braid_Int            recv_index  = _braid_RecvIndexOff;
+   braid_Int            send_index  = _braid_SendIndexOff;
    _braid_CommHandle   *recv_handle = NULL;
    _braid_CommHandle   *send_handle = NULL;
    braid_Int            iu, sflag;
@@ -1184,7 +1193,7 @@ _braid_UCommInit(braid_Core  core,
       {
          _braid_UGetIndex(core, level, iupper, &iu, &sflag);
          _braid_CommSendInit(core, level, iupper, ua[iu], &send_handle);
-         send_index = -1;
+         send_index = _braid_SendIndexOff;
       }
       else
       {
@@ -1213,8 +1222,8 @@ _braid_UCommInitF(braid_Core  core,
    braid_Int            iupper      = _braid_GridElt(grids[level], iupper);
    braid_Int            cfactor     = _braid_GridElt(grids[level], cfactor);
    braid_BaseVector    *ua          = _braid_GridElt(grids[level], ua);
-   braid_Int            recv_index  = -1;
-   braid_Int            send_index  = -1;
+   braid_Int            recv_index  = _braid_RecvIndexOff;
+   braid_Int            send_index  = _braid_SendIndexOff;
    _braid_CommHandle   *recv_handle = NULL;
    _braid_CommHandle   *send_handle = NULL;
    braid_Int            iu, sflag;
@@ -1236,7 +1245,7 @@ _braid_UCommInitF(braid_Core  core,
       {
          _braid_UGetIndex(core, level, iupper, &iu, &sflag);
          _braid_CommSendInit(core, level, iupper, ua[iu], &send_handle);
-         send_index = -1;
+         send_index = _braid_SendIndexOff;
       }
       else if ( _braid_IsFPoint(iupper+1, cfactor) )
       {
@@ -1266,8 +1275,8 @@ _braid_UCommWait(braid_Core  core,
 
    _braid_CommWait(core, &recv_handle);
    _braid_CommWait(core, &send_handle);
-   _braid_GridElt(grids[level], recv_index)  = -1;
-   _braid_GridElt(grids[level], send_index)  = -1;
+   _braid_GridElt(grids[level], recv_index)  = _braid_RecvIndexOff;
+   _braid_GridElt(grids[level], send_index)  = _braid_SendIndexOff;
    _braid_GridElt(grids[level], recv_handle) = recv_handle;
    _braid_GridElt(grids[level], send_handle) = send_handle;
 
@@ -1682,8 +1691,8 @@ _braid_GridInit(braid_Core     core,
    _braid_GridElt(grid, level)  = level;
    _braid_GridElt(grid, ilower) = ilower;
    _braid_GridElt(grid, iupper) = iupper;
-   _braid_GridElt(grid, recv_index) = -1;
-   _braid_GridElt(grid, send_index) = -1;
+   _braid_GridElt(grid, recv_index) = _braid_RecvIndexOff;
+   _braid_GridElt(grid, send_index) = _braid_SendIndexOff;
    
    /* Store each processor's time slice, plus one time value to the left 
     * and to the right */
@@ -1917,8 +1926,8 @@ _braid_ComputeFullRNorm(braid_Core  core,
    _braid_Grid      **grids       = _braid_CoreElt(core, grids);
    braid_StepStatus   status      = (braid_StepStatus)core;
    braid_Int          nrefine     = _braid_CoreElt(core, nrefine);
-   braid_Int          gupper      = _braid_CoreElt(core, gupper);
    braid_Int          ncpoints    = _braid_GridElt(grids[level], ncpoints);
+   braid_Int          gupper      = _braid_CoreElt(core, gupper);
    braid_Int          tnorm       = _braid_CoreElt(core, tnorm);
    braid_Real        *ta          = _braid_GridElt(grids[level], ta);
    braid_Int          ilower      = _braid_GridElt(grids[level], ilower);
@@ -1939,7 +1948,7 @@ _braid_ComputeFullRNorm(braid_Core  core,
       {
          _braid_UGetVector(core, level, flo-1, &u);
       }
-      else if (ci > 0)
+      else if (ci > _braid_CoreElt(core, initial_ci))
       {
          _braid_UGetVector(core, level, ci-1, &u);
       }
@@ -1975,13 +1984,13 @@ _braid_ComputeFullRNorm(braid_Core  core,
          {
             /* Post send to neighbor processor */
             _braid_CommSendInit(core, level, fi, u, &send_handle);
-            _braid_GridElt(grids[level], send_index)  = -1;
+            _braid_GridElt(grids[level], send_index)  = _braid_SendIndexOff;
             _braid_GridElt(grids[level], send_handle) = send_handle;
          }
          _braid_BaseFree(core, app,  r);
       }
       /* Residual from C-point. */
-      if (ci > 0)
+      if (ci > _braid_CoreElt(core, initial_ci))
       {
          /* Update local processor norm. */
          ii = ci-ilower;
@@ -2005,7 +2014,7 @@ _braid_ComputeFullRNorm(braid_Core  core,
          _braid_BaseFree(core, app,  r);
       }
 
-      if ((flo <= fhi) || (ci > 0))
+      if ((flo <= fhi) || (ci > _braid_CoreElt(core, initial_ci)))
       {
          _braid_BaseFree(core, app,  u);
       }
@@ -2065,7 +2074,7 @@ _braid_FCRelax(braid_Core  core,
          {
             _braid_UGetVector(core, level, flo-1, &u);
          }
-         else if (ci > 0)
+         else if (ci > _braid_CoreElt(core, initial_ci))
          {
             _braid_UGetVector(core, level, ci-1, &u);
          }
@@ -2078,14 +2087,14 @@ _braid_FCRelax(braid_Core  core,
          }
 
          /* C-relaxation */
-         if (ci > 0)
+         if (ci > _braid_CoreElt(core, initial_ci))
          {
             _braid_Step(core, level, ci, NULL, u);
             _braid_USetVector(core, level, ci, u, 1);
          }
 
          /* if ((flo <= fhi) && (interval == ncpoints)) */
-         if ((flo <= fhi) && !(ci > 0))
+         if ((flo <= fhi) && !(ci > _braid_CoreElt(core, initial_ci)))
          {
             _braid_BaseFree(core, app,  u);
          }
@@ -2190,7 +2199,7 @@ _braid_FRestrict(braid_Core   core,
       {
          _braid_UGetVector(core, level, flo-1, &r);
       }
-      else if (ci > 0)
+      else if (ci > _braid_CoreElt(core, initial_ci))
       {
          _braid_UGetVector(core, level, ci-1, &r);
       }
@@ -2239,7 +2248,7 @@ _braid_FRestrict(braid_Core   core,
          
       
       /* Compute residual and restrict */
-      if (ci > 0)
+      if (ci > _braid_CoreElt(core, initial_ci))
       {
          /* Compute FAS residual */
          _braid_UGetVectorRef(core, level, ci, &u);
@@ -2272,7 +2281,7 @@ _braid_FRestrict(braid_Core   core,
          _braid_Coarsen(core, c_level, 0, 0, u, &c_va[0]);
       }
 
-      if ((flo <= fhi) || (ci > 0))
+      if ((flo <= fhi) || (ci > _braid_CoreElt(core, initial_ci)))
       {
          _braid_BaseFree(core, app,  r);
       }
@@ -2430,7 +2439,7 @@ _braid_FInterp(braid_Core  core,
       }
 
       /* Interpolate C-points, refining in space if needed */
-      if (ci > 0)
+      if (ci > _braid_CoreElt(core, initial_ci))
       {
          _braid_UGetVectorRef(core, level, ci, &u);
          /* Allow user to process current C-point */
@@ -2808,7 +2817,8 @@ _braid_FRefine(braid_Core   core,
       /* Post r_fa send */
       if (ilower > 0)
       {
-         _braid_GetBlockDistProc((gupper+1), nprocs, (ilower-1), &prevproc);
+         _braid_GetBlockDistProc((gupper+1), nprocs, (ilower-1),
+                                 _braid_CoreElt(core, periodic), &prevproc);
          MPI_Isend(send_buf, 2, braid_MPI_REAL, prevproc, 2, comm,
                    &requests[ncomms++]);
       }
@@ -2863,12 +2873,14 @@ _braid_FRefine(braid_Core   core,
    send_buffer = _braid_CTAlloc(braid_Real, r_npoints*(1+isize+1));
    bptr = send_buffer;
    nsends = -1;
-   _braid_GetBlockDistProc((f_gupper+1), nprocs, (r_ilower-1), &prevproc);
+   _braid_GetBlockDistProc((f_gupper+1), nprocs, (r_ilower-1),
+                           _braid_CoreElt(core, periodic), &prevproc);
    ii = 0;
    for (r_ii = 0; r_ii < r_npoints; r_ii++)
    {
       r_i = r_ilower + r_ii;
-      _braid_GetBlockDistProc((f_gupper+1), nprocs, r_i, &proc);
+      _braid_GetBlockDistProc((f_gupper+1), nprocs, r_i,
+                              _braid_CoreElt(core, periodic), &proc);
       if ((proc != prevproc) || (nsends < 0))
       {
          nsends++;
@@ -3079,7 +3091,7 @@ _braid_FRefine(braid_Core   core,
       if (send_ua[ii] != NULL)
       {
          r_i = r_fa[ii];
-         _braid_GetBlockDistProc((f_gupper+1), nprocs, r_i, &proc);
+         _braid_GetBlockDistProc((f_gupper+1), nprocs, r_i, _braid_CoreElt(core, periodic), &proc);
          if (proc != prevproc)
          {
             if (proc != myproc)
@@ -3107,7 +3119,7 @@ _braid_FRefine(braid_Core   core,
       if (f_ca[f_ii] > -1)
       {
          i = f_ca[f_ii];
-         _braid_GetBlockDistProc((gupper+1), nprocs, i, &proc);
+         _braid_GetBlockDistProc((gupper+1), nprocs, i, _braid_CoreElt(core, periodic), &proc);
          if (proc != prevproc)
          {
             if (proc != myproc)
@@ -3562,8 +3574,9 @@ _braid_InitHierarchy(braid_Core    core,
       }
 
       _braid_GetCFactor(core, level, &cfactor);
-      
-      _braid_GridElt(grid, gupper) = gcupper;
+
+      gupper = gcupper;
+      _braid_GridElt(grid, gupper) = gupper;
 
       _braid_ProjectInterval(gclower, gcupper, 0, cfactor, &gclower, &gcupper);
       _braid_MapFineToCoarse(gclower, cfactor, gclower);

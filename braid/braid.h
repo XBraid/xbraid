@@ -71,7 +71,6 @@ extern "C" {
 
 /** @} */
 
-
 /*--------------------------------------------------------------------------
  * Error Codes 
  *--------------------------------------------------------------------------*/
@@ -353,7 +352,6 @@ typedef braid_Int
                        braid_Int        *iupper     /**< upper time index value for this processor */
                        );
 
-
 /** @}*/
 
 /*--------------------------------------------------------------------------
@@ -381,7 +379,6 @@ typedef braid_Int
                          braid_ObjectiveStatus ostatus,          /**< status structure for querying time, index, etc. */
                          braid_Real           *objectiveT_ptr    /**< output: objective function at current time */
                         );
-
 
 /**
  * This is the differentiated version of the @ref braid_PtFcnObjectiveT routine. 
@@ -434,7 +431,6 @@ typedef braid_Int
                                         braid_Real  *F_bar_ptr   /**< output: partial derivative of the postprocessed objective with respect to sum_obj */
                                        );
 
-
 /**
  * This is the differentiated version of the time-stepping routine. 
  * It provides the transposed derivatives of *Step()* multiplied by the adjoint 
@@ -455,8 +451,6 @@ typedef braid_Int
                        braid_StepStatus status     /**< query this struct for info about u (e.g., tstart and tstop) */ 
                       );
 
-
-
 /**
  * Set the gradient to zero, which is usually stored in @ref braid_App .
  */
@@ -465,7 +459,6 @@ typedef braid_Int
                            );
 
 /** @}*/
-
 
 /*--------------------------------------------------------------------------
  * User Interface Routines
@@ -727,6 +720,18 @@ braid_SetTimeGrid(braid_Core          core,  /**< braid_Core (_braid_Core) struc
                   );
 
 /**
+ * Set periodic time grid.  The periodicity on each grid level is given by the
+ * number of points on each level.  Requirements: The number of points on the
+ * finest grid level must be evenly divisible by the product of the coarsening
+ * factors between each grid level.  Currently, the coarsening factors must be
+ * the same on all grid levels.  Also, braid_SetSeqSoln must not be used.
+ **/
+braid_Int
+braid_SetPeriodic(braid_Core core,     /**< braid_Core (_braid_Core) struct*/
+                  braid_Int  periodic  /**< boolean to specify if periodic */
+                  );
+
+/**
  * Set spatial coarsening routine with user-defined routine.
  * Default is no spatial refinment or coarsening.
  **/
@@ -836,6 +841,7 @@ braid_SplitCommworld(const MPI_Comm  *comm_world,  /**< Global communicator to s
                      MPI_Comm        *comm_x,      /**< Spatial communicator (written as output) */
                      MPI_Comm        *comm_t       /**< Temporal communicator (written as output) */
                      );
+
 /**
  * Activate the shell vector feature, and set the various functions that are required :
  * - sinit  : create a shell vector
@@ -920,7 +926,6 @@ braid_GetSpatialAccuracy( braid_StepStatus  status,         /**< Current XBraid 
                           braid_Real        tight_tol,      /**< Tightest allowed spatial solve stopping tol on fine grid*/
                           braid_Real       *tol_ptr         /**< output, holds the computed spatial solve stopping tol */
                          );
-
 /**
  * Set the initial guess to XBraid as the sequential time stepping solution.
  * This is primarily for debugging.  When used with storage=-2, the initial
@@ -940,7 +945,6 @@ braid_SetSeqSoln(braid_Core  core,          /**< braid_Core (_braid_Core) struct
                  braid_Int   seq_soln       /**< 1: Init with sequential time stepping soln, 0: Use user's Init()*/
                  );
 
-
 /**
  * Get the processor's rank.
  */                       
@@ -948,7 +952,6 @@ braid_Int
 braid_GetMyID(braid_Core core,           /**< braid_Core (_braid_Core) struct */
               braid_Int *myid_ptr        /**< output: rank of the processor. */
              );
-
 
 /** @}*/
 

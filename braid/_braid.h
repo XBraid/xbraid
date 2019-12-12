@@ -20,7 +20,6 @@
  * Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  ***********************************************************************EHEADER*/
- 
 
 /** \file _braid.h
  * \brief Define headers for developer routines.
@@ -200,6 +199,8 @@ typedef struct _braid_Core_struct
    braid_PtFcnSRefine     srefine;          /**< (optional) return a spatially refined vector */
    braid_PtFcnSync        sync;             /**< (optional) user access to app once-per-processor */
    braid_PtFcnTimeGrid    tgrid;            /**< (optional) return time point values on level 0 */
+   braid_Int              periodic;         /**< determines if periodic */
+   braid_Int              initial_ci;       /**< initial C-pt index (0: default; -1: periodic )*/
 
    braid_Int              access_level;     /**< determines how often to call the user's access routine */ 
    braid_Int              print_level;      /**< determines amount of output printed to screen (0,1,2,3) */
@@ -392,6 +393,7 @@ braid_Int
 _braid_GetBlockDistProc(braid_Int   npoints,
                         braid_Int   nprocs,
                         braid_Int   index,
+                        braid_Int   periodic,
                         braid_Int  *proc_ptr);
 
 /**
