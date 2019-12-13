@@ -237,7 +237,7 @@ my_Init(braid_App     app,
    my_Vector *u;
 
    u = (my_Vector *) malloc(sizeof(my_Vector));
-   if (t == 0.0) /* Initial condition */
+   if (t == app->tstart) /* Initial condition */
    {
       (u->value) = 1.0;
    }
@@ -381,6 +381,7 @@ int main (int argc, char *argv[])
    int           max_levels = 2;
    int           nrelax     = 1;
    int           nrelax0    = -1;
+   int           nrelaxc    = 5;
    double        tol        = 1.0e-06;
    int           cfactor    = 2;
    int           max_iter   = 100;
@@ -416,6 +417,7 @@ int main (int argc, char *argv[])
             printf("  -ml  <max_levels> : set max levels\n");
             printf("  -nu  <nrelax>     : set num F-C relaxations\n");
             printf("  -nu0 <nrelax>     : set num F-C relaxations on level 0\n");
+            printf("  -nuc <nrelax>     : set num F-C relaxations on coarsest grid\n");
             printf("  -tol <tol>        : set stopping tolerance\n");
             printf("  -cf  <cfactor>    : set coarsening factor\n");
             printf("  -mi  <max_iter>   : set max iterations\n");
@@ -449,6 +451,11 @@ int main (int argc, char *argv[])
       {
          arg_index++;
          nrelax0 = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-nuc") == 0 )
+      {
+         arg_index++;
+         nrelaxc = atoi(argv[arg_index++]);
       }
       else if ( strcmp(argv[arg_index], "-tol") == 0 ) 
       {
@@ -519,6 +526,7 @@ int main (int argc, char *argv[])
    {
       braid_SetNRelax(core,  0, nrelax0);
    }
+   braid_SetNRelax(core, max_levels-1, nrelaxc);
    braid_SetAbsTol(core, tol);
    braid_SetCFactor(core, -1, cfactor);
    braid_SetMaxIter(core, max_iter);

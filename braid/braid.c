@@ -194,7 +194,6 @@ _braid_DriveUpdateCycle(braid_Core          core,
          tol *= rnorm0;
       }
 
-
       _braid_ParFprintfFlush(cycle.outfile, myid, "%d %d %d %d %1.15e %1.15e\n",
                              level, nrefine, iter, gupper, rnorm, tol);
    }
@@ -265,7 +264,6 @@ _braid_DriveCheckConvergence(braid_Core  core,
       _braid_GetRNorm(core, -1, &rnorm);
       rnorm0 = _braid_CoreElt(core, rnorm0);
    }
-
 
    if ( adjoint )
    {
@@ -463,7 +461,7 @@ braid_Drive(braid_Core  core)
    braid_Int            seq_soln        = _braid_CoreElt(core, seq_soln);
    braid_SyncStatus     sstatus         = (braid_SyncStatus)core;
 
-   braid_Int     *nrels, nrel0;
+   braid_Int     *nrels;
    braid_Int      nlevels;
    braid_Int      ilower, iupper, i;
    braid_Real    *ta;
@@ -530,12 +528,9 @@ braid_Drive(braid_Core  core)
       /* Create a grid hierarchy */
       _braid_InitHierarchy(core, grid, 0);
 
-
       /* Set initial values */
       _braid_InitGuess(core, 0);
-
    }
-
 
    if ( adjoint)
    {
@@ -565,10 +560,8 @@ braid_Drive(braid_Core  core)
       }
    }
 
-
-   /* Turn on warm_restart, so that further calls to braid_drive() don't initialize the grid again. */
+   /* Turn on warm_restart, so further calls to braid_drive() don't initialize the grid again. */
    _braid_CoreElt(core, warm_restart) = 1;
-
 
    /* Initialize cycle state */
    _braid_DriveInitCycle(core, &cycle);
@@ -599,6 +592,7 @@ braid_Drive(braid_Core  core)
        * either FRefine() or FAccess(). */
       if (nlevels == 1)
       {
+         braid_Int  nrel0;
          nrels = _braid_CoreElt(core, nrels);
          nrel0 = nrels[0];
          nrels[0] = 1;
@@ -637,6 +631,17 @@ braid_Drive(braid_Core  core)
 
          if (level > 0)
          {
+            /* Periodic coarsest grid solve */
+            if ( (level == (nlevels-1)) && _braid_CoreElt(core, periodic) )
+            {
+               braid_Int  nrel;
+               nrels = _braid_CoreElt(core, nrels);
+               nrel  = nrels[level];
+               nrels[level] = nrels[max_levels-1];
+               _braid_FCRelax(core, level);
+               nrels[level] = nrel;
+            }
+
             /* F-relax then interpolate */
             _braid_FInterp(core, level);
 
@@ -706,7 +711,6 @@ braid_Drive(braid_Core  core)
 
             /* Print current status */
             _braid_DrivePrintStatus(core, level, iter, refined, localtime);
-
 
             /* If no refinement was done, check for convergence */
             if (!refined)
@@ -905,11 +909,11 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, nfmg_Vcyc)       = nfmg_Vcyc;
 
    _braid_CoreElt(core, storage)         = -1;            /* only store C-points */
-   _braid_CoreElt(core, useshell)         = 0;
+   _braid_CoreElt(core, useshell)        = 0;
 
-   _braid_CoreElt(core, gupper)          = ntime;
+   _braid_CoreElt(core, gupper)          = 0; /* Set with SetPeriodic() below */
 
-   _braid_CoreElt(core, refine)          = 0;  /* Time refinement off by default */
+   _braid_CoreElt(core, refine)          = 0; /* Time refinement off by default */
    _braid_CoreElt(core, rfactors)        = NULL;
    _braid_CoreElt(core, r_space)         = 0;
    _braid_CoreElt(core, rstopped)        = -1;
@@ -1011,8 +1015,6 @@ braid_InitAdjoint(braid_PtFcnObjectiveT        objectiveT,
    _braid_CoreElt(*core_ptr, objT_diff)      = objT_diff;
    _braid_CoreElt(*core_ptr, reset_gradient) = reset_gradient;
 
-
-
    return _braid_error_flag;
 }
 
@@ -1034,7 +1036,6 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, cfactors));
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
-
 
       /* Destroy the optimization structure */
       _braid_CoreElt(core, record) = 0;
@@ -1602,9 +1603,11 @@ braid_SetPeriodic(braid_Core core,
                   braid_Int  periodic)
 {
    _braid_CoreElt(core, periodic)   = periodic;
+   _braid_CoreElt(core, gupper)     = _braid_CoreElt(core, ntime);
    _braid_CoreElt(core, initial_ci) = 0;
    if (periodic)
    {
+      _braid_CoreElt(core, gupper)     = _braid_CoreElt(core, ntime) - 1;
       _braid_CoreElt(core, initial_ci) = -1;
    }
 

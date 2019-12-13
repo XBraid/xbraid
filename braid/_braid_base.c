@@ -68,7 +68,12 @@ _braid_BaseStep(braid_Core       core,
       _braid_CoreElt(core, barTape) = _braid_TapePush(_braid_CoreElt(core, barTape), ustopbar_copy);
   }
 
-   /* Call the users Step function */
+   /* Call the users Step function.  If periodic and integrating to the periodic
+    * point, adjust tnext to be tstop. */
+   if ( _braid_CoreElt(core, periodic) && (_braid_CoreElt(core, idx) < 0) )
+   {
+      _braid_CoreElt(core, tnext) = _braid_CoreElt(core, tstop);
+   }
    if ( fstop == NULL )
    {
       _braid_CoreFcn(core, step)(app, ustop->userVector, NULL, u->userVector, status);
@@ -78,6 +83,7 @@ _braid_BaseStep(braid_Core       core,
       /* fstop not supported by adjoint! */
       _braid_CoreFcn(core, step)(app, ustop->userVector, fstop->userVector, u->userVector, status);
    }
+
    return _braid_error_flag;
 }
 
