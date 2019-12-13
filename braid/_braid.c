@@ -2924,7 +2924,7 @@ _braid_FRefine(braid_Core   core,
 
    /* Post receives */
    recv_size = f_npoints*(1+isize+1); /* max receive size */
-   recv_buffer = _braid_CTAlloc(braid_Real, recv_size);
+   recv_buffer = _braid_CTAlloc(braid_Real, recv_size+1);
    f_ca = _braid_CTAlloc(braid_Int,  f_npoints);
    f_ta = _braid_GridElt(f_grid, ta);
    nreceived = 0;
