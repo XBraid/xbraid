@@ -35,6 +35,9 @@
 #define _braid_SendIndexOff -2
 #define _braid_RecvIndexOff -2
 
+#define _braid_MapPeriodic(index, npoints) \
+( index = ((index)+(npoints)) % (npoints) )  /* this also handles negative indexes */
+
 #define DEBUG 0
 
 #if DEBUG
@@ -605,7 +608,7 @@ _braid_GetBlockDistProc(braid_Int   npoints,
    /* If periodic, adjust the index based on the periodicity */
    if (periodic > 0)
    {
-      index = (index+npoints) % npoints;  /* this also handles negative indexes */
+      _braid_MapPeriodic(index, npoints);
    }
 
    /* Compute processor number */
@@ -2325,10 +2328,8 @@ _braid_FRestrict(braid_Core   core,
    /* Initialize update of c_va[-1] boundary */
    if (c_ilower <= c_iupper)
    {
-      _braid_CommRecvInit(core, c_level, c_ilower-1, &c_va[-1],
-                          &recv_handle);
-      _braid_CommSendInit(core, c_level, c_iupper, c_va[c_iupper-c_ilower],
-                          &send_handle);
+      _braid_CommRecvInit(core, c_level, c_ilower-1, &c_va[-1], &recv_handle);
+      _braid_CommSendInit(core, c_level, c_iupper, c_va[c_iupper-c_ilower], &send_handle);
    }
 
    /* Start with rightmost point */
@@ -2551,10 +2552,9 @@ _braid_FRefineSpace(braid_Core   core,
  * Create a new fine grid (level 0) and corresponding grid hierarchy by refining
  * the current fine grid based on user-provided refinement factors.  Return the
  * boolean 'refined_ptr' to indicate whether grid refinement was actually done.
- * To simplify the algorithm, refinement factors are automatically capped to be
- * no greater than the coarsening factor (for level 0).  The grid data is also
- * redistributed to achieve good load balance in the temporal dimension.  If the
- * refinement factor is 1 in each time interval, no refinement is done.
+ * The grid data is redistributed to achieve good load balance in the temporal
+ * dimension.  If the refinement factor is 1 in each time interval, no
+ * refinement is done.
  *
  * This routine is somewhat complex, but an attempt was made to use consistent
  * terminology throughout.  We refer to the initial level 0 grid as the "coarse"
@@ -2625,7 +2625,21 @@ _braid_FRefineSpace(braid_Core   core,
  *  f_first           62
  *   f_next                                                                       74
  *  recv_ua      0     *   0   0   *     0     *   0   0   *     0     *
+ *
+ * Comments on the periodic case: The coarse-grid indexes can never be negative,
+ * so it is okay to use '-1' in the 'r_ca' array.  The values in the 'r_fa'
+ * array will also never be negative.  It is okay to pass negative indexes to
+ * the _braid_GetBlockDistProc() routine, but there is one instance below where
+ * negative indexes had to be first mapped to its corresponding positive value
+ * to correctly use it as an index into an array.
  * 
+ *----------------------------------------------------------------------------
+ *
+ * The following optimization was removed, because it is problematic in general
+ * (e.g., when doing adaptive spatial refinement such as SAMR).  Note that the
+ * next 'r_fa' value to my right (computed below) was needed to implement this
+ * feature, but it is not needed otherwise.
+ *
  * When storing C-pts only, data from coarse indices 29 and 34 are not needed,
  * so we have the following differences from above:
  *     r_ca   -1  -1  -1          30    -1    31  -1  -1  32    -1    33
@@ -2717,7 +2731,6 @@ _braid_FRefine(braid_Core   core,
    r_npoints = 0;
    for (i = ilower; i <= iupper; i++)
    {
-      /* First modify rfactor to be no greater than cfactor (required) */
       ii = i - ilower;
       if (rfactors[ii] < 1)
       {
@@ -2749,7 +2762,17 @@ _braid_FRefine(braid_Core   core,
    }
       
    /* Compute r_ilower and r_iupper */
-   MPI_Scan(&r_npoints, &r_iupper, 1, braid_MPI_INT, MPI_SUM, comm);
+   {
+      braid_Int  inbuf = r_npoints;
+
+      /* If periodic, adjust the r_iupper index values in the scan by adjusting
+       * the 'inbuf' value on the first time interval */
+      if ( _braid_CoreElt(core, periodic) && (ilower == 0))
+      {
+         inbuf = inbuf - (rfactors[0] - 1);
+      }
+      MPI_Scan(&inbuf, &r_iupper, 1, braid_MPI_INT, MPI_SUM, comm);
+   }
    r_ilower = r_iupper - r_npoints;
    r_iupper = r_iupper - 1;
 
@@ -2774,8 +2797,15 @@ _braid_FRefine(braid_Core   core,
    r_ii = 0;
    for (i = (ilower-1); i < iupper; i++)
    {
+      braid_Real  dt;
+
       ii = i-ilower;
       rfactor = rfactors[ii+1];
+      dt = ta[ii+1]-ta[ii];
+      if ( _braid_CoreElt(core, periodic) && (i < 0) )
+      {
+         dt = _braid_CoreElt(core, tstop) - ta[ii]; /* Use periodic time value */
+      }
 
       for (j = 1; j <= rfactor; j++)
       {
@@ -2783,7 +2813,7 @@ _braid_FRefine(braid_Core   core,
          {
             r_ca[r_ii] = -1;
             /* This works because we have ta[-1] */
-            r_ta[r_ii] = ta[ii] + (((braid_Real)j)/rfactor)*(ta[ii+1]-ta[ii]);
+            r_ta[r_ii] = ta[ii] + (((braid_Real)j)/rfactor)*dt;
          }
          else
          {
@@ -2796,7 +2826,10 @@ _braid_FRefine(braid_Core   core,
       }
    }
 
-   /* Get the next r_fa value to my right */
+   /* Get the next r_fa and r_ta values to my right.  Note that the r_ta values
+    * should be exchanged in a toroidal fashion in the periodic case. */
+   /* RDF - Remove the "next r_fa" part of this, since it is only needed for the
+    * below optimization that we are also removing. */
    ncomms = 2; /* Upper bound */
    requests = _braid_CTAlloc(MPI_Request, ncomms);
    statuses = _braid_CTAlloc(MPI_Status,  ncomms);
@@ -2808,30 +2841,30 @@ _braid_FRefine(braid_Core   core,
       send_buf[1]=r_ta[0];     
       /* Post r_fa receive */
       r_fa[npoints] = f_gupper+1;
-      if (iupper < gupper)
+      if ((iupper < gupper) || _braid_CoreElt(core, periodic))
       {
-         MPI_Irecv(recv_buf, 2, braid_MPI_REAL, MPI_ANY_SOURCE, 2, comm,
-                   &requests[ncomms++]);
+         MPI_Irecv(recv_buf, 2, braid_MPI_REAL, MPI_ANY_SOURCE, 2, comm, &requests[ncomms++]);
       }
 
-      /* Post r_fa send */
-      if (ilower > 0)
+      /* Post r_fa send (to the left) */
+      if ((ilower > 0) || _braid_CoreElt(core, periodic))
       {
          _braid_GetBlockDistProc((gupper+1), nprocs, (ilower-1),
                                  _braid_CoreElt(core, periodic), &prevproc);
-         MPI_Isend(send_buf, 2, braid_MPI_REAL, prevproc, 2, comm,
-                   &requests[ncomms++]);
+         MPI_Isend(send_buf, 2, braid_MPI_REAL, prevproc, 2, comm, &requests[ncomms++]);
       }
       MPI_Waitall(ncomms, requests, statuses);
-      if ( iupper < gupper )
+      if (( iupper < gupper ) || _braid_CoreElt(core, periodic))
       {
-         r_fa[npoints]=recv_buf[0];
+//         r_fa[npoints]=recv_buf[0];
+         r_fa[npoints]=-99;
          r_ta[r_npoints]=recv_buf[1];
       }
    }
    _braid_TFree(requests);
    _braid_TFree(statuses);
 
+#if 0 /* RDF - This causes problems in general.  Remove it altogether. */
    /* If storing only C-points on the fine grid (and NOT using shell vectors),
     *  modify r_ca to mark only those coarse points that need to be sent to
     * initialize the C-points */
@@ -2848,6 +2881,7 @@ _braid_FRefine(braid_Core   core,
          }
       }
    }
+#endif
 
    /*-----------------------------------------------------------------------*/
    /* 3. Send the index mapping and time value information (r_ca, r_ta) to the
@@ -2889,8 +2923,21 @@ _braid_FRefine(braid_Core   core,
 
          if ((proc != prevproc) && (prevproc > -1))
          {
+            braid_Int  msg;
+
             /* Send f_next info */
-            MPI_Send(&r_fa[ii], 1, braid_MPI_INT, prevproc, 3, comm);
+            if (r_i < 0)
+            {
+               /* Refined indexes can be negative in the periodic case.  Want to
+                * send an upper bound for the positive periodic value of these
+                * indexes (not zero). */
+               msg = (f_gupper+1);
+            }
+            else
+            {
+               msg = r_fa[ii];
+            }
+            MPI_Send(&msg, 1, braid_MPI_INT, prevproc, 3, comm);
          }
          prevproc = proc;
       }
@@ -2954,6 +3001,12 @@ _braid_FRefine(braid_Core   core,
       {
          iptr = (braid_Int *) bptr;
          f_i = iptr[0];
+         /* Since this is being used as an array index, ensure that it is has
+          * the correct positive value in the periodic case */
+         if ( _braid_CoreElt(core, periodic) )
+         {
+            _braid_MapPeriodic(f_i, (f_gupper+1));
+         }
          f_ii = f_i - f_ilower;
          f_ca[f_ii] = iptr[1];
          bptr += isize;
@@ -3044,6 +3097,10 @@ _braid_FRefine(braid_Core   core,
             r_ii = r_fa[ii] - r_ilower;
             if (r_ca[r_ii] > -1)
             {
+               /* Note that r_ta and ta must have values to the left and right.
+                * For example, the values r_ta[r_ii-1], r_ta[r_ii], r_ta[r_ii+1]
+                * must all be present, hence the need for computing the next
+                * r_ta value above. */
                _braid_RefineBasic(core, -1, fi, &r_ta[r_ii], &ta[ii], u, &send_ua[ii]);
             }
 
@@ -3068,6 +3125,7 @@ _braid_FRefine(braid_Core   core,
          r_ii = r_fa[ii] - r_ilower;
          if (r_ca[r_ii] > -1)
          {
+            /* Note that r_ta and ta must have values to the left and right */
             _braid_RefineBasic(core, -1, ci, &r_ta[r_ii], &ta[ii], u, &send_ua[ii]);
          }
 
@@ -3278,10 +3336,8 @@ _braid_FRefine(braid_Core   core,
    /*-----------------------------------------------------------------------*/
    /* 5. Build the new fine grid hierarchy, then use recv_ua to populate the
     * initial values on grid level 0.  This is done by integrating values to the
-    * next C-point the right.  Because we require that rfactor <= cfactor, each
-    * C-point either has a corresponding value or has a value in the F-interval
-    * immediately to the left that can be integrated.  Communication from the
-    * left processor may still be needed. */
+    * next C-point to the right.  Communication from the left processor may
+    * still be needed. */
 
 #if DEBUG
    printf("%d %d: 5\n", FRefine_count, myproc);

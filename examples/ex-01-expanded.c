@@ -559,6 +559,7 @@ int main (int argc, char *argv[])
       printf("  num_syncs             = %d\n\n", (app->num_syncs));
 
    braid_Destroy(core);
+   free(app);
    MPI_Finalize();
 
    return (0);

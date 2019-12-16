@@ -128,13 +128,27 @@ my_Step(braid_App        app,
       {
          rf = (int)(ceil(sqrt(0.5*LTE/(u->value)/(app->tol))));
       }
+      else if (app->refine == 4)
+      {
+         int index, cfactor = 2;
+         braid_StepStatusGetTIndex(status, &index);
+         rf = 1;
+         if (nrefine < 4)
+         {
+            /* Refine each interval (as indicated by its right index) that is a
+             * multiple of cfactor, i.e., interval 0, cfactor, 2*cfactor, ... */
+            if ( ((index+1) % cfactor) == 0 )
+            {
+               rf = cfactor*cfactor-1;
+            }
+         }
+      }
 
       rf = (rf < 1) ? 1 : rf;
       if (app->limit_rfactor > 0)
          rf = (rf < app->limit_rfactor) ? rf : app->limit_rfactor;
       braid_StepStatusSetRFactor(status, rf);
    }
-
 
    return 0;
 }
@@ -288,7 +302,7 @@ int main (int argc, char *argv[])
    my_App       *app;
    double        tstart, tstop, tol;
    int           ntime, rank, limit_rfactor, arg_index, print_usage;
-   int           refine, output, storage, fmg, sync;
+   int           refine, output, storage, fmg, sync, periodic;
 
    /* Define time domain: ntime intervals */
    ntime  = 100;
@@ -302,6 +316,7 @@ int main (int argc, char *argv[])
    storage = -1;
    fmg = 0;
    sync = 0;
+   periodic = 0;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -342,6 +357,10 @@ int main (int argc, char *argv[])
          arg_index++;
          sync = 1;
       }
+      else if( strcmp(argv[arg_index], "-periodic") == 0 ){
+         arg_index++;
+         periodic = 1;
+      }
       else if ( strcmp(argv[arg_index], "-fmg") == 0 ){
          arg_index++;
          fmg = 1;
@@ -366,10 +385,12 @@ int main (int argc, char *argv[])
       printf("                                     : 0 - no refinement\n");
       printf("                                     : 1 - arbitrary refinement around t=2.5\n");
       printf("                                     : 2 - refinement based on local truncation error\n");
+      printf("                                     : 4 - periodic example based on cfactor\n");
       printf("  -max_rfactor <lim>                 : limit the refinement factor (default: -1)\n");
       printf("  -fmg                               : use FMG cycling\n");
       printf("  -storage <level>                   : full storage on levels >= level\n");
       printf("  -sync                              : enable calls to the sync function\n");
+      printf("  -periodic                          : solve a periodic problem\n");
       printf("  -no_output                         : do not save the solution in output files\n");
       printf("  -help                              : print this help and exit\n");
       printf("\n");
@@ -408,6 +429,8 @@ int main (int argc, char *argv[])
       braid_SetAccessLevel(core, 0);
    if (sync)
       braid_SetSync(core, my_Sync);
+   if (periodic)
+      braid_SetPeriodic(core, periodic);
 
    /* Run simulation, and then clean up */
    braid_Drive(core);
