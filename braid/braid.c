@@ -909,12 +909,13 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, nfmg_Vcyc)       = nfmg_Vcyc;
 
    _braid_CoreElt(core, storage)         = -1;            /* only store C-points */
-   _braid_CoreElt(core, useshell)        = 0;
+   _braid_CoreElt(core, useshell)         = 0;
 
    _braid_CoreElt(core, gupper)          = 0; /* Set with SetPeriodic() below */
 
-   _braid_CoreElt(core, refine)          = 0; /* Time refinement off by default */
+   _braid_CoreElt(core, refine)          = 0;  /* Time refinement off by default */
    _braid_CoreElt(core, rfactors)        = NULL;
+   _braid_CoreElt(core, rdtvalues)       = NULL;
    _braid_CoreElt(core, r_space)         = 0;
    _braid_CoreElt(core, rstopped)        = -1;
    _braid_CoreElt(core, nrefine)         = 0;
@@ -1036,6 +1037,7 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, cfactors));
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
+      _braid_TFree(_braid_CoreElt(core, rdtvalues));
 
       /* Destroy the optimization structure */
       _braid_CoreElt(core, record) = 0;
@@ -1863,7 +1865,7 @@ braid_SetTStopObjective(braid_Core core,
 
 braid_Int
 braid_SetPostprocessObjective(braid_Core                      core,
-                              braid_PtFcnPostprocessObjective post_fcn)
+                              braid_PtFcnPostprocessObjective post_fcn )
 {
    if ( !(_braid_CoreElt(core, adjoint)) )
    {
@@ -1877,7 +1879,7 @@ braid_SetPostprocessObjective(braid_Core                      core,
 
 braid_Int
 braid_SetPostprocessObjective_diff(braid_Core                           core,
-                                   braid_PtFcnPostprocessObjective_diff post_fcn_diff)
+                                   braid_PtFcnPostprocessObjective_diff post_fcn_diff )
 {
    if ( !(_braid_CoreElt(core, adjoint)) )
    {

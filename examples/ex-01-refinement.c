@@ -1,20 +1,20 @@
 /*BHEADER**********************************************************************
- * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
- * Produced at the Lawrence Livermore National Laboratory. Written by 
- * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
+ * Copyright (c) 2013, Lawrence Livermore National Security, LLC.
+ * Produced at the Lawrence Livermore National Laboratory. Written by
+ * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin
  * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
- * 
+ *
  * This file is part of XBraid. For support, post issues to the XBraid Github page.
- * 
+ *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License (as published by the Free Software
  * Foundation) version 2.1 dated February 1999.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE. See the terms and conditions of the GNU General Public
  * License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License along
  * with this program; if not, write to the Free Software Foundation, Inc., 59
  * Temple Place, Suite 330, Boston, MA 02111-1307 USA
@@ -25,8 +25,8 @@
  * Example:       ex-01-refinement.c
  *
  * Interface:     C
- * 
- * Requires:      only C-language support     
+ *
+ * Requires:      only C-language support
  *
  * Compile with:  make ex-01
  *
@@ -34,11 +34,11 @@
  *
  * Sample run:    mpirun -np 2 ex-01
  *
- * Description:   solve the scalar ODE 
- *                   u' = lambda u, 
+ * Description:   solve the scalar ODE
+ *                   u' = lambda u,
  *                   with lambda=-1 and y(0) = 1
  *                in a very simplified XBraid setting.
- *                
+ *
  *                When run with the default 10 time steps and no refinement, the solution is:
  *                $ ./ex-01
  *                $ cat ex-01.out.00*
@@ -99,6 +99,7 @@ my_Step(braid_App        app,
    double dt;                 /* step size */
    double v;                  /* current value of the solution */
    double LTE;
+
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
    dt = tstop-tstart;
    v = (u->value);
@@ -114,19 +115,44 @@ my_Step(braid_App        app,
    braid_StepStatusGetNRefine(status, &nrefine);
 
    /* XBraid only accepts refinements on level 0, and it's also a good idea to
-    * cap the number of possible refinements (here capped at 8) */ 
+    * cap the number of possible refinements (here capped at 8) */
    if ((level == 0) && (nrefine < 8))
    {
       int rf = 1;
       if (app->refine == 1)
       {
          if (dt>0.001)
+         {
             if ( (tstart<=2.5+0.00001)&&(2.5-0.00001<=tstop) )
+            {
                rf = 100;
+            }
+         }
       }
       else if (app->refine == 2)
       {
          rf = (int)(ceil(sqrt(0.5*LTE/(u->value)/(app->tol))));
+      }
+      else if (app->refine == 3)
+      {
+         if (dt>0.001)
+         {
+            if ( (tstart<=2.5+0.00001)&&(2.5-0.00001<=tstop) )
+            {
+               double newdt, *dtvalues;
+               int    i;
+
+               rf = 2;
+               newdt = dt / (double) rf;
+               dtvalues = (double*) malloc((rf-1)*sizeof(double));
+               for (i=0; i<rf-1; i++)
+               {
+                  dtvalues[i] = newdt;
+               }
+               braid_StatusSetRefinementDtValues((braid_Status)status, rf, dtvalues);
+               free(dtvalues);
+            }
+         }
       }
       else if (app->refine == 4)
       {
@@ -146,7 +172,9 @@ my_Step(braid_App        app,
 
       rf = (rf < 1) ? 1 : rf;
       if (app->limit_rfactor > 0)
+      {
          rf = (rf < app->limit_rfactor) ? rf : app->limit_rfactor;
+      }
       braid_StepStatusSetRFactor(status, rf);
    }
 
@@ -228,7 +256,7 @@ my_Access(braid_App          app,
    char       filename[255];
    FILE      *file;
    double     t;
-   
+
    braid_AccessStatusGetT(astatus, &t);
    braid_AccessStatusGetTIndex(astatus, &index);
    sprintf(filename, "%s.%04d.%03d", "ex-01-refinement.out", index, app->rank);
@@ -288,7 +316,9 @@ my_Sync(braid_App app,
    braid_SyncStatusGetCallingFunction(status, &calling_fcn);
 
    if(calling_fcn == braid_ASCaller_FRefine_AfterInitHier)
+   {
       app->num_syncs += 1;
+   }
     return 0;
 }
 
@@ -324,56 +354,70 @@ int main (int argc, char *argv[])
 
    /* Parse command line */
    arg_index = 0;
-   while( arg_index < argc ){
-      if( strcmp(argv[arg_index], "-nt") == 0 ){
+   while( arg_index < argc )
+   {
+      if( strcmp(argv[arg_index], "-nt") == 0 )
+      {
          arg_index++;
          ntime = atoi(argv[arg_index++]);
       }
-      else if( strcmp(argv[arg_index], "-max_rfactor") == 0 ){
+      else if( strcmp(argv[arg_index], "-max_rfactor") == 0 )
+      {
          arg_index++;
          limit_rfactor = atoi(argv[arg_index++]);
       }
-      else if( strcmp(argv[arg_index], "-refine") == 0 ){
+      else if( strcmp(argv[arg_index], "-refine") == 0 )
+      {
          arg_index++;
          refine = atoi(argv[arg_index++]);
       }
-      else if( strcmp(argv[arg_index], "-tol") == 0 ){
+      else if( strcmp(argv[arg_index], "-tol") == 0 )
+      {
          arg_index++;
          tol = atof(argv[arg_index++]);
       }
-      else if( strcmp(argv[arg_index], "-no_output") == 0 ){
+      else if( strcmp(argv[arg_index], "-no_output") == 0 )
+      {
          arg_index++;
          output = 0;
       }
-      else if( strcmp(argv[arg_index], "-help") == 0 ){
+      else if( strcmp(argv[arg_index], "-help") == 0 )
+      {
          print_usage = 1;
          break;
       }
-      else if ( strcmp(argv[arg_index], "-storage") == 0 ){
+      else if ( strcmp(argv[arg_index], "-storage") == 0 )
+      {
          arg_index++;
          storage = atoi(argv[arg_index++]);
       }
-      else if( strcmp(argv[arg_index], "-sync") == 0 ){
+      else if( strcmp(argv[arg_index], "-sync") == 0 )
+      {
          arg_index++;
          sync = 1;
       }
-      else if( strcmp(argv[arg_index], "-periodic") == 0 ){
+      else if( strcmp(argv[arg_index], "-periodic") == 0 )
+      {
          arg_index++;
          periodic = 1;
       }
-      else if ( strcmp(argv[arg_index], "-fmg") == 0 ){
+      else if ( strcmp(argv[arg_index], "-fmg") == 0 )
+      {
          arg_index++;
          fmg = 1;
       }
-      else{
-         if(arg_index > 1){
+      else
+      {
+         if(arg_index > 1)
+         {
             printf("UNUSED command line paramter %s\n", argv[arg_index]);
          }
          arg_index++;
       }
    }
 
-   if((print_usage) && (rank == 0)){
+   if((print_usage) && (rank == 0))
+   {
       printf("\n");
       printf("Usage: %s [<options>]\n", argv[0]);
       printf("\n");
@@ -385,6 +429,7 @@ int main (int argc, char *argv[])
       printf("                                     : 0 - no refinement\n");
       printf("                                     : 1 - arbitrary refinement around t=2.5\n");
       printf("                                     : 2 - refinement based on local truncation error\n");
+      printf("                                     : 3 - arbitrary refinement around t=2.5, specifying the new time-step sizes\n");
       printf("                                     : 4 - periodic example based on cfactor\n");
       printf("  -max_rfactor <lim>                 : limit the refinement factor (default: -1)\n");
       printf("  -fmg                               : use FMG cycling\n");
@@ -396,11 +441,11 @@ int main (int argc, char *argv[])
       printf("\n");
    }
 
-   if( print_usage ){
+   if( print_usage )
+   {
       MPI_Finalize();
       return (0);
    }
-
 
    /* set up app structure */
    app = (my_App *) malloc(sizeof(my_App));
@@ -422,21 +467,33 @@ int main (int argc, char *argv[])
    braid_SetCFactor(core, -1, 2);
    braid_SetRefine(core, 1);
    if (fmg)
+   {
       braid_SetFMG(core);
+   }
    if (storage >= -2)
+   {
       braid_SetStorage(core, storage);
+   }
    if (!output)
+   {
       braid_SetAccessLevel(core, 0);
+   }
    if (sync)
+   {
       braid_SetSync(core, my_Sync);
+   }
    if (periodic)
+   {
       braid_SetPeriodic(core, periodic);
+   }
 
    /* Run simulation, and then clean up */
    braid_Drive(core);
 
    if (sync && rank == 0)
+   {
       printf("  num_syncs             = %d\n\n", (app->num_syncs));
+   }
 
    braid_Destroy(core);
    free(app);

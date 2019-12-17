@@ -1190,7 +1190,7 @@ _braid_UCommInit(braid_Core  core,
       /* Post receive */
       _braid_CommRecvInit(core, level, ilower-1, &ua[-1], &recv_handle);
       recv_index = ilower-1;
-
+      
       /* Only post send if iupper is a C-point, otherwise compute and send later */
       if ( _braid_IsCPoint(iupper, cfactor) )
       {
@@ -1241,8 +1241,8 @@ _braid_UCommInitF(braid_Core  core,
       }
 
       /* Only post send if iupper is a C-point and iupper+1 is an F-point.  This
-       * check allows for the case of cfactor=1, i.e., all C-points.  Otherwise,
-       * if iupper+1 is an F-point, set send_index, so that when that point is
+       * check allows for the case of cfactor=1, i.e., all C-points.  Otherwise, 
+       * if iupper+1 is an F-point, set send_index, so that when that point is 
        * computed later, it is sent. */
       if ( _braid_IsCPoint(iupper, cfactor) && _braid_IsFPoint(iupper+1, cfactor))
       {
@@ -1438,7 +1438,6 @@ _braid_Step(braid_Core         core,
    braid_App          app      = _braid_CoreElt(core, app);
    braid_Real         tol      = _braid_CoreElt(core, tol);
    braid_Int          iter     = _braid_CoreElt(core, niter);
-   braid_Int         *rfactors = _braid_CoreElt(core, rfactors);
    _braid_Grid      **grids    = _braid_CoreElt(core, grids);
    braid_StepStatus   status   = (braid_StepStatus)core;
    braid_Int          nrefine  = _braid_CoreElt(core, nrefine);
@@ -1461,9 +1460,6 @@ _braid_Step(braid_Core         core,
    if (level == 0)
    {
       _braid_BaseStep(core, app,  ustop, NULL, u, level, status);
-      rfactors[ii] = _braid_StatusElt(status, rfactor);
-      if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
-         _braid_CoreElt(core, r_space) = 1;
    }     
    else
    {
@@ -1498,7 +1494,6 @@ _braid_Residual(braid_Core        core,
    braid_App        app      = _braid_CoreElt(core, app);
    braid_Real       tol      = _braid_CoreElt(core, tol);
    braid_Int        iter     = _braid_CoreElt(core, niter);
-   braid_Int       *rfactors = _braid_CoreElt(core, rfactors);
    _braid_Grid    **grids    = _braid_CoreElt(core, grids);
    braid_StepStatus status   = (braid_StepStatus)core;
    braid_Int        nrefine  = _braid_CoreElt(core, nrefine);
@@ -1517,14 +1512,6 @@ _braid_Residual(braid_Core        core,
       _braid_GetUInit(core, level, index, r, &rstop);
       _braid_BaseStep(core, app,  rstop, NULL, r, level, status);
       _braid_BaseSum(core, app,  1.0, ustop, -1.0, r);
-      if (level == 0)
-      {
-         /*TODO Remove this line after modifing the _braid_StatusSetRFactor to set the rfactor in the array directly */
-         rfactors[ii] = _braid_StatusElt(status, rfactor);
-         /* TODO : Remove these two lines, which are now useless since core==status */
-         if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
-            _braid_CoreElt(core, r_space) = 1;
-      }
    }
    else
    {
@@ -2709,7 +2696,7 @@ _braid_PeriodicAdjustRFactors(braid_Core   core,
  *  f_first           62
  *   f_next                                                                       74
  *  recv_ua      0     *   0   0   *     0     *   0   0   *     0     *
- *
+ * 
  * Comments on the periodic case: The coarse-grid indexes can never be negative,
  * so it is okay to use '-1' in the 'r_ca' array.  The values in the 'r_fa'
  * array will also never be negative.  It is okay to pass negative indexes to
@@ -2742,6 +2729,7 @@ _braid_FRefine(braid_Core   core,
    braid_Int          iter            = _braid_CoreElt(core, niter);
    braid_Int          refine          = _braid_CoreElt(core, refine);
    braid_Int         *rfactors        = _braid_CoreElt(core, rfactors);
+   braid_Real       **rdtvalues       = _braid_CoreElt(core, rdtvalues);
    braid_Int          nrefine         = _braid_CoreElt(core, nrefine);
    braid_Int          max_refinements = _braid_CoreElt(core, max_refinements);
    braid_Int          tpoints_cutoff  = _braid_CoreElt(core, tpoints_cutoff);
@@ -2776,6 +2764,7 @@ _braid_FRefine(braid_Core   core,
                    
    _braid_Grid      *f_grid;
    braid_Int         cfactor, rfactor, m, interval, flo, fhi, fi, ci, f_hi, f_ci;
+   braid_Real       *rdtvalue;
 
 #if DEBUG
    /*cfactor = 6;*/ /* RDF HACKED TEST */
@@ -2844,7 +2833,7 @@ _braid_FRefine(braid_Core   core,
    {
       _braid_CoreElt(core, r_space) = 0;
    }
-
+      
    /* If periodic, add refinement to ensure the required number of points */
    if (periodic)
    {
@@ -2893,6 +2882,7 @@ _braid_FRefine(braid_Core   core,
 
       ii = i-ilower;
       rfactor = rfactors[ii+1];
+      rdtvalue = rdtvalues[ii+1];
       dt = ta[ii+1]-ta[ii];
       if ( periodic && (i < 0) )
       {
@@ -2904,8 +2894,16 @@ _braid_FRefine(braid_Core   core,
          if (j < rfactor)
          {
             r_ca[r_ii] = -1;
-            /* This works because we have ta[-1] */
-            r_ta[r_ii] = ta[ii] + (((braid_Real)j)/rfactor)*dt;
+            if (rdtvalue != NULL) 
+            {
+               /* Non-uniform refinement. Add points based on dt values. */
+               r_ta[r_ii] = r_ta[r_ii-1] + rdtvalue[j-1];
+            } 
+            else 
+            {
+               /* Refine uniformly based on rfactor.  This works because we have ta[-1]. */
+               r_ta[r_ii] = ta[ii] + (((braid_Real)j)/rfactor)*dt;
+            }
          }
          else
          {
@@ -3356,6 +3354,16 @@ _braid_FRefine(braid_Core   core,
       }
    }
 
+   /* Free refinement dt values, if set */
+   for(ii = 0; ii < iupper-ilower+2; ii++)
+   {
+      if (rdtvalues[ii] != NULL)
+      {
+         _braid_TFree(rdtvalues[ii]);
+      }
+      rdtvalues[ii] = NULL;
+   }
+
    /* Free up some memory */
    _braid_TFree(send_ua);
    _braid_TFree(send_procs);
@@ -3383,6 +3391,7 @@ _braid_FRefine(braid_Core   core,
    {
       braid_Int  level, nlevels = _braid_CoreElt(core, nlevels);
       _braid_TFree(_braid_CoreElt(core, rfactors));
+      _braid_TFree(_braid_CoreElt(core, rdtvalues));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
 
       for (level = 0; level < nlevels; level++)
@@ -3464,6 +3473,13 @@ _braid_FRefine(braid_Core   core,
             {
                _braid_USetVector(core, 0, f_j, u, 0);
                _braid_Step(core, 0, f_j+1, NULL, u);
+               /* Free rdtvalue if it has just been set */
+               int iii = f_j+1 - f_ilower;
+               if (_braid_CoreElt(core, rdtvalues)[iii] != NULL)
+               {
+                  _braid_TFree(_braid_CoreElt(core, rdtvalues)[iii]);
+                  _braid_CoreElt(core, rdtvalues)[iii] = NULL;
+               }
             }
          }
          _braid_USetVector(core, 0, f_j, u, 1);
@@ -3599,6 +3615,7 @@ _braid_InitHierarchy(braid_Core    core,
    braid_Int      nrdefault  = _braid_CoreElt(core, nrdefault);
    braid_Int      gupper     = _braid_CoreElt(core, gupper);
    braid_Int     *rfactors   = _braid_CoreElt(core, rfactors);
+   braid_Real   **rdtvalues  = _braid_CoreElt(core, rdtvalues);
    braid_Int      nlevels    = _braid_CoreElt(core, nlevels);
    _braid_Grid  **grids      = _braid_CoreElt(core, grids);
 
@@ -3656,6 +3673,10 @@ _braid_InitHierarchy(braid_Core    core,
    }
    _braid_CoreElt(core, rfactors) = rfactors;
 
+   /* Allocate array of refiment dt values, initialized with NULL */
+   rdtvalues = _braid_CTAlloc(braid_Real*, iupper-ilower+2); /* Ensures non-NULL */
+   _braid_CoreElt(core, rdtvalues) = rdtvalues;
+
    /* Set up nrels array */
    for (level = 0; level < max_levels; level++)
    {
@@ -3688,7 +3709,7 @@ _braid_InitHierarchy(braid_Core    core,
       }
 
       _braid_GetCFactor(core, level, &cfactor);
-
+      
       gupper = gcupper;
       _braid_GridElt(grid, gupper) = gupper;
 
