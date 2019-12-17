@@ -1604,11 +1604,11 @@ braid_SetPeriodic(braid_Core core,
 {
    _braid_CoreElt(core, periodic)   = periodic;
    _braid_CoreElt(core, gupper)     = _braid_CoreElt(core, ntime);
-   _braid_CoreElt(core, initial_ci) = 0;
+   _braid_CoreElt(core, initiali) = 0;
    if (periodic)
    {
       _braid_CoreElt(core, gupper)     = _braid_CoreElt(core, ntime) - 1;
-      _braid_CoreElt(core, initial_ci) = -1;
+      _braid_CoreElt(core, initiali) = -1;
    }
 
    return _braid_error_flag;

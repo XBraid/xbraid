@@ -606,7 +606,7 @@ _braid_GetBlockDistProc(braid_Int   npoints,
    braid_Int      proc, quo, rem, p, q;
 
    /* If periodic, adjust the index based on the periodicity */
-   if (periodic > 0)
+   if (periodic)
    {
       _braid_MapPeriodic(index, npoints);
    }
@@ -1951,7 +1951,7 @@ _braid_ComputeFullRNorm(braid_Core  core,
       {
          _braid_UGetVector(core, level, flo-1, &u);
       }
-      else if (ci > _braid_CoreElt(core, initial_ci))
+      else if (ci > _braid_CoreElt(core, initiali))
       {
          _braid_UGetVector(core, level, ci-1, &u);
       }
@@ -1993,7 +1993,7 @@ _braid_ComputeFullRNorm(braid_Core  core,
          _braid_BaseFree(core, app,  r);
       }
       /* Residual from C-point. */
-      if (ci > _braid_CoreElt(core, initial_ci))
+      if (ci > _braid_CoreElt(core, initiali))
       {
          /* Update local processor norm. */
          ii = ci-ilower;
@@ -2017,7 +2017,7 @@ _braid_ComputeFullRNorm(braid_Core  core,
          _braid_BaseFree(core, app,  r);
       }
 
-      if ((flo <= fhi) || (ci > _braid_CoreElt(core, initial_ci)))
+      if ((flo <= fhi) || (ci > _braid_CoreElt(core, initiali)))
       {
          _braid_BaseFree(core, app,  u);
       }
@@ -2077,7 +2077,7 @@ _braid_FCRelax(braid_Core  core,
          {
             _braid_UGetVector(core, level, flo-1, &u);
          }
-         else if (ci > _braid_CoreElt(core, initial_ci))
+         else if (ci > _braid_CoreElt(core, initiali))
          {
             _braid_UGetVector(core, level, ci-1, &u);
          }
@@ -2090,14 +2090,14 @@ _braid_FCRelax(braid_Core  core,
          }
 
          /* C-relaxation */
-         if (ci > _braid_CoreElt(core, initial_ci))
+         if (ci > _braid_CoreElt(core, initiali))
          {
             _braid_Step(core, level, ci, NULL, u);
             _braid_USetVector(core, level, ci, u, 1);
          }
 
          /* if ((flo <= fhi) && (interval == ncpoints)) */
-         if ((flo <= fhi) && !(ci > _braid_CoreElt(core, initial_ci)))
+         if ((flo <= fhi) && !(ci > _braid_CoreElt(core, initiali)))
          {
             _braid_BaseFree(core, app,  u);
          }
@@ -2202,7 +2202,7 @@ _braid_FRestrict(braid_Core   core,
       {
          _braid_UGetVector(core, level, flo-1, &r);
       }
-      else if (ci > _braid_CoreElt(core, initial_ci))
+      else if (ci > _braid_CoreElt(core, initiali))
       {
          _braid_UGetVector(core, level, ci-1, &r);
       }
@@ -2251,7 +2251,7 @@ _braid_FRestrict(braid_Core   core,
          
       
       /* Compute residual and restrict */
-      if (ci > _braid_CoreElt(core, initial_ci))
+      if (ci > _braid_CoreElt(core, initiali))
       {
          /* Compute FAS residual */
          _braid_UGetVectorRef(core, level, ci, &u);
@@ -2284,7 +2284,7 @@ _braid_FRestrict(braid_Core   core,
          _braid_Coarsen(core, c_level, 0, 0, u, &c_va[0]);
       }
 
-      if ((flo <= fhi) || (ci > _braid_CoreElt(core, initial_ci)))
+      if ((flo <= fhi) || (ci > _braid_CoreElt(core, initiali)))
       {
          _braid_BaseFree(core, app,  r);
       }
@@ -2335,7 +2335,7 @@ _braid_FRestrict(braid_Core   core,
    /* Start with rightmost point */
    for (c_i = c_iupper; c_i >= c_ilower; c_i--)
    {
-      if (c_i > 0)
+      if (c_i > _braid_CoreElt(core, initiali))
       {
          c_ii = c_i - c_ilower;
          if (c_ii == 0)
@@ -2440,7 +2440,7 @@ _braid_FInterp(braid_Core  core,
       }
 
       /* Interpolate C-points, refining in space if needed */
-      if (ci > _braid_CoreElt(core, initial_ci))
+      if (ci > _braid_CoreElt(core, initiali))
       {
          _braid_UGetVectorRef(core, level, ci, &u);
          /* Allow user to process current C-point */
