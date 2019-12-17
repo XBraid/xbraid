@@ -32,12 +32,6 @@
 #include "_braid_status.h"
 #include "_braid_base.h"
 
-#define _braid_SendIndexOff -2
-#define _braid_RecvIndexOff -2
-
-#define _braid_MapPeriodic(index, npoints) \
-( index = ((index)+(npoints)) % (npoints) )  /* this also handles negative indexes */
-
 #define DEBUG 0
 
 #if DEBUG
@@ -559,6 +553,12 @@ _braid_AdjointFeatureCheck(braid_Core core)
 /*----------------------------------------------------------------------------
  * Macros used below
  *----------------------------------------------------------------------------*/
+
+#define _braid_SendIndexOff -2
+#define _braid_RecvIndexOff -2
+
+#define _braid_MapPeriodic(index, npoints) \
+( index = ((index)+(npoints)) % (npoints) )  /* this also handles negative indexes */
 
 /* Compute number of reals given some number of bytes (use ceiling) */
 #define _braid_NBytesToNReals(nbytes, nreals) \
@@ -2549,6 +2549,90 @@ _braid_FRefineSpace(braid_Core   core,
 }
 
 /*----------------------------------------------------------------------------
+ * Helper routine for periodic problems.  Compute the divisor by which the
+ * number of points must be divisible and also the number of extra needed.
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_PeriodicCheckNumPoints(braid_Core   core,
+                              braid_Int    npoints,
+                              braid_Int   *divisor_ptr,
+                              braid_Int   *nextra_ptr)
+{
+   braid_Int  divisor, nextra, level, size, cfactor;
+
+   /* Compute coarsening factor divisor */
+   divisor = 1;
+   nextra  = 0;
+   size = npoints;
+   for (level = 0; level < (_braid_CoreElt(core, max_levels) - 1); level++)
+   {
+      _braid_GetCFactor(core, level, &cfactor);
+      size    /= cfactor;
+      divisor *= cfactor;
+      if (size < cfactor)
+      {
+         break;
+      }
+   }
+   if (divisor < npoints)
+   {
+      divisor *= cfactor;
+   }
+   nextra = divisor - npoints;
+
+   *divisor_ptr = divisor;
+   *nextra_ptr  = nextra;
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
+ * Helper routine for periodic problems.  Add refinement to ensure the required
+ * number of points.
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_PeriodicAdjustRFactors(braid_Core   core,
+                              braid_Int   *lnrpoints_ptr,   /* local num refined points */
+                              braid_Int   *gnrpoints_ptr)   /* global num refined points */
+{
+   braid_Int   lnrpoints = *lnrpoints_ptr;
+   braid_Int   gnrpoints = *gnrpoints_ptr;
+
+   braid_Int      gupper   = _braid_CoreElt(core, gupper);
+   braid_Int     *rfactors = _braid_CoreElt(core, rfactors);
+   _braid_Grid  **grids    = _braid_CoreElt(core, grids);
+   braid_Int      ilower   = _braid_GridElt(grids[0], ilower);
+   braid_Int      iupper   = _braid_GridElt(grids[0], iupper);
+   braid_Int      divisor, gnextra, extra_ilo, extra_ihi, extra, i;
+
+   /* Compute global number of extra refined points needed */
+   _braid_PeriodicCheckNumPoints(core, gnrpoints, &divisor, &gnextra);
+
+   if (gnextra > 0)
+   {
+      gnrpoints = gnrpoints + gnextra;
+
+      for (i = ilower; i <= iupper; i++)
+      {
+         _braid_GetBlockDistInterval(gnextra, (gupper+1), i, &extra_ilo, &extra_ihi);
+         extra = extra_ihi - extra_ilo + 1;
+         if (extra > 0)
+         {
+            rfactors[i-ilower] += extra;
+            lnrpoints          += extra;
+         }
+      }
+
+      *lnrpoints_ptr = lnrpoints;
+      *gnrpoints_ptr = gnrpoints;
+   }
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
  * Create a new fine grid (level 0) and corresponding grid hierarchy by refining
  * the current fine grid based on user-provided refinement factors.  Return the
  * boolean 'refined_ptr' to indicate whether grid refinement was actually done.
@@ -2655,6 +2739,7 @@ _braid_FRefine(braid_Core   core,
 {
    MPI_Comm           comm            = _braid_CoreElt(core, comm);
    braid_App          app             = _braid_CoreElt(core, app);
+   braid_Int          periodic        = _braid_CoreElt(core, periodic);
    braid_Int          iter            = _braid_CoreElt(core, niter);
    braid_Int          refine          = _braid_CoreElt(core, refine);
    braid_Int         *rfactors        = _braid_CoreElt(core, rfactors);
@@ -2737,7 +2822,7 @@ _braid_FRefine(braid_Core   core,
          _braid_Error(braid_ERROR_GENERIC, "Refinement factor smaller than one");
          rfactors[ii] = 1;
       }
-      r_npoints += rfactors[i-ilower];
+      r_npoints += rfactors[ii];
    }
    MPI_Allreduce(&r_npoints, &f_gupper, 1, braid_MPI_INT, MPI_SUM, comm);
    f_gupper--;
@@ -2760,6 +2845,14 @@ _braid_FRefine(braid_Core   core,
    {
       _braid_CoreElt(core, r_space) = 0;
    }
+
+   /* If periodic, add refinement to ensure the required number of points */
+   if (periodic)
+   {
+      f_gupper++;
+      _braid_PeriodicAdjustRFactors(core, &r_npoints, &f_gupper);
+      f_gupper--;
+   }
       
    /* Compute r_ilower and r_iupper */
    {
@@ -2767,7 +2860,7 @@ _braid_FRefine(braid_Core   core,
 
       /* If periodic, adjust the r_iupper index values in the scan by adjusting
        * the 'inbuf' value on the first time interval */
-      if ( _braid_CoreElt(core, periodic) && (ilower == 0))
+      if ( periodic && (ilower == 0))
       {
          inbuf = inbuf - (rfactors[0] - 1);
       }
@@ -2802,7 +2895,7 @@ _braid_FRefine(braid_Core   core,
       ii = i-ilower;
       rfactor = rfactors[ii+1];
       dt = ta[ii+1]-ta[ii];
-      if ( _braid_CoreElt(core, periodic) && (i < 0) )
+      if ( periodic && (i < 0) )
       {
          dt = _braid_CoreElt(core, tstop) - ta[ii]; /* Use periodic time value */
       }
@@ -2841,20 +2934,19 @@ _braid_FRefine(braid_Core   core,
       send_buf[1]=r_ta[0];     
       /* Post r_fa receive */
       r_fa[npoints] = f_gupper+1;
-      if ((iupper < gupper) || _braid_CoreElt(core, periodic))
+      if ((iupper < gupper) || periodic)
       {
          MPI_Irecv(recv_buf, 2, braid_MPI_REAL, MPI_ANY_SOURCE, 2, comm, &requests[ncomms++]);
       }
 
       /* Post r_fa send (to the left) */
-      if ((ilower > 0) || _braid_CoreElt(core, periodic))
+      if ((ilower > 0) || periodic)
       {
-         _braid_GetBlockDistProc((gupper+1), nprocs, (ilower-1),
-                                 _braid_CoreElt(core, periodic), &prevproc);
+         _braid_GetBlockDistProc((gupper+1), nprocs, (ilower-1), periodic, &prevproc);
          MPI_Isend(send_buf, 2, braid_MPI_REAL, prevproc, 2, comm, &requests[ncomms++]);
       }
       MPI_Waitall(ncomms, requests, statuses);
-      if (( iupper < gupper ) || _braid_CoreElt(core, periodic))
+      if (( iupper < gupper ) || periodic)
       {
 //         r_fa[npoints]=recv_buf[0];
          r_fa[npoints]=-99;
@@ -2907,14 +2999,12 @@ _braid_FRefine(braid_Core   core,
    send_buffer = _braid_CTAlloc(braid_Real, r_npoints*(1+isize+1));
    bptr = send_buffer;
    nsends = -1;
-   _braid_GetBlockDistProc((f_gupper+1), nprocs, (r_ilower-1),
-                           _braid_CoreElt(core, periodic), &prevproc);
+   _braid_GetBlockDistProc((f_gupper+1), nprocs, (r_ilower-1), periodic, &prevproc);
    ii = 0;
    for (r_ii = 0; r_ii < r_npoints; r_ii++)
    {
       r_i = r_ilower + r_ii;
-      _braid_GetBlockDistProc((f_gupper+1), nprocs, r_i,
-                              _braid_CoreElt(core, periodic), &proc);
+      _braid_GetBlockDistProc((f_gupper+1), nprocs, r_i, periodic, &proc);
       if ((proc != prevproc) || (nsends < 0))
       {
          nsends++;
@@ -3003,7 +3093,7 @@ _braid_FRefine(braid_Core   core,
          f_i = iptr[0];
          /* Since this is being used as an array index, ensure that it is has
           * the correct positive value in the periodic case */
-         if ( _braid_CoreElt(core, periodic) )
+         if (periodic)
          {
             _braid_MapPeriodic(f_i, (f_gupper+1));
          }
@@ -3020,7 +3110,6 @@ _braid_FRefine(braid_Core   core,
          }
          nreceived++;
       }
-
    }
 
    /* Finish sends and f_next receive */
@@ -3149,7 +3238,7 @@ _braid_FRefine(braid_Core   core,
       if (send_ua[ii] != NULL)
       {
          r_i = r_fa[ii];
-         _braid_GetBlockDistProc((f_gupper+1), nprocs, r_i, _braid_CoreElt(core, periodic), &proc);
+         _braid_GetBlockDistProc((f_gupper+1), nprocs, r_i, periodic, &proc);
          if (proc != prevproc)
          {
             if (proc != myproc)
@@ -3177,7 +3266,7 @@ _braid_FRefine(braid_Core   core,
       if (f_ca[f_ii] > -1)
       {
          i = f_ca[f_ii];
-         _braid_GetBlockDistProc((gupper+1), nprocs, i, _braid_CoreElt(core, periodic), &proc);
+         _braid_GetBlockDistProc((gupper+1), nprocs, i, periodic, &proc);
          if (proc != prevproc)
          {
             if (proc != myproc)
