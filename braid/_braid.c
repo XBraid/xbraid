@@ -44,10 +44,10 @@ FILE    *_braid_printfile  = NULL;
 braid_Int 
 _braid_VectorBarCopy(braid_VectorBar bar, braid_VectorBar *bar_ptr)
 {
-  bar->useCount++;
-  *bar_ptr= bar;
+   bar->useCount++;
+   *bar_ptr= bar;
 
-  return _braid_error_flag;
+   return _braid_error_flag;
 }
 
 braid_Int
@@ -59,15 +59,15 @@ _braid_VectorBarDelete(braid_Core core, braid_VectorBar bar)
    /* Free memory, if no pointer is left */
    if (bar->useCount==0)
    {
-       _braid_CoreFcn(core, free)(_braid_CoreElt(core, app), bar->userVector);
-       free(bar);
+      _braid_CoreFcn(core, free)(_braid_CoreElt(core, app), bar->userVector);
+      free(bar);
    }
  
    /* Sanity check */
    else if (bar->useCount < 0)
    {
-     printf("ERROR: useCount < 0 !\n");
-     exit(0);
+      printf("ERROR: useCount < 0 !\n");
+      exit(0);
    }
  
    return _braid_error_flag;
@@ -83,45 +83,45 @@ _braid_OptimDestroy( braid_Core core)
     * has been created */
    if (_braid_CoreElt(core, grids)[0] != NULL)
    {
-     _braid_Grid *fine_grid  = _braid_CoreElt(core, grids)[0];
-     braid_Int    storage    = _braid_CoreElt(core, storage);
-     braid_Int    clower     = _braid_GridElt(fine_grid, clower);
-     braid_Int    iupper     = _braid_GridElt(fine_grid, iupper);
-     braid_Int    ilower     = _braid_GridElt(fine_grid, ilower);
-     braid_Int    cfactor    = _braid_GridElt(fine_grid, cfactor);
-     braid_Int    ic, iclocal, sflag, increment, destroy_flag;
+      _braid_Grid *fine_grid  = _braid_CoreElt(core, grids)[0];
+      braid_Int    storage    = _braid_CoreElt(core, storage);
+      braid_Int    clower     = _braid_GridElt(fine_grid, clower);
+      braid_Int    iupper     = _braid_GridElt(fine_grid, iupper);
+      braid_Int    ilower     = _braid_GridElt(fine_grid, ilower);
+      braid_Int    cfactor    = _braid_GridElt(fine_grid, cfactor);
+      braid_Int    ic, iclocal, sflag, increment, destroy_flag;
 
-     /* Get the number of adjoint vectors on finest level */
-     if (storage < 0 ) 
-     {
-        /* Only C-point storage */
-        ilower    = clower;
-        increment = cfactor;
-     }
-     else
-     {
-        /* All points */
-        increment = 1;
-     }
+      /* Get the number of adjoint vectors on finest level */
+      if (storage < 0 ) 
+      {
+         /* Only C-point storage */
+         ilower    = clower;
+         increment = cfactor;
+      }
+      else
+      {
+         /* All points */
+         increment = 1;
+      }
 
-     /* Free the adjoint variables and tapeinput */
-     for (ic=ilower; ic <= iupper; ic += increment)
-     {
-        destroy_flag = 1;
+      /* Free the adjoint variables and tapeinput */
+      for (ic=ilower; ic <= iupper; ic += increment)
+      {
+         destroy_flag = 1;
 
-        /* if only C-point storage, destroy only at C-points */
-        if (storage < 0 &&  !(_braid_IsCPoint(ic, cfactor)) )
-        {
-           destroy_flag = 0;
-        } 
+         /* if only C-point storage, destroy only at C-points */
+         if (storage < 0 &&  !(_braid_IsCPoint(ic, cfactor)) )
+         {
+            destroy_flag = 0;
+         } 
 
-        if (destroy_flag)
-        {
-           _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
-           _braid_CoreFcn(core, free)( app, optim->adjoints[iclocal]);
-           _braid_VectorBarDelete(core, optim->tapeinput[iclocal] );
-        }
-     }
+         if (destroy_flag)
+         {
+            _braid_UGetIndex(core, 0, ic, &iclocal, &sflag);
+            _braid_CoreFcn(core, free)( app, optim->adjoints[iclocal]);
+            _braid_VectorBarDelete(core, optim->tapeinput[iclocal] );
+         }
+      }
 
    }
 
@@ -288,10 +288,10 @@ _braid_AddToObjective(braid_Core              core,
    if ( tstart_obj <= t && t <= tstop_obj )
    {
       /* Evaluate objective at time t */
-     _braid_BaseObjectiveT(core, app, u, ostatus, &objT);
+      _braid_BaseObjectiveT(core, app, u, ostatus, &objT);
 
-     /* Add to the time-averaged objective function */
-     optim->sum_user_obj += objT;
+      /* Add to the time-averaged objective function */
+      optim->sum_user_obj += objT;
    }
 
    return _braid_error_flag;
@@ -346,7 +346,7 @@ _braid_EvalObjective_diff(braid_Core core)
     * This function may not be defined by the user.*/
    if (_braid_CoreElt(core, obj_only))
    {
-     return 0;
+      return 0;
    }
 
    /* Differentiate the postprocessing objective, if set */
@@ -539,7 +539,7 @@ _braid_AdjointFeatureCheck(braid_Core core)
       err_char = "Sync";
       err = 1;
    }
-    // r_space?
+   // r_space?
    if ( err )
    {
       _braid_printf(" \n\n WARNING! %s is not yet supported for adjoint sensitivities (or at least not tested).\n", err_char); 
@@ -557,12 +557,12 @@ _braid_AdjointFeatureCheck(braid_Core core)
 #define _braid_SendIndexOff -2
 #define _braid_RecvIndexOff -2
 
-#define _braid_MapPeriodic(index, npoints) \
-( index = ((index)+(npoints)) % (npoints) )  /* this also handles negative indexes */
+#define _braid_MapPeriodic(index, npoints)                              \
+   ( index = ((index)+(npoints)) % (npoints) )  /* this also handles negative indexes */
 
 /* Compute number of reals given some number of bytes (use ceiling) */
-#define _braid_NBytesToNReals(nbytes, nreals) \
-nreals = nbytes / sizeof(braid_Real) + ((nbytes % sizeof(braid_Real)) != 0)
+#define _braid_NBytesToNReals(nbytes, nreals)                           \
+   nreals = nbytes / sizeof(braid_Real) + ((nbytes % sizeof(braid_Real)) != 0)
 
 /*----------------------------------------------------------------------------
  * Returns the index interval for 'proc' in a blocked data distribution
@@ -1463,7 +1463,7 @@ _braid_Step(braid_Core         core,
       _braid_BaseStep(core, app,  ustop, NULL, u, level, status);
       rfactors[ii] = _braid_StatusElt(status, rfactor);
       if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
-            _braid_CoreElt(core, r_space) = 1;
+         _braid_CoreElt(core, r_space) = 1;
    }     
    else
    {
@@ -1523,7 +1523,7 @@ _braid_Residual(braid_Core        core,
          rfactors[ii] = _braid_StatusElt(status, rfactor);
          /* TODO : Remove these two lines, which are now useless since core==status */
          if ( !_braid_CoreElt(core, r_space) && _braid_StatusElt(status, r_space) )
-               _braid_CoreElt(core, r_space) = 1;
+            _braid_CoreElt(core, r_space) = 1;
       }
    }
    else
@@ -2714,15 +2714,14 @@ _braid_PeriodicAdjustRFactors(braid_Core   core,
  * so it is okay to use '-1' in the 'r_ca' array.  The values in the 'r_fa'
  * array will also never be negative.  It is okay to pass negative indexes to
  * the _braid_GetBlockDistProc() routine, but there is one instance below where
- * negative indexes had to be first mapped to its corresponding positive value
- * to correctly use it as an index into an array.
+ * each negative index had to first be mapped to its corresponding positive
+ * value to correctly use it as an index into an array.
  * 
  *----------------------------------------------------------------------------
  *
  * The following optimization was removed, because it is problematic in general
  * (e.g., when doing adaptive spatial refinement such as SAMR).  Note that the
- * next 'r_fa' value to my right (computed below) was needed to implement this
- * feature, but it is not needed otherwise.
+ * next 'r_fa' value to my right was needed to implement this feature.
  *
  * When storing C-pts only, data from coarse indices 29 and 34 are not needed,
  * so we have the following differences from above:
@@ -2919,61 +2918,31 @@ _braid_FRefine(braid_Core   core,
       }
    }
 
-   /* Get the next r_fa and r_ta values to my right.  Note that the r_ta values
-    * should be exchanged in a toroidal fashion in the periodic case. */
-   /* RDF - Remove the "next r_fa" part of this, since it is only needed for the
-    * below optimization that we are also removing. */
+   /* Get the next r_ta values to my right.  Note that the r_ta values should be
+    * exchanged in a toroidal fashion in the periodic case. */
    ncomms = 2; /* Upper bound */
    requests = _braid_CTAlloc(MPI_Request, ncomms);
    statuses = _braid_CTAlloc(MPI_Status,  ncomms);
    ncomms = 0;
    if (npoints > 0)
    {
-      braid_Real send_buf[2], recv_buf[2];
-      send_buf[0]=r_fa[0];
-      send_buf[1]=r_ta[0];     
-      /* Post r_fa receive */
-      r_fa[npoints] = f_gupper+1;
+      /* Post r_ta receive */
       if ((iupper < gupper) || periodic)
       {
-         MPI_Irecv(recv_buf, 2, braid_MPI_REAL, MPI_ANY_SOURCE, 2, comm, &requests[ncomms++]);
+         MPI_Irecv(&r_ta[r_npoints], 1, braid_MPI_REAL, MPI_ANY_SOURCE, 2, comm,
+                   &requests[ncomms++]);
       }
 
-      /* Post r_fa send (to the left) */
+      /* Post r_ta send (to the left) */
       if ((ilower > 0) || periodic)
       {
          _braid_GetBlockDistProc((gupper+1), nprocs, (ilower-1), periodic, &prevproc);
-         MPI_Isend(send_buf, 2, braid_MPI_REAL, prevproc, 2, comm, &requests[ncomms++]);
+         MPI_Isend(&r_ta[0], 1, braid_MPI_REAL, prevproc, 2, comm, &requests[ncomms++]);
       }
       MPI_Waitall(ncomms, requests, statuses);
-      if (( iupper < gupper ) || periodic)
-      {
-//         r_fa[npoints]=recv_buf[0];
-         r_fa[npoints]=-99;
-         r_ta[r_npoints]=recv_buf[1];
-      }
    }
    _braid_TFree(requests);
    _braid_TFree(statuses);
-
-#if 0 /* RDF - This causes problems in general.  Remove it altogether. */
-   /* If storing only C-points on the fine grid (and NOT using shell vectors),
-    *  modify r_ca to mark only those coarse points that need to be sent to
-    * initialize the C-points */
-   if (_braid_CoreElt(core, storage) != 0 && _braid_CoreElt(core, useshell) != 1)
-   {
-      for (ii = 0; ii < npoints; ii++)
-      {
-         /* If the index for the next coarse point is not larger than the index
-          * for the next C-point, then the coarse point is not needed */
-         if ( !(r_fa[ii+1] > _braid_NextCPoint(r_fa[ii], cfactor)) )
-         {
-            r_ii = r_fa[ii] - r_ilower;
-            r_ca[r_ii] = -1;
-         }
-      }
-   }
-#endif
 
    /*-----------------------------------------------------------------------*/
    /* 3. Send the index mapping and time value information (r_ca, r_ta) to the
@@ -3438,7 +3407,7 @@ _braid_FRefine(braid_Core   core,
    /*braid_SetCFactor(core,  0, cfactor);*/ /* RDF HACKED TEST */
    _braid_InitHierarchy(core, f_grid, 1);
    nrefine = _braid_CoreElt(core, nrefine);
-    _braid_SyncStatusInit(iter, 0, nrefine, f_gupper, 0,
+   _braid_SyncStatusInit(iter, 0, nrefine, f_gupper, 0,
                          braid_ASCaller_FRefine_AfterInitHier, sstatus);
    _braid_Sync(core, sstatus);
 
@@ -3602,12 +3571,12 @@ _braid_FAccess(braid_Core     core,
 
          /* If time-serial: Evaluate the user's local objective function at CPoints on finest grid */
          if ( _braid_CoreElt(core, adjoint) && 
-                 _braid_CoreElt(core, max_levels <=1) ) 
+              _braid_CoreElt(core, max_levels <=1) ) 
          {
             _braid_ObjectiveStatusInit(ta[ci-ilower], ci, iter, level, nrefine, gupper, ostatus);
             _braid_AddToObjective(core, u, ostatus);
          }
-       }
+      }
    }
    _braid_UCommWait(core, level);
 
