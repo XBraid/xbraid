@@ -42,7 +42,7 @@
 #define ACCESSOR_FUNCTION_GET1_IN3(stype,param,vtype1,vtype2,vtype3,vtype4) \
    braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 v2, braid_##vtype3 v3, braid_##vtype4 v4) \
    {return braid_StatusGet##param((braid_Status)s, v1, v2, v3, v4);}
-#define ACCESSOR_FUNCTION_GET2(stype,param,vtype1,vtype2)               \
+#define ACCESSOR_FUNCTION_GET2(stype,param,vtype1,vtype2) \
    braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2) \
    {return braid_StatusGet##param((braid_Status)s, v1, v2);}
 #define ACCESSOR_FUNCTION_GET2_IN1(stype,param,vtype1,vtype2,vtype3) \
@@ -352,7 +352,67 @@ braid_StatusSetRFactor(braid_Status status,
                        braid_Real   rfactor
                        )
 {
-   _braid_StatusElt(status, rfactor) = rfactor;
+   braid_Int  level = _braid_StatusElt(status, level);
+
+   /* Only set the rfactor on level 0 */
+   if (level == 0)
+   {
+      _braid_Grid      **grids    = _braid_StatusElt(status, grids);
+      braid_Int         *rfactors = _braid_StatusElt(status, rfactors);
+      braid_Int          index    = _braid_StatusElt(status, idx);
+      braid_Int          ilower   = _braid_GridElt(grids[level], ilower);
+      braid_Int          ii       = index+1 - ilower;
+
+      /* Set refinement factor */
+      rfactors[ii] = rfactor;
+   }
+
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_StatusSetRefinementDtValues(braid_Status  status,
+                                  braid_Real    rfactor,
+                                  braid_Real   *rdtarray
+                                  )
+{
+   braid_Int  level = _braid_StatusElt(status, level);
+
+   /* Only set the rfactor on level 0 */
+   if (level == 0)
+   {
+      _braid_Grid      **grids    = _braid_StatusElt(status, grids);
+      braid_Int         *rfactors = _braid_StatusElt(status, rfactors);
+      braid_Int          index    = _braid_StatusElt(status, idx);
+      braid_Int          ilower   = _braid_GridElt(grids[level], ilower);
+      braid_Int          ii       = index+1 - ilower;
+
+      /* Set refinement factor */
+      rfactors[ii] = rfactor;
+
+      /* Store dt values */
+      if (rfactor > 1)
+      {
+         braid_Real  **rdtvalues = _braid_StatusElt(status, rdtvalues);
+         braid_Int     j;
+
+         if (rdtvalues[ii] != NULL)
+         {
+            /* This essentially forces a realloc in case rfactor has changed.
+             * Note that TFree() sets rdtvalues[ii] to NULL. */
+            _braid_TFree(rdtvalues[ii]);
+         }
+         if (rdtvalues[ii] == NULL)
+         {
+            rdtvalues[ii] = _braid_CTAlloc(braid_Real, (rfactor-1));
+         }
+         for (j = 0; j < (rfactor-1); j++)
+         {
+            rdtvalues[ii][j] = rdtarray[j];
+         }
+      }
+   }
+
    return _braid_error_flag;
 }
 
@@ -513,16 +573,15 @@ _braid_StepStatusInit(braid_Real       tstart,
                       braid_Int        gupper,
                       braid_StepStatus status)
 {
-   _braid_StatusElt(status, t)          = tstart;
-   _braid_StatusElt(status, tnext)      = tstop;
-   _braid_StatusElt(status, idx)        = idx;
-   _braid_StatusElt(status, tol)        = tol;
-   _braid_StatusElt(status, niter)      = iter;
-   _braid_StatusElt(status, level)      = level;
-   _braid_StatusElt(status, nrefine)    = nrefine;
-   _braid_StatusElt(status, gupper)     = gupper;
-   _braid_StatusElt(status, rfactor)    = 1;
-   _braid_StatusElt(status, r_space)    = 0;
+   _braid_StatusElt(status, t)         = tstart;
+   _braid_StatusElt(status, tnext)     = tstop;
+   _braid_StatusElt(status, idx)       = idx;
+   _braid_StatusElt(status, tol)       = tol;
+   _braid_StatusElt(status, niter)     = iter;
+   _braid_StatusElt(status, level)     = level;
+   _braid_StatusElt(status, nrefine)   = nrefine;
+   _braid_StatusElt(status, gupper)    = gupper;
+   _braid_StatusElt(status, r_space)   = 0;
 
    return _braid_error_flag;
 }

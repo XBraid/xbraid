@@ -453,6 +453,7 @@ braid_Drive(braid_Core  core)
    braid_Int            ntime           = _braid_CoreElt(core, ntime);
    braid_Int            skip            = _braid_CoreElt(core, skip);
    braid_Int            max_levels      = _braid_CoreElt(core, max_levels);
+   braid_Int            incr_max_levels = _braid_CoreElt(core, incr_max_levels);
    braid_Int            warm_restart    = _braid_CoreElt(core, warm_restart);
    braid_Int            print_level     = _braid_CoreElt(core, print_level);
    braid_Int            access_level    = _braid_CoreElt(core, access_level);
@@ -575,7 +576,7 @@ braid_Drive(braid_Core  core)
    
    nlevels = _braid_CoreElt(core, nlevels);
    done  = 0;
-   if (max_levels <= 1)
+   if (max_levels <= 1 && incr_max_levels == 0)
    {
       /* Just do sequential time marching */
       done = 1;
@@ -675,6 +676,7 @@ braid_Drive(braid_Core  core)
 
             /* Finest grid - refine grid if desired */
             _braid_FRefine(core, &refined);
+
             nlevels = _braid_CoreElt(core, nlevels);
 
             // If we are done refining and doing a fixed point test,
@@ -829,6 +831,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              nfmg_Vcyc       = 1;              /* Default num V-cycles at each fmg level is 1 */
    braid_Int              max_iter        = 100;            /* Default max_iter */
    braid_Int              max_levels      = 30;             /* Default max_levels */
+   braid_Int              incr_max_levels = 0;              /* Default increment max levels is false */
    braid_Int              min_coarse      = 2;              /* Default min_coarse */
    braid_Int              seq_soln        = 0;              /* Default initial guess is from user's Init() function */
    braid_Int              print_level     = 2;              /* Default print level */
@@ -886,6 +889,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, print_level)     = print_level;
    _braid_CoreElt(core, io_level)        = io_level;
    _braid_CoreElt(core, max_levels)      = 0; /* Set with SetMaxLevels() below */
+   _braid_CoreElt(core, incr_max_levels) = incr_max_levels;
    _braid_CoreElt(core, min_coarse)      = min_coarse;
    _braid_CoreElt(core, seq_soln)        = seq_soln;
    _braid_CoreElt(core, tol)             = tol;
@@ -911,6 +915,7 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, refine)          = 0;  /* Time refinement off by default */
    _braid_CoreElt(core, rfactors)        = NULL;
+   _braid_CoreElt(core, rdtvalues)       = NULL;
    _braid_CoreElt(core, r_space)         = 0;
    _braid_CoreElt(core, rstopped)        = -1;
    _braid_CoreElt(core, nrefine)         = 0;
@@ -1033,7 +1038,7 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, cfactors));
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
-
+      _braid_TFree(_braid_CoreElt(core, rdtvalues));
 
       /* Destroy the optimization structure */
       _braid_CoreElt(core, record) = 0;
@@ -1226,6 +1231,18 @@ braid_SetMaxLevels(braid_Core  core,
    _braid_CoreElt(core, nrels)    = nrels;
    _braid_CoreElt(core, cfactors) = cfactors;
    _braid_CoreElt(core, grids)    = grids;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetIncrMaxLevels(braid_Core  core,
+                       braid_Int   incr_max_levels)
+{
+   _braid_CoreElt(core, incr_max_levels) = incr_max_levels;
 
    return _braid_error_flag;
 }

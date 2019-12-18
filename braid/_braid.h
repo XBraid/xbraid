@@ -206,6 +206,7 @@ typedef struct _braid_Core_struct
    braid_Int              io_level;         /**< determines amount of output printed to files (0,1) */
    braid_Int              seq_soln;         /**< boolean, controls if the initial guess is from sequential time stepping*/
    braid_Int              max_levels;       /**< maximum number of temporal grid levels */
+   braid_Int              incr_max_levels;  /**< After doing refinement, increase the max number of levels by 1 (0=false, 1=true)*/
    braid_Int              min_coarse;       /**< minimum possible coarse grid size */
    braid_Real             tol;              /**< stopping tolerance */
    braid_Int              rtol;             /**< use relative tolerance */
@@ -234,6 +235,7 @@ typedef struct _braid_Core_struct
 
    braid_Int              refine;           /**< refine in time (refine = 1) */
    braid_Int             *rfactors;         /**< refinement factors for finest grid (if any) */
+   braid_Real           **rdtvalues;        /**< Array of pointers to arrays of dt values for non-uniform refinement  */
    braid_Int              r_space;          /**< spatial refinment flag */
    braid_Int              rstopped;         /**< refinement stopped at iteration rstopped */
    braid_Int              nrefine;          /**< number of refinements done */
