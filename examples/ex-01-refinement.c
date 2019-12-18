@@ -107,6 +107,7 @@ my_Step(braid_App        app,
    /* Use backward Euler to propagate solution */
    /* Use forward Euler to estimate the local trucation error */
    (u->value) = 1./(1. + dt)*v;
+//   (u->value) = v + dt*cos(tstop);  // RDF - Add this option to the example?
    LTE = (u->value) - (1. - dt)*v;
    LTE  = (LTE < 0) ? -LTE : LTE;
 
@@ -338,6 +339,7 @@ int main (int argc, char *argv[])
    ntime  = 100;
    tstart = 0.0;
    tstop  = 5.0;
+//   tstop  = 2*acos(-1);  // RDF - Add this option to the example?
    limit_rfactor = -1;
    print_usage = 0;
    tol = 1.0e-6;
