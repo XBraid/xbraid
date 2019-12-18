@@ -320,7 +320,7 @@ my_Sync(braid_App app,
    {
       app->num_syncs += 1;
    }
-    return 0;
+   return 0;
 }
 
 /*--------------------------------------------------------------------------
@@ -333,7 +333,7 @@ int main (int argc, char *argv[])
    my_App       *app;
    double        tstart, tstop, tol;
    int           ntime, rank, limit_rfactor, arg_index, print_usage;
-   int           refine, output, storage, fmg, sync, periodic;
+   int           refine, output, storage, fmg, sync, incMaxLvl, periodic;
 
    /* Define time domain: ntime intervals */
    ntime  = 100;
@@ -348,6 +348,7 @@ int main (int argc, char *argv[])
    storage = -1;
    fmg = 0;
    sync = 0;
+   incMaxLvl = 0;
    periodic = 0;
 
    /* Initialize MPI */
@@ -398,6 +399,11 @@ int main (int argc, char *argv[])
          arg_index++;
          sync = 1;
       }
+      else if( strcmp(argv[arg_index], "-incMaxLvl") == 0 )
+      {
+         arg_index++;
+         incMaxLvl = 1;
+      }
       else if( strcmp(argv[arg_index], "-periodic") == 0 )
       {
          arg_index++;
@@ -437,6 +443,7 @@ int main (int argc, char *argv[])
       printf("  -fmg                               : use FMG cycling\n");
       printf("  -storage <level>                   : full storage on levels >= level\n");
       printf("  -sync                              : enable calls to the sync function\n");
+      printf("  -incMaxLvl                         : increase max number of Braid levels after each FRefine\n");
       printf("  -periodic                          : solve a periodic problem\n");
       printf("  -no_output                         : do not save the solution in output files\n");
       printf("  -help                              : print this help and exit\n");
@@ -483,6 +490,10 @@ int main (int argc, char *argv[])
    if (sync)
    {
       braid_SetSync(core, my_Sync);
+   }
+   if (incMaxLvl)
+   {
+      braid_SetIncrMaxLevels(core);
    }
    if (periodic)
    {

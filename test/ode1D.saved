@@ -217,3 +217,12 @@ Finished braid_TestAll: no fails detected, however some results must be
   residual norm         = 5.049943e-09
   number of levels      = 12
   num_syncs             = 6
+# Begin Test 33
+  Braid: Temporal refinement occurred, 102 time steps
+  Braid: Temporal refinement occurred, 104 time steps
+  Braid: Temporal refinement occurred, 106 time steps
+  Braid: Temporal refinement occurred, 108 time steps
+  Braid: Temporal refinement occurred, 110 time steps
+  Braid: Temporal refinement occurred, 112 time steps
+
+

@@ -195,6 +195,10 @@ class BraidAccessStatus
       void GetWrapperTest(braid_Int *wtest_ptr) { braid_AccessStatusGetWrapperTest(astatus, wtest_ptr); }
       void GetResidual(braid_Real *rnorm_ptr)   { braid_AccessStatusGetResidual(astatus, rnorm_ptr); }
       void GetNRefine(braid_Int *nrefine_ptr)   { braid_AccessStatusGetNRefine(astatus, nrefine_ptr); }
+      void GetCallingFunction(braid_Int *callingfcn_ptr)
+      {
+         braid_AccessStatusGetCallingFunction(astatus, callingfcn_ptr);
+      }
 
       // The braid_AccessStatus structure is deallocated inside of Braid
       // This class is just to make code consistently look object oriented
@@ -486,7 +490,9 @@ public:
    }
 
    void SetMaxLevels(braid_Int max_levels) { braid_SetMaxLevels(core, max_levels); }
-   
+
+   void SetIncrMaxLevels() { braid_SetIncrMaxLevels(core); }
+
    void SetSkip(braid_Int skip) { braid_SetSkip(core, skip); }
 
    void SetMinCoarse(braid_Int min_coarse) { braid_SetMinCoarse(core, min_coarse); }
