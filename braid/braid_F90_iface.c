@@ -1043,12 +1043,10 @@ braid_F90_Name(braid_set_max_levels_f90, BRAID_SET_MAX_LEVELS_F90)(
 /*  braid_SetIncrMaxLevels( ) */
 braid_Int
 braid_F90_Name(braid_set_incr_max_levels_f90, BRAID_SET_INCR_MAX_LEVELS_F90)(
-   braid_F90_ObjPtr  *core,        /**< braid_Core (_braid_Core) struct*/
-   braid_F90_Int     *incr_max_levels   /**< increment max levels after refinement */
+   braid_F90_ObjPtr  *core         /**< braid_Core (_braid_Core) struct*/
    )
 {
-   braid_SetIncrMaxLevels(braid_TakeF90_ObjDeref(braid_Core,  core) ,
-                          braid_TakeF90_Int(                  incr_max_levels) );
+   braid_SetIncrMaxLevels(braid_TakeF90_ObjDeref(braid_Core,  core));
    return 0;
 }
 
