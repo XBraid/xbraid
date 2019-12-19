@@ -38,6 +38,8 @@ import os
 #    is in your PYTHONPATH, e.g.,
 # 
 #     export PYTHONPATH="$HOME/.local/lib/python3.6"
+#     or perhaps, 
+#     export PYTHONPATH="$HOME/.local/lib/python3.7/site-packages"
 #
 # 2) Type 
 #    ipython 3
