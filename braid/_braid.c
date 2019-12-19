@@ -3294,7 +3294,7 @@ _braid_FRefine(braid_Core   core,
    {
       braid_Int new_max_levels = _braid_CoreElt(core, max_levels);
       ++new_max_levels;
-      _braid_CoreElt(core, max_levels) = new_max_levels;
+      braid_SetMaxLevels(core, new_max_levels);
    }
 
    /*braid_SetCFactor(core,  0, cfactor);*/ /* RDF HACKED TEST */

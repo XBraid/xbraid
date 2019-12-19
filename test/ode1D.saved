@@ -2,16 +2,19 @@
   time steps = 10
   iterations            = 4
   residual norm         = 0.000000e+00
+  max number of levels  = 2
   number of levels      = 2
 # Begin Test 1
   time steps = 10
   iterations            = 0
   residual norm         = -1.000000e+00
+  max number of levels  = 1
   number of levels      = 1
 # Begin Test 2
   time steps = 10
   iterations            = 0
   residual norm         = -1.000000e+00
+  max number of levels  = 1
   number of levels      = 1
 # Begin Test 3
 Finished braid_TestAll: no fails detected, however some results must be
@@ -19,57 +22,68 @@ Finished braid_TestAll: no fails detected, however some results must be
   time steps = 10
   iterations            = 4
   residual norm         = 0.000000e+00
+  max number of levels  = 2
   number of levels      = 2
 # Begin Test 5
   time steps = 10
   iterations            = 4
   residual norm         = 0.000000e+00
+  max number of levels  = 2
   number of levels      = 2
 # Begin Test 6
   time steps = 10
   iterations            = 4
   residual norm         = 0.000000e+00
+  max number of levels  = 2
   number of levels      = 2
 # Begin Test 7
   time steps = 10
   iterations            = 4
   residual norm         = 0.000000e+00
+  max number of levels  = 2
   number of levels      = 2
 # Begin Test 8
   time steps = 10
   iterations            = 0
   residual norm         = -1.000000e+00
+  max number of levels  = 1
   number of levels      = 1
 # Begin Test 9
   time steps = 10
   iterations            = 0
   residual norm         = -1.000000e+00
+  max number of levels  = 1
   number of levels      = 1
 # Begin Test 10
   time steps = 10
   iterations            = 0
   residual norm         = -1.000000e+00
+  max number of levels  = 1
   number of levels      = 1
 # Begin Test 11
   time steps = 10
   iterations            = 4
   residual norm         = 0.000000e+00
+  max number of levels  = 2
   number of levels      = 2
 # Begin Test 12
   time steps = 10
   iterations            = 4
   residual norm         = 0.000000e+00
+  max number of levels  = 2
   number of levels      = 2
 # Begin Test 13
   time steps = 100
   iterations            = 6
   residual norm         = 2.370729e-07
+  max number of levels  = 15
   number of levels      = 6
 # Begin Test 14
   Braid: Temporal refinement occurred, 298 time steps
   time steps = 298
   iterations            = 5
   residual norm         = 4.084945e-07
+  max number of levels  = 15
   number of levels      = 8
 # Begin Test 15
   Braid: Temporal refinement occurred, 200 time steps
@@ -82,6 +96,7 @@ Finished braid_TestAll: no fails detected, however some results must be
   time steps = 6400
   iterations            = 3
   residual norm         = 5.298384e-07
+  max number of levels  = 15
   number of levels      = 12
 # Begin Test 16
   Braid: Temporal refinement occurred, 1000 time steps
@@ -90,18 +105,21 @@ Finished braid_TestAll: no fails detected, however some results must be
   time steps = 4000
   iterations            = 4
   residual norm         = 9.318376e-08
+  max number of levels  = 15
   number of levels      = 11
 # Begin Test 17
   Braid: Temporal refinement occurred, 3600 time steps
   time steps = 3600
   iterations            = 6
   residual norm         = 6.301948e-08
+  max number of levels  = 15
   number of levels      = 11
 # Begin Test 18
   Braid: Temporal refinement occurred, 298 time steps
   time steps = 298
   iterations            = 5
   residual norm         = 4.084945e-07
+  max number of levels  = 15
   number of levels      = 8
 # Begin Test 19
   Braid: Temporal refinement occurred, 200 time steps
@@ -114,6 +132,7 @@ Finished braid_TestAll: no fails detected, however some results must be
   time steps = 6400
   iterations            = 3
   residual norm         = 5.298384e-07
+  max number of levels  = 15
   number of levels      = 12
 # Begin Test 20
   Braid: Temporal refinement occurred, 1000 time steps
@@ -122,18 +141,21 @@ Finished braid_TestAll: no fails detected, however some results must be
   time steps = 4000
   iterations            = 4
   residual norm         = 9.318376e-08
+  max number of levels  = 15
   number of levels      = 11
 # Begin Test 21
   Braid: Temporal refinement occurred, 3600 time steps
   time steps = 3600
   iterations            = 6
   residual norm         = 6.301948e-08
+  max number of levels  = 15
   number of levels      = 11
 # Begin Test 22
   Braid: Temporal refinement occurred, 298 time steps
   time steps = 298
   iterations            = 3
   residual norm         = 7.371648e-07
+  max number of levels  = 15
   number of levels      = 8
 # Begin Test 23
   Braid: Temporal refinement occurred, 200 time steps
@@ -145,6 +167,7 @@ Finished braid_TestAll: no fails detected, however some results must be
   time steps = 6400
   iterations            = 3
   residual norm         = 5.049943e-09
+  max number of levels  = 15
   number of levels      = 12
 # Begin Test 24
   Braid: Temporal refinement occurred, 1000 time steps
@@ -152,12 +175,14 @@ Finished braid_TestAll: no fails detected, however some results must be
   time steps = 4000
   iterations            = 3
   residual norm         = 3.973135e-08
+  max number of levels  = 15
   number of levels      = 11
 # Begin Test 25
   Braid: Temporal refinement occurred, 3600 time steps
   time steps = 3600
   iterations            = 3
   residual norm         = 5.838816e-07
+  max number of levels  = 15
   number of levels      = 11
 # Begin Test 26
   Braid: Temporal refinement occurred, 400 time steps
@@ -167,6 +192,7 @@ Finished braid_TestAll: no fails detected, however some results must be
   time steps = 4800
   iterations            = 4
   residual norm         = 7.013544e-08
+  max number of levels  = 15
   number of levels      = 12
 # Begin Test 27
   Braid: Temporal refinement occurred, 400 time steps
@@ -176,6 +202,7 @@ Finished braid_TestAll: no fails detected, however some results must be
   time steps = 4800
   iterations            = 4
   residual norm         = 7.013544e-08
+  max number of levels  = 15
   number of levels      = 12
 # Begin Test 28
   Braid: Temporal refinement occurred, 400 time steps
@@ -185,6 +212,7 @@ Finished braid_TestAll: no fails detected, however some results must be
   time steps = 4800
   iterations            = 4
   residual norm         = 7.013544e-08
+  max number of levels  = 15
   number of levels      = 12
 # Begin Test 29
   Braid: Temporal refinement occurred, 400 time steps
@@ -194,16 +222,19 @@ Finished braid_TestAll: no fails detected, however some results must be
   time steps = 4800
   iterations            = 4
   residual norm         = 7.013544e-08
+  max number of levels  = 15
   number of levels      = 12
 # Begin Test 30
   time steps = 10
   iterations            = 4
   residual norm         = 0.000000e+00
+  max number of levels  = 2
   number of levels      = 2
 # Begin Test 31
   time steps = 10
   iterations            = 4
   residual norm         = 0.000000e+00
+  max number of levels  = 2
   number of levels      = 2
 # Begin Test 32
   Braid: Temporal refinement occurred, 200 time steps
@@ -215,5 +246,20 @@ Finished braid_TestAll: no fails detected, however some results must be
   time steps = 6400
   iterations            = 3
   residual norm         = 5.049943e-09
+  max number of levels  = 15
   number of levels      = 12
   num_syncs             = 6
+# Begin Test 33
+  Braid: Temporal refinement occurred, 102 time steps
+  Braid: Temporal refinement occurred, 104 time steps
+  Braid: Temporal refinement occurred, 106 time steps
+  Braid: Temporal refinement occurred, 108 time steps
+  Braid: Temporal refinement occurred, 110 time steps
+  Braid: Temporal refinement occurred, 112 time steps
+  time steps = 112
+  iterations            = 2
+  residual norm         = 7.531287e-08
+  max number of levels  = 21
+  number of levels      = 6
+
+

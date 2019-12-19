@@ -549,13 +549,12 @@ braid_Int
 braid_SetMaxLevels(braid_Core  core,        /**< braid_Core (_braid_Core) struct*/
                    braid_Int   max_levels   /**< maximum levels to allow */
                    );
+
 /**
  * Increase the max number of multigrid levels after performing a refinement.
  **/
 braid_Int
-braid_SetIncrMaxLevels(braid_Core  core,
-                       braid_Int   incr_max_levels
-                       );
+braid_SetIncrMaxLevels(braid_Core  core);
 
 /**
  * Set whether to skip all work on the first down cycle (skip = 1).  On by default.

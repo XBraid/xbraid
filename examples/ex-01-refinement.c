@@ -317,7 +317,7 @@ int main (int argc, char *argv[])
    my_App       *app;
    double        tstart, tstop, tol;
    int           ntime, rank, limit_rfactor, arg_index, print_usage;
-   int           refine, output, storage, fmg, sync;
+   int           refine, output, storage, fmg, sync, incMaxLvl ;
 
    /* Define time domain: ntime intervals */
    ntime  = 100;
@@ -331,6 +331,7 @@ int main (int argc, char *argv[])
    storage = -1;
    fmg = 0;
    sync = 0;
+   incMaxLvl = 0;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -380,6 +381,11 @@ int main (int argc, char *argv[])
          arg_index++;
          sync = 1;
       }
+      else if( strcmp(argv[arg_index], "-incMaxLvl") == 0 )
+      {
+         arg_index++;
+         incMaxLvl = 1;
+      }
       else if ( strcmp(argv[arg_index], "-fmg") == 0 )
       {
          arg_index++;
@@ -402,19 +408,20 @@ int main (int argc, char *argv[])
       printf("\n");
       printf(" General XBraid configuration parameters\n");
       printf(" ---------------------------------------\n");
-      printf("  -nt  <n>                           : number of time steps (default: 100)\n");
-      printf("  -tol <tol>                         : set the stopping tolerance (default: 1e-6)\n");
-      printf("  -refine <n>                        : set the type of temporal refinement (default: 0)\n");
-      printf("                                     : 0 - no refinement\n");
-      printf("                                     : 1 - arbitrary refinement around t=2.5\n");
-      printf("                                     : 2 - refinement based on local truncation error\n");
-      printf("                                     : 3 - arbitrary refinement around t=2.5, specifying the new time-step sizes\n");
-      printf("  -max_rfactor <lim>                 : limit the refinement factor (default: -1)\n");
-      printf("  -fmg                               : use FMG cycling\n");
-      printf("  -storage <level>                   : full storage on levels >= level\n");
-      printf("  -sync                              : enable calls to the sync function\n");
-      printf("  -no_output                         : do not save the solution in output files\n");
-      printf("  -help                              : print this help and exit\n");
+      printf("  -nt  <n>                      : number of time steps (default: 100)\n");
+      printf("  -tol <tol>                    : set the stopping tolerance (default: 1e-6)\n");
+      printf("  -refine <n>                   : set the type of temporal refinement (default: 0)\n");
+      printf("                                : 0 - no refinement\n");
+      printf("                                : 1 - arbitrary refinement around t=2.5\n");
+      printf("                                : 2 - refinement based on local truncation error\n");
+      printf("                                : 3 - arbitrary refinement around t=2.5, specifying the new time-step sizes\n");
+      printf("  -max_rfactor <lim>            : limit the refinement factor (default: -1)\n");
+      printf("  -fmg                          : use FMG cycling\n");
+      printf("  -storage <level>              : full storage on levels >= level\n");
+      printf("  -sync                         : enable calls to the sync function\n");
+      printf("  -incMaxLvl                    : increase max number of Braid levels after each FRefine\n");
+      printf("  -no_output                    : do not save the solution in output files\n");
+      printf("  -help                         : print this help and exit\n");
       printf("\n");
    }
 
@@ -458,6 +465,10 @@ int main (int argc, char *argv[])
    if (sync)
    {
       braid_SetSync(core, my_Sync);
+   }
+   if (incMaxLvl)
+   {
+      braid_SetIncrMaxLevels(core);
    }
 
    /* Run simulation, and then clean up */

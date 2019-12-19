@@ -1239,10 +1239,9 @@ braid_SetMaxLevels(braid_Core  core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_SetIncrMaxLevels(braid_Core  core,
-                       braid_Int   incr_max_levels)
+braid_SetIncrMaxLevels(braid_Core  core)
 {
-   _braid_CoreElt(core, incr_max_levels) = incr_max_levels;
+   _braid_CoreElt(core, incr_max_levels) = 1;
 
    return _braid_error_flag;
 }
