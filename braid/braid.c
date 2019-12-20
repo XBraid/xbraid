@@ -1208,6 +1208,63 @@ braid_PrintStats(braid_Core  core)
  *--------------------------------------------------------------------------*/
 
 braid_Int
+braid_WriteConvHistory(braid_Core core,    
+                       const char* filename)
+{
+   braid_Int     myid          = _braid_CoreElt(core, myid_world);
+   braid_Real    tstart        = _braid_CoreElt(core, tstart);
+   braid_Real    tstop         = _braid_CoreElt(core, tstop);
+   braid_Int     gupper        = _braid_CoreElt(core, gupper);
+   braid_Int     nlevels       = _braid_CoreElt(core, nlevels);
+   _braid_Grid **grids         = _braid_CoreElt(core, grids);
+
+   FILE* braidlog;
+   braid_Int niter, iter;
+   int cfac, gupp, level;
+   double* resnorms;
+
+   if (myid == 0) {
+
+     /* Write some general information file */
+     braidlog = fopen(filename, "w");
+     _braid_ParFprintfFlush(braidlog, myid, "# start time       = %e\n", tstart);
+     _braid_ParFprintfFlush(braidlog, myid, "# stop time        = %e\n", tstop);
+     _braid_ParFprintfFlush(braidlog, myid, "# time steps       = %d\n", (int) gupper);
+     _braid_ParFprintfFlush(braidlog, myid, "# number of levels = %d\n", nlevels);
+     _braid_ParFprintfFlush(braidlog, myid, "#  level   time-pts   cfactor\n");
+     for (level = 0; level < nlevels-1; level++)
+     {
+       cfac = _braid_GridElt(grids[level], cfactor);
+       gupp = _braid_GridElt(grids[level], gupper);
+       _braid_ParFprintfFlush(braidlog, myid, "#  % 5d  % 8d  % 7d\n", level, gupp , cfac);
+     }
+     /* Print out coarsest level information */
+     gupp = _braid_GridElt(grids[level], gupper);
+     _braid_ParFprintfFlush(braidlog, myid, "#  % 5d  % 8d  \n\n", level, gupp);
+
+
+     /* Get and write residuals for all iterations */
+     braid_GetNumIter(core, &niter);
+     resnorms = _braid_CTAlloc(double, niter);
+     braid_GetRNorms(core, &niter, resnorms);
+     _braid_ParFprintfFlush(braidlog, myid, "# iter   residual norm\n");
+     for (iter=0; iter<niter; iter++)
+     {
+       _braid_ParFprintfFlush(braidlog, myid, "%03d      %1.14e\n", iter, resnorms[iter]);
+     }
+
+     /* Cleanup */
+     fclose(braidlog);
+     _braid_TFree(resnorms);
+  }
+  
+  return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
 braid_SetMaxLevels(braid_Core  core,
                    braid_Int   max_levels)
 {
