@@ -207,6 +207,7 @@ class BraidStepStatus
       { braid_StepStatusGetTstartTstop(pstatus, tstart_ptr, tstop_ptr); }
       void GetT(braid_Real *tstart_ptr)                  { braid_StepStatusGetT(pstatus, tstart_ptr); }
       void GetTstop(braid_Real *tstop_ptr)               { braid_StepStatusGetTstop(pstatus, tstop_ptr); }
+      void GetDone(braid_Int *done)               { braid_StatusGetDone((braid_Status) pstatus, done); }
       void GetTIndex(braid_Int *tindex_ptr)              { braid_StepStatusGetTIndex(pstatus, tindex_ptr); }
       void GetLevel(braid_Int *level_ptr)                { braid_StepStatusGetLevel(pstatus, level_ptr); }
       void GetNLevels(braid_Int *nlevels_ptr)            { braid_StepStatusGetNLevels(pstatus, nlevels_ptr); }
@@ -499,6 +500,8 @@ public:
    void SetMaxRefinements(braid_Int max_refinements) {braid_SetMaxRefinements(core, max_refinements);}
 
    void GetNumIter(braid_Int *niter_ptr) { braid_GetNumIter(core, niter_ptr); }
+
+   void GetCFactor(braid_Int *cfactor_ptr) { _braid_GetCFactor(core, 0, cfactor_ptr); }
 
    void GetRNorms(braid_Int *nrequest_ptr, braid_Real *rnorms) { braid_GetRNorms(core, nrequest_ptr, rnorms); }
    
