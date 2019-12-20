@@ -1197,7 +1197,7 @@ braid_PrintStats(braid_Core  core)
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_FlushConvHistory(braid_Core core,    
+braid_WriteConvHistory(braid_Core core,    
                        const char* filename)
 {
    braid_Int     myid          = _braid_CoreElt(core, myid_world);
@@ -1216,30 +1216,30 @@ braid_FlushConvHistory(braid_Core core,
 
      /* Write some general information file */
      braidlog = fopen(filename, "w");
-     fprintf(braidlog,"# start time       = %e\n", tstart);
-     fprintf(braidlog,"# stop time        = %e\n", tstop);
-     fprintf(braidlog,"# time steps       = %d\n", (int) gupper);
-     fprintf(braidlog,"# number of levels = %d\n", nlevels);
-     fprintf(braidlog, "#  level   time-pts   cfactor\n");
+     _braid_ParFprintfFlush(braidlog, myid, "# start time       = %e\n", tstart);
+     _braid_ParFprintfFlush(braidlog, myid, "# stop time        = %e\n", tstop);
+     _braid_ParFprintfFlush(braidlog, myid, "# time steps       = %d\n", (int) gupper);
+     _braid_ParFprintfFlush(braidlog, myid, "# number of levels = %d\n", nlevels);
+     _braid_ParFprintfFlush(braidlog, myid, "#  level   time-pts   cfactor\n");
      for (level = 0; level < nlevels-1; level++)
      {
        cfac = _braid_GridElt(grids[level], cfactor);
        gupp = _braid_GridElt(grids[level], gupper);
-       fprintf(braidlog, "#  % 5d  % 8d  % 7d\n", level, gupp , cfac);
+       _braid_ParFprintfFlush(braidlog, myid, "#  % 5d  % 8d  % 7d\n", level, gupp , cfac);
      }
      /* Print out coarsest level information */
      gupp = _braid_GridElt(grids[level], gupper);
-     fprintf(braidlog, "#  % 5d  % 8d  \n\n", level, gupp);
+     _braid_ParFprintfFlush(braidlog, myid, "#  % 5d  % 8d  \n\n", level, gupp);
 
 
      /* Get and write residuals for all iterations */
      braid_GetNumIter(core, &niter);
      resnorms = _braid_CTAlloc(double, niter);
      braid_GetRNorms(core, &niter, resnorms);
-     fprintf(braidlog, "# iter   residual norm\n");
+     _braid_ParFprintfFlush(braidlog, myid, "# iter   residual norm\n");
      for (iter=0; iter<niter; iter++)
      {
-       fprintf(braidlog, "%03d      %1.14e\n", iter, resnorms[iter]);
+       _braid_ParFprintfFlush(braidlog, myid, "%03d      %1.14e\n", iter, resnorms[iter]);
      }
 
      /* Cleanup */
