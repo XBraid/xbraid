@@ -2546,27 +2546,33 @@ _braid_PeriodicCheckNumPoints(braid_Core   core,
                               braid_Int   *divisor_ptr,
                               braid_Int   *nextra_ptr)
 {
-   braid_Int  divisor, nextra, level, size, cfactor;
+   braid_Int  divisor, nextra, level, cfactor;
 
    /* Compute coarsening factor divisor */
    divisor = 1;
    nextra  = 0;
-   size = npoints;
    for (level = 0; level < (_braid_CoreElt(core, max_levels) - 1); level++)
    {
       _braid_GetCFactor(core, level, &cfactor);
-      size    /= cfactor;
       divisor *= cfactor;
-      if (size < cfactor)
+      if ((int)(npoints/divisor) < cfactor)
       {
          break;
       }
    }
-   if (divisor < npoints)
+   if ((npoints % divisor) > 0)
    {
-      divisor *= cfactor;
+      /* Product of coarsening factors (divisor) does not evenly divide npoints */
+
+      /* If we can coarsen one more time, update the divisor to reflect that */
+      if (level < (_braid_CoreElt(core, max_levels) - 1))
+      {
+         divisor *= cfactor;
+      }
+
+      /* Target value is the next largest number evenly divisible by divisor */
+      nextra = ((int)(npoints/divisor) + 1)*divisor - npoints;
    }
-   nextra = divisor - npoints;
 
    *divisor_ptr = divisor;
    *nextra_ptr  = nextra;
@@ -3050,7 +3056,7 @@ _braid_FRefine(braid_Core   core,
       /* post receive from arbitrary process (should always get at least one) */
       bptr = recv_buffer;
       size = recv_size;
-      MPI_Recv(bptr, (1+size), braid_MPI_REAL, MPI_ANY_SOURCE, 4, comm, &status);
+      MPI_Recv(bptr, size, braid_MPI_REAL, MPI_ANY_SOURCE, 4, comm, &status);
 
       size = (braid_Int) bptr[0];
       bptr++;

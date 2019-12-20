@@ -333,7 +333,7 @@ int main (int argc, char *argv[])
    my_App       *app;
    double        tstart, tstop, tol;
    int           ntime, rank, limit_rfactor, arg_index, print_usage;
-   int           refine, output, storage, fmg, sync, incMaxLvl, periodic;
+   int           refine, output, storage, fmg, sync, incMaxLvl, periodic, max_levels;
 
    /* Define time domain: ntime intervals */
    ntime  = 100;
@@ -350,6 +350,7 @@ int main (int argc, char *argv[])
    sync = 0;
    incMaxLvl = 0;
    periodic = 0;
+   max_levels = 15;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -409,6 +410,11 @@ int main (int argc, char *argv[])
          arg_index++;
          periodic = 1;
       }
+      else if ( strcmp(argv[arg_index], "-ml") == 0 )
+      {
+         arg_index++;
+         max_levels = atoi(argv[arg_index++]);
+      }
       else if ( strcmp(argv[arg_index], "-fmg") == 0 )
       {
          arg_index++;
@@ -445,6 +451,7 @@ int main (int argc, char *argv[])
       printf("  -sync                              : enable calls to the sync function\n");
       printf("  -incMaxLvl                         : increase max number of Braid levels after each FRefine\n");
       printf("  -periodic                          : solve a periodic problem\n");
+      printf("  -ml  <max_levels>                  : set max levels\n");
       printf("  -no_output                         : do not save the solution in output files\n");
       printf("  -help                              : print this help and exit\n");
       printf("\n");
@@ -471,7 +478,7 @@ int main (int argc, char *argv[])
 
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 2);
-   braid_SetMaxLevels(core, 15);
+   braid_SetMaxLevels(core, max_levels);
    braid_SetAbsTol(core, tol);
    braid_SetCFactor(core, -1, 2);
    braid_SetRefine(core, 1);
