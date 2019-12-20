@@ -200,7 +200,7 @@ typedef struct _braid_Core_struct
    braid_PtFcnSync        sync;             /**< (optional) user access to app once-per-processor */
    braid_PtFcnTimeGrid    tgrid;            /**< (optional) return time point values on level 0 */
    braid_Int              periodic;         /**< determines if periodic */
-   braid_Int              initiali;         /**< initial grid index (0: default; -1: periodic ) */
+   braid_Int              initiali;         /**< initial condition grid index (0: default; -1: periodic ) */
 
    braid_Int              access_level;     /**< determines how often to call the user's access routine */ 
    braid_Int              print_level;      /**< determines amount of output printed to screen (0,1,2,3) */

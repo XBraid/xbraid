@@ -77,6 +77,7 @@ typedef struct _braid_App_struct
    int       rank;
    int       limit_rfactor;
    int       refine;
+   int       periodic;
    double    tol;
    int       num_syncs;
 } my_App;
@@ -106,8 +107,14 @@ my_Step(braid_App        app,
 
    /* Use backward Euler to propagate solution */
    /* Use forward Euler to estimate the local trucation error */
-   (u->value) = 1./(1. + dt)*v;
-//   (u->value) = v + dt*cos(tstop);  // RDF - Add this option to the example?
+   if (app->periodic)
+   {
+      (u->value) = v + dt*cos(tstop);
+   }
+   else
+   {
+      (u->value) = 1./(1. + dt)*v;
+   }
    LTE = (u->value) - (1. - dt)*v;
    LTE  = (LTE < 0) ? -LTE : LTE;
 
@@ -339,7 +346,6 @@ int main (int argc, char *argv[])
    ntime  = 100;
    tstart = 0.0;
    tstop  = 5.0;
-//   tstop  = 2*acos(-1);  // RDF - Add this option to the example?
    limit_rfactor = -1;
    print_usage = 0;
    tol = 1.0e-6;
@@ -468,8 +474,14 @@ int main (int argc, char *argv[])
    (app->rank)   = rank;
    (app->limit_rfactor)   = limit_rfactor;
    (app->refine) = refine;
+   (app->periodic) = periodic;
    (app->tol) = tol;
    (app->num_syncs) = 0;
+
+   if (periodic)
+   {
+      tstop  = 2*acos(-1);
+   }
 
    /* initialize XBraid and set options */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
