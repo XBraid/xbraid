@@ -1690,9 +1690,8 @@ braid_SetPeriodic(braid_Core core,
    }
    else if (periodic == 1)
    {
-      _braid_printf("  Braid: The periodic option is not compatible with SeqSoln option, disabling\n");
+      _braid_printf("  Braid: Periodic option is not compatible with SeqSoln option, disabling\n");
    }
-
 
    return _braid_error_flag;
 }
@@ -1895,12 +1894,12 @@ braid_SetSeqSoln(braid_Core  core,
       if(_braid_CoreElt(core, skip) == 1)
       {
          _braid_CoreElt(core, skip) = 0;
-         _braid_printf("  Braid: SetSeqSoln requires skip be turned off, turning off now\n");
+         _braid_printf("  Braid: SetSeqSoln requires skip turned off, turning off now\n");
       }
       if(_braid_CoreElt(core, periodic) == 1)
       {
          _braid_CoreElt(core, periodic) = 0;
-         _braid_printf("  Braid: SetSeqSoln requires periodic be turned off, turning off now\n");
+         _braid_printf("  Braid: SetSeqSoln requires periodic turned off, turning off now\n");
       }
    }
    return _braid_error_flag;

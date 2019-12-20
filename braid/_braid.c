@@ -2554,11 +2554,11 @@ _braid_PeriodicCheckNumPoints(braid_Core   core,
    for (level = 0; level < (_braid_CoreElt(core, max_levels) - 1); level++)
    {
       _braid_GetCFactor(core, level, &cfactor);
-      divisor *= cfactor;
       if ((int)(npoints/divisor) < cfactor)
       {
          break;
       }
+      divisor *= cfactor;
    }
    if ((npoints % divisor) > 0)
    {
