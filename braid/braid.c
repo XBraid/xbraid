@@ -1099,6 +1099,7 @@ braid_PrintStats(braid_Core  core)
    braid_Real    globaltime    = _braid_CoreElt(core, globaltime);
    braid_PtFcnResidual fullres = _braid_CoreElt(core, full_rnorm_res);
    _braid_Grid **grids         = _braid_CoreElt(core, grids);
+   braid_Int     periodic      = _braid_CoreElt(core, periodic);
    braid_Int     adjoint       = _braid_CoreElt(core, adjoint);
    braid_Optim   optim         = _braid_CoreElt(core, optim);
 
@@ -1186,6 +1187,7 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  min coarse            = %d\n", min_coarse);
       _braid_printf("  number of levels      = %d\n", nlevels);
       _braid_printf("  skip down cycle       = %d\n", skip);
+      _braid_printf("  periodic              = %d\n", periodic);
       _braid_printf("  number of refinements = %d\n", nrefine);
       _braid_printf("\n");
       _braid_printf("  level   time-pts   cfactor   nrelax\n");
@@ -1675,14 +1677,22 @@ braid_Int
 braid_SetPeriodic(braid_Core core,
                   braid_Int  periodic)
 {
-   _braid_CoreElt(core, periodic)   = periodic;
+   _braid_CoreElt(core, periodic)   = 0;
    _braid_CoreElt(core, gupper)     = _braid_CoreElt(core, ntime);
    _braid_CoreElt(core, initiali) = 0;
-   if (periodic)
+
+   /* Do not set periodic, if we are doing sequential integration */
+   if ( periodic && (_braid_CoreElt(core, seq_soln) == 0) )
    {
+      _braid_CoreElt(core, periodic)   = 1;
       _braid_CoreElt(core, gupper)     = _braid_CoreElt(core, ntime) - 1;
       _braid_CoreElt(core, initiali) = -1;
    }
+   else if (periodic == 1)
+   {
+      _braid_printf("  Braid: The periodic option is not compatible with SeqSoln option, disabling\n");
+   }
+
 
    return _braid_error_flag;
 }
@@ -1881,8 +1891,18 @@ braid_SetSeqSoln(braid_Core  core,
    /* Skip needs to be 0 if we do a sequential integration first */
    _braid_CoreElt(core, seq_soln) = seq_soln;
    if (seq_soln == 1)
-      _braid_CoreElt(core, skip) = 0;
-
+   {
+      if(_braid_CoreElt(core, skip) == 1)
+      {
+         _braid_CoreElt(core, skip) = 0;
+         _braid_printf("  Braid: SetSeqSoln requires skip be turned off, turning off now\n");
+      }
+      if(_braid_CoreElt(core, periodic) == 1)
+      {
+         _braid_CoreElt(core, periodic) = 0;
+         _braid_printf("  Braid: SetSeqSoln requires periodic be turned off, turning off now\n");
+      }
+   }
    return _braid_error_flag;
 }
 
