@@ -2536,6 +2536,39 @@ _braid_FRefineSpace(braid_Core   core,
 }
 
 /*----------------------------------------------------------------------------
+ * Helper routine for periodic problems.  Compute the max number of levels
+ * from user settings
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_PeriodicNumLevels(braid_Core   core,
+                         braid_Int    npoints,
+                         braid_Int   *nlevels_ptr)   /* nlevels */
+{
+   braid_Int min_coarse = _braid_CoreElt(core, min_coarse);
+   braid_Int max_levels = _braid_CoreElt(core, max_levels);
+
+   braid_Int level, cfactor;
+   braid_Int levelPoints = npoints;
+   braid_Int max_coarse_level = max_levels;
+
+   for (level = 0; level < max_levels; level++)
+   {
+      _braid_GetCFactor(core, level, &cfactor);
+      if((levelPoints/cfactor) < min_coarse)
+      {
+         max_coarse_level = level;
+         break;
+      }
+      levelPoints = (levelPoints/cfactor);
+   }
+
+   *nlevels_ptr = _braid_min((max_levels-1), max_coarse_level);
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
  * Helper routine for periodic problems.  Compute the divisor by which the
  * number of points must be divisible and also the number of extra needed.
  *----------------------------------------------------------------------------*/
@@ -2546,12 +2579,14 @@ _braid_PeriodicCheckNumPoints(braid_Core   core,
                               braid_Int   *divisor_ptr,
                               braid_Int   *nextra_ptr)
 {
-   braid_Int  divisor, nextra, level, cfactor;
+   braid_Int  divisor, nextra, level, cfactor, computedmax;
 
    /* Compute coarsening factor divisor */
    divisor = 1;
    nextra  = 0;
-   for (level = 0; level < (_braid_CoreElt(core, max_levels) - 1); level++)
+
+   _braid_PeriodicNumLevels(core, npoints, &computedmax);
+   for (level = 0; level < computedmax; level++)
    {
       _braid_GetCFactor(core, level, &cfactor);
       if ((int)(npoints/divisor) < cfactor)
