@@ -77,6 +77,7 @@ typedef struct _braid_App_struct
    int       rank;
    int       limit_rfactor;
    int       refine;
+   int       periodic;
    double    tol;
    int       num_syncs;
 } my_App;
@@ -106,7 +107,14 @@ my_Step(braid_App        app,
 
    /* Use backward Euler to propagate solution */
    /* Use forward Euler to estimate the local trucation error */
-   (u->value) = 1./(1. + dt)*v;
+   if (app->periodic)
+   {
+      (u->value) = v + dt*cos(tstop);
+   }
+   else
+   {
+      (u->value) = 1./(1. + dt)*v;
+   }
    LTE = (u->value) - (1. - dt)*v;
    LTE  = (LTE < 0) ? -LTE : LTE;
 
@@ -151,6 +159,21 @@ my_Step(braid_App        app,
                }
                braid_StatusSetRefinementDtValues((braid_Status)status, rf, dtvalues);
                free(dtvalues);
+            }
+         }
+      }
+      else if (app->refine == 4)
+      {
+         int index, cfactor = 2;
+         braid_StepStatusGetTIndex(status, &index);
+         rf = 1;
+         if (nrefine < 4)
+         {
+            /* Refine each interval (as indicated by its right index) that is a
+             * multiple of cfactor, i.e., interval 0, cfactor, 2*cfactor, ... */
+            if ( ((index+1) % cfactor) == 0 )
+            {
+               rf = cfactor*cfactor-1;
             }
          }
       }
@@ -317,7 +340,7 @@ int main (int argc, char *argv[])
    my_App       *app;
    double        tstart, tstop, tol;
    int           ntime, rank, limit_rfactor, arg_index, print_usage;
-   int           refine, output, storage, fmg, sync, incMaxLvl ;
+   int           refine, output, storage, fmg, sync, incMaxLvl, periodic, max_levels;
 
    /* Define time domain: ntime intervals */
    ntime  = 100;
@@ -332,6 +355,8 @@ int main (int argc, char *argv[])
    fmg = 0;
    sync = 0;
    incMaxLvl = 0;
+   periodic = 0;
+   max_levels = 15;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -386,6 +411,16 @@ int main (int argc, char *argv[])
          arg_index++;
          incMaxLvl = 1;
       }
+      else if( strcmp(argv[arg_index], "-periodic") == 0 )
+      {
+         arg_index++;
+         periodic = 1;
+      }
+      else if ( strcmp(argv[arg_index], "-ml") == 0 )
+      {
+         arg_index++;
+         max_levels = atoi(argv[arg_index++]);
+      }
       else if ( strcmp(argv[arg_index], "-fmg") == 0 )
       {
          arg_index++;
@@ -408,20 +443,23 @@ int main (int argc, char *argv[])
       printf("\n");
       printf(" General XBraid configuration parameters\n");
       printf(" ---------------------------------------\n");
-      printf("  -nt  <n>                      : number of time steps (default: 100)\n");
-      printf("  -tol <tol>                    : set the stopping tolerance (default: 1e-6)\n");
-      printf("  -refine <n>                   : set the type of temporal refinement (default: 0)\n");
-      printf("                                : 0 - no refinement\n");
-      printf("                                : 1 - arbitrary refinement around t=2.5\n");
-      printf("                                : 2 - refinement based on local truncation error\n");
-      printf("                                : 3 - arbitrary refinement around t=2.5, specifying the new time-step sizes\n");
-      printf("  -max_rfactor <lim>            : limit the refinement factor (default: -1)\n");
-      printf("  -fmg                          : use FMG cycling\n");
-      printf("  -storage <level>              : full storage on levels >= level\n");
-      printf("  -sync                         : enable calls to the sync function\n");
-      printf("  -incMaxLvl                    : increase max number of Braid levels after each FRefine\n");
-      printf("  -no_output                    : do not save the solution in output files\n");
-      printf("  -help                         : print this help and exit\n");
+      printf("  -nt  <n>                           : number of time steps (default: 100)\n");
+      printf("  -tol <tol>                         : set the stopping tolerance (default: 1e-6)\n");
+      printf("  -refine <n>                        : set the type of temporal refinement (default: 0)\n");
+      printf("                                     : 0 - no refinement\n");
+      printf("                                     : 1 - arbitrary refinement around t=2.5\n");
+      printf("                                     : 2 - refinement based on local truncation error\n");
+      printf("                                     : 3 - arbitrary refinement around t=2.5, specifying the new time-step sizes\n");
+      printf("                                     : 4 - periodic example based on cfactor\n");
+      printf("  -max_rfactor <lim>                 : limit the refinement factor (default: -1)\n");
+      printf("  -fmg                               : use FMG cycling\n");
+      printf("  -storage <level>                   : full storage on levels >= level\n");
+      printf("  -sync                              : enable calls to the sync function\n");
+      printf("  -incMaxLvl                         : increase max number of Braid levels after each FRefine\n");
+      printf("  -periodic                          : solve a periodic problem\n");
+      printf("  -ml  <max_levels>                  : set max levels\n");
+      printf("  -no_output                         : do not save the solution in output files\n");
+      printf("  -help                              : print this help and exit\n");
       printf("\n");
    }
 
@@ -436,8 +474,14 @@ int main (int argc, char *argv[])
    (app->rank)   = rank;
    (app->limit_rfactor)   = limit_rfactor;
    (app->refine) = refine;
+   (app->periodic) = periodic;
    (app->tol) = tol;
    (app->num_syncs) = 0;
+
+   if (periodic)
+   {
+      tstop  = 2*acos(-1);
+   }
 
    /* initialize XBraid and set options */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
@@ -446,7 +490,7 @@ int main (int argc, char *argv[])
 
    /* Set some typical Braid parameters */
    braid_SetPrintLevel( core, 2);
-   braid_SetMaxLevels(core, 15);
+   braid_SetMaxLevels(core, max_levels);
    braid_SetAbsTol(core, tol);
    braid_SetCFactor(core, -1, 2);
    braid_SetRefine(core, 1);
@@ -469,6 +513,10 @@ int main (int argc, char *argv[])
    if (incMaxLvl)
    {
       braid_SetIncrMaxLevels(core);
+   }
+   if (periodic)
+   {
+      braid_SetPeriodic(core, periodic);
    }
 
    /* Run simulation, and then clean up */
