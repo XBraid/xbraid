@@ -3213,9 +3213,9 @@ _braid_FRefine(braid_Core   core,
    /* Initialize new hierarchy */
    _braid_CoreElt(core, gupper)  = f_gupper;
    _braid_CoreElt(core, nrefine) += 1;
-   braid_Int newrefine = _braid_CoreElt(core, nrefine);
+   braid_Int numrefine = _braid_CoreElt(core, nrefine);
    // If we have hit max refinement, then limit the max levels
-   if(!(newrefine < max_refinements))
+   if(!(numrefine < max_refinements) || (f_gupper >= tpoints_cutoff))
    {
       braid_Int maxLevelAfterRefine = _braid_CoreElt(core, max_levels_after_refine);
       braid_SetMaxLevels(core, maxLevelAfterRefine);
