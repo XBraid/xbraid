@@ -2546,15 +2546,17 @@ _braid_PeriodicCheckNumPoints(braid_Core   core,
                               braid_Int   *divisor_ptr,
                               braid_Int   *nextra_ptr)
 {
+   braid_Int  max_levels = _braid_CoreElt(core, max_levels);
+   braid_Int  min_coarse = _braid_CoreElt(core, min_coarse);
    braid_Int  divisor, nextra, level, cfactor;
 
    /* Compute coarsening factor divisor */
    divisor = 1;
    nextra  = 0;
-   for (level = 0; level < (_braid_CoreElt(core, max_levels) - 1); level++)
+   for (level = 0; level < (max_levels - 1); level++)
    {
       _braid_GetCFactor(core, level, &cfactor);
-      if ((int)(npoints/divisor) < cfactor)
+      if ( ((int)(npoints/divisor) < cfactor) || ((int)(npoints/divisor) < min_coarse) )
       {
          break;
       }
@@ -2565,7 +2567,7 @@ _braid_PeriodicCheckNumPoints(braid_Core   core,
       /* Product of coarsening factors (divisor) does not evenly divide npoints */
 
       /* If we can coarsen one more time, update the divisor to reflect that */
-      if (level < (_braid_CoreElt(core, max_levels) - 1))
+      if ( (level < (max_levels - 1)) && !((int)(npoints/divisor) < min_coarse))
       {
          divisor *= cfactor;
       }

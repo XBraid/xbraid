@@ -66,6 +66,7 @@ TESTS=( "diffusion1D.sh " \
         "compare_examples_drivers_storage.sh " \
         "mfem.sh" \
         "ode1D.sh" \
+        "ode1D-refine-periodic.sh" \
         "test-checkout-compile.sh " \
         "adjoint.sh " \
         "shellvector_bdf2.sh "\
