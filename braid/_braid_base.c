@@ -1,16 +1,36 @@
+/*BHEADER**********************************************************************
+ * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
+ * Produced at the Lawrence Livermore National Laboratory.
+ * 
+ * This file is part of XBraid. For support, post issues to the XBraid Github page.
+ * 
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (as published by the Free Software
+ * Foundation) version 2.1 dated February 1999.
+ * 
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or FITNESS FOR A
+ * PARTICULAR PURPOSE. See the terms and conditions of the GNU General Public
+ * License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc., 59
+ * Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ ***********************************************************************EHEADER*/
+
 /**
  *  Source file implementing the wrapper for the user routines
  **/
-
 
 #ifndef _braid_base_HEADER
 #define _braid_base_HEADER
 
 #include "_braid.h"
-#include "_braid_status.h"
-#include "braid_defs.h"
-#include "_util.c"
+#include "_util.h"
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int 
 _braid_BaseStep(braid_Core       core,
@@ -87,8 +107,9 @@ _braid_BaseStep(braid_Core       core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
-                        
 braid_Int
 _braid_BaseInit(braid_Core        core,
                 braid_App         app, 
@@ -140,6 +161,9 @@ _braid_BaseInit(braid_Core        core,
 
    return _braid_error_flag;
 }
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseClone(braid_Core         core,
@@ -200,6 +224,8 @@ _braid_BaseClone(braid_Core         core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseFree(braid_Core       core,
@@ -241,6 +267,8 @@ _braid_BaseFree(braid_Core       core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSum(braid_Core        core,
@@ -284,6 +312,8 @@ _braid_BaseSum(braid_Core        core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSpatialNorm(braid_Core        core,
@@ -291,13 +321,14 @@ _braid_BaseSpatialNorm(braid_Core        core,
                        braid_BaseVector  u,    
                        braid_Real       *norm_ptr )
 {
-
    /* Compute the spatial norm of the user's vector */
    _braid_CoreFcn(core, spatialnorm)(app, u->userVector, norm_ptr);
 
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseAccess(braid_Core          core,
@@ -331,6 +362,9 @@ _braid_BaseAccess(braid_Core          core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
 braid_Int
 _braid_BaseSync(braid_Core          core,
                 braid_App           app,
@@ -347,6 +381,9 @@ _braid_BaseSync(braid_Core          core,
 
    return _braid_error_flag;
 }
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseBufSize(braid_Core          core,
@@ -365,6 +402,8 @@ _braid_BaseBufSize(braid_Core          core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseBufPack(braid_Core          core,
@@ -406,6 +445,8 @@ _braid_BaseBufPack(braid_Core          core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseBufUnpack(braid_Core          core,
@@ -468,6 +509,8 @@ _braid_BaseBufUnpack(braid_Core          core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseObjectiveT(braid_Core             core,
@@ -522,6 +565,8 @@ _braid_BaseObjectiveT(braid_Core             core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseResidual(braid_Core        core,
@@ -541,6 +586,9 @@ _braid_BaseResidual(braid_Core        core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
 braid_Int
 _braid_BaseFullResidual(braid_Core        core,
                         braid_App         app,    
@@ -559,7 +607,8 @@ _braid_BaseFullResidual(braid_Core        core,
    return _braid_error_flag;
 }
 
-
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSCoarsen(braid_Core              core,
@@ -584,6 +633,9 @@ _braid_BaseSCoarsen(braid_Core              core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
 braid_Int
 _braid_BaseSRefine(braid_Core                 core,
                    braid_App                  app,    
@@ -607,6 +659,8 @@ _braid_BaseSRefine(braid_Core                 core,
    return _braid_error_flag;
 }                      
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSInit(braid_Core        core,
@@ -630,6 +684,8 @@ _braid_BaseSInit(braid_Core        core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSClone(braid_Core        core, 
@@ -654,6 +710,8 @@ _braid_BaseSClone(braid_Core        core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSFree(braid_Core      core,
@@ -672,6 +730,8 @@ _braid_BaseSFree(braid_Core      core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseTimeGrid(braid_Core  core,
@@ -691,6 +751,8 @@ _braid_BaseTimeGrid(braid_Core  core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseStep_diff(_braid_Action *action)
@@ -741,6 +803,8 @@ _braid_BaseStep_diff(_braid_Action *action)
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseClone_diff(_braid_Action *action)
@@ -775,6 +839,8 @@ _braid_BaseClone_diff(_braid_Action *action)
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSum_diff(_braid_Action *action)
@@ -812,6 +878,8 @@ _braid_BaseSum_diff(_braid_Action *action)
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseObjectiveT_diff(_braid_Action *action)
@@ -862,6 +930,9 @@ _braid_BaseObjectiveT_diff(_braid_Action *action)
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
 braid_Int
 _braid_BaseBufPack_diff(_braid_Action *action )
 {
@@ -907,6 +978,9 @@ _braid_BaseBufPack_diff(_braid_Action *action )
 
    return _braid_error_flag;
 }
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseBufUnpack_diff(_braid_Action *action)
@@ -961,10 +1035,7 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
    /* Free ubar */
    _braid_VectorBarDelete(core, ubar);
 
-
    return _braid_error_flag;
 }
-
-
 
 #endif

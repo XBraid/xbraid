@@ -1,9 +1,6 @@
 #BHEADER**********************************************************************
-#
 # Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
-# Produced at the Lawrence Livermore National Laboratory. Written by 
-# Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
-# Dobrev, et al. LLNL-CODE-660355. All rights reserved.
+# Produced at the Lawrence Livermore National Laboratory.
 # 
 # This file is part of XBraid. For support, post issues to the XBraid Github page.
 # 
@@ -32,9 +29,41 @@ include ../makefile.inc
 # Targets
 ##################################################################
 
-BRAID_HEADERS = _braid.h braid.h _util.h braid_test.h braid_status.h braid_defs.h _braid_base.h _braid_tape.h
+BRAID_HEADERS =\
+ _braid_base.h\
+ _braid.h\
+ _braid_status.h\
+ _braid_tape.h\
+ _util.h\
+ braid.h\
+ braid_status.h\
+ braid_test.h
 
-BRAID_FILES = _util.c braid.c _braid.c braid_test.c _braid_status.c braid_F90_iface.c _braid_base.c  _braid_tape.c
+BRAID_FILES =\
+ _braid_base.c\
+ _braid.c\
+ _braid_tape.c\
+ _util.c\
+ access.c\
+ braid.c\
+ braid_F90_iface.c\
+ braid_status.c\
+ braid_test.c\
+ communication.c\
+ distribution.c\
+ drive.c\
+ grid.c\
+ hierarchy.c\
+ interp.c\
+ mpistubs.c\
+ norm.c\
+ refine.c\
+ relax.c\
+ residual.c\
+ restrict.c\
+ space.c\
+ step.c\
+ uvector.c
 
 ifeq ($(sequential),yes)
 	BRAID_HEADERS += mpistubs.h

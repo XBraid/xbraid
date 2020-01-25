@@ -1,8 +1,6 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
- * Produced at the Lawrence Livermore National Laboratory. Written by 
- * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
- * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
+ * Produced at the Lawrence Livermore National Laboratory.
  * 
  * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
@@ -42,12 +40,74 @@
 extern "C" {
 #endif
 
+/*--------------------------------------------------------------------------
+ * Error handling
+ *--------------------------------------------------------------------------*/
+
+/** 
+ * This is the global XBraid error flag.  If it is ever nonzero, an error has 
+ * occurred. 
+ **/
+extern braid_Int _braid_error_flag;
+
+void _braid_ErrorHandler(const char *filename, braid_Int line, braid_Int ierr, const char *msg);
+#define _braid_Error(IERR, msg)       _braid_ErrorHandler(__FILE__, __LINE__, IERR, msg)
+#define _braid_ErrorInArg(IARG, msg)  _braid_Error(HYPRE_ERROR_ARG | IARG<<3, msg)
+
+/*--------------------------------------------------------------------------
+ * Memory allocation macros
+ *--------------------------------------------------------------------------*/
+
+/** 
+ * Allocation macro 
+ **/
+#define _braid_TAlloc(type, count) \
+( (type *)malloc((size_t)(sizeof(type) * (count))) )
+
+/** 
+ * Allocation macro 
+ **/
+#define _braid_CTAlloc(type, count) \
+( (type *)calloc((size_t)(count), (size_t)sizeof(type)) )
+
+/** 
+ * Re-allocation macro 
+ **/
+#define _braid_TReAlloc(ptr, type, count) \
+( (type *)realloc((char *)ptr, (size_t)(sizeof(type) * (count))) )
+
+/** 
+ * Free memory macro 
+ **/
+#define _braid_TFree(ptr) \
+( free((char *)ptr), ptr = NULL )
+
+/*--------------------------------------------------------------------------
+ * Miscellaneous macros and functions 
+ *--------------------------------------------------------------------------*/
+
+#ifndef _braid_max
+#define _braid_max(a,b)  (((a)<(b)) ? (b) : (a))
+#endif
+#ifndef _braid_min
+#define _braid_min(a,b)  (((a)<(b)) ? (a) : (b))
+#endif
+#ifndef _braid_isnan
+#define _braid_isnan(a) (a != a)
+#endif
+
+/* Used to implement periodic feature */
+#define _braid_SendIndexNull -2
+#define _braid_RecvIndexNull -2
+#define _braid_MapPeriodic(index, npoints) \
+( index = ((index)+(npoints)) % (npoints) )  /* this also handles negative indexes */
+
 /** 
  * Braid Vector Structures:
  *
  * There are three vector structures
  *   _braid_VectorBar      Defined below
- *   braid_Vector          Defiend in braid.h
+ *   braid_Vector          Defined in braid.h
  *   braid_BaseVector      Defined below
  *
  * The braid_BaseVector is the main internal Vector class, which is 
@@ -84,7 +144,6 @@ struct _braid_BaseVector_struct
 };
 typedef struct _braid_BaseVector_struct *braid_BaseVector;
 
-
 /** 
  * Data structure for storing the optimization variables
  */
@@ -107,7 +166,6 @@ struct _braid_Optimization_struct
    MPI_Request     *request;          /**< helper: Storing the MPI request of BufUnPackDiff */
 };
 typedef struct _braid_Optimization_struct *braid_Optim;
-
 
 /*--------------------------------------------------------------------------
  * Main data structures and accessor macros
@@ -237,7 +295,7 @@ typedef struct _braid_Core_struct
    braid_Int              refine;           /**< refine in time (refine = 1) */
    braid_Int             *rfactors;         /**< refinement factors for finest grid (if any) */
    braid_Real           **rdtvalues;        /**< Array of pointers to arrays of dt values for non-uniform refinement  */
-   braid_Int              r_space;          /**< spatial refinment flag */
+   braid_Int              r_space;          /**< spatial refinement flag */
    braid_Int              rstopped;         /**< refinement stopped at iteration rstopped */
    braid_Int              nrefine;          /**< number of refinements done */
    braid_Int              max_refinements;  /**< maximum number of refinements */
@@ -867,8 +925,6 @@ _braid_GetFullRNorm(braid_Core  core,
 braid_Int
 _braid_DeleteLastResidual(braid_Core  core);
 
-
-
 /**
  * Shallow copy a braid_VectorBar shared pointer, bar_ptr is set to bar
  * and the useCount is incremented by one.
@@ -876,7 +932,6 @@ _braid_DeleteLastResidual(braid_Core  core);
 braid_Int
 _braid_VectorBarCopy(braid_VectorBar  bar,       
                      braid_VectorBar *bar_ptr);  
-
 
 /**
  * Reduce the useCount of a braid_VectorBar shared pointer 
@@ -886,13 +941,11 @@ braid_Int
 _braid_VectorBarDelete(braid_Core      core, 
                        braid_VectorBar bar);
 
-
 /**
  * Free memory of the optimization structure 
  */
 braid_Int
 _braid_OptimDestroy( braid_Core core);
-
 
 /**
  * Update the adjoint variables and compute adjoint residual norm
@@ -901,7 +954,6 @@ _braid_OptimDestroy( braid_Core core);
 braid_Int
 _braid_UpdateAdjoint(braid_Core  core,
                      braid_Real *rnorm_adj_ptr);
-
 
 /**
  * Set adjoint residual norm 
@@ -927,13 +979,11 @@ _braid_AddToObjective(braid_Core             core,
 braid_Int
 _braid_EvalObjective(braid_Core core);
 
-
 /** 
  * Differentiated objective function 
  */
 braid_Int
 _braid_EvalObjective_diff(braid_Core core);
-
 
 /**
  * Allocate and initialize the adjoint variables 
@@ -941,7 +991,6 @@ _braid_EvalObjective_diff(braid_Core core);
 braid_Int
 _braid_InitAdjointVars(braid_Core   core, 
                        _braid_Grid *fine_grid);
-
 
 /**
  * Switch for displaying the XBraid actions. Used for debugging only. 
@@ -956,10 +1005,19 @@ _braid_SetVerbosity(braid_Core  core,
 braid_Int
 _braid_AdjointFeatureCheck(braid_Core core);
 
+/**
+ * Main loop for MGRIT
+ */
+braid_Int
+_braid_Drive(braid_Core core, 
+             braid_Real localtime);
 
 #ifdef __cplusplus
 }
 #endif
+
+#include "_braid_status.h"
+#include "_braid_base.h"
 
 #endif
 

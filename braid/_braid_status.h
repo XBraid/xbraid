@@ -1,8 +1,6 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
- * Produced at the Lawrence Livermore National Laboratory. Written by 
- * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
- * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
+ * Produced at the Lawrence Livermore National Laboratory.
  * 
  * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
@@ -21,7 +19,6 @@
  *
  ***********************************************************************EHEADER*/
  
-
 /** \file _braid_status.h
  * \brief Define the internals of the XBraid status structures and internal 
  * status structure functions, like destroy. 
@@ -36,7 +33,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 /*--------------------------------------------------------------------------
  * Define base Status structure as a pointer to core, and all other derived
@@ -80,7 +76,6 @@ struct _braid_ObjectiveStatus_struct
 {
    _braid_Status status;
 };
-
 
 /*--------------------------------------------------------------------------
  * Begin headers for internal Braid Status functions, like Destroy, and StatusInit
