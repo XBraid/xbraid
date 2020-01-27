@@ -20,7 +20,8 @@
  ***********************************************************************EHEADER*/
 
 /** \file _braid.c
- * \brief Source code for developer routines.  See braid.h for more information.
+ * \brief Source code for various developer routines that don't belong in specific
+ * subfiles.  See _braid.h for more information.
  *
  */
 
