@@ -34,3 +34,6 @@ Note that it is okay to include internal prototypes and implementations in these
 user interface files when it makes sense (say, as supporting routines), but this
 should generally be avoided.
 
+An attempt has been made to simplify header file usage as much as possible by
+requiring only one header file for users, `braid.h`, and one header file for
+developers, `_braid.h`.
