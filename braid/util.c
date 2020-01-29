@@ -18,7 +18,6 @@
  * Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  ***********************************************************************EHEADER*/
- 
 
 /** \file util.c
  * \brief Source code for utility routines. See util.h for more documentation.
@@ -37,6 +36,7 @@
  * 'index' and has stride 'stride'.  An empty projection is represented by
  * ilower > iupper.
  *--------------------------------------------------------------------------*/
+
 braid_Int
 _braid_ProjectInterval( braid_Int   ilower,
                         braid_Int   iupper,
@@ -66,6 +66,97 @@ _braid_ProjectInterval( braid_Int   ilower,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_GetInterval(braid_Core   core,
+                   braid_Int    level,
+                   braid_Int    interval_index,
+                   braid_Int   *flo_ptr,
+                   braid_Int   *fhi_ptr,
+                   braid_Int   *ci_ptr)
+{
+   _braid_Grid  **grids   = _braid_CoreElt(core, grids);
+   braid_Int      ilower  = _braid_GridElt(grids[level], ilower);
+   braid_Int      iupper  = _braid_GridElt(grids[level], iupper);
+   braid_Int      clower  = _braid_GridElt(grids[level], clower);
+   braid_Int      cupper  = _braid_GridElt(grids[level], cupper);
+   braid_Int      cfactor = _braid_GridElt(grids[level], cfactor);
+   braid_Int      flo, fhi, ci;
+
+   flo = ilower;
+   fhi = iupper;
+   ci  = -1;
+
+   if ( _braid_IsCPoint(clower, cfactor) )
+   {
+      flo = clower + (interval_index-1)*cfactor + 1;
+      fhi = clower + (interval_index  )*cfactor - 1;
+      if (flo < ilower)
+      {
+         flo = ilower;
+      }
+      if (fhi > iupper)
+      {
+         fhi = iupper;
+      }
+
+      ci = clower + interval_index*cfactor;
+      if (ci > cupper)
+      {
+         ci = -1;  /* return -1 if no C-points */
+      }
+   }
+
+   *flo_ptr = flo;
+   *fhi_ptr = fhi;
+   *ci_ptr  = ci;
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_SetVerbosity(braid_Core  core,
+                    braid_Int   verbose_adj)
+{
+   _braid_CoreElt(core, verbose_adj) = verbose_adj;
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
+ * Process the error with code ierr raised at the given line and source file
+ *----------------------------------------------------------------------------*/
+
+void
+_braid_ErrorHandler(const char *filename,
+                    braid_Int   line,
+                    braid_Int   ierr,
+                    const char *msg)
+{
+   _braid_error_flag |= ierr;
+
+#ifdef braid_PRINT_ERRORS
+   if (msg)
+   {
+      _braid_printf("braid error in file \"%s\", line %d, error code = %d - %s\n",
+                    filename, line, ierr, msg);
+   }
+   else
+   {
+      _braid_printf("braid error in file \"%s\", line %d, error code = %d\n",
+                    filename, line, ierr);
+   }
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
 braid_Int
 _braid_printf( const char *format, ...)
 {
@@ -85,6 +176,9 @@ _braid_printf( const char *format, ...)
 
    return _braid_error_flag;
 }
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_ParFprintfFlush(FILE       *file, 
@@ -106,6 +200,9 @@ _braid_ParFprintfFlush(FILE       *file,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
 braid_Int
 _braid_Max(braid_Real  *array, 
            braid_Int    size,
@@ -126,6 +223,9 @@ _braid_Max(braid_Real  *array,
    
    return _braid_error_flag;
 }
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_GetNEntries(braid_Real   *_array, 

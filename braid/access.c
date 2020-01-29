@@ -112,3 +112,36 @@ _braid_FAccess(braid_Core     core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_AccessVector(braid_Core          core,
+                    braid_AccessStatus  status,
+                    braid_BaseVector    u)
+{
+   braid_App      app    = _braid_CoreElt(core, app);
+
+   _braid_BaseAccess(core, app,  u, status);
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_Sync(braid_Core        core,
+            braid_SyncStatus  status)
+{
+   if ( _braid_CoreElt(core, sync) == NULL)
+   {
+      return _braid_error_flag;
+   }
+   braid_App app = _braid_CoreElt(core, app);
+
+   _braid_BaseSync(core, app, status);
+
+   return _braid_error_flag;
+}
+

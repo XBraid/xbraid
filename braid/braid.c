@@ -27,6 +27,9 @@
 #include "_braid.h"
 #include "util.h"
 
+braid_Int _braid_error_flag = 0;
+FILE    *_braid_printfile  = NULL;
+
 #ifndef DEBUG
 #define DEBUG 0
 #endif

@@ -41,7 +41,7 @@ nreals = nbytes / sizeof(braid_Real) + ((nbytes % sizeof(braid_Real)) != 0)
  * number of points must be divisible and also the number of extra needed.
  *----------------------------------------------------------------------------*/
 
-braid_Int
+static braid_Int
 _braid_PeriodicCheckNumPoints(braid_Core   core,
                               braid_Int    npoints,
                               braid_Int   *divisor_ptr,
@@ -88,7 +88,7 @@ _braid_PeriodicCheckNumPoints(braid_Core   core,
  * number of points.
  *----------------------------------------------------------------------------*/
 
-braid_Int
+static braid_Int
 _braid_PeriodicAdjustRFactors(braid_Core   core,
                               braid_Int   *lnrpoints_ptr,   /* local num refined points */
                               braid_Int   *gnrpoints_ptr)   /* global num refined points */

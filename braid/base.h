@@ -19,7 +19,6 @@
  *
  ***********************************************************************EHEADER*/
 
-
  /** \file base.h
  *  \brief Define headers for wrapper routines of user-defined functions. 
  *
@@ -33,12 +32,14 @@
  *  differentiation to compute the adjoint cycle.
  **/
 
-
 #ifndef _braid_base_HEADER
 #define _braid_base_HEADER
 
 #include "_braid.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * This calls the user's step routine.
@@ -348,5 +349,9 @@ _braid_BaseBufUnpack_diff(_braid_Action *action      /**< _braid_Action structur
 braid_Int
 _braid_BaseInit_diff(_braid_Action *action      /**< _braid_Action structure, holds information about the primal XBraid action */
                      );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

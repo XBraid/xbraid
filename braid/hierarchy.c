@@ -23,32 +23,6 @@
 #include "util.h"
 
 /*----------------------------------------------------------------------------
- * Returns the coarsening factor to use on grid 'level'
- *----------------------------------------------------------------------------*/
-
-braid_Int
-_braid_GetCFactor(braid_Core   core,
-                  braid_Int    level,
-                  braid_Int   *cfactor_ptr)
-{
-   braid_Int     *cfactors  = _braid_CoreElt(core, cfactors);
-   braid_Int      cfdefault = _braid_CoreElt(core, cfdefault);
-   braid_Int      cfactor;
-
-   if (cfactors[level] != 0)
-   {
-      cfactor = cfactors[level];
-   }
-   else
-   {
-      cfactor = cfdefault;
-   }
-   *cfactor_ptr = cfactor;
-
-   return _braid_error_flag;
-}
-
-/*----------------------------------------------------------------------------
  * Initialize grid hierarchy
  *----------------------------------------------------------------------------*/
 
@@ -316,6 +290,195 @@ _braid_InitHierarchy(braid_Core    core,
          {
             MPI_Wait(&request2, &status);
          }
+      }
+   }
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
+ * Returns the coarsening factor to use on grid 'level'
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_GetCFactor(braid_Core   core,
+                  braid_Int    level,
+                  braid_Int   *cfactor_ptr)
+{
+   braid_Int     *cfactors  = _braid_CoreElt(core, cfactors);
+   braid_Int      cfdefault = _braid_CoreElt(core, cfdefault);
+   braid_Int      cfactor;
+
+   if (cfactors[level] != 0)
+   {
+      cfactor = cfactors[level];
+   }
+   else
+   {
+      cfactor = cfdefault;
+   }
+   *cfactor_ptr = cfactor;
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
+ * Set initial guess at C-points, and initialize shell at F-points when using
+ * shell vectors.
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_InitGuess(braid_Core  core,
+                 braid_Int   level)
+{
+   braid_App          app      = _braid_CoreElt(core, app);
+   braid_Int          seq_soln = _braid_CoreElt(core, seq_soln);
+   braid_Int          nrefine  = _braid_CoreElt(core,nrefine);
+   _braid_Grid      **grids    = _braid_CoreElt(core, grids);
+   braid_Int          ilower   = _braid_GridElt(grids[level], ilower);
+   braid_Int          iupper   = _braid_GridElt(grids[level], iupper);
+   braid_Int          clower   = _braid_GridElt(grids[level], clower);
+   braid_Int          cupper   = _braid_GridElt(grids[level], cupper);
+   braid_Int          cfactor  = _braid_GridElt(grids[level], cfactor);
+   braid_Real        *ta       = _braid_GridElt(grids[level], ta);
+   braid_BaseVector  *va       = _braid_GridElt(grids[level], va);
+
+   braid_BaseVector  u;
+   braid_Int         i, iu, sflag;
+
+   if ( (level == 0) && (seq_soln == 1) )
+   {
+      /* If first processor, grab initial condition */
+      if(ilower == 0)
+      {
+         /* If we have already refined, then an initial init has already been done */
+         if(nrefine > 0)
+         {
+            _braid_UGetVector(core, 0, 0, &u);    /* Get stored vector */
+         }
+         else
+         {
+            _braid_BaseInit(core, app,  ta[0], &u);
+            _braid_USetVector(core, 0, 0, u, 0);
+         }
+         ilower += 1;
+      }
+      /* Else, receive point to the left */
+      else
+      {
+         _braid_UCommInitBasic(core, 0, 1, 0, 0);     /* Post receive to the left*/
+         _braid_UGetVector(core, 0, ilower-1, &u);    /* Wait on receive */
+      }
+
+      /* Set Flag so that USetVector initiates send when iupper is available */
+      _braid_GridElt(grids[level], send_index)  = iupper;
+
+      /* Initialize all points on the finest grid with sequential time marching */
+      for(i = ilower; i <= iupper; i++)
+      {
+         _braid_Step(core, 0, i, NULL, u);       /* Step forward */
+         _braid_USetVector(core, 0, i, u, 0);    /* Store: copy u into core,
+                                                    sending to left if needed */
+      }
+
+      _braid_UCommWait(core, 0);                 /* Wait on comm to finish */
+   }
+   else if (level == 0)
+   {
+      if (_braid_CoreElt(core, useshell)==1)
+      {
+         for (i = ilower; i <=iupper; i++)
+         {
+            if (_braid_IsCPoint(i,cfactor))
+            {
+               // We are on a C-point, init full vector
+               _braid_BaseInit(core, app,  ta[i-ilower], &u);
+            }
+            else
+            {
+               // We are on a F-point, init shell only
+               _braid_BaseSInit(core,  app, ta[i-ilower], &u);
+            }
+            _braid_USetVectorRef(core, level, i, u);
+         }
+      }
+      else
+      {
+         /* Only initialize the C-points on the finest grid */
+         for (i = clower; i <= cupper; i += cfactor)
+         {
+            _braid_BaseInit(core, app,  ta[i-ilower], &u);
+            _braid_USetVectorRef(core, level, i, u);
+         }
+      }
+   }
+   else
+   {
+      for (i = ilower; i <= iupper; i++)
+      {
+         _braid_UGetIndex(core, level, i, &iu, &sflag);
+         if (sflag == 0) // Full point
+         {
+            _braid_BaseClone(core, app,  va[i-ilower], &u);
+            _braid_USetVectorRef(core, level, i, u);
+         }
+         else if (sflag == -1) // Shell
+         {
+            _braid_BaseSClone(core,  app, va[i-ilower], &u);
+            _braid_USetVectorRef(core, level, i, u);
+         }
+      }
+   }
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
+ * Copy the initialized C-points on the fine grid, to all coarse levels.
+ * Allows first down cycle to be skipped, in FMG fashion.
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_CopyFineToCoarse(braid_Core  core)
+{
+   braid_App      app     = _braid_CoreElt(core, app);
+   _braid_Grid  **grids   = _braid_CoreElt(core, grids);
+   braid_Int      nlevels = _braid_CoreElt(core, nlevels);
+   
+   braid_Int      f_index, index, iu, is_stored, level, f_cfactor;
+   braid_Int      ilower, iupper;
+   braid_BaseVector   u, *va;
+
+   for(level = 1; level < nlevels; level++)
+   {
+
+      f_cfactor = _braid_GridElt(grids[level-1], cfactor);
+      iupper    = _braid_GridElt(grids[level], iupper);
+      ilower    = _braid_GridElt(grids[level], ilower);
+      va        = _braid_GridElt(grids[level], va);
+
+      /* Loop over all points belonging to this processor, and if a C-point,
+       * then carry out spatial coarsening and copy to ua and va */
+      for (index=ilower; index<=iupper; index++)
+      {
+         _braid_MapCoarseToFine(index, f_cfactor, f_index);
+         _braid_UGetVector(core, level-1, f_index, &u);
+         _braid_Coarsen(core, level, f_index, index, u, &va[index-ilower]);
+         
+         _braid_BaseFree(core, app,  u);
+         _braid_BaseClone(core, app,  va[index-ilower], &u);
+         _braid_USetVectorRef(core, level, index, u);
+         _braid_UGetIndex(core, level, index, &iu, &is_stored);
+         if (is_stored == -2) /* Case where F-points are not stored, and we are not using shell vectors */
+         {
+            _braid_BaseFree(core, app,  u);
+         }
+         else if (is_stored == -1) /* This is a shell vector */
+         {
+            // We free the data in u, keeping the shell
+            _braid_BaseSFree(core,  app, u);
+         }
+ 
       }
    }
 

@@ -41,7 +41,7 @@ typedef struct
  * function.
  *--------------------------------------------------------------------------*/
 
-braid_Int
+static braid_Int
 _braid_DriveInitCycle(braid_Core          core,
                       _braid_CycleState  *cycle_ptr)
 {
@@ -88,7 +88,7 @@ _braid_DriveInitCycle(braid_Core          core,
  *   up          0                     refine or check convergence
  *--------------------------------------------------------------------------*/
 
-braid_Int
+static braid_Int
 _braid_DriveUpdateCycle(braid_Core          core,
                         braid_Int           level,
                         braid_Int           iter,
@@ -193,7 +193,7 @@ _braid_DriveUpdateCycle(braid_Core          core,
  * function.
  *--------------------------------------------------------------------------*/
 
-braid_Int
+static braid_Int
 _braid_DriveEndCycle(braid_Core          core,
                      _braid_CycleState  *cycle_ptr)
 {
@@ -218,7 +218,7 @@ _braid_DriveEndCycle(braid_Core          core,
  * function.
  *--------------------------------------------------------------------------*/
 
-braid_Int
+static braid_Int
 _braid_DriveCheckConvergence(braid_Core  core,
                              braid_Int   iter,
                              braid_Int  *done_ptr)
@@ -325,7 +325,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
  * function.
  *--------------------------------------------------------------------------*/
 
-braid_Int
+static braid_Int
 _braid_DrivePrintStatus(braid_Core  core,
                         braid_Int   level,
                         braid_Int   iter,

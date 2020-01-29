@@ -40,8 +40,8 @@ BRAID_HEADERS =\
  braid_test.h
 
 BRAID_FILES =\
- _braid.c\
  access.c\
+ adjoint.c\
  base.c\
  braid.c\
  braid_F90_iface.c\

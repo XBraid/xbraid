@@ -163,5 +163,4 @@ _braid_TapeResetInput(braid_Core core);
  */
 const char* _braid_CallGetName(_braid_Call call);
 
-
 #endif
