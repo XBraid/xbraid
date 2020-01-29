@@ -34,7 +34,7 @@
 #include <math.h>
 
 #include "braid.h"
-#include "_braid_tape.h"
+#include "tape.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -1016,8 +1016,8 @@ _braid_Drive(braid_Core core,
 }
 #endif
 
-#include "_braid_status.h"
-#include "_braid_base.h"
+#include "status.h"
+#include "base.h"
 
 #endif
 

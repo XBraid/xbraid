@@ -19,13 +19,13 @@
  *
  ***********************************************************************EHEADER*/
 
-/** \file _braid_tape.h
+/** \file tape.h
  * \brief Define headers for the tape routines (linked list for AD)
  *
  */
 
-#ifndef braid_tape_HEADER
-#define braid_tape_HEADER
+#ifndef _braid_tape_HEADER
+#define _braid_tape_HEADER
 
 #include "_braid.h"
 #include "braid.h"

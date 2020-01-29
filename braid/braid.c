@@ -25,7 +25,7 @@
  */
 
 #include "_braid.h"
-#include "_util.h"
+#include "util.h"
 
 #ifndef DEBUG
 #define DEBUG 0

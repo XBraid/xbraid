@@ -22,7 +22,7 @@
  ***********************************************************************EHEADER*/
 
 #include "_braid.h"
-#include "_util.h"
+#include "util.h"
 
 /*----------------------------------------------------------------------------
  * Returns an index into the local u-vector for grid 'level' at point 'index'.

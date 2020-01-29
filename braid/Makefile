@@ -30,21 +30,19 @@ include ../makefile.inc
 ##################################################################
 
 BRAID_HEADERS =\
- _braid_base.h\
  _braid.h\
- _braid_status.h\
- _braid_tape.h\
- _util.h\
+ base.h\
+ status.h\
+ tape.h\
+ util.h\
  braid.h\
  braid_status.h\
  braid_test.h
 
 BRAID_FILES =\
- _braid_base.c\
  _braid.c\
- _braid_tape.c\
- _util.c\
  access.c\
+ base.c\
  braid.c\
  braid_F90_iface.c\
  braid_status.c\
@@ -63,6 +61,8 @@ BRAID_FILES =\
  restrict.c\
  space.c\
  step.c\
+ tape.c\
+ util.c\
  uvector.c
 
 ifeq ($(sequential),yes)

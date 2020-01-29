@@ -20,7 +20,7 @@
  ***********************************************************************EHEADER*/
  
 
-/** \file _util.h
+/** \file util.h
  * \brief Define headers for utility routines.
  *
  * This file contains the headers for utility routines. Essentially,
@@ -28,8 +28,8 @@
  * as an argument, then it's a utility routine.
  */
 
-#ifndef braid_util_HEADER
-#define braid_util_HEADER
+#ifndef _braid_util_HEADER
+#define _braid_util_HEADER
 
 #include "_braid.h"
 

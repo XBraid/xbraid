@@ -25,7 +25,7 @@
  */
 
 #include "_braid.h"
-#include "_util.h"
+#include "util.h"
 
 /*--------------------------------------------------------------------------
  * Some simple tests on the myinit, myaccess and myfree routines

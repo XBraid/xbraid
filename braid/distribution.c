@@ -20,7 +20,7 @@
  ***********************************************************************EHEADER*/
 
 #include "_braid.h"
-#include "_util.h"
+#include "util.h"
 
 /*----------------------------------------------------------------------------
  * Returns the index interval for 'proc' in a blocked data distribution

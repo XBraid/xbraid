@@ -21,12 +21,12 @@
  
 /** \file braid_status.c
  * \brief Source code for status interface routines.  See braid_status.h and
- * _braid_status.h for more information.
+ * status.h for more information.
  *
  */
 
 #include "_braid.h"
-#include "_util.h"
+#include "util.h"
 
 #ifndef DEBUG
 #define DEBUG 0

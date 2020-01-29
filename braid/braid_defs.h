@@ -25,8 +25,8 @@
  *
  */
 
-#ifndef braiddefs_HEADER
-#define braiddefs_HEADER
+#ifndef braid_defs_HEADER
+#define braid_defs_HEADER
 
 #include <stdlib.h>
 #include <stdio.h>

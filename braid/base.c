@@ -23,11 +23,8 @@
  *  Source file implementing the wrapper for the user routines
  **/
 
-#ifndef _braid_base_HEADER
-#define _braid_base_HEADER
-
 #include "_braid.h"
-#include "_util.h"
+#include "util.h"
 
 /*----------------------------------------------------------------------------
  *----------------------------------------------------------------------------*/
@@ -1038,4 +1035,3 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
    return _braid_error_flag;
 }
 
-#endif

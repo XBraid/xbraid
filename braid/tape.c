@@ -19,8 +19,8 @@
  *
  ***********************************************************************EHEADER*/
 
-/** \file _braid_tape.c
- * \brief Source code for tape routines. See _braid_tape.h for more documentation.
+/** \file tape.c
+ * \brief Source code for tape routines. See tape.h for more documentation.
  *
  */
 

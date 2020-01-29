@@ -19,7 +19,7 @@
  *
  ***********************************************************************EHEADER*/
  
-/** \file _braid_status.h
+/** \file status.h
  * \brief Define the internals of the XBraid status structures and internal 
  * status structure functions, like destroy. 
  */

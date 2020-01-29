@@ -20,7 +20,7 @@
  ***********************************************************************EHEADER*/
 
 
- /** \file _braid_base.h
+ /** \file base.h
  *  \brief Define headers for wrapper routines of user-defined functions. 
  *
  *  Routines defined here wrap the user-defined routines. If this is a normal

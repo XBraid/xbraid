@@ -20,7 +20,7 @@
  ***********************************************************************EHEADER*/
 
 #include "_braid.h"
-#include "_util.h"
+#include "util.h"
 
 /*----------------------------------------------------------------------------
  * Set the residual norm for iteration iter.  If iter < 0, set the rnorm for the

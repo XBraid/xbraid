@@ -20,13 +20,13 @@
  ***********************************************************************EHEADER*/
  
 
-/** \file _util.c
- * \brief Source code for utility routines. See _util.h for more documentation.
+/** \file util.c
+ * \brief Source code for utility routines. See util.h for more documentation.
  *
  */
 
 #include "_braid.h"
-#include "_util.h"
+#include "util.h"
 
 #ifndef DEBUG
 #define DEBUG 0
