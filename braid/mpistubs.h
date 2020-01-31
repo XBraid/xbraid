@@ -11,10 +11,9 @@
  ***********************************************************************EHEADER*/
 
 /** \file mpistubs.h
- * \brief Fake MPI stubs to generate serial codes without MPI.
+ * \brief XBraid internal headers to define fake MPI stubs.  This ultimately allows 
+ * the user to generate purely serial codes without MPI.
  *
- * This file contains the stubs to allow the user to fake using MPI, i.e., 
- * compile XBraid without MPI support for a purely serial version. 
  */
 
 #ifdef __cplusplus

@@ -20,16 +20,17 @@
  ***********************************************************************EHEADER*/
 
  /** \file base.h
- *  \brief Define headers for wrapper routines of user-defined functions. 
  *
- *  Routines defined here wrap the user-defined routines. If this is a normal
- *  XBraid run (i.e., no adjoint), then the wrappers serve no function, and
- *  just call the user's routines. If this is an XBraid_Adjoint run, then these
- *  routines record themselves to the action tape and push state and bar
- *  vectors to the primal and the bar tape, respectively.  These vectors are
- *  then later popped from the tape and passed to the user *diff* routines in
- *  order to compute the differentiated actions.  This is a form of automatic
- *  differentiation to compute the adjoint cycle.
+ *  \brief Define XBraid internal headers for wrapper routines of user-defined functions. 
+ *
+ *  The XBraid internal headers defined here wrap the user-defined routines. If
+ *  this is a normal XBraid run (i.e., no adjoint), then the wrappers serve no
+ *  function, and just call the user's routines. If this is an XBraid_Adjoint
+ *  run, then these routines record themselves to the action tape and push
+ *  state and bar vectors to the primal and the bar tape, respectively.  These
+ *  vectors are then later popped from the tape and passed to the user *diff*
+ *  routines in order to compute the differentiated actions.  This is a form of
+ *  automatic differentiation to compute the adjoint cycle.
  **/
 
 #ifndef _braid_base_HEADER

@@ -20,9 +20,9 @@
  ***********************************************************************EHEADER*/
 
 /** \file braid.h
- * \brief Define headers for user interface routines.
+ * \brief Define headers for user-interface routines.
  *
- * This file contains routines used to allow the user to initialize, run
+ * This file contains user-routines used to allow the user to initialize, run
  * and get and set options for a XBraid solver. 
  */
 

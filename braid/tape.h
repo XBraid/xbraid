@@ -20,7 +20,8 @@
  ***********************************************************************EHEADER*/
 
 /** \file tape.h
- * \brief Define headers for the tape routines (linked list for AD)
+ * \brief Define the XBraid internal headers for the action-tape routines
+ * (linked list for AD)
  *
  */
 

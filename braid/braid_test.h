@@ -21,9 +21,9 @@
  
 
 /** \file braid_test.h
- * \brief Define headers for XBraid test routines.
+ * \brief Define headers for XBraid user-test routines.
  *
- * This file contains routines used to test a user's XBraid wrapper routines 
+ * This file contains headers for the user to test their XBraid wrapper routines 
  * one-by-one.
  */
 

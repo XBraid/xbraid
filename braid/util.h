@@ -20,7 +20,7 @@
  ***********************************************************************EHEADER*/
 
 /** \file util.h
- * \brief Define headers for utility routines.
+ * \brief Define XBraid internal headers for utility routines.
  *
  * This file contains the headers for utility routines. Essentially,
  * if a routine does not take braid_Core (or other XBraid specific structs) 

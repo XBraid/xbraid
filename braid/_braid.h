@@ -20,9 +20,10 @@
  ***********************************************************************EHEADER*/
 
 /** \file _braid.h
- * \brief Define headers for developer routines and structure declarations.
+ * \brief Define headers for XBraid internal (developer) routines and XBraid internal structure declarations.
  *
- * This file contains the headers for developer routines and structure declarations.
+ * This file contains the headers for XBraid internal (developer) routines and
+ * structure declarations.
  */
 
 #ifndef _braid_HEADER

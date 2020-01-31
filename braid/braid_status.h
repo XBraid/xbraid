@@ -21,8 +21,8 @@
  
 
 /** \file braid_status.h
- * \brief Define headers for XBraid status structures and headers for the user 
- * functions allowing the user to get/set status structure values. 
+ * \brief Define headers for the user-interface with the XBraid status structures, 
+ * allowing the user to get/set status structure values. 
  *
  */
 
