@@ -1,7 +1,5 @@
 // Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. Written by 
-// Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
-// Dobrev, et al. LLNL-CODE-660355. All rights reserved.
+// Produced at the Lawrence Livermore National Laboratory.
 // 
 // This file is part of XBraid. For support, post issues to the XBraid Github page.
 //

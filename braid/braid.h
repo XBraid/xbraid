@@ -1,8 +1,6 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
- * Produced at the Lawrence Livermore National Laboratory. Written by 
- * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
- * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
+ * Produced at the Lawrence Livermore National Laboratory.
  * 
  * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
@@ -22,10 +20,10 @@
  ***********************************************************************EHEADER*/
 
 /** \file braid.h
- * \brief Define headers for user interface routines.
+ * \brief Define headers for user-interface routines.
  *
- * This file contains routines used to allow the user to initialize, run
- * and get and set a XBraid solver. 
+ * This file contains user-routines used to allow the user to initialize, run
+ * and get and set options for a XBraid solver. 
  */
 
 #ifndef braid_HEADER
@@ -942,6 +940,7 @@ braid_GetSpatialAccuracy( braid_StepStatus  status,         /**< Current XBraid 
                           braid_Real        tight_tol,      /**< Tightest allowed spatial solve stopping tol on fine grid*/
                           braid_Real       *tol_ptr         /**< output, holds the computed spatial solve stopping tol */
                          );
+
 /**
  * Set the initial guess to XBraid as the sequential time stepping solution.
  * This is primarily for debugging.  When used with storage=-2, the initial
@@ -968,6 +967,20 @@ braid_Int
 braid_GetMyID(braid_Core core,           /**< braid_Core (_braid_Core) struct */
               braid_Int *myid_ptr        /**< output: rank of the processor. */
              );
+
+/**
+ * Machine independent pseudo-random number generator is defined in Braid.c
+ */
+#ifndef braid_RAND_MAX
+#define braid_RAND_MAX 32768
+#endif
+
+/**
+ * Define a machine independent random number generator
+ */
+braid_Int
+braid_Rand(void                                /**< Take no arguments, to mimic C-standard rand() */
+      );
 
 /** @}*/
 
@@ -1078,15 +1091,7 @@ braid_Int
 braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
                       braid_Real  *rnorm_adj   /**< output: adjoint residual norm of last iteration */
                      );
-/**
- * Define a machine independent random number generator
- */
-braid_Int
-braid_Rand(void                                /**< Take no arguments, to mimic C-standard rand() */
-      );
-
 /** @}*/
-
 
 #ifdef __cplusplus
 }
