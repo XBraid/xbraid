@@ -29,7 +29,7 @@
 #ifndef braid_status_HEADER
 #define braid_status_HEADER
 
-#include "braid.h"
+#include "braid_defs.h"
 
 #ifdef __cplusplus
 extern "C" {

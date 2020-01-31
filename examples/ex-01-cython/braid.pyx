@@ -2,8 +2,10 @@
 Cython header file defining the Braid-Python interface
 '''
 
-cdef extern from "braid_status.h":
+cdef extern from "status.h":
 
+    ##
+    # Import the user-interface status structure definitions
     cdef struct _braid_Status_struct:
         pass
     ctypedef _braid_Status_struct *braid_Status
@@ -11,6 +13,10 @@ cdef extern from "braid_status.h":
     cdef struct _braid_AccessStatus_struct:
         pass
     ctypedef _braid_AccessStatus_struct *braid_AccessStatus 
+
+    cdef struct _braid_SyncStatus_struct:
+        pass
+    ctypedef _braid_SyncStatus_struct *braid_SyncStatus 
 
     cdef struct _braid_StepStatus_struct:
         pass
@@ -24,6 +30,8 @@ cdef extern from "braid_status.h":
         pass
     ctypedef _braid_CoarsenRefStatus_struct *braid_CoarsenRefStatus
     
+
+cdef extern from "braid_status.h":
     ##
     # Wrap StepStatus Routines
     int braid_StepStatusGetT (braid_StepStatus status, double *t_ptr)
@@ -77,6 +85,18 @@ cdef extern from "braid_status.h":
     # Wrap BufferStatus Routines
     int braid_BufferStatusGetMessageType (braid_BufferStatus status, int *messagetype_ptr)
     int braid_BufferStatusSetSize ( braid_BufferStatus status, int size);
+
+    ##
+    # Wrap SyncStatus Routines
+    int braid_SyncStatusGetTIUL (braid_SyncStatus status, int *iloc_upper, int *iloc_lower, int level)
+    int braid_SyncStatusGetTimeValues (braid_SyncStatus status, double **tvalues_ptr, int i_upper, int i_lower, int level)
+    int braid_SyncStatusGetIter (braid_SyncStatus status, int *iter_ptr)
+    int braid_SyncStatusGetLevel (braid_CoarsenRefStatus status, int *level_ptr)
+    int braid_SyncStatusGetNLevels (braid_CoarsenRefStatus status, int *nlevels_ptr)
+    int braid_SyncStatusGetNRefine (braid_CoarsenRefStatus status, int *nrefine_ptr)
+    int braid_SyncStatusGetNTPoints (braid_CoarsenRefStatus status, int *ntpoints_ptr)
+    int braid_SyncStatusGetDone (braid_AccessStatus status, int *done_ptr)
+    int braid_SyncStatusGetCallingFunction (braid_AccessStatus status, int *cfunction_ptr)
 
 cdef extern from "braid.h":
     
