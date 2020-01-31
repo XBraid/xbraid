@@ -1,8 +1,6 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
- * Produced at the Lawrence Livermore National Laboratory. Written by 
- * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
- * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
+ * Produced at the Lawrence Livermore National Laboratory.
  * 
  * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
@@ -22,9 +20,10 @@
  ***********************************************************************EHEADER*/
 
 /** \file _braid.h
- * \brief Define headers for developer routines.
+ * \brief Define headers for XBraid internal (developer) routines and XBraid internal structure declarations.
  *
- * This file contains the headers for developer routines.
+ * This file contains the headers for XBraid internal (developer) routines and
+ * structure declarations.
  */
 
 #ifndef _braid_HEADER
@@ -36,18 +35,80 @@
 #include <math.h>
 
 #include "braid.h"
-#include "_braid_tape.h"
+#include "tape.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/*--------------------------------------------------------------------------
+ * Error handling
+ *--------------------------------------------------------------------------*/
+
+/** 
+ * This is the global XBraid error flag.  If it is ever nonzero, an error has 
+ * occurred. 
+ **/
+extern braid_Int _braid_error_flag;
+
+void _braid_ErrorHandler(const char *filename, braid_Int line, braid_Int ierr, const char *msg);
+#define _braid_Error(IERR, msg)       _braid_ErrorHandler(__FILE__, __LINE__, IERR, msg)
+#define _braid_ErrorInArg(IARG, msg)  _braid_Error(HYPRE_ERROR_ARG | IARG<<3, msg)
+
+/*--------------------------------------------------------------------------
+ * Memory allocation macros
+ *--------------------------------------------------------------------------*/
+
+/** 
+ * Allocation macro 
+ **/
+#define _braid_TAlloc(type, count) \
+( (type *)malloc((size_t)(sizeof(type) * (count))) )
+
+/** 
+ * Allocation macro 
+ **/
+#define _braid_CTAlloc(type, count) \
+( (type *)calloc((size_t)(count), (size_t)sizeof(type)) )
+
+/** 
+ * Re-allocation macro 
+ **/
+#define _braid_TReAlloc(ptr, type, count) \
+( (type *)realloc((char *)ptr, (size_t)(sizeof(type) * (count))) )
+
+/** 
+ * Free memory macro 
+ **/
+#define _braid_TFree(ptr) \
+( free((char *)ptr), ptr = NULL )
+
+/*--------------------------------------------------------------------------
+ * Miscellaneous macros and functions 
+ *--------------------------------------------------------------------------*/
+
+#ifndef _braid_max
+#define _braid_max(a,b)  (((a)<(b)) ? (b) : (a))
+#endif
+#ifndef _braid_min
+#define _braid_min(a,b)  (((a)<(b)) ? (a) : (b))
+#endif
+#ifndef _braid_isnan
+#define _braid_isnan(a) (a != a)
+#endif
+
+/* Used to implement periodic feature */
+#define _braid_SendIndexNull -2
+#define _braid_RecvIndexNull -2
+#define _braid_MapPeriodic(index, npoints) \
+( index = ((index)+(npoints)) % (npoints) )  /* this also handles negative indexes */
 
 /** 
  * Braid Vector Structures:
  *
  * There are three vector structures
  *   _braid_VectorBar      Defined below
- *   braid_Vector          Defiend in braid.h
+ *   braid_Vector          Defined in braid.h
  *   braid_BaseVector      Defined below
  *
  * The braid_BaseVector is the main internal Vector class, which is 
@@ -84,7 +145,6 @@ struct _braid_BaseVector_struct
 };
 typedef struct _braid_BaseVector_struct *braid_BaseVector;
 
-
 /** 
  * Data structure for storing the optimization variables
  */
@@ -107,7 +167,6 @@ struct _braid_Optimization_struct
    MPI_Request     *request;          /**< helper: Storing the MPI request of BufUnPackDiff */
 };
 typedef struct _braid_Optimization_struct *braid_Optim;
-
 
 /*--------------------------------------------------------------------------
  * Main data structures and accessor macros
@@ -237,7 +296,7 @@ typedef struct _braid_Core_struct
    braid_Int              refine;           /**< refine in time (refine = 1) */
    braid_Int             *rfactors;         /**< refinement factors for finest grid (if any) */
    braid_Real           **rdtvalues;        /**< Array of pointers to arrays of dt values for non-uniform refinement  */
-   braid_Int              r_space;          /**< spatial refinment flag */
+   braid_Int              r_space;          /**< spatial refinement flag */
    braid_Int              rstopped;         /**< refinement stopped at iteration rstopped */
    braid_Int              nrefine;          /**< number of refinements done */
    braid_Int              max_refinements;  /**< maximum number of refinements */
@@ -377,6 +436,8 @@ extern FILE *_braid_printfile;
  * Prototypes
  *--------------------------------------------------------------------------*/
 
+/* distribution.c */
+
 /**
  * Returns the index interval for *proc* in a blocked data distribution.
  */
@@ -419,13 +480,7 @@ _braid_GetProc(braid_Core   core,
                braid_Int    index,
                braid_Int   *proc_ptr);
 
-/**
- * Returns the coarsening factor to use on grid *level*.
- */
-braid_Int
-_braid_GetCFactor(braid_Core   core,
-                  braid_Int    level,
-                  braid_Int   *cfactor_ptr);
+/* communication.c */
 
 /**
  * Initialize a receive to go into *vector_ptr* for the given time *index* on
@@ -458,6 +513,8 @@ _braid_CommSendInit(braid_Core           core,
 braid_Int
 _braid_CommWait(braid_Core         core,
                _braid_CommHandle **handle_ptr);
+
+/* uvector.c */
 
 /**
  * Returns an index into the local u-vector for grid *level* at point *index*, 
@@ -558,43 +615,17 @@ braid_Int
 _braid_UCommWait(braid_Core  core,
                  braid_Int   level);
 
-/**
- * Retrieve the time step indices at this *level* corresponding to a local FC
- * interval given by *interval_index*.  Argument *ci_ptr* is the time step index
- * for the C-pt and *flo_ptr* and *fhi_ptr* are the smallest and largest F-pt
- * indices in this interval.  The C-pt is always to the right of the F-interval,
- * but neither a C-pt or an F-interval are guaranteed.  If the *ci_ptr* returns
- * a -1, there is no C-pt.  If the *flo_ptr* is greater than the *fhi_ptr*,
- * there is no F-interval.
- */
-braid_Int
-_braid_GetInterval(braid_Core   core,
-                   braid_Int    level,
-                   braid_Int    interval_index,
-                   braid_Int   *flo_ptr,
-                   braid_Int   *fhi_ptr,
-                   braid_Int   *ci_ptr);
-
-/** 
- * Call user's access function in order to give access to XBraid and the current
- * vector.  Most commonly, this lets the user write *u* to screen, disk, etc...
- * The vector *u* corresponds to time step *index* on *level*.  *status* holds
- * state information about the current XBraid iteration, time value, etc...
- */
-braid_Int
-_braid_AccessVector(braid_Core         core,
-                    braid_AccessStatus status,
-                    braid_BaseVector   u);
+/* step.c */
 
 /**
- * Call user's sync function in order to give access to XBraid and the user's
- * app. This is called once-per-processor at various points in XBraid in
- * order to allow the user to perform any book-keeping operations. *status*
- * provides state information about the current XBraid status and processor.
+ * Integrate one time step at time step *index* to time step *index*+1.
  */
 braid_Int
-_braid_Sync(braid_Core       core,
-            braid_SyncStatus status);
+_braid_Step(braid_Core        core,
+            braid_Int         level,
+            braid_Int         index,
+            braid_BaseVector  ustop,
+            braid_BaseVector  u);
 
 /**
  * Return an initial guess in *ustop_ptr* to use in the step routine for
@@ -608,15 +639,7 @@ _braid_GetUInit(braid_Core         core,
                 braid_BaseVector   u,
                 braid_BaseVector  *ustop_ptr);
 
-/**
- * Integrate one time step at time step *index* to time step *index*+1.
- */
-braid_Int
-_braid_Step(braid_Core        core,
-            braid_Int         level,
-            braid_Int         index,
-            braid_BaseVector  ustop,
-            braid_BaseVector  u);
+/* residual.c */
 
 /**
  * Compute residual *r*
@@ -637,6 +660,8 @@ _braid_FASResidual(braid_Core       core,
                    braid_Int        index,
                    braid_BaseVector ustop,
                    braid_BaseVector r);
+
+/* space.c */
 
 /**
  * Coarsen in space on *level* by calling the user's coarsen function.
@@ -679,6 +704,18 @@ _braid_Refine(braid_Core        core,
               braid_BaseVector  cvector,
               braid_BaseVector *fvector);
 
+/** 
+ * Call spatial refinement on all local time steps if r_space has been set on
+ * the local processor.  Returns refined_ptr == 2 if refinment was completed at
+ * any point globally, otherwise returns 0.  This is a helper function for
+ * _braid_FRefine().
+ */
+braid_Int
+_braid_FRefineSpace(braid_Core   core,
+                    braid_Int   *refined_ptr);
+
+/* grid.c */
+
 /**
  * Create a new grid object *grid_ptr* with level indicator *level*.  Arguments
  * *ilower* and *iupper* correspond to the lower and upper time index values for
@@ -705,127 +742,7 @@ braid_Int
 _braid_GridDestroy(braid_Core    core,
                    _braid_Grid  *grid);
 
-/**
- * Set initial guess on *level*.  Only C-pts are initialized on level 0,
- * otherwise stored values are initialized based on restricted fine-grid values.
- */
-braid_Int
-_braid_InitGuess(braid_Core  core,
-                 braid_Int   level);
-
-/**
- * Compute full temporal residual norm with user-provided residual routine. 
- * Output goes in *return_rnorm. 
- */
-braid_Int
-_braid_ComputeFullRNorm(braid_Core  core,
-                        braid_Int   level,
-                        braid_Real *return_rnorm);
-
-/**
- * Do nu sweeps of F-then-C relaxation on *level*
- */
-braid_Int
-_braid_FCRelax(braid_Core  core,
-               braid_Int   level);
-
-/**
- * F-Relax on *level* and then restrict to *level+1*
- * 
- * The output is set in the braid_Grid in core, so that the restricted vectors
- * *va* and *fa* will be created, representing *level+1* versions of the unknown
- * and rhs vectors.
- * 
- * If the user has set spatial coarsening, then this user-defined routine is
- * also called.
- *
- * If *level==0*, then *rnorm_ptr* will contain the residual norm.
- */
-braid_Int
-_braid_FRestrict(braid_Core   core,       /**< braid_Core (_braid_Core) struct */   
-                 braid_Int    level       /**< restrict from level to level+1 */
-                 );
-
-/**
- * F-Relax on *level* and interpolate to *level-1*
- *
- * The output is set in the braid_Grid in core, so that the vector *u* on
- * *level* is created by interpolating from *level+1*.
- *
- * If the user has set spatial refinement, then this user-defined routine is
- * also called.
- */
-braid_Int
-_braid_FInterp(braid_Core  core,   /**< braid_Core (_braid_Core) struct */  
-               braid_Int   level   /**< interp from level to level+1 */
-               );
-
-/** 
- * Call spatial refinement on all local time steps if r_space has been set on
- * the local processor.  Returns refined_ptr == 2 if refinment was completed at
- * any point globally, otherwise returns 0.  This is a helper function for
- * _braid_FRefine().
- */
-braid_Int
-_braid_FRefineSpace(braid_Core   core,
-                    braid_Int   *refined_ptr);
-
-/**
- * Create a new fine grid (level 0) and corresponding grid hierarchy by refining
- * the current fine grid based on user-provided refinement factors.  Return the
- * boolean *refined_ptr* to indicate whether grid refinement was actually done.
- * To simplify the algorithm, refinement factors are automatically capped to be
- * no greater than the coarsening factor (for level 0).  The grid data is also
- * redistributed to achieve good load balance in the temporal dimension.  If the
- * refinement factor is 1 in each time interval, no refinement is done.
- */
-braid_Int
-_braid_FRefine(braid_Core   core,
-               braid_Int   *refined_ptr);
-
-/** 
- * Call the user's access function in order to give access to XBraid and the
- * current vector at grid *level and iteration *iter*.  Most commonly, this lets
- * the user write solutions to screen, disk, etc...  The quantity *rnorm*
- * denotes the last computed residual norm, and *done* is a boolean indicating
- * whether XBraid has finished iterating and this is the last Access call.
- */
-braid_Int
-_braid_FAccess(braid_Core     core,
-               braid_Int      level,
-               braid_Int      done);
-
-/**
- * Initialize grid hierarchy with *fine_grid* serving as the finest grid.
- * Boolean *refined* indicates whether *fine_grid* was created by refining a
- * coarser grid (in the FRefine() routine), which has implications on how to
- * define CF-intervals.
- */
-braid_Int
-_braid_InitHierarchy(braid_Core    core,
-                     _braid_Grid  *fine_grid,
-                     braid_Int     refined);
-
-/**
- * Print out the residual norm for every C-point.
- * Processor 0 gathers all the rnorms and prints them
- * in order through a gatherv operator
- */
-braid_Int
-_braid_PrintSpatialNorms(braid_Core    core,
-                         braid_Real   *rnorms,
-                         braid_Int     n);
-
-/** 
- * Copy the initialized C-points on the fine grid, to all coarse levels.  For
- * instance, if a point k on level m corresponds to point p on level 0, then
- * they are equivalent after this function.  The only exception is any spatial
- * coarsening the user decides to do.  This function allows XBraid to skip all
- * work on the first down cycle and start in FMG style on the coarsest level.
- * Assumes level 0 C-points are initialized.
- */
-braid_Int
-_braid_CopyFineToCoarse(braid_Core  core);
+/* norm.c */
 
 /**
  * Set the residual norm for iteration iter.  If iter < 0, set the rnorm for the
@@ -862,104 +779,174 @@ _braid_GetFullRNorm(braid_Core  core,
                     braid_Real *rnorm_ptr);
 
 /**
- *  Delete the last residual, for use if F-Refinement is done. 
+ * Compute full temporal residual norm with user-provided residual routine. 
+ * Output goes in *return_rnorm. 
  */
 braid_Int
-_braid_DeleteLastResidual(braid_Core  core);
-
-
+_braid_ComputeFullRNorm(braid_Core  core,
+                        braid_Int   level,
+                        braid_Real *return_rnorm);
 
 /**
- * Shallow copy a braid_VectorBar shared pointer, bar_ptr is set to bar
- * and the useCount is incremented by one.
+ * Print out the residual norm for every C-point.
+ * Processor 0 gathers all the rnorms and prints them
+ * in order through a gatherv operator
  */
 braid_Int
-_braid_VectorBarCopy(braid_VectorBar  bar,       
-                     braid_VectorBar *bar_ptr);  
+_braid_PrintSpatialNorms(braid_Core    core,
+                         braid_Real   *rnorms,
+                         braid_Int     n);
 
-
-/**
- * Reduce the useCount of a braid_VectorBar shared pointer 
- * Free the pointer memory if useCount is zero.  
- */ 
-braid_Int
-_braid_VectorBarDelete(braid_Core      core, 
-                       braid_VectorBar bar);
-
+/* relax.c */
 
 /**
- * Free memory of the optimization structure 
+ * Do nu sweeps of F-then-C relaxation on *level*
  */
 braid_Int
-_braid_OptimDestroy( braid_Core core);
+_braid_FCRelax(braid_Core  core,
+               braid_Int   level);
 
+/* restrict.c */
 
 /**
- * Update the adjoint variables and compute adjoint residual norm
- * Returns the tnorm of adjoint residual
+ * F-Relax on *level* and then restrict to *level+1*
+ * 
+ * The output is set in the braid_Grid in core, so that the restricted vectors
+ * *va* and *fa* will be created, representing *level+1* versions of the unknown
+ * and rhs vectors.
+ * 
+ * If the user has set spatial coarsening, then this user-defined routine is
+ * also called.
+ *
+ * If *level==0*, then *rnorm_ptr* will contain the residual norm.
  */
 braid_Int
-_braid_UpdateAdjoint(braid_Core  core,
-                     braid_Real *rnorm_adj_ptr);
+_braid_FRestrict(braid_Core   core,       /**< braid_Core (_braid_Core) struct */   
+                 braid_Int    level       /**< restrict from level to level+1 */
+                 );
 
+/* interp.c */
 
 /**
- * Set adjoint residual norm 
+ * F-Relax on *level* and interpolate to *level-1*
+ *
+ * The output is set in the braid_Grid in core, so that the vector *u* on
+ * *level* is created by interpolating from *level+1*.
+ *
+ * If the user has set spatial refinement, then this user-defined routine is
+ * also called.
  */
-braid_Int 
-_braid_SetRNormAdjoint(braid_Core  core, 
-                       braid_Int   iter, 
-                       braid_Real  rnorm_adj);
+braid_Int
+_braid_FInterp(braid_Core  core,   /**< braid_Core (_braid_Core) struct */  
+               braid_Int   level   /**< interp from level to level+1 */
+               );
+
+/* refine.c */
+
+/**
+ * Create a new fine grid (level 0) and corresponding grid hierarchy by refining
+ * the current fine grid based on user-provided refinement factors.  Return the
+ * boolean *refined_ptr* to indicate whether grid refinement was actually done.
+ * To simplify the algorithm, refinement factors are automatically capped to be
+ * no greater than the coarsening factor (for level 0).  The grid data is also
+ * redistributed to achieve good load balance in the temporal dimension.  If the
+ * refinement factor is 1 in each time interval, no refinement is done.
+ */
+braid_Int
+_braid_FRefine(braid_Core   core,
+               braid_Int   *refined_ptr);
+
+/* access.c */
 
 /** 
- * Evaluate the user's local objective function at time *t* and add it to the
- * time-averaged objective function
+ * Call the user's access function in order to give access to XBraid and the
+ * current vector at grid *level and iteration *iter*.  Most commonly, this lets
+ * the user write solutions to screen, disk, etc...  The quantity *rnorm*
+ * denotes the last computed residual norm, and *done* is a boolean indicating
+ * whether XBraid has finished iterating and this is the last Access call.
  */
 braid_Int
-_braid_AddToObjective(braid_Core             core, 
-                      braid_BaseVector       u, 
-                      braid_ObjectiveStatus  ostatus);
-
-/**
- * Evaluate the objective function:
- * MPI_Allreduce the time average and postprocess the objective 
- */
-braid_Int
-_braid_EvalObjective(braid_Core core);
-
+_braid_FAccess(braid_Core     core,
+               braid_Int      level,
+               braid_Int      done);
 
 /** 
- * Differentiated objective function 
+ * Call user's access function in order to give access to XBraid and the current
+ * vector.  Most commonly, this lets the user write *u* to screen, disk, etc...
+ * The vector *u* corresponds to time step *index* on *level*.  *status* holds
+ * state information about the current XBraid iteration, time value, etc...
  */
 braid_Int
-_braid_EvalObjective_diff(braid_Core core);
-
+_braid_AccessVector(braid_Core         core,
+                    braid_AccessStatus status,
+                    braid_BaseVector   u);
 
 /**
- * Allocate and initialize the adjoint variables 
+ * Call user's sync function in order to give access to XBraid and the user's
+ * app. This is called once-per-processor at various points in XBraid in
+ * order to allow the user to perform any book-keeping operations. *status*
+ * provides state information about the current XBraid status and processor.
  */
 braid_Int
-_braid_InitAdjointVars(braid_Core   core, 
-                       _braid_Grid *fine_grid);
+_braid_Sync(braid_Core       core,
+            braid_SyncStatus status);
 
+/* hierarchy.c */
 
 /**
- * Switch for displaying the XBraid actions. Used for debugging only. 
+ * Initialize grid hierarchy with *fine_grid* serving as the finest grid.
+ * Boolean *refined* indicates whether *fine_grid* was created by refining a
+ * coarser grid (in the FRefine() routine), which has implications on how to
+ * define CF-intervals.
  */
 braid_Int
-_braid_SetVerbosity(braid_Core  core,
-                    braid_Int   verbose_adj);
+_braid_InitHierarchy(braid_Core    core,
+                     _braid_Grid  *fine_grid,
+                     braid_Int     refined);
 
 /**
- * Sanity check for non-supported adjoint features
+ * Returns the coarsening factor to use on grid *level*.
  */
 braid_Int
-_braid_AdjointFeatureCheck(braid_Core core);
+_braid_GetCFactor(braid_Core   core,
+                  braid_Int    level,
+                  braid_Int   *cfactor_ptr);
 
+/**
+ * Set initial guess on *level*.  Only C-pts are initialized on level 0,
+ * otherwise stored values are initialized based on restricted fine-grid values.
+ */
+braid_Int
+_braid_InitGuess(braid_Core  core,
+                 braid_Int   level);
+
+/** 
+ * Copy the initialized C-points on the fine grid, to all coarse levels.  For
+ * instance, if a point k on level m corresponds to point p on level 0, then
+ * they are equivalent after this function.  The only exception is any spatial
+ * coarsening the user decides to do.  This function allows XBraid to skip all
+ * work on the first down cycle and start in FMG style on the coarsest level.
+ * Assumes level 0 C-points are initialized.
+ */
+braid_Int
+_braid_CopyFineToCoarse(braid_Core  core);
+
+/* drive.c */
+
+/**
+ * Main loop for MGRIT
+ */
+braid_Int
+_braid_Drive(braid_Core core, 
+             braid_Real localtime);
 
 #ifdef __cplusplus
 }
 #endif
+
+#include "status.h"
+#include "base.h"
+#include "adjoint.h"
 
 #endif
 

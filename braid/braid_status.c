@@ -1,8 +1,6 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
- * Produced at the Lawrence Livermore National Laboratory. Written by 
- * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
- * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
+ * Produced at the Lawrence Livermore National Laboratory.
  * 
  * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
@@ -23,14 +21,12 @@
  
 /** \file braid_status.c
  * \brief Source code for status interface routines.  See braid_status.h and
- * _braid_status.h for more information.
+ * status.h for more information.
  *
  */
 
-#include "_braid_status.h"
 #include "_braid.h"
-#include "braid_defs.h"
-#include "_util.h"
+#include "util.h"
 
 #ifndef DEBUG
 #define DEBUG 0

@@ -10,11 +10,11 @@
  * $Revision$
  ***********************************************************************EHEADER*/
 
-/******************************************************************************
+/** \file mpistubs.h
+ * \brief XBraid internal headers to define fake MPI stubs.  This ultimately allows 
+ * the user to generate purely serial codes without MPI.
  *
- *  Fake mpi stubs to generate serial codes without mpi
- *
- *****************************************************************************/
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,13 +52,14 @@ typedef int  MPI_Aint;
 #define  MPI_BYTE 4
 #define  MPI_REAL 5
 #define  MPI_COMPLEX 6
+#define  MPI_FLOAT 7
 
 #define  MPI_SUM 0
 #define  MPI_MIN 1
 #define  MPI_MAX 2
 #define  MPI_LOR 3
 #define  MPI_SUCCESS 0
-#define  MPI_STATUSES_IGNORE 0
+#define  MPI_STATUS_IGNORE 0
 
 #define  MPI_UNDEFINED -9999
 #define  MPI_REQUEST_NULL  0

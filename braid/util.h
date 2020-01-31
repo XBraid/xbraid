@@ -1,8 +1,6 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
- * Produced at the Lawrence Livermore National Laboratory. Written by 
- * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
- * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
+ * Produced at the Lawrence Livermore National Laboratory.
  * 
  * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
@@ -20,18 +18,17 @@
  * Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  ***********************************************************************EHEADER*/
- 
 
-/** \file _util.h
- * \brief Define headers for utility routines.
+/** \file util.h
+ * \brief Define XBraid internal headers for utility routines.
  *
  * This file contains the headers for utility routines. Essentially,
  * if a routine does not take braid_Core (or other XBraid specific structs) 
  * as an argument, then it's a utility routine.
  */
 
-#ifndef braid_util_HEADER
-#define braid_util_HEADER
+#ifndef _braid_util_HEADER
+#define _braid_util_HEADER
 
 #include "_braid.h"
 
@@ -47,6 +44,30 @@ _braid_ProjectInterval( braid_Int   ilower,
                         braid_Int   stride,
                         braid_Int  *pilower,
                         braid_Int  *piupper );
+
+/**
+ * Retrieve the time step indices at this *level* corresponding to a local FC
+ * interval given by *interval_index*.  Argument *ci_ptr* is the time step index
+ * for the C-pt and *flo_ptr* and *fhi_ptr* are the smallest and largest F-pt
+ * indices in this interval.  The C-pt is always to the right of the F-interval,
+ * but neither a C-pt or an F-interval are guaranteed.  If the *ci_ptr* returns
+ * a -1, there is no C-pt.  If the *flo_ptr* is greater than the *fhi_ptr*,
+ * there is no F-interval.
+ */
+braid_Int
+_braid_GetInterval(braid_Core   core,
+                   braid_Int    level,
+                   braid_Int    interval_index,
+                   braid_Int   *flo_ptr,
+                   braid_Int   *fhi_ptr,
+                   braid_Int   *ci_ptr);
+
+/**
+ * Switch for displaying the XBraid actions. Used for debugging only. 
+ */
+braid_Int
+_braid_SetVerbosity(braid_Core  core,
+                    braid_Int   verbose_adj);
 
 /**
  * If set, print to @ref _braid_printfile and then flush.  
