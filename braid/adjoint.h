@@ -19,6 +19,14 @@
  *
  ***********************************************************************EHEADER*/
  
+/** \file adjoint.h 
+ * \brief Define header for adjoint feature.
+ *
+ * This file contains the headers for the adjoint feature, e.g., the functions
+ * to wrap and call the users objective function, and allocate adjoint (bar)
+ * variables.
+ */
+
 #ifndef _braid_adjoint_HEADER
 #define _braid_adjoint_HEADER
 

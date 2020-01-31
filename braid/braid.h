@@ -23,7 +23,7 @@
  * \brief Define headers for user interface routines.
  *
  * This file contains routines used to allow the user to initialize, run
- * and get and set a XBraid solver. 
+ * and get and set options for a XBraid solver. 
  */
 
 #ifndef braid_HEADER

@@ -18,7 +18,6 @@
  * Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  ***********************************************************************EHEADER*/
- 
 
 /** \file util.h
  * \brief Define headers for utility routines.

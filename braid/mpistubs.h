@@ -10,11 +10,12 @@
  * $Revision$
  ***********************************************************************EHEADER*/
 
-/******************************************************************************
+/** \file mpistubs.h
+ * \brief Fake MPI stubs to generate serial codes without MPI.
  *
- *  Fake mpi stubs to generate serial codes without mpi
- *
- *****************************************************************************/
+ * This file contains the stubs to allow the user to fake using MPI, i.e., 
+ * compile XBraid without MPI support for a purely serial version. 
+ */
 
 #ifdef __cplusplus
 extern "C" {

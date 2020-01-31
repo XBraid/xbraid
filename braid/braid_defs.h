@@ -21,7 +21,7 @@
  
 
 /** \file braid_defs.h
- * \brief Definitions of types, error flags, etc... 
+ * \brief Definitions of braid types, error flags, etc... 
  *
  */
 

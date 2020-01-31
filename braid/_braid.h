@@ -20,9 +20,9 @@
  ***********************************************************************EHEADER*/
 
 /** \file _braid.h
- * \brief Define headers for developer routines.
+ * \brief Define headers for developer routines and structure declarations.
  *
- * This file contains the headers for developer routines.
+ * This file contains the headers for developer routines and structure declarations.
  */
 
 #ifndef _braid_HEADER
