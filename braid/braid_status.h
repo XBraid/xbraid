@@ -1,8 +1,6 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
- * Produced at the Lawrence Livermore National Laboratory. Written by 
- * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
- * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
+ * Produced at the Lawrence Livermore National Laboratory.
  * 
  * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
@@ -23,15 +21,15 @@
  
 
 /** \file braid_status.h
- * \brief Define headers for XBraid status structures and headers for the user 
- * functions allowing the user to get/set status structure values. 
+ * \brief Define headers for the user-interface with the XBraid status structures, 
+ * allowing the user to get/set status structure values. 
  *
  */
 
 #ifndef braid_status_HEADER
 #define braid_status_HEADER
 
-#include "braid_defs.h"
+#include "braid.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,8 +42,14 @@ extern "C" {
 /** Macros allowing for auto-generation of `inherited' StatusGet functions */
 #define ACCESSOR_HEADER_GET1(stype,param,vtype1) \
   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1);
+#define ACCESSOR_HEADER_GET1_IN3(stype,param,vtype1,vtype2,vtype3,vtype4) \
+   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 v2, braid_##vtype3 v3, braid_##vtype4 v4);
 #define ACCESSOR_HEADER_GET2(stype,param,vtype1,vtype2) \
   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2);
+#define ACCESSOR_HEADER_GET2_IN1(stype,param,vtype1,vtype2,vtype3) \
+   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2, braid_##vtype3 v3);
+#define ACCESSOR_HEADER_GET3(stype,param,vtype1,vtype2,vtype3) \
+  braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2, braid_##vtype3 *v3);
 #define ACCESSOR_HEADER_GET4(stype,param,vtype1,vtype2,vtype3,vtype4) \
   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2, braid_##vtype3 *v3, braid_##vtype4 *v4);
 #define ACCESSOR_HEADER_GET5(stype,param,vtype1,vtype2,vtype3,vtype4,vtype5) \
@@ -80,6 +84,14 @@ typedef struct _braid_Status_struct *braid_Status;
  * _braid_AccessStatusGet**()_ functions. This is just a pointer to the braid_Status.
  */
 typedef struct _braid_AccessStatus_struct *braid_AccessStatus;
+
+/**
+ * SyncStatus structure which provides the status of XBraid at a given instant
+ * on some level during a run. This is vector independent and called once per
+ * processor. The user accesses it through _braid_SyncStatusGet**()_ functions.
+ * This is just a pointer to the braid_Status.
+ */
+ typedef struct _braid_SyncStatus_struct *braid_SyncStatus;
 
 /**
  * The user's step routine routine will receive a StepStatus structure, which
@@ -210,6 +222,37 @@ braid_StatusGetDone(braid_Status status,                   /**< structure contai
                     );
 
 /**
+ * Returns upper and lower time point indices on this processor. Two
+ * values are returned. Requires the user to specify which level they
+ * want the time point indices from.
+ **/
+braid_Int
+braid_StatusGetTIUL(braid_Status status,                   /**< structure containing current simulation info */
+                    braid_Int   *iloc_upper,               /**< output, the upper time point index on this processor */
+                    braid_Int   *iloc_lower,               /**< output, the lower time point index on this processor */
+                    braid_Int    level                     /**< input, level for the desired indices */
+                    );
+
+/**
+ * Returns an array of time values corresponding to the given inputs.
+ * The inputs are the level you want the time values from, the upper
+ * time point index you want the value of, and the lower time point
+ * index you want the time value of. The output is then filled with
+ * all time values from the upper index to the lower index, inclusive.
+ *
+ * The caller is responsible for allocating and managing the memory
+ * for the array. Time values are filled in so that tvalues_ptr[0]
+ * corresponds to the lower time index.
+ **/
+braid_Int
+braid_StatusGetTimeValues(braid_Status status,             /**< structure containing current simulation info */
+                          braid_Real **tvalues_ptr,        /**< output, time point values for the requested range of indices */
+                          braid_Int    i_upper,            /**< input, upper index of the desired time value range (inclusive) */
+                          braid_Int    i_lower,            /**< input, lower index of the desired time value range (inclusive) */
+                          braid_Int    level               /**< input, level for the desired time values */
+                          );
+
+/**
  * Return XBraid status for the current simulation. Four values are 
  * returned.
  *
@@ -241,7 +284,7 @@ braid_StatusGetWrapperTest(braid_Status status,            /**< structure contai
  **/
 braid_Int
 braid_StatusGetCallingFunction(braid_Status status,        /**< structure containing current simulation info */
-                               braid_Int   *cfunction_ptr  /**< output, function number (0=FInterp, 1=FRestrict, 2=FRefine, 3=FAccess) */
+                               braid_Int   *cfunction_ptr  /**< output, function number (0=FInterp, 1=FRestrict, 2=FRefine, 3=FAccess, 4=FRefine after refinement, 5=Drive Top of Cycle) */
                                );
 
 /**
@@ -374,12 +417,24 @@ braid_StatusSetTightFineTolx(braid_Status status,          /**< structure contai
 /**
  * Set the rfactor, a desired refinement factor for this interval.  rfactor=1
  * indicates no refinement, otherwise, this inteval is subdivided rfactor
- * times. 
+ * times (uniform refinement).
  **/
 braid_Int
 braid_StatusSetRFactor(braid_Status status,                /**< structure containing current simulation info */
                        braid_Real   rfactor                /**< input, user-determined desired rfactor */
                        );
+
+
+/**
+ * Set time step sizes for refining the time interval non-uniformly.
+ **/
+braid_Int
+braid_StatusSetRefinementDtValues(braid_Status status,      /**< structure containing current simulation info */
+                                  braid_Real   rfactor,     /**< input, number of subintervals */
+                                  braid_Real*   dtarray     /**< input, array of dt values for non-uniform refinement */
+                                  );
+
+
 
 /**
  * Set the r_space flag. When set = 1, spatial coarsening will be called,
@@ -442,6 +497,20 @@ ACCESSOR_HEADER_GET1(Access, Done,            Int)
 ACCESSOR_HEADER_GET4(Access, TILD,            Real, Int, Int, Int)
 ACCESSOR_HEADER_GET1(Access, WrapperTest,     Int)
 ACCESSOR_HEADER_GET1(Access, CallingFunction, Int)
+
+/*--------------------------------------------------------------------------
+ * SyncStatus Prototypes: They just wrap the corresponding Status accessors
+ *--------------------------------------------------------------------------*/
+
+ACCESSOR_HEADER_GET2_IN1(Sync, TIUL,         Int, Int, Int)
+ACCESSOR_HEADER_GET1_IN3(Sync, TimeValues,   Real*, Int, Int, Int)
+ACCESSOR_HEADER_GET1(Sync, Iter,             Int)
+ACCESSOR_HEADER_GET1(Sync, Level,            Int)
+ACCESSOR_HEADER_GET1(Sync, NLevels,          Int)
+ACCESSOR_HEADER_GET1(Sync, NRefine,          Int)
+ACCESSOR_HEADER_GET1(Sync, NTPoints,         Int)
+ACCESSOR_HEADER_GET1(Sync, Done,             Int)
+ACCESSOR_HEADER_GET1(Sync, CallingFunction,  Int)
 
 /*--------------------------------------------------------------------------
  * CoarsenRefStatus Prototypes: They just wrap the corresponding Status accessors
@@ -523,6 +592,11 @@ ACCESSOR_HEADER_GET1(Objective, Tol,           Real)
 #define braid_ASCaller_FRefine   2
 /** When CallingFunction equals 0, Braid is in FAccess */
 #define braid_ASCaller_FAccess   3
+/** When CallingFunction equals 4, Braid is inside FRefine after the new finest
+ * level has been initialized */
+#define braid_ASCaller_FRefine_AfterInitHier   4
+/** When CallingFunction equals 5, Braid is at the top of the cycle */
+#define braid_ASCaller_Drive_TopCycle   5
 
 /** @}*/
 

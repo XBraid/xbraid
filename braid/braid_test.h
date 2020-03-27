@@ -1,8 +1,6 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
- * Produced at the Lawrence Livermore National Laboratory. Written by 
- * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
- * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
+ * Produced at the Lawrence Livermore National Laboratory.
  * 
  * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
@@ -23,9 +21,9 @@
  
 
 /** \file braid_test.h
- * \brief Define headers for XBraid test routines.
+ * \brief Define headers for XBraid user-test routines.
  *
- * This file contains routines used to test a user's XBraid wrapper routines 
+ * This file contains headers for the user to test their XBraid wrapper routines 
  * one-by-one.
  */
 

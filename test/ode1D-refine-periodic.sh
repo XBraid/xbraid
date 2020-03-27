@@ -73,46 +73,56 @@ example_dir="../examples"
 driver_dir="../drivers"
 test_dir=`pwd`
 output_dir=`pwd`/$scriptname.dir
-rm -fr $output_dir
+rm -fr $output_dir 2> /dev/null
 mkdir -p $output_dir
 
 
 # compile the regression test drivers 
+# note that there are a lot of unavoidable Fortran warnings about 
+# unused app structures, hence we ignore those for ex-01b-f
 echo "Compiling regression test drivers"
-#cd $example_dir
-#make clean
-#make 
-cd $driver_dir
+cd $example_dir
 make clean
-make drive-diffusion-2D
+make ex-01 
+make ex-01-pp 
+make ex-01-expanded
+make ex-01-refinement
+make ex-01-expanded-f &> /dev/null
 cd $test_dir
 
 
 # Run the following regression tests 
-TESTS=( "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15  -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15 -forcing -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1 -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15  -storage -2 -skip 1" \
-        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15 -forcing -storage -2 -skip 1" \
-        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1 -storage -2 -skip 1" \
-        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15  -storage -2 -skip 0 -res " \
-        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1 -storage -2 -skip 0 -res" \
-        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15  -storage -2 -skip 0 -cf0 1" \
-        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15 -forcing -storage -2 -skip 0 -cf0 1" \
-        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -ml 15 -fmg 1 -storage -2 -skip 0 -cf0 1" \
-        "$RunString -np 8 $driver_dir/drive-diffusion-2D -pgrid 1 1 8 -ml 15 -nt 128 -nx 33 33 -mi 100 -expl -scoarsen 1 -skip 0"\
-        "$RunString -np 2 $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 32 -ml 15 -access_level 1  -storage -2 -skip 0" \
-        "$RunString -np 2 $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 32 -ml 15 -access_level 2  -storage -2 -skip 0" \
-        "$RunString -np 2 $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 32 -ml 15 -access_level 3  -storage -2 -skip 0" \
-        "$RunString -np 2 $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 32 -ml 15 -print_level 0  -storage -2 -skip 0" \
-        "$RunString -np 2 $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 32 -ml 15 -print_level 2  -storage -2 -skip 0" \
-        "$RunString -np 1 $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -nt 9  -ml 2  -print_level 3  -storage -2 -skip 1 -mc 1 -nu 0 -mc 1 -mi 4 2" \
-        "$RunString -np 2 $driver_dir/drive-diffusion-2D -pgrid 1 1 2 -nt 32 -ml 15 -print_level 2 -fmg 2 -storage -2 -skip 0" \
-        "$RunString -np 1 $driver_dir/drive-diffusion-2D -pgrid 1 1 1 -run_wrapper_tests  -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 65  -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 64  -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 2 -cfl 0.30 -nu0 1 -nu 1 -mc 1  -storage -2 -skip 0" \
-        "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 128 -nx 17 17 -scoarsen -mi 20 -ml 20 -cf 4 -cfl 0.30 -nu0 1 -nu 1 -mc 16  -storage -2 -skip 0" )
+TESTS=( "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 0" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 1" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 2" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 10" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor -1" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 1 -storage 0" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 2 -storage 0" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 10 -storage 0" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor -1 -storage 0" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 1 -fmg" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 2 -fmg" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 10 -fmg" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor -1 -fmg" \
+        "$RunString -np 1 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 4" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 4" \
+        "$RunString -np 3 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 4" \
+        "$RunString -np 4 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 4" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 2 -fmg -sync" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -refine 3 -incMaxLvl"\
+        "$RunString -np 1 $example_dir/ex-01-refinement -periodic -nt 64"\
+        "$RunString -np 2 $example_dir/ex-01-refinement -periodic -nt 64"\
+        "$RunString -np 4 $example_dir/ex-01-refinement -periodic -nt 64"\
+        "$RunString -np 1 $example_dir/ex-01-refinement -refine 4 -periodic -nt 64" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -refine 4 -periodic -nt 64" \
+        "$RunString -np 4 $example_dir/ex-01-refinement -refine 4 -periodic -nt 64" \
+        "$RunString -np 1 $example_dir/ex-01-refinement -refine 1 -periodic -nt 64" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -refine 1 -periodic -nt 64" \
+        "$RunString -np 4 $example_dir/ex-01-refinement -refine 1 -periodic -nt 64" \
+        "$RunString -np 8 $example_dir/ex-01-refinement -periodic -nt 4"\
+        "$RunString -np 8 $example_dir/ex-01-refinement -refine 4 -periodic -nt 4" \
+        "$RunString -np 8 $example_dir/ex-01-refinement -refine 1 -periodic -nt 4" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 
@@ -127,7 +137,7 @@ TESTS=( "$RunString -np 4 $driver_dir/drive-diffusion-2D -pgrid 1 1 4 -nt 256 -m
 # The unfiltered output is the direct output of the script, whereas std.out.*
 # is filtered by a grep for the lines that are to be checked.  
 #
-lines_to_check="^  time steps.*|^  number of levels.*|^  iterations.*|^spatial problem size.*|^ Fine level spatial problem size.*|.*  expl.*|^  my_Access\(\) called.*|.*braid_Test.*|.*Braid: Temporal refinement occurred.*|.*braid_.*"
+lines_to_check="^  time steps.*|^  number of levels.*|^  max number of levels.*|^  iterations.*|^  residual norm.*|^Finished braid_TestAll: no fails detected, however some results must be|.*Braid: Temporal refinement occurred.*|^  num_syncs.*"
 #
 # Then, each std.out.num is compared against stored correct output in 
 # $scriptname.saved.num, which is generated by splitting $scriptname.saved
@@ -141,12 +151,19 @@ $csplitcommand -n 1 --silent --prefix $output_dir/$scriptname.saved. $scriptname
 counter=0
 for test in "${TESTS[@]}"
 do
+   rm ex-01*.out.* timegrid.* 2> /dev/null
    echo "Running Test $counter"
    eval "$test" 1>> $output_dir/unfiltered.std.out.$counter  2>> $output_dir/std.out.$counter
    cd $output_dir
    egrep -o "$lines_to_check" unfiltered.std.out.$counter > std.out.$counter
    diff -U3 -B -bI"$TestDelimiter" $scriptname.saved.$counter std.out.$counter >> std.err.$counter
+   # check whether test was successfull (portable on UNIX systems)
+   if [ `du std.err.$counter | cut -f1` -gt 0 ]; then
+      echo "...did not pass."
+   fi
    cd $test_dir
+   cat ex-01*.out.* > $output_dir/solutionvector.out.$counter 2> /dev/null
+   cat timegrid.* > $output_dir/timegrid.$counter 2> /dev/null
    counter=$(( $counter + 1 ))
 done 
 
@@ -168,3 +185,6 @@ done
 if [ -n $MACHINES_FILE ] ; then
    rm $MACHINES_FILE 2> /dev/null
 fi
+rm braid.out.cycle 2> /dev/null
+rm ex-01*.out.* 2> /dev/null
+rm timegrid.* 2> /dev/null

@@ -1,8 +1,6 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
- * Produced at the Lawrence Livermore National Laboratory. Written by 
- * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
- * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
+ * Produced at the Lawrence Livermore National Laboratory.
  * 
  * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
@@ -21,10 +19,9 @@
  *
  ***********************************************************************EHEADER*/
  
-
-/** \file _braid_status.h
- * \brief Define the internals of the XBraid status structures and internal 
- * status structure functions, like destroy. 
+/** \file status.h
+ * \brief Define the XBraid internal headers for the XBraid status structure routines, 
+ * and define the status structures themselves. 
  */
 
 #ifndef _braid_status_HEADER
@@ -36,7 +33,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 /*--------------------------------------------------------------------------
  * Define base Status structure as a pointer to core, and all other derived
@@ -52,6 +48,11 @@ struct _braid_Status_struct
 typedef struct _braid_Status_struct _braid_Status;
 
 struct _braid_AccessStatus_struct
+{
+   _braid_Status status;
+};
+
+struct _braid_SyncStatus_struct
 {
    _braid_Status status;
 };
@@ -75,7 +76,6 @@ struct _braid_ObjectiveStatus_struct
 {
    _braid_Status status;
 };
-
 
 /*--------------------------------------------------------------------------
  * Begin headers for internal Braid Status functions, like Destroy, and StatusInit
@@ -104,6 +104,19 @@ _braid_AccessStatusInit(braid_Real          t,                /**< current time 
                         );
 
 /**
+ * Initialize a braid_SyncStatus structure
+ */
+braid_Int
+_braid_SyncStatusInit(braid_Int           iter,             /**< current iteration in XBraid*/
+                      braid_Int           level,            /**< current level in XBraid */
+                      braid_Int           nrefine,          /**< number of refinements done */
+                      braid_Int           gupper,           /**< global size of the fine grid */
+                      braid_Int           done,             /**< boolean describing whether XBraid has finished */
+                      braid_Int           calling_function, /**< from which function are we accessing braid */
+                      braid_SyncStatus    status            /**< structure to initialize */
+                      );
+
+/**
  * Initialize a braid_CoarsenRefStatus structure
  */
 braid_Int
@@ -115,6 +128,7 @@ _braid_CoarsenRefStatusInit(braid_Real              tstart,      /**< time value
                             braid_Int               level,       /**< current fine level in XBraid */
                             braid_Int               nrefine,     /**< number of refinements done */
                             braid_Int               gupper,      /**< global size of the fine grid */
+                            braid_Int               c_index,     /**< coarse time index refining from */
                             braid_CoarsenRefStatus  status       /**< structure to initialize */
                             );
 

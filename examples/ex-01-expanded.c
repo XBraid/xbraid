@@ -78,6 +78,7 @@ typedef struct _braid_App_struct
    int       mydt;
    int       ntime;
    int       rank;
+   int       num_syncs;
 
 } my_App;
 
@@ -236,7 +237,7 @@ my_Init(braid_App     app,
    my_Vector *u;
 
    u = (my_Vector *) malloc(sizeof(my_Vector));
-   if (t == 0.0) /* Initial condition */
+   if (t == app->tstart) /* Initial condition */
    {
       (u->value) = 1.0;
    }
@@ -355,6 +356,16 @@ my_BufUnpack(braid_App          app,
    return 0;
 }
 
+int my_Sync(braid_App        app,
+            braid_SyncStatus status)
+{
+   braid_Int calling_fcn;
+   braid_SyncStatusGetCallingFunction(status, &calling_fcn);
+   if(calling_fcn == braid_ASCaller_Drive_TopCycle)
+      app->num_syncs += 1;
+
+   return 0;
+}
 /*--------------------------------------------------------------------------
  * Main driver
  *--------------------------------------------------------------------------*/
@@ -370,12 +381,15 @@ int main (int argc, char *argv[])
    int           max_levels = 2;
    int           nrelax     = 1;
    int           nrelax0    = -1;
+   int           nrelaxc    = 5;
    double        tol        = 1.0e-06;
    int           cfactor    = 2;
    int           max_iter   = 100;
    int           fmg        = 0;
    int           res        = 0;
    int           mydt       = 0;
+   int           sync       = 0;
+   int           periodic   = 0;
 
    int           arg_index;
    int           rank;
@@ -403,11 +417,14 @@ int main (int argc, char *argv[])
             printf("  -ml  <max_levels> : set max levels\n");
             printf("  -nu  <nrelax>     : set num F-C relaxations\n");
             printf("  -nu0 <nrelax>     : set num F-C relaxations on level 0\n");
+            printf("  -nuc <nrelax>     : set num F-C relaxations on coarsest grid\n");
             printf("  -tol <tol>        : set stopping tolerance\n");
             printf("  -cf  <cfactor>    : set coarsening factor\n");
             printf("  -mi  <max_iter>   : set max iterations\n");
             printf("  -fmg              : use FMG cycling\n");
             printf("  -res              : use my residual\n");
+            printf("  -sync             : enable calls to the sync function\n");
+            printf("  -periodic         : solve a periodic problem\n");
             printf("  -tg <mydt>        : use user-specified time grid as global fine time grid, options are\n");
             printf("                      1 - uniform time grid\n");
             printf("                      2 - nonuniform time grid, where dt*0.5 for n = 1, ..., nt/2; dt*1.5 for n = nt/2+1, ..., nt\n\n");
@@ -434,6 +451,11 @@ int main (int argc, char *argv[])
       {
          arg_index++;
          nrelax0 = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-nuc") == 0 )
+      {
+         arg_index++;
+         nrelaxc = atoi(argv[arg_index++]);
       }
       else if ( strcmp(argv[arg_index], "-tol") == 0 ) 
       {
@@ -465,6 +487,16 @@ int main (int argc, char *argv[])
          arg_index++;
          mydt = atoi(argv[arg_index++]);
       }
+      else if( strcmp(argv[arg_index], "-sync") == 0 )
+      {
+         arg_index++;
+         sync = 1;
+      }
+      else if( strcmp(argv[arg_index], "-periodic") == 0 )
+      {
+         arg_index++;
+         periodic = 1;
+      }
       else
       {
          arg_index++;
@@ -480,6 +512,7 @@ int main (int argc, char *argv[])
    (app->tstop)  = tstop;
    (app->ntime)  = ntime;
    (app->rank)   = rank;
+   (app->num_syncs) = 0;
 
    /* initialize XBraid and set options */
    braid_Init(comm, comm, tstart, tstop, ntime, app,
@@ -493,6 +526,7 @@ int main (int argc, char *argv[])
    {
       braid_SetNRelax(core,  0, nrelax0);
    }
+   braid_SetNRelax(core, max_levels-1, nrelaxc);
    braid_SetAbsTol(core, tol);
    braid_SetCFactor(core, -1, cfactor);
    braid_SetMaxIter(core, max_iter);
@@ -509,11 +543,23 @@ int main (int argc, char *argv[])
       init_TimeSteps(app);
       braid_SetTimeGrid(core, my_timegrid);
    }
+   if (sync)
+   {
+      braid_SetSync(core, my_Sync);
+   }
+   if (periodic)
+   {
+      braid_SetPeriodic(core, periodic);
+   }
 
    /* Run simulation, and then clean up */
    braid_Drive(core);
 
+   if (sync && rank == 0)
+      printf("  num_syncs             = %d\n\n", (app->num_syncs));
+
    braid_Destroy(core);
+   free(app);
    MPI_Finalize();
 
    return (0);

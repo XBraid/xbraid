@@ -1,8 +1,6 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
- * Produced at the Lawrence Livermore National Laboratory. Written by 
- * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
- * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
+ * Produced at the Lawrence Livermore National Laboratory.
  * 
  * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
@@ -26,9 +24,8 @@
  * \brief Define XBraid test routines.
  */
 
-#include "_braid_status.h"
 #include "_braid.h"
-#include "_util.h"
+#include "util.h"
 
 /*--------------------------------------------------------------------------
  * Some simple tests on the myinit, myaccess and myfree routines
@@ -244,7 +241,7 @@ braid_TestSpatialNorm( braid_App              app,
       zero_flag = 1;
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Warning:  spatialnorm(u) = 0.0\n"); 
    }
-   else if( braid_isnan(result1) )
+   else if( _braid_isnan(result1) )
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Warning:  spatialnorm(u) = nan\n"); 
       correct = 0;
@@ -258,7 +255,7 @@ braid_TestSpatialNorm( braid_App              app,
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   spatialnorm(v) \n");
    spatialnorm(app, v, &result1);
-   if( (fabs(result1) > wiggle) || braid_isnan(result1) )
+   if( (fabs(result1) > wiggle) || _braid_isnan(result1) )
    {
       correct = 0;
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   Test 1 Failed\n");
@@ -284,7 +281,7 @@ braid_TestSpatialNorm( braid_App              app,
    
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   spatialnorm(w)\n");
    spatialnorm(app, w, &result2);
-   if( (fabs(result2/result1 - 2.0) > wiggle) || braid_isnan(result2/result1) )
+   if( (fabs(result2/result1 - 2.0) > wiggle) || _braid_isnan(result2/result1) )
    {
       correct = 0;
       if(zero_flag)
@@ -321,7 +318,7 @@ braid_TestSpatialNorm( braid_App              app,
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestSpatialNorm:   spatialnorm(w)\n");
    spatialnorm(app, w, &result2);
    /* Check Result */
-   if( (fabs(result2/result1 - 0.5) > wiggle) || braid_isnan(result2/result1) )
+   if( (fabs(result2/result1 - 0.5) > wiggle) || _braid_isnan(result2/result1) )
 
    {
       correct = 0;
@@ -410,7 +407,7 @@ braid_TestBuf( braid_App              app,
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   Warning:  spatialnorm(u) = 0.0\n"); 
    }
-   else if( braid_isnan(result1) )
+   else if( _braid_isnan(result1) )
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   Warning:  spatialnorm(u) = nan\n"); 
       correct = 0;
@@ -435,7 +432,7 @@ braid_TestBuf( braid_App              app,
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBuf:   spatialnorm(v) \n");
    spatialnorm(app, v, &result1);
-   if( (fabs(result1) > wiggle) || braid_isnan(result1) )
+   if( (fabs(result1) > wiggle) || _braid_isnan(result1) )
 
    {
       correct = 0;
@@ -487,7 +484,7 @@ braid_TestCoarsenRefine( braid_App           app,
    braid_AccessStatus      astatus = (braid_AccessStatus)status;
    braid_CoarsenRefStatus  cstatus = (braid_CoarsenRefStatus)status;
    
-   _braid_CoarsenRefStatusInit(t, t-fdt, t+fdt, t-cdt, t+cdt, 0, 0, 0, cstatus);
+   _braid_CoarsenRefStatusInit(t, t-fdt, t+fdt, t-cdt, t+cdt, 0, 0, 0, 0, cstatus);
    MPI_Comm_rank( comm_x, &myid_x );
 
    /* Initialize the correct flag */
@@ -507,7 +504,7 @@ braid_TestCoarsenRefine( braid_App           app,
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   Warning:  spatialnorm(u) = 0.0\n"); 
    }
-   else if( braid_isnan(result1) )
+   else if( _braid_isnan(result1) )
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   Warning:  spatialnorm(u) = nan\n"); 
       correct = 0;
@@ -550,7 +547,7 @@ braid_TestCoarsenRefine( braid_App           app,
    spatialnorm(app, wc, &result1);
    
    /* We expect exact equality between uc and vc */
-   if( (fabs(result1) != 0.0) || braid_isnan(result1) )
+   if( (fabs(result1) != 0.0) || _braid_isnan(result1) )
    {
       correct = 0;
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   Test 2 Failed\n");
@@ -587,7 +584,7 @@ braid_TestCoarsenRefine( braid_App           app,
    spatialnorm(app, v, &result1);
    
    /* We expect exact equality between u and v */
-   if( (fabs(result1) != 0.0) || braid_isnan(result1) )
+   if( (fabs(result1) != 0.0) || _braid_isnan(result1) )
    {
       correct = 0;
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestCoarsenRefine:   Test 3 Failed\n");
@@ -662,9 +659,31 @@ braid_TestResidual( braid_App              app,
    braid_Real              result1;
    braid_Int               myid_x, result_int;
    braid_Status            status  = _braid_CTAlloc(_braid_Status, 1);
-   braid_AccessStatus      astatus = (braid_AccessStatus)status;
-   braid_StepStatus        sstatus = (braid_StepStatus)status;
-   
+   braid_AccessStatus      astatus = (braid_AccessStatus) status;
+   braid_StepStatus        sstatus = (braid_StepStatus) status;
+ 
+
+   /* 
+    * Next, we must initialize status so that the user may call
+    * braid_StepStatusSetRFactor() from inside of step(), which many users will
+    * do.  Calling braid_StepStatusSetRFactor() requires that status (which is
+    * really a braid_Core) to have allocated two pieces of data, 
+    * (1) core->rfactors and (2) core->grids[0]->ilower
+    */
+   braid_Core              core    = (braid_Core) status;
+   _braid_Grid          **grids    = _braid_CoreElt(core, grids);
+   braid_Int              *rfactors;
+   _braid_Grid            *fine_grid;
+   /* 1) Initialize array of grids and fine-grid, then set ilower */ 
+   grids    = _braid_TReAlloc(grids, _braid_Grid *, 1);
+   fine_grid = _braid_CTAlloc(_braid_Grid, 1);
+   _braid_GridElt(fine_grid, ilower) = 0;
+   grids[0] = fine_grid;
+   _braid_CoreElt(core, grids) = grids;
+   /* 2) Initialize rfactors */
+   rfactors = _braid_CTAlloc(braid_Int, 4); 
+   _braid_CoreElt(core, rfactors) = rfactors;
+
    _braid_StepStatusInit(t, t+dt, 0, 1e-16, 0, 0, 0, 2, sstatus);
    _braid_AccessStatusInit(t, 0, 0.0, 0, 0, 0, 2, 0, 1, -1, astatus);
 
@@ -684,7 +703,7 @@ braid_TestResidual( braid_App              app,
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   Warning:  spatialnorm(u) = 0.0\n"); 
    }
-   else if( braid_isnan(result1) )
+   else if( _braid_isnan(result1) )
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   Warning:  spatialnorm(u) = nan\n"); 
    }
@@ -747,6 +766,10 @@ braid_TestResidual( braid_App              app,
    myfree(app, fstop);
 
    _braid_StatusDestroy(status);
+
+   _braid_TFree(rfactors);
+   _braid_TFree(grids);
+   _braid_TFree(fine_grid);
 
    _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestResidual \n");
    

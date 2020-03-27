@@ -518,6 +518,7 @@ int main (int argc, char *argv[])
    double   objective, gamma, stepsize, mygnorm, gnorm, gtol, rnorm, rnorm_adj;
    int      max_levels, cfactor, access_level, print_level, braid_maxiter;
    double   braid_tol, braid_adjtol;
+   double   dt, h_inv;
 
    /* Define time domain */
    ntime  = 20;              /* Total number of time-steps */
@@ -526,7 +527,7 @@ int main (int argc, char *argv[])
 
    /* Define some optimization parameters */
    gamma    = 0.005;         /* Relaxation parameter in the objective function */
-   stepsize = 50.0;          /* Step size for design updates */
+   stepsize = 5.0;            /* Step size for design updates */
    maxiter  = 500;           /* Maximum number of optimization iterations */
    gtol     = 1e-6;          /* Stopping criterion on the gradient norm */
 
@@ -631,7 +632,6 @@ int main (int argc, char *argv[])
          return (0);
       }
    }
-
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);

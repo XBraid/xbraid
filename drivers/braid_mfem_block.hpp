@@ -109,8 +109,8 @@ protected:
     // Data for multiple spatial levels, level 0 is the finest level
     Array<ParMesh *>                    mesh;
     Array<ParFiniteElementSpace *> fe_space;
-    Array<ParGridFunction *>  x;        // auxiliary ParGridFunctions for block x
     Array<ParGridFunction *>  v;        // auxiliary ParGridFunctions for block v
+    Array<ParGridFunction *>  x;        // auxiliary ParGridFunctions for block x
     Array<const SparseMatrix *>     P;  // local interpolation matrices, l --> l+1
     Array<TimeDependentOperator *> ode;
     Array<ODESolver *>      solver;

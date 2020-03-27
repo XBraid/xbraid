@@ -1,7 +1,5 @@
 // Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. Written by 
-// Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
-// Dobrev, et al. LLNL-CODE-660355. All rights reserved.
+// Produced at the Lawrence Livermore National Laboratory.
 // 
 // This file is part of XBraid. For support, post issues to the XBraid Github page.
 //
@@ -27,6 +25,7 @@
 #include "braid_test.h"
 
 class BraidAccessStatus;
+class BraidSyncStatus;
 class BraidStepStatus;
 class BraidCoarsenRefStatus;
 class BraidBufferStatus;
@@ -153,6 +152,18 @@ public:
       Clone(cu_, fu_ptr);
       return 0;
    }
+
+   /// This function may be optionally defined by the user. This provides
+   /// a once-per-processor access to the user's app function at certain
+   /// points during the code (see documentation for more details).
+   /// To turn on sync, use core.SetSync()
+   /// @see braid_PtFcnSync.
+   virtual braid_Int Sync(BraidSyncStatus &sstatus)
+   {
+      fprintf(stderr, "Braid C++ Wrapper Warning: turn off sync "
+              "until the Sync function been user implemented\n");
+      return 0;
+   }
 };
 
 
@@ -182,12 +193,51 @@ class BraidAccessStatus
       void GetWrapperTest(braid_Int *wtest_ptr) { braid_AccessStatusGetWrapperTest(astatus, wtest_ptr); }
       void GetResidual(braid_Real *rnorm_ptr)   { braid_AccessStatusGetResidual(astatus, rnorm_ptr); }
       void GetNRefine(braid_Int *nrefine_ptr)   { braid_AccessStatusGetNRefine(astatus, nrefine_ptr); }
+      void GetCallingFunction(braid_Int *callingfcn_ptr)
+      {
+         braid_AccessStatusGetCallingFunction(astatus, callingfcn_ptr);
+      }
 
       // The braid_AccessStatus structure is deallocated inside of Braid
       // This class is just to make code consistently look object oriented
       ~BraidAccessStatus() { }
 };
 
+// Wrapper for BRAID's SyncStatus object
+class BraidSyncStatus
+{
+   private:
+      braid_SyncStatus sstatus;
+
+   public:
+      BraidSyncStatus(braid_SyncStatus _sstatus)
+      {
+         sstatus = _sstatus;
+      }
+      void GetTIUL(braid_Int *i_upper,
+                   braid_Int *i_lower,
+                   braid_Int  level)
+      { braid_SyncStatusGetTIUL(sstatus, i_upper, i_lower, level); }
+      void GetTimeValues(braid_Real **tvalues_ptr,
+                         braid_Int    i_upper,
+                         braid_Int    i_lower,
+                         braid_Int    level)
+      { braid_SyncStatusGetTimeValues(sstatus, tvalues_ptr, i_upper, i_lower, level); }
+      void GetNLevels(braid_Int *nlevels_ptr)   { braid_SyncStatusGetNLevels(sstatus, nlevels_ptr);}
+      void GetIter(braid_Int *iter_ptr)         { braid_SyncStatusGetIter(sstatus, iter_ptr); }
+      void GetLevel(braid_Int *level_ptr)       { braid_SyncStatusGetLevel(sstatus, level_ptr); }
+      void GetNRefine(braid_Int *nrefine_ptr)   { braid_SyncStatusGetNRefine(sstatus, nrefine_ptr); }
+      void GetNTPoints(braid_Int *ntpoints_ptr) { braid_SyncStatusGetNTPoints(sstatus, ntpoints_ptr); }
+      void GetDone(braid_Int *done_ptr)         { braid_SyncStatusGetDone(sstatus, done_ptr); }
+      void GetCallingFunction(braid_Int *callingfcn_ptr)
+      {
+         braid_SyncStatusGetCallingFunction(sstatus, callingfcn_ptr);
+      }
+
+      // The braid_SyncStatus structure is deallocated inside of Braid
+      // This class is just to make code consistently look object oriented
+      ~BraidSyncStatus() { }
+};
 
 // Wrapper for BRAID's StepStatus object
 class BraidStepStatus
@@ -251,6 +301,7 @@ class BraidCoarsenRefStatus
       }
       void GetT(braid_Real *tstart_ptr)         { braid_CoarsenRefStatusGetT(cstatus, tstart_ptr); }
       void GetTIndex(braid_Int *tindex_ptr)     { braid_CoarsenRefStatusGetTIndex(cstatus, tindex_ptr); }
+      void GetIter(braid_Int *iter_ptr)         { braid_CoarsenRefStatusGetIter(cstatus, iter_ptr); }
       void GetFTstop(braid_Real *f_tstop_ptr)   { braid_CoarsenRefStatusGetFTstop(cstatus, f_tstop_ptr); }
       void GetFTprior(braid_Real *f_tprior_ptr) { braid_CoarsenRefStatusGetFTprior(cstatus, f_tprior_ptr); }
       void GetCTstop(braid_Real *c_tstop_ptr)   { braid_CoarsenRefStatusGetCTstop(cstatus, c_tstop_ptr); }
@@ -359,6 +410,13 @@ static braid_Int _BraidAppAccess(braid_App          _app,
    return app -> Access(_u, astatus);
 }
 
+static braid_Int _BraidAppSync(braid_App        _app,
+                               braid_SyncStatus _sstatus)
+{
+   BraidApp *app = (BraidApp*)_app;
+   BraidSyncStatus sstatus(_sstatus);
+   return app -> Sync(sstatus);
+}
 
 static braid_Int _BraidAppBufSize(braid_App  _app,
                                   braid_Int *size_ptr,
@@ -431,7 +489,9 @@ public:
    }
 
    void SetMaxLevels(braid_Int max_levels) { braid_SetMaxLevels(core, max_levels); }
-   
+
+   void SetIncrMaxLevels() { braid_SetIncrMaxLevels(core); }
+
    void SetSkip(braid_Int skip) { braid_SetSkip(core, skip); }
 
    void SetMinCoarse(braid_Int min_coarse) { braid_SetMinCoarse(core, min_coarse); }
@@ -472,6 +532,8 @@ public:
       braid_SetSpatialCoarsen(core, _BraidAppCoarsen);
       braid_SetSpatialRefine(core, _BraidAppRefine);
    }
+
+   void SetSync() { braid_SetSync(core, _BraidAppSync); }
 
    void SetResidual() { braid_SetResidual(core, _BraidAppResidual); }
 

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #BHEADER**********************************************************************
 #
 # Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
@@ -65,11 +65,13 @@ TESTS=( "diffusion1D.sh " \
         "compare_examples_drivers.sh " \
         "compare_examples_drivers_storage.sh " \
         "mfem.sh" \
-        "ode1D.sh" \
         "test-checkout-compile.sh " \
         "adjoint.sh " \
         "shellvector_bdf2.sh "\
-        "memcheck-tux-jacob.sh ")
+        "memcheck-tux-jacob.sh "\
+        "ode1D.sh")
+#       Need to fix the issues with refinement = 2 
+#        "ode1D-refine-periodic.sh"\
 
 # Run regression tests
 for test in "${TESTS[@]}"

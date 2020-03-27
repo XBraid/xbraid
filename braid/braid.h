@@ -1,8 +1,6 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
- * Produced at the Lawrence Livermore National Laboratory. Written by 
- * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
- * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
+ * Produced at the Lawrence Livermore National Laboratory.
  * 
  * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
@@ -22,10 +20,10 @@
  ***********************************************************************EHEADER*/
 
 /** \file braid.h
- * \brief Define headers for user interface routines.
+ * \brief Define headers for user-interface routines.
  *
- * This file contains routines used to allow the user to initialize, run
- * and get and set a XBraid solver. 
+ * This file contains user-routines used to allow the user to initialize, run
+ * and get and set options for a XBraid solver. 
  */
 
 #ifndef braid_HEADER
@@ -66,9 +64,10 @@ extern "C" {
 #define braid_Fortran_Residual 1
 /** Turn on the optional user-defined time-grid function */ 
 #define braid_Fortran_TimeGrid 1
+/** Turn on the optional user-defined sync function */
+#define braid_Fortran_Sync 1
 
 /** @} */
-
 
 /*--------------------------------------------------------------------------
  * Error Codes 
@@ -216,6 +215,17 @@ typedef braid_Int
                      );
 
 /**
+ * Gives user access to XBraid and to the user's app at various points (primarily
+ * once per iteration inside FRefine and outside in the main cycle loop).  This
+ * function is called once per-processor (not for every state vector stored on the
+ * processor, like access).
+ **/
+typedef braid_Int
+(*braid_PtFcnSync)(braid_App         app,              /**< user-defined _braid_App structure */
+                   braid_SyncStatus  status            /**< can be querried for info like the current XBraid Iteration */
+                   );
+
+/**
  * This routine tells XBraid message sizes by computing an upper bound in bytes
  * for an arbitrary braid_Vector.  This size must be an upper bound for what
  * BufPack and BufUnPack will assume.
@@ -340,7 +350,6 @@ typedef braid_Int
                        braid_Int        *iupper     /**< upper time index value for this processor */
                        );
 
-
 /** @}*/
 
 /*--------------------------------------------------------------------------
@@ -368,7 +377,6 @@ typedef braid_Int
                          braid_ObjectiveStatus ostatus,          /**< status structure for querying time, index, etc. */
                          braid_Real           *objectiveT_ptr    /**< output: objective function at current time */
                         );
-
 
 /**
  * This is the differentiated version of the @ref braid_PtFcnObjectiveT routine. 
@@ -421,7 +429,6 @@ typedef braid_Int
                                         braid_Real  *F_bar_ptr   /**< output: partial derivative of the postprocessed objective with respect to sum_obj */
                                        );
 
-
 /**
  * This is the differentiated version of the time-stepping routine. 
  * It provides the transposed derivatives of *Step()* multiplied by the adjoint 
@@ -442,8 +449,6 @@ typedef braid_Int
                        braid_StepStatus status     /**< query this struct for info about u (e.g., tstart and tstop) */ 
                       );
 
-
-
 /**
  * Set the gradient to zero, which is usually stored in @ref braid_App .
  */
@@ -452,7 +457,6 @@ typedef braid_Int
                            );
 
 /** @}*/
-
 
 /*--------------------------------------------------------------------------
  * User Interface Routines
@@ -529,6 +533,16 @@ braid_Int
 braid_PrintStats(braid_Core  core           /**< braid_Core (_braid_Core) struct*/
                  );
 
+
+/**
+ * After Drive() finishes, this function can be called to write out the convergence history 
+ * (residuals for each iteration) to a file
+ **/
+braid_Int
+braid_WriteConvHistory(braid_Core core,      /**< braid_Core (_braid_Core) struct */
+                       const char* filename  /**< Output file name */
+                       );
+
 /**
  * Set max number of multigrid levels.
  **/
@@ -536,6 +550,12 @@ braid_Int
 braid_SetMaxLevels(braid_Core  core,        /**< braid_Core (_braid_Core) struct*/
                    braid_Int   max_levels   /**< maximum levels to allow */
                    );
+
+/**
+ * Increase the max number of multigrid levels after performing a refinement.
+ **/
+braid_Int
+braid_SetIncrMaxLevels(braid_Core  core);
 
 /**
  * Set whether to skip all work on the first down cycle (skip = 1).  On by default.
@@ -714,6 +734,18 @@ braid_SetTimeGrid(braid_Core          core,  /**< braid_Core (_braid_Core) struc
                   );
 
 /**
+ * Set periodic time grid.  The periodicity on each grid level is given by the
+ * number of points on each level.  Requirements: The number of points on the
+ * finest grid level must be evenly divisible by the product of the coarsening
+ * factors between each grid level.  Currently, the coarsening factors must be
+ * the same on all grid levels.  Also, braid_SetSeqSoln must not be used.
+ **/
+braid_Int
+braid_SetPeriodic(braid_Core core,     /**< braid_Core (_braid_Core) struct*/
+                  braid_Int  periodic  /**< boolean to specify if periodic */
+                  );
+
+/**
  * Set spatial coarsening routine with user-defined routine.
  * Default is no spatial refinment or coarsening.
  **/
@@ -730,6 +762,22 @@ braid_Int
 braid_SetSpatialRefine(braid_Core         core,   /**< braid_Core (_braid_Core) struct*/
                        braid_PtFcnSRefine srefine /**< function pointer to spatial refinement routine */
                        );
+
+/**
+ * Set sync routine with user-defined routine.
+ * Sync gives user access to XBraid and the user's app at various points
+ * (primarily once per iteration inside FRefine and outside in the main
+ * cycle loop). This function is called once per-processor (instead of for
+ * every state vector on the processor, like access). The use case is to
+ * allow the user to update their app once-per iteration based on information
+ * from XBraid, for example to maintain the space-time grid when doing
+ * time-space adaptivity.
+ * Default is no sync routine.
+ **/
+braid_Int
+braid_SetSync(braid_Core      core, /**< braid_Core (_braid_Core) struct*/
+              braid_PtFcnSync sync  /**< function pointer to sync routine */
+              );
 
 /**
  * Set print level for XBraid.  This controls how much information is 
@@ -807,6 +855,7 @@ braid_SplitCommworld(const MPI_Comm  *comm_world,  /**< Global communicator to s
                      MPI_Comm        *comm_x,      /**< Spatial communicator (written as output) */
                      MPI_Comm        *comm_t       /**< Temporal communicator (written as output) */
                      );
+
 /**
  * Activate the shell vector feature, and set the various functions that are required :
  * - sinit  : create a shell vector
@@ -911,7 +960,6 @@ braid_SetSeqSoln(braid_Core  core,          /**< braid_Core (_braid_Core) struct
                  braid_Int   seq_soln       /**< 1: Init with sequential time stepping soln, 0: Use user's Init()*/
                  );
 
-
 /**
  * Get the processor's rank.
  */                       
@@ -920,6 +968,19 @@ braid_GetMyID(braid_Core core,           /**< braid_Core (_braid_Core) struct */
               braid_Int *myid_ptr        /**< output: rank of the processor. */
              );
 
+/**
+ * Machine independent pseudo-random number generator is defined in Braid.c
+ */
+#ifndef braid_RAND_MAX
+#define braid_RAND_MAX 32768
+#endif
+
+/**
+ * Define a machine independent random number generator
+ */
+braid_Int
+braid_Rand(void                                /**< Take no arguments, to mimic C-standard rand() */
+      );
 
 /** @}*/
 
@@ -1035,15 +1096,7 @@ braid_Int
 braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
                       braid_Real  *rnorm_adj   /**< output: adjoint residual norm of last iteration */
                      );
-/**
- * Define a machine independent random number generator
- */
-braid_Int
-braid_Rand(void                                /**< Take no arguments, to mimic C-standard rand() */
-      );
-
 /** @}*/
-
 
 #ifdef __cplusplus
 }
