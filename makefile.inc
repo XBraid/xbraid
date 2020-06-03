@@ -85,8 +85,8 @@ else ifeq ($(shell uname -s), Darwin)
       CXXFLAGS = -g -Wall -fPIC
       FORTFLAGS = -Og -Wall
    else
-      CFLAGS = -O -Wall -fPIC
-      CXXFLAGS = -O -Wall -fPIC
+      CFLAGS = -O3 -Wall -fPIC
+      CXXFLAGS = -O3 -Wall -fPIC
       FORTFLAGS = -O1 -Wall
    endif
 else ifeq ($(findstring cab,$(HOSTNAME)),cab)
@@ -129,8 +129,8 @@ else ifeq ($(shell uname -s),Linux)
       CXXFLAGS = -g -Wall -fPIC
       FORTFLAGS = -g -Wall
    else
-      CFLAGS = -O -Wall -fPIC
-      CXXFLAGS = -O -Wall -fPIC
+      CFLAGS = -O3 -Wall -fPIC
+      CXXFLAGS = -O3 -Wall -fPIC
       FORTFLAGS = -O1 -Wall
    endif
 ##
@@ -146,8 +146,8 @@ else
       CXXFLAGS = -g -Wall -fPIC
       FORTFLAGS = -g -Wall
    else
-      CFLAGS = -O -Wall -fPIC
-      CXXFLAGS = -O -Wall -fPIC
+      CFLAGS = -O3 -Wall -fPIC
+      CXXFLAGS = -O3 -Wall -fPIC
       FORTFLAGS = -O1 -Wall
    endif
 endif
