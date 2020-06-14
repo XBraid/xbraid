@@ -3378,6 +3378,7 @@ _braid_FAccess(braid_Core     core,
       }
       for (fi = flo; fi <= fhi; fi++)
       {
+         //  printf("FAccess recompute %f, %d\n", ta[fi-ilower], fi-ilower);
          _braid_Step(core, level, fi, NULL, u);
          _braid_USetVector(core, level, fi, u, 0);
 
@@ -3426,6 +3427,7 @@ _braid_FAccess(braid_Core     core,
          {
             _braid_AccessStatusInit( ta[ci-ilower], ci, rnorm, iter, level, nrefine, gupper,
                                      done, 0, braid_ASCaller_FAccess, astatus);
+            // printf("FAccess %f, %d\n", ta[ci-ilower], ci-ilower);
             _braid_AccessVector(core, astatus, u);
          }
 
