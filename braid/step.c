@@ -133,3 +133,56 @@ _braid_GetUInit(braid_Core         core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ * Solve A(u) for time step 'index' on grid 'level'
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_TriSolve(braid_Core  core,
+                braid_Int   level,
+                braid_Int   index)
+{
+   braid_App          app      = _braid_CoreElt(core, app);
+   _braid_Grid      **grids    = _braid_CoreElt(core, grids);
+   braid_TriStatus    status   = (braid_TriStatus)core;
+   braid_Int          ilower   = _braid_GridElt(grids[level], ilower);
+   braid_Real        *ta       = _braid_GridElt(grids[level], ta);
+   braid_BaseVector  *fa       = _braid_GridElt(grids[level], fa);
+
+   braid_BaseVector   u, uleft, uright;
+
+   braid_Int          ii = index-ilower, homogeneous = 0;
+
+   /* Update status (core) */
+   _braid_StatusElt(status, t)     = ta[ii];
+   _braid_StatusElt(status, tprev) = ta[ii-1];
+   _braid_StatusElt(status, tnext) = ta[ii+1];
+   _braid_StatusElt(status, idx)   = index;
+   _braid_StatusElt(status, level) = level;
+
+   /* Solve A(u) */
+
+   _braid_UGetVectorRef(core, level, index-1, &uleft);
+   _braid_UGetVectorRef(core, level, index+1, &uright);
+   _braid_UGetVectorRef(core, level, index, &u);
+
+//   if (level > 0)
+//   {
+//      homogeneous = 1;
+//   }
+
+   if (level == 0)
+   {
+      /* No FAS rhs */
+      _braid_BaseTriSolve(core, app, uleft, uright, NULL, u, homogeneous, status);
+   }
+   else
+   {
+      _braid_BaseTriSolve(core, app, uleft, uright, fa[ii], u, homogeneous, status);
+   }
+
+   _braid_USetVectorRef(core, level, index, u);
+
+   return _braid_error_flag;
+}
+

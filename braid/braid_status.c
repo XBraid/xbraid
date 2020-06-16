@@ -109,6 +109,18 @@ braid_StatusGetLevel(braid_Status status,
 }
 
 braid_Int
+braid_StatusGetILowerUpper(braid_Status status,
+                           braid_Int   *ilower_ptr,
+                           braid_Int   *iupper_ptr
+                           )
+{
+   _braid_Grid  **grids = _braid_StatusElt(status, grids);
+   *ilower_ptr = _braid_GridElt(grids[0], ilower);
+   *iupper_ptr = _braid_GridElt(grids[0], iupper);
+   return _braid_error_flag;
+}
+
+braid_Int
 braid_StatusGetNLevels(braid_Status status,
                        braid_Int   *nlevels_ptr
                        )
@@ -440,6 +452,28 @@ braid_StatusSetSize(braid_Status status,
    return _braid_error_flag;
 }
 
+braid_Int
+braid_StatusGetTriT(braid_Status status,
+                    braid_Real  *t_ptr,
+                    braid_Real  *tprev_ptr,
+                    braid_Real  *tnext_ptr
+   )
+{
+   *t_ptr = _braid_StatusElt(status, t);
+   *tprev_ptr = _braid_StatusElt(status, tprev);
+   *tnext_ptr = _braid_StatusElt(status, tnext);
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_StatusGetXRelax(braid_Status status,
+                      braid_Int   *xrelax_ptr
+   )
+{
+   *xrelax_ptr = _braid_StatusElt(status, xrelax);
+   return _braid_error_flag;
+}
+
 /*--------------------------------------------------------------------------
  * AccessStatus Routines
  *--------------------------------------------------------------------------*/
@@ -473,6 +507,7 @@ ACCESSOR_FUNCTION_GET1(Access, T,               Real)
 ACCESSOR_FUNCTION_GET1(Access, TIndex,          Int)
 ACCESSOR_FUNCTION_GET1(Access, Iter,            Int)
 ACCESSOR_FUNCTION_GET1(Access, Level,           Int)
+ACCESSOR_FUNCTION_GET2(Access, ILowerUpper,     Int, Int)
 ACCESSOR_FUNCTION_GET1(Access, NLevels,         Int)
 ACCESSOR_FUNCTION_GET1(Access, NRefine,         Int)
 ACCESSOR_FUNCTION_GET1(Access, NTPoints,        Int)
@@ -646,3 +681,27 @@ ACCESSOR_FUNCTION_GET1(Objective, NLevels,       Int)
 ACCESSOR_FUNCTION_GET1(Objective, NRefine,       Int)
 ACCESSOR_FUNCTION_GET1(Objective, NTPoints,      Int)
 ACCESSOR_FUNCTION_GET1(Objective, Tol,           Real)
+
+/*--------------------------------------------------------------------------
+ * TriStatus Status Routines (for TriSolve and TriResidual)
+ *--------------------------------------------------------------------------*/
+
+ACCESSOR_FUNCTION_GET1(Tri, T,             Real)
+ACCESSOR_FUNCTION_GET1(Tri, TIndex,        Int)
+ACCESSOR_FUNCTION_GET1(Tri, Iter,          Int)
+ACCESSOR_FUNCTION_GET1(Tri, Level,         Int)
+ACCESSOR_FUNCTION_GET1(Tri, NLevels,       Int)
+ACCESSOR_FUNCTION_GET1(Tri, NRefine,       Int)
+ACCESSOR_FUNCTION_GET1(Tri, NTPoints,      Int)
+ACCESSOR_FUNCTION_GET1(Tri, Tstop,         Real)
+ACCESSOR_FUNCTION_GET2(Tri, TstartTstop,   Real, Real)
+ACCESSOR_FUNCTION_GET3(Tri, TriT,          Real, Real, Real)
+ACCESSOR_FUNCTION_GET1(Tri, Tol,           Real)
+ACCESSOR_FUNCTION_GET2(Tri, RNorms,        Int,  Real)
+ACCESSOR_FUNCTION_GET1(Tri, OldFineTolx,   Real)
+ACCESSOR_FUNCTION_SET1(Tri, OldFineTolx,   Real)
+ACCESSOR_FUNCTION_SET1(Tri, TightFineTolx, Real)
+ACCESSOR_FUNCTION_SET1(Tri, RFactor,       Real)
+ACCESSOR_FUNCTION_SET1(Tri, RSpace,        Real)
+
+ACCESSOR_FUNCTION_GET1(Tri, XRelax,        Int)

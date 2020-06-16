@@ -41,6 +41,7 @@ _braid_InitHierarchy(braid_Core    core,
    braid_Real   **rdtvalues  = _braid_CoreElt(core, rdtvalues);
    braid_Int      nlevels    = _braid_CoreElt(core, nlevels);
    _braid_Grid  **grids      = _braid_CoreElt(core, grids);
+   braid_Int      trimgrit   = _braid_CoreElt(core, trimgrit);
 
    /**
     * These are some common index names used to refer to intervals and
@@ -73,9 +74,15 @@ _braid_InitHierarchy(braid_Core    core,
                     
    MPI_Request       request1, request2;
    MPI_Status        status;
-   braid_Int         left_proc, right_proc;
+   braid_Int         left_proc, right_proc, set_ta_right = 0;
 
    grids[0] = fine_grid;
+
+   /* Should we store a ta value for index iupper+1? */
+   if ( (_braid_CoreElt(core, scoarsen) != NULL) || (trimgrit) )
+   {
+      set_ta_right = 1;
+   }
 
    /* Do sequential time marching if min_coarse is already reached */
    if ( gupper <= min_coarse )
@@ -133,7 +140,7 @@ _braid_InitHierarchy(braid_Core    core,
 
       _braid_GetCFactor(core, level, &cfactor);
       
-      gupper = gcupper;
+      gupper = gcupper;                        // RDF: Why was this different in omgrit code?
       _braid_GridElt(grid, gupper) = gupper;
 
       _braid_ProjectInterval(gclower, gcupper, 0, cfactor, &gclower, &gcupper);
@@ -154,7 +161,7 @@ _braid_InitHierarchy(braid_Core    core,
       _braid_GridElt(grid, cfactor)  = cfactor;
       _braid_GridElt(grid, ncpoints) = ncpoints;
       if ( (gclower < gcupper) && (max_levels > level+1) &&
-           ((gcupper - gclower) >= min_coarse) )
+           ((gcupper - gclower) >= min_coarse) )  // RDF: Is min_coarse = num time intervals?
       {
          /* Initialize the coarse grid */
          _braid_GridInit(core, level+1, clo, chi, &grids[level+1]);
@@ -162,25 +169,28 @@ _braid_InitHierarchy(braid_Core    core,
       else
       {
          /* This is the coarsest level */
-         if ( (level > 0) || (!refined) )
+         if (!trimgrit)
          {
-            /* If this is a true coarse level (it has a fine grid above it in
-             * the current hierarchy) or it is a fine level that was not built
-             * by refining a coarser grid, then do serial time integration by
-             * setting only one C-point and the rest F-points */
-            if (ilower == 0)
+            if ( (level > 0) || (!refined) )
             {
-               ncpoints = 1;
+               /* If this is a true coarse level (it has a fine grid above it in
+                * the current hierarchy) or it is a fine level that was not built
+                * by refining a coarser grid, then do serial time integration by
+                * setting only one C-point and the rest F-points */
+               if (ilower == 0)
+               {
+                  ncpoints = 1;
+               }
+               else
+               {
+                  ncpoints = 0;
+               }
+               /* clower > cupper indicates empty interval */
+               _braid_GridElt(grid, clower)   = ilower;
+               _braid_GridElt(grid, cupper)   = 0;
+               _braid_GridElt(grid, cfactor)  = gupper+1;
+               _braid_GridElt(grid, ncpoints) = ncpoints;
             }
-            else
-            {
-               ncpoints = 0;
-            }
-            /* clower > cupper indicates empty interval */
-            _braid_GridElt(grid, clower)   = ilower;
-            _braid_GridElt(grid, cupper)   = 0;
-            _braid_GridElt(grid, cfactor)  = gupper+1;
-            _braid_GridElt(grid, ncpoints) = ncpoints;
          }
 
          /* Stop coarsening */
@@ -204,8 +214,8 @@ _braid_InitHierarchy(braid_Core    core,
       iupper = _braid_GridElt(grid, iupper);
       if (level > 0)
       {
-         va = _braid_CTAlloc(braid_BaseVector, iupper-ilower+2);
-         fa = _braid_CTAlloc(braid_BaseVector, iupper-ilower+2);
+         va = _braid_CTAlloc(braid_BaseVector, iupper-ilower+3);  /* left & right for TriMGRIT */
+         fa = _braid_CTAlloc(braid_BaseVector, iupper-ilower+3);  /* left & right for TriMGRIT */
          _braid_GridElt(grid, va_alloc) = va;
          _braid_GridElt(grid, fa_alloc) = fa;
          _braid_GridElt(grid, va)       = va+1;  /* shift */
@@ -224,7 +234,7 @@ _braid_InitHierarchy(braid_Core    core,
          nupoints = iupper-ilower+1;                  /* all points */
       }
 
-      ua = _braid_CTAlloc(braid_BaseVector, nupoints+1);
+      ua = _braid_CTAlloc(braid_BaseVector, nupoints+2);  /* left & right for TriMGRIT */
       _braid_GridElt(grid, nupoints)  = nupoints;
       _braid_GridElt(grid, ua_alloc)  = ua;
       _braid_GridElt(grid, ua)        = ua+1;  /* shift */
@@ -255,7 +265,7 @@ _braid_InitHierarchy(braid_Core    core,
             ta[-1] = ta[0]; 
          }
          /* Post receive to set ta[iupper-ilower+1] on each processor */
-         if ( _braid_CoreElt(core, scoarsen) != NULL )
+         if ( set_ta_right )
          {
             if (right_proc > -1)
             {
@@ -264,7 +274,7 @@ _braid_InitHierarchy(braid_Core    core,
             }
             else
             {
-               /* Place a repeat value to indicate the end the time-line for this level */
+               /* Place a repeat value to indicate the end of the time-line for this level */
                ta[iupper-ilower+1] = ta[iupper-ilower];
             }
          }
@@ -276,7 +286,7 @@ _braid_InitHierarchy(braid_Core    core,
                      right_proc, 1, comm);
          }
          /* Post send that sets ta[iupper-ilower+1] on each processor */
-         if ( (left_proc > -1) && ( _braid_CoreElt(core, scoarsen) != NULL ) )
+         if ( (left_proc > -1) && ( set_ta_right ) )
          {
             MPI_Send(&ta[0], sizeof(braid_Real), MPI_BYTE, left_proc, 1, comm);
          }

@@ -77,6 +77,11 @@ struct _braid_ObjectiveStatus_struct
    _braid_Status status;
 };
 
+struct _braid_TriStatus_struct
+{
+   _braid_Status status;
+};
+
 /*--------------------------------------------------------------------------
  * Begin headers for internal Braid Status functions, like Destroy, and StatusInit
  *--------------------------------------------------------------------------*/

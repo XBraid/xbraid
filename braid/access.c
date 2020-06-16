@@ -113,6 +113,51 @@ _braid_FAccess(braid_Core     core,
 }
 
 /*----------------------------------------------------------------------------
+ * Access to XBraid on grid level
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_TriAccess(braid_Core     core,
+                 braid_Int      level,
+                 braid_Int      done)
+{
+   _braid_Grid          **grids        = _braid_CoreElt(core, grids);
+   braid_AccessStatus     astatus      = (braid_AccessStatus)core;
+   braid_Int              access_level = _braid_CoreElt(core, access_level);
+   braid_Int              ilower       = _braid_GridElt(grids[level], ilower);
+   braid_Int              iupper       = _braid_GridElt(grids[level], iupper);
+   braid_Real            *ta           = _braid_GridElt(grids[level], ta);
+
+   braid_Real             rnorm;
+   braid_BaseVector       u;
+   braid_Int              i;
+
+   _braid_GetRNorm(core, -1, &rnorm);
+
+   /* Update status (core) */
+   _braid_StatusElt(astatus, level)            = level;
+   _braid_StatusElt(astatus, rnorm)            = rnorm;
+   _braid_StatusElt(astatus, done)             = done;
+   _braid_StatusElt(astatus, wrapper_test)     = 0;
+   _braid_StatusElt(astatus, calling_function) = braid_ASCaller_TriAccess;
+
+   if (access_level >= 1)
+   {
+      for (i = ilower; i <= iupper; i++)
+      {
+         /* Update status (core) */
+         _braid_StatusElt(astatus, t)   = ta[i-ilower];
+         _braid_StatusElt(astatus, idx) = i;
+
+         _braid_UGetVectorRef(core, level, i, &u);
+         _braid_AccessVector(core, astatus, u);
+      }
+   }
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
  *----------------------------------------------------------------------------*/
 
 braid_Int

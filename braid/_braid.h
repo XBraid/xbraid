@@ -331,6 +331,11 @@ typedef struct _braid_Core_struct
    braid_PtFcnPostprocessObjective      postprocess_obj;      /**< Optional user function: Modify the time-averaged objective function, e.g. for inverse design problems, adding relaxation term etc. */
    braid_PtFcnPostprocessObjective_diff postprocess_obj_diff; /**< Optional user function: Derivative of postprocessing function  */
 
+   /* Data for TriMGRIT */
+   braid_Int              trimgrit;      /**< using TriMGRIT algorithm (1) or not (0)? */
+   braid_PtFcnTriResidual triresidual;   /**< compute residual at time point i */
+   braid_PtFcnTriSolve    trisolve;      /**< solve for time point i */
+
    /** Data elements required for the Status structures */
    /** Common Status properties */
    braid_Real    t;                /**< current time */
@@ -348,6 +353,7 @@ typedef struct _braid_Core_struct
    braid_Real    c_tstop;          /**< time value to the right of tstart on coarse grid */
    /** StepStatus properties */
    braid_Real    tnext;            /**< time value to evolve towards, time value to the right of tstart */
+   braid_Real    tprev;            /**< time value to the left of current time (for TriMGRIT) */
    braid_Real    old_fine_tolx;    /**< Allows for storing the previously used fine tolerance from GetSpatialAccuracy */
    braid_Int     tight_fine_tolx;  /**< Boolean, indicating whether the tightest fine tolx has been used, condition for halting */
    braid_Int     rfactor;          /**< if set by user, allows for subdivision of this interval for better time accuracy */
@@ -355,6 +361,9 @@ typedef struct _braid_Core_struct
    braid_Int    messagetype;       /**< message type, 0: for Step(), 1: for load balancing */
    braid_Int    size_buffer;       /**< if set by user, send buffer will be "size" bytes in length */
    braid_Int    send_recv_rank;    /***< holds the rank of the source / receiver from MPI_Send / MPI_Recv calls. */
+
+   braid_Int    xrelax;
+
 } _braid_Core;
 
 /*--------------------------------------------------------------------------
@@ -514,6 +523,28 @@ braid_Int
 _braid_CommWait(braid_Core         core,
                _braid_CommHandle **handle_ptr);
 
+/**
+ * Initialize communication for TriMGRIT.
+ */
+braid_Int
+_braid_TriCommInit(braid_Core     core,
+                   braid_Int      level,
+                   braid_Int     *nrequests_ptr,
+                   MPI_Request  **requests_ptr,
+                   MPI_Status   **statuses_ptr,
+                   void        ***buffers_ptr);
+
+/**
+ * Finalize communication for TriMGRIT.
+ */
+braid_Int
+_braid_TriCommWait(braid_Core     core,
+                   braid_Int      level,
+                   braid_Int      nrequests,
+                   MPI_Request  **requests_ptr,
+                   MPI_Status   **statuses_ptr,
+                   void        ***buffers_ptr);
+
 /* uvector.c */
 
 /**
@@ -639,6 +670,14 @@ _braid_GetUInit(braid_Core         core,
                 braid_BaseVector   u,
                 braid_BaseVector  *ustop_ptr);
 
+/**
+ * TriMGRIT solve routine.  Solve A(u) for time step 'index' on grid 'level'.
+ */
+braid_Int
+_braid_TriSolve(braid_Core  core,
+                braid_Int   level,
+                braid_Int   index);
+
 /* residual.c */
 
 /**
@@ -660,6 +699,18 @@ _braid_FASResidual(braid_Core       core,
                    braid_Int        index,
                    braid_BaseVector ustop,
                    braid_BaseVector r);
+
+/**
+ * TriMGRIT solve routine.  Compute residual for time step 'index' on grid 'level':
+ *    A(u)    (if 'fas' == 0)
+ *    A(u)-f  (if 'fas' == 1)
+ */
+braid_Int
+_braid_TriResidual(braid_Core         core,
+                   braid_Int          level,
+                   braid_Int          index,
+                   braid_Int          fas,          /* FAS residual? */ 
+                   braid_BaseVector  *r_ptr);
 
 /* space.c */
 
@@ -806,6 +857,14 @@ braid_Int
 _braid_FCRelax(braid_Core  core,
                braid_Int   level);
 
+/**
+ * TriMGRIT FCF-relaxation routine
+ */
+braid_Int
+_braid_TriFCFRelax(braid_Core  core,
+                   braid_Int   level,
+                   braid_Int   nrelax);
+
 /* restrict.c */
 
 /**
@@ -825,6 +884,13 @@ _braid_FRestrict(braid_Core   core,       /**< braid_Core (_braid_Core) struct *
                  braid_Int    level       /**< restrict from level to level+1 */
                  );
 
+/**
+ * TriMGRIT restriction routine
+ */
+braid_Int
+_braid_TriRestrict(braid_Core   core,
+                   braid_Int    level);
+
 /* interp.c */
 
 /**
@@ -840,6 +906,13 @@ braid_Int
 _braid_FInterp(braid_Core  core,   /**< braid_Core (_braid_Core) struct */  
                braid_Int   level   /**< interp from level to level+1 */
                );
+
+/**
+ * TriMGRIT interpolation routine
+ */
+braid_Int
+_braid_TriInterp(braid_Core   core,
+                 braid_Int    level);
 
 /* refine.c */
 
@@ -869,6 +942,14 @@ braid_Int
 _braid_FAccess(braid_Core     core,
                braid_Int      level,
                braid_Int      done);
+
+/**
+ * TriMGRIT access routine
+ */
+braid_Int
+_braid_TriAccess(braid_Core     core,
+                 braid_Int      level,
+                 braid_Int      done);
 
 /** 
  * Call user's access function in order to give access to XBraid and the current
@@ -939,6 +1020,13 @@ _braid_CopyFineToCoarse(braid_Core  core);
 braid_Int
 _braid_Drive(braid_Core core, 
              braid_Real localtime);
+
+/**
+ * Main loop for TriMGRIT
+ */
+braid_Int
+_braid_TriDrive(braid_Core core, 
+                braid_Real localtime);
 
 #ifdef __cplusplus
 }

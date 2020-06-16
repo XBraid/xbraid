@@ -77,12 +77,27 @@ _braid_GridClean(braid_Core    core,
 
    if (ua_alloc)
    {
-      for (ii = 0; ii < nupoints; ii++)
+      if (_braid_CoreElt(core, trimgrit))
       {
-         if (ua[ii] != NULL)
+         /* For TriMGRIT, free ghost layers too */
+         for (ii = -1; ii < nupoints+1; ii++)
          {
-            _braid_BaseFree(core, app,  ua[ii]);
-            ua[ii] = NULL;
+            if (ua[ii] != NULL)
+            {
+               _braid_BaseFree(core, app,  ua[ii]);
+               ua[ii] = NULL;
+            }
+         }
+      }
+      else
+      {
+         for (ii = 0; ii < nupoints; ii++)
+         {
+            if (ua[ii] != NULL)
+            {
+               _braid_BaseFree(core, app,  ua[ii]);
+               ua[ii] = NULL;
+            }
          }
       }
    }

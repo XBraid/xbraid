@@ -85,3 +85,107 @@ _braid_FCRelax(braid_Core  core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ * Do nu sweeps of F-then-C relaxation followed by one final F-relaxation
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_TriFCFRelax(braid_Core  core,
+                   braid_Int   level,
+                   braid_Int   nrelax)
+{
+   braid_Int     *nrels   = _braid_CoreElt(core, nrels);
+   _braid_Grid  **grids   = _braid_CoreElt(core, grids);
+   braid_Int      ilower  = _braid_GridElt(grids[level], ilower);
+   braid_Int      iupper  = _braid_GridElt(grids[level], iupper);
+   braid_Int      cfactor = _braid_GridElt(grids[level], cfactor);
+
+   braid_Int      nrequests;
+   MPI_Request   *requests;
+   MPI_Status    *statuses;
+   void         **buffers;
+
+   braid_Int      nu, i;
+
+   if (ilower > iupper)
+   {
+      /* No data for this process on this level */
+      return _braid_error_flag;
+   }
+
+   if (nrelax < 0)
+   {
+      /* use preset nrelax values */
+      nrelax  = nrels[level];
+   }
+
+   for (nu = 0; nu <= nrelax; nu++)
+   {
+      /* F-points */
+
+      /* Initiate communication (ignore F/C for now) and loop over center points */
+      _braid_TriCommInit(core, level, &nrequests, &requests, &statuses, &buffers);
+      for (i = (ilower+1); i <= (iupper-1); i++)
+      {
+         if ( _braid_IsFPoint(i, cfactor) )
+         {
+            _braid_TriSolve(core, level, i);
+         }
+      }
+      /* Finalize communication and loop over end points */
+      _braid_TriCommWait(core, level, nrequests, &requests, &statuses, &buffers);
+      if ( _braid_IsFPoint(ilower, cfactor) )
+      {
+         _braid_TriSolve(core, level, ilower);
+      }
+      if ( (iupper > ilower) && _braid_IsFPoint(iupper, cfactor) )
+      {
+         _braid_TriSolve(core, level, iupper);
+      }
+
+      /* C-points (except for last iteration) */
+
+      if (nu < nrelax)
+      {
+         /* Initiate communication (ignore F/C for now) and loop over center points */
+         _braid_TriCommInit(core, level, &nrequests, &requests, &statuses, &buffers);
+         for (i = (ilower+1); i <= (iupper-1); i++)
+         {
+            if ( _braid_IsCPoint(i, cfactor) )
+            {
+               _braid_TriSolve(core, level, i);
+            }
+         }
+         /* Finalize communication and loop over end points */
+         _braid_TriCommWait(core, level, nrequests, &requests, &statuses, &buffers);
+         if ( _braid_IsCPoint(ilower, cfactor) )
+         {
+            _braid_TriSolve(core, level, ilower);
+         }
+         if ( (iupper > ilower) && _braid_IsCPoint(iupper, cfactor) )
+         {
+            _braid_TriSolve(core, level, iupper);
+         }
+      }
+   }
+
+   /* RDF: Should we keep this as a feature?  What to call it? */
+
+   _braid_CoreElt(core, xrelax) = 1;
+
+   /* Initiate communication (ignore F/C for now) and loop over center points */
+   _braid_TriCommInit(core, level, &nrequests, &requests, &statuses, &buffers);
+   for (i = (ilower+1); i <= (iupper-1); i++)
+   {
+      _braid_TriSolve(core, level, i);
+   }
+   /* Finalize communication and loop over end points */
+   _braid_TriCommWait(core, level, nrequests, &requests, &statuses, &buffers);
+   _braid_TriSolve(core, level, ilower);
+   _braid_TriSolve(core, level, iupper);
+
+   _braid_CoreElt(core, xrelax) = 0;
+
+   return _braid_error_flag;
+}
+

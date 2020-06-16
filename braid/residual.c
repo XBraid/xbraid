@@ -103,3 +103,60 @@ _braid_FASResidual(braid_Core        core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ * Compute residual A(u) for time step 'index' on grid 'level'
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_TriResidual(braid_Core         core,
+                   braid_Int          level,
+                   braid_Int          index,
+                   braid_Int          fas,          /* FAS residual? */ 
+                   braid_BaseVector  *r_ptr)
+{
+   braid_App          app      = _braid_CoreElt(core, app);
+   _braid_Grid      **grids    = _braid_CoreElt(core, grids);
+   braid_TriStatus    status   = (braid_TriStatus)core;
+   braid_Int          ilower   = _braid_GridElt(grids[level], ilower);
+   braid_Real        *ta       = _braid_GridElt(grids[level], ta);
+   braid_BaseVector  *fa       = _braid_GridElt(grids[level], fa);
+
+   braid_BaseVector   u, uleft, uright, r;
+
+   braid_Int          ii = index-ilower, homogeneous = 0;
+
+   /* Update status (core) */
+   _braid_StatusElt(status, t)     = ta[ii];
+   _braid_StatusElt(status, tprev) = ta[ii-1];
+   _braid_StatusElt(status, tnext) = ta[ii+1];
+   _braid_StatusElt(status, idx)   = index;
+   _braid_StatusElt(status, level) = level;
+   
+   /* Compute residual */
+
+   _braid_UGetVectorRef(core, level, index-1, &uleft);
+   _braid_UGetVectorRef(core, level, index+1, &uright);
+   _braid_UGetVectorRef(core, level, index, &u);
+   _braid_BaseClone(core, app, u, &r);
+
+
+//   if (level > 0)
+//   {
+//      homogeneous = 1;
+//   }
+
+   if ( (level == 0) || (!fas) )
+   {
+      /* No FAS rhs */
+      _braid_BaseTriResidual(core, app, uleft, uright, NULL, r, homogeneous, status);
+   }
+   else
+   {
+      _braid_BaseTriResidual(core, app, uleft, uright, fa[ii], r, homogeneous, status);
+   }
+
+   *r_ptr = r;
+
+   return _braid_error_flag;
+}
+

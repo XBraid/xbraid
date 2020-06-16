@@ -123,6 +123,10 @@ typedef struct _braid_BufferStatus_struct *braid_BufferStatus;
  */
 typedef struct _braid_ObjectiveStatus_struct *braid_ObjectiveStatus;
 
+/**
+ * Status structure for TriMGRIT routines TriSolve and TriResidual.
+ */
+typedef struct _braid_TriStatus_struct *braid_TriStatus;
 
 /** @}*/
 
@@ -177,6 +181,15 @@ braid_Int
 braid_StatusGetLevel(braid_Status status,                  /**< structure containing current simulation info */
                      braid_Int   *level_ptr                /**< output, current level in XBraid */
                      );
+
+/**
+ * Return the lower and upper index for this process from the Status structure.
+ **/
+braid_Int
+braid_StatusGetILowerUpper(braid_Status status,                  /**< structure containing current simulation info */
+                           braid_Int   *ilower_ptr,              /**< output, lower index */
+                           braid_Int   *iupper_ptr               /**< output, upper index */
+   );
 
 /**
  * Return the total number of XBraid levels from the Status structure.
@@ -463,6 +476,26 @@ braid_Int
 braid_StatusSetSize(braid_Status status,                   /**< structure containing current simulation info */
                     braid_Real   size                      /**< input, size of the send buffer */
                     );
+
+/**
+ * Return XBraid status for the current simulation. Three values are returned,
+ * t, tprev, and tnext.
+ **/
+braid_Int
+braid_StatusGetTriT(braid_Status status,
+                    braid_Real  *t_ptr,
+                    braid_Real  *tprev_ptr,
+                    braid_Real  *tnext_ptr
+   );
+
+/**
+ * Return xrelax status.
+ **/
+braid_Int
+braid_StatusGetXRelax(braid_Status status,
+                      braid_Int   *xrelax_ptr
+   );
+
 /** @}*/
 
 
@@ -489,6 +522,7 @@ ACCESSOR_HEADER_GET1(Access, T,               Real)
 ACCESSOR_HEADER_GET1(Access, TIndex,          Int)
 ACCESSOR_HEADER_GET1(Access, Iter,            Int)
 ACCESSOR_HEADER_GET1(Access, Level,           Int)
+ACCESSOR_HEADER_GET2(Access, ILowerUpper,   Int, Int)
 ACCESSOR_HEADER_GET1(Access, NLevels,         Int)
 ACCESSOR_HEADER_GET1(Access, NRefine,         Int)
 ACCESSOR_HEADER_GET1(Access, NTPoints,        Int)
@@ -570,6 +604,29 @@ ACCESSOR_HEADER_GET1(Objective, NRefine,       Int)
 ACCESSOR_HEADER_GET1(Objective, NTPoints,      Int)
 ACCESSOR_HEADER_GET1(Objective, Tol,           Real)
 
+/*--------------------------------------------------------------------------
+ * TriStatus Prototypes: They just wrap the corresponding Status accessors
+ *--------------------------------------------------------------------------*/
+
+ACCESSOR_HEADER_GET1(Tri, T,             Real)
+ACCESSOR_HEADER_GET1(Tri, TIndex,        Int)
+ACCESSOR_HEADER_GET1(Tri, Iter,          Int)
+ACCESSOR_HEADER_GET1(Tri, Level,         Int)
+ACCESSOR_HEADER_GET1(Tri, NLevels,       Int)
+ACCESSOR_HEADER_GET1(Tri, NRefine,       Int)
+ACCESSOR_HEADER_GET1(Tri, NTPoints,      Int)
+ACCESSOR_HEADER_GET1(Tri, Tstop,         Real)
+ACCESSOR_HEADER_GET2(Tri, TstartTstop,   Real, Real)
+ACCESSOR_HEADER_GET3(Tri, TriT,          Real, Real, Real)
+ACCESSOR_HEADER_GET1(Tri, Tol,           Real)
+ACCESSOR_HEADER_GET2(Tri, RNorms,        Int,  Real)
+ACCESSOR_HEADER_GET1(Tri, OldFineTolx,   Real)
+ACCESSOR_HEADER_SET1(Tri, OldFineTolx,   Real)
+ACCESSOR_HEADER_SET1(Tri, TightFineTolx, Real)
+ACCESSOR_HEADER_SET1(Tri, RFactor,       Real)
+ACCESSOR_HEADER_SET1(Tri, RSpace,        Real)
+
+ACCESSOR_HEADER_GET1(Tri, XRelax,        Int)
 
 /** @}*/
 
@@ -597,6 +654,8 @@ ACCESSOR_HEADER_GET1(Objective, Tol,           Real)
 #define braid_ASCaller_FRefine_AfterInitHier   4
 /** When CallingFunction equals 5, Braid is at the top of the cycle */
 #define braid_ASCaller_Drive_TopCycle   5
+/** When CallingFunction equals 4, Braid is in TriAccess */
+#define braid_ASCaller_TriAccess 6
 
 /** @}*/
 

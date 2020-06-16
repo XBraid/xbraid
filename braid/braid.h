@@ -459,6 +459,51 @@ typedef braid_Int
 /** @}*/
 
 /*--------------------------------------------------------------------------
+ * User-written routines for TriMGRIT
+ *--------------------------------------------------------------------------*/
+/** \defgroup trimgrituserwritten User-written routines for TriMGRIT
+ *  \ingroup userwritten
+ *  
+ *  These are all the user-written routines needed to use TriMGRIT.
+ *
+ *  @{
+ */
+
+/**
+ * This routine computes A(u) - f at time point 'idx'.  The vector 'r' initially
+ * holds u at time 'idx' and returns the residual.  The vectors 'uleft' and
+ * 'uright' should not be modified by the user.  The rhs vector 'f' may be NULL,
+ * which represents a zero value.
+ **/
+typedef braid_Int
+(*braid_PtFcnTriResidual)(braid_App       app,         /**< user-defined _braid_App structure */
+                          braid_Vector    uleft,       /**< input: vector at idx-1 */
+                          braid_Vector    uright,      /**< input: vector at idx+1 */
+                          braid_Vector    f,           /**< input, rhs at idx (may be NULL) */
+                          braid_Vector    r,           /**< input/output, vector at idx */
+                          braid_Int       homogeneous, /**< homogenous A(u)? */
+                          braid_TriStatus status       /**< query this struct for info */ 
+   );
+
+/**
+ * This routine solves A(u) = f at time point 'idx'.  The vector 'u' holds an
+ * initial value for u at time 'idx' and returns the (approximate) solution.
+ * The vectors 'uleft' and 'uright' should not be modified by the user.  The rhs
+ * vector 'f' may be NULL, which represents a zero value.
+ **/
+typedef braid_Int
+(*braid_PtFcnTriSolve)(braid_App       app,         /**< user-defined _braid_App structure */
+                       braid_Vector    uleft,       /**< input: vector at idx-1 */
+                       braid_Vector    uright,      /**< input: vector at idx+1 */
+                       braid_Vector    f,           /**< input, rhs at idx (may be NULL) */
+                       braid_Vector    u,           /**< input/output, vector at idx */
+                       braid_Int       homogeneous, /**< homogenous A(u)? */
+                       braid_TriStatus status       /**< query this struct for info */ 
+   );
+
+/** @}*/
+
+/*--------------------------------------------------------------------------
  * User Interface Routines
  *--------------------------------------------------------------------------*/
 /** \defgroup userinterface User interface routines
@@ -1091,6 +1136,40 @@ braid_Int
 braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
                       braid_Real  *rnorm_adj   /**< output: adjoint residual norm of last iteration */
                      );
+/** @}*/
+
+/** \defgroup trimgritinterface TriMGRIT Interface routines
+ *  \ingroup userinterface
+ *
+ *  These routines are for TriMGRIT.
+ *
+ *  @{
+ */
+
+/**
+ * Create a core object with the required initial data for TriMGRIT.
+ **/
+braid_Int
+braid_InitTriMGRIT(MPI_Comm               comm_world,
+                   MPI_Comm               comm,
+                   braid_Real             tstart,
+                   braid_Real             tstop,
+                   braid_Int              ntime,
+                   braid_App              app,
+                   braid_PtFcnTriResidual triresidual,
+                   braid_PtFcnTriSolve    trisolve,
+                   braid_PtFcnInit        init,
+                   braid_PtFcnClone       clone,
+                   braid_PtFcnFree        free,
+                   braid_PtFcnSum         sum,
+                   braid_PtFcnSpatialNorm spatialnorm,
+                   braid_PtFcnAccess      access,
+                   braid_PtFcnBufSize     bufsize,
+                   braid_PtFcnBufPack     bufpack,
+                   braid_PtFcnBufUnpack   bufunpack,
+                   braid_Core            *core_ptr
+   );
+
 /** @}*/
 
 #ifdef __cplusplus

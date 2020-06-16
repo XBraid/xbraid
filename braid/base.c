@@ -1035,3 +1035,57 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_BaseTriResidual(braid_Core       core,
+                       braid_App        app,
+                       braid_BaseVector uleft,
+                       braid_BaseVector uright,
+                       braid_BaseVector f,
+                       braid_BaseVector r,
+                       braid_Int        homogeneous,
+                       braid_TriStatus  status )
+{
+   braid_Vector user_uleft  = NULL;
+   braid_Vector user_uright = NULL;
+   braid_Vector user_f      = NULL;
+
+   if ( uleft != NULL )  { user_uleft  = (uleft->userVector); }
+   if ( uright != NULL ) { user_uright = (uright->userVector); }
+   if ( f != NULL )      { user_f      = (f->userVector); }
+
+   _braid_CoreFcn(core, triresidual)(app, user_uleft, user_uright, user_f, r->userVector,
+                                     homogeneous, status);
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_BaseTriSolve(braid_Core       core,
+                    braid_App        app,
+                    braid_BaseVector uleft,
+                    braid_BaseVector uright,
+                    braid_BaseVector f,
+                    braid_BaseVector u,
+                    braid_Int        homogeneous,
+                    braid_TriStatus  status )
+{
+   braid_Vector user_uleft  = NULL;
+   braid_Vector user_uright = NULL;
+   braid_Vector user_f      = NULL;
+
+   if ( uleft != NULL )  { user_uleft  = (uleft->userVector); }
+   if ( uright != NULL ) { user_uright = (uright->userVector); }
+   if ( f != NULL )      { user_f      = (f->userVector); }
+
+   _braid_CoreFcn(core, trisolve)(app, user_uleft, user_uright, user_f, u->userVector,
+                                  homogeneous, status);
+
+   return _braid_error_flag;
+}
+

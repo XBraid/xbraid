@@ -351,6 +351,36 @@ braid_Int
 _braid_BaseInit_diff(_braid_Action *action      /**< _braid_Action structure, holds information about the primal XBraid action */
                      );
 
+/*-------------------------------------------------------------
+ * TriMGRIT base routines
+ *-----------------------------------------------------------*/
+
+/**
+ * Base TriSolve routine
+ */ 
+braid_Int
+_braid_BaseTriSolve(braid_Core       core,
+                    braid_App        app,
+                    braid_BaseVector uleft,
+                    braid_BaseVector uright,
+                    braid_BaseVector f,
+                    braid_BaseVector u,
+                    braid_Int        level,
+                    braid_TriStatus  status );
+
+/**
+ * Base TriResidual routine
+ */ 
+braid_Int
+_braid_BaseTriResidual(braid_Core       core,
+                       braid_App        app,
+                       braid_BaseVector uleft,
+                       braid_BaseVector uright,
+                       braid_BaseVector f,
+                       braid_BaseVector r,
+                       braid_Int        level,
+                       braid_TriStatus  status );
+
 #ifdef __cplusplus
 }
 #endif
