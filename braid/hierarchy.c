@@ -356,6 +356,18 @@ _braid_InitGuess(braid_Core  core,
    braid_BaseVector  u;
    braid_Int         i, iu, sflag;
 
+   if ( _braid_CoreElt(core, trimgrit) )
+   {
+      /* Initialize and store all points (only called from level 0) */
+      for (i = ilower; i <= iupper; i++)
+      {
+         _braid_BaseInit(core, app, ta[i-ilower], &u);
+         _braid_USetVectorRef(core, level, i, u);
+      }
+
+      return _braid_error_flag;
+   }
+
    if ( (level == 0) && (seq_soln == 1) )
    {
       /* If first processor, grab initial condition */
