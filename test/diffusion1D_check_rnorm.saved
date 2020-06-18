@@ -85,3 +85,19 @@
   Discretization error at final time:  3.3696e-02
   residual norm         = 2.445729e-01
                         
+# Begin Test 18
+
+  Discretization error at final time:  1.0073e-01
+  residual norm         = 7.020537e-02
+
+# Begin Test 19
+
+  Discretization error at final time:  1.0075e-01
+  residual norm         = 7.825136e-02
+
+# Begin Test 20
+
+  Discretization error at final time:  1.0151e-01
+  residual norm         = 7.524882e-02
+
+
