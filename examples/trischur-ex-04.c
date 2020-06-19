@@ -196,7 +196,6 @@ my_TriResidual(braid_App       app,
                braid_Vector    uright,
                braid_Vector    f,
                braid_Vector    r,
-               braid_Int       homogeneous,
                braid_TriStatus status)
 {
    double  t, tprev, tnext, dt;
@@ -267,8 +266,8 @@ my_TriResidual(braid_App       app,
       vec_axpy(2, -1.0, utmp, rtmp);
    }
 
-   /* Subtract rhs gbar (add g) in non-homogeneous case */
-   if ((!homogeneous) && (index == 0))
+   /* Subtract rhs gbar (add g) */
+   if (index == 0)
    {
       /* rtmp = rtmp + g; g = Phi_0 u_0 */
       utmp[0] =  0.0;
@@ -304,7 +303,6 @@ my_TriSolve(braid_App       app,
             braid_Vector    uright,
             braid_Vector    f,
             braid_Vector    u,
-            braid_Int       homogeneous,
             braid_TriStatus status)
 {
    double  t, tprev, tnext, dt;
@@ -329,7 +327,7 @@ my_TriSolve(braid_App       app,
    vec_copy(2, (u->values), utmp);
    
    /* Compute residual */
-   my_TriResidual(app, uleft, uright, f, u, homogeneous, status);
+   my_TriResidual(app, uleft, uright, f, u, status);
 
    /* Apply center block preconditioner (multiply by \tilde{C}^-1) to -r
     *

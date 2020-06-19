@@ -1045,7 +1045,6 @@ _braid_BaseTriResidual(braid_Core       core,
                        braid_BaseVector uright,
                        braid_BaseVector f,
                        braid_BaseVector r,
-                       braid_Int        homogeneous,
                        braid_TriStatus  status )
 {
    braid_Vector user_uleft  = NULL;
@@ -1056,8 +1055,7 @@ _braid_BaseTriResidual(braid_Core       core,
    if ( uright != NULL ) { user_uright = (uright->userVector); }
    if ( f != NULL )      { user_f      = (f->userVector); }
 
-   _braid_CoreFcn(core, triresidual)(app, user_uleft, user_uright, user_f, r->userVector,
-                                     homogeneous, status);
+   _braid_CoreFcn(core, triresidual)(app, user_uleft, user_uright, user_f, r->userVector, status);
 
    return _braid_error_flag;
 }
@@ -1072,7 +1070,6 @@ _braid_BaseTriSolve(braid_Core       core,
                     braid_BaseVector uright,
                     braid_BaseVector f,
                     braid_BaseVector u,
-                    braid_Int        homogeneous,
                     braid_TriStatus  status )
 {
    braid_Vector user_uleft  = NULL;
@@ -1083,8 +1080,7 @@ _braid_BaseTriSolve(braid_Core       core,
    if ( uright != NULL ) { user_uright = (uright->userVector); }
    if ( f != NULL )      { user_f      = (f->userVector); }
 
-   _braid_CoreFcn(core, trisolve)(app, user_uleft, user_uright, user_f, u->userVector,
-                                  homogeneous, status);
+   _braid_CoreFcn(core, trisolve)(app, user_uleft, user_uright, user_f, u->userVector, status);
 
    return _braid_error_flag;
 }

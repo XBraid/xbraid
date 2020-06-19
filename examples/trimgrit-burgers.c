@@ -196,14 +196,16 @@ apply_A(int M, double *ac, double *al, double *au, double *u, double *v)
 /* Compute tridiagonal Jacobian matrix A'(u) = [al_{i-1} ac_i au_i] */
 
 void
-compute_A(double dt, double dx, double nu, int M, double *u,
-          double *ac, double *al, double *au)
+compute_A(my_App *app, double dt, double *u, double *ac, double *al, double *au)
 {
+   double  dx    = (app->dx);
+   double  nu    = (app->nu);
+   int     M     = (app->mspace);
    double  beta  = b(dt,dx,nu);
    double  gamma = g(dt,dx);
    int     i;
 
-#if 0
+#if 1
 
    /* This gives advection-diffusion (and matches advec-diff-rms2.c) */
    ac[0] = (1 + 2*beta);
@@ -284,8 +286,10 @@ compute_A(double dt, double dx, double nu, int M, double *u,
  * tolerance or with a fixed number of iterations. */
 
 void
-apply_Phi(double dt, double dx, double nu, int M, double *g, double *u, double *scr)
+apply_Phi(my_App *app, double dt, double *g, double *u)
 {
+   int     M     = (app->mspace);
+   double *scr   = (app->scr);
    double *ac    = scr;
    double *al    = scr + M;
    double *au    = scr + 2*M;
@@ -297,7 +301,7 @@ apply_Phi(double dt, double dx, double nu, int M, double *g, double *u, double *
    for (iter = 0; iter < maxit; iter++)
    {
       /* Compute Jacobian A'(u) */
-      compute_A( dt, dx, nu, M, u, ac, al, au );
+      compute_A( app, dt, u, ac, al, au );
 
       /* Compute F(u) = A(u) - g (store in 'du') */
       apply_A( M, ac, al, au, u, du );                  // note: A(u) = A'(u)u for this problem
@@ -316,16 +320,16 @@ apply_Phi(double dt, double dx, double nu, int M, double *g, double *u, double *
 /* Apply Du(Phi)(u) (or its adjoint) by computing w <-- A'(u)^{-1} w */
 
 void
-apply_DuPhi(double dt, double dx, double nu, int M, double *u, double *w,
-            int adjoint, double *scr)
+apply_DuPhi(my_App *app, double dt, double *u, double *w, int adjoint)
 {
-
+   int     M     = (app->mspace);
+   double *scr   = (app->scr);
    double *ac    = scr;
    double *al    = scr + M;
    double *au    = scr + 2*M;
 
    /* Compute Jacobian A'(u) */
-   compute_A( dt, dx, nu, M, u, ac, al, au );
+   compute_A( app, dt, u, ac, al, au );
 
    if (adjoint)
    {
@@ -344,16 +348,16 @@ apply_DuPhi(double dt, double dx, double nu, int M, double *u, double *w,
 /* Apply Dv(Phi)(u) (or its adjoint) by computing w <-- dt A'(u)^{-1} w */
 
 void
-apply_DvPhi(double dt, double dx, double nu, int M, double *u, double *w,
-            int adjoint, double *scr)
+apply_DvPhi(my_App *app, double dt, double *u, double *w, int adjoint)
 {
-
+   int     M     = (app->mspace);
+   double *scr   = (app->scr);
    double *ac    = scr;
    double *al    = scr + M;
    double *au    = scr + 2*M;
 
    /* Compute Jacobian A'(u) */
-   compute_A( dt, dx, nu, M, u, ac, al, au );
+   compute_A( app, dt, u, ac, al, au );
 
    if (adjoint)
    {
@@ -373,8 +377,11 @@ apply_DvPhi(double dt, double dx, double nu, int M, double *u, double *w,
 /* Apply Gu(J)(u) by computing u <-- dx dt (u - u0) */
 
 void
-apply_GuObjective(double dt, double dx, double *u0, int M, double *u)
+apply_GuObjective(my_App *app, double dt, double *u)
 {
+   double  dx    = (app->dx);
+   int     M     = (app->mspace);
+   double *u0    = (app->u0);
    vec_axpy(M, -1.0, u0, 1.0, u);
    vec_scale(M, dx*dt, u);
 }
@@ -384,8 +391,11 @@ apply_GuObjective(double dt, double dx, double *u0, int M, double *u)
 /* Apply Gv(J)(v) by computing v <-- alpha dx dt v */
 
 void
-apply_GvObjective(double dt, double dx, double alpha, int M, double *v)
+apply_GvObjective(my_App *app, double dt, double *v)
 {
+   double  dx    = (app->dx);
+   double  alpha = (app->alpha);
+   int     M     = (app->mspace);
    vec_scale(M, alpha*dx*dt, v);
 }
 
@@ -397,15 +407,10 @@ apply_TriResidual(my_App     *app,
                   my_Vector  *uright,
                   my_Vector  *f,
                   my_Vector  *r,
-                  int         homogeneous,
                   double      dt)
 {
-   double  nu     = (app->nu);
-   double  alpha  = (app->alpha);
    int     mspace = (app->mspace);
-   double  dx     = (app->dx);
    double *u0     = (app->u0);
-   double *scr    = (app->scr);
 
    double *rutmp, *rvtmp, *rwtmp, *vectmp;
 
@@ -417,20 +422,20 @@ apply_TriResidual(my_App     *app,
 
    /* Grad-u of Lagrangian residual equation */
    vec_copy(mspace, (r->uvals), rutmp);
-   apply_GuObjective(dt, dx, u0, mspace, rutmp);
+   apply_GuObjective(app, dt, rutmp);
    vec_axpy(mspace, 1.0, (r->wvals), 1.0, rutmp);
    if (uright != NULL)
    {
       vec_copy(mspace, (uright->wvals), vectmp);
-      apply_DuPhi(dt, dx, nu, mspace, (uright->uvals), vectmp, 1, scr);
+      apply_DuPhi(app, dt, (uright->uvals), vectmp, 1);
       vec_axpy(mspace, -1.0, vectmp, 1.0, rutmp);
    }
 
    /* Grad-v of Lagrangian residual equation */
    vec_copy(mspace, (r->vvals), rvtmp);
-   apply_GvObjective(dt, dx, alpha, mspace, rvtmp);
+   apply_GvObjective(app, dt, rvtmp);
    vec_copy(mspace, (r->wvals), vectmp);
-   apply_DvPhi(dt, dx, nu, mspace, (r->uvals), vectmp, 1, scr);  // note: u needed for implicit
+   apply_DvPhi(app, dt, (r->uvals), vectmp, 1);  // note: u needed for implicit
    vec_axpy(mspace, -1.0, vectmp, 1.0, rvtmp);
 
    /* Grad-w of Lagrangian residual equation */
@@ -445,7 +450,7 @@ apply_TriResidual(my_App     *app,
       vec_axpy(mspace, 1.0, u0, 1.0, vectmp);
    }
    vec_copy(mspace, (r->uvals), rwtmp);
-   apply_Phi(dt, dx, nu, mspace, vectmp, rwtmp, scr);
+   apply_Phi(app, dt, vectmp, rwtmp);
    vec_axpy(mspace, 1.0, (r->uvals), -1.0, rwtmp);
 
    /* Subtract rhs f on coarse grids */
@@ -482,7 +487,6 @@ my_TriResidual(braid_App       app,
                braid_Vector    uright,
                braid_Vector    f,
                braid_Vector    r,
-               braid_Int       homogeneous,
                braid_TriStatus status)
 {
    double  t, tprev, tnext, dt;
@@ -503,7 +507,7 @@ my_TriResidual(braid_App       app,
    }
 
    /* Compute residual */
-   apply_TriResidual(app, uleft, uright, f, r, homogeneous, dt);
+   apply_TriResidual(app, uleft, uright, f, r, dt);
 
    return 0;
 }   
@@ -518,15 +522,11 @@ my_TriSolve(braid_App       app,
             braid_Vector    uright,
             braid_Vector    f,
             braid_Vector    u,
-            braid_Int       homogeneous,
             braid_TriStatus status)
 {
-   double  nu     = (app->nu);
    double  alpha  = (app->alpha);
    int     mspace = (app->mspace);
    double  dx     = (app->dx);
-   double *u0     = (app->u0);
-   double *scr    = (app->scr);
 
    double  t, tprev, tnext, dt;
    double *utmp, *vtmp, *wtmp, *rtmp, *vectmp, scale;
@@ -571,10 +571,10 @@ my_TriSolve(braid_App       app,
       if (uleft != NULL)
       {
          vec_copy(mspace, (uleft->uvals), rtmp);
-         apply_GuObjective(dt, dx, u0, mspace, rtmp);
+         apply_GuObjective(app, dt, rtmp);
          vec_axpy(mspace, 1.0, (uleft->wvals), 1.0, rtmp);
          vec_copy(mspace, (u->wvals), vectmp);
-         apply_DuPhi(dt, dx, nu, mspace, (u->uvals), vectmp, 1, scr);
+         apply_DuPhi(app, dt, (u->uvals), vectmp, 1);
          vec_axpy(mspace, -1.0, vectmp, 1.0, rtmp);
          /* RDF HACK BEGIN subtract the tau-correction RHS here */
          if (level > 0)
@@ -586,7 +586,7 @@ my_TriSolve(braid_App       app,
          }
          /* RDF HACK END   subtract the tau-correction RHS here */
          vec_scale(mspace, 1/(dx*dt), rtmp);                            // see GuObjective
-         apply_DuPhi(dt, dx, nu, mspace, (u->uvals), rtmp, 0, scr);
+         apply_DuPhi(app, dt, (u->uvals), rtmp, 0);
          vec_scale(mspace, -1.0, rtmp);
       }
       else
@@ -598,7 +598,7 @@ my_TriSolve(braid_App       app,
    /* END   residual calc at time (i-1) */
 
    /* Compute residual */
-   my_TriResidual(app, uleft, uright, f, u, homogeneous, status);
+   my_TriResidual(app, uleft, uright, f, u, status);
 
    if (!xrelax)
    {
@@ -613,7 +613,7 @@ my_TriSolve(braid_App       app,
       vec_axpy(mspace, 1.0, vectmp, 1.0, rtmp);
       vec_copy(mspace, (u->vvals), vectmp);
       vec_scale(mspace, 1/(alpha*dx*dt), vectmp);                  // see GvObjective
-      apply_DvPhi(dt, dx, nu, mspace, (u->uvals), vectmp, 0, scr); // note: u needed for implicit
+      apply_DvPhi(app, dt, (u->uvals), vectmp, 0); // note: u needed for implicit
       vec_axpy(mspace, -1.0, vectmp, 1.0, rtmp);
       vec_axpy(mspace, -1.0, (u->wvals), 1.0, rtmp);
       if (uleft != NULL)
@@ -1034,6 +1034,18 @@ main(int argc, char *argv[])
    /* Set up scratch space */
    vec_create(4*mspace, &scr);
 
+   /* Set up the app structure */
+   app = (my_App *) malloc(sizeof(my_App));
+   app->myid     = rank;
+   app->ntime    = ntime;
+   app->mspace   = mspace;
+   app->dx       = dx;
+   app->nu       = nu;
+   app->alpha    = alpha;
+   app->w        = NULL;
+   app->u0       = u0;
+   app->scr      = scr;
+
    /* Run uncontrolled forward problem in serial */
    if (forward)
    {
@@ -1057,7 +1069,7 @@ main(int argc, char *argv[])
             vec_copy(mspace, u, g);
          }
 
-         apply_Phi(dt, dx, nu, mspace, g, u, scr);
+         apply_Phi(app, dt, g, u);
 
          for(j = 0; j < (mspace-1); j++)
          {
@@ -1069,18 +1081,6 @@ main(int argc, char *argv[])
       fclose(file);
       return (0);
    }
-
-   /* Set up the app structure */
-   app = (my_App *) malloc(sizeof(my_App));
-   app->myid     = rank;
-   app->ntime    = ntime;
-   app->mspace   = mspace;
-   app->dx       = dx;
-   app->nu       = nu;
-   app->alpha    = alpha;
-   app->w        = NULL;
-   app->u0       = u0;
-   app->scr      = scr;
 
    sprintf(filename, "%s.%03d", "trimgrit-burgers.out.u", (app->myid));
    (app->ufile) = fopen(filename, "w");

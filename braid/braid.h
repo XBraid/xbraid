@@ -481,7 +481,6 @@ typedef braid_Int
                           braid_Vector    uright,      /**< input: vector at idx+1 */
                           braid_Vector    f,           /**< input, rhs at idx (may be NULL) */
                           braid_Vector    r,           /**< input/output, vector at idx */
-                          braid_Int       homogeneous, /**< homogenous A(u)? */
                           braid_TriStatus status       /**< query this struct for info */ 
    );
 
@@ -497,7 +496,6 @@ typedef braid_Int
                        braid_Vector    uright,      /**< input: vector at idx+1 */
                        braid_Vector    f,           /**< input, rhs at idx (may be NULL) */
                        braid_Vector    u,           /**< input/output, vector at idx */
-                       braid_Int       homogeneous, /**< homogenous A(u)? */
                        braid_TriStatus status       /**< query this struct for info */ 
    );
 

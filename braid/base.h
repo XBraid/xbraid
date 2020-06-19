@@ -365,7 +365,6 @@ _braid_BaseTriSolve(braid_Core       core,
                     braid_BaseVector uright,
                     braid_BaseVector f,
                     braid_BaseVector u,
-                    braid_Int        level,
                     braid_TriStatus  status );
 
 /**
@@ -378,7 +377,6 @@ _braid_BaseTriResidual(braid_Core       core,
                        braid_BaseVector uright,
                        braid_BaseVector f,
                        braid_BaseVector r,
-                       braid_Int        level,
                        braid_TriStatus  status );
 
 #ifdef __cplusplus

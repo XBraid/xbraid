@@ -231,7 +231,6 @@ apply_TriResidual(my_App     *app,
                   my_Vector  *uright,
                   my_Vector  *f,
                   my_Vector  *r,
-                  int         homogeneous,
                   double      dt)
 {
    double  nu     = (app->nu);
@@ -291,15 +290,11 @@ apply_TriResidual(my_App     *app,
    }
 
    /* No change for index 0 */
-   if (!homogeneous)
-   {
-      vec_copy(mspace, u0, utmp);
-      vec_axpy(mspace, -1.0, utmp, 1.0, rtmp);
-
-      vec_copy(mspace, u0, utmp);
-      apply_Phi(dt, dx, nu, mspace, utmp, scr);
-      vec_axpy(mspace, 1.0, utmp, 1.0, rtmp); 
-   }
+   vec_copy(mspace, u0, utmp);
+   vec_axpy(mspace, -1.0, utmp, 1.0, rtmp);
+   vec_copy(mspace, u0, utmp);
+   apply_Phi(dt, dx, nu, mspace, utmp, scr);
+   vec_axpy(mspace, 1.0, utmp, 1.0, rtmp); 
 
    /* Subtract rhs f */
    if (f != NULL)
@@ -332,7 +327,6 @@ my_TriResidual(braid_App       app,
                braid_Vector    uright,
                braid_Vector    f,
                braid_Vector    r,
-               braid_Int       homogeneous,
                braid_TriStatus status)
 {
    double  t, tprev, tnext, dt;
@@ -353,7 +347,7 @@ my_TriResidual(braid_App       app,
    }
 
    /* Compute residual */
-   apply_TriResidual(app, uleft, uright, f, r, homogeneous, dt);
+   apply_TriResidual(app, uleft, uright, f, r, dt);
 
    return 0;
 }   
@@ -368,7 +362,6 @@ my_TriSolve(braid_App       app,
             braid_Vector    uright,
             braid_Vector    f,
             braid_Vector    u,
-            braid_Int       homogeneous,
             braid_TriStatus status)
 {
    double  alpha  = (app->alpha);
@@ -406,7 +399,7 @@ my_TriSolve(braid_App       app,
    vec_copy(mspace, (u->values), utmp);
 
    /* Compute residual (store in u) */
-   my_TriResidual(app, uleft, uright, f, u, homogeneous, status);
+   my_TriResidual(app, uleft, uright, f, u, status);
 
    /* Use diagonal of Schur-complement to scale residual */
    if (uleft != NULL)
