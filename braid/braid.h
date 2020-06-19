@@ -674,6 +674,16 @@ braid_SetNRelax(braid_Core  core,           /**< braid_Core (_braid_Core) struct
                 braid_Int   nrelax          /**< number of relaxations to do on *level* */
                 );
 
+/** Set the C-relaxation weight on grid *level* (level 0 is the finest grid).
+ * The default is 1.0 on all levels.  To change the default factor,  
+ * use *level * = -1*.
+ **/
+braid_Int
+braid_SetCRelaxWt(braid_Core  core,        /**< braid_Core (_braid_Core) struct*/           
+                  braid_Int   level,       /**< *level* to set *Cwt* on */
+                  braid_Real  Cwt          /**< C-relaxation weight to use on *level* */
+                  );
+
 /**
  * Set the coarsening factor *cfactor* on grid *level* (level 0 is
  * the finest grid).  The default factor is 2 on all levels.  To change the

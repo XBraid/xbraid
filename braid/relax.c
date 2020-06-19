@@ -31,15 +31,19 @@ _braid_FCRelax(braid_Core  core,
                braid_Int   level)
 {
    braid_App       app      = _braid_CoreElt(core, app);
+   braid_Int       nlevels  = _braid_CoreElt(core, nlevels);
    braid_Int      *nrels    = _braid_CoreElt(core, nrels);
+   braid_Real     *CWts     = _braid_CoreElt(core, CWts);
    _braid_Grid   **grids    = _braid_CoreElt(core, grids);
    braid_Int       ncpoints = _braid_GridElt(grids[level], ncpoints);
 
-   braid_BaseVector  u;
+   braid_BaseVector  u, u_old;
+   braid_Real        CWt;
    braid_Int         flo, fhi, fi, ci;
    braid_Int         nu, nrelax, interval;
 
    nrelax  = nrels[level];
+   CWt     = CWts[level];
 
    for (nu = 0; nu < nrelax; nu++)
    {
@@ -69,7 +73,23 @@ _braid_FCRelax(braid_Core  core,
          /* C-relaxation */
          if (ci > _braid_CoreElt(core, initiali))
          {
+            /* If weighted Jacobi, store the previous u-value,
+             *   Note, do no weighting if coarsest level*/
+            if( (CWt != 1.0) && (level != (nlevels-1)) )
+            {
+               _braid_UGetVector(core, level, ci, &u_old);
+            }
+
             _braid_Step(core, level, ci, NULL, u);
+
+            if( (CWt != 1.0) && (level != (nlevels-1)) )
+            {
+               /* Apply weighted combination for w-Jacobi
+                * u <--  omega*u_new + (1-omega)*u_old */
+               _braid_BaseSum(core, app, (1.0 - CWt), u_old, CWt, u);
+               _braid_BaseFree(core, app, u_old);
+            }
+
             _braid_USetVector(core, level, ci, u, 1);
          }
 

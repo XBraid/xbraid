@@ -272,6 +272,8 @@ typedef struct _braid_Core_struct
    braid_Int              rtol;             /**< use relative tolerance */
    braid_Int             *nrels;            /**< number of pre-relaxations on each level */
    braid_Int              nrdefault;        /**< default number of pre-relaxations */
+   braid_Real            *CWts;             /**< C-relaxation weight for each level */
+   braid_Real             CWt_default;      /**< default C-relaxtion weight */
    braid_Int             *cfactors;         /**< coarsening factors */
    braid_Int              cfdefault;        /**< default coarsening factor */
    braid_Int              max_iter;         /**< maximum number of multigrid in time iterations */

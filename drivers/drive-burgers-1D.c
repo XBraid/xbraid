@@ -856,6 +856,7 @@ int main (int argc, char *argv[])
    int           max_levels    = 2;
    int           nrelax        = 1;
    int           nrelax0       = -1;
+   double        CWt           = 1.0;
    int           skip          = 0;
    double        tol           = 1.0e-07;
    int           cfactor       = 2;
@@ -903,6 +904,7 @@ int main (int argc, char *argv[])
             printf("\n");
             printf("  -ml   <max_levels>   : set max levels\n");
             printf("  -nu   <nrelax>       : set num F-C relaxations\n");
+            printf("  -CWt  <CWt>          : set C-relaxation weight on all levels\n");
             printf("  -skip <set_skip>     : set skip relaxations on first down-cycle; 0: no skip;  1: skip\n");
             printf("  -nx   <nspace>       : set num points in space\n");
             printf("  -nt   <ntime>        : set num points in time\n");
@@ -985,6 +987,11 @@ int main (int argc, char *argv[])
       {
          arg_index++;
          nrelax0 = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-CWt") == 0 )
+      {
+         arg_index++;
+         CWt = atof(argv[arg_index++]);
       }
       else if ( strcmp(argv[arg_index], "-tol") == 0 ) 
       {
@@ -1086,6 +1093,7 @@ int main (int argc, char *argv[])
    braid_SetPrintLevel( core, 2);
    braid_SetMaxLevels(core, max_levels);
    braid_SetSkip(core, skip);
+   braid_SetCRelaxWt(core, -1, CWt);
    braid_SetNRelax(core, -1, nrelax);
    if (nrelax0 > -1)
    {
@@ -1168,7 +1176,7 @@ int main (int argc, char *argv[])
       printf("\n-----------------------------------------------------------------\n"); 
       printf("-----------------------------------------------------------------\n\n"); 
       printf( " Per level diagnostic information \n\n");
-      printf("level     dx         dt       a*dt/dx       a*dt/dx^2\n"); 
+      printf("level       dx          dt        a*dt/dx      a*dt/dx^2\n"); 
       printf("-----------------------------------------------------------------\n"); 
       for( i = 0; i < max_levels; i++)
       {

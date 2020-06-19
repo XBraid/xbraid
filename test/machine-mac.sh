@@ -25,6 +25,9 @@
 
 testname=`basename $0 .sh`
 
+# OPENMPI, Mac High Sierra issue fixed by this (regarding max filename lengths)
+export TMPDIR=/tmp 
+
 # Echo usage information
 case $1 in
    -h|-help)
