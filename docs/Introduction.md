@@ -505,6 +505,17 @@ done on a level. A few summary points about relaxation are as follows.
   together with F-cycles. 
 - See @ref twodheat_scaling  for a case study of relaxation strategies. 
 
+There is also a weighted relaxation option, which applies weighted-Jacobi at the C-points
+during the C-relaxation.  Experiments with the 1D heat equation and 1D advection showed iteration
+gains of 10-25% for V-cycles when the experimentally optimal weight was used.
+- For the heat equation, a weight of around 1.3 was experimentally optimal
+- For the advection equation, weights between 1.4 and 1.8 were experimentally optimal
+- Set this option with [braid_SetCRelaxWt](@ref braid_SetCRelaxWt), which
+  allows you to set a global relaxation weight, or an individual weight for
+  each level.  In general, under-relaxation (weight < 1.0) never improved
+  performance, but over-relxation (1.0 < weight < 2.0) often offered some
+  improvement.
+
 Last, [Parallel Time Integration with Multigrid](https://computation.llnl.gov/project/linear_solvers/pubs/mgritPaper-2014.pdf)
 has a more in depth case study of cycling and relaxation strategies
 

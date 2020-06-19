@@ -36,6 +36,8 @@ _braid_InitHierarchy(braid_Core    core,
    braid_Int      min_coarse = _braid_CoreElt(core, min_coarse);
    braid_Int     *nrels      = _braid_CoreElt(core, nrels);
    braid_Int      nrdefault  = _braid_CoreElt(core, nrdefault);
+   braid_Real    *CWts       = _braid_CoreElt(core, CWts);
+   braid_Real     CWt_default= _braid_CoreElt(core, CWt_default);
    braid_Int      gupper     = _braid_CoreElt(core, gupper);
    braid_Int     *rfactors   = _braid_CoreElt(core, rfactors);
    braid_Real   **rdtvalues  = _braid_CoreElt(core, rdtvalues);
@@ -100,12 +102,16 @@ _braid_InitHierarchy(braid_Core    core,
    rdtvalues = _braid_CTAlloc(braid_Real*, iupper-ilower+2); /* Ensures non-NULL */
    _braid_CoreElt(core, rdtvalues) = rdtvalues;
 
-   /* Set up nrels array */
+   /* Set up nrels and Cwt array */
    for (level = 0; level < max_levels; level++)
    {
       if (nrels[level] < 0)
       {
          nrels[level] = nrdefault;
+      }
+      if (CWts[level] < 0)
+      {
+         CWts[level] = CWt_default;
       }
    }
 
