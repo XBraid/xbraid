@@ -66,6 +66,7 @@ typedef struct _braid_App_struct
    int      mspace;      /* Number of space points included in our state vector */
                          /* So including boundaries we have M+2 space points */
    double   dx;          /* Spatial mesh spacing */
+   int      problem;     /* Problem to run */
 
    int      ilower;      /* Lower index for my proc */
    int      iupper;      /* Upper index for my proc */
@@ -198,40 +199,43 @@ apply_A(int M, double *ac, double *al, double *au, double *u, double *v)
 void
 compute_A(my_App *app, double dt, double *u, double *ac, double *al, double *au)
 {
-   double  dx    = (app->dx);
-   double  nu    = (app->nu);
-   int     M     = (app->mspace);
-   double  beta  = b(dt,dx,nu);
-   double  gamma = g(dt,dx);
+   int     problem = (app->problem);
+   double  dx      = (app->dx);
+   double  nu      = (app->nu);
+   int     M       = (app->mspace);
+   double  beta    = b(dt,dx,nu);
+   double  gamma   = g(dt,dx);
    int     i;
 
-#if 1
-
-   /* This gives advection-diffusion (and matches advec-diff-rms2.c) */
-   ac[0] = (1 + 2*beta);
-   al[0] = -beta - gamma;
-   au[0] = -beta + gamma;
-   for (i = 1; i < M-1; i++)
+   if (problem == 1)
    {
-      ac[i] = (1 + 2*beta);
-      al[i] = -beta - gamma;
-      au[i] = -beta + gamma;
+      /* Advection-diffusion */
+      ac[0] = (1 + 2*beta);
+      al[0] = -beta - gamma;
+      au[0] = -beta + gamma;
+      for (i = 1; i < M-1; i++)
+      {
+         ac[i] = (1 + 2*beta);
+         al[i] = -beta - gamma;
+         au[i] = -beta + gamma;
+      }
+      ac[M-1] = (1 + 2*beta);
+      al[M-2] = -beta - gamma;
    }
-   ac[M-1] = (1 + 2*beta);
-   al[M-2] = -beta - gamma;
-
-//   /* This sets A to the identity */
-//   for (i = 0; i < M; i++)
-//   {
-//      ac[i] = 1.0;
-//      al[i] = 0.0;
-//      au[i] = 0.0;
-//   }
-
-#else
-
-   /* Lax-Friedrichs flux approximation (see adaptive spatial coarsening paper) */
+   else if (problem == 2)
    {
+      /* Simple ODE (sets A to the identity) */
+      for (i = 0; i < M; i++)
+      {
+         ac[i] = 1.0;
+         al[i] = 0.0;
+         au[i] = 0.0;
+      }
+   }
+   else
+   {
+      /* Viscous Burgers - Lax-Friedrichs flux approximation (see adaptive
+       * spatial coarsening paper) */
       double gamma2, absu, absum1, absup1;
       gamma2 = gamma/2;
       absu   = fabs(u[0]);
@@ -252,8 +256,6 @@ compute_A(my_App *app, double dt, double *u, double *ac, double *al, double *au)
       absu   = absup1;
       ac[M-1] = (1 + 2*beta) + gamma2*(2*absu + absum1);
    }
-
-#endif
 
 //   /* This BTCS scheme is unstable due to centered difference on dx term.
 //    *
@@ -278,6 +280,7 @@ compute_A(my_App *app, double dt, double *u, double *ac, double *al, double *au)
 //      au[i] = -beta + gamma*u[i];
 //   }
 //   ac[M-1] = (1 + 2*beta) - gamma*u[M-2];
+
 }
 
 /*------------------------------------*/
@@ -871,7 +874,7 @@ main(int argc, char *argv[])
          
    char        filename[255];
    double      tstart, tstop, dt, dx, start, end; 
-   int         rank, ntime, mspace, arg_index;
+   int         rank, ntime, mspace, problem, arg_index;
    double      alpha, nu;
    int         max_levels, min_coarse, nrelax, nrelaxc, cfactor, maxiter, fmg;
    int         access_level, print_level, forward;
@@ -891,6 +894,9 @@ main(int argc, char *argv[])
    /* Define some optimization parameters */
    alpha = .005;            /* parameter in the objective function */
    nu    = .03;             /* parameter in PDE (used 0.3 in RIPS) */
+
+   /* Specify which problem to run */
+   problem = 0;
 
    /* Define some Braid parameters */
    max_levels     = 30;
@@ -917,6 +923,8 @@ main(int argc, char *argv[])
          printf("  s.t.  u_t + u_x - nu*u_xx = v(x,t) \n");
          printf("        u(0,t) = u(1,t) = 0 \n\n");
          printf("        u(x,0) = u0(x) \n");
+         printf("  -adv                    : Advection-diffusion problem constraint\n");
+         printf("  -ode                    : Simple ODE problem constraint\n");
          printf("  -tstop <tstop>          : Upper integration limit for time\n");
          printf("  -ntime <ntime>          : Num points in time\n");
          printf("  -mspace <mspace>        : Num points in space\n");
@@ -933,15 +941,25 @@ main(int argc, char *argv[])
          printf("  -print <print_level>    : Braid print level \n");
          exit(1);
       }
-      else if ( strcmp(argv[arg_index], "-ntime") == 0 )
+      else if ( strcmp(argv[arg_index], "-adv") == 0 )
       {
          arg_index++;
-         ntime = atoi(argv[arg_index++]);
+         problem = 1;
+      }
+      else if ( strcmp(argv[arg_index], "-ode") == 0 )
+      {
+         arg_index++;
+         problem = 2;
       }
       else if ( strcmp(argv[arg_index], "-tstop") == 0 )
       {
          arg_index++;
          tstop = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-ntime") == 0 )
+      {
+         arg_index++;
+         ntime = atoi(argv[arg_index++]);
       }
       else if ( strcmp(argv[arg_index], "-mspace") == 0 )
       {
@@ -1037,11 +1055,12 @@ main(int argc, char *argv[])
    /* Set up the app structure */
    app = (my_App *) malloc(sizeof(my_App));
    app->myid     = rank;
+   app->alpha    = alpha;
+   app->nu       = nu;
    app->ntime    = ntime;
    app->mspace   = mspace;
    app->dx       = dx;
-   app->nu       = nu;
-   app->alpha    = alpha;
+   app->problem  = problem;
    app->w        = NULL;
    app->u0       = u0;
    app->scr      = scr;
