@@ -1,5 +1,6 @@
-# Run with 
-#  $$ mpirun -np K  python3 ex_01_run.py
+# Script for MPI runs, 
+#
+#  $ mpirun -np K  python3 ex_01_run.py
 #
 
 import ex_01

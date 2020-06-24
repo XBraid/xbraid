@@ -75,3 +75,30 @@ To run the examples, type
    using a simple steepest-descent optimization iteration.  
    
 
+5. ex-01-cython/ is an example using the Braid-Cython interface defined in
+   braid.pyx ( braid/braid.pyx ).  It solves the same scalar ODE equation as
+   the ex-01 series described above.  
+
+   For instructions on running and compiling, see 
+   
+      examples/ex-01-cython/ex_01.pyx
+   
+   and
+   
+      examples/ex-01-cython/ex_01-setup.py
+   
+5. ex-01-cython-alt/ is another example using the Braid-Cython interface
+   defined in braid.pyx ( braid/braid.pyx ).  It solves the same scalar ODE
+   equation as the ex-01 series described above, however, it uses a lower-level
+   C-like syntax for most of it's code.  This alternative example is included
+   to introduce users to different Braid-compatible Cython syntax.
+   
+   For instructions on running and compiling, see
+   
+      examples/ex-01-cython-alt/ex_01_alt.pyx
+   
+   and
+   
+      examples/ex-01-cython-alt/ex_01_alt-setup.py
+   
+

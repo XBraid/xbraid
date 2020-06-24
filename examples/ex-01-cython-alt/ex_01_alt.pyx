@@ -5,6 +5,68 @@ cimport mpi4py.MPI as MPI
 cimport mpi4py.libmpi as libmpi
 import numpy as np 
 
+#
+# Example:       ex_01_alt.pyx
+#
+# Interface:     Cython
+# 
+# Requires:      Python 3, Cython, C-language support     
+#
+# Description:   Solve the scalar ODE 
+#                   u' = lambda u, 
+#                   with lambda=-1 and y(0) = 1
+#                in a very simplified XBraid setting.
+#
+#                This example uses a lower-level C-style syntax than the
+#                other basic Cython example in examples/ex-01-cython
+#
+#
+# Compile with:  See ex_01_alt-setup.py for notes on installing and running
+#
+#                If you move this example to another directory, you must 
+#                set the correct relative location for "braid.pyx" below.
+#
+# Help with:     This is the simplest Cython example available, read the source
+#
+# Sample run:    From inside Python 3,     
+#                >>> import ex_01_alt
+#                >>> core, app = ex_01_alt.InitCoreApp()
+#                >>> ex_01_alt.run_Braid(core, app)
+#
+#                Print output with
+#                >>> import os; os.system("cat ex-01-alt.out.00*")
+#                1.00000000000000e+00
+#                6.66666666666667e-01
+#                4.44444444444444e-01
+#                2.96296296296296e-01
+#                1.97530864197531e-01
+#                1.31687242798354e-01
+#                8.77914951989026e-02
+#                5.85276634659351e-02
+#                3.90184423106234e-02
+#                2.60122948737489e-02
+#                1.73415299158326e-02
+#                0
+#
+# Sample 
+# Parallel run:  See the file ex_01_alt_run.py.  Run it from the shell with, 
+#                $ mpirun -np 2  python3 ex_01_alt_run.py
+#
+#                Print output with
+#                $ cat ex-01-alt.out.00*
+#                1.00000000000000e+00
+#                6.66666666666667e-01
+#                4.44444444444444e-01
+#                2.96296296296296e-01
+#                1.97530864197531e-01
+#                1.31687242798354e-01
+#                8.77914951989026e-02
+#                5.85276634659351e-02
+#                3.90184423106234e-02
+#                2.60122948737489e-02
+#                1.73415299158326e-02
+#                
+
 
 ##
 # Define your Python Braid Vector as a C-struct
@@ -118,14 +180,24 @@ cdef int my_norm(braid_App app, braid_Vector u, double *norm_ptr):
     return 0
 
 cdef int my_access(braid_App app, braid_Vector u, braid_AccessStatus status):
-    cdef double t
     
     # Create Numpy wrapper around u.v
     cdef double[:] uv_view = <double[:1]> u.v
     u_np = np.asarray(uv_view)
 
-    braid_AccessStatusGetT(status, &t)
-    print(u_np[0], t)
+    # Declare tindex as an integer, and the fill it in with the time index
+    cdef int tindex
+    braid_AccessStatusGetTIndex(status, &tindex)
+
+    # Can get access to more information like
+    # cdef double t
+    # braid_AccessStatusGetT(status, &t)
+    
+    # Write this solution value to file
+    filename = "%s.%04d.%03d"%("ex-01-alt.out", tindex, app.rank)
+    f = open(filename, "w")
+    f.write( "%.14e\n"%u_np[0]);
+
     return 0
 
 cdef int my_bufsize(braid_App app, int *size_ptr, braid_BufferStatus status):
