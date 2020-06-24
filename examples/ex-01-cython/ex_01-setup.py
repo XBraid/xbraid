@@ -2,6 +2,7 @@ from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Build import cythonize
 import os
+import sys
 # import numpy
 
 braid_dir = "../../braid"
@@ -67,8 +68,8 @@ braid_dir = "../../braid"
 
 
 os.environ["CC"] = "mpicc"
-os.environ["LDSHARED"] = "mpicc -shared"    # Comment out for High Sierra with Homebrew
-                                             # Comment in for Ubuntu/Linux 
+if sys.platform != 'darwin':
+    os.environ["LDSHARED"] = "mpicc -shared"    # Needed by Ubuntu LTS, leave out for Mac
 
 ex_01_extension = Extension(
     name="ex_01",
