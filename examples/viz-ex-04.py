@@ -1,3 +1,4 @@
+from __future__ import print_function
 from scipy import *
 from matplotlib import pyplot as mpl
 from os import sys
@@ -23,8 +24,8 @@ from os import sys
 ##
 
 if len(sys.argv) != 2:
-    print " Please run this script with one command line argument, serial|braid, "
-    print " indicating if you want to visualize the output from ex-04-serial or ex-04."
+    print(" Please run this script with one command line argument, serial|braid, ")
+    print(" indicating if you want to visualize the output from ex-04-serial or ex-04.")
     sys.exit(1)
 
 ##
@@ -52,8 +53,8 @@ elif sys.argv[1] == "braid":
             state_vec[step-1,:] = loadtxt(fname, delimiter=',')
 
 else:
-    print " Please run this script with one command line argument, serial|braid, "
-    print " indicating if you want to visualize the output from ex-04-serial or ex-04."
+    print(" Please run this script with one command line argument, serial|braid, ")
+    print(" indicating if you want to visualize the output from ex-04-serial or ex-04.")
     sys.exit(1)
 
 mpl.figure(1)
