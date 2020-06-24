@@ -1,3 +1,4 @@
+## Brief XBraid Overview
 <!--
   - Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
   - Produced at the Lawrence Livermore National Laboratory. Written by 
@@ -22,17 +23,7 @@
 
 ![](docs/img/logo_with_subtext_2_inch.png)
 
-### Table of Contents
-1. **<a href="#WhatIsBraid">What is XBraid?</a>**  
-1. **<a href="#AboutXBraid">About XBraid</a>**  
-1. **<a href="#Docs">Documentation</a>**  
-1. **<a href="#UserAdvice">Advice to Users</a>**  
-1. **<a href="#BuildingXBraid">Building XBraid</a>**  
-1. **<a href="#License">Software License</a>**  
-
-
-<a name="WhatIsBraid"></a> 
-### What is XBraid?
+# What is XBraid? {#briefwhatsbraid}
 
 XBraid is a parallel-in-time software package.  It implements an
 optimal-scaling multigrid solver for the (non)linear systems that arise from
@@ -44,9 +35,14 @@ and at collaborating [academic institutions](https://github.com/XBraid/xbraid/wi
 
 For our publication list, please go [here](https://github.com/XBraid/xbraid/wiki/Project-Publications).
 
+# Meaning of the name {#braidname}
 
-<a name="AboutXBraid"></a> 
-### About XBraid
+We chose the package name XBraid to stand for Time-Braid, where X is the first
+letter in the Greek word for time, Chronos. The algorithm braids together
+time-grids of different granularity in order to create a multigrid method and
+achieve parallelism in the time dimension.
+
+# About XBraid {#briefabout}
 
 Typically, solution algorithms for evolution equations are based on a
 time-marching approach, solving sequentially for one time step after the other.
@@ -77,18 +73,17 @@ MGRIT).  A few important points about XBraid are as follows.
 - The full approximation scheme multigrid approach is used to accommodate
   nonlinear problems.
 
-- XBraid written in MPI/C with C++ and Fortran 90 interfaces.
+- XBraid written in MPI/C with C++, Fortran 90, and Python interfaces.
 
 - XBraid is released under LGPL 2.1.
 
 
-<a name="Docs"></a> 
-### Documentation
+# Documentation {#briefdocs}
 
 - For examples of using XBraid, see the
   [examples/](https://github.com/XBraid/xbraid/tree/master/examples) and
   [drivers/](https://github.com/XBraid/xbraid/tree/master/drivers) directories,
-  and in particular examples/ex-01-*.c
+  and in particular examples/ex-01-*
 
 - See the [release](https://github.com/XBraid/xbraid/releases) page for links
   to precompiled documentation PDFs that go through, step-by-step, how to use
@@ -100,8 +95,7 @@ MGRIT).  A few important points about XBraid are as follows.
 - For citing XBraid, see [here](https://github.com/XBraid/xbraid/wiki/Citing-XBraid).
 
 
-<a name="UserAdvice"></a> 
-### Advice to Users
+# Advice to Users {#advice}
 
 The field of parallel-in-time methods is in many ways under development, and
 success has been shown primarily for problems with some parabolic character.
@@ -110,7 +104,10 @@ applications such as hyperbolic problems, computational fluid dynamics, power
 grids, medical applications, and so on, expectations should take this fact into
 account.  That being said, we strongly encourage new users to try our code for
 their application.  Every new application has its own issues to address and
-this will help us to improve both the algorithm and the software.
+this will help us to improve both the algorithm and the software. Please see
+our project publications website for our recent
+[publications](https://github.com/XBraid/xbraid/wiki/Project-Publications)
+concerning some of these varied applications.
 
 For bug reporting, please use the issue tracker here on Github. Please include
 as much relevant information as possible, including all the information in the
@@ -118,9 +115,7 @@ as much relevant information as possible, including all the information in the
 runtime problems, please also include the machine type, operating system, MPI
 implementation, compiler, and any error messages produced. 
 
-
-<a name="BuildingXBraid"></a> 
-### Building XBraid
+# Building XBraid {#briefbuild}
 
 -  To specify the compilers, flags and options for your machine, edit
    makefile.inc.  For now, we keep it simple and avoid using configure or
@@ -156,8 +151,7 @@ implementation, compiler, and any error messages produced.
        LFLAGS = -lm
 
 
-<a name="License"></a> 
-### License
+# License {#brieflicense}
 
 This project is released under the LGPL v2.1 license. See files COPYRIGHT and
 LICENSE file for full details.
