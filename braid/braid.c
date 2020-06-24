@@ -193,6 +193,7 @@ braid_Init(MPI_Comm               comm_world,
    /* Braid default values */
    braid_Int              cfdefault       = 2;              /* Default coarsening factor */
    braid_Int              nrdefault       = 1;              /* Default number of FC sweeps on each level */
+   braid_Real             CWt_default     = 1.0;            /* Default C-relaxtion weight  */
    braid_Int              fmg             = 0;              /* Default fmg (0 is off) */
    braid_Int              nfmg            = -1;             /* Default fmg cycles is -1, indicating all fmg-cycles (if fmg=1) */
    braid_Int              nfmg_Vcyc       = 1;              /* Default num V-cycles at each fmg level is 1 */
@@ -265,6 +266,8 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, nrels)           = NULL; /* Set with SetMaxLevels() below */
    _braid_CoreElt(core, nrdefault)       = nrdefault;
+   _braid_CoreElt(core, CWts)            = NULL; /* Set with SetMaxLevels() below */
+   _braid_CoreElt(core, CWt_default)     = CWt_default;
 
    _braid_CoreElt(core, cfactors)        = NULL; /* Set with SetMaxLevels() below */
    _braid_CoreElt(core, cfdefault)       = cfdefault;
@@ -400,6 +403,7 @@ braid_Destroy(braid_Core  core)
       braid_Int               level;
 
       _braid_TFree(_braid_CoreElt(core, nrels));
+      _braid_TFree(_braid_CoreElt(core, CWts));
       _braid_TFree(_braid_CoreElt(core, rnorms));
       _braid_TFree(_braid_CoreElt(core, full_rnorms));
       _braid_TFree(_braid_CoreElt(core, cfactors));
@@ -449,6 +453,7 @@ braid_PrintStats(braid_Core  core)
    braid_Real    tol           = _braid_CoreElt(core, tol);
    braid_Int     rtol          = _braid_CoreElt(core, rtol);
    braid_Int    *nrels         = _braid_CoreElt(core, nrels);
+   braid_Real   *CWts          = _braid_CoreElt(core, CWts);
    /*braid_Int    *cfactors     = _braid_CoreElt(core, cfactors);*/
    braid_Int     max_iter      = _braid_CoreElt(core, max_iter);
    braid_Int     nrefine       = _braid_CoreElt(core, nrefine);
@@ -555,12 +560,12 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  periodic              = %d\n", periodic);
       _braid_printf("  number of refinements = %d\n", nrefine);
       _braid_printf("\n");
-      _braid_printf("  level   time-pts   cfactor   nrelax\n");
+      _braid_printf("  level   time-pts   cfactor   nrelax   Crelax Wt\n");
       for (level = 0; level < nlevels-1; level++)
       {
-         _braid_printf("  % 5d  % 8d  % 7d   % 6d\n",
+         _braid_printf("  % 5d  % 8d  % 7d   % 6d        %1.2f\n",
                        level, _braid_GridElt(grids[level], gupper),
-                       _braid_GridElt(grids[level], cfactor), nrels[level]);
+                       _braid_GridElt(grids[level], cfactor), nrels[level], CWts[level]);
       }
       /* Print out coarsest level information */
       _braid_printf("  % 5d  % 8d  \n",
@@ -639,6 +644,7 @@ braid_SetMaxLevels(braid_Core  core,
 {
    braid_Int              old_max_levels = _braid_CoreElt(core, max_levels);
    braid_Int             *nrels          = _braid_CoreElt(core, nrels);
+   braid_Real            *CWts           = _braid_CoreElt(core, CWts);
    braid_Int             *cfactors       = _braid_CoreElt(core, cfactors);
    _braid_Grid          **grids          = _braid_CoreElt(core, grids);
    braid_Int              level;
@@ -646,15 +652,18 @@ braid_SetMaxLevels(braid_Core  core,
    _braid_CoreElt(core, max_levels) = max_levels;
 
    nrels = _braid_TReAlloc(nrels, braid_Int, max_levels);
+   CWts = _braid_TReAlloc(CWts, braid_Real, max_levels);
    cfactors = _braid_TReAlloc(cfactors, braid_Int, max_levels);
    grids    = _braid_TReAlloc(grids, _braid_Grid *, max_levels);
    for (level = old_max_levels; level < max_levels; level++)
    {
       nrels[level]    = -1;
+      CWts[level]    = -1.0;
       cfactors[level] = 0;
       grids[level]    = NULL;
    }
    _braid_CoreElt(core, nrels)    = nrels;
+   _braid_CoreElt(core, CWts)     = CWts;
    _braid_CoreElt(core, cfactors) = cfactors;
    _braid_CoreElt(core, grids)    = grids;
 
@@ -836,6 +845,30 @@ braid_SetNRelax(braid_Core  core,
    {
       /* Set factor on specified level */
       nrels[level] = nrelax;
+   }
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetCRelaxWt(braid_Core  core,
+                  braid_Int   level,
+                  braid_Real  Cwt)
+{
+   braid_Real  *CWts = _braid_CoreElt(core, CWts);
+
+   if (level < 0)
+   {
+      /* Set default value */
+      _braid_CoreElt(core, CWt_default) = Cwt;
+   }
+   else
+   {
+      /* Set C-relax weight on specified level */
+      CWts[level] = Cwt;
    }
 
    return _braid_error_flag;

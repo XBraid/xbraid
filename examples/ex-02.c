@@ -447,6 +447,7 @@ int main (int argc, char *argv[])
    int       max_levels    = 2;
    int       nrelax        = 1;
    int       skip          = 0;
+   double    CWt           = 1.0;
    double    tol           = 1.0e-07;
    int       cfactor       = 2;
    int       max_iter      = 30;
@@ -482,10 +483,11 @@ int main (int argc, char *argv[])
             printf("   -nspace <nspace>     : set num points in space\n\n");
             printf("   -ml   <max_levels>   : set max levels\n");
             printf("   -nu   <nrelax>       : set num F-C relaxations\n");
+            printf("   -CWt  <CWt>          : set C-relaxation weight on all levels\n");
             printf("   -skip <set_skip>     : set skip relaxations on first down-cycle; 0: no skip;  1: skip\n");
             printf("   -tol  <tol>          : set stopping tolerance (scaled later by sqrt(dt) sqrt(dx))\n");
             printf("   -cf   <cfactor>      : set coarsening factor on all levels \n");
-            printf("   -mc  <min_coarse>    : set min possible coarse level size (default: 3)\n");
+            printf("   -mc   <min_coarse>   : set min possible coarse level size (default: 3)\n");
             printf("   -mi   <max_iter>     : set max iterations\n");
             printf("   -fmg                 : use FMG cycling\n");
             printf("   -sc                  : use spatial coarsening by factor of 2 each level\n");
@@ -532,6 +534,11 @@ int main (int argc, char *argv[])
       {
          arg_index++;
          nrelax = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-CWt") == 0 )
+      {
+         arg_index++;
+         CWt = atof(argv[arg_index++]);
       }
       else if ( strcmp(argv[arg_index], "-skip") == 0 )
       {
@@ -635,6 +642,7 @@ int main (int argc, char *argv[])
       braid_SetMinCoarse( core, min_coarse );
       braid_SetSkip(core, skip);
       braid_SetNRelax(core, -1, nrelax);
+      braid_SetCRelaxWt(core, -1, CWt);
       braid_SetAbsTol(core, tol);
       braid_SetCFactor(core, -1, cfactor);
       braid_SetMaxIter(core, max_iter);

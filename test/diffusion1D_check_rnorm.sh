@@ -111,7 +111,10 @@ TESTS=( "$example_dir/ex-02-serial -ntime 16 -nspace 9" \
         "$RunString -np 3  $example_dir/ex-02 -ntime 64 -nspace 33 -nu 1 -ml 3 -mi 2 -skip 1 -use_seq" \
         "$RunString -np 1  $example_dir/ex-02 -ntime 64 -nspace 17 -nu 1 -ml 3 -mi 2 -skip 1 -res" \
         "$RunString -np 2  $example_dir/ex-02 -ntime 64 -nspace 17 -nu 1 -ml 3 -mi 2 -skip 1 -res" \
-        "$RunString -np 3  $example_dir/ex-02 -ntime 64 -nspace 17 -nu 1 -ml 3 -mi 2 -skip 1 -res")
+        "$RunString -np 3  $example_dir/ex-02 -ntime 64 -nspace 17 -nu 1 -ml 3 -mi 2 -skip 1 -res"\
+        "$RunString -np 1  $example_dir/ex-02 -ntime 16 -nspace 9 -nu 1 -ml 3 -mi 2 -skip 0 -CWt 1.5" \
+        "$RunString -np 2  $example_dir/ex-02 -ntime 16 -nspace 9 -nu 1 -ml 3 -mi 2 -skip 0 -CWt 1.5" \
+	"$RunString -np 3  $example_dir/ex-02 -ntime 16 -nspace 9 -nu 1 -ml 3 -mi 2 -skip 0 -CWt 1.5" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 
