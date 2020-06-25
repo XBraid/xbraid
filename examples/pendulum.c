@@ -723,7 +723,7 @@ main(int argc, char *argv[])
 
       /* Print adjoint w to file */
       {
-         sprintf(filename, "%s.%03d", "trischur-ex-04.out.w", (app->myid));
+         sprintf(filename, "%s.%03d", "pendulum.out.w", (app->myid));
          file = fopen(filename, "w");
          for (i = 0; i < (app->npoints); i++)
          {
@@ -741,7 +741,7 @@ main(int argc, char *argv[])
       {
          double *u;
 
-         sprintf(filename, "%s.%03d", "trischur-ex-04.out.u", (app->myid));
+         sprintf(filename, "%s.%03d", "pendulum.out.u", (app->myid));
          file = fopen(filename, "w");
          vec_create(2, &u);
          for (i = 0; i < (app->npoints); i++)
@@ -773,7 +773,7 @@ main(int argc, char *argv[])
       {
          double *v;
 
-         sprintf(filename, "%s.%03d", "trischur-ex-04.out.v", (app->myid));
+         sprintf(filename, "%s.%03d", "pendulum.out.v", (app->myid));
          file = fopen(filename, "w");
          vec_create(2, &v);
          for (i = 0; i < (app->npoints); i++)
