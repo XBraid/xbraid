@@ -51,6 +51,13 @@
 #include "braid.h"
 #include "braid_test.h"
 
+#define OMEGA (2.0*3.14159)
+#define LAMBDA (0.1)
+// Initial position in radians
+#define THETA_1_INIT 0.75
+// Initial velocity
+#define THETA_2_INIT 0.0
+
 /*--------------------------------------------------------------------------
  * My App and Vector structures
  *--------------------------------------------------------------------------*/
@@ -135,8 +142,10 @@ vec_scale(int size, double alpha, double *x)
 void
 apply_Phi(double dt, double *u)
 {
-   u[0] = u[0] + dt*u[1];
-   u[1] = u[1] - dt*u[1];
+   double tmp_u0 = u[0];
+   u[0] = u[0] + dt * u[1];
+   u[1] = -OMEGA * OMEGA * dt * tmp_u0 +
+       (1. - LAMBDA * dt) * u[1];
 }
 
 /*------------------------------------*/
@@ -144,7 +153,9 @@ apply_Phi(double dt, double *u)
 void
 apply_PhiAdjoint(double dt, double *w)
 {
-   w[1] = w[1] - dt*w[1] + dt*w[0];
+   double tmp_w0 = w[0];
+   w[0] = w[0] - OMEGA * OMEGA * dt * w[1];
+   w[1] = dt * tmp_w0 + (1. - LAMBDA * dt ) * w[1];
 }
 
 /*------------------------------------*/
@@ -270,8 +281,9 @@ my_TriResidual(braid_App       app,
    if (index == 0)
    {
       /* rtmp = rtmp + g; g = Phi_0 u_0 */
-      utmp[0] =  0.0;
-      utmp[1] = -1.0;
+      // Initial values
+      utmp[0] =  THETA_1_INIT;
+      utmp[1] =  THETA_2_INIT;
       apply_Phi(dt, utmp);
       vec_axpy(2, 1.0, utmp, rtmp);
    }
@@ -583,12 +595,13 @@ main(int argc, char *argv[])
    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
    /* Define time domain */
-   ntime  = 20;              /* Total number of time-steps */
+   ntime  = 100;              /* Total number of time-steps */
    tstart = 0.0;             /* Beginning of time domain */
    tstop  = 1.0;             /* End of time domain*/
 
    /* Define some optimization parameters */
    gamma = 0.005;            /* Relaxation parameter in the objective function */
+
 
    /* Define some Braid parameters */
    max_levels     = 30;
@@ -741,7 +754,7 @@ main(int argc, char *argv[])
       {
          double *u;
 
-         sprintf(filename, "%s.%03d", "pendulum.out.u", (app->myid));
+         sprintf(filename, "%s.%03d", "pendulum.out.theta", (app->myid));
          file = fopen(filename, "w");
          vec_create(2, &u);
          for (i = 0; i < (app->npoints); i++)
@@ -773,7 +786,7 @@ main(int argc, char *argv[])
       {
          double *v;
 
-         sprintf(filename, "%s.%03d", "pendulum.out.v", (app->myid));
+         sprintf(filename, "%s.%03d", "pendulum.out.alpha", (app->myid));
          file = fopen(filename, "w");
          vec_create(2, &v);
          for (i = 0; i < (app->npoints); i++)
