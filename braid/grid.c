@@ -77,27 +77,13 @@ _braid_GridClean(braid_Core    core,
 
    if (ua_alloc)
    {
-      if (_braid_CoreElt(core, trimgrit))
+      /* For TriMGRIT, free ghost layers too */
+      for (ii = -1; ii < nupoints+1; ii++)
       {
-         /* For TriMGRIT, free ghost layers too */
-         for (ii = -1; ii < nupoints+1; ii++)
+         if (ua[ii] != NULL)
          {
-            if (ua[ii] != NULL)
-            {
-               _braid_BaseFree(core, app,  ua[ii]);
-               ua[ii] = NULL;
-            }
-         }
-      }
-      else
-      {
-         for (ii = 0; ii < nupoints; ii++)
-         {
-            if (ua[ii] != NULL)
-            {
-               _braid_BaseFree(core, app,  ua[ii]);
-               ua[ii] = NULL;
-            }
+            _braid_BaseFree(core, app,  ua[ii]);
+            ua[ii] = NULL;
          }
       }
    }
@@ -114,7 +100,8 @@ _braid_GridClean(braid_Core    core,
    }
    if (fa_alloc)
    {
-      for (ii = -1; ii <= (iupper-ilower); ii++)
+      /* For TriMGRIT, free ghost layers too */
+      for (ii = -1; ii <= (iupper-ilower)+1; ii++)
       {
          if (fa[ii] != NULL)
          {

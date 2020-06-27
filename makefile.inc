@@ -43,9 +43,9 @@ endif
 
 # Was MPI use specified?
 ifeq ($(sequential),yes)
-   sequential = YES
+   csequential = YES
 else
-   sequential = NO
+   csequential = NO
 endif
 
 # Default compiler options for different platforms and known machines
@@ -153,7 +153,7 @@ else
 endif
 
 # Compiler options when compiling without MPI
-ifeq ($(sequential),YES)
+ifeq ($(csequential),YES)
    MPICC = gcc
    MPICXX = g++
    MPIF90 = gfortran

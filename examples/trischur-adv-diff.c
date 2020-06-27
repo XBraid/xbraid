@@ -437,6 +437,7 @@ my_Init(braid_App     app,
    for (i = 0; i <= mspace-1; i++)
    {
       u->values[i] = ((double)braid_Rand())/braid_RAND_MAX;
+//      u->values[i] = 1.0;
    }
 
    *u_ptr = u;
