@@ -29,7 +29,7 @@ braid_Int
 _braid_CommRecvInit(braid_Core           core,
                     braid_Int            level,
                     braid_Int            index,
-                    braid_BaseVector     *vector_ptr,
+                    braid_BaseVector    *vector_ptr,
                     _braid_CommHandle  **handle_ptr)
 {
    MPI_Comm            comm = _braid_CoreElt(core, comm);
@@ -39,7 +39,7 @@ _braid_CommRecvInit(braid_Core           core,
    MPI_Request        *requests;
    MPI_Status         *status;
    braid_Int           proc, size, num_requests;
-   braid_BufferStatus bstatus = (braid_BufferStatus)core;
+   braid_BufferStatus  bstatus = (braid_BufferStatus)core;
 
    _braid_GetProc(core, level, index, &proc);
    if (proc > -1)
@@ -183,6 +183,7 @@ _braid_TriCommInit(braid_Core     core,
    _braid_Grid      **grids   = _braid_CoreElt(core, grids);
    braid_Int          ilower  = _braid_GridElt(grids[level], ilower);
    braid_Int          iupper  = _braid_GridElt(grids[level], iupper);
+   braid_BaseVector  *fa      = _braid_GridElt(grids[level], fa);
    braid_BufferStatus bstatus = (braid_BufferStatus)core;
 
    braid_Int          nrequests = 0;
@@ -233,7 +234,14 @@ _braid_TriCommInit(braid_Core     core,
 
       if (proc > -1)
       {
-         _braid_UGetVectorRef(core, level, index, &u);
+         if (_braid_CoreElt(core, tricommtype) == 1)
+         {
+            u = fa[index-ilower];
+         }
+         else
+         {
+            _braid_UGetVectorRef(core, level, index, &u);
+         }
          _braid_BaseBufSize(core, app, &size, bstatus);
          buffers[nrequests] = malloc(size);
          _braid_StatusElt(bstatus, size_buffer) = size;
@@ -267,6 +275,7 @@ _braid_TriCommWait(braid_Core     core,
    _braid_Grid      **grids   = _braid_CoreElt(core, grids);
    braid_Int          ilower  = _braid_GridElt(grids[level], ilower);
    braid_Int          iupper  = _braid_GridElt(grids[level], iupper);
+   braid_BaseVector  *fa      = _braid_GridElt(grids[level], fa);
    braid_BufferStatus bstatus = (braid_BufferStatus)core;
 
    MPI_Request       *requests = *requests_ptr;
@@ -297,13 +306,27 @@ _braid_TriCommWait(braid_Core     core,
 
       if (proc > -1)
       {
-         _braid_UGetVectorRef(core, level, index, &u);
+         if (_braid_CoreElt(core, tricommtype) == 1)
+         {
+            u = fa[index-ilower];
+         }
+         else
+         {
+            _braid_UGetVectorRef(core, level, index, &u);
+         }
          if (u != NULL)
          {
             _braid_BaseFree(core, app, u);
          }
          _braid_BaseBufUnpack(core, app, buffers[nrequests], &u, bstatus);
-         _braid_USetVectorRef(core, level, index, u);
+         if (_braid_CoreElt(core, tricommtype) == 1)
+         {
+            fa[index-ilower] = u;
+         }
+         else
+         {
+            _braid_USetVectorRef(core, level, index, u);
+         }
 
          nrequests++;
       }

@@ -363,6 +363,8 @@ _braid_BaseTriSolve(braid_Core       core,
                     braid_App        app,
                     braid_BaseVector uleft,
                     braid_BaseVector uright,
+                    braid_BaseVector fleft,
+                    braid_BaseVector fright,
                     braid_BaseVector f,
                     braid_BaseVector u,
                     braid_TriStatus  status );

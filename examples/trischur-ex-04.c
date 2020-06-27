@@ -301,6 +301,8 @@ int
 my_TriSolve(braid_App       app,
             braid_Vector    uleft,
             braid_Vector    uright,
+            braid_Vector    fleft,
+            braid_Vector    fright,
             braid_Vector    f,
             braid_Vector    u,
             braid_TriStatus status)

@@ -494,6 +494,8 @@ typedef braid_Int
 (*braid_PtFcnTriSolve)(braid_App       app,         /**< user-defined _braid_App structure */
                        braid_Vector    uleft,       /**< input: vector at idx-1 */
                        braid_Vector    uright,      /**< input: vector at idx+1 */
+                       braid_Vector    fleft,       /**< input: rhs at idx-1 (may be NULL) */
+                       braid_Vector    fright,      /**< input: rhs at idx+1 (may be NULL) */
                        braid_Vector    f,           /**< input, rhs at idx (may be NULL) */
                        braid_Vector    u,           /**< input/output, vector at idx */
                        braid_TriStatus status       /**< query this struct for info */ 
@@ -1176,6 +1178,14 @@ braid_InitTriMGRIT(MPI_Comm               comm_world,
                    braid_PtFcnBufPack     bufpack,
                    braid_PtFcnBufUnpack   bufunpack,
                    braid_Core            *core_ptr
+   );
+
+/**
+ * Turn the xrelax feature on or off.
+ */
+braid_Int
+braid_SetUseXRelax(braid_Core core,       /**< braid_Core (_braid_Core) struct */
+                   braid_Int  use_xrelax  /**< use xrelax feature? */
    );
 
 /** @}*/

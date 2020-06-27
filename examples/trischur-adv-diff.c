@@ -360,6 +360,8 @@ int
 my_TriSolve(braid_App       app,
             braid_Vector    uleft,
             braid_Vector    uright,
+            braid_Vector    fleft,
+            braid_Vector    fright,
             braid_Vector    f,
             braid_Vector    u,
             braid_TriStatus status)
@@ -370,14 +372,7 @@ my_TriSolve(braid_App       app,
 
    double  t, tprev, tnext, dt;
    double *utmp, scale;
-   int     xrelax, iter;
-
-   braid_TriStatusGetXRelax(status, &xrelax);
-   if (xrelax == 1)
-   {
-      /* Don't do anything for the solves tagged with "xrelax" */
-      return 0;
-   }
+   int     iter;
 
    /* Get the time-step size */
    braid_TriStatusGetTriT(status, &t, &tprev, &tnext);

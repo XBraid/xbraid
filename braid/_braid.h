@@ -337,6 +337,8 @@ typedef struct _braid_Core_struct
    braid_Int              trimgrit;      /**< using TriMGRIT algorithm (1) or not (0)? */
    braid_PtFcnTriResidual triresidual;   /**< compute residual at time point i */
    braid_PtFcnTriSolve    trisolve;      /**< solve for time point i */
+   braid_Int              tricommtype;   /**< vector data to communicate: u (0) or f (1) */
+   braid_Int              xrelax;        /**< do extra relaxation step? */
 
    /** Data elements required for the Status structures */
    /** Common Status properties */
@@ -363,8 +365,6 @@ typedef struct _braid_Core_struct
    braid_Int    messagetype;       /**< message type, 0: for Step(), 1: for load balancing */
    braid_Int    size_buffer;       /**< if set by user, send buffer will be "size" bytes in length */
    braid_Int    send_recv_rank;    /***< holds the rank of the source / receiver from MPI_Send / MPI_Recv calls. */
-
-   braid_Int    xrelax;
 
 } _braid_Core;
 

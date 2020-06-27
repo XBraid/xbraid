@@ -49,10 +49,6 @@
 //#define g(dt,dx) 0.0
 #define b(dt,dx,nu) nu*dt/(dx*dx)
 
-// RDF HACK
-#include "_braid.h"
-#include "util.h"
-
 /*--------------------------------------------------------------------------
  * My App and Vector structures
  *--------------------------------------------------------------------------*/
@@ -523,6 +519,8 @@ int
 my_TriSolve(braid_App       app,
             braid_Vector    uleft,
             braid_Vector    uright,
+            braid_Vector    fleft,
+            braid_Vector    fright,
             braid_Vector    f,
             braid_Vector    u,
             braid_TriStatus status)
@@ -534,12 +532,6 @@ my_TriSolve(braid_App       app,
    double  t, tprev, tnext, dt;
    double *utmp, *vtmp, *wtmp, *rtmp, *vectmp, scale;
    int     xrelax, iter;
-
-   // RDF HACK BEGIN
-   int     level, index;
-   braid_TriStatusGetLevel(status, &level);
-   braid_TriStatusGetTIndex(status, &index);
-   // RDF HACK END
 
    braid_TriStatusGetXRelax(status, &xrelax);
 
@@ -579,16 +571,11 @@ my_TriSolve(braid_App       app,
          vec_copy(mspace, (u->wvals), vectmp);
          apply_DuPhi(app, dt, (u->uvals), vectmp, 1);
          vec_axpy(mspace, -1.0, vectmp, 1.0, rtmp);
-         /* RDF HACK BEGIN subtract the tau-correction RHS here */
-         if (level > 0)
+         if (fleft != NULL)
          {
-            _braid_Grid      **grids = _braid_CoreElt((braid_Core)status, grids);
-            braid_BaseVector  *fa    = _braid_GridElt(grids[level], fa);
-            braid_Vector       fleft = fa[index-1]->userVector;
             vec_axpy(mspace, -1.0, (fleft->uvals), 1.0, rtmp);
          }
-         /* RDF HACK END   subtract the tau-correction RHS here */
-         vec_scale(mspace, 1/(dx*dt), rtmp);                            // see GuObjective
+         vec_scale(mspace, 1/(dx*dt), rtmp);                       // see GuObjective
          apply_DuPhi(app, dt, (u->uvals), rtmp, 0);
          vec_scale(mspace, -1.0, rtmp);
       }
@@ -1131,6 +1118,7 @@ main(int argc, char *argv[])
    {
       braid_SetFMG(core);
    }
+   braid_SetUseXRelax(core, 1);
 
    /* Parallel-in-time TriMGRIT simulation */
    start=clock();

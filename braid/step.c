@@ -169,11 +169,11 @@ _braid_TriSolve(braid_Core  core,
    if (level == 0)
    {
       /* No FAS rhs */
-      _braid_BaseTriSolve(core, app, uleft, uright, NULL, u, status);
+      _braid_BaseTriSolve(core, app, uleft, uright, NULL, NULL, NULL, u, status);
    }
    else
    {
-      _braid_BaseTriSolve(core, app, uleft, uright, fa[ii], u, status);
+      _braid_BaseTriSolve(core, app, uleft, uright, fa[ii-1], fa[ii+1], fa[ii], u, status);
    }
 
    _braid_USetVectorRef(core, level, index, u);

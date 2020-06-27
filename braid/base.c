@@ -1068,19 +1068,26 @@ _braid_BaseTriSolve(braid_Core       core,
                     braid_App        app,
                     braid_BaseVector uleft,
                     braid_BaseVector uright,
+                    braid_BaseVector fleft,
+                    braid_BaseVector fright,
                     braid_BaseVector f,
                     braid_BaseVector u,
                     braid_TriStatus  status )
 {
    braid_Vector user_uleft  = NULL;
    braid_Vector user_uright = NULL;
+   braid_Vector user_fleft  = NULL;
+   braid_Vector user_fright = NULL;
    braid_Vector user_f      = NULL;
 
    if ( uleft != NULL )  { user_uleft  = (uleft->userVector); }
    if ( uright != NULL ) { user_uright = (uright->userVector); }
+   if ( fleft != NULL )  { user_fleft  = (fleft->userVector); }
+   if ( fright != NULL ) { user_fright = (fright->userVector); }
    if ( f != NULL )      { user_f      = (f->userVector); }
 
-   _braid_CoreFcn(core, trisolve)(app, user_uleft, user_uright, user_f, u->userVector, status);
+   _braid_CoreFcn(core, trisolve)(app, user_uleft, user_uright, user_fleft, user_fright, user_f,
+                                  u->userVector, status);
 
    return _braid_error_flag;
 }
