@@ -614,6 +614,7 @@ main(int argc, char *argv[])
          printf("  min   \\int_0^1 u_1(t)^2 + u_2(t)^2 + gamma c(t)^2  dt \n\n");
          printf("  s.t.  d/dt u_1(t) = u_2(t) \n");
          printf("        d/dt u_2(t) = -u_2(t) + c(t) \n\n");
+         printf("  -tstop <tstop>          : Upper integration limit for time\n");
          printf("  -ntime <ntime>          : Num points in time\n");
          printf("  -gamma <gamma>          : Relaxation parameter in the objective function \n");
          printf("  -ml <max_levels>        : Max number of braid levels \n");
@@ -624,12 +625,18 @@ main(int argc, char *argv[])
          printf("  -tol <tol>              : Stopping tolerance \n");
          printf("  -access <access_level>  : Braid access level \n");
          printf("  -print <print_level>    : Braid print level \n");
+         printf("\n");
          exit(1);
       }
       else if ( strcmp(argv[arg_index], "-ntime") == 0 )
       {
          arg_index++;
          ntime = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-tstop") == 0 )
+      {
+         arg_index++;
+         tstop = atoi(argv[arg_index++]);
       }
       else if ( strcmp(argv[arg_index], "-gamma") == 0 )
       {
