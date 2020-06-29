@@ -334,7 +334,8 @@ braid_Init(MPI_Comm               comm_world,
    braid_SetMaxIter(core, max_iter);
    braid_SetPeriodic(core, 0);
 
-   _braid_CoreElt(core, xrelax) = 0;
+   _braid_CoreElt(core, tricommtype) = 0;
+   braid_SetUseXRelax(core, 0);            /* Turn off xrelax feature by default */
 
    *core_ptr = core;
 
@@ -1534,6 +1535,25 @@ braid_GetRNormAdjoint(braid_Core  core,
    }
 
    *rnorm_adj = _braid_CoreElt(core, optim)->rnorm_adj;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetUseXRelax(braid_Core core,
+                   braid_Int  use_xrelax)
+{
+   if (use_xrelax)
+   {
+      _braid_CoreElt(core, xrelax) = 0;
+   }
+   else
+   {
+      _braid_CoreElt(core, xrelax) = -1;
+   }
 
    return _braid_error_flag;
 }

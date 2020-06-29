@@ -174,8 +174,6 @@ _braid_TriInterp(braid_Core   core,
    f_level   = level-1;
    f_cfactor = _braid_GridElt(grids[f_level], cfactor);
 
-#if 1
-{
    /* Update u at C-points on the fine grid */
    for (i = ilower; i <= iupper; i++)
    {
@@ -192,78 +190,6 @@ _braid_TriInterp(braid_Core   core,
 
    /* Update u at F-points with F-relaxation */
    _braid_TriFCFRelax(core, f_level, 0);
-}
-#else
-{
-   braid_BaseVector    *fa      = _braid_GridElt(grids[level], fa);
-   braid_Int            f_ilower, f_iupper;
-
-   f_ilower  = _braid_GridElt(grids[f_level], ilower);
-   f_iupper  = _braid_GridElt(grids[f_level], iupper);
-
-   /* Update u at C-points on the fine grid, store error corrections in fa temporarily */
-   for (i = ilower; i <= iupper; i++)
-   {
-      braid_Real  *ta = _braid_GridElt(grids[level], ta);
-      braid_Int    ii = i-ilower;
-
-      /* Update status (core) */
-      _braid_StatusElt(status, t)     = ta[ii];
-      _braid_StatusElt(status, tprev) = ta[ii-1];
-      _braid_StatusElt(status, tnext) = ta[ii+1];
-      _braid_StatusElt(status, idx)   = i;
-
-      e = va[i-ilower];
-      _braid_UGetVectorRef(core, level, i, &u);
-      _braid_BaseSum(core, app, 1.0, u, -1.0, e);          // e = u - u0
-      _braid_MapCoarseToFine(i, f_cfactor, f_i);
-      _braid_Refine(core, f_level, f_i, i, e, &f_e);       // f_e = P_space e
-      _braid_UGetVectorRef(core, f_level, f_i, &f_u);
-      _braid_BaseSum(core, app, 1.0, f_e, 1.0, f_u);       // f_u = f_u + f_e
-      _braid_USetVectorRef(core, f_level, f_i, f_u);
-
-      /* Store error correction in fa */
-      _braid_BaseFree(core, app, fa[i-ilower]);
-      fa[i-ilower] = f_e;
-   }
-
-   /* ZTODO: Communicate fa boundary values here */
-   /* ZTODO: This only works for cfactor 2 at the moment.  It would be nice to
-    * be able to just do F-relaxation with _braid_TriFCFRelax() on a grid with
-    * the error corrections at C-points, zero at F-points initially, and using a
-    * homogeneous problem with no FAS rhs. */
-
-   /* Update u at F-points on the fine grid */
-   _braid_StatusElt(status, level) = f_level;
-   for (f_i = f_ilower; f_i <= f_iupper; f_i++)
-   {
-      if ( _braid_IsFPoint(f_i, f_cfactor) )
-      {
-         braid_Real  *f_ta = _braid_GridElt(grids[f_level], ta);
-         braid_Int    f_ii = f_i-f_ilower;
-
-         /* Update status (core) */
-         _braid_StatusElt(status, t)     = f_ta[f_ii];
-         _braid_StatusElt(status, tprev) = f_ta[f_ii-1];
-         _braid_StatusElt(status, tnext) = f_ta[f_ii+1];
-         _braid_StatusElt(status, idx)   = f_i;
-
-         /* Create zero initial correction vector */
-         _braid_UGetVectorRef(core, f_level, f_i, &f_u);
-         _braid_BaseClone(core, app,  f_u, &f_e);
-         _braid_BaseSum(core, app, 0.0, f_u, 0.0, f_e);    // f_e = 0
-
-         /* Homogeneous solve at F-point with initial guess of zero */
-         _braid_MapFineToCoarse(f_i-1, f_cfactor, i);
-         _braid_BaseTriSolve(core, app, fa[i-ilower], fa[i+1-ilower], NULL, f_e, 1, status);
-
-         _braid_BaseSum(core, app, 1.0, f_e, 1.0, f_u);    // f_u = f_u + f_e
-         _braid_USetVectorRef(core, f_level, f_i, f_u);
-         _braid_BaseFree(core, app, f_e);
-      }
-   }
-}
-#endif
 
    /* Clean up */
    _braid_GridClean(core, grids[level]);

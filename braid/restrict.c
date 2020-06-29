@@ -376,6 +376,12 @@ _braid_TriRestrict(braid_Core   core,
       _braid_BaseSum(core, app, 1.0, c_r, -1.0, c_fa[c_i - c_ilower]);
       _braid_BaseFree(core, app, c_r);
    }
+
+   /* Communicate c_fa boundaries */
+   _braid_CoreElt(core, tricommtype) = 1;  /* Adjust commtype indicator */
+   _braid_TriCommInit(core, c_level, &nrequests, &requests, &statuses, &buffers);
+   _braid_TriCommWait(core, c_level,  nrequests, &requests, &statuses, &buffers);
+   _braid_CoreElt(core, tricommtype) = 0;  /* Reset commtype indicator */
   
    return _braid_error_flag;
 }

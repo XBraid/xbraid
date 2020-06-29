@@ -109,6 +109,8 @@ _braid_FCRelax(braid_Core  core,
  * Do nu sweeps of F-then-C relaxation followed by one final F-relaxation
  *----------------------------------------------------------------------------*/
 
+#define XRELAX_LAST 1
+
 braid_Int
 _braid_TriFCFRelax(braid_Core  core,
                    braid_Int   level,
@@ -163,6 +165,28 @@ _braid_TriFCFRelax(braid_Core  core,
          _braid_TriSolve(core, level, iupper);
       }
 
+#if !XRELAX_LAST
+      if (_braid_CoreElt(core, xrelax) > -1)
+      {
+         /* Extra relaxation step at all points */
+
+         /* Turn on xrelax indicator */
+         _braid_CoreElt(core, xrelax) = 1;
+         /* Initiate communication (ignore F/C for now) and loop over center points */
+         _braid_TriCommInit(core, level, &nrequests, &requests, &statuses, &buffers);
+         for (i = (ilower+1); i <= (iupper-1); i++)
+         {
+            _braid_TriSolve(core, level, i);
+         }
+         /* Finalize communication and loop over end points */
+         _braid_TriCommWait(core, level, nrequests, &requests, &statuses, &buffers);
+         _braid_TriSolve(core, level, ilower);
+         _braid_TriSolve(core, level, iupper);
+         /* Turn off xrelax indicator */
+         _braid_CoreElt(core, xrelax) = 0;
+      }
+#endif
+
       /* C-points (except for last iteration) */
 
       if (nu < nrelax)
@@ -189,22 +213,27 @@ _braid_TriFCFRelax(braid_Core  core,
       }
    }
 
-   /* RDF: Should we keep this as a feature?  What to call it? */
-
-   _braid_CoreElt(core, xrelax) = 1;
-
-   /* Initiate communication (ignore F/C for now) and loop over center points */
-   _braid_TriCommInit(core, level, &nrequests, &requests, &statuses, &buffers);
-   for (i = (ilower+1); i <= (iupper-1); i++)
+#if XRELAX_LAST
+   if (_braid_CoreElt(core, xrelax) > -1)
    {
-      _braid_TriSolve(core, level, i);
-   }
-   /* Finalize communication and loop over end points */
-   _braid_TriCommWait(core, level, nrequests, &requests, &statuses, &buffers);
-   _braid_TriSolve(core, level, ilower);
-   _braid_TriSolve(core, level, iupper);
+      /* Extra relaxation step at all points */
 
-   _braid_CoreElt(core, xrelax) = 0;
+      /* Turn on xrelax indicator */
+      _braid_CoreElt(core, xrelax) = 1;
+      /* Initiate communication (ignore F/C for now) and loop over center points */
+      _braid_TriCommInit(core, level, &nrequests, &requests, &statuses, &buffers);
+      for (i = (ilower+1); i <= (iupper-1); i++)
+      {
+         _braid_TriSolve(core, level, i);
+      }
+      /* Finalize communication and loop over end points */
+      _braid_TriCommWait(core, level, nrequests, &requests, &statuses, &buffers);
+      _braid_TriSolve(core, level, ilower);
+      _braid_TriSolve(core, level, iupper);
+      /* Turn off xrelax indicator */
+      _braid_CoreElt(core, xrelax) = 0;
+   }
+#endif
 
    return _braid_error_flag;
 }

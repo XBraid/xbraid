@@ -470,7 +470,14 @@ braid_StatusGetXRelax(braid_Status status,
                       braid_Int   *xrelax_ptr
    )
 {
-   *xrelax_ptr = _braid_StatusElt(status, xrelax);
+   if (_braid_StatusElt(status, xrelax) > -1)
+   {
+      *xrelax_ptr = _braid_StatusElt(status, xrelax);
+   }
+   else
+   {
+      *xrelax_ptr = 0;  /* xrelax feature is turned off */
+   }
    return _braid_error_flag;
 }
 

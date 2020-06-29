@@ -301,6 +301,8 @@ int
 my_TriSolve(braid_App       app,
             braid_Vector    uleft,
             braid_Vector    uright,
+            braid_Vector    fleft,
+            braid_Vector    fright,
             braid_Vector    f,
             braid_Vector    u,
             braid_TriStatus status)
@@ -374,10 +376,10 @@ my_Init(braid_App     app,
    u = (my_Vector *) malloc(sizeof(my_Vector));
    vec_create(2, &(u->values));
 
-//   u->values[0] = 1.0;
-//   u->values[1] = 0.0;
    u->values[0] = ((double)braid_Rand())/braid_RAND_MAX;
    u->values[1] = ((double)braid_Rand())/braid_RAND_MAX;
+//   u->values[0] = 1.0;
+//   u->values[1] = 0.0;
 
    *u_ptr = u;
 
