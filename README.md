@@ -1,4 +1,4 @@
-## Brief XBraid Overview
+## XBraid Quickstart, User Advice, and License 
 <!--
   - Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
   - Produced at the Lawrence Livermore National Laboratory. Written by 
@@ -23,7 +23,7 @@
 
 ![](docs/img/logo_with_subtext_2_inch.png)
 
-# What is XBraid? {#briefwhatsbraid}
+## What is XBraid? 
 
 XBraid is a parallel-in-time software package.  It implements an
 optimal-scaling multigrid solver for the (non)linear systems that arise from
@@ -35,14 +35,7 @@ and at collaborating [academic institutions](https://github.com/XBraid/xbraid/wi
 
 For our publication list, please go [here](https://github.com/XBraid/xbraid/wiki/Project-Publications).
 
-# Meaning of the name {#braidname}
-
-We chose the package name XBraid to stand for Time-Braid, where X is the first
-letter in the Greek word for time, Chronos. The algorithm braids together
-time-grids of different granularity in order to create a multigrid method and
-achieve parallelism in the time dimension.
-
-# About XBraid {#briefabout}
+## About XBraid 
 
 Typically, solution algorithms for evolution equations are based on a
 time-marching approach, solving sequentially for one time step after the other.
@@ -78,7 +71,7 @@ MGRIT).  A few important points about XBraid are as follows.
 - XBraid is released under LGPL 2.1.
 
 
-# Documentation {#briefdocs}
+## Documentation 
 
 - For examples of using XBraid, see the
   [examples/](https://github.com/XBraid/xbraid/tree/master/examples) and
@@ -95,7 +88,7 @@ MGRIT).  A few important points about XBraid are as follows.
 - For citing XBraid, see [here](https://github.com/XBraid/xbraid/wiki/Citing-XBraid).
 
 
-# Advice to Users {#advice}
+## Advice to Users 
 
 The field of parallel-in-time methods is in many ways under development, and
 success has been shown primarily for problems with some parabolic character.
@@ -115,7 +108,8 @@ as much relevant information as possible, including all the information in the
 runtime problems, please also include the machine type, operating system, MPI
 implementation, compiler, and any error messages produced. 
 
-# Building XBraid {#briefbuild}
+
+## Building XBraid 
 
 -  To specify the compilers, flags and options for your machine, edit
    makefile.inc.  For now, we keep it simple and avoid using configure or
@@ -151,7 +145,15 @@ implementation, compiler, and any error messages produced.
        LFLAGS = -lm
 
 
-# License {#brieflicense}
+## Meaning of the name 
+
+We chose the package name XBraid to stand for Time-Braid, where X is the first
+letter in the Greek word for time, Chronos. The algorithm braids together
+time-grids of different granularity in order to create a multigrid method and
+achieve parallelism in the time dimension.
+
+
+## License 
 
 This project is released under the LGPL v2.1 license. See files COPYRIGHT and
 LICENSE file for full details.
