@@ -1,3 +1,4 @@
+from __future__ import division
 from scipy import *
 from matplotlib import pyplot as mpl
 from os import sys
@@ -73,11 +74,11 @@ mpl.ylim(data[0,:].min()-1.0, data[0,:].max()+1.0)
 mpl.xlim(xstart, xstop) 
 
 mpl.figure(2)
-mpl.plot(mesh, data[nsteps/2,:], '-o')
+mpl.plot(mesh, data[nsteps//2,:], '-o')
 mpl.ylabel('u')
 mpl.xlabel('space')
-mpl.title('Step %d'%(nsteps/2))
-mpl.ylim(data[nsteps/2,:].min()-1.0, data[nsteps/2,:].max()+1.0)
+mpl.title('Step %d'%(nsteps//2))
+mpl.ylim(data[nsteps//2,:].min()-1.0, data[nsteps//2,:].max()+1.0)
 mpl.xlim(xstart, xstop) 
 
 mpl.figure(3)
