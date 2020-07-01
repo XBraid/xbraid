@@ -633,9 +633,10 @@ int main (int argc, char *argv[])
    braid_PrintStats(core);
 
 
-
-   /* Write final design to file */
-   write_design_vec("design", design, ntime);
+   if (rank == 0) {
+       /* Write final design to file */
+       write_design_vec("design", design, ntime);
+   }
 
    /* Clean up */
    free(design);
