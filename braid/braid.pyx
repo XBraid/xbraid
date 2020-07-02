@@ -154,6 +154,7 @@ cdef extern from "braid.h":
     int braid_SetAbsTol (braid_Core core, double atol)
     int braid_SetRelTol (braid_Core core, double rtol)
     int braid_SetNRelax (braid_Core core, int level, int nrelax)
+    int braid_SetCRelaxWt(braid_Core  core, int level, double Cwt) 
     int braid_SetCFactor (braid_Core core, int level, int cfactor)
     int braid_SetMaxIter (braid_Core core, int max_iter)
     int braid_SetFMG (braid_Core core)
@@ -233,8 +234,6 @@ cdef object convert_carray_to_numpy(double * v, dim1, dim2=1, dim3=1):
     elif dim2 > 1 and dim3 > 1:
        v_np = v_np.reshape(dim1, dim2, dim3)        
     
-    # TODO, test this for 1D, 2D, and 3D arrays, making sure that no copies are done
-
     return v_np
 
 

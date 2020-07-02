@@ -103,3 +103,6 @@ For the Cython examples, see the corresponding *.pyx file.
 4. ex-04 solves a simple optimal control problem with time-dependent design variable
    using a simple steepest-descent optimization iteration.  
    
+5. ex-05-cython solves a simple 1D advection diffusion equation using the
+   Cython interface 
+   
