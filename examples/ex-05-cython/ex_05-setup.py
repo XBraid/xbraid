@@ -65,7 +65,7 @@ ex_05_extension = Extension(
     libraries=["braid"],
     library_dirs=[braid_dir],
     include_dirs=[braid_dir], 
-    extra_compile_args=["-Wno-incompatible-pointer-types", "-Wno-unused-function"] 
+    extra_compile_args=["-Wno-incompatible-pointer-types", "-Wno-unused-function" ] 
 )
 setup(
     name="ex_05",
