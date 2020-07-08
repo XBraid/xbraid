@@ -636,7 +636,7 @@ main(int argc, char *argv[])
       else if ( strcmp(argv[arg_index], "-tstop") == 0 )
       {
          arg_index++;
-         tstop = atoi(argv[arg_index++]);
+         tstop = atof(argv[arg_index++]);
       }
       else if ( strcmp(argv[arg_index], "-gamma") == 0 )
       {
