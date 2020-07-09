@@ -21,11 +21,9 @@ from invert_sparse_mat_splu import invert_sparse_mat_splu
 #                
 #                on x in [0, 1], with t in [0, tstop=1.0]
 #
-#                Initial condition is a step function.
+#                Initial condition is a sine-hump in the domain center.
 #
-#                Boundary conditions are 
-#                u(x=0, t) = 1
-#                u(x=1, t) = 0
+#                Boundary conditions are periodic 
 #
 # Compile with:  See ex_05-setup.py for notes on installing and running
 #
@@ -98,8 +96,6 @@ cdef class PyBraid_App:
     cdef double tstart        # number of points in space
     cdef double tstop         # number of points in space
     cdef int nx               # number of points in space
-    cdef double xL            # left initial condition in space and Dirichlet condition 
-    cdef double xR            # right initial condition in space 
     cdef double eps           # diffusion coefficient
     cdef double a             # advection coefficient
     cdef object L             # spatial discretization matrix
@@ -156,16 +152,7 @@ cdef int my_step(braid_App app, braid_Vector ustop, braid_Vector fstop, braid_Ve
             Inv = invert_sparse_mat_splu( I - dt*pyApp.L )
 
             def matvec(y):
-                # Account for boundary values.  Note that matrix indexing pyApp.L[i,j] is
-                # expensive.  Instead, we index directly into the the data array.  Also, 
-                # only need right boundary condition if nonzero diffusion term.
-                if pyApp.eps != 0.0:                                   
-                    y[0] += (dt*pyApp.L.data[2])*pyApp.xL     # Equivalent to   += (dt*pyApp.L[1,0])*pyApp.xL
-                    y[-1] += (dt*pyApp.L.data[-3])*pyApp.xR   # Equivalent to   += (dt*pyApp.L[-2,-1])*pyApp.xR
-                else:
-                    y[0] += (dt*pyApp.L.data[1])*pyApp.xL     # Equivalent to   += (dt*pyApp.L[1,0])*pyApp.xL
-                
-                return Inv*y
+                return Inv*y #  if boundary conditions, Inv*(y + dt*pyApp.bcs)
         
             pyApp.Phi[level] = LinearOperator(pyApp.L.shape, matvec=matvec, dtype=pyApp.L.dtype)
 
@@ -190,17 +177,16 @@ cdef int my_step(braid_App app, braid_Vector ustop, braid_Vector fstop, braid_Ve
             
             # Define a mat-vec that applies SDIRK3
             def matvec(y):
-                k0 = y
-                k1 = pyApp.L*k0
-                k1[0] += (pyApp.L.data[1])*pyApp.xL     # BCs: equivalent to   += (pyApp.L[1,0])*pyApp.xL
-                k1 = SDIRK_Diag_Inv*( k1 )
                 
-                k2 = pyApp.L*(k0 + dt*a_21*k1)
-                k2[0] += (pyApp.L.data[1])*pyApp.xL     # BCs: equivalent to   += (pyApp.L[1,0])*pyApp.xL
+                k0 = y
+                
+                k1 = pyApp.L*k0                             # if boundary conditions,  + pyApp.bcs
+                k1 = SDIRK_Diag_Inv*( k1 )                  
+                                                            
+                k2 = pyApp.L*(k0 + dt*a_21*k1)              # if boundary conditions,  + pyApp.bcs
                 k2 = SDIRK_Diag_Inv*( k2 )
                 
-                k3 = pyApp.L*(k0 + dt*a_31*k1 + dt*a_32*k2)
-                k3[0] += (1*pyApp.L.data[1])*pyApp.xL   # BCs: equivalent to   += (pyApp.L[1,0])*pyApp.xL
+                k3 = pyApp.L*(k0 + dt*a_31*k1 + dt*a_32*k2) # if boundary conditions,  + pyApp.bcs
                 k3 = SDIRK_Diag_Inv*( k3 ) 
                 
                 return k0 + dt*(b_1*k1 + b_2*k2 + b_3*k3)
@@ -208,10 +194,28 @@ cdef int my_step(braid_App app, braid_Vector ustop, braid_Vector fstop, braid_Ve
             pyApp.Phi[level] = LinearOperator(pyApp.L.shape, matvec=matvec, dtype=pyApp.L.dtype)
 
         elif pyApp.time_discr == 'FE':
-            exit("FE Not implemented")           
+            # Compute time-stepping operator for forward Euler
+            I = eye(pyApp.nx, pyApp.nx, format='csr', dtype=pyApp.L.dtype)
+            Phi_Mat = I + dt*pyApp.L 
+
+            def matvec(y):
+                return Phi_Mat*y #  if boundary conditions, Phi_Mat*(y + dt*pyApp.bcs)
         
+            pyApp.Phi[level] = LinearOperator(pyApp.L.shape, matvec=matvec, dtype=pyApp.L.dtype)
+
         elif pyApp.time_discr == 'RK4':
-            exit("RK4 Not implemented")
+            
+            # Compute time-stepping operator for RK-4
+            def matvec(y):
+                k1 = pyApp.L*y
+                k2 = pyApp.L*(y + dt/2*k1)
+                k3 = pyApp.L*(y + dt/2*k2)
+                k4 = pyApp.L*(y + dt*k3)
+                y =  y + (dt/6.)*(k1 + 2*k2 + 2*k3 + k4)
+            
+                return y                    
+            
+            pyApp.Phi[level] = LinearOperator(pyApp.L.shape, matvec=matvec, dtype=pyApp.L.dtype)
 
     # Take step: make sure to write pyU in-place with [:]
     pyU.values[:] = pyApp.Phi[level] * pyU.values
@@ -230,11 +234,14 @@ cdef int my_init(braid_App app, double t, braid_Vector *u_ptr):
     # Make sure to change values in-place with [:]
     if t == 0.0:
         nx = pyApp.nx
-        pyU.values[0:(nx//10)] = pyApp.xL
-        pyU.values[(nx//10):] = 0.0
-        if pyApp.eps != 0.0:
-            # Use right boundary condition if nonzero diffusion
-            pyU.values[-1] = pyApp.xR
+        mesh_x = np.linspace(0,1.0,nx)
+        indys = np.array( (mesh_x >= 0.25), dtype=int) + np.array( (mesh_x <= 0.5), dtype=int) == 2
+        pyU.values = np.sin(2*np.pi*mesh_x)
+        #pyU.values[indys] = -np.sin(4*np.pi*mesh_x[indys])
+        
+        #pyU.values[:] = 0.0
+        #pyU.values[(nx//10):(nx//5)] = 1.0
+        # If boundary conditions, need to set [0] and [-1] entries
 
     else:
         pyU.values[:] = 6.123451
@@ -399,7 +406,7 @@ cdef int my_bufunpack(braid_App app, void *buffer, braid_Vector *u_ptr, braid_Bu
 ##
 # Helper function to generate the spatial discretization for the
 # advection-diffusion problem.  Different discretization types are supported.
-def generate_spatial_disc(nx, xL, xR, a, eps, diff_discr='second_order', advect_discr='upwind'):
+def generate_spatial_disc(nx, a, eps, diff_discr='second_order', advect_discr='upwind'):
     
     # Assume unit interval with nx points
     dx = 1.0 / (nx - 1.0)
@@ -420,29 +427,70 @@ def generate_spatial_disc(nx, xL, xR, a, eps, diff_discr='second_order', advect_
         o[0,:] *= -1.0
         
         Adv =  (1./dx) * spdiags(o, np.array([0,-1]), nx, nx).tocsr()
-        
+
     elif advect_discr == 'central':
         # Construct the u_x stencil of [-1   0   1]
         o = np.ones((2, nx))
         o[0,:] *= -1.0
         
         Adv =  (1./(2.*dx)) * spdiags(o, np.array([1,-1]), nx, nx).tocsr()
+
+    elif (advect_discr == 'fourth') or (advect_discr == 'fourth_diss') or (advect_discr == 'fourth_diss_sq'):
+        o = np.ones((2,nx+10))
+        o[0,:] *= -1.
+        
+        Dzero = (1./(2.*dx))*spdiags(-o, [-1,1], nx+10, nx+10, format='csr')
+        Dplus = (1./dx)*spdiags(o, [1,0], nx+10, nx+10, format='csr')
+        Dminus =(1./dx)*spdiags(o, [-1,0], nx+10, nx+10, format='csr')
+        I = eye(nx+10, nx+10, format='csr')
+
+        # Set fourth order centered stecil for d/dx
+        Adv = Dzero*(I - (dx**2/6.)*Dplus*Dminus)
+        
+        # Add fourth-order hyperviscosity
+        if advect_discr == 'fourth_diss':
+            # Add one order of artificial diss (third order in space)
+            Adv += 1.1*(-dx**3)*Dplus*Dplus*Dminus*Dminus
+
+        elif advect_discr == 'fourth_diss_sq':
+            # Add two orders of artificial diss (second order in space)
+            Adv += 1.1*(-dx**2)*Dplus*Dplus*Dminus*Dminus
+        
+        # Note, because we use periodic boundary conditions, the computations
+        # of Dplus*Dminus (and so on) are inaccurate near the boundary.  Thus,
+        # we inserted a plus 10 padding above, that we now remove.
+        Adv = Adv[5:(5+nx), 5:(5+nx)]
+        
+        # Note: if no periodicity in space, you need to fix up the last two
+        # rows of Adv, so that they represent accurate first derivative
+        # computations (because there is no BC to account for the truncated
+        # stencils).  You could use one-sided stenicls, or just make the last
+        # two rows upwinding.
+
     else:
         exit("Advection discretization " + advect_discr + " unrecognized")
 
-    ##
-    # Construct composite operator and return
-    L = eps*Diff + a*Adv
-    L.sort_indices()
-    
-    return L
 
+    ##
+    # Construct composite operator, enforce periodic BCs, and then return
+    L = eps*Diff + a*Adv
+    
+    L[0,-1] = L[2,1]
+    L[0,-2] = L[2,0]
+    L[1,-1] = L[2,0]
+    #
+    L[-1,0] = L[2,3]
+    L[-1,1] = L[2,4]
+    L[-2,0] = L[2,4]
+    
+    L.sort_indices()
+    return L
 
 
 # For a description of what each paramter here does, look at the help message
 # printed by the driver, or look at the various braid_Set*() routines below. 
-def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, ntime=60, xL=1.0,
-        xR=0.0, eps=1.0, a=1.0, st=1, tol=1e-6, cf=2, mi=30, sc=0, fmg=0, advect_discr='upwind', 
+def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, ntime=60, 
+        eps=1.0, a=1.0, st=1, tol=1e-6, cf=2, mi=30, sc=0, fmg=0, advect_discr='upwind', 
         time_discr='BE'):
 
     cdef braid_Core core
@@ -461,8 +509,6 @@ def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, nti
              "  skip <set_skip>     : set skip relaxations on first down-cycle; 0: no skip;  1: skip\n" + \
              "  nx   <nspace>       : set num points in space\n" + \
              "  nt   <ntime>        : set num points in time\n" + \
-             "  xL   <xLeft>        : set the left x-value (both as boundary condition and as initial condition)\n" + \
-             "  xR   <xRight>       : set the right x-value (both as boundary condition and as initial condition)\n" + \
              "  eps  <epsilon>      : set the diffusion coefficient, u_t = a*u_x + eps*u_xx \n" + \
              "  a    <a>            : set the advection coefficient, u_t = a*u_x + eps*u_xx \n" + \
              "  st   <stepper>      : set the time stepper, 0: forward Euler, 1: backward Euler\n" + \
@@ -515,8 +561,6 @@ def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, nti
         pyApp.tstart = tstart
         pyApp.tstop = tstop
         pyApp.nx = nx
-        pyApp.xL = xL
-        pyApp.xR = xR
         pyApp.eps = eps
         pyApp.a = a
         pyApp.Phi = [ [] for i in range(ml) ]
@@ -527,7 +571,7 @@ def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, nti
         # Define spatial discretization for each level
         pyApp.dxs = [] 
         for i in range(ml):
-            pyApp.L = generate_spatial_disc(nx, xL, xR, a, eps, advect_discr=pyApp.advect_discr)
+            pyApp.L = generate_spatial_disc(nx, a, eps, advect_discr=pyApp.advect_discr)
             pyApp.dxs.append( (1.0 - 0.0) / (nx - 1.0) )
 
         # Scale tol by domain, assume x-domain is unit interval
