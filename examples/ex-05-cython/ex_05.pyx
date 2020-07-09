@@ -17,11 +17,11 @@ from invert_sparse_mat_splu import invert_sparse_mat_splu
 # Requires:      Python 3, Cython, C-language support     
 #
 # Description:   Solve the 1D advection-diffusion equation 
-#                   u_t = u_x + eps*u_xx 
+#                   u_t + a*u_x  =   eps*u_xx 
 #                
 #                on x in [0, 1], with t in [0, tstop=1.0]
 #
-#                Initial condition is a sine-hump in the domain center.
+#                Initial condition is a sine wave 
 #
 #                Boundary conditions are periodic 
 #
@@ -90,7 +90,6 @@ cdef class PyBraid_App:
     '''
 
     cdef int rank             # MPI rank
-    cdef int st               # time-stepper chosen (0: fwd Euler, 1: bwd Euler) 
     cdef int sc               # spatial coarsening used? (0: no,  1: yes) 
     cdef int nt               # number of points in space
     cdef double tstart        # number of points in space
@@ -107,6 +106,8 @@ cdef class PyBraid_App:
                               # 'BE', 'FE', 'SDIRK3', 'RK4'
     cdef object advect_discr  # string containing the desired advection discretization
                               # 'upwind', 'central', 'fourth', 'fourth_diss', 'fourth_diss_sq'
+    cdef object diff_discr    # string containing the desired diffusion discretization
+                              # 'second_order', 'fourth_order'
     def __cinit__(self, _rank): 
         self.rank = _rank
 
@@ -241,7 +242,7 @@ cdef int my_init(braid_App app, double t, braid_Vector *u_ptr):
         
         #pyU.values[:] = 0.0
         #pyU.values[(nx//10):(nx//5)] = 1.0
-        # If boundary conditions, need to set [0] and [-1] entries
+        ## If boundary conditions, need to set [0] and [-1] entries
 
     else:
         pyU.values[:] = 6.123451
@@ -411,56 +412,50 @@ def generate_spatial_disc(nx, a, eps, diff_discr='second_order', advect_discr='u
     # Assume unit interval with nx points
     dx = 1.0 / (nx - 1.0)
 
+    # Declare basic difference matrices.  # To avoid any boundary effects, we
+    # add a padding of 10 (to be removed later)
+    o = np.ones((2,nx+10))
+    o[0,:] *= -1.
+    #
+    Dplus = (1./dx)*spdiags(o, [0,1], nx+10, nx+10, format='csr')
+    Dminus =(1./dx)*spdiags(o, [-1,0], nx+10, nx+10, format='csr')
+    Dzero = (1./(2.*dx))*spdiags(o, [-1,1], nx+10, nx+10, format='csr')  # equiv to Dzero = 0.5*(Dplus + Dminus)
+    I = eye(nx+10, nx+10, format='csr')
+
     # Construct diffusion matrix
     if diff_discr == 'second_order':
         # Construct the u_xx stencil of [1   -2   1]
-        o = np.ones((3, nx))
-        o[1,:] *= -2.0
-        Diff =  (1./dx**2) * spdiags(o, np.array([1, 0,-1]), nx, nx).tocsr()
+        Diff =  Dplus*Dminus
+    elif diff_discr == 'fourth_order':
+        # Construct the fourth order u_xx stencil 
+        Diff =  Dplus*Dminus*(I - ((dx**2)/12.)*Dplus*Dminus)
     else:
-        exit("Advection discretization " + advect_discr + " unrecognized")
-    
+        exit("Diffusion discretization " + diff_discr + " unrecognized")
+
+
     # Construct advection matrix
     if advect_discr == 'upwind':
         # Construct the u_x stencil of [-1   1   0]
-        o = np.ones((2, nx))
-        o[0,:] *= -1.0
-        
-        Adv =  (1./dx) * spdiags(o, np.array([0,-1]), nx, nx).tocsr()
+        Adv =  Dminus 
 
     elif advect_discr == 'central':
         # Construct the u_x stencil of [-1   0   1]
-        o = np.ones((2, nx))
-        o[0,:] *= -1.0
-        
-        Adv =  (1./(2.*dx)) * spdiags(o, np.array([1,-1]), nx, nx).tocsr()
+        Adv =  Dzero
 
     elif (advect_discr == 'fourth') or (advect_discr == 'fourth_diss') or (advect_discr == 'fourth_diss_sq'):
-        o = np.ones((2,nx+10))
-        o[0,:] *= -1.
-        
-        Dzero = (1./(2.*dx))*spdiags(-o, [-1,1], nx+10, nx+10, format='csr')
-        Dplus = (1./dx)*spdiags(o, [1,0], nx+10, nx+10, format='csr')
-        Dminus =(1./dx)*spdiags(o, [-1,0], nx+10, nx+10, format='csr')
-        I = eye(nx+10, nx+10, format='csr')
-
+       
         # Set fourth order centered stecil for d/dx
-        Adv = Dzero*(I - (dx**2/6.)*Dplus*Dminus)
+        Adv = Dzero*(I - ((dx**2)/6.)*Dplus*Dminus)
         
         # Add fourth-order hyperviscosity
         if advect_discr == 'fourth_diss':
             # Add one order of artificial diss (third order in space)
-            Adv += 1.1*(-dx**3)*Dplus*Dplus*Dminus*Dminus
+            Adv += 1.1*(dx**3)*Dplus*Dplus*Dminus*Dminus
 
         elif advect_discr == 'fourth_diss_sq':
             # Add two orders of artificial diss (second order in space)
-            Adv += 1.1*(-dx**2)*Dplus*Dplus*Dminus*Dminus
-        
-        # Note, because we use periodic boundary conditions, the computations
-        # of Dplus*Dminus (and so on) are inaccurate near the boundary.  Thus,
-        # we inserted a plus 10 padding above, that we now remove.
-        Adv = Adv[5:(5+nx), 5:(5+nx)]
-        
+            Adv += 1.1*(dx**2)*Dplus*Dplus*Dminus*Dminus
+               
         # Note: if no periodicity in space, you need to fix up the last two
         # rows of Adv, so that they represent accurate first derivative
         # computations (because there is no BC to account for the truncated
@@ -470,11 +465,23 @@ def generate_spatial_disc(nx, a, eps, diff_discr='second_order', advect_discr='u
     else:
         exit("Advection discretization " + advect_discr + " unrecognized")
 
+    ##
+    # Construct composite operator, remember that we solve
+    #    u_t + a*u_x  =   eps*u_xx 
+    # but we are forming here
+    #    u_t = L u = -a u_x + eps u_xx
+    L = - a*Adv + eps*Diff
+    
+    ##
+    # Remove padding around boundary
+    # Note, because we use periodic boundary conditions, the computations
+    # of Dplus*Dminus (and so on) are inaccurate near the boundary.  Thus,
+    # we inserted a plus 10 padding above, that we now remove.
+    L = L[5:(5+nx), 5:(5+nx)]
 
     ##
-    # Construct composite operator, enforce periodic BCs, and then return
-    L = eps*Diff + a*Adv
-    
+    # Enforce periodic BCs
+    L = L.tolil()
     L[0,-1] = L[2,1]
     L[0,-2] = L[2,0]
     L[1,-1] = L[2,0]
@@ -483,6 +490,7 @@ def generate_spatial_disc(nx, a, eps, diff_discr='second_order', advect_discr='u
     L[-1,1] = L[2,4]
     L[-2,0] = L[2,4]
     
+    L = L.tocsr()
     L.sort_indices()
     return L
 
@@ -490,8 +498,8 @@ def generate_spatial_disc(nx, a, eps, diff_discr='second_order', advect_discr='u
 # For a description of what each paramter here does, look at the help message
 # printed by the driver, or look at the various braid_Set*() routines below. 
 def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, ntime=60, 
-        eps=1.0, a=1.0, st=1, tol=1e-6, cf=2, mi=30, sc=0, fmg=0, advect_discr='upwind', 
-        time_discr='BE'):
+        eps=1.0, a=1.0, tol=1e-6, cf=2, mi=30, sc=0, fmg=0, advect_discr='upwind', 
+        diff_discr='second_order', time_discr='BE'):
 
     cdef braid_Core core
     cdef double tstart
@@ -511,7 +519,6 @@ def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, nti
              "  nt   <ntime>        : set num points in time\n" + \
              "  eps  <epsilon>      : set the diffusion coefficient, u_t = a*u_x + eps*u_xx \n" + \
              "  a    <a>            : set the advection coefficient, u_t = a*u_x + eps*u_xx \n" + \
-             "  st   <stepper>      : set the time stepper, 0: forward Euler, 1: backward Euler\n" + \
              "  tol  <tol>          : set stopping tolerance (scaled by sqrt(dt) sqrt(dx))\n" + \
              "  cf   <cfactor>      : set coarsening factor\n" + \
              "  mi   <max_iter>     : set max iterations\n" + \
@@ -519,6 +526,8 @@ def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, nti
              "  fmg                 : use FMG cycling \n" + \
              "  time_discr          : time discretization to use, choose one of \n" + \
              "                      :   'BE', 'FE', 'SDIRK3', 'RK4' \n" + \
+             "  diff_discr          : diffusion discretization to use, choose one of \n" + \
+             "                      :   'second_order', 'fourth_order' \n" + \
              "  advect_discr        : spatial discretization for advection term\n" +\
              "                      :   The advection term can be one of \n" + \
              "                      :   'upwind', 'central', 'fourth', 'fourth_diss', 'fourth_diss_sq' \n" + \
@@ -555,7 +564,6 @@ def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, nti
         pyCore.setCore(core)
         
         # Set discretization options in App
-        pyApp.st = st
         pyApp.sc = sc
         pyApp.nt = ntime
         pyApp.tstart = tstart
@@ -567,11 +575,12 @@ def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, nti
         pyApp.dts = [ -1.0 for i in range(ml) ]
         pyApp.time_discr = time_discr
         pyApp.advect_discr = advect_discr
+        pyApp.diff_discr = diff_discr
         
         # Define spatial discretization for each level
         pyApp.dxs = [] 
         for i in range(ml):
-            pyApp.L = generate_spatial_disc(nx, a, eps, advect_discr=pyApp.advect_discr)
+            pyApp.L = generate_spatial_disc(nx, a, eps, advect_discr=pyApp.advect_discr, diff_discr=pyApp.diff_discr)
             pyApp.dxs.append( (1.0 - 0.0) / (nx - 1.0) )
 
         # Scale tol by domain, assume x-domain is unit interval
