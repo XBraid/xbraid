@@ -4,7 +4,7 @@ from mpi4py import MPI
 cimport mpi4py.MPI as MPI
 cimport mpi4py.libmpi as libmpi
 import numpy as np 
-from scipy.sparse import spdiags, eye, linalg, csr_matrix
+from scipy.sparse import spdiags, eye, linalg, csr_matrix, coo_matrix
 from scipy.sparse.linalg.interface import LinearOperator
 from sys import exit
 from invert_sparse_mat_splu import invert_sparse_mat_splu 
@@ -94,13 +94,15 @@ cdef class PyBraid_App:
     cdef int nt               # number of points in space
     cdef double tstart        # number of points in space
     cdef double tstop         # number of points in space
-    cdef int nx               # number of points in space
     cdef double eps           # diffusion coefficient
     cdef double a             # advection coefficient
-    cdef object L             # spatial discretization matrix
+    cdef object L             # list of spatial discretization matrices
+    cdef object P             # list of spatial interpolation matrices 
+    cdef object R             # list of spatial restriction matrices
     cdef object Phi           # list containing LinearOperators (for implicit) and sparse matrices 
                               # (for explicit) whose application allow for the evaluation of Phi 
     cdef object dts           # list containing dt value for each level 
+    cdef object nx            # list containing the number of points in space for each level
     cdef object dxs           # list containing dx value for each level 
     cdef object time_discr    # string containing the desired time discretization
                               # 'BE', 'FE', 'SDIRK3', 'RK4'
@@ -141,21 +143,22 @@ cdef int my_step(braid_App app, braid_Vector ustop, braid_Vector fstop, braid_Ve
     # Cast app as a PyBraid_App
     pyApp = <PyBraid_App> app
 
+    L =  pyApp.L[level]
+    nx = pyApp.nx[level]
 
-    
     # Compute time-stepping matrix
     if pyApp.Phi[level] == []:
         pyApp.dts[level] = dt
         
         if pyApp.time_discr == 'BE':
             # Compute time-stepping operator for Backward Euler
-            I = eye(pyApp.nx, pyApp.nx, format='csr', dtype=pyApp.L.dtype)
-            Inv = invert_sparse_mat_splu( I - dt*pyApp.L )
+            I = eye(nx, nx, format='csr', dtype=L.dtype)
+            Inv = invert_sparse_mat_splu( I - dt*L )
 
             def matvec(y):
                 return Inv*y #  if boundary conditions, Inv*(y + dt*pyApp.bcs)
         
-            pyApp.Phi[level] = LinearOperator(pyApp.L.shape, matvec=matvec, dtype=pyApp.L.dtype)
+            pyApp.Phi[level] = LinearOperator(L.shape, matvec=matvec, dtype=L.dtype)
 
 
         elif pyApp.time_discr == 'SDIRK3':
@@ -173,50 +176,50 @@ cdef int my_step(braid_App app, braid_Vector ustop, braid_Vector fstop, braid_Ve
             b_1 = b; b_2 = 1-a-b; b_3 = a
 
             # Use SPLU to get our inverse 
-            I = eye(pyApp.nx, pyApp.nx, format='csr', dtype=pyApp.L.dtype)
-            SDIRK_Diag_Inv = invert_sparse_mat_splu( I - dt*a*pyApp.L )
+            I = eye(nx, nx, format='csr', dtype=L.dtype)
+            SDIRK_Diag_Inv = invert_sparse_mat_splu( I - dt*a*L )
             
             # Define a mat-vec that applies SDIRK3
             def matvec(y):
                 
                 k0 = y
                 
-                k1 = pyApp.L*k0                             # if boundary conditions,  + pyApp.bcs
+                k1 = L*k0                             # if boundary conditions,  + pyApp.bcs
                 k1 = SDIRK_Diag_Inv*( k1 )                  
                                                             
-                k2 = pyApp.L*(k0 + dt*a_21*k1)              # if boundary conditions,  + pyApp.bcs
+                k2 = L*(k0 + dt*a_21*k1)              # if boundary conditions,  + pyApp.bcs
                 k2 = SDIRK_Diag_Inv*( k2 )
                 
-                k3 = pyApp.L*(k0 + dt*a_31*k1 + dt*a_32*k2) # if boundary conditions,  + pyApp.bcs
+                k3 = L*(k0 + dt*a_31*k1 + dt*a_32*k2) # if boundary conditions,  + pyApp.bcs
                 k3 = SDIRK_Diag_Inv*( k3 ) 
                 
                 return k0 + dt*(b_1*k1 + b_2*k2 + b_3*k3)
             
-            pyApp.Phi[level] = LinearOperator(pyApp.L.shape, matvec=matvec, dtype=pyApp.L.dtype)
+            pyApp.Phi[level] = LinearOperator(L.shape, matvec=matvec, dtype=L.dtype)
 
         elif pyApp.time_discr == 'FE':
             # Compute time-stepping operator for forward Euler
-            I = eye(pyApp.nx, pyApp.nx, format='csr', dtype=pyApp.L.dtype)
-            Phi_Mat = I + dt*pyApp.L 
+            I = eye(nx, nx, format='csr', dtype=L.dtype)
+            Phi_Mat = I + dt*L 
 
             def matvec(y):
                 return Phi_Mat*y #  if boundary conditions, Phi_Mat*(y + dt*pyApp.bcs)
         
-            pyApp.Phi[level] = LinearOperator(pyApp.L.shape, matvec=matvec, dtype=pyApp.L.dtype)
+            pyApp.Phi[level] = LinearOperator(L.shape, matvec=matvec, dtype=L.dtype)
 
         elif pyApp.time_discr == 'RK4':
             
             # Compute time-stepping operator for RK-4
             def matvec(y):
-                k1 = pyApp.L*y
-                k2 = pyApp.L*(y + dt/2*k1)
-                k3 = pyApp.L*(y + dt/2*k2)
-                k4 = pyApp.L*(y + dt*k3)
+                k1 = L*y
+                k2 = L*(y + dt/2*k1)
+                k3 = L*(y + dt/2*k2)
+                k4 = L*(y + dt*k3)
                 y =  y + (dt/6.)*(k1 + 2*k2 + 2*k3 + k4)
             
                 return y                    
             
-            pyApp.Phi[level] = LinearOperator(pyApp.L.shape, matvec=matvec, dtype=pyApp.L.dtype)
+            pyApp.Phi[level] = LinearOperator(L.shape, matvec=matvec, dtype=L.dtype)
 
     # Take step: make sure to write pyU in-place with [:]
     pyU.values[:] = pyApp.Phi[level] * pyU.values
@@ -230,11 +233,11 @@ cdef int my_init(braid_App app, double t, braid_Vector *u_ptr):
     pyApp = <PyBraid_App> app
     
     # Allocate new vector
-    pyU = PyBraid_Vector(pyApp.nx) 
+    nx = pyApp.nx[0]
+    pyU = PyBraid_Vector(nx) 
     
     # Make sure to change values in-place with [:]
     if t == 0.0:
-        nx = pyApp.nx
         mesh_x = np.linspace(0,1.0,nx)
         indys = np.array( (mesh_x >= 0.25), dtype=int) + np.array( (mesh_x <= 0.5), dtype=int) == 2
         pyU.values = np.sin(2*np.pi*mesh_x)
@@ -261,11 +264,11 @@ cdef int my_clone(braid_App app, braid_Vector u, braid_Vector *v_ptr):
     # Cast app as a PyBraid_App
     pyApp = <PyBraid_App> app
 
-    # Allocate new vector
-    pyV = PyBraid_Vector(pyApp.nx)
-    
     # Cast u as a PyBraid_Vector
     pyU = <PyBraid_Vector> u
+    
+    # Allocate new vector
+    pyV = PyBraid_Vector(pyU.values.shape[0])
     
     # Assign pyU's value to clone pyV
     #    Make sure to move values with the in-place operator [:]
@@ -346,11 +349,11 @@ cdef int my_access(braid_App app, braid_Vector u, braid_AccessStatus status):
     f.write("%d\n"%pyApp.nt)
     f.write("%.14e\n"%pyApp.tstart)
     f.write("%.14e\n"%pyApp.tstop)
-    f.write("%d\n"%pyApp.nx)
+    f.write("%d\n"%pyApp.nx[0])
     f.write("%.14e\n"%0.0)
     f.write("%.14e\n"%1.0)
 
-    for i in range(pyApp.nx):
+    for i in range(pyApp.nx[0]):
         f.write( "%.14e\n"%pyU.values[i]);
     f.close()
 
@@ -362,13 +365,14 @@ cdef int my_bufsize(braid_App app, int *size_ptr, braid_BufferStatus status):
     pyApp = <PyBraid_App> app
     
     #  Note size_ptr is an integer array of size 1, and we index in at location [0]
-    size_ptr[0] = pyApp.nx*sizeof(double)
+    size_ptr[0] = (pyApp.nx[0] + 1)*sizeof(double)
     
     return 0
 
 cdef int my_bufpack(braid_App app, braid_Vector u, void *buffer, braid_BufferStatus status):
     # Cast u as a PyBraid_Vector
     pyU = <PyBraid_Vector> u
+    nx = pyU.values.shape[0]
 
     # Cast app as a PyBraid_App
     pyApp = <PyBraid_App> app
@@ -377,9 +381,10 @@ cdef int my_bufpack(braid_App app, braid_Vector u, void *buffer, braid_BufferSta
     dbuffer = PyBraid_VoidToDoubleArray(buffer)
     
     # Pack buffer, making sure to write in-place with [:]
-    convert_carray_to_numpy(dbuffer, pyApp.nx)[:] = pyU.values[:]
+    convert_carray_to_numpy(dbuffer, nx+1)[0] = nx 
+    convert_carray_to_numpy(dbuffer, nx+1)[1:] = pyU.values[:]
 
-    braid_BufferStatusSetSize(status, pyApp.nx*sizeof(double))
+    braid_BufferStatusSetSize(status, (nx+1)*sizeof(double))
     return 0
 
 cdef int my_bufunpack(braid_App app, void *buffer, braid_Vector *u_ptr, braid_BufferStatus status):
@@ -391,18 +396,94 @@ cdef int my_bufunpack(braid_App app, void *buffer, braid_Vector *u_ptr, braid_Bu
     dbuffer = PyBraid_VoidToDoubleArray(buffer)
    
     # Allocate new vector
-    pyU = PyBraid_Vector(pyApp.nx)
+    nx = int(convert_carray_to_numpy(dbuffer, 1)[0])
+    pyU = PyBraid_Vector(nx)
     
     # Must increment smart pointer for pyU, or else Python will delete it 
     Py_INCREF(pyU)
     
     # Unpack information in dbuffer, making sure to write in-place with [:]
-    pyU.values[:] = convert_carray_to_numpy(dbuffer, pyApp.nx)[:]
+    pyU.values[:] = convert_carray_to_numpy(dbuffer, nx+1)[1:]
     
     # Set output, so that u_ptr points to pyU
     pyU.SetVectorPtr(u_ptr)
     
     return 0
+
+
+## 1D Bilinear interpolation
+## Input argument is nc, the number of points on the coarse grid
+## nc must be a power of 2 plus 1
+def interpolation1d(nc):
+    d = np.repeat([[1, 2, 1]], nc, axis=0).T
+    I = np.zeros((3,nc), dtype=int)
+    for i in range(nc):
+        I[:,i] = [2*i, 2*i+1, 2*i+2]
+    J = np.repeat([np.arange(nc)], 3, axis=0)
+    P = coo_matrix( (d.ravel(), (I.ravel(), J.ravel()))).tocsr()
+    return 0.5 * P
+
+## 1D Injection interpolation
+## Input argument is nc, the number of points on the coarse grid
+def injection1d(nc):
+    d = np.repeat([[1]], nc, axis=0).T
+    I = np.zeros((1,nc), dtype=int)
+    for i in range(nc):
+        I[:,i] = [2*i+1]
+    J = np.repeat([np.arange(nc)], 1, axis=0)
+    P = coo_matrix( (d.ravel(), (I.ravel(), J.ravel())), shape=(2*nc+1, nc)).tocsr()
+    return P
+
+
+cdef int my_coarsen(braid_App app, braid_Vector fu, braid_Vector *cu_ptr, braid_CoarsenRefStatus status):
+    # Cast fu as a PyBraid_Vector
+    pyFU = <PyBraid_Vector> fu
+
+    # Cast app as a PyBraid_App
+    pyApp = <PyBraid_App> app
+    
+    # This returns the level for fu
+    cdef int level = 0
+    braid_CoarsenRefStatusGetLevel(status, &level)
+
+    # Allocate new vector
+    pyCU = PyBraid_Vector(pyApp.nx[level+1])
+    
+    # Restrict, making sure to write in-place
+    pyCU.values[:] = pyApp.R[level]*pyFU.values
+    
+    # Must increment smart pointer for pyCU, or else Python will delete it 
+    Py_INCREF(pyCU)
+    
+    # Set output, so that cu_ptr points to pyCU
+    pyCU.SetVectorPtr(cu_ptr)
+
+
+cdef int my_refine(braid_App app, braid_Vector cu, braid_Vector *fu_ptr, braid_CoarsenRefStatus status):
+    # Cast cu as a PyBraid_Vector
+    pyCU = <PyBraid_Vector> cu
+
+    # Cast app as a PyBraid_App
+    pyApp = <PyBraid_App> app
+    
+    # This returns the level for fu_ptr
+    cdef int level = 0
+    braid_CoarsenRefStatusGetLevel(status, &level)
+
+    # Allocate new vector
+    pyFU = PyBraid_Vector(pyApp.nx[level])
+    
+    # Interpolate, making sure to write in-place
+    pyFU.values[:] = pyApp.P[level]*pyCU.values
+    
+    # Must increment smart pointer for pyFU, or else Python will delete it 
+    Py_INCREF(pyFU)
+    
+    # Set output, so that fu_ptr points to pyFU
+    pyFU.SetVectorPtr(fu_ptr)
+
+
+
 
 ##
 # Helper function to generate the spatial discretization for the
@@ -568,7 +649,6 @@ def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, nti
         pyApp.nt = ntime
         pyApp.tstart = tstart
         pyApp.tstop = tstop
-        pyApp.nx = nx
         pyApp.eps = eps
         pyApp.a = a
         pyApp.Phi = [ [] for i in range(ml) ]
@@ -578,10 +658,38 @@ def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, nti
         pyApp.diff_discr = diff_discr
         
         # Define spatial discretization for each level
+        pyApp.nx = [] 
         pyApp.dxs = [] 
+        pyApp.L = []
+        pyApp.R = []
+        pyApp.P = []
+        pyApp.nx.append(nx)
         for i in range(ml):
-            pyApp.L = generate_spatial_disc(nx, a, eps, advect_discr=pyApp.advect_discr, diff_discr=pyApp.diff_discr)
-            pyApp.dxs.append( (1.0 - 0.0) / (nx - 1.0) )
+            pyApp.L.append(generate_spatial_disc(pyApp.nx[i], a, eps, advect_discr=pyApp.advect_discr, diff_discr=pyApp.diff_discr))
+            
+            if(pyApp.sc == 1):
+                nc = (nx // 2**(i+1)) + 1
+                pyApp.R.append(injection1d(nc))
+                pyApp.P.append(interpolation1d(nc))
+            else:
+                nc = nx
+
+            pyApp.dxs.append( (1.0 - 0.0) / (pyApp.nx[i] - 1.0) )
+            if i != ml-1:
+                pyApp.nx.append( nc )
+
+        #  NNNeed some way to not coarsen beyond a grid of 3 points ... or just
+        #leave that to the user?  or just stop after 3 points and do the
+        #identity?  
+        # Set spatial coarsening
+        if(pyApp.sc == 1):
+            # Check that the spatial grid size is a power of 2 plus 1
+            if (2**np.floor(np.log2(pyApp.nx)) + 1) != pyApp.nx:
+                exit("Spatial coarsening only works with power of 2 plus 1 grids")
+
+            #braid_SetSpatialCoarsen(pyCore.getCore(), my_coarsen)
+            #braid_SetSpatialRefine(pyCore.getCore(), my_refine)
+
 
         # Scale tol by domain, assume x-domain is unit interval
         tol = tol/( np.sqrt((tstop - tstart)/(ntime-1.0))*np.sqrt((1.0 - 0.0)/(nx-1.0)) )
@@ -598,7 +706,7 @@ def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, nti
         braid_SetMaxIter(pyCore.getCore(), mi)
         if fmg == 1:
             braid_SetFMG(pyCore.getCore())
-        
+
         return pyCore, pyApp
 
 
