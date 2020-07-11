@@ -140,6 +140,8 @@ cdef int my_step(braid_App app, braid_Vector ustop, braid_Vector fstop, braid_Ve
     # how the value array is written in-place
     pyU = <PyBraid_Vector> u
 
+    print("level, nx:  " + str(level) + "  " + str(pyU.values.shape[0]))
+
     # Cast app as a PyBraid_App
     pyApp = <PyBraid_App> app
 
@@ -421,17 +423,17 @@ def interpolation1d(nc):
         I[:,i] = [2*i, 2*i+1, 2*i+2]
     J = np.repeat([np.arange(nc)], 3, axis=0)
     P = coo_matrix( (d.ravel(), (I.ravel(), J.ravel()))).tocsr()
-    return 0.5 * P
+    return 0.5 * P[1:-1,:].tocsr()
 
-## 1D Injection interpolation
+## 1D Injection interpolation, injecting the end points
 ## Input argument is nc, the number of points on the coarse grid
 def injection1d(nc):
     d = np.repeat([[1]], nc, axis=0).T
     I = np.zeros((1,nc), dtype=int)
     for i in range(nc):
-        I[:,i] = [2*i+1]
+        I[:,i] = [2*i]
     J = np.repeat([np.arange(nc)], 1, axis=0)
-    P = coo_matrix( (d.ravel(), (I.ravel(), J.ravel())), shape=(2*nc+1, nc)).tocsr()
+    P = coo_matrix( (d.ravel(), (I.ravel(), J.ravel())), shape=(2*(nc-1)+1, nc)).tocsr()
     return P
 
 
@@ -457,8 +459,7 @@ cdef int my_coarsen(braid_App app, braid_Vector fu, braid_Vector *cu_ptr, braid_
     
     # Set output, so that cu_ptr points to pyCU
     pyCU.SetVectorPtr(cu_ptr)
-
-
+    
 cdef int my_refine(braid_App app, braid_Vector cu, braid_Vector *fu_ptr, braid_CoarsenRefStatus status):
     # Cast cu as a PyBraid_Vector
     pyCU = <PyBraid_Vector> cu
@@ -481,8 +482,6 @@ cdef int my_refine(braid_App app, braid_Vector cu, braid_Vector *fu_ptr, braid_C
     
     # Set output, so that fu_ptr points to pyFU
     pyFU.SetVectorPtr(fu_ptr)
-
-
 
 
 ##
@@ -657,6 +656,13 @@ def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, nti
         pyApp.advect_discr = advect_discr
         pyApp.diff_discr = diff_discr
         
+        # Compute number of levels, between which you do spatial coarsening,
+        # e.g., if nx = 65, then we have 4 levels to do spatial coarsening
+        # between.  We do not coarsen beyond a grid of 5 points, because that's
+        # the minimal sized grid needed to enforce periodic BCs for the
+        # fourth-order stencil
+        num_scoarsen_levels = int(np.log2(nx)) - 2  
+
         # Define spatial discretization for each level
         pyApp.nx = [] 
         pyApp.dxs = [] 
@@ -668,27 +674,35 @@ def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, nti
             pyApp.L.append(generate_spatial_disc(pyApp.nx[i], a, eps, advect_discr=pyApp.advect_discr, diff_discr=pyApp.diff_discr))
             
             if(pyApp.sc == 1):
-                nc = (nx // 2**(i+1)) + 1
-                pyApp.R.append(injection1d(nc))
-                pyApp.P.append(interpolation1d(nc))
+                # Spatial coarsening option is active
+                if(i < num_scoarsen_levels ):
+                    # We still have a large enough grid to coarsen 
+                    nc = (nx // 2**(i+1)) + 1
+                    R = injection1d(nc)
+                    pyApp.R.append( R.T.tocsr() )
+                    pyApp.P.append(interpolation1d(nc))
+                else:
+                    # We have reached a coarse grid size of 5, so we stop and 
+                    # do not change nc
+                    nc = pyApp.nx[-1]
+                    pyApp.R.append( eye( nc, nc, format='csr') )
+                    pyApp.P.append( eye( nc, nc, format='csr') )
             else:
+                # No spatial coarsening
                 nc = nx
 
             pyApp.dxs.append( (1.0 - 0.0) / (pyApp.nx[i] - 1.0) )
             if i != ml-1:
                 pyApp.nx.append( nc )
-
-        #  NNNeed some way to not coarsen beyond a grid of 3 points ... or just
-        #leave that to the user?  or just stop after 3 points and do the
-        #identity?  
+              
         # Set spatial coarsening
         if(pyApp.sc == 1):
             # Check that the spatial grid size is a power of 2 plus 1
-            if (2**np.floor(np.log2(pyApp.nx)) + 1) != pyApp.nx:
+            if (2**np.floor(np.log2(pyApp.nx[0])) + 1) != pyApp.nx[0]:
                 exit("Spatial coarsening only works with power of 2 plus 1 grids")
 
-            #braid_SetSpatialCoarsen(pyCore.getCore(), my_coarsen)
-            #braid_SetSpatialRefine(pyCore.getCore(), my_refine)
+            braid_SetSpatialCoarsen(pyCore.getCore(), my_coarsen)
+            braid_SetSpatialRefine(pyCore.getCore(), my_refine)
 
 
         # Scale tol by domain, assume x-domain is unit interval

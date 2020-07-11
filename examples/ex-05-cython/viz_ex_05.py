@@ -87,7 +87,6 @@ def viz_ex_05():
     mpl.title('Step %d'%(nsteps-1))
     mpl.xlim(xstart, xstop) 
 
-
     mpl.show()
 
 if __name__ == '__main__':
