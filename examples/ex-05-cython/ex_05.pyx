@@ -157,7 +157,7 @@ cdef int my_step(braid_App app, braid_Vector ustop, braid_Vector fstop, braid_Ve
         Inv = invert_sparse_mat_splu( I - dt*L )
 
         def matvec(y):
-            return Inv*y #  if boundary conditions, Inv*(y + dt*pyApp.bcs)
+            return Inv*y 
         
         pyApp.Phi[level] = LinearOperator(L.shape, matvec=matvec, dtype=L.dtype)
 
@@ -490,7 +490,7 @@ def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0,
     if print_help:
         # Simply print the help message, and return.
 
-        helpstring = "Braid simulation of 1D advection-diffusion\n\n" + \
+        helpstring = "Braid simulation of 1D heat equation\n\n" + \
              "Parameter options to InitCoreApp:\n" + \
              "  ml   <max_levels>   : set max levels\n" + \
              "  nu   <nrelax>       : set num F-C relaxations\n" + \
