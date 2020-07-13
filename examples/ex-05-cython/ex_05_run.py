@@ -4,7 +4,6 @@
 #
 
 import ex_05
-from viz_ex_05 import viz_ex_05
 
 # Can choose to print help message
 print_help = False
@@ -15,6 +14,8 @@ core, app = ex_05.InitCoreApp(print_help=print_help, ml=2, nu=1, nu0=1,
 if print_help == False:
     ex_05.run_Braid(core, app)
 
-viz_ex_05()
+# Uncomment to run simple visualization script
+#from viz_ex_05 import viz_ex_05
+#viz_ex_05()
 
 

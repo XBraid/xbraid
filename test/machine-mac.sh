@@ -70,7 +70,7 @@ TESTS=( "diffusion1D.sh " \
         "mfem.sh" \
         "ode1D.sh" \
         "ode1D-refine-periodic.sh" \
-        "ode1D_cython.sh" \
+        "cython_tests.sh" \
         "test-checkout-compile.sh " \
         "adjoint.sh " \
         "shellvector_bdf2.sh "\

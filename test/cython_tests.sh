@@ -71,7 +71,8 @@ esac
 # Setup
 example_dir1="../examples/ex-01-cython"
 example_dir2="../examples/ex-01-cython-alt"
-driver_dir="../drivers"
+example_dir3="../examples/ex-05-cython"
+driver_dir1="../drivers/drive-adv-diff-1D-Cython"
 test_dir=`pwd`
 output_dir=`pwd`/$scriptname.dir
 rm -fr $output_dir 2> /dev/null
@@ -92,6 +93,19 @@ cd $test_dir
 cd $example_dir2
 rm -rf build
 python3 ex_01_alt-setup.py install --prefix=$HOME/.local
+echo " "
+echo " "
+cd $test_dir
+cd $example_dir3
+rm -rf build
+python3 ex_05-setup.py install --prefix=$HOME/.local
+echo " "
+echo " "
+cd $test_dir
+cd $driver_dir1
+rm -rf build
+python3 drive_adv_diff_1D-setup.py install --prefix=$HOME/.local
+#
 export PYTHONPATH="$HOME/.local/lib/python3.6"
 export PYTHONPATH="$HOME/.local/lib/python3.6/site-packages:$PYTHONPATH"
 export PYTHONPATH="$HOME/.local/lib/python3.7:$PYTHONPATH"
@@ -100,7 +114,13 @@ cd $test_dir
 
 # Run the following regression tests 
 TESTS=( "$RunString -np 1 python3 $example_dir1/ex_01_run.py" \
-        "$RunString -np 1 python3 $example_dir2/ex_01_alt_run.py" )
+        "$RunString -np 1 python3 $example_dir2/ex_01_alt_run.py" \
+        "$RunString -np 1 python3 $example_dir3/ex_05_run.py" \
+        "$RunString -np 1 python3 $driver_dir1/drive_adv_diff_1D_run.py" \
+        "$RunString -np 2 python3 $example_dir3/ex_05_run.py" \
+        "$RunString -np 2 python3 $driver_dir1/drive_adv_diff_1D_run.py" \
+        "$RunString -np 3 python3 $example_dir3/ex_05_run.py" \
+        "$RunString -np 3 python3 $driver_dir1/drive_adv_diff_1D_run.py" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 
@@ -164,5 +184,6 @@ if [ -n $MACHINES_FILE ] ; then
    rm $MACHINES_FILE 2> /dev/null
 fi
 rm braid.out.cycle 2> /dev/null
-rm ex-01*.out.* 2> /dev/null
+rm ex-05*.out.* 2> /dev/null
+rm drive_adv_diff_1D.out.* 2> /dev/null
 rm timegrid.* 2> /dev/null

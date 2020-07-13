@@ -4,7 +4,6 @@
 #
 
 import drive_adv_diff_1D
-from viz_drive_adv_diff_1D import viz_drive_adv_diff_1D
 
 # Can choose to print help message
 print_help = False
@@ -18,6 +17,8 @@ core, app = drive_adv_diff_1D.InitCoreApp(print_help=print_help, ml=2, nu=1, nu0
 if print_help == False:
     drive_adv_diff_1D.run_Braid(core, app)
      
-viz_drive_adv_diff_1D()
+# Uncomment to run simple visualization script
+#from viz_drive_adv_diff_1D import viz_drive_adv_diff_1D
+#viz_drive_adv_diff_1D()
      
 
