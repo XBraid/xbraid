@@ -90,7 +90,7 @@ ctypedef _braid_App_struct *braid_App
 ##
 # Import Cython Braid Wrappers 
 # (only do after declaration of Braid Vector and App)
-include "braid.pyx"
+include "../../braid/braid.pyx"
 
 
 ##
