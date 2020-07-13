@@ -26,7 +26,7 @@ braid/braid.pyx ).
 
 It solves the 1D advection-diffusion equation
  
-         u_t = u_x + eps*u_xx,
+         u_t = a*u_x + eps*u_xx,
  
 For instructions on running and compiling, see 
 

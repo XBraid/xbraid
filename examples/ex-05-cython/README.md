@@ -24,9 +24,9 @@
 This is an example using the Braid-Cython interface defined in braid.pyx (
 braid/braid.pyx ). 
 
-It solves the 1D advection-diffusion equation
+It solves the 1D heat equation
  
-         u_t = u_x + eps*u_xx,
+         u_t = u_xx
  
 For instructions on running and compiling, see 
 

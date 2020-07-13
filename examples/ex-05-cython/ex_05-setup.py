@@ -41,10 +41,10 @@ braid_dir = "../../braid"
 #    Output:
 #
 #    Braid: Begin simulation, 60 time steps
-#    Braid: || r_0 || = 2.449744e+01, conv factor = 1.00e+00, wall time = 3.41e-02
-#    Braid: || r_1 || = 1.202467e-02, conv factor = 4.91e-04, wall time = 5.34e-02
-#    Braid: || r_2 || = 4.237590e-04, conv factor = 3.52e-02, wall time = 7.28e-02
-#    Braid: || r_3 || = 1.693387e-05, conv factor = 4.00e-02, wall time = 9.18e-02
+#    Braid: || r_0 || = 2.211629e+01, conv factor = 1.00e+00, wall time = 2.43e-02
+#    Braid: || r_1 || = 6.164662e-03, conv factor = 2.79e-04, wall time = 4.63e-02
+#    Braid: || r_2 || = 2.174025e-04, conv factor = 3.53e-02, wall time = 6.75e-02
+#    Braid: || r_3 || = 8.721079e-06, conv factor = 4.01e-02, wall time = 8.80e-02
 #    ...
 #    ...
 #

@@ -16,8 +16,8 @@ from invert_sparse_mat_splu import invert_sparse_mat_splu
 # 
 # Requires:      Python 3, Cython, C-language support     
 #
-# Description:   Solve the 1D advection-diffusion equation 
-#                   u_t + a*u_x  =   eps*u_xx 
+# Description:   Solve the 1D heat equation 
+#                u_t = u_xx
 #                
 #                on x in [0, 1], with t in [0, tstop=1.0]
 #
@@ -42,12 +42,11 @@ from invert_sparse_mat_splu import invert_sparse_mat_splu
 #                >>> ex_05.run_Braid(core, app)
 #
 #                Output:
-#            
 #                Braid: Begin simulation, 60 time steps
-#                Braid: || r_0 || = 2.449744e+01, conv factor = 1.00e+00, wall time = 3.41e-02
-#                Braid: || r_1 || = 1.202467e-02, conv factor = 4.91e-04, wall time = 5.34e-02
-#                Braid: || r_2 || = 4.237590e-04, conv factor = 3.52e-02, wall time = 7.28e-02
-#                Braid: || r_3 || = 1.693387e-05, conv factor = 4.00e-02, wall time = 9.18e-02
+#                Braid: || r_0 || = 2.211629e+01, conv factor = 1.00e+00, wall time = 2.43e-02
+#                Braid: || r_1 || = 6.164662e-03, conv factor = 2.79e-04, wall time = 4.63e-02
+#                Braid: || r_2 || = 2.174025e-04, conv factor = 3.53e-02, wall time = 6.75e-02
+#                Braid: || r_3 || = 8.721079e-06, conv factor = 4.01e-02, wall time = 8.80e-02
 #                ...
 #                ...
 #
@@ -104,8 +103,6 @@ cdef class PyBraid_App:
     cdef int nt               # number of points in time
     cdef double tstart        # initial global time
     cdef double tstop         # final global time
-    cdef double eps           # diffusion coefficient
-    cdef double a             # advection coefficient
     cdef object L             # list of spatial discretization matrices at each Braid level
     cdef object P             # list of spatial interpolation matrices at each Braid level
     cdef object R             # list of spatial restriction matrices at each Braid level
@@ -114,12 +111,6 @@ cdef class PyBraid_App:
     cdef object dts           # list containing dt values for each Braid level 
     cdef object nx            # list containing the number of points in space for each Braid level
     cdef object dxs           # list containing dx values for each Braid level 
-    cdef object time_discr    # string containing the desired time discretization
-                              # 'BE', 'FE', 'SDIRK3', 'RK4'
-    cdef object advect_discr  # string containing the desired advection discretization
-                              # 'upwind', 'central', 'fourth', 'fourth_diss', 'fourth_diss_sq'
-    cdef object diff_discr    # string containing the desired diffusion discretization
-                              # 'second_order', 'fourth_order'
     def __cinit__(self, _rank): 
         self.rank = _rank
 
@@ -159,78 +150,17 @@ cdef int my_step(braid_App app, braid_Vector ustop, braid_Vector fstop, braid_Ve
 
     # Compute time-stepping matrix
     if pyApp.Phi[level] == []:
+        
+        # Compute time-stepping operator for Backward Euler
         pyApp.dts[level] = dt
+        I = eye(nx, nx, format='csr', dtype=L.dtype)
+        Inv = invert_sparse_mat_splu( I - dt*L )
+
+        def matvec(y):
+            return Inv*y #  if boundary conditions, Inv*(y + dt*pyApp.bcs)
         
-        if pyApp.time_discr == 'BE':
-            # Compute time-stepping operator for Backward Euler
-            I = eye(nx, nx, format='csr', dtype=L.dtype)
-            Inv = invert_sparse_mat_splu( I - dt*L )
+        pyApp.Phi[level] = LinearOperator(L.shape, matvec=matvec, dtype=L.dtype)
 
-            def matvec(y):
-                return Inv*y #  if boundary conditions, Inv*(y + dt*pyApp.bcs)
-        
-            pyApp.Phi[level] = LinearOperator(L.shape, matvec=matvec, dtype=L.dtype)
-
-
-        elif pyApp.time_discr == 'SDIRK3':
-            # Compute time-stepping operator for SDIRK3 
-            # 
-            #   a  |   a
-            #   c  |  c-a    a
-            #   1  |   b   1-a-b  a
-            # -----+----------------
-            #      |   b   1-a-b  a
-            a = 0.435866521508458999416019
-            b = 1.20849664917601007033648
-            c = 0.717933260754229499708010
-            a_21 = c-a; a_31 = b; a_32 = 1-a-b
-            b_1 = b; b_2 = 1-a-b; b_3 = a
-
-            # Use SPLU to get our inverse 
-            I = eye(nx, nx, format='csr', dtype=L.dtype)
-            SDIRK_Diag_Inv = invert_sparse_mat_splu( I - dt*a*L )
-            
-            # Define a mat-vec that applies SDIRK3
-            def matvec(y):
-                
-                k0 = y
-                
-                k1 = L*k0                             # if boundary conditions,  + pyApp.bcs
-                k1 = SDIRK_Diag_Inv*( k1 )                  
-                                                            
-                k2 = L*(k0 + dt*a_21*k1)              # if boundary conditions,  + pyApp.bcs
-                k2 = SDIRK_Diag_Inv*( k2 )
-                
-                k3 = L*(k0 + dt*a_31*k1 + dt*a_32*k2) # if boundary conditions,  + pyApp.bcs
-                k3 = SDIRK_Diag_Inv*( k3 ) 
-                
-                return k0 + dt*(b_1*k1 + b_2*k2 + b_3*k3)
-            
-            pyApp.Phi[level] = LinearOperator(L.shape, matvec=matvec, dtype=L.dtype)
-
-        elif pyApp.time_discr == 'FE':
-            # Compute time-stepping operator for forward Euler
-            I = eye(nx, nx, format='csr', dtype=L.dtype)
-            Phi_Mat = I + dt*L 
-
-            def matvec(y):
-                return Phi_Mat*y #  if boundary conditions, Phi_Mat*(y + dt*pyApp.bcs)
-        
-            pyApp.Phi[level] = LinearOperator(L.shape, matvec=matvec, dtype=L.dtype)
-
-        elif pyApp.time_discr == 'RK4':
-            
-            # Compute time-stepping operator for RK-4
-            def matvec(y):
-                k1 = L*y
-                k2 = L*(y + dt/2*k1)
-                k3 = L*(y + dt/2*k2)
-                k4 = L*(y + dt*k3)
-                y =  y + (dt/6.)*(k1 + 2*k2 + 2*k3 + k4)
-            
-                return y                    
-            
-            pyApp.Phi[level] = LinearOperator(L.shape, matvec=matvec, dtype=L.dtype)
 
     # Take step: make sure to write pyU in-place with [:]
     pyU.values[:] = pyApp.Phi[level] * pyU.values
@@ -251,14 +181,7 @@ cdef int my_init(braid_App app, double t, braid_Vector *u_ptr):
     # Make sure to change values in-place with [:]
     if t == 0.0:
         mesh_x = np.linspace(0,1.0,nx)
-        indys = np.array( (mesh_x >= 0.25), dtype=int) + np.array( (mesh_x <= 0.5), dtype=int) == 2
-        pyU.values = np.sin(2*np.pi*mesh_x)
-        #pyU.values[indys] = -np.sin(4*np.pi*mesh_x[indys])
-        
-        #pyU.values[:] = 0.0
-        #pyU.values[(nx//10):(nx//5)] = 1.0
-        ## If boundary conditions, need to set [0] and [-1] entries
-
+        pyU.values = np.sin(np.pi*mesh_x)
     else:
         pyU.values[:] = 6.123451
         # pyU.values[:] = np.random.rand(pyApp.nx)
@@ -514,9 +437,8 @@ cdef int my_refine(braid_App app, braid_Vector cu, braid_Vector *fu_ptr, braid_C
 
 
 ##
-# Helper function to generate the spatial discretization for the
-# advection-diffusion problem.  Different discretization types are supported.
-def generate_spatial_disc(nx, a, eps, diff_discr='second_order', advect_discr='upwind'):
+# Helper function to generate the spatial discretization for the heat equation.
+def generate_spatial_disc(nx):
     
     # Assume unit interval with nx points
     dx = 1.0 / (nx - 1.0)
@@ -528,64 +450,13 @@ def generate_spatial_disc(nx, a, eps, diff_discr='second_order', advect_discr='u
     #
     Dplus = (1./dx)*spdiags(o, [0,1], nx+10, nx+10, format='csr')
     Dminus =(1./dx)*spdiags(o, [-1,0], nx+10, nx+10, format='csr')
-    Dzero = (1./(2.*dx))*spdiags(o, [-1,1], nx+10, nx+10, format='csr')  # equiv to Dzero = 0.5*(Dplus + Dminus)
     I = eye(nx+10, nx+10, format='csr')
 
-    # Construct diffusion matrix
-    if diff_discr == 'second_order':
-        # Construct the u_xx stencil of [1   -2   1]
-        Diff =  Dplus*Dminus
-    elif diff_discr == 'fourth_order':
-        # Construct the fourth order u_xx stencil 
-        Diff =  Dplus*Dminus*(I - ((dx**2)/12.)*Dplus*Dminus)
-    else:
-        exit("Diffusion discretization " + diff_discr + " unrecognized")
-
-
-    # Construct advection matrix
-    if advect_discr == 'upwind':
-        # Construct the u_x stencil of [-1   1   0]
-        Adv =  Dminus 
-
-    elif advect_discr == 'central':
-        # Construct the u_x stencil of [-1   0   1]
-        Adv =  Dzero
-
-    elif (advect_discr == 'fourth') or (advect_discr == 'fourth_diss') or (advect_discr == 'fourth_diss_sq'):
-       
-        # Set fourth order centered stecil for d/dx
-        Adv = Dzero*(I - ((dx**2)/6.)*Dplus*Dminus)
-        
-        # Add fourth-order hyperviscosity
-        if advect_discr == 'fourth_diss':
-            # Add one order of artificial diss (third order in space)
-            Adv += 1.1*(dx**3)*Dplus*Dplus*Dminus*Dminus
-
-        elif advect_discr == 'fourth_diss_sq':
-            # Add two orders of artificial diss (second order in space)
-            Adv += 1.1*(dx**2)*Dplus*Dplus*Dminus*Dminus
-               
-        # Note: if no periodicity in space, you need to fix up the last two
-        # rows of Adv, so that they represent accurate first derivative
-        # computations (because there is no BC to account for the truncated
-        # stencils).  You could use one-sided stenicls, or just make the last
-        # two rows upwinding.
-
-    else:
-        exit("Advection discretization " + advect_discr + " unrecognized")
-
-    ##
-    # Construct composite operator, remember that we solve
-    #    u_t + a*u_x  =   eps*u_xx 
-    # but we are forming here
-    #    u_t = L u = -a u_x + eps u_xx
-    L = - a*Adv + eps*Diff
-    
-    ##
-    # Remove padding around boundary
-    # Note, because we use periodic boundary conditions, the computations
-    # of Dplus*Dminus (and so on) are inaccurate near the boundary.  Thus,
-    # we inserted a plus 10 padding above, that we now remove.
+    # Construct diffusion matrix with stencil of [1  -2   1] and remove padding
+    # around boundary Note, because we use periodic boundary conditions, the
+    # computations of Dplus*Dminus (and so on) are inaccurate near the
+    # boundary.  Thus, we inserted a plus 10 padding above, that we now remove.
+    L = Dplus*Dminus
     L = L[5:(5+nx), 5:(5+nx)]
 
     ##
@@ -601,14 +472,14 @@ def generate_spatial_disc(nx, a, eps, diff_discr='second_order', advect_discr='u
     
     L = L.tocsr()
     L.sort_indices()
+    
     return L
 
 
 # For a description of what each parameter does, look at the help message
 # printed by the driver, or look at the various braid_Set*() routines below. 
-def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, ntime=60, 
-        eps=1.0, a=1.0, tol=1e-6, cf=2, mi=30, sc=0, fmg=0, advect_discr='upwind', 
-        diff_discr='second_order', time_discr='BE'):
+def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, 
+                nx=16, ntime=60, tol=1e-6, cf=2, mi=30, sc=0, fmg=0):
 
     cdef braid_Core core
     cdef double tstart
@@ -628,24 +499,11 @@ def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, nti
              "  skip <set_skip>     : set skip relaxations on first down-cycle; 0: no skip;  1: skip\n" + \
              "  nx   <nspace>       : set num points in space\n" + \
              "  nt   <ntime>        : set num points in time\n" + \
-             "  eps  <epsilon>      : set the diffusion coefficient, u_t = a*u_x + eps*u_xx \n" + \
-             "  a    <a>            : set the advection coefficient, u_t = a*u_x + eps*u_xx \n" + \
              "  tol  <tol>          : set stopping tolerance (scaled by sqrt(dt) sqrt(dx))\n" + \
              "  cf   <cfactor>      : set coarsening factor\n" + \
              "  mi   <max_iter>     : set max iterations\n" + \
              "  sc   <scoarsen>     : use spatial coarsening (bilinear) by factor of 2; must use 2^k sized grids\n" + \
-             "  fmg                 : use FMG cycling \n" + \
-             "  time_discr          : time discretization to use, choose one of \n" + \
-             "                      :   'BE', 'FE', 'SDIRK3', 'RK4' \n" + \
-             "  diff_discr          : diffusion discretization to use, choose one of \n" + \
-             "                      :   'second_order', 'fourth_order' \n" + \
-             "  advect_discr        : spatial discretization for advection term\n" +\
-             "                      :   The advection term can be one of \n" + \
-             "                      :   'upwind', 'central', 'fourth', 'fourth_diss', 'fourth_diss_sq' \n" + \
-             "                      :   where these options are upwinding, central differencing, fourth order differencing, \n" + \
-             "                      :   fourth order differencing with one order of artificial dissipation, and \n" + \
-             "                      :   fourth order differencing with two orders of artificial dissipation.  \n\n" + \
-             "                      :   The diffusion term is always discretized with classic second order differencing. \n"
+             "  fmg                 : use FMG cycling \n"
         
         print(helpstring)
 
@@ -679,13 +537,8 @@ def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, nti
         pyApp.nt = ntime
         pyApp.tstart = tstart
         pyApp.tstop = tstop
-        pyApp.eps = eps
-        pyApp.a = a
         pyApp.Phi = [ [] for i in range(ml) ]
         pyApp.dts = [ -1.0 for i in range(ml) ]
-        pyApp.time_discr = time_discr
-        pyApp.advect_discr = advect_discr
-        pyApp.diff_discr = diff_discr
         
         # Compute number of levels, between which you do spatial coarsening,
         # e.g., if nx = 65, then we have 4 levels to do spatial coarsening
@@ -702,7 +555,7 @@ def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, nti
         pyApp.P = []
         pyApp.nx.append(nx)
         for i in range(ml):
-            pyApp.L.append(generate_spatial_disc(pyApp.nx[i], a, eps, advect_discr=pyApp.advect_discr, diff_discr=pyApp.diff_discr))
+            pyApp.L.append(generate_spatial_disc(pyApp.nx[i]))
             
             if(pyApp.sc == 1):
                 # Spatial coarsening option is active
@@ -761,16 +614,16 @@ def run_Braid(PyBraid_Core pyCore, PyBraid_App pyApp):
     braid_Drive(pyCore.getCore())
     
     # Print per-level discretization information
-    print("\n\n-----------------------------------------------------------------")
-    print("-----------------------------------------------------------------\n")
-    print("level       dx          dt        a*dt/dx      a*dt/dx^2"); 
-    print("-----------------------------------------------------------------"); 
+    print("\n\n----------------------------------------------------------")
+    print("----------------------------------------------------------\n")
+    print("level       dx          dt        a*dt/dx^2"); 
+    print("----------------------------------------------------------"); 
     for i in range(len(pyApp.Phi)): 
         dx = pyApp.dxs[i] 
         dt = pyApp.dts[i] 
         if dt == -1.0:
             break
-        print(" %2d   |   %1.2e    %1.2e    %1.2e    %1.2e" %(i, dx, dt, pyApp.a*dt/dx, pyApp.a*dt/(dx*dx) )) 
+        print(" %2d   |   %1.2e    %1.2e    %1.2e" %(i, dx, dt, dt/(dx*dx) )) 
 
     # Destroy App, decrementing smart pointer for app
     Py_DECREF(pyApp)
