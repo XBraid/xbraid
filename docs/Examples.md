@@ -1292,13 +1292,15 @@ can return a boolean variable to indicate correctness.
                           my_Access, my_Free, my_Clone, my_Sum, my_SpatialNorm, 
                           my_CoarsenBilinear, my_Refine);
 
-# Fortan90 Interface, C++ Interface, and More Complicated Examples {#complicatedexamples}
+# Fortan90 Interface, C++ Interface, Python Interface, and More Complicated Examples {#complicatedexamples}
 
-We have Fortran90 and C++ interfaces.  For Fortran 90, see ``examples/ex-01f.f90``.
+We have Fortran90, C++, and Python interfaces.  For Fortran 90, see ``examples/ex-01f.f90``.
 For C++ see ``braid.hpp`` and ``examples/ex-01-pp.cpp``
 For more complicated C++ examples, see the various C++ examples in
-``drivers/drive-**.cpp``.  For a discussion of more complex problems please see
-our project
+``drivers/drive-**.cpp``.  For Python, see the directories ``examples/ex-01-cython`` 
+and ``examples/ex-01-cython-alt``.
+
+For a discussion of more complex problems please see our project
 [publications website](http://computation.llnl.gov/projects/parallel-time-integration-multigrid/publications)
 for our recent publications concerning some of these varied applications. 
 

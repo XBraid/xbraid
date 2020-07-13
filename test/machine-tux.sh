@@ -69,7 +69,8 @@ TESTS=( "diffusion1D.sh " \
         "adjoint.sh " \
         "shellvector_bdf2.sh "\
         "memcheck-tux-jacob.sh "\
-        "ode1D.sh")
+        "ode1D.sh"\
+        "cython_tests.sh")
 #       Need to fix the issues with refinement = 2 
 #        "ode1D-refine-periodic.sh"\
 
