@@ -40,10 +40,20 @@ braid_dir = "../../braid"
 #
 #    Output:
 #
+#    Braid: Begin simulation, 60 time steps
+#    Braid: || r_0 || = 2.449744e+01, conv factor = 1.00e+00, wall time = 3.41e-02
+#    Braid: || r_1 || = 1.202467e-02, conv factor = 4.91e-04, wall time = 5.34e-02
+#    Braid: || r_2 || = 4.237590e-04, conv factor = 3.52e-02, wall time = 7.28e-02
+#    Braid: || r_3 || = 1.693387e-05, conv factor = 4.00e-02, wall time = 9.18e-02
+#    ...
+#    ...
 #
-## 3) For parallel runs, try
+# 3) For runs where you control various solver and problem parameters and can use
+#    multiple processors in time, try 
 #
 #    $$ mpirun -np K  python3 ex_05_run.py
+#
+#    where you control parameters by editing ex_05_run.py 
 ## 
 
 ##

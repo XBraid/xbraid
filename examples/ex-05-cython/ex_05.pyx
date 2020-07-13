@@ -30,15 +30,26 @@ from invert_sparse_mat_splu import invert_sparse_mat_splu
 #                If you move this example to another directory, you must 
 #                set the correct relative location for "braid.pyx" below.
 #
-# Help with:     $python3 ex_This is the simplest Cython example available, read the source
+# Help with:     Print the help message from inside Python 3 with
+#
+#                >>> import ex_05
+#                >>> core, app = ex_05.InitCoreApp()
+#                >>> ex_05.InitCoreApp(print_help=True) 
 #
 # Sample run:    From inside Python 3,     
 #                >>> import ex_05
 #                >>> core, app = ex_05.InitCoreApp()
 #                >>> ex_05.run_Braid(core, app)
 #
-#                Output: 
-#
+#                Output:
+#            
+#                Braid: Begin simulation, 60 time steps
+#                Braid: || r_0 || = 2.449744e+01, conv factor = 1.00e+00, wall time = 3.41e-02
+#                Braid: || r_1 || = 1.202467e-02, conv factor = 4.91e-04, wall time = 5.34e-02
+#                Braid: || r_2 || = 4.237590e-04, conv factor = 3.52e-02, wall time = 7.28e-02
+#                Braid: || r_3 || = 1.693387e-05, conv factor = 4.00e-02, wall time = 9.18e-02
+#                ...
+#                ...
 #
 # Sample 
 # Parallel run:  See the file ex_05_run.py.  Run it from the shell with, 
@@ -82,7 +93,6 @@ cdef class PyBraid_Vector:
 # Define user App to hold all "time-independent" information needed by the
 # simulation.  This object is always available as the first parameter to any user
 # function.
-#
 ##
 cdef class PyBraid_App:
     '''
@@ -91,19 +101,19 @@ cdef class PyBraid_App:
 
     cdef int rank             # MPI rank
     cdef int sc               # spatial coarsening used? (0: no,  1: yes) 
-    cdef int nt               # number of points in space
-    cdef double tstart        # number of points in space
-    cdef double tstop         # number of points in space
+    cdef int nt               # number of points in time
+    cdef double tstart        # initial global time
+    cdef double tstop         # final global time
     cdef double eps           # diffusion coefficient
     cdef double a             # advection coefficient
-    cdef object L             # list of spatial discretization matrices
-    cdef object P             # list of spatial interpolation matrices 
-    cdef object R             # list of spatial restriction matrices
-    cdef object Phi           # list containing LinearOperators (for implicit) and sparse matrices 
-                              # (for explicit) whose application allow for the evaluation of Phi 
-    cdef object dts           # list containing dt value for each level 
-    cdef object nx            # list containing the number of points in space for each level
-    cdef object dxs           # list containing dx value for each level 
+    cdef object L             # list of spatial discretization matrices at each Braid level
+    cdef object P             # list of spatial interpolation matrices at each Braid level
+    cdef object R             # list of spatial restriction matrices at each Braid level
+    cdef object Phi           # list containing time-stepping LinearOperators (for implicit) and sparse matrices 
+                              # (for explicit) for each Braid level
+    cdef object dts           # list containing dt values for each Braid level 
+    cdef object nx            # list containing the number of points in space for each Braid level
+    cdef object dxs           # list containing dx values for each Braid level 
     cdef object time_discr    # string containing the desired time discretization
                               # 'BE', 'FE', 'SDIRK3', 'RK4'
     cdef object advect_discr  # string containing the desired advection discretization
@@ -124,6 +134,7 @@ include "../../braid/braid.pyx"
 # Define user functions like Step, Init, ...
 ##
 
+# Take a time step at any given Braid level
 cdef int my_step(braid_App app, braid_Vector ustop, braid_Vector fstop, braid_Vector u, braid_StepStatus status):
     
     # Declare tstart and tstop as doubles, and then fill with values from Braid status
@@ -139,8 +150,6 @@ cdef int my_step(braid_App app, braid_Vector ustop, braid_Vector fstop, braid_Ve
     # Cast u as a PyBraid_Vector, and do time-stepping.  Note
     # how the value array is written in-place
     pyU = <PyBraid_Vector> u
-
-    print("level, nx:  " + str(level) + "  " + str(pyU.values.shape[0]))
 
     # Cast app as a PyBraid_App
     pyApp = <PyBraid_App> app
@@ -229,6 +238,7 @@ cdef int my_step(braid_App app, braid_Vector ustop, braid_Vector fstop, braid_Ve
     return 0
 
 
+# Allocate and initialize a Braid vector on level 0
 cdef int my_init(braid_App app, double t, braid_Vector *u_ptr):
     
     # Cast app as a PyBraid_App
@@ -261,6 +271,8 @@ cdef int my_init(braid_App app, double t, braid_Vector *u_ptr):
 
     return 0
 
+
+# Clone a Braid vector on any Braid level
 cdef int my_clone(braid_App app, braid_Vector u, braid_Vector *v_ptr):
     
     # Cast app as a PyBraid_App
@@ -282,9 +294,10 @@ cdef int my_clone(braid_App app, braid_Vector u, braid_Vector *v_ptr):
     # Set output, so that u_ptr points to pyU
     pyV.SetVectorPtr(v_ptr)
     
-    #print("Clone  " + str(pyU.value) + "  " + str(pyV.value))
     return 0
  
+
+# Free a Braid vector on any Braid level
 cdef int my_free(braid_App app, braid_Vector u):
     # Cast u as a PyBraid_Vector
     pyU = <PyBraid_Vector> u
@@ -296,6 +309,8 @@ cdef int my_free(braid_App app, braid_Vector u):
     
     return 0
 
+
+# Compute an AXPY with two Braid vectors on any Braid level
 cdef int my_sum(braid_App app, double alpha, braid_Vector x, double beta, braid_Vector y):
     # Cast x and y as a PyBraid_Vector
     pyX = <PyBraid_Vector> x
@@ -306,6 +321,8 @@ cdef int my_sum(braid_App app, double alpha, braid_Vector x, double beta, braid_
 
     return 0
 
+
+# Compute a vector norm on any Braid level
 cdef int my_norm(braid_App app, braid_Vector u, double *norm_ptr):
     # Cast u as a PyBraid_Vector
     pyU = <PyBraid_Vector> u
@@ -314,9 +331,10 @@ cdef int my_norm(braid_App app, braid_Vector u, double *norm_ptr):
     #  Note norm_ptr is a double array of size 1, and we index in at location [0]
     norm_ptr[0] = np.sqrt(np.dot(pyU.values, pyU.values))
     
-    #print("Norm " + str(norm_ptr[0]) + ",  " + str(pyU.value[0]))
     return 0
 
+
+# Define how you want to output (for processing, visualization, ...) Braid vectors
 cdef int my_access(braid_App app, braid_Vector u, braid_AccessStatus status):
     # Cast u as a PyBraid_Vector
     pyU = <PyBraid_Vector> u
@@ -361,6 +379,9 @@ cdef int my_access(braid_App app, braid_Vector u, braid_AccessStatus status):
 
     return 0
 
+
+# Define the maximum possible size needed for an MPI buffer than contains a
+# Braid vector
 cdef int my_bufsize(braid_App app, int *size_ptr, braid_BufferStatus status):
     
     # Cast app as a PyBraid_App
@@ -371,6 +392,8 @@ cdef int my_bufsize(braid_App app, int *size_ptr, braid_BufferStatus status):
     
     return 0
 
+
+# Define how to pack a Braid vector into an MPI buffer
 cdef int my_bufpack(braid_App app, braid_Vector u, void *buffer, braid_BufferStatus status):
     # Cast u as a PyBraid_Vector
     pyU = <PyBraid_Vector> u
@@ -389,6 +412,9 @@ cdef int my_bufpack(braid_App app, braid_Vector u, void *buffer, braid_BufferSta
     braid_BufferStatusSetSize(status, (nx+1)*sizeof(double))
     return 0
 
+
+# Define how to unpack an MPI buffer containing a Braid vector, and put the
+# result in a newly allocated Braid vector
 cdef int my_bufunpack(braid_App app, void *buffer, braid_Vector *u_ptr, braid_BufferStatus status):
     
     # Cast app as a PyBraid_App
@@ -437,6 +463,7 @@ def injection1d(nc):
     return P
 
 
+# Define how to spatially coarsen a Braid vector
 cdef int my_coarsen(braid_App app, braid_Vector fu, braid_Vector *cu_ptr, braid_CoarsenRefStatus status):
     # Cast fu as a PyBraid_Vector
     pyFU = <PyBraid_Vector> fu
@@ -459,7 +486,9 @@ cdef int my_coarsen(braid_App app, braid_Vector fu, braid_Vector *cu_ptr, braid_
     
     # Set output, so that cu_ptr points to pyCU
     pyCU.SetVectorPtr(cu_ptr)
-    
+
+
+# Define how to spatially refine a Braid vector
 cdef int my_refine(braid_App app, braid_Vector cu, braid_Vector *fu_ptr, braid_CoarsenRefStatus status):
     # Cast cu as a PyBraid_Vector
     pyCU = <PyBraid_Vector> cu
@@ -575,7 +604,7 @@ def generate_spatial_disc(nx, a, eps, diff_discr='second_order', advect_discr='u
     return L
 
 
-# For a description of what each paramter here does, look at the help message
+# For a description of what each parameter does, look at the help message
 # printed by the driver, or look at the various braid_Set*() routines below. 
 def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, ntime=60, 
         eps=1.0, a=1.0, tol=1e-6, cf=2, mi=30, sc=0, fmg=0, advect_discr='upwind', 
@@ -588,6 +617,8 @@ def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, nti
     cdef int rank
     
     if print_help:
+        # Simply print the help message, and return.
+
         helpstring = "Braid simulation of 1D advection-diffusion\n\n" + \
              "Parameter options to InitCoreApp:\n" + \
              "  ml   <max_levels>   : set max levels\n" + \
@@ -621,7 +652,7 @@ def InitCoreApp(print_help=False, ml=2, nu=1, nu0=1, CWt=1.0, skip=0, nx=16, nti
         return None,None
     
     else:
-        # Set up braid core and app
+        # Set up Braid core and app
         
         # number of time-steps, ntime, passed in as parameter
         tstart = 0.0
