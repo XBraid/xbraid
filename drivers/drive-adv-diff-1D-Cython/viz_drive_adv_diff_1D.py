@@ -6,11 +6,11 @@ from os import sys
 # Run like 
 #  $ python viz.py
 #
-#  Vizualize the files from ex-05.  The output is assumed to have 
+#  Vizualize the files from drive_adv_diff_1D.  The output is assumed to have 
 #  the following format.  The filenames are 
 #       file_stem + '.' step_number + '.' + rank
 #  So, the filename
-#       ex-05.out.0000350.00000
+#       drive_adv_diff_1D.out.0000350.00000
 #  is the output from step 350 from processor rank 0.  Right now,
 #  there is no parallelism, so it's always rank 0.
 #
@@ -30,10 +30,10 @@ from os import sys
 #     x[k]
 ##
 
-def viz_ex_05():
+def viz_drive_adv_diff_1D():
 
     # Set the braid iteration number and number of steps
-    file_stem = 'ex-05.out.'
+    file_stem = 'drive_adv_diff_1D.out.'
     current_rank = 0
 
     # Load the initial solution file and extract the problem size in space and time and the grid spacings
@@ -65,7 +65,7 @@ def viz_ex_05():
     mpl.colorbar()
     mpl.ylabel('time')
     mpl.xlabel('space')
-    mpl.title('Space-Time Solution')
+    mpl.title("Space-time Solution")
 
     mpl.figure(1)
     mpl.plot(mesh, data[0,:], '-o')
@@ -92,5 +92,5 @@ def viz_ex_05():
 
 if __name__ == '__main__':
     # run viz function
-    viz_ex_05()
+    viz_drive_adv_diff_1D()
 

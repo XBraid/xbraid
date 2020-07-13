@@ -10,7 +10,7 @@ from sys import exit
 from invert_sparse_mat_splu import invert_sparse_mat_splu 
 
 #
-# Example:       ex_05.pyx
+# Example:       drive_adv_diff_1D.pyx
 #
 # Interface:     Cython
 # 
@@ -25,21 +25,21 @@ from invert_sparse_mat_splu import invert_sparse_mat_splu
 #
 #                Spatial boundary conditions are periodic 
 #
-# Compile with:  See ex_05-setup.py for notes on installing and running
+# Compile with:  See drive_adv_diff_1D-setup.py for notes on installing and running
 #
 #                If you move this example to another directory, you must 
 #                set the correct relative location for "braid.pyx" below.
 #
 # Help with:     Print the help message from inside Python 3 with
 #
-#                >>> import ex_05
-#                >>> core, app = ex_05.InitCoreApp()
-#                >>> ex_05.InitCoreApp(print_help=True) 
+#                >>> import drive_adv_diff_1D
+#                >>> core, app = drive_adv_diff_1D.InitCoreApp()
+#                >>> drive_adv_diff_1D.InitCoreApp(print_help=True) 
 #
 # Sample run:    From inside Python 3,     
-#                >>> import ex_05
-#                >>> core, app = ex_05.InitCoreApp()
-#                >>> ex_05.run_Braid(core, app)
+#                >>> import drive_adv_diff_1D
+#                >>> core, app = drive_adv_diff_1D.InitCoreApp()
+#                >>> drive_adv_diff_1D.run_Braid(core, app)
 #
 #                Output:
 #            
@@ -52,8 +52,8 @@ from invert_sparse_mat_splu import invert_sparse_mat_splu
 #                ...
 #
 # Sample 
-# Parallel run:  See the file ex_05_run.py.  Run it from the shell with, 
-#                $ mpirun -np 2  python3 ex_05_run.py
+# Parallel run:  See the file drive_adv_diff_1D_run.py.  Run it from the shell with, 
+#                $ mpirun -np 2  python3 drive_adv_diff_1D_run.py
 #
 #                Output: 
 #                Should be identical to serial run above
@@ -364,7 +364,7 @@ cdef int my_access(braid_App app, braid_Vector u, braid_AccessStatus status):
     #   .
     #   .
     # x[k]
-    filename = "%s.%05d.%04d"%("ex-05.out", tindex, pyApp.rank)
+    filename = "%s.%05d.%04d"%("drive_adv_diff_1D.out", tindex, pyApp.rank)
     f = open(filename, "w")
     f.write("%d\n"%pyApp.nt)
     f.write("%.14e\n"%pyApp.tstart)
