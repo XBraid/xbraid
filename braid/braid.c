@@ -321,6 +321,11 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, old_fine_tolx)       = -1.0;
    _braid_CoreElt(core, tight_fine_tolx)     = 1;
 
+   /* Richardson Error Estimation */
+   _braid_CoreElt(core, est_error)       = 0; /*Error Estimation off by default */
+   _braid_CoreElt(core, richardson)      = 0; /*Richardson Extrapolation off by default */
+   _braid_CoreElt(core, order)           = 2; /* 2nd order local time stepper by defualt */
+
    braid_SetMaxLevels(core, max_levels);
    braid_SetMaxIter(core, max_iter);
    braid_SetPeriodic(core, 0);
@@ -1497,5 +1502,27 @@ braid_Rand(void)
 {
    _braid_rand_next = _braid_rand_next * 1103515245 + 12345;
    return (unsigned int) (_braid_rand_next/65536) % braid_RAND_MAX;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetErrorEstimation(braid_Core core,
+                         braid_Int  est_error,
+                         braid_Int  richardson,
+                         braid_Int  local_order)
+{
+   if ( local_order < 2 && ( est_error || richardson ) )
+   {
+      _braid_printf(" Local Order of Time Integrator must be > 1 \n " );
+      abort();
+   }
+
+   _braid_CoreElt(core, est_error)  = est_error;
+   _braid_CoreElt(core, richardson) = richardson;
+   _braid_CoreElt(core, order)      = local_order;
+
+   return _braid_error_flag;
 }
 

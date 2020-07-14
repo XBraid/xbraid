@@ -463,6 +463,16 @@ braid_Int
 braid_StatusSetSize(braid_Status status,                   /**< structure containing current simulation info */
                     braid_Real   size                      /**< input, size of the send buffer */
                     );
+
+/**
+ * Get the Richardson based error estimates 
+ */
+
+braid_Int
+braid_StatusGetErrorEst(braid_Status    status,          /**< structure containing current simulation info */
+                        braid_Int      *npoints,         /**< output, number of points in the array */
+                        braid_Real    **error_est);      /**< output, pointer to the error estimate array */
+
 /** @}*/
 
 

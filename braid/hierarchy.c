@@ -44,6 +44,12 @@ _braid_InitHierarchy(braid_Core    core,
    braid_Int      nlevels    = _braid_CoreElt(core, nlevels);
    _braid_Grid  **grids      = _braid_CoreElt(core, grids);
 
+
+   /* Required for Richardson */
+   braid_Int      richardson = _braid_CoreElt(core, richardson);
+   braid_Int      est_error  = _braid_CoreElt(core, est_error); 
+   braid_Real    *dtk, *estimate;
+
    /**
     * These are some common index names used to refer to intervals and
     * time points.  Here's what they mean.
@@ -299,6 +305,26 @@ _braid_InitHierarchy(braid_Core    core,
       }
    }
 
+   /* Required for Richardson.  Allocate the dtk and estimate arrays */ 
+   if ( richardson || est_error )
+   {
+      grid = grids[0];
+      ilower   = _braid_GridElt(grid, ilower);
+      iupper   = _braid_GridElt(grid, iupper);
+      ncpoints = _braid_GridElt(grid, ncpoints);
+
+      dtk = _braid_CTAlloc(braid_Real, ncpoints);
+      _braid_CoreElt(core, dtk) = dtk;
+      if (est_error)
+      {
+         estimate = _braid_CTAlloc(braid_Real, iupper-ilower+1);
+         _braid_CoreElt(core, estimate) = estimate;
+      }   
+      
+      _braid_GetDtk(core);
+   }
+
+
    return _braid_error_flag;
 }
 
@@ -490,4 +516,94 @@ _braid_CopyFineToCoarse(braid_Core  core)
 
    return _braid_error_flag;
 }
+
+
+
+/*----------------------------------------------------------------------------
+ * Propagate time step information required to compute the Richardson error
+ * estimate at each C-point. This can be done at any time, but does require
+ * some communication. This fills in error_factors at the C-points. 
+ *----------------------------------------------------------------------------*/
+braid_Int 
+_braid_GetDtk(braid_Core core )
+{
+  
+   _braid_Grid  **grids       = _braid_CoreElt(core, grids);
+   _braid_Grid   *grid        = grids[0];
+   MPI_Comm      comm         = _braid_CoreElt(core, comm);
+   braid_Int     myid         = _braid_CoreElt(core, myid);
+   braid_Int     order        = _braid_CoreElt(core, order); 
+   braid_Int     ilower       = _braid_GridElt(grid, ilower);
+   braid_Int     iupper       = _braid_GridElt(grid, iupper);
+   braid_Int     gupper       = _braid_GridElt(grid, gupper);
+   braid_Int     ncpoints     = _braid_GridElt(grid, ncpoints);
+   braid_Int     cfactor      = _braid_GridElt(grid, cfactor);
+   braid_Real   *dtk_core     = _braid_CoreElt(core, dtk ); 
+   braid_Real   *ta           = _braid_GridElt(grid, ta);
+   braid_Int fhi,flo,ci,interval,send_flag,recv_flag,i;
+   braid_Real send_val, recv_val, dtk;
+   MPI_Request recv_left, send_right ;
+   
+   int comm_size;
+   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+   
+   if ( ilower <= iupper ) 
+   {  
+      send_flag = recv_flag = 0;
+      send_val = recv_val = 0.0;
+      
+      if ( !_braid_IsCPoint( ilower - 1, cfactor) && ilower > 0 )
+      {
+         recv_flag = 1;
+         MPI_Irecv( &recv_val, 1, braid_MPI_REAL, myid -1 , 56, comm, &recv_left );
+      }
+
+      braid_Int cpoint = ncpoints-1;
+      for (interval = ncpoints; interval > -1; interval--)
+      {
+         _braid_GetInterval(core, 0, interval, &flo, &fhi, &ci);             
+        
+         dtk = 0;
+
+         /* Wait for the value from the left */
+         if ( interval == 0 && recv_flag )
+         {
+            MPI_Wait( &recv_left, MPI_STATUS_IGNORE);
+            dtk = recv_val;
+
+            recv_flag = 0;
+         }
+         
+         //Finish up the interval 
+         for ( i = flo; i <= fhi; i++ ) 
+         {
+            dtk += pow( ta[i-ilower] - ta[i-ilower-1] , order );
+         }   
+         /* Save dtk at the C points or send it on to the right is 
+          * last point is not a C point */
+         if ( ci > 0 ) 
+         {
+            dtk += pow( ta[ci-ilower] - ta[ci-ilower-1] , order );
+            dtk_core[cpoint] = dtk;
+            cpoint--;
+         }
+         
+         if ( iupper != gupper && interval == ncpoints && !_braid_IsCPoint(iupper, cfactor) )
+         {
+            send_val  = dtk;
+            send_flag = 1;
+            MPI_Isend( &send_val, 1, braid_MPI_REAL, myid + 1, 56, comm, &send_right );
+         }
+      }   
+      /* All recvieves should be complete. Finish up sends, and exit */
+      if ( send_flag )
+      {
+         MPI_Wait( &send_right , MPI_STATUS_IGNORE);
+      }
+   }
+
+   return _braid_error_flag;
+}
+
+
 
