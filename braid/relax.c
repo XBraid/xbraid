@@ -67,7 +67,6 @@ _braid_FCRelax(braid_Core  core,
    braid_Int  size, proc;
    MPI_Request send_request, recv_request;
    void *recv_buff, *send_buff;
-   braid_Int send_flag;  
 
 
    /* In this case, nothing needs to be done regarding Richardson */
@@ -114,7 +113,6 @@ _braid_FCRelax(braid_Core  core,
 
             size = _braid_StatusElt( bstatus, size_buffer );
             MPI_Isend(send_buff, size, MPI_BYTE, proc, 84, comm, &send_request);
-            send_flag = 1;
          }
       }      
 
