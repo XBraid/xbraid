@@ -67,6 +67,7 @@ _braid_FCRelax(braid_Core  core,
    braid_Int  size, proc;
    MPI_Request send_request, recv_request;
    void *recv_buff, *send_buff;
+   braid_Int send_flag;  
 
 
    /* In this case, nothing needs to be done regarding Richardson */
@@ -113,6 +114,7 @@ _braid_FCRelax(braid_Core  core,
 
             size = _braid_StatusElt( bstatus, size_buffer );
             MPI_Isend(send_buff, size, MPI_BYTE, proc, 84, comm, &send_request);
+            send_flag = 1;
          }
       }      
 
@@ -219,6 +221,13 @@ _braid_FCRelax(braid_Core  core,
          }
       }
       _braid_UCommWait(core, level);
+   }
+
+   /* If Richardson, then must wait for communication, and then free buffer */
+   if (send_flag) 
+   {
+       MPI_Wait( &send_request, MPI_STATUS_IGNORE);
+       _braid_TFree( send_buff );
    }
 
    return _braid_error_flag;
