@@ -313,7 +313,6 @@ int main (int argc, char *argv[])
    int           arg_index;
    int           min_coarse = 8;
    int           order = -1;
-   int           seq=0;
    int           time_discr = 1;
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -364,11 +363,6 @@ int main (int argc, char *argv[])
          arg_index++;
          nrelax = atoi(argv[arg_index++]);
       } 
-      else if ( strcmp(argv[arg_index], "-seq") == 0 )
-      {
-         arg_index++;
-         seq = atoi(argv[arg_index++]);
-      }
       else if ( strcmp(argv[arg_index], "-nu0") == 0 )
       {
          arg_index++;

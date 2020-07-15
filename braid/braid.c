@@ -415,6 +415,7 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
       _braid_TFree(_braid_CoreElt(core, rdtvalues));
+      _braid_TFree(_braid_CoreElt(core, dtk));
 
       /* Destroy the optimization structure */
       _braid_CoreElt(core, record) = 0;
