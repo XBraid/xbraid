@@ -572,6 +572,7 @@ braid_Int
 braid_SetRefine(braid_Core  core,    /**< braid_Core (_braid_Core) struct*/
                 braid_Int   refine   /**< boolean, refine in time or not */
                 );
+
 /**
  * Set the max number of time grid refinement levels allowed.
  **/
@@ -579,8 +580,9 @@ braid_Int
 braid_SetMaxRefinements(braid_Core  core,             /**< braid_Core (_braid_Core) struct*/
                         braid_Int   max_refinements   /**< maximum refinement levels allowed */
                        );
+
 /**
- * Set the number of time steps, beyond with refinements stop.
+ * Set the number of time steps, beyond which refinements stop.
  * If num(tpoints) > tpoints_cutoff, then stop doing refinements.
  **/
 braid_Int

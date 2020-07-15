@@ -195,7 +195,8 @@ _braid_FCRelax(braid_Core  core,
                a = DTK / ( DTK - dtk_temp );
                b = - dtk_temp / ( DTK - dtk_temp );
 
-               /* TODO Switch to _braid_Step and removie status init */
+               /* Note that we initialize StepStatus here in a non-standard
+                * way, and hence cannot use _braid_Step(...). */
                _braid_StepStatusInit(time_left, ta[ci-ilower], ci-cfactor, tol,
                                      iter, level, nrefine, gupper, status);
                _braid_BaseStep(core, app, u, NULL, bigstep, level, status);
