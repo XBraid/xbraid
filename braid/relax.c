@@ -67,7 +67,8 @@ _braid_FCRelax(braid_Core  core,
    braid_Int  size, proc;
    MPI_Request send_request, recv_request;
    void *recv_buff, *send_buff;
-   braid_Int send_flag;  
+   braid_Int send_flag;
+   send_flag = 0;
 
 
    /* In this case, nothing needs to be done regarding Richardson */
