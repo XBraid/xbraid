@@ -304,7 +304,7 @@ int my_Sync(braid_App        app,
    {
       /* Find the maximum spatial error estimate */
       braid_SyncStatusGetAllErrorEst(status, &(app->nestimates), &(app->estimates));
-      MPI_Allreduce( &(app->estimates), &(app->max_estimate), app->nestimates, MPI_DOUBLE, MPI_MAX, app->comm ); 
+      MPI_Allreduce( app->estimates, &(app->max_estimate), app->nestimates, MPI_DOUBLE, MPI_MAX, app->comm ); 
       
       for(int k=0; k < app->nestimates; k++)
          printf("SIndex: %d    Error Est:  %1.5e\n", k, app->estimates[k]);
