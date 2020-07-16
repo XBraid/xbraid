@@ -450,8 +450,10 @@ braid_StatusGetSingleErrorEst(braid_Status   status,
    braid_Int     ilower = _braid_GridElt(grids[0], ilower);
    braid_Int     level  = _braid_StatusElt(status, level);
 
-   /* Richardson estimates only exist on level 0 */
-   braid_Int local_time_idx = idx - ilower;
+   /* Richardson estimates only exist on level 0 Note, we must increment
+    * local_time_idx by 1, because the index set earlier in status is
+    * decremented by 1 relative to Braid's indexing */
+   braid_Int local_time_idx = idx - ilower + 1;
    if ( _braid_StatusElt(status, est_error) && (level == 0) )
    {
       *estimate = (_braid_StatusElt(status, estimate))[local_time_idx];
