@@ -448,12 +448,18 @@ braid_StatusGetSingleErrorEst(braid_Status   status,
    braid_Int     idx    = _braid_StatusElt(status, idx);
    _braid_Grid **grids  = _braid_StatusElt(status, grids);
    braid_Int     ilower = _braid_GridElt(grids[0], ilower);
+   braid_Int     level  = _braid_StatusElt(status, level);
 
+   /* Richardson estimates only exist on level 0 */
    braid_Int local_time_idx = idx - ilower;
-   if ( _braid_StatusElt(status, est_error) )
+   if ( _braid_StatusElt(status, est_error) && (level == 0) )
+   {
       *estimate = (_braid_StatusElt(status, estimate))[local_time_idx];
+   }
    else
+   {
       *estimate = -1.0;
+   }
 
    return _braid_error_flag;
 }
@@ -466,11 +472,12 @@ braid_StatusGetNumErrorEst(braid_Status   status,
     _braid_Grid **grids  = _braid_StatusElt(status, grids);
     braid_Int     ilower = _braid_GridElt(grids[0], ilower);
     braid_Int     iupper = _braid_GridElt(grids[0], iupper);
-   
-   if ( _braid_StatusElt(status, est_error) )
+    braid_Int     level  = _braid_StatusElt(status, level);
+
+   /* Richardson estimates only exist on level 0 */
+   if ( _braid_StatusElt(status, est_error) && (level == 0) )
    {
       *npoints = iupper - ilower + 1;
-   
    }
    else
    {
@@ -490,18 +497,20 @@ braid_StatusGetAllErrorEst(braid_Status  status,
     braid_Int     ilower          = _braid_GridElt(grids[0], ilower);
     braid_Int     iupper          = _braid_GridElt(grids[0], iupper);
     braid_Real   *braid_estimates = _braid_StatusElt(status, estimate);
+    braid_Int     level           = _braid_StatusElt(status, level);
     braid_Int     npoints, m;
 
-   if ( _braid_StatusElt(status, est_error) )
+   /* Richardson estimates only exist on level 0 */
+   if ( _braid_StatusElt(status, est_error) && (level == 0) )
    {
       npoints = iupper - ilower + 1;
-   
    }
    else
    {
       npoints = 0;
    }
    
+   /* Populate user-array with error estimates */
    for(m=0; m < npoints; m++)
    {
       estimate[m] = braid_estimates[m];
