@@ -180,7 +180,7 @@ _braid_FRestrict(braid_Core   core,
          _braid_UGetVectorRef(core, level, ci, &u);
          _braid_FASResidual(core, level, ci, u, r);
 
-         /* Compute rnorm (only on level 0). Richardson computes the rnorm later ) */
+         /* Compute rnorm (only on level 0). Richardson computes the rnorm later */
          if (level == 0 && !richardson )
          {
             _braid_BaseSpatialNorm(core, app,  r, &rnorm_temp);
@@ -296,7 +296,7 @@ _braid_FRestrict(braid_Core   core,
    }
    _braid_CommWait(core, &send_handle);
    
-   /* Compute rnorm (only on level 0) */
+   /* Compute global rnorm (only on level 0) */
    if (level == 0)
    {
       if(tnorm == 1)          /* one-norm reduction */

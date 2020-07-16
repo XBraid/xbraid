@@ -318,6 +318,10 @@ _braid_InitHierarchy(braid_Core    core,
       if (est_error)
       {
          estimate = _braid_CTAlloc(braid_Real, iupper-ilower+1);
+         for(int j = 0; j < (iupper-ilower+1); j++)
+         {
+            estimate[j] = -1;
+         }
          _braid_CoreElt(core, estimate) = estimate;
       }   
       

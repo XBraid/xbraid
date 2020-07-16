@@ -1109,15 +1109,21 @@ braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
  * used to improve the accuracy of the solution at the C-points. When est_error
  * is turned on (est_error == 1), RE is used to estimate the local truncation
  * error at each F-point. These estimates can be accessed through the Access
- * and GlobalAccess Functions. The last parameter is local_order represents the
- * LOCAL order of the time integration scheme. e.g. local_order = 2 for
- * Backward Euler.
+ * and GlobalAccess Functions. 
+ *
+ * The last parameter is local_order represents the LOCAL order of the time
+ * integration scheme. e.g. local_order = 2 for Backward Euler.  
+ *
+ * Also, the Richardson error estimate is only available after roughly 1 Braid
+ * iteration.  The estimate is given a dummy value of -1.0, until an actual
+ * estimate is available.
  **/
 braid_Int
-braid_SetErrorEstimation(braid_Core core,
-                         braid_Int  est_error,
-                         braid_Int  richardson,
-                         braid_Int  local_order);
+braid_SetRichardsonEstimation(braid_Core core,                /**< braid_Core (_braid_Core) struct*/
+                              braid_Int  est_error,           /**< Boolean, if 1 compute Richardson-based error estimates, if 0, then do not */
+                              braid_Int  richardson,          /**< Boolean, if 1 carry out Richardson-based extrapolation to enhance accuracy on the fine-grid, if 0, then do not*/
+                              braid_Int  local_order          /**< Local order of the time integration scheme, e.g., local _order=2 for backward Euler */
+                              );
 
 
 /** @}*/

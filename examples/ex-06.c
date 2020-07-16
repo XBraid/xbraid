@@ -50,10 +50,13 @@
 typedef struct _braid_App_struct
 {
    MPI_Comm  comm;
-   double    tstart;
-   double    tstop;
-   int       ntime;
+   double    tstart;        /* Simulation start time */
+   double    tstop;         /* Simualtion final time */
+   int       ntime;         /* Number of time points on finest level */
    int       time_discr;    /* Time-discretization options: 1 is Backward Euler, 2 is SDIRK-23 */         
+   double    *estimates;    /* Holds the error estimates from Braid for each of my local time-points */
+   int       nestimates;    /* Number of error estimates */
+   double    max_estimate;  /* Global max error estimate from Braid */
 } my_App;
 
 /* Can put anything in my vector and name it anything as well */
@@ -110,7 +113,15 @@ my_Step(braid_App        app,
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
 
    double dt = tstop - tstart;
-   
+ 
+   /* Get the Richardson based error estimate.  Note, it will equal -1, if
+    * error_est is not turned on when initialziing Braid */
+   int index;
+   double estimate;
+   braid_StepStatusGetSingleErrorEst(status, &estimate);
+   braid_StepStatusGetTIndex(status, &index);
+   printf("Index: %d    Error Est:  %1.5e\n", index, estimate);
+
    /* Choose backward Euler, or SDIRK23 */
    if (app->time_discr == 1)
    {
@@ -217,6 +228,13 @@ my_Access(braid_App          app,
    braid_AccessStatusGetDone(astatus,&done);
    braid_AccessStatusGetT(astatus, &t);
    
+   /* Get the Richardson based error estimate.  Note, it will equal -1, if
+    * error_est is not turned on when initialziing Braid */
+   double estimate;
+   braid_AccessStatusGetSingleErrorEst(astatus, &estimate);
+   braid_AccessStatusGetTIndex(astatus, &index);
+   printf("AIndex: %d    Error Est:  %1.5e\n", index, estimate);
+
    braid_Real exact_solution;
    exact_solution = (1.0/16.0)*( -4.0*t + 11.0*exp(-4.0*t) + 5.0 );
    braid_AccessStatusGetNTPoints(astatus,&nt);
@@ -270,24 +288,33 @@ my_BufUnpack(braid_App          app,
 
    return 0;
 }
-/*
-int my_GlobalAccess(braid_App     app,
-                    braid_Vector         *u_ptr,
-                    braid_GAccessStatus  _gstatus)
-{
 
-   double *wfactors, *error_est;
-   int i, npoints, *rfactors, iter, nrefine;
-   braid_GAccessStatusGetFactors( _gstatus, &rfactors, &wfactors, &error_est, &npoints );
-   braid_GAccessStatusGetIter( _gstatus, &iter, &nrefine );
-   for ( i = 0; i < npoints; i++)
-   {   
-      rfactors[i] = 1;
-      (u_ptr[i])->error = error_est[i];
+int my_Sync(braid_App        app,
+            braid_SyncStatus status)
+{
+   
+   /* Sync can be called from two places, at the top of each Braid Cycle or,
+    * from inside of Refine.  Here, we don't care, but show you this for your
+    * reference. This is how you detect your calling function */
+
+   braid_Int calling_fcn;
+   braid_SyncStatusGetCallingFunction(status, &calling_fcn);
+   
+   if( (calling_fcn == braid_ASCaller_Drive_TopCycle) || (calling_fcn == braid_ASCaller_FRefine_AfterInitHier) )
+   {
+      /* Find the maximum spatial error estimate */
+      braid_SyncStatusGetAllErrorEst(status, &(app->nestimates), &(app->estimates));
+      MPI_Allreduce( &(app->estimates), &(app->max_estimate), app->nestimates, MPI_DOUBLE, MPI_MAX, app->comm ); 
+      
+      for(int k=0; k < app->nestimates; k++)
+         printf("SIndex: %d    Error Est:  %1.5e\n", k, app->estimates[k]);
+
+      printf("SI  Max %1.5e\n", app->max_estimate);
+
    }
-   return 0 ;
+
+   return 0;
 }
-*/
 
 
 /*--------------------------------------------------------------------------
@@ -300,9 +327,9 @@ int main (int argc, char *argv[])
    braid_Core    core;
    my_App       *app;
    MPI_Comm      comm;
-   double        tstart, tstop;
+   double        tstart, tstop, dt;
    int           ntime;
-   int           tpts       = 10000;
+   int           max_tpts   = 10000;
    int           max_levels = 100;
    int           nrelax     = 1;
    int           nrelax0    = -1;
@@ -312,18 +339,22 @@ int main (int argc, char *argv[])
    int           refine_time = 0;
    int           arg_index;
    int           min_coarse = 8;
-   int           order = -1;
    int           time_discr = 1;
+   int           richardson = 0;
+   int           error_est = 0;
+   int           order = -1;
+   
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
-   /* ntime time intervals with spacing 1 */
    comm   = MPI_COMM_WORLD;
+   
+   /* Simulate ntime time-steps */
    ntime  = 256;
    tstart = 0.0;
    tstop  = 0.5;
+   dt = (tstop - tstart)/(ntime - 1);
 
    /* Parse command line */
-
    arg_index = 1;
    while (arg_index < argc)
    {
@@ -334,22 +365,24 @@ int main (int argc, char *argv[])
          if ( myid == 0 )
          {
             printf("\n");
-            printf("  -ml  <max_levels>  : set max levels\n");
-            printf("  -nu  <nrelax>      : set num F-C relaxations\n");
-            printf("  -nu0 <nrelax>      : set num F-C relaxations on level 0\n");
-            printf("  -tol <tol>         : set stopping tolerance\n");
-            printf("  -cf  <cfactor>     : set coarsening factor\n");
-            printf("  -mi  <max_iter>    : set max iterations\n");
-            printf("  -rt                : use temporal refinment\n");
-            printf("  -tpts <tpts>       : cutoff for time refinement\n");
-            printf("  -nt <ntime>        : number of time points\n");
-            printf("  -time_discr <int>  : Time-discretization: 1 is Backward Euler, 2 is SDIRK-23 \n");
-  
-            printf("e.g. ./ex-07                            --> BE with no Richardson \n");
-            printf("e.g. ./ex-07 -time_discr 1              --> BE with no Richardson \n\n");
-            printf("e.g. ./ex-07 -time_discr 2              --> SDIRK23 with no Richardson \n");
-            printf("e.g. ./ex-07 -time_discr 1 -richardson  --> BE with Richardson \n");
-            printf("e.g. ./ex-07 -time_discr 2 -richardson  --> SDIRK23 with Richardson \n");
+            printf("  -nt <ntime>           : number of time points\n");
+            printf("  -ml  <max_levels>     : set max levels\n");
+            printf("  -nu  <nrelax>         : set num F-C relaxations\n");
+            printf("  -nu0 <nrelax>         : set num F-C relaxations on level 0\n");
+            printf("  -tol <tol>            : set stopping tolerance\n");
+            printf("  -cf  <cfactor>        : set coarsening factor\n");
+            printf("  -mi  <max_iter>       : set max iterations\n");
+            printf("  -time_discr <int>     : Time-discretization: 1 is Backward Euler, 2 is SDIRK-23 \n");
+            printf("\n");                   
+            printf("  -richardson           : turn on Richardson extrapolation for enhanced fine-grid accuracy\n");
+            printf("  -refinet              : use temporal refinment with Richardson based error estimate\n");
+            printf("  -max_tpts <max_tpts>  : cutoff for time refinement, i.e., max time points allowed\n");
+            printf("\n"); 
+            printf("  e.g. ./ex-07                            --> BE with no Richardson \n");
+            printf("  e.g. ./ex-07 -time_discr 1              --> BE with no Richardson \n");
+            printf("  e.g. ./ex-07 -time_discr 2              --> SDIRK23 with no Richardson \n");
+            printf("  e.g. ./ex-07 -time_discr 1 -richardson  --> BE with Richardson \n");
+            printf("  e.g. ./ex-07 -time_discr 2 -richardson  --> SDIRK23 with Richardson \n");
          }
          exit(1);
       }
@@ -376,7 +409,7 @@ int main (int argc, char *argv[])
       else if ( strcmp(argv[arg_index], "-richardson") == 0 )
       {
          arg_index++;
-         order = 1;
+         richardson = 1;
       }
       else if ( strcmp(argv[arg_index], "-tol") == 0 )
       {
@@ -388,10 +421,10 @@ int main (int argc, char *argv[])
          arg_index++;
          cfactor = atoi(argv[arg_index++]);
       }
-      else if ( strcmp(argv[arg_index], "-tpts") == 0 )
+      else if ( strcmp(argv[arg_index], "-max_tpts") == 0 )
       {
          arg_index++;
-         tpts = atoi(argv[arg_index++]);
+         max_tpts = atoi(argv[arg_index++]);
       }
       else if ( strcmp(argv[arg_index], "-nt") == 0 )
       {
@@ -403,7 +436,7 @@ int main (int argc, char *argv[])
          arg_index++;
          max_iter = atoi(argv[arg_index++]);
       } 
-      else if ( strcmp(argv[arg_index], "-rt") == 0 )
+      else if ( strcmp(argv[arg_index], "-refinet") == 0 )
       {
          arg_index++;
          refine_time = 1;
@@ -415,26 +448,47 @@ int main (int argc, char *argv[])
       }
    }
 
-   /* set up app structure */
+   /* Set up app structure */
    app = (my_App *) malloc(sizeof(my_App));
    (app->comm)   = comm;
    (app->tstart) = tstart;
    (app->tstop)  = tstop;
    (app->ntime)  = ntime;
    (app->time_discr) = time_discr;
-
+   
+   /* Initialize Braid */
    braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
               my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm,
               my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
+   
+   /* Set Braid Options */
    braid_SetPrintLevel( core, 2);
    braid_SetMaxLevels(core, max_levels);
    braid_SetNRelax(core, -1, nrelax);
    braid_SetAccessLevel(core,2);
-
-   int richardson = 0;
-   if ( order > 0 )
+   braid_SetAbsTol(core, tol/sqrt(dt));
+   braid_SetCFactor(core, -1, cfactor);
+   braid_SetMaxIter(core, max_iter);
+   braid_SetMinCoarse(core, min_coarse);
+   braid_SetStorage(core, 0);
+   braid_SetSkip(core,0); 
+   if (nrelax0 > -1)
    {
-      richardson++;
+      braid_SetNRelax(core,  -1, nrelax0);
+   }
+
+   /* Set Braid temporal refinement options */
+   if (refine_time)
+   {
+      braid_SetRefine( core, 1 );
+      braid_SetTPointsCutoff( core, max_tpts);
+      error_est = 1;     /* Will tell Richardson below to compute error estimates */
+   }
+   braid_SetSync(core, my_Sync);
+   
+   /* Set Braid Richardson options */
+   if ( richardson )
+   {
       if (time_discr == 1) 
       {
       	order = 2;
@@ -449,29 +503,15 @@ int main (int argc, char *argv[])
          return -1;
       }
    }
+   braid_SetRichardsonEstimation(core, 1, richardson, order);
    
-   braid_SetErrorEstimation(core, 0, richardson, order);
-   if (nrelax0 > -1)
-   {
-      braid_SetNRelax(core,  -1, nrelax0);
-   }
-   braid_SetRelTol(core, tol);
-   braid_SetCFactor(core, -1, cfactor);
-   braid_SetMaxIter(core, max_iter);
-   braid_SetMinCoarse(core, min_coarse);
-   braid_SetStorage(core, 0);
-   braid_SetSkip(core,0); 
-   if (refine_time)
-   {
-      braid_SetRefine( core, 1 );
-      braid_SetTPointsCutoff( core, tpts);
-   }
-   int myid;
-   MPI_Comm_rank( comm, &myid );
+   /* Run Braid Simulation */
    braid_Drive(core);
 
+   /* Clean up */
    braid_Destroy(core);
    free( app );
+
    /* Finalize MPI */
    MPI_Finalize();
 

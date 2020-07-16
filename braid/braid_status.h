@@ -91,7 +91,7 @@ typedef struct _braid_AccessStatus_struct *braid_AccessStatus;
  * processor. The user accesses it through _braid_SyncStatusGet**()_ functions.
  * This is just a pointer to the braid_Status.
  */
- typedef struct _braid_SyncStatus_struct *braid_SyncStatus;
+typedef struct _braid_SyncStatus_struct *braid_SyncStatus;
 
 /**
  * The user's step routine routine will receive a StepStatus structure, which
@@ -464,14 +464,23 @@ braid_StatusSetSize(braid_Status status,                   /**< structure contai
                     braid_Real   size                      /**< input, size of the send buffer */
                     );
 
-/**
- * Get the Richardson based error estimates 
- */
 
+/**
+ * Get the Richardson based error estimate at a single time point, e.g., in Step or Access
+ */
 braid_Int
-braid_StatusGetErrorEst(braid_Status    status,          /**< structure containing current simulation info */
-                        braid_Int      *npoints,         /**< output, number of points in the array */
-                        braid_Real    **error_est);      /**< output, pointer to the error estimate array */
+braid_StatusGetSingleErrorEst(braid_Status   status,           /**< structure containing current simulation info */
+                              braid_Real    *estimate          /**< output, error estimate, equals -1 if not available yet */
+                              );
+
+/**
+ * Get All the Richardson based error estimates, e.g. in Sync
+ */
+braid_Int
+braid_StatusGetAllErrorEst(braid_Status    status,       /**< structure containing current simulation info */
+                           braid_Int      *npoints,      /**< output, number of points in the array */
+                           braid_Real    **error_est     /**< output, pointer to the error estimate array, equals -1 if not available yet */
+                           );
 
 /** @}*/
 
@@ -507,6 +516,7 @@ ACCESSOR_HEADER_GET1(Access, Done,            Int)
 ACCESSOR_HEADER_GET4(Access, TILD,            Real, Int, Int, Int)
 ACCESSOR_HEADER_GET1(Access, WrapperTest,     Int)
 ACCESSOR_HEADER_GET1(Access, CallingFunction, Int)
+ACCESSOR_HEADER_GET1(Access, SingleErrorEst,        Real)
 
 /*--------------------------------------------------------------------------
  * SyncStatus Prototypes: They just wrap the corresponding Status accessors
@@ -521,6 +531,7 @@ ACCESSOR_HEADER_GET1(Sync, NRefine,          Int)
 ACCESSOR_HEADER_GET1(Sync, NTPoints,         Int)
 ACCESSOR_HEADER_GET1(Sync, Done,             Int)
 ACCESSOR_HEADER_GET1(Sync, CallingFunction,  Int)
+ACCESSOR_HEADER_GET2(Sync, AllErrorEst,      Int, Real*)
 
 /*--------------------------------------------------------------------------
  * CoarsenRefStatus Prototypes: They just wrap the corresponding Status accessors
@@ -559,6 +570,7 @@ ACCESSOR_HEADER_SET1(Step, OldFineTolx,   Real)
 ACCESSOR_HEADER_SET1(Step, TightFineTolx, Real)
 ACCESSOR_HEADER_SET1(Step, RFactor,       Real)
 ACCESSOR_HEADER_SET1(Step, RSpace,        Real)
+ACCESSOR_HEADER_GET1(Step, SingleErrorEst,      Real)
 
 /*--------------------------------------------------------------------------
  * BufferStatus Prototypes: They just wrap the corresponding Status accessors

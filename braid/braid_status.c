@@ -441,19 +441,39 @@ braid_StatusSetSize(braid_Status status,
 }
 
 braid_Int
-braid_StatusGetErrorEst(braid_Status   status, 
-                             braid_Int     *npoints,
-                             braid_Real   **estimate)
+braid_StatusGetSingleErrorEst(braid_Status   status, 
+                              braid_Real    *estimate
+                              )
+{
+   braid_Int     idx    = _braid_StatusElt(status, idx);
+   _braid_Grid **grids  = _braid_StatusElt(status, grids);
+   braid_Int     ilower = _braid_GridElt(grids[0], ilower);
+
+   braid_Int local_time_idx = idx - ilower;
+   if ( _braid_StatusElt(status, est_error) )
+      *estimate = (_braid_StatusElt(status, estimate))[local_time_idx];
+   else
+      *estimate = -1.0;
+
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_StatusGetAllErrorEst(braid_Status   status, 
+                           braid_Int     *npoints,
+                           braid_Real   **estimate
+                           )
 {
     _braid_Grid **grids  = _braid_StatusElt(status, grids);
     braid_Int     ilower = _braid_GridElt(grids[0], ilower);
     braid_Int     iupper = _braid_GridElt(grids[0], iupper);
    
-   if ( _braid_StatusElt(status,est_error) )
+   if ( _braid_StatusElt(status, est_error) )
       *npoints = iupper - ilower + 1;
    else
       *npoints = 0;
-
+   
+   /* When you update this to two routines, make estimate -1 if not Richardson */
    *estimate = _braid_StatusElt(status, estimate);
    return _braid_error_flag;
 }
@@ -499,7 +519,7 @@ ACCESSOR_FUNCTION_GET1(Access, Done,            Int)
 ACCESSOR_FUNCTION_GET4(Access, TILD,            Real, Int, Int, Int)
 ACCESSOR_FUNCTION_GET1(Access, WrapperTest,     Int)
 ACCESSOR_FUNCTION_GET1(Access, CallingFunction, Int)
-ACCESSOR_FUNCTION_GET2(Access, ErrorEst, Int, Real*)
+ACCESSOR_FUNCTION_GET1(Access, SingleErrorEst,  Real)
 
 /*--------------------------------------------------------------------------
  * SyncStatus Routines
@@ -531,7 +551,7 @@ ACCESSOR_FUNCTION_GET1(Sync, NRefine,          Int)
 ACCESSOR_FUNCTION_GET1(Sync, NTPoints,         Int)
 ACCESSOR_FUNCTION_GET1(Sync, Done,             Int)
 ACCESSOR_FUNCTION_GET1(Sync, CallingFunction,  Int)
-ACCESSOR_FUNCTION_GET2(Sync, ErrorEst, Int, Real*)
+ACCESSOR_FUNCTION_GET2(Sync, AllErrorEst,      Int, Real*)
 
 /*--------------------------------------------------------------------------
  * CoarsenRefStatus Routines
@@ -617,7 +637,7 @@ ACCESSOR_FUNCTION_SET1(Step, OldFineTolx,   Real)
 ACCESSOR_FUNCTION_SET1(Step, TightFineTolx, Real)
 ACCESSOR_FUNCTION_SET1(Step, RFactor,       Real)
 ACCESSOR_FUNCTION_SET1(Step, RSpace,        Real)
-ACCESSOR_FUNCTION_GET2(Step, ErrorEst, Int, Real*)
+ACCESSOR_FUNCTION_GET1(Step, SingleErrorEst,Real)
 
 /*--------------------------------------------------------------------------
  * BufferStatus Routines
