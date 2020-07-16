@@ -359,8 +359,13 @@ braid_StatusSetRFactor(braid_Status status,
       braid_Int          ilower   = _braid_GridElt(grids[level], ilower);
       braid_Int          ii       = index+1 - ilower;
 
-      /* Set refinement factor */
-      rfactors[ii] = rfactor;
+      /* Set refinement factor
+       * 
+       * Note: make sure index ii is positive.  There is one step with
+       * Richardson in FCRelax that is with a C-point from the left-neighboring
+       * processor.  Thus, ii can be negative. */
+      if( ii >= 0 )
+         rfactors[ii] = rfactor;
    }
 
    return _braid_error_flag;
@@ -383,28 +388,34 @@ braid_StatusSetRefinementDtValues(braid_Status  status,
       braid_Int          ilower   = _braid_GridElt(grids[level], ilower);
       braid_Int          ii       = index+1 - ilower;
 
-      /* Set refinement factor */
-      rfactors[ii] = rfactor;
-
-      /* Store dt values */
-      if (rfactor > 1)
+       /* Note: make sure index ii is positive.  There is one step with
+        * Richardson in FCRelax that is with a C-point from the
+        * left-neighboring processor.  Thus, ii can be negative. */ 
+      if( ii >= 0 )
       {
-         braid_Real  **rdtvalues = _braid_StatusElt(status, rdtvalues);
-         braid_Int     j;
-
-         if (rdtvalues[ii] != NULL)
+         /* Set refinement factor */
+         rfactors[ii] = rfactor;
+         
+         /* Store dt values */
+         if (rfactor > 1)
          {
-            /* This essentially forces a realloc in case rfactor has changed.
-             * Note that TFree() sets rdtvalues[ii] to NULL. */
-            _braid_TFree(rdtvalues[ii]);
-         }
-         if (rdtvalues[ii] == NULL)
-         {
-            rdtvalues[ii] = _braid_CTAlloc(braid_Real, (rfactor-1));
-         }
-         for (j = 0; j < (rfactor-1); j++)
-         {
-            rdtvalues[ii][j] = rdtarray[j];
+            braid_Real  **rdtvalues = _braid_StatusElt(status, rdtvalues);
+            braid_Int     j;
+         
+            if (rdtvalues[ii] != NULL)
+            {
+               /* This essentially forces a realloc in case rfactor has changed.
+                * Note that TFree() sets rdtvalues[ii] to NULL. */
+               _braid_TFree(rdtvalues[ii]);
+            }
+            if (rdtvalues[ii] == NULL)
+            {
+               rdtvalues[ii] = _braid_CTAlloc(braid_Real, (rfactor-1));
+            }
+            for (j = 0; j < (rfactor-1); j++)
+            {
+               rdtvalues[ii][j] = rdtarray[j];
+            }
          }
       }
    }
@@ -454,11 +465,18 @@ braid_StatusGetSingleErrorEst(braid_Status   status,
     *
     * Note, we must increment local_time_idx by 1, because the index set
     * earlier in status (by either Step or Acess) is decremented by 1 relative
-    * to Braid's indexing */
+    * to Braid's indexing 
+    *
+    * Also Note, make sure index is positive.  There is one step with Richardson
+    * in FCRelax that is with a C-point from the left-neighboring processor.
+    * Thus, ii can be negative. */ 
    braid_Int local_time_idx = idx - ilower + 1;
-   if ( _braid_StatusElt(status, est_error) && (level == 0) )
+   if( local_time_idx >= 0 )
    {
-      *estimate = (_braid_StatusElt(status, estimate))[local_time_idx];
+      if ( _braid_StatusElt(status, est_error) && (level == 0) )
+      {
+         *estimate = (_braid_StatusElt(status, estimate))[local_time_idx];
+      }
    }
    else
    {
