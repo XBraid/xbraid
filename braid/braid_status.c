@@ -459,9 +459,8 @@ braid_StatusGetSingleErrorEst(braid_Status   status,
 }
 
 braid_Int
-braid_StatusGetAllErrorEst(braid_Status   status, 
-                           braid_Int     *npoints,
-                           braid_Real   **estimate
+braid_StatusGetNumErrorEst(braid_Status   status, 
+                           braid_Int     *npoints
                            )
 {
     _braid_Grid **grids  = _braid_StatusElt(status, grids);
@@ -469,12 +468,45 @@ braid_StatusGetAllErrorEst(braid_Status   status,
     braid_Int     iupper = _braid_GridElt(grids[0], iupper);
    
    if ( _braid_StatusElt(status, est_error) )
+   {
       *npoints = iupper - ilower + 1;
-   else
-      *npoints = 0;
    
-   /* When you update this to two routines, make estimate -1 if not Richardson */
-   *estimate = _braid_StatusElt(status, estimate);
+   }
+   else
+   {
+      *npoints = 0;
+   }
+
+   return _braid_error_flag;
+}
+
+
+braid_Int
+braid_StatusGetAllErrorEst(braid_Status  status, 
+                           braid_Real   *estimate
+                           )
+{
+    _braid_Grid **grids           = _braid_StatusElt(status, grids);
+    braid_Int     ilower          = _braid_GridElt(grids[0], ilower);
+    braid_Int     iupper          = _braid_GridElt(grids[0], iupper);
+    braid_Real   *braid_estimates = _braid_StatusElt(status, estimate);
+    braid_Int     npoints, m;
+
+   if ( _braid_StatusElt(status, est_error) )
+   {
+      npoints = iupper - ilower + 1;
+   
+   }
+   else
+   {
+      npoints = 0;
+   }
+   
+   for(m=0; m < npoints; m++)
+   {
+      estimate[m] = braid_estimates[m];
+   }
+
    return _braid_error_flag;
 }
 
@@ -551,7 +583,8 @@ ACCESSOR_FUNCTION_GET1(Sync, NRefine,          Int)
 ACCESSOR_FUNCTION_GET1(Sync, NTPoints,         Int)
 ACCESSOR_FUNCTION_GET1(Sync, Done,             Int)
 ACCESSOR_FUNCTION_GET1(Sync, CallingFunction,  Int)
-ACCESSOR_FUNCTION_GET2(Sync, AllErrorEst,      Int, Real*)
+ACCESSOR_FUNCTION_GET1(Sync, NumErrorEst,      Int)
+ACCESSOR_FUNCTION_GET1(Sync, AllErrorEst,      Real)
 
 /*--------------------------------------------------------------------------
  * CoarsenRefStatus Routines

@@ -54,9 +54,7 @@ typedef struct _braid_App_struct
    double    tstop;         /* Simualtion final time */
    int       ntime;         /* Number of time points on finest level */
    int       time_discr;    /* Time-discretization options: 1 is Backward Euler, 2 is SDIRK-23 */         
-   double    *estimates;    /* Holds the error estimates from Braid for each of my local time-points */
-   int       nestimates;    /* Number of error estimates */
-   double    max_estimate;  /* Global max error estimate from Braid */
+   double    max_estimate;  /* Global max Richardson-based error estimate from Braid */
 } my_App;
 
 /* Can put anything in my vector and name it anything as well */
@@ -120,7 +118,7 @@ my_Step(braid_App        app,
    double estimate;
    braid_StepStatusGetSingleErrorEst(status, &estimate);
    braid_StepStatusGetTIndex(status, &index);
-   printf("Index: %d    Error Est:  %1.5e\n", index, estimate);
+   /* printf("Index: %d    Error Est:  %1.5e\n", index, estimate); */
 
    /* Choose backward Euler, or SDIRK23 */
    if (app->time_discr == 1)
@@ -233,7 +231,7 @@ my_Access(braid_App          app,
    double estimate;
    braid_AccessStatusGetSingleErrorEst(astatus, &estimate);
    braid_AccessStatusGetTIndex(astatus, &index);
-   printf("AIndex: %d    Error Est:  %1.5e\n", index, estimate);
+   /* printf("AIndex: %d    Error Est:  %1.5e\n", index, estimate); */
 
    braid_Real exact_solution;
    exact_solution = (1.0/16.0)*( -4.0*t + 11.0*exp(-4.0*t) + 5.0 );
@@ -243,7 +241,7 @@ my_Access(braid_App          app,
    MPI_Comm_rank( MPI_COMM_WORLD, &index );
    
    if (done && t == app->tstop ) 
-      printf("Discretization error (t,sol,err): %.20f %.20f %.20f \n", t, u->value0, fabs( (u->value0)- exact_solution )  );
+      printf("\nFinal Discretization error (t,sol,err):\n    %.20f %.20f %.20f \n", t, u->value0, fabs( (u->value0)- exact_solution )  );
 
    return 0;
 }
@@ -292,25 +290,41 @@ my_BufUnpack(braid_App          app,
 int my_Sync(braid_App        app,
             braid_SyncStatus status)
 {
-   
+   double   *estimates;     /* For the error estimates from Braid for each of this proc's local time-points */
+   int       nestimates;    /* Number of error estimates on this proc */
+
    /* Sync can be called from two places, at the top of each Braid Cycle or,
     * from inside of Refine.  Here, we don't care, but show you this for your
     * reference. This is how you detect your calling function */
-
    braid_Int calling_fcn;
    braid_SyncStatusGetCallingFunction(status, &calling_fcn);
    
    if( (calling_fcn == braid_ASCaller_Drive_TopCycle) || (calling_fcn == braid_ASCaller_FRefine_AfterInitHier) )
    {
-      /* Find the maximum spatial error estimate */
-      braid_SyncStatusGetAllErrorEst(status, &(app->nestimates), &(app->estimates));
-      MPI_Allreduce( app->estimates, &(app->max_estimate), app->nestimates, MPI_DOUBLE, MPI_MAX, app->comm ); 
+
+      /* Allocate and populate array for this proc's error estimates */ 
+      braid_SyncStatusGetNumErrorEst(status, &nestimates);
+      estimates = malloc( sizeof(double)*nestimates);
+      braid_SyncStatusGetAllErrorEst(status, estimates);
       
-      for(int k=0; k < app->nestimates; k++)
-         printf("SIndex: %d    Error Est:  %1.5e\n", k, app->estimates[k]);
-
-      printf("SI  Max %1.5e\n", app->max_estimate);
-
+      /* 
+       * Find the globally maximum spatial error estimate 
+       * 
+       * Note: if there is spatial parallelism, then you would have to take a
+       * max over the spatial communicator, and then over the temporal
+       * communicator. 
+       *
+       * */
+      double my_max = -1.0;
+      for( int m=0; m < nestimates; m++)
+      {
+         if( my_max < estimates[m])
+            my_max = estimates[m];
+      }
+      MPI_Allreduce( &my_max, &(app->max_estimate), 1, MPI_DOUBLE, MPI_MAX, app->comm ); 
+      
+      /* printf("SI  Max %1.5e\n", app->max_estimate); */
+      free(estimates);
    }
 
    return 0;
@@ -483,8 +497,10 @@ int main (int argc, char *argv[])
       braid_SetRefine( core, 1 );
       braid_SetTPointsCutoff( core, max_tpts);
       error_est = 1;     /* Will tell Richardson below to compute error estimates */
+      
+      /* Turn on Sync, this is where the all reduce to find the global max error estimate happens */ 
+      braid_SetSync(core, my_Sync);
    }
-   braid_SetSync(core, my_Sync);
    
    /* Set Braid Richardson options */
    if ( richardson )

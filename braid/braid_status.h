@@ -473,13 +473,30 @@ braid_StatusGetSingleErrorEst(braid_Status   status,           /**< structure co
                               braid_Real    *estimate          /**< output, error estimate, equals -1 if not available yet */
                               );
 
-/**
- * Get All the Richardson based error estimates, e.g. in Sync
+
+/** 
+ * Get the number of local Richardson-based error estimates stored on this
+ * processor.  Use this function in conjuction with GetAllErrorEst().
+ * Workflow: use this function to get the size of the needed user-array that
+ * will hold the error estimates, then pre-allocate array, then call
+ * GetAllErrorEst() to write error estimates to the user-array, then
+ * post-process array in user-code.
+ */
+braid_Int
+braid_StatusGetNumErrorEst(braid_Status   status,        /**< structure containing current simulation info */
+                           braid_Int     *npoints        /**< output, number of locally stored Richardson error estimates */
+                           );
+
+/** 
+ * Get All the Richardson based error estimates, e.g. in Sync.  Use this
+ * function in conjuction with GetNumErrorEst().  Workflow: use
+ * GetNumErrorEst() to get the size of the needed user-array that will hold the
+ * error estimates, then pre-allocate array, then call this function to write
+ * error estimates to the user-array, then post-process array in user-code.
  */
 braid_Int
 braid_StatusGetAllErrorEst(braid_Status    status,       /**< structure containing current simulation info */
-                           braid_Int      *npoints,      /**< output, number of points in the array */
-                           braid_Real    **error_est     /**< output, pointer to the error estimate array, equals -1 if not available yet */
+                           braid_Real     *error_est     /**< output, user-allocated error estimate array, written by Braid, equals -1 if not available yet */
                            );
 
 /** @}*/
@@ -531,7 +548,8 @@ ACCESSOR_HEADER_GET1(Sync, NRefine,          Int)
 ACCESSOR_HEADER_GET1(Sync, NTPoints,         Int)
 ACCESSOR_HEADER_GET1(Sync, Done,             Int)
 ACCESSOR_HEADER_GET1(Sync, CallingFunction,  Int)
-ACCESSOR_HEADER_GET2(Sync, AllErrorEst,      Int, Real*)
+ACCESSOR_HEADER_GET1(Sync, NumErrorEst,      Int)
+ACCESSOR_HEADER_GET1(Sync, AllErrorEst,      Real)
 
 /*--------------------------------------------------------------------------
  * CoarsenRefStatus Prototypes: They just wrap the corresponding Status accessors
