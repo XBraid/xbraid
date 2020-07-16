@@ -54,6 +54,7 @@ typedef struct _braid_App_struct
    double    tstop;         /* Simualtion final time */
    int       ntime;         /* Number of time points on finest level */
    int       time_discr;    /* Time-discretization options: 1 is Backward Euler, 2 is SDIRK-23 */         
+   int       refine_time;   /* Whether adaptive time refinement is turned on */
    double    max_estimate;  /* Global max Richardson-based error estimate from Braid */
 } my_App;
 
@@ -106,21 +107,14 @@ my_Step(braid_App        app,
         braid_Vector     u,
         braid_StepStatus status)
 {
+   int level;
    double tstart;             /* current time */
    double tstop;              /* evolve to this time*/
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
 
    double dt = tstop - tstart;
- 
-   /* Get the Richardson based error estimate.  Note, it will equal -1, if
-    * error_est is not turned on when initialziing Braid */
-   int index;
-   double estimate;
-   braid_StepStatusGetSingleErrorEst(status, &estimate);
-   braid_StepStatusGetTIndex(status, &index);
-   /* printf("Index: %d    Error Est:  %1.5e\n", index, estimate); */
 
-   /* Choose backward Euler, or SDIRK23 */
+   /* Take step with backward Euler, or SDIRK23 */
    if (app->time_discr == 1)
    {
       u->value0 = myBE(u->value0, tstart,dt);
@@ -132,6 +126,23 @@ my_Step(braid_App        app,
    else
    {
       u->value0 = myBE(u->value0, tstart,dt);
+   }
+
+   /* Get the local Richardson based error estimate.  Note, it will equal -1,
+    * if error_est is not turned on when initialziing Braid */
+   int index;
+   double local_estimate;
+   braid_StepStatusGetSingleErrorEst(status, &local_estimate);
+   braid_StepStatusGetTIndex(status, &index);
+   /* printf("Index: %d    Error Est:  %1.5e\n", index, local_estimate); */
+   
+   /* If doing refinement in time, and our local estimate is "large", refine by
+    * factor of 2 Note that app->max_estimate is updated once an iteration in
+    * Sync, with the globally max error estimate.*/
+   braid_StepStatusGetLevel(status, &level);
+   if ( (app->refine_time) && (level == 0) && (local_estimate > 0.02*app->max_estimate))
+   {
+      braid_StepStatusSetRFactor(status, 2);
    }
 
    return 0;
@@ -343,20 +354,20 @@ int main (int argc, char *argv[])
    MPI_Comm      comm;
    double        tstart, tstop, dt;
    int           ntime;
-   int           max_tpts   = 10000;
+   int           max_tpts   = 100;
    int           max_levels = 100;
    int           nrelax     = 1;
    int           nrelax0    = -1;
    double        tol        = 1.0e-12;
    int           cfactor    = 2;
    int           max_iter   = 1500;
-   int           refine_time = 0;
    int           arg_index;
    int           min_coarse = 8;
    int           time_discr = 1;
    int           richardson = 0;
    int           error_est = 0;
    int           order = -1;
+   int           refine_time = 0;
    
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -469,6 +480,7 @@ int main (int argc, char *argv[])
    (app->tstop)  = tstop;
    (app->ntime)  = ntime;
    (app->time_discr) = time_discr;
+   (app->refine_time) = refine_time;
    
    /* Initialize Braid */
    braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,
@@ -492,13 +504,13 @@ int main (int argc, char *argv[])
    }
 
    /* Set Braid temporal refinement options */
-   if (refine_time)
+   if (app->refine_time)
    {
       braid_SetRefine( core, 1 );
       braid_SetTPointsCutoff( core, max_tpts);
       error_est = 1;     /* Will tell Richardson below to compute error estimates */
       
-      /* Turn on Sync, this is where the all reduce to find the global max error estimate happens */ 
+      /* Turn on Sync, this is where the MPI ALLreduce happens to find the global max error estimate */ 
       braid_SetSync(core, my_Sync);
    }
    
@@ -519,7 +531,7 @@ int main (int argc, char *argv[])
          return -1;
       }
    }
-   braid_SetRichardsonEstimation(core, 1, richardson, order);
+   braid_SetRichardsonEstimation(core, error_est, richardson, order);
    
    /* Run Braid Simulation */
    braid_Drive(core);
