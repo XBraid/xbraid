@@ -147,10 +147,12 @@ my_Step(braid_App        app,
     *
     * Note also that the Richardson estimates are only computed after about one
     * iteration.  So do not do any refinement until afterward that.  In particular,
-    * the app->max_estimate won't be computed until then.*/
+    * the app->max_estimate won't be computed until then.  Also, immediately after an 
+    * FRefine cycle, the Richardson estimates are wiped, and require a new iteration 
+    * to compute.  Thus always check if local_estimate != 1.0 */
    braid_StepStatusGetLevel(status, &level);
    braid_StepStatusGetIter(status, &iter);
-   if ( (app->refine_time) && (level == 0) && (iter > 1) && (local_estimate > 0.02*app->max_estimate))
+   if ( (app->refine_time) && (level == 0) && (iter > 1) && (local_estimate > 0.02*app->max_estimate) && (local_estimate != -1.0) )
    {
       braid_StepStatusSetRFactor(status, 2);
    }

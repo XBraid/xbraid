@@ -470,7 +470,7 @@ braid_StatusSetSize(braid_Status status,                   /**< structure contai
  */
 braid_Int
 braid_StatusGetSingleErrorEst(braid_Status   status,           /**< structure containing current simulation info */
-                              braid_Real    *estimate          /**< output, error estimate, equals -1 if not available yet */
+                              braid_Real    *estimate          /**< output, error estimate, equals -1 if not available yet (e.g., before iteration 1, or after refinement) */
                               );
 
 
@@ -496,7 +496,7 @@ braid_StatusGetNumErrorEst(braid_Status   status,        /**< structure containi
  */
 braid_Int
 braid_StatusGetAllErrorEst(braid_Status    status,       /**< structure containing current simulation info */
-                           braid_Real     *error_est     /**< output, user-allocated error estimate array, written by Braid, equals -1 if not available yet */
+                           braid_Real     *error_est     /**< output, user-allocated error estimate array, written by Braid, equals -1 if not available yet (e.g., before iteration 1, or after refinement) */
                            );
 
 /** @}*/
