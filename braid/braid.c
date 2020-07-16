@@ -407,6 +407,8 @@ braid_Destroy(braid_Core  core)
    {
       braid_Int               nlevels    = _braid_CoreElt(core, nlevels);
       _braid_Grid           **grids      = _braid_CoreElt(core, grids);
+      braid_Int               richardson = _braid_CoreElt(core, richardson);
+      braid_Int               est_error  = _braid_CoreElt(core, est_error); 
       braid_Int               level;
 
       _braid_TFree(_braid_CoreElt(core, nrels));
@@ -417,7 +419,6 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
       _braid_TFree(_braid_CoreElt(core, rdtvalues));
-      _braid_TFree(_braid_CoreElt(core, dtk));
 
       /* Destroy the optimization structure */
       _braid_CoreElt(core, record) = 0;
@@ -425,6 +426,16 @@ braid_Destroy(braid_Core  core)
       {
          _braid_OptimDestroy( core );
          _braid_TFree(_braid_CoreElt(core, optim));
+      }
+
+      /* Destroy Richardson estimate structures */
+      if ( richardson || est_error )
+      {
+         _braid_TFree(_braid_CoreElt(core, dtk));
+         if (est_error)
+         {
+            _braid_TFree(_braid_CoreElt(core, estimate));
+         }
       }
 
       for (level = 0; level < nlevels; level++)
