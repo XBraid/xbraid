@@ -114,6 +114,7 @@ my_Step(braid_App        app,
 
    double dt = tstop - tstart;
 
+
    /* Take step with backward Euler, or SDIRK23 */
    if (app->time_discr == 1)
    {
@@ -128,6 +129,7 @@ my_Step(braid_App        app,
       u->value0 = myBE(u->value0, tstart,dt);
    }
 
+
    /* Get the local Richardson based error estimate.  Note, it will equal -1,
     * if error_est is not turned on when initialziing Braid */
    int index;
@@ -136,6 +138,7 @@ my_Step(braid_App        app,
    braid_StepStatusGetTIndex(status, &index);
    /* printf("Index: %d    Error Est:  %1.5e\n", index, local_estimate); */
    
+
    /* If doing refinement in time, and our local estimate is "large", refine by
     * factor of 2.
     *
@@ -143,13 +146,15 @@ my_Step(braid_App        app,
     * the globally max error estimate.
     *
     * Note also that the Richardson estimates are only computed after about one
-    * iteration.  So do not do any refinement until afterward that */
+    * iteration.  So do not do any refinement until afterward that.  In particular,
+    * the app->max_estimate won't be computed until then.*/
    braid_StepStatusGetLevel(status, &level);
    braid_StepStatusGetIter(status, &iter);
    if ( (app->refine_time) && (level == 0) && (iter > 1) && (local_estimate > 0.02*app->max_estimate))
    {
       braid_StepStatusSetRFactor(status, 2);
    }
+
 
    return 0;
 }
