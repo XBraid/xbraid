@@ -198,7 +198,7 @@ _braid_FCRelax(braid_Core  core,
 
                /* Note that we initialize StepStatus here in a non-standard
                 * way, and hence cannot use _braid_Step(...). */
-               _braid_StepStatusInit(time_left, ta[ci-ilower], ci-cfactor, tol,
+               _braid_StepStatusInit(time_left, ta[ci-ilower], ci-cfactor-1, tol,
                                      iter, level, nrefine, gupper, status);
                _braid_BaseStep(core, app, u, NULL, bigstep, level, status);
 
