@@ -340,7 +340,8 @@ int my_Sync(braid_App        app,
        *
        * */
       double my_max = -1.0;
-      for( int m=0; m < nestimates; m++)
+      int m;
+      for( m=0; m < nestimates; m++)
       {
          if( my_max < estimates[m])
             my_max = estimates[m];

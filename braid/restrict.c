@@ -227,7 +227,7 @@ _braid_FRestrict(braid_Core   core,
    }
 
    /* Allocate temporary error estimate array */
-   if ( est_error )
+   if ( level == 0 && est_error )
    {
         estimate = _braid_CTAlloc(braid_Real, c_iupper-c_ilower + 1 );
    }

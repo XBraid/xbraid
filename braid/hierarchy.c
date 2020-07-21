@@ -77,7 +77,7 @@ _braid_InitHierarchy(braid_Core    core,
 
    _braid_Grid      *grid;
    braid_Real       *f_ta;
-   braid_Int         i, f_i, f_ilower, clo, chi, gclower, gcupper;
+   braid_Int         i, j, f_i, f_ilower, clo, chi, gclower, gcupper;
                     
    MPI_Request       request1, request2;
    MPI_Status        status;
@@ -318,7 +318,7 @@ _braid_InitHierarchy(braid_Core    core,
       if (est_error)
       {
          estimate = _braid_CTAlloc(braid_Real, iupper-ilower+1);
-         for(int j = 0; j < (iupper-ilower+1); j++)
+         for(j = 0; j < (iupper-ilower+1); j++)
          {
             estimate[j] = -1;
          }
