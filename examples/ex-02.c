@@ -256,7 +256,7 @@ my_Access(braid_App          app,
 
    /* IF on the finest level AND print_level is high enough AND at the final time,
     * THEN print out the discretization error */
-   if( (level == 0) && ((app->print_level) > 0) && (index == app->ntime) )
+   if( (level == 0) && ((app->print_level) > 0) && ((index+1) == app->ntime) )
    {
       error = compute_error_norm(u->values, app->xstart, app->xstop, u->size, t);
       printf("  Discretization error at final time:  %1.4e\n", error);
