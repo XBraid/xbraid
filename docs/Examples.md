@@ -473,7 +473,13 @@ be implemented in some of the following examples.
     [braid_SetRichardsonEstimation](@ref braid_SetRichardsonEstimation) .
     Moreover, this feature can be used in conjunction with the above discussed function,
     [braid_StepStatusSetRFactor](@ref braid_StepStatusSetRFactor), to achieve easy-to-use
-    adaptive refinement in time..
+    adaptive refinement in time.
+
+    Essentially, Richardson extrapolation (RE) is used to improve the accuracy
+    of the solution at the C-points on the finest level.  When the built-in
+    error estimate option is turned on, RE is used to estimate the local
+    truncation error at each F-point. These estimates can be accessed through
+    the Access and GlobalAccess Functions. 
    
     The Richardson-based error estimates and extrapolation are only available
     after the first Braid iteration, in that the coarse level solution must be
