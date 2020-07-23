@@ -111,4 +111,23 @@ For the Cython examples, see the corresponding *.pyx file.
       
                 examples/ex-05-cython/ex_05-setup.py
 
+6. ex-06 solve a simple scalar ODE, but allow for use of the Richardson-based
+   error estimator and error correction.  With the "-refinet" option, the error
+   estimator allows for adaptive refinement, and with the "-richardson" option,
+   Richardson extrapolation is used improve the finest-level solution. 
+
+   The viz script, 
+               
+               examples/viz-ex-06.py
+   
+   allows you to visualize the solution, error, and error estimate.  The use of
+   "-richardson" notably improves the solution".
+    
+   The Richardson-based error estimates and/or extrapolation are only available
+   after the first Braid iteration, in that the coarse level solution must be
+   available to compute the estimate and extrapolation.  Thus, after an
+   adaptive refinement (and new hierarchy is constructed), another iteration is
+   again required for the error estimates to be available.  If the error
+   estimate isn't available, Braid returns a value of -1.  See this example and
+   the comments therein for more details.
 
