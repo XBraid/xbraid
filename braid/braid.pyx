@@ -46,6 +46,7 @@ cdef extern from "braid_status.h":
     int braid_StepStatusGetTol (braid_StepStatus status, double *tol_ptr)
     int braid_StepStatusGetRNorms (braid_StepStatus status, int *nrequest_ptr, double *rnorms_ptr)
     int braid_StepStatusGetOldFineTolx (braid_StepStatus status, double *old_fine_tolx_ptr)
+    int braid_StepStatusGetSingleErrorEst (braid_StepStatus status, double *estimate)
     int braid_StepStatusSetOldFineTolx (braid_StepStatus status, double old_fine_tolx)
     int braid_StepStatusSetTightFineTolx (braid_StepStatus status, double tight_fine_tolx)
     int braid_StepStatusSetRFactor (braid_StepStatus status, double rfactor)
@@ -65,6 +66,7 @@ cdef extern from "braid_status.h":
     int braid_AccessStatusGetTILD (braid_AccessStatus status, double *t_ptr, int *iter_ptr, int *level_ptr, int *done_ptr)
     int braid_AccessStatusGetWrapperTest (braid_AccessStatus status, int *wtest_ptr)
     int braid_AccessStatusGetCallingFunction (braid_AccessStatus status, int *cfunction_ptr)
+    int braid_AccessStatusGetSingleErrorEst (braid_AccessStatus status, double *estimate)
 
     ##
     # Wrap CoarsenRefStatus Routines
@@ -91,12 +93,14 @@ cdef extern from "braid_status.h":
     int braid_SyncStatusGetTIUL (braid_SyncStatus status, int *iloc_upper, int *iloc_lower, int level)
     int braid_SyncStatusGetTimeValues (braid_SyncStatus status, double **tvalues_ptr, int i_upper, int i_lower, int level)
     int braid_SyncStatusGetIter (braid_SyncStatus status, int *iter_ptr)
-    int braid_SyncStatusGetLevel (braid_CoarsenRefStatus status, int *level_ptr)
-    int braid_SyncStatusGetNLevels (braid_CoarsenRefStatus status, int *nlevels_ptr)
-    int braid_SyncStatusGetNRefine (braid_CoarsenRefStatus status, int *nrefine_ptr)
-    int braid_SyncStatusGetNTPoints (braid_CoarsenRefStatus status, int *ntpoints_ptr)
-    int braid_SyncStatusGetDone (braid_AccessStatus status, int *done_ptr)
-    int braid_SyncStatusGetCallingFunction (braid_AccessStatus status, int *cfunction_ptr)
+    int braid_SyncStatusGetLevel (braid_SyncStatus status, int *level_ptr)
+    int braid_SyncStatusGetNLevels (braid_SyncStatus status, int *nlevels_ptr)
+    int braid_SyncStatusGetNRefine (braid_SyncStatus status, int *nrefine_ptr)
+    int braid_SyncStatusGetNTPoints (braid_SyncStatus status, int *ntpoints_ptr)
+    int braid_SyncStatusGetDone (braid_SyncStatus status, int *done_ptr)
+    int braid_SyncStatusGetCallingFunction (braid_SyncStatus status, int *cfunction_ptr)
+    int braid_SyncStatusGetNumErrorEst (braid_SyncStatus status, int *npoints)
+    int braid_SyncStatusGetAllErrorEst (braid_SyncStatus status, double *error_est)
 
 cdef extern from "braid.h":
     
@@ -174,6 +178,7 @@ cdef extern from "braid.h":
     int braid_SetAccessLevel (braid_Core core, int access_level)
     int braid_SplitCommworld (const libmpi.MPI_Comm *comm_world, int px, libmpi.MPI_Comm *comm_x, libmpi.MPI_Comm *comm_t)
     int braid_SetShell (braid_Core core, braid_PtFcnSInit sinit, braid_PtFcnSClone sclone, braid_PtFcnSFree sfree)
+    int braid_SetRichardsonEstimation (braid_Core core, int est_error, int richardson, int local_order)
     
     ##
     # Wrap BraidGet Routines

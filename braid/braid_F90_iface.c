@@ -682,13 +682,26 @@ braid_F90_Name(braid_access_status_get_tild_f90, BRAID_ACCESS_STATUS_GET_TILD_F9
 braid_Int
 braid_F90_Name(braid_access_status_get_tindex_f90, BRAID_ACCESS_STATUS_GET_TINDEX_F90)(
                               braid_F90_ObjPtr    status,        /**< structure containing current simulation info */
-                              braid_F90_Int      *idx_ptr      /**< output, global index value corresponding to current time value to evolve from */
+                              braid_F90_Int      *idx_ptr        /**< output, global index value corresponding to current time value to evolve from */
                               )
 {
    braid_AccessStatusGetTIndex( braid_TakeF90_Obj(braid_AccessStatus, status),
                                braid_TakeF90_IntPtr(                 idx_ptr) );
    return 0;
 }
+
+/* Wrap braid_AccessStatusGetSingleErrorEst( ) */
+braid_Int
+braid_F90_Name(braid_access_status_get_single_error_est_f90, BRAID_ACCESS_STATUS_GET_SINGLE_ERROR_EST_F90)(
+                              braid_F90_ObjPtr    status,              /**< structure containing current simulation info */
+                              braid_F90_Real      *estimate            /**< output, error estimate, equals -1 if not available yet (e.g., before iteration 1, or after refinement) */                              
+                              )
+{
+   braid_AccessStatusGetSingleErrorEst( braid_TakeF90_Obj(braid_AccessStatus, status),
+                                        braid_TakeF90_RealPtr(                estimate) );
+   return 0;
+}
+
 
 /* Wrap braid_StepStatusGetTstartTstop( ) */
 braid_Int
@@ -813,6 +826,18 @@ braid_F90_Name(braid_step_status_set_tight_fine_tolx_f90, BRAID_STEP_STATUS_SET_
 {
    braid_StepStatusSetTightFineTolx( braid_TakeF90_Obj(braid_StepStatus, status),
                                      braid_TakeF90_Real(                 tight_fine_tolx) );
+   return 0;
+}
+
+/* Wrap braid_StepStatusGetSingleErrorEst( ) */
+braid_Int
+braid_F90_Name(braid_step_status_get_single_error_est_f90, BRAID_STEP_STATUS_GET_SINGLE_ERROR_EST_F90)(
+                              braid_F90_ObjPtr    status,              /**< structure containing current simulation info */
+                              braid_F90_Real      *estimate            /**< output, error estimate, equals -1 if not available yet (e.g., before iteration 1, or after refinement) */                              
+                              )
+{
+   braid_StepStatusGetSingleErrorEst( braid_TakeF90_Obj(braid_StepStatus, status),
+                                      braid_TakeF90_RealPtr(              estimate) );
    return 0;
 }
 
@@ -957,6 +982,33 @@ braid_F90_Name(braid_sync_status_get_callingfunction_f90, BRAID_SNYC_STATUS_GET_
                                      braid_TakeF90_IntPtr(               cfunction_ptr) );
   return 0;
 }
+
+
+/* Wrap braid_SyncStatusGetNumErrorEst( ) */
+braid_Int
+braid_F90_Name(braid_sync_status_get_num_error_est_f90, BRAID_SYNC_STATUS_GET_NUM_ERROR_EST_F90)(
+                              braid_F90_ObjPtr  status,            /**< structure containing current simulation info */
+                              braid_F90_Int     *npoints           /**< output, number of locally stored Richardson error estimates */
+                                                                               )
+{
+  braid_SyncStatusGetNumErrorEst(braid_TakeF90_Obj(braid_SyncStatus, status),
+                                 braid_TakeF90_IntPtr(               npoints) );
+  return 0;
+}
+
+/* Wrap braid_SyncStatusGetAllErrorEst( ) */
+braid_Int
+braid_F90_Name(braid_sync_status_get_all_error_est_f90, BRAID_SYNC_STATUS_GET_ALL_ERROR_EST_F90)(
+                              braid_F90_ObjPtr  status,            /**< structure containing current simulation info */
+                              braid_F90_Real   *error_est          /**< output, user-allocated error estimate array, written by Braid, equals -1 if not available yet (e.g., before iteration 1, or after refinement) */
+                                                                               )
+{
+  braid_SyncStatusGetAllErrorEst(braid_TakeF90_Obj(braid_SyncStatus, status),
+                                 braid_TakeF90_RealPtr(              error_est) );
+  return 0;
+}
+
+
 
 /*--------------------------------------------------------------------------
  * Wrap XBraid User Interface Functions
@@ -1392,6 +1444,24 @@ braid_F90_Name(braid_set_seq_soln_f90, BRAID_SET_SEQ_SOLN_F90)(
                     braid_TakeF90_Int(                 use_ptr) );
    return 0;
 }
+
+/*  braid_SetRichardsonEstimation( ) */
+braid_Int
+braid_F90_Name(braid_set_richardson_estimation_f90, BRAID_SET_RICHARDSON_ESTIMATION_F90)(
+                   braid_F90_ObjPtr  *core,          /**< braid_Core (_braid_Core) struct*/
+                   braid_F90_Int     *est_error,     /**< Boolean, if 1 compute Richardson-based error estimates, if 0, then do not */
+                   braid_F90_Int     *richardson,    /**< Boolean, if 1 carry out Richardson-based extrapolation to enhance accuracy on the fine-grid, if 0, then do not*/
+                   braid_F90_Int     *local_order    /**< Local order of the time integration scheme, e.g., local _order=2 for backward Euler */
+                   )
+{
+   braid_SetRichardsonEstimation(braid_TakeF90_ObjDeref(braid_Core,  core) ,
+                                 braid_TakeF90_Int(                  est_error) ,
+                                 braid_TakeF90_Int(                  richardson) ,
+                                 braid_TakeF90_Int(                  local_order) );
+
+   return 0;
+}
+
 
 #if (braid_Fortran_Sync == 1)
 

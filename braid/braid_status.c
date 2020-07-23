@@ -509,7 +509,7 @@ braid_StatusGetNumErrorEst(braid_Status   status,
 
 braid_Int
 braid_StatusGetAllErrorEst(braid_Status  status, 
-                           braid_Real   *estimate
+                           braid_Real   *error_est
                            )
 {
     _braid_Grid **grids           = _braid_StatusElt(status, grids);
@@ -532,7 +532,7 @@ braid_StatusGetAllErrorEst(braid_Status  status,
    /* Populate user-array with error estimates */
    for(m=0; m < npoints; m++)
    {
-      estimate[m] = braid_estimates[m];
+      error_est[m] = braid_estimates[m];
    }
 
    return _braid_error_flag;
