@@ -478,7 +478,7 @@ be implemented in some of the following examples.
     Essentially, Richardson extrapolation (RE) is used to improve the accuracy
     of the solution at the C-points on the finest level.  When the built-in
     error estimate option is turned on, RE is used to estimate the local
-    truncation error at each F-point. These estimates can be accessed through
+    truncation error at each point. These estimates can be accessed through
     the Access and GlobalAccess Functions. 
    
     The Richardson-based error estimates and extrapolation are only available
