@@ -136,14 +136,14 @@
   number of levels      = 7
 # Begin Test 16
   time steps = 17
-  iterations            = 5
-  residual norm         = 4.216252e-16
+  iterations            = 4
+  residual norm         = 3.823523e-05
   max number of levels  = 2
   number of levels      = 2
 # Begin Test 17
   time steps = 17
-  iterations            = 5
-  residual norm         = 4.216252e-16
+  iterations            = 4
+  residual norm         = 3.823523e-05
   max number of levels  = 2
   number of levels      = 2
 # Begin Test 18
