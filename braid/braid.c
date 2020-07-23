@@ -877,7 +877,14 @@ braid_SetCRelaxWt(braid_Core  core,
                   braid_Int   level,
                   braid_Real  Cwt)
 {
-   braid_Real  *CWts = _braid_CoreElt(core, CWts);
+   braid_Real  *CWts     = _braid_CoreElt(core, CWts);
+   braid_Int richardson  = _braid_CoreElt(core, richardson);
+
+   if( richardson && (Cwt != 1.0) )
+   { 
+      printf("Weighted relaxation and Richardson extrapolation are incompatible.  Turning off weighted relaxation.\n");
+      return _braid_error_flag;
+   }
 
    if (level < 0)
    {
@@ -1527,12 +1534,35 @@ braid_SetRichardsonEstimation(braid_Core core,
                               braid_Int  richardson,
                               braid_Int  local_order)
 {
+   
+   braid_Real  *CWts        = _braid_CoreElt(core, CWts);
+   braid_Real   CWt_default = _braid_CoreElt(core, CWt_default);
+   braid_Int    ml          = _braid_CoreElt(core, max_levels);
+   braid_Int j;
+
+   /* Compatability checks */
    if ( local_order < 2 && ( est_error || richardson ) )
    {
       _braid_printf(" Local Order of Time Integrator must be > 1 \n\n" );
       abort();
    }
 
+   if(CWt_default != 1.0)
+   {
+      printf("\nWeighted relaxation and Richardson extrapolation are incompatible.  Ignoring Richardson options.\n\n");
+      return _braid_error_flag;
+   }
+
+   for(j=0; j < ml; j++)
+   {
+      if( (CWts[j] != 1.0) && (CWts[j] != -1.0) )
+         {
+            printf("\nWeighted relaxation and Richardson extrapolation are incompatible.  Ignoring Richardson options.\n\n");
+            return _braid_error_flag;
+         }
+   }
+
+   /* Can finally set Richardson to enabled */
    _braid_CoreElt(core, est_error)  = est_error;
    _braid_CoreElt(core, richardson) = richardson;
    _braid_CoreElt(core, order)      = local_order;
