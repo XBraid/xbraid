@@ -1112,7 +1112,7 @@ braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
  * error at each point. These estimates can be accessed through StepStatus and
  * AccessStatus functions. 
  *
- * The last parameter is local_orderm, which represents the LOCAL order of the
+ * The last parameter is local_order, which represents the LOCAL order of the
  * time integration scheme. e.g. local_order = 2 for Backward Euler.  
  *
  * Also, the Richardson error estimate is only available after roughly 1 Braid
