@@ -1104,12 +1104,13 @@ braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
                       braid_Real  *rnorm_adj   /**< output: adjoint residual norm of last iteration */
                      );
 
-/** Turn on Richardson-based error estimation and/or extrapolation with XBraid.
- * When enabled, the Richardson extrapolation (RE) option (richardson == 1) is
- * used to improve the accuracy of the solution at the C-points on the finest
- * level.  When the built-in error estimate option is turned on (est_error ==
- * 1), RE is used to estimate the local truncation error at each point. These
- * estimates can be accessed through the Access and GlobalAccess Functions. 
+/** Turn on built-in Richardson-based error estimation and/or extrapolation
+ * with XBraid.  When enabled, the Richardson extrapolation (RE) option
+ * (richardson == 1) is used to improve the accuracy of the solution at the
+ * C-points on the finest level.  When the built-in error estimate option is
+ * turned on (est_error == 1), RE is used to estimate the local truncation
+ * error at each point. These estimates can be accessed through StepStatus and
+ * AccessStatus functions. 
  *
  * The last parameter is local_orderm, which represents the LOCAL order of the
  * time integration scheme. e.g. local_order = 2 for Backward Euler.  
