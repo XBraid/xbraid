@@ -66,6 +66,8 @@ typedef struct _braid_App_struct
    double *  g;            /* temporary vector for inversions and mat-vecs */
    double *  sc_info;      /* Runtime information that tracks the space-time grids visited */
    int       print_level;  /* Level of output desired by user (see the -help message below) */
+   int       refine_time;  /* Boolean, controls whether adaptive refinement in time is turned on */
+   double    error_tol;    /* If doing adaptive refinement, use this absolute step-wise error tol */ 
 } my_App;
 
 /* Can put anything in my vector and name it anything as well */
@@ -100,7 +102,7 @@ int my_Step(braid_App        app,
    double tstart;             /* current time */
    double tstop;              /* evolve to this time*/
    int level, i;
-   double deltaX, deltaT;
+   double deltaX, deltaT, error_est;
 
    braid_StepStatusGetLevel(status, &level);
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
@@ -126,8 +128,27 @@ int my_Step(braid_App        app,
    (app->sc_info)[ (2*level) ] = deltaX;
    (app->sc_info)[ (2*level) + 1] = deltaT;
    
-   /* no refinement */
-   braid_StepStatusSetRFactor(status, 1);
+
+   /* Carry out any adaptive refinement in time 
+    *
+    * Note that the Richardson estimates are only computed after about one
+    * iteration.  If the estimate is not available, error_est == -1.0 
+    */
+   if( (app->refine_time) && (level == 0) )
+   {
+      braid_StepStatusGetSingleErrorEst(status, &error_est); 
+      if(error_est != -1.0)
+      {
+         int rfactor = (int) ceil( sqrt( error_est / app->error_tol) );
+         braid_StepStatusSetRFactor(status, rfactor);
+      }
+      else
+      {
+         // Do no refinement in time
+         braid_StepStatusSetRFactor(status, 1);
+      }
+   }
+
 
    return 0;
 }
@@ -236,7 +257,7 @@ my_Access(braid_App          app,
           braid_Vector       u,
           braid_AccessStatus astatus)
 {
-   int        index, rank, level, done;
+   int        index, rank, level, done, ntime;
    char       filename[255];
    double     t, error;
    
@@ -244,19 +265,20 @@ my_Access(braid_App          app,
    braid_AccessStatusGetTIndex(astatus, &index);
    braid_AccessStatusGetLevel(astatus, &level);
    braid_AccessStatusGetDone(astatus, &done);
+   braid_AccessStatusGetNTPoints(astatus, &ntime);
    
    /* Print solution to file if simulation is over */
    if(done)
    {
       MPI_Comm_rank( (app->comm), &rank);
-      sprintf(filename, "%s.%07d.%05d", "ex-02.out", index, rank);
+      sprintf(filename, "%s.%07d.%05d", "ex-02.out", index+1, rank);
       save_solution(filename, u->values, u->size, app->xstart, 
-            app->xstop, app->ntime, app->tstart, app->tstop);
+            app->xstop, ntime, app->tstart, app->tstop, t);
    }
 
    /* IF on the finest level AND print_level is high enough AND at the final time,
     * THEN print out the discretization error */
-   if( (level == 0) && ((app->print_level) > 0) && ((index+1) == app->ntime) )
+   if( (level == 0) && ((app->print_level) > 0) && ((index+1) == ntime) )
    {
       error = compute_error_norm(u->values, app->xstart, app->xstop, u->size, t);
       printf("  Discretization error at final time:  %1.4e\n", error);
@@ -459,6 +481,9 @@ int main (int argc, char *argv[])
    int       print_level   = 2;
    int       access_level  = 1;
    int       use_sequential= 0;
+   int       richardson    = 0;
+   int       refine_time   = 0;
+   double    error_tol     = 1e-3;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -491,6 +516,10 @@ int main (int argc, char *argv[])
             printf("   -mi   <max_iter>     : set max iterations\n");
             printf("   -fmg                 : use FMG cycling\n");
             printf("   -sc                  : use spatial coarsening by factor of 2 each level\n");
+            printf("   -richardson          : use built-in Richardson extrapolation to improve finest grid accuracy\n");
+            printf("   -refinet <tol>       : use temporal refinment with a Richardson-based error estimate and <tol> absolute tolerance\n");
+            printf("                          Try: ./ex-02 -ntime 8 -refinet 1e-2\n");
+            printf("                               ./python viz-ex-02.py\n");
             printf("   -res                 : use my residual\n\n");
             printf("   -print_level <l>     : sets the print_level (default: 1) \n");
             printf("                          0 - no output to standard out \n");
@@ -579,6 +608,17 @@ int main (int argc, char *argv[])
          arg_index++;
          res = 1;
       }
+      else if ( strcmp(argv[arg_index], "-richardson") == 0 )
+      {
+         arg_index++;
+         richardson = 1;
+      }
+      else if ( strcmp(argv[arg_index], "-refinet") == 0 )
+      {
+         arg_index++;
+         refine_time = 1;
+         error_tol = atof(argv[arg_index++]);
+      }
       else if( strcmp(argv[arg_index], "-print_level") == 0 ){
          arg_index++;
          print_level = atoi(argv[arg_index++]);
@@ -607,6 +647,8 @@ int main (int argc, char *argv[])
    (app->xstop)         = xstop;
    (app->nspace)        = nspace;
    (app->print_level)   = print_level;
+   (app->refine_time)   = refine_time;
+   (app->error_tol)     = error_tol;
 
    /* Initialize storage for sc_info, for tracking space-time grids visited during the simulation */
    app->sc_info = (double*) malloc( 2*max_levels*sizeof(double) );
@@ -671,6 +713,14 @@ int main (int argc, char *argv[])
          braid_SetSpatialRefine(core,  my_Interp);
       }
       
+      /* Set Richardson and temporal refinement options */
+      if (app->refine_time)
+      {
+         braid_SetRefine( core, 1 );
+         braid_SetTPointsCutoff( core, 10000);
+      }
+      braid_SetRichardsonEstimation(core, app->refine_time, richardson, 2);
+
       braid_Drive(core);
       
       /* Print accumulated info on space-time grids visited during the simulation */
