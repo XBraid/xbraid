@@ -471,16 +471,13 @@ braid_StatusGetSingleErrorEst(braid_Status   status,
     * in FCRelax that is with a C-point from the left-neighboring processor.
     * Thus, ii can be negative. */ 
    braid_Int local_time_idx = idx - ilower + 1;
+   *estimate = -1.0;
    if( local_time_idx >= 0 )
    {
       if ( _braid_StatusElt(status, est_error) && (level == 0) )
       {
          *estimate = (_braid_StatusElt(status, estimate))[local_time_idx];
       }
-   }
-   else
-   {
-      *estimate = -1.0;
    }
 
    return _braid_error_flag;

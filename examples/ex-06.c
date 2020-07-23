@@ -22,18 +22,39 @@
  *
  ***********************************************************************EHEADER*/
 
-
 /*
-   Example 07_a
+ * Example 06
+ *
+ * Interface:    C
+ * 
+ * Requires:     only C-language support     
+ *
+ * Compile with: make ex-06
+ *
+ * Help with:    ex-06 -help
+ *
+ * Sample run:   mpirun -np 2 ex-06 -richardson
+ * 
+ * Description:   solve the scalar ODE 
+ *                   u' = f(t, u(t)) = -4u(t) -t + 1
+ *                   and
+ *                   u(t) = 1/16( -4t + 11*exp(-4t) + 5
+ *                   u(0) = 1
+ *
+ *                Same as ex-01, only implements more advanced XBraid features.
+ *                
+ *                When run with the defaults, the final solution file is:
+ *                $ ./ex-06
+ *                $ cat ex-06.out.0255.000 
+ *                  5.00000000000000e-01
+ *                  255
+ *                  256
+ *                  2.81268959247216e-01
+ *                  2.13146630707207e-314
+ *                  7.25952022044396e-04
+ *
+ **/
 
-   Compile with: make ex-07
-
-   Sample run:   mpirun -np 2 ex-07
-
-   Description:
-
-
-*/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -43,10 +64,10 @@
 #include "braid.h"
 
 /*--------------------------------------------------------------------------
- * Time integration routines
+ * User-defined routines and structures
  *--------------------------------------------------------------------------*/
 
-/* Can put anything in my app and name it anything as well */
+/* App structure can contain anything, and be named anything as well */
 typedef struct _braid_App_struct
 {
    MPI_Comm  comm;
@@ -58,12 +79,14 @@ typedef struct _braid_App_struct
    double    max_estimate;  /* Global max Richardson-based error estimate from Braid */
 } my_App;
 
-/* Can put anything in my vector and name it anything as well */
+/* Vector structure can contain anything, and be name anything as well */
 typedef struct _braid_Vector_struct
 {
    double value0,error;
 
 } my_Vector;
+
+/* ---- Begin defining time-integration routines ---- */
 
 /* Solve k = f(x + dt k,t+dt) */ 
 braid_Real 
@@ -149,7 +172,9 @@ my_Step(braid_App        app,
     * iteration.  So do not do any refinement until afterward that.  In particular,
     * the app->max_estimate won't be computed until then.  Also, immediately after an 
     * FRefine cycle, the Richardson estimates are wiped, and require a new iteration 
-    * to compute.  Thus always check if local_estimate != 1.0 */
+    * to compute.  
+    *
+    * ==> Thus always check if local_estimate != 1.0 */
    braid_StepStatusGetLevel(status, &level);
    braid_StepStatusGetIter(status, &iter);
    if ( (app->refine_time) && (level == 0) && (iter > 1) && (local_estimate > 0.02*app->max_estimate) && (local_estimate != -1.0) )
@@ -161,6 +186,7 @@ my_Step(braid_App        app,
    return 0;
 }
 
+/* Braid vector initialziation routine */
 int
 my_Init(braid_App     app,
         double        t,
@@ -185,6 +211,7 @@ my_Init(braid_App     app,
    return 0;
 }
 
+/* Braid vector clone routine */
 int
 my_Clone(braid_App     app,
          braid_Vector  u,
@@ -200,6 +227,7 @@ my_Clone(braid_App     app,
    return 0;
 }
 
+/* Braid vector free routine */
 int
 my_Free(braid_App    app,
         braid_Vector u)
@@ -209,6 +237,7 @@ my_Free(braid_App    app,
    return 0;
 }
 
+/* Braid vector sum AXPY routine */
 int
 my_Sum(braid_App     app,
        double        alpha,
@@ -221,6 +250,7 @@ my_Sum(braid_App     app,
    return 0;
 }
 
+/* Braid vector norm routine */
 int
 my_SpatialNorm(braid_App     app,
                braid_Vector  u,
@@ -234,17 +264,27 @@ my_SpatialNorm(braid_App     app,
    return 0;
 }
 
+/* Braid vector access (e.g., print to screen or file) routine */
 int
 my_Access(braid_App          app,
           braid_Vector       u,
           braid_AccessStatus astatus)
 {
-   int        index, iter, nrefine,level,done,caller,nt;
-   double     t;
+   int        myid, index, level, done,caller, nt;
+   double     t, error;
+   char       filename[255];
+   FILE      *file;
+
+   MPI_Comm_rank( app->comm, &myid);
+   
+   /* Retrieve Braid cycle information, can also query number of temporal
+    * refinements, current Braid iter, and so on. */
+   braid_AccessStatusGetNTPoints(astatus,&nt);
    braid_AccessStatusGetLevel(astatus, &level);
    braid_AccessStatusGetCallingFunction(astatus, &caller);
    if (level > 0 )
    {
+      /* Do nothing on coarse levels */
       return 0;
    }
    braid_AccessStatusGetDone(astatus,&done);
@@ -256,20 +296,28 @@ my_Access(braid_App          app,
    braid_AccessStatusGetSingleErrorEst(astatus, &estimate);
    braid_AccessStatusGetTIndex(astatus, &index);
    /* printf("AIndex: %d    Error Est:  %1.5e\n", index, estimate); */
-
+   
+   /* Compute exact solution and error*/
    braid_Real exact_solution;
    exact_solution = (1.0/16.0)*( -4.0*t + 11.0*exp(-4.0*t) + 5.0 );
-   braid_AccessStatusGetNTPoints(astatus,&nt);
-   braid_AccessStatusGetIter(astatus, &iter);
-   braid_AccessStatusGetNRefine(astatus, &nrefine );
-   MPI_Comm_rank( MPI_COMM_WORLD, &index );
+   error = fabs( (u->value0)- exact_solution );
+
+   /* Print data to file */
+   sprintf(filename, "%s.%04d.%03d", "ex-06.out", index, myid);
+   file = fopen(filename, "w");
+   fprintf(file, "%.14e\n%d\n%d\n%.14e\n%.14e\n%.14e\n", t, index, nt, u->value0, estimate, error);
+   fflush(file);
+   fclose(file);
    
+   /* If finished with Braid, print final discretization error */
    if (done && t == app->tstop ) 
-      printf("\nFinal Discretization error (t,sol,err):\n    %.20f %.20f %.20f \n", t, u->value0, fabs( (u->value0)- exact_solution )  );
+      printf("\nFinal Discretization error (t,sol,err):\n    %.20f %.20f %.20f \n", 
+            t, u->value0, error  );
 
    return 0;
 }
 
+/* Braid MPI buffer size routine */
 int
 my_BufSize(braid_App          app,
            int                *size_ptr,
@@ -279,6 +327,7 @@ my_BufSize(braid_App          app,
    return 0;
 }
 
+/* Braid MPI buffer pack routine */
 int
 my_BufPack(braid_App          app,
            braid_Vector       u,
@@ -294,6 +343,7 @@ my_BufPack(braid_App          app,
    return 0;
 }
 
+/* Braid MPI buffer Unpack routine */
 int
 my_BufUnpack(braid_App          app,
              void               *buffer,
@@ -311,6 +361,7 @@ my_BufUnpack(braid_App          app,
    return 0;
 }
 
+/* Braid Sync routine, used for user "global" operations*/
 int my_Sync(braid_App        app,
             braid_SyncStatus status)
 {
@@ -359,7 +410,6 @@ int my_Sync(braid_App        app,
 /*--------------------------------------------------------------------------
  * Main driver
  *--------------------------------------------------------------------------*/
-#include <execinfo.h>
 
 int main (int argc, char *argv[])
 {
@@ -423,7 +473,10 @@ int main (int argc, char *argv[])
             printf("  e.g. ./ex-07 -time_discr 1 -richardson  --> BE with Richardson \n");
             printf("  e.g. ./ex-07 -time_discr 2 -richardson  --> SDIRK23 with Richardson \n");
          }
-         exit(1);
+         /* Finalize MPI */
+         MPI_Finalize();
+         
+         return (0);
       }
       else if ( strcmp(argv[arg_index], "-ml") == 0 )
       {
@@ -482,8 +535,10 @@ int main (int argc, char *argv[])
       }
       else
       {
-         arg_index++;
-         /*break;*/
+         printf("Unrecognized command line option, quitting:  %s\n", argv[arg_index]); 
+         /* Finalize MPI */
+         MPI_Finalize();
+         return (0);
       }
    }
 
@@ -529,7 +584,7 @@ int main (int argc, char *argv[])
    }
    
    /* Set Braid Richardson options */
-   if ( richardson )
+   if ( richardson || error_est )
    {
       if (time_discr == 1) 
       {
@@ -542,7 +597,7 @@ int main (int argc, char *argv[])
       else
       {
          printf("Unrecognized time_discr option:  %d\n", time_discr);
-         return -1;
+         return (0);
       }
    }
    braid_SetRichardsonEstimation(core, error_est, richardson, order);
