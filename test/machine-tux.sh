@@ -71,7 +71,8 @@ TESTS=( "diffusion1D.sh " \
         "memcheck-tux-jacob.sh "\
         "ode1D.sh"\
         "cython_tests.sh"\
-	"ode1D-refine-periodic.sh")
+        "richardson.sh"\
+	     "ode1D-refine-periodic.sh")
 
 # Run regression tests
 for test in "${TESTS[@]}"
