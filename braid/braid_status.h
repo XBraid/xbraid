@@ -480,7 +480,8 @@ braid_StatusGetSingleErrorEst(braid_Status   status,           /**< structure co
  * Workflow: use this function to get the size of the needed user-array that
  * will hold the error estimates, then pre-allocate array, then call
  * GetAllErrorEst() to write error estimates to the user-array, then
- * post-process array in user-code.
+ * post-process array in user-code.  This post-processing will often occur in
+ * the Sync function.  See examples/ex-06.c.
  */
 braid_Int
 braid_StatusGetNumErrorEst(braid_Status   status,        /**< structure containing current simulation info */
@@ -493,6 +494,8 @@ braid_StatusGetNumErrorEst(braid_Status   status,        /**< structure containi
  * GetNumErrorEst() to get the size of the needed user-array that will hold the
  * error estimates, then pre-allocate array, then call this function to write
  * error estimates to the user-array, then post-process array in user-code.
+ * This post-processing will often occur in the Sync function.  See
+ * examples/ex-06.c.
  */
 braid_Int
 braid_StatusGetAllErrorEst(braid_Status    status,       /**< structure containing current simulation info */

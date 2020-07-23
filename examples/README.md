@@ -122,13 +122,13 @@ For the Cython examples, see the corresponding *.pyx file.
                examples/viz-ex-06.py
    
    allows you to visualize the solution, error, and error estimate.  The use of
-   "-richardson" notably improves the solution".
+   "-richardson" notably improves the accuracy of the solution.
     
    The Richardson-based error estimates and/or extrapolation are only available
    after the first Braid iteration, in that the coarse level solution must be
-   available to compute the estimate and extrapolation.  Thus, after an
+   available to compute the error estimate and extrapolation.  Thus, after an
    adaptive refinement (and new hierarchy is constructed), another iteration is
-   again required for the error estimates to be available.  If the error
+   again required for the error estimate to be available.  If the error
    estimate isn't available, Braid returns a value of -1.  See this example and
    the comments therein for more details.
 

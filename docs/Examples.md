@@ -483,11 +483,11 @@ be implemented in some of the following examples.
    
     The Richardson-based error estimates and extrapolation are only available
     after the first Braid iteration, in that the coarse level solution must be
-    available to compute the estimate and/or extrapolation.  Thus, after an
-    adaptive refinement (and new hierarchy is constructed), another iteration is
-    again required for the error estimates to be available.  If the error
-    estimate isn't available, Braid returns a value of -1.  See this example for
-    more details 
+    available to compute the error estimate and/or extrapolation.  Thus, after
+    an adaptive refinement (and new hierarchy is constructed), another
+    iteration is again required for the error estimates to be available.  If
+    the error estimate isn't available, Braid returns a value of -1.  See this
+    example for more details 
 
                examples/ex-06.c
    
