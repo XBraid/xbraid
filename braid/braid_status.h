@@ -488,9 +488,8 @@ braid_StatusGetNumErrorEst(braid_Status   status,        /**< structure containi
                            braid_Int     *npoints        /**< output, number of locally stored Richardson error estimates */
                            );
 
-/** 
- * Get All the Richardson based error estimates, e.g. in Sync.  Use this
- * function in conjuction with GetNumErrorEst().  Workflow: use
+/** Get All the Richardson based error estimates, e.g. from inside Sync.  Use
+ * this function in conjuction with GetNumErrorEst().  Workflow: use
  * GetNumErrorEst() to get the size of the needed user-array that will hold the
  * error estimates, then pre-allocate array, then call this function to write
  * error estimates to the user-array, then post-process array in user-code.
