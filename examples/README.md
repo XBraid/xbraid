@@ -111,10 +111,11 @@ For the Cython examples, see the corresponding *.pyx file.
       
                 examples/ex-05-cython/ex_05-setup.py
 
-6. ex-06 solve a simple scalar ODE, but allow for use of the Richardson-based
-   error estimator and error correction.  With the "-refinet" option, the error
-   estimator allows for adaptive refinement, and with the "-richardson" option,
-   Richardson extrapolation is used improve the finest-level solution. 
+6. ex-06 solve a simple scalar ODE, but allow for use of the built-in
+   Richardson-based error estimator and error correction.  With the "-refinet"
+   option, the error estimator allows for adaptive refinement, and with the
+   "-richardson" option, Richardson extrapolation is used improve the
+   finest-level solution. 
 
    The viz script, 
                

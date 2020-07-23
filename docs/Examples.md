@@ -467,10 +467,10 @@ be implemented in some of the following examples.
    implementation of this.
 
 12. **Richardson-based Error Estimation and Extrapolation**: This feature
-    allows the user to access Richardson-based error estimates and accuracy
-    improving extrapolation.  The error estimates and/or extrapolation can be
-    turned on by using 
-    [braid_SetRichardsonEstimation](@ref braid_SetRichardsonEstimation)
+    allows the user to access built-in Richardson-based error estimates and
+    accuracy improving extrapolation.  The error estimates and/or extrapolation
+    can be turned on by using 
+    [braid_SetRichardsonEstimation](@ref braid_SetRichardsonEstimation) .
     Moreover, this feature can be used in conjunction with the above discussed function,
     [braid_StepStatusSetRFactor](@ref braid_StepStatusSetRFactor), to achieve easy-to-use
     adaptive refinement in time..
