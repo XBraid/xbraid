@@ -71,12 +71,16 @@ os.environ["CC"] = "mpicc"
 if sys.platform != 'darwin':
     os.environ["LDSHARED"] = "mpicc -shared"    # Needed by Ubuntu LTS, leave out for Mac
 
+    # You may need to add local paths here, if you have local installations of compilers and python
+    #os.environ["PATH"] = '/home/jbschroder/.local/bin:' + os.environ["PATH"]
+    #os.environ["PYTHONPATH"] = "/home/jbschroder/.local/lib/python3.6"
+
 ex_01_extension = Extension(
     name="ex_01",
     sources=["ex_01.pyx"],
     libraries=["braid"],
-    library_dirs=[braid_dir],
-    include_dirs=[braid_dir], 
+    library_dirs=[braid_dir], #Can append local dirs:    , "/home/jbschroder/.local/lib", "/home/jbschroder/.local/lib/openmpi"],
+    include_dirs=[braid_dir], #Can append local dirs:    , "/home/jbschroder/.local/include", "/home/jbschroder/.local/include/openmpi/mpiext"],
     extra_compile_args=["-Wno-incompatible-pointer-types", "-Wno-unused-function"] 
 )
 setup(
