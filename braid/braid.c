@@ -882,7 +882,8 @@ braid_SetCRelaxWt(braid_Core  core,
 
    if( richardson && (Cwt != 1.0) )
    { 
-      printf("Weighted relaxation and Richardson extrapolation are incompatible.  Turning off weighted relaxation.\n");
+      
+     _braid_printf("Weighted relaxation and Richardson extrapolation are incompatible.  Turning off weighted relaxation.\n");
       return _braid_error_flag;
    }
 
@@ -1549,7 +1550,7 @@ braid_SetRichardsonEstimation(braid_Core core,
 
    if(CWt_default != 1.0)
    {
-      printf("\nWeighted relaxation and Richardson extrapolation are incompatible.  Ignoring Richardson options.\n\n");
+      _braid_printf("\nWeighted relaxation and Richardson extrapolation are incompatible.  Ignoring Richardson options.\n\n");
       return _braid_error_flag;
    }
 
@@ -1557,7 +1558,7 @@ braid_SetRichardsonEstimation(braid_Core core,
    {
       if( (CWts[j] != 1.0) && (CWts[j] != -1.0) )
          {
-            printf("\nWeighted relaxation and Richardson extrapolation are incompatible.  Ignoring Richardson options.\n\n");
+            _braid_printf("\nWeighted relaxation and Richardson extrapolation are incompatible.  Ignoring Richardson options.\n\n");
             return _braid_error_flag;
          }
    }
