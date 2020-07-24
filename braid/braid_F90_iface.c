@@ -690,15 +690,15 @@ braid_F90_Name(braid_access_status_get_tindex_f90, BRAID_ACCESS_STATUS_GET_TINDE
    return 0;
 }
 
-/* Wrap braid_AccessStatusGetSingleErrorEst( ) */
+/* Wrap braid_AccessStatusGetSingleErrorEstAccess( ) */
 braid_Int
-braid_F90_Name(braid_access_status_get_single_error_est_f90, BRAID_ACCESS_STATUS_GET_SINGLE_ERROR_EST_F90)(
+braid_F90_Name(braid_access_status_get_single_error_est_access_f90, BRAID_ACCESS_STATUS_GET_SINGLE_ERROR_EST_ACCESS_F90)(
                               braid_F90_ObjPtr    status,              /**< structure containing current simulation info */
                               braid_F90_Real      *estimate            /**< output, error estimate, equals -1 if not available yet (e.g., before iteration 1, or after refinement) */                              
                               )
 {
-   braid_AccessStatusGetSingleErrorEst( braid_TakeF90_Obj(braid_AccessStatus, status),
-                                        braid_TakeF90_RealPtr(                estimate) );
+   braid_AccessStatusGetSingleErrorEstAccess( braid_TakeF90_Obj(braid_AccessStatus, status),
+                                              braid_TakeF90_RealPtr(                estimate) );
    return 0;
 }
 
@@ -829,15 +829,15 @@ braid_F90_Name(braid_step_status_set_tight_fine_tolx_f90, BRAID_STEP_STATUS_SET_
    return 0;
 }
 
-/* Wrap braid_StepStatusGetSingleErrorEst( ) */
+/* Wrap braid_StepStatusGetSingleErrorEstStep( ) */
 braid_Int
-braid_F90_Name(braid_step_status_get_single_error_est_f90, BRAID_STEP_STATUS_GET_SINGLE_ERROR_EST_F90)(
+braid_F90_Name(braid_step_status_get_single_error_est_step_f90, BRAID_STEP_STATUS_GET_SINGLE_ERROR_EST_STEP_F90)(
                               braid_F90_ObjPtr    status,              /**< structure containing current simulation info */
                               braid_F90_Real      *estimate            /**< output, error estimate, equals -1 if not available yet (e.g., before iteration 1, or after refinement) */                              
                               )
 {
-   braid_StepStatusGetSingleErrorEst( braid_TakeF90_Obj(braid_StepStatus, status),
-                                      braid_TakeF90_RealPtr(              estimate) );
+   braid_StepStatusGetSingleErrorEstStep( braid_TakeF90_Obj(braid_StepStatus, status),
+                                          braid_TakeF90_RealPtr(              estimate) );
    return 0;
 }
 

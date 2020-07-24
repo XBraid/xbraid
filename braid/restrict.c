@@ -141,7 +141,7 @@ _braid_FRestrict(braid_Core   core,
           * temporarily holding the state vector */
          if( (access_level >= 3) )
          {
-            _braid_AccessStatusInit(ta[fi-f_ilower], fi-1, rnm, iter, level, nrefine, gupper,
+            _braid_AccessStatusInit(ta[fi-f_ilower], fi, rnm, iter, level, nrefine, gupper,
                                     0, 0, braid_ASCaller_FRestrict, astatus);
             _braid_AccessVector(core, astatus, r);
          }
@@ -158,7 +158,7 @@ _braid_FRestrict(braid_Core   core,
       /* Allow user to process current C-point */
       if( (access_level>= 3) && (ci > -1) )
       {
-         _braid_AccessStatusInit(ta[ci-f_ilower], ci-1, rnm, iter, level, nrefine, gupper,
+         _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper,
                                  0, 0, braid_ASCaller_FRestrict, astatus);
          _braid_UGetVectorRef(core, level, ci, &u);
          _braid_AccessVector(core, astatus, u);

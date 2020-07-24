@@ -157,7 +157,7 @@ my_Step(braid_App        app,
     * if error_est is not turned on when initialziing Braid */
    int index;
    double local_estimate;
-   braid_StepStatusGetSingleErrorEst(status, &local_estimate);
+   braid_StepStatusGetSingleErrorEstStep(status, &local_estimate);
    braid_StepStatusGetTIndex(status, &index);
    /* printf("Index: %d    Error Est:  %1.5e\n", index, local_estimate); */
    
@@ -293,7 +293,7 @@ my_Access(braid_App          app,
    /* Get the Richardson based error estimate.  Note, it will equal -1, if
     * error_est is not turned on when initialziing Braid */
    double estimate;
-   braid_AccessStatusGetSingleErrorEst(astatus, &estimate);
+   braid_AccessStatusGetSingleErrorEstAccess(astatus, &estimate);
    braid_AccessStatusGetTIndex(astatus, &index);
    /* printf("AIndex: %d    Error Est:  %1.5e\n", index, estimate); */
    

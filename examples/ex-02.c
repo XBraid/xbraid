@@ -136,7 +136,7 @@ int my_Step(braid_App        app,
     */
    if( (app->refine_time) && (level == 0) )
    {
-      braid_StepStatusGetSingleErrorEst(status, &error_est); 
+      braid_StepStatusGetSingleErrorEstStep(status, &error_est); 
       if(error_est != -1.0)
       {
          int rfactor = (int) ceil( sqrt( error_est / app->error_tol) );
@@ -271,14 +271,14 @@ my_Access(braid_App          app,
    if(done)
    {
       MPI_Comm_rank( (app->comm), &rank);
-      sprintf(filename, "%s.%07d.%05d", "ex-02.out", index+1, rank);
+      sprintf(filename, "%s.%07d.%05d", "ex-02.out", index, rank);
       save_solution(filename, u->values, u->size, app->xstart, 
             app->xstop, ntime, app->tstart, app->tstop, t);
    }
 
    /* IF on the finest level AND print_level is high enough AND at the final time,
     * THEN print out the discretization error */
-   if( (level == 0) && ((app->print_level) > 0) && ((index+1) == ntime) )
+   if( (level == 0) && ((app->print_level) > 0) && (index == ntime) )
    {
       error = compute_error_norm(u->values, app->xstart, app->xstop, u->size, t);
       printf("  Discretization error at final time:  %1.4e\n", error);

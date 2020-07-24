@@ -451,26 +451,22 @@ braid_StatusSetSize(braid_Status status,
    return _braid_error_flag;
 }
 
+
+/* Local helper function for braid_StatusGetSingleErrorEstStep and 
+braid_StatusGetSingleErrorEstAccess.  This function avoids repeat code */
 braid_Int
-braid_StatusGetSingleErrorEst(braid_Status   status, 
-                              braid_Real    *estimate
-                              )
+GetSingleErrorEstHelper(braid_Status   status, 
+                        braid_Real    *estimate,
+                        braid_Int      local_time_idx )
 {
-   braid_Int     idx    = _braid_StatusElt(status, idx);
-   _braid_Grid **grids  = _braid_StatusElt(status, grids);
-   braid_Int     ilower = _braid_GridElt(grids[0], ilower);
    braid_Int     level  = _braid_StatusElt(status, level);
 
    /* Richardson estimates only exist on level 0.
     *
-    * Note, we must increment local_time_idx by 1, because the index set
-    * earlier in status (by either Step or Acess) is decremented by 1 relative
-    * to Braid's indexing 
-    *
     * Also Note, make sure index is positive.  There is one step with Richardson
     * in FCRelax that is with a C-point from the left-neighboring processor.
-    * Thus, ii can be negative. */ 
-   braid_Int local_time_idx = idx - ilower + 1;
+    * Thus, local index can be negative. */ 
+
    *estimate = -1.0;
    if( local_time_idx >= 0 )
    {
@@ -482,6 +478,45 @@ braid_StatusGetSingleErrorEst(braid_Status   status,
 
    return _braid_error_flag;
 }
+
+braid_Int
+braid_StatusGetSingleErrorEstStep(braid_Status   status, 
+                                  braid_Real    *estimate
+                                  )
+{
+   braid_Int     idx    = _braid_StatusElt(status, idx);
+   _braid_Grid **grids  = _braid_StatusElt(status, grids);
+   braid_Int     ilower = _braid_GridElt(grids[0], ilower);
+
+   /* Compute local time index, and call helper function
+    * Note, we must increment local_time_idx by 1, because the index set
+    * earlier in status Step refers to the time index of "tstart".  Whereas,
+    * this function should return the error estimate of the time-step
+    * corresponding to "tstop". 
+    */
+   braid_Int local_time_idx = idx - ilower + 1;
+   GetSingleErrorEstHelper(status, estimate, local_time_idx); 
+
+   return _braid_error_flag;
+}
+
+
+braid_Int
+braid_StatusGetSingleErrorEstAccess(braid_Status   status, 
+                                    braid_Real    *estimate
+                                    )
+{
+   braid_Int     idx    = _braid_StatusElt(status, idx);
+   _braid_Grid **grids  = _braid_StatusElt(status, grids);
+   braid_Int     ilower = _braid_GridElt(grids[0], ilower);
+
+   /* Compute local time index, and call helper function */
+   braid_Int local_time_idx = idx - ilower;
+   GetSingleErrorEstHelper(status, estimate, local_time_idx); 
+
+   return _braid_error_flag;
+}
+
 
 braid_Int
 braid_StatusGetNumErrorEst(braid_Status   status, 
@@ -579,7 +614,7 @@ ACCESSOR_FUNCTION_GET1(Access, Done,            Int)
 ACCESSOR_FUNCTION_GET4(Access, TILD,            Real, Int, Int, Int)
 ACCESSOR_FUNCTION_GET1(Access, WrapperTest,     Int)
 ACCESSOR_FUNCTION_GET1(Access, CallingFunction, Int)
-ACCESSOR_FUNCTION_GET1(Access, SingleErrorEst,  Real)
+ACCESSOR_FUNCTION_GET1(Access, SingleErrorEstAccess,  Real)
 
 /*--------------------------------------------------------------------------
  * SyncStatus Routines
@@ -698,7 +733,7 @@ ACCESSOR_FUNCTION_SET1(Step, OldFineTolx,   Real)
 ACCESSOR_FUNCTION_SET1(Step, TightFineTolx, Real)
 ACCESSOR_FUNCTION_SET1(Step, RFactor,       Real)
 ACCESSOR_FUNCTION_SET1(Step, RSpace,        Real)
-ACCESSOR_FUNCTION_GET1(Step, SingleErrorEst,Real)
+ACCESSOR_FUNCTION_GET1(Step, SingleErrorEstStep, Real)
 
 /*--------------------------------------------------------------------------
  * BufferStatus Routines

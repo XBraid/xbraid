@@ -672,7 +672,7 @@ _braid_FRefine(braid_Core   core,
             /* Allow user to process current vector */
             if( (access_level >= 3) )
             {
-               _braid_AccessStatusInit(ta[ii], fi-1, rnorm, iter, 0, nrefine, gupper,
+               _braid_AccessStatusInit(ta[ii], fi, rnorm, iter, 0, nrefine, gupper,
                                        0, 0, braid_ASCaller_FRefine, astatus);
                _braid_AccessVector(core, astatus, u);
             }
@@ -697,7 +697,7 @@ _braid_FRefine(braid_Core   core,
          /* Allow user to process current vector */
          if( (access_level >= 3) )
          {
-            _braid_AccessStatusInit(ta[ii], ci-1, rnorm, iter, 0, nrefine, gupper,
+            _braid_AccessStatusInit(ta[ii], ci, rnorm, iter, 0, nrefine, gupper,
                                     0, 0, braid_ASCaller_FRefine, astatus);
             _braid_AccessVector(core, astatus, u);
          }

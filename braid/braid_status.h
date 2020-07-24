@@ -153,9 +153,13 @@ braid_StatusGetT(braid_Status status,                      /**< structure contai
                  braid_Real  *t_ptr                        /**< output, current time */
                  );
 
-/**
- * Return the index value corresponding to the current time value
- * from the Status structure.
+/** Return the index value corresponding to the current time value from the
+ * Status structure.  
+ *
+ * For Step(), this corresponds to the time-index of "tstart", as this is the
+ * time-index of the input vector.  That is, NOT the time-index of "tstop".
+ * For Access, this corresponds just simply to the time-index of the input
+ * vector.
  **/
 braid_Int
 braid_StatusGetTIndex(braid_Status status,                  /**< structure containing current simulation info */
@@ -464,14 +468,32 @@ braid_StatusSetSize(braid_Status status,                   /**< structure contai
                     braid_Real   size                      /**< input, size of the send buffer */
                     );
 
+/** 
+ * Get the Richardson based error estimate at the single time point currently
+ * being "Stepped", i.e., return the current error estimate for the time point
+ * at "tstart".
+ *
+ * Note that Step needs specific logic distinct from Access, hence please use
+ * braid_AccessStatusGetSingleErrorEstAccess for the user Access() function.
+ */
 
-/**
- * Get the Richardson based error estimate at a single time point, e.g., in Step or Access
+braid_Int
+braid_StatusGetSingleErrorEstStep(braid_Status   status,           /**< structure containing current simulation info */
+                                  braid_Real    *estimate          /**< output, error estimate, equals -1 if not available yet (e.g., before iteration 1, or after refinement) */
+                                  );
+
+/** 
+ * Get the Richardson based error estimate at the single time point currently 
+ * accessible from Access.
+ * 
+ * Note that Access needs specific logic distinct from Step, hence please use
+ * braid_StepStatusGetSingleErrorEstStep for the user Step() function. 
  */
 braid_Int
-braid_StatusGetSingleErrorEst(braid_Status   status,           /**< structure containing current simulation info */
-                              braid_Real    *estimate          /**< output, error estimate, equals -1 if not available yet (e.g., before iteration 1, or after refinement) */
-                              );
+braid_StatusGetSingleErrorEstAccess(braid_Status   status,           /**< structure containing current simulation info */
+                                    braid_Real    *estimate          /**< output, error estimate, equals -1 if not available yet (e.g., before iteration 1, or after refinement) */
+                                    );
+
 
 
 /** 
@@ -535,7 +557,7 @@ ACCESSOR_HEADER_GET1(Access, Done,            Int)
 ACCESSOR_HEADER_GET4(Access, TILD,            Real, Int, Int, Int)
 ACCESSOR_HEADER_GET1(Access, WrapperTest,     Int)
 ACCESSOR_HEADER_GET1(Access, CallingFunction, Int)
-ACCESSOR_HEADER_GET1(Access, SingleErrorEst,        Real)
+ACCESSOR_HEADER_GET1(Access, SingleErrorEstAccess, Real)
 
 /*--------------------------------------------------------------------------
  * SyncStatus Prototypes: They just wrap the corresponding Status accessors
@@ -590,7 +612,7 @@ ACCESSOR_HEADER_SET1(Step, OldFineTolx,   Real)
 ACCESSOR_HEADER_SET1(Step, TightFineTolx, Real)
 ACCESSOR_HEADER_SET1(Step, RFactor,       Real)
 ACCESSOR_HEADER_SET1(Step, RSpace,        Real)
-ACCESSOR_HEADER_GET1(Step, SingleErrorEst,      Real)
+ACCESSOR_HEADER_GET1(Step, SingleErrorEstStep, Real)
 
 /*--------------------------------------------------------------------------
  * BufferStatus Prototypes: They just wrap the corresponding Status accessors

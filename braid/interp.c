@@ -81,7 +81,7 @@ _braid_FInterp(braid_Core  core,
          /* Allow user to process current vector */
          if( (access_level >= 3) )
          {
-            _braid_AccessStatusInit(ta[fi-ilower], fi-1, rnorm, iter, level, nrefine, gupper,
+            _braid_AccessStatusInit(ta[fi-ilower], fi, rnorm, iter, level, nrefine, gupper,
                                     0, 0, braid_ASCaller_FInterp, astatus);
             _braid_AccessVector(core, astatus, u);
          }
@@ -96,7 +96,7 @@ _braid_FInterp(braid_Core  core,
          /* Allow user to process current vector on the FINEST level*/
          if( (access_level >= 3) && (f_level == 0) )
          {
-            _braid_AccessStatusInit(ta[fi-ilower], f_index-1, rnorm, iter, f_level, nrefine, gupper,
+            _braid_AccessStatusInit(ta[fi-ilower], f_index, rnorm, iter, f_level, nrefine, gupper,
                                     0, 0, braid_ASCaller_FInterp, astatus);
             _braid_AccessVector(core, astatus, f_u);
          }
@@ -114,7 +114,7 @@ _braid_FInterp(braid_Core  core,
          /* Allow user to process current C-point */
          if( (access_level >= 3) )
          {
-            _braid_AccessStatusInit(ta[ci-ilower], ci-1, rnorm, iter, level, nrefine, gupper,
+            _braid_AccessStatusInit(ta[ci-ilower], ci, rnorm, iter, level, nrefine, gupper,
                                     0, 0, braid_ASCaller_FInterp, astatus);
             _braid_AccessVector(core, astatus, u);
          }
@@ -129,7 +129,7 @@ _braid_FInterp(braid_Core  core,
          /* Allow user to process current C-point on the FINEST level*/
          if( (access_level >= 3) && (f_level == 0) )
          {
-            _braid_AccessStatusInit(ta[ci-ilower], f_index-1, rnorm, iter, f_level, nrefine, gupper,
+            _braid_AccessStatusInit(ta[ci-ilower], f_index, rnorm, iter, f_level, nrefine, gupper,
                                     0, 0, braid_ASCaller_FInterp, astatus);
             _braid_AccessVector(core, astatus, f_u);
          }

@@ -193,7 +193,7 @@ class BraidAccessStatus
       void GetWrapperTest(braid_Int *wtest_ptr)          { braid_AccessStatusGetWrapperTest(astatus, wtest_ptr); }
       void GetResidual(braid_Real *rnorm_ptr)            { braid_AccessStatusGetResidual(astatus, rnorm_ptr); }
       void GetNRefine(braid_Int *nrefine_ptr)            { braid_AccessStatusGetNRefine(astatus, nrefine_ptr); }
-      void GetSingleErrorEst(braid_Real *estimate_ptr)   { braid_AccessStatusGetSingleErrorEst(astatus, estimate_ptr); }
+      void GetSingleErrorEstAccess(braid_Real *estimate_ptr)   { braid_AccessStatusGetSingleErrorEstAccess(astatus, estimate_ptr); }
       void GetCallingFunction(braid_Int *callingfcn_ptr)
       {
          braid_AccessStatusGetCallingFunction(astatus, callingfcn_ptr);
@@ -271,7 +271,7 @@ class BraidStepStatus
       void GetOldFineTolx(braid_Real *old_fine_tolx_ptr) { braid_StepStatusGetOldFineTolx(pstatus, old_fine_tolx_ptr); }
       void SetOldFineTolx(braid_Real old_fine_tolx)      { braid_StepStatusSetOldFineTolx(pstatus, old_fine_tolx); }
       void SetTightFineTolx(braid_Int tight_fine_tolx)   { braid_StepStatusSetTightFineTolx(pstatus, tight_fine_tolx); }
-      void GetSingleErrorEst(braid_Real *estimate_ptr)   { braid_StepStatusGetSingleErrorEst(pstatus, estimate_ptr); }
+      void GetSingleErrorEstStep(braid_Real *estimate_ptr)   { braid_StepStatusGetSingleErrorEstStep(pstatus, estimate_ptr); }
 
          // The braid_StepStatus structure is deallocated inside of Braid
       // This class is just to make code consistently look object oriented

@@ -46,7 +46,7 @@ cdef extern from "braid_status.h":
     int braid_StepStatusGetTol (braid_StepStatus status, double *tol_ptr)
     int braid_StepStatusGetRNorms (braid_StepStatus status, int *nrequest_ptr, double *rnorms_ptr)
     int braid_StepStatusGetOldFineTolx (braid_StepStatus status, double *old_fine_tolx_ptr)
-    int braid_StepStatusGetSingleErrorEst (braid_StepStatus status, double *estimate)
+    int braid_StepStatusGetSingleErrorEstStep (braid_StepStatus status, double *estimate)
     int braid_StepStatusSetOldFineTolx (braid_StepStatus status, double old_fine_tolx)
     int braid_StepStatusSetTightFineTolx (braid_StepStatus status, double tight_fine_tolx)
     int braid_StepStatusSetRFactor (braid_StepStatus status, double rfactor)
@@ -66,7 +66,7 @@ cdef extern from "braid_status.h":
     int braid_AccessStatusGetTILD (braid_AccessStatus status, double *t_ptr, int *iter_ptr, int *level_ptr, int *done_ptr)
     int braid_AccessStatusGetWrapperTest (braid_AccessStatus status, int *wtest_ptr)
     int braid_AccessStatusGetCallingFunction (braid_AccessStatus status, int *cfunction_ptr)
-    int braid_AccessStatusGetSingleErrorEst (braid_AccessStatus status, double *estimate)
+    int braid_AccessStatusGetSingleErrorEstAccess (braid_AccessStatus status, double *estimate)
 
     ##
     # Wrap CoarsenRefStatus Routines
