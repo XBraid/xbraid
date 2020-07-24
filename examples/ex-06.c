@@ -424,7 +424,7 @@ int main (int argc, char *argv[])
    int           nrelax0    = -1;
    double        tol        = 1.0e-12;
    int           cfactor    = 2;
-   int           max_iter   = 1500;
+   int           max_iter   = 100;
    int           arg_index;
    int           min_coarse = 8;
    int           time_discr = 1;
