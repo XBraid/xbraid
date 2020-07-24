@@ -474,7 +474,8 @@ braid_StatusSetSize(braid_Status status,                   /**< structure contai
  * at "tstart".
  *
  * Note that Step needs specific logic distinct from Access, hence please use
- * braid_AccessStatusGetSingleErrorEstAccess for the user Access() function.
+ * [braid_AccessStatusGetSingleErrorEstAccess](@ref braid_AccessStatusGetSingleErrorEstAccess)
+ * for the user Access() function.
  */
 
 braid_Int
@@ -487,7 +488,8 @@ braid_StatusGetSingleErrorEstStep(braid_Status   status,           /**< structur
  * accessible from Access.
  * 
  * Note that Access needs specific logic distinct from Step, hence please use
- * braid_StepStatusGetSingleErrorEstStep for the user Step() function. 
+ * [braid_StepStatusGetSingleErrorEstStep](@ref braid_StepStatusGetSingleErrorEstStep)
+ * for the user Step() function. 
  */
 braid_Int
 braid_StatusGetSingleErrorEstAccess(braid_Status   status,           /**< structure containing current simulation info */
