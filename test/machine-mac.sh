@@ -74,6 +74,7 @@ TESTS=( "diffusion1D.sh " \
         "test-checkout-compile.sh " \
         "adjoint.sh " \
         "shellvector_bdf2.sh "\
+        "richardson.sh"\
         # "memcheck-tux-jacob.sh "\
         "docs.sh " )
 

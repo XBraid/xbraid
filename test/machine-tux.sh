@@ -70,9 +70,9 @@ TESTS=( "diffusion1D.sh " \
         "shellvector_bdf2.sh "\
         "memcheck-tux-jacob.sh "\
         "ode1D.sh"\
-        "cython_tests.sh")
-#       Need to fix the issues with refinement = 2 
-#        "ode1D-refine-periodic.sh"\
+        "cython_tests.sh"\
+        "richardson.sh"\
+	     "ode1D-refine-periodic.sh")
 
 # Run regression tests
 for test in "${TESTS[@]}"

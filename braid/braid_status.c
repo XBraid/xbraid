@@ -359,8 +359,13 @@ braid_StatusSetRFactor(braid_Status status,
       braid_Int          ilower   = _braid_GridElt(grids[level], ilower);
       braid_Int          ii       = index+1 - ilower;
 
-      /* Set refinement factor */
-      rfactors[ii] = rfactor;
+      /* Set refinement factor
+       * 
+       * Note: make sure index ii is positive.  There is one step with
+       * Richardson in FCRelax that is with a C-point from the left-neighboring
+       * processor.  Thus, ii can be negative. */
+      if( ii >= 0 )
+         rfactors[ii] = rfactor;
    }
 
    return _braid_error_flag;
@@ -383,28 +388,34 @@ braid_StatusSetRefinementDtValues(braid_Status  status,
       braid_Int          ilower   = _braid_GridElt(grids[level], ilower);
       braid_Int          ii       = index+1 - ilower;
 
-      /* Set refinement factor */
-      rfactors[ii] = rfactor;
-
-      /* Store dt values */
-      if (rfactor > 1)
+       /* Note: make sure index ii is positive.  There is one step with
+        * Richardson in FCRelax that is with a C-point from the
+        * left-neighboring processor.  Thus, ii can be negative. */ 
+      if( ii >= 0 )
       {
-         braid_Real  **rdtvalues = _braid_StatusElt(status, rdtvalues);
-         braid_Int     j;
-
-         if (rdtvalues[ii] != NULL)
+         /* Set refinement factor */
+         rfactors[ii] = rfactor;
+         
+         /* Store dt values */
+         if (rfactor > 1)
          {
-            /* This essentially forces a realloc in case rfactor has changed.
-             * Note that TFree() sets rdtvalues[ii] to NULL. */
-            _braid_TFree(rdtvalues[ii]);
-         }
-         if (rdtvalues[ii] == NULL)
-         {
-            rdtvalues[ii] = _braid_CTAlloc(braid_Real, (rfactor-1));
-         }
-         for (j = 0; j < (rfactor-1); j++)
-         {
-            rdtvalues[ii][j] = rdtarray[j];
+            braid_Real  **rdtvalues = _braid_StatusElt(status, rdtvalues);
+            braid_Int     j;
+         
+            if (rdtvalues[ii] != NULL)
+            {
+               /* This essentially forces a realloc in case rfactor has changed.
+                * Note that TFree() sets rdtvalues[ii] to NULL. */
+               _braid_TFree(rdtvalues[ii]);
+            }
+            if (rdtvalues[ii] == NULL)
+            {
+               rdtvalues[ii] = _braid_CTAlloc(braid_Real, (rfactor-1));
+            }
+            for (j = 0; j < (rfactor-1); j++)
+            {
+               rdtvalues[ii][j] = rdtarray[j];
+            }
          }
       }
    }
@@ -437,6 +448,128 @@ braid_StatusSetSize(braid_Status status,
                     )
 {
    _braid_StatusElt(status, size_buffer ) = size;
+   return _braid_error_flag;
+}
+
+
+/* Local helper function for braid_StatusGetSingleErrorEstStep and 
+braid_StatusGetSingleErrorEstAccess.  This function avoids repeat code */
+braid_Int
+GetSingleErrorEstHelper(braid_Status   status, 
+                        braid_Real    *estimate,
+                        braid_Int      local_time_idx )
+{
+   braid_Int     level  = _braid_StatusElt(status, level);
+
+   /* Richardson estimates only exist on level 0.
+    *
+    * Also Note, make sure index is positive.  There is one step with Richardson
+    * in FCRelax that is with a C-point from the left-neighboring processor.
+    * Thus, local index can be negative. */ 
+
+   *estimate = -1.0;
+   if( local_time_idx >= 0 )
+   {
+      if ( _braid_StatusElt(status, est_error) && (level == 0) )
+      {
+         *estimate = (_braid_StatusElt(status, estimate))[local_time_idx];
+      }
+   }
+
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_StatusGetSingleErrorEstStep(braid_Status   status, 
+                                  braid_Real    *estimate
+                                  )
+{
+   braid_Int     idx    = _braid_StatusElt(status, idx);
+   _braid_Grid **grids  = _braid_StatusElt(status, grids);
+   braid_Int     ilower = _braid_GridElt(grids[0], ilower);
+
+   /* Compute local time index, and call helper function
+    * Note, we must increment local_time_idx by 1, because the index set
+    * earlier in status Step refers to the time index of "tstart".  Whereas,
+    * this function should return the error estimate of the time-step
+    * corresponding to "tstop". 
+    */
+   braid_Int local_time_idx = idx - ilower + 1;
+   GetSingleErrorEstHelper(status, estimate, local_time_idx); 
+
+   return _braid_error_flag;
+}
+
+
+braid_Int
+braid_StatusGetSingleErrorEstAccess(braid_Status   status, 
+                                    braid_Real    *estimate
+                                    )
+{
+   braid_Int     idx    = _braid_StatusElt(status, idx);
+   _braid_Grid **grids  = _braid_StatusElt(status, grids);
+   braid_Int     ilower = _braid_GridElt(grids[0], ilower);
+
+   /* Compute local time index, and call helper function */
+   braid_Int local_time_idx = idx - ilower;
+   GetSingleErrorEstHelper(status, estimate, local_time_idx); 
+
+   return _braid_error_flag;
+}
+
+
+braid_Int
+braid_StatusGetNumErrorEst(braid_Status   status, 
+                           braid_Int     *npoints
+                           )
+{
+    _braid_Grid **grids  = _braid_StatusElt(status, grids);
+    braid_Int     ilower = _braid_GridElt(grids[0], ilower);
+    braid_Int     iupper = _braid_GridElt(grids[0], iupper);
+    braid_Int     level  = _braid_StatusElt(status, level);
+
+   /* Richardson estimates only exist on level 0 */
+   if ( _braid_StatusElt(status, est_error) && (level == 0) )
+   {
+      *npoints = iupper - ilower + 1;
+   }
+   else
+   {
+      *npoints = 0;
+   }
+
+   return _braid_error_flag;
+}
+
+
+braid_Int
+braid_StatusGetAllErrorEst(braid_Status  status, 
+                           braid_Real   *error_est
+                           )
+{
+    _braid_Grid **grids           = _braid_StatusElt(status, grids);
+    braid_Int     ilower          = _braid_GridElt(grids[0], ilower);
+    braid_Int     iupper          = _braid_GridElt(grids[0], iupper);
+    braid_Real   *braid_estimates = _braid_StatusElt(status, estimate);
+    braid_Int     level           = _braid_StatusElt(status, level);
+    braid_Int     npoints, m;
+
+   /* Richardson estimates only exist on level 0 */
+   if ( _braid_StatusElt(status, est_error) && (level == 0) )
+   {
+      npoints = iupper - ilower + 1;
+   }
+   else
+   {
+      npoints = 0;
+   }
+   
+   /* Populate user-array with error estimates */
+   for(m=0; m < npoints; m++)
+   {
+      error_est[m] = braid_estimates[m];
+   }
+
    return _braid_error_flag;
 }
 
@@ -481,6 +614,7 @@ ACCESSOR_FUNCTION_GET1(Access, Done,            Int)
 ACCESSOR_FUNCTION_GET4(Access, TILD,            Real, Int, Int, Int)
 ACCESSOR_FUNCTION_GET1(Access, WrapperTest,     Int)
 ACCESSOR_FUNCTION_GET1(Access, CallingFunction, Int)
+ACCESSOR_FUNCTION_GET1(Access, SingleErrorEstAccess,  Real)
 
 /*--------------------------------------------------------------------------
  * SyncStatus Routines
@@ -512,6 +646,8 @@ ACCESSOR_FUNCTION_GET1(Sync, NRefine,          Int)
 ACCESSOR_FUNCTION_GET1(Sync, NTPoints,         Int)
 ACCESSOR_FUNCTION_GET1(Sync, Done,             Int)
 ACCESSOR_FUNCTION_GET1(Sync, CallingFunction,  Int)
+ACCESSOR_FUNCTION_GET1(Sync, NumErrorEst,      Int)
+ACCESSOR_FUNCTION_GET1(Sync, AllErrorEst,      Real)
 
 /*--------------------------------------------------------------------------
  * CoarsenRefStatus Routines
@@ -597,6 +733,7 @@ ACCESSOR_FUNCTION_SET1(Step, OldFineTolx,   Real)
 ACCESSOR_FUNCTION_SET1(Step, TightFineTolx, Real)
 ACCESSOR_FUNCTION_SET1(Step, RFactor,       Real)
 ACCESSOR_FUNCTION_SET1(Step, RSpace,        Real)
+ACCESSOR_FUNCTION_GET1(Step, SingleErrorEstStep, Real)
 
 /*--------------------------------------------------------------------------
  * BufferStatus Routines

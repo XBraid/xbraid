@@ -20,6 +20,7 @@ from os import sys
 #     ntime_steps
 #     tstart
 #     tstop
+#     current_time
 #     nspace_points
 #     xstart
 #     xstop
@@ -32,6 +33,7 @@ from os import sys
 ##
 
 # Set the braid iteration number and number of steps
+#file_stem = 'ex-02-serial.out.'
 file_stem = 'ex-02.out.'
 current_rank = 0
 
@@ -42,53 +44,47 @@ data = loadtxt(fname)
 nsteps = int(data[0])
 tstart = float(data[1])
 tstop = float(data[2])
-nspace = int(data[3])
-xstart = float(data[4])
-xstop = float(data[5])
+tvalues = zeros((nsteps,))
+nspace = int(data[4])
+xstart = float(data[5])
+xstop = float(data[6])
 mesh = linspace(xstart, xstop, nspace)
-data = zeros((nsteps,data.shape[0]-6))
+data = zeros((nsteps,data.shape[0]-7))
 
 # Load space-time solution, noting that we don't know the MPI ranks ahead of
 # time that generated the files, so we guess :-)
 for step in range(nsteps):
     try:
         fname = file_stem + "%07d"%step + '.' + "%05d"%current_rank
-        data[step,:] = (loadtxt(fname))[6:]
+        data[step,:] = (loadtxt(fname))[7:]
+        tvalues[step] = (loadtxt(fname))[3]
     except:
         current_rank = current_rank + 1
         fname = file_stem + "%07d"%step + '.' + "%05d"%current_rank
-        data[step,:] = (loadtxt(fname))[6:]
+        data[step,:] = (loadtxt(fname))[7:]
+        tvalues[step+1] = (loadtxt(fname))[3]
+
+
+# IMSHOW not as useful for adaptive grids, so it's turned off by default
+#mpl.figure(0)
+#mpl.imshow(data,origin='lower',extent=(xstart, xstop, tstart, tstop))
+#mpl.colorbar()
+#mpl.ylabel('time')
+#mpl.xlabel('space')
+
+
+for j, idx in enumerate([0, nsteps//5, 2*(nsteps//5), 3*(nsteps//5), 4*(nsteps//5), nsteps-1]):
+    mpl.figure(j+1)
+    mpl.plot(mesh, data[idx,:], '-o')
+    mpl.ylabel('u')
+    mpl.xlabel('space')
+    mpl.title('Step=%d,  Time=%1.4e'%(idx, tvalues[idx]) )
+    mpl.ylim(data[idx,:].min()-1.0, data[idx,:].max()+1.0)
+    mpl.xlim(xstart, xstop) 
 
 mpl.figure(0)
-mpl.imshow(data,origin='lower',extent=(xstart, xstop, tstart, tstop))
-mpl.colorbar()
-mpl.ylabel('time')
-mpl.xlabel('space')
-
-mpl.figure(1)
-mpl.plot(mesh, data[0,:], '-o')
-mpl.ylabel('u')
-mpl.xlabel('space')
-mpl.title('Step 0')
-mpl.ylim(data[0,:].min()-1.0, data[0,:].max()+1.0)
-mpl.xlim(xstart, xstop) 
-
-mpl.figure(2)
-mpl.plot(mesh, data[nsteps//2,:], '-o')
-mpl.ylabel('u')
-mpl.xlabel('space')
-mpl.title('Step %d'%(nsteps//2))
-mpl.ylim(data[nsteps//2,:].min()-1.0, data[nsteps//2,:].max()+1.0)
-mpl.xlim(xstart, xstop) 
-
-mpl.figure(3)
-mpl.plot(mesh, data[nsteps-1,:], '-o')
-mpl.ylabel('u')
-mpl.xlabel('space')
-mpl.title('Step %d'%(nsteps-1))
-mpl.ylim(data[nsteps-1,:].min()-1.0, data[nsteps-1,:].max()+1.0)
-mpl.xlim(xstart, xstop) 
-
+mpl.plot(tvalues, zeros_like(tvalues), 'k.')
+mpl.title("Time Grid")
 
 mpl.show()
 

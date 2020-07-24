@@ -166,6 +166,6 @@ if [ -n $MACHINES_FILE ] ; then
    rm $MACHINES_FILE 2> /dev/null
 fi
 rm braid.out.cycle 2> /dev/null
-rm ex-01*.out.* 2> /dev/null
+rm ex-04*.out.* 2> /dev/null
 rm $output_dir/timegrid.* 2> /dev/null
 rm $output_dir/solutionvector.* 2> /dev/null

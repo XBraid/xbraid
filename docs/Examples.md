@@ -466,7 +466,32 @@ be implemented in some of the following examples.
    See ``examples/ex-01-refinement.c`` and ``examples/ex-03.c`` for an
    implementation of this.
 
-12. **Shell-vector**: This feature supports the use of multi-step methods.
+12. **Richardson-based Error Estimation and Extrapolation**: This feature
+    allows the user to access built-in Richardson-based error estimates and
+    accuracy improving extrapolation.  The error estimates and/or extrapolation
+    can be turned on by using 
+    [braid_SetRichardsonEstimation](@ref braid_SetRichardsonEstimation) .
+    Moreover, this feature can be used in conjunction with the above discussed function,
+    [braid_StepStatusSetRFactor](@ref braid_StepStatusSetRFactor), to achieve easy-to-use
+    adaptive refinement in time.
+
+    Essentially, Richardson extrapolation (RE) is used to improve the accuracy
+    of the solution at the C-points on the finest level.  When the built-in
+    error estimate option is turned on, RE is used to estimate the local
+    truncation error at each point. These estimates can be accessed through
+    StepStatus and AccessStatus functions. 
+   
+    The Richardson-based error estimates and extrapolation are only available
+    after the first Braid iteration, in that the coarse level solution must be
+    available to compute the error estimate and/or extrapolation.  Thus, after
+    an adaptive refinement (and new hierarchy is constructed), another
+    iteration is again required for the error estimates to be available.  If
+    the error estimate isn't available, Braid returns a value of -1.  See this
+    example for more details 
+
+               examples/ex-06.c
+   
+13. **Shell-vector**: This feature supports the use of multi-step methods.
    The strategy for BDF-K methods is to allow for the lumping of ``k`` time
    points into a single XBraid vector.  So, if the problem had 100 time points
    and the time-stepper was BDF-2, then XBraid would only ``see`` 50 time
@@ -491,7 +516,7 @@ be implemented in some of the following examples.
 
    See ``examples/ex-01-expanded-bdf2.c``.
 
-13. **Storage**:  This option (see [braid_SetStorage](@ref braid_SetStorage))
+14. **Storage**:  This option (see [braid_SetStorage](@ref braid_SetStorage))
     allows the user to specify storage at all time points (C and F) or only at
     C-points.  This extra storage is useful for implicit methods, where the
     solution value from the *previous XBraid iteration* for time step \f$i\f$
