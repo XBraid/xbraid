@@ -314,7 +314,7 @@ typedef struct _braid_Core_struct
 
    /** Richardson-based error estimation and refinement*/
    braid_Int              richardson;       /**< turns on Richardson extrapolation for accuracy */
-   braid_Int              est_error;        /**< turns on embedded error estimation for refinement */
+   braid_Int              est_error;        /**< turns on embedded error estimation, e.g., for refinement */
    braid_Int              order;            /**< local order of time integration scheme */
    braid_Real            *dtk;              /**< holds value of sum_{i} dt_i^k for each C-interval */
    braid_Real            *estimate;         /**< holds value of the error estimate at each fine grid point */
@@ -921,10 +921,10 @@ _braid_FinalizeErrorEstimates( braid_Core   core,
                                braid_Real  *estimate,
                                braid_Int    length);
 
-/**
- * Propagate time step information required to compute the error estimate
- * at each C-point. This can be done at any time, but does require some 
- * communication. This fills in error_factors at the C points. 
+/** 
+ * Propagate time step information required to compute the Richardson error
+ * estimate at each C-point. This can be done at any time, but does require
+ * some communication. This fills in error_factors at the C points. 
  */
 braid_Int
 _braid_GetDtk(braid_Core  core);

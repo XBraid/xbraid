@@ -36,7 +36,7 @@ _braid_FCRelax(braid_Core  core,
    braid_Real     *CWts     = _braid_CoreElt(core, CWts);
    _braid_Grid   **grids    = _braid_CoreElt(core, grids);
    braid_Int       ncpoints = _braid_GridElt(grids[level], ncpoints);
-   
+
    braid_BaseVector  u, u_old;
    braid_Real        CWt;
    braid_Int         flo, fhi, fi, ci;

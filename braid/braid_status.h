@@ -519,6 +519,8 @@ braid_StatusGetNumErrorEst(braid_Status   status,        /**< structure containi
  * error estimates to the user-array, then post-process array in user-code.
  * This post-processing will often occur in the Sync function.  See
  * examples/ex-06.c.
+ *
+ * The error_est array must be user-allocated.
  */
 braid_Int
 braid_StatusGetAllErrorEst(braid_Status    status,       /**< structure containing current simulation info */
