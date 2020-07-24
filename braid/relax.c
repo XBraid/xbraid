@@ -90,18 +90,17 @@ _braid_FCRelax(braid_Core  core,
       /* Richardson option requires access to the C-point in the left-most interval, so send it */
       if ( richardson )
       {
-         if (  ilower > 0 )
+         if ( ilower > _braid_CoreElt(core, initiali))
          {
             //Need to post a recv for a C-point from the left. 
             _braid_GetProc(core, level, clower-cfactor, &proc);
-            
             _braid_BufferStatusInit( 0, 0, bstatus );
             _braid_BaseBufSize(core, app,  &size, bstatus);
              recv_buff = malloc(size);
              
              MPI_Irecv(recv_buff, size, MPI_BYTE, proc, 84, comm, &recv_request);
          }
-         if ( iupper < gupper && cupper + cfactor <= gupper   )            
+         if( ((iupper < gupper) && (cupper + cfactor <= gupper)) || _braid_CoreElt(core, periodic) )            
          {
             //Need to post a send of ciupper         
             _braid_GetProc(core, level, cupper+cfactor, &proc); 

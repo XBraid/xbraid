@@ -429,6 +429,7 @@ int main (int argc, char *argv[])
    int           min_coarse = 8;
    int           time_discr = 1;
    int           richardson = 0;
+   int           periodic = 0;
    int           error_est = 0;
    int           order = -1;
    int           refine_time = 0;
@@ -466,6 +467,7 @@ int main (int argc, char *argv[])
             printf("  -richardson           : turn on Richardson extrapolation for enhanced fine-grid accuracy\n");
             printf("  -refinet              : use temporal refinment with Richardson based error estimate\n");
             printf("  -max_tpts <max_tpts>  : cutoff for time refinement, i.e., max time points allowed\n");
+            printf("  -periodic             : turn on a periodic in time problem (not meaningful physically, only test of code\n");
             printf("\n"); 
             printf("  e.g. ./ex-07                            --> BE with no Richardson \n");
             printf("  e.g. ./ex-07 -time_discr 1              --> BE with no Richardson \n");
@@ -502,6 +504,11 @@ int main (int argc, char *argv[])
       {
          arg_index++;
          richardson = 1;
+      }
+      else if ( strcmp(argv[arg_index], "-periodic") == 0 )
+      {
+         arg_index++;
+         periodic = 1;
       }
       else if ( strcmp(argv[arg_index], "-tol") == 0 )
       {
@@ -601,7 +608,8 @@ int main (int argc, char *argv[])
       }
    }
    braid_SetRichardsonEstimation(core, error_est, richardson, order);
-   
+   braid_SetPeriodic(core, periodic);
+
    /* Run Braid Simulation */
    braid_Drive(core);
 
