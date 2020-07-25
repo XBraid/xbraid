@@ -765,7 +765,7 @@ braid_SetPrintFile(braid_Core     core,
    {
       if ((_braid_printfile = fopen(printfile_name, "w")) == NULL)
       {
-         printf("  Braid: Error: can't open output file %s\n", printfile_name);
+         _braid_printf("  Braid: Error: can't open output file %s\n", printfile_name);
          exit(1);
       }
    }
