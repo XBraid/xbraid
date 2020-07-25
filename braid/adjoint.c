@@ -53,7 +53,7 @@ _braid_VectorBarDelete(braid_Core core, braid_VectorBar bar)
    /* Sanity check */
    else if (bar->useCount < 0)
    {
-      printf("ERROR: useCount < 0 !\n");
+      _braid_printf("ERROR: useCount < 0 !\n");
       exit(0);
    }
  

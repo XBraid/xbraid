@@ -29,6 +29,7 @@
 #define _braid_tape_HEADER
 
 #include "_braid.h"
+#include "util.h"
 #include "braid.h"
 
 /**
