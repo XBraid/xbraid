@@ -93,7 +93,14 @@ _braid_BaseStep(braid_Core       core,
    }
    if ( fstop == NULL )
    {
-      _braid_CoreFcn(core, step)(app, ustop->userVector, NULL, u->userVector, status);
+      if ( ustop == NULL )
+      {
+         _braid_CoreFcn(core, step)(app, NULL, NULL, u->userVector, status);
+      }
+      else
+      {
+         _braid_CoreFcn(core, step)(app, ustop->userVector, NULL, u->userVector, status);
+      }
    }
    else
    {
