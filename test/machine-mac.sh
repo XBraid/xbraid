@@ -70,9 +70,11 @@ TESTS=( "diffusion1D.sh " \
         "mfem.sh" \
         "ode1D.sh" \
         "ode1D-refine-periodic.sh" \
+        "cython_tests.sh" \
         "test-checkout-compile.sh " \
         "adjoint.sh " \
         "shellvector_bdf2.sh "\
+        "richardson.sh"\
         # "memcheck-tux-jacob.sh "\
         "docs.sh " )
 

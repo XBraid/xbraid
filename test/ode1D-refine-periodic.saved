@@ -176,91 +176,73 @@
   max number of levels  = 21
   number of levels      = 6
 # Begin Test 19
-  time steps = 63
-  iterations            = 3
-  residual norm         = 9.579695e-16
+  Braid: Temporal refinement occurred, 127 time steps
+  Braid: Temporal refinement occurred, 255 time steps
+  Braid: Temporal refinement occurred, 511 time steps
+  Braid: Temporal refinement occurred, 1023 time steps
+  time steps = 1023
+  iterations            = 2
+  residual norm         = 4.986042e-05
   max number of levels  = 15
-  number of levels      = 5
+  number of levels      = 9
 # Begin Test 20
-  time steps = 63
-  iterations            = 3
-  residual norm         = 9.579695e-16
+  Braid: Temporal refinement occurred, 127 time steps
+  Braid: Temporal refinement occurred, 255 time steps
+  Braid: Temporal refinement occurred, 511 time steps
+  Braid: Temporal refinement occurred, 1023 time steps
+  time steps = 1023
+  iterations            = 2
+  residual norm         = 4.986042e-05
   max number of levels  = 15
-  number of levels      = 5
+  number of levels      = 9
 # Begin Test 21
-  time steps = 63
-  iterations            = 3
-  residual norm         = 9.579695e-16
+  Braid: Temporal refinement occurred, 127 time steps
+  Braid: Temporal refinement occurred, 255 time steps
+  Braid: Temporal refinement occurred, 511 time steps
+  Braid: Temporal refinement occurred, 1023 time steps
+  time steps = 1023
+  iterations            = 2
+  residual norm         = 4.986042e-05
   max number of levels  = 15
-  number of levels      = 5
+  number of levels      = 9
 # Begin Test 22
-  Braid: Temporal refinement occurred, 127 time steps
   Braid: Temporal refinement occurred, 255 time steps
-  Braid: Temporal refinement occurred, 511 time steps
-  Braid: Temporal refinement occurred, 1023 time steps
-  time steps = 1023
-  iterations            = 3
-  residual norm         = 2.768760e-15
+  time steps = 255
+  iterations            = 100
+  residual norm         = 1.667531e-02
   max number of levels  = 15
-  number of levels      = 9
+  number of levels      = 7
 # Begin Test 23
-  Braid: Temporal refinement occurred, 127 time steps
   Braid: Temporal refinement occurred, 255 time steps
-  Braid: Temporal refinement occurred, 511 time steps
-  Braid: Temporal refinement occurred, 1023 time steps
-  time steps = 1023
-  iterations            = 3
-  residual norm         = 2.768760e-15
+  time steps = 255
+  iterations            = 100
+  residual norm         = 1.667531e-02
   max number of levels  = 15
-  number of levels      = 9
+  number of levels      = 7
 # Begin Test 24
-  Braid: Temporal refinement occurred, 127 time steps
   Braid: Temporal refinement occurred, 255 time steps
-  Braid: Temporal refinement occurred, 511 time steps
-  Braid: Temporal refinement occurred, 1023 time steps
-  time steps = 1023
-  iterations            = 3
-  residual norm         = 2.768760e-15
+  time steps = 255
+  iterations            = 100
+  residual norm         = 1.667531e-02
   max number of levels  = 15
-  number of levels      = 9
+  number of levels      = 7
 # Begin Test 25
-  Braid: Temporal refinement occurred, 255 time steps
-  time steps = 255
-  iterations            = 100
-  residual norm         = 1.667531e-02
-  max number of levels  = 15
-  number of levels      = 7
-# Begin Test 26
-  Braid: Temporal refinement occurred, 255 time steps
-  time steps = 255
-  iterations            = 100
-  residual norm         = 1.667531e-02
-  max number of levels  = 15
-  number of levels      = 7
-# Begin Test 27
-  Braid: Temporal refinement occurred, 255 time steps
-  time steps = 255
-  iterations            = 100
-  residual norm         = 1.667531e-02
-  max number of levels  = 15
-  number of levels      = 7
-# Begin Test 28
   time steps = 3
   iterations            = 1
   residual norm         = 0.000000e+00
   max number of levels  = 15
   number of levels      = 1
-# Begin Test 29
+# Begin Test 26
   Braid: Temporal refinement occurred, 7 time steps
   Braid: Temporal refinement occurred, 15 time steps
   Braid: Temporal refinement occurred, 31 time steps
   Braid: Temporal refinement occurred, 63 time steps
   time steps = 63
-  iterations            = 2
-  residual norm         = 2.603704e-16
+  iterations            = 1
+  residual norm         = 3.171576e-03
   max number of levels  = 15
   number of levels      = 5
-# Begin Test 30
+# Begin Test 27
   Braid: Temporal refinement occurred, 127 time steps
   Braid: Temporal refinement occurred, 255 time steps
   time steps = 255

@@ -425,7 +425,7 @@ int main (int argc, char *argv[])
    cfactor        = 2;
    braid_tol      = 1.0e-6;
    braid_adjtol   = 1.0e-6;
-   access_level   = 0;
+   access_level   = 1;
    print_level    = 0;
    
 
@@ -633,9 +633,10 @@ int main (int argc, char *argv[])
    braid_PrintStats(core);
 
 
-
-   /* Write final design to file */
-   write_design_vec("design", design, ntime);
+   if (rank == 0) {
+       /* Write final design to file */
+       write_design_vec("design", design, ntime);
+   }
 
    /* Clean up */
    free(design);

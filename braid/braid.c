@@ -321,6 +321,13 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, old_fine_tolx)       = -1.0;
    _braid_CoreElt(core, tight_fine_tolx)     = 1;
 
+   /* Richardson Error Estimation */
+   _braid_CoreElt(core, est_error)       = 0;     /* Error Estimation off by default */
+   _braid_CoreElt(core, richardson)      = 0;     /* Richardson Extrapolation off by default */
+   _braid_CoreElt(core, order)           = 2;     /* 2nd order local time stepper by defualt */
+   _braid_CoreElt(core, dtk)             = NULL;  /* Set in _braid_InitHierarchy */
+   _braid_CoreElt(core, estimate)        = NULL;  /* Set in _braid_InitHierarchy */
+
    braid_SetMaxLevels(core, max_levels);
    braid_SetMaxIter(core, max_iter);
    braid_SetPeriodic(core, 0);
@@ -400,6 +407,8 @@ braid_Destroy(braid_Core  core)
    {
       braid_Int               nlevels    = _braid_CoreElt(core, nlevels);
       _braid_Grid           **grids      = _braid_CoreElt(core, grids);
+      braid_Int               richardson = _braid_CoreElt(core, richardson);
+      braid_Int               est_error  = _braid_CoreElt(core, est_error); 
       braid_Int               level;
 
       _braid_TFree(_braid_CoreElt(core, nrels));
@@ -417,6 +426,16 @@ braid_Destroy(braid_Core  core)
       {
          _braid_OptimDestroy( core );
          _braid_TFree(_braid_CoreElt(core, optim));
+      }
+
+      /* Destroy Richardson estimate structures */
+      if ( richardson || est_error )
+      {
+         _braid_TFree(_braid_CoreElt(core, dtk));
+         if (est_error)
+         {
+            _braid_TFree(_braid_CoreElt(core, estimate));
+         }
       }
 
       for (level = 0; level < nlevels; level++)
@@ -746,7 +765,7 @@ braid_SetPrintFile(braid_Core     core,
    {
       if ((_braid_printfile = fopen(printfile_name, "w")) == NULL)
       {
-         printf("  Braid: Error: can't open output file %s\n", printfile_name);
+         _braid_printf("  Braid: Error: can't open output file %s\n", printfile_name);
          exit(1);
       }
    }
@@ -858,7 +877,15 @@ braid_SetCRelaxWt(braid_Core  core,
                   braid_Int   level,
                   braid_Real  Cwt)
 {
-   braid_Real  *CWts = _braid_CoreElt(core, CWts);
+   braid_Real  *CWts     = _braid_CoreElt(core, CWts);
+   braid_Int richardson  = _braid_CoreElt(core, richardson);
+
+   if( richardson && (Cwt != 1.0) )
+   { 
+      
+     _braid_printf("Weighted relaxation and Richardson extrapolation are incompatible.  Turning off weighted relaxation.\n");
+      return _braid_error_flag;
+   }
 
    if (level < 0)
    {
@@ -1497,5 +1524,50 @@ braid_Rand(void)
 {
    _braid_rand_next = _braid_rand_next * 1103515245 + 12345;
    return (unsigned int) (_braid_rand_next/65536) % braid_RAND_MAX;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetRichardsonEstimation(braid_Core core,
+                              braid_Int  est_error,
+                              braid_Int  richardson,
+                              braid_Int  local_order)
+{
+   
+   braid_Real  *CWts        = _braid_CoreElt(core, CWts);
+   braid_Real   CWt_default = _braid_CoreElt(core, CWt_default);
+   braid_Int    ml          = _braid_CoreElt(core, max_levels);
+   braid_Int j;
+
+   /* Compatability checks */
+   if ( local_order < 2 && ( est_error || richardson ) )
+   {
+      _braid_printf(" Local Order of Time Integrator must be > 1 \n\n" );
+      abort();
+   }
+
+   if(CWt_default != 1.0)
+   {
+      _braid_printf("\nWeighted relaxation and Richardson extrapolation are incompatible.  Ignoring Richardson options.\n\n");
+      return _braid_error_flag;
+   }
+
+   for(j=0; j < ml; j++)
+   {
+      if( (CWts[j] != 1.0) && (CWts[j] != -1.0) )
+         {
+            _braid_printf("\nWeighted relaxation and Richardson extrapolation are incompatible.  Ignoring Richardson options.\n\n");
+            return _braid_error_flag;
+         }
+   }
+
+   /* Can finally set Richardson to enabled */
+   _braid_CoreElt(core, est_error)  = est_error;
+   _braid_CoreElt(core, richardson) = richardson;
+   _braid_CoreElt(core, order)      = local_order;
+
+   return _braid_error_flag;
 }
 

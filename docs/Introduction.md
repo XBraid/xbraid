@@ -20,31 +20,6 @@
   - Temple Place, Suite 330, Boston, MA 02111-1307 USA
  -->
 
-
-# Meaning of the name {#braidname}
-
-We chose the package name XBraid to stand for _Time-Braid_, where
-X is the first letter in the Greek word for time, _Chronos_.  The
-algorithm _braids_ together time-grids of different granularity in order to
-create a multigrid method and achieve parallelism in the time dimension.
-
-# Advice to users {#advice}
-
-The field of parallel-in-time methods is in many ways under development, and
-success has been shown primarily for problems with some parabolic character.
-While there are ongoing projects (here and elsewhere) looking at varied
-applications such as hyperbolic problems, computational fluid dynamics, power
-grids, medical applications, and so on, expectations should take this fact into
-account.  Please see our project
-[publications website](http://computation.llnl.gov/projects/parallel-time-integration-multigrid/publications)
-for our recent publications concerning some of these varied applications. 
-
-That being said, we strongly encourage new users to try our code for
-their application.  Every new application has its own issues to address and
-this will help us to improve both the algorithm and the software.
-
-For support, please post issues to the XBraid Github issue tracker. 
-
 # Overview of the XBraid Algorithm {#braidoverview}
 
 The goal of XBraid is to solve a problem faster than a traditional time
@@ -399,7 +374,7 @@ regardless of time step size.  After this is done, the XBraid code takes care of
 the parallelism in the time dimension.
 
 XBraid 
-- is written in C and can easily interface with Fortran and C++
+- is written in C and can easily interface with Fortran, C++, and Python
 - uses MPI for parallelism
 - self documents through comments in the source code and through *.md files
 - functions and structures are prefixed by *braid* 

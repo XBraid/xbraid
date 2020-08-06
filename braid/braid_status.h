@@ -29,7 +29,7 @@
 #ifndef braid_status_HEADER
 #define braid_status_HEADER
 
-#include "braid.h"
+#include "braid_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -91,7 +91,7 @@ typedef struct _braid_AccessStatus_struct *braid_AccessStatus;
  * processor. The user accesses it through _braid_SyncStatusGet**()_ functions.
  * This is just a pointer to the braid_Status.
  */
- typedef struct _braid_SyncStatus_struct *braid_SyncStatus;
+typedef struct _braid_SyncStatus_struct *braid_SyncStatus;
 
 /**
  * The user's step routine routine will receive a StepStatus structure, which
@@ -153,9 +153,13 @@ braid_StatusGetT(braid_Status status,                      /**< structure contai
                  braid_Real  *t_ptr                        /**< output, current time */
                  );
 
-/**
- * Return the index value corresponding to the current time value
- * from the Status structure.
+/** Return the index value corresponding to the current time value from the
+ * Status structure.  
+ *
+ * For Step(), this corresponds to the time-index of "tstart", as this is the
+ * time-index of the input vector.  That is, NOT the time-index of "tstop".
+ * For Access, this corresponds just simply to the time-index of the input
+ * vector.
  **/
 braid_Int
 braid_StatusGetTIndex(braid_Status status,                  /**< structure containing current simulation info */
@@ -463,6 +467,66 @@ braid_Int
 braid_StatusSetSize(braid_Status status,                   /**< structure containing current simulation info */
                     braid_Real   size                      /**< input, size of the send buffer */
                     );
+
+/** 
+ * Get the Richardson based error estimate at the single time point currently
+ * being "Stepped", i.e., return the current error estimate for the time point
+ * at "tstart".
+ *
+ * Note that Step needs specific logic distinct from Access, hence please use
+ * [braid_AccessStatusGetSingleErrorEstAccess](@ref braid_AccessStatusGetSingleErrorEstAccess)
+ * for the user Access() function.
+ */
+
+braid_Int
+braid_StatusGetSingleErrorEstStep(braid_Status   status,           /**< structure containing current simulation info */
+                                  braid_Real    *estimate          /**< output, error estimate, equals -1 if not available yet (e.g., before iteration 1, or after refinement) */
+                                  );
+
+/** 
+ * Get the Richardson based error estimate at the single time point currently 
+ * accessible from Access.
+ * 
+ * Note that Access needs specific logic distinct from Step, hence please use
+ * [braid_StepStatusGetSingleErrorEstStep](@ref braid_StepStatusGetSingleErrorEstStep)
+ * for the user Step() function. 
+ */
+braid_Int
+braid_StatusGetSingleErrorEstAccess(braid_Status   status,           /**< structure containing current simulation info */
+                                    braid_Real    *estimate          /**< output, error estimate, equals -1 if not available yet (e.g., before iteration 1, or after refinement) */
+                                    );
+
+
+
+/** 
+ * Get the number of local Richardson-based error estimates stored on this
+ * processor.  Use this function in conjuction with GetAllErrorEst().
+ * Workflow: use this function to get the size of the needed user-array that
+ * will hold the error estimates, then pre-allocate array, then call
+ * GetAllErrorEst() to write error estimates to the user-array, then
+ * post-process array in user-code.  This post-processing will often occur in
+ * the Sync function.  See examples/ex-06.c.
+ */
+braid_Int
+braid_StatusGetNumErrorEst(braid_Status   status,        /**< structure containing current simulation info */
+                           braid_Int     *npoints        /**< output, number of locally stored Richardson error estimates */
+                           );
+
+/** Get All the Richardson based error estimates, e.g. from inside Sync.  Use
+ * this function in conjuction with GetNumErrorEst().  Workflow: use
+ * GetNumErrorEst() to get the size of the needed user-array that will hold the
+ * error estimates, then pre-allocate array, then call this function to write
+ * error estimates to the user-array, then post-process array in user-code.
+ * This post-processing will often occur in the Sync function.  See
+ * examples/ex-06.c.
+ *
+ * The error_est array must be user-allocated.
+ */
+braid_Int
+braid_StatusGetAllErrorEst(braid_Status    status,       /**< structure containing current simulation info */
+                           braid_Real     *error_est     /**< output, user-allocated error estimate array, written by Braid, equals -1 if not available yet (e.g., before iteration 1, or after refinement) */
+                           );
+
 /** @}*/
 
 
@@ -497,6 +561,7 @@ ACCESSOR_HEADER_GET1(Access, Done,            Int)
 ACCESSOR_HEADER_GET4(Access, TILD,            Real, Int, Int, Int)
 ACCESSOR_HEADER_GET1(Access, WrapperTest,     Int)
 ACCESSOR_HEADER_GET1(Access, CallingFunction, Int)
+ACCESSOR_HEADER_GET1(Access, SingleErrorEstAccess, Real)
 
 /*--------------------------------------------------------------------------
  * SyncStatus Prototypes: They just wrap the corresponding Status accessors
@@ -511,6 +576,8 @@ ACCESSOR_HEADER_GET1(Sync, NRefine,          Int)
 ACCESSOR_HEADER_GET1(Sync, NTPoints,         Int)
 ACCESSOR_HEADER_GET1(Sync, Done,             Int)
 ACCESSOR_HEADER_GET1(Sync, CallingFunction,  Int)
+ACCESSOR_HEADER_GET1(Sync, NumErrorEst,      Int)
+ACCESSOR_HEADER_GET1(Sync, AllErrorEst,      Real)
 
 /*--------------------------------------------------------------------------
  * CoarsenRefStatus Prototypes: They just wrap the corresponding Status accessors
@@ -549,6 +616,7 @@ ACCESSOR_HEADER_SET1(Step, OldFineTolx,   Real)
 ACCESSOR_HEADER_SET1(Step, TightFineTolx, Real)
 ACCESSOR_HEADER_SET1(Step, RFactor,       Real)
 ACCESSOR_HEADER_SET1(Step, RSpace,        Real)
+ACCESSOR_HEADER_GET1(Step, SingleErrorEstStep, Real)
 
 /*--------------------------------------------------------------------------
  * BufferStatus Prototypes: They just wrap the corresponding Status accessors
