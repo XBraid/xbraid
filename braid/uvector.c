@@ -180,6 +180,7 @@ _braid_UGetVector(braid_Core         core,
          _braid_GridElt(grids[level], recv_index)  = _braid_RecvIndexNull;
          _braid_GridElt(grids[level], recv_handle) = recv_handle;
          u = ua[-1];
+         ua[-1] = NULL;
       }
    }
    else
