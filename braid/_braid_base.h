@@ -123,6 +123,16 @@ _braid_BaseAccess(braid_Core          core,        /**< braid_Core structure */
                   braid_AccessStatus  status       /**< can be querried for info like the current XBraid Iteration */
                   );
 
+/**
+ * This calls the user's Sync routine.
+ * If (adjoint): nothing
+ */
+braid_Int
+_braid_BaseSync(braid_Core          core,        /**< braid_Core structure */
+                braid_App           app,         /**< user-defined _braid_App structure */
+                braid_SyncStatus    status       /**< can be querried for info like the current XBraid Iteration */
+                );
+
 /** 
  * This calls the user's BufSize routine.
  * If (adjoint): nothing

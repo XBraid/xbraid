@@ -48,6 +48,7 @@ BRAID_FLAGS = -I$(BRAID_DIR)
 BRAID_LIB_FILE = $(BRAID_DIR)/libbraid.a
 
 C_NOHYPRE = ex-01 ex-01-adjoint ex-01-optimization ex-01-refinement ex-01-expanded ex-01-expanded-bdf2 ex-02 ex-04 ex-04-serial
+CPP_NOHYPRE = ex-01-pp 
 F_NOHYPRE = ex-01-expanded-f
 C_EXAMPLES = ex-03 ex-03-serial
 # Note: .cpp examples will be linked with mfem
@@ -59,7 +60,7 @@ C_EXAMPLES = ex-03 ex-03-serial
 .SUFFIXES: .c .cpp
 
 # put this rule first so it becomes the default
-all: $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES)
+all: $(C_NOHYPRE) $(CPP_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES)
 
 # Rule for building ex-01
 ex-01: ex-01.c $(BRAID_LIB_FILE)
@@ -86,6 +87,11 @@ ex-01-refinement: ex-01-refinement.c $(BRAID_LIB_FILE)
 ex-01-expanded: ex-01-expanded.c $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
 	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(@).c -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
+
+# Rule for building ex-01-pp
+ex-01-pp: ex-01-pp.cpp $(BRAID_LIB_FILE)
+	@echo "Building" $@ "..."
+	$(MPICXX) $(CXXFLAGS) $(BRAID_FLAGS) $(@).cpp -o $@ $(BRAID_LIB_FILE) $(LFLAGS)
 
 # Rule for building ex-01-expanded-f
 ex-01-expanded-f: ex-01-expanded-f.f90 $(BRAID_LIB_FILE)
@@ -149,7 +155,7 @@ $(HYPRE_LIB_FILE):
 	$(error The Hypre library is not built, unable to build ex-03)
 
 clean: cleanout
-	rm -f *.o $(C_NOHYPRE) $(F_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES) $(F_EXAMPLES) *ror_norm* *_err_* *_mesh* *_sol_*
+	rm -f *.o $(C_NOHYPRE) $(CPP_NOHYPRE) $(F_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES) $(F_EXAMPLES) *ror_norm* *_err_* *_mesh* *_sol_*
 	rm -rf *.dSYM
 
 cleanout:

@@ -54,6 +54,7 @@ endif
 HOSTNAME := $(shell hostname)
 
 ifeq ($(findstring tux408,$(HOSTNAME)),tux408)
+   # Jacobs old LLNL tux-boxes
    CC = mpicc
    MPICC = mpicc
    MPICXX = mpicxx
@@ -71,13 +72,14 @@ ifeq ($(findstring tux408,$(HOSTNAME)),tux408)
    ifeq ($(lvalgrind),YES)
       #only needed for openmpi: LFLAGS += /usr/lib64/valgrind/libmpiwrap-amd64-linux.so 
    endif
-else ifeq ($(findstring ASTechs,$(HOSTNAME)),ASTechs)
-   # for Jacob's laptop
+else ifeq ($(shell uname -s), Darwin)
+   # for Jacob's MacBook running Homebrew 
+   # Need to specifically include lstdc++ (!!)
    CC = gcc
    MPICC = mpicc
    MPICXX = mpicxx
    MPIF90 = mpif90
-   LFLAGS = -lm
+   LFLAGS = -lm -lstdc++
    ifeq ($(optlevel),DEBUG)
       CFLAGS = -g -Wall
       CXXFLAGS = -g -Wall

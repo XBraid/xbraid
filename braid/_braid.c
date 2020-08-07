@@ -487,6 +487,7 @@ _braid_AdjointFeatureCheck(braid_Core core)
    braid_PtFcnSCoarsen  scoarsen  = _braid_CoreElt(core, scoarsen);
    braid_PtFcnSRefine   srefine   = _braid_CoreElt(core, srefine);
    braid_PtFcnTimeGrid  tgrid     = _braid_CoreElt(core, tgrid);
+   braid_PtFcnSync      sync      = _braid_CoreElt(core, sync);
    braid_Int            storage   = _braid_CoreElt(core, storage);  
    braid_Int            useshell  = _braid_CoreElt(core, useshell);
    braid_Int            trefine   = _braid_CoreElt(core, refine);
@@ -533,7 +534,12 @@ _braid_AdjointFeatureCheck(braid_Core core)
    {
       err_char = "Storage >= 1";
       err = 1;
-   } 
+   }
+   if ( sync != NULL )
+   {
+      err_char = "Sync";
+      err = 1;
+   }
     // r_space?
    if ( err )
    {
@@ -1380,6 +1386,24 @@ _braid_AccessVector(braid_Core          core,
 }
 
 /*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_Sync(braid_Core        core,
+            braid_SyncStatus  status)
+{
+   if ( _braid_CoreElt(core, sync) == NULL)
+   {
+      return _braid_error_flag;
+   }
+   braid_App app = _braid_CoreElt(core, app);
+
+   _braid_BaseSync(core, app, status);
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
  * Get an initial guess for ustop to use in the step routine (implicit schemes)
  * This vector may just be a shell. User should be able to deal with it
  *----------------------------------------------------------------------------*/
@@ -1619,7 +1643,7 @@ _braid_Coarsen(braid_Core        core,
       /* Call the user's coarsening routine */
       _braid_CoarsenRefStatusInit(f_ta[f_ii], f_ta[f_ii-1], f_ta[f_ii+1], 
                                   c_ta[c_ii-1], c_ta[c_ii+1],
-                                  level-1, nrefine, gupper, cstatus);
+                                  level-1, nrefine, gupper, c_index, cstatus);
       _braid_BaseSCoarsen(core, app, fvector, cvector, cstatus);
    }
    return _braid_error_flag;
@@ -1632,6 +1656,7 @@ _braid_Coarsen(braid_Core        core,
 braid_Int
 _braid_RefineBasic(braid_Core        core,
                    braid_Int         level,    /* fine level */
+                   braid_Int         c_index,  /* coarse time index */
                    braid_Real       *f_ta,     /* pointer into fine time array */
                    braid_Real       *c_ta,     /* pointer into coarse time array */
                    braid_BaseVector  cvector,
@@ -1651,7 +1676,7 @@ _braid_RefineBasic(braid_Core        core,
    {
       /* Call the user's refinement routine */
       _braid_CoarsenRefStatusInit(f_ta[0], f_ta[-1], f_ta[+1], c_ta[-1], c_ta[+1],
-                                  level, nrefine, gupper, cstatus);
+                                  level, nrefine, gupper, c_index, cstatus);
       _braid_BaseSRefine(core,  app, cvector, fvector, cstatus);
    }
 
@@ -1679,7 +1704,7 @@ _braid_Refine(braid_Core        core,
    braid_Int      c_ii = c_index-c_ilower;
    braid_Int      f_ii = f_index-f_ilower;
 
-   _braid_RefineBasic(core, level, &f_ta[f_ii], &c_ta[c_ii], cvector, fvector);
+   _braid_RefineBasic(core, level, c_index, &f_ta[f_ii], &c_ta[c_ii], cvector, fvector);
 
    return _braid_error_flag;
 }
@@ -1826,6 +1851,7 @@ _braid_InitGuess(braid_Core  core,
 {
    braid_App          app      = _braid_CoreElt(core, app);
    braid_Int          seq_soln = _braid_CoreElt(core, seq_soln);
+   braid_Int          nrefine  = _braid_CoreElt(core,nrefine);
    _braid_Grid      **grids    = _braid_CoreElt(core, grids);
    braid_Int          ilower   = _braid_GridElt(grids[level], ilower);
    braid_Int          iupper   = _braid_GridElt(grids[level], iupper);
@@ -1843,8 +1869,16 @@ _braid_InitGuess(braid_Core  core,
       /* If first processor, grab initial condition */
       if(ilower == 0)
       {
-         _braid_BaseInit(core, app,  ta[0], &u);
-         _braid_USetVector(core, 0, 0, u, 0);
+         /* If we have already refined, then an initial init has already been done */
+         if(nrefine > 0)
+         {
+            _braid_UGetVector(core, 0, 0, &u);    /* Get stored vector */
+         }
+         else
+         {
+            _braid_BaseInit(core, app,  ta[0], &u);
+            _braid_USetVector(core, 0, 0, u, 0);
+         }
          ilower += 1;
       }
       /* Else, receive point to the left */
@@ -2430,6 +2464,14 @@ _braid_FInterp(braid_Core  core,
          _braid_BaseSum(core, app,  1.0, f_e, 1.0, f_u);
          _braid_USetVectorRef(core, f_level, f_index, f_u);
          _braid_BaseFree(core, app,  f_e);
+         /* Allow user to process current vector on the FINEST level*/
+         if( (access_level >= 3) && (f_level == 0) )
+         {
+            _braid_AccessStatusInit(ta[fi-ilower], f_index, rnorm, iter, f_level, nrefine, gupper,
+                                    0, 0, braid_ASCaller_FInterp, astatus);
+            _braid_AccessVector(core, astatus, f_u);
+         }
+
       }
       if (flo <= fhi)
       {
@@ -2455,6 +2497,14 @@ _braid_FInterp(braid_Core  core,
          _braid_BaseSum(core, app,  1.0, f_e, 1.0, f_u);
          _braid_USetVectorRef(core, f_level, f_index, f_u);
          _braid_BaseFree(core, app,  f_e);
+         /* Allow user to process current C-point on the FINEST level*/
+         if( (access_level >= 3) && (f_level == 0) )
+         {
+            _braid_AccessStatusInit(ta[ci-ilower], f_index, rnorm, iter, f_level, nrefine, gupper,
+                                    0, 0, braid_ASCaller_FInterp, astatus);
+            _braid_AccessVector(core, astatus, f_u);
+         }
+
       }
    }
 
@@ -2499,7 +2549,7 @@ _braid_FRefineSpace(braid_Core   core,
              
             if ( c_vec != NULL )
             {
-               _braid_RefineBasic(core, -1, &ta[ii], &ta[ii], c_vec, &f_vec);
+               _braid_RefineBasic(core, -1, i, &ta[ii], &ta[ii], c_vec, &f_vec);
                _braid_USetVectorRef(core, 0, i, f_vec);
             }
          }                       
@@ -2515,7 +2565,7 @@ _braid_FRefineSpace(braid_Core   core,
          if ( ilower == 0 && r_space == 0 )
          {
             _braid_UGetVectorRef(core, 0, 0, &c_vec);
-            _braid_RefineBasic(core, -1, &ta[0], &ta[0], c_vec, &f_vec);
+            _braid_RefineBasic(core, -1, 0, &ta[0], &ta[0], c_vec, &f_vec);
             _braid_USetVectorRef(core, 0, 0, f_vec);     
          }       
                 
@@ -2639,6 +2689,7 @@ _braid_FRefine(braid_Core   core,
    braid_Int          tpoints_cutoff  = _braid_CoreElt(core, tpoints_cutoff);
    braid_AccessStatus astatus         = (braid_AccessStatus)core;
    braid_BufferStatus bstatus         = (braid_BufferStatus)core;
+   braid_SyncStatus   sstatus         = (braid_SyncStatus)core;
    braid_Int          access_level    = _braid_CoreElt(core, access_level);
    _braid_Grid      **grids           = _braid_CoreElt(core, grids);
    braid_Int          ncpoints        = _braid_GridElt(grids[0], ncpoints);
@@ -3028,7 +3079,7 @@ _braid_FRefine(braid_Core   core,
             r_ii = r_fa[ii] - r_ilower;
             if (r_ca[r_ii] > -1)
             {
-               _braid_RefineBasic(core, -1, &r_ta[r_ii], &ta[ii], u, &send_ua[ii]);
+               _braid_RefineBasic(core, -1, fi, &r_ta[r_ii], &ta[ii], u, &send_ua[ii]);
             }
 
             /* Allow user to process current vector */
@@ -3052,7 +3103,7 @@ _braid_FRefine(braid_Core   core,
          r_ii = r_fa[ii] - r_ilower;
          if (r_ca[r_ii] > -1)
          {
-            _braid_RefineBasic(core, -1, &r_ta[r_ii], &ta[ii], u, &send_ua[ii]);
+            _braid_RefineBasic(core, -1, ci, &r_ta[r_ii], &ta[ii], u, &send_ua[ii]);
          }
 
          /* Allow user to process current vector */
@@ -3254,6 +3305,10 @@ _braid_FRefine(braid_Core   core,
    _braid_CoreElt(core, nrefine) += 1;
    /*braid_SetCFactor(core,  0, cfactor);*/ /* RDF HACKED TEST */
    _braid_InitHierarchy(core, f_grid, 1);
+   nrefine = _braid_CoreElt(core, nrefine);
+    _braid_SyncStatusInit(iter, 0, nrefine, f_gupper, 0,
+                         braid_ASCaller_FRefine_AfterInitHier, sstatus);
+   _braid_Sync(core, sstatus);
 
    /* Initialize communication */
    recv_msg = 0;
