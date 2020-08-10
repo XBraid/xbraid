@@ -49,7 +49,7 @@ take_step(double* u,         /* state at current time */
 
    /* Compute the update */
    du0 =  deltaT * u[1];
-   du1 =  deltaT * ( -u[1] + (design*design));
+   du1 =  deltaT * ( -u[1] + design);
    
    /* Update the state */
    u[0] = u[0] +  du0;
@@ -80,8 +80,7 @@ evalObjectiveT(double* u,        /* state at current time */
 /* Compute the transposed partial derivative of take_step multiplied with current adjoint w */
 double
 take_step_diff(double *w, 
-               double  deltaT, 
-               double  design)
+               double  deltaT)
 {
    double *ddu = (double*)malloc(2*sizeof(double));
    double gradientT;
@@ -91,7 +90,7 @@ take_step_diff(double *w,
    ddu[1] = w[1] + deltaT * w[0] - deltaT * w[1];
 
    /* derivative with respect to c  */
-   gradientT = deltaT * w[1] * 2. * design;
+   gradientT = deltaT * w[1];
 
    /* Update adjoint */
    w[0] = ddu[0];
@@ -142,7 +141,7 @@ take_adjoint_step(double *w,         /* adjoint variable that gets propagated ba
    gradientT += evalObjectiveT_diff(w, u, design, gamma, deltaT);
 
    /* transposed derivatives of take_step times w */
-   gradientT += take_step_diff(w, deltaT, design);
+   gradientT += take_step_diff(w, deltaT);
 
    return gradientT;
 }                 
