@@ -682,9 +682,10 @@ braid_Int
 _braid_TriDrive(braid_Core  core, 
                 braid_Real  localtime)
 {
-   braid_Int  access_level = _braid_CoreElt(core, access_level);
-   braid_Int *nrels        = _braid_CoreElt(core, nrels);
-   braid_Int  maxlevels    = _braid_CoreElt(core, max_levels);
+   braid_Int            access_level    = _braid_CoreElt(core, access_level);
+   braid_Int           *nrels           = _braid_CoreElt(core, nrels);
+   braid_Int            maxlevels       = _braid_CoreElt(core, max_levels);
+   braid_SyncStatus     sstatus         = (braid_SyncStatus)core;
    braid_Int  nlevels;
 
    /* Cycle state variables */
@@ -736,6 +737,11 @@ _braid_TriDrive(braid_Core  core,
          else
          {
             /* Finest grid level */
+            /* Call user's Sync function */
+            _braid_SyncStatusInit(iter, level, _braid_CoreElt(core, nrefine),
+                                  _braid_CoreElt(core, gupper), done,
+                                  braid_ASCaller_Drive_TopCycle, sstatus);
+            _braid_Sync(core, sstatus);
 
             if (nlevels == 1)
             {
