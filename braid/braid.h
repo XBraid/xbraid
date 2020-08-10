@@ -1089,6 +1089,11 @@ braid_SetObjectiveOnly(braid_Core core,         /**< braid_Core (_braid_Core) st
                        );                   
 
 
+/**
+ * Set this option when solving the adjoint equation with XBraid. This will revert the 
+ * processor distribution over the time-domain, i.e. the first processor will store the 
+ * LAST time-interval, instead of the first one. 
+ */
 braid_Int
 braid_SetRevertedRanks(braid_Core core,
                        braid_Int  boolean);
