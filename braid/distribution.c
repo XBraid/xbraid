@@ -165,7 +165,7 @@ _braid_GetProc(braid_Core   core,
      index = npoints -1 - index;
    }
 
-   _braid_GetBlockDistProc(npoints, nprocs, index, 0, proc_ptr);
+   _braid_GetBlockDistProc(npoints, nprocs, index, _braid_CoreElt(core, periodic), proc_ptr);
 
    return _braid_error_flag;
 

@@ -552,6 +552,10 @@ _braid_UGetVectorRef(braid_Core        core,
                      braid_BaseVector *u_ptr);
 
 
+/**
+ * Returns a reference to the u-vector at the last time point. 
+ * (The last time-step will always be stored for any XBraid configuration.)
+ */
 braid_Int
 _braid_UGetLast(braid_Core        core,
                 braid_BaseVector *u_ptr);
@@ -973,9 +977,6 @@ braid_Int
 _braid_Drive(braid_Core core, 
              braid_Real localtime);
 
-braid_Int
-_braid_UGetLast(braid_Core        core,
-                braid_BaseVector *u_ptr);
 
 #ifdef __cplusplus
 }
