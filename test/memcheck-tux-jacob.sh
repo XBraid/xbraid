@@ -55,7 +55,7 @@ case $OS in
       if [ ! -f $MACHINES_FILE ] ; then
          hostname > $MACHINES_FILE
       fi
-      RunString="mpirun -machinefile $MACHINES_FILE $*"
+      RunString="LD_PRELOAD=/home/jbschroder/.local/lib/valgrind/libmpiwrap-amd64-linux.so  mpirun -machinefile $MACHINES_FILE $*"
       csplitcommand="csplit"
       ;;
    Darwin*)

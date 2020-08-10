@@ -1,16 +1,33 @@
+/*BHEADER**********************************************************************
+ * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
+ * Produced at the Lawrence Livermore National Laboratory.
+ * 
+ * This file is part of XBraid. For support, post issues to the XBraid Github page.
+ * 
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (as published by the Free Software
+ * Foundation) version 2.1 dated February 1999.
+ * 
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or FITNESS FOR A
+ * PARTICULAR PURPOSE. See the terms and conditions of the GNU General Public
+ * License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc., 59
+ * Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ ***********************************************************************EHEADER*/
+
 /**
  *  Source file implementing the wrapper for the user routines
  **/
 
-
-#ifndef _braid_base_HEADER
-#define _braid_base_HEADER
-
 #include "_braid.h"
-#include "_braid_status.h"
-#include "braid_defs.h"
-#include "_util.c"
+#include "util.h"
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int 
 _braid_BaseStep(braid_Core       core,
@@ -35,7 +52,7 @@ _braid_BaseStep(braid_Core       core,
    braid_Int        gupper      = _braid_CoreElt(core, gupper);
    braid_Real       tol         = _braid_CoreElt(core, tol);
 
-   if (verbose_adj) printf("%d: STEP %.4f to %.4f, %d\n", myid, t, tnext, tidx);
+   if (verbose_adj) _braid_printf("%d: STEP %.4f to %.4f, %d\n", myid, t, tnext, tidx);
 
    /* Record to the tape */
    if ( record )
@@ -68,7 +85,12 @@ _braid_BaseStep(braid_Core       core,
       _braid_CoreElt(core, barTape) = _braid_TapePush(_braid_CoreElt(core, barTape), ustopbar_copy);
   }
 
-   /* Call the users Step function */
+   /* Call the users Step function.  If periodic and integrating to the periodic
+    * point, adjust tnext to be tstop. */
+   if ( _braid_CoreElt(core, periodic) && (_braid_CoreElt(core, idx) < 0) )
+   {
+      _braid_CoreElt(core, tnext) = _braid_CoreElt(core, tstop);
+   }
    if ( fstop == NULL )
    {
       _braid_CoreFcn(core, step)(app, ustop->userVector, NULL, u->userVector, status);
@@ -78,11 +100,13 @@ _braid_BaseStep(braid_Core       core,
       /* fstop not supported by adjoint! */
       _braid_CoreFcn(core, step)(app, ustop->userVector, fstop->userVector, u->userVector, status);
    }
+
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
-                        
 braid_Int
 _braid_BaseInit(braid_Core        core,
                 braid_App         app, 
@@ -97,7 +121,7 @@ _braid_BaseInit(braid_Core        core,
    braid_Int         record      = _braid_CoreElt(core, record);
    braid_Int         adjoint     = _braid_CoreElt(core, adjoint);
     
-   if (verbose_adj) printf("%d INIT\n", myid);
+   if (verbose_adj) _braid_printf("%d INIT\n", myid);
 
    /* Allocate the braid_BaseVector */
    u = (braid_BaseVector) malloc(sizeof(braid_Vector) + sizeof(braid_VectorBar));
@@ -135,6 +159,9 @@ _braid_BaseInit(braid_Core        core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
 braid_Int
 _braid_BaseClone(braid_Core         core,
                  braid_App          app,  
@@ -151,7 +178,7 @@ _braid_BaseClone(braid_Core         core,
    braid_Int         record       = _braid_CoreElt(core, record);
    braid_Int         adjoint      = _braid_CoreElt(core, adjoint);
 
-   if (verbose_adj) printf("%d: CLONE\n", myid);
+   if (verbose_adj) _braid_printf("%d: CLONE\n", myid);
 
    /* Allocate the braid_BaseVector */
    v = (braid_BaseVector) malloc(sizeof(braid_Vector) + sizeof(braid_VectorBar));
@@ -194,6 +221,8 @@ _braid_BaseClone(braid_Core         core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseFree(braid_Core       core,
@@ -207,7 +236,7 @@ _braid_BaseFree(braid_Core       core,
    braid_Int      adjoint     = _braid_CoreElt(core, adjoint);
    braid_Int      record      = _braid_CoreElt(core, record);
 
-   if (verbose_adj) printf("%d: FREE\n", myid);
+   if (verbose_adj) _braid_printf("%d: FREE\n", myid);
 
    /* Record to the tape */
    if ( record )
@@ -235,6 +264,8 @@ _braid_BaseFree(braid_Core       core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSum(braid_Core        core,
@@ -251,7 +282,7 @@ _braid_BaseSum(braid_Core        core,
    braid_Int        verbose_adj  =  _braid_CoreElt(core, verbose_adj);
    braid_Int        record       =  _braid_CoreElt(core, record);
 
-   if ( verbose_adj ) printf("%d: SUM\n", myid);
+   if ( verbose_adj ) _braid_printf("%d: SUM\n", myid);
 
    /* Record to the tape */
    if ( record )
@@ -278,6 +309,8 @@ _braid_BaseSum(braid_Core        core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSpatialNorm(braid_Core        core,
@@ -285,13 +318,14 @@ _braid_BaseSpatialNorm(braid_Core        core,
                        braid_BaseVector  u,    
                        braid_Real       *norm_ptr )
 {
-
    /* Compute the spatial norm of the user's vector */
    _braid_CoreFcn(core, spatialnorm)(app, u->userVector, norm_ptr);
 
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseAccess(braid_Core          core,
@@ -305,7 +339,7 @@ _braid_BaseAccess(braid_Core          core,
    braid_Int        verbose_adj   = _braid_CoreElt(core, verbose_adj);
    braid_Int        record        = _braid_CoreElt(core, record);
    
-   if ( verbose_adj ) printf("%d: ACCESS\n", myid);
+   if ( verbose_adj ) _braid_printf("%d: ACCESS\n", myid);
 
    /* Record to the tape */
    if ( record )
@@ -325,6 +359,9 @@ _braid_BaseAccess(braid_Core          core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
 braid_Int
 _braid_BaseSync(braid_Core          core,
                 braid_App           app,
@@ -332,7 +369,7 @@ _braid_BaseSync(braid_Core          core,
 {
    braid_Int        myid          = _braid_CoreElt(core, myid);
    braid_Int        verbose_adj   = _braid_CoreElt(core, verbose_adj);
-   if( verbose_adj ) printf("%d: SNYC\n", myid);
+   if( verbose_adj ) _braid_printf("%d: SNYC\n", myid);
 
    /* Do adjoint stuff here */
 
@@ -341,6 +378,9 @@ _braid_BaseSync(braid_Core          core,
 
    return _braid_error_flag;
 }
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseBufSize(braid_Core          core,
@@ -351,7 +391,7 @@ _braid_BaseBufSize(braid_Core          core,
    braid_Int  myid         = _braid_CoreElt(core, myid);
    braid_Int  verbose_adj  = _braid_CoreElt(core, verbose_adj);
 
-   if ( verbose_adj ) printf("%d: BUFSIZE\n", myid);
+   if ( verbose_adj ) _braid_printf("%d: BUFSIZE\n", myid);
 
    /* Call the users BufSize function */
    _braid_CoreFcn(core, bufsize)(app, size_ptr, status);
@@ -359,6 +399,8 @@ _braid_BaseBufSize(braid_Core          core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseBufPack(braid_Core          core,
@@ -374,7 +416,7 @@ _braid_BaseBufPack(braid_Core          core,
    braid_Int        record       = _braid_CoreElt(core, record);
    braid_Int        sender       = _braid_CoreElt(core, send_recv_rank);
 
-   if ( verbose_adj ) printf("%d: BUFPACK\n",  myid );
+   if ( verbose_adj ) _braid_printf("%d: BUFPACK\n",  myid );
 
    /* Record to the tape */
    if ( record )
@@ -400,6 +442,8 @@ _braid_BaseBufPack(braid_Core          core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseBufUnpack(braid_Core          core,
@@ -419,7 +463,7 @@ _braid_BaseBufUnpack(braid_Core          core,
    braid_Int        receiver     = _braid_CoreElt(core, send_recv_rank);
    braid_Real       tstart       = _braid_CoreElt(core, tstart);
 
-   if ( verbose_adj ) printf("%d: BUFUNPACK\n", myid);
+   if ( verbose_adj ) _braid_printf("%d: BUFUNPACK\n", myid);
 
    /* Allocate the braid_BaseVector */
    u = (braid_BaseVector) malloc(sizeof(braid_Vector) + sizeof(braid_VectorBar));
@@ -462,6 +506,8 @@ _braid_BaseBufUnpack(braid_Core          core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseObjectiveT(braid_Core             core,
@@ -483,7 +529,7 @@ _braid_BaseObjectiveT(braid_Core             core,
    braid_Int        nrefine       = _braid_CoreElt(core, nrefine);
    braid_Int        gupper        = _braid_CoreElt(core, gupper);
    
-   if ( verbose_adj ) printf("%d: OBJECTIVET\n", myid);
+   if ( verbose_adj ) _braid_printf("%d: OBJECTIVET\n", myid);
 
    /* if bar: Record to the tape */
    if ( record )
@@ -516,6 +562,8 @@ _braid_BaseObjectiveT(braid_Core             core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseResidual(braid_Core        core,
@@ -527,13 +575,16 @@ _braid_BaseResidual(braid_Core        core,
    braid_Int        verbose_adj  = _braid_CoreElt(core, verbose_adj);
    braid_Int        myid         = _braid_CoreElt(core, myid);
 
-   if ( verbose_adj ) printf("%d: RESIDUAL\n", myid);
+   if ( verbose_adj ) _braid_printf("%d: RESIDUAL\n", myid);
 
    /* Call the users Residual function */
    _braid_CoreFcn(core, residual)(app, ustop->userVector, r->userVector, status);
 
    return _braid_error_flag;
 }
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseFullResidual(braid_Core        core,
@@ -545,7 +596,7 @@ _braid_BaseFullResidual(braid_Core        core,
    braid_Int        verbose_adj  = _braid_CoreElt(core, verbose_adj);
    braid_Int        myid         = _braid_CoreElt(core, myid);
 
-   if ( verbose_adj ) printf("%d: FULLRESIDUAL\n", myid);
+   if ( verbose_adj ) _braid_printf("%d: FULLRESIDUAL\n", myid);
 
    /* Call the users Residual function */
    _braid_CoreFcn(core, full_rnorm_res)(app, r->userVector, u->userVector, status);
@@ -553,7 +604,8 @@ _braid_BaseFullResidual(braid_Core        core,
    return _braid_error_flag;
 }
 
-
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSCoarsen(braid_Core              core,
@@ -566,7 +618,7 @@ _braid_BaseSCoarsen(braid_Core              core,
    braid_Int        verbose_adj  = _braid_CoreElt(core, verbose_adj);
    braid_Int        myid         = _braid_CoreElt(core, myid);
 
-   if ( verbose_adj ) printf("%d: SCOARSEN\n", myid);
+   if ( verbose_adj ) _braid_printf("%d: SCOARSEN\n", myid);
 
    cu = (braid_BaseVector) malloc(sizeof(braid_BaseVector));
 
@@ -577,6 +629,9 @@ _braid_BaseSCoarsen(braid_Core              core,
 
    return _braid_error_flag;
 }
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSRefine(braid_Core                 core,
@@ -589,7 +644,7 @@ _braid_BaseSRefine(braid_Core                 core,
    braid_Int        verbose_adj  = _braid_CoreElt(core, verbose_adj);
    braid_Int        myid         = _braid_CoreElt(core, myid);
 
-   if ( verbose_adj ) printf("%d: SREFINE\n", myid);
+   if ( verbose_adj ) _braid_printf("%d: SREFINE\n", myid);
 
    fu = (braid_BaseVector) malloc(sizeof(braid_BaseVector));
 
@@ -601,6 +656,8 @@ _braid_BaseSRefine(braid_Core                 core,
    return _braid_error_flag;
 }                      
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSInit(braid_Core        core,
@@ -612,7 +669,7 @@ _braid_BaseSInit(braid_Core        core,
    braid_Int        verbose_adj  = _braid_CoreElt(core, verbose_adj);
    braid_Int        myid         = _braid_CoreElt(core, myid);
 
-   if ( verbose_adj ) printf("%d: SINIT\n", myid);
+   if ( verbose_adj ) _braid_printf("%d: SINIT\n", myid);
 
    u = (braid_BaseVector) malloc(sizeof(braid_BaseVector));
 
@@ -624,6 +681,8 @@ _braid_BaseSInit(braid_Core        core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSClone(braid_Core        core, 
@@ -636,7 +695,7 @@ _braid_BaseSClone(braid_Core        core,
    braid_Int        verbose_adj  = _braid_CoreElt(core, verbose_adj);
    braid_Int        myid         = _braid_CoreElt(core, myid);
 
-   if ( verbose_adj ) printf("%d: SCLONE\n", myid);
+   if ( verbose_adj ) _braid_printf("%d: SCLONE\n", myid);
 
    v = (braid_BaseVector) malloc(sizeof(braid_BaseVector));
 
@@ -648,6 +707,8 @@ _braid_BaseSClone(braid_Core        core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSFree(braid_Core      core,
@@ -658,7 +719,7 @@ _braid_BaseSFree(braid_Core      core,
    braid_Int  verbose_adj  = _braid_CoreElt(core, verbose_adj);
    braid_Int  myid         = _braid_CoreElt(core, myid);
  
-   if ( verbose_adj ) printf("%d: SFREE\n", myid);
+   if ( verbose_adj ) _braid_printf("%d: SFREE\n", myid);
 
    /* Call the users sfree */
    _braid_CoreFcn(core, sfree)(app, u->userVector);
@@ -666,6 +727,8 @@ _braid_BaseSFree(braid_Core      core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseTimeGrid(braid_Core  core,
@@ -677,7 +740,7 @@ _braid_BaseTimeGrid(braid_Core  core,
    braid_Int  verbose_adj  = _braid_CoreElt(core, verbose_adj);
    braid_Int  myid         = _braid_CoreElt(core, myid);
  
-   if ( verbose_adj ) printf("%d: TIMEGRID\n", myid);
+   if ( verbose_adj ) _braid_printf("%d: TIMEGRID\n", myid);
 
    /* Call the users timegrid function */
    _braid_CoreFcn(core, tgrid)(app, ta, ilower, iupper);
@@ -685,6 +748,8 @@ _braid_BaseTimeGrid(braid_Core  core,
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseStep_diff(_braid_Action *action)
@@ -705,7 +770,7 @@ _braid_BaseStep_diff(_braid_Action *action)
    braid_Int        verbose_adj  = _braid_CoreElt(core, verbose_adj);
    braid_Int        myid         = _braid_CoreElt(core, myid);
 
-   if ( verbose_adj ) printf("%d: STEP_DIFF %.4f to %.4f, %d\n", myid, inTime, outTime, tidx);
+   if ( verbose_adj ) _braid_printf("%d: STEP_DIFF %.4f to %.4f, %d\n", myid, inTime, outTime, tidx);
 
    /* Pop ustop & u from primal tape */
    ustop = (braid_Vector)    (_braid_CoreElt(core, userVectorTape)->data_ptr);
@@ -735,6 +800,8 @@ _braid_BaseStep_diff(_braid_Action *action)
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseClone_diff(_braid_Action *action)
@@ -745,7 +812,7 @@ _braid_BaseClone_diff(_braid_Action *action)
    braid_Int       verbose_adj = _braid_CoreElt(core, verbose_adj);
    braid_Int       myid        = _braid_CoreElt(core, myid);
 
-   if ( verbose_adj ) printf("%d: CLONE_DIFF\n", myid);
+   if ( verbose_adj ) _braid_printf("%d: CLONE_DIFF\n", myid);
 
    /* Get and pop vbar from the tape */
    v_bar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
@@ -769,6 +836,8 @@ _braid_BaseClone_diff(_braid_Action *action)
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseSum_diff(_braid_Action *action)
@@ -782,7 +851,7 @@ _braid_BaseSum_diff(_braid_Action *action)
    braid_Int       verbose_adj = _braid_CoreElt(core, verbose_adj);
    braid_Int       myid        = _braid_CoreElt(core, myid);
 
-   if ( verbose_adj ) printf("%d: SUM_DIFF\n", myid);
+   if ( verbose_adj ) _braid_printf("%d: SUM_DIFF\n", myid);
 
    /* Get and pop ybar from the tape */
    y_bar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
@@ -806,6 +875,8 @@ _braid_BaseSum_diff(_braid_Action *action)
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_BaseObjectiveT_diff(_braid_Action *action)
@@ -825,7 +896,7 @@ _braid_BaseObjectiveT_diff(_braid_Action *action)
    braid_Real             f_bar        = _braid_CoreElt(core, optim)->f_bar;
    braid_ObjectiveStatus  ostatus      = (braid_ObjectiveStatus) action->core;
 
-   if ( verbose_adj ) printf("%d: OBJT_DIFF\n", myid);
+   if ( verbose_adj ) _braid_printf("%d: OBJT_DIFF\n", myid);
 
    /* Get the primal and bar vectors from the tapes */
    u    = (braid_Vector)    (_braid_CoreElt(core, userVectorTape)->data_ptr);
@@ -856,6 +927,9 @@ _braid_BaseObjectiveT_diff(_braid_Action *action)
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
 braid_Int
 _braid_BaseBufPack_diff(_braid_Action *action )
 {
@@ -872,7 +946,7 @@ _braid_BaseBufPack_diff(_braid_Action *action )
    braid_Int          myid            = _braid_CoreElt(core, myid);
    braid_BufferStatus bstatus         = (braid_BufferStatus) core;
 
-   if ( verbose_adj ) printf("%d: BUFPACK_DIFF\n", myid);
+   if ( verbose_adj ) _braid_printf("%d: BUFPACK_DIFF\n", myid);
 
    /* Get the bar vector and pop it from the tape*/
    ubar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
@@ -902,6 +976,9 @@ _braid_BaseBufPack_diff(_braid_Action *action )
    return _braid_error_flag;
 }
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
 braid_Int
 _braid_BaseBufUnpack_diff(_braid_Action *action)
 {
@@ -918,7 +995,7 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
    braid_Int           verbose_adj    = _braid_CoreElt(core, verbose_adj);
    braid_Int           myid           = _braid_CoreElt(core, myid);
 
-   if ( verbose_adj ) printf("%d: BUFUNPACK_DIFF\n", myid);
+   if ( verbose_adj ) _braid_printf("%d: BUFUNPACK_DIFF\n", myid);
 
    /* Get the bar vector and pop it from the tape*/
    ubar = (braid_VectorBar) (_braid_CoreElt(core, barTape)->data_ptr);
@@ -955,10 +1032,6 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
    /* Free ubar */
    _braid_VectorBarDelete(core, ubar);
 
-
    return _braid_error_flag;
 }
 
-
-
-#endif

@@ -518,6 +518,7 @@ int main (int argc, char *argv[])
    double   objective, gamma, stepsize, mygnorm, gnorm, gtol, rnorm, rnorm_adj;
    int      max_levels, cfactor, access_level, print_level, braid_maxiter;
    double   braid_tol, braid_adjtol;
+   double   dt, h_inv;
 
    /* Define time domain */
    ntime  = 20;              /* Total number of time-steps */
@@ -526,7 +527,7 @@ int main (int argc, char *argv[])
 
    /* Define some optimization parameters */
    gamma    = 0.005;         /* Relaxation parameter in the objective function */
-   stepsize = 50.0;          /* Step size for design updates */
+   stepsize = 5.0;            /* Step size for design updates */
    maxiter  = 500;           /* Maximum number of optimization iterations */
    gtol     = 1e-6;          /* Stopping criterion on the gradient norm */
 
@@ -536,7 +537,7 @@ int main (int argc, char *argv[])
    cfactor        = 2;
    braid_tol      = 1.0e-6;
    braid_adjtol   = 1.0e-6;
-   access_level   = 0;
+   access_level   = 1;
    print_level    = 0;
    
 
@@ -632,6 +633,17 @@ int main (int argc, char *argv[])
       }
    }
 
+   /* Initialize optimization */
+   design   = (double*) malloc( ntime*sizeof(double) );    /* design vector (control c) */
+   gradient = (double*) malloc( ntime*sizeof(double) );    /* gradient vector */
+   for (ts = 0; ts < ntime; ts++)
+   {
+      design[ts]   = 0.;
+      gradient[ts] = 0.;
+   }
+   /* Inverse of reduced Hessian approximation */
+   dt    = (tstop - tstart) / ntime;
+   h_inv = 1. / ( 2 * dt * (1. + gamma) );
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -803,11 +815,13 @@ int main (int argc, char *argv[])
         //  break;
 //       }
 
-      /* Design update */
-//       for(ts = 0; ts < ntime; ts++) 
-//       {
-//          app->design[ts] -= stepsize * app->gradient[ts];
-//       }
+      /* Preconditioned design update */
+   //    for(ts = 0; ts < ntime; ts++) 
+   //    {
+   //       app->design[ts] -= stepsize * h_inv * app->gradient[ts];
+   //    }
+
+   // }
 
    
 //    /* Output */
@@ -835,9 +849,10 @@ int main (int argc, char *argv[])
 //    braid_PrintStats(core);
 
 
-
-   /* Write final design to file */
-//    write_design_vec("design", design, ntime);
+   // if (rank == 0) {
+   //     /* Write final design to file */
+   //     write_design_vec("design", design, ntime);
+   // }
 
    /* Clean up */
 //    free(design);

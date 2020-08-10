@@ -1,0 +1,48 @@
+# Begin Test 0
+  time steps = 10
+  iterations            = 4
+  residual norm         = 0.000000e+00
+  max number of levels  = 2
+  number of levels      = 2
+# Begin Test 1
+  time steps = 10
+  iterations            = 4
+  residual norm         = 0.000000e+00
+  max number of levels  = 2
+  number of levels      = 2
+# Begin Test 2
+  time steps = 60
+  iterations            = 4
+  residual norm         = 8.721079e-06
+  max number of levels  = 2
+  number of levels      = 2
+# Begin Test 3
+  time steps = 60
+  iterations            = 4
+  residual norm         = 1.693387e-05
+  max number of levels  = 2
+  number of levels      = 2
+# Begin Test 4
+  time steps = 60
+  iterations            = 4
+  residual norm         = 8.721079e-06
+  max number of levels  = 2
+  number of levels      = 2
+# Begin Test 5
+  time steps = 60
+  iterations            = 4
+  residual norm         = 1.693387e-05
+  max number of levels  = 2
+  number of levels      = 2
+# Begin Test 6
+  time steps = 60
+  iterations            = 4
+  residual norm         = 8.721079e-06
+  max number of levels  = 2
+  number of levels      = 2
+# Begin Test 7
+  time steps = 60
+  iterations            = 4
+  residual norm         = 1.693387e-05
+  max number of levels  = 2
+  number of levels      = 2

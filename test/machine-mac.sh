@@ -25,6 +25,9 @@
 
 testname=`basename $0 .sh`
 
+# OPENMPI, Mac High Sierra issue fixed by this (regarding max filename lengths)
+export TMPDIR=/tmp 
+
 # Echo usage information
 case $1 in
    -h|-help)
@@ -66,9 +69,12 @@ TESTS=( "diffusion1D.sh " \
         "compare_examples_drivers_storage.sh " \
         "mfem.sh" \
         "ode1D.sh" \
+        "ode1D-refine-periodic.sh" \
+        "cython_tests.sh" \
         "test-checkout-compile.sh " \
         "adjoint.sh " \
         "shellvector_bdf2.sh "\
+        "richardson.sh"\
         # "memcheck-tux-jacob.sh "\
         "docs.sh " )
 

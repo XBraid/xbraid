@@ -128,3 +128,14 @@ To run the examples, type
      + *drive-nonlin-elasticity*:  implements time-dependent nonlinear elasticity and is under
        development.
 
+6. Directory drive-adv-diff-1D-Cython/  solves a simple 1D advection-diffussion equation 
+   using the Cython interface and numerous spatial and temporal discretizations
+   
+                drivers/drive-adv-diff-1D-Cython/drive_adv_diff_1D.pyx
+      
+      and
+      
+                drivers/drive-adv-diff-1D-Cython/drive_adv_diff_1D-setup.py
+
+
+

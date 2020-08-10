@@ -348,7 +348,8 @@ save_solution(char   *filename,
               double  xstop,
               int     ntime,
               double  tstart,
-              double  tstop)
+              double  tstop,
+              double  current_t)
 {
    FILE      *file;
    int i;
@@ -357,6 +358,7 @@ save_solution(char   *filename,
    fprintf(file, "%d\n",    ntime +1);
    fprintf(file, "%.14e\n", tstart );
    fprintf(file, "%.14e\n", tstop );
+   fprintf(file, "%.14e\n", current_t );
    fprintf(file, "%d\n",    size );
    fprintf(file, "%.14e\n", xstart );
    fprintf(file, "%.14e\n", xstop );

@@ -61,12 +61,12 @@ ifeq ($(findstring tux408,$(HOSTNAME)),tux408)
    MPIF90 = mpif90
    LFLAGS = -lm
    ifeq ($(optlevel),DEBUG)
-      CFLAGS = -g -Wall -lm
-      CXXFLAGS = -g -Wall -Wno-reorder -lm
+      CFLAGS = -g -Wall -lm -fPIC
+      CXXFLAGS = -g -Wall -Wno-reorder -lm -fPIC
       FORTFLAGS = -Og -Wall
    else
-      CFLAGS = -O -Wall -lm
-      CXXFLAGS = -O -Wall -Wno-reorder -lm
+      CFLAGS = -O -Wall -lm -fPIC
+      CXXFLAGS = -O -Wall -Wno-reorder -lm -fPIC
       FORTFLAGS = -O1 -Wall
    endif
    ifeq ($(lvalgrind),YES)
@@ -81,12 +81,12 @@ else ifeq ($(shell uname -s), Darwin)
    MPIF90 = mpif90
    LFLAGS = -lm -lstdc++
    ifeq ($(optlevel),DEBUG)
-      CFLAGS = -g -Wall
-      CXXFLAGS = -g -Wall
+      CFLAGS = -g -Wall -fPIC
+      CXXFLAGS = -g -Wall -fPIC
       FORTFLAGS = -Og -Wall
    else
-      CFLAGS = -O -Wall
-      CXXFLAGS = -O -Wall
+      CFLAGS = -O -Wall -fPIC
+      CXXFLAGS = -O -Wall -fPIC
       FORTFLAGS = -O1 -Wall
    endif
 else ifeq ($(findstring cab,$(HOSTNAME)),cab)
@@ -96,12 +96,12 @@ else ifeq ($(findstring cab,$(HOSTNAME)),cab)
    MPIF90 = mpif90
    LFLAGS = -lm
    ifeq ($(optlevel),DEBUG)
-      CFLAGS = -g -Wall
-      CXXFLAGS = -g -Wall
+      CFLAGS = -g -Wall -fPIC
+      CXXFLAGS = -g -Wall -fPIC
       FORTFLAGS = -Og -Wall
    else
-      CFLAGS = -O -Wall
-      CXXFLAGS = -O -Wall
+      CFLAGS = -O -Wall -fPIC
+      CXXFLAGS = -O -Wall -fPIC
       FORTFLAGS = -O1 -Wall
    endif   
 else ifeq ($(findstring vulcan,$(HOSTNAME)),vulcan)
@@ -111,12 +111,12 @@ else ifeq ($(findstring vulcan,$(HOSTNAME)),vulcan)
    MPIF90 = mpixlf90
    LFLAGS = -lm
    ifeq ($(optlevel),DEBUG)
-      CFLAGS = -g -Wall
-      CXXFLAGS = -g -Wall
+      CFLAGS = -g -Wall -fPIC
+      CXXFLAGS = -g -Wall -fPIC
       FORTFLAGS = -Og -Wall
    else
-      CFLAGS = -O -Wall
-      CXXFLAGS = -O -Wall
+      CFLAGS = -O -Wall -fPIC
+      CXXFLAGS = -O -Wall -fPIC
       FORTFLAGS = -O1 -Wall
    endif
 else ifeq ($(shell uname -s),Linux)
@@ -125,12 +125,12 @@ else ifeq ($(shell uname -s),Linux)
    MPIF90 = mpif90
    LFLAGS = -lm
    ifeq ($(optlevel),DEBUG)
-      CFLAGS = -g -Wall
-      CXXFLAGS = -g -Wall
+      CFLAGS = -g -Wall -fPIC
+      CXXFLAGS = -g -Wall -fPIC
       FORTFLAGS = -g -Wall
    else
-      CFLAGS = -O -Wall
-      CXXFLAGS = -O -Wall
+      CFLAGS = -O -Wall -fPIC
+      CXXFLAGS = -O -Wall -fPIC
       FORTFLAGS = -O1 -Wall
    endif
 ##
@@ -142,12 +142,12 @@ else
    MPIF90 = mpif90
    LFLAGS = -lm
    ifeq ($(optlevel),DEBUG)
-      CFLAGS = -g -Wall
-      CXXFLAGS = -g -Wall
+      CFLAGS = -g -Wall -fPIC
+      CXXFLAGS = -g -Wall -fPIC
       FORTFLAGS = -g -Wall
    else
-      CFLAGS = -O -Wall
-      CXXFLAGS = -O -Wall
+      CFLAGS = -O -Wall -fPIC
+      CXXFLAGS = -O -Wall -fPIC
       FORTFLAGS = -O1 -Wall
    endif
 endif

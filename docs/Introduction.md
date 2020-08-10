@@ -20,31 +20,6 @@
   - Temple Place, Suite 330, Boston, MA 02111-1307 USA
  -->
 
-
-# Meaning of the name {#braidname}
-
-We chose the package name XBraid to stand for _Time-Braid_, where
-X is the first letter in the Greek word for time, _Chronos_.  The
-algorithm _braids_ together time-grids of different granularity in order to
-create a multigrid method and achieve parallelism in the time dimension.
-
-# Advice to users {#advice}
-
-The field of parallel-in-time methods is in many ways under development, and
-success has been shown primarily for problems with some parabolic character.
-While there are ongoing projects (here and elsewhere) looking at varied
-applications such as hyperbolic problems, computational fluid dynamics, power
-grids, medical applications, and so on, expectations should take this fact into
-account.  Please see our project
-[publications website](http://computation.llnl.gov/projects/parallel-time-integration-multigrid/publications)
-for our recent publications concerning some of these varied applications. 
-
-That being said, we strongly encourage new users to try our code for
-their application.  Every new application has its own issues to address and
-this will help us to improve both the algorithm and the software.
-
-For support, please post issues to the XBraid Github issue tracker. 
-
 # Overview of the XBraid Algorithm {#braidoverview}
 
 The goal of XBraid is to solve a problem faster than a traditional time
@@ -399,7 +374,7 @@ regardless of time step size.  After this is done, the XBraid code takes care of
 the parallelism in the time dimension.
 
 XBraid 
-- is written in C and can easily interface with Fortran and C++
+- is written in C and can easily interface with Fortran, C++, and Python
 - uses MPI for parallelism
 - self documents through comments in the source code and through *.md files
 - functions and structures are prefixed by *braid* 
@@ -504,6 +479,17 @@ done on a level. A few summary points about relaxation are as follows.
   (i.e., *braid_setnrelax(core, 0, 1)* ).  Another strategy is to use F-relaxation on all levels
   together with F-cycles. 
 - See @ref twodheat_scaling  for a case study of relaxation strategies. 
+
+There is also a weighted relaxation option, which applies weighted-Jacobi at the C-points
+during the C-relaxation.  Experiments with the 1D heat equation and 1D advection showed iteration
+gains of 10-25% for V-cycles when the experimentally optimal weight was used.
+- For the heat equation, a weight of around 1.3 was experimentally optimal
+- For the advection equation, weights between 1.4 and 1.8 were experimentally optimal
+- Set this option with [braid_SetCRelaxWt](@ref braid_SetCRelaxWt), which
+  allows you to set a global relaxation weight, or an individual weight for
+  each level.  In general, under-relaxation (weight < 1.0) never improved
+  performance, but over-relxation (1.0 < weight < 2.0) often offered some
+  improvement.
 
 Last, [Parallel Time Integration with Multigrid](https://computation.llnl.gov/project/linear_solvers/pubs/mgritPaper-2014.pdf)
 has a more in depth case study of cycling and relaxation strategies

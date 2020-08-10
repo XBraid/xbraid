@@ -1,8 +1,6 @@
 /*BHEADER**********************************************************************
  * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
- * Produced at the Lawrence Livermore National Laboratory. Written by 
- * Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
- * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
+ * Produced at the Lawrence Livermore National Laboratory.
  * 
  * This file is part of XBraid. For support, post issues to the XBraid Github page.
  * 
@@ -23,12 +21,12 @@
  
 
 /** \file braid_defs.h
- * \brief Definitions of types, error flags, etc... 
+ * \brief Definitions of braid types, error flags, etc... 
  *
  */
 
-#ifndef braiddefs_HEADER
-#define braiddefs_HEADER
+#ifndef braid_defs_HEADER
+#define braid_defs_HEADER
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -65,69 +63,6 @@ typedef double braid_Real;
 // #define braid_MPI_REAL  MPI_FLOAT
 #define braid_MPI_REAL  MPI_DOUBLE
 #define braid_MPI_INT   MPI_INT
-
-/*--------------------------------------------------------------------------
- * Error handling
- *--------------------------------------------------------------------------*/
-
-/** 
- * This is the global XBraid error flag.  If it is ever nonzero, an error has 
- * occurred. 
- **/
-extern braid_Int _braid_error_flag;
-
-void _braid_ErrorHandler(const char *filename, braid_Int line, braid_Int ierr, const char *msg);
-#define _braid_Error(IERR, msg)       _braid_ErrorHandler(__FILE__, __LINE__, IERR, msg)
-#define _braid_ErrorInArg(IARG, msg)  _braid_Error(HYPRE_ERROR_ARG | IARG<<3, msg)
-
-/*--------------------------------------------------------------------------
- * Memory allocation macros
- *--------------------------------------------------------------------------*/
-
-/** 
- * Allocation macro 
- **/
-#define _braid_TAlloc(type, count) \
-( (type *)malloc((size_t)(sizeof(type) * (count))) )
-
-/** 
- * Allocation macro 
- **/
-#define _braid_CTAlloc(type, count) \
-( (type *)calloc((size_t)(count), (size_t)sizeof(type)) )
-
-/** 
- * Re-allocation macro 
- **/
-#define _braid_TReAlloc(ptr, type, count) \
-( (type *)realloc((char *)ptr, (size_t)(sizeof(type) * (count))) )
-
-/** 
- * Free memory macro 
- **/
-#define _braid_TFree(ptr) \
-( free((char *)ptr), ptr = NULL )
-
-/*--------------------------------------------------------------------------
- * Miscellaneous macros and functions 
- *--------------------------------------------------------------------------*/
-
-#ifndef _braid_max
-#define _braid_max(a,b)  (((a)<(b)) ? (b) : (a))
-#endif
-#ifndef _braid_min
-#define _braid_min(a,b)  (((a)<(b)) ? (a) : (b))
-#endif
-#ifndef braid_isnan
-#define braid_isnan(a) (a != a)
-#endif
-
-/**
- * Machine independent pseudo-random number generator is defined in Braid.c
- */
-#ifndef braid_RAND_MAX
-#define braid_RAND_MAX 32768
-#endif
 
 #ifdef __cplusplus
 }
