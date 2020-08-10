@@ -654,6 +654,7 @@ _braid_Drive(braid_Core  core,
    {
       _braid_CoreElt(core, record) = 0;
    }
+   _braid_CoreElt(core, done) = 1;
    _braid_FAccess(core, 0, 1);
 
    /* If sequential time-marching, evaluate the tape */
