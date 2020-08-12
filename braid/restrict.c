@@ -345,12 +345,11 @@ _braid_FinalizeErrorEstimates( braid_Core   core,
                                braid_Int    length)
 {
 
-   braid_Int     order       = _braid_CoreElt(core, order );
    braid_Int     myid        = _braid_CoreElt(core, myid );
    MPI_Comm      comm        = _braid_CoreElt(core, comm );
   _braid_Grid  **grids       = _braid_CoreElt(core, grids);
    braid_Real   *error_est   = _braid_CoreElt(core, estimate);
-   braid_Real   *ta       = _braid_GridElt(grids[0], ta);
+   braid_Real   *dtk_core    = _braid_CoreElt(core, dtk);
    braid_Int     ilower   = _braid_GridElt(grids[0],ilower);
    braid_Int     iupper   = _braid_GridElt(grids[0],iupper);
    braid_Int     gupper   = _braid_GridElt(grids[0],gupper);
@@ -358,7 +357,7 @@ _braid_FinalizeErrorEstimates( braid_Core   core,
    braid_Int     ncpoints = _braid_GridElt(grids[0], ncpoints);
 
    braid_Int recv_flag, send_flag_l, send_flag_r, i, last_cpoint, estimate_index ; 
-   braid_Real recv_value, send_value_l, send_value_r, dtk, factor ;
+   braid_Real recv_value, send_value_l, send_value_r, factor ;
    MPI_Request recv_request, send_request_l, send_request_r;
 
    if ( ilower <= iupper )
@@ -392,7 +391,7 @@ _braid_FinalizeErrorEstimates( braid_Core   core,
          }
          else
          {
-            send_value_r = estimate[length - 1];
+            send_value_r = estimate[length - 1] * dtk_core[ length - 1 ];
          }
 
          send_flag_r++;
@@ -411,7 +410,7 @@ _braid_FinalizeErrorEstimates( braid_Core   core,
          }
          else
          {
-            send_value_l = estimate[0];
+            send_value_l = estimate[0] * dtk_core[0];
          }
 
          send_flag_l++;
@@ -435,12 +434,11 @@ _braid_FinalizeErrorEstimates( braid_Core   core,
          }
          else
          {
-            factor = estimate[ estimate_index ] ;
+            factor = estimate[ estimate_index ] * dtk_core[ estimate_index ] ;
          }
 
-         /* Update the factor */
-         dtk = pow( ta[i-ilower] - ta[i-ilower-1] , order );
-         error_est[ i-ilower ] = factor * dtk ;
+         /* Set error estimate */
+         error_est[ i-ilower ] = factor ;
          
          /* increase the index at the Cpoints, unless this is the
           * last C point. In that case, use the same index */ 
@@ -450,7 +448,7 @@ _braid_FinalizeErrorEstimates( braid_Core   core,
          }
       }
 
-      /* All recvieves should be completed. Finish up sends */
+      /* All receives should be completed. Finish up sends */
       if ( send_flag_r )
       {
          MPI_Wait( & send_request_r, MPI_STATUS_IGNORE );

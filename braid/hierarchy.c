@@ -565,7 +565,7 @@ _braid_GetDtk(braid_Core core )
       braid_Int cpoint = ncpoints-1;
       for (interval = ncpoints; interval > -1; interval--)
       {
-         _braid_GetInterval(core, 0, interval, &flo, &fhi, &ci);             
+         _braid_GetInterval(core, 0, interval, &flo, &fhi, &ci);
         
          dtk = 0;
 
@@ -583,7 +583,7 @@ _braid_GetDtk(braid_Core core )
          {
             dtk += pow( ta[i-ilower] - ta[i-ilower-1] , order );
          }   
-         /* Save dtk at the C points or send it on to the right is 
+         /* Save dtk at the C points or send it on to the right if 
           * last point is not a C point */
          if ( ci > 0 ) 
          {

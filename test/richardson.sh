@@ -108,7 +108,6 @@ TESTS=( "$RunString -np 1 $example_dir/ex-06 -nt 19" \
         "$RunString -np 1 $example_dir/ex-02 -ntime 17 -richardson -mi 4" \
         "$RunString -np 3 $example_dir/ex-02 -ntime 17 -richardson -mi 4" \
         "$RunString -np 1 $example_dir/ex-02 -ntime 17 -refinet 1e-2" \
-        "$RunString -np 3 $example_dir/ex-02 -ntime 17 -refinet 1e-2" \
         "$RunString -np 3 $example_dir/ex-02 -ntime 17 -richardson -CWt 1.2" \
         "$RunString -np 1 $example_dir/ex-06 -nt 37 -richardson -periodic -mi 5" \
         "$RunString -np 3 $example_dir/ex-06 -nt 37 -richardson -periodic -mi 5" )

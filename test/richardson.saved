@@ -165,38 +165,31 @@
   number of levels      = 2
   periodic              = 0
 # Begin Test 18
-  Braid: Temporal refinement occurred, 59 time steps
-  Braid: Temporal refinement occurred, 94 time steps
-  time steps = 94
-  iterations            = 6
-  residual norm         = 2.079086e-07
+  Braid: Temporal refinement occurred, 85 time steps
+  Braid: Temporal refinement occurred, 138 time steps
+  Braid: Temporal refinement occurred, 140 time steps
+  Braid: Temporal refinement occurred, 142 time steps
+  time steps = 142
+  iterations            = 7
+  residual norm         = 3.577909e-07
   max number of levels  = 2
   number of levels      = 2
   periodic              = 0
 # Begin Test 19
-  Braid: Temporal refinement occurred, 59 time steps
-  Braid: Temporal refinement occurred, 94 time steps
-  time steps = 94
-  iterations            = 6
-  residual norm         = 2.079086e-07
-  max number of levels  = 2
-  number of levels      = 2
-  periodic              = 0
-# Begin Test 20
   time steps = 17
   iterations            = 5
   residual norm         = 1.850975e-07
   max number of levels  = 2
   number of levels      = 2
   periodic              = 0
-# Begin Test 21
+# Begin Test 20
   time steps = 36
   iterations            = 5
   residual norm         = 4.821318e-02
   max number of levels  = 100
   number of levels      = 3
   periodic              = 1
-# Begin Test 20
+# Begin Test 21
   time steps = 36
   iterations            = 5
   residual norm         = 4.821318e-02
