@@ -251,6 +251,7 @@ _braid_FRestrict(braid_Core   core,
          {    
                dtk = dtk_core[c_ii];
                DTK = pow( ta_c[c_ii] - ta_c[c_ii-1], order );
+               /* Factor computes \bar{a} from Richardson paper, used to scale RHS term in FAS */
                factor = DTK / ( DTK - dtk );
                _braid_BaseSum(core, app, factor, c_u, factor, c_fa[c_ii]);
 
@@ -286,6 +287,12 @@ _braid_FRestrict(braid_Core   core,
              }
              else
              {
+                /* Note, the algebra:
+                 *     (DTK - dtk) = (m*dt)^k - m (dt)^k = m (dt)^k (m^k_g - 1)
+                 * where k is the local order, k_g = (k-1) is the global order,
+                 * dt is the fine grid step size.  The m (dt)^k is canceled out
+                 * in FinalizeErrorEstimates.
+                 */
                 est_temp = est_temp / ( DTK - dtk );
              }
              estimate[ c_ii ] = est_temp; 
@@ -437,7 +444,15 @@ _braid_FinalizeErrorEstimates( braid_Core   core,
             factor = estimate[ estimate_index ] * dtk_core[ estimate_index ] ;
          }
 
-         /* Set error estimate */
+         /* Set Error Estimate 
+          * Note that we have scaled factor above by dtk_core, which equals
+          * m*dt^k, which is the coarsening factor m, fine-grid step size dt,
+          * and local order k.  This is needed to cancel out an extra factor of
+          * (1/m*dt^k) in estimate.  The error estimate then equals, 
+          * || U^{fine}_i - U^{coarse}_i || / (m^{k_g} - 1
+          * where k_g is the global order of the time stepping method.
+          * */
+
          error_est[ i-ilower ] = factor ;
          
          /* increase the index at the Cpoints, unless this is the
