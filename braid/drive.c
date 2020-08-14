@@ -568,10 +568,9 @@ _braid_Drive(braid_Core  core,
             _braid_FRefine(core, &refined);
             nlevels = _braid_CoreElt(core, nlevels);
 
-            // If we are done refining and doing a fixed point test,
-            // then compute the sequential solution on the finest grid
-            braid_Int rstopped = _braid_CoreElt(core, rstopped);
-            if( (rstopped > -1) && (rstopped == iter) && (seq_soln == 1) )
+            /* If we are doing a fixed-point test, we need to initialize
+             * with the exact solution after every refinement */
+            if(refined && (seq_soln == 1))
             {
                _braid_InitGuess(core, 0);
             }
