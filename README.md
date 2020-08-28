@@ -33,7 +33,7 @@ This code and associated algorithms are developed at [Lawrence Livermore
 National Laboratory](https://computation.llnl.gov/projects/parallel-time-integration-multigrid/),
 and at collaborating [academic institutions](https://github.com/XBraid/xbraid/wiki/Team). 
 
-For our publication list, please go [here](https://github.com/XBraid/xbraid/wiki/Project-Publications).
+For our publication list, please go [here](https://github.com/XBraid/xbraid/wiki/Project-Publications). There you will papers on XBraid and various application areas where XBraid has been applied, e.g., fluid dynamics, machine learning, parabolic equations, Burgers' equation, powergrid systems, etc. 
 
 ## About XBraid 
 
