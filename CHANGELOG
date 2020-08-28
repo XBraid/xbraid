@@ -1,4 +1,66 @@
 ----------------------------
+Version 3.0.0, 8/2020
+----------------------------
+
+This version contains some major new features, a Python interface, and a new
+file structure.
+
+- Added a new periodic feature (activiated through BraidSetPeriodic) that
+  allows for solving time-periodic problems efficiently.  The periodic
+  structure is replicated on all Braid levels.  See examples/ directory 
+  for example codes. 
+
+- Added a new Richardson-based extrapolation option (activated through
+  BraidSetRichardsonEstimation).  This option assumes sufficient continuity
+  in time and then uses Richardson extrapolation to improve the accuracy 
+  order in time on the finest grid.  See examples/ for example codes.
+
+- Added a new Richardson-based error estimation option (activated through
+  BraidSetRichardsonEstimation).  This option also assumes sufficent
+  continuity in time and then uses Richardson-based techniques to give an 
+  error estimate in time on the finest grid.  See examples/ for example codes.
+
+- Added a new Cython (Python) interface.  See braid.pyx and the examples/
+  directory for how this works.  In short, Braid can now be called and run
+  through Python, including mpi4py, while using other existing Python 
+  libraries.
+
+- Added weighted relaxation, which allows for weighting the C-relaxation as
+  one would for standard weighted-Jacobi (activated through braid_SetCRelaxWt).
+  Experiments show that this weight (when properly chosen) can reduce iterations
+  by 10%-30%, for the tested problems.  Common weights are in the range of
+  1.0 to 2.0.
+
+- Added an optional new user function called "Sync" that is called only once
+  per MPI task at certain points in the code, i.e., at the top of a Braid cycle,
+  and after FRefine.  This is different from "Access" which is called for every
+  time-point that an MPI task "owns".  Sync is designed to make it easier to
+  complete global operations, such as a reduce over the temporal communicator to
+  compute some quantity, e.g., a maximum error estimate.
+
+- Split very large files, primarily _braid.c, into many smaller files.  This
+  file had become too unwieldy and large.  Also, renamed many files that began
+  with "_braid...".  The goal here is to make the filenames easier to grok.
+
+- Added more flexibility for FRefine (which implements FMG/Nested Iteration),
+  so that the user can more adaptively control options like the max number of
+  levels, the final number of levels, and when to initialize with a sequential
+  solution for debugging purposes.
+
+- Updated Make system so that a default make doesn't include MFEM and that an
+  error message is printed if hypre isn't found.  Hypre only affects some
+  example codes, not Braid itself.
+
+Also,
+
+- Incorporated various bug fixes, including some memory bugs in FRefine
+
+- Updated documentation to discuss new features (weighted-relaxation,
+  Richardson-based error estimation and extrapolation, periodic
+  functionality, Cython interface, and Sync function.)
+
+
+----------------------------
 Version 2.3.0, 7/11/2018
 ----------------------------
 
