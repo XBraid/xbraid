@@ -648,13 +648,20 @@ _braid_Drive(braid_Core  core,
       _braid_FRestrict(core, level);
    }
 
-   /* Allow final access to Braid by carrying out an F-relax to generate points */
-   /* Record it only if sequential time stepping */
-   if (max_levels > 1)
-   {
-      _braid_CoreElt(core, record) = 0;
-   }
-   _braid_FAccess(core, 0, 1);
+   /* Do one final F-C-Relaxation sweep in order to:
+    * -> store the last time-point vector in grid's 'ulast'. Retrieve it by calling _braid_UGetLast()
+    * -> do a sequential time-stepping, if max_levels==1 (TODO: DOES THIS WORK IF nprocs>1??)
+    * -> gather gradient information when solving adjoint equation with XBraid. The users 'my_step' function should compute gradients only if braid's 'done' flag is true
+   */
+   braid_Int nrelax_orig = _braid_CoreElt(core, nrels)[0];
+   braid_Int done_orig = done;
+   _braid_CoreElt(core, nrels)[0] = 1;
+   _braid_CoreElt(core, done) = 1;
+
+   _braid_FCRelax(core, 0);
+
+   _braid_CoreElt(core, nrels)[0] = nrelax_orig;
+   _braid_CoreElt(core, done) = done_orig;
 
    /* If sequential time-marching, evaluate the tape */
    if ( adjoint && max_levels <= 1 )
