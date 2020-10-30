@@ -222,7 +222,7 @@ typedef struct
    braid_BaseVector  *va_alloc;      /**< original memory allocation for va */
    braid_BaseVector  *fa_alloc;      /**< original memory allocation for fa */
 
-   braid_BaseVector ulast;          /**< stores last time step */
+   braid_BaseVector   ulast;         /**< stores vector at last time step */
 
 } _braid_Grid;
 
@@ -943,6 +943,10 @@ braid_Int
 _braid_Drive(braid_Core core, 
              braid_Real localtime);
 
+
+/**
+ * Retrieve uvector at last time-step
+ */
 braid_Int
 _braid_UGetLast(braid_Core        core,
                 braid_BaseVector *u_ptr);

@@ -49,7 +49,10 @@ _braid_GridInit(braid_Core     core,
    ta = _braid_CTAlloc(braid_Real, iupper-ilower+3);
    _braid_GridElt(grid, ta_alloc) = ta;
    _braid_GridElt(grid, ta)       = ta+1;  /* shift */
-   
+
+   /* Initialize last time step storage with NULL */
+   _braid_GridElt(grid, ulast) = NULL;
+
    *grid_ptr = grid;
 
    return _braid_error_flag;
