@@ -650,7 +650,7 @@ _braid_Drive(braid_Core  core,
 
    /* Do one final F-C-Relaxation sweep in order to:
     * -> store the last time-point vector in grid's 'ulast'. Retrieve it by calling _braid_UGetLast()
-    * -> do a sequential time-stepping, if max_levels==1 (TODO: DOES THIS WORK IF nprocs>1??)
+    * -> do a sequential time-stepping, if max_levels==1
     * -> gather gradient information when solving adjoint equation with XBraid. The users 'my_step' function should compute gradients only if braid's 'done' flag is true
    */
    braid_Int nrelax_orig = _braid_CoreElt(core, nrels)[0];
