@@ -648,6 +648,17 @@ _braid_Drive(braid_Core  core,
       _braid_FRestrict(core, level);
    }
 
+   /* Allow final access to Braid by carrying out an F-relax to generate points */
+   /* Record it only if sequential time stepping */
+   if (max_levels == 1 || access_level >= 1) 
+   {
+      if (max_levels > 1)
+      {
+         _braid_CoreElt(core, record) = 0;
+      }
+      _braid_FAccess(core, 0, 1);
+   }
+
    /* Do one final F-C-Relaxation sweep in order to:
     * -> store the last time-point vector in grid's 'ulast'. Retrieve it by calling _braid_UGetLast()
     * -> do a sequential time-stepping, if max_levels==1
