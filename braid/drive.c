@@ -664,15 +664,18 @@ _braid_Drive(braid_Core  core,
     * -> do a sequential time-stepping, if max_levels==1
     * -> gather gradient information when solving adjoint equation with XBraid. The users 'my_step' function should compute gradients only if braid's 'done' flag is true
    */
-   braid_Int nrelax_orig = _braid_CoreElt(core, nrels)[0];
-   braid_Int done_orig = done;
-   _braid_CoreElt(core, nrels)[0] = 1;
-   _braid_CoreElt(core, done) = 1;
+   if (_braid_CoreElt(core, finalFCrelax))
+   {
+      braid_Int nrelax_orig = _braid_CoreElt(core, nrels)[0];
+      braid_Int done_orig = done;
+      _braid_CoreElt(core, nrels)[0] = 1;
+      _braid_CoreElt(core, done) = 1;
 
-   _braid_FCRelax(core, 0);
+      _braid_FCRelax(core, 0);
 
-   _braid_CoreElt(core, nrels)[0] = nrelax_orig;
-   _braid_CoreElt(core, done) = done_orig;
+      _braid_CoreElt(core, nrels)[0] = nrelax_orig;
+      _braid_CoreElt(core, done) = done_orig;
+   }
 
    /* If sequential time-marching, evaluate the tape */
    if ( adjoint && max_levels <= 1 )

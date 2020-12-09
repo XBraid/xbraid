@@ -204,6 +204,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              print_level     = 2;              /* Default print level */
    braid_Int              io_level        = 1;              /* Default output-to-file level */
    braid_Int              access_level    = 1;              /* Default access level */
+   braid_Int              finalFCrelax    = 0;              /* Default final FCrelax */
    braid_Int              tnorm           = 2;              /* Default temporal norm */
    braid_Real             tol             = 1.0e-09;        /* Default absolute tolerance */
    braid_Int              warm_restart    = 0;              /* Default is no warm restart */
@@ -253,6 +254,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, sync)            = NULL;
 
    _braid_CoreElt(core, access_level)    = access_level;
+   _braid_CoreElt(core, finalFCrelax)    = finalFCrelax;
    _braid_CoreElt(core, tnorm)           = tnorm;
    _braid_CoreElt(core, print_level)     = print_level;
    _braid_CoreElt(core, io_level)        = io_level;
@@ -778,6 +780,16 @@ braid_SetAccessLevel(braid_Core  core,
 {
    _braid_CoreElt(core, access_level) = access_level;
 
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetFinalFCRelax(braid_Core core)
+{
+   _braid_CoreElt(core, finalFCrelax) = 1;
    return _braid_error_flag;
 }
 

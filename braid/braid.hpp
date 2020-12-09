@@ -547,6 +547,8 @@ public:
 
    void SetAccessLevel(braid_Int access_level) { braid_SetAccessLevel(core, access_level); }
 
+   void SetFinalFCRelax() {braid_SetFinalFCRelax(core); }
+
    void SetFMG() { braid_SetFMG(core); }
 
    void SetNFMG(braid_Int k) { braid_SetNFMG(core, k); }
