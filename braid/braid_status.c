@@ -597,6 +597,7 @@ ACCESSOR_FUNCTION_SET1(Step, OldFineTolx,   Real)
 ACCESSOR_FUNCTION_SET1(Step, TightFineTolx, Real)
 ACCESSOR_FUNCTION_SET1(Step, RFactor,       Real)
 ACCESSOR_FUNCTION_SET1(Step, RSpace,        Real)
+ACCESSOR_FUNCTION_GET1(Step, Done,          Int)
 
 /*--------------------------------------------------------------------------
  * BufferStatus Routines

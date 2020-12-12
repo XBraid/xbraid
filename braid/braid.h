@@ -843,6 +843,16 @@ braid_SetAccessLevel(braid_Core  core,          /**< braid_Core (_braid_Core) st
                      braid_Int   access_level   /**< desired access_level */
                      );
 
+
+/** 
+ * Perform a final FCRelax after XBraid finishes. 
+ * This can be useful in order to 
+ * - store the last time-point vector in grid's 'ulast'. It can be retrieve afterwards by calling _braid_UGetLast()
+ * - gather gradient information when solving the adjoint equation with XBraid. The users 'my_step' function for the adjoint time-stepper should compute gradients only if braid's 'done' flag is true
+ */
+braid_Int
+braid_SetFinalFCRelax(braid_Core core);
+
 /**
  * Split MPI commworld into *comm_x* and *comm_t*, the 
  * spatial and temporal communicators.  The total number of processors

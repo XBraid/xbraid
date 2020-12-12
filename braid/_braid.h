@@ -222,7 +222,7 @@ typedef struct
    braid_BaseVector  *va_alloc;      /**< original memory allocation for va */
    braid_BaseVector  *fa_alloc;      /**< original memory allocation for fa */
 
-   braid_BaseVector ulast;          /**< stores last time step */
+   braid_BaseVector   ulast;         /**< stores vector at last time step */
 
 } _braid_Grid;
 
@@ -264,6 +264,7 @@ typedef struct _braid_Core_struct
    braid_Int              initiali;         /**< initial condition grid index (0: default; -1: periodic ) */
 
    braid_Int              access_level;     /**< determines how often to call the user's access routine */ 
+   braid_Int              finalFCrelax;     /**< determines if a final FCrelax is performed (default 0=false) */ 
    braid_Int              print_level;      /**< determines amount of output printed to screen (0,1,2,3) */
    braid_Int              io_level;         /**< determines amount of output printed to files (0,1) */
    braid_Int              seq_soln;         /**< boolean, controls if the initial guess is from sequential time stepping*/
@@ -943,6 +944,10 @@ braid_Int
 _braid_Drive(braid_Core core, 
              braid_Real localtime);
 
+
+/**
+ * Retrieve uvector at last time-step
+ */
 braid_Int
 _braid_UGetLast(braid_Core        core,
                 braid_BaseVector *u_ptr);

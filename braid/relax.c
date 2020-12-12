@@ -34,6 +34,9 @@ _braid_FCRelax(braid_Core  core,
    braid_Int      *nrels    = _braid_CoreElt(core, nrels);
    _braid_Grid   **grids    = _braid_CoreElt(core, grids);
    braid_Int       ncpoints = _braid_GridElt(grids[level], ncpoints);
+   braid_Int       done     = _braid_CoreElt(core, done);
+   braid_Int       ntime    = _braid_CoreElt(core, ntime);
+   braid_Int       storage  = _braid_CoreElt(core, storage);
 
    braid_BaseVector  u;
    braid_Int         flo, fhi, fi, ci;
@@ -64,6 +67,17 @@ _braid_FCRelax(braid_Core  core,
          {
             _braid_Step(core, level, fi, NULL, u);
             _braid_USetVector(core, level, fi, u, 0);
+
+            /* If braid is finished, store last time step */
+            if (done && fi == ntime && level == 0 && storage < 0)
+            {
+               if (_braid_GridElt(grids[level], ulast) != NULL)
+               {
+                  _braid_BaseFree(core, app, _braid_GridElt(grids[level], ulast));
+                  _braid_GridElt(grids[level], ulast) = NULL;
+               }
+               _braid_BaseClone(core, app,  u, &(_braid_GridElt(grids[level], ulast)));
+            }
          }
 
          /* C-relaxation */
@@ -71,6 +85,16 @@ _braid_FCRelax(braid_Core  core,
          {
             _braid_Step(core, level, ci, NULL, u);
             _braid_USetVector(core, level, ci, u, 1);
+            /* If braid is finished, store last time step */
+            if (done && ci == ntime && level == 0 && storage < 0)
+            {
+               if (_braid_GridElt(grids[level], ulast) != NULL)
+               {
+                  _braid_BaseFree(core, app, _braid_GridElt(grids[level], ulast));
+                  _braid_GridElt(grids[level], ulast) = NULL;
+               }
+               _braid_BaseClone(core, app,  u, &(_braid_GridElt(grids[level], ulast)));
+            }
          }
 
          /* if ((flo <= fhi) && (interval == ncpoints)) */

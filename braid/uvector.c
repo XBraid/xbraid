@@ -201,6 +201,32 @@ _braid_UGetVector(braid_Core         core,
    return _braid_error_flag;
 }
 
+/* Retrieve the last time-step vector */
+braid_Int
+_braid_UGetLast(braid_Core        core,
+                braid_BaseVector *u_ptr)
+{
+   _braid_Grid       **grids = _braid_CoreElt(core, grids);
+   int                 ntime = _braid_CoreElt(core, ntime);
+   braid_BaseVector    ulast;
+
+   /* Get vector at last time step*/
+   if (_braid_CoreElt(core, storage) < 0 )
+   {
+      ulast  = _braid_GridElt(grids[0], ulast);
+   }
+   else
+   {
+     _braid_UGetVectorRef(core, 0, ntime, &ulast);
+   }
+
+  *u_ptr = ulast;
+
+   return _braid_error_flag;
+
+}
+
+
 /*----------------------------------------------------------------------------
  * Stores the u-vector on grid 'level' at point 'index'.  If 'index' is my "send
  * index", a send is initiated to a neighbor processor.  If 'move' is true, the
