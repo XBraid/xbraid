@@ -685,24 +685,22 @@ my_Access(braid_App           app,
    double     tstop  = (app->man->tstop);
    double     rnorm, disc_err, t;
    int        nt = (app->man->nt);
-   int        iter, level, done;
+   int        iter, level, done, calling_fcn;
    int        index, myid;
    static int previous_level = -5;
    static int previous_iter = -5;
    char       filename[255], filename_mesh[255], filename_err[255], filename_sol[255];
   
-   /* Retrieve current time from Status Object */
-   braid_AccessStatusGetT(astatus, &t);
-
    /* Retrieve Braid State Information from Status Object */
    MPI_Comm_rank(comm, &myid);
    braid_AccessStatusGetTILD(astatus, &t, &iter, &level, &done);
    braid_AccessStatusGetResidual(astatus, &rnorm);
+   braid_AccessStatusGetCallingFunction(astatus, &calling_fcn);
    if( (myid == 0) && ((level != previous_level) || (iter != previous_iter)) )
    {
       previous_level = level;
       previous_iter = iter;
-      printf("  my_Access() called, iter= %d, level= %d\n", iter, level);
+      printf("  my_Access() called, iter= %d, level= %d, calling function= %d\n", iter, level, calling_fcn);
    }
 
    /* Write a file for each time step that contains a single scalar, the l2
@@ -1903,7 +1901,7 @@ int main (int argc, char *argv[])
    double mystarttime, myendtime, mytime, maxtime;
    int run_wrapper_tests, correct, fspatial_disc_idx, max_iter_x[2];
    int print_level, access_level, nA_max, max_levels, min_coarse, skip;
-   int nrelax, nrelax0, cfactor, cfactor0, max_iter, storage, res, new_res;
+   int nrelax, nrelax0, finalFC, cfactor, cfactor0, max_iter, storage, res, new_res;
    int fmg, tnorm, nfmg_Vcyc, scoarsen, num_scoarsenCFL, use_rand;
 
    /* Initialize MPI */
@@ -1933,6 +1931,7 @@ int main (int argc, char *argv[])
    min_coarse          = 3;  
    nrelax              = 1;
    nrelax0             = -1;
+   finalFC             = 0;
    tol                 = 1.0e-09;
    tnorm               = 2;
    cfactor             = 2;
@@ -2026,6 +2025,10 @@ int main (int argc, char *argv[])
          arg_index++;
          fmg = 1;
          nfmg_Vcyc = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-finalFC") == 0 ){
+         arg_index++;
+         finalFC = 1;
       }
       else if ( strcmp(argv[arg_index], "-storage") == 0 ){
          arg_index++;
@@ -2123,6 +2126,7 @@ int main (int argc, char *argv[])
       printf("  -mc  <min_coarse>                  : set min possible coarse level size (default: 3)\n");
       printf("  -nu  <nrelax>                      : set num F-C relaxations (default: 1)\n");
       printf("  -nu0 <nrelax>                      : set num F-C relaxations on level 0\n");
+      printf("  -finalFC                           : set to do a final FC-relaxation after the cycle ends\n");
       printf("  -tol <tol>                         : set stopping tolerance (default: 1e-09)\n");
       printf("  -tnorm <tnorm>                     : set temporal norm \n");
       printf("                                       1 - One-norm \n");
@@ -2191,7 +2195,8 @@ int main (int argc, char *argv[])
       printf("  -access_level <l>               : sets the access_level (default: 1) \n");
       printf("                                    0 - never call access \n");
       printf("                                    1 - call access only after completion \n");
-      printf("                                    2 - call access every iteration and level\n");
+      printf("                                    2 - call access at the end of every cycle \n");
+      printf("                                    3 - call access every iteration and level\n");
       printf("  -output_files                   : save the solution/error/error norms to files\n");
       printf("                                    frequency of file accesss is set by access_level\n");
       printf("  -output_vis                     : save the error for GLVis visualization\n");
@@ -2471,6 +2476,10 @@ int main (int argc, char *argv[])
       if (nrelax0 > -1)
       {
          braid_SetNRelax(core,  0, nrelax0);
+      }
+      if (finalFC)
+      {
+         braid_SetFinalFCRelax(core);
       }
 
       /*braid_SetRelTol(core, tol);*/

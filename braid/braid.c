@@ -479,6 +479,7 @@ braid_PrintStats(braid_Core  core)
    braid_Real    globaltime    = _braid_CoreElt(core, globaltime);
    braid_PtFcnResidual fullres = _braid_CoreElt(core, full_rnorm_res);
    _braid_Grid **grids         = _braid_CoreElt(core, grids);
+   braid_Int     finalFCRelax  = _braid_CoreElt(core, finalFCrelax);
    braid_Int     periodic      = _braid_CoreElt(core, periodic);
    braid_Int     adjoint       = _braid_CoreElt(core, adjoint);
    braid_Optim   optim         = _braid_CoreElt(core, optim);
@@ -568,6 +569,7 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  number of levels      = %d\n", nlevels);
       _braid_printf("  skip down cycle       = %d\n", skip);
       _braid_printf("  periodic              = %d\n", periodic);
+      _braid_printf("  finalFCRelax          = %d\n", finalFCRelax);
       _braid_printf("  number of refinements = %d\n", nrefine);
       _braid_printf("\n");
       _braid_printf("  level   time-pts   cfactor   nrelax\n");

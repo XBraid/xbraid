@@ -497,7 +497,8 @@ int main (int argc, char *argv[])
             printf("   -access_level <l>    : sets the access_level (default: 1) \n");
             printf("                          0 - never call access \n");
             printf("                          1 - call access only after completion \n");
-            printf("                          2 - call access every iteration and level\n\n");
+            printf("                          2 - call access at the end of every cycle \n");
+            printf("                          3 - call access every iteration and level\n\n");
          }
          exit(1);
       }
