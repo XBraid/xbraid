@@ -126,7 +126,6 @@ _braid_FCRelax(braid_Core  core,
          }
          else if( (level == 0) && (ci == _braid_CoreElt(core, initiali)) && done)
          {
-            printf("Tlingit\n");
             /* If final opportunity for user access, provide access to initial condition */
             _braid_UGetVector(core, level, ci, &u);
             _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper,
