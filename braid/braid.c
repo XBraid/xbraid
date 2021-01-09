@@ -232,6 +232,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, tstart)          = tstart;
    _braid_CoreElt(core, tstop)           = tstop;
    _braid_CoreElt(core, ntime)           = ntime;
+   _braid_CoreElt(core, done)            = 0;
    _braid_CoreElt(core, app)             = app;
 
    _braid_CoreElt(core, step)            = step;
@@ -402,6 +403,8 @@ braid_Destroy(braid_Core  core)
       braid_App               app        = _braid_CoreElt(core, app);
       braid_Int               nlevels    = _braid_CoreElt(core, nlevels);
       _braid_Grid           **grids      = _braid_CoreElt(core, grids);
+      braid_Int               cfactor    = _braid_GridElt(grids[0], cfactor);
+      braid_Int               gupper     = _braid_CoreElt(core, gupper);
       braid_Int               level;
 
       _braid_TFree(_braid_CoreElt(core, nrels));
@@ -421,7 +424,7 @@ braid_Destroy(braid_Core  core)
       }
 
       /* Free last time step, if set */
-      if (_braid_CoreElt(core, storage) < 0 )
+      if ( (_braid_CoreElt(core, storage) < 0) && !(_braid_IsCPoint(gupper, cfactor)) )
       {
          if (_braid_GridElt(grids[0], ulast) != NULL)
          {

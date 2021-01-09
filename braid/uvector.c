@@ -201,26 +201,39 @@ _braid_UGetVector(braid_Core         core,
    return _braid_error_flag;
 }
 
-/* Retrieve the last time-step vector */
+/* Retrieve the last time-step vector.  Note that the
+ * last time-step is only available after Braid is 
+ * finished cycling and done is True.  This routine should
+ * only be called by the last processor in time. */
 braid_Int
 _braid_UGetLast(braid_Core        core,
                 braid_BaseVector *u_ptr)
 {
-   _braid_Grid       **grids = _braid_CoreElt(core, grids);
-   int                 ntime = _braid_CoreElt(core, ntime);
+   _braid_Grid       **grids    = _braid_CoreElt(core, grids);
+   MPI_Comm            comm     = _braid_CoreElt(core, comm);
+   braid_Int           cfactor  = _braid_GridElt(grids[0], cfactor);
+   braid_Int           gupper   = _braid_CoreElt(core, gupper);
+   braid_Int           done     = _braid_CoreElt(core, done);
    braid_BaseVector    ulast;
+   braid_Int           num_procs, myid;
 
-   /* Get vector at last time step*/
-   if (_braid_CoreElt(core, storage) < 0 )
+   MPI_Comm_size( comm, &num_procs);
+   MPI_Comm_rank( comm, &myid );
+   
+   /* If Done, get vector at last time step*/
+   if(done && (myid == (num_procs-1) ) )
    {
-      ulast  = _braid_GridElt(grids[0], ulast);
-   }
-   else
-   {
-     _braid_UGetVectorRef(core, 0, ntime, &ulast);
-   }
+      if ( (_braid_CoreElt(core, storage) < 0) && !(_braid_IsCPoint(gupper, cfactor)) )
+      {
+         ulast  = _braid_GridElt(grids[0], ulast);
+      }
+      else
+      {
+        _braid_UGetVectorRef(core, 0, gupper, &ulast);
+      }
 
-  *u_ptr = ulast;
+     *u_ptr = ulast;
+   }
 
    return _braid_error_flag;
 
@@ -247,6 +260,10 @@ _braid_USetVector(braid_Core        core,
    braid_BaseVector    *ua          = _braid_GridElt(grids[level], ua);
    braid_Int            send_index  = _braid_GridElt(grids[level], send_index);
    _braid_CommHandle   *send_handle = _braid_GridElt(grids[level], send_handle);
+   braid_Int            done        = _braid_CoreElt(core, done);
+   braid_Int            gupper      = _braid_CoreElt(core, gupper);
+   braid_Int            storage     = _braid_CoreElt(core, storage);
+   braid_Int            cfactor     = _braid_GridElt(grids[level], cfactor);
    braid_Int            iu, sflag;
 
    if (index == send_index)
@@ -294,6 +311,21 @@ _braid_USetVector(braid_Core        core,
    {
       _braid_BaseFree(core, app,  u);              /* free the vector */
    }
+
+   /* If braid is finished, make sure the last time point is stored, i.e.,
+    * store the last time point in ulast if storage is not enabled for F-points
+    * OR the last time point is not a C-point */
+
+   if (done && (index == gupper) && (level == 0) && (storage < 0) && !(_braid_IsCPoint(gupper, cfactor)))
+   {
+      if (_braid_GridElt(grids[level], ulast) != NULL)
+      {
+         _braid_BaseFree(core, app, _braid_GridElt(grids[level], ulast));
+         _braid_GridElt(grids[level], ulast) = NULL;
+      }
+      _braid_BaseClone(core, app,  u, &(_braid_GridElt(grids[level], ulast)));
+  }
+
 
    return _braid_error_flag;
 }

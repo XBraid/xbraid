@@ -42,8 +42,6 @@ _braid_FAccess(braid_Core     core,
    braid_Int              ncpoints     = _braid_GridElt(grids[level], ncpoints);
    braid_Real             *ta          = _braid_GridElt(grids[level], ta);
    braid_Int              ilower       = _braid_GridElt(grids[level], ilower);
-   braid_Int              ntime        = _braid_CoreElt(core, ntime);
-   braid_Int              storage      = _braid_CoreElt(core, storage);
 
    braid_Real        rnorm;
    braid_BaseVector  u;
@@ -83,16 +81,6 @@ _braid_FAccess(braid_Core     core,
             _braid_AddToObjective(core, u, ostatus);
          }
 
-         /* If braid is finished, store last time step */
-         if (done && (ci == ntime) && (level == 0) && (storage < 0))
-         {
-            if (_braid_GridElt(grids[level], ulast) != NULL)
-            {
-               _braid_BaseFree(core, app, _braid_GridElt(grids[level], ulast));
-               _braid_GridElt(grids[level], ulast) = NULL;
-            }
-            _braid_BaseClone(core, app,  u, &(_braid_GridElt(grids[level], ulast)));
-         }
       }
       if (flo <= fhi)
       {
@@ -119,17 +107,6 @@ _braid_FAccess(braid_Core     core,
             _braid_AddToObjective(core, u, ostatus);
          }
          
-         /* If braid is finished, store last time step */
-         if (done && (ci == ntime) && (level == 0) && (storage < 0))
-         {
-            if (_braid_GridElt(grids[level], ulast) != NULL)
-            {
-               _braid_BaseFree(core, app, _braid_GridElt(grids[level], ulast));
-               _braid_GridElt(grids[level], ulast) = NULL;
-            }
-            _braid_BaseClone(core, app,  u, &(_braid_GridElt(grids[level], ulast)));
-         }
-
       }
    }
    _braid_UCommWait(core, level);

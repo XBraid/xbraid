@@ -461,7 +461,6 @@ _braid_BaseBufUnpack(braid_Core          core,
    braid_Int        adjoint      = _braid_CoreElt(core, adjoint);
    braid_Int        record       = _braid_CoreElt(core, record);
    braid_Int        receiver     = _braid_CoreElt(core, send_recv_rank);
-   braid_Real       tstart       = _braid_CoreElt(core, tstart);
 
    if ( verbose_adj ) printf("%d: BUFUNPACK\n", myid);
 

@@ -222,7 +222,7 @@ typedef struct
    braid_BaseVector  *va_alloc;      /**< original memory allocation for va */
    braid_BaseVector  *fa_alloc;      /**< original memory allocation for fa */
 
-   braid_BaseVector   ulast;         /**< stores vector at last time step */
+   braid_BaseVector   ulast;         /**< stores vector at last time step, only set in FAccess and FCRelax if done is True */
 
 } _braid_Grid;
 

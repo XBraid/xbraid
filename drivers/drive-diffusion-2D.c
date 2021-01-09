@@ -116,6 +116,7 @@
 #include "HYPRE_sstruct_ls.h"
 #include "_hypre_sstruct_mv.h"
 
+#include "_braid.h"     /* Access to internal braid functions, use at own risk */
 #include "braid.h"
 #include "braid_test.h"
 
@@ -1890,7 +1891,7 @@ int main (int argc, char *argv[])
    int i, arg_index, myid, num_procs;
    MPI_Comm comm, comm_x, comm_t;
    int ndim, nx, ny, nlx, nly, nt, forcing, ilower[2], iupper[2];
-   double K, tstart, tstop, dx, dy, dt, cfl;
+   double K, tstart, tstop, dx, dy, dt, cfl, disc_err;
    int px, py, pt, pi, pj;
    int output_files, explicit, output_vis;
 
@@ -1899,7 +1900,7 @@ int main (int argc, char *argv[])
    my_App       *app;
    double tol_x[2], tol, *scoarsenCFL;
    double mystarttime, myendtime, mytime, maxtime;
-   int run_wrapper_tests, correct, fspatial_disc_idx, max_iter_x[2];
+   int run_wrapper_tests, correct, ulast, fspatial_disc_idx, max_iter_x[2];
    int print_level, access_level, nA_max, max_levels, min_coarse, skip;
    int nrelax, nrelax0, finalFC, cfactor, cfactor0, max_iter, storage, res, new_res;
    int fmg, tnorm, nfmg_Vcyc, scoarsen, num_scoarsenCFL, use_rand;
@@ -1955,6 +1956,7 @@ int main (int argc, char *argv[])
    print_level         = 2;
    access_level        = 1;
    run_wrapper_tests   = 0;
+   ulast               = 0;
 
    MPI_Comm_rank( comm, &myid );
    MPI_Comm_size( comm, &num_procs );
@@ -2088,6 +2090,10 @@ int main (int argc, char *argv[])
          arg_index++;
          run_wrapper_tests = 1;
       }
+      else if( strcmp(argv[arg_index], "-ulast") == 0 ){
+         arg_index++;
+         ulast = 1;
+      }
       else if( strcmp(argv[arg_index], "-output_files") == 0 ){
          arg_index++;
          output_files = 1;
@@ -2145,6 +2151,7 @@ int main (int argc, char *argv[])
       printf("  -forcing                           : consider non-zero RHS b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))\n");
       printf("  -use_rand <bool>                   : if nonzero, then use a uniformly random value to initialize each\n");
       printf("                                       time step for t>0.  if zero, then use a zero initial guess.\n");
+      printf("  -ulast                             : Use ulast functionality to test direct retrieval the last time point \n");
       printf("                                     \n");
       printf("                                     \n");
       printf(" Spatial Coarsening related parameters  \n");
@@ -2658,6 +2665,27 @@ int main (int argc, char *argv[])
          }
 
          printf( "\n" );
+      }
+
+      /* Advanced internal braid function that allows for direct access to the
+       * last time point.  Inserted here for regression testing. */
+      MPI_Comm_rank(comm_t, &myid );
+      MPI_Comm_size(comm_t, &num_procs);
+      if( myid == (num_procs-1) && ulast)
+      {
+         /* Note that braid_BaseVector is a pointer itself, so ulast here is just a
+          * memory address We then pass in "&ulast" to _braid_UGetLast, so that this
+          * pointer is overwritten with the appropriate memory address of the 
+          * last point */
+         braid_BaseVector ulast;
+         _braid_UGetLast(core, &ulast);
+         compute_disc_err(app->man, ulast->userVector->x, app->man->tstop, app->e, &disc_err);
+         MPI_Send(&disc_err, 1, MPI_DOUBLE, 0, 12, comm_t);
+      }
+      else if( (myid == 0) && ulast)
+      {
+         MPI_Recv(&disc_err, 1, MPI_DOUBLE, num_procs-1, 12, comm_t, MPI_STATUS_IGNORE);
+         printf("Final discretization error (via ulast) = %1.4e\n\n", disc_err);
       }
 
       braid_Destroy(core);

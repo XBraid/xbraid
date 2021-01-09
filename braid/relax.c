@@ -35,8 +35,6 @@ _braid_FCRelax(braid_Core  core,
    _braid_Grid   **grids        = _braid_CoreElt(core, grids);
    braid_Int       ncpoints     = _braid_GridElt(grids[level], ncpoints);
    braid_Int       done         = _braid_CoreElt(core, done);
-   braid_Int       ntime        = _braid_CoreElt(core, ntime);
-   braid_Int       storage      = _braid_CoreElt(core, storage);
    
    braid_AccessStatus   astatus      = (braid_AccessStatus)core;
    braid_Real          *ta           = _braid_GridElt(grids[level], ta);
@@ -86,17 +84,6 @@ _braid_FCRelax(braid_Core  core,
                _braid_AccessVector(core, astatus, u);
             }
 
-            /* If braid is finished, store last time step */
-            if (done && fi == ntime && level == 0 && storage < 0)
-            {
-               if (_braid_GridElt(grids[level], ulast) != NULL)
-               {
-                  _braid_BaseFree(core, app, _braid_GridElt(grids[level], ulast));
-                  _braid_GridElt(grids[level], ulast) = NULL;
-               }
-               _braid_BaseClone(core, app,  u, &(_braid_GridElt(grids[level], ulast)));
-            }
-
          }
 
          /* C-relaxation */
@@ -113,16 +100,6 @@ _braid_FCRelax(braid_Core  core,
                _braid_AccessVector(core, astatus, u);
             }
          
-            /* If braid is finished, store last time step */
-            if (done && ci == ntime && level == 0 && storage < 0)
-            {
-               if (_braid_GridElt(grids[level], ulast) != NULL)
-               {
-                  _braid_BaseFree(core, app, _braid_GridElt(grids[level], ulast));
-                  _braid_GridElt(grids[level], ulast) = NULL;
-               }
-               _braid_BaseClone(core, app,  u, &(_braid_GridElt(grids[level], ulast)));
-            }
          }
          else if( (level == 0) && (ci == _braid_CoreElt(core, initiali)) && done)
          {

@@ -1092,7 +1092,7 @@ Finished braid_TestBuf: all tests passed successfully
 
 # Begin Test 28
 
-  my_Access() called, iter= 0, level= 0, calling function= 3
+  my_Access() called, iter= 0, level= 0, calling function= 6
   time steps = 32
   iterations            = 0
   number of levels      = 1
@@ -1105,4 +1105,22 @@ Finished braid_TestBuf: all tests passed successfully
   iterations            = 0
   number of levels      = 1
  Fine level spatial problem size  : 17 x 17
+
+# Begin Test 30
+
+  my_Access() called, iter= 4, level= 0, calling function= 3
+  time steps = 11
+  iterations            = 4
+  number of levels      = 2
+ Fine level spatial problem size  : 17 x 17
+Final discretization error (via ulast) = 1.5689e-03
+
+# Begin Test 30
+
+  my_Access() called, iter= 4, level= 0, calling function= 3
+  time steps = 10
+  iterations            = 4
+  number of levels      = 2
+ Fine level spatial problem size  : 17 x 17
+Final discretization error (via ulast) = 1.4428e-03
 
