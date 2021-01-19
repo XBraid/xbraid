@@ -619,6 +619,14 @@ braid_Int
 _braid_UCommWait(braid_Core  core,
                  braid_Int   level);
 
+/**
+ * Retrieve uvector at last time-step
+ */
+braid_Int
+_braid_UGetLast(braid_Core        core,
+                braid_BaseVector *u_ptr);
+
+
 /* step.c */
 
 /**
@@ -944,13 +952,6 @@ braid_Int
 _braid_Drive(braid_Core core, 
              braid_Real localtime);
 
-
-/**
- * Retrieve uvector at last time-step
- */
-braid_Int
-_braid_UGetLast(braid_Core        core,
-                braid_BaseVector *u_ptr);
 
 #ifdef __cplusplus
 }
