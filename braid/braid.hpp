@@ -592,18 +592,32 @@ public:
 
    void SetStorage(braid_Int storage) { braid_SetStorage(core, storage); }
 
-   void SetRefine(braid_Int refine) {braid_SetRefine(core, refine);}
+   void SetRefine(braid_Int refine) { braid_SetRefine(core, refine); }
 
-   void SetMaxRefinements(braid_Int max_refinements) {braid_SetMaxRefinements(core, max_refinements);}
+   void SetMaxRefinements(braid_Int max_refinements) { braid_SetMaxRefinements(core, max_refinements); }
 
-   void SetRichardsonEstimation(braid_Int est_error, braid_Int richardson, braid_Int local_order) {braid_SetRichardsonEstimation(core, est_error, richardson, local_order);}
+   void SetRichardsonEstimation(braid_Int est_error, braid_Int richardson, braid_Int local_order) { braid_SetRichardsonEstimation(core, est_error, richardson, local_order); }
 
+   void SetFileIOLevel(braid_Int   io_level) { braid_SetFileIOLevel(core, io_level); }
+
+   void SetDefaultPrintFile() { braid_SetDefaultPrintFile(core); }
+
+   void SetCRelaxWt(braid_Int level, braid_Real  Cwt) { braid_SetCRelaxWt(core, level, Cwt); }
+
+   void SetTPointsCutoff(braid_Int tpoints_cutoff) { braid_SetTPointsCutoff(core, tpoints_cutoff); }
+
+   void SetFullRNormRes(braid_PtFcnResidual residual) { braid_SetFullRNormRes(core, residual); }
+
+   void SetTimeGrid(braid_PtFcnTimeGrid tgrid) { braid_SetTimeGrid(core, tgrid); }
+  
    void GetNumIter(braid_Int *niter_ptr) { braid_GetNumIter(core, niter_ptr); }
 
    void GetRNorms(braid_Int *nrequest_ptr, braid_Real *rnorms) { braid_GetRNorms(core, nrequest_ptr, rnorms); }
    
    void GetNLevels(braid_Int *nlevels_ptr) { braid_GetNLevels(core, nlevels_ptr); }
 
+   void GetMyID(braid_Int *myid_ptr) { braid_GetMyID(core, myid_ptr); }
+  
    void Drive() { braid_Drive(core); }
 
    ~BraidCore() { braid_Destroy(core); }
