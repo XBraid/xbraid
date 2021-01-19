@@ -193,6 +193,7 @@ class BraidAccessStatus
       void GetWrapperTest(braid_Int *wtest_ptr)          { braid_AccessStatusGetWrapperTest(astatus, wtest_ptr); }
       void GetResidual(braid_Real *rnorm_ptr)            { braid_AccessStatusGetResidual(astatus, rnorm_ptr); }
       void GetNRefine(braid_Int *nrefine_ptr)            { braid_AccessStatusGetNRefine(astatus, nrefine_ptr); }
+      void GetNTPoints(braid_Int *ntpoints_ptr)          { braid_AccessStatusGetNTPoints(astatus, ntpoints_ptr); }
       void GetSingleErrorEstAccess(braid_Real *estimate_ptr)   { braid_AccessStatusGetSingleErrorEstAccess(astatus, estimate_ptr); }
       void GetCallingFunction(braid_Int *callingfcn_ptr)
       {
@@ -264,6 +265,7 @@ class BraidStepStatus
       void GetLevel(braid_Int *level_ptr)                { braid_StepStatusGetLevel(pstatus, level_ptr); }
       void GetNLevels(braid_Int *nlevels_ptr)            { braid_StepStatusGetNLevels(pstatus, nlevels_ptr); }
       void GetNRefine(braid_Int *nrefine_ptr)            { braid_StepStatusGetNRefine(pstatus, nrefine_ptr); }
+      void GetNTPoints(braid_Int *ntpoints_ptr)          { braid_StepStatusGetNTPoints(pstatus, ntpoints_ptr); }
       void SetRFactor(braid_Int rfactor)                 { braid_StepStatusSetRFactor(pstatus, rfactor); }
       void SetRSpace(braid_Int rspace)                   { braid_StepStatusSetRSpace(pstatus, rspace); }
       void StepStatusGetTol(braid_Real *tol_ptr)         { braid_StepStatusGetTol(pstatus, tol_ptr); }
@@ -312,6 +314,7 @@ class BraidCoarsenRefStatus
       void GetLevel(braid_Int *level_ptr)       { braid_CoarsenRefStatusGetLevel(cstatus, level_ptr); }
       void GetNLevels(braid_Int *nlevels_ptr)   { braid_CoarsenRefStatusGetNLevels(cstatus, nlevels_ptr); }
       void GetNRefine(braid_Int *nrefine_ptr)   { braid_CoarsenRefStatusGetNRefine(cstatus, nrefine_ptr); }
+      void GetNTPoints(braid_Int *ntpoints_ptr) { braid_CoarsenRefStatusGetNTPoints(cstatus, ntpoints_ptr); }
 
       // The braid_CoarsenRefStatus structure is deallocated inside of Braid
       // This class is just to make code consistently look object oriented
