@@ -310,7 +310,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
    {
       if (myid == 0)
       {
-      /*   _braid_printf("  Braid: Max. iterations reached.\n\n"); */
+         _braid_printf("  Braid: Max. iterations reached.\n\n"); 
       }
       done = 1;
    }

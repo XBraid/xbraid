@@ -257,7 +257,7 @@ class BraidStepStatus
       { braid_StepStatusGetTstartTstop(pstatus, tstart_ptr, tstop_ptr); }
       void GetT(braid_Real *tstart_ptr)                  { braid_StepStatusGetT(pstatus, tstart_ptr); }
       void GetTstop(braid_Real *tstop_ptr)               { braid_StepStatusGetTstop(pstatus, tstop_ptr); }
-      void GetDone(braid_Int *done)               { braid_StatusGetDone((braid_Status) pstatus, done); }
+      void GetDone(braid_Int *done)                      { braid_StatusGetDone((braid_Status) pstatus, done); }
       void GetTIndex(braid_Int *tindex_ptr)              { braid_StepStatusGetTIndex(pstatus, tindex_ptr); }
       void GetLevel(braid_Int *level_ptr)                { braid_StepStatusGetLevel(pstatus, level_ptr); }
       void GetNLevels(braid_Int *nlevels_ptr)            { braid_StepStatusGetNLevels(pstatus, nlevels_ptr); }
@@ -547,7 +547,7 @@ public:
 
    void SetAccessLevel(braid_Int access_level) { braid_SetAccessLevel(core, access_level); }
 
-   void SetFinalFCRelax() {braid_SetFinalFCRelax(core); }
+   void SetFinalFCRelax() { braid_SetFinalFCRelax(core); }
 
    void SetFMG() { braid_SetFMG(core); }
 

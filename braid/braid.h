@@ -847,8 +847,12 @@ braid_SetAccessLevel(braid_Core  core,          /**< braid_Core (_braid_Core) st
 /** 
  * Perform a final FCRelax after XBraid finishes. 
  * This can be useful in order to 
- * - store the last time-point vector in grid's 'ulast'. It can be retrieve afterwards by calling _braid_UGetLast()
- * - gather gradient information when solving the adjoint equation with XBraid. The users 'my_step' function for the adjoint time-stepper should compute gradients only if braid's 'done' flag is true
+ * - Store the last time-point vector in 'ulast', which can then be retrieved  
+ *   by calling _braid_UGetLast()
+ * - Gather gradient information when solving the adjoint equation with XBraid,
+ *   so that you only need to gather/compute the gradient information once, after
+ *   XBraid is finished. To do this, the users 'my_step' function for the adjoint 
+ *   time-stepper should compute gradients only if braid's 'done' flag is true
  */
 braid_Int
 braid_SetFinalFCRelax(braid_Core core);
@@ -1087,6 +1091,10 @@ braid_SetObjectiveOnly(braid_Core core,         /**< braid_Core (_braid_Core) st
                        );                   
 
 
+/**
+ * Set reverted ranks, so that Braid solves "backwards" in time, e.g., when solving 
+ * and adjoint equation in time.
+ */
 braid_Int
 braid_SetRevertedRanks(braid_Core core,
                        braid_Int  boolean);
