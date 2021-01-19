@@ -29,6 +29,7 @@ class BraidSyncStatus;
 class BraidStepStatus;
 class BraidCoarsenRefStatus;
 class BraidBufferStatus;
+class BraidObjectiveStatus;
 
 // Wrapper for BRAID's App object. Users should inherit this class and implement
 // the purely virtual functions (see braid.h for descriptions).
@@ -321,6 +322,7 @@ class BraidCoarsenRefStatus
       ~BraidCoarsenRefStatus() { }
 };
 
+// Wrapper for BRAID's BufferStatus object
 class BraidBufferStatus
 {
    private:
@@ -335,6 +337,32 @@ class BraidBufferStatus
       void GetMessageType( braid_Int *messagetype_ptr ) { braid_BufferStatusGetMessageType( bstatus, messagetype_ptr); }
       void SetSize( braid_Int size ) { braid_BufferStatusSetSize( bstatus, size ); }
       ~BraidBufferStatus() {} 
+};
+
+// Wrapper for BRAID's ObjectiveStatus object
+class BraidObjectiveStatus
+{
+   private:
+      braid_ObjectiveStatus ostatus;
+
+   public:
+      BraidObjectiveStatus(braid_ObjectiveStatus  _ostatus)
+      {
+         ostatus = _ostatus;
+      }
+
+      void GetT(braid_Real *tstart_ptr)         { braid_ObjectiveStatusGetT(ostatus, tstart_ptr); }
+      void GetTIndex(braid_Int *tindex_ptr)     { braid_ObjectiveStatusGetTIndex(ostatus, tindex_ptr); }
+      void GetIter(braid_Int *iter_ptr)         { braid_ObjectiveStatusGetIter(ostatus, iter_ptr); }
+      void GetLevel(braid_Int *level_ptr)       { braid_ObjectiveStatusGetLevel(ostatus, level_ptr); }
+      void GetNLevels(braid_Int *nlevels_ptr)   { braid_ObjectiveStatusGetNLevels(ostatus, nlevels_ptr); }
+      void GetNRefine(braid_Int *nrefine_ptr)   { braid_ObjectiveStatusGetNRefine(ostatus, nrefine_ptr); }
+      void GetNTPoints(braid_Int *ntpoints_ptr) { braid_ObjectiveStatusGetNTPoints(ostatus, ntpoints_ptr); }
+      void GetTol(braid_Real *tol_ptr)          { braid_ObjectiveStatusGetTol(ostatus, tol_ptr); }
+
+      // The braid_ObjectiveStatus structure is deallocated inside of Braid
+      // This class is just to make code consistently look object oriented
+      ~BraidObjectiveStatus() { }
 };
 
 // Static functions passed to Braid, with braid_App == BraidApp*
