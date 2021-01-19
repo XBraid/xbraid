@@ -50,7 +50,7 @@ _braid_GridInit(braid_Core     core,
    _braid_GridElt(grid, ta_alloc) = ta;
    _braid_GridElt(grid, ta)       = ta+1;  /* shift */
 
-   /* Initialize last time step storage with NULL */
+   /* Initialize last time step storage with NULL, only used on finest grid */
    _braid_GridElt(grid, ulast) = NULL;
 
    *grid_ptr = grid;

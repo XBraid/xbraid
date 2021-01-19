@@ -92,7 +92,7 @@ _braid_FCRelax(braid_Core  core,
             _braid_Step(core, level, ci, NULL, u);
             _braid_USetVector(core, level, ci, u, 1);
             
-            /* Allow user to process current vector, noting that if done */
+            /* Allow user to process current vector */
             if( (access_level >= 3) || (done == 1) )
             {
                _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper,
