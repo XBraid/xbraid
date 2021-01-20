@@ -28,7 +28,7 @@
  * 
  * Requires:      only C-language support     
  *
- * Compile with:  make ex-04-adjoint
+ * Compile with:  make ex-04
  *
  * Description:  Solves a simple optimal control problem in time-parallel:
  * 
