@@ -45,7 +45,7 @@ _braid_TapePush(_braid_Tape* head, void* data_ptr)
    _braid_Tape* tmp = (_braid_Tape*)malloc(sizeof(_braid_Tape));
    if (tmp == NULL)
    {
-      printf("MALLOC ERROR!\n") ;
+      _braid_printf("MALLOC ERROR!\n") ;
       exit(1);
    }
    if ( _braid_TapeIsEmpty(head) ) tmp->size = 1;
@@ -106,7 +106,7 @@ _braid_TapeDisplayBackwards(braid_Core core, _braid_Tape* head, void (*displayfc
    }
    else
    {
-       printf("Tape is empty\n");
+       _braid_printf("Tape is empty\n");
    }
   
   return _braid_error_flag;

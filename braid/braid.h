@@ -572,6 +572,7 @@ braid_Int
 braid_SetRefine(braid_Core  core,    /**< braid_Core (_braid_Core) struct*/
                 braid_Int   refine   /**< boolean, refine in time or not */
                 );
+
 /**
  * Set the max number of time grid refinement levels allowed.
  **/
@@ -579,8 +580,9 @@ braid_Int
 braid_SetMaxRefinements(braid_Core  core,             /**< braid_Core (_braid_Core) struct*/
                         braid_Int   max_refinements   /**< maximum refinement levels allowed */
                        );
+
 /**
- * Set the number of time steps, beyond with refinements stop.
+ * Set the number of time steps, beyond which refinements stop.
  * If num(tpoints) > tpoints_cutoff, then stop doing refinements.
  **/
 braid_Int
@@ -630,6 +632,16 @@ braid_SetNRelax(braid_Core  core,           /**< braid_Core (_braid_Core) struct
                 braid_Int   level,          /**< *level* to set *nrelax* on */
                 braid_Int   nrelax          /**< number of relaxations to do on *level* */
                 );
+
+/** Set the C-relaxation weight on grid *level* (level 0 is the finest grid).
+ * The default is 1.0 on all levels.  To change the default factor,  
+ * use *level * = -1*.
+ **/
+braid_Int
+braid_SetCRelaxWt(braid_Core  core,        /**< braid_Core (_braid_Core) struct*/           
+                  braid_Int   level,       /**< *level* to set *Cwt* on */
+                  braid_Real  Cwt          /**< C-relaxation weight to use on *level* */
+                  );
 
 /**
  * Set the coarsening factor *cfactor* on grid *level* (level 0 is
@@ -1114,6 +1126,32 @@ braid_Int
 braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
                       braid_Real  *rnorm_adj   /**< output: adjoint residual norm of last iteration */
                      );
+
+/** Turn on built-in Richardson-based error estimation and/or extrapolation
+ * with XBraid.  When enabled, the Richardson extrapolation (RE) option
+ * (richardson == 1) is used to improve the accuracy of the solution at the
+ * C-points on the finest level.  When the built-in error estimate option is
+ * turned on (est_error == 1), RE is used to estimate the local truncation
+ * error at each point. These estimates can be accessed through StepStatus and
+ * AccessStatus functions. 
+ *
+ * The last parameter is local_order, which represents the LOCAL order of the
+ * time integration scheme. e.g. local_order = 2 for Backward Euler.  
+ *
+ * Also, the Richardson error estimate is only available after roughly 1 Braid
+ * iteration.  The estimate is given a dummy value of -1.0, until an actual
+ * estimate is available.  Thus after an adaptive refinement, and a new
+ * hierarchy is formed, another iteration must pass before the error estimates
+ * are available again.
+ **/
+braid_Int
+braid_SetRichardsonEstimation(braid_Core core,                /**< braid_Core (_braid_Core) struct*/
+                              braid_Int  est_error,           /**< Boolean, if 1 compute Richardson-based error estimates, if 0, then do not */
+                              braid_Int  richardson,          /**< Boolean, if 1 carry out Richardson-based extrapolation to enhance accuracy on the fine-grid, if 0, then do not*/
+                              braid_Int  local_order          /**< Local order of the time integration scheme, e.g., local _order=2 for backward Euler */
+                              );
+
+
 /** @}*/
 
 #ifdef __cplusplus

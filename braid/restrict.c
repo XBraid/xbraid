@@ -86,6 +86,15 @@ _braid_FRestrict(braid_Core   core,
    _braid_CommHandle    *recv_handle  = NULL;
    _braid_CommHandle    *send_handle  = NULL;
 
+   /* Required for Richardson */
+   braid_Int            richardson  = _braid_CoreElt(core, richardson);
+   braid_Int            est_error   = _braid_CoreElt(core, est_error);
+   braid_Int            order       = _braid_CoreElt(core, order);
+   braid_Real          *ta_c        = _braid_GridElt(grids[1], ta );
+   braid_Real          *dtk_core    = _braid_CoreElt(core, dtk);
+   braid_Real          *estimate;    
+   braid_Real           factor, dtk, DTK;
+
    braid_Int            c_level, c_ilower, c_iupper, c_index, c_i, c_ii;
    braid_BaseVector     c_u, *c_va, *c_fa;
 
@@ -171,8 +180,8 @@ _braid_FRestrict(braid_Core   core,
          _braid_UGetVectorRef(core, level, ci, &u);
          _braid_FASResidual(core, level, ci, u, r);
 
-         /* Compute rnorm (only on level 0) */
-         if (level == 0)
+         /* Compute rnorm (only on level 0). Richardson computes the rnorm later */
+         if (level == 0 && !richardson )
          {
             _braid_BaseSpatialNorm(core, app,  r, &rnorm_temp);
             tnorm_a[interval] = rnorm_temp;       /* inf-norm uses tnorm_a */
@@ -204,15 +213,97 @@ _braid_FRestrict(braid_Core   core,
       }
    }
    _braid_UCommWait(core, level);
+  
+   /* Now apply coarse residual to update fa values */
 
-   /* If debug printing, print out tnorm_a for this interval. This
-    * should show the serial propagation of the exact solution */
-   if ((print_level > 2) && (level == 0) )
+   /* Set initial guess on coarse level */
+   _braid_InitGuess(core, c_level);
+
+   /* Initialize update of c_va[-1] boundary */
+   if (c_ilower <= c_iupper)
    {
-      _braid_PrintSpatialNorms(core, tnorm_a, ncpoints);
+      _braid_CommRecvInit(core, c_level, c_ilower-1, &c_va[-1], &recv_handle);
+      _braid_CommSendInit(core, c_level, c_iupper, c_va[c_iupper-c_ilower], &send_handle);
    }
 
-   /* Compute rnorm (only on level 0) */
+   /* Allocate temporary error estimate array */
+   if ( level == 0 && est_error )
+   {
+        estimate = _braid_CTAlloc(braid_Real, c_iupper-c_ilower + 1 );
+   }
+
+   /* Start with rightmost point */
+   for (c_i = c_iupper; c_i >= c_ilower; c_i--)
+   {
+      if (c_i > _braid_CoreElt(core, initiali))
+      {
+         c_ii = c_i - c_ilower;
+         if (c_ii == 0)
+         {
+            /* Finalize update of c_va[-1] */
+            _braid_CommWait(core, &recv_handle);
+         }
+         _braid_BaseClone(core, app,  c_va[c_ii-1], &c_u);
+         _braid_Residual(core, c_level, c_i, c_va[c_ii], c_u);
+         
+         /* Richardson computes norm here, and recombines solution at C-points for higher accuracy */
+         if ( level == 0 && richardson  ) 
+         {    
+               dtk = dtk_core[c_ii];
+               DTK = pow( ta_c[c_ii] - ta_c[c_ii-1], order );
+               /* Factor computes \bar{a} from Richardson paper, used to scale RHS term in FAS */
+               factor = DTK / ( DTK - dtk );
+               _braid_BaseSum(core, app, factor, c_u, factor, c_fa[c_ii]);
+
+               /* Compute the rnorm */
+               _braid_BaseSum(core, app, 1.0, c_fa[c_ii], -1.0, c_u );
+               _braid_BaseSpatialNorm(core, app, c_u, &rnorm_temp);
+               
+               tnorm_a[c_ii] = rnorm_temp;       /* inf-norm uses tnorm_a */
+               if(tnorm == 1) 
+               {  
+                   rnorm += rnorm_temp;               /* one-norm combination */ 
+               }
+               else if(tnorm == 2)
+               {  
+                  rnorm += (rnorm_temp*rnorm_temp);  /* two-norm combination */
+               }
+         }    
+         else
+         {
+            _braid_BaseSum(core, app,  1.0, c_u, 1.0, c_fa[c_ii]);
+         }
+
+         /* Compute Richardson error estimator */
+         if ( level == 0 && est_error )
+         {
+              braid_Real est_temp;
+              dtk = dtk_core[c_ii]  ;
+              DTK = pow( ta_c[c_ii] - ta_c[c_ii-1], order );
+             _braid_BaseSpatialNorm(core, app, c_fa[c_ii], &est_temp);
+             if ( richardson )
+             {
+                est_temp = est_temp / DTK;
+             }
+             else
+             {
+                /* Note, the algebra:
+                 *     (DTK - dtk) = (m*dt)^k - m (dt)^k = m (dt)^k (m^k_g - 1)
+                 * where k is the local order, k_g = (k-1) is the global order,
+                 * dt is the fine grid step size.  The m (dt)^k is canceled out
+                 * in FinalizeErrorEstimates.
+                 */
+                est_temp = est_temp / ( DTK - dtk );
+             }
+             estimate[ c_ii ] = est_temp; 
+         }
+
+         _braid_BaseFree(core, app,  c_u);
+      }
+   }
+   _braid_CommWait(core, &send_handle);
+   
+   /* Compute global rnorm (only on level 0) */
    if (level == 0)
    {
       if(tnorm == 1)          /* one-norm reduction */
@@ -234,37 +325,157 @@ _braid_FRestrict(braid_Core   core,
       _braid_SetRNorm(core, -1, grnorm);
    }
    
-   /* Now apply coarse residual to update fa values */
-
-   /* Set initial guess on coarse level */
-   _braid_InitGuess(core, c_level);
-
-   /* Initialize update of c_va[-1] boundary */
-   if (c_ilower <= c_iupper)
+   /* If debug printing, print out tnorm_a for this interval. This
+    * should show the serial propagation of the exact solution */
+   if ((print_level > 2) && (level == 0) )
    {
-      _braid_CommRecvInit(core, c_level, c_ilower-1, &c_va[-1], &recv_handle);
-      _braid_CommSendInit(core, c_level, c_iupper, c_va[c_iupper-c_ilower], &send_handle);
+      _braid_PrintSpatialNorms(core, tnorm_a, ncpoints);
    }
 
-   /* Start with rightmost point */
-   for (c_i = c_iupper; c_i >= c_ilower; c_i--)
+   /* Need to finalize the error estimates at the F-points */ 
+   if ( level == 0 && est_error )
    {
-      if (c_i > _braid_CoreElt(core, initiali))
-      {
-         c_ii = c_i - c_ilower;
-         if (c_ii == 0)
-         {
-            /* Finalize update of c_va[-1] */
-            _braid_CommWait(core, &recv_handle);
-         }
-         _braid_BaseClone(core, app,  c_va[c_ii-1], &c_u);
-         _braid_Residual(core, c_level, c_i, c_va[c_ii], c_u);
-         _braid_BaseSum(core, app,  1.0, c_u, 1.0, c_fa[c_ii]);
-         _braid_BaseFree(core, app,  c_u);
-      }
-   }
-   _braid_CommWait(core, &send_handle);
-  
+      _braid_FinalizeErrorEstimates( core, estimate , c_iupper-c_ilower + 1 );
+      _braid_TFree(estimate);
+   } 
+   
    return _braid_error_flag;
 }
+
+
+/*----------------------------------------------------------------------------
+ * Finalize Richardson error estimates at F-points.
+ *----------------------------------------------------------------------------*/
+braid_Int
+_braid_FinalizeErrorEstimates( braid_Core   core, 
+                               braid_Real  *estimate,
+                               braid_Int    length)
+{
+
+   braid_Int     myid        = _braid_CoreElt(core, myid );
+   MPI_Comm      comm        = _braid_CoreElt(core, comm );
+  _braid_Grid  **grids       = _braid_CoreElt(core, grids);
+   braid_Real   *error_est   = _braid_CoreElt(core, estimate);
+   braid_Real   *dtk_core    = _braid_CoreElt(core, dtk);
+   braid_Int     ilower   = _braid_GridElt(grids[0],ilower);
+   braid_Int     iupper   = _braid_GridElt(grids[0],iupper);
+   braid_Int     gupper   = _braid_GridElt(grids[0],gupper);
+   braid_Int     cfactor  = _braid_GridElt(grids[0],cfactor);
+   braid_Int     ncpoints = _braid_GridElt(grids[0], ncpoints);
+
+   braid_Int recv_flag, send_flag_l, send_flag_r, i, last_cpoint, estimate_index ; 
+   braid_Real recv_value, send_value_l, send_value_r, factor ;
+   MPI_Request recv_request, send_request_l, send_request_r;
+
+   if ( ilower <= iupper )
+   {
+
+      /* Recv situation 1: Recv from left if ilower is > last C point */
+      send_flag_l = send_flag_r = recv_flag = 0; 
+      last_cpoint = ( gupper / cfactor ) * cfactor ;
+      if ( ilower > last_cpoint && ilower > 0 )
+      { 
+         recv_flag++;
+         MPI_Irecv( &recv_value, 1, braid_MPI_REAL, myid -1, 98, comm, &recv_request );
+      }
+      
+      /* Recv situation 2: recv from right if iupper is a f point */
+      else if ( !_braid_IsCPoint(iupper, cfactor) && iupper != gupper )
+      {
+         recv_flag++;
+         MPI_Irecv( &recv_value, 1, braid_MPI_REAL, myid + 1, 98, comm, &recv_request );
+      }
+      
+      /* Send situation 1: Send to the right if proc owns a point in last interval, but not gupper */
+      if ( iupper >= last_cpoint && iupper != gupper )
+      {
+         /* If we have no c points, wait to recv before sending */ 
+         if ( ncpoints == 0 )
+         {  
+            recv_flag--;
+            MPI_Wait( &recv_request , MPI_STATUS_IGNORE );
+            send_value_r = recv_value;
+         }
+         else
+         {
+            send_value_r = estimate[length - 1] * dtk_core[ length - 1 ];
+         }
+
+         send_flag_r++;
+         MPI_Isend( &send_value_r, 1, braid_MPI_REAL, myid + 1 , 98, comm, &send_request_r );
+      }
+      
+      /* Send situation 2: Send to the left if ilower -1 is not a C point */
+      if ( ilower <= last_cpoint && ilower > 0 && !_braid_IsCPoint( ilower - 1, cfactor ) )
+      {
+         /* If we have no c points, wait to recv before sending */
+         if ( ncpoints == 0 )
+         {
+            recv_flag--;
+            MPI_Wait( &recv_request, MPI_STATUS_IGNORE );
+            send_value_l = recv_value; 
+         }
+         else
+         {
+            send_value_l = estimate[0] * dtk_core[0];
+         }
+
+         send_flag_l++;
+         MPI_Isend( &send_value_l, 1, braid_MPI_REAL, myid - 1, 98, comm, &send_request_l );
+      }
+
+      /* Update the values */
+      estimate_index = 0;
+      factor = 0;   
+      for ( i = ilower; i <= iupper; i++ )
+      {
+         /* If this is an F point interval at end of proc ownership */
+         if (estimate_index >= length )
+         {
+            if (recv_flag)
+            {
+               recv_flag--;
+               MPI_Wait( &recv_request , MPI_STATUS_IGNORE );
+            }       
+            factor = recv_value; 
+         }
+         else
+         {
+            factor = estimate[ estimate_index ] * dtk_core[ estimate_index ] ;
+         }
+
+         /* Set Error Estimate 
+          * Note that we have scaled factor above by dtk_core, which equals
+          * m*dt^k, which is the coarsening factor m, fine-grid step size dt,
+          * and local order k.  This is needed to cancel out an extra factor of
+          * (1/m*dt^k) in estimate.  The error estimate then equals, 
+          * || U^{fine}_i - U^{coarse}_i || / (m^{k_g} - 1
+          * where k_g is the global order of the time stepping method.
+          * */
+
+         error_est[ i-ilower ] = factor ;
+         
+         /* increase the index at the Cpoints, unless this is the
+          * last C point. In that case, use the same index */ 
+         if ( _braid_IsCPoint( i, cfactor ) && i != last_cpoint )
+         {
+            estimate_index++;
+         }
+      }
+
+      /* All receives should be completed. Finish up sends */
+      if ( send_flag_r )
+      {
+         MPI_Wait( & send_request_r, MPI_STATUS_IGNORE );
+      }
+      if ( send_flag_l )
+      {
+         MPI_Wait( & send_request_l, MPI_STATUS_IGNORE );
+      }
+
+   }
+   
+   return _braid_error_flag;
+}
+
 

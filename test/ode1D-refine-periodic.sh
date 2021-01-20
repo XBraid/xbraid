@@ -111,18 +111,15 @@ TESTS=( "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 
         "$RunString -np 4 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 4" \
         "$RunString -np 2 $example_dir/ex-01-refinement -no_output -nt 100 -tol 1e-6 -refine 2 -max_rfactor 2 -fmg -sync" \
         "$RunString -np 2 $example_dir/ex-01-refinement -refine 3 -incMaxLvl"\
-        "$RunString -np 1 $example_dir/ex-01-refinement -periodic -nt 64"\
-        "$RunString -np 2 $example_dir/ex-01-refinement -periodic -nt 64"\
-        "$RunString -np 4 $example_dir/ex-01-refinement -periodic -nt 64"\
-        "$RunString -np 1 $example_dir/ex-01-refinement -refine 4 -periodic -nt 64" \
-        "$RunString -np 2 $example_dir/ex-01-refinement -refine 4 -periodic -nt 64" \
-        "$RunString -np 4 $example_dir/ex-01-refinement -refine 4 -periodic -nt 64" \
+        "$RunString -np 1 $example_dir/ex-01-refinement -refine 4 -periodic -nt 64 -tol 8e-5" \
+        "$RunString -np 2 $example_dir/ex-01-refinement -refine 4 -periodic -nt 64 -tol 8e-5" \
+        "$RunString -np 4 $example_dir/ex-01-refinement -refine 4 -periodic -nt 64 -tol 8e-5" \
         "$RunString -np 1 $example_dir/ex-01-refinement -refine 1 -periodic -nt 64" \
         "$RunString -np 2 $example_dir/ex-01-refinement -refine 1 -periodic -nt 64" \
         "$RunString -np 4 $example_dir/ex-01-refinement -refine 1 -periodic -nt 64" \
         "$RunString -np 8 $example_dir/ex-01-refinement -periodic -nt 4"\
-        "$RunString -np 8 $example_dir/ex-01-refinement -refine 4 -periodic -nt 4" \
-        "$RunString -np 8 $example_dir/ex-01-refinement -refine 1 -periodic -nt 4" )
+        "$RunString -np 8 $example_dir/ex-01-refinement -refine 4 -periodic -nt 4 -tol 8e-3" \
+        "$RunString -np 8 $example_dir/ex-01-refinement -refine 1 -periodic -nt 4 " )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 

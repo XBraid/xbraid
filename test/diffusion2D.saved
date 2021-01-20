@@ -475,7 +475,22 @@
   braid_GetSpatialAccuracy:  1.00e-02
   braid_StepStatusGetTol:  6.70e-08
   braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  1.96e-03
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  1
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  1
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  1
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
   braid_StepStatusGetRNorms[0]:  -1.00e+00
   braid_GetSpatialAccuracy:  1.00e-02
   braid_StepStatusGetTol:  6.70e-08
@@ -499,18 +514,23 @@
   braid_StepStatusGetRNorms[0]:  -1.00e+00
   braid_GetSpatialAccuracy:  1.00e-02
   braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  1.96e-03
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
   braid_StepStatusGetRNorms[0]:  -1.00e+00
   braid_GetSpatialAccuracy:  1.00e-02
   braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  1.96e-03
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
   braid_StepStatusGetRNorms[0]:  -1.00e+00
   braid_GetSpatialAccuracy:  1.00e-02
   braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  1
-  braid_StepStatusGetRNorms[-1]:  1.96e-03
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
+  braid_StepStatusGetRNorms[0]:  -1.00e+00
+  braid_GetSpatialAccuracy:  1.00e-02
+  braid_StepStatusGetTol:  6.70e-08
+  braid_StepStatusGetIter:  2
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
   braid_StepStatusGetRNorms[0]:  -1.00e+00
   braid_GetSpatialAccuracy:  1.00e-02
   braid_StepStatusGetTol:  6.70e-08
@@ -577,26 +597,6 @@
   braid_StepStatusGetIter:  2
   braid_StepStatusGetRNorms[-1]:  4.66e-07
   braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  4.66e-07
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  4.66e-07
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  4.66e-07
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
-  braid_GetSpatialAccuracy:  1.00e-02
-  braid_StepStatusGetTol:  6.70e-08
-  braid_StepStatusGetIter:  2
-  braid_StepStatusGetRNorms[-1]:  4.66e-07
-  braid_StepStatusGetRNorms[0]:  -1.00e+00
   braid_GetSpatialAccuracy:  2.09e-08
   braid_StepStatusGetTol:  6.70e-08
   braid_StepStatusGetIter:  3
@@ -645,22 +645,22 @@
   braid_GetSpatialAccuracy:  1.00e-02
   braid_StepStatusGetTol:  6.70e-08
   braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  6.69e-11
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
   braid_StepStatusGetRNorms[0]:  -1.00e+00
   braid_GetSpatialAccuracy:  1.00e-02
   braid_StepStatusGetTol:  6.70e-08
   braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  6.69e-11
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
   braid_StepStatusGetRNorms[0]:  -1.00e+00
   braid_GetSpatialAccuracy:  1.00e-02
   braid_StepStatusGetTol:  6.70e-08
   braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  6.69e-11
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
   braid_StepStatusGetRNorms[0]:  -1.00e+00
   braid_GetSpatialAccuracy:  1.00e-02
   braid_StepStatusGetTol:  6.70e-08
   braid_StepStatusGetIter:  3
-  braid_StepStatusGetRNorms[-1]:  6.69e-11
+  braid_StepStatusGetRNorms[-1]:  -1.00e+00
   braid_StepStatusGetRNorms[0]:  -1.00e+00
   braid_GetSpatialAccuracy:  1.00e-02
   braid_StepStatusGetTol:  6.70e-08

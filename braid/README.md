@@ -1,3 +1,4 @@
+## File naming conventions
 <!--
   - Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
   - Produced at the Lawrence Livermore National Laboratory.
@@ -18,7 +19,7 @@
   - Temple Place, Suite 330, Boston, MA 02111-1307 USA
  -->
 
-# File naming conventions
+These are the general filenaming conventions for Braid 
 
 User interface routines in braid begin with `braid_` and all other internal
 non-user routines begin with `_braid_`.  This helps to prevent name clashes when

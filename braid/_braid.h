@@ -275,6 +275,8 @@ typedef struct _braid_Core_struct
    braid_Int              rtol;             /**< use relative tolerance */
    braid_Int             *nrels;            /**< number of pre-relaxations on each level */
    braid_Int              nrdefault;        /**< default number of pre-relaxations */
+   braid_Real            *CWts;             /**< C-relaxation weight for each level */
+   braid_Real             CWt_default;      /**< default C-relaxtion weight */
    braid_Int             *cfactors;         /**< coarsening factors */
    braid_Int              cfdefault;        /**< default coarsening factor */
    braid_Int              max_iter;         /**< maximum number of multigrid in time iterations */
@@ -312,6 +314,13 @@ typedef struct _braid_Core_struct
 
    braid_Real             localtime;        /**< local wall time for braid_Drive() */
    braid_Real             globaltime;       /**< global wall time for braid_Drive() */
+
+   /** Richardson-based error estimation and refinement*/
+   braid_Int              richardson;       /**< turns on Richardson extrapolation for accuracy */
+   braid_Int              est_error;        /**< turns on embedded error estimation, e.g., for refinement */
+   braid_Int              order;            /**< local order of time integration scheme */
+   braid_Real            *dtk;              /**< holds value of sum_{i} dt_i^k for each C-interval */
+   braid_Real            *estimate;         /**< holds value of the error estimate at each fine grid point */
 
    /* Data for adjoint and optimization */
    braid_Optim            optim;             /**< structure that stores optimization variables (objective function, etc.) */ 
@@ -915,6 +924,22 @@ braid_Int
 _braid_InitHierarchy(braid_Core    core,
                      _braid_Grid  *fine_grid,
                      braid_Int     refined);
+
+/**
+ * Finalize Richardson error estimates 
+ **/
+braid_Int
+_braid_FinalizeErrorEstimates( braid_Core   core, 
+                               braid_Real  *estimate,
+                               braid_Int    length);
+
+/** 
+ * Propagate time step information required to compute the Richardson error
+ * estimate at each C-point. This can be done at any time, but does require
+ * some communication. This fills in error_factors at the C points. 
+ */
+braid_Int
+_braid_GetDtk(braid_Core  core);
 
 /**
  * Returns the coarsening factor to use on grid *level*.

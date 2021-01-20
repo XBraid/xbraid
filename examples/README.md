@@ -21,15 +21,16 @@
   - Temple Place, Suite 330, Boston, MA 02111-1307 USA
  -->
 
-Type
+For C/C++/Fortran examples, type
 
       ex-* -help
 
-for instructions on how to run any example.
-
-To run the examples, type
+for instructions on how to run.  To run the C/C++/Fortran examples, type
    
       mpirun -np 4 ex-*  [args]
+
+For the Cython examples, see the corresponding *.pyx file. 
+
 
 
 1. ex-01 is the simplest example.  It implements a scalar ODE and can be
@@ -51,6 +52,34 @@ To run the examples, type
 
     + *ex-01-optimization.c*: gradient-based optimization cycle for ex-01-c
 
+    + *ex-01-cython/*: is a  directory containing an example using the Braid-Cython
+       interface defined in braid.pyx ( braid/braid.pyx ).  It solves the same
+       scalar ODE equation as the ex-01 series described above.  This example uses
+       a Python-like syntax, in contrast to the ex-01-cython-alt example, which uses
+       a C-style syntax.
+    
+       For instructions on running and compiling, see 
+       
+                examples/ex-01-cython/ex_01.pyx
+       
+       and
+       
+                examples/ex-01-cython/ex_01-setup.py
+   
+    + *ex-01-cython-alt/*: is a directory containing another example using the
+      Braid-Cython interface defined in braid.pyx ( braid/braid.pyx ).  It solves
+      the same scalar ODE equation as the ex-01 series described above.  This example
+      uses a lower-level C-like syntax for most of it's code, in contrast to the 
+      ex-01-cython example, which uses a Python-style syntax.  
+      
+      For instructions on running and compiling, see
+      
+                examples/ex-01-cython-alt/ex_01_alt.pyx
+      
+      and
+      
+                examples/ex-01-cython-alt/ex_01_alt-setup.py
+   
 2. ex-02 implements the 1D heat equation on a regular grid, using a very simple
    implementation.  This is the next example to read after the various ex-01
    cases.
@@ -74,4 +103,32 @@ To run the examples, type
 4. ex-04 solves a simple optimal control problem with time-dependent design variable
    using a simple steepest-descent optimization iteration.  
    
+5. Directory ex-05-cython/  solves a simple 1D heat equation using the Cython interface 
+   
+                examples/ex-05-cython/ex_05.pyx
+      
+      and
+      
+                examples/ex-05-cython/ex_05-setup.py
+
+6. ex-06 solve a simple scalar ODE, but allows for use of the built-in
+   Richardson-based error estimator and accuracy improving extrapolation. With
+   the "-refinet" option, the error estimator allows for adaptive refinement in
+   time, and with the "-richardson" option, Richardson extrapolation is used
+   improve the solution at fine-level C-points. 
+
+   The viz script, 
+               
+               examples/viz-ex-06.py
+   
+   allows you to visualize the solution, error, and error estimate.  The use of
+   "-richardson" notably improves the accuracy of the solution.
+    
+   The Richardson-based error estimates and/or extrapolation are only available
+   after the first Braid iteration, in that the coarse level solution must be
+   available to compute the error estimate and extrapolation.  Thus, after an
+   adaptive refinement (and new hierarchy is constructed), another iteration is
+   again required for the error estimate to be available.  If the error
+   estimate isn't available, Braid returns a value of -1.  See this example and
+   the comments therein for more details.
 

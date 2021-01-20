@@ -902,6 +902,16 @@ _braid_FRefine(braid_Core   core,
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, rdtvalues));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
+      
+      /* Free Richardson data structures */
+      if ( _braid_CoreElt(core, estimate ) != NULL )
+      {
+         _braid_TFree(_braid_CoreElt(core, estimate));
+      }
+      if ( _braid_CoreElt(core, dtk) != NULL )
+      {
+         _braid_TFree(_braid_CoreElt(core, dtk));
+      }
 
       for (level = 0; level < nlevels; level++)
       {

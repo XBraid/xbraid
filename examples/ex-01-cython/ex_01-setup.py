@@ -2,20 +2,10 @@ from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Build import cythonize
 import os
+import sys
 # import numpy
 
-##
-# TODO for this branch
-#
-# Can we remove the BraidApp argument for the functions?  Maybe hold off on this.
-# 
-# Integrate these install comments automatically into the users manual.
-# Perhaps have this be a separate directory inside of braid/examples/
-#
-# Design a few regression tests
-#
-# Can you make the install procedure more robust?
-##
+braid_dir = "../../braid"
 
 ##
 # This setup.py file has been tested on High Sierra with Homebrew, and Ubuntu LTS.
@@ -23,8 +13,9 @@ import os
 #
 # To Install,
 #
-# 1) Make sure that library_dirs and include_dirs point to the 
-#    location of "braid"
+# 1) Make sure that braid_dir (defined above) points to the location of "braid"
+#    This is used by library_dirs and include_dirs below
+#
 # 2) Type (using whatever install location you want)
 #
 #    $ python3 ex_01-setup.py install --prefix=$HOME/.local
@@ -42,14 +33,27 @@ import os
 #     export PYTHONPATH="$HOME/.local/lib/python3.7/site-packages"
 #
 # 2) Type 
-#    ipython 3
+#    python3
 #    >>> import ex_01
-#    >>> core = ex_01.InitCore()
-#    >>> ex_01.run_Braid(core)
+#    >>> core, app = ex_01.InitCoreApp()
+#    >>> ex_01.run_Braid(core, app)
 #
-#    This should yield the same output as ex-01.c
+#    Print output with
+#    >>> import os; os.system("cat ex-01.out.00*")
+#    1.00000000000000e+00
+#    6.66666666666667e-01
+#    4.44444444444444e-01
+#    2.96296296296296e-01
+#    1.97530864197531e-01
+#    1.31687242798354e-01
+#    8.77914951989026e-02
+#    5.85276634659351e-02
+#    3.90184423106234e-02
+#    2.60122948737489e-02
+#    1.73415299158326e-02
+#    0
 #
-# 3) For parallel runs, try
+## 3) For parallel runs, try
 #
 #    $$ mpirun -np K  python3 ex_01_run.py
 ## 
@@ -64,14 +68,19 @@ import os
 
 
 os.environ["CC"] = "mpicc"
-os.environ["LDSHARED"] = "mpicc -shared"    # Comment out for High Sierra with Homebrew
+if sys.platform != 'darwin':
+    os.environ["LDSHARED"] = "mpicc -shared"    # Needed by Ubuntu LTS, leave out for Mac
+
+    # You may need to add local paths here, if you have local installations of compilers and python
+    #os.environ["PATH"] = '/home/jbschroder/.local/bin:' + os.environ["PATH"]
+    #os.environ["PYTHONPATH"] = "/home/jbschroder/.local/lib/python3.6"
 
 ex_01_extension = Extension(
     name="ex_01",
     sources=["ex_01.pyx"],
     libraries=["braid"],
-    library_dirs=["../../braid"],
-    include_dirs=["../../braid"], 
+    library_dirs=[braid_dir], #Can append local dirs:    , "/home/jbschroder/.local/lib", "/home/jbschroder/.local/lib/openmpi"],
+    include_dirs=[braid_dir], #Can append local dirs:    , "/home/jbschroder/.local/include", "/home/jbschroder/.local/include/openmpi/mpiext"],
     extra_compile_args=["-Wno-incompatible-pointer-types", "-Wno-unused-function"] 
 )
 setup(

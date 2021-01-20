@@ -111,7 +111,7 @@ int main (int argc, char *argv[])
    /* Initialize solution at time t=0.0 */
    get_solution(values, nspace, 0.0, xstart, deltaX);
    sprintf(filename, "%s.%07d.%05d", "ex-02-serial.out", 0, 0);
-   save_solution(filename, values, nspace, xstart, xstop, ntime, tstart, tstop);
+   save_solution(filename, values, nspace, xstart, xstop, ntime, tstart, tstop, 0.0);
 
    /* Main time step loop */
    t = tstart;
@@ -125,7 +125,7 @@ int main (int argc, char *argv[])
       
       /* Output Solution */
       sprintf(filename, "%s.%07d.%05d", "ex-02-serial.out", step, 0);
-      save_solution(filename, values, nspace, xstart, xstop, ntime, tstart, tstop);
+      save_solution(filename, values, nspace, xstart, xstop, ntime, tstart, tstop, t);
    }
    error = compute_error_norm(values, xstart, xstop, nspace, tstop);
    gettimeofday(&end, NULL);
