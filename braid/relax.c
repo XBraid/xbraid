@@ -246,10 +246,11 @@ _braid_FCRelax(braid_Core  core,
          else if( (level == 0) && (ci == _braid_CoreElt(core, initiali)) && done)
          {
             /* If final opportunity for user access, provide access to initial condition */
-            _braid_UGetVector(core, level, ci, &u);
+            braid_BaseVector uref;
+            _braid_UGetVectorRef(core, level, ci, &uref);
             _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper_zero,
                                     done, 0, braid_ASCaller_FCRelax, astatus);
-            _braid_AccessVector(core, astatus, u);
+            _braid_AccessVector(core, astatus, uref);
          }
 
          /* if ((flo <= fhi) && (interval == ncpoints)) */
