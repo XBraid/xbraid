@@ -234,12 +234,12 @@ _braid_FCRelax(braid_Core  core,
             {
                _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper_zero,
                                        done, 0, braid_ASCaller_FCRelax, astatus);
-               _braid_AccessVector(core, astatus, u);
-               ///* If Richardson, then vector u is not up-to-date, so be safe
-               // * and get fresh reference for user access */
-               //braid_BaseVector uref;
-               //_braid_UGetVectorRef(core, level, ci, &uref);
-               //_braid_AccessVector(core, astatus, uref);
+               
+	       /* If Richardson, then vector u is not up-to-date, so be safe
+                * and get fresh reference for user access */
+               braid_BaseVector uref;
+               _braid_UGetVectorRef(core, level, ci, &uref);
+               _braid_AccessVector(core, astatus, uref);
             }
          
          }
