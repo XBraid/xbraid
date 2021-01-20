@@ -116,6 +116,7 @@
 #include "HYPRE_sstruct_ls.h"
 #include "_hypre_sstruct_mv.h"
 
+#include "_braid.h"     /* Access to internal braid functions, use at own risk */
 #include "braid.h"
 #include "braid_test.h"
 
@@ -685,24 +686,22 @@ my_Access(braid_App           app,
    double     tstop  = (app->man->tstop);
    double     rnorm, disc_err, t;
    int        nt = (app->man->nt);
-   int        iter, level, done;
+   int        iter, level, done, calling_fcn;
    int        index, myid;
    static int previous_level = -5;
    static int previous_iter = -5;
    char       filename[255], filename_mesh[255], filename_err[255], filename_sol[255];
   
-   /* Retrieve current time from Status Object */
-   braid_AccessStatusGetT(astatus, &t);
-
    /* Retrieve Braid State Information from Status Object */
    MPI_Comm_rank(comm, &myid);
    braid_AccessStatusGetTILD(astatus, &t, &iter, &level, &done);
    braid_AccessStatusGetResidual(astatus, &rnorm);
+   braid_AccessStatusGetCallingFunction(astatus, &calling_fcn);
    if( (myid == 0) && ((level != previous_level) || (iter != previous_iter)) )
    {
       previous_level = level;
       previous_iter = iter;
-      printf("  my_Access() called, iter= %d, level= %d\n", iter, level);
+      printf("  my_Access() called, iter= %d, level= %d, calling function= %d\n", iter, level, calling_fcn);
    }
 
    /* Write a file for each time step that contains a single scalar, the l2
@@ -1892,7 +1891,7 @@ int main (int argc, char *argv[])
    int i, arg_index, myid, num_procs;
    MPI_Comm comm, comm_x, comm_t;
    int ndim, nx, ny, nlx, nly, nt, forcing, ilower[2], iupper[2];
-   double K, tstart, tstop, dx, dy, dt, cfl;
+   double K, tstart, tstop, dx, dy, dt, cfl, disc_err;
    int px, py, pt, pi, pj;
    int output_files, explicit, output_vis;
 
@@ -1901,9 +1900,9 @@ int main (int argc, char *argv[])
    my_App       *app;
    double tol_x[2], tol, *scoarsenCFL;
    double mystarttime, myendtime, mytime, maxtime;
-   int run_wrapper_tests, correct, fspatial_disc_idx, max_iter_x[2];
+   int run_wrapper_tests, correct, ulast, fspatial_disc_idx, max_iter_x[2];
    int print_level, access_level, nA_max, max_levels, min_coarse, skip;
-   int nrelax, nrelax0, cfactor, cfactor0, max_iter, storage, res, new_res;
+   int nrelax, nrelax0, finalFC, cfactor, cfactor0, max_iter, storage, res, new_res;
    int fmg, tnorm, nfmg_Vcyc, scoarsen, num_scoarsenCFL, use_rand;
 
    /* Initialize MPI */
@@ -1933,6 +1932,7 @@ int main (int argc, char *argv[])
    min_coarse          = 3;  
    nrelax              = 1;
    nrelax0             = -1;
+   finalFC             = 0;
    tol                 = 1.0e-09;
    tnorm               = 2;
    cfactor             = 2;
@@ -1956,6 +1956,7 @@ int main (int argc, char *argv[])
    print_level         = 2;
    access_level        = 1;
    run_wrapper_tests   = 0;
+   ulast               = 0;
 
    MPI_Comm_rank( comm, &myid );
    MPI_Comm_size( comm, &num_procs );
@@ -2027,6 +2028,10 @@ int main (int argc, char *argv[])
          fmg = 1;
          nfmg_Vcyc = atoi(argv[arg_index++]);
       }
+      else if ( strcmp(argv[arg_index], "-finalFC") == 0 ){
+         arg_index++;
+         finalFC = 1;
+      }
       else if ( strcmp(argv[arg_index], "-storage") == 0 ){
          arg_index++;
          storage = atoi(argv[arg_index++]);
@@ -2085,6 +2090,10 @@ int main (int argc, char *argv[])
          arg_index++;
          run_wrapper_tests = 1;
       }
+      else if( strcmp(argv[arg_index], "-ulast") == 0 ){
+         arg_index++;
+         ulast = 1;
+      }
       else if( strcmp(argv[arg_index], "-output_files") == 0 ){
          arg_index++;
          output_files = 1;
@@ -2123,6 +2132,7 @@ int main (int argc, char *argv[])
       printf("  -mc  <min_coarse>                  : set min possible coarse level size (default: 3)\n");
       printf("  -nu  <nrelax>                      : set num F-C relaxations (default: 1)\n");
       printf("  -nu0 <nrelax>                      : set num F-C relaxations on level 0\n");
+      printf("  -finalFC                           : set to do a final FC-relaxation after the cycle ends\n");
       printf("  -tol <tol>                         : set stopping tolerance (default: 1e-09)\n");
       printf("  -tnorm <tnorm>                     : set temporal norm \n");
       printf("                                       1 - One-norm \n");
@@ -2141,6 +2151,7 @@ int main (int argc, char *argv[])
       printf("  -forcing                           : consider non-zero RHS b(x,y,t) = -sin(x)*sin(y)*(sin(t)-2*cos(t))\n");
       printf("  -use_rand <bool>                   : if nonzero, then use a uniformly random value to initialize each\n");
       printf("                                       time step for t>0.  if zero, then use a zero initial guess.\n");
+      printf("  -ulast                             : Use ulast functionality to test direct retrieval the last time point \n");
       printf("                                     \n");
       printf("                                     \n");
       printf(" Spatial Coarsening related parameters  \n");
@@ -2191,7 +2202,8 @@ int main (int argc, char *argv[])
       printf("  -access_level <l>               : sets the access_level (default: 1) \n");
       printf("                                    0 - never call access \n");
       printf("                                    1 - call access only after completion \n");
-      printf("                                    2 - call access every iteration and level\n");
+      printf("                                    2 - call access at the end of every cycle \n");
+      printf("                                    3 - call access every iteration and level\n");
       printf("  -output_files                   : save the solution/error/error norms to files\n");
       printf("                                    frequency of file accesss is set by access_level\n");
       printf("  -output_vis                     : save the error for GLVis visualization\n");
@@ -2472,6 +2484,10 @@ int main (int argc, char *argv[])
       {
          braid_SetNRelax(core,  0, nrelax0);
       }
+      if (finalFC)
+      {
+         braid_SetFinalFCRelax(core);
+      }
 
       /*braid_SetRelTol(core, tol);*/
       braid_SetAbsTol(core, tol/sqrt(dx*dy*dt));
@@ -2649,6 +2665,27 @@ int main (int argc, char *argv[])
          }
 
          printf( "\n" );
+      }
+
+      /* Advanced internal braid function that allows for direct access to the
+       * last time point.  Inserted here for regression testing. */
+      MPI_Comm_rank(comm_t, &myid );
+      MPI_Comm_size(comm_t, &num_procs);
+      if( myid == (num_procs-1) && ulast)
+      {
+         /* Note that braid_BaseVector is a pointer itself, so ulast here is just a
+          * memory address We then pass in "&ulast" to _braid_UGetLast, so that this
+          * pointer is overwritten with the appropriate memory address of the 
+          * last point */
+         braid_BaseVector ulast;
+         _braid_UGetLast(core, &ulast);
+         compute_disc_err(app->man, ulast->userVector->x, app->man->tstop, app->e, &disc_err);
+         MPI_Send(&disc_err, 1, MPI_DOUBLE, 0, 12, comm_t);
+      }
+      else if( (myid == 0) && ulast)
+      {
+         MPI_Recv(&disc_err, 1, MPI_DOUBLE, num_procs-1, 12, comm_t, MPI_STATUS_IGNORE);
+         printf("Final discretization error (via ulast) = %1.4e\n\n", disc_err);
       }
 
       braid_Destroy(core);

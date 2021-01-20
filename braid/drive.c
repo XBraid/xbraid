@@ -310,7 +310,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
    {
       if (myid == 0)
       {
-         _braid_printf("  Braid: Max. iterations reached.\n\n");
+         _braid_printf("  Braid: Max. iterations reached.\n\n"); 
       }
       done = 1;
    }
@@ -629,6 +629,9 @@ _braid_Drive(braid_Core  core,
       }
    }
 
+   /* Set flag that Braid is done */
+   _braid_CoreElt(core, done) = 1;
+
    /* By default, set the final residual norm to be the same as the previous */
    {
       braid_Real  rnorm;
@@ -647,13 +650,34 @@ _braid_Drive(braid_Core  core,
       _braid_FRestrict(core, level);
    }
 
-   /* Allow final access to Braid by carrying out an F-relax to generate points */
-   /* Record it only if sequential time stepping */
-   if (max_levels > 1)
+
+   /* Allow final access to Braid by carrying out a relaxation to generate points */
+   if ( _braid_CoreElt(core, finalFCrelax) )
    {
-      _braid_CoreElt(core, record) = 0;
+      /* Do one final F-C-Relaxation sweep in order to:
+       * - Relax the final coarse-grid correction, while giving user access to solution
+       * - Store the last time-point vector as ulast, see _braid_UGetLast()
+       * - Gather gradient information when solving adjoint equation with XBraid. The users 'my_step' 
+       *   function should compute gradients only if braid's 'done' flag is true */
+
+      braid_Int nrelax_orig = _braid_CoreElt(core, nrels)[0];
+      _braid_CoreElt(core, nrels)[0] = 1;
+      _braid_FCRelax(core, 0);
+      _braid_CoreElt(core, nrels)[0] = nrelax_orig;
    }
-   _braid_FAccess(core, 0, 1);
+   else if ( (max_levels == 1) || (access_level >= 1) )
+   {
+      /* Do one final F-Relaxation sweep in order to:
+       *  - Provide user access to solution
+       *  - Store the last time-point vector as ulast, see _braid_UGetLast() */
+      if (max_levels > 1)
+      {
+         /* Record it only if not sequential time stepping */
+         _braid_CoreElt(core, record) = 0;
+      }
+      _braid_FAccess(core, 0, 1);
+   }
+
 
    /* If sequential time-marching, evaluate the tape */
    if ( adjoint && max_levels <= 1 )

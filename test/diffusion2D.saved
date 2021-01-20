@@ -1,6 +1,6 @@
 # Begin Test 0
 
-  my_Access() called, iter= 9, level= 0
+  my_Access() called, iter= 9, level= 0, calling function= 3
   time steps = 256
   iterations           = 9
   number of levels     = 7
@@ -8,7 +8,7 @@
 
 # Begin Test 1
 
-  my_Access() called, iter= 9, level= 0
+  my_Access() called, iter= 9, level= 0, calling function= 3
   time steps = 256
   iterations           = 9
   number of levels     = 7
@@ -16,7 +16,7 @@
 
 # Begin Test 2
 
-  my_Access() called, iter= 8, level= 0
+  my_Access() called, iter= 8, level= 0, calling function= 3
   time steps = 256
   iterations           = 8
   number of levels     = 7
@@ -24,7 +24,7 @@
 
 # Begin Test 3
 
-  my_Access() called, iter= 7, level= 0
+  my_Access() called, iter= 7, level= 0, calling function= 3
   time steps = 256
   iterations           = 7
   number of levels     = 7
@@ -32,7 +32,7 @@
 
 # Begin Test 4
 
-  my_Access() called, iter= 6, level= 0
+  my_Access() called, iter= 6, level= 0, calling function= 3
   time steps = 256
   iterations           = 6
   number of levels     = 7
@@ -40,7 +40,7 @@
 
 # Begin Test 5
 
-  my_Access() called, iter= 4, level= 0
+  my_Access() called, iter= 4, level= 0, calling function= 3
   time steps = 256
   iterations           = 4
   number of levels     = 7
@@ -48,7 +48,7 @@
 
 # Begin Test 6
 
-  my_Access() called, iter= 11, level= 0
+  my_Access() called, iter= 11, level= 0, calling function= 3
   time steps = 256
   iterations           = 11
   number of levels     = 7
@@ -56,7 +56,7 @@
 
 # Begin Test 7
 
-  my_Access() called, iter= 11, level= 0
+  my_Access() called, iter= 11, level= 0, calling function= 3
   time steps = 256
   iterations           = 11
   number of levels     = 7
@@ -64,7 +64,7 @@
 
 # Begin Test 8
 
-  my_Access() called, iter= 9, level= 0
+  my_Access() called, iter= 9, level= 0, calling function= 3
   time steps = 256
   iterations           = 9
   number of levels     = 8
@@ -72,7 +72,7 @@
 
 # Begin Test 9
 
-  my_Access() called, iter= 9, level= 0
+  my_Access() called, iter= 9, level= 0, calling function= 3
   time steps = 256
   iterations           = 9
   number of levels     = 8
@@ -80,7 +80,7 @@
 
 # Begin Test 10
 
-  my_Access() called, iter= 5, level= 0
+  my_Access() called, iter= 5, level= 0, calling function= 3
   time steps = 256
   iterations           = 5
   number of levels     = 8
@@ -89,7 +89,7 @@
 
 # Begin Test 11
 
-  my_Access() called, iter= 24, level= 0
+  my_Access() called, iter= 24, level= 0, calling function= 3
   time steps = 128
   iterations           = 24
   number of levels     = 6
@@ -103,7 +103,7 @@
 
 # Begin Test 12
 
-  my_Access() called, iter= 7, level= 0
+  my_Access() called, iter= 7, level= 0, calling function= 3
   time steps = 32
   iterations           = 7
   number of levels     = 4
@@ -111,168 +111,281 @@
 
 # Begin Test 13
 
-  my_Access() called, iter= 0, level= 0
-  my_Access() called, iter= 1, level= 0
-  my_Access() called, iter= 2, level= 0
-  my_Access() called, iter= 3, level= 0
-  my_Access() called, iter= 4, level= 0
-  my_Access() called, iter= 5, level= 0
-  my_Access() called, iter= 6, level= 0
-  my_Access() called, iter= 7, level= 0
+  my_Access() called, iter= 0, level= 0, calling function= 3
+  my_Access() called, iter= 1, level= 0, calling function= 3
+  my_Access() called, iter= 2, level= 0, calling function= 3
+  my_Access() called, iter= 3, level= 0, calling function= 3
+  my_Access() called, iter= 4, level= 0, calling function= 3
+  my_Access() called, iter= 5, level= 0, calling function= 3
+  my_Access() called, iter= 6, level= 0, calling function= 3
+  my_Access() called, iter= 7, level= 0, calling function= 3
   time steps = 32
   iterations           = 7
   number of levels     = 4
  Fine level spatial problem size  : 17 x 17
 
 # Begin Test 14
-  my_Access() called, iter= 0, level= 0
-  my_Access() called, iter= 0, level= 1
-  my_Access() called, iter= 0, level= 2
-  my_Access() called, iter= 0, level= 3
-  my_Access() called, iter= 0, level= 2
-  my_Access() called, iter= 0, level= 1
-  my_Access() called, iter= 0, level= 0
-  my_Access() called, iter= 0, level= 1
-  my_Access() called, iter= 0, level= 0
-  my_Access() called, iter= 0, level= 1
-  my_Access() called, iter= 0, level= 0
-  my_Access() called, iter= 0, level= 1
-  my_Access() called, iter= 0, level= 0
-  my_Access() called, iter= 0, level= 1
-  my_Access() called, iter= 0, level= 0
-  my_Access() called, iter= 0, level= 1
-  my_Access() called, iter= 0, level= 0
-  my_Access() called, iter= 0, level= 1
-  my_Access() called, iter= 0, level= 0
-  my_Access() called, iter= 0, level= 1
-  my_Access() called, iter= 0, level= 0
-  my_Access() called, iter= 1, level= 0
-  my_Access() called, iter= 1, level= 1
-  my_Access() called, iter= 1, level= 2
-  my_Access() called, iter= 1, level= 3
-  my_Access() called, iter= 1, level= 2
-  my_Access() called, iter= 1, level= 1
-  my_Access() called, iter= 1, level= 0
-  my_Access() called, iter= 1, level= 1
-  my_Access() called, iter= 1, level= 0
-  my_Access() called, iter= 1, level= 1
-  my_Access() called, iter= 1, level= 0
-  my_Access() called, iter= 1, level= 1
-  my_Access() called, iter= 1, level= 0
-  my_Access() called, iter= 1, level= 1
-  my_Access() called, iter= 1, level= 0
-  my_Access() called, iter= 1, level= 1
-  my_Access() called, iter= 1, level= 0
-  my_Access() called, iter= 1, level= 1
-  my_Access() called, iter= 1, level= 0
-  my_Access() called, iter= 1, level= 1
-  my_Access() called, iter= 1, level= 0
-  my_Access() called, iter= 2, level= 0
-  my_Access() called, iter= 2, level= 1
-  my_Access() called, iter= 2, level= 2
-  my_Access() called, iter= 2, level= 3
-  my_Access() called, iter= 2, level= 2
-  my_Access() called, iter= 2, level= 1
-  my_Access() called, iter= 2, level= 0
-  my_Access() called, iter= 2, level= 1
-  my_Access() called, iter= 2, level= 0
-  my_Access() called, iter= 2, level= 1
-  my_Access() called, iter= 2, level= 0
-  my_Access() called, iter= 2, level= 1
-  my_Access() called, iter= 2, level= 0
-  my_Access() called, iter= 2, level= 1
-  my_Access() called, iter= 2, level= 0
-  my_Access() called, iter= 2, level= 1
-  my_Access() called, iter= 2, level= 0
-  my_Access() called, iter= 2, level= 1
-  my_Access() called, iter= 2, level= 0
-  my_Access() called, iter= 2, level= 1
-  my_Access() called, iter= 2, level= 0
-  my_Access() called, iter= 3, level= 0
-  my_Access() called, iter= 3, level= 1
-  my_Access() called, iter= 3, level= 2
-  my_Access() called, iter= 3, level= 3
-  my_Access() called, iter= 3, level= 2
-  my_Access() called, iter= 3, level= 1
-  my_Access() called, iter= 3, level= 0
-  my_Access() called, iter= 3, level= 1
-  my_Access() called, iter= 3, level= 0
-  my_Access() called, iter= 3, level= 1
-  my_Access() called, iter= 3, level= 0
-  my_Access() called, iter= 3, level= 1
-  my_Access() called, iter= 3, level= 0
-  my_Access() called, iter= 3, level= 1
-  my_Access() called, iter= 3, level= 0
-  my_Access() called, iter= 3, level= 1
-  my_Access() called, iter= 3, level= 0
-  my_Access() called, iter= 3, level= 1
-  my_Access() called, iter= 3, level= 0
-  my_Access() called, iter= 3, level= 1
-  my_Access() called, iter= 3, level= 0
-  my_Access() called, iter= 4, level= 0
-  my_Access() called, iter= 4, level= 1
-  my_Access() called, iter= 4, level= 2
-  my_Access() called, iter= 4, level= 3
-  my_Access() called, iter= 4, level= 2
-  my_Access() called, iter= 4, level= 1
-  my_Access() called, iter= 4, level= 0
-  my_Access() called, iter= 4, level= 1
-  my_Access() called, iter= 4, level= 0
-  my_Access() called, iter= 4, level= 1
-  my_Access() called, iter= 4, level= 0
-  my_Access() called, iter= 4, level= 1
-  my_Access() called, iter= 4, level= 0
-  my_Access() called, iter= 4, level= 1
-  my_Access() called, iter= 4, level= 0
-  my_Access() called, iter= 4, level= 1
-  my_Access() called, iter= 4, level= 0
-  my_Access() called, iter= 4, level= 1
-  my_Access() called, iter= 4, level= 0
-  my_Access() called, iter= 4, level= 1
-  my_Access() called, iter= 4, level= 0
-  my_Access() called, iter= 5, level= 0
-  my_Access() called, iter= 5, level= 1
-  my_Access() called, iter= 5, level= 2
-  my_Access() called, iter= 5, level= 3
-  my_Access() called, iter= 5, level= 2
-  my_Access() called, iter= 5, level= 1
-  my_Access() called, iter= 5, level= 0
-  my_Access() called, iter= 5, level= 1
-  my_Access() called, iter= 5, level= 0
-  my_Access() called, iter= 5, level= 1
-  my_Access() called, iter= 5, level= 0
-  my_Access() called, iter= 5, level= 1
-  my_Access() called, iter= 5, level= 0
-  my_Access() called, iter= 5, level= 1
-  my_Access() called, iter= 5, level= 0
-  my_Access() called, iter= 5, level= 1
-  my_Access() called, iter= 5, level= 0
-  my_Access() called, iter= 5, level= 1
-  my_Access() called, iter= 5, level= 0
-  my_Access() called, iter= 5, level= 1
-  my_Access() called, iter= 5, level= 0
-  my_Access() called, iter= 6, level= 0
-  my_Access() called, iter= 6, level= 1
-  my_Access() called, iter= 6, level= 2
-  my_Access() called, iter= 6, level= 3
-  my_Access() called, iter= 6, level= 2
-  my_Access() called, iter= 6, level= 1
-  my_Access() called, iter= 6, level= 0
-  my_Access() called, iter= 6, level= 1
-  my_Access() called, iter= 6, level= 0
-  my_Access() called, iter= 6, level= 1
-  my_Access() called, iter= 6, level= 0
-  my_Access() called, iter= 6, level= 1
-  my_Access() called, iter= 6, level= 0
-  my_Access() called, iter= 6, level= 1
-  my_Access() called, iter= 6, level= 0
-  my_Access() called, iter= 6, level= 1
-  my_Access() called, iter= 6, level= 0
-  my_Access() called, iter= 6, level= 1
-  my_Access() called, iter= 6, level= 0
-  my_Access() called, iter= 6, level= 1
-  my_Access() called, iter= 6, level= 0
-  my_Access() called, iter= 7, level= 0
+
+  my_Access() called, iter= 0, level= 0, calling function= 6
+  my_Access() called, iter= 0, level= 1, calling function= 6
+  my_Access() called, iter= 0, level= 2, calling function= 6
+  my_Access() called, iter= 0, level= 3, calling function= 0
+  my_Access() called, iter= 0, level= 2, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 6
+  my_Access() called, iter= 1, level= 1, calling function= 6
+  my_Access() called, iter= 1, level= 2, calling function= 6
+  my_Access() called, iter= 1, level= 3, calling function= 0
+  my_Access() called, iter= 1, level= 2, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 6
+  my_Access() called, iter= 2, level= 1, calling function= 6
+  my_Access() called, iter= 2, level= 2, calling function= 6
+  my_Access() called, iter= 2, level= 3, calling function= 0
+  my_Access() called, iter= 2, level= 2, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 6
+  my_Access() called, iter= 3, level= 1, calling function= 6
+  my_Access() called, iter= 3, level= 2, calling function= 6
+  my_Access() called, iter= 3, level= 3, calling function= 0
+  my_Access() called, iter= 3, level= 2, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 4, level= 0, calling function= 6
+  my_Access() called, iter= 4, level= 1, calling function= 6
+  my_Access() called, iter= 4, level= 2, calling function= 6
+  my_Access() called, iter= 4, level= 3, calling function= 0
+  my_Access() called, iter= 4, level= 2, calling function= 0
+  my_Access() called, iter= 4, level= 1, calling function= 0
+  my_Access() called, iter= 4, level= 0, calling function= 0
+  my_Access() called, iter= 4, level= 1, calling function= 0
+  my_Access() called, iter= 4, level= 0, calling function= 0
+  my_Access() called, iter= 4, level= 1, calling function= 0
+  my_Access() called, iter= 4, level= 0, calling function= 0
+  my_Access() called, iter= 4, level= 1, calling function= 0
+  my_Access() called, iter= 4, level= 0, calling function= 0
+  my_Access() called, iter= 4, level= 1, calling function= 0
+  my_Access() called, iter= 4, level= 0, calling function= 0
+  my_Access() called, iter= 4, level= 1, calling function= 0
+  my_Access() called, iter= 4, level= 0, calling function= 0
+  my_Access() called, iter= 4, level= 1, calling function= 0
+  my_Access() called, iter= 4, level= 0, calling function= 0
+  my_Access() called, iter= 4, level= 1, calling function= 0
+  my_Access() called, iter= 4, level= 0, calling function= 0
+  my_Access() called, iter= 4, level= 1, calling function= 0
+  my_Access() called, iter= 4, level= 0, calling function= 0
+  my_Access() called, iter= 4, level= 1, calling function= 0
+  my_Access() called, iter= 4, level= 0, calling function= 0
+  my_Access() called, iter= 4, level= 1, calling function= 0
+  my_Access() called, iter= 4, level= 0, calling function= 0
+  my_Access() called, iter= 4, level= 1, calling function= 0
+  my_Access() called, iter= 4, level= 0, calling function= 0
+  my_Access() called, iter= 4, level= 1, calling function= 0
+  my_Access() called, iter= 4, level= 0, calling function= 0
+  my_Access() called, iter= 4, level= 1, calling function= 0
+  my_Access() called, iter= 4, level= 0, calling function= 0
+  my_Access() called, iter= 4, level= 1, calling function= 0
+  my_Access() called, iter= 4, level= 0, calling function= 0
+  my_Access() called, iter= 4, level= 1, calling function= 0
+  my_Access() called, iter= 4, level= 0, calling function= 0
+  my_Access() called, iter= 5, level= 0, calling function= 6
+  my_Access() called, iter= 5, level= 1, calling function= 6
+  my_Access() called, iter= 5, level= 2, calling function= 6
+  my_Access() called, iter= 5, level= 3, calling function= 0
+  my_Access() called, iter= 5, level= 2, calling function= 0
+  my_Access() called, iter= 5, level= 1, calling function= 0
+  my_Access() called, iter= 5, level= 0, calling function= 0
+  my_Access() called, iter= 5, level= 1, calling function= 0
+  my_Access() called, iter= 5, level= 0, calling function= 0
+  my_Access() called, iter= 5, level= 1, calling function= 0
+  my_Access() called, iter= 5, level= 0, calling function= 0
+  my_Access() called, iter= 5, level= 1, calling function= 0
+  my_Access() called, iter= 5, level= 0, calling function= 0
+  my_Access() called, iter= 5, level= 1, calling function= 0
+  my_Access() called, iter= 5, level= 0, calling function= 0
+  my_Access() called, iter= 5, level= 1, calling function= 0
+  my_Access() called, iter= 5, level= 0, calling function= 0
+  my_Access() called, iter= 5, level= 1, calling function= 0
+  my_Access() called, iter= 5, level= 0, calling function= 0
+  my_Access() called, iter= 5, level= 1, calling function= 0
+  my_Access() called, iter= 5, level= 0, calling function= 0
+  my_Access() called, iter= 5, level= 1, calling function= 0
+  my_Access() called, iter= 5, level= 0, calling function= 0
+  my_Access() called, iter= 5, level= 1, calling function= 0
+  my_Access() called, iter= 5, level= 0, calling function= 0
+  my_Access() called, iter= 5, level= 1, calling function= 0
+  my_Access() called, iter= 5, level= 0, calling function= 0
+  my_Access() called, iter= 5, level= 1, calling function= 0
+  my_Access() called, iter= 5, level= 0, calling function= 0
+  my_Access() called, iter= 5, level= 1, calling function= 0
+  my_Access() called, iter= 5, level= 0, calling function= 0
+  my_Access() called, iter= 5, level= 1, calling function= 0
+  my_Access() called, iter= 5, level= 0, calling function= 0
+  my_Access() called, iter= 5, level= 1, calling function= 0
+  my_Access() called, iter= 5, level= 0, calling function= 0
+  my_Access() called, iter= 5, level= 1, calling function= 0
+  my_Access() called, iter= 5, level= 0, calling function= 0
+  my_Access() called, iter= 6, level= 0, calling function= 6
+  my_Access() called, iter= 6, level= 1, calling function= 6
+  my_Access() called, iter= 6, level= 2, calling function= 6
+  my_Access() called, iter= 6, level= 3, calling function= 0
+  my_Access() called, iter= 6, level= 2, calling function= 0
+  my_Access() called, iter= 6, level= 1, calling function= 0
+  my_Access() called, iter= 6, level= 0, calling function= 0
+  my_Access() called, iter= 6, level= 1, calling function= 0
+  my_Access() called, iter= 6, level= 0, calling function= 0
+  my_Access() called, iter= 6, level= 1, calling function= 0
+  my_Access() called, iter= 6, level= 0, calling function= 0
+  my_Access() called, iter= 6, level= 1, calling function= 0
+  my_Access() called, iter= 6, level= 0, calling function= 0
+  my_Access() called, iter= 6, level= 1, calling function= 0
+  my_Access() called, iter= 6, level= 0, calling function= 0
+  my_Access() called, iter= 6, level= 1, calling function= 0
+  my_Access() called, iter= 6, level= 0, calling function= 0
+  my_Access() called, iter= 6, level= 1, calling function= 0
+  my_Access() called, iter= 6, level= 0, calling function= 0
+  my_Access() called, iter= 6, level= 1, calling function= 0
+  my_Access() called, iter= 6, level= 0, calling function= 0
+  my_Access() called, iter= 6, level= 1, calling function= 0
+  my_Access() called, iter= 6, level= 0, calling function= 0
+  my_Access() called, iter= 6, level= 1, calling function= 0
+  my_Access() called, iter= 6, level= 0, calling function= 0
+  my_Access() called, iter= 6, level= 1, calling function= 0
+  my_Access() called, iter= 6, level= 0, calling function= 0
+  my_Access() called, iter= 6, level= 1, calling function= 0
+  my_Access() called, iter= 6, level= 0, calling function= 0
+  my_Access() called, iter= 6, level= 1, calling function= 0
+  my_Access() called, iter= 6, level= 0, calling function= 0
+  my_Access() called, iter= 6, level= 1, calling function= 0
+  my_Access() called, iter= 6, level= 0, calling function= 0
+  my_Access() called, iter= 6, level= 1, calling function= 0
+  my_Access() called, iter= 6, level= 0, calling function= 0
+  my_Access() called, iter= 6, level= 1, calling function= 0
+  my_Access() called, iter= 6, level= 0, calling function= 0
+  my_Access() called, iter= 7, level= 0, calling function= 3
   time steps = 32
   iterations            = 7
   number of levels      = 4
@@ -280,13 +393,13 @@
 
 # Begin Test 15
 
-  my_Access() called, iter= 7, level= 0
+  my_Access() called, iter= 7, level= 0, calling function= 3
  Fine level spatial problem size  : 17 x 17
 
 
 # Begin Test 16
  
-  my_Access() called, iter= 7, level= 0
+  my_Access() called, iter= 7, level= 0, calling function= 3
   time steps = 32
   iterations           = 7
   number of levels     = 4
@@ -574,7 +687,7 @@
   braid_StepStatusGetIter:  4
   braid_StepStatusGetRNorms[-1]:  6.69e-11
   braid_StepStatusGetRNorms[0]:  -1.00e+00
-  my_Access() called, iter= 4, level= 0
+  my_Access() called, iter= 4, level= 0, calling function= 3
   braid_GetSpatialAccuracy:  1.00e-09
   braid_StepStatusGetTol:  6.70e-08
   braid_StepStatusGetIter:  4
@@ -613,7 +726,7 @@
 
 # Begin Test 18
  
-  my_Access() called, iter= 7, level= 0
+  my_Access() called, iter= 7, level= 0, calling function= 3
   time steps = 32
   iterations           = 7
   number of levels     = 4
@@ -625,7 +738,7 @@ Starting braid_TestInitAccess
    braid_TestInitAccess:   Starting Test 1
    braid_TestInitAccess:   u = init(t=0.00e+00)
    braid_TestInitAccess:   access(u) 
-  my_Access() called, iter= 0, level= 0
+  my_Access() called, iter= 0, level= 0, calling function= -1
    braid_TestInitAccess:   check output: wrote u for initial condition at t=0.00e+00. 
    braid_TestInitAccess:   free(u) 
 Finished braid_TestInitAccess
@@ -783,7 +896,7 @@ Finished braid_TestBuf: all tests passed successfully
 
 # Begin Test 20
 
-  my_Access() called, iter= 1, level= 0
+  my_Access() called, iter= 1, level= 0, calling function= 3
   time steps = 128
   iterations           = 1
   number of levels     = 1
@@ -791,7 +904,7 @@ Finished braid_TestBuf: all tests passed successfully
 
 # Begin Test 21
 
-  my_Access() called, iter= 7, level= 0
+  my_Access() called, iter= 7, level= 0, calling function= 3
   time steps = 128
   iterations           = 7
   number of levels     = 2
@@ -799,7 +912,7 @@ Finished braid_TestBuf: all tests passed successfully
 
 # Begin Test 22
 
-  my_Access() called, iter= 8, level= 0
+  my_Access() called, iter= 8, level= 0, calling function= 3
   time steps = 128
   iterations           = 8
   number of levels     = 8
@@ -807,9 +920,207 @@ Finished braid_TestBuf: all tests passed successfully
 
 # Begin Test 23
 
-  my_Access() called, iter= 8, level= 0
+  my_Access() called, iter= 8, level= 0, calling function= 3
   time steps = 128
   iterations           = 8
   number of levels     = 2
  Fine level spatial problem size  : 17 x 17
+
+
+# Begin Test 24
+
+  my_Access() called, iter= 4, level= 0, calling function= 6
+  time steps = 32
+  iterations            = 4
+  number of levels      = 2
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 25
+
+  my_Access() called, iter= 4, level= 0, calling function= 6
+  time steps = 32
+  iterations            = 4
+  number of levels      = 2
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 26
+
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 0, level= 1, calling function= 0
+  my_Access() called, iter= 0, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 6
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 1, level= 1, calling function= 0
+  my_Access() called, iter= 1, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 6
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 2, level= 1, calling function= 0
+  my_Access() called, iter= 2, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 6
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 3, level= 1, calling function= 0
+  my_Access() called, iter= 3, level= 0, calling function= 0
+  my_Access() called, iter= 4, level= 0, calling function= 6
+  time steps = 32
+  iterations            = 4
+  number of levels      = 2
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 27
+
+  my_Access() called, iter= 4, level= 0, calling function= 6
+  time steps = 32
+  iterations            = 4
+  number of levels      = 3
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 28
+
+  my_Access() called, iter= 0, level= 0, calling function= 6
+  time steps = 32
+  iterations            = 0
+  number of levels      = 1
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 29
+
+  my_Access() called, iter= 0, level= 0, calling function= 3
+  time steps = 32
+  iterations            = 0
+  number of levels      = 1
+ Fine level spatial problem size  : 17 x 17
+
+# Begin Test 30
+
+  my_Access() called, iter= 4, level= 0, calling function= 3
+  time steps = 11
+  iterations            = 4
+  number of levels      = 2
+ Fine level spatial problem size  : 17 x 17
+Final discretization error (via ulast) = 1.5689e-03
+
+# Begin Test 30
+
+  my_Access() called, iter= 4, level= 0, calling function= 3
+  time steps = 10
+  iterations            = 4
+  number of levels      = 2
+ Fine level spatial problem size  : 17 x 17
+Final discretization error (via ulast) = 1.4428e-03
 

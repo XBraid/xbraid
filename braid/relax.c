@@ -36,11 +36,21 @@ _braid_FCRelax(braid_Core  core,
    braid_Real     *CWts     = _braid_CoreElt(core, CWts);
    _braid_Grid   **grids    = _braid_CoreElt(core, grids);
    braid_Int       ncpoints = _braid_GridElt(grids[level], ncpoints);
+   braid_Int       done     = _braid_CoreElt(core, done);
+
+   braid_AccessStatus   astatus      = (braid_AccessStatus)core;
+   braid_Real          *ta           = _braid_GridElt(grids[level], ta);
+   braid_Int            access_level = _braid_CoreElt(core, access_level);
+   braid_Int            f_ilower     = _braid_GridElt(grids[level], ilower);
+   braid_Int            iter         = _braid_CoreElt(core, niter);
+   braid_Int            nrefine      = _braid_CoreElt(core, nrefine);
+   braid_Int            gupper_zero  = _braid_CoreElt(core, gupper);
 
    braid_BaseVector  u, u_old;
    braid_Real        CWt;
    braid_Int         flo, fhi, fi, ci;
    braid_Int         nu, nrelax, interval;
+   braid_Real        rnm;
 
    /* Required for Richardson */
    MPI_Comm            comm       = _braid_CoreElt(core, comm);
@@ -50,13 +60,10 @@ _braid_FCRelax(braid_Core  core,
    braid_Int           clower     = _braid_GridElt(grids[level], clower);
    braid_Int           cfactor    = _braid_GridElt(grids[level], cfactor);
    braid_Int           gupper     = _braid_GridElt(grids[level], gupper);
-   braid_Real         *ta         = _braid_GridElt(grids[level], ta);
    braid_Real         *dtk        = _braid_CoreElt(core, dtk);
    braid_Int           order      = _braid_CoreElt(core, order);
    braid_BaseVector   *ua         = _braid_GridElt(grids[level], ua);
    braid_Int           richardson = _braid_CoreElt(core, richardson);
-   braid_Int           iter       = _braid_CoreElt(core, niter);
-   braid_Int           nrefine    = _braid_CoreElt(core, nrefine);
    braid_BufferStatus  bstatus    = (braid_BufferStatus)core;
    braid_StepStatus    status     = (braid_StepStatus)core;
    braid_Real          tol        = _braid_CoreElt(core, tol );
@@ -158,10 +165,20 @@ _braid_FCRelax(braid_Core  core,
          }
 
          /* F-relaxation */
+         _braid_GetRNorm(core, -1, &rnm);
          for (fi = flo; fi <= fhi; fi++)
          {
             _braid_Step(core, level, fi, NULL, u);
             _braid_USetVector(core, level, fi, u, 0);
+
+            /* Allow user to process current vector */
+            if( (access_level >= 3) || (done == 1) )
+            {
+               _braid_AccessStatusInit(ta[fi-f_ilower], fi, rnm, iter, level, nrefine, gupper_zero,
+                                       done, 0, braid_ASCaller_FCRelax, astatus);
+               _braid_AccessVector(core, astatus, u);
+            }
+
          }
 
          /* C-relaxation */
@@ -212,6 +229,27 @@ _braid_FCRelax(braid_Core  core,
                _braid_BaseFree(core, app,  bigstep);
             }
 
+            /* Allow user to process current vector */
+            if( (access_level >= 3) || (done == 1) )
+            {
+               _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper_zero,
+                                       done, 0, braid_ASCaller_FCRelax, astatus);
+               _braid_AccessVector(core, astatus, u);
+               ///* If Richardson, then vector u is not up-to-date, so be safe
+               // * and get fresh reference for user access */
+               //braid_BaseVector uref;
+               //_braid_UGetVectorRef(core, level, ci, &uref);
+               //_braid_AccessVector(core, astatus, uref);
+            }
+         
+         }
+         else if( (level == 0) && (ci == _braid_CoreElt(core, initiali)) && done)
+         {
+            /* If final opportunity for user access, provide access to initial condition */
+            _braid_UGetVector(core, level, ci, &u);
+            _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper_zero,
+                                    done, 0, braid_ASCaller_FCRelax, astatus);
+            _braid_AccessVector(core, astatus, u);
          }
 
          /* if ((flo <= fhi) && (interval == ncpoints)) */

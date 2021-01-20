@@ -262,6 +262,7 @@ class BraidStepStatus
       { braid_StepStatusGetTstartTstop(pstatus, tstart_ptr, tstop_ptr); }
       void GetT(braid_Real *tstart_ptr)                  { braid_StepStatusGetT(pstatus, tstart_ptr); }
       void GetTstop(braid_Real *tstop_ptr)               { braid_StepStatusGetTstop(pstatus, tstop_ptr); }
+      void GetDone(braid_Int *done)                      { braid_StatusGetDone((braid_Status) pstatus, done); }
       void GetTIndex(braid_Int *tindex_ptr)              { braid_StepStatusGetTIndex(pstatus, tindex_ptr); }
       void GetLevel(braid_Int *level_ptr)                { braid_StepStatusGetLevel(pstatus, level_ptr); }
       void GetNLevels(braid_Int *nlevels_ptr)            { braid_StepStatusGetNLevels(pstatus, nlevels_ptr); }
@@ -584,6 +585,8 @@ public:
 
    void SetAccessLevel(braid_Int access_level) { braid_SetAccessLevel(core, access_level); }
 
+   void SetFinalFCRelax() { braid_SetFinalFCRelax(core); }
+
    void SetFMG() { braid_SetFMG(core); }
 
    void SetNFMG(braid_Int k) { braid_SetNFMG(core, k); }
@@ -591,6 +594,8 @@ public:
    void SetNFMGVcyc(braid_Int nfmg_Vcyc) { braid_SetNFMGVcyc(core, nfmg_Vcyc); }
 
    void SetStorage(braid_Int storage) { braid_SetStorage(core, storage); }
+
+   void SetRevertedRanks(braid_Int reverted_ranks) { braid_SetRevertedRanks(core, reverted_ranks); }
 
    void SetRefine(braid_Int refine) { braid_SetRefine(core, refine); }
 
@@ -612,9 +617,17 @@ public:
   
    void GetNumIter(braid_Int *niter_ptr) { braid_GetNumIter(core, niter_ptr); }
 
+   void GetCFactor(braid_Int *cfactor_ptr) { _braid_GetCFactor(core, 0, cfactor_ptr); }
+
    void GetRNorms(braid_Int *nrequest_ptr, braid_Real *rnorms) { braid_GetRNorms(core, nrequest_ptr, rnorms); }
    
    void GetNLevels(braid_Int *nlevels_ptr) { braid_GetNLevels(core, nlevels_ptr); }
+
+   braid_Core GetCore() { return core; };
+
+   braid_Int GetWarmRestart() { return _braid_CoreElt(core, warm_restart); };
+
+   void GetDistribution(braid_Int *ilower_ptr, braid_Int *iupper_ptr) { _braid_GetDistribution(core, ilower_ptr, iupper_ptr); };
 
    void GetMyID(braid_Int *myid_ptr) { braid_GetMyID(core, myid_ptr); }
   

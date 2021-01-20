@@ -80,6 +80,7 @@ _braid_FAccess(braid_Core     core,
             _braid_ObjectiveStatusInit(ta[fi-ilower], fi, iter, level, nrefine, gupper, ostatus);
             _braid_AddToObjective(core, u, ostatus);
          }
+
       }
       if (flo <= fhi)
       {
@@ -105,6 +106,7 @@ _braid_FAccess(braid_Core     core,
             _braid_ObjectiveStatusInit(ta[ci-ilower], ci, iter, level, nrefine, gupper, ostatus);
             _braid_AddToObjective(core, u, ostatus);
          }
+         
       }
    }
    _braid_UCommWait(core, level);
