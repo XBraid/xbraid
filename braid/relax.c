@@ -44,7 +44,7 @@ _braid_FCRelax(braid_Core  core,
    braid_Int            f_ilower     = _braid_GridElt(grids[level], ilower);
    braid_Int            iter         = _braid_CoreElt(core, niter);
    braid_Int            nrefine      = _braid_CoreElt(core, nrefine);
-   braid_Int            gupper       = _braid_CoreElt(core, gupper);
+   braid_Int            gupper_zero  = _braid_CoreElt(core, gupper);
 
    braid_BaseVector  u, u_old;
    braid_Real        CWt;
@@ -60,13 +60,10 @@ _braid_FCRelax(braid_Core  core,
    braid_Int           clower     = _braid_GridElt(grids[level], clower);
    braid_Int           cfactor    = _braid_GridElt(grids[level], cfactor);
    braid_Int           gupper     = _braid_GridElt(grids[level], gupper);
-   braid_Real         *ta         = _braid_GridElt(grids[level], ta);
    braid_Real         *dtk        = _braid_CoreElt(core, dtk);
    braid_Int           order      = _braid_CoreElt(core, order);
    braid_BaseVector   *ua         = _braid_GridElt(grids[level], ua);
    braid_Int           richardson = _braid_CoreElt(core, richardson);
-   braid_Int           iter       = _braid_CoreElt(core, niter);
-   braid_Int           nrefine    = _braid_CoreElt(core, nrefine);
    braid_BufferStatus  bstatus    = (braid_BufferStatus)core;
    braid_StepStatus    status     = (braid_StepStatus)core;
    braid_Real          tol        = _braid_CoreElt(core, tol );
@@ -177,7 +174,7 @@ _braid_FCRelax(braid_Core  core,
             /* Allow user to process current vector */
             if( (access_level >= 3) || (done == 1) )
             {
-               _braid_AccessStatusInit(ta[fi-f_ilower], fi, rnm, iter, level, nrefine, gupper,
+               _braid_AccessStatusInit(ta[fi-f_ilower], fi, rnm, iter, level, nrefine, gupper_zero,
                                        done, 0, braid_ASCaller_FCRelax, astatus);
                _braid_AccessVector(core, astatus, u);
             }
@@ -235,7 +232,7 @@ _braid_FCRelax(braid_Core  core,
             /* Allow user to process current vector */
             if( (access_level >= 3) || (done == 1) )
             {
-               _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper,
+               _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper_zero,
                                        done, 0, braid_ASCaller_FCRelax, astatus);
                _braid_AccessVector(core, astatus, u);
             }
@@ -245,7 +242,7 @@ _braid_FCRelax(braid_Core  core,
          {
             /* If final opportunity for user access, provide access to initial condition */
             _braid_UGetVector(core, level, ci, &u);
-            _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper,
+            _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper_zero,
                                     done, 0, braid_ASCaller_FCRelax, astatus);
             _braid_AccessVector(core, astatus, u);
          }
