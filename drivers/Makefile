@@ -47,7 +47,7 @@ MFEM_LIB_FILE = mfem_is_not_built
 BRAID_FLAGS = -I$(BRAID_DIR)
 BRAID_LIB_FILE = $(BRAID_DIR)/libbraid.a
 
-C_EXAMPLES = drive-burgers-1D drive-diffusion-2D drive-lorenz drive-simple-optimization
+C_EXAMPLES = drive-burgers-1D drive-diffusion-2D drive-lorenz drive-solve-adjoint-with-xbraid
 # Note: .cpp examples will be linked with mfem
 CXX_EXAMPLES = drive-diffusion-1D-moving-mesh drive-diffusion-1D-moving-mesh-serial \
 					drive-diffusion-ben drive-diffusion drive-lin-elasticity \

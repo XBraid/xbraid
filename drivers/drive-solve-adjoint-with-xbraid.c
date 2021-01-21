@@ -21,13 +21,13 @@
  *
  ***********************************************************************EHEADER*/
 
- /** Driver:       drive-simple-optimization.c
+ /** Driver:       drive-solve-adjoint-with-xbraid.c
  *
  * Interface:    C
  * 
  * Requires:     only C-language support     
  *
- * Compile with: make drive-simple-optimization
+ * Compile with: make drive-solve-adjoint-with-xbraid
  *
  * Description:  Uses XBraid to solve the adjoint equation of the following 
  *               simple optimal control problem
@@ -57,7 +57,7 @@
 #include "braid.h"
 #include "_braid.h"
 #include "braid_test.h"
-#include "drive-simple-optimization-lib.c"
+#include "drive-solve-adjoint-with-xbraid-lib.c"
 
 
 /*--------------------------------------------------------------------------
@@ -79,12 +79,12 @@ typedef struct _braid_App_struct
 /* Define the state vector at one time-step */
 typedef struct _braid_Vector_struct
 {
-   /* The Vector part holds the R^2 state vector (u_1, u_2) at one time step */
+   /* State vector in R^2 (u_1, u_2) at one time step */
    double *values;    
 
-   /* The Shell part consists of the design variable c at one time step */
+   /* Store the local design variable c at one time step */
    double  design;
-   /* Store the local gradient in u. */
+   /* Store the local gradient wrt c at one time step */
    double gradient;
 
 } my_Vector;
@@ -105,6 +105,7 @@ int GetTimeStepIndex(braid_App app,
    return ts;
 }  
 
+/* From primal time-step index ts, return the corresponding adjoint time-step index. */
 int GetPrimalTimeIndex(braid_App app,
                        int       ts)
 {
@@ -165,6 +166,7 @@ my_Step_Adj(braid_App        app,
    double design;
    double deltaT;
    double localgrad = 0.0;
+   int done;
    
    /* Get the time-steps */
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
@@ -179,15 +181,16 @@ my_Step_Adj(braid_App        app,
    _braid_UGetVectorRef(app->primalcore, 0, primaltimestep, &uprimal);
    design = uprimal->userVector->design;
 
-  /* Take one step backwards */
+  /* Take one step backwards. */
    localgrad = take_step_diff(u->values, deltaT, design);
    
    /* Add derivative of objective function */
    u->values[0] += 2 * uprimal->userVector->values[0];
    u->values[1] += 2 * uprimal->userVector->values[1];
 
-   /* Store local gradient */
-   u->gradient = localgrad;
+   /* Store local gradient if XBraid is done */
+   braid_StepStatusGetDone(status, &done);
+   if (done) u->gradient = localgrad;
 
    /* no refinement */
    braid_StepStatusSetRFactor(status, 1);
@@ -242,7 +245,8 @@ my_Init_Adj(braid_App     app,
    u = (my_Vector *) malloc(sizeof(my_Vector));
    u->values     = (double*) malloc( 2*sizeof(double) );
 
-   /* Initialize the adjoint vector with derivative of objective function at last time step */
+   /* If this is the last primal time-step (i.e. the first adjoint time-step), 
+    * initialize the adjoint vector with derivative of objective function */
    if (t == 0)
    {
          int primaltimestep = GetPrimalTimeIndex(app, ts) ;
@@ -607,7 +611,7 @@ int main (int argc, char *argv[])
    app->primalcore = core;
 
    /* Solve the forward ODE with XBraid */
-   if (rank==0) printf("Solving ODE with XBraid...\n");
+   if (rank==0) printf("\nSolving ODE with XBraid...\n");
    braid_Drive(core);
 
    /* Evaluate the objective function */
@@ -648,9 +652,12 @@ int main (int argc, char *argv[])
 
    /* Store all points */
    braid_SetStorage(core_adj, 0);
+   
+   /* Perform a final FC-relaxation to collect the gradient After XBraid is done. */
+   braid_SetFinalFCRelax(core_adj);
 
    /* Solve the adjoint equation with XBraid */
-   if (rank==0) printf("Solving adjoint equation with XBraid...\n");
+   if (rank==0) printf("\nSolving adjoint equation with XBraid...\n");
    braid_Drive(core_adj);
 
    /* Compute gradient norm */
