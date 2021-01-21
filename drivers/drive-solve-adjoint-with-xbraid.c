@@ -461,8 +461,9 @@ int main (int argc, char *argv[])
    tstart = 0.0;             /* Beginning of time domain */
    tstop  = 1.0;             /* End of time domain*/
 
-   /* Define some optimization parameters */
-   stepsize = 5.0;            /* Step size for design updates */
+   /* Define some optimization parameters (not currently used, but would be if
+    * gradient computation were wrapped inside an optimization loop */
+   stepsize = 5.0;           /* Step size for design updates */
    maxiter  = 500;           /* Maximum number of optimization iterations */
    gtol     = 1e-6;          /* Stopping criterion on the gradient norm */
 
@@ -483,14 +484,15 @@ int main (int argc, char *argv[])
       if ( strcmp(argv[arg_index], "-help") == 0 )
       {
          printf("\n");
-         printf(" Solves a simple optimal control problem in time-serial on [0, 1] \n\n");
+         printf(" Uses XBraid to solve the adjoint equation of the following \n");
+         printf(" simple optimal control proble \n\n");
          printf("  min   \\int_0^1 u_1(t)^2 + u_2(t)^2 dt \n\n");
          printf("  s.t.  d/dt u_1(t) = u_2(t) \n");
          printf("        d/dt u_2(t) = -u_2(t) + c(t) \n\n");
          printf("  -ntime <ntime>          : set num points in time\n");
-         printf("  -stepsize <stepsize>    : Step size for design updates \n");
-         printf("  -mi <maxiter>           : Maximum number of optimization iterations \n");
-         printf("  -gtol <gtol>            : Stopping criterion on the gradient norm \n");
+         //printf("  -stepsize <stepsize>    : Step size for design updates \n");
+         //printf("  -mi <maxiter>           : Maximum number of optimization iterations \n");
+         //printf("  -gtol <gtol>            : Stopping criterion on the gradient norm \n");
          printf("  -ml <max_levels>        : Max number of braid levels \n");
          printf("  -bmi <braid_maxiter>    : Braid max_iter \n");
          printf("  -cf <cfactor>           : Coarsening factor \n");
@@ -631,7 +633,7 @@ int main (int argc, char *argv[])
       }
    }
    MPI_Allreduce(&objective, &objective, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-   if (rank == 0) printf("Objective = %1.14e\n", objective);
+   if (rank == 0) printf("Objective = %1.12e\n", objective);
 
 
    /* Set up XBraid core to solve the adjoint equation */
@@ -645,7 +647,7 @@ int main (int argc, char *argv[])
    braid_SetAccessLevel(core_adj, access_level);
    braid_SetPrintLevel( core_adj, print_level);       
    braid_SetMaxIter(core_adj, braid_maxiter);
-   braid_SetAbsTol(core_adj, braid_tol);
+   braid_SetAbsTol(core_adj, braid_adjtol);
 
    /* Tell XBraid to use reverted processor ranks when solving adjoint equation */
    braid_SetRevertedRanks(core_adj, 1);
@@ -676,7 +678,7 @@ int main (int argc, char *argv[])
    }
    mygnorm = gnorm;
    MPI_Allreduce(&mygnorm, &gnorm, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-   if (rank == 0) printf("Gradient norm: %1.14e\n", gnorm);
+   if (rank == 0) printf("Gradient norm: %1.12e\n", gnorm);
 
 
    /* Clean up */
