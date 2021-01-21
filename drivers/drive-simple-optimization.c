@@ -35,7 +35,7 @@
  *                 min   \int_0^1 u_1(t)^2 + u_2(t)^2 dt 
  * 
  *                  s.t.  d/dt u_1(t) = u_2(t), 
- *                        d/dt u_2(t) = -u_2(t) + c(t)
+ *                        d/dt u_2(t) = -u_2(t) + c(t)^2
  * 
  *               with initial condition u_1(0) = 0, u_2(0) = -1 and piecewise
  *               constant control c(t).  
