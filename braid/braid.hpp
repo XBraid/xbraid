@@ -232,6 +232,11 @@ class BraidSyncStatus
       void GetDone(braid_Int *done_ptr)              { braid_SyncStatusGetDone(sstatus, done_ptr); }
       void GetNumErrorEst(braid_Int *npoints_ptr)    { braid_SyncStatusGetNumErrorEst(sstatus, npoints_ptr); }
       void GetAllErrorEst(braid_Real *error_est_ptr) { braid_SyncStatusGetAllErrorEst(sstatus, error_est_ptr); }
+      void GetTComm(MPI_Comm *comm_ptr)              { braid_SyncStatusGetTComm(sstatus, comm_ptr); }
+      void GetProc(braid_Int *proc_ptr,
+                   braid_Int  level,
+                   braid_Int  index)
+      { braid_SyncStatusGetProc(sstatus, proc_ptr, level, index); }
       void GetCallingFunction(braid_Int *callingfcn_ptr)
       {
          braid_SyncStatusGetCallingFunction(sstatus, callingfcn_ptr);

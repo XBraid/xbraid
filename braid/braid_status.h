@@ -29,6 +29,7 @@
 #ifndef braid_status_HEADER
 #define braid_status_HEADER
 
+#include "braid.h"
 #include "braid_defs.h"
 
 #ifdef __cplusplus
@@ -42,6 +43,8 @@ extern "C" {
 /** Macros allowing for auto-generation of `inherited' StatusGet functions */
 #define ACCESSOR_HEADER_GET1(stype,param,vtype1) \
   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1);
+#define ACCESSOR_HEADER_GET1_IN2(stype,param,vtype1,vtype2,vtype3) \
+   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 v2, braid_##vtype3 v3);
 #define ACCESSOR_HEADER_GET1_IN3(stype,param,vtype1,vtype2,vtype3,vtype4) \
    braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 v2, braid_##vtype3 v3, braid_##vtype4 v4);
 #define ACCESSOR_HEADER_GET2(stype,param,vtype1,vtype2) \
@@ -144,6 +147,7 @@ typedef struct _braid_ObjectiveStatus_struct *braid_ObjectiveStatus;
 /*--------------------------------------------------------------------------
  * Global Status Prototypes
  *--------------------------------------------------------------------------*/
+
 
 /**
  * Return the current time from the Status structure.
@@ -391,6 +395,18 @@ braid_StatusGetRNorms(braid_Status status,                 /**< structure contai
                       );
 
 /**
+ * Returns the processor number in *proc_ptr* on which the time step *index*
+ * lives for the given *level*.  Returns -1 if *index* is out of range.
+ * This is used especially by the _braid_SyncStatus functionality
+ **/
+braid_Int
+braid_StatusGetProc(braid_Status  status,
+                    braid_Int    *proc_ptr,
+                    braid_Int     level,
+                    braid_Int     index
+                    );
+
+/**
  * Return the previous *old_fine_tolx* set through *braid_StatusSetOldFineTolx*
  * This is used especially by *braid_GetSpatialAccuracy
  **/
@@ -569,6 +585,7 @@ ACCESSOR_HEADER_GET1(Access, SingleErrorEstAccess, Real)
 
 ACCESSOR_HEADER_GET2_IN1(Sync, TIUL,         Int, Int, Int)
 ACCESSOR_HEADER_GET1_IN3(Sync, TimeValues,   Real*, Int, Int, Int)
+ACCESSOR_HEADER_GET1_IN2(Sync, Proc,         Int, Int, Int)
 ACCESSOR_HEADER_GET1(Sync, Iter,             Int)
 ACCESSOR_HEADER_GET1(Sync, Level,            Int)
 ACCESSOR_HEADER_GET1(Sync, NLevels,          Int)
@@ -578,6 +595,16 @@ ACCESSOR_HEADER_GET1(Sync, Done,             Int)
 ACCESSOR_HEADER_GET1(Sync, CallingFunction,  Int)
 ACCESSOR_HEADER_GET1(Sync, NumErrorEst,      Int)
 ACCESSOR_HEADER_GET1(Sync, AllErrorEst,      Real)
+
+/**
+ * Return the temporal communicator.
+ * Should only be accessible from SyncStatus function, so it is not
+ * placed in the global status prototypes. No 'inheritence' allowed.
+ **/
+braid_Int
+braid_SyncStatusGetTComm(braid_SyncStatus status,          /**< structure containing current simulation info */
+                         MPI_Comm        *comm_ptr         /**< output, temporal communicator */
+                         );
 
 /*--------------------------------------------------------------------------
  * CoarsenRefStatus Prototypes: They just wrap the corresponding Status accessors
