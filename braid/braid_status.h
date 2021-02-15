@@ -692,6 +692,8 @@ ACCESSOR_HEADER_GET1(Objective, Tol,           Real)
 #define braid_ASCaller_FRefine_AfterInitHier   4
 /** When CallingFunction equals 5, Braid is at the top of the cycle */
 #define braid_ASCaller_Drive_TopCycle   5
+/** When CallingFunction equals 6, Braid just finished initialization */
+#define braid_ASCaller_Drive_AfterInit   6
 
 /** @}*/
 
