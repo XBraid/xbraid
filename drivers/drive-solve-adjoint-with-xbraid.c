@@ -451,10 +451,12 @@ int main (int argc, char *argv[])
          
    double   tstart, tstop; 
    int      rank, size, arg_index;
-   int      ntime, maxiter;
-   double   objective, stepsize, mygnorm, gnorm, gtol;
+   int      ntime;
+   double   objective, mygnorm, gnorm;
    int      max_levels, cfactor, access_level, print_level, braid_maxiter;
    double   braid_tol, braid_adjtol;
+   /*double   gtol, stepsize;*/
+   /*int      maxiter*/
 
    /* Define time domain */
    ntime  = 20;              /* Total number of time-steps */
@@ -463,9 +465,9 @@ int main (int argc, char *argv[])
 
    /* Define some optimization parameters (not currently used, but would be if
     * gradient computation were wrapped inside an optimization loop */
-   stepsize = 5.0;           /* Step size for design updates */
-   maxiter  = 500;           /* Maximum number of optimization iterations */
-   gtol     = 1e-6;          /* Stopping criterion on the gradient norm */
+   /*stepsize = 5.0;*/           /* Step size for design updates */
+   /*maxiter  = 500;*/           /* Maximum number of optimization iterations */
+   /*gtol     = 1e-6;*/          /* Stopping criterion on the gradient norm */
 
    /* Define some Braid parameters */
    max_levels     = 4;
@@ -507,7 +509,7 @@ int main (int argc, char *argv[])
          arg_index++;
          ntime = atoi(argv[arg_index++]);
       }
-      else if ( strcmp(argv[arg_index], "-stepsize") == 0 )
+      /*else if ( strcmp(argv[arg_index], "-stepsize") == 0 )
       {
          arg_index++;
          stepsize = atof(argv[arg_index++]);
@@ -521,7 +523,7 @@ int main (int argc, char *argv[])
       {
          arg_index++;
          gtol = atof(argv[arg_index++]);
-      }
+      }*/
       else if ( strcmp(argv[arg_index], "-ml") == 0 )
       {
          arg_index++;
