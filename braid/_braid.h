@@ -271,6 +271,7 @@ typedef struct _braid_Core_struct
    braid_Int              max_levels;       /**< maximum number of temporal grid levels */
    braid_Int              incr_max_levels;  /**< After doing refinement, increase the max number of levels by 1 (0=false, 1=true)*/
    braid_Int              min_coarse;       /**< minimum possible coarse grid size */
+   braid_Int              relax_only_cg;    /**< Use relaxation only on coarsest grid (alternative to serial solve) */
    braid_Real             tol;              /**< stopping tolerance */
    braid_Int              rtol;             /**< use relative tolerance */
    braid_Int             *nrels;            /**< number of pre-relaxations on each level */

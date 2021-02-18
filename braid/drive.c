@@ -438,7 +438,7 @@ _braid_Drive(braid_Core  core,
    braid_Int            obj_only        = _braid_CoreElt(core, obj_only);
    braid_Int            adjoint         = _braid_CoreElt(core, adjoint);
    braid_Int            seq_soln        = _braid_CoreElt(core, seq_soln);
-   braid_Int            relax_only_cg   = 1;//_braid_CoreElt(core, relax_only_cg);
+   braid_Int            relax_only_cg   = _braid_CoreElt(core, relax_only_cg);
    braid_SyncStatus     sstatus         = (braid_SyncStatus)core;
 
    braid_Int     *nrels;
@@ -454,10 +454,10 @@ _braid_Drive(braid_Core  core,
    _braid_DriveInitCycle(core, &cycle);
 
    /* Just do sequential time marching, 
-    * if only one level and ( no FRefine OR relaxation only on the coarse-grid is turned off) */
+    * if only one level and ( no FRefine AND no relaxation only on the coarse-grid ) */
    nlevels = _braid_CoreElt(core, nlevels);
    done  = 0;
-   if ( (max_levels <= 1) && (incr_max_levels == 0 && !relax_only_cg)  )
+   if ( (max_levels <= 1) && ( (incr_max_levels == 0) && !relax_only_cg)  )
    {
       done = 1;
    }
@@ -487,12 +487,14 @@ _braid_Drive(braid_Core  core,
             nrel0 = nrels[0];
             nrels[0] = 1;
          }
+
          _braid_FCRelax(core, 0);
+         _braid_SetRNorm(core, -1, 0.0);
+
          if(!relax_only_cg)
          {
             nrels[0] = nrel0;
          }
-         _braid_SetRNorm(core, -1, 0.0);
       }
 
       /* Update cycle state and direction based on level and iter */
@@ -525,15 +527,13 @@ _braid_Drive(braid_Core  core,
 
          if (level > 0)
          {
-            /* Solve with relaxation on coarsest grid if periodic or explicitly
-             * choosing relaxation on coarsest grid */
+            /* Solve with relaxation on coarsest grid IF ( periodic OR explicitly choosing relaxation on coarsest grid ) */
             if ( (level == (nlevels-1)) && (_braid_CoreElt(core, periodic) || relax_only_cg) )
             {
                braid_Int  nrel;
                nrels = _braid_CoreElt(core, nrels);
                nrel  = nrels[level];
                nrels[level] = nrels[max_levels-1];
-               printf("\n\n   NRELS   %d    %d \n", nrel, nrels[max_levels-1]);
                _braid_FCRelax(core, level);
                nrels[level] = nrel;
             }

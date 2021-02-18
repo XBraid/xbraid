@@ -57,7 +57,6 @@ _braid_FInterp(braid_Core  core,
    
    _braid_UCommInitF(core, level);
 
-   printf("\n\nStart FINTERP\n");
    /**
     * Start from the right-most interval 
     *
@@ -142,8 +141,6 @@ _braid_FInterp(braid_Core  core,
 
    /* Clean up */
    _braid_GridClean(core, grids[level]);
-   
-   printf("\nEnd FINTERP\n\n");
 
    return _braid_error_flag;
 }

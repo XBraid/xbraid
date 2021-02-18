@@ -532,6 +532,8 @@ public:
 
    void SetMinCoarse(braid_Int min_coarse) { braid_SetMinCoarse(core, min_coarse); }
 
+   void SetRelaxOnlyCG(braid_Int relax_only_cg) { braid_SetRelaxOnlyCG(core, relax_only_cg); }
+
    void SetNRelax(braid_Int level, braid_Int nrelax)
    { braid_SetNRelax(core, level, nrelax); }
 

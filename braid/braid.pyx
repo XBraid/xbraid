@@ -155,6 +155,7 @@ cdef extern from "braid.h":
     int braid_SetMaxRefinements (braid_Core core, int max_refinements)
     int braid_SetTPointsCutoff (braid_Core core, int tpoints_cutoff)
     int braid_SetMinCoarse (braid_Core core, int min_coarse)
+    int braid_SetRelaxOnlyCG (braid_Core core, int relax_only_cg)
     int braid_SetAbsTol (braid_Core core, double atol)
     int braid_SetRelTol (braid_Core core, double rtol)
     int braid_SetNRelax (braid_Core core, int level, int nrelax)

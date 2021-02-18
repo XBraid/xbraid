@@ -112,7 +112,6 @@ _braid_FRestrict(braid_Core   core,
 
    _braid_UCommInit(core, level);
 
-   printf("\n\nStart FRESTRICT\n");
    /* Start from the right-most interval.
     * 
     * Do an F-relax and then a C-relax.  These relaxations are needed to compute
@@ -340,7 +339,6 @@ _braid_FRestrict(braid_Core   core,
       _braid_TFree(estimate);
    } 
    
-   printf("END FRESTRICT\n\n");
    return _braid_error_flag;
 }
 
