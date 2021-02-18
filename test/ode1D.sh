@@ -106,7 +106,22 @@ TESTS=( "$RunString -np 1 $example_dir/ex-01" \
         "$RunString -np 1 $example_dir/ex-01-expanded-f -tg 2 -ml 2 -cf0 2 -cf 2" \
         "$RunString -np 2 $example_dir/ex-01-expanded-f -tg 2 -ml 2 -cf0 2 -cf 2" \
         "$RunString -np 1 $example_dir/ex-01-pp" \
-        "$RunString -np 2 $example_dir/ex-01-pp" )
+        "$RunString -np 2 $example_dir/ex-01-pp" \
+        "$RunString -np 1 $example_dir/ex-01-expanded -ntime 24 -ml 2 -mi 2 -nu0 1 -nu 1 -nuc 1 -relax_only_cg -skip 0" \
+        "$RunString -np 2 $example_dir/ex-01-expanded -ntime 24 -ml 2 -mi 2 -nu0 1 -nu 1 -nuc 1 -relax_only_cg -skip 0" \
+        "$RunString -np 1 $example_dir/ex-01-expanded -ntime 24 -ml 2 -mi 2 -nu0 1 -nu 2 -nuc 2 -relax_only_cg -skip 1" \
+        "$RunString -np 1 $example_dir/ex-01-expanded -ntime 24 -ml 2 -mi 2 -nu0 1 -nu 2 -skip 1" \
+        "$RunString -np 1 $example_dir/ex-01-expanded -ntime 24 -ml 2 -mi 2 -nu0 1 -nu 2 -skip 0" \
+        "$RunString -np 1 $example_dir/ex-01-expanded -ntime 24 -ml 1 -mi 2 -nu0 2 -nu 2 -nuc 2 -relax_only_cg -skip 0" \
+        "$RunString -np 1 $example_dir/ex-01-expanded -ntime 24 -ml 1 -mi 2 -nu0 2 -nu 2 -nuc 2 -relax_only_cg -skip 1" \
+        "$RunString -np 2 $example_dir/ex-01-expanded -ntime 24 -ml 1 -mi 2 -nu0 2 -nu 2 -nuc 2 -relax_only_cg -skip 1" \
+        "$RunString -np 1 $example_dir/ex-01-expanded -ntime 24 -ml 1 -mi 2 -nu0 2 -nu 2 -skip 1" \
+        "$RunString -np 1 $example_dir/ex-01-expanded -ntime 24 -ml 1 -mi 2 -nu0 2 -nu 2 -skip 0" \
+        "$RunString -np 1 $example_dir/ex-01-expanded -ntime 24 -ml 3 -mi 2 -nu0 1 -nu 2 -nuc 2 -relax_only_cg -skip 0" \
+        "$RunString -np 2 $example_dir/ex-01-expanded -ntime 24 -ml 3 -mi 2 -nu0 1 -nu 2 -nuc 2 -relax_only_cg -skip 0" \
+        "$RunString -np 1 $example_dir/ex-01-expanded -ntime 24 -ml 3 -mi 2 -nu0 1 -nu 1 -nuc 1 -relax_only_cg -skip 1" \
+        "$RunString -np 1 $example_dir/ex-01-expanded -ntime 24 -ml 3 -mi 2 -nu0 1 -nu 2 -skip 1" \
+        "$RunString -np 1 $example_dir/ex-01-expanded -ntime 24 -ml 3 -mi 2 -nu0 1 -nu 2 -skip 0" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 

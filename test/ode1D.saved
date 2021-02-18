@@ -85,9 +85,93 @@ Finished braid_TestAll: no fails detected, however some results must be
   max number of levels  = 2
   number of levels      = 2
 # Begin Test 15
-  time steps = 10
-  iterations            = 4
-  residual norm         = 0.000000e+00
+  time steps = 24
+  iterations            = 2
+  residual norm         = 2.558119e-02
   max number of levels  = 2
   number of levels      = 2
+# Begin Test 16
+  time steps = 24
+  iterations            = 2
+  residual norm         = 2.558119e-02
+  max number of levels  = 2
+  number of levels      = 2
+# Begin Test 17
+  time steps = 24
+  iterations            = 2
+  residual norm         = 3.240160e-02
+  max number of levels  = 2
+  number of levels      = 2
+# Begin Test 18
+  time steps = 24
+  iterations            = 2
+  residual norm         = 2.851112e-02
+  max number of levels  = 2
+  number of levels      = 2
+# Begin Test 19
+  time steps = 24
+  iterations            = 2
+  residual norm         = 1.403540e-02
+  max number of levels  = 2
+  number of levels      = 2
+# Begin Test 20
+  time steps = 24
+  iterations            = 1
+  residual norm         = 0.000000e+00
+  max number of levels  = 1
+  number of levels      = 1
+# Begin Test 21
+  time steps = 24
+  iterations            = 1
+  residual norm         = 0.000000e+00
+  max number of levels  = 1
+  number of levels      = 1
+# Begin Test 22
+  time steps = 24
+  iterations            = 1
+  residual norm         = 0.000000e+00
+  max number of levels  = 1
+  number of levels      = 1
+# Begin Test 23
+  time steps = 24
+  iterations            = 0
+  residual norm         = -1.000000e+00
+  max number of levels  = 1
+  number of levels      = 1
+# Begin Test 24
+  time steps = 24
+  iterations            = 0
+  residual norm         = -1.000000e+00
+  max number of levels  = 1
+  number of levels      = 1
+# Begin Test 25
+  time steps = 24
+  iterations            = 2
+  residual norm         = 1.420885e-02
+  max number of levels  = 3
+  number of levels      = 3
+# Begin Test 26
+  time steps = 24
+  iterations            = 2
+  residual norm         = 1.420885e-02
+  max number of levels  = 3
+  number of levels      = 3
+# Begin Test 27
+  time steps = 24
+  iterations            = 2
+  residual norm         = 6.155653e-02
+  max number of levels  = 3
+  number of levels      = 3
+# Begin Test 28
+  time steps = 24
+  iterations            = 2
+  residual norm         = 5.856029e-02
+  max number of levels  = 3
+  number of levels      = 3
+# Begin Test 29
+  time steps = 24
+  iterations            = 2
+  residual norm         = 1.420885e-02
+  max number of levels  = 3
+  number of levels      = 3
 

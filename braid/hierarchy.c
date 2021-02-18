@@ -31,18 +31,19 @@ _braid_InitHierarchy(braid_Core    core,
                      _braid_Grid  *fine_grid,
                      braid_Int     refined)
 {
-   MPI_Comm       comm       = _braid_CoreElt(core, comm);
-   braid_Int      max_levels = _braid_CoreElt(core, max_levels);
-   braid_Int      min_coarse = _braid_CoreElt(core, min_coarse);
-   braid_Int     *nrels      = _braid_CoreElt(core, nrels);
-   braid_Int      nrdefault  = _braid_CoreElt(core, nrdefault);
-   braid_Real    *CWts       = _braid_CoreElt(core, CWts);
-   braid_Real     CWt_default= _braid_CoreElt(core, CWt_default);
-   braid_Int      gupper     = _braid_CoreElt(core, gupper);
-   braid_Int     *rfactors   = _braid_CoreElt(core, rfactors);
-   braid_Real   **rdtvalues  = _braid_CoreElt(core, rdtvalues);
-   braid_Int      nlevels    = _braid_CoreElt(core, nlevels);
-   _braid_Grid  **grids      = _braid_CoreElt(core, grids);
+   MPI_Comm       comm            = _braid_CoreElt(core, comm);
+   braid_Int      max_levels      = _braid_CoreElt(core, max_levels);
+   braid_Int      min_coarse      = _braid_CoreElt(core, min_coarse);
+   braid_Int     *nrels           = _braid_CoreElt(core, nrels);
+   braid_Int      nrdefault       = _braid_CoreElt(core, nrdefault);
+   braid_Real    *CWts            = _braid_CoreElt(core, CWts);
+   braid_Real     CWt_default     = _braid_CoreElt(core, CWt_default);
+   braid_Int      gupper          = _braid_CoreElt(core, gupper);
+   braid_Int     *rfactors        = _braid_CoreElt(core, rfactors);
+   braid_Real   **rdtvalues       = _braid_CoreElt(core, rdtvalues);
+   braid_Int      nlevels         = _braid_CoreElt(core, nlevels);
+   braid_Int      relax_only_cg   = _braid_CoreElt(core, relax_only_cg);
+   _braid_Grid  **grids           = _braid_CoreElt(core, grids);
 
 
    /* Required for Richardson */
@@ -173,8 +174,17 @@ _braid_InitHierarchy(braid_Core    core,
       }
       else
       {
-         /* This is the coarsest level */
-         if ( (level > 0) || (!refined) )
+         
+         /* If solving coarsest grid by relaxation, initialize a standard coarse grid*/
+         if( relax_only_cg && (gclower < gcupper) )
+         {
+            /* Initialize the coarse grid */
+            _braid_GridInit(core, level+1, clo, chi, &grids[level+1]);
+         }
+
+         /* If solving coarsest grid by sequential time-marching, we have 1
+          * C-point at t0, and the rest F-points */ 
+         else if ( (level > 0) || (!refined) )
          {
             /* If this is a true coarse level (it has a fine grid above it in
              * the current hierarchy) or it is a fine level that was not built

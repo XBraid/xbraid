@@ -598,8 +598,19 @@ braid_SetTPointsCutoff(braid_Core  core,                /**< braid_Core (_braid_
  **/
 braid_Int
 braid_SetMinCoarse(braid_Core  core,        /**< braid_Core (_braid_Core) struct*/
-                   braid_Int   min_coarse   /** minimum coarse grid size */
+                   braid_Int   min_coarse   /**< minimum coarse grid size */
                    );
+
+/**
+ * Set whether the coarsest grid is solved only with relaxation.  The default is
+ * to solve the coarsest grid with sequential time-stepping (relax_only_cg == 0).
+ * This default is generally recommended.
+ **/
+braid_Int
+braid_SetRelaxOnlyCG(braid_Core  core,             /**< braid_Core (_braid_Core) struct*/
+                     braid_Int   relax_only_cg     /**< boolean for relaxation-only coarse-grid solve */
+                    );
+
 
 /**
  * Set absolute stopping tolerance.

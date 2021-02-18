@@ -201,6 +201,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              max_levels      = 30;             /* Default max_levels */
    braid_Int              incr_max_levels = 0;              /* Default increment max levels is false */
    braid_Int              min_coarse      = 2;              /* Default min_coarse */
+   braid_Int              relax_only_cg   = 0;              /* Default to no relaxation on coarsest grid (alternative to serial solve) */
    braid_Int              seq_soln        = 0;              /* Default initial guess is from user's Init() function */
    braid_Int              print_level     = 2;              /* Default print level */
    braid_Int              io_level        = 1;              /* Default output-to-file level */
@@ -263,6 +264,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, max_levels)      = 0; /* Set with SetMaxLevels() below */
    _braid_CoreElt(core, incr_max_levels) = incr_max_levels;
    _braid_CoreElt(core, min_coarse)      = min_coarse;
+   _braid_CoreElt(core, relax_only_cg)   = relax_only_cg;
    _braid_CoreElt(core, seq_soln)        = seq_soln;
    _braid_CoreElt(core, tol)             = tol;
    _braid_CoreElt(core, rtol)            = rtol;
@@ -485,6 +487,7 @@ braid_PrintStats(braid_Core  core)
    braid_Int     gupper        = _braid_CoreElt(core, gupper);
    braid_Int     max_levels    = _braid_CoreElt(core, max_levels);
    braid_Int     min_coarse    = _braid_CoreElt(core, min_coarse);
+   braid_Int     relax_only_cg = _braid_CoreElt(core, relax_only_cg);
    braid_Int     seq_soln      = _braid_CoreElt(core, seq_soln);
    braid_Int     storage       = _braid_CoreElt(core, storage);
    braid_Real    tol           = _braid_CoreElt(core, tol);
@@ -596,6 +599,7 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  number of levels      = %d\n", nlevels);
       _braid_printf("  skip down cycle       = %d\n", skip);
       _braid_printf("  periodic              = %d\n", periodic);
+      _braid_printf("  relax_only_cg         = %d\n", relax_only_cg);
       _braid_printf("  finalFCRelax          = %d\n", finalFCRelax);
       _braid_printf("  number of refinements = %d\n", nrefine);
       _braid_printf("\n");
@@ -744,6 +748,18 @@ braid_SetMinCoarse(braid_Core  core,
                    braid_Int   min_coarse)
 {
    _braid_CoreElt(core, min_coarse) = min_coarse;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetRelaxOnlyCG(braid_Core  core,
+                     braid_Int   relax_only_cg)
+{
+   _braid_CoreElt(core, relax_only_cg) = relax_only_cg;
 
    return _braid_error_flag;
 }
