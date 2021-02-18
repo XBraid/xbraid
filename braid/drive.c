@@ -310,7 +310,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
    {
       if (myid == 0)
       {
-         _braid_printf("  Braid: Max. iterations reached.\n\n");
+         _braid_printf("  Braid: Max. iterations reached.\n\n"); 
       }
       done = 1;
    }
@@ -438,6 +438,7 @@ _braid_Drive(braid_Core  core,
    braid_Int            obj_only        = _braid_CoreElt(core, obj_only);
    braid_Int            adjoint         = _braid_CoreElt(core, adjoint);
    braid_Int            seq_soln        = _braid_CoreElt(core, seq_soln);
+   braid_Int            relax_only_cg   = _braid_CoreElt(core, relax_only_cg);
    braid_SyncStatus     sstatus         = (braid_SyncStatus)core;
 
    braid_Int     *nrels;
@@ -452,11 +453,12 @@ _braid_Drive(braid_Core  core,
    /* Initialize cycle state */
    _braid_DriveInitCycle(core, &cycle);
 
+   /* Just do sequential time marching, 
+    * if only one level and ( no FRefine AND no relaxation only on the coarse-grid ) */
    nlevels = _braid_CoreElt(core, nlevels);
    done  = 0;
-   if (max_levels <= 1 && incr_max_levels == 0)
+   if ( (max_levels <= 1) && ( (incr_max_levels == 0) && !relax_only_cg)  )
    {
-      /* Just do sequential time marching */
       done = 1;
    }
 
@@ -479,12 +481,20 @@ _braid_Drive(braid_Core  core,
       if (nlevels == 1)
       {
          braid_Int  nrel0;
-         nrels = _braid_CoreElt(core, nrels);
-         nrel0 = nrels[0];
-         nrels[0] = 1;
+         if(!relax_only_cg)
+         {
+            nrels = _braid_CoreElt(core, nrels);
+            nrel0 = nrels[0];
+            nrels[0] = 1;
+         }
+
          _braid_FCRelax(core, 0);
-         nrels[0] = nrel0;
          _braid_SetRNorm(core, -1, 0.0);
+
+         if(!relax_only_cg)
+         {
+            nrels[0] = nrel0;
+         }
       }
 
       /* Update cycle state and direction based on level and iter */
@@ -517,8 +527,8 @@ _braid_Drive(braid_Core  core,
 
          if (level > 0)
          {
-            /* Periodic coarsest grid solve */
-            if ( (level == (nlevels-1)) && _braid_CoreElt(core, periodic) )
+            /* Solve with relaxation on coarsest grid IF ( periodic OR explicitly choosing relaxation on coarsest grid ) */
+            if ( (level == (nlevels-1)) && (_braid_CoreElt(core, periodic) || relax_only_cg) )
             {
                braid_Int  nrel;
                nrels = _braid_CoreElt(core, nrels);
@@ -629,6 +639,9 @@ _braid_Drive(braid_Core  core,
       }
    }
 
+   /* Set flag that Braid is done */
+   _braid_CoreElt(core, done) = 1;
+
    /* By default, set the final residual norm to be the same as the previous */
    {
       braid_Real  rnorm;
@@ -647,13 +660,36 @@ _braid_Drive(braid_Core  core,
       _braid_FRestrict(core, level);
    }
 
-   /* Allow final access to Braid by carrying out an F-relax to generate points */
-   /* Record it only if sequential time stepping */
-   if (max_levels > 1)
+
+   /* Allow final access to Braid by carrying out a relaxation to generate points */
+   if ( _braid_CoreElt(core, finalFCrelax) )
    {
-      _braid_CoreElt(core, record) = 0;
+      /* Do one final F-C-Relaxation sweep in order to:
+       * - Relax the final coarse-grid correction, while giving user access to solution
+       * - Store the last time-point vector as ulast, see _braid_UGetLast()
+       * - Gather gradient information when solving adjoint equation with XBraid. The users 'my_step' 
+       *   function should compute gradients only if braid's 'done' flag is true */
+
+      braid_Int nrelax_orig = _braid_CoreElt(core, nrels)[0];
+      _braid_CoreElt(core, nrels)[0] = 1;
+      _braid_FCRelax(core, 0);
+      _braid_CoreElt(core, nrels)[0] = nrelax_orig;
    }
-   _braid_FAccess(core, 0, 1);
+   /* Call FAccess if (only 1 level and not solving coarse-grid by relaxation) 
+    * OR (access_level is high enough) */
+   else if ( ((max_levels == 1) && !relax_only_cg) || (access_level >= 1) )
+   {
+      /* Do one final F-Relaxation sweep in order to:
+       *  - Provide user access to solution
+       *  - Store the last time-point vector as ulast, see _braid_UGetLast() */
+      if (max_levels > 1)
+      {
+         /* Record it only if not sequential time stepping */
+         _braid_CoreElt(core, record) = 0;
+      }
+      _braid_FAccess(core, 0, 1);
+   }
+
 
    /* If sequential time-marching, evaluate the tape */
    if ( adjoint && max_levels <= 1 )

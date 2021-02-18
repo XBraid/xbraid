@@ -598,8 +598,19 @@ braid_SetTPointsCutoff(braid_Core  core,                /**< braid_Core (_braid_
  **/
 braid_Int
 braid_SetMinCoarse(braid_Core  core,        /**< braid_Core (_braid_Core) struct*/
-                   braid_Int   min_coarse   /** minimum coarse grid size */
+                   braid_Int   min_coarse   /**< minimum coarse grid size */
                    );
+
+/**
+ * Set whether the coarsest grid is solved only with relaxation.  The default is
+ * to solve the coarsest grid with sequential time-stepping (relax_only_cg == 0).
+ * This default is generally recommended.
+ **/
+braid_Int
+braid_SetRelaxOnlyCG(braid_Core  core,             /**< braid_Core (_braid_Core) struct*/
+                     braid_Int   relax_only_cg     /**< boolean for relaxation-only coarse-grid solve */
+                    );
+
 
 /**
  * Set absolute stopping tolerance.
@@ -855,6 +866,20 @@ braid_SetAccessLevel(braid_Core  core,          /**< braid_Core (_braid_Core) st
                      braid_Int   access_level   /**< desired access_level */
                      );
 
+
+/** 
+ * Perform a final FCRelax after XBraid finishes. 
+ * This can be useful in order to 
+ * - Store the last time-point vector in 'ulast', which can then be retrieved  
+ *   by calling _braid_UGetLast()
+ * - Gather gradient information when solving the adjoint equation with XBraid,
+ *   so that you only need to gather/compute the gradient information once, after
+ *   XBraid is finished. To do this, the users 'my_step' function for the adjoint 
+ *   time-stepper should compute gradients only if braid's 'done' flag is true
+ */
+braid_Int
+braid_SetFinalFCRelax(braid_Core core);
+
 /**
  * Split MPI commworld into *comm_x* and *comm_t*, the 
  * spatial and temporal communicators.  The total number of processors
@@ -1087,6 +1112,15 @@ braid_Int
 braid_SetObjectiveOnly(braid_Core core,         /**< braid_Core (_braid_Core) struct */
                        braid_Int  boolean       /**< set to '1' for computing objective function only, '0' for computing objective function AND gradients */
                        );                   
+
+
+/**
+ * Set reverted ranks, so that Braid solves "backwards" in time, e.g., when solving 
+ * and adjoint equation in time.
+ */
+braid_Int
+braid_SetRevertedRanks(braid_Core core,
+                       braid_Int  boolean);
 
 /**
  * After @ref braid_Drive has finished, this returns the objective function value.

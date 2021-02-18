@@ -643,6 +643,7 @@ ACCESSOR_HEADER_SET1(Step, OldFineTolx,   Real)
 ACCESSOR_HEADER_SET1(Step, TightFineTolx, Real)
 ACCESSOR_HEADER_SET1(Step, RFactor,       Real)
 ACCESSOR_HEADER_SET1(Step, RSpace,        Real)
+ACCESSOR_HEADER_GET1(Step, Done,          Int)
 ACCESSOR_HEADER_GET1(Step, SingleErrorEstStep, Real)
 
 /*--------------------------------------------------------------------------
@@ -692,8 +693,10 @@ ACCESSOR_HEADER_GET1(Objective, Tol,           Real)
 #define braid_ASCaller_FRefine_AfterInitHier   4
 /** When CallingFunction equals 5, Braid is at the top of the cycle */
 #define braid_ASCaller_Drive_TopCycle   5
-/** When CallingFunction equals 6, Braid just finished initialization */
-#define braid_ASCaller_Drive_AfterInit   6
+  /** When CallingFunction equals 6, Braid is in FCrelax */
+#define braid_ASCaller_FCRelax 6
+  /** When CallingFunction equals 6, Braid just finished initialization */
+#define braid_ASCaller_Drive_AfterInit   7
 
 /** @}*/
 
