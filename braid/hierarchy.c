@@ -173,8 +173,17 @@ _braid_InitHierarchy(braid_Core    core,
       }
       else
       {
-         /* This is the coarsest level */
-         if ( (level > 0) || (!refined) )
+         
+         /* If solving coarsest grid by relaxation, initialize a standard coarse grid*/
+         if( 1 )
+         {
+            /* Initialize the coarse grid */
+            _braid_GridInit(core, level+1, clo, chi, &grids[level+1]);
+         }
+
+         /* If solving coarsest grid by sequential time-marching, we have 1
+          * C-point at t0, and the rest F-points */ 
+         else if ( (level > 0) || (!refined) )
          {
             /* If this is a true coarse level (it has a fine grid above it in
              * the current hierarchy) or it is a fine level that was not built

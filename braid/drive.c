@@ -438,6 +438,7 @@ _braid_Drive(braid_Core  core,
    braid_Int            obj_only        = _braid_CoreElt(core, obj_only);
    braid_Int            adjoint         = _braid_CoreElt(core, adjoint);
    braid_Int            seq_soln        = _braid_CoreElt(core, seq_soln);
+   braid_Int            relax_only_cg   = 1;//_braid_CoreElt(core, relax_only_cg);
    braid_SyncStatus     sstatus         = (braid_SyncStatus)core;
 
    braid_Int     *nrels;
@@ -452,11 +453,12 @@ _braid_Drive(braid_Core  core,
    /* Initialize cycle state */
    _braid_DriveInitCycle(core, &cycle);
 
+   /* Just do sequential time marching, 
+    * if only one level and ( no FRefine OR relaxation only on the coarse-grid is turned off) */
    nlevels = _braid_CoreElt(core, nlevels);
    done  = 0;
-   if (max_levels <= 1 && incr_max_levels == 0)
+   if ( (max_levels <= 1) && (incr_max_levels == 0 && !relax_only_cg)  )
    {
-      /* Just do sequential time marching */
       done = 1;
    }
 
@@ -479,11 +481,17 @@ _braid_Drive(braid_Core  core,
       if (nlevels == 1)
       {
          braid_Int  nrel0;
-         nrels = _braid_CoreElt(core, nrels);
-         nrel0 = nrels[0];
-         nrels[0] = 1;
+         if(!relax_only_cg)
+         {
+            nrels = _braid_CoreElt(core, nrels);
+            nrel0 = nrels[0];
+            nrels[0] = 1;
+         }
          _braid_FCRelax(core, 0);
-         nrels[0] = nrel0;
+         if(!relax_only_cg)
+         {
+            nrels[0] = nrel0;
+         }
          _braid_SetRNorm(core, -1, 0.0);
       }
 
@@ -517,13 +525,15 @@ _braid_Drive(braid_Core  core,
 
          if (level > 0)
          {
-            /* Periodic coarsest grid solve */
-            if ( (level == (nlevels-1)) && _braid_CoreElt(core, periodic) )
+            /* Solve with relaxation on coarsest grid if periodic or explicitly
+             * choosing relaxation on coarsest grid */
+            if ( (level == (nlevels-1)) && (_braid_CoreElt(core, periodic) || relax_only_cg) )
             {
                braid_Int  nrel;
                nrels = _braid_CoreElt(core, nrels);
                nrel  = nrels[level];
                nrels[level] = nrels[max_levels-1];
+               printf("\n\n   NRELS   %d    %d \n", nrel, nrels[max_levels-1]);
                _braid_FCRelax(core, level);
                nrels[level] = nrel;
             }
@@ -665,7 +675,9 @@ _braid_Drive(braid_Core  core,
       _braid_FCRelax(core, 0);
       _braid_CoreElt(core, nrels)[0] = nrelax_orig;
    }
-   else if ( (max_levels == 1) || (access_level >= 1) )
+   /* Call FAccess if (only 1 level and not solving coarse-grid by relaxation) 
+    * OR (access_level is high enough) */
+   else if ( ((max_levels == 1) && !relax_only_cg) || (access_level >= 1) )
    {
       /* Do one final F-Relaxation sweep in order to:
        *  - Provide user access to solution
