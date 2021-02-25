@@ -175,21 +175,15 @@ _braid_InitHierarchy(braid_Core    core,
       else
       {
          
-         /* If solving coarsest grid by relaxation, initialize a standard coarse grid*/
-         if( relax_only_cg && (gclower < gcupper) )
-         {
-            /* Initialize the coarse grid */
-            _braid_GridInit(core, level+1, clo, chi, &grids[level+1]);
-         }
-
-         /* If solving coarsest grid by sequential time-marching, we have 1
-          * C-point at t0, and the rest F-points */ 
-         else if ( (level > 0) || (!refined) )
+         if ( ((level > 0) || (!refined)) && (!relax_only_cg) )
          {
             /* If this is a true coarse level (it has a fine grid above it in
              * the current hierarchy) or it is a fine level that was not built
              * by refining a coarser grid, then do serial time integration by
-             * setting only one C-point and the rest F-points */
+             * setting only one C-point and the rest F-points.  
+             *
+             * The one exception is if relax_only_cg is turned on, in which
+             * case, the coarsest grid is always solved with relaxation. */
             if (ilower == 0)
             {
                ncpoints = 1;
