@@ -521,6 +521,7 @@ int main(int argc, char *argv[])
    int    nrelax      = 1;
    int    nrelax0     = -1;
    double tol         = 1e-9;
+   double CWt         = 1.0;
    int    rtol        = 1;
    int    tnorm       = 2;
    int    skip        = 1;
@@ -622,6 +623,10 @@ int main(int argc, char *argv[])
       {
          nrelax0 = atoi(argv[++arg_index]);
       }
+      else if (strcmp(argv[arg_index], "-CWt") == 0)
+      {
+         CWt = atof(argv[++arg_index]);
+      }
       else if (strcmp(argv[arg_index], "-tol") == 0)
       {
          tol = atof(argv[++arg_index]);
@@ -645,6 +650,10 @@ int main(int argc, char *argv[])
       else if (strcmp(argv[arg_index], "-cf0") == 0)
       {
          cfactor0 = atoi(argv[++arg_index]);
+      }
+      else if (strcmp(argv[arg_index], "-CWt") == 0)
+      {
+         CWt = atof(argv[++arg_index]);
       }
       else if (strcmp(argv[arg_index], "-mi") == 0)
       {
@@ -744,6 +753,7 @@ int main(int argc, char *argv[])
          "  -mc  <min_coarse> : set minimum possible coarse level size (default: 3)\n"
          "  -nu  <nrelax>     : set num F-C relaxations (default: 1)\n"
          "  -nu0 <nrelax>     : set num F-C relaxations on level 0\n"
+         "  -CWt  <CWt>       : set C-relaxation weight on all levels\n"
          "  -tol <tol>        : set stopping tolerance (default: 1e-9)\n"
          "  -rtol <0/1>       : use relative or absolute stopping tolerance (default: 1)\n"
          "  -tnorm <tnorm>    : set temporal norm \n"
@@ -960,6 +970,8 @@ int main(int argc, char *argv[])
          core.SetNRelax(-1, nrelax);
          if (nrelax0 > -1)
             core.SetNRelax(0, nrelax0);
+         if (CWt != 1.0)
+            core.SetCRelaxWt(-1, CWt);
          rtol ? core.SetRelTol(tol) : core.SetAbsTol(tol);
          core.SetCFactor(-1, cfactor);
          core.SetAggCFactor(cfactor0);
