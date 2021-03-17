@@ -78,7 +78,7 @@ private:
 
    mutable Vector z; // auxiliary vector
 
-   int GetDtIndex(double dt) const;
+   int GetDtIndex(double dt, int dim) const;
 
 public:
    FE_Evolution(HypreParMatrix &_M, HypreParMatrix &_K, const Vector &_b);
@@ -280,7 +280,7 @@ FE_Evolution::~FE_Evolution()
    }
 }
 
-int FE_Evolution::GetDtIndex(double dt) const
+int FE_Evolution::GetDtIndex(double dt, int dim) const
 {
    for (int i = 0; i < dts.Size(); i++)
    {
@@ -302,6 +302,7 @@ int FE_Evolution::GetDtIndex(double dt) const
    Solver *B_solver_new = NULL;
    if (prec_type == 0)
    {
+
       HypreParaSails *prec = new HypreParaSails(B_new);
       HYPRE_ParaSailsSetLogging(*prec, 0);
       B_prec_new = B_hs = prec;
@@ -309,6 +310,19 @@ int FE_Evolution::GetDtIndex(double dt) const
    else if (prec_type == 1)
    {
       HypreBoomerAMG *prec = new HypreBoomerAMG(B_new);
+      prec->SetPrintLevel(0);
+      B_prec_new = B_hs = prec;
+   }
+   else if (prec_type == 2)
+   {
+      HypreBoomerAMG *prec = new HypreBoomerAMG(B_new);
+      //
+      prec->SetAdvectiveOptions(1, "", "FA"); 
+      prec->SetRelaxType(3); 
+      if (dim == 3) prec->SetCoarsening(10); 
+      prec->SetAggressiveCoarsening(0); 
+      prec->SetInterpolation(0); 
+      //
       prec->SetPrintLevel(0);
       B_prec_new = B_hs = prec;
    }
@@ -331,7 +345,7 @@ int FE_Evolution::GetDtIndex(double dt) const
    if (!B_solver_new)
    {
       HypreGMRES *solver = new HypreGMRES(B_new);
-      solver->SetTol(1e-12);
+      solver->SetTol(1e-8);
       solver->SetMaxIter(1000);
       solver->SetPrintLevel(0);
       solver->SetPreconditioner(*B_hs);
@@ -354,7 +368,9 @@ void FE_Evolution::Mult(const Vector &x, Vector &y) const
 void FE_Evolution::ImplicitSolve(const double dt, const Vector &x, Vector &k)
 {
    // k = (M - dt*K)^{-1} (K x + b)
-   int i = GetDtIndex(dt);
+   
+   int dim = x.Size();
+   int i = GetDtIndex(dt, dim);
    K.Mult(x, z);
    z += b;
    B_solver[i]->Mult(z, k);
@@ -401,7 +417,7 @@ DGAdvectionOptions::DGAdvectionOptions(int argc, char *argv[])
    krylov_coarse   = false;
    krylov_size     = 4;
    init_rand       = false;
-   prec_type       = 0; // see FE_Evolution::SetPreconditionerType()
+   prec_type       = 2; // see FE_Evolution::SetPreconditionerType()
    vishost         = "localhost";
    visport         = 19916;
    vis_time_steps  = 0;
