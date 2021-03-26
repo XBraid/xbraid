@@ -30,13 +30,14 @@ braid_Int
 _braid_FCRelax(braid_Core  core,
                braid_Int   level)
 {
-   braid_App       app      = _braid_CoreElt(core, app);
-   braid_Int       nlevels  = _braid_CoreElt(core, nlevels);
-   braid_Int      *nrels    = _braid_CoreElt(core, nrels);
-   braid_Real     *CWts     = _braid_CoreElt(core, CWts);
-   _braid_Grid   **grids    = _braid_CoreElt(core, grids);
-   braid_Int       ncpoints = _braid_GridElt(grids[level], ncpoints);
-   braid_Int       done     = _braid_CoreElt(core, done);
+   braid_App       app           = _braid_CoreElt(core, app);
+   braid_Int       nlevels       = _braid_CoreElt(core, nlevels);
+   braid_Int      *nrels         = _braid_CoreElt(core, nrels);
+   braid_Real     *CWts          = _braid_CoreElt(core, CWts);
+   _braid_Grid   **grids         = _braid_CoreElt(core, grids);
+   braid_Int       ncpoints      = _braid_GridElt(grids[level], ncpoints);
+   braid_Int       done          = _braid_CoreElt(core, done);
+   braid_Int       relax_only_cg = _braid_CoreElt(core, relax_only_cg);
 
    braid_AccessStatus   astatus      = (braid_AccessStatus)core;
    braid_Real          *ta           = _braid_GridElt(grids[level], ta);
@@ -186,15 +187,16 @@ _braid_FCRelax(braid_Core  core,
          {
             /* If weighted Jacobi, store the previous u-value,
              *   Note, do no weighting if coarsest level*/
-            if( (CWt != 1.0) && (level != (nlevels-1)) )
+            if( (CWt != 1.0) && ( (level != (nlevels-1)) || relax_only_cg ) )
             {
                _braid_UGetVector(core, level, ci, &u_old);
             }
 
             _braid_Step(core, level, ci, NULL, u);
 
-            if( (CWt != 1.0) && (level != (nlevels-1)) )
+            if( (CWt != 1.0) && ( (level != (nlevels-1)) || relax_only_cg ) )
             {
+               printf("HERE!\n");
                /* Apply weighted combination for w-Jacobi
                 * u <--  omega*u_new + (1-omega)*u_old */
                _braid_BaseSum(core, app, (1.0 - CWt), u_old, CWt, u);
