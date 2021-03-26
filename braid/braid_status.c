@@ -591,11 +591,11 @@ braid_StatusGetAllErrorEst(braid_Status  status,
 }
 
 braid_Int
-braid_StatusGetTComm(braid_SyncStatus status,
-                     MPI_Comm         comm_ptr
+braid_StatusGetTComm(braid_Status  status,
+                     MPI_Comm     *comm_ptr
                      )
 {
-   comm_ptr = _braid_StatusElt(status, comm);
+   *comm_ptr = _braid_StatusElt(status, comm);
    return _braid_error_flag;
 }
 

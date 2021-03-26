@@ -551,8 +551,8 @@ braid_StatusGetAllErrorEst(braid_Status    status,       /**< structure containi
  * This is used especially by Sync
  **/
 braid_Int
-braid_StatusGetTComm(braid_SyncStatus status,            /**< structure containing current simulation info */
-                     MPI_Comm         comm_ptr           /**< output, temporal communicator */
+braid_StatusGetTComm(braid_Status  status,            /**< structure containing current simulation info */
+                     MPI_Comm     *comm_ptr           /**< output, temporal communicator */
                      );
 
 /** @}*/
