@@ -59,6 +59,9 @@
 #define ACCESSOR_FUNCTION_SET1(stype,param,vtype1) \
    braid_Int braid_##stype##StatusSet##param(braid_##stype##Status s, braid_##vtype1 v1) \
    {return braid_StatusSet##param((braid_Status)s, v1);}
+#define ACCESSOR_FUNCTION_GET1_GENERIC(stype,param,vtype1) \
+   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, vtype1 *v1) \
+   {return braid_StatusGet##param((braid_Status)s, v1);}
 
 braid_Int
 _braid_StatusDestroy(braid_Status status)
@@ -587,6 +590,15 @@ braid_StatusGetAllErrorEst(braid_Status  status,
    return _braid_error_flag;
 }
 
+braid_Int
+braid_StatusGetTComm(braid_SyncStatus status,
+                     MPI_Comm         comm_ptr
+                     )
+{
+   comm_ptr = _braid_StatusElt(status, comm);
+   return _braid_error_flag;
+}
+
 /*--------------------------------------------------------------------------
  * AccessStatus Routines
  *--------------------------------------------------------------------------*/
@@ -663,15 +675,8 @@ ACCESSOR_FUNCTION_GET1(Sync, Done,             Int)
 ACCESSOR_FUNCTION_GET1(Sync, CallingFunction,  Int)
 ACCESSOR_FUNCTION_GET1(Sync, NumErrorEst,      Int)
 ACCESSOR_FUNCTION_GET1(Sync, AllErrorEst,      Real)
+ACCESSOR_FUNCTION_GET1_GENERIC(Sync, TComm,    MPI_Comm)
 
-braid_Int
-braid_SyncStatusGetTComm(braid_SyncStatus status,
-                         MPI_Comm        *comm_ptr
-                         )
-{
-   *comm_ptr = _braid_StatusElt(status, comm);
-   return _braid_error_flag;
-}
 
 /*--------------------------------------------------------------------------
  * CoarsenRefStatus Routines
