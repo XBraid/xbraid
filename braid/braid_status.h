@@ -150,7 +150,6 @@ typedef struct _braid_ObjectiveStatus_struct *braid_ObjectiveStatus;
  * Global Status Prototypes
  *--------------------------------------------------------------------------*/
 
-
 /**
  * Return the current time from the Status structure.
  **/
@@ -548,7 +547,7 @@ braid_StatusGetAllErrorEst(braid_Status    status,       /**< structure containi
 /**
  * Gets accces to the temporal communicator. Allows this processor
  * to access other temporal processors.
- * This is used especially by Sync
+ * This is used especially by Sync.
  **/
 braid_Int
 braid_StatusGetTComm(braid_Status  status,            /**< structure containing current simulation info */
@@ -698,7 +697,7 @@ ACCESSOR_HEADER_GET1(Objective, Tol,           Real)
 #define braid_ASCaller_Drive_TopCycle 5
 /** When CallingFunction equals 6, Braid is in FCrelax */
 #define braid_ASCaller_FCRelax 6
-/** When CallingFunction equals 6, Braid just finished initialization */
+/** When CallingFunction equals 7, Braid just finished initialization */
 #define braid_ASCaller_Drive_AfterInit 7
 
 /** @}*/
