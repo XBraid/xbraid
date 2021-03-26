@@ -741,7 +741,8 @@ int main (int argc, char *argv[])
       printf("  -access_level <l>               : sets the access_level (default: 1) \n");
       printf("                                    0 - never call access \n");
       printf("                                    1 - call access only after completion \n");
-      printf("                                    2 - call access every iteration and level\n");
+      printf("                                    2 - call access at the end of every cycle \n");
+      printf("                                    3 - call access every iteration and level\n");
       printf("  -output_files                   : save the solution/error/error norms to files\n");
       printf("                                    frequency of file accesss is set by access_level\n");
       printf("  -output_vis                     : save the error for GLVis visualization\n");

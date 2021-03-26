@@ -134,7 +134,7 @@ my_Step(braid_App        app,
 {
    double tstart;             /* current time */
    double tstop;              /* evolve to this time*/
-   int    istart;             /* time point index value corresponding to tstop on (global) fine grid */
+   int    istart;             /* time point index value corresponding to tstart on (global) fine grid */
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
    braid_StepStatusGetTIndex(status, &istart);
 
@@ -378,18 +378,20 @@ int main (int argc, char *argv[])
    double        tstart, tstop;
    int           ntime;
 
-   int           max_levels = 2;
-   int           nrelax     = 1;
-   int           nrelax0    = -1;
-   int           nrelaxc    = 5;
-   double        tol        = 1.0e-06;
-   int           cfactor    = 2;
-   int           max_iter   = 100;
-   int           fmg        = 0;
-   int           res        = 0;
-   int           mydt       = 0;
-   int           sync       = 0;
-   int           periodic   = 0;
+   int           max_levels    = 2;
+   int           nrelax        = 1;
+   int           nrelax0       = -1;
+   int           nrelaxc       = 5;
+   double        tol           = 1.0e-06;
+   int           cfactor       = 2;
+   int           max_iter      = 100;
+   int           fmg           = 0;
+   int           skip          = 1;
+   int           res           = 0;
+   int           mydt          = 0;
+   int           sync          = 0;
+   int           periodic      = 0;
+   int           relax_only_cg = 0;
 
    int           arg_index;
    int           rank;
@@ -421,6 +423,7 @@ int main (int argc, char *argv[])
             printf("  -tol <tol>        : set stopping tolerance\n");
             printf("  -cf  <cfactor>    : set coarsening factor\n");
             printf("  -mi  <max_iter>   : set max iterations\n");
+            printf("  -skip <set_skip>  : set skip relaxations on first down-cycle; 0: no skip;  1: skip\n");
             printf("  -fmg              : use FMG cycling\n");
             printf("  -res              : use my residual\n");
             printf("  -sync             : enable calls to the sync function\n");
@@ -497,6 +500,16 @@ int main (int argc, char *argv[])
          arg_index++;
          periodic = 1;
       }
+      else if( strcmp(argv[arg_index], "-relax_only_cg") == 0 )
+      {
+         arg_index++;
+         relax_only_cg = 1;
+      }
+      else if ( strcmp(argv[arg_index], "-skip") == 0 )
+      {
+         arg_index++;
+         skip = atoi(argv[arg_index++]);
+      }
       else
       {
          arg_index++;
@@ -530,6 +543,7 @@ int main (int argc, char *argv[])
    braid_SetAbsTol(core, tol);
    braid_SetCFactor(core, -1, cfactor);
    braid_SetMaxIter(core, max_iter);
+   braid_SetSkip(core, skip);
    if (fmg)
    {
       braid_SetFMG(core);
@@ -550,6 +564,10 @@ int main (int argc, char *argv[])
    if (periodic)
    {
       braid_SetPeriodic(core, periodic);
+   }
+   if (relax_only_cg)
+   {
+      braid_SetRelaxOnlyCG(core, relax_only_cg);
    }
 
    /* Run simulation, and then clean up */

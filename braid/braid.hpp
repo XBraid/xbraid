@@ -29,6 +29,7 @@ class BraidSyncStatus;
 class BraidStepStatus;
 class BraidCoarsenRefStatus;
 class BraidBufferStatus;
+class BraidObjectiveStatus;
 
 // Wrapper for BRAID's App object. Users should inherit this class and implement
 // the purely virtual functions (see braid.h for descriptions).
@@ -193,6 +194,7 @@ class BraidAccessStatus
       void GetWrapperTest(braid_Int *wtest_ptr)          { braid_AccessStatusGetWrapperTest(astatus, wtest_ptr); }
       void GetResidual(braid_Real *rnorm_ptr)            { braid_AccessStatusGetResidual(astatus, rnorm_ptr); }
       void GetNRefine(braid_Int *nrefine_ptr)            { braid_AccessStatusGetNRefine(astatus, nrefine_ptr); }
+      void GetNTPoints(braid_Int *ntpoints_ptr)          { braid_AccessStatusGetNTPoints(astatus, ntpoints_ptr); }
       void GetSingleErrorEstAccess(braid_Real *estimate_ptr)   { braid_AccessStatusGetSingleErrorEstAccess(astatus, estimate_ptr); }
       void GetCallingFunction(braid_Int *callingfcn_ptr)
       {
@@ -265,18 +267,21 @@ class BraidStepStatus
       { braid_StepStatusGetTstartTstop(pstatus, tstart_ptr, tstop_ptr); }
       void GetT(braid_Real *tstart_ptr)                  { braid_StepStatusGetT(pstatus, tstart_ptr); }
       void GetTstop(braid_Real *tstop_ptr)               { braid_StepStatusGetTstop(pstatus, tstop_ptr); }
+      void GetDone(braid_Int *done)                      { braid_StatusGetDone((braid_Status) pstatus, done); }
       void GetTIndex(braid_Int *tindex_ptr)              { braid_StepStatusGetTIndex(pstatus, tindex_ptr); }
       void GetLevel(braid_Int *level_ptr)                { braid_StepStatusGetLevel(pstatus, level_ptr); }
       void GetNLevels(braid_Int *nlevels_ptr)            { braid_StepStatusGetNLevels(pstatus, nlevels_ptr); }
       void GetNRefine(braid_Int *nrefine_ptr)            { braid_StepStatusGetNRefine(pstatus, nrefine_ptr); }
+      void GetNTPoints(braid_Int *ntpoints_ptr)          { braid_StepStatusGetNTPoints(pstatus, ntpoints_ptr); }
       void SetRFactor(braid_Int rfactor)                 { braid_StepStatusSetRFactor(pstatus, rfactor); }
       void SetRSpace(braid_Int rspace)                   { braid_StepStatusSetRSpace(pstatus, rspace); }
-      void StepStatusGetTol(braid_Real *tol_ptr)         { braid_StepStatusGetTol(pstatus, tol_ptr); }
+      void GetTol(braid_Real *tol_ptr)                   { braid_StepStatusGetTol(pstatus, tol_ptr); }
       void GetIter(braid_Int *iter_ptr)                  { braid_StepStatusGetIter(pstatus, iter_ptr); }
       void GetOldFineTolx(braid_Real *old_fine_tolx_ptr) { braid_StepStatusGetOldFineTolx(pstatus, old_fine_tolx_ptr); }
       void SetOldFineTolx(braid_Real old_fine_tolx)      { braid_StepStatusSetOldFineTolx(pstatus, old_fine_tolx); }
       void SetTightFineTolx(braid_Int tight_fine_tolx)   { braid_StepStatusSetTightFineTolx(pstatus, tight_fine_tolx); }
       void GetSingleErrorEstStep(braid_Real *estimate_ptr)   { braid_StepStatusGetSingleErrorEstStep(pstatus, estimate_ptr); }
+      void GetSpatialAccuracy( braid_Real loose_tol, braid_Real tight_tol, braid_Real *tol_ptr) { braid_GetSpatialAccuracy(pstatus, loose_tol, tight_tol, tol_ptr); }
 
          // The braid_StepStatus structure is deallocated inside of Braid
       // This class is just to make code consistently look object oriented
@@ -317,12 +322,14 @@ class BraidCoarsenRefStatus
       void GetLevel(braid_Int *level_ptr)       { braid_CoarsenRefStatusGetLevel(cstatus, level_ptr); }
       void GetNLevels(braid_Int *nlevels_ptr)   { braid_CoarsenRefStatusGetNLevels(cstatus, nlevels_ptr); }
       void GetNRefine(braid_Int *nrefine_ptr)   { braid_CoarsenRefStatusGetNRefine(cstatus, nrefine_ptr); }
+      void GetNTPoints(braid_Int *ntpoints_ptr) { braid_CoarsenRefStatusGetNTPoints(cstatus, ntpoints_ptr); }
 
       // The braid_CoarsenRefStatus structure is deallocated inside of Braid
       // This class is just to make code consistently look object oriented
       ~BraidCoarsenRefStatus() { }
 };
 
+// Wrapper for BRAID's BufferStatus object
 class BraidBufferStatus
 {
    private:
@@ -337,6 +344,32 @@ class BraidBufferStatus
       void GetMessageType( braid_Int *messagetype_ptr ) { braid_BufferStatusGetMessageType( bstatus, messagetype_ptr); }
       void SetSize( braid_Int size ) { braid_BufferStatusSetSize( bstatus, size ); }
       ~BraidBufferStatus() {} 
+};
+
+// Wrapper for BRAID's ObjectiveStatus object
+class BraidObjectiveStatus
+{
+   private:
+      braid_ObjectiveStatus ostatus;
+
+   public:
+      BraidObjectiveStatus(braid_ObjectiveStatus  _ostatus)
+      {
+         ostatus = _ostatus;
+      }
+
+      void GetT(braid_Real *tstart_ptr)         { braid_ObjectiveStatusGetT(ostatus, tstart_ptr); }
+      void GetTIndex(braid_Int *tindex_ptr)     { braid_ObjectiveStatusGetTIndex(ostatus, tindex_ptr); }
+      void GetIter(braid_Int *iter_ptr)         { braid_ObjectiveStatusGetIter(ostatus, iter_ptr); }
+      void GetLevel(braid_Int *level_ptr)       { braid_ObjectiveStatusGetLevel(ostatus, level_ptr); }
+      void GetNLevels(braid_Int *nlevels_ptr)   { braid_ObjectiveStatusGetNLevels(ostatus, nlevels_ptr); }
+      void GetNRefine(braid_Int *nrefine_ptr)   { braid_ObjectiveStatusGetNRefine(ostatus, nrefine_ptr); }
+      void GetNTPoints(braid_Int *ntpoints_ptr) { braid_ObjectiveStatusGetNTPoints(ostatus, ntpoints_ptr); }
+      void GetTol(braid_Real *tol_ptr)          { braid_ObjectiveStatusGetTol(ostatus, tol_ptr); }
+
+      // The braid_ObjectiveStatus structure is deallocated inside of Braid
+      // This class is just to make code consistently look object oriented
+      ~BraidObjectiveStatus() { }
 };
 
 // Static functions passed to Braid, with braid_App == BraidApp*
@@ -504,6 +537,8 @@ public:
 
    void SetMinCoarse(braid_Int min_coarse) { braid_SetMinCoarse(core, min_coarse); }
 
+   void SetRelaxOnlyCG(braid_Int relax_only_cg) { braid_SetRelaxOnlyCG(core, relax_only_cg); }
+
    void SetNRelax(braid_Int level, braid_Int nrelax)
    { braid_SetNRelax(core, level, nrelax); }
 
@@ -557,6 +592,8 @@ public:
 
    void SetAccessLevel(braid_Int access_level) { braid_SetAccessLevel(core, access_level); }
 
+   void SetFinalFCRelax() { braid_SetFinalFCRelax(core); }
+
    void SetFMG() { braid_SetFMG(core); }
 
    void SetNFMG(braid_Int k) { braid_SetNFMG(core, k); }
@@ -565,18 +602,42 @@ public:
 
    void SetStorage(braid_Int storage) { braid_SetStorage(core, storage); }
 
-   void SetRefine(braid_Int refine) {braid_SetRefine(core, refine);}
+   void SetRevertedRanks(braid_Int reverted_ranks) { braid_SetRevertedRanks(core, reverted_ranks); }
 
-   void SetMaxRefinements(braid_Int max_refinements) {braid_SetMaxRefinements(core, max_refinements);}
+   void SetRefine(braid_Int refine) { braid_SetRefine(core, refine); }
 
-   void SetRichardsonEstimation(braid_Int est_error, braid_Int richardson, braid_Int local_order) {braid_SetRichardsonEstimation(core, est_error, richardson, local_order);}
+   void SetMaxRefinements(braid_Int max_refinements) { braid_SetMaxRefinements(core, max_refinements); }
 
+   void SetRichardsonEstimation(braid_Int est_error, braid_Int richardson, braid_Int local_order) { braid_SetRichardsonEstimation(core, est_error, richardson, local_order); }
+
+   void SetFileIOLevel(braid_Int   io_level) { braid_SetFileIOLevel(core, io_level); }
+
+   void SetDefaultPrintFile() { braid_SetDefaultPrintFile(core); }
+
+   void SetCRelaxWt(braid_Int level, braid_Real  Cwt) { braid_SetCRelaxWt(core, level, Cwt); }
+
+   void SetTPointsCutoff(braid_Int tpoints_cutoff) { braid_SetTPointsCutoff(core, tpoints_cutoff); }
+
+   void SetFullRNormRes(braid_PtFcnResidual residual) { braid_SetFullRNormRes(core, residual); }
+
+   void SetTimeGrid(braid_PtFcnTimeGrid tgrid) { braid_SetTimeGrid(core, tgrid); }
+  
    void GetNumIter(braid_Int *niter_ptr) { braid_GetNumIter(core, niter_ptr); }
+
+   void GetCFactor(braid_Int *cfactor_ptr) { _braid_GetCFactor(core, 0, cfactor_ptr); }
 
    void GetRNorms(braid_Int *nrequest_ptr, braid_Real *rnorms) { braid_GetRNorms(core, nrequest_ptr, rnorms); }
    
    void GetNLevels(braid_Int *nlevels_ptr) { braid_GetNLevels(core, nlevels_ptr); }
 
+   braid_Core GetCore() { return core; };
+
+   braid_Int GetWarmRestart() { return _braid_CoreElt(core, warm_restart); };
+
+   void GetDistribution(braid_Int *ilower_ptr, braid_Int *iupper_ptr) { _braid_GetDistribution(core, ilower_ptr, iupper_ptr); };
+
+   void GetMyID(braid_Int *myid_ptr) { braid_GetMyID(core, myid_ptr); }
+  
    void Drive() { braid_Drive(core); }
 
    ~BraidCore() { braid_Destroy(core); }

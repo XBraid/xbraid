@@ -212,10 +212,12 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              max_levels      = 30;             /* Default max_levels */
    braid_Int              incr_max_levels = 0;              /* Default increment max levels is false */
    braid_Int              min_coarse      = 2;              /* Default min_coarse */
+   braid_Int              relax_only_cg   = 0;              /* Default to no relaxation on coarsest grid (alternative to serial solve) */
    braid_Int              seq_soln        = 0;              /* Default initial guess is from user's Init() function */
    braid_Int              print_level     = 2;              /* Default print level */
    braid_Int              io_level        = 1;              /* Default output-to-file level */
    braid_Int              access_level    = 1;              /* Default access level */
+   braid_Int              finalFCrelax    = 0;              /* Default final FCrelax */
    braid_Int              tnorm           = 2;              /* Default temporal norm */
    braid_Real             tol             = 1.0e-09;        /* Default absolute tolerance */
    braid_Int              warm_restart    = 0;              /* Default is no warm restart */
@@ -226,6 +228,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              adjoint         = 0;              /* Default adjoint run: Turned off */
    braid_Int              record          = 0;              /* Default action recording: Turned off */
    braid_Int              obj_only        = 0;              /* Default objective only: Turned off */
+   braid_Int              reverted_ranks  = 0;              /* Default objective only: Turned off */
    braid_Int              verbose_adj     = 0;              /* Default adjoint verbosity Turned off */
 
    braid_Int              myid_world,  myid;
@@ -242,6 +245,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, tstart)          = tstart;
    _braid_CoreElt(core, tstop)           = tstop;
    _braid_CoreElt(core, ntime)           = ntime;
+   _braid_CoreElt(core, done)            = 0;
    _braid_CoreElt(core, app)             = app;
 
    _braid_CoreElt(core, step)            = step;
@@ -264,12 +268,14 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, sync)            = NULL;
 
    _braid_CoreElt(core, access_level)    = access_level;
+   _braid_CoreElt(core, finalFCrelax)    = finalFCrelax;
    _braid_CoreElt(core, tnorm)           = tnorm;
    _braid_CoreElt(core, print_level)     = print_level;
    _braid_CoreElt(core, io_level)        = io_level;
    _braid_CoreElt(core, max_levels)      = 0; /* Set with SetMaxLevels() below */
    _braid_CoreElt(core, incr_max_levels) = incr_max_levels;
    _braid_CoreElt(core, min_coarse)      = min_coarse;
+   _braid_CoreElt(core, relax_only_cg)   = relax_only_cg;
    _braid_CoreElt(core, seq_soln)        = seq_soln;
    _braid_CoreElt(core, tol)             = tol;
    _braid_CoreElt(core, rtol)            = rtol;
@@ -311,6 +317,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, adjoint)               = adjoint;
    _braid_CoreElt(core, record)                = record;
    _braid_CoreElt(core, obj_only)              = obj_only;
+   _braid_CoreElt(core, reverted_ranks)        = reverted_ranks;
    _braid_CoreElt(core, verbose_adj)           = verbose_adj;
    _braid_CoreElt(core, actionTape)            = NULL;
    _braid_CoreElt(core, userVectorTape)        = NULL;
@@ -416,8 +423,11 @@ braid_Destroy(braid_Core  core)
 {
    if (core)
    {
+      braid_App               app        = _braid_CoreElt(core, app);
       braid_Int               nlevels    = _braid_CoreElt(core, nlevels);
       _braid_Grid           **grids      = _braid_CoreElt(core, grids);
+      braid_Int               cfactor    = _braid_GridElt(grids[0], cfactor);
+      braid_Int               gupper     = _braid_CoreElt(core, gupper);
       braid_Int               richardson = _braid_CoreElt(core, richardson);
       braid_Int               est_error  = _braid_CoreElt(core, est_error); 
       braid_Int               level;
@@ -439,6 +449,15 @@ braid_Destroy(braid_Core  core)
          _braid_TFree(_braid_CoreElt(core, optim));
       }
 
+      /* Free last time step, if set */
+      if ( (_braid_CoreElt(core, storage) < 0) && !(_braid_IsCPoint(gupper, cfactor)) )
+      {
+         if (_braid_GridElt(grids[0], ulast) != NULL)
+         {
+           _braid_BaseFree(core, app, _braid_GridElt(grids[0], ulast));
+         }
+      }
+
       /* Destroy Richardson estimate structures */
       if ( richardson || est_error )
       {
@@ -453,6 +472,7 @@ braid_Destroy(braid_Core  core)
       {
          _braid_GridDestroy(core, grids[level]);
       }
+
       _braid_TFree(grids);
 
       _braid_TFree(core);
@@ -478,6 +498,7 @@ braid_PrintStats(braid_Core  core)
    braid_Int     gupper        = _braid_CoreElt(core, gupper);
    braid_Int     max_levels    = _braid_CoreElt(core, max_levels);
    braid_Int     min_coarse    = _braid_CoreElt(core, min_coarse);
+   braid_Int     relax_only_cg = _braid_CoreElt(core, relax_only_cg);
    braid_Int     seq_soln      = _braid_CoreElt(core, seq_soln);
    braid_Int     storage       = _braid_CoreElt(core, storage);
    braid_Real    tol           = _braid_CoreElt(core, tol);
@@ -499,6 +520,7 @@ braid_PrintStats(braid_Core  core)
    braid_Real    globaltime    = _braid_CoreElt(core, globaltime);
    braid_PtFcnResidual fullres = _braid_CoreElt(core, full_rnorm_res);
    _braid_Grid **grids         = _braid_CoreElt(core, grids);
+   braid_Int     finalFCRelax  = _braid_CoreElt(core, finalFCrelax);
    braid_Int     periodic      = _braid_CoreElt(core, periodic);
    braid_Int     adjoint       = _braid_CoreElt(core, adjoint);
    braid_Optim   optim         = _braid_CoreElt(core, optim);
@@ -588,6 +610,8 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  number of levels      = %d\n", nlevels);
       _braid_printf("  skip down cycle       = %d\n", skip);
       _braid_printf("  periodic              = %d\n", periodic);
+      _braid_printf("  relax_only_cg         = %d\n", relax_only_cg);
+      _braid_printf("  finalFCRelax          = %d\n", finalFCRelax);
       _braid_printf("  number of refinements = %d\n", nrefine);
       _braid_printf("\n");
       _braid_printf("  level   time-pts   cfactor   nrelax   Crelax Wt\n");
@@ -743,6 +767,18 @@ braid_SetMinCoarse(braid_Core  core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
+braid_SetRelaxOnlyCG(braid_Core  core,
+                     braid_Int   relax_only_cg)
+{
+   _braid_CoreElt(core, relax_only_cg) = relax_only_cg;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
 braid_SetPrintLevel(braid_Core  core,
                     braid_Int   print_level)
 {
@@ -804,6 +840,16 @@ braid_SetAccessLevel(braid_Core  core,
 {
    _braid_CoreElt(core, access_level) = access_level;
 
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetFinalFCRelax(braid_Core core)
+{
+   _braid_CoreElt(core, finalFCrelax) = 1;
    return _braid_error_flag;
 }
 
@@ -1497,8 +1543,15 @@ braid_SetObjectiveOnly(braid_Core core,
    return _braid_error_flag;
 }
 
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
+braid_Int
+braid_SetRevertedRanks(braid_Core core,
+                       braid_Int  boolean)
+{
+   _braid_CoreElt(core, reverted_ranks) = boolean; 
+
+   return _braid_error_flag;
+}
+
 
 braid_Int
 braid_GetRNormAdjoint(braid_Core  core,
