@@ -196,7 +196,6 @@ _braid_FCRelax(braid_Core  core,
 
             if( (CWt != 1.0) && ( (level != (nlevels-1)) || relax_only_cg ) )
             {
-               printf("HERE!\n");
                /* Apply weighted combination for w-Jacobi
                 * u <--  omega*u_new + (1-omega)*u_old */
                _braid_BaseSum(core, app, (1.0 - CWt), u_old, CWt, u);
