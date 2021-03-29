@@ -59,8 +59,6 @@ extern "C" {
   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 *v2, braid_##vtype3 *v3, braid_##vtype4 *v4, braid_##vtype5 *v5);
 #define ACCESSOR_HEADER_SET1(stype,param,vtype1) \
   braid_Int braid_##stype##StatusSet##param(braid_##stype##Status s, braid_##vtype1 v1);
-#define ACCESSOR_HEADER_GET1_GENERIC(stype,param,vtype1) \
-  braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, vtype1 *v1);
 
 /*----------------------------------------------------------------------------------
  * Define Status Structure. The `base' class is braid_Status, and all the other
@@ -606,7 +604,7 @@ ACCESSOR_HEADER_GET1(Sync, Done,             Int)
 ACCESSOR_HEADER_GET1(Sync, CallingFunction,  Int)
 ACCESSOR_HEADER_GET1(Sync, NumErrorEst,      Int)
 ACCESSOR_HEADER_GET1(Sync, AllErrorEst,      Real)
-ACCESSOR_HEADER_GET1_GENERIC(Sync, TComm,    MPI_Comm)
+ACCESSOR_HEADER_GET1(Sync, TComm,            MPI_Comm)
 
 /*--------------------------------------------------------------------------
  * CoarsenRefStatus Prototypes: They just wrap the corresponding Status accessors
