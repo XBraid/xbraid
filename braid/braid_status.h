@@ -399,10 +399,10 @@ braid_StatusGetRNorms(braid_Status status,                 /**< structure contai
  * This is used especially by the _braid_SyncStatus functionality
  **/
 braid_Int
-braid_StatusGetProc(braid_Status  status,
-                    braid_Int    *proc_ptr,
-                    braid_Int     level,
-                    braid_Int     index
+braid_StatusGetProc(braid_Status  status,                  /**< structure containing current simulation info */
+                    braid_Int    *proc_ptr,                /**< output, the processor number corresponding to the level and time point index inputs */
+                    braid_Int     level,                   /**< input, level for the desired processor */
+                    braid_Int     index                    /**< input, the global time point index for the desired processor */
                     );
 
 /**
