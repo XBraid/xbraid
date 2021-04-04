@@ -50,6 +50,7 @@ braid_Drive(braid_Core  core)
    braid_App            app             = _braid_CoreElt(core, app);
    braid_Int            obj_only        = _braid_CoreElt(core, obj_only);
    braid_Int            adjoint         = _braid_CoreElt(core, adjoint);
+   braid_SyncStatus     sstatus         = (braid_SyncStatus)core;
 
    braid_Int      ilower, iupper, i;
    braid_Real    *ta;
@@ -114,6 +115,16 @@ braid_Drive(braid_Core  core)
 
       /* Set initial values */
       _braid_InitGuess(core, 0);
+
+      /* Let the users sync after initialization */
+      _braid_SyncStatusInit(0, // Iteration
+                            0, // Level
+                            _braid_CoreElt(core, nrefine),
+                            _braid_CoreElt(core, gupper),
+                            0, // done
+                            braid_ASCaller_Drive_AfterInit,
+                            sstatus);
+      _braid_Sync(core, sstatus);
    }
 
    /* Initialize sensitivity computation */

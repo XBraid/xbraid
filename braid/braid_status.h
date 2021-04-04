@@ -29,6 +29,7 @@
 #ifndef braid_status_HEADER
 #define braid_status_HEADER
 
+#include "braid.h"
 #include "braid_defs.h"
 
 #ifdef __cplusplus
@@ -42,6 +43,8 @@ extern "C" {
 /** Macros allowing for auto-generation of `inherited' StatusGet functions */
 #define ACCESSOR_HEADER_GET1(stype,param,vtype1) \
   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1);
+#define ACCESSOR_HEADER_GET1_IN2(stype,param,vtype1,vtype2,vtype3) \
+   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 v2, braid_##vtype3 v3);
 #define ACCESSOR_HEADER_GET1_IN3(stype,param,vtype1,vtype2,vtype3,vtype4) \
    braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 v2, braid_##vtype3 v3, braid_##vtype4 v4);
 #define ACCESSOR_HEADER_GET2(stype,param,vtype1,vtype2) \
@@ -391,6 +394,18 @@ braid_StatusGetRNorms(braid_Status status,                 /**< structure contai
                       );
 
 /**
+ * Returns the processor number in *proc_ptr* on which the time step *index*
+ * lives for the given *level*.  Returns -1 if *index* is out of range.
+ * This is used especially by the _braid_SyncStatus functionality
+ **/
+braid_Int
+braid_StatusGetProc(braid_Status  status,                  /**< structure containing current simulation info */
+                    braid_Int    *proc_ptr,                /**< output, the processor number corresponding to the level and time point index inputs */
+                    braid_Int     level,                   /**< input, level for the desired processor */
+                    braid_Int     index                    /**< input, the global time point index for the desired processor */
+                    );
+
+/**
  * Return the previous *old_fine_tolx* set through *braid_StatusSetOldFineTolx*
  * This is used especially by *braid_GetSpatialAccuracy
  **/
@@ -527,6 +542,16 @@ braid_StatusGetAllErrorEst(braid_Status    status,       /**< structure containi
                            braid_Real     *error_est     /**< output, user-allocated error estimate array, written by Braid, equals -1 if not available yet (e.g., before iteration 1, or after refinement) */
                            );
 
+/**
+ * Gets accces to the temporal communicator. Allows this processor
+ * to access other temporal processors.
+ * This is used especially by Sync.
+ **/
+braid_Int
+braid_StatusGetTComm(braid_Status  status,            /**< structure containing current simulation info */
+                     MPI_Comm     *comm_ptr           /**< output, temporal communicator */
+                     );
+
 /** @}*/
 
 
@@ -569,6 +594,7 @@ ACCESSOR_HEADER_GET1(Access, SingleErrorEstAccess, Real)
 
 ACCESSOR_HEADER_GET2_IN1(Sync, TIUL,         Int, Int, Int)
 ACCESSOR_HEADER_GET1_IN3(Sync, TimeValues,   Real*, Int, Int, Int)
+ACCESSOR_HEADER_GET1_IN2(Sync, Proc,         Int, Int, Int)
 ACCESSOR_HEADER_GET1(Sync, Iter,             Int)
 ACCESSOR_HEADER_GET1(Sync, Level,            Int)
 ACCESSOR_HEADER_GET1(Sync, NLevels,          Int)
@@ -578,6 +604,7 @@ ACCESSOR_HEADER_GET1(Sync, Done,             Int)
 ACCESSOR_HEADER_GET1(Sync, CallingFunction,  Int)
 ACCESSOR_HEADER_GET1(Sync, NumErrorEst,      Int)
 ACCESSOR_HEADER_GET1(Sync, AllErrorEst,      Real)
+ACCESSOR_HEADER_GET1(Sync, TComm,            MPI_Comm)
 
 /*--------------------------------------------------------------------------
  * CoarsenRefStatus Prototypes: They just wrap the corresponding Status accessors
@@ -654,20 +681,22 @@ ACCESSOR_HEADER_GET1(Objective, Tol,           Real)
  */
 
 /** When CallingFunction equals 0, Braid is in FInterp */
-#define braid_ASCaller_FInterp   0
-/** When CallingFunction equals 0, Braid is in FRestrict */
+#define braid_ASCaller_FInterp 0
+/** When CallingFunction equals 1, Braid is in FRestrict */
 #define braid_ASCaller_FRestrict 1
-/** When CallingFunction equals 0, Braid is in FRefine */
-#define braid_ASCaller_FRefine   2
-/** When CallingFunction equals 0, Braid is in FAccess */
-#define braid_ASCaller_FAccess   3
+/** When CallingFunction equals 2, Braid is in FRefine */
+#define braid_ASCaller_FRefine 2
+/** When CallingFunction equals 3, Braid is in FAccess */
+#define braid_ASCaller_FAccess 3
 /** When CallingFunction equals 4, Braid is inside FRefine after the new finest
  * level has been initialized */
-#define braid_ASCaller_FRefine_AfterInitHier   4
+#define braid_ASCaller_FRefine_AfterInitHier 4
 /** When CallingFunction equals 5, Braid is at the top of the cycle */
-#define braid_ASCaller_Drive_TopCycle   5
+#define braid_ASCaller_Drive_TopCycle 5
 /** When CallingFunction equals 6, Braid is in FCrelax */
 #define braid_ASCaller_FCRelax 6
+/** When CallingFunction equals 7, Braid just finished initialization */
+#define braid_ASCaller_Drive_AfterInit 7
 
 /** @}*/
 

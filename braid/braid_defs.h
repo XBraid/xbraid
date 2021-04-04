@@ -63,6 +63,7 @@ typedef double braid_Real;
 // #define braid_MPI_REAL  MPI_FLOAT
 #define braid_MPI_REAL  MPI_DOUBLE
 #define braid_MPI_INT   MPI_INT
+#define braid_MPI_Comm  MPI_Comm
 
 #ifdef __cplusplus
 }

@@ -35,6 +35,9 @@
 #define ACCESSOR_FUNCTION_GET1(stype,param,vtype1) \
    braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1) \
    {return braid_StatusGet##param((braid_Status)s, v1);}
+#define ACCESSOR_FUNCTION_GET1_IN2(stype,param,vtype1,vtype2,vtype3) \
+   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 v2, braid_##vtype3 v3) \
+   {return braid_StatusGet##param((braid_Status)s, v1, v2, v3);}
 #define ACCESSOR_FUNCTION_GET1_IN3(stype,param,vtype1,vtype2,vtype3,vtype4) \
    braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 v2, braid_##vtype3 v3, braid_##vtype4 v4) \
    {return braid_StatusGet##param((braid_Status)s, v1, v2, v3, v4);}
@@ -317,6 +320,17 @@ braid_StatusGetRNorms(braid_Status status,
 }
 
 braid_Int
+braid_StatusGetProc(braid_Status  status,
+                    braid_Int    *proc_ptr,
+                    braid_Int     level,
+                    braid_Int     index
+                    )
+{
+   _braid_GetProc((braid_Core)status, level, index, proc_ptr);
+   return _braid_error_flag;
+}
+
+braid_Int
 braid_StatusGetOldFineTolx(braid_Status status,
                            braid_Real  *old_fine_tolx_ptr
                            )
@@ -573,6 +587,15 @@ braid_StatusGetAllErrorEst(braid_Status  status,
    return _braid_error_flag;
 }
 
+braid_Int
+braid_StatusGetTComm(braid_Status  status,
+                     MPI_Comm     *comm_ptr
+                     )
+{
+   *comm_ptr = _braid_StatusElt(status, comm);
+   return _braid_error_flag;
+}
+
 /*--------------------------------------------------------------------------
  * AccessStatus Routines
  *--------------------------------------------------------------------------*/
@@ -639,6 +662,7 @@ _braid_SyncStatusInit(braid_Int            iter,
 }
 ACCESSOR_FUNCTION_GET2_IN1(Sync, TIUL,         Int, Int, Int)
 ACCESSOR_FUNCTION_GET1_IN3(Sync, TimeValues,   Real*, Int, Int, Int)
+ACCESSOR_FUNCTION_GET1_IN2(Sync, Proc,         Int, Int, Int)
 ACCESSOR_FUNCTION_GET1(Sync, Iter,             Int)
 ACCESSOR_FUNCTION_GET1(Sync, Level,            Int)
 ACCESSOR_FUNCTION_GET1(Sync, NLevels,          Int)
@@ -648,6 +672,8 @@ ACCESSOR_FUNCTION_GET1(Sync, Done,             Int)
 ACCESSOR_FUNCTION_GET1(Sync, CallingFunction,  Int)
 ACCESSOR_FUNCTION_GET1(Sync, NumErrorEst,      Int)
 ACCESSOR_FUNCTION_GET1(Sync, AllErrorEst,      Real)
+ACCESSOR_FUNCTION_GET1(Sync, TComm,            MPI_Comm)
+
 
 /*--------------------------------------------------------------------------
  * CoarsenRefStatus Routines
