@@ -44,7 +44,7 @@ MFEM_CONFIG_MK = $(MFEM_DIR)/config/config.mk
 MFEM_LIB_FILE = mfem_is_not_built
 -include $(MFEM_CONFIG_MK)
 
-BRAID_FLAGS = -I$(BRAID_DIR)
+BRAID_FLAGS = -I$(BRAID_DIR) -Wno-deprecated-declarations
 BRAID_LIB_FILE = $(BRAID_DIR)/libbraid.a
 
 C_EXAMPLES = drive-burgers-1D drive-diffusion-2D drive-lorenz drive-solve-adjoint-with-xbraid

@@ -149,7 +149,11 @@ private:
       hypre_ParCSRMatrixSum(*B.Last(), -dt, *A);
 
       B_amg.Append(new HypreBoomerAMG);
-      B_amg.Last()->SetPrintLevel(-1);
+      B_amg.Last()->SetPrintLevel(0);
+      //B_amg.Last()->SetMaxIter(20);
+      //B_amg.Last()->SetTol(1e-6);
+      B_amg.Last()->SetErrorMode(HypreSolver::ErrorMode::WARN_HYPRE_ERRORS);
+      //B_amg.Last()->SetErrorMode(HypreSolver::ErrorMode::IGNORE_HYPRE_ERRORS);
 
       B_pcg.Append(new CGSolver(B.Last()->GetComm()));
       B_pcg.Last()->SetRelTol(1e-12);

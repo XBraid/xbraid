@@ -318,10 +318,12 @@ int FE_Evolution::GetDtIndex(double dt, int dim) const
       HypreBoomerAMG *prec = new HypreBoomerAMG(B_new);
       //
       prec->SetAdvectiveOptions(1, "", "FA");
+      //prec->SetMaxLevels(50);
       prec->SetRelaxType(3);
       if (dim == 3) prec->SetCoarsening(10);
       prec->SetAggressiveCoarsening(0);
       prec->SetInterpolation(0);
+      //prec->SetStrengthThresh(0.0);
       //
       prec->SetPrintLevel(0);
       B_prec_new = B_hs = prec;
