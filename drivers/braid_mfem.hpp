@@ -256,6 +256,7 @@ struct BraidOptions : public OptionsParser
    int    nrelax0;
    double tol;
    double CWt;
+   double CWt0;
    bool   rtol;
    int    tnorm;
    int    storage;
@@ -889,6 +890,7 @@ BraidOptions::BraidOptions(int argc, char *argv[])
    nrelax0          = -1;    // if > -1, use as nrelax for level 0
    tol              = 1e-9;
    CWt              = 1.0;
+   CWt0             = 1.0;
    rtol             = true;
    tnorm            = 2;
    storage          = -1;
@@ -916,6 +918,7 @@ BraidOptions::BraidOptions(int argc, char *argv[])
    AddOption(&nrelax0, "-nu0", "--num-fc-relax-level-0",
              "Number of F-C relaxations on level 0.");
    AddOption(&CWt, "-CWt", "--CRelaxWt", "CF-Relaxation weight.");
+   AddOption(&CWt0, "-CWt0", "--CRelaxWt0", "CF-Relaxation weight for level 0 only.");
    AddOption(&tol, "-tol", "--tolerance", "Stopping tolerance.");
    AddOption(&rtol, "-reltol", "--relative-tolerance", "-abstol",
              "--absolute-tolerance",
@@ -999,6 +1002,8 @@ void BraidOptions::SetBraidCoreOptions(BraidCore &core)
       core.SetNRelax(0, nrelax0);
    if (CWt != 1.0)
       core.SetCRelaxWt(-1, CWt);
+   if (CWt0 != 1.0)
+      core.SetCRelaxWt(0, CWt0);
    rtol ? core.SetRelTol(tol) : core.SetAbsTol(tol);
    core.SetCFactor(-1, cfactor);
    core.SetAggCFactor(cfactor0);

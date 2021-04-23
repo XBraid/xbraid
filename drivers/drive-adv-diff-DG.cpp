@@ -437,7 +437,7 @@ DGAdvectionOptions::DGAdvectionOptions(int argc, char *argv[])
    AddOption(&ode_solver_type, "-s", "--ode-solver",
              "ODE solver: 1 - Forward Euler, 2 - RK2 SSP, 3 - RK3 SSP,"
              " 4 - RK4, 6 - RK6,\n"
-             "\t11 - Backward Euler, 12 - SDIRK-2, 13 - SDIRK-3");
+             "\t11 - Backward Euler, 12 - SDIRK-2, 123 - SDIRK-23, 13 - SDIRK-3");
    AddOption(&basis_type, "-b", "--basis-type",
              "DG basis type: 0 - Nodal Gauss-Legendre, 1 - Nodal Gauss-Lobatto,"
              " 2 - Positive");
@@ -601,6 +601,7 @@ int DGAdvectionApp::Step(braid_Vector    u_,
 
             case 11: ode_solver = new BackwardEulerSolver; break;
             case 12: ode_solver = new SDIRK23Solver(2); break;
+            case 123: ode_solver = new SDIRK23Solver; break;
             case 13: ode_solver = new SDIRK33Solver; break;
 
             default: ode_solver = new RK4Solver; break;
@@ -791,6 +792,7 @@ void DGAdvectionApp::InitLevel(int l)
 
       case 11: ode_solver = new BackwardEulerSolver; break;
       case 12: ode_solver = new SDIRK23Solver(2); break;
+      case 123: ode_solver = new SDIRK23Solver; break;
       case 13: ode_solver = new SDIRK33Solver; break;
 
       default: ode_solver = new RK4Solver; break;
