@@ -156,11 +156,14 @@ braid_Drive(braid_Core  core)
       }
    }
 
-   /* Turn on warm_restart, so further calls to braid_drive() don't initialize the grid again. */
-   _braid_CoreElt(core, warm_restart) = 1;
+   /* Reset from previous calls to braid_drive() */
+   _braid_CoreElt(core, done) = 0;
 
    /* Solve with MGRIT */
    _braid_Drive(core, localtime);
+
+   /* Turn on warm_restart, so further calls to braid_drive() don't initialize the grid again. */
+   _braid_CoreElt(core, warm_restart) = 1;
 
    /* Stop timer */
    localtime = MPI_Wtime() - localtime;
