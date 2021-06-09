@@ -531,7 +531,8 @@ be implemented in some of the following examples.
    the initial guess for an implicit solve.  If storage is turned on (i.e., set
    to 0), then this value will always be the improved initial guess from the
    previous XBraid iteration for C- and F-points, at the cost of storing more
-   information.  If storage is not turned on (i.e., set to -1), then at
+   information.  If storage is not turned on (i.e., set to the default -1),
+   then at
    
    - Level 0, F-points, *ustop* = *u* in *Step()*, i.e., no improved information is available
    
