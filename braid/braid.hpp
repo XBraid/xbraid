@@ -279,7 +279,7 @@ class BraidStepStatus
       void GetIter(braid_Int *iter_ptr)                  { braid_StepStatusGetIter(pstatus, iter_ptr); }
       void GetOldFineTolx(braid_Real *old_fine_tolx_ptr) { braid_StepStatusGetOldFineTolx(pstatus, old_fine_tolx_ptr); }
       void SetOldFineTolx(braid_Real old_fine_tolx)      { braid_StepStatusSetOldFineTolx(pstatus, old_fine_tolx); }
-      void SetTightFineTolx(braid_Int tight_fine_tolx)   { braid_StepStatusSetTightFineTolx(pstatus, tight_fine_tolx); }
+      void SetTightFineTolx(braid_Real tight_fine_tolx)   { braid_StepStatusSetTightFineTolx(pstatus, tight_fine_tolx); }
       void GetSingleErrorEstStep(braid_Real *estimate_ptr)   { braid_StepStatusGetSingleErrorEstStep(pstatus, estimate_ptr); }
       void GetSpatialAccuracy( braid_Real loose_tol, braid_Real tight_tol, braid_Real *tol_ptr) { braid_GetSpatialAccuracy(pstatus, loose_tol, tight_tol, tol_ptr); }
 
@@ -625,6 +625,8 @@ public:
    void GetNumIter(braid_Int *niter_ptr) { braid_GetNumIter(core, niter_ptr); }
 
    void GetCFactor(braid_Int *cfactor_ptr) { _braid_GetCFactor(core, 0, cfactor_ptr); }
+
+   void GetCFactor(braid_Int level, braid_Int *cfactor_ptr) { _braid_GetCFactor(core, level, cfactor_ptr); }
 
    void GetRNorms(braid_Int *nrequest_ptr, braid_Real *rnorms) { braid_GetRNorms(core, nrequest_ptr, rnorms); }
    
