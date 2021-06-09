@@ -527,12 +527,18 @@ be implemented in some of the following examples.
     at C-points in the default setting.  When storage is turned on at F-points,
     the better initial guess becomes available everywhere.
    
-   In general, the user should always use the *ustop* parameter in
-   *Step()* as the initial guess for an implicit solve.  If storage
-   is turned on (i.e., set to 0), then this value will always be the improved
-   initial guess for C- and F-points.  If storage is not turned on, then
-   this will be the improved guess only for C-points.  For F-points,
-   it will equal the solution from the previous time step.
+   In general, the user should always use the *ustop* parameter in *Step()* as
+   the initial guess for an implicit solve.  If storage is turned on (i.e., set
+   to 0), then this value will always be the improved initial guess from the
+   previous XBraid iteration for C- and F-points, at the cost of storing more
+   information.  If storage is not turned on (i.e., set to -1), then at
+   
+   - Level 0, F-points, *ustop* = *u* in *Step()*, i.e., no improved information is available
+   
+   - Level 0, C-points, *ustop* = the old solution value at *tstop* in *Step()*, i.e., improved information is available
+   
+   - All coarse levels, *ustop* = the restricted fine-grid solution value (the
+     initial guess at tstop), i.e., improved information is available
 
    See ``examples/ex-03`` for an example which uses this feature.
 
