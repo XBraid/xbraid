@@ -625,8 +625,17 @@ braid_PrintStats(braid_Core  core)
                        _braid_GridElt(grids[level], cfactor), nrels[level], CWts[level]);
       }
       /* Print out coarsest level information */
-      _braid_printf("  % 5d  % 8d  \n",
-                    level, _braid_GridElt(grids[level], gupper) );
+      if(relax_only_cg)
+      {
+         _braid_printf("  % 5d  % 8d            % 6d        %1.2f\n",
+                       level, _braid_GridElt(grids[level], gupper),
+                       nrels[level], CWts[level]);
+      }
+      else
+      {
+         _braid_printf("  % 5d  % 8d  \n",
+                       level, _braid_GridElt(grids[level], gupper) );
+      }
       _braid_printf("\n");
       _braid_printf("  wall time = %f\n", globaltime);
       _braid_printf("\n");
