@@ -644,6 +644,30 @@ Wrapping and debugging a code with XBraid typically follows a few steps.
   processors in time (and space if possible).
 - Congratulations!  Your code is now verified.
 
+
+One detail that can rarely affect the fixed-point test (and other tests)
+concerns the time-step size computation in XBraid. XBraid computes the 
+time-step value with the formula
+
+    \f[t_i = t_0 + (i/N)*(T - t_0), \;\; i = 1,2 \dots, N \f]
+
+where \f$N\f$ is the number of time-steps (not counting \f$t_0\f$), the integer
+division with \f$N\f$ is cast as a float, \f$t_0\f$ is the global start time,
+and \f$T\f$ is the global end time.  This formula guarantees that the last
+time-value \f$t_N = T\f$ and that the \f$t_i\f$ are evenly spaced (to within
+floating point accuracy).  But, this formula also means that in some cases the
+time-step size can vary when not expected.  For example, the time-step size can
+be uniform in exact arithmetic, but vary by a small amount (in the least
+significant bit) in floating-point arithmetic.  For instance, a time-interval
+of [0,1] and \f$N=5\f$ can yield this phenomenon.  
+
+This phenomenon can cause fixed-point issues, for example, if you precompute
+values based on the time-step size, or use the time-step size as a dictionary
+key.  If you suspect this is an issue, it is recommended to use for your
+debugging tests, \f$t_0\f$, \f$T\f$, and \f$N\f$ that do not produce this
+phenomenon, or to use a user-specified time-grid with
+[braid_SetTimeGrid](@ref braid_SetTimeGrid) .
+
 # Computing Derivatives with XBraid_Adjoint {#xbraid_adjoint}
 
 *XBraid_Adjoint has been developed in collaboration with the Scientific Computing group at TU Kaiserslautern, Germany, and in particular with Dr. Stefanie Guenther and Prof. Nicolas Gauger.*
