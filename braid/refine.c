@@ -248,6 +248,7 @@ _braid_FRefine(braid_Core   core,
    braid_Int          access_level    = _braid_CoreElt(core, access_level);
    _braid_Grid      **grids           = _braid_CoreElt(core, grids);
    braid_Int          ncpoints        = _braid_GridElt(grids[0], ncpoints);
+   braid_Real         timer           = 0.0;
 
    braid_Real         rnorm;
 
@@ -436,17 +437,23 @@ _braid_FRefine(braid_Core   core,
       /* Post r_ta receive */
       if ((iupper < gupper) || periodic)
       {
+         timer = MPI_Wtime();
          MPI_Irecv(&r_ta[r_npoints], 1, braid_MPI_REAL, MPI_ANY_SOURCE, 2, comm,
                    &requests[ncomms++]);
+         _braid_CoreElt(core, timer_MPI_recv) += MPI_Wtime() - timer;
       }
 
       /* Post r_ta send (to the left) */
       if ((ilower > 0) || periodic)
       {
          _braid_GetBlockDistProc((gupper+1), nprocs, (ilower-1), periodic, &prevproc);
+         timer = MPI_Wtime();
          MPI_Isend(&r_ta[0], 1, braid_MPI_REAL, prevproc, 2, comm, &requests[ncomms++]);
+         _braid_CoreElt(core, timer_MPI_send) += MPI_Wtime() - timer;
       }
+      timer = MPI_Wtime();
       MPI_Waitall(ncomms, requests, statuses);
+      _braid_CoreElt(core, timer_MPI_wait) += MPI_Wtime() - timer;
    }
    _braid_TFree(requests);
    _braid_TFree(statuses);
@@ -463,7 +470,9 @@ _braid_FRefine(braid_Core   core,
       f_next = f_gupper+1;
       if (f_iupper < f_gupper)
       {
+         timer = MPI_Wtime();
          MPI_Irecv(&f_next, 1, braid_MPI_INT, MPI_ANY_SOURCE, 3, comm, &request);
+         _braid_CoreElt(core, timer_MPI_recv) += MPI_Wtime() - timer;
       }
    }
 
@@ -544,7 +553,9 @@ _braid_FRefine(braid_Core   core,
       size = send_sizes[m];
       proc = send_procs[m];
       bptr[0] = (braid_Real) size; /* insert size at the beginning */
+      timer = MPI_Wtime();
       MPI_Isend(bptr, (1+size), braid_MPI_REAL, proc, 4, comm, &requests[m]);
+      _braid_CoreElt(core, timer_MPI_send) += MPI_Wtime() - timer;
       bptr += (1+size);
    }
 
@@ -589,12 +600,16 @@ _braid_FRefine(braid_Core   core,
    }
 
    /* Finish sends and f_next receive */
+   timer = MPI_Wtime();
    MPI_Waitall(nsends, requests, statuses);
+   _braid_CoreElt(core, timer_MPI_wait) += MPI_Wtime() - timer;
    if (f_npoints > 0)
    {
       if (f_iupper < f_gupper)
       {
+         timer = MPI_Wtime();
          MPI_Wait(&request, &status);
+         _braid_CoreElt(core, timer_MPI_wait) += MPI_Wtime() - timer;
       }
    }
 
@@ -781,8 +796,10 @@ _braid_FRefine(braid_Core   core,
       unum = recv_unums[m]; /* Number of u-vectors being received */
       recv_size = unum*(1 + max_usize);
       recv_buffers[m] = _braid_CTAlloc(braid_Real, recv_size);
+      timer = MPI_Wtime();
       MPI_Irecv(recv_buffers[m], recv_size, braid_MPI_REAL, recv_procs[m], 5, comm,
                 &requests[m]);
+      _braid_CoreElt(core, timer_MPI_recv) += MPI_Wtime() - timer;
 
 #if DEBUG
       proc = recv_procs[m];
@@ -820,8 +837,10 @@ _braid_FRefine(braid_Core   core,
          ii++;
       }
       send_buffers[m] = _braid_TReAlloc(send_buffers[m], braid_Real, send_size);
+      timer = MPI_Wtime();
       MPI_Isend(send_buffers[m], send_size, braid_MPI_REAL, send_procs[m], 5, comm,
                 &requests[m + nrecvs]);
+      _braid_CoreElt(core, timer_MPI_send) += MPI_Wtime() - timer;
 
 #if DEBUG
       unum = send_unums[m];
@@ -836,7 +855,9 @@ _braid_FRefine(braid_Core   core,
 #endif
 
    /* Finish communication */
+   timer = MPI_Wtime();
    MPI_Waitall((nsends+nrecvs), requests, statuses);
+   _braid_CoreElt(core, timer_MPI_wait) += MPI_Wtime() - timer;
 
 #if DEBUG
    printf("%d %d: 4\n", FRefine_count, myproc);

@@ -533,6 +533,13 @@ braid_Int
 braid_PrintStats(braid_Core  core           /**< braid_Core (_braid_Core) struct*/
                  );
 
+/** 
+ * Print timers after a XBraid run, note these timers do not include any
+ * adjoint routines or Richardson routines
+ **/
+braid_Int
+braid_PrintTimers(braid_Core  core           /**< braid_Core (_braid_Core) struct*/
+                 );
 
 /**
  * After Drive() finishes, this function can be called to write out the convergence history 

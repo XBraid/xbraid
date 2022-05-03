@@ -40,6 +40,7 @@ _braid_CommRecvInit(braid_Core           core,
    MPI_Status         *status;
    braid_Int           proc, size, num_requests;
    braid_BufferStatus bstatus = (braid_BufferStatus)core;
+   braid_Real         timer   = 0.0;
 
    _braid_GetProc(core, level, index, &proc);
    if (proc > -1)
@@ -54,7 +55,9 @@ _braid_CommRecvInit(braid_Core           core,
       num_requests = 1;
       requests = _braid_CTAlloc(MPI_Request, num_requests);
       status   = _braid_CTAlloc(MPI_Status, num_requests);
+      timer = MPI_Wtime();
       MPI_Irecv(buffer, size, MPI_BYTE, proc, 0, comm, &requests[0]);
+      _braid_CoreElt(core, timer_MPI_recv) += MPI_Wtime() - timer;
 
       _braid_CommHandleElt(handle, request_type) = 1; /* recv type = 1 */
       _braid_CommHandleElt(handle, num_requests) = num_requests;
@@ -87,6 +90,7 @@ _braid_CommSendInit(braid_Core           core,
    MPI_Status         *status;
    braid_Int           proc, size, num_requests;
    braid_BufferStatus  bstatus   = (braid_BufferStatus)core;
+   braid_Real          timer     = 0.0;
    
 
    _braid_GetProc(core, level, index+1, &proc);
@@ -110,7 +114,9 @@ _braid_CommSendInit(braid_Core           core,
       num_requests = 1;
       requests = _braid_CTAlloc(MPI_Request, num_requests);
       status   = _braid_CTAlloc(MPI_Status, num_requests);
+      timer = MPI_Wtime();
       MPI_Isend(buffer, size, MPI_BYTE, proc, 0, comm, &requests[0]);
+      _braid_CoreElt(core, timer_MPI_send) += MPI_Wtime() - timer;
 
       _braid_CommHandleElt(handle, request_type) = 0; /* send type = 0 */
       _braid_CommHandleElt(handle, num_requests) = num_requests;
@@ -133,6 +139,7 @@ _braid_CommWait(braid_Core          core,
 {
    braid_App           app    = _braid_CoreElt(core, app);
    _braid_CommHandle  *handle = *handle_ptr;
+   braid_Real          timer     = 0.0;
 
    if (handle != NULL)
    {
@@ -143,7 +150,9 @@ _braid_CommWait(braid_Core          core,
       void          *buffer       = _braid_CommHandleElt(handle, buffer);
       braid_BufferStatus bstatus  = (braid_BufferStatus)core;
 
+      timer = MPI_Wtime();
       MPI_Waitall(num_requests, requests, status);
+      _braid_CoreElt(core, timer_MPI_wait) += MPI_Wtime() - timer;
       
       if (request_type == 1) /* recv type */
       {

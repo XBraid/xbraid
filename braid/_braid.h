@@ -369,6 +369,26 @@ typedef struct _braid_Core_struct
    braid_Int    messagetype;       /**< message type, 0: for Step(), 1: for load balancing */
    braid_Int    size_buffer;       /**< if set by user, send buffer will be "size" bytes in length */
    braid_Int    send_recv_rank;    /***< holds the rank of the source / receiver from MPI_Send / MPI_Recv calls. */
+
+   /** Timers for various key parts of the code */
+   braid_Real  timer_MPI_wait;
+   braid_Real  timer_MPI_send;
+   braid_Real  timer_MPI_recv;
+   braid_Real  timer_drive_init;
+   braid_Real  timer_user_step;
+   braid_Real  timer_user_init;
+   braid_Real  timer_user_clone;
+   braid_Real  timer_user_free;
+   braid_Real  timer_user_sum;
+   braid_Real  timer_user_spatialnorm;
+   braid_Real  timer_user_access;
+   braid_Real  timer_user_bufsize;
+   braid_Real  timer_user_bufpack;
+   braid_Real  timer_user_bufunpack;
+   braid_Real  timer_user_residual;
+   braid_Real  timer_user_scoarsen;
+   braid_Real  timer_user_srefine;
+   braid_Real  timer_user_sync;
 } _braid_Core;
 
 /*--------------------------------------------------------------------------

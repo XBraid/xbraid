@@ -56,7 +56,9 @@ braid_Drive(braid_Core  core)
    braid_Real    *ta;
    _braid_Grid   *grid;
    braid_Real     localtime, globaltime;
+   braid_Real     timer_drive_init;
 
+   timer_drive_init = MPI_Wtime();
    /* Check for non-supported adjoint features */
    if (adjoint)
    {
@@ -155,6 +157,7 @@ braid_Drive(braid_Core  core)
          _braid_CoreElt(core, record) = 1;
       }
    }
+   _braid_CoreElt(core, timer_drive_init) += MPI_Wtime() - timer_drive_init;
 
    /* Reset from previous calls to braid_drive() */
    _braid_CoreElt(core, done) = 0;
@@ -348,6 +351,26 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, order)           = 2;     /* 2nd order local time stepper by defualt */
    _braid_CoreElt(core, dtk)             = NULL;  /* Set in _braid_InitHierarchy */
    _braid_CoreElt(core, estimate)        = NULL;  /* Set in _braid_InitHierarchy */
+
+   /* Timers for key parts of code */
+   _braid_CoreElt(core, timer_drive_init)  = 0.0;
+   _braid_CoreElt(core, timer_user_step)  = 0.0;
+   _braid_CoreElt(core, timer_user_init)  = 0.0;
+   _braid_CoreElt(core, timer_user_clone)  = 0.0;
+   _braid_CoreElt(core, timer_user_free)  = 0.0;
+   _braid_CoreElt(core, timer_user_sum)  = 0.0;
+   _braid_CoreElt(core, timer_user_spatialnorm)  = 0.0;
+   _braid_CoreElt(core, timer_user_access)  = 0.0;
+   _braid_CoreElt(core, timer_user_sync)  = 0.0;
+   _braid_CoreElt(core, timer_user_bufsize)  = 0.0;
+   _braid_CoreElt(core, timer_user_bufpack)  = 0.0;
+   _braid_CoreElt(core, timer_user_bufunpack)  = 0.0;
+   _braid_CoreElt(core, timer_user_residual)  = 0.0;
+   _braid_CoreElt(core, timer_user_scoarsen)  = 0.0;
+   _braid_CoreElt(core, timer_user_srefine)  = 0.0;
+   _braid_CoreElt(core, timer_MPI_recv)  = 0.0;
+   _braid_CoreElt(core, timer_MPI_wait)  = 0.0;
+   _braid_CoreElt(core, timer_MPI_send)  = 0.0;
 
    braid_SetMaxLevels(core, max_levels);
    braid_SetMaxIter(core, max_iter);
@@ -646,7 +669,43 @@ braid_PrintStats(braid_Core  core)
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
+braid_Int
+braid_PrintTimers(braid_Core  core)
+{
+   braid_Int     myid          = _braid_CoreElt(core, myid_world);
+   FILE *fp;
+   char filename[] = "braid_timings_0000.txt";
 
+   sprintf(filename, "braid_timings_%04d.txt", myid);
+   fp = fopen(filename, "a");
+   
+   fprintf(fp, "\nTimings for rank %d\n", myid); 
+   fprintf(fp, "   drive_init   %1.3e\n",  _braid_CoreElt(core, timer_drive_init)); 
+   fprintf(fp, "   step         %1.3e\n",  _braid_CoreElt(core, timer_user_step)); 
+   fprintf(fp, "   init         %1.3e\n",  _braid_CoreElt(core, timer_user_init)); 
+   fprintf(fp, "   clone        %1.3e\n",  _braid_CoreElt(core, timer_user_clone)); 
+   fprintf(fp, "   free         %1.3e\n",  _braid_CoreElt(core, timer_user_free)); 
+   fprintf(fp, "   sum          %1.3e\n",  _braid_CoreElt(core, timer_user_sum)); 
+   fprintf(fp, "   spatialnorm  %1.3e\n",  _braid_CoreElt(core, timer_user_spatialnorm)); 
+   fprintf(fp, "   bufsize      %1.3e\n",  _braid_CoreElt(core, timer_user_bufsize)); 
+   fprintf(fp, "   bufpack      %1.3e\n",  _braid_CoreElt(core, timer_user_bufpack)); 
+   fprintf(fp, "   bufunpack    %1.3e\n\n",  _braid_CoreElt(core, timer_user_bufunpack)); 
+   fprintf(fp, "   access       %1.3e\n",  _braid_CoreElt(core, timer_user_access)); 
+   fprintf(fp, "   sync         %1.3e\n",  _braid_CoreElt(core, timer_user_sync)); 
+   fprintf(fp, "   residual     %1.3e\n",  _braid_CoreElt(core, timer_user_residual)); 
+   fprintf(fp, "   scoarsen     %1.3e\n",  _braid_CoreElt(core, timer_user_scoarsen)); 
+   fprintf(fp, "   srefine      %1.3e\n\n",  _braid_CoreElt(core, timer_user_srefine)); 
+   fprintf(fp, "   MPI_recv     %1.3e\n",  _braid_CoreElt(core, timer_MPI_recv)); 
+   fprintf(fp, "   MPI_send     %1.3e\n",  _braid_CoreElt(core, timer_MPI_send)); 
+   fprintf(fp, "   MPI_wait     %1.3e\n",  _braid_CoreElt(core, timer_MPI_wait)); 
+
+   fclose(fp);
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+ 
 braid_Int
 braid_WriteConvHistory(braid_Core core,    
                        const char* filename)
