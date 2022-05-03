@@ -180,6 +180,12 @@ braid_Drive(braid_Core  core)
       braid_PrintStats(core);
    }
 
+   /* Print basic timing information */
+   if (print_level > 0)
+   {
+      braid_PrintTimers(core);
+   }
+
    return _braid_error_flag;
 }
 
@@ -677,7 +683,7 @@ braid_PrintTimers(braid_Core  core)
    char filename[] = "braid_timings_0000.txt";
 
    sprintf(filename, "braid_timings_%04d.txt", myid);
-   fp = fopen(filename, "a");
+   fp = fopen(filename, "w");
    
    fprintf(fp, "\nTimings for rank %d\n", myid); 
    fprintf(fp, "   drive_init   %1.3e\n",  _braid_CoreElt(core, timer_drive_init)); 
