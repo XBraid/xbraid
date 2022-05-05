@@ -308,10 +308,10 @@ _braid_DriveCheckConvergence(braid_Core  core,
 
    if (iter == max_iter-1 )
    {
-      if (myid == 0)
-      {
-         _braid_printf("  Braid: Max. iterations reached.\n\n"); 
-      }
+    //if (myid == 0)
+    //{
+    //   _braid_printf("  Braid: Max. iterations reached.\n\n"); 
+    //}
       done = 1;
    }
 
@@ -527,6 +527,9 @@ _braid_Drive(braid_Core  core,
 
          if (level > 0)
          {
+            /* Set core->level to dummy value signifying coarsest grid solve. Must reset core->level after FInterp below */
+            _braid_CoreElt(core, level) = -11;
+
             /* Solve with relaxation on coarsest grid IF ( periodic OR explicitly choosing relaxation on coarsest grid ) */
             if ( (level == (nlevels-1)) && (_braid_CoreElt(core, periodic) || relax_only_cg) )
             {
@@ -542,6 +545,7 @@ _braid_Drive(braid_Core  core,
             _braid_FInterp(core, level);
 
             level--;
+            _braid_CoreElt(core, level) = level;
          }
          else
          {

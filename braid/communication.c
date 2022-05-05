@@ -150,9 +150,15 @@ _braid_CommWait(braid_Core          core,
       void          *buffer       = _braid_CommHandleElt(handle, buffer);
       braid_BufferStatus bstatus  = (braid_BufferStatus)core;
 
+      // Wait on all communication, timing result for coarsest-grid separately 
       timer = MPI_Wtime();
       MPI_Waitall(num_requests, requests, status);
-      _braid_CoreElt(core, timer_MPI_wait) += MPI_Wtime() - timer;
+      if (_braid_CoreElt(core, level) == -11){// (_braid_CoreElt(core, nlevels)-1) ) {
+         _braid_CoreElt(core, timer_MPI_wait_coarse) += MPI_Wtime() - timer;
+      }
+      else {
+         _braid_CoreElt(core, timer_MPI_wait) += MPI_Wtime() - timer;
+      }
       
       if (request_type == 1) /* recv type */
       {

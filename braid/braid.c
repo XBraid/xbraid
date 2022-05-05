@@ -376,6 +376,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, timer_user_srefine)  = 0.0;
    _braid_CoreElt(core, timer_MPI_recv)  = 0.0;
    _braid_CoreElt(core, timer_MPI_wait)  = 0.0;
+   _braid_CoreElt(core, timer_MPI_wait_coarse)  = 0.0;
    _braid_CoreElt(core, timer_MPI_send)  = 0.0;
 
    braid_SetMaxLevels(core, max_levels);
@@ -686,24 +687,25 @@ braid_PrintTimers(braid_Core  core)
    fp = fopen(filename, "w");
    
    fprintf(fp, "\nTimings for rank %d\n", myid); 
-   fprintf(fp, "   drive_init   %1.3e\n",  _braid_CoreElt(core, timer_drive_init)); 
-   fprintf(fp, "   step         %1.3e\n",  _braid_CoreElt(core, timer_user_step)); 
-   fprintf(fp, "   init         %1.3e\n",  _braid_CoreElt(core, timer_user_init)); 
-   fprintf(fp, "   clone        %1.3e\n",  _braid_CoreElt(core, timer_user_clone)); 
-   fprintf(fp, "   free         %1.3e\n",  _braid_CoreElt(core, timer_user_free)); 
-   fprintf(fp, "   sum          %1.3e\n",  _braid_CoreElt(core, timer_user_sum)); 
-   fprintf(fp, "   spatialnorm  %1.3e\n",  _braid_CoreElt(core, timer_user_spatialnorm)); 
-   fprintf(fp, "   bufsize      %1.3e\n",  _braid_CoreElt(core, timer_user_bufsize)); 
-   fprintf(fp, "   bufpack      %1.3e\n",  _braid_CoreElt(core, timer_user_bufpack)); 
-   fprintf(fp, "   bufunpack    %1.3e\n\n",  _braid_CoreElt(core, timer_user_bufunpack)); 
-   fprintf(fp, "   access       %1.3e\n",  _braid_CoreElt(core, timer_user_access)); 
-   fprintf(fp, "   sync         %1.3e\n",  _braid_CoreElt(core, timer_user_sync)); 
-   fprintf(fp, "   residual     %1.3e\n",  _braid_CoreElt(core, timer_user_residual)); 
-   fprintf(fp, "   scoarsen     %1.3e\n",  _braid_CoreElt(core, timer_user_scoarsen)); 
-   fprintf(fp, "   srefine      %1.3e\n\n",  _braid_CoreElt(core, timer_user_srefine)); 
-   fprintf(fp, "   MPI_recv     %1.3e\n",  _braid_CoreElt(core, timer_MPI_recv)); 
-   fprintf(fp, "   MPI_send     %1.3e\n",  _braid_CoreElt(core, timer_MPI_send)); 
-   fprintf(fp, "   MPI_wait     %1.3e\n",  _braid_CoreElt(core, timer_MPI_wait)); 
+   fprintf(fp, "   drive_init       %1.3e\n",  _braid_CoreElt(core, timer_drive_init)); 
+   fprintf(fp, "   step             %1.3e\n",  _braid_CoreElt(core, timer_user_step)); 
+   fprintf(fp, "   init             %1.3e\n",  _braid_CoreElt(core, timer_user_init)); 
+   fprintf(fp, "   clone            %1.3e\n",  _braid_CoreElt(core, timer_user_clone)); 
+   fprintf(fp, "   free             %1.3e\n",  _braid_CoreElt(core, timer_user_free)); 
+   fprintf(fp, "   sum              %1.3e\n",  _braid_CoreElt(core, timer_user_sum)); 
+   fprintf(fp, "   spatialnorm      %1.3e\n",  _braid_CoreElt(core, timer_user_spatialnorm)); 
+   fprintf(fp, "   bufsize          %1.3e\n",  _braid_CoreElt(core, timer_user_bufsize)); 
+   fprintf(fp, "   bufpack          %1.3e\n",  _braid_CoreElt(core, timer_user_bufpack)); 
+   fprintf(fp, "   bufunpack        %1.3e\n\n",  _braid_CoreElt(core, timer_user_bufunpack)); 
+   fprintf(fp, "   access           %1.3e\n",  _braid_CoreElt(core, timer_user_access)); 
+   fprintf(fp, "   sync             %1.3e\n",  _braid_CoreElt(core, timer_user_sync)); 
+   fprintf(fp, "   residual         %1.3e\n",  _braid_CoreElt(core, timer_user_residual)); 
+   fprintf(fp, "   scoarsen         %1.3e\n",  _braid_CoreElt(core, timer_user_scoarsen)); 
+   fprintf(fp, "   srefine          %1.3e\n\n",  _braid_CoreElt(core, timer_user_srefine)); 
+   fprintf(fp, "   MPI_recv         %1.3e\n",  _braid_CoreElt(core, timer_MPI_recv)); 
+   fprintf(fp, "   MPI_send         %1.3e\n",  _braid_CoreElt(core, timer_MPI_send)); 
+   fprintf(fp, "   MPI_wait         %1.3e\n",  _braid_CoreElt(core, timer_MPI_wait)); 
+   fprintf(fp, "   MPI_wait_coarse  %1.3e\n",  _braid_CoreElt(core, timer_MPI_wait_coarse)); 
 
    fclose(fp);
    return _braid_error_flag;
