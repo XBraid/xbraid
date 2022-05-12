@@ -117,6 +117,16 @@ _braid_GetDistribution(braid_Core   core,
 
    _braid_GetBlockDistInterval(npoints, nprocs, proc, &ilower, &iupper);
 
+   // tempo
+   if( proc != 0){
+      //fprintf(stderr, "PoooP\n");
+      ilower = ilower - 1;
+   }
+   if( proc != (nprocs-1)){
+      //fprintf(stderr, "PoooP\n");
+      iupper = iupper - 1;
+   }
+
    /* revert ranks */
    if (reverted_ranks)
    {
@@ -158,6 +168,13 @@ _braid_GetProc(braid_Core   core,
    {
       cfactor = _braid_GridElt(grids[l], cfactor);
       _braid_MapCoarseToFine(index, cfactor, index);
+   }
+   
+   // tempo
+   //fprintf(stderr, "ff  %d  %d  %d\n",index,gupper,npoints);
+   if( (index <= gupper) && (index >= 0) ){
+   //if( (index == 0) || (index == 1) ){
+     index = index+1;
    }
 
    if (reverted_ranks)
