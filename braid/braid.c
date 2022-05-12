@@ -359,6 +359,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, estimate)        = NULL;  /* Set in _braid_InitHierarchy */
 
    /* Timers for key parts of code */
+   _braid_CoreElt(core, timer_coarse_solve) = 0.0;
    _braid_CoreElt(core, timer_drive_init)  = 0.0;
    _braid_CoreElt(core, timer_user_step)  = 0.0;
    _braid_CoreElt(core, timer_user_init)  = 0.0;
@@ -688,6 +689,7 @@ braid_PrintTimers(braid_Core  core)
    
    fprintf(fp, "\nTimings for rank %d\n", myid); 
    fprintf(fp, "   drive_init       %1.3e\n",  _braid_CoreElt(core, timer_drive_init)); 
+   fprintf(fp, "   coarse solve     %1.3e\n",  _braid_CoreElt(core, timer_coarse_solve)); 
    fprintf(fp, "   step             %1.3e\n",  _braid_CoreElt(core, timer_user_step)); 
    fprintf(fp, "   init             %1.3e\n",  _braid_CoreElt(core, timer_user_init)); 
    fprintf(fp, "   clone            %1.3e\n",  _braid_CoreElt(core, timer_user_clone)); 

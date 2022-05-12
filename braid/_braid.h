@@ -375,6 +375,7 @@ typedef struct _braid_Core_struct
    braid_Real  timer_MPI_wait_coarse;
    braid_Real  timer_MPI_send;
    braid_Real  timer_MPI_recv;
+   braid_Real  timer_coarse_solve;
    braid_Real  timer_drive_init;
    braid_Real  timer_user_step;
    braid_Real  timer_user_init;

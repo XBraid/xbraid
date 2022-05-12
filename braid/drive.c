@@ -445,6 +445,7 @@ _braid_Drive(braid_Core  core,
    braid_Int      nlevels;
    braid_Int      ilower, iupper;
    braid_Real     rnorm_adj;
+   braid_Real     timer;
 
    /* Cycle state variables */
    _braid_CycleState  cycle;
@@ -542,7 +543,13 @@ _braid_Drive(braid_Core  core,
             }
 
             /* F-relax then interpolate */
+            if(level == (nlevels-1)){
+               timer = MPI_Wtime();
+            }
             _braid_FInterp(core, level);
+            if(level == (nlevels-1)){
+               _braid_CoreElt(core, timer_coarse_solve) += MPI_Wtime() - timer;
+            }
 
             level--;
             _braid_CoreElt(core, level) = level;
