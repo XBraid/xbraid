@@ -173,8 +173,12 @@ _braid_GetProc(braid_Core   core,
    // tempo
    //fprintf(stderr, "ff  %d  %d  %d\n",index,gupper,npoints);
    if( (index <= gupper) && (index >= 0) ){
-   //if( (index == 0) || (index == 1) ){
-     index = index+1;
+      if (reverted_ranks){
+         index = index-1;
+      }
+      else{
+         index = index+1;
+      }
    }
 
    if (reverted_ranks)
