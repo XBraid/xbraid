@@ -644,6 +644,7 @@ ACCESSOR_HEADER_SET1(Step, RFactor,       Real)
 ACCESSOR_HEADER_SET1(Step, RSpace,        Real)
 ACCESSOR_HEADER_GET1(Step, Done,          Int)
 ACCESSOR_HEADER_GET1(Step, SingleErrorEstStep, Real)
+ACCESSOR_HEADER_GET1(Step, CallingFunction,    Int)
 
 /*--------------------------------------------------------------------------
  * BufferStatus Prototypes: They just wrap the corresponding Status accessors
@@ -696,6 +697,14 @@ ACCESSOR_HEADER_GET1(Objective, Tol,           Real)
 #define braid_ASCaller_FCRelax 6
 /** When CallingFunction equals 7, Braid just finished initialization */
 #define braid_ASCaller_Drive_AfterInit 7
+/** When CallingFunction equals 8, Braid is in BaseStep_diff */
+#define braid_ASCaller_BaseStep_diff 8
+/** When CallingFunction equals 9, Braid is in ComputeFullRNorm */
+#define braid_ASCaller_ComputeFullRNorm 9
+/** When CallingFunction equals 10, Braid is in Residual */
+#define braid_ASCaller_Residual 10
+/** When CallingFunction equals 11, Braid is in InitGuess */
+#define braid_ASCaller_InitGuess 11
 
 /** @}*/
 

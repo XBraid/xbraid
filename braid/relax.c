@@ -169,7 +169,7 @@ _braid_FCRelax(braid_Core  core,
          _braid_GetRNorm(core, -1, &rnm);
          for (fi = flo; fi <= fhi; fi++)
          {
-            _braid_Step(core, level, fi, NULL, u);
+            _braid_Step(core, level, fi, braid_ASCaller_FCRelax, NULL, u);
             _braid_USetVector(core, level, fi, u, 0);
 
             /* Allow user to process current vector */
@@ -192,7 +192,7 @@ _braid_FCRelax(braid_Core  core,
                _braid_UGetVector(core, level, ci, &u_old);
             }
 
-            _braid_Step(core, level, ci, NULL, u);
+            _braid_Step(core, level, ci, braid_ASCaller_FCRelax, NULL, u);
 
             if( (CWt != 1.0) && ( (level != (nlevels-1)) || relax_only_cg ) )
             {
@@ -216,7 +216,8 @@ _braid_FCRelax(braid_Core  core,
                /* Note that we initialize StepStatus here in a non-standard
                 * way, and hence cannot use _braid_Step(...). */
                _braid_StepStatusInit(time_left, ta[ci-ilower], ci-cfactor-1, tol,
-                                     iter, level, nrefine, gupper, status);
+                                     iter, level, nrefine, gupper, 
+                                     braid_ASCaller_FCRelax, status);
                _braid_BaseStep(core, app, u, NULL, bigstep, level, status);
 
                _braid_BaseSum(core, app, a, u, b, bigstep );

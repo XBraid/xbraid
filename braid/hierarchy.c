@@ -416,7 +416,7 @@ _braid_InitGuess(braid_Core  core,
       /* Initialize all points on the finest grid with sequential time marching */
       for(i = ilower; i <= iupper; i++)
       {
-         _braid_Step(core, 0, i, NULL, u);       /* Step forward */
+         _braid_Step(core, 0, i, braid_ASCaller_InitGuess, NULL, u);       /* Step forward */
          _braid_USetVector(core, 0, i, u, 0);    /* Store: copy u into core,
                                                     sending to left if needed */
       }

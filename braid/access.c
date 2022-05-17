@@ -63,7 +63,7 @@ _braid_FAccess(braid_Core     core,
       }
       for (fi = flo; fi <= fhi; fi++)
       {
-         _braid_Step(core, level, fi, NULL, u);
+         _braid_Step(core, level, fi, braid_ASCaller_FAccess, NULL, u);
          _braid_USetVector(core, level, fi, u, 0);
 
          if (access_level >= 1)

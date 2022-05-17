@@ -136,15 +136,16 @@ _braid_CoarsenRefStatusInit(braid_Real              tstart,      /**< time value
  * Initialize a braid_StepStatus structure
  */
 braid_Int
-_braid_StepStatusInit(braid_Real        tstart,      /**< current time value  */
-                      braid_Real        tstop,       /**< time value to evolve towards, time value to the right of tstart */
-                      braid_Int         idx,         /**< time point index value corresponding to tstart on the global time grid */
-                      braid_Real        tol,         /**< Current XBraid stopping tolerance */
-                      braid_Int         iter,        /**< Current XBraid iteration (also equal to length of rnorms) */
-                      braid_Int         level,       /**< current level in XBraid */
-                      braid_Int         nrefine,     /**< number of refinements done */
-                      braid_Int         gupper,      /**< global size of the fine grid */
-                      braid_StepStatus  status       /**< structure to initialize */
+_braid_StepStatusInit(braid_Real        tstart,           /**< current time value  */
+                      braid_Real        tstop,            /**< time value to evolve towards, time value to the right of tstart */
+                      braid_Int         idx,              /**< time point index value corresponding to tstart on the global time grid */
+                      braid_Real        tol,              /**< Current XBraid stopping tolerance */
+                      braid_Int         iter,             /**< Current XBraid iteration (also equal to length of rnorms) */
+                      braid_Int         level,            /**< current level in XBraid */
+                      braid_Int         nrefine,          /**< number of refinements done */
+                      braid_Int         gupper,           /**< global size of the fine grid */
+                      braid_Int         calling_function, /**< from which function are we accessing braid */
+                      braid_StepStatus  status            /**< structure to initialize */
                       );
 
 /**

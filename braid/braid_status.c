@@ -729,6 +729,7 @@ _braid_StepStatusInit(braid_Real       tstart,
                       braid_Int        level,
                       braid_Int        nrefine,
                       braid_Int        gupper,
+                      braid_Int        calling_function,
                       braid_StepStatus status)
 {
    _braid_StatusElt(status, t)         = tstart;
@@ -740,6 +741,7 @@ _braid_StepStatusInit(braid_Real       tstart,
    _braid_StatusElt(status, nrefine)   = nrefine;
    _braid_StatusElt(status, gupper)    = gupper;
    _braid_StatusElt(status, r_space)   = 0;
+   _braid_StatusElt(status, calling_function) = calling_function;
 
    return _braid_error_flag;
 }
@@ -761,6 +763,7 @@ ACCESSOR_FUNCTION_SET1(Step, RFactor,       Real)
 ACCESSOR_FUNCTION_SET1(Step, RSpace,        Real)
 ACCESSOR_FUNCTION_GET1(Step, Done,          Int)
 ACCESSOR_FUNCTION_GET1(Step, SingleErrorEstStep, Real)
+ACCESSOR_FUNCTION_GET1(Step, CallingFunction,    Int)
 
 /*--------------------------------------------------------------------------
  * BufferStatus Routines

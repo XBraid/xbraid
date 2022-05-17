@@ -134,7 +134,7 @@ _braid_FRestrict(braid_Core   core,
       _braid_GetRNorm(core, -1, &rnm);
       for (fi = flo; fi <= fhi; fi++)
       {
-         _braid_Step(core, level, fi, NULL, r);
+         _braid_Step(core, level, fi, braid_ASCaller_FRestrict, NULL, r);
          _braid_USetVector(core, level, fi, r, 0);
          
          /* Allow user to process current vector, note that r here is

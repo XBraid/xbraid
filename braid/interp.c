@@ -76,7 +76,7 @@ _braid_FInterp(braid_Core  core,
       }
       for (fi = flo; fi <= fhi; fi++)
       {
-         _braid_Step(core, level, fi, NULL, u);
+         _braid_Step(core, level, fi, braid_ASCaller_FInterp, NULL, u);
          _braid_USetVector(core, level, fi, u, 0);
          /* Allow user to process current vector */
          if( (access_level >= 3) )

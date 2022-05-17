@@ -30,6 +30,7 @@ braid_Int
 _braid_Step(braid_Core         core,
             braid_Int          level,
             braid_Int          index,
+            braid_Int          calling_function,
             braid_BaseVector   ustop,
             braid_BaseVector   u)
 {
@@ -47,7 +48,7 @@ _braid_Step(braid_Core         core,
    braid_Int        ii;
 
    ii = index-ilower;
-   _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, status);
+   _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, status);
 
    /* If ustop is set to NULL, use a default approach for setting it */
    if (ustop == NULL)
