@@ -282,6 +282,10 @@ class BraidStepStatus
       void SetTightFineTolx(braid_Real tight_fine_tolx)   { braid_StepStatusSetTightFineTolx(pstatus, tight_fine_tolx); }
       void GetSingleErrorEstStep(braid_Real *estimate_ptr)   { braid_StepStatusGetSingleErrorEstStep(pstatus, estimate_ptr); }
       void GetSpatialAccuracy( braid_Real loose_tol, braid_Real tight_tol, braid_Real *tol_ptr) { braid_GetSpatialAccuracy(pstatus, loose_tol, tight_tol, tol_ptr); }
+      void GetCallingFunction(braid_Int *callingfcn_ptr)
+      {
+         braid_StepStatusGetCallingFunction(sstatus, callingfcn_ptr);
+      }
 
          // The braid_StepStatus structure is deallocated inside of Braid
       // This class is just to make code consistently look object oriented
