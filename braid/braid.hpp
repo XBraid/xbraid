@@ -284,7 +284,7 @@ class BraidStepStatus
       void GetSpatialAccuracy( braid_Real loose_tol, braid_Real tight_tol, braid_Real *tol_ptr) { braid_GetSpatialAccuracy(pstatus, loose_tol, tight_tol, tol_ptr); }
       void GetCallingFunction(braid_Int *callingfcn_ptr)
       {
-         braid_StepStatusGetCallingFunction(sstatus, callingfcn_ptr);
+         braid_StepStatusGetCallingFunction(pstatus, callingfcn_ptr);
       }
 
          // The braid_StepStatus structure is deallocated inside of Braid
