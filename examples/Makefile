@@ -34,7 +34,7 @@ include ../makefile.inc
 # Build exmaples 
 ##################################################################
 
-HYPRE_DIR = ../../hypre/src/hypre
+HYPRE_DIR = ../../../hypre/src/hypre
 HYPRE_FLAGS = -I$(HYPRE_DIR)/include
 HYPRE_LIB = -L$(HYPRE_DIR)/lib -lHYPRE
 HYPRE_LIB_FILE = $(HYPRE_DIR)/lib/libHYPRE.a

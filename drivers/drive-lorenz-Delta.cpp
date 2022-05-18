@@ -346,15 +346,7 @@ int MyBraidApp::SpatialNorm(braid_Vector u_,
 int MyBraidApp::BufSize(int *size_ptr,
                         BraidBufferStatus &status)
 {
-   if (useDelta)
-   {
-      *size_ptr = (2 * VECSIZE + VECSIZE * VECSIZE) * sizeof(double);
-   }
-   else
-   {
-      *size_ptr = (VECSIZE) * sizeof(double);
-   }
-
+   *size_ptr = (2 * VECSIZE + VECSIZE * VECSIZE) * sizeof(double);
    return 0;
 }
 
@@ -364,7 +356,6 @@ int MyBraidApp::BufPack(braid_Vector u_,
 {
    BraidVector *u = (BraidVector *)u_;
    double *dbuffer = (double *)buffer;
-   status.SetSize(sizeof(double));
    // std::cout << "buffpack called" << '\n';
 
    for (size_t i = 0; i < VECSIZE; i++)
@@ -382,6 +373,11 @@ int MyBraidApp::BufPack(braid_Vector u_,
       {
          dbuffer[i + 2 * VECSIZE] = (u->Delta(i));
       }
+      status.SetSize((2 * VECSIZE + VECSIZE * VECSIZE)*sizeof(double));
+   }
+   else 
+   {
+      status.SetSize(VECSIZE*sizeof(double));
    }
 
    return 0;
@@ -463,7 +459,7 @@ int main(int argc, char *argv[])
 
    // Define time domain: nt intervals
    nt = 512;
-   Tf_lyap = 2;
+   Tf_lyap = 1;
    tstart = 0.0;
    tstop = Tf_lyap * T_lyap;
 
@@ -481,7 +477,7 @@ int main(int argc, char *argv[])
    BraidCore core(MPI_COMM_WORLD, &app);
    if (useDelta) {core.SetResidual();}
    core.SetPrintLevel(2);
-   core.SetMaxLevels(2);
+   core.SetMaxLevels(3);
    core.SetAbsTol(1.0e-10);
    core.SetCFactor(-1, cfactor);
    core.SetNRelax(-1, 0);
