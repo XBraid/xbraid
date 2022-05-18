@@ -1,0 +1,22 @@
+# binaries
+*.o
+libbraid.a
+ex-01
+ex-01-adjoint
+ex-01-expanded
+ex-01-expanded-bdf2
+ex-01-pp
+ex-01-refinement
+ex-01-optimization
+ex-02
+ex-04
+ex-04-serial
+ex-06
+
+# output files
+*.out
+*.out.*
+
+# etc.
+Eigen/
+
