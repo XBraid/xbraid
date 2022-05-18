@@ -325,7 +325,7 @@ my_BufPack(braid_App     app,
    {
       dbuffer[i] = (u->values[i]);
    }
-   braid_BufferStatusSetSize( bstatus, sizeof(double));
+   braid_BufferStatusSetSize( bstatus, VecSize*sizeof(double));
 
    return 0;
 }
