@@ -64,6 +64,12 @@ ALL_EXAMPLES := $(patsubst %.c,%,$(ALL_EXAMPLES))
 
 # put this rule first so it becomes the default
 all: $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES) $(CXX_MFEM_EXAMPLES)
+
+# Rule for compiling drive-lorenz
+drive-lorenz: drive-lorenz.c $(BRAID_LIB_FILE)
+	@echo "Building" $@ "..."
+	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $< -o $@\
+ $(BRAID_LIB_FILE) $(LFLAGS)
 	
 # Rule for compiling drive-lorenz-Delta
 drive-lorenz-Delta: drive-lorenz-Delta.cpp $(BRAID_LIB_FILE)

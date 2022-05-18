@@ -1,6 +1,7 @@
 # output files
 *.cycle
 *.out
+*.out.*
 *.csv
 
 # binaries

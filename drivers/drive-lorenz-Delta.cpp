@@ -26,11 +26,13 @@
 //
 // Interface:     C++
 //
-// Requires:      C-language and C++ support
+// Requires:      C-language and C++ support, Eigen linear algebra library:
+//                https://gitlab.com/libeigen/eigen
 //
 // Compile with:  make drive-lorenz-Delta
 //
-// Help with:     ex-01-pp -help
+// TODO:
+// Help with:     drive-lorenz-Delta -help
 //
 // Sample run:    mpirun -np 2 drive-lorenz-Delta
 //
@@ -57,12 +59,12 @@ class BraidVector
 public:
    // Each vector holds the state vector at a particular time
    VEC state;
-   VEC prev_c_point;
+   VEC action;
    MAT Delta;
 
    // Construct a BraidVector for a given vector of doubles
-   BraidVector(VEC state_, VEC adjnt_, MAT Delta_) : state(state_), prev_c_point(adjnt_), Delta(Delta_) {}
-   BraidVector() : state(VEC()), prev_c_point(VEC()), Delta(MAT()) {}
+   BraidVector(VEC state_, VEC prev_c_point_, MAT Delta_) : state(state_), action(prev_c_point_), Delta(Delta_) {}
+   BraidVector() : state(VEC()), action(VEC()), Delta(MAT()) {}
 
    // Deconstructor
    virtual ~BraidVector(){};
@@ -76,7 +78,7 @@ protected:
    // BraidApp defines tstart, tstop, ntime and comm_t
 
 public:
-   int cfactor;   // Currently only supporting one CF for all levels
+   int cfactor; // Currently only supporting one CF for all levels
    bool useDelta;
    // Constructor
    MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_ = 0.0, double tstop_ = 1.0, int ntime_ = 100, int cfactor_ = 2, bool useDelta_ = false);
@@ -153,7 +155,7 @@ MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop
 // Helper function to check if current point is a C point for this level
 int MyBraidApp::IsCPoint(int i, int level)
 {
-   return ((i % intpow(cfactor, level + 1)) == 0);
+   return ((i % cfactor) == 0);
 }
 
 //
@@ -177,10 +179,14 @@ int MyBraidApp::Step(braid_Vector u_,
 
    // no refinement
    pstatus.SetRFactor(1);
+   bool f_is_null = (fstop_ == nullptr);
+
+   // std::cout << "Stp called @ " << T_index << " on level " << level << '\n';
+   // std::cout << "f is null: " << f_is_null << '\n';
 
    if (!useDelta) // default behavior
    {
-      u->state = euler(u->state, tstop - tstart) + f->Delta * u->state;
+      u->state = euler(u->state, tstop - tstart);
       return 0;
    }
    // else:
@@ -192,19 +198,38 @@ int MyBraidApp::Step(braid_Vector u_,
       {
          // Need to store the value at the previous c-point for tau correction later
          // TODO Is there a way to get around this?
-         u->prev_c_point = u->state;
+         u->action = u->state;
          // we implicitly set u->Delta = I at each C-point
-         if (level == 0) {u->Delta = euler_du(u->state, tstop - tstart);}
-         else {u->Delta = euler_du(u->state, tstop - tstart) + f->Delta;}
+         if (level == 0 || f_is_null)
+         {
+            u->Delta = euler_du(u->state, tstop - tstart);
+         }
+         else
+         {
+            u->Delta = euler_du(u->state, tstop - tstart) + f->Delta;
+         }
       }
       else
       {
-         if (level == 0) {u->Delta = euler_du(u->state, tstop - tstart) * u->Delta;}
-         else {u->Delta = (euler_du(u->state, tstop - tstart) + f->Delta) * u->Delta;}
+         if (level == 0 || f_is_null)
+         {
+            u->Delta = euler_du(u->state, tstop - tstart) * u->Delta;
+         }
+         else
+         {
+            u->Delta = (euler_du(u->state, tstop - tstart) + f->Delta) * u->Delta;
+         }
       }
    }
-   if (level == 0) { u->state = euler(u->state, tstop - tstart);}
-   else {u->state = euler(u->state, tstop - tstart) + f->Delta * u->state + f->state;}
+   if (level == 0 || f_is_null)
+   {
+      u->state = euler(u->state, tstop - tstart);
+   }
+   else
+   {
+      // tau is f->state - f->action
+      u->state = euler(u->state, tstop - tstart) + f->Delta * u->state + f->state - f->action;
+   }
 
    return 0;
 }
@@ -218,21 +243,37 @@ int MyBraidApp::Residual(braid_Vector u_,
 
    double tstart; // current time
    double tstop;  // evolve to this time
-   int level;
+   int level, T_index, calling_fnc;
+   bool up = false;
+
    pstatus.GetTstartTstop(&tstart, &tstop);
    pstatus.GetLevel(&level);
+   pstatus.GetTIndex(&T_index);
+   pstatus.GetCallingFunction(&calling_fnc);
 
+   up = (calling_fnc == 11);
+
+   // std::cout << "Res called @ " << T_index << " on level " << level << '\n';
+   // std::cout << "u is up: " << up << '\n';
    if (!useDelta)
    {
       r->state = u->state - euler(r->state, tstop - tstart);
       return 0;
    }
+   if (up)
+   {
+      r->Delta = -euler_du(r->state, tstop - tstart);
+      r->action = r->Delta * r->state;
+      r->state = u->state - euler(r->state, tstop - tstart);
+      return 0;
+   }
    // else:
    // -D Phi^m
-   r->Delta = -euler_du(r->state, tstop - tstart) * r->Delta; 
-   // u_i - [Phi^m - DPhi^m]u_{i-m}
-   r->state = u->state - euler(r->state, tstop - tstart) - r->Delta * r->prev_c_point;
-
+   r->Delta = -euler_du(r->state, tstop - tstart) * r->Delta;
+   // -[D Phi^m]u_{i-m}
+   r->action = r->Delta * r->action;
+   // u_i - Phi^m(u_{i-m})
+   r->state = u->state - euler(r->state, tstop - tstart);
    return 0;
 }
 
@@ -250,8 +291,11 @@ int MyBraidApp::Init(double t,
       u->state << -1.8430428, -0.07036326, 23.15614636;
    }
 
-   u->Delta.setIdentity();
-   u->prev_c_point << 0., 0., 0.;
+   if (useDelta)
+   {
+      u->Delta.setIdentity();
+      u->action << 0., 0., 0.;
+   }
 
    *u_ptr = (braid_Vector)u;
    return 0;
@@ -260,8 +304,10 @@ int MyBraidApp::Init(double t,
 int MyBraidApp::Clone(braid_Vector u_,
                       braid_Vector *v_ptr)
 {
+   // std::cout << "Clone called" << '\n';
+
    BraidVector *u = (BraidVector *)u_;
-   BraidVector *v = new BraidVector(u->state, u->prev_c_point, u->Delta);
+   BraidVector *v = new BraidVector(u->state, u->action, u->Delta);
    *v_ptr = (braid_Vector)v;
 
    return 0;
@@ -279,9 +325,11 @@ int MyBraidApp::Sum(double alpha,
                     double beta,
                     braid_Vector y_)
 {
+   // std::cout << "Sum called" << '\n';
    BraidVector *x = (BraidVector *)x_;
    BraidVector *y = (BraidVector *)y_;
    (y->state) = alpha * (x->state) + beta * (y->state);
+   (y->action) = alpha * (x->action) + beta * (y->action);
    (y->Delta) = alpha * (x->Delta) + beta * (y->Delta);
    return 0;
 }
@@ -289,6 +337,7 @@ int MyBraidApp::Sum(double alpha,
 int MyBraidApp::SpatialNorm(braid_Vector u_,
                             double *norm_ptr)
 {
+   // std::cout << "Norm called" << '\n';
    BraidVector *u = (BraidVector *)u_;
    *norm_ptr = u->state.norm();
    return 0;
@@ -316,6 +365,7 @@ int MyBraidApp::BufPack(braid_Vector u_,
    BraidVector *u = (BraidVector *)u_;
    double *dbuffer = (double *)buffer;
    status.SetSize(sizeof(double));
+   // std::cout << "buffpack called" << '\n';
 
    for (size_t i = 0; i < VECSIZE; i++)
    {
@@ -326,14 +376,13 @@ int MyBraidApp::BufPack(braid_Vector u_,
    {
       for (size_t i = 0; i < VECSIZE; i++)
       {
-         dbuffer[i + VECSIZE] = (u->prev_c_point[i]);
+         dbuffer[i + VECSIZE] = (u->action[i]);
       }
       for (size_t i = 0; i < VECSIZE * VECSIZE; i++)
       {
          dbuffer[i + 2 * VECSIZE] = (u->Delta(i));
       }
    }
-
 
    return 0;
 }
@@ -343,6 +392,7 @@ int MyBraidApp::BufUnpack(void *buffer,
                           BraidBufferStatus &status)
 {
    double *dbuffer = (double *)buffer;
+   // std::cout << "buffunpack called" << '\n';
 
    BraidVector *u = new BraidVector();
 
@@ -355,7 +405,7 @@ int MyBraidApp::BufUnpack(void *buffer,
    {
       for (size_t i = 0; i < VECSIZE; i++)
       {
-         (u->prev_c_point[i]) = dbuffer[i + VECSIZE];
+         (u->action[i]) = dbuffer[i + VECSIZE];
       }
       for (size_t i = 0; i < VECSIZE * VECSIZE; i++)
       {
@@ -370,6 +420,7 @@ int MyBraidApp::BufUnpack(void *buffer,
 int MyBraidApp::Access(braid_Vector u_,
                        BraidAccessStatus &astatus)
 {
+   // std::cout << "Access called" << '\n';
    char filename[255];
    std::ofstream file;
    BraidVector *u = (BraidVector *)u_;
@@ -399,19 +450,25 @@ int MyBraidApp::Access(braid_Vector u_,
 
 int main(int argc, char *argv[])
 {
-   double tstart, tstop;
-   int nt, Tf_lyap, cfactor, rank;
-   bool useDelta;
+   double Tf_lyap, tstart, tstop;
+   int nt, cfactor, rank;
+
+   // command line arg
+   bool useDelta = true;
+   if ((argc > 1) && (strcasecmp(argv[1], "--deltaoff") == 0))
+   {
+      useDelta = false;
+      std::cout << "turning off Delta correction for this run...\n";
+   }
 
    // Define time domain: nt intervals
-   nt = 1024;
+   nt = 512;
    Tf_lyap = 2;
    tstart = 0.0;
    tstop = Tf_lyap * T_lyap;
 
    // MGRIT params
    cfactor = 2;
-   useDelta = false;
 
    // Initialize MPI
    MPI_Init(&argc, &argv);
@@ -422,11 +479,13 @@ int main(int argc, char *argv[])
 
    // Initialize Braid Core Object and set some solver options
    BraidCore core(MPI_COMM_WORLD, &app);
+   if (useDelta) {core.SetResidual();}
    core.SetPrintLevel(2);
    core.SetMaxLevels(2);
    core.SetAbsTol(1.0e-10);
    core.SetCFactor(-1, cfactor);
    core.SetNRelax(-1, 0);
+   core.SetSkip(0);
 
    // Run Simulation
    core.Drive();

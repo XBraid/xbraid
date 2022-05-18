@@ -244,7 +244,7 @@ _braid_FRestrict(braid_Core   core,
             _braid_CommWait(core, &recv_handle);
          }
          _braid_BaseClone(core, app,  c_va[c_ii-1], &c_u);
-         _braid_Residual(core, c_level, c_i, c_va[c_ii], c_u);
+         _braid_Residual(core, c_level, c_i, braid_ASCaller_Residual, c_va[c_ii], c_u);
          
          /* Richardson computes norm here, and recombines solution at C-points for higher accuracy */
          if ( level == 0 && richardson  ) 

@@ -701,10 +701,12 @@ ACCESSOR_HEADER_GET1(Objective, Tol,           Real)
 #define braid_ASCaller_BaseStep_diff 8
 /** When CallingFunction equals 9, Braid is in ComputeFullRNorm */
 #define braid_ASCaller_ComputeFullRNorm 9
-/** When CallingFunction equals 10, Braid is in Residual */
-#define braid_ASCaller_Residual 10
-/** When CallingFunction equals 11, Braid is in InitGuess */
-#define braid_ASCaller_InitGuess 11
+/** When CallingFunction equals 10, Braid is in FASResidual */
+#define braid_ASCaller_FASResidual 10
+/** When CallingFunction equals 11, Braid is in Residual, immediately after restriction */
+#define braid_ASCaller_Residual 11
+/** When CallingFunction equals 12, Braid is in InitGuess */
+#define braid_ASCaller_InitGuess 12
 
 /** @}*/
 
