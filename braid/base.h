@@ -191,6 +191,7 @@ braid_Int
 _braid_BaseResidual(braid_Core       core,             /**< braid_Core structure */
                     braid_App        app,              /**< user-defined _braid_App structure */
                     braid_BaseVector ustop,            /**< input, *u* vector at *tstop* */
+                    braid_BaseVector fstop,            /**< input, *f* vector (rhs) at *tstop* */
                     braid_BaseVector r,                /**< output, residual at *tstop* (at input, equals *u* at *tstart*) */
                     braid_StepStatus status            /**< braid_Status structure (pointer to the core) */ 
                     );
@@ -204,6 +205,7 @@ _braid_BaseFullResidual(braid_Core        core,        /**< braid_Core structure
                         braid_App         app,         /**< user-defined _braid_App structure */
                         braid_BaseVector  r,           /**< output, residual at *tstop* */
                         braid_BaseVector  u,           /**< input, *u* vector at *tstop* */
+                        braid_BaseVector  f,           /**< input, *u* vector at *tstop* */
                         braid_StepStatus  status       /**< braid_Status structure (pointer to the core) */ 
                        );    
 

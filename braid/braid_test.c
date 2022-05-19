@@ -733,7 +733,7 @@ braid_TestResidual( braid_App              app,
    sum(app, 1.0, ustop, 1.0, fstop); 
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   r = residual(unext, u) \n");
-   residual(app, unext, u, sstatus); 
+   residual(app, unext, NULL, u, sstatus); 
    
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestResidual:   r = fstop - r \n");
    sum(app, 1.0, fstop, -1.0, u); 

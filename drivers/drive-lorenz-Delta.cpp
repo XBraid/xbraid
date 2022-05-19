@@ -22,17 +22,18 @@
  ***********************************************************************EHEADER*/
 
 //
-// Example:       ex-01-pp.cpp
+// Driver:       drive-lorenz-Delta.cpp
 //
 // Interface:     C++
 //
 // Requires:      C-language and C++ support, Eigen linear algebra library:
 //                https://gitlab.com/libeigen/eigen
+//                Get the library file "Eigen" from the link above and copy it into
+//                drivers/drive-lorenz-Delta-lib/
 //
 // Compile with:  make drive-lorenz-Delta
 //
-// TODO:
-// Help with:     drive-lorenz-Delta -help
+// Help with:     ./drive-lorenz-Delta -help
 //
 // Sample run:    mpirun -np 2 drive-lorenz-Delta
 //
@@ -129,6 +130,7 @@ public:
                       BraidAccessStatus &astatus);
 
    virtual int Residual(braid_Vector u_,
+                        braid_Vector f_,
                         braid_Vector r_,
                         BraidStepStatus &pstatus);
 
@@ -170,16 +172,18 @@ int MyBraidApp::Step(braid_Vector u_,
 
    double tstart; // current time
    double tstop;  // evolve to this time
-   int level, nlevels, T_index;
+   int level, nlevels, T_index, calling_fnc;
 
    pstatus.GetTstartTstop(&tstart, &tstop);
    pstatus.GetLevel(&level);
    pstatus.GetNLevels(&nlevels);
    pstatus.GetTIndex(&T_index); // this is the index of tstart
+   pstatus.GetCallingFunction(&calling_fnc);
 
    // no refinement
    pstatus.SetRFactor(1);
    bool f_is_null = (fstop_ == nullptr);
+   bool computeDeltas = (calling_fnc == 1); // only compute Deltas when in FRefine
 
    // std::cout << "Stp called @ " << T_index << " on level " << level << '\n';
    // std::cout << "f is null: " << f_is_null << '\n';
@@ -192,7 +196,7 @@ int MyBraidApp::Step(braid_Vector u_,
    // else:
 
    // Compute linear tangent propagators only on fine-grids
-   if (level < nlevels - 1)
+   if (computeDeltas)
    {
       if (IsCPoint(T_index, level))
       {
@@ -235,10 +239,12 @@ int MyBraidApp::Step(braid_Vector u_,
 }
 
 int MyBraidApp::Residual(braid_Vector u_,
+                         braid_Vector f_,
                          braid_Vector r_,
                          BraidStepStatus &pstatus)
 {
    BraidVector *u = (BraidVector *)u_;
+   BraidVector *f = (BraidVector *)f_;
    BraidVector *r = (BraidVector *)r_;
 
    double tstart; // current time
@@ -267,13 +273,23 @@ int MyBraidApp::Residual(braid_Vector u_,
       r->state = u->state - euler(r->state, tstop - tstart);
       return 0;
    }
+   if (f == NULL)
+   {
+      // -D Phi^m
+      r->Delta = -euler_du(r->state, tstop - tstart) * r->Delta;
+      // -[D Phi^m]u_{i-m}
+      r->action = r->Delta * r->action;
+      // u_i - Phi^m(u_{i-m})
+      r->state = u->state - euler(r->state, tstop - tstart);
+      return 0;
+   }
    // else:
    // -D Phi^m
-   r->Delta = -euler_du(r->state, tstop - tstart) * r->Delta;
+   r->Delta = -(euler_du(r->state, tstop - tstart) + f->Delta) * r->Delta;
    // -[D Phi^m]u_{i-m}
    r->action = r->Delta * r->action;
-   // u_i - Phi^m(u_{i-m})
-   r->state = u->state - euler(r->state, tstop - tstart);
+   // u_i - Phi^m(u_{i-m}) - tau
+   r->state = u->state - euler(r->state, tstop - tstart) - (f->Delta * r->state + (f->state - f->action));
    return 0;
 }
 
@@ -285,17 +301,15 @@ int MyBraidApp::Init(double t,
    {
       // this is the Eigen "comma initialization" syntax
       u->state << 0., 0., 0.;
+      u->action << 0., 0., 0.;
    }
    else
    {
-      u->state << -1.8430428, -0.07036326, 23.15614636;
+      u->state << -1.8430428, -0.07036326, 23.15614636; // some point near the attractor
+      u->action = u->state;
    }
 
-   if (useDelta)
-   {
-      u->Delta.setIdentity();
-      u->action << 0., 0., 0.;
-   }
+   u->Delta.setIdentity();
 
    *u_ptr = (braid_Vector)u;
    return 0;
@@ -346,15 +360,7 @@ int MyBraidApp::SpatialNorm(braid_Vector u_,
 int MyBraidApp::BufSize(int *size_ptr,
                         BraidBufferStatus &status)
 {
-   if (useDelta)
-   {
-      *size_ptr = (2 * VECSIZE + VECSIZE * VECSIZE) * sizeof(double);
-   }
-   else
-   {
-      *size_ptr = (VECSIZE) * sizeof(double);
-   }
-
+   *size_ptr = (2 * VECSIZE + VECSIZE * VECSIZE) * sizeof(double);
    return 0;
 }
 
@@ -364,7 +370,6 @@ int MyBraidApp::BufPack(braid_Vector u_,
 {
    BraidVector *u = (BraidVector *)u_;
    double *dbuffer = (double *)buffer;
-   status.SetSize(sizeof(double));
    // std::cout << "buffpack called" << '\n';
 
    for (size_t i = 0; i < VECSIZE; i++)
@@ -382,6 +387,11 @@ int MyBraidApp::BufPack(braid_Vector u_,
       {
          dbuffer[i + 2 * VECSIZE] = (u->Delta(i));
       }
+      status.SetSize((2 * VECSIZE + VECSIZE * VECSIZE)*sizeof(double));
+   }
+   else 
+   {
+      status.SetSize(VECSIZE*sizeof(double));
    }
 
    return 0;
@@ -433,7 +443,7 @@ int MyBraidApp::Access(braid_Vector u_,
    int nt = MyBraidApp::ntime;
 
    // Print information to file
-   if ((index == nt - 1) and done)
+   if ((index == nt - 1) && done)
    {
       sprintf(filename, "%s.%04d.%03d", "lorenz-Delta.out", index, rank);
       file.open(filename);
@@ -450,29 +460,109 @@ int MyBraidApp::Access(braid_Vector u_,
 
 int main(int argc, char *argv[])
 {
-   double Tf_lyap, tstart, tstop;
-   int nt, cfactor, rank;
+   double tstart, tstop;
+   int rank;
 
-   // command line arg
-   bool useDelta = true;
-   if ((argc > 1) && (strcasecmp(argv[1], "--deltaoff") == 0))
-   {
-      useDelta = false;
-      std::cout << "turning off Delta correction for this run...\n";
-   }
+   int    nt         = 4096;
+   double Tf_lyap    = 4;
+   int    max_levels = 2;
+   int    nrelax     = 0;
+   int    nrelax0    = 0;
+   double tol        = 1e-10;
+   int    cfactor    = 2;
+   int    max_iter    = 25;
+   bool   useFMG     = false;
+   bool   useDelta   = true;
 
-   // Define time domain: nt intervals
-   nt = 512;
-   Tf_lyap = 2;
-   tstart = 0.0;
-   tstop = Tf_lyap * T_lyap;
-
-   // MGRIT params
-   cfactor = 2;
+   int           arg_index;
 
    // Initialize MPI
    MPI_Init(&argc, &argv);
    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+   // Parse command line
+   arg_index = 1;
+   while (arg_index < argc)
+   {
+      if ( strcmp(argv[arg_index], "-help") == 0 )
+      {
+         if ( rank == 0 )
+         {
+            printf("\n");
+            printf("  -nt         : set num time points (default %d)\n", nt);
+            printf("  -tf         : set end time, in Lyapunov time (default %lf)\n", Tf_lyap);
+            printf("  -ml         : set max levels\n");
+            printf("  -nu         : set num F-C relaxations\n");
+            printf("  -nu0        : set num F-C relaxations on level 0\n");
+            printf("  -tol        : set stopping tolerance\n");
+            printf("  -cf         : set coarsening factor\n");
+            printf("  -mi         : set max iterations\n");
+            printf("  -fmg        : use FMG cycling\n");
+            printf("  -noDelta    : turn off delta correction\n");
+            printf("\n");
+         }
+         exit(0);
+      }
+      else if ( strcmp(argv[arg_index], "-nt") == 0 )
+      {
+         arg_index++;
+         nt = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-tf") == 0 ) 
+      {
+         arg_index++;
+         Tf_lyap = atof(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-ml") == 0 )
+      {
+         arg_index++;
+         max_levels = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-nu") == 0 )
+      {
+         arg_index++;
+         nrelax = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-nu0") == 0 )
+      {
+         arg_index++;
+         nrelax0 = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-tol") == 0 ) 
+      {
+         arg_index++;
+         tol = atof(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-cf") == 0 )
+      {
+         arg_index++;
+         cfactor = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-mi") == 0 )
+      {
+         arg_index++;
+         max_iter = atoi(argv[arg_index++]);
+      }
+      else if ( strcmp(argv[arg_index], "-fmg") == 0 )
+      {
+         arg_index++;
+         useFMG = true;
+      }
+      else if ( strcmp(argv[arg_index], "-noDelta") == 0 )
+      {
+         arg_index++;
+         useDelta = false;
+      }
+      else
+      {
+         arg_index++;
+         /*break;*/
+      }
+   }
+
+   tstart = 0.0;
+   tstop = Tf_lyap * T_lyap;
+
 
    // set up app structure
    MyBraidApp app(MPI_COMM_WORLD, rank, tstart, tstop, nt, cfactor, useDelta);
@@ -480,12 +570,19 @@ int main(int argc, char *argv[])
    // Initialize Braid Core Object and set some solver options
    BraidCore core(MPI_COMM_WORLD, &app);
    if (useDelta) {core.SetResidual();}
+   if (useFMG) 
+   {
+      core.SetFMG();
+      core.SetNFMG(2);
+   }
    core.SetPrintLevel(2);
-   core.SetMaxLevels(2);
-   core.SetAbsTol(1.0e-10);
+   core.SetMaxLevels(max_levels);
+   core.SetMaxIter(max_iter);
+   core.SetAbsTol(tol);
    core.SetCFactor(-1, cfactor);
-   core.SetNRelax(-1, 0);
-   core.SetSkip(0);
+   core.SetNRelax(-1, nrelax);
+   core.SetNRelax(0, nrelax0);
+   // core.SetSkip(0);
 
    // Run Simulation
    core.Drive();

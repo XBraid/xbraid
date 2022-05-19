@@ -69,9 +69,7 @@ typedef struct _braid_App_struct
 typedef struct _braid_Vector_struct
 {
    Vec values;
-
 } my_Vector;
-
 double sigma = 10.0;
 double beta  = 8.0/3.0;
 double rho   = 28.0;

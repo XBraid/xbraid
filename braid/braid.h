@@ -273,6 +273,7 @@ typedef braid_Int
 typedef braid_Int
 (*braid_PtFcnResidual)(braid_App        app,    /**< user-defined _braid_App structure */
                        braid_Vector     ustop,  /**< input, u vector at *tstop* */
+                       braid_Vector     fstop,  /**< input, right-hand side at *tstop* */
                        braid_Vector     r     , /**< output, residual at *tstop* (at input, equals *u* at *tstart*) */
                        braid_StepStatus status  /**< query this struct for info about u (e.g., tstart and tstop) */ 
                        );
