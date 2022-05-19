@@ -673,6 +673,7 @@ _braid_Residual(braid_Core       core,
                 braid_Int        index,
                 braid_Int        calling_function,
                 braid_BaseVector ustop,
+                braid_BaseVector fstop,
                 braid_BaseVector r);
 
 /**

@@ -365,10 +365,11 @@ braid_BufUnpack_F90_Iface(braid_App      app,          /**< user-defined _braid_
  * Fortran interface, first we define the prototype for the user-defined function and then we
  * provide the C-wrapper around the user-written Fortran function
  * */
-void braid_F90_Name(braid_residual_f90, BRAID_RESIDUAL_F90)(braid_F90_ObjPtr, braid_F90_ObjPtr, braid_F90_ObjPtr, braid_F90_ObjPtr);
+void braid_F90_Name(braid_residual_f90, BRAID_RESIDUAL_F90)(braid_F90_ObjPtr, braid_F90_ObjPtr, braid_F90_ObjPtr, braid_F90_ObjPtr, braid_F90_ObjPtr);
 braid_Int
 braid_Residual_F90_Iface(braid_App               app,        /**< user-defined _braid_App structure */
                          braid_Vector            ustop,      /**< braid_Vector to compute residual with*/                       
+                         braid_Vector            fstop,      /**< braid_Vector to compute residual with*/                       
                          braid_Vector            r,          /**< output, residual vector */   
                          braid_StepStatus        status      /**< query this struct for info about the current status, like tstop and tstart */
                          )
@@ -376,6 +377,7 @@ braid_Residual_F90_Iface(braid_App               app,        /**< user-defined _
    braid_F90_Name(braid_residual_f90, BRAID_RESIDUAL_F90)( 
                             braid_PassF90_Obj(   app),
                             braid_PassF90_Obj(   ustop),
+                            braid_PassF90_Obj(   fstop),
                             braid_PassF90_Obj(   r),
                             braid_PassF90_Obj(   status) );
    return 0;

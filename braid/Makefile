@@ -44,8 +44,8 @@ BRAID_FILES =\
  adjoint.c\
  base.c\
  braid.c\
- braid_F90_iface.c\
  braid_status.c\
+ braid_F90_iface.c\
  braid_test.c\
  communication.c\
  distribution.c\

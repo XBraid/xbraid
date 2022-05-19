@@ -568,6 +568,7 @@ braid_Int
 _braid_BaseResidual(braid_Core        core,
                     braid_App         app,    
                     braid_BaseVector  ustop,  
+                    braid_BaseVector  fstop,  
                     braid_BaseVector  r,      
                     braid_StepStatus  status )
 {
@@ -577,7 +578,14 @@ _braid_BaseResidual(braid_Core        core,
    if ( verbose_adj ) _braid_printf("%d: RESIDUAL\n", myid);
 
    /* Call the users Residual function */
-   _braid_CoreFcn(core, residual)(app, ustop->userVector, r->userVector, status);
+   if (fstop == NULL)
+   {
+      _braid_CoreFcn(core, residual)(app, ustop->userVector, NULL, r->userVector, status);
+   }
+   else
+   {
+      _braid_CoreFcn(core, residual)(app, ustop->userVector, fstop->userVector, r->userVector, status);
+   }
 
    return _braid_error_flag;
 }
@@ -590,6 +598,7 @@ _braid_BaseFullResidual(braid_Core        core,
                         braid_App         app,    
                         braid_BaseVector  r,      
                         braid_BaseVector  u,  
+                        braid_BaseVector  f,
                         braid_StepStatus  status )
 {
    braid_Int        verbose_adj  = _braid_CoreElt(core, verbose_adj);
@@ -598,7 +607,7 @@ _braid_BaseFullResidual(braid_Core        core,
    if ( verbose_adj ) _braid_printf("%d: FULLRESIDUAL\n", myid);
 
    /* Call the users Residual function */
-   _braid_CoreFcn(core, full_rnorm_res)(app, r->userVector, u->userVector, status);
+   _braid_CoreFcn(core, full_rnorm_res)(app, r->userVector, u->userVector, f->userVector, status);
 
    return _braid_error_flag;
 }

@@ -32,6 +32,7 @@ _braid_Residual(braid_Core        core,
                 braid_Int         index,
                 braid_Int         calling_function,
                 braid_BaseVector  ustop,
+                braid_BaseVector  fstop,
                 braid_BaseVector  r)
 {
    braid_App        app      = _braid_CoreElt(core, app);
@@ -59,7 +60,7 @@ _braid_Residual(braid_Core        core,
    else
    {
       /* Call the user's residual routine */
-      _braid_BaseResidual(core, app, ustop, r, status);
+      _braid_BaseResidual(core, app, ustop, fstop, r, status);
    }
 
    return _braid_error_flag;
@@ -83,14 +84,25 @@ _braid_FASResidual(braid_Core        core,
 
    braid_Int        ii;
 
-   _braid_Residual(core, level, index, braid_ASCaller_FASResidual, ustop, r);
+   ii = index-ilower;
+
+   // I'm expecting the user's Residual function to appropriately handle the tau correction
    if (level == 0)
+   {
+      _braid_Residual(core, level, index, braid_ASCaller_FASResidual, ustop, NULL, r);
+
+   }
+   else
+   {
+      _braid_Residual(core, level, index, braid_ASCaller_FASResidual, ustop, fa[ii], r);
+   }
+
+   if ((level == 0) || (_braid_CoreElt(core, residual) != NULL))
    {
       _braid_BaseSum(core, app,  0.0, r, -1.0, r);
    }
    else
    {
-      ii = index-ilower;
       if(fa[ii] == NULL)
       {
          _braid_BaseSum(core, app,  0.0, r, -1.0, r);
