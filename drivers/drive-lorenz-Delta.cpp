@@ -22,12 +22,14 @@
  ***********************************************************************EHEADER*/
 
 //
-// Example:       ex-01-pp.cpp
+// Driver:       drive-lorenz-Delta.cpp
 //
 // Interface:     C++
 //
 // Requires:      C-language and C++ support, Eigen linear algebra library:
 //                https://gitlab.com/libeigen/eigen
+//                Get the library file "Eigen" from the link above and copy it into
+//                drivers/drive-lorenz-Delta-lib/
 //
 // Compile with:  make drive-lorenz-Delta
 //
