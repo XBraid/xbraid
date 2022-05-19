@@ -31,8 +31,7 @@
 //
 // Compile with:  make drive-lorenz-Delta
 //
-// TODO:
-// Help with:     drive-lorenz-Delta -help
+// Help with:     ./drive-lorenz-Delta -help
 //
 // Sample run:    mpirun -np 2 drive-lorenz-Delta
 //
@@ -488,19 +487,19 @@ int main(int argc, char *argv[])
          if ( rank == 0 )
          {
             printf("\n");
-            printf("  -nt    <ntime>    : set num time points (default %d)\n", nt);
-            printf("  -tf <tstop>    : set end time, in Lyapunov time (default %lf)\n", Tf_lyap);
-            printf("  -ml  <max_levels> : set max levels\n");
-            printf("  -nu  <nrelax>     : set num F-C relaxations\n");
-            printf("  -nu0 <nrelax>     : set num F-C relaxations on level 0\n");
-            printf("  -tol <tol>        : set stopping tolerance\n");
-            printf("  -cf  <cfactor>    : set coarsening factor\n");
-            printf("  -mi  <max_iter>   : set max iterations\n");
-            printf("  -fmg              : use FMG cycling\n");
-            printf("  -noDelta          : turn off delta correction\n");
+            printf("  -nt         : set num time points (default %d)\n", nt);
+            printf("  -tf         : set end time, in Lyapunov time (default %lf)\n", Tf_lyap);
+            printf("  -ml         : set max levels\n");
+            printf("  -nu         : set num F-C relaxations\n");
+            printf("  -nu0        : set num F-C relaxations on level 0\n");
+            printf("  -tol        : set stopping tolerance\n");
+            printf("  -cf         : set coarsening factor\n");
+            printf("  -mi         : set max iterations\n");
+            printf("  -fmg        : use FMG cycling\n");
+            printf("  -noDelta    : turn off delta correction\n");
             printf("\n");
          }
-         exit(1);
+         exit(0);
       }
       else if ( strcmp(argv[arg_index], "-nt") == 0 )
       {
