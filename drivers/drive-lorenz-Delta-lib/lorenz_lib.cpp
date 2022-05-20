@@ -9,8 +9,8 @@ VEC f_lorenz(VEC u)
 
     VEC out;
     out << sigma * (y - x),
-           x * (rho - z) - y,
-           x * y - beta * z;
+        x * (rho - z) - y,
+        x * y - beta * z;
 
     return out;
 }
@@ -23,9 +23,9 @@ MAT f_lorenz_du(VEC u)
     z = u[2];
 
     MAT out;
-    out <<  -sigma, sigma,     0,
-           rho - z,    -1,    -x,
-                 y,     x, -beta;
+    out << -sigma, sigma, 0,
+        rho - z, -1, -x,
+        y, x, -beta;
     return out;
 }
 
@@ -39,31 +39,57 @@ MAT euler_du(VEC u, double dt)
     return Matrix3d::Identity() + dt * f_lorenz_du(u);
 }
 
-VEC theta1(VEC u, VEC ustop, double dt, double theta=0.5, int newton_iters=10, double tol=1e-10)
+VEC theta1(const VEC u, const VEC guess, double dt, double theta, MAT *P_tan, int newton_iters, double tol)
 {
+    if (theta == 1.)
+    {
+        if (P_tan)
+        {
+            *P_tan = euler_du(u, dt);
+        } // compute linearization
+        return euler(u, dt);
+    }
     VEC k1 = f_lorenz(u);
+    VEC ustop = guess;
     VEC rhs;
     MAT A;
-    for (int i=0; i < newton_iters; i++)
+    bool max = false;
+
+    for (int i = 0; i < newton_iters; i++)
     {
-        rhs = ustop - u - dt*(theta*k1 + (1-theta)*f_lorenz(ustop));
+        rhs = ustop - u - dt * (theta * k1 + (1 - theta) * f_lorenz(ustop));
+
+        // Newton iter
         if (rhs.norm() <= tol)
         {
-            return ustop;
-        }
-        // Newton iter
-        A = MAT::Identity() - dt*(1-theta)*f_lorenz_du(ustop);
+            break;
+        } // tolerance checking
+        A = MAT::Identity() - dt * (1 - theta) * f_lorenz_du(ustop);
         ustop -= A.partialPivLu().solve(rhs);
+        max = (i == newton_iters - 1);
+    }
+    if (max)
+    {
+        std::cout << "WARNING: max iters (" << newton_iters << ") reached in theta1!\n";
+    }
+    if (P_tan)
+    {
+        A = MAT::Identity() - dt * (1 - theta) * f_lorenz_du(ustop);
+        *P_tan = A.partialPivLu().solve(MAT::Identity() + dt * theta * f_lorenz_du(u));
     }
     return ustop;
 }
 
-MAT theta1_du(VEC u, VEC ustop, double dt, double theta=0.5)
+MAT theta1_du(VEC u, VEC ustop, double dt, double theta)
 {
+    if (theta == 1.)
+    {
+        return euler_du(u, dt);
+    }
     MAT rhs;
     MAT lhs;
-    rhs = MAT::Identity() + dt*theta*f_lorenz_du(u);
-    lhs = MAT::Identity() - dt*(1-theta)*f_lorenz_du(ustop);
+    rhs = MAT::Identity() + dt * theta * f_lorenz_du(u);
+    lhs = MAT::Identity() - dt * (1 - theta) * f_lorenz_du(ustop);
     return lhs.partialPivLu().solve(rhs);
 }
 

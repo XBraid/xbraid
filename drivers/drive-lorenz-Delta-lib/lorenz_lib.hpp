@@ -23,7 +23,7 @@ VEC f_lorenz(VEC u);
 MAT f_lorenz_du(VEC u);
 VEC euler(VEC u, double dt);
 MAT euler_du(VEC u, double dt);
-VEC theta1(VEC u, VEC ustop, double dt, double theta=0.5, int newton_iters=10, double tol=1e-10);
+VEC theta1(const VEC u, const VEC guess, double dt, double theta=0.5, MAT *P_tan=nullptr, int newton_iters=10, double tol=1e-10);
 MAT theta1_du(VEC u, VEC ustop, double dt, double theta=0.5);
 
 void pack_array(std::ofstream &f, VEC u);
