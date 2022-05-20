@@ -172,7 +172,8 @@ MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop
       for (int level = 1; level < max_levels; level++)
       {
          total_cf = intpow(cfactor, level);
-         thetas[level] = (1 + total_cf) / (2 * total_cf); // asymptotic values for forward Euler
+         // thetas[level] = (1 + total_cf) / (2 * total_cf); // asymptotic values for forward Euler
+         thetas[level] = (4 + pow(total_cf, 4)) / (5 * pow(total_cf, 4)); // asymptotic values for rk4
       }
    }
 }
@@ -192,8 +193,16 @@ double MyBraidApp::getTheta(int level)
 VEC MyBraidApp::baseStep(const VEC u, const VEC ustop, double dt, int level, MAT *P_tan_ptr)
 {
    // first order theta method
+   // double theta = getTheta(level);
+   // return theta1(u, ustop, dt, theta, P_tan_ptr);
+
+   // fourth order theta method
+   if (level == 0)
+   {
+      return rk4(u, dt, P_tan_ptr);
+   }
    double theta = getTheta(level);
-   return theta1(u, ustop, dt, theta, P_tan_ptr);
+   return theta4(u, ustop, dt, theta, P_tan_ptr);
 
    // forward euler
    // if (P_tan_ptr)
