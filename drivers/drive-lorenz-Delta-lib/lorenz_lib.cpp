@@ -7,7 +7,7 @@ VEC f_lorenz(VEC u)
     y = u[1];
     z = u[2];
 
-    VEC out{0., 0., 0.};
+    VEC out;
     out << sigma * (y - x),
            x * (rho - z) - y,
            x * y - beta * z;
@@ -37,6 +37,34 @@ VEC euler(VEC u, double dt)
 MAT euler_du(VEC u, double dt)
 {
     return Matrix3d::Identity() + dt * f_lorenz_du(u);
+}
+
+VEC theta1(VEC u, VEC ustop, double dt, double theta=0.5, int newton_iters=10, double tol=1e-10)
+{
+    VEC k1 = f_lorenz(u);
+    VEC rhs;
+    MAT A;
+    for (int i=0; i < newton_iters; i++)
+    {
+        rhs = ustop - u - dt*(theta*k1 + (1-theta)*f_lorenz(ustop));
+        if (rhs.norm() <= tol)
+        {
+            return ustop;
+        }
+        // Newton iter
+        A = MAT::Identity() - dt*(1-theta)*f_lorenz_du(ustop);
+        ustop -= A.partialPivLu().solve(rhs);
+    }
+    return ustop;
+}
+
+MAT theta1_du(VEC u, VEC ustop, double dt, double theta=0.5)
+{
+    MAT rhs;
+    MAT lhs;
+    rhs = MAT::Identity() + dt*theta*f_lorenz_du(u);
+    lhs = MAT::Identity() - dt*(1-theta)*f_lorenz_du(ustop);
+    return lhs.partialPivLu().solve(rhs);
 }
 
 void pack_array(std::ofstream &f, VEC u)
