@@ -127,8 +127,13 @@ VEC theta4(VEC u, VEC ustop, double dt, double theta, MAT *P_tan, int newton_ite
     VEC u1, u2, u3;
 
     k1 = dt * f_lorenz(u);
+
+    // get an initial guess for u1
+    k2 = ustop - u; // this is already 2nd order accurate!
+    u1 = u + (1. + theta) / 4 * k1 + (1. - theta) / 4 * k2;
+
     // the matrix du1/du is also computed here, to be used to find K2 later
-    u1 = theta1(u, u, dt / 2, (1. + theta) / 2, P_tan, newton_iters, tol);
+    u1 = theta1(u, u1, dt / 2, (1. + theta) / 2, P_tan, newton_iters, tol);
     k2 = dt * f_lorenz(u1);
     u2 = u + (1. - theta) / 4 * k1 + (1. + theta) / 4 * k2;
     k3 = dt * f_lorenz(u2);
