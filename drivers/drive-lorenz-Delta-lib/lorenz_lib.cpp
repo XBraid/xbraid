@@ -68,10 +68,10 @@ VEC theta1(const VEC u, const VEC guess, double dt, double theta, MAT *P_tan, in
         ustop -= A.partialPivLu().solve(rhs);
         max = (i == newton_iters - 1);
     }
-    if (max)
-    {
-        std::cout << "WARNING: max iters (" << newton_iters << ") reached in theta1!\n";
-    }
+    // if (max)
+    // {
+    //     std::cout << "WARNING: max iters (" << newton_iters << ") reached in theta1!\n";
+    // }
     if (P_tan)
     {
         A = MAT::Identity() - dt * (1 - theta) * f_lorenz_du(ustop);

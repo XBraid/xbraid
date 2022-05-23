@@ -22,7 +22,7 @@
  ***********************************************************************EHEADER*/
 
 //
-// Driver:       drive-lorenz-Delta.cpp
+// Driver:       drive-lorenz-LRDelta.cpp
 //
 // Interface:     C++
 //
@@ -31,13 +31,13 @@
 //                Get the library file "Eigen" from the link above and copy it into
 //                drivers/drive-lorenz-Delta-lib/
 //
-// Compile with:  make drive-lorenz-Delta
+// Compile with:  make drive-lorenz-LRDelta
 //
-// Help with:     ./drive-lorenz-Delta -help
+// Help with:     ./drive-lorenz-LRDelta -help
 //
-// Sample run:    mpirun -np 2 drive-lorenz-Delta
+// Sample run:    mpirun -np 2 drive-lorenz-LRDelta
 //
-// Description:   solve the Lorenz system using forward Euler and Delta correction
+// Description:   solve the Lorenz system using forward Euler and low rank Delta correction
 //
 //
 
