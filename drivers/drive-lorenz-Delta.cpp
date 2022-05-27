@@ -523,9 +523,9 @@ int main(int argc, char *argv[])
    double tstart, tstop;
    int rank;
 
-   int nt = 2048;
-   double Tf_lyap = 4;
-   int max_levels = 3;
+   int nt = 16;
+   double Tf_lyap = 0.1;
+   int max_levels = 2;
    int nrelax = 0;
    int nrelax0 = 0;
    double tol = 1e-8;

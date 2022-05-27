@@ -53,7 +53,7 @@ VEC theta1(const VEC u, const VEC guess, double dt, double theta, MAT *P_tan, in
     VEC ustop = guess;
     VEC rhs;
     MAT A;
-    bool max = false;
+    // bool max = false;
 
     for (int i = 0; i < newton_iters; i++)
     {
@@ -66,7 +66,7 @@ VEC theta1(const VEC u, const VEC guess, double dt, double theta, MAT *P_tan, in
         } // tolerance checking
         A = MAT::Identity() - dt * (1 - theta) * f_lorenz_du(ustop);
         ustop -= A.partialPivLu().solve(rhs);
-        max = (i == newton_iters - 1);
+        // max = (i == newton_iters - 1);
     }
     // if (max)
     // {
@@ -145,11 +145,8 @@ VEC theta4(VEC u, VEC ustop, double dt, double theta, MAT *P_tan, int newton_ite
         // P_tan already stores part of K2 (i.e. du1/du)
         MAT &K2 = *P_tan;
         MAT K1, K3, K4;
-        // MAT &tmp = K4; // just use this to store temporary values
 
         K1 = dt * f_lorenz_du(u);
-        // tmp = dt * f_lorenz_du(u1);
-        // K2 = tmp * (MAT::Identity() + (1 + theta) / 4 * K1 + (1 - theta) / 4 * tmp * K2);
         K2 = dt * f_lorenz_du(u1) * K2;
         K3 = dt * f_lorenz_du(u2) * (MAT::Identity() + (1 - theta) / 4 * K1 + (1 + theta) / 4 * K2);
         K4 = dt * f_lorenz_du(u3) * (MAT::Identity() + K3);
@@ -158,9 +155,42 @@ VEC theta4(VEC u, VEC ustop, double dt, double theta, MAT *P_tan, int newton_ite
     return u + (k1 + 2 * k2 + 2 * k3 + k4) / 6;
 }
 
+void GramSchmidt(COL_MAT &A)
+{ // orthonormalize A in place using gram-schmidt
+    using Eigen::all;
+    // std::cout << "GS:\n";
+
+    // normalize the first column
+    // std::cout << A(all, 0).norm() << '\n';
+    A(all, 0).normalize();
+
+    for (Eigen::Index i = 1; i < A.cols(); i++)
+    {
+        // subtract the orthogonal projection of the columns to the left
+        for (Eigen::Index j = 0; j < i; j++)
+        {
+            A(all, i) -= A(all, i).dot(A(all, j)) * A(all, j);
+        }
+
+        // normalize this column
+        // std::cout << A(all, i).norm() << '\n';
+        A(all, i).normalize();
+    }
+}
+
 void pack_array(std::ofstream &f, VEC u)
 {
     f << u[0] << ',' << u[1] << ',' << u[2] << '\n';
+}
+
+void pack_darray(std::ofstream &f, COL_MAT u)
+{
+    f << u(0, 0) << ',' << u(1, 0) << ',' << u(2, 0);
+    for (Eigen::Index i = 1; i < u.cols(); i++)
+    {
+        f << ',' << u(0, i) << ',' << u(1, i) << ',' << u(2, i);
+    }
+    f << '\n';
 }
 
 int intpow(int base, int exp)

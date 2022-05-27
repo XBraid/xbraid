@@ -77,6 +77,11 @@ drive-lorenz-Delta: drive-lorenz-Delta.cpp $(BRAID_LIB_FILE)
 	$(MPICXX) $(CXXFLAGS) $(BRAID_FLAGS) -Idrive-lorenz-Delta-lib \
  $< -o $@ $(BRAID_LIB_FILE) drive-lorenz-Delta-lib/lorenz_lib.cpp $(LFLAGS)
 
+drive-lorenz-LRDelta: drive-lorenz-LRDelta.cpp $(BRAID_LIB_FILE)
+	@echo "Building" $@ "..."
+	$(MPICXX) $(CXXFLAGS) $(BRAID_FLAGS) -Idrive-lorenz-Delta-lib \
+ $< -o $@ $(BRAID_LIB_FILE) drive-lorenz-Delta-lib/lorenz_lib.cpp $(LFLAGS)
+
 # Rule for compiling .c files
 %: %.c $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
