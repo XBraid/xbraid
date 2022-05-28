@@ -201,11 +201,11 @@ VEC MyBraidApp::baseStep(const VEC u, const VEC ustop, double dt, int level, MAT
    // return theta1(u, ustop, dt, theta, P_tan_ptr);
 
    // fourth order theta method
-   if (level == 0)
+   double theta = getTheta(level);
+   if (level == 0 || theta == 1.)
    {
       return rk4(u, dt, P_tan_ptr);
    }
-   double theta = getTheta(level);
    return theta4(u, ustop, dt, theta, P_tan_ptr, newton_iters);
 
    // forward euler
@@ -523,9 +523,9 @@ int main(int argc, char *argv[])
    double tstart, tstop;
    int rank;
 
-   int nt = 16;
-   double Tf_lyap = 0.1;
-   int max_levels = 2;
+   int nt = 4096;
+   double Tf_lyap = 4;
+   int max_levels = 3;
    int nrelax = 0;
    int nrelax0 = 0;
    double tol = 1e-8;
@@ -667,7 +667,7 @@ int main(int argc, char *argv[])
    core.SetCFactor(-1, cfactor);
    core.SetNRelax(-1, nrelax);
    core.SetNRelax(0, nrelax0);
-   // core.SetSkip(0);
+   core.SetSkip(0);
 
    // Run Simulation
    core.Drive();
