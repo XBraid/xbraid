@@ -224,10 +224,11 @@ MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop
       double &cf_pow = total_cf;
       for (int level = 1; level < max_levels; level++)
       {
-         total_cf = intpow(cfactor, level);
+         // total_cf = intpow(cfactor, level);
          // thetas[level] = (1 + total_cf) / (2 * total_cf); // asymptotic values for forward Euler
-         cf_pow = pow(total_cf, 4);
-         thetas[level] = (4 + cf_pow) / (double)(5 * cf_pow); // asymptotic values for rk4
+         // cf_pow = pow(total_cf, 4);
+         // thetas[level] = (4 + cf_pow) / (double)(5 * cf_pow); // asymptotic values for rk4
+         thetas[level] = (total_cf - sqrt(3*total_cf*total_cf - 3)/3)/total_cf; // theta2
       }
    }
 }
@@ -250,13 +251,22 @@ VEC MyBraidApp::baseStep(const VEC u, const VEC ustop, double dt, int level, MAT
    // double theta = getTheta(level);
    // return theta1(u, ustop, dt, theta, P_tan_ptr);
 
-   // fourth order theta method
-   double theta = getTheta(level);
-   if (level == 0 || theta == 1.)
+   // second order theta method
+   if (level == 0 || !useTheta)
    {
-      return rk4(u, dt, P_tan_ptr);
+      return crank_nicolson(u, ustop, dt, P_tan_ptr, newton_iters);
+      // return crank_nicolson(u, u, dt, P_tan_ptr, newton_iters);
    }
-   return theta4(u, ustop, dt, theta, P_tan_ptr, newton_iters);
+   double theta = getTheta(level);
+   return theta2(u, ustop, dt, theta, theta, 0.5-theta, P_tan_ptr, newton_iters);
+
+   // fourth order theta method
+   // double theta = getTheta(level);
+   // if (level == 0 || theta == 1.)
+   // {
+   //    return rk4(u, dt, P_tan_ptr);
+   // }
+   // return theta4(u, ustop, dt, theta, P_tan_ptr, newton_iters);
 
    // forward euler
    // if (P_tan_ptr)
@@ -280,15 +290,13 @@ COL_MAT MyBraidApp::baseStepDiffDot(const COL_MAT v,
    }
 
    // else use finite difference approximation to potentially save on work
-   using Eigen::all;
    COL_MAT out = v;
    const double eps = 1e-8;
 
    for (Eigen::Index i = 0; i < v.cols(); i++)
    {
-      VEC col = v(all, i);
       // TODO: can I get a better initial guess than ustop + eps*col?
-      out(all, i) = (baseStep(u + eps*col, ustop + eps*col, dt, level) - ustop)/eps;
+      out.col(i) = (baseStep(u + eps*v.col(i), ustop + eps*v.col(i), dt, level) - ustop)/eps;
    }
    return out;
 }
@@ -853,6 +861,7 @@ int main(int argc, char *argv[])
    core.SetNRelax(-1, nrelax);
    core.SetNRelax(0, nrelax0);
    core.SetSkip(0);
+   core.SetStorage(0);
 
    // Run Simulation
    core.Drive();

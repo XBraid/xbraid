@@ -178,6 +178,7 @@ MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop
          // thetas[level] = (1 + total_cf) / (2 * total_cf); // asymptotic values for forward Euler
          cf_pow = pow(total_cf, 4);
          thetas[level] = (4 + cf_pow) / (double)(5 * cf_pow); // asymptotic values for rk4
+         // thetas[level] = (total_cf - sqrt(3*total_cf*total_cf - 3)/3)/total_cf; // theta2
       }
    }
 }
@@ -199,14 +200,36 @@ VEC MyBraidApp::baseStep(const VEC u, const VEC ustop, double dt, int level, MAT
    // first order theta method
    // double theta = getTheta(level);
    // return theta1(u, ustop, dt, theta, P_tan_ptr);
+   // no initial guess:
+   // return theta1(u, u, dt, theta, P_tan_ptr, newton_iters, 1e-14);
+
+   // second order theta method
+   // double theta = getTheta(level);
+   // if (level == 0 || !useTheta)
+   // {
+   //    return crank_nicolson(u, ustop, dt, P_tan_ptr, newton_iters);
+   //    // return theta2(u, ustop, dt, 1., 0., 0., P_tan_ptr, newton_iters);
+   // }
+   // double cf = intpow(cfactor, level);
+   // // A-stable
+   // return theta2(u, ustop, dt, theta, theta, 0.5 - theta, P_tan_ptr, newton_iters);
+   // L-stable
+   // return theta2(u, ustop, dt, theta, theta, 2./3. - 1/(6*cf*cf) - theta, P_tan_ptr, newton_iters);
 
    // fourth order theta method
    double theta = getTheta(level);
-   if (level == 0 || theta == 1.)
+   if (level == 0 || !useTheta)
    {
       return rk4(u, dt, P_tan_ptr);
    }
-   return theta4(u, ustop, dt, theta, P_tan_ptr, newton_iters);
+   else if (dt >= .15)
+   {
+      double th_A = 1. - sqrtf64(3.)/3.;
+      double th_C = -1./3. + sqrtf64(3.)/3.;
+      return theta2(u, ustop, dt, th_A, th_A, th_C, P_tan_ptr, newton_iters);
+      // return theta1(u, u, dt, 0., P_tan_ptr, newton_iters);
+   }
+   return theta4(u, ustop, dt, theta, P_tan_ptr, newton_iters, 1e-10);
 
    // forward euler
    // if (P_tan_ptr)
@@ -658,16 +681,18 @@ int main(int argc, char *argv[])
    if (useFMG)
    {
       core.SetFMG();
-      core.SetNFMG(2);
+      core.SetNFMG(1);
    }
    core.SetPrintLevel(2);
+   core.SetAccessLevel(1);
    core.SetMaxLevels(max_levels);
    core.SetMaxIter(max_iter);
    core.SetAbsTol(tol);
    core.SetCFactor(-1, cfactor);
    core.SetNRelax(-1, nrelax);
    core.SetNRelax(0, nrelax0);
-   core.SetSkip(0);
+   core.SetSkip(1);
+   core.SetStorage(-2);
 
    // Run Simulation
    core.Drive();

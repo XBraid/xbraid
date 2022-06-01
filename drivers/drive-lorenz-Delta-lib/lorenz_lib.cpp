@@ -46,7 +46,7 @@ VEC theta1(const VEC u, const VEC guess, double dt, double theta, MAT *P_tan, in
         if (P_tan)
         {
             *P_tan = euler_du(u, dt);
-        } // compute linearization
+        }
         return euler(u, dt);
     }
     VEC k1 = f_lorenz(u);
@@ -80,17 +80,65 @@ VEC theta1(const VEC u, const VEC guess, double dt, double theta, MAT *P_tan, in
     return ustop;
 }
 
-MAT theta1_du(VEC u, VEC ustop, double dt, double theta)
+VEC crank_nicolson(VEC u, VEC ustop, double dt, MAT *P_tan, int newton_iters, double tol)
 {
-    if (theta == 1.)
+    return theta1(u, ustop, dt, 0.5, P_tan, newton_iters, tol);
+}
+
+VEC theta2(VEC u, VEC ustop, double dt, double th_A, double th_B, double th_C, MAT *P_tan, int newton_iters, double tol)
+{
+    double th_Cs, a11, a12, a21, a22;
+    Eigen::Vector<double, 2 * VECSIZE> k;
+    VEC u1, u2;
+    Eigen::Matrix<double, 2 * VECSIZE, 2 * VECSIZE> A;
+
+    th_Cs = 1. - th_A - th_B - th_C;
+    a11 = (th_B + th_C) / 2.;
+    a12 = -(th_C) / 2.;
+    a21 = (th_A + th_B + th_C) / 2. + th_Cs;
+    a22 = (th_A + th_C) / 2.;
+
+    // TODO: find a better initial guess
+    k.setZero(); // safest initial guess
+
+    for (int i = 0; i < newton_iters; i++)
     {
-        return euler_du(u, dt);
+        Eigen::Vector<double, 2 * VECSIZE> rhs;
+        u1 = u + a11 * k.head(VECSIZE) + a12 * k.tail(VECSIZE);
+        u2 = u + a21 * k.head(VECSIZE) + a22 * k.tail(VECSIZE);
+
+        rhs << k.head(VECSIZE) - dt * f_lorenz(u1),
+            k.tail(VECSIZE) - dt * f_lorenz(u2);
+
+        if (rhs.norm() <= tol)
+        {
+            break;
+        }
+
+        // block matrix
+        MAT B1 = f_lorenz_du(u1);
+        MAT B2 = f_lorenz_du(u2);
+        A << MAT::Identity() - dt * a11 * B1, -dt * a12 * B1,
+            -dt * a21 * B2, MAT::Identity() - dt * a22 * B2;
+
+        k -= A.partialPivLu().solve(rhs);
     }
-    MAT rhs;
-    MAT lhs;
-    rhs = MAT::Identity() + dt * theta * f_lorenz_du(u);
-    lhs = MAT::Identity() - dt * (1 - theta) * f_lorenz_du(ustop);
-    return lhs.partialPivLu().solve(rhs);
+    if (P_tan)
+    {
+        Eigen::Matrix<double, 2 * VECSIZE, VECSIZE> RHS;
+        MAT K1 = dt * f_lorenz_du(u1);
+        MAT K2 = dt * f_lorenz_du(u2);
+
+        RHS << K1, K2;
+        A << MAT::Identity() - a11 * K1, -a12 * K1,
+            -a21 * K2, MAT::Identity() - a22 * K2;
+        RHS = A.partialPivLu().solve(RHS);
+        K1 = RHS.topRows(VECSIZE);
+        K2 = RHS.bottomRows(VECSIZE);
+
+        *P_tan = MAT::Identity() + (K1 + K2) / 2.;
+    }
+    return u + (k.head(VECSIZE) + k.tail(VECSIZE)) / 2.;
 }
 
 VEC rk4(VEC u, double dt, MAT *P_tan)
@@ -129,11 +177,11 @@ VEC theta4(VEC u, VEC ustop, double dt, double theta, MAT *P_tan, int newton_ite
     k1 = dt * f_lorenz(u);
 
     // get an initial guess for u1
-    k2 = ustop - u; // this is already 2nd order accurate!
-    u1 = u + (1. + theta) / 4 * k1 + (1. - theta) / 4 * k2;
+    // k2 = ustop - u; // this is already 2nd order accurate!
+    // u1 = u + (1. + theta) / 4 * k1 + (1. - theta) / 4 * k2;
 
     // the matrix du1/du is also computed here, to be used to find K2 later
-    u1 = theta1(u, u1, dt / 2, (1. + theta) / 2, P_tan, newton_iters, tol);
+    u1 = theta1(u, u, dt / 2, (1. + theta) / 2, P_tan, newton_iters, tol);
     k2 = dt * f_lorenz(u1);
     u2 = u + (1. - theta) / 4 * k1 + (1. + theta) / 4 * k2;
     k3 = dt * f_lorenz(u2);
@@ -157,24 +205,19 @@ VEC theta4(VEC u, VEC ustop, double dt, double theta, MAT *P_tan, int newton_ite
 
 void GramSchmidt(COL_MAT &A)
 { // orthonormalize A in place using gram-schmidt
-    using Eigen::all;
-    // std::cout << "GS:\n";
-
     // normalize the first column
-    // std::cout << A(all, 0).norm() << '\n';
-    A(all, 0).normalize();
+    A.col(0).normalize();
 
     for (Eigen::Index i = 1; i < A.cols(); i++)
     {
         // subtract the orthogonal projection of the columns to the left
         for (Eigen::Index j = 0; j < i; j++)
         {
-            A(all, i) -= A(all, i).dot(A(all, j)) * A(all, j);
+            A.col(i) -= A.col(i).dot(A.col(j)) * A.col(j);
         }
 
         // normalize this column
-        // std::cout << A(all, i).norm() << '\n';
-        A(all, i).normalize();
+        A.col(i).normalize();
     }
 }
 
