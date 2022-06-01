@@ -862,6 +862,7 @@ int main(int argc, char *argv[])
    core.SetNRelax(0, nrelax0);
    core.SetSkip(0);
    core.SetStorage(0);
+   core.SetTemporalNorm(3);
 
    // Run Simulation
    core.Drive();

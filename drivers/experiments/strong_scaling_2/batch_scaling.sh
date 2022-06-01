@@ -14,11 +14,11 @@ echo -n 'My jobid is '; echo $SLURM_JOBID
 echo -n 'Timestamp START: ';date
 
 # number of cores
-ncores="1 2 4 8 16 32 64 128 512 1024"
+ncores="1 2 4 8 16 32 64 128 256 512 1024"
 # ncores="1 2 4 8"
 
 # fixed arguments
-fargs="-tf 2 -nt 2048 -cf 4 -theta -nu 1"
+fargs="-tf 2 -nt 2048 -cf 4 -theta -nu 1 -tol 1e-6"
 
 # path to executable
 ex="../../drive-lorenz-Delta"
@@ -31,11 +31,13 @@ outn="lorenz_theta"
 
 # serial run
 # mpirun -n 1 ${ex} -lorenz-Delta ${fargs} -ml 1 > ${outd}/${outn}_Delta_nc${nc}_ml1
-srun -N 1 -n 1 -o ${outd}/${outn}_Delta_nc${1}_ml1 ${ex} ${fargs} -ml 1
+# srun -N 1 -n 1 -o ${outd}/${outn}_ml1 ${ex} ${fargs} -ml 1
 
 for nc in $ncores; do
-	srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta_nc${nc}_ml4 ${ex} ${fargs} -ml 4 -Delta -fmg
-	srun -N 19 -n ${nc} -o ${outd}/${outn}_nc${nc}_ml6       ${ex} ${fargs} -ml 6
+	# srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta_fmg_nc${nc}_ml4 ${ex} ${fargs} -ml 4 -Delta -fmg
+	# srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta_nc${nc}_ml4     ${ex} ${fargs} -ml 4 -Delta
+	# srun -N 19 -n ${nc} -o ${outd}/${outn}_nc${nc}_ml6           ${ex} ${fargs} -ml 6
+	srun -N 19 -n ${nc} -o ${outd}/${outn}_nc${nc}_ml5           ${ex} ${fargs} -ml 5
 	# mpirun -n ${nc} ${ex} ${fargs} -ml 4 -Delta -fmg > ${outd}/${outn}_Delta_nc${nc}_ml4 
 	# mpirun -n ${nc} ${ex} ${fargs} -ml 6 > ${outd}/${outn}_nc${nc}_ml6       
 	# echo "mpirun -n ${nc} ${ex} ${fargs} -ml 6 > ${outd}/${outn}_nc${nc}_ml6"

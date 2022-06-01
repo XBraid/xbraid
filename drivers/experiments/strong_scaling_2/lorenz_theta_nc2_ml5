@@ -1,0 +1,54 @@
+Using theta method
+
+  Braid: Begin simulation, 2048 time steps
+  Braid: || r_0 || not available, wall time = 1.92e-02
+  Braid: || r_1 || = 1.213414e+01, conv factor = 1.00e+00, wall time = 9.75e-02
+  Braid: || r_2 || = 7.269148e+00, conv factor = 5.99e-01, wall time = 1.78e-01
+  Braid: || r_3 || = 1.542502e+01, conv factor = 2.12e+00, wall time = 2.60e-01
+  Braid: || r_4 || = 1.752910e+01, conv factor = 1.14e+00, wall time = 3.43e-01
+  Braid: || r_5 || = 1.977533e+01, conv factor = 1.13e+00, wall time = 4.25e-01
+  Braid: || r_6 || = 2.750353e+01, conv factor = 1.39e+00, wall time = 5.08e-01
+  Braid: || r_7 || = 9.460970e+00, conv factor = 3.44e-01, wall time = 5.91e-01
+  Braid: || r_8 || = 6.105065e+00, conv factor = 6.45e-01, wall time = 6.74e-01
+  Braid: || r_9 || = 8.844749e-02, conv factor = 1.45e-02, wall time = 7.56e-01
+  Braid: || r_10 || = 1.430538e-04, conv factor = 1.62e-03, wall time = 8.39e-01
+  Braid: || r_11 || = 1.135551e-07, conv factor = 7.94e-04, wall time = 9.21e-01
+
+  Braid Solver Stats:
+  start time = 0.000000e+00
+  stop time  = 5.116856e+00
+  time steps = 2048
+
+  use seq soln?         = 0
+  storage               = -1
+
+  max iterations        = 25
+  iterations            = 12
+
+  residual norm         = 1.135551e-07
+  stopping tolerance    = 1.000000e-06
+  use relative tol?     = 0
+                                          --> Inf-norm TemporalNorm 
+
+  use fmg?              = 0
+  access_level          = 1
+  print_level           = 2
+
+  max number of levels  = 5
+  min coarse            = 2
+  number of levels      = 5
+  skip down cycle       = 1
+  periodic              = 0
+  relax_only_cg         = 0
+  finalFCRelax          = 0
+  number of refinements = 0
+
+  level   time-pts   cfactor   nrelax   Crelax Wt
+      0      2048        4        0        1.00
+      1       512        4        1        1.00
+      2       128        4        1        1.00
+      3        32        4        1        1.00
+      4         8  
+
+  wall time = 1.016245
+

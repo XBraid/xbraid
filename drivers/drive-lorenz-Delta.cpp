@@ -224,8 +224,8 @@ VEC MyBraidApp::baseStep(const VEC u, const VEC ustop, double dt, int level, MAT
    }
    else if (dt >= .15)
    {
-      double th_A = 1. - sqrtf64(3.)/3.;
-      double th_C = -1./3. + sqrtf64(3.)/3.;
+      double th_A = 1. - sqrt(3.)/3.;
+      double th_C = -1./3. + sqrt(3.)/3.;
       return theta2(u, ustop, dt, th_A, th_A, th_C, P_tan_ptr, newton_iters);
       // return theta1(u, u, dt, 0., P_tan_ptr, newton_iters);
    }
@@ -692,7 +692,8 @@ int main(int argc, char *argv[])
    core.SetNRelax(-1, nrelax);
    core.SetNRelax(0, nrelax0);
    core.SetSkip(1);
-   core.SetStorage(-2);
+   core.SetStorage(-1);
+   core.SetTemporalNorm(3);
 
    // Run Simulation
    core.Drive();
