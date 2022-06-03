@@ -72,38 +72,6 @@ public:
    virtual ~BraidVector(){};
 };
 
-void bf_pack_help(double *buf, const COL_MAT u, const size_t obj_size, size_t &bf_size)
-{
-   size_t i_bf = bf_size;
-   for (size_t i = 0; i < obj_size; i++)
-   {
-      buf[i_bf] = u(i);
-      i_bf++;
-   }
-   bf_size += obj_size;
-}
-
-void bf_unpack_help(double *buf, COL_MAT &u, const size_t obj_size, size_t &bf_size)
-{
-   size_t i_bf = bf_size;
-   for (size_t i = 0; i < obj_size; i++)
-   {
-      u(i) = buf[i_bf];
-      i_bf++;
-   }
-   bf_size += obj_size;
-}
-
-void bf_unpack_help(double *buf, VEC &u, const size_t obj_size, size_t &bf_size)
-{
-   size_t i_bf = bf_size;
-   for (size_t i = 0; i < obj_size; i++)
-   {
-      u(i) = buf[i_bf];
-      i_bf++;
-   }
-   bf_size += obj_size;
-}
 
 // Wrapper for BRAID's App object
 // --> Put all time INDEPENDENT information here
@@ -333,6 +301,7 @@ int MyBraidApp::Step(braid_Vector u_,
 
    // no refinement
    pstatus.SetRFactor(1);
+
    bool computeDeltas = (calling_fnc == braid_ASCaller_FRestrict); // only compute Deltas when in FRestrict
    bool normalize;
    // only want to normalize at C-points, or on the coarsest grid
@@ -495,8 +464,8 @@ int MyBraidApp::Init(double t,
       u->action = u->state;
    }
 
-   u->Psi.setIdentity(VECSIZE, DeltaRank);
-   u->Delta.setIdentity(VECSIZE, DeltaRank);
+   u->Psi.setIdentity(DIM, DeltaRank);
+   u->Delta.setIdentity(DIM, DeltaRank);
 
    *u_ptr = (braid_Vector)u;
    return 0;
@@ -551,7 +520,7 @@ int MyBraidApp::SpatialNorm(braid_Vector u_,
 int MyBraidApp::BufSize(int *size_ptr,
                         BraidBufferStatus &status)
 {
-   *size_ptr = (2 * VECSIZE + 2 * VECSIZE * DeltaRank) * sizeof(double);
+   *size_ptr = (2 * DIM + 2 * DIM * DeltaRank) * sizeof(double);
    return 0;
 }
 
@@ -564,15 +533,15 @@ int MyBraidApp::BufPack(braid_Vector u_,
    // std::cout << "buffpack called" << '\n';
    size_t bf_size = 0;
 
-   bf_pack_help(dbuffer, u->state, VECSIZE, bf_size);
+   bf_pack_help(dbuffer, u->state, DIM, bf_size);
    // std::cout << "state successful\n";
-   bf_pack_help(dbuffer, u->Psi, VECSIZE * DeltaRank, bf_size);
+   bf_pack_help(dbuffer, u->Psi, DIM * DeltaRank, bf_size);
    // std::cout << "lyapunov successful\n";
 
    if (useDelta)
    {
-      bf_pack_help(dbuffer, u->action, VECSIZE, bf_size);
-      bf_pack_help(dbuffer, u->Delta, VECSIZE * DeltaRank, bf_size);
+      bf_pack_help(dbuffer, u->action, DIM, bf_size);
+      bf_pack_help(dbuffer, u->Delta, DIM * DeltaRank, bf_size);
    }
    status.SetSize(bf_size * sizeof(double));
    return 0;
@@ -586,20 +555,18 @@ int MyBraidApp::BufUnpack(void *buffer,
    // std::cout << "buffunpack called" << '\n';
 
    BraidVector *u = new BraidVector();
-   u->Psi.setZero(VECSIZE, DeltaRank);
-   u->Delta.setIdentity(VECSIZE, DeltaRank);
+   u->Psi.setZero(DIM, DeltaRank);
+   u->Delta.setIdentity(DIM, DeltaRank);
 
    size_t bf_size = 0;
 
-   bf_unpack_help(dbuffer, u->state, VECSIZE, bf_size);
-   // std::cout << "state successful\n";
-   bf_unpack_help(dbuffer, u->Psi, VECSIZE * DeltaRank, bf_size);
-   // std::cout << "lyapunov successful\n";
+   bf_unpack_help(dbuffer, u->state, DIM, bf_size);
+   bf_unpack_help(dbuffer, u->Psi, DIM * DeltaRank, bf_size);
 
    if (useDelta)
    {
-      bf_unpack_help(dbuffer, u->action, VECSIZE, bf_size);
-      bf_unpack_help(dbuffer, u->Delta, VECSIZE * DeltaRank, bf_size);
+      bf_unpack_help(dbuffer, u->action, DIM, bf_size);
+      bf_unpack_help(dbuffer, u->Delta, DIM * DeltaRank, bf_size);
    }
    *u_ptr = (braid_Vector)u;
 
@@ -862,7 +829,7 @@ int main(int argc, char *argv[])
    core.SetNRelax(0, nrelax0);
    core.SetSkip(0);
    core.SetStorage(0);
-   core.SetTemporalNorm(3);
+   core.SetTemporalNorm(2);
 
    // Run Simulation
    core.Drive();
