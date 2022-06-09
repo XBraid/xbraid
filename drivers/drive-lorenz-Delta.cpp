@@ -317,8 +317,8 @@ int MyBraidApp::Step(braid_Vector u_,
    // }
 
    VEC guess;
-   // guess << ustop->guess;
-   guess << u->state;
+   guess << ustop->guess;
+   // guess << u->state;
 
    VEC utmp;
    MAT Ptmp;
