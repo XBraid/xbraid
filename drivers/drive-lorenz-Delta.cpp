@@ -85,12 +85,13 @@ public:
    int cfactor0;
    int newton_iters;  // only used if useTheta
    double newton_tol; // only used if useTheta
+   int DeltaLevel;
    bool useDelta;
    bool useTheta;
    std::vector<double> thetas;
 
    // Constructor
-   MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop_, int ntime_, int cfactor_, int cfactor0_, bool useDelta_, bool useTheta_, int newton_iters_, double newton_tol_, int max_levels);
+   MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop_, int ntime_, int cfactor_, int cfactor0_, bool useDelta_, int DeltaLevel_, bool useTheta_, int newton_iters_, double newton_tol_, int max_levels);
 
    // We will need the MPI Rank
    int rank;
@@ -163,7 +164,7 @@ public:
 };
 
 // Braid App Constructor
-MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop_, int ntime_, int cfactor_, int cfactor0_, bool useDelta_, bool useTheta_, int newton_iters_, double newton_tol_, int max_levels)
+MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop_, int ntime_, int cfactor_, int cfactor0_, bool useDelta_, int DeltaLevel_, bool useTheta_, int newton_iters_, double newton_tol_, int max_levels)
     : BraidApp(comm_t_, tstart_, tstop_, ntime_)
 {
    rank = rank_;
@@ -171,6 +172,7 @@ MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop
    cfactor0 = cfactor0_;
    newton_iters = newton_iters_;
    newton_tol = newton_tol_;
+   DeltaLevel = DeltaLevel_;
    useDelta = useDelta_;
    useTheta = useTheta_;
    thetas.assign(max_levels, 1.);
@@ -295,7 +297,10 @@ int MyBraidApp::Step(braid_Vector u_,
 
    // no refinement
    pstatus.SetRFactor(1);
-   bool computeDeltas = (useDelta) && (calling_fnc == braid_ASCaller_FRestrict); // only compute Deltas when in FRestrict
+
+   bool DeltaCorrect = (useDelta) && (level > DeltaLevel);
+   bool computeDeltas = (useDelta) && (level >= DeltaLevel);
+   computeDeltas = (computeDeltas) && (calling_fnc == braid_ASCaller_FRestrict); // only compute Deltas when in FRestrict
 
    // std::cout << "Stp called @ " << T_index << " on level " << level << '\n';
    // std::cout << "f is null: " << f_is_null << '\n';
@@ -318,7 +323,6 @@ int MyBraidApp::Step(braid_Vector u_,
 
    VEC guess;
    guess << ustop->guess;
-   // guess << u->state;
 
    VEC utmp;
    MAT Ptmp;
@@ -328,7 +332,7 @@ int MyBraidApp::Step(braid_Vector u_,
    {
       // store state and compute linear tangent propagator
       utmp = baseStep(u->state, guess, dt, level, nlevels, &Ptmp);
-      if (f) // use Delta correction
+      if (f && DeltaCorrect) // use Delta correction
       {
          Ptmp += f->Delta;
       }
@@ -356,18 +360,17 @@ int MyBraidApp::Step(braid_Vector u_,
    // on fine grids, only overwrite u->guess if ustop is an f-point:
    if (!IsCPoint(T_index + 1, level) || level == nlevels - 1)
    {
-      u->guess = guess;
+      u->guess = guess;          // the new value
    }
    else
    {
-      u->guess = ustop->guess;
+      u->guess = ustop->guess;   // the old value
    }
-   // u->guess = guess;
 
    if (f)
    {
       utmp += f->state;
-      if (useDelta)
+      if (DeltaCorrect)
       {
          utmp += f->Delta * u->state - f->action;
       }
@@ -396,15 +399,16 @@ int MyBraidApp::Residual(braid_Vector u_,
    pstatus.GetTIndex(&T_index);
    pstatus.GetCallingFunction(&calling_fnc);
 
-   bool up = (calling_fnc == 11);
+   bool up = (calling_fnc == braid_ASCaller_Residual);
    double dt = tstop - tstart;
 
    // get initial guess
    VEC guess = u->guess;
    VEC utmp;
 
-   if (!useDelta)
+   if (!useDelta || level < DeltaLevel || (level == DeltaLevel && up))
    {
+      // default residual (no linearizations computed)
       utmp = baseStep(r->state, guess, dt, level, nlevels);
       if (f)
       {
@@ -413,20 +417,20 @@ int MyBraidApp::Residual(braid_Vector u_,
       r->state = u->state - utmp;
       return 0;
    }
-   // else:
-   MAT Ptmp;
+   // else we need to treat the Delta correction specially:
 
+   MAT Ptmp;
    utmp = baseStep(r->state, guess, dt, level, nlevels, &Ptmp);
 
    if (up)
-   { // this is called on the coarse grid right after restriction
+   { // this is called on the coarse grid right after restriction (no tau correction available)
       r->Delta = -Ptmp;
       r->action = r->Delta * r->state;
       r->state = u->state - utmp;
       return 0;
    }
-
    // else this is called on the fine grid right after F-relax
+
    if (f)
    { // do delta correction and tau correction
       Ptmp += f->Delta;
@@ -592,6 +596,7 @@ int main(int argc, char *argv[])
    int cf0 = 4;
    int max_iter = 25;
    int newton_iters = 2;
+   int DeltaLevel = 1;
    bool useFMG = false;
    bool useDelta = false;
    bool useTheta = true;
@@ -623,6 +628,7 @@ int main(int argc, char *argv[])
             printf("  -niters     : set number of newton iters for theta method\n");
             printf("  -fmg        : use FMG cycling\n");
             printf("  -Delta      : use delta correction\n");
+            printf("  -Deltalvl   : defer delta correction until this level\n");
             printf("  -theta      : use first order theta method\n");
             printf("\n");
          }
@@ -678,6 +684,11 @@ int main(int argc, char *argv[])
          arg_index++;
          newton_iters = atoi(argv[arg_index++]);
       }
+      else if (strcmp(argv[arg_index], "-Deltalvl") == 0)
+      {
+         arg_index++;
+         DeltaLevel = atoi(argv[arg_index++]);
+      }
       else if (strcmp(argv[arg_index], "-fmg") == 0)
       {
          arg_index++;
@@ -715,7 +726,7 @@ int main(int argc, char *argv[])
    double newton_tol = 1e-2 * tol;
 
    // set up app structure
-   MyBraidApp app(MPI_COMM_WORLD, rank, tstart, tstop, nt, cfactor, cf0, useDelta, useTheta, newton_iters, newton_tol, max_levels);
+   MyBraidApp app(MPI_COMM_WORLD, rank, tstart, tstop, nt, cfactor, cf0, useDelta, DeltaLevel, useTheta, newton_iters, newton_tol, max_levels);
 
    // Initialize Braid Core Object and set some solver options
    BraidCore core(MPI_COMM_WORLD, &app);
@@ -740,7 +751,7 @@ int main(int argc, char *argv[])
    core.SetNRelax(0, nrelax0);
    core.SetSkip(0);
    core.SetStorage(1);
-   core.SetTemporalNorm(2);
+   core.SetTemporalNorm(3);
 
    // Run Simulation
    core.Drive();
