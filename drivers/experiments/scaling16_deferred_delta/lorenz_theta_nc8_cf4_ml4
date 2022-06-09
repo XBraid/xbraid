@@ -1,0 +1,58 @@
+Using theta method
+
+  Braid: Begin simulation, 16384 time steps
+  Braid: || r_0 || = 1.996946e+01, conv factor = 1.00e+00, wall time = 2.68e-02
+  Braid: || r_1 || = 1.657783e+00, conv factor = 8.30e-02, wall time = 6.37e-02
+  Braid: || r_2 || = 2.603884e+00, conv factor = 1.57e+00, wall time = 1.02e-01
+  Braid: || r_3 || = 1.843689e+00, conv factor = 7.08e-01, wall time = 1.40e-01
+  Braid: || r_4 || = 4.732276e+00, conv factor = 2.57e+00, wall time = 1.78e-01
+  Braid: || r_5 || = 2.235626e+00, conv factor = 4.72e-01, wall time = 2.14e-01
+  Braid: || r_6 || = 3.868403e+00, conv factor = 1.73e+00, wall time = 2.51e-01
+  Braid: || r_7 || = 1.592046e+00, conv factor = 4.12e-01, wall time = 2.90e-01
+  Braid: || r_8 || = 2.966581e+00, conv factor = 1.86e+00, wall time = 3.29e-01
+  Braid: || r_9 || = 1.665869e+00, conv factor = 5.62e-01, wall time = 3.67e-01
+  Braid: || r_10 || = 1.695327e+00, conv factor = 1.02e+00, wall time = 4.05e-01
+  Braid: || r_11 || = 8.790931e-01, conv factor = 5.19e-01, wall time = 4.43e-01
+  Braid: || r_12 || = 8.872865e-01, conv factor = 1.01e+00, wall time = 4.79e-01
+  Braid: || r_13 || = 1.780894e-02, conv factor = 2.01e-02, wall time = 5.14e-01
+  Braid: || r_14 || = 9.345804e-03, conv factor = 5.25e-01, wall time = 5.48e-01
+  Braid: || r_15 || = 3.968792e-05, conv factor = 4.25e-03, wall time = 5.80e-01
+  Braid: || r_16 || = 7.915295e-07, conv factor = 1.99e-02, wall time = 6.10e-01
+
+  Braid Solver Stats:
+  start time = 0.000000e+00
+  stop time  = 1.023371e+01
+  time steps = 16384
+
+  use seq soln?         = 0
+  storage               = 1
+
+  max iterations        = 25
+  iterations            = 17
+
+  residual norm         = 7.915295e-07
+  stopping tolerance    = 1.000000e-05
+  use relative tol?     = 0
+                                          --> Inf-norm TemporalNorm 
+
+  use fmg?              = 0
+  access_level          = 1
+  print_level           = 2
+
+  max number of levels  = 4
+  min coarse            = 2
+  number of levels      = 4
+  skip down cycle       = 0
+  periodic              = 0
+  relax_only_cg         = 0
+  finalFCRelax          = 0
+  number of refinements = 0
+
+  level   time-pts   cfactor   nrelax   Crelax Wt
+      0     16384       16        0        1.00
+      1      1024        4        1        1.00
+      2       256        4        1        1.00
+      3        64  
+
+  wall time = 0.630014
+
