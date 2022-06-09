@@ -191,7 +191,6 @@ MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop
          {
             thetas[level] = (4 + cf_pow) / (double)(5 * cf_pow); // asymptotic values for rk4
          }
-         // std::cout << thetas[level] << '\n';
          // thetas[level] = (total_cf - sqrt(3*total_cf*total_cf - 3)/3)/total_cf; // theta2
       }
    }
@@ -200,6 +199,11 @@ MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop
 // Helper function to check if current point is a C point for this level
 int MyBraidApp::IsCPoint(int i, int level)
 {
+   if (level == 0)
+   {
+      return ((i % cfactor0) == 0);
+   }
+   // else:
    return ((i % cfactor) == 0);
 }
 
@@ -211,9 +215,26 @@ double MyBraidApp::getTheta(int level)
 
 VEC MyBraidApp::baseStep(const VEC u, VEC &uguess, double dt, int level, int nlevels, MAT *P_tan_ptr)
 {
+   // this should return Phi(u) and set u->guess
+
    // first order theta method
+   // if (level == 0 || !useTheta)
+   // {
+   //    // forward euler
+   //    if (P_tan_ptr)
+   //    {
+   //       *P_tan_ptr = euler_du(u, dt);
+   //    }
+   //    return euler(u, dt);
+   // }
    // double theta = getTheta(level);
-   // return theta1(u, uguess, dt, theta, P_tan_ptr);
+   // if (uguess.isZero())
+   // {
+   //    uguess = u; // much safer initial guess
+   // }
+   // VEC ustop = theta1(u, uguess, dt, theta, P_tan_ptr, newton_iters, newton_tol);
+   // uguess = ustop;
+   // return ustop;
    // no initial guess:
    // return theta1(u, u, dt, theta, P_tan_ptr, newton_iters, 1e-14);
 
@@ -231,28 +252,22 @@ VEC MyBraidApp::baseStep(const VEC u, VEC &uguess, double dt, int level, int nle
    // return theta2(u, uguess, dt, theta, theta, 2./3. - 1/(6*cf*cf) - theta, P_tan_ptr, newton_iters);
 
    // fourth order theta method
-   double theta = getTheta(level);
    if (level == 0 || !useTheta)
    {
       return rk4(u, dt, P_tan_ptr);
    }
+   double theta = getTheta(level);
    // else: 
-   // double tol = std::max(1e-9, dt*dt*dt*dt); // scale tolerance with time-step size
    int iters = newton_iters;
-   if (level == nlevels-1)
-   {
-      // limit newton iterations on coarsest grid!
-      iters = std::min(newton_iters, 2);
-      uguess = u; // should be safer
-   }
-   return theta4(u, uguess, dt, theta, P_tan_ptr, iters, 1e-10);
-
-   // forward euler
-   // if (P_tan_ptr)
+   // if (level == nlevels-1)
    // {
-   //    *P_tan_ptr = euler_du(u, dt);
+   //    // limit newton iterations on coarsest grid!
+   //    iters = std::min(newton_iters, 2);
    // }
-   // return euler(u, dt);
+
+   // no initial guess
+   // uguess = u;
+   return theta4(u, uguess, dt, theta, P_tan_ptr, iters, 1e-10);
 }
 
 //
@@ -280,22 +295,30 @@ int MyBraidApp::Step(braid_Vector u_,
 
    // no refinement
    pstatus.SetRFactor(1);
-   bool computeDeltas = (calling_fnc == 1); // only compute Deltas when in FRefine
+   bool computeDeltas = (useDelta && (calling_fnc == 1)); // only compute Deltas when in FRefine
 
    // std::cout << "Stp called @ " << T_index << " on level " << level << '\n';
    // std::cout << "f is null: " << f_is_null << '\n';
+   // if (level > 0)
+   // {
+   //    std::cout << level << ": ";
+   //    if (calling_fnc == braid_ASCaller_FRestrict || calling_fnc == braid_ASCaller_FInterp || calling_fnc == braid_ASCaller_FCRelax)
+   //    {
+   //       std::cout << "Stp: ";
+   //    }
+   //    else if (calling_fnc == braid_ASCaller_FASResidual || calling_fnc == braid_ASCaller_Residual)
+   //    {
+   //       std::cout << "Res: ";
+   //    }
+   //    else
+   //    {
+   //       std::cout << calling_fnc << ": ";
+   //    }
+   // }
 
-   // get best initial guess from braid
-   // if not available, ustop->guess == u->guess already
-   u->guess = ustop->guess;
-
-   if (!useDelta) // default behavior
-   {
-      // if (level > 0){std::cout << "level: " << level << ", i: " << T_index <<  '\n';}
-      u->state = baseStep(u->state, u->guess, dt, level, nlevels);
-      return 0;
-   }
-   // else:
+   VEC guess;
+   // guess << ustop->guess;
+   guess << u->state;
 
    VEC utmp;
    MAT Ptmp;
@@ -304,7 +327,7 @@ int MyBraidApp::Step(braid_Vector u_,
    if (computeDeltas)
    {
       // store state and compute linear tangent propagator
-      utmp = baseStep(u->state, u->guess, dt, level, nlevels, &Ptmp);
+      utmp = baseStep(u->state, guess, dt, level, nlevels, &Ptmp);
       if (f) // use Delta correction
       {
          Ptmp += f->Delta;
@@ -313,7 +336,6 @@ int MyBraidApp::Step(braid_Vector u_,
       if (IsCPoint(T_index, level))
       {
          // Need to store the value at the previous c-point for tau correction later
-         // TODO Is there a way to get around this?
          u->action = u->state;
 
          // we implicitly set u->Delta = I at each C-point
@@ -328,16 +350,30 @@ int MyBraidApp::Step(braid_Vector u_,
    }
    else
    {
-      utmp = baseStep(u->state, u->guess, dt, level, nlevels);
+      utmp = baseStep(u->state, guess, dt, level, nlevels);
    }
+
+   // on fine grids, only overwrite u->guess if ustop is an f-point:
+   if (!IsCPoint(T_index+1, level) || level == nlevels-1)
+   {
+      u->guess = guess;
+   }
+   else
+   {
+      u->guess = ustop->guess;
+   }
+   // u->guess = guess;
 
    if (f)
    {
-      // tau = state - action
-      utmp += f->Delta * u->state + f->state - f->action;
+      utmp += f->state;
+      if (useDelta)
+      {
+         utmp += f->Delta * u->state - f->action;
+      }
    }
-   u->state = utmp;
 
+   u->state = utmp;
    return 0;
 }
 
@@ -362,17 +398,29 @@ int MyBraidApp::Residual(braid_Vector u_,
 
    bool up = (calling_fnc == 11);
    double dt = tstop - tstart;
-   VEC guess = u->state;
+   
+   // get initial guess
+   VEC guess = u->guess;
+   VEC utmp;
+
+   // if (level > 0)
+   // {
+   //    std::cout << level << ": Res: ";
+   // }
 
    // std::cout << "Res called @ " << T_index << " on level " << level << '\n';
    // std::cout << "u is up: " << up << '\n';
    if (!useDelta)
    {
-      r->state = u->state - baseStep(r->state, guess, dt, level, nlevels);
+      utmp = baseStep(r->state, guess, dt, level, nlevels);
+      if (f)
+      {
+         utmp += f->state;
+      }
+      r->state = u->state - utmp;
       return 0;
    }
    // else:
-   VEC utmp;
    MAT Ptmp;
 
    utmp = baseStep(r->state, guess, dt, level, nlevels, &Ptmp);
@@ -444,7 +492,7 @@ int MyBraidApp::Sum(double alpha,
    BraidVector *x = (BraidVector *)x_;
    BraidVector *y = (BraidVector *)y_;
    (y->state) = alpha * (x->state) + beta * (y->state);
-   // (y->guess) = alpha * (x->guess) + beta * (y->guess);
+   (y->guess) = alpha * (x->guess) + beta * (y->guess);
    (y->action) = alpha * (x->action) + beta * (y->action);
    (y->Delta) = alpha * (x->Delta) + beta * (y->Delta);
    return 0;
@@ -549,12 +597,12 @@ int main(int argc, char *argv[])
 
    int nt = 4096;
    double Tf_lyap = 4;
-   int max_levels = 3;
+   int max_levels = 4;
    int nrelax = 1;
    int nrelax0 = 0;
-   double tol = 1e-6;
+   double tol = 1e-5;
    int cfactor = 4;
-   int cf0 = cfactor;
+   int cf0 = 4;
    int max_iter = 25;
    int newton_iters = 2;
    bool useFMG = false;
@@ -677,17 +725,18 @@ int main(int argc, char *argv[])
       std::cout << "Using theta method\n";
    }
 
-   double newton_tol = tol;
+   double newton_tol = 1e-2*tol;
 
    // set up app structure
    MyBraidApp app(MPI_COMM_WORLD, rank, tstart, tstop, nt, cfactor, cf0, useDelta, useTheta, newton_iters, newton_tol, max_levels);
 
    // Initialize Braid Core Object and set some solver options
    BraidCore core(MPI_COMM_WORLD, &app);
-   if (useDelta)
-   {
-      core.SetResidual();
-   }
+   // if (useDelta)
+   // {
+   //    core.SetResidual();
+   // }
+   core.SetResidual();
    if (useFMG)
    {
       core.SetFMG();
@@ -703,7 +752,7 @@ int main(int argc, char *argv[])
    core.SetNRelax(-1, nrelax);
    core.SetNRelax(0, nrelax0);
    core.SetSkip(0);
-   core.SetStorage(0);
+   core.SetStorage(1);
    core.SetTemporalNorm(2);
 
    // Run Simulation

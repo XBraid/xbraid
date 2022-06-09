@@ -62,26 +62,26 @@ VEC theta1(const VEC u, const VEC guess, double dt, double theta, MAT *P_tan, in
         // Newton iter
         if (rhs.norm() <= tol)
         {
-            // std::cout << "newton iters: " << i << '\n';
+            // std::cout << "newton iters: " << i << ", ";
             break;
         } // tolerance checking
         A = MAT::Identity() - dt * (1 - theta) * f_lorenz_du(ustop);
         ustop -= A.partialPivLu().solve(rhs);
         // max = (i == newton_iters - 1);
     }
-    // if (max)
-    // {
-    //     std::cout << "WARNING: max iters (" << newton_iters << ") reached in theta1!\n";
-    // }
+
+
     if (P_tan)
     {
         A = MAT::Identity() - dt * (1 - theta) * f_lorenz_du(ustop);
         *P_tan = A.partialPivLu().solve(MAT::Identity() + dt * theta * f_lorenz_du(u));
     }
+
+    // std::cout << "guess accuracy: " << (ustop - guess).norm() << '\n';
     return ustop;
 }
 
-VEC crank_nicolson(VEC u, VEC ustop, double dt, MAT *P_tan, int newton_iters, double tol)
+VEC crank_nicolson(VEC u, VEC &ustop, double dt, MAT *P_tan, int newton_iters, double tol)
 {
     return theta1(u, ustop, dt, 0.5, P_tan, newton_iters, tol);
 }
@@ -195,8 +195,7 @@ VEC theta4(VEC u, VEC &uguess, double dt, double theta, MAT *P_tan, int newton_i
     u3 = u + k3;
     k4 = dt * f_lorenz(u3);
 
-    // std::cout << "guess accuracy: " << (u1 - uguess).norm() << '\n';
-    uguess = u1; // save the value of u1 for next time
+    uguess = u1;
 
     if (P_tan)
     {
