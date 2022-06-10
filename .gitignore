@@ -25,3 +25,6 @@ drive-lorenz-LRDelta
 drive-lorenz-Delta
 drive-lorenz
 wrapperTests.txt
+
+# etc.
+Eigen
