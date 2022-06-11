@@ -85,7 +85,7 @@ drive-lorenz-LRDelta: drive-lorenz-LRDelta.cpp $(BRAID_LIB_FILE)
 drive-ks: drive-ks.cpp $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
 	$(MPICXX) $(CXXFLAGS) $(BRAID_FLAGS) -Idrive-ks-lib -IEigen \
- $< -o $@ $(BRAID_LIB_FILE) drive-lorenz-Delta-lib/lorenz_lib.cpp $(LFLAGS) -lumfpack
+ $< -o $@ $(BRAID_LIB_FILE) drive-ks-lib/ks_lib.cpp $(LFLAGS) -lumfpack
 
 
 # Rule for compiling .c files

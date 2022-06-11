@@ -9,11 +9,11 @@
 #include <chrono>
 
 // linear algebra solver includes
-#include "Eigen/Dense"
-#include "Eigen/Sparse"
-#include "Eigen/UmfPackSupport" // need to install SuiteSparse
+#include "../Eigen/Dense"
+#include "../Eigen/Sparse"
+#include "../Eigen/UmfPackSupport" // need to install SuiteSparse
 
-// want the flexibility of dynamic arrays to dynamically change problem size
+// want the flexibility of dynamic arrays to change problem size at run-time
 using Eigen::Index;
 typedef Eigen::VectorXd VEC;
 typedef Eigen::MatrixXd MAT;
@@ -21,6 +21,8 @@ typedef Eigen::SparseMatrix<double, Eigen::ColMajor> SPMAT;
 typedef Eigen::Triplet<double> T;
 typedef std::vector<double> Stencil;
 
+// Lyapunov time
+const double T_lyap{log(10) / 0.1};
 
 // exported functions
 class KSDiscretization
@@ -29,10 +31,11 @@ public:
     SPMAT L;
     SPMAT Dx;
     int nx;
+    double len;
     double dx;
 
     // constructor
-    KSDiscretization() : L(SPMAT()), Dx(SPMAT()), nx(0), dx(0.) {} // default. Never use this.
+    KSDiscretization() : L(SPMAT()), Dx(SPMAT()), nx(0), len(0.), dx(0.) {} // Never use this.
     KSDiscretization(int nx_, double length, Stencil d1, Stencil d2, Stencil d4);
 
     // implements discretization:
@@ -43,6 +46,7 @@ public:
 SPMAT circulant_from_stencil(std::vector<double> stencil, int n);
 VEC theta2(const VEC &u, const KSDiscretization& disc, double dt, double th_A = 0., double th_B = 0., double th_C = 1., MAT *P_tan = nullptr, int newton_iters = 10, double tol = 1e-10);
 void pack_array(std::ofstream &f, const VEC &u);
+void GramSchmidt(MAT& A);
 int intpow(int base, int exp);
 
 void bf_pack_help(double *buf, const MAT& u, const size_t obj_size, size_t &bf_size);

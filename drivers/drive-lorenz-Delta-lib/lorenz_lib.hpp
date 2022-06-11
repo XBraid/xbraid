@@ -3,7 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
-#include "Eigen/Dense" // expects Eigen library in xbraid/drivers/
+#include "../Eigen/Dense" // expects Eigen library in xbraid/drivers/
 
 #define DIM 3
 typedef Eigen::Vector3d VEC;

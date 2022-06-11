@@ -1,0 +1,105 @@
+
+Starting braid_TestInitAccess
+
+   braid_TestInitAccess:   Starting Test 1
+   braid_TestInitAccess:   u = init(t=0.00e+00)
+   braid_TestInitAccess:   access(u) 
+   braid_TestInitAccess:   check output: wrote u for initial condition at t=0.00e+00. 
+
+   braid_TestInitAccess:   free(u) 
+Finished braid_TestInitAccess
+
+Starting braid_TestClone
+
+   braid_TestClone:   Starting Test 1
+   braid_TestClone:   u = init(t=0.00e+00)
+   braid_TestClone:   v = clone(u)
+   braid_TestClone:   access(u)
+   braid_TestClone:   access(v)
+   braid_TestClone:   check output:  wrote u and v for initial condition at t=0.00e+00.
+
+   braid_TestClone:   free(u)
+   braid_TestClone:   free(v)
+Finished braid_TestClone
+
+Starting braid_TestSpatialNorm
+
+   braid_TestSpatialNorm:   Starting Test 1
+   braid_TestSpatialNorm:   u = init(t=0.00e+00)
+   braid_TestSpatialNorm:   spatialnorm(u) 
+   braid_TestSpatialNorm:   v = clone(u)
+   braid_TestSpatialNorm:   v = u - v 
+   braid_TestSpatialNorm:   spatialnorm(v) 
+   braid_TestSpatialNorm:   Test 1 Passed
+   braid_TestSpatialNorm:   actual output:    spatialnorm(v) = 0.00e+00  
+   braid_TestSpatialNorm:   expected output:  spatialnorm(v) = 0.0 
+
+   braid_TestSpatialNorm:   Starting Test 2
+   braid_TestSpatialNorm:   w = clone(u)
+   braid_TestSpatialNorm:   w = u + w 
+   braid_TestSpatialNorm:   spatialnorm(u)
+   braid_TestSpatialNorm:   spatialnorm(w)
+   braid_TestSpatialNorm:   Test 2 Passed
+   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 1.12e+01 / 5.61e+00 = 2.00e+00 
+   braid_TestSpatialNorm:   expected output:  spatialnorm(w) / spatialnorm(u) = 2.0 
+
+   braid_TestSpatialNorm:   Starting Test 3
+   braid_TestSpatialNorm:   free(w)
+   braid_TestSpatialNorm:   w = clone(u)
+   braid_TestSpatialNorm:   w = 0.0*u + 0.5*w 
+   braid_TestSpatialNorm:   spatialnorm(u)
+   braid_TestSpatialNorm:   spatialnorm(w)
+   braid_TestSpatialNorm:   Test 3 Passed
+   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 2.81e+00 / 5.61e+00 = 5.00e-01 
+   braid_TestSpatialNorm:   expected output:  spatialnorm(w) / spatialnorm(u) = 0.5 
+
+   braid_TestSpatialNorm:   free(u)
+   braid_TestSpatialNorm:   free(v)
+   braid_TestSpatialNorm:   free(w)
+Finished braid_TestSpatialNorm: all tests passed successfully
+
+Starting braid_TestBuf
+
+   braid_TestBuf:   Starting Test 1
+   braid_TestBuf:   u = init(t=0.00e+00)
+   braid_TestBuf:   spatialnorm(u) 
+   braid_TestBuf:   size = bufsize()
+   braid_TestBuf:   buffer = malloc(size)
+   braid_TestBuf:   buffer = bufpack(u, buffer))
+   braid_TestBuf:   v = bufunpack(buffer)
+   braid_TestBuf:   v = u - v 
+   braid_TestBuf:   spatialnorm(v) 
+   braid_TestBuf:   Test 1 Passed
+   braid_TestBuf:   actual output:    spatialnorm(v) = 0.00e+00  
+   braid_TestBuf:   expected output:  spatialnorm(v) = 0.0 
+
+   braid_TestBuf:   free(u)
+   braid_TestBuf:   free(v)
+Finished braid_TestBuf: all tests passed successfully
+
+Starting braid_TestResidual
+
+   braid_TestResidual:   Starting Test 1
+   braid_TestResidual:   u = init(t=1.00e+00)
+   braid_TestResidual:   spatialnorm(u) 
+   braid_TestResidual:   Warning:  spatialnorm(u) = 0.0
+   braid_TestResidual:   unext = clone(u)
+   braid_TestResidual:   ustop = clone(u)
+   braid_TestResidual:   fstop = clone(u)
+   braid_TestResidual:   fstop = ustop + fstop 
+   braid_TestResidual:   unext = step(ustop, fstop, unext) 
+   braid_TestResidual:   ustop = clone(u)
+   braid_TestResidual:   fstop = clone(u)
+   braid_TestResidual:   fstop = ustop + fstop 
+   braid_TestResidual:   r = residual(unext, u) 
+   braid_TestResidual:   r = fstop - r 
+   braid_TestResidual:   spatialnorm(r)
+   braid_TestResidual:   access(r) 
+   braid_TestResidual:   actual output:    spatialnorm(r) approx. 1.0e--2147483648 
+   braid_TestResidual:   expected output:  spatialnorm(r) approx. 0.0 
+
+   braid_TestResidual:   free(u)
+   braid_TestResidual:   free(unext)
+   braid_TestResidual:   free(ustop)
+   braid_TestResidual:   free(fstop)
+Finished braid_TestResidual 

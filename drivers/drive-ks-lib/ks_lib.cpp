@@ -114,7 +114,8 @@ SPMAT circulant_from_stencil(Stencil stencil, int n)
 KSDiscretization::KSDiscretization(int nx_, double length, Stencil d1, Stencil d2, Stencil d4)
 {
     nx = nx_;
-    dx = length/nx;
+    len = length;
+    dx = len/nx;
     Dx = 1/dx * circulant_from_stencil(d1, nx);
     L  = 1/(dx*dx) * circulant_from_stencil(d2, nx);
     L += 1/(dx*dx*dx*dx) * circulant_from_stencil(d4, nx);
@@ -153,7 +154,7 @@ VEC theta2(const VEC &u, const KSDiscretization& disc, double dt, double th_A, d
     SPMAT eye(nx, nx);
     eye.setIdentity();
     VEC rhs(VEC::Zero(stages * nx));
-    for (size_t i = 0; i < newton_iters; i++)
+    for (int i = 0; i < newton_iters; i++)
     {
         u1 = u + a11 * k.head(nx) + a12 * k.tail(nx);
         u2 = u + a21 * k.head(nx) + a22 * k.tail(nx);
@@ -193,6 +194,24 @@ VEC theta2(const VEC &u, const KSDiscretization& disc, double dt, double th_A, d
         }
     }
     return u + (k.head(nx) + k.tail(nx)) / 2;
+}
+
+void GramSchmidt(MAT& A)
+{ // orthonormalize A in place using gram-schmidt
+    // normalize the first column
+    A.col(0).normalize();
+
+    for (Eigen::Index i = 1; i < A.cols(); i++)
+    {
+        // subtract the orthogonal projection of the columns to the left
+        for (Eigen::Index j = 0; j < i; j++)
+        {
+            A.col(i) -= A.col(i).dot(A.col(j)) * A.col(j);
+        }
+
+        // normalize this column
+        A.col(i).normalize();
+    }
 }
 
 void pack_array(std::ofstream &f, const VEC &u)
