@@ -108,6 +108,7 @@ public:
                 const VEC &ustop,
                 double dt,
                 int level,
+                int nlevels,
                 MAT *P_tan_ptr = nullptr);
 
    // computes the dot product between the derivative of the step function
@@ -117,6 +118,7 @@ public:
                        const VEC &ustop,
                        double dt,
                        int level,
+                       int nlevels,
                        MAT *P_tan_ptr = nullptr);
 
    MAT LRDeltaDot(const MAT &u,
@@ -200,7 +202,9 @@ MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop
       for (int level = 1; level < max_levels; level++)
       {
          total_cf = intpow(cfactor, level);
-         thetas[level] = (total_cf - sqrt(3 * total_cf * total_cf - 3) / 3) / total_cf; // theta2
+         thetas[level] = (total_cf - sqrt(3 * total_cf * total_cf + 6) / 3) / total_cf; // theta2
+         // std::cout << "(" << thetas[level] << ", ";
+         // std::cout << 2./3 + 1/(3*total_cf*total_cf) - thetas[level] << ")\n";
       }
    }
 }
@@ -217,12 +221,16 @@ double MyBraidApp::getTheta(int level)
    return thetas[level];
 }
 
-VEC MyBraidApp::baseStep(const VEC &u, const VEC &ustop, double dt, int level, MAT *P_tan_ptr)
+VEC MyBraidApp::baseStep(const VEC &u, const VEC &ustop, double dt, int level, int nlevels, MAT *P_tan_ptr)
 {
+   // limit iterations on coarse grid  
+   int iters = newton_iters;
+
+
    // second order theta method
    if (level == 0 || !useTheta)
    {
-      return theta2(u, disc, dt, 0., 0., 1., P_tan_ptr, newton_iters);
+      return theta2(u, disc, dt, 0., 0., 1., P_tan_ptr, iters);
    }
    double theta = getTheta(level);
    double cf = intpow(cfactor, level);
@@ -234,6 +242,7 @@ MAT MyBraidApp::baseStepDiffDot(const MAT &v,
                                 const VEC &ustop,
                                 const double dt,
                                 const int level,
+                                const int nlevels,
                                 MAT *P_tan_ptr)
 {
    // use full precomputed linear tangent propagator
@@ -249,7 +258,7 @@ MAT MyBraidApp::baseStepDiffDot(const MAT &v,
    for (Eigen::Index i = 0; i < v.cols(); i++)
    {
       // TODO: can I get a better initial guess than ustop + eps*col?
-      out.col(i) = (baseStep(u + eps * v.col(i), ustop + eps * v.col(i), dt, level) - ustop) / eps;
+      out.col(i) = (baseStep(u + eps * v.col(i), ustop + eps * v.col(i), dt, level, nlevels) - ustop) / eps;
    }
    return out;
 }
@@ -302,14 +311,14 @@ int MyBraidApp::Step(braid_Vector u_,
    // get the base timestep for state and lyapunov vectors
    if (finiteDiff)
    {
-      utmp = baseStep(u->state, ustop->state, dt, level);
-      Psitmp = baseStepDiffDot(u->Psi, u->state, utmp, dt, level);
+      utmp = baseStep(u->state, ustop->state, dt, level, nlevels);
+      Psitmp = baseStepDiffDot(u->Psi, u->state, utmp, dt, level, nlevels);
    }
    else /* full dense matrix */
    {
       MAT P_mat(disc.nx, disc.nx);
-      utmp = baseStep(u->state, ustop->state, dt, level, &P_mat);
-      Psitmp = baseStepDiffDot(u->Psi, u->state, utmp, dt, level, &P_mat);
+      utmp = baseStep(u->state, ustop->state, dt, level, nlevels, &P_mat);
+      Psitmp = baseStepDiffDot(u->Psi, u->state, utmp, dt, level, nlevels, &P_mat);
    }
 
    if (!useDelta) // default behavior, no Delta correction
@@ -371,10 +380,11 @@ int MyBraidApp::Residual(braid_Vector u_,
 
    double tstart; // current time
    double tstop;  // evolve to this time
-   int level, T_index, calling_fnc;
+   int level, nlevels, T_index, calling_fnc;
 
    pstatus.GetTstartTstop(&tstart, &tstop);
    pstatus.GetLevel(&level);
+   pstatus.GetNLevels(&nlevels);
    pstatus.GetTIndex(&T_index);
    pstatus.GetCallingFunction(&calling_fnc);
 
@@ -384,14 +394,14 @@ int MyBraidApp::Residual(braid_Vector u_,
    MAT Psitmp;
    if (finiteDiff)
    {
-      utmp = baseStep(r->state, u->state, dt, level);
-      Psitmp = baseStepDiffDot(r->Psi, r->state, utmp, dt, level);
+      utmp = baseStep(r->state, u->state, dt, level, nlevels);
+      Psitmp = baseStepDiffDot(r->Psi, r->state, utmp, dt, level, nlevels);
    }
    else
    {
       MAT Ptmp(disc.nx, disc.nx);
-      utmp = baseStep(r->state, u->state, dt, level, &Ptmp);
-      Psitmp = baseStepDiffDot(r->Psi, r->state, utmp, dt, level, &Ptmp);
+      utmp = baseStep(r->state, u->state, dt, level, nlevels, &Ptmp);
+      Psitmp = baseStepDiffDot(r->Psi, r->state, utmp, dt, level, nlevels, &Ptmp);
    }
 
    if (!useDelta)
@@ -491,7 +501,7 @@ int MyBraidApp::SpatialNorm(braid_Vector u_,
 {
    // std::cout << "Norm called" << '\n';
    BraidVector *u = (BraidVector *)u_;
-   *norm_ptr = u->state.norm();
+   *norm_ptr = u->state.norm()/std::sqrt(disc.nx); // normalized like l2 norm
    return 0;
 }
 
@@ -643,7 +653,7 @@ int main(int argc, char *argv[])
    double tstart, tstop;
    int rank;
 
-   int nt = 1024;
+   int nt = 256;
    double Tf_lyap = 4;
    int max_levels = 2;
    int nrelax = 0;
@@ -657,6 +667,7 @@ int main(int argc, char *argv[])
    bool useTheta = false;
    bool finiteDiff = false;
    bool wrapperTests = false;
+   bool output = false;
    int DeltaRank = 1;
 
    // KS parameters
@@ -694,6 +705,7 @@ int main(int argc, char *argv[])
             printf("  -fd         : compute deltas using finite differences\n");
             printf("  -rank       : set rank of delta correction (Default: 3)\n");
             printf("  -theta      : use first order theta method\n");
+            printf("  -out        : write output to file (for visualization)\n");
             printf("  -test       : run wrapper tests\n");
             printf("\n");
          }
@@ -779,6 +791,11 @@ int main(int argc, char *argv[])
          arg_index++;
          finiteDiff = true;
       }
+      else if (strcmp(argv[arg_index], "-out") == 0)
+      {
+         arg_index++;
+         output = true;
+      }
       else if (strcmp(argv[arg_index], "-test") == 0)
       {
          arg_index++;
@@ -844,14 +861,23 @@ int main(int argc, char *argv[])
    core.SetCFactor(-1, cfactor);
    core.SetNRelax(-1, nrelax);
    core.SetNRelax(0, nrelax0);
-   core.SetSkip(0);
+   core.SetSkip(1);
    core.SetStorage(0);
    core.SetTemporalNorm(2);
+
+   if (output)
+   {
+      core.SetAccessLevel(1);
+   }
+   else
+   {
+      core.SetAccessLevel(0);
+   }
 
    // Run Simulation
    core.Drive();
 
-   if (rank == 0)
+   if (rank == 0 && output)
    {
       collate_files(nt, cfactor, "drive-ks");
       // collate_files(nt, cfactor, "drive-ks-lv");
