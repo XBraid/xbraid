@@ -1,6 +1,5 @@
 #include "ks_lib.hpp"
 
-
 // internal functions
 
 void _setdiag(SPMAT &A, const VEC &u)
@@ -75,8 +74,6 @@ ArrayXd _pascals_row(int n)
     return out;
 }
 
-
-
 // exported functions
 SPMAT circulant_from_stencil(Stencil stencil, int n)
 {
@@ -108,30 +105,23 @@ SPMAT circulant_from_stencil(ArrayXd stencil, int n)
     return circulant_from_stencil(Stencil(stencil.data(), stencil.data() + stencil.size()), n);
 }
 
-VEC FourierMode(int wavenum, int nx)
+VEC FourierMode(int wavenum, int nx, double len)
 {
     if (wavenum == 0)
     {
-        return VEC::Ones(nx) / nx;
+        return VEC::Ones(nx) / (double)nx;
     }
-    VEC x = VEC::LinSpaced(nx, 0., wavenum * 2 * M_PI);
+    VEC x = VEC::LinSpaced(nx, 0., len - len / nx);
+    x *= wavenum * 2 * M_PI / len;
     return Eigen::sin(x.array());
 }
 
-void setFourierMatrix(MAT &A)
+void setFourierMatrix(MAT &A, const int nx, const double len)
 {
     for (Index j = 0; j < A.cols(); j++)
     {
-        A.col(j) = FourierMode(j, A.rows());
-    }
-}
-
-void setFourierMatrix(MAT &A, int rows, int cols)
-{
-    A.resize(rows, cols);
-    for (Index j = 0; j < cols; j++)
-    {
-        A.col(j) = FourierMode(j, rows);
+        A.col(j) = FourierMode(j+1, nx, len);
+        A.col(j).normalize();
     }
 }
 
@@ -151,18 +141,18 @@ KSDiscretization::KSDiscretization(int nx_, double length, Stencil d1, Stencil d
 {
     nx = nx_;
     len = length;
-    dx = len/nx;
-    Dx = 1/dx * circulant_from_stencil(d1, nx);
-    L  = 1/(dx*dx) * circulant_from_stencil(d2, nx);
-    L += 1/(dx*dx*dx*dx) * circulant_from_stencil(d4, nx);
+    dx = len / nx;
+    Dx = 1 / dx * circulant_from_stencil(d1, nx);
+    L = 1 / (dx * dx) * circulant_from_stencil(d2, nx);
+    L += 1 / (dx * dx * dx * dx) * circulant_from_stencil(d4, nx);
 }
 
-VEC KSDiscretization::f_ks(const VEC& u) const
+VEC KSDiscretization::f_ks(const VEC &u) const
 {
-    return - L * u - u.cwiseProduct(Dx * u);
+    return -L * u - u.cwiseProduct(Dx * u);
 }
 
-SPMAT KSDiscretization::f_ks_du(const VEC& u) const
+SPMAT KSDiscretization::f_ks_du(const VEC &u) const
 {
     SPMAT U(nx, nx);
     SPMAT N(nx, nx);
@@ -171,8 +161,7 @@ SPMAT KSDiscretization::f_ks_du(const VEC& u) const
     return -(L + N + U * Dx).pruned();
 }
 
-
-VEC theta2(const VEC &u, const VEC &ustop, const KSDiscretization& disc, double dt, double th_A, double th_B, double th_C, MAT *P_tan, int newton_iters, double tol)
+VEC theta2(const VEC &u, const VEC &ustop, const KSDiscretization &disc, double dt, double th_A, double th_B, double th_C, MAT *P_tan, int newton_iters, double tol)
 {
     const int stages = 2;
     int nx = u.size();
@@ -238,7 +227,7 @@ VEC theta2(const VEC &u, const VEC &ustop, const KSDiscretization& disc, double 
     return u + (k.head(nx) + k.tail(nx)) / 2;
 }
 
-VEC theta4(const VEC &u, const VEC &ustop, const KSDiscretization& disc, double dt, double th_A, double th_B, double th_C, MAT *P_tan, int newton_iters, double tol)
+VEC theta4(const VEC &u, const VEC &ustop, const KSDiscretization &disc, double dt, double th_A, double th_B, double th_C, MAT *P_tan, int newton_iters, double tol)
 {
     const int stages = 3;
     int nx = u.size();
@@ -262,8 +251,8 @@ VEC theta4(const VEC &u, const VEC &ustop, const KSDiscretization& disc, double 
         double a32 = 1 - (th_A + th_C) / 3 - th_B / 6;
         double a33 = (th_A + th_C) / 6;
         A << a11, a12, a13,
-             a21, a22, a23,
-             a31, a32, a33;
+            a21, a22, a23,
+            a31, a32, a33;
     }
 
     SPMAT LHS(stages * nx, stages * nx);
@@ -325,7 +314,7 @@ VEC theta4(const VEC &u, const VEC &ustop, const KSDiscretization& disc, double 
     return u + (k.head(nx) + 4 * k.segment(nx, nx) + k.tail(nx)) / 6.;
 }
 
-void GramSchmidt(MAT& A)
+void GramSchmidt(MAT &A)
 { // orthonormalize A in place using gram-schmidt
     // normalize the first column
     A.col(0).normalize();
@@ -357,11 +346,11 @@ void pack_darray(std::ofstream &f, const MAT &u)
     using Eigen::last;
     for (Index j = 0; j < u.cols() - 1; j++)
     {
-        for (Index i = 0; i < u.rows() - 1; i++)
+        for (Index i = 0; i < u.rows(); i++)
         {
             f << u(i, j) << ',';
         }
-        f << u(j, last) << ';';
+        // f << u(j, last) << ';';
     }
     pack_array(f, u.col(u.cols() - 1));
 }
@@ -376,46 +365,46 @@ int intpow(const int base, const int exp)
     return out;
 }
 
-void bf_pack_help(double *buf, const MAT& u, const size_t obj_size, size_t &bf_size)
+void bf_pack_help(double *buf, const MAT &u, const size_t obj_size, size_t &bf_size)
 {
-   size_t i_bf = bf_size;
-   for (size_t i = 0; i < obj_size; i++)
-   {
-      buf[i_bf] = u(i);
-      i_bf++;
-   }
-   bf_size += obj_size;
+    size_t i_bf = bf_size;
+    for (size_t i = 0; i < obj_size; i++)
+    {
+        buf[i_bf] = u(i);
+        i_bf++;
+    }
+    bf_size += obj_size;
 }
 
-void bf_pack_help(double *buf, const VEC& u, const size_t obj_size, size_t &bf_size)
+void bf_pack_help(double *buf, const VEC &u, const size_t obj_size, size_t &bf_size)
 {
-   size_t i_bf = bf_size;
-   for (size_t i = 0; i < obj_size; i++)
-   {
-      buf[i_bf] = u(i);
-      i_bf++;
-   }
-   bf_size += obj_size;
+    size_t i_bf = bf_size;
+    for (size_t i = 0; i < obj_size; i++)
+    {
+        buf[i_bf] = u(i);
+        i_bf++;
+    }
+    bf_size += obj_size;
 }
 
 void bf_unpack_help(double *buf, VEC &u, const size_t obj_size, size_t &bf_size)
 {
-   size_t i_bf = bf_size;
-   for (size_t i = 0; i < obj_size; i++)
-   {
-      u(i) = buf[i_bf];
-      i_bf++;
-   }
-   bf_size += obj_size;
+    size_t i_bf = bf_size;
+    for (size_t i = 0; i < obj_size; i++)
+    {
+        u(i) = buf[i_bf];
+        i_bf++;
+    }
+    bf_size += obj_size;
 }
 
 void bf_unpack_help(double *buf, MAT &u, const size_t obj_size, size_t &bf_size)
 {
-   size_t i_bf = bf_size;
-   for (size_t i = 0; i < obj_size; i++)
-   {
-      u(i) = buf[i_bf];
-      i_bf++;
-   }
-   bf_size += obj_size;
+    size_t i_bf = bf_size;
+    for (size_t i = 0; i < obj_size; i++)
+    {
+        u(i) = buf[i_bf];
+        i_bf++;
+    }
+    bf_size += obj_size;
 }

@@ -64,10 +64,7 @@ public:
 
    // Construct a BraidVector for a given vector of doubles
    BraidVector(VEC state_, VEC prev_c_point_, MAT Psi_, MAT Delta_) : state(state_), action(prev_c_point_), Psi(Psi_), Delta(Delta_) {}
-   BraidVector(int nx, int rank) : state(VEC::Zero(nx)), action(VEC::Zero(nx)), Psi(nx, rank), Delta(MAT::Identity(nx, rank))
-   {
-      setFourierMatrix(Psi);  // smooth Psi improves Delta correction stability
-   }
+   BraidVector(int nx, int rank) : state(VEC::Zero(nx)), action(VEC::Zero(nx)), Psi(nx, rank), Delta(MAT::Identity(nx, rank)) {}
    BraidVector() : state(VEC()), action(VEC()), Psi(MAT()), Delta(MAT()) {}
 
    // Deconstructor
@@ -224,14 +221,10 @@ double MyBraidApp::getTheta(int level)
 
 VEC MyBraidApp::baseStep(const VEC &u, const VEC &ustop, double dt, int level, int nlevels, MAT *P_tan_ptr)
 {
-   // limit iterations on coarse grid  
-   int iters = newton_iters;
-
-
    // second order theta method
    if (level == 0 || !useTheta)
    {
-      return theta2(u, ustop, disc, dt, 0., 0., 1., P_tan_ptr, iters);
+      return theta2(u, ustop, disc, dt, 0., 0., 1., P_tan_ptr, newton_iters);
    }
    double theta = getTheta(level);
    double cf = intpow(cfactor, level);
@@ -426,11 +419,13 @@ int MyBraidApp::Init(double t,
 {
    // this should take care of most of the initialization
    BraidVector *u = new BraidVector(disc.nx, DeltaRank);
+   setFourierMatrix(u->Psi, disc.nx, disc.len);
+
    if (t == tstart)
    {
       // set initial condition
-      // u->state = Eigen::sin(VEC::LinSpaced(disc.nx, 0., 8*M_PI).array());
-      u->state = smoothed_noise(disc.nx, disc.nx/8);
+      u->state = FourierMode(1, disc.nx, disc.len);
+      // u->state = smoothed_noise(disc.nx, disc.nx/8);
       u->action = u->state;
    }
 
@@ -543,7 +538,7 @@ int MyBraidApp::Access(braid_Vector u_,
 {
    // std::cout << "Access called" << '\n';
    char filename[255];
-   // char lv_fname[255];
+   char lv_fname[255];
    std::ofstream file;
    BraidVector *u = (BraidVector *)u_;
 
@@ -562,11 +557,10 @@ int MyBraidApp::Access(braid_Vector u_,
       pack_array(file, u->state);
       file.close();
 
-      // not implemented for KS
-      // sprintf(lv_fname, "%s.%04d", "drive-ks-lv.out", index);
-      // file.open(lv_fname);
-      // pack_darray(file, u->Psi);
-      // file.close();
+      sprintf(lv_fname, "%s.%04d", "drive-ks-lv.out", index);
+      file.open(lv_fname);
+      pack_darray(file, u->Psi);
+      file.close();
    }
 
    return 0;
@@ -852,7 +846,7 @@ int main(int argc, char *argv[])
    if (rank == 0 && output)
    {
       collate_files(nt, cfactor, "drive-ks");
-      // collate_files(nt, cfactor, "drive-ks-lv");
+      collate_files(nt, cfactor, "drive-ks-lv");
    }
 
    // Clean up
