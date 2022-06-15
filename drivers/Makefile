@@ -37,6 +37,7 @@ include ../makefile.inc
 HYPRE_DIR = ../../hypre/src/hypre
 HYPRE_FLAGS = -I$(HYPRE_DIR)/include
 HYPRE_LIB = -L$(HYPRE_DIR)/lib -lHYPRE
+SUITE_SPARSE = /usr/include/suitesparse/
 
 MFEM_INTERFACE = ./braid_mfem.hpp ./braid_mfem_block.hpp ../braid/braid.hpp
 MFEM_DIR = ../../mfem
@@ -84,7 +85,7 @@ drive-lorenz-LRDelta: drive-lorenz-LRDelta.cpp $(BRAID_LIB_FILE)
 
 drive-ks: drive-ks.cpp $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
-	$(MPICXX) $(CXXFLAGS) $(BRAID_FLAGS) -Idrive-ks-lib -IEigen \
+	$(MPICXX) $(CXXFLAGS) $(BRAID_FLAGS) -Idrive-ks-lib -IEigen -I$(SUITE_SPARSE) \
  $< -o $@ $(BRAID_LIB_FILE) drive-ks-lib/ks_lib.cpp $(LFLAGS) -lumfpack
 
 

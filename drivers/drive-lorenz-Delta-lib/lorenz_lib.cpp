@@ -64,10 +64,12 @@ VEC theta1(const VEC u, const VEC guess, double dt, double theta, MAT *P_tan, in
         {
             // std::cout << "newton iters: " << i << ", ";
             break;
-        } // tolerance checking
+        }
+
+        // here the explicit inverse is computed using cofactors, and is actually
+        // much faster then LU for such a small matrix!
         A = MAT::Identity() - dt * (1 - theta) * f_lorenz_du(ustop);
-        ustop -= A.partialPivLu().solve(rhs);
-        // max = (i == newton_iters - 1);
+        ustop -= A.inverse()*rhs;
     }
 
 

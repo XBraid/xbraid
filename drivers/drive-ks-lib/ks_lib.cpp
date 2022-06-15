@@ -191,7 +191,7 @@ VEC theta2(const VEC &u, const VEC &ustop, const KSDiscretization& disc, double 
     SPMAT eye(nx, nx);
     eye.setIdentity();
     VEC rhs(stages * nx);
-    for (size_t i = 0; i < newton_iters; i++)
+    for (int i = 0; i < newton_iters; i++)
     {
         u1 = u + a11 * k.head(nx) + a12 * k.tail(nx);
         u2 = u + a21 * k.head(nx) + a22 * k.tail(nx);
@@ -271,7 +271,7 @@ VEC theta4(const VEC &u, const VEC &ustop, const KSDiscretization& disc, double 
     SPMAT eye(nx, nx);
     eye.setIdentity();
     VEC rhs(stages * nx);
-    for (size_t i = 0; i < newton_iters; i++)
+    for (int i = 0; i < newton_iters; i++)
     {
         u1 = u + A(0, 0) * k.head(nx) + A(0, 1) * k.segment(nx, nx) + A(0, 2) * k.tail(nx);
         u2 = u + A(1, 0) * k.head(nx) + A(1, 1) * k.segment(nx, nx) + A(1, 2) * k.tail(nx);
