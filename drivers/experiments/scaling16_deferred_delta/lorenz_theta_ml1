@@ -19,7 +19,7 @@ Using theta method
                                           --> Inf-norm TemporalNorm 
 
   use fmg?              = 0
-  access_level          = 1
+  access_level          = 0
   print_level           = 2
 
   max number of levels  = 1
@@ -34,5 +34,5 @@ Using theta method
   level   time-pts   cfactor   nrelax   Crelax Wt
       0     16384  
 
-  wall time = 0.111132
+  wall time = 0.003397
 

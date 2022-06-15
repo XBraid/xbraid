@@ -1,6 +1,6 @@
-This machine is ruby75
-My jobid is 8585185
-Timestamp START: Wed Jun  8 22:00:42 PDT 2022
+This machine is ruby169
+My jobid is 8618807
+Timestamp START: Tue Jun 14 23:40:21 PDT 2022
 srun -N 1 -n 1 -o ./lorenz_theta_ml1 ../../drive-lorenz-Delta -tf 4 -nt 16384 -cf0 16 -theta -nu 1 -niters 2 -tol 1e-5 -ml 1
 srun -N 19 -n 1 -o ./lorenz_theta_Delta_fmg_nc1_cf4_ml4 ../../drive-lorenz-Delta -tf 4 -nt 16384 -cf0 16 -theta -nu 1 -niters 2 -tol 1e-5 -cf 4 -ml 4 -Delta -Deltalvl 2 -fmg
 srun -N 19 -n 1 -o ./lorenz_theta_Delta_nc1_cf4_ml4     ../../drive-lorenz-Delta -tf 4 -nt 16384 -cf0 16 -theta -nu 1 -niters 2 -tol 1e-5 -cf 4 -ml 4 -Delta -Deltalvl 1
@@ -36,4 +36,4 @@ srun -N 19 -n 1024 -o ./lorenz_theta_Delta_fmg_nc1024_cf4_ml4 ../../drive-lorenz
 srun -N 19 -n 1024 -o ./lorenz_theta_Delta_nc1024_cf4_ml4     ../../drive-lorenz-Delta -tf 4 -nt 16384 -cf0 16 -theta -nu 1 -niters 2 -tol 1e-5 -cf 4 -ml 4 -Delta -Deltalvl 1
 srun -N 19 -n 1024 -o ./lorenz_theta_nc1024_cf4_ml4           ../../drive-lorenz-Delta -tf 4 -nt 16384 -cf0 16 -theta -nu 1 -niters 2 -tol 1e-5 -cf 4 -ml 4
 Done
-Timestamp END: Wed Jun  8 22:02:05 PDT 2022
+Timestamp END: Tue Jun 14 23:41:24 PDT 2022

@@ -2,16 +2,16 @@ Using Delta correction
 Using theta method
 
   Braid: Begin simulation, 16384 time steps
-  Braid: || r_0 || = 1.996946e+01, conv factor = 1.00e+00, wall time = 1.00e-02
-  Braid: || r_1 || = 2.582873e+00, conv factor = 1.29e-01, wall time = 1.58e-02
-  Braid: || r_2 || = 7.901364e+00, conv factor = 3.06e+00, wall time = 2.14e-02
-  Braid: || r_3 || = 7.189442e+00, conv factor = 9.10e-01, wall time = 2.69e-02
-  Braid: || r_4 || = 7.564974e+00, conv factor = 1.05e+00, wall time = 3.20e-02
-  Braid: || r_5 || = 3.052680e+00, conv factor = 4.04e-01, wall time = 3.68e-02
-  Braid: || r_6 || = 4.091558e+00, conv factor = 1.34e+00, wall time = 4.15e-02
-  Braid: || r_7 || = 8.144150e-01, conv factor = 1.99e-01, wall time = 4.60e-02
-  Braid: || r_8 || = 6.574568e-03, conv factor = 8.07e-03, wall time = 5.02e-02
-  Braid: || r_9 || = 4.266827e-10, conv factor = 6.49e-08, wall time = 5.44e-02
+  Braid: || r_0 || = 1.996946e+01, conv factor = 1.00e+00, wall time = 8.47e-03
+  Braid: || r_1 || = 2.582873e+00, conv factor = 1.29e-01, wall time = 8.90e-03
+  Braid: || r_2 || = 7.901364e+00, conv factor = 3.06e+00, wall time = 9.14e-03
+  Braid: || r_3 || = 7.189442e+00, conv factor = 9.10e-01, wall time = 9.37e-03
+  Braid: || r_4 || = 7.564974e+00, conv factor = 1.05e+00, wall time = 9.62e-03
+  Braid: || r_5 || = 3.052680e+00, conv factor = 4.04e-01, wall time = 9.86e-03
+  Braid: || r_6 || = 4.091558e+00, conv factor = 1.34e+00, wall time = 1.01e-02
+  Braid: || r_7 || = 8.144150e-01, conv factor = 1.99e-01, wall time = 1.03e-02
+  Braid: || r_8 || = 6.574568e-03, conv factor = 8.07e-03, wall time = 1.06e-02
+  Braid: || r_9 || = 4.266471e-10, conv factor = 6.49e-08, wall time = 1.08e-02
 
   Braid Solver Stats:
   start time = 0.000000e+00
@@ -24,13 +24,13 @@ Using theta method
   max iterations        = 25
   iterations            = 10
 
-  residual norm         = 4.266827e-10
+  residual norm         = 4.266471e-10
   stopping tolerance    = 1.000000e-05
   use relative tol?     = 0
                                           --> Inf-norm TemporalNorm 
 
   use fmg?              = 0
-  access_level          = 1
+  access_level          = 0
   print_level           = 2
 
   max number of levels  = 4
@@ -48,5 +48,5 @@ Using theta method
       2       256        4        1        1.00
       3        64  
 
-  wall time = 0.058267
+  wall time = 0.011389
 
