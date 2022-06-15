@@ -600,6 +600,7 @@ int main(int argc, char *argv[])
    bool useFMG = false;
    bool useDelta = false;
    bool useTheta = true;
+   bool output = false;
 
    int arg_index;
 
@@ -630,6 +631,7 @@ int main(int argc, char *argv[])
             printf("  -Delta      : use delta correction\n");
             printf("  -Deltalvl   : defer delta correction until this level\n");
             printf("  -theta      : use first order theta method\n");
+            printf("  -out        : write output to file\n");
             printf("\n");
          }
          exit(0);
@@ -704,6 +706,11 @@ int main(int argc, char *argv[])
          arg_index++;
          useTheta = true;
       }
+      else if (strcmp(argv[arg_index], "-out") == 0)
+      {
+         arg_index++;
+         output = true;
+      }
       else
       {
          arg_index++;
@@ -741,7 +748,7 @@ int main(int argc, char *argv[])
       core.SetNFMG(1);
    }
    core.SetPrintLevel(2);
-   core.SetAccessLevel(1);
+   core.SetAccessLevel(0);
    core.SetMaxLevels(max_levels);
    core.SetMaxIter(max_iter);
    core.SetAbsTol(tol);
@@ -752,6 +759,10 @@ int main(int argc, char *argv[])
    core.SetSkip(0);
    core.SetStorage(1);
    core.SetTemporalNorm(3);
+   if (output)
+   {
+      core.SetAccessLevel(1);
+   }
 
    // Run Simulation
    core.Drive();
