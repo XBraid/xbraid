@@ -2,11 +2,11 @@ Using Delta correction
 Using theta method
 
   Braid: Begin simulation, 16384 time steps
-  Braid: || r_0 || = 1.996946e+01, conv factor = 1.00e+00, wall time = 6.55e-03
-  Braid: || r_1 || = 1.287829e+00, conv factor = 6.45e-02, wall time = 9.89e-03
-  Braid: || r_2 || = 2.711399e+00, conv factor = 2.11e+00, wall time = 1.44e-02
-  Braid: || r_3 || = 1.055118e+00, conv factor = 3.89e-01, wall time = 1.88e-02
-  Braid: || r_4 || = 1.227927e-06, conv factor = 1.16e-06, wall time = 2.31e-02
+  Braid: || r_0 || = 1.996946e+01, conv factor = 1.00e+00, wall time = 2.88e-01
+  Braid: || r_1 || = 1.287829e+00, conv factor = 6.45e-02, wall time = 5.00e-01
+  Braid: || r_2 || = 2.711399e+00, conv factor = 2.11e+00, wall time = 8.20e-01
+  Braid: || r_3 || = 1.055118e+00, conv factor = 3.89e-01, wall time = 1.12e+00
+  Braid: || r_4 || = 1.227927e-06, conv factor = 1.16e-06, wall time = 1.41e+00
 
   Braid Solver Stats:
   start time = 0.000000e+00
@@ -45,5 +45,5 @@ Using theta method
       2       256        4        1        1.00
       3        64  
 
-  wall time = 0.023724
+  wall time = 1.414814
 
