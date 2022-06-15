@@ -42,6 +42,7 @@ if __name__=="__main__":
     fig, axs = plt.subplots(1, 1, figsize=(ratio[0], ratio[1]))
     interp = "bilinear"
     axs.imshow(integrate(u[::cf*stride]), cmap=cmap, extent=extent, aspect="auto", interpolation=interp)
+    # axs.imshow(u[::cf*stride], cmap=cmap, extent=extent, aspect="auto", interpolation=interp)
     axs.set_ylabel("$t_\lambda$")
     fig.tight_layout()
     axs.set_xlabel("u", fontsize=32)

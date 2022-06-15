@@ -112,7 +112,7 @@ VEC FourierMode(int wavenum, int nx, double len)
         return VEC::Ones(nx) / (double)nx;
     }
     VEC x = VEC::LinSpaced(nx, 0., len - len / nx);
-    x *= wavenum * 2 * M_PI / len;
+    x *= wavenum * M_PI / len;
     return Eigen::sin(x.array());
 }
 
@@ -164,6 +164,7 @@ SPMAT KSDiscretization::f_ks_du(const VEC &u) const
 VEC theta2(const VEC &u, const VEC &ustop, const KSDiscretization &disc, double dt, double th_A, double th_B, double th_C, MAT *P_tan, int newton_iters, double tol)
 {
     const int stages = 2;
+
     int nx = u.size();
     double th_Cs, a11, a12, a21, a22;
     th_Cs = 1. - th_A - th_B - th_C;

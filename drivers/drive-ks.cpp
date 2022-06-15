@@ -64,7 +64,7 @@ public:
 
    // Construct a BraidVector for a given vector of doubles
    BraidVector(VEC state_, VEC prev_c_point_, MAT Psi_, MAT Delta_) : state(state_), action(prev_c_point_), Psi(Psi_), Delta(Delta_) {}
-   BraidVector(int nx, int rank) : state(VEC::Zero(nx)), action(VEC::Zero(nx)), Psi(nx, rank), Delta(MAT::Identity(nx, rank)) {}
+   BraidVector(int nx, int rank) : state(VEC::Zero(nx)), action(VEC::Zero(nx)), Psi(MAT::Identity(nx, rank)), Delta(MAT::Identity(nx, rank)) {}
    BraidVector() : state(VEC()), action(VEC()), Psi(MAT()), Delta(MAT()) {}
 
    // Deconstructor
@@ -200,9 +200,19 @@ MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop
       for (int level = 1; level < max_levels; level++)
       {
          total_cf = intpow(cfactor, level);
+         // second order
          thetas[level] = (total_cf - sqrt(3 * total_cf * total_cf + 6) / 3) / total_cf; // theta2
-         // std::cout << "(" << thetas[level] << ", ";
-         // std::cout << 2./3 + 1/(3*total_cf*total_cf) - thetas[level] << ")\n";
+
+         // fourth order
+         // double cf_4 = std::pow(total_cf, 4);
+         // if (cf_4 == 0.) // overflow
+         // {
+         //    thetas[level] = 1 - std::sqrt(10) / 5.;
+         // }
+         // else
+         // {
+         //    thetas[level] = 1. - std::sqrt(10 * cf_4 + 15) / (5 * total_cf * total_cf);
+         // }
       }
    }
 }
@@ -229,6 +239,22 @@ VEC MyBraidApp::baseStep(const VEC &u, const VEC &ustop, double dt, int level, i
    double theta = getTheta(level);
    double cf = intpow(cfactor, level);
    return theta2(u, ustop, disc, dt, theta, theta, 2. / 3 + 1 / (3 * cf * cf) - theta, P_tan_ptr, newton_iters);
+
+   // fourth order theta method
+   // if (level == 0 || !useTheta)
+   // {
+   //    return theta4(u, ustop, disc, dt, 0., 0., 1., P_tan_ptr, newton_iters, std::sqrt(disc.nx)*1e-9);
+   // }
+   // double cf = intpow(cfactor, level);
+   // double theta = getTheta(level);
+   // double cf_4 = cf*cf*cf*cf;
+   // bool overflow = (cf_4 == 0.);
+   // double th_C = 7./10 - theta;
+   // if (!overflow)
+   // {
+   //    th_C += 3./(10*cf_4);
+   // }
+   // return theta4(u, ustop, disc, dt, theta, theta, th_C, P_tan_ptr, newton_iters);
 }
 
 MAT MyBraidApp::baseStepDiffDot(const MAT &v,
@@ -372,8 +398,8 @@ int MyBraidApp::Residual(braid_Vector u_,
 
    double dt = tstop - tstart;
 
-   VEC utmp(u->state);
-   MAT Psitmp(u->Psi);
+   VEC utmp(r->state);
+   MAT Psitmp(r->Psi);
    utmp = baseStep(r->state, u->state, dt, level, nlevels, &Psitmp);
 
    if (!useDelta)
@@ -424,8 +450,8 @@ int MyBraidApp::Init(double t,
    if (t == tstart)
    {
       // set initial condition
-      u->state = FourierMode(1, disc.nx, disc.len);
-      // u->state = smoothed_noise(disc.nx, disc.nx/8);
+      // u->state = FourierMode(2, disc.nx, disc.len);
+      u->state = smoothed_noise(disc.nx, disc.nx/8);
       u->action = u->state;
    }
 
