@@ -88,9 +88,10 @@ public:
 
    int nx;
    KSDiscretization disc;
+   VEC initial_data;
 
    // Constructor
-   MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop_, int ntime_, int cfactor_, bool useDelta_, int DeltaRank_, bool useTheta_, int newton_iters_, int max_levels, int nx, double length);
+   MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop_, int ntime_, int cfactor_, bool useDelta_, int DeltaRank_, bool useTheta_, int newton_iters_, int max_levels, int nx, double length, const VEC &initial_data_);
 
    // We will need the MPI Rank
    int rank;
@@ -177,7 +178,7 @@ public:
 };
 
 // Braid App Constructor
-MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop_, int ntime_, int cfactor_, bool useDelta_, int DeltaRank_, bool useTheta_, int newton_iters_, int max_levels, int nx, double length)
+MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop_, int ntime_, int cfactor_, bool useDelta_, int DeltaRank_, bool useTheta_, int newton_iters_, int max_levels, int nx, double length, const VEC &initial_data_)
     : BraidApp(comm_t_, tstart_, tstop_, ntime_)
 {
    rank = rank_;
@@ -192,6 +193,7 @@ MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop
    Stencil d2 = Stencil({-1. / 12, 4. / 3, -5. / 2, 4. / 3, -1. / 12});
    Stencil d4 = Stencil({-1. / 6, 2., -13. / 2, 28. / 3, -13. / 2, 2., -1. / 6});
    disc = KSDiscretization(nx, length, d1, d2, d4);
+   initial_data = initial_data_;
 
    thetas.assign(max_levels, 1.);
    if (useTheta)
@@ -446,14 +448,8 @@ int MyBraidApp::Init(double t,
    // this should take care of most of the initialization
    BraidVector *u = new BraidVector(disc.nx, DeltaRank);
    setFourierMatrix(u->Psi, disc.nx, disc.len);
-
-   if (t == tstart)
-   {
-      // set initial condition
-      // u->state = FourierMode(2, disc.nx, disc.len);
-      u->state = smoothed_noise(disc.nx, disc.nx/8);
-      u->action = u->state;
-   }
+   u->state = initial_data;
+   u->action = u->state;
 
    *u_ptr = (braid_Vector)u;
    return 0;
@@ -812,8 +808,12 @@ int main(int argc, char *argv[])
       std::cout << "Using theta method\n";
    }
 
+   // get initial data
+   VEC u0 = smoothed_noise(nx, nx/4);
+   u0.array() -= u0.mean();
+
    // set up app structure
-   MyBraidApp app(MPI_COMM_WORLD, rank, tstart, tstop, nt, cfactor, useDelta, DeltaRank, useTheta, newton_iters, max_levels, nx, len);
+   MyBraidApp app(MPI_COMM_WORLD, rank, tstart, tstop, nt, cfactor, useDelta, DeltaRank, useTheta, newton_iters, max_levels, nx, len, u0);
 
    // wrapper tests
    if (wrapperTests)
@@ -854,7 +854,7 @@ int main(int argc, char *argv[])
    core.SetNRelax(-1, nrelax);
    core.SetNRelax(0, nrelax0);
    core.SetSkip(1);
-   core.SetStorage(0);
+   core.SetStorage(0); // TODO: implement initial guess!
    core.SetTemporalNorm(2);
 
    if (output)

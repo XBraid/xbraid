@@ -120,7 +120,7 @@ void setFourierMatrix(MAT &A, const int nx, const double len)
 {
     for (Index j = 0; j < A.cols(); j++)
     {
-        A.col(j) = FourierMode(j+1, nx, len);
+        A.col(j) = FourierMode(j + 1, nx, len);
         A.col(j).normalize();
     }
 }
