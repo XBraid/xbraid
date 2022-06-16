@@ -1,0 +1,77 @@
+slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
+Using theta method
+
+  Braid: Begin simulation, 4096 time steps
+
+  Braid Solver Stats:
+  start time = 0.000000e+00
+  stop time  = 1.842068e+02
+  time steps = 4096
+
+  use seq soln?         = 0
+  storage               = 0
+
+  max iterations        = 25
+  iterations            = 0
+
+  residual norm         = -1.000000e+00
+  stopping tolerance    = 1.000000e-08
+  use relative tol?     = 0
+                                          --> 2-norm TemporalNorm 
+
+  use fmg?              = 0
+  access_level          = 0
+  print_level           = 2
+
+  max number of levels  = 1
+  min coarse            = 2
+  number of levels      = 1
+  skip down cycle       = 1
+  periodic              = 0
+  relax_only_cg         = 0
+  finalFCRelax          = 0
+  number of refinements = 0
+
+  level   time-pts   cfactor   nrelax   Crelax Wt
+      0      4096  
+
+  wall time = 5.650953
+
+Using theta method
+
+  Braid: Begin simulation, 4096 time steps
+
+  Braid Solver Stats:
+  start time = 0.000000e+00
+  stop time  = 1.842068e+02
+  time steps = 4096
+
+  use seq soln?         = 0
+  storage               = 0
+
+  max iterations        = 25
+  iterations            = 0
+
+  residual norm         = -1.000000e+00
+  stopping tolerance    = 1.000000e-08
+  use relative tol?     = 0
+                                          --> 2-norm TemporalNorm 
+
+  use fmg?              = 0
+  access_level          = 0
+  print_level           = 2
+
+  max number of levels  = 1
+  min coarse            = 2
+  number of levels      = 1
+  skip down cycle       = 1
+  periodic              = 0
+  relax_only_cg         = 0
+  finalFCRelax          = 0
+  number of refinements = 0
+
+  level   time-pts   cfactor   nrelax   Crelax Wt
+      0      4096  
+
+  wall time = 6.084668
+

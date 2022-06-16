@@ -1,0 +1,71 @@
+slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
+slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
+slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
+slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
+slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
+slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
+slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
+slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
+slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
+slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
+slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
+slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
+slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
+slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
+slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
+slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
+Using Delta correction
+Using theta method
+
+  Braid: Begin simulation, 4096 time steps
+  Braid: || r_0 || not available, wall time = 1.03e-01
+  Braid: || r_1 || = 3.020280e-01, conv factor = 1.00e+00, wall time = 1.59e+00
+  Braid: || r_2 || = 5.181800e-01, conv factor = 1.72e+00, wall time = 3.11e+00
+  Braid: || r_3 || = 5.400183e-01, conv factor = 1.04e+00, wall time = 4.64e+00
+  Braid: || r_4 || = 3.509621e-01, conv factor = 6.50e-01, wall time = 6.18e+00
+  Braid: || r_5 || = 2.997470e-01, conv factor = 8.54e-01, wall time = 7.76e+00
+  Braid: || r_6 || = 1.412285e-01, conv factor = 4.71e-01, wall time = 9.29e+00
+  Braid: || r_7 || = 2.916571e-02, conv factor = 2.07e-01, wall time = 1.08e+01
+  Braid: || r_8 || = 5.074492e-04, conv factor = 1.74e-02, wall time = 1.24e+01
+  Braid: || r_9 || = 2.643239e-05, conv factor = 5.21e-02, wall time = 1.40e+01
+  Braid: || r_10 || = 1.831026e-06, conv factor = 6.93e-02, wall time = 1.55e+01
+  Braid: || r_11 || = 7.138808e-08, conv factor = 3.90e-02, wall time = 1.70e+01
+  Braid: || r_12 || = 2.756436e-09, conv factor = 3.86e-02, wall time = 1.85e+01
+
+  Braid Solver Stats:
+  start time = 0.000000e+00
+  stop time  = 1.842068e+02
+  time steps = 4096
+
+  use seq soln?         = 0
+  storage               = 0
+
+  max iterations        = 25
+  iterations            = 13
+
+  residual norm         = 2.756436e-09
+  stopping tolerance    = 1.000000e-08
+  use relative tol?     = 0
+                                          --> 2-norm TemporalNorm 
+
+  use fmg?              = 0
+  access_level          = 0
+  print_level           = 2
+
+  max number of levels  = 4
+  min coarse            = 2
+  number of levels      = 4
+  skip down cycle       = 1
+  periodic              = 0
+  relax_only_cg         = 0
+  finalFCRelax          = 0
+  number of refinements = 0
+
+  level   time-pts   cfactor   nrelax   Crelax Wt
+      0      4096        4        1        1.00
+      1      1024        4        1        1.00
+      2       256        4        1        1.00
+      3        64  
+
+  wall time = 18.727093
+

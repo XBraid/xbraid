@@ -15,7 +15,8 @@ echo -n 'Timestamp START: ';date
 
 # number of cores
 # ncores="1 2 4 8 16 32 64 128 256 512 1024"
-ncores="4 16 64 256 1024"
+# ncores="4 16 64 256 1024"
+ncores="2 8 32 128 512"
 # ncores="4"
 
 # levels
@@ -31,13 +32,13 @@ ranks="2 4 8 16"
 fargs="-tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta"
 
 # path to executable
-ex="../../drive-ks"
+ex="../../../drive-ks"
 
 # output directory
 outd="."
 
 # output fname
-outn="lorenz_theta"
+outn="ks"
 
 # serial run
 # mpirun -n 1 ${ex} ${fargs} -ml 1 > ${outd}/${outn}_ml1
@@ -48,7 +49,7 @@ for nc in $ncores; do
    for ml in $mlevels; do
       for cf in $cfactors; do
          for rank in $ranks; do
-         echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}_cf${cf}_ml${ml}     ${ex} ${fargs} -cf ${cf} -ml ${ml} -Delta -rank ${rank}"
+	    echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}_cf${cf}_ml${ml}     ${ex} ${fargs} -cf ${cf} -ml ${ml} -Delta -rank ${rank}"
             srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}_cf${cf}_ml${ml}     ${ex} ${fargs} -cf ${cf} -ml ${ml} -Delta -rank ${rank}
          done
          echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_nc${nc}_cf${cf}_ml${ml}           ${ex} ${fargs} -cf ${cf} -ml ${ml}"

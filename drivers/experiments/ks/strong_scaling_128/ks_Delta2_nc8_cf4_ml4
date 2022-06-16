@@ -1,0 +1,57 @@
+Using Delta correction
+Using theta method
+
+  Braid: Begin simulation, 4096 time steps
+  Braid: || r_0 || not available, wall time = 2.10e-01
+  Braid: || r_1 || = 3.200779e-01, conv factor = 1.00e+00, wall time = 3.03e+00
+  Braid: || r_2 || = 4.546279e-01, conv factor = 1.42e+00, wall time = 5.85e+00
+  Braid: || r_3 || = 4.044418e-01, conv factor = 8.90e-01, wall time = 8.59e+00
+  Braid: || r_4 || = 3.895584e-01, conv factor = 9.63e-01, wall time = 1.15e+01
+  Braid: || r_5 || = 3.234366e-01, conv factor = 8.30e-01, wall time = 1.44e+01
+  Braid: || r_6 || = 3.072068e-01, conv factor = 9.50e-01, wall time = 1.74e+01
+  Braid: || r_7 || = 1.163675e-01, conv factor = 3.79e-01, wall time = 2.04e+01
+  Braid: || r_8 || = 5.984799e-02, conv factor = 5.14e-01, wall time = 2.33e+01
+  Braid: || r_9 || = 1.803764e-03, conv factor = 3.01e-02, wall time = 2.62e+01
+  Braid: || r_10 || = 1.265250e-04, conv factor = 7.01e-02, wall time = 2.91e+01
+  Braid: || r_11 || = 8.933660e-06, conv factor = 7.06e-02, wall time = 3.19e+01
+  Braid: || r_12 || = 2.582456e-07, conv factor = 2.89e-02, wall time = 3.47e+01
+  Braid: || r_13 || = 1.512966e-08, conv factor = 5.86e-02, wall time = 3.77e+01
+  Braid: || r_14 || = 1.208939e-10, conv factor = 7.99e-03, wall time = 4.07e+01
+
+  Braid Solver Stats:
+  start time = 0.000000e+00
+  stop time  = 1.842068e+02
+  time steps = 4096
+
+  use seq soln?         = 0
+  storage               = 0
+
+  max iterations        = 25
+  iterations            = 15
+
+  residual norm         = 1.208939e-10
+  stopping tolerance    = 1.000000e-08
+  use relative tol?     = 0
+                                          --> 2-norm TemporalNorm 
+
+  use fmg?              = 0
+  access_level          = 0
+  print_level           = 2
+
+  max number of levels  = 4
+  min coarse            = 2
+  number of levels      = 4
+  skip down cycle       = 1
+  periodic              = 0
+  relax_only_cg         = 0
+  finalFCRelax          = 0
+  number of refinements = 0
+
+  level   time-pts   cfactor   nrelax   Crelax Wt
+      0      4096        4        1        1.00
+      1      1024        4        1        1.00
+      2       256        4        1        1.00
+      3        64  
+
+  wall time = 40.902164
+
