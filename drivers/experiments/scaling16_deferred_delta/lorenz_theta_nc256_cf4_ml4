@@ -1,23 +1,23 @@
 Using theta method
 
   Braid: Begin simulation, 16384 time steps
-  Braid: || r_0 || = 1.996946e+01, conv factor = 1.00e+00, wall time = 1.03e-02
-  Braid: || r_1 || = 1.657783e+00, conv factor = 8.30e-02, wall time = 1.54e-02
-  Braid: || r_2 || = 2.603884e+00, conv factor = 1.57e+00, wall time = 1.81e-02
-  Braid: || r_3 || = 1.843689e+00, conv factor = 7.08e-01, wall time = 2.09e-02
-  Braid: || r_4 || = 4.732276e+00, conv factor = 2.57e+00, wall time = 2.35e-02
-  Braid: || r_5 || = 2.235626e+00, conv factor = 4.72e-01, wall time = 2.61e-02
-  Braid: || r_6 || = 3.868403e+00, conv factor = 1.73e+00, wall time = 2.86e-02
-  Braid: || r_7 || = 1.592046e+00, conv factor = 4.12e-01, wall time = 3.11e-02
-  Braid: || r_8 || = 2.966581e+00, conv factor = 1.86e+00, wall time = 3.36e-02
-  Braid: || r_9 || = 1.665869e+00, conv factor = 5.62e-01, wall time = 3.61e-02
-  Braid: || r_10 || = 1.695327e+00, conv factor = 1.02e+00, wall time = 3.85e-02
-  Braid: || r_11 || = 8.790931e-01, conv factor = 5.19e-01, wall time = 4.09e-02
-  Braid: || r_12 || = 8.872866e-01, conv factor = 1.01e+00, wall time = 4.32e-02
-  Braid: || r_13 || = 1.780895e-02, conv factor = 2.01e-02, wall time = 4.56e-02
-  Braid: || r_14 || = 9.345904e-03, conv factor = 5.25e-01, wall time = 4.78e-02
-  Braid: || r_15 || = 3.968613e-05, conv factor = 4.25e-03, wall time = 5.19e-02
-  Braid: || r_16 || = 8.813753e-07, conv factor = 2.22e-02, wall time = 5.42e-02
+  Braid: || r_0 || = 1.996946e+01, conv factor = 1.00e+00, wall time = 1.79e-02
+  Braid: || r_1 || = 1.657783e+00, conv factor = 8.30e-02, wall time = 2.28e-02
+  Braid: || r_2 || = 2.603884e+00, conv factor = 1.57e+00, wall time = 2.56e-02
+  Braid: || r_3 || = 1.843689e+00, conv factor = 7.08e-01, wall time = 2.83e-02
+  Braid: || r_4 || = 4.732276e+00, conv factor = 2.57e+00, wall time = 3.09e-02
+  Braid: || r_5 || = 2.235626e+00, conv factor = 4.72e-01, wall time = 3.35e-02
+  Braid: || r_6 || = 3.868403e+00, conv factor = 1.73e+00, wall time = 3.61e-02
+  Braid: || r_7 || = 1.592046e+00, conv factor = 4.12e-01, wall time = 3.86e-02
+  Braid: || r_8 || = 2.966581e+00, conv factor = 1.86e+00, wall time = 4.11e-02
+  Braid: || r_9 || = 1.665869e+00, conv factor = 5.62e-01, wall time = 4.35e-02
+  Braid: || r_10 || = 1.695327e+00, conv factor = 1.02e+00, wall time = 4.59e-02
+  Braid: || r_11 || = 8.790931e-01, conv factor = 5.19e-01, wall time = 4.83e-02
+  Braid: || r_12 || = 8.872866e-01, conv factor = 1.01e+00, wall time = 5.07e-02
+  Braid: || r_13 || = 1.780895e-02, conv factor = 2.01e-02, wall time = 5.30e-02
+  Braid: || r_14 || = 9.345904e-03, conv factor = 5.25e-01, wall time = 5.53e-02
+  Braid: || r_15 || = 3.968613e-05, conv factor = 4.25e-03, wall time = 5.93e-02
+  Braid: || r_16 || = 8.813753e-07, conv factor = 2.22e-02, wall time = 6.16e-02
 
   Braid Solver Stats:
   start time = 0.000000e+00
@@ -54,5 +54,5 @@ Using theta method
       2       256        4        1        1.00
       3        64  
 
-  wall time = 0.060809
+  wall time = 0.062338
 

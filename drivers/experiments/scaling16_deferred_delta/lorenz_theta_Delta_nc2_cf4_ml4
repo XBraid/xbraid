@@ -5,9 +5,9 @@ Using theta method
   Braid: || r_0 || = 1.996946e+01, conv factor = 1.00e+00, wall time = 1.21e-01
   Braid: || r_1 || = 2.582873e+00, conv factor = 1.29e-01, wall time = 2.53e-01
   Braid: || r_2 || = 7.901364e+00, conv factor = 3.06e+00, wall time = 3.88e-01
-  Braid: || r_3 || = 7.189442e+00, conv factor = 9.10e-01, wall time = 5.22e-01
+  Braid: || r_3 || = 7.189442e+00, conv factor = 9.10e-01, wall time = 5.21e-01
   Braid: || r_4 || = 7.564974e+00, conv factor = 1.05e+00, wall time = 6.55e-01
-  Braid: || r_5 || = 3.052680e+00, conv factor = 4.04e-01, wall time = 7.87e-01
+  Braid: || r_5 || = 3.052680e+00, conv factor = 4.04e-01, wall time = 7.88e-01
   Braid: || r_6 || = 4.091558e+00, conv factor = 1.34e+00, wall time = 9.18e-01
   Braid: || r_7 || = 8.144150e-01, conv factor = 1.99e-01, wall time = 1.04e+00
   Braid: || r_8 || = 6.574568e-03, conv factor = 8.07e-03, wall time = 1.17e+00
@@ -48,5 +48,5 @@ Using theta method
       2       256        4        1        1.00
       3        64  
 
-  wall time = 1.290347
+  wall time = 1.291592
 
