@@ -103,11 +103,11 @@ public:
 
    double getTheta(int level);
 
-   VEC baseStep(VEC u,
+   VEC baseStep(const VEC &u,
                 VEC &uguess,
-                double dt,
-                int level,
-                int nlevels,
+                const double dt,
+                const int level,
+                const int nlevels,
                 MAT *P_tan_ptr = nullptr);
 
    // Define all the Braid Wrapper routines
@@ -215,7 +215,7 @@ double MyBraidApp::getTheta(int level)
    return thetas[level];
 }
 
-VEC MyBraidApp::baseStep(const VEC u, VEC &uguess, double dt, int level, int nlevels, MAT *P_tan_ptr)
+VEC MyBraidApp::baseStep(const VEC &u, VEC &uguess, const double dt, const int level, const int nlevels, MAT *P_tan_ptr)
 {
    // this should return Phi(u) and set u->guess
 
@@ -302,27 +302,7 @@ int MyBraidApp::Step(braid_Vector u_,
    bool computeDeltas = (useDelta) && (level >= DeltaLevel);
    computeDeltas = (computeDeltas) && (calling_fnc == braid_ASCaller_FRestrict); // only compute Deltas when in FRestrict
 
-   // std::cout << "Stp called @ " << T_index << " on level " << level << '\n';
-   // std::cout << "f is null: " << f_is_null << '\n';
-   // if (level > 0)
-   // {
-   //    std::cout << level << ": ";
-   //    if (calling_fnc == braid_ASCaller_FRestrict || calling_fnc == braid_ASCaller_FInterp || calling_fnc == braid_ASCaller_FCRelax)
-   //    {
-   //       std::cout << "Stp: ";
-   //    }
-   //    else if (calling_fnc == braid_ASCaller_FASResidual || calling_fnc == braid_ASCaller_Residual)
-   //    {
-   //       std::cout << "Res: ";
-   //    }
-   //    else
-   //    {
-   //       std::cout << calling_fnc << ": ";
-   //    }
-   // }
-
-   VEC guess;
-   guess << ustop->guess;
+   u->guess << ustop->guess;
 
    VEC utmp;
    MAT Ptmp;
@@ -331,7 +311,7 @@ int MyBraidApp::Step(braid_Vector u_,
    if (computeDeltas)
    {
       // store state and compute linear tangent propagator
-      utmp = baseStep(u->state, guess, dt, level, nlevels, &Ptmp);
+      utmp = baseStep(u->state, u->guess, dt, level, nlevels, &Ptmp);
       if (f && DeltaCorrect) // use Delta correction
       {
          Ptmp += f->Delta;
@@ -354,15 +334,11 @@ int MyBraidApp::Step(braid_Vector u_,
    }
    else
    {
-      utmp = baseStep(u->state, guess, dt, level, nlevels);
+      utmp = baseStep(u->state, u->guess, dt, level, nlevels);
    }
 
-   // on fine grids, only overwrite u->guess if ustop is an f-point:
-   if (!IsCPoint(T_index + 1, level) || level == nlevels - 1)
-   {
-      u->guess = guess;          // the new value
-   }
-   else
+   // only overwrite u->guess if ustop is an f-point:
+   if (level < nlevels - 1 && IsCPoint(T_index + 1, level))
    {
       u->guess = ustop->guess;   // the old value
    }

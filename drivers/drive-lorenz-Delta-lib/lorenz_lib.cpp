@@ -1,6 +1,6 @@
 #include "lorenz_lib.hpp"
 
-VEC f_lorenz(VEC u)
+VEC f_lorenz(const VEC &u)
 {
     double x, y, z;
     x = u[0];
@@ -15,7 +15,7 @@ VEC f_lorenz(VEC u)
     return out;
 }
 
-MAT f_lorenz_du(VEC u)
+MAT f_lorenz_du(const VEC &u)
 {
     double x, y, z;
     x = u[0];

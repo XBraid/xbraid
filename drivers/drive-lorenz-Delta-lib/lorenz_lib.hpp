@@ -20,8 +20,8 @@ const double beta{8. / 3.};
 const double T_lyap{log(10) / 0.9};
 
 // functions
-VEC f_lorenz(VEC u);
-MAT f_lorenz_du(VEC u);
+VEC f_lorenz(const VEC &u);
+MAT f_lorenz_du(const VEC &u);
 
 // first order
 VEC euler(VEC u, double dt);

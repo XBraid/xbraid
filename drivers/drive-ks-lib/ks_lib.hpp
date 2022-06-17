@@ -53,8 +53,9 @@ void setFourierMatrix(MAT &A, const int nx, const double len);
 void GramSchmidt(MAT& A);
 
 // time steppers
-VEC theta2(const VEC &u, const VEC &ustop, const KSDiscretization& disc, double dt, double th_A = 0., double th_B = 0., double th_C = 0., MAT *P_tan = nullptr, int newton_iters = 10, double tol = 1e-9);
-VEC theta4(const VEC &u, const VEC &ustop, const KSDiscretization& disc, double dt, double th_A = 0., double th_B = 0., double th_C = 0., MAT *P_tan = nullptr, int newton_iters = 10, double tol = 1e-9);
+void getGuessTheta2(VEC &guess, const VEC &u, const VEC &ustop, const KSDiscretization &disc, double dt);
+VEC theta2(const VEC &u, VEC &guess, const KSDiscretization& disc, double dt, double th_A = 0., double th_B = 0., double th_C = 0., MAT *P_tan = nullptr, int newton_iters = 10, double tol = 1e-9);
+VEC theta4(const VEC &u, VEC &guess, const KSDiscretization& disc, double dt, double th_A = 0., double th_B = 0., double th_C = 0., MAT *P_tan = nullptr, int newton_iters = 10, double tol = 1e-9);
 
 // braid helpers
 int intpow(int base, int exp);

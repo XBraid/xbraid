@@ -161,11 +161,23 @@ SPMAT KSDiscretization::f_ks_du(const VEC &u) const
     return -(L + N + U * Dx).pruned();
 }
 
-VEC theta2(const VEC &u, const VEC &ustop, const KSDiscretization &disc, double dt, double th_A, double th_B, double th_C, MAT *P_tan, int newton_iters, double tol)
+void getGuessTheta2(VEC &guess, const VEC &u, const VEC &ustop, const KSDiscretization &disc, double dt)
 {
     const int stages = 2;
-
     int nx = u.size();
+    assert(guess.size() == stages * nx);
+
+    // naive guess (at least 2nd order)
+    guess.tail(nx) = dt * disc.f_ks(ustop);
+    guess.head(nx) = 2 * (ustop - u) - guess.tail(nx);
+}
+
+VEC theta2(const VEC &u, VEC &guess, const KSDiscretization &disc, double dt, double th_A, double th_B, double th_C, MAT *P_tan, int newton_iters, double tol)
+{
+    const int stages = 2;
+    int nx = u.size();
+    assert(guess.size() == stages * nx);
+
     double th_Cs, a11, a12, a21, a22;
     th_Cs = 1. - th_A - th_B - th_C;
     a11 = (th_B + th_C) / 2;
@@ -173,7 +185,7 @@ VEC theta2(const VEC &u, const VEC &ustop, const KSDiscretization &disc, double 
     a21 = (th_A + th_B + th_C) / 2 + th_Cs;
     a22 = (th_A + th_C) / 2;
 
-    VEC k(VEC::Zero(stages * nx)); // safest initial guess
+    VEC k(guess);
     VEC u1(u), u2(u);
 
     SPMAT A(stages * nx, stages * nx);
@@ -225,17 +237,32 @@ VEC theta2(const VEC &u, const VEC &ustop, const KSDiscretization &disc, double 
             P_tan->col(j) += (tmp.head(nx) + tmp.tail(nx)) / 2.;
         }
     }
+    // std::cout << "guess accuracy: " << (k - guess).norm() << '\n';
+    guess = k;
     return u + (k.head(nx) + k.tail(nx)) / 2;
 }
 
-VEC theta4(const VEC &u, const VEC &ustop, const KSDiscretization &disc, double dt, double th_A, double th_B, double th_C, MAT *P_tan, int newton_iters, double tol)
+void getGuessTheta4(VEC &guess, const VEC &u, const VEC &ustop, const KSDiscretization &disc, double dt, double th_A, double th_B, double th_C)
 {
     const int stages = 3;
     int nx = u.size();
+    assert(guess.size() == stages * nx);
+
+    // naive guess
+    guess.head(nx) = dt * disc.f_ks(u);
+    guess.segment(nx, nx) = ustop - u;
+    guess.tail(nx) = dt * disc.f_ks(ustop);
+}
+
+VEC theta4(const VEC &u, VEC &guess, const KSDiscretization &disc, double dt, double th_A, double th_B, double th_C, MAT *P_tan, int newton_iters, double tol)
+{
+    const int stages = 3;
+    int nx = u.size();
+    assert(guess.size() == stages * nx);
     Eigen::Matrix<double, stages, stages> A;
     double norm;
 
-    VEC k(VEC::Zero(stages * nx)); // safest initial guess
+    VEC k(guess);
     VEC u1(u), u2(u), u3(u);
 
     // set up coefficient matrix
@@ -312,6 +339,8 @@ VEC theta4(const VEC &u, const VEC &ustop, const KSDiscretization &disc, double 
             P_tan->col(j) += (tmp.head(nx) + 4 * tmp.segment(nx, nx) + tmp.tail(nx)) / 6.;
         }
     }
+    std::cout << "guess accuracy: " << (k - guess).norm() << '\n';
+    guess = k;
     return u + (k.head(nx) + 4 * k.segment(nx, nx) + k.tail(nx)) / 6.;
 }
 
