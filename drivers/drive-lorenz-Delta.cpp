@@ -91,7 +91,19 @@ public:
    std::vector<double> thetas;
 
    // Constructor
-   MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop_, int ntime_, int cfactor_, int cfactor0_, bool useDelta_, int DeltaLevel_, bool useTheta_, int newton_iters_, double newton_tol_, int max_levels);
+   MyBraidApp(MPI_Comm comm_t_,
+              int rank_,
+              double tstart_,
+              double tstop_,
+              int ntime_,
+              int cfactor_,
+              int cfactor0_,
+              bool useDelta_,
+              int DeltaLevel_,
+              bool useTheta_,
+              int newton_iters_,
+              double newton_tol_,
+              int max_levels);
 
    // We will need the MPI Rank
    int rank;

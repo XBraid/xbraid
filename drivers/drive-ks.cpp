@@ -87,6 +87,7 @@ public:
    int cfactor;      // Currently only supporting one CF for all levels
    int newton_iters; // only used if useTheta
    int DeltaRank;
+   int DeltaLevel;
    bool useDelta;
    bool useTheta;
    int stages;
@@ -97,7 +98,22 @@ public:
    VEC initial_data;
 
    // Constructor
-   MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop_, int ntime_, int cfactor_, bool useDelta_, int DeltaRank_, bool useTheta_, int newton_iters_, int max_levels, int nx, double length, int order, const VEC &initial_data_);
+   MyBraidApp(MPI_Comm comm_t_,
+              int rank_,
+              double tstart_,
+              double tstop_,
+              int ntime_,
+              int cfactor_,
+              bool useDelta_,
+              int DeltaLevel_,
+              int DeltaRank_,
+              bool useTheta_,
+              int newton_iters_,
+              int max_levels,
+              int nx,
+              double length,
+              int order,
+              const VEC &initial_data_);
 
    // We will need the MPI Rank
    int rank;
@@ -186,15 +202,16 @@ public:
 };
 
 // Braid App Constructor
-MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop_, int ntime_, int cfactor_, bool useDelta_, int DeltaRank_, bool useTheta_, int newton_iters_, int max_levels, int nx, double length, int order, const VEC &initial_data_)
+MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop_, int ntime_, int cfactor_, bool useDelta_, int DeltaLevel_, int DeltaRank_, bool useTheta_, int newton_iters_, int max_levels, int nx, double length, int order, const VEC &initial_data_)
     : BraidApp(comm_t_, tstart_, tstop_, ntime_)
 {
    rank = rank_;
    cfactor = cfactor_;
    newton_iters = newton_iters_;
    useDelta = useDelta_;
-   useTheta = useTheta_;
    DeltaRank = DeltaRank_;
+   DeltaLevel = DeltaLevel_;
+   useTheta = useTheta_;
 
    switch (order)
    {
@@ -340,9 +357,11 @@ int MyBraidApp::Step(braid_Vector u_,
    pstatus.SetRFactor(1);
 
 
-   bool computeDeltas, normalize, useGuess, toCPoint, coarseGrid;
+   bool DeltaCorrect, computeDeltas, normalize, useGuess, toCPoint, coarseGrid;
    toCPoint = IsCPoint(T_index+1, level);
    coarseGrid = (level == nlevels - 1);
+
+   DeltaCorrect = (useDelta) && (level > DeltaLevel);
 
    // only compute Deltas when in FRestrict
    computeDeltas = (calling_fnc == braid_ASCaller_FRestrict); 
@@ -368,6 +387,26 @@ int MyBraidApp::Step(braid_Vector u_,
    }
 
    VEC utmp(u->state);
+
+   if (!useDelta || level < DeltaLevel) // default behavior, no Psi propagation
+   {
+      utmp = baseStep(u->state, u->guess, dt, level, nlevels);
+      if (f)
+      {
+         utmp += f->state;
+         if (DeltaCorrect)
+         {
+            utmp += LRDeltaDot(u->state, f->Delta, f->Psi) - f->action;
+         }
+      }
+      u->state = utmp;
+      if (!useGuess)
+      {
+         u->guess = ustop->guess; // the old value
+      }
+      return 0;
+   }
+   // else:
    MAT Psitmp(u->Psi);
    utmp = baseStep(u->state, u->guess, dt, level, nlevels, &Psitmp);
 
@@ -376,24 +415,6 @@ int MyBraidApp::Step(braid_Vector u_,
    {
       u->guess = ustop->guess; // the old value
    }
-
-   if (!useDelta) // default behavior, no Delta correction
-   {
-      if (f)
-      {
-         utmp += f->state;
-         Psitmp += f->Psi; // here the tau correction for Psi is nonzero, since we are not using Delta correction
-      }
-      // orthonormalize lyapunov vectors at C-points
-      if (normalize)
-      {
-         GramSchmidt(Psitmp);
-      }
-      u->state = utmp;
-      u->Psi = Psitmp;
-      return 0;
-   }
-   // else:
    if (f)
    {
       // tau = state - action
@@ -456,26 +477,26 @@ int MyBraidApp::Residual(braid_Vector u_,
       }
    }
 
+   bool up = (calling_fnc == braid_ASCaller_Residual);
+
    VEC utmp(r->state);
    MAT Psitmp(r->Psi);
    utmp = baseStep(r->state, guess, dt, level, nlevels, &Psitmp);
 
-   if (!useDelta)
+   if (!useDelta || level < DeltaLevel || (level == DeltaLevel && up))
    {
       if (f)
       { // do tau correction
          utmp += f->state;
-         Psitmp += f->Psi;
       }
 
       r->state = u->state - utmp;
-      r->Psi = u->Psi - Psitmp;
 
       return 0;
    }
    // else:
 
-   if (calling_fnc == braid_ASCaller_Residual)
+   if (up)
    { // this is called on the coarse grid right after restriction
       r->action = -LRDeltaDot(r->state, Psitmp, r->Psi);
       r->Delta = -Psitmp;
@@ -706,8 +727,8 @@ int main(int argc, char *argv[])
    double tstart, tstop;
    int rank;
 
-   int nt = 1024;
-   double Tf_lyap = 4;
+   int nt = 64;
+   double Tf_lyap = 0.1;
    int max_levels = 2;
    int nrelax = 1;
    int nrelax0 = 1;
@@ -717,10 +738,11 @@ int main(int argc, char *argv[])
    int newton_iters = 10;
    bool useFMG = false;
    bool useDelta = false;
+   int DeltaLvl = 0;
+   int DeltaRank = 1;
    bool useTheta = false;
    bool wrapperTests = false;
    bool output = false;
-   int DeltaRank = 1;
    int ord = 2;
 
    // KS parameters
@@ -756,6 +778,7 @@ int main(int argc, char *argv[])
             printf("  -niters     : set number of newton iters for theta method\n");
             printf("  -fmg        : use FMG cycling\n");
             printf("  -Delta      : use delta correction\n");
+            printf("  -Deltalvl   : delta correction is deferred until this level\n");
             printf("  -rank       : set rank of delta correction (Default: 3)\n");
             printf("  -theta      : use first order theta method\n");
             printf("  -out        : write output to file (for visualization)\n");
@@ -834,6 +857,11 @@ int main(int argc, char *argv[])
          arg_index++;
          useDelta = true;
       }
+      else if (strcmp(argv[arg_index], "-Deltalvl") == 0)
+      {
+         arg_index++;
+         DeltaLvl = atoi(argv[arg_index++]);
+      }
       else if (strcmp(argv[arg_index], "-rank") == 0)
       {
          arg_index++;
@@ -877,7 +905,7 @@ int main(int argc, char *argv[])
    VEC u0 = FourierMode(1, nx, len);
 
    // set up app structure
-   MyBraidApp app(MPI_COMM_WORLD, rank, tstart, tstop, nt, cfactor, useDelta, DeltaRank, useTheta, newton_iters, max_levels, nx, len, ord, u0);
+   MyBraidApp app(MPI_COMM_WORLD, rank, tstart, tstop, nt, cfactor, useDelta, DeltaLvl, DeltaRank, useTheta, newton_iters, max_levels, nx, len, ord, u0);
 
    // wrapper tests
    if (wrapperTests)
