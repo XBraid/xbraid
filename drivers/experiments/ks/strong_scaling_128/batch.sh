@@ -26,7 +26,7 @@ cfactors="4"
 ranks="2 4 8 16"
 
 # fixed arguments
-fargs="-tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta"
+fargs="-tf 6 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-6 -theta -Deltalvl 1"
 
 # path to executable
 ex="../../../drive-ks"
