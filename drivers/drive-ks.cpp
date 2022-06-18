@@ -874,8 +874,7 @@ int main(int argc, char *argv[])
    }
 
    // get initial data
-   VEC u0 = smoothed_noise(nx, nx / 4);
-   u0.array() -= u0.mean();
+   VEC u0 = FourierMode(1, nx, len);
 
    // set up app structure
    MyBraidApp app(MPI_COMM_WORLD, rank, tstart, tstop, nt, cfactor, useDelta, DeltaRank, useTheta, newton_iters, max_levels, nx, len, ord, u0);

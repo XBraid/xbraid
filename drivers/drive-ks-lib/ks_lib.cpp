@@ -112,7 +112,7 @@ VEC FourierMode(int wavenum, int nx, double len)
         return VEC::Ones(nx) / (double)nx;
     }
     VEC x = VEC::LinSpaced(nx, 0., len - len / nx);
-    x *= wavenum * M_PI / len;
+    x *= 2 * wavenum * M_PI / len;
     return Eigen::sin(x.array());
 }
 
@@ -221,8 +221,10 @@ VEC theta2(const VEC &u, VEC &guess, const KSDiscretization &disc, double dt, do
     {
         // here we assume that the columns of P_tan contain tangent vectors to propagate
         // and we propagate them implicitely without forming the full lin. of Phi.
-        VEC tmp(stages * nx); // just used to store solution vectors
-        VEC rhs(stages * nx);
+        // VEC tmp(stages * nx); // just used to store solution vectors
+        // VEC rhs(stages * nx);
+        MAT tmp(stages * nx, P_tan->cols());
+        MAT rhs(stages * nx, P_tan->cols());
         SPMAT K1 = dt * disc.f_ks_du(u1);
         SPMAT K2 = dt * disc.f_ks_du(u2);
 
@@ -230,12 +232,15 @@ VEC theta2(const VEC &u, VEC &guess, const KSDiscretization &disc, double dt, do
         solver.compute(A); // does the factorization
 
         // solve for P_tan one column at a time
-        for (Index j = 0; j < P_tan->cols(); j++)
-        {
-            rhs << K1 * P_tan->col(j), K2 * P_tan->col(j);
-            tmp = solver.solve(rhs);
-            P_tan->col(j) += (tmp.head(nx) + tmp.tail(nx)) / 2.;
-        }
+        // for (Index j = 0; j < P_tan->cols(); j++)
+        // {
+        //     rhs << K1 * P_tan->col(j), K2 * P_tan->col(j);
+        //     tmp = solver.solve(rhs);
+        //     P_tan->col(j) += (tmp.head(nx) + tmp.tail(nx)) / 2.;
+        // }
+        rhs << K1 * (*P_tan), K2 * (*P_tan);
+        tmp = solver.solve(rhs);
+        *P_tan += (tmp.topRows(nx) + tmp.bottomRows(nx)) / 2.;
     }
     // std::cout << "guess accuracy: " << (k - guess).norm() << '\n';
     guess = k;
