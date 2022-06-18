@@ -388,7 +388,7 @@ int MyBraidApp::Step(braid_Vector u_,
 
    VEC utmp(u->state);
 
-   if (!useDelta || level < DeltaLevel) // default behavior, no Psi propagation
+   if (!useDelta || level < DeltaLevel || coarseGrid) // default behavior, no Psi propagation
    {
       utmp = baseStep(u->state, u->guess, dt, level, nlevels);
       if (f)
