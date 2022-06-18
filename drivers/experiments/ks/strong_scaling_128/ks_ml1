@@ -1,4 +1,3 @@
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
 Using theta method
 
   Braid: Begin simulation, 4096 time steps
@@ -35,7 +34,7 @@ Using theta method
   level   time-pts   cfactor   nrelax   Crelax Wt
       0      4096  
 
-  wall time = 5.650953
+  wall time = 5.385814
 
 Using theta method
 
@@ -73,5 +72,5 @@ Using theta method
   level   time-pts   cfactor   nrelax   Crelax Wt
       0      4096  
 
-  wall time = 6.084668
+  wall time = 5.449706
 

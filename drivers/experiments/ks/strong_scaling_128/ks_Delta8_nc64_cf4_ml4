@@ -1,83 +1,34 @@
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
-slurmstepd: error: execve(): /g/g20/vargas53/xbraid/drivers/experiments/ks/strong_scaling_128/../../drive-ks: No such file or directory
 Using Delta correction
 Using theta method
 
   Braid: Begin simulation, 4096 time steps
-  Braid: || r_0 || not available, wall time = 3.02e-02
-  Braid: || r_1 || = 3.520183e-01, conv factor = 1.00e+00, wall time = 6.55e-01
-  Braid: || r_2 || = 8.479036e-01, conv factor = 2.41e+00, wall time = 1.30e+00
-  Braid: || r_3 || = 6.718570e-01, conv factor = 7.92e-01, wall time = 1.91e+00
-  Braid: || r_4 || = 5.621830e-01, conv factor = 8.37e-01, wall time = 2.52e+00
-  Braid: || r_5 || = 2.290951e-01, conv factor = 4.08e-01, wall time = 3.14e+00
-  Braid: || r_6 || = 1.543433e-01, conv factor = 6.74e-01, wall time = 3.75e+00
-  Braid: || r_7 || = 5.562689e-02, conv factor = 3.60e-01, wall time = 4.35e+00
-  Braid: || r_8 || = 8.295328e-05, conv factor = 1.49e-03, wall time = 4.97e+00
-  Braid: || r_9 || = 2.059807e-06, conv factor = 2.48e-02, wall time = 5.60e+00
-  Braid: || r_10 || = 5.667869e-08, conv factor = 2.75e-02, wall time = 6.23e+00
-  Braid: || r_11 || = 2.300430e-09, conv factor = 4.06e-02, wall time = 6.85e+00
+  Braid: || r_0 || not available, wall time = 3.03e-02
+  Braid: || r_1 || = 2.830475e-01, conv factor = 1.00e+00, wall time = 5.65e-01
+  Braid: || r_2 || = 6.705197e-01, conv factor = 2.37e+00, wall time = 1.12e+00
+  Braid: || r_3 || = 6.730265e-01, conv factor = 1.00e+00, wall time = 1.67e+00
+  Braid: || r_4 || = 7.934808e-01, conv factor = 1.18e+00, wall time = 2.20e+00
+  Braid: || r_5 || = 4.730878e-01, conv factor = 5.96e-01, wall time = 2.72e+00
+  Braid: || r_6 || = 3.658876e-01, conv factor = 7.73e-01, wall time = 3.22e+00
+  Braid: || r_7 || = 2.864155e-01, conv factor = 7.83e-01, wall time = 3.71e+00
+  Braid: || r_8 || = 3.446723e-02, conv factor = 1.20e-01, wall time = 4.17e+00
+  Braid: || r_9 || = 3.904780e-04, conv factor = 1.13e-02, wall time = 4.61e+00
+  Braid: || r_10 || = 1.614749e-04, conv factor = 4.14e-01, wall time = 5.05e+00
+  Braid: || r_11 || = 8.558696e-07, conv factor = 5.30e-03, wall time = 5.45e+00
+  Braid: || r_12 || = 1.075404e-05, conv factor = 1.26e+01, wall time = 5.86e+00
+  Braid: || r_13 || = 4.043073e-07, conv factor = 3.76e-02, wall time = 6.25e+00
+  Braid: || r_14 || = 3.023556e-05, conv factor = 7.48e+01, wall time = 6.67e+00
+  Braid: || r_15 || = 5.629999e-05, conv factor = 1.86e+00, wall time = 7.10e+00
+  Braid: || r_16 || = 6.426014e-06, conv factor = 1.14e-01, wall time = 7.52e+00
+  Braid: || r_17 || = 1.146759e-07, conv factor = 1.78e-02, wall time = 7.86e+00
+  Braid: || r_18 || = 7.319321e-07, conv factor = 6.38e+00, wall time = 8.23e+00
+  Braid: || r_19 || = 1.566219e-06, conv factor = 2.14e+00, wall time = 8.60e+00
+  Braid: || r_20 || = 7.301421e-08, conv factor = 4.66e-02, wall time = 8.94e+00
+  Braid: || r_21 || = 4.271287e-07, conv factor = 5.85e+00, wall time = 9.30e+00
+  Braid: || r_22 || = 9.854711e-07, conv factor = 2.31e+00, wall time = 9.68e+00
+  Braid: || r_23 || = 4.749817e-06, conv factor = 4.82e+00, wall time = 1.01e+01
+  Braid: || r_24 || = 9.017345e-07, conv factor = 1.90e-01, wall time = 1.05e+01
+  Braid: Max. iterations reached.
+
 
   Braid Solver Stats:
   start time = 0.000000e+00
@@ -88,9 +39,9 @@ Using theta method
   storage               = 0
 
   max iterations        = 25
-  iterations            = 12
+  iterations            = 25
 
-  residual norm         = 2.300430e-09
+  residual norm         = 9.017345e-07
   stopping tolerance    = 1.000000e-08
   use relative tol?     = 0
                                           --> 2-norm TemporalNorm 
@@ -114,5 +65,5 @@ Using theta method
       2       256        4        1        1.00
       3        64  
 
-  wall time = 7.090600
+  wall time = 10.593769
 

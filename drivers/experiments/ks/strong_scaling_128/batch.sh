@@ -14,10 +14,7 @@ echo -n 'My jobid is '; echo $SLURM_JOBID
 echo -n 'Timestamp START: ';date
 
 # number of cores
-# ncores="1 2 4 8 16 32 64 128 256 512 1024"
-# ncores="4 16 64 256 1024"
-ncores="2 8 32 128 512"
-# ncores="4"
+ncores="16 32 64 128 256 512 1024"
 
 # levels
 mlevels="4"

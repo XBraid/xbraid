@@ -1,0 +1,56 @@
+This machine is ruby249
+My jobid is 8663270
+Timestamp START: Fri Jun 17 17:53:01 PDT 2022
+srun -N 1 -n 1 -o ./ks_ml1 ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -ml 1
+srun -N 19 -n 2 -o ./ks_Delta2_nc2_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 2
+srun -N 19 -n 2 -o ./ks_Delta4_nc2_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 4
+srun -N 19 -n 2 -o ./ks_Delta8_nc2_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 8
+srun -N 19 -n 2 -o ./ks_Delta16_nc2_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 16
+srun -N 19 -n 2 -o ./ks_nc2_cf4_ml4           ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4
+srun -N 19 -n 4 -o ./ks_Delta2_nc4_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 2
+srun -N 19 -n 4 -o ./ks_Delta4_nc4_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 4
+srun -N 19 -n 4 -o ./ks_Delta8_nc4_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 8
+srun -N 19 -n 4 -o ./ks_Delta16_nc4_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 16
+srun -N 19 -n 4 -o ./ks_nc4_cf4_ml4           ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4
+srun -N 19 -n 8 -o ./ks_Delta2_nc8_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 2
+srun -N 19 -n 8 -o ./ks_Delta4_nc8_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 4
+srun -N 19 -n 8 -o ./ks_Delta8_nc8_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 8
+srun -N 19 -n 8 -o ./ks_Delta16_nc8_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 16
+srun -N 19 -n 8 -o ./ks_nc8_cf4_ml4           ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4
+srun -N 19 -n 16 -o ./ks_Delta2_nc16_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 2
+srun -N 19 -n 16 -o ./ks_Delta4_nc16_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 4
+srun -N 19 -n 16 -o ./ks_Delta8_nc16_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 8
+srun -N 19 -n 16 -o ./ks_Delta16_nc16_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 16
+srun -N 19 -n 16 -o ./ks_nc16_cf4_ml4           ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4
+srun -N 19 -n 32 -o ./ks_Delta2_nc32_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 2
+srun -N 19 -n 32 -o ./ks_Delta4_nc32_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 4
+srun -N 19 -n 32 -o ./ks_Delta8_nc32_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 8
+srun -N 19 -n 32 -o ./ks_Delta16_nc32_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 16
+srun -N 19 -n 32 -o ./ks_nc32_cf4_ml4           ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4
+srun -N 19 -n 64 -o ./ks_Delta2_nc64_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 2
+srun -N 19 -n 64 -o ./ks_Delta4_nc64_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 4
+srun -N 19 -n 64 -o ./ks_Delta8_nc64_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 8
+srun -N 19 -n 64 -o ./ks_Delta16_nc64_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 16
+srun -N 19 -n 64 -o ./ks_nc64_cf4_ml4           ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4
+srun -N 19 -n 128 -o ./ks_Delta2_nc128_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 2
+srun -N 19 -n 128 -o ./ks_Delta4_nc128_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 4
+srun -N 19 -n 128 -o ./ks_Delta8_nc128_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 8
+srun -N 19 -n 128 -o ./ks_Delta16_nc128_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 16
+srun -N 19 -n 128 -o ./ks_nc128_cf4_ml4           ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4
+srun -N 19 -n 256 -o ./ks_Delta2_nc256_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 2
+srun -N 19 -n 256 -o ./ks_Delta4_nc256_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 4
+srun -N 19 -n 256 -o ./ks_Delta8_nc256_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 8
+srun -N 19 -n 256 -o ./ks_Delta16_nc256_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 16
+srun -N 19 -n 256 -o ./ks_nc256_cf4_ml4           ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4
+srun -N 19 -n 512 -o ./ks_Delta2_nc512_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 2
+srun -N 19 -n 512 -o ./ks_Delta4_nc512_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 4
+srun -N 19 -n 512 -o ./ks_Delta8_nc512_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 8
+srun -N 19 -n 512 -o ./ks_Delta16_nc512_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 16
+srun -N 19 -n 512 -o ./ks_nc512_cf4_ml4           ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4
+srun -N 19 -n 1024 -o ./ks_Delta2_nc1024_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 2
+srun -N 19 -n 1024 -o ./ks_Delta4_nc1024_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 4
+srun -N 19 -n 1024 -o ./ks_Delta8_nc1024_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 8
+srun -N 19 -n 1024 -o ./ks_Delta16_nc1024_cf4_ml4     ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4 -Delta -rank 16
+srun -N 19 -n 1024 -o ./ks_nc1024_cf4_ml4           ../../../drive-ks -tf 8 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-8 -theta -cf 4 -ml 4
+Done
+Timestamp END: Fri Jun 17 18:23:09 PDT 2022
