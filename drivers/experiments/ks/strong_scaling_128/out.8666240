@@ -1,6 +1,6 @@
-This machine is ruby532
-My jobid is 8665491
-Timestamp START: Sat Jun 18 00:06:04 PDT 2022
+This machine is ruby47
+My jobid is 8666240
+Timestamp START: Sat Jun 18 01:25:16 PDT 2022
 srun -N 1 -n 1 -o ./ks_ml1 ../../../drive-ks -tf 6 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-6 -theta -Deltalvl 1 -ml 1
 srun -N 19 -n 16 -o ./ks_Delta2_nc16_cf4_ml4     ../../../drive-ks -tf 6 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-6 -theta -Deltalvl 1 -cf 4 -ml 4 -Delta -rank 2
 srun -N 19 -n 16 -o ./ks_Delta4_nc16_cf4_ml4     ../../../drive-ks -tf 6 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-6 -theta -Deltalvl 1 -cf 4 -ml 4 -Delta -rank 4
@@ -38,4 +38,4 @@ srun -N 19 -n 1024 -o ./ks_Delta8_nc1024_cf4_ml4     ../../../drive-ks -tf 6 -nt
 srun -N 19 -n 1024 -o ./ks_Delta16_nc1024_cf4_ml4     ../../../drive-ks -tf 6 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-6 -theta -Deltalvl 1 -cf 4 -ml 4 -Delta -rank 16
 srun -N 19 -n 1024 -o ./ks_nc1024_cf4_ml4           ../../../drive-ks -tf 6 -nt 4096 -nx 128 -nu 1 -nu0 1 -tol 1e-6 -theta -Deltalvl 1 -cf 4 -ml 4
 Done
-Timestamp END: Sat Jun 18 00:09:52 PDT 2022
+Timestamp END: Sat Jun 18 01:29:20 PDT 2022
