@@ -23,7 +23,7 @@ mlevels="4"
 cfactors="4"
 
 # Delta ranks
-ranks="2 4 8 10 16"
+ranks="2 4 8 12 16 32 64"
 
 # fixed arguments
 fargs="-tf 4 -nt 2048 -nx 64 -nu 1 -nu0 1 -tol 1e-6 -theta -niters 3 -Deltalvl 1"
