@@ -167,7 +167,6 @@ void getGuessTheta2(VEC &guess, const VEC &u, const VEC &ustop, const KSDiscreti
     int nx = u.size();
     assert(guess.size() == stages * nx);
 
-    // naive guess (at least 2nd order)
     guess.tail(nx) = dt * disc.f_ks(ustop);
     guess.head(nx) = 2 * (ustop - u) - guess.tail(nx);
 }

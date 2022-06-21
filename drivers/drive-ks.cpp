@@ -84,8 +84,9 @@ protected:
    // BraidApp defines tstart, tstop, ntime and comm_t
 
 public:
-   int cfactor;      // Currently only supporting one CF for all levels
-   int newton_iters; // only used if useTheta
+   int cfactor;
+   int cfactor0;
+   int newton_iters;
    int DeltaRank;
    int DeltaLevel;
    bool useDelta;
@@ -104,6 +105,7 @@ public:
               double tstop_,
               int ntime_,
               int cfactor_,
+              int cfactor0_,
               bool useDelta_,
               int DeltaLevel_,
               int DeltaRank_,
@@ -123,7 +125,7 @@ public:
 
    bool IsCPoint(int i, int level);
 
-   bool IsFPoint(int i, int level) {return !IsCPoint(i, level);}
+   bool IsFPoint(int i, int level) { return !IsCPoint(i, level); }
 
    double getTheta(int level);
 
@@ -202,11 +204,12 @@ public:
 };
 
 // Braid App Constructor
-MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop_, int ntime_, int cfactor_, bool useDelta_, int DeltaLevel_, int DeltaRank_, bool useTheta_, int newton_iters_, int max_levels, int nx, double length, int order, const VEC &initial_data_)
+MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop_, int ntime_, int cfactor_, int cfactor0_, bool useDelta_, int DeltaLevel_, int DeltaRank_, bool useTheta_, int newton_iters_, int max_levels, int nx, double length, int order, const VEC &initial_data_)
     : BraidApp(comm_t_, tstart_, tstop_, ntime_)
 {
    rank = rank_;
    cfactor = cfactor_;
+   cfactor0 = cfactor0_;
    newton_iters = newton_iters_;
    useDelta = useDelta_;
    DeltaRank = DeltaRank_;
@@ -241,7 +244,7 @@ MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop
       double total_cf;
       for (int level = 1; level < max_levels; level++)
       {
-         total_cf = intpow(cfactor, level);
+         total_cf = cfactor0*intpow(cfactor, level-1);
          if (order == 2)
          {
             thetas[level] = (total_cf - sqrt(3 * total_cf * total_cf + 6) / 3) / total_cf; // theta2
@@ -266,6 +269,10 @@ MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop
 // Helper function to check if current point is a C point for this level
 bool MyBraidApp::IsCPoint(int i, int level)
 {
+   if (level == 0)
+   {
+      return ((i % cfactor0) == 0);
+   }
    return ((i % cfactor) == 0);
 }
 
@@ -277,25 +284,32 @@ double MyBraidApp::getTheta(int level)
 
 VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, int level, int nlevels, MAT *P_tan_ptr)
 {
+   // limit newton iterations on coarsest grid
+   int iters = newton_iters;
+   if (level == nlevels - 1)
+   {
+      iters = 3;
+   }
+
    // second order theta method
    if (stages == 2)
    {
       if (level == 0 || !useTheta)
       {
-         return theta2(u, guess, disc, dt, 0., 0., 1., P_tan_ptr, newton_iters, std::sqrt(disc.nx) * 1e-9);
+         return theta2(u, guess, disc, dt, 0., 0., 1., P_tan_ptr, iters, std::sqrt(disc.nx) * 1e-9);
       }
       double theta = getTheta(level);
-      double cf = intpow(cfactor, level);
-      return theta2(u, guess, disc, dt, theta, theta, 2. / 3 + 1 / (3 * cf * cf) - theta, P_tan_ptr, newton_iters);
+      double cf = cfactor0*intpow(cfactor, level-1);
+      return theta2(u, guess, disc, dt, theta, theta, 2. / 3 + 1 / (3 * cf * cf) - theta, P_tan_ptr, iters);
    }
    // else:
 
    // fourth order theta method
    if (level == 0 || !useTheta)
    {
-      return theta4(u, guess, disc, dt, 0., 0., 1., P_tan_ptr, newton_iters, std::sqrt(disc.nx) * 1e-9);
+      return theta4(u, guess, disc, dt, 0., 0., 1., P_tan_ptr, iters, std::sqrt(disc.nx) * 1e-9);
    }
-   double cf = intpow(cfactor, level);
+   double cf = cfactor0*intpow(cfactor, level-1);
    double theta = getTheta(level);
    double cf_4 = cf * cf * cf * cf;
    bool overflow = (cf_4 == 0.);
@@ -304,7 +318,7 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, int level, int nle
    {
       th_C += 3. / (10 * cf_4);
    }
-   return theta4(u, guess, disc, dt, theta, theta, th_C, P_tan_ptr, newton_iters);
+   return theta4(u, guess, disc, dt, theta, theta, th_C, P_tan_ptr, iters);
 }
 
 // TODO: think about removing this:
@@ -356,17 +370,16 @@ int MyBraidApp::Step(braid_Vector u_,
    // no refinement
    pstatus.SetRFactor(1);
 
-
    bool DeltaCorrect, computeDeltas, normalize, useGuess, toCPoint, coarseGrid;
-   toCPoint = IsCPoint(T_index+1, level);
+   toCPoint = IsCPoint(T_index + 1, level);
    coarseGrid = (level == nlevels - 1);
 
    DeltaCorrect = (useDelta) && (level > DeltaLevel);
 
    // only compute Deltas when in FRestrict
-   computeDeltas = (calling_fnc == braid_ASCaller_FRestrict); 
+   computeDeltas = (calling_fnc == braid_ASCaller_FRestrict);
 
-   // only normalize at C-points, or on the coarsest grid, or when in finterp 
+   // only normalize at C-points, or on the coarsest grid, or when in finterp
    normalize = (toCPoint || coarseGrid || calling_fnc == braid_ASCaller_FInterp);
 
    // the initial guess is only valid for f-points on fine-grids
@@ -724,15 +737,16 @@ int main(int argc, char *argv[])
    double tstart, tstop;
    int rank;
 
-   int nt = 64;
-   double Tf_lyap = 0.1;
-   int max_levels = 2;
+   int nt = 2048;
+   double Tf_lyap = 4;
+   int max_levels = 4;
    int nrelax = 1;
    int nrelax0 = 1;
    double tol = 1e-6;
    int cfactor = 4;
+   int cf0 = 4;
    int max_iter = 25;
-   int newton_iters = 10;
+   int newton_iters = 3;
    bool useFMG = false;
    bool useDelta = false;
    int DeltaLvl = 0;
@@ -771,6 +785,7 @@ int main(int argc, char *argv[])
             printf("  -nu0        : set num F-C relaxations on level 0\n");
             printf("  -tol        : set stopping tolerance\n");
             printf("  -cf         : set coarsening factor\n");
+            printf("  -cf0        : set coarsening factor on level 0\n");
             printf("  -mi         : set max iterations\n");
             printf("  -niters     : set number of newton iters for theta method\n");
             printf("  -fmg        : use FMG cycling\n");
@@ -833,6 +848,11 @@ int main(int argc, char *argv[])
       {
          arg_index++;
          cfactor = atoi(argv[arg_index++]);
+      }
+      else if (strcmp(argv[arg_index], "-cf0") == 0)
+      {
+         arg_index++;
+         cf0 = atoi(argv[arg_index++]);
       }
       else if (strcmp(argv[arg_index], "-mi") == 0)
       {
@@ -902,7 +922,7 @@ int main(int argc, char *argv[])
    VEC u0 = FourierMode(1, nx, len);
 
    // set up app structure
-   MyBraidApp app(MPI_COMM_WORLD, rank, tstart, tstop, nt, cfactor, useDelta, DeltaLvl, DeltaRank, useTheta, newton_iters, max_levels, nx, len, ord, u0);
+   MyBraidApp app(MPI_COMM_WORLD, rank, tstart, tstop, nt, cfactor, cf0, useDelta, DeltaLvl, DeltaRank, useTheta, newton_iters, max_levels, nx, len, ord, u0);
 
    // wrapper tests
    if (wrapperTests)
@@ -933,13 +953,14 @@ int main(int argc, char *argv[])
    if (useFMG)
    {
       core.SetFMG();
-      core.SetNFMG(2);
+      core.SetNFMG(1);
    }
    core.SetPrintLevel(2);
    core.SetMaxLevels(max_levels);
    core.SetMaxIter(max_iter);
    core.SetAbsTol(tol);
    core.SetCFactor(-1, cfactor);
+   core.SetCFactor(0, cf0);
    core.SetNRelax(-1, nrelax);
    core.SetNRelax(0, nrelax0);
    core.SetSkip(1);

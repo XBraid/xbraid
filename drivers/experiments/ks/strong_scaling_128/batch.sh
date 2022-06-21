@@ -17,17 +17,17 @@ echo -n 'Timestamp START: ';date
 ncores="16 32 64 128 256 512 1024"
 
 # levels
-mlevels="5"
+mlevels="4"
 
 # coarsening factors
 cfactors="4"
 
 # Delta ranks
-ranks="32 64"
-# ranks="2 4 8 16"
+# ranks="32 64"
+ranks="2 4 8 10 16"
 
 # fixed arguments
-fargs="-tf 4 -nt 8192 -nx 128 -nu 1 -nu0 1 -tol 1e-6 -theta -Deltalvl 2"
+fargs="-tf 4 -nt 8192 -cf0 16 -nx 128 -nu 1 -nu0 1 -tol 1e-6 -theta -niters 3 -Deltalvl 1"
 
 # path to executable
 ex="../../../drive-ks"
