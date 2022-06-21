@@ -23,10 +23,10 @@ mlevels="4"
 cfactors="4"
 
 # Delta ranks
-ranks="2 4 8 16"
+ranks="2 4 8 16 32 64"
 
 # fixed arguments
-fargs="-tf 4 -nt 2048 -nx 64 -nu 1 -nu0 1 -tol 1e-6 -theta -niters 2 -Deltalvl 1"
+fargs="-tf 4 -nt 2048 -nx 64 -nu 1 -nu0 1 -tol 1e-6 -theta -Deltalvl 1"
 
 # path to executable
 ex="../../../drive-ks"
