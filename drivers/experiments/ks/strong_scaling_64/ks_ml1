@@ -1,11 +1,11 @@
 Using theta method
 
-  Braid: Begin simulation, 8192 time steps
+  Braid: Begin simulation, 2048 time steps
 
   Braid Solver Stats:
   start time = 0.000000e+00
   stop time  = 9.210340e+01
-  time steps = 8192
+  time steps = 2048
 
   use seq soln?         = 0
   storage               = 0
@@ -32,7 +32,7 @@ Using theta method
   number of refinements = 0
 
   level   time-pts   cfactor   nrelax   Crelax Wt
-      0      8192  
+      0      2048  
 
-  wall time = 3.838756
+  wall time = 0.862843
 
