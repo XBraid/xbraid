@@ -424,14 +424,11 @@ int MyBraidApp::Step(braid_Vector u_,
    }
 
    // store state and Psi at previous C-point
-   if (computeDeltas)
+   if (computeDeltas && IsCPoint(T_index, level))
    {
-      if (IsCPoint(T_index, level))
-      {
-         // Need to store the value at the previous c-point for tau correction later
-         u->action = u->state;
-         u->Delta = u->Psi;
-      }
+      // Need to store the value at the previous c-point for tau correction later
+      u->action = u->state;
+      u->Delta = u->Psi;
    }
 
    // normalize Psi at c-points:

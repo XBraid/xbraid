@@ -4,7 +4,7 @@
 #SBATCH -N 19
 #SBATCH -p pbatch
 #SBATCH -A paratime
-#SBATCH -t 60
+#SBATCH -t 30
 #SBATCH -o out.%j
 #SBATCH -e err.%j
 ##### These are shell commands
@@ -17,7 +17,7 @@ echo -n 'Timestamp START: ';date
 ncores="16 32 64 128 256 512 1024"
 
 # levels
-mlevels="5"
+mlevels="4"
 
 # coarsening factors
 cfactors="4"
@@ -26,7 +26,7 @@ cfactors="4"
 ranks="2 4 8 16"
 
 # fixed arguments
-fargs="-tf 4 -nt 8192 -nx 128 -nu 1 -nu0 1 -tol 1e-6 -theta -Deltalvl 2"
+fargs="-tf 4 -nt 2048 -nx 64 -nu 1 -nu0 1 -tol 1e-6 -theta -niters 2 -Deltalvl 1"
 
 # path to executable
 ex="../../../drive-ks"
