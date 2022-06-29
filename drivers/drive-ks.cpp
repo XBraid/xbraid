@@ -133,8 +133,7 @@ public:
    VEC baseStep(const VEC &u,
                 VEC &ustop,
                 double dt,
-                int level,
-                int nlevels,
+                BraidStepStatus &pstatus,
                 MAT *P_tan_ptr = nullptr);
 
    // computes the dot product between the derivative of the step function
@@ -282,32 +281,53 @@ double MyBraidApp::getTheta(int level)
    return thetas[level];
 }
 
-VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, int level, int nlevels, MAT *P_tan_ptr)
+VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &pstatus, MAT *P_tan_ptr)
 {
-   // limit newton iterations on coarsest grid
+   int level, nlevels;
+   pstatus.GetLevel(&level);
+   pstatus.GetNLevels(&nlevels);
+
+   // tolerance for Newton's method
+   double tol = 1e-9;
+   // this actually seems to hurt more than helps for chaotic problems
+   // double tol, tight{1e-12}, loose{1e-6};
+   // if (level > 0)
+   // {
+   //    tol = tight;
+   // }
+   // else
+   // {
+   //    pstatus.GetSpatialAccuracy(loose, tight, &tol);
+   // }
+   // if (nlevels == 1)
+   // {
+   //    tol = tight;
+   // }
+
+   // limit newton iterations only on coarse grids
    int iters = newton_iters;
-   if (level == nlevels - 1)
-   {
-      iters = 3;
-   }
+   // if (level == 0)
+   // {
+   //    iters = 10;
+   // }
 
    // second order theta method
    if (stages == 2)
    {
       if (level == 0 || !useTheta)
       {
-         return theta2(u, guess, disc, dt, 0., 0., 1., P_tan_ptr, iters, std::sqrt(disc.nx) * 1e-9);
+         return theta2(u, guess, disc, dt, 0., 0., 1., P_tan_ptr, iters, std::sqrt(disc.nx) * tol);
       }
       double theta = getTheta(level);
       double cf = cfactor0*intpow(cfactor, level-1);
-      return theta2(u, guess, disc, dt, theta, theta, 2. / 3 + 1 / (3 * cf * cf) - theta, P_tan_ptr, iters);
+      return theta2(u, guess, disc, dt, theta, theta, 2. / 3 + 1 / (3 * cf * cf) - theta, P_tan_ptr, iters, std::sqrt(disc.nx) * tol);
    }
    // else:
 
    // fourth order theta method
    if (level == 0 || !useTheta)
    {
-      return theta4(u, guess, disc, dt, 0., 0., 1., P_tan_ptr, iters, std::sqrt(disc.nx) * 1e-9);
+      return theta4(u, guess, disc, dt, 0., 0., 1., P_tan_ptr, iters, std::sqrt(disc.nx) * tol);
    }
    double cf = cfactor0*intpow(cfactor, level-1);
    double theta = getTheta(level);
@@ -318,7 +338,7 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, int level, int nle
    {
       th_C += 3. / (10 * cf_4);
    }
-   return theta4(u, guess, disc, dt, theta, theta, th_C, P_tan_ptr, iters);
+   return theta4(u, guess, disc, dt, theta, theta, th_C, P_tan_ptr, iters, std::sqrt(disc.nx) * tol);
 }
 
 // TODO: think about removing this:
@@ -399,11 +419,12 @@ int MyBraidApp::Step(braid_Vector u_,
       u->guess = VEC::Zero(stages * nx);
    }
 
+
    VEC utmp(u->state);
 
    if (!useDelta || level < DeltaLevel || coarseGrid) // default behavior, no Psi propagation
    {
-      utmp = baseStep(u->state, u->guess, dt, level, nlevels);
+      utmp = baseStep(u->state, u->guess, dt, pstatus);
       if (f)
       {
          utmp += f->state;
@@ -421,7 +442,7 @@ int MyBraidApp::Step(braid_Vector u_,
    }
    // else:
    MAT Psitmp(u->Psi);
-   utmp = baseStep(u->state, u->guess, dt, level, nlevels, &Psitmp);
+   utmp = baseStep(u->state, u->guess, dt, pstatus, &Psitmp);
 
    // never overwrite initial guess at C-points
    if (!useGuess)
@@ -491,7 +512,7 @@ int MyBraidApp::Residual(braid_Vector u_,
 
    VEC utmp(r->state);
    MAT Psitmp(r->Psi);
-   utmp = baseStep(r->state, guess, dt, level, nlevels, &Psitmp);
+   utmp = baseStep(r->state, guess, dt, pstatus, &Psitmp);
 
    if (!useDelta || level < DeltaLevel || (level == DeltaLevel && up))
    {
@@ -749,7 +770,7 @@ int main(int argc, char *argv[])
    int newton_iters = 3;
    bool useFMG = false;
    bool useDelta = false;
-   int DeltaLvl = 0;
+   int DeltaLvl = 1;
    int DeltaRank = 1;
    bool useTheta = false;
    bool wrapperTests = false;
