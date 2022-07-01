@@ -670,12 +670,12 @@ my_Init(braid_App     app,
    for (i = 0; i <= mspace-1; i++)
    {
       /* In reverse order to match against Schur approach */
-//      u->wvals[i] = ((double)braid_Rand())/braid_RAND_MAX;
-//      u->vvals[i] = ((double)braid_Rand())/braid_RAND_MAX;
-//      u->uvals[i] = ((double)braid_Rand())/braid_RAND_MAX;
-      u->wvals[i] = 1.0;
-      u->vvals[i] = 1.0;
-      u->uvals[i] = 1.0;
+      u->wvals[i] = ((double)braid_Rand())/braid_RAND_MAX;
+      u->vvals[i] = ((double)braid_Rand())/braid_RAND_MAX;
+      u->uvals[i] = ((double)braid_Rand())/braid_RAND_MAX;
+//      u->wvals[i] = 1.0;
+//      u->vvals[i] = 1.0;
+//      u->uvals[i] = 1.0;
    }
 
    *u_ptr = u;
