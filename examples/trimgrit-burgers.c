@@ -670,12 +670,12 @@ my_Init(braid_App     app,
    for (i = 0; i <= mspace-1; i++)
    {
       /* In reverse order to match against Schur approach */
-      u->wvals[i] = ((double)braid_Rand())/braid_RAND_MAX;
-      u->vvals[i] = ((double)braid_Rand())/braid_RAND_MAX;
-      u->uvals[i] = ((double)braid_Rand())/braid_RAND_MAX;
-//      u->wvals[i] = 1.0;
-//      u->vvals[i] = 1.0;
-//      u->uvals[i] = 1.0;
+//      u->wvals[i] = ((double)braid_Rand())/braid_RAND_MAX;
+//      u->vvals[i] = ((double)braid_Rand())/braid_RAND_MAX;
+//      u->uvals[i] = ((double)braid_Rand())/braid_RAND_MAX;
+      u->wvals[i] = 1.0;
+      u->vvals[i] = 1.0;
+      u->uvals[i] = 1.0;
    }
 
    *u_ptr = u;
@@ -863,13 +863,12 @@ main(int argc, char *argv[])
    my_App     *app;
          
    char        filename[255];
-   double      tstart, tstop, dt, dx, start, end; 
+   double      tstart, tstop, dt, dx;
    int         rank, ntime, mspace, problem, arg_index;
    double      alpha, nu;
    int         max_levels, min_coarse, nrelax, nrelaxc, cfactor, maxiter, fmg;
    int         access_level, print_level, forward;
    double      tol;
-   double      time;
    double     *u0, *scr;
    int         i;
 
@@ -1124,26 +1123,7 @@ main(int argc, char *argv[])
    braid_SetUseXRelax(core, 1);
 
    /* Parallel-in-time TriMGRIT simulation */
-   start=clock();
    braid_Drive(core);
-   end=clock();
-
-   /* Print runtime to file (for runtime comparisons)*/
-   time = (double)(end-start)/CLOCKS_PER_SEC;
-   printf("Total Run Time: %f s \n", time);
-
-//   {
-//      char    filename[255];
-//      FILE   *file;
-//      
-//      //Note that this out file appends the number of time steps
-//      sprintf(filename, "%s.%d", "trimgrit-burgers.time", ntime);
-//
-//      file = fopen(filename, "w");
-//      fprintf(file, "%f", time);
-//      fflush(file);
-//      fclose(file);
-//   }
 
 //   /* RDF Testing */
 //   {

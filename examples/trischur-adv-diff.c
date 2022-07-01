@@ -436,8 +436,8 @@ my_Init(braid_App     app,
 
    for (i = 0; i <= mspace-1; i++)
    {
-      u->values[i] = ((double)braid_Rand())/braid_RAND_MAX;
-//      u->values[i] = 1.0;
+//      u->values[i] = ((double)braid_Rand())/braid_RAND_MAX;
+      u->values[i] = 1.0;
    }
 
    *u_ptr = u;
@@ -632,13 +632,12 @@ main(int argc, char *argv[])
    braid_Core  core;
    my_App     *app;
          
-   double      tstart, tstop, dt, dx, start, end; 
+   double      tstart, tstop, dt, dx;
    int         rank, ntime, mspace, arg_index;
    double      alpha, nu;
    int         max_levels, min_coarse, nrelax, nrelaxc, cfactor, maxiter;
    int         access_level, print_level;
    double      tol;
-   double      time;
    double     *u0, *scr;
    int         i;
 
@@ -820,9 +819,7 @@ main(int argc, char *argv[])
    braid_SetAbsTol(core, tol);
 
    /* Parallel-in-time TriMGRIT simulation */
-   start=clock();
    braid_Drive(core);
-   end=clock();
 
    /* Writes solutions to files */  
    if (access_level > 0)
@@ -973,23 +970,6 @@ main(int argc, char *argv[])
       free(v);
       free(u);
    }
-
-   /* Print runtime to file (for runtime comparisons)*/
-   time = (double)(end-start)/CLOCKS_PER_SEC;
-   printf("Total Run Time: %f s \n", time);
-
-//   {
-//      char    filename[255];
-//      FILE   *file;
-//      
-//      //Note that this out file appends the number of time steps
-//      sprintf(filename, "%s.%d", "trischur-adv-diff.time", ntime);
-//
-//      file = fopen(filename, "w");
-//      fprintf(file, "%f", time);
-//      fflush(file);
-//      fclose(file);
-//   }
 
 //   /* RDF Testing */
 //   {
