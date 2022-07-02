@@ -38,22 +38,23 @@ outn="ks"
 # 8 procs
 nx="128"; nt="128"; nc="8"; ml="2"
 srun -N 1 -n 1     -o ${outd}/${outn}_nc${nc}_ml1           ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml 1
+srun -N 1 -n ${nc} -o ${outd}/${outn}_nc${nc}_ml${ml}       ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml ${ml} -cf0 2
 srun -N 1 -n ${nc} -o ${outd}/${outn}_theta_nc${nc}_ml${ml} ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml ${ml} -theta
 srun -N 1 -n ${nc} -o ${outd}/${outn}_Delta_nc${nc}_ml${ml} ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml ${ml} ${dargs} -Deltalvl 0
 
 # 64 procs
 nx="256"; nt="512"; nc="64"; ml="3"
 srun -N 1 -n 1     -o ${outd}/${outn}_nc${nc}_ml1           ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml 1
-srun -N 2 -n ${nc} -o ${outd}/${outn}_nc${nc}_ml${ml}       ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml 3 -cf0 2
+srun -N 2 -n ${nc} -o ${outd}/${outn}_nc${nc}_ml${ml}       ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml 2 -cf0 8
 srun -N 2 -n ${nc} -o ${outd}/${outn}_theta_nc${nc}_ml${ml} ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml ${ml} -theta
 srun -N 2 -n ${nc} -o ${outd}/${outn}_Delta_nc${nc}_ml${ml} ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml ${ml} ${dargs}
 
 # 512 procs
 nx="512"; nt="2048"; nc="512"; ml="4"
 srun -N 1  -n 1     -o ${outd}/${outn}_nc${nc}_ml1           ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml 1
-srun -N 10 -n ${nc} -o ${outd}/${outn}_nc${nc}_ml${ml}       ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml 4     -cf0 8
-srun -N 10 -n ${nc} -o ${outd}/${outn}_theta_nc${nc}_ml${ml} ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml ${ml} -cf0 16 -theta
-srun -N 10 -n ${nc} -o ${outd}/${outn}_Delta_nc${nc}_ml${ml} ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml ${ml} -cf0 16 ${dargs}
+srun -N 10 -n ${nc} -o ${outd}/${outn}_nc${nc}_ml${ml}       ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml 3 -cf0 8
+srun -N 10 -n ${nc} -o ${outd}/${outn}_theta_nc${nc}_ml${ml} ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml ${ml} -theta
+srun -N 10 -n ${nc} -o ${outd}/${outn}_Delta_nc${nc}_ml${ml} ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml ${ml} ${dargs}
 
 echo 'Done'
 echo -n 'Timestamp END: ';date

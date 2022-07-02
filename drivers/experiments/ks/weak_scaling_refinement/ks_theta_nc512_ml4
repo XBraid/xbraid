@@ -1,10 +1,26 @@
 Using theta method
 
   Braid: Begin simulation, 2048 time steps
-  Braid: || r_0 || not available, wall time = 6.31e-03
-  Braid: || r_1 || = 5.862355e+67, conv factor = 1.00e+00, wall time = 4.10e-01
-  Braid: || r_2 || = -nan, conv factor = -nan, wall time = 9.28e-01
-  Braid: Iterations diverged.
+  Braid: || r_0 || not available, wall time = 1.27e-02
+  Braid: || r_1 || = 1.625308e-01, conv factor = 1.00e+00, wall time = 3.92e-01
+  Braid: || r_2 || = 3.977987e-01, conv factor = 2.45e+00, wall time = 8.26e-01
+  Braid: || r_3 || = 2.389246e-01, conv factor = 6.01e-01, wall time = 1.23e+00
+  Braid: || r_4 || = 2.613300e-02, conv factor = 1.09e-01, wall time = 1.57e+00
+  Braid: || r_5 || = 6.306538e-03, conv factor = 2.41e-01, wall time = 1.88e+00
+  Braid: || r_6 || = 7.081925e-04, conv factor = 1.12e-01, wall time = 2.15e+00
+  Braid: || r_7 || = 3.885445e-05, conv factor = 5.49e-02, wall time = 2.38e+00
+  Braid: || r_8 || = 1.348854e-06, conv factor = 3.47e-02, wall time = 2.58e+00
+  Braid: || r_9 || = 1.319110e-06, conv factor = 9.78e-01, wall time = 2.78e+00
+  Braid: || r_10 || = 5.482695e-06, conv factor = 4.16e+00, wall time = 2.98e+00
+  Braid: || r_11 || = 7.918864e-06, conv factor = 1.44e+00, wall time = 3.20e+00
+  Braid: || r_12 || = 4.613798e-06, conv factor = 5.83e-01, wall time = 3.40e+00
+  Braid: || r_13 || = 2.170801e-06, conv factor = 4.71e-01, wall time = 3.60e+00
+  Braid: || r_14 || = 2.872133e-06, conv factor = 1.32e+00, wall time = 3.80e+00
+  Braid: || r_15 || = 2.433759e-06, conv factor = 8.47e-01, wall time = 4.00e+00
+  Braid: || r_16 || = 1.012914e-06, conv factor = 4.16e-01, wall time = 4.20e+00
+  Braid: || r_17 || = 3.803798e-06, conv factor = 3.76e+00, wall time = 4.40e+00
+  Braid: || r_18 || = 3.457826e-06, conv factor = 9.09e-01, wall time = 4.60e+00
+  Braid: || r_19 || = 8.172111e-07, conv factor = 2.36e-01, wall time = 4.79e+00
 
   Braid Solver Stats:
   start time = 0.000000e+00
@@ -15,9 +31,9 @@ Using theta method
   storage               = 0
 
   max iterations        = 25
-  iterations            = 3
+  iterations            = 20
 
-  residual norm         = -nan
+  residual norm         = 8.172111e-07
   stopping tolerance    = 1.000000e-06
   use relative tol?     = 0
                                           --> 2-norm TemporalNorm 
@@ -36,10 +52,10 @@ Using theta method
   number of refinements = 0
 
   level   time-pts   cfactor   nrelax   Crelax Wt
-      0      2048       16        1        1.00
-      1       128        4        1        1.00
-      2        32        4        1        1.00
-      3         8  
+      0      2048        4        1        1.00
+      1       512        4        1        1.00
+      2       128        4        1        1.00
+      3        32  
 
-  wall time = 1.143062
+  wall time = 4.948213
 
