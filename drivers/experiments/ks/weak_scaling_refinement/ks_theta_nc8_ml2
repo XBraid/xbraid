@@ -1,0 +1,51 @@
+Using theta method
+
+  Braid: Begin simulation, 128 time steps
+  Braid: || r_0 || not available, wall time = 1.85e-02
+  Braid: || r_1 || = 2.827886e-01, conv factor = 1.00e+00, wall time = 8.41e-02
+  Braid: || r_2 || = 5.336024e-01, conv factor = 1.89e+00, wall time = 1.46e-01
+  Braid: || r_3 || = 7.931604e-01, conv factor = 1.49e+00, wall time = 2.06e-01
+  Braid: || r_4 || = 4.298080e-01, conv factor = 5.42e-01, wall time = 2.63e-01
+  Braid: || r_5 || = 9.677942e-02, conv factor = 2.25e-01, wall time = 3.17e-01
+  Braid: || r_6 || = 3.107304e-02, conv factor = 3.21e-01, wall time = 3.66e-01
+  Braid: || r_7 || = 1.324289e-02, conv factor = 4.26e-01, wall time = 4.09e-01
+  Braid: || r_8 || = 1.026838e-03, conv factor = 7.75e-02, wall time = 4.43e-01
+  Braid: || r_9 || = 4.760620e-05, conv factor = 4.64e-02, wall time = 4.71e-01
+  Braid: || r_10 || = 1.656880e-06, conv factor = 3.48e-02, wall time = 4.89e-01
+  Braid: || r_11 || = 7.435672e-08, conv factor = 4.49e-02, wall time = 5.07e-01
+
+  Braid Solver Stats:
+  start time = 0.000000e+00
+  stop time  = 9.210340e+01
+  time steps = 128
+
+  use seq soln?         = 0
+  storage               = 0
+
+  max iterations        = 25
+  iterations            = 12
+
+  residual norm         = 7.435672e-08
+  stopping tolerance    = 1.000000e-06
+  use relative tol?     = 0
+                                          --> 2-norm TemporalNorm 
+
+  use fmg?              = 0
+  access_level          = 0
+  print_level           = 2
+
+  max number of levels  = 2
+  min coarse            = 2
+  number of levels      = 2
+  skip down cycle       = 1
+  periodic              = 0
+  relax_only_cg         = 0
+  finalFCRelax          = 0
+  number of refinements = 0
+
+  level   time-pts   cfactor   nrelax   Crelax Wt
+      0       128        4        1        1.00
+      1        32  
+
+  wall time = 0.509334
+
