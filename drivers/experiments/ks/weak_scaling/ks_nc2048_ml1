@@ -9,7 +9,7 @@
   use seq soln?         = 0
   storage               = 0
 
-  max iterations        = 25
+  max iterations        = 50
   iterations            = 0
 
   residual norm         = -1.000000e+00
@@ -33,5 +33,5 @@
   level   time-pts   cfactor   nrelax   Crelax Wt
       0     32768  
 
-  wall time = 15.697614
+  wall time = 15.510697
 
