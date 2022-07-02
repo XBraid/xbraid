@@ -63,7 +63,7 @@ outn="ks"
 # srun -N 10 -n ${nc} -o ${outd}/${outn}_Delta_nc${nc}_ml${ml} ${ex} ${fargs} -nt ${nt} -ml ${ml} -cf0 16 ${dargs} 
 
 # 2048 procs
-nt="8192"; nc="2048"; ml="5"
+nt="32768"; nc="2048"; ml="5"
 srun -N 1  -n 1     -o ${outd}/${outn}_nc${nc}_ml1           ${ex} ${fargs} -nt ${nt} -ml 1
 srun -N 40 -n ${nc} -o ${outd}/${outn}_nc${nc}_ml${ml}       ${ex} ${fargs} -nt ${nt} -ml 5     -cf0 8
 srun -N 40 -n ${nc} -o ${outd}/${outn}_theta_nc${nc}_ml${ml} ${ex} ${fargs} -nt ${nt} -ml ${ml} -cf0 16 -theta

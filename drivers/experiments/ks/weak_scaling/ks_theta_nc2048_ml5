@@ -1,23 +1,46 @@
 Using theta method
 
-  Braid: Begin simulation, 8192 time steps
-  Braid: || r_0 || not available, wall time = 3.93e-02
-  Braid: || r_1 || = 1.006001e+30, conv factor = 1.00e+00, wall time = 1.61e-01
-  Braid: || r_2 || = -nan, conv factor = -nan, wall time = 3.17e-01
-  Braid: Iterations diverged.
+  Braid: Begin simulation, 32768 time steps
+  Braid: || r_0 || not available, wall time = 2.44e-02
+  Braid: || r_1 || = 1.823041e-01, conv factor = 1.00e+00, wall time = 1.57e-01
+  Braid: || r_2 || = 4.530534e-01, conv factor = 2.49e+00, wall time = 3.20e-01
+  Braid: || r_3 || = 2.281732e-01, conv factor = 5.04e-01, wall time = 4.66e-01
+  Braid: || r_4 || = 1.714498e-02, conv factor = 7.51e-02, wall time = 5.82e-01
+  Braid: || r_5 || = 6.903536e-03, conv factor = 4.03e-01, wall time = 6.93e-01
+  Braid: || r_6 || = 8.232291e-04, conv factor = 1.19e-01, wall time = 7.93e-01
+  Braid: || r_7 || = 7.922702e-05, conv factor = 9.62e-02, wall time = 8.87e-01
+  Braid: || r_8 || = 4.334316e-05, conv factor = 5.47e-01, wall time = 9.80e-01
+  Braid: || r_9 || = 3.279237e-05, conv factor = 7.57e-01, wall time = 1.08e+00
+  Braid: || r_10 || = 2.226933e-05, conv factor = 6.79e-01, wall time = 1.17e+00
+  Braid: || r_11 || = 4.943541e-05, conv factor = 2.22e+00, wall time = 1.26e+00
+  Braid: || r_12 || = 3.295001e-05, conv factor = 6.67e-01, wall time = 1.35e+00
+  Braid: || r_13 || = 2.471001e-05, conv factor = 7.50e-01, wall time = 1.44e+00
+  Braid: || r_14 || = 4.335877e-05, conv factor = 1.75e+00, wall time = 1.54e+00
+  Braid: || r_15 || = 3.108169e-05, conv factor = 7.17e-01, wall time = 1.63e+00
+  Braid: || r_16 || = 2.873407e-05, conv factor = 9.24e-01, wall time = 1.73e+00
+  Braid: || r_17 || = 2.088445e-05, conv factor = 7.27e-01, wall time = 1.82e+00
+  Braid: || r_18 || = 2.702708e-05, conv factor = 1.29e+00, wall time = 1.91e+00
+  Braid: || r_19 || = 3.043378e-05, conv factor = 1.13e+00, wall time = 2.00e+00
+  Braid: || r_20 || = 2.291950e-05, conv factor = 7.53e-01, wall time = 2.10e+00
+  Braid: || r_21 || = 3.817120e-05, conv factor = 1.67e+00, wall time = 2.19e+00
+  Braid: || r_22 || = 2.523110e-05, conv factor = 6.61e-01, wall time = 2.28e+00
+  Braid: || r_23 || = 1.545049e-05, conv factor = 6.12e-01, wall time = 2.37e+00
+  Braid: || r_24 || = 1.873616e-05, conv factor = 1.21e+00, wall time = 2.46e+00
+  Braid: Max. iterations reached.
+
 
   Braid Solver Stats:
   start time = 0.000000e+00
   stop time  = 9.210340e+01
-  time steps = 8192
+  time steps = 32768
 
   use seq soln?         = 0
   storage               = 0
 
   max iterations        = 25
-  iterations            = 3
+  iterations            = 25
 
-  residual norm         = -nan
+  residual norm         = 1.873616e-05
   stopping tolerance    = 1.000000e-06
   use relative tol?     = 0
                                           --> 2-norm TemporalNorm 
@@ -36,11 +59,11 @@ Using theta method
   number of refinements = 0
 
   level   time-pts   cfactor   nrelax   Crelax Wt
-      0      8192       16        1        1.00
-      1       512        4        1        1.00
-      2       128        4        1        1.00
-      3        32        4        1        1.00
-      4         8  
+      0     32768       16        1        1.00
+      1      2048        4        1        1.00
+      2       512        4        1        1.00
+      3       128        4        1        1.00
+      4        32  
 
-  wall time = 0.379633
+  wall time = 2.514819
 

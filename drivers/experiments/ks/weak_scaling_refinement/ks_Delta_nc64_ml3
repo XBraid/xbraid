@@ -2,13 +2,13 @@ Using Delta correction
 Using theta method
 
   Braid: Begin simulation, 512 time steps
-  Braid: || r_0 || not available, wall time = 1.01e-02
-  Braid: || r_1 || = 1.460160e-01, conv factor = 1.00e+00, wall time = 1.49e-01
-  Braid: || r_2 || = 4.215631e-01, conv factor = 2.89e+00, wall time = 2.87e-01
-  Braid: || r_3 || = 1.838037e-01, conv factor = 4.36e-01, wall time = 4.15e-01
-  Braid: || r_4 || = 7.957361e-04, conv factor = 4.33e-03, wall time = 5.23e-01
-  Braid: || r_5 || = 9.240085e-06, conv factor = 1.16e-02, wall time = 6.08e-01
-  Braid: || r_6 || = 2.650441e-08, conv factor = 2.87e-03, wall time = 6.76e-01
+  Braid: || r_0 || not available, wall time = 1.81e-02
+  Braid: || r_1 || = 1.370385e-01, conv factor = 1.00e+00, wall time = 2.58e-01
+  Braid: || r_2 || = 4.111625e-01, conv factor = 3.00e+00, wall time = 4.96e-01
+  Braid: || r_3 || = 1.564478e-01, conv factor = 3.81e-01, wall time = 7.16e-01
+  Braid: || r_4 || = 7.721051e-04, conv factor = 4.94e-03, wall time = 9.02e-01
+  Braid: || r_5 || = 8.908657e-06, conv factor = 1.15e-02, wall time = 1.05e+00
+  Braid: || r_6 || = 3.269602e-08, conv factor = 3.67e-03, wall time = 1.17e+00
 
   Braid Solver Stats:
   start time = 0.000000e+00
@@ -21,7 +21,7 @@ Using theta method
   max iterations        = 25
   iterations            = 7
 
-  residual norm         = 2.650441e-08
+  residual norm         = 3.269602e-08
   stopping tolerance    = 1.000000e-06
   use relative tol?     = 0
                                           --> 2-norm TemporalNorm 
@@ -44,5 +44,5 @@ Using theta method
       1       128        4        1        1.00
       2        32  
 
-  wall time = 0.700085
+  wall time = 1.221874
 
