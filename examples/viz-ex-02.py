@@ -1,5 +1,5 @@
 from __future__ import division
-from scipy import *
+from numpy import *
 from matplotlib import pyplot as mpl
 from os import sys
 
@@ -78,13 +78,14 @@ for j, idx in enumerate([0, nsteps//5, 2*(nsteps//5), 3*(nsteps//5), 4*(nsteps//
     mpl.plot(mesh, data[idx,:], '-o')
     mpl.ylabel('u')
     mpl.xlabel('space')
-    mpl.title('Step=%d,  Time=%1.4e'%(idx, tvalues[idx]) )
+    mpl.title('Solution at Time-Step=%d,t=%1.4e'%(idx, tvalues[idx]) )
     mpl.ylim(data[idx,:].min()-1.0, data[idx,:].max()+1.0)
     mpl.xlim(xstart, xstop) 
 
-mpl.figure(0)
-mpl.plot(tvalues, zeros_like(tvalues), 'k.')
-mpl.title("Time Grid")
+# If Desired, can also plot regularly space time grid
+#mpl.figure(0)
+#mpl.plot(tvalues, zeros_like(tvalues), 'k.')
+#mpl.title("Time Grid")
 
 mpl.show()
 
