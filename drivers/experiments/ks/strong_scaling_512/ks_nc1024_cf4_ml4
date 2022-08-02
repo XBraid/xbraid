@@ -1,0 +1,67 @@
+
+  Braid: Begin simulation, 8192 time steps
+  Braid: || r_0 || not available, wall time = 1.15e-02
+  Braid: || r_1 || = 1.578099e-01, conv factor = 1.00e+00, wall time = 6.92e-01
+  Braid: || r_2 || = 2.331605e-01, conv factor = 1.48e+00, wall time = 1.42e+00
+  Braid: || r_3 || = 3.028628e-01, conv factor = 1.30e+00, wall time = 2.12e+00
+  Braid: || r_4 || = 2.442860e-01, conv factor = 8.07e-01, wall time = 2.78e+00
+  Braid: || r_5 || = 1.669906e-01, conv factor = 6.84e-01, wall time = 3.37e+00
+  Braid: || r_6 || = 2.273188e-02, conv factor = 1.36e-01, wall time = 3.93e+00
+  Braid: || r_7 || = 7.714109e-03, conv factor = 3.39e-01, wall time = 4.40e+00
+  Braid: || r_8 || = 2.104764e-03, conv factor = 2.73e-01, wall time = 4.83e+00
+  Braid: || r_9 || = 3.012290e-04, conv factor = 1.43e-01, wall time = 5.22e+00
+  Braid: || r_10 || = 5.671958e-05, conv factor = 1.88e-01, wall time = 5.58e+00
+  Braid: || r_11 || = 2.331220e-05, conv factor = 4.11e-01, wall time = 5.92e+00
+  Braid: || r_12 || = 2.284698e-05, conv factor = 9.80e-01, wall time = 6.27e+00
+  Braid: || r_13 || = 1.263494e-05, conv factor = 5.53e-01, wall time = 6.58e+00
+  Braid: || r_14 || = 3.420047e-06, conv factor = 2.71e-01, wall time = 6.89e+00
+  Braid: || r_15 || = 6.620553e-06, conv factor = 1.94e+00, wall time = 7.20e+00
+  Braid: || r_16 || = 2.760760e-05, conv factor = 4.17e+00, wall time = 7.55e+00
+  Braid: || r_17 || = 8.478023e-06, conv factor = 3.07e-01, wall time = 7.86e+00
+  Braid: || r_18 || = 3.481137e-05, conv factor = 4.11e+00, wall time = 8.21e+00
+  Braid: || r_19 || = 3.142398e-05, conv factor = 9.03e-01, wall time = 8.57e+00
+  Braid: || r_20 || = 3.776184e-06, conv factor = 1.20e-01, wall time = 8.89e+00
+  Braid: || r_21 || = 1.737794e-05, conv factor = 4.60e+00, wall time = 9.22e+00
+  Braid: || r_22 || = 1.829219e-05, conv factor = 1.05e+00, wall time = 9.54e+00
+  Braid: || r_23 || = 6.211111e-06, conv factor = 3.40e-01, wall time = 9.86e+00
+  Braid: || r_24 || = 1.743806e-05, conv factor = 2.81e+00, wall time = 1.02e+01
+  Braid: Max. iterations reached.
+
+
+  Braid Solver Stats:
+  start time = 0.000000e+00
+  stop time  = 9.210340e+01
+  time steps = 8192
+
+  use seq soln?         = 0
+  storage               = 0
+
+  max iterations        = 25
+  iterations            = 25
+
+  residual norm         = 1.743806e-05
+  stopping tolerance    = 1.000000e-06
+  use relative tol?     = 0
+                                          --> 2-norm TemporalNorm 
+
+  use fmg?              = 0
+  access_level          = 0
+  print_level           = 2
+
+  max number of levels  = 4
+  min coarse            = 2
+  number of levels      = 4
+  skip down cycle       = 1
+  periodic              = 0
+  relax_only_cg         = 0
+  finalFCRelax          = 0
+  number of refinements = 0
+
+  level   time-pts   cfactor   nrelax   Crelax Wt
+      0      8192        8        1        1.00
+      1      1024        4        1        1.00
+      2       256        4        1        1.00
+      3        64  
+
+  wall time = 10.426521
+
