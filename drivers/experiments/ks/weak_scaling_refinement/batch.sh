@@ -56,5 +56,12 @@ srun -N 10 -n ${nc} -o ${outd}/${outn}_nc${nc}_ml${ml}       ${ex} ${fargs} -nx 
 srun -N 10 -n ${nc} -o ${outd}/${outn}_theta_nc${nc}_ml${ml} ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml ${ml} -theta
 srun -N 10 -n ${nc} -o ${outd}/${outn}_Delta_nc${nc}_ml${ml} ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml ${ml} ${dargs}
 
+# 4096 procs
+nx="1024"; nt="8192"; nc="4096"; ml="5"
+srun -N 1  -n 1     -o ${outd}/${outn}_nc${nc}_ml1           ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml 1
+srun -N 10 -n ${nc} -o ${outd}/${outn}_nc${nc}_ml${ml}       ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml 4 -cf0 8
+srun -N 10 -n ${nc} -o ${outd}/${outn}_theta_nc${nc}_ml${ml} ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml ${ml} -theta
+srun -N 10 -n ${nc} -o ${outd}/${outn}_Delta_nc${nc}_ml${ml} ${ex} ${fargs} -nx ${nx} -nt ${nt} -ml ${ml} ${dargs}
+
 echo 'Done'
 echo -n 'Timestamp END: ';date
