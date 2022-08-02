@@ -246,7 +246,8 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &uguess, const double dt, const int l
    // {
    //    uguess = u; // much safer initial guess
    // }
-   // VEC ustop = theta1(u, uguess, dt, theta, P_tan_ptr, newton_iters, newton_tol);
+   // uguess = u; // no initial guess
+   // VEC ustop = theta1(u, uguess, dt, theta, P_tan_ptr, newton_iters, 1e-10);
    // uguess = ustop;
    // return ustop;
    // no initial guess:
@@ -273,14 +274,14 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &uguess, const double dt, const int l
    double theta = getTheta(level);
    // else:
    int iters = newton_iters;
-   if (level == nlevels - 1)
-   {
-      // limit newton iterations on coarsest grid!
-      iters = std::min(newton_iters, 2);
-   }
+   // if (level == nlevels - 1)
+   // {
+   //    // limit newton iterations on coarsest grid!
+   //    iters = std::min(newton_iters, 2);
+   // }
 
-   // no initial guess
-   // uguess = u;
+   // // no initial guess
+   uguess = u;
    return theta4(u, uguess, dt, theta, P_tan_ptr, iters, 1e-10);
 }
 
@@ -579,15 +580,15 @@ int main(int argc, char *argv[])
    int max_levels = 4;
    int nrelax = 1;
    int nrelax0 = 0;
-   double tol = 1e-5;
+   double tol = 1e-16;
    int cfactor = 4;
    int cf0 = 4;
-   int max_iter = 25;
+   int max_iter = 50;
    int newton_iters = 2;
    int DeltaLevel = 1;
    bool useFMG = false;
    bool useDelta = false;
-   bool useTheta = true;
+   bool useTheta = false;
    bool output = false;
 
    int arg_index;
@@ -746,7 +747,7 @@ int main(int argc, char *argv[])
    core.SetNRelax(0, nrelax0);
    core.SetSkip(0);
    core.SetStorage(1);
-   core.SetTemporalNorm(3);
+   core.SetTemporalNorm(2);
    if (output)
    {
       core.SetAccessLevel(1);
