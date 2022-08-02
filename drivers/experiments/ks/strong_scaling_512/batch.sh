@@ -45,22 +45,22 @@ outn="ks"
 echo "srun -N 1 -n 1 -o ${outd}/${outn}_ml1 ${ex} ${fargs} -ml 1"
 srun -N 1 -n 1 -o ${outd}/${outn}_ml1 ${ex} ${fargs} -ml 1
 
-# for nc in $ncores; do
-   # for ml in $mlevels; do
-      # for cf in $cfactors; do
-         # echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_nc${nc}_cf${cf}_ml${ml}           ${ex} ${fargs} -cf ${cf} -ml ${ml-1} -cf0 8"
-         # srun -N 19 -n ${nc} -o ${outd}/${outn}_nc${nc}_cf${cf}_ml${ml}           	${ex} ${fargs} -cf ${cf} -ml ${ml-1} -cf0 8
+for nc in $ncores; do
+   for ml in $mlevels; do
+      for cf in $cfactors; do
+         echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_nc${nc}_cf${cf}_ml${ml}           ${ex} ${fargs} -cf ${cf} -ml ${ml-1} -cf0 8"
+         srun -N 19 -n ${nc} -o ${outd}/${outn}_nc${nc}_cf${cf}_ml${ml}           	${ex} ${fargs} -cf ${cf} -ml ${ml} -cf0 8
 
-	 # echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_theta_nc${nc}_cf${cf}_ml${ml}           ${ex} ${fargs} -cf ${cf} -ml ${ml} -theta"
-         # srun -N 19 -n ${nc} -o ${outd}/${outn}_theta_nc${nc}_cf${cf}_ml${ml}           ${ex} ${fargs} -cf ${cf} -ml ${ml} -theta
+	 echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_theta_nc${nc}_cf${cf}_ml${ml}           ${ex} ${fargs} -cf ${cf} -ml ${ml} -theta"
+         srun -N 19 -n ${nc} -o ${outd}/${outn}_theta_nc${nc}_cf${cf}_ml${ml}           ${ex} ${fargs} -cf ${cf} -ml ${ml} -theta
 
-         # for rank in $ranks; do
-	    # echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}_cf${cf}_ml${ml}     ${ex} ${fargs} -cf ${cf} -ml ${ml} -Delta -rank ${rank}"
-            # srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}_cf${cf}_ml${ml}     ${ex} ${fargs} -cf ${cf} -ml ${ml} -Delta -theta -rank ${rank}
-         # done
-      # done
-   # done
-# done
+         for rank in $ranks; do
+	    echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}_cf${cf}_ml${ml}     ${ex} ${fargs} -cf ${cf} -ml ${ml} -Delta -rank ${rank}"
+            srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}_cf${cf}_ml${ml}     ${ex} ${fargs} -cf ${cf} -ml ${ml} -Delta -theta -rank ${rank}
+         done
+      done
+   done
+done
 
 echo 'Done'
 echo -n 'Timestamp END: ';date
