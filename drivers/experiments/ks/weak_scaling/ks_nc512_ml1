@@ -15,7 +15,7 @@
   residual norm         = -1.000000e+00
   stopping tolerance    = 1.000000e-06
   use relative tol?     = 0
-                                          --> 2-norm TemporalNorm 
+                                          --> Inf-norm TemporalNorm 
 
   use fmg?              = 0
   access_level          = 0
@@ -33,5 +33,5 @@
   level   time-pts   cfactor   nrelax   Crelax Wt
       0      8192  
 
-  wall time = 3.770947
+  wall time = 14.402753
 

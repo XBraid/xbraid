@@ -29,7 +29,7 @@ ranks="2 4 8 10 16 32 64"
 
 # fixed arguments
 # fargs="-tf 4 -nt 8192 -cf0 16 -nx 512 -nu 1 -nu0 1 -tol 1e-6 -theta -niters 3 -Deltalvl 1"
-fargs="-tf 4 -nt 8192 -cf0 16 -nx 512 -nu 1 -nu0 1 -tol 1e-6 -niters 3"
+fargs="-tf 4 -nt 8192 -cf0 16 -nx 512 -nu 1 -nu0 1 -tol 1e-6 -niters 3 -mi 50"
 
 # path to executable
 ex="../../../drive-ks"

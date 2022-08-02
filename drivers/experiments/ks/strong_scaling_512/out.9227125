@@ -1,6 +1,0 @@
-This machine is ruby71
-My jobid is 9227125
-Timestamp START: Tue Aug  2 10:39:58 PDT 2022
-srun -N 1 -n 1 -o ./ks_ml1 ../../../drive-ks -tf 4 -nt 8192 -cf0 16 -nx 512 -nu 1 -nu0 1 -tol 1e-6 -niters 3 -ml 1
-Done
-Timestamp END: Tue Aug  2 10:40:14 PDT 2022

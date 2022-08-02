@@ -1,15 +1,15 @@
 Using theta method
 
   Braid: Begin simulation, 512 time steps
-  Braid: || r_0 || not available, wall time = 7.41e-03
-  Braid: || r_1 || = 1.460160e-01, conv factor = 1.00e+00, wall time = 1.36e-01
-  Braid: || r_2 || = 4.005808e-01, conv factor = 2.74e+00, wall time = 2.63e-01
-  Braid: || r_3 || = 1.596362e-01, conv factor = 3.99e-01, wall time = 3.83e-01
-  Braid: || r_4 || = 1.192331e-02, conv factor = 7.47e-02, wall time = 4.86e-01
-  Braid: || r_5 || = 6.028484e-03, conv factor = 5.06e-01, wall time = 5.78e-01
-  Braid: || r_6 || = 6.377709e-04, conv factor = 1.06e-01, wall time = 6.61e-01
-  Braid: || r_7 || = 3.847967e-05, conv factor = 6.03e-02, wall time = 7.28e-01
-  Braid: || r_8 || = 6.538847e-07, conv factor = 1.70e-02, wall time = 7.87e-01
+  Braid: || r_0 || not available, wall time = 2.43e-02
+  Braid: || r_1 || = 8.778018e-02, conv factor = 1.00e+00, wall time = 4.92e-01
+  Braid: || r_2 || = 2.508101e-01, conv factor = 2.86e+00, wall time = 9.94e-01
+  Braid: || r_3 || = 9.780182e-02, conv factor = 3.90e-01, wall time = 1.46e+00
+  Braid: || r_4 || = 1.009951e-02, conv factor = 1.03e-01, wall time = 1.86e+00
+  Braid: || r_5 || = 2.839436e-03, conv factor = 2.81e-01, wall time = 2.22e+00
+  Braid: || r_6 || = 3.506232e-04, conv factor = 1.23e-01, wall time = 2.53e+00
+  Braid: || r_7 || = 3.189782e-05, conv factor = 9.10e-02, wall time = 2.79e+00
+  Braid: || r_8 || = 5.039239e-07, conv factor = 1.58e-02, wall time = 3.02e+00
 
   Braid Solver Stats:
   start time = 0.000000e+00
@@ -22,10 +22,10 @@ Using theta method
   max iterations        = 50
   iterations            = 9
 
-  residual norm         = 6.538847e-07
+  residual norm         = 5.039239e-07
   stopping tolerance    = 1.000000e-06
   use relative tol?     = 0
-                                          --> 2-norm TemporalNorm 
+                                          --> Inf-norm TemporalNorm 
 
   use fmg?              = 0
   access_level          = 0
@@ -45,5 +45,5 @@ Using theta method
       1       128        4        1        1.00
       2        32  
 
-  wall time = 0.810711
+  wall time = 3.111541
 
