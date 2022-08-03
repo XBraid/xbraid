@@ -349,7 +349,7 @@ VEC theta4(const VEC &u, VEC &guess, const KSDiscretization &disc, double dt, do
 }
 
 void GramSchmidt(MAT &A)
-{ // orthonormalize A in place using gram-schmidt
+{ // orthonormalize A in place using modified gram-schmidt
     // normalize the first column
     A.col(0).normalize();
 
