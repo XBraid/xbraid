@@ -986,7 +986,7 @@ int main(int argc, char *argv[])
    core.SetNRelax(0, nrelax0);
    core.SetSkip(1);
    core.SetStorage(0);
-   core.SetTemporalNorm(3);
+   core.SetTemporalNorm(2);
 
    if (output)
    {
