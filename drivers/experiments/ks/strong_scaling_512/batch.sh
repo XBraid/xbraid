@@ -17,8 +17,7 @@ echo -n 'Timestamp START: ';date
 ncores="16 32 64 128 256 512 1024"
 
 # Delta ranks
-# ranks="32 64"
-ranks="2 4 8 10 16 32 64"
+ranks="2 4 8 10 12 14 16 32 64"
 
 # fixed arguments
 fargs="-tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-6 -niters 3 -mi 50"
@@ -38,15 +37,15 @@ echo "srun -N 1 -n 1 -o ${outd}/${outn}_ml1 ${ex} ${fargs} -ml 1"
 srun -N 1 -n 1 -o       ${outd}/${outn}_ml1 ${ex} ${fargs} -ml 1
 
 for nc in $ncores; do
-   echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_nc${nc}_ml${ml}       ${ex} ${fargs} -ml 4 -cf0 8"
-   srun  -N 19 -n ${nc} -o ${outd}/${outn}_nc${nc}_ml${ml}            ${ex} ${fargs} -ml 4 -cf0 8
+   echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_nc${nc}       ${ex} ${fargs} -ml 4"
+   srun  -N 19 -n ${nc} -o ${outd}/${outn}_nc${nc}            ${ex} ${fargs} -ml 4
 
-   echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_theta_nc${nc}_ml${ml} ${ex} ${fargs} -ml 4 -cf0 8 -theta"
-   srun -N 19 -n ${nc} -o ${outd}/${outn}_theta_nc${nc}_ml${ml}       ${ex} ${fargs} -ml 4 -cf0 8 -theta
+   echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_theta_nc${nc} ${ex} ${fargs} -ml 4 -cf0 8 -theta"
+   srun -N 19 -n ${nc} -o ${outd}/${outn}_theta_nc${nc}       ${ex} ${fargs} -ml 4 -cf0 8 -theta
 
    for rank in $ranks; do
-      echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}_ml${ml} ${ex} ${fargs} -ml 5 -theta -Delta -rank ${rank} -Deltalvl 2"
-      srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}_ml${ml}       ${ex} ${fargs} -ml 5 -theta -Delta -rank ${rank} -Deltalvl 2
+      echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc} ${ex} ${fargs} -ml 4 -cf0 16 -theta -Delta -rank ${rank} -Deltalvl 1"
+      srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}       ${ex} ${fargs} -ml 4 -cf0 16 -theta -Delta -rank ${rank} -Deltalvl 1
    done
 done
 
