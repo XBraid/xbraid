@@ -2,13 +2,13 @@ Using Delta correction
 Using theta method
 
   Braid: Begin simulation, 8192 time steps
-  Braid: || r_0 || not available, wall time = 4.00e-02
-  Braid: || r_1 || = 1.625884e-01, conv factor = 1.00e+00, wall time = 5.93e-01
-  Braid: || r_2 || = 5.157885e-01, conv factor = 3.17e+00, wall time = 1.16e+00
-  Braid: || r_3 || = 2.054021e-01, conv factor = 3.98e-01, wall time = 1.70e+00
-  Braid: || r_4 || = 2.868715e-03, conv factor = 1.40e-02, wall time = 2.16e+00
-  Braid: || r_5 || = 9.220234e-06, conv factor = 3.21e-03, wall time = 2.59e+00
-  Braid: || r_6 || = 1.328529e-07, conv factor = 1.44e-02, wall time = 2.97e+00
+  Braid: || r_0 || not available, wall time = 7.60e-02
+  Braid: || r_1 || = 1.741913e-01, conv factor = 1.00e+00, wall time = 7.44e-01
+  Braid: || r_2 || = 5.593835e-01, conv factor = 3.21e+00, wall time = 1.43e+00
+  Braid: || r_3 || = 2.268216e-01, conv factor = 4.05e-01, wall time = 2.11e+00
+  Braid: || r_4 || = 3.919712e-03, conv factor = 1.73e-02, wall time = 2.75e+00
+  Braid: || r_5 || = 5.937367e-06, conv factor = 1.51e-03, wall time = 3.27e+00
+  Braid: || r_6 || = 5.455867e-08, conv factor = 9.19e-03, wall time = 3.77e+00
 
   Braid Solver Stats:
   start time = 0.000000e+00
@@ -21,7 +21,7 @@ Using theta method
   max iterations        = 50
   iterations            = 7
 
-  residual norm         = 1.328529e-07
+  residual norm         = 5.455867e-08
   stopping tolerance    = 1.000000e-06
   use relative tol?     = 0
                                           --> 2-norm TemporalNorm 
@@ -30,9 +30,9 @@ Using theta method
   access_level          = 0
   print_level           = 2
 
-  max number of levels  = 4
+  max number of levels  = 5
   min coarse            = 2
-  number of levels      = 4
+  number of levels      = 5
   skip down cycle       = 1
   periodic              = 0
   relax_only_cg         = 0
@@ -40,10 +40,11 @@ Using theta method
   number of refinements = 0
 
   level   time-pts   cfactor   nrelax   Crelax Wt
-      0      8192       16        1        1.00
-      1       512        4        1        1.00
-      2       128        4        1        1.00
-      3        32  
+      0      8192        4        1        1.00
+      1      2048        4        1        1.00
+      2       512        4        1        1.00
+      3       128        4        1        1.00
+      4        32  
 
-  wall time = 3.140458
+  wall time = 3.943746
 

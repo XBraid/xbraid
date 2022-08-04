@@ -2,29 +2,17 @@ Using Delta correction
 Using theta method
 
   Braid: Begin simulation, 8192 time steps
-  Braid: || r_0 || not available, wall time = 3.91e-02
-  Braid: || r_1 || = 1.625884e-01, conv factor = 1.00e+00, wall time = 5.22e-01
-  Braid: || r_2 || = 8.744271e-01, conv factor = 5.38e+00, wall time = 1.02e+00
-  Braid: || r_3 || = 2.146280e-01, conv factor = 2.45e-01, wall time = 1.52e+00
-  Braid: || r_4 || = 1.434697e-02, conv factor = 6.68e-02, wall time = 1.97e+00
-  Braid: || r_5 || = 3.181654e-04, conv factor = 2.22e-02, wall time = 2.33e+00
-  Braid: || r_6 || = 6.191093e-06, conv factor = 1.95e-02, wall time = 2.65e+00
-  Braid: || r_7 || = 1.848103e-06, conv factor = 2.99e-01, wall time = 2.95e+00
-  Braid: || r_8 || = 1.167175e-06, conv factor = 6.32e-01, wall time = 3.25e+00
-  Braid: || r_9 || = 3.158651e-06, conv factor = 2.71e+00, wall time = 3.56e+00
-  Braid: || r_10 || = 1.165346e-06, conv factor = 3.69e-01, wall time = 3.87e+00
-  Braid: || r_11 || = 1.202778e-06, conv factor = 1.03e+00, wall time = 4.16e+00
-  Braid: || r_12 || = 1.451664e-06, conv factor = 1.21e+00, wall time = 4.48e+00
-  Braid: || r_13 || = 1.148446e-06, conv factor = 7.91e-01, wall time = 4.76e+00
-  Braid: || r_14 || = 2.268096e-06, conv factor = 1.97e+00, wall time = 5.08e+00
-  Braid: || r_15 || = 1.443538e-06, conv factor = 6.36e-01, wall time = 5.38e+00
-  Braid: || r_16 || = 1.145081e-06, conv factor = 7.93e-01, wall time = 5.68e+00
-  Braid: || r_17 || = 1.492986e-06, conv factor = 1.30e+00, wall time = 5.97e+00
-  Braid: || r_18 || = 1.369504e-06, conv factor = 9.17e-01, wall time = 6.28e+00
-  Braid: || r_19 || = 1.115035e-06, conv factor = 8.14e-01, wall time = 6.58e+00
-  Braid: || r_20 || = 4.324775e-06, conv factor = 3.88e+00, wall time = 6.89e+00
-  Braid: || r_21 || = 2.565010e-06, conv factor = 5.93e-01, wall time = 7.20e+00
-  Braid: || r_22 || = 2.685616e-07, conv factor = 1.05e-01, wall time = 7.48e+00
+  Braid: || r_0 || not available, wall time = 6.23e-02
+  Braid: || r_1 || = 1.741913e-01, conv factor = 1.00e+00, wall time = 6.07e-01
+  Braid: || r_2 || = 9.553841e-01, conv factor = 5.48e+00, wall time = 1.20e+00
+  Braid: || r_3 || = 2.388312e-01, conv factor = 2.50e-01, wall time = 1.81e+00
+  Braid: || r_4 || = 1.698847e-02, conv factor = 7.11e-02, wall time = 2.36e+00
+  Braid: || r_5 || = 3.189077e-04, conv factor = 1.88e-02, wall time = 2.80e+00
+  Braid: || r_6 || = 5.391847e-06, conv factor = 1.69e-02, wall time = 3.20e+00
+  Braid: || r_7 || = 2.876991e-06, conv factor = 5.34e-01, wall time = 3.56e+00
+  Braid: || r_8 || = 1.634257e-06, conv factor = 5.68e-01, wall time = 3.93e+00
+  Braid: || r_9 || = 1.833802e-06, conv factor = 1.12e+00, wall time = 4.28e+00
+  Braid: || r_10 || = 9.403265e-07, conv factor = 5.13e-01, wall time = 4.63e+00
 
   Braid Solver Stats:
   start time = 0.000000e+00
@@ -35,9 +23,9 @@ Using theta method
   storage               = 0
 
   max iterations        = 50
-  iterations            = 23
+  iterations            = 11
 
-  residual norm         = 2.685616e-07
+  residual norm         = 9.403265e-07
   stopping tolerance    = 1.000000e-06
   use relative tol?     = 0
                                           --> 2-norm TemporalNorm 
@@ -46,9 +34,9 @@ Using theta method
   access_level          = 0
   print_level           = 2
 
-  max number of levels  = 4
+  max number of levels  = 5
   min coarse            = 2
-  number of levels      = 4
+  number of levels      = 5
   skip down cycle       = 1
   periodic              = 0
   relax_only_cg         = 0
@@ -56,10 +44,11 @@ Using theta method
   number of refinements = 0
 
   level   time-pts   cfactor   nrelax   Crelax Wt
-      0      8192       16        1        1.00
-      1       512        4        1        1.00
-      2       128        4        1        1.00
-      3        32  
+      0      8192        4        1        1.00
+      1      2048        4        1        1.00
+      2       512        4        1        1.00
+      3       128        4        1        1.00
+      4        32  
 
-  wall time = 7.623962
+  wall time = 4.782304
 

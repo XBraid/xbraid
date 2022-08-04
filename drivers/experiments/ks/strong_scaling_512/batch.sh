@@ -17,7 +17,7 @@ echo -n 'Timestamp START: ';date
 ncores="16 32 64 128 256 512 1024"
 
 # Delta ranks
-ranks="2 4 8 10 12 14 16 32 64"
+ranks="2 4 8 10 16 32 64"
 
 # fixed arguments
 fargs="-tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-6 -niters 3 -mi 50"
