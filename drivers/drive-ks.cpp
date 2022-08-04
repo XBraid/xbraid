@@ -288,7 +288,7 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &p
    pstatus.GetNLevels(&nlevels);
 
    // tolerance for Newton's method
-   double tol = 1e-9;
+   double tol = 1e-12;
    // this actually seems to hurt more than helps for chaotic problems
    // double tol, tight{1e-12}, loose{1e-6};
    // if (level > 0)
@@ -422,7 +422,8 @@ int MyBraidApp::Step(braid_Vector u_,
 
    VEC utmp(u->state);
 
-   if (!useDelta || level < DeltaLevel || coarseGrid) // default behavior, no Psi propagation
+   // if (!useDelta || level < DeltaLevel || coarseGrid) // default behavior, no Psi propagation
+   if (!useDelta || level < DeltaLevel)
    {
       utmp = baseStep(u->state, u->guess, dt, pstatus);
       if (f)

@@ -40,12 +40,12 @@ for nc in $ncores; do
    echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_nc${nc}       ${ex} ${fargs} -ml 4"
    srun  -N 19 -n ${nc} -o ${outd}/${outn}_nc${nc}            ${ex} ${fargs} -ml 4
 
-   echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_theta_nc${nc} ${ex} ${fargs} -ml 4 -cf0 8 -theta"
-   srun -N 19 -n ${nc} -o ${outd}/${outn}_theta_nc${nc}       ${ex} ${fargs} -ml 4 -cf0 8 -theta
+   echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_theta_nc${nc} ${ex} ${fargs} -ml 4 -theta"
+   srun -N 19 -n ${nc} -o ${outd}/${outn}_theta_nc${nc}       ${ex} ${fargs} -ml 4 -theta
 
    for rank in $ranks; do
-      echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc} ${ex} ${fargs} -ml 4 -cf0 16 -theta -Delta -rank ${rank} -Deltalvl 1"
-      srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}       ${ex} ${fargs} -ml 4 -cf0 16 -theta -Delta -rank ${rank} -Deltalvl 1
+      echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc} ${ex} ${fargs} -ml 5 -theta -Delta -rank ${rank} -Deltalvl 1"
+      srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}       ${ex} ${fargs} -ml 5 -theta -Delta -rank ${rank} -Deltalvl 1
    done
 done
 
