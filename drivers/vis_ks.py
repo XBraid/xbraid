@@ -31,7 +31,7 @@ if __name__=="__main__":
     cf = ceil(len(u)/nt)
     l = nx
     T_lyap = np.log(10)/0.1
-    Tf = 4*T_lyap
+    Tf = 8*T_lyap
 
     # plot trajectories
     ratio = (5, 5)
@@ -41,8 +41,8 @@ if __name__=="__main__":
     extent = (0, l, Tf/T_lyap, 0)
     fig, axs = plt.subplots(1, 1, figsize=(ratio[0], ratio[1]))
     interp = "bilinear"
-    axs.imshow(integrate(u[::cf*stride]), cmap=cmap, extent=extent, aspect="auto", interpolation=interp)
-    # axs.imshow(u[::cf*stride], cmap=cmap, extent=extent, aspect="auto", interpolation=interp)
+    # axs.imshow(integrate(u[::cf*stride]), cmap=cmap, extent=extent, aspect="auto", interpolation=interp)
+    axs.imshow(u[::cf*stride], cmap=cmap, extent=extent, aspect="auto", interpolation=interp)
     axs.set_ylabel("$t_\lambda$")
     fig.tight_layout()
     axs.set_xlabel("u", fontsize=32)
