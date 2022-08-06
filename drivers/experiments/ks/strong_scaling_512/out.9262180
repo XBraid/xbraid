@@ -1,0 +1,69 @@
+This machine is ruby104
+My jobid is 9262180
+Timestamp START: Fri Aug  5 16:59:23 PDT 2022
+srun -N 1 -n 1 -o ./ks_ml1 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 1
+srun -N 19 -n 16 -o ./ks_nc16       ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 2
+srun -N 19 -n 16 -o ./ks_theta_nc16 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 3 -theta
+srun -N 19 -n 16 -o ./ks_Delta2_nc16 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 2 -Deltalvl 1
+srun -N 19 -n 16 -o ./ks_Delta4_nc16 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 4 -Deltalvl 1
+srun -N 19 -n 16 -o ./ks_Delta8_nc16 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 8 -Deltalvl 1
+srun -N 19 -n 16 -o ./ks_Delta10_nc16 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 10 -Deltalvl 1
+srun -N 19 -n 16 -o ./ks_Delta16_nc16 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 16 -Deltalvl 1
+srun -N 19 -n 16 -o ./ks_Delta32_nc16 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 32 -Deltalvl 1
+srun -N 19 -n 16 -o ./ks_Delta64_nc16 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 64 -Deltalvl 1
+srun -N 19 -n 32 -o ./ks_nc32       ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 2
+srun -N 19 -n 32 -o ./ks_theta_nc32 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 3 -theta
+srun -N 19 -n 32 -o ./ks_Delta2_nc32 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 2 -Deltalvl 1
+srun -N 19 -n 32 -o ./ks_Delta4_nc32 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 4 -Deltalvl 1
+srun -N 19 -n 32 -o ./ks_Delta8_nc32 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 8 -Deltalvl 1
+srun -N 19 -n 32 -o ./ks_Delta10_nc32 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 10 -Deltalvl 1
+srun -N 19 -n 32 -o ./ks_Delta16_nc32 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 16 -Deltalvl 1
+srun -N 19 -n 32 -o ./ks_Delta32_nc32 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 32 -Deltalvl 1
+srun -N 19 -n 32 -o ./ks_Delta64_nc32 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 64 -Deltalvl 1
+srun -N 19 -n 64 -o ./ks_nc64       ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 2
+srun -N 19 -n 64 -o ./ks_theta_nc64 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 3 -theta
+srun -N 19 -n 64 -o ./ks_Delta2_nc64 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 2 -Deltalvl 1
+srun -N 19 -n 64 -o ./ks_Delta4_nc64 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 4 -Deltalvl 1
+srun -N 19 -n 64 -o ./ks_Delta8_nc64 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 8 -Deltalvl 1
+srun -N 19 -n 64 -o ./ks_Delta10_nc64 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 10 -Deltalvl 1
+srun -N 19 -n 64 -o ./ks_Delta16_nc64 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 16 -Deltalvl 1
+srun -N 19 -n 64 -o ./ks_Delta32_nc64 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 32 -Deltalvl 1
+srun -N 19 -n 64 -o ./ks_Delta64_nc64 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 64 -Deltalvl 1
+srun -N 19 -n 128 -o ./ks_nc128       ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 2
+srun -N 19 -n 128 -o ./ks_theta_nc128 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 3 -theta
+srun -N 19 -n 128 -o ./ks_Delta2_nc128 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 2 -Deltalvl 1
+srun -N 19 -n 128 -o ./ks_Delta4_nc128 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 4 -Deltalvl 1
+srun -N 19 -n 128 -o ./ks_Delta8_nc128 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 8 -Deltalvl 1
+srun -N 19 -n 128 -o ./ks_Delta10_nc128 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 10 -Deltalvl 1
+srun -N 19 -n 128 -o ./ks_Delta16_nc128 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 16 -Deltalvl 1
+srun -N 19 -n 128 -o ./ks_Delta32_nc128 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 32 -Deltalvl 1
+srun -N 19 -n 128 -o ./ks_Delta64_nc128 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 64 -Deltalvl 1
+srun -N 19 -n 256 -o ./ks_nc256       ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 2
+srun -N 19 -n 256 -o ./ks_theta_nc256 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 3 -theta
+srun -N 19 -n 256 -o ./ks_Delta2_nc256 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 2 -Deltalvl 1
+srun -N 19 -n 256 -o ./ks_Delta4_nc256 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 4 -Deltalvl 1
+srun -N 19 -n 256 -o ./ks_Delta8_nc256 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 8 -Deltalvl 1
+srun -N 19 -n 256 -o ./ks_Delta10_nc256 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 10 -Deltalvl 1
+srun -N 19 -n 256 -o ./ks_Delta16_nc256 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 16 -Deltalvl 1
+srun -N 19 -n 256 -o ./ks_Delta32_nc256 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 32 -Deltalvl 1
+srun -N 19 -n 256 -o ./ks_Delta64_nc256 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 64 -Deltalvl 1
+srun -N 19 -n 512 -o ./ks_nc512       ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 2
+srun -N 19 -n 512 -o ./ks_theta_nc512 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 3 -theta
+srun -N 19 -n 512 -o ./ks_Delta2_nc512 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 2 -Deltalvl 1
+srun -N 19 -n 512 -o ./ks_Delta4_nc512 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 4 -Deltalvl 1
+srun -N 19 -n 512 -o ./ks_Delta8_nc512 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 8 -Deltalvl 1
+srun -N 19 -n 512 -o ./ks_Delta10_nc512 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 10 -Deltalvl 1
+srun -N 19 -n 512 -o ./ks_Delta16_nc512 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 16 -Deltalvl 1
+srun -N 19 -n 512 -o ./ks_Delta32_nc512 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 32 -Deltalvl 1
+srun -N 19 -n 512 -o ./ks_Delta64_nc512 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 64 -Deltalvl 1
+srun -N 19 -n 1024 -o ./ks_nc1024       ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 2
+srun -N 19 -n 1024 -o ./ks_theta_nc1024 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 3 -theta
+srun -N 19 -n 1024 -o ./ks_Delta2_nc1024 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 2 -Deltalvl 1
+srun -N 19 -n 1024 -o ./ks_Delta4_nc1024 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 4 -Deltalvl 1
+srun -N 19 -n 1024 -o ./ks_Delta8_nc1024 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 8 -Deltalvl 1
+srun -N 19 -n 1024 -o ./ks_Delta10_nc1024 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 10 -Deltalvl 1
+srun -N 19 -n 1024 -o ./ks_Delta16_nc1024 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 16 -Deltalvl 1
+srun -N 19 -n 1024 -o ./ks_Delta32_nc1024 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 32 -Deltalvl 1
+srun -N 19 -n 1024 -o ./ks_Delta64_nc1024 ../../../drive-ks -tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16 -ml 4 -theta -Delta -rank 64 -Deltalvl 1
+Done
+Timestamp END: Fri Aug  5 17:40:01 PDT 2022

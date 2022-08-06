@@ -1,0 +1,14 @@
+srun: Warning: can't run 16 processes on 19 nodes, setting nnodes to 16
+srun: Warning: can't run 16 processes on 19 nodes, setting nnodes to 16
+srun: Warning: can't run 16 processes on 19 nodes, setting nnodes to 16
+srun: Warning: can't run 16 processes on 19 nodes, setting nnodes to 16
+srun: Warning: can't run 16 processes on 19 nodes, setting nnodes to 16
+srun: Warning: can't run 16 processes on 19 nodes, setting nnodes to 16
+srun: Warning: can't run 16 processes on 19 nodes, setting nnodes to 16
+srun: error: Unable to create step for job 9262189: More processors requested than permitted
+srun: error: Unable to create step for job 9262189: More processors requested than permitted
+srun: error: Unable to create step for job 9262189: More processors requested than permitted
+srun: error: Unable to create step for job 9262189: More processors requested than permitted
+srun: error: Unable to create step for job 9262189: More processors requested than permitted
+srun: error: Unable to create step for job 9262189: More processors requested than permitted
+srun: error: Unable to create step for job 9262189: More processors requested than permitted

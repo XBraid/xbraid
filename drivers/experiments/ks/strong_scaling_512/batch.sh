@@ -20,7 +20,7 @@ ncores="16 32 64 128 256 512 1024"
 ranks="2 4 8 10 16 32 64"
 
 # fixed arguments
-fargs="-tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50"
+fargs="-tf 4 -nt 8192 -nx 512 -cf 4 -nu 1 -nu0 1 -tol 1e-9 -niters 3 -mi 50 -cf0 16"
 
 # path to executable
 ex="../../../drive-ks"
@@ -37,15 +37,15 @@ echo "srun -N 1 -n 1 -o ${outd}/${outn}_ml1 ${ex} ${fargs} -ml 1"
 srun -N 1 -n 1 -o       ${outd}/${outn}_ml1 ${ex} ${fargs} -ml 1
 
 for nc in $ncores; do
-   echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_nc${nc}       ${ex} ${fargs} -ml 2 -cf0 16"
-   srun  -N 19 -n ${nc} -o ${outd}/${outn}_nc${nc}            ${ex} ${fargs} -ml 2 -cf0 16
+   echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_nc${nc}       ${ex} ${fargs} -ml 2"
+   srun  -N 19 -n ${nc} -o ${outd}/${outn}_nc${nc}            ${ex} ${fargs} -ml 2
 
-   echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_theta_nc${nc} ${ex} ${fargs} -ml 3 -cf0 16 -theta"
-   srun -N 19 -n ${nc} -o ${outd}/${outn}_theta_nc${nc}       ${ex} ${fargs} -ml 3 -cf0 16 -theta
+   echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_theta_nc${nc} ${ex} ${fargs} -ml 3 -theta"
+   srun -N 19 -n ${nc} -o ${outd}/${outn}_theta_nc${nc}       ${ex} ${fargs} -ml 3 -theta
 
    for rank in $ranks; do
-      echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc} ${ex} ${fargs} -ml 4 -cf0 16 -theta -Delta -rank ${rank} -Deltalvl 1"
-      srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}       ${ex} ${fargs} -ml 4 -cf0 16 -theta -Delta -rank ${rank} -Deltalvl 1
+      echo "srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc} ${ex} ${fargs} -ml 4 -theta -Delta -rank ${rank} -Deltalvl 1"
+      srun -N 19 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}       ${ex} ${fargs} -ml 4 -theta -Delta -rank ${rank} -Deltalvl 1
    done
 done
 

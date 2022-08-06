@@ -1,14 +1,12 @@
 
   Braid: Begin simulation, 8192 time steps
-  Braid: || r_0 || not available, wall time = 8.88e-02
-  Braid: || r_1 || = 7.629728e-02, conv factor = 1.00e+00, wall time = 3.12e+00
-  Braid: || r_2 || = 7.408402e-02, conv factor = 9.71e-01, wall time = 6.17e+00
-  Braid: || r_3 || = 5.003412e-02, conv factor = 6.75e-01, wall time = 9.32e+00
-  Braid: || r_4 || = 3.313164e-03, conv factor = 6.62e-02, wall time = 1.22e+01
-  Braid: || r_5 || = 1.193598e-03, conv factor = 3.60e-01, wall time = 1.49e+01
-  Braid: || r_6 || = 9.851136e-05, conv factor = 8.25e-02, wall time = 1.74e+01
-  Braid: || r_7 || = 6.093983e-06, conv factor = 6.19e-02, wall time = 1.96e+01
-  Braid: || r_8 || = 2.490632e-07, conv factor = 4.09e-02, wall time = 2.17e+01
+  Braid: || r_0 || not available, wall time = 8.70e-02
+  Braid: || r_1 || = 4.691069e-03, conv factor = 1.00e+00, wall time = 4.64e+00
+  Braid: || r_2 || = 5.684410e-04, conv factor = 1.21e-01, wall time = 8.95e+00
+  Braid: || r_3 || = 1.869306e-05, conv factor = 3.29e-02, wall time = 1.27e+01
+  Braid: || r_4 || = 1.505364e-07, conv factor = 8.05e-03, wall time = 1.64e+01
+  Braid: || r_5 || = 2.209489e-09, conv factor = 1.47e-02, wall time = 2.00e+01
+  Braid: || r_6 || = 7.673930e-10, conv factor = 3.47e-01, wall time = 2.35e+01
 
   Braid Solver Stats:
   start time = 0.000000e+00
@@ -19,10 +17,10 @@
   storage               = 0
 
   max iterations        = 50
-  iterations            = 9
+  iterations            = 7
 
-  residual norm         = 2.490632e-07
-  stopping tolerance    = 1.000000e-06
+  residual norm         = 7.673930e-10
+  stopping tolerance    = 1.000000e-09
   use relative tol?     = 0
                                           --> 2-norm TemporalNorm 
 
@@ -30,9 +28,9 @@
   access_level          = 0
   print_level           = 2
 
-  max number of levels  = 3
+  max number of levels  = 2
   min coarse            = 2
-  number of levels      = 3
+  number of levels      = 2
   skip down cycle       = 1
   periodic              = 0
   relax_only_cg         = 0
@@ -41,8 +39,7 @@
 
   level   time-pts   cfactor   nrelax   Crelax Wt
       0      8192       16        1        1.00
-      1       512        4        1        1.00
-      2       128  
+      1       512  
 
-  wall time = 22.463018
+  wall time = 26.145829
 
