@@ -200,7 +200,7 @@ VEC theta2(const VEC &u, VEC &guess, const KSDiscretization &disc, double dt, do
         rhs << k.head(nx) - dt * disc.f_ks(u1),
             k.tail(nx) - dt * disc.f_ks(u2);
 
-        if (rhs.norm() <= tol)
+        if (rhs.norm()/std::sqrt(nx) <= tol)
         {
             break;
         }

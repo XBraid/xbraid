@@ -23,7 +23,7 @@ ntimes="128 512 2048 8192"
 mlevels="2 3 4 5"
 
 # fixed arguments
-fargs="-tf 4 -nx 128 -cf 4 -mi 50"
+fargs="-tf 4 -nx 128 -cf 4  -mi 25"
 dargs="-theta -Delta -rank 10"
 
 # path to executable

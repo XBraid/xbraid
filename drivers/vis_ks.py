@@ -26,27 +26,32 @@ def integrate(u):
 
 if __name__=="__main__":
     u = read_csv("drive-ks.out")
+    font = {'size'   : 16}
+    plt.rc('font', **font)
 
     nt, nx = u.shape
     cf = ceil(len(u)/nt)
-    l = nx
+    # l = nx
+    l = 64
     T_lyap = np.log(10)/0.1
     Tf = 8*T_lyap
 
     # plot trajectories
-    ratio = (5, 5)
+    ratio = (8, 4)
     cmap = "plasma"
     # cmap = "cool_r"
     stride = max(nt//( nx*ratio[0]//ratio[1] )//cf, 1)
-    extent = (0, l, Tf/T_lyap, 0)
+    # extent = (0, l, Tf/T_lyap, 0)
+    extent = (0, Tf/T_lyap, l, 0)
     fig, axs = plt.subplots(1, 1, figsize=(ratio[0], ratio[1]))
     interp = "bilinear"
     # axs.imshow(integrate(u[::cf*stride]), cmap=cmap, extent=extent, aspect="auto", interpolation=interp)
-    axs.imshow(u[::cf*stride], cmap=cmap, extent=extent, aspect="auto", interpolation=interp)
-    axs.set_ylabel("$t_\lambda$")
+    axs.imshow(u[::cf*stride].T, cmap=cmap, extent=extent, aspect="auto", interpolation=interp)
+    axs.set_xlabel("$t_\lambda$")
+    axs.set_ylabel("x")
     fig.tight_layout()
-    axs.set_xlabel("u", fontsize=32)
     axs.grid()
+    plt.savefig("ks_traj.png", dpi=600)
     plt.show()
 
     # error norm + estimate lyapunov exponent

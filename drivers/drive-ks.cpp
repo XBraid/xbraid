@@ -291,21 +291,21 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &p
    pstatus.GetNLevels(&nlevels);
 
    // tolerance for Newton's method
-   double tol = 1e-12;
+   // double tol = 1e-13/std::sqrt(disc.nx);
    // this actually seems to hurt more than helps for chaotic problems
-   // double tol, tight{1e-12}, loose{1e-6};
-   // if (level > 0)
-   // {
-   //    tol = tight;
-   // }
-   // else
-   // {
-   //    pstatus.GetSpatialAccuracy(loose, tight, &tol);
-   // }
-   // if (nlevels == 1)
-   // {
-   //    tol = tight;
-   // }
+   double tol, tight{1e-13/std::sqrt(disc.nx)}, loose{1e-11/std::sqrt(disc.nx)};
+   if (level > 0)
+   {
+      tol = tight;
+   }
+   else
+   {
+      pstatus.GetSpatialAccuracy(loose, tight, &tol);
+   }
+   if (nlevels == 1)
+   {
+      tol = tight;
+   }
 
    // limit newton iterations only on coarse grids
    int iters = newton_iters;
@@ -951,7 +951,8 @@ int main(int argc, char *argv[])
    }
 
    // get initial data
-   VEC u0 = FourierMode(1, nx, len);
+   // VEC u0 = FourierMode(1, nx, len);
+   VEC u0 = smoothed_noise(nx, nx/4);
 
    // set up app structure
    MyBraidApp app(MPI_COMM_WORLD, rank, tstart, tstop, nt, cfactor, cf0, useDelta, DeltaLvl, DeltaRank, cglv, useTheta, newton_iters, max_levels, nx, len, ord, u0);
@@ -1013,8 +1014,8 @@ int main(int argc, char *argv[])
 
    if (rank == 0 && output)
    {
-      collate_files(nt, cfactor, "drive-ks");
-      collate_files(nt, cfactor, "drive-ks-lv");
+      collate_files(nt, cf0, "drive-ks");
+      collate_files(nt, cf0, "drive-ks-lv");
    }
 
    // Clean up
