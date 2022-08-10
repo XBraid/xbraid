@@ -1,0 +1,46 @@
+Using theta method
+
+  Braid: Begin simulation, 8192 time steps
+  Braid: || r_0 || not available, wall time = 2.65e-03
+  Braid: || r_1 || = 3.442866e-03, conv factor = 1.00e+00, wall time = 8.35e-01
+  Braid: || r_2 || = 2.006094e-03, conv factor = 5.83e-01, wall time = 1.66e+00
+  Braid: || r_3 || = 7.644956e-06, conv factor = 3.81e-03, wall time = 2.48e+00
+  Braid: || r_4 || = 2.775721e-08, conv factor = 3.63e-03, wall time = 3.22e+00
+  Braid: || r_5 || = 1.020543e-10, conv factor = 3.68e-03, wall time = 4.04e+00
+
+  Braid Solver Stats:
+  start time = 0.000000e+00
+  stop time  = 9.210340e+01
+  time steps = 8192
+
+  use seq soln?         = 0
+  storage               = 0
+
+  max iterations        = 25
+  iterations            = 6
+
+  residual norm         = 1.020543e-10
+  stopping tolerance    = 1.000000e-08
+  use relative tol?     = 0
+                                          --> 2-norm TemporalNorm 
+
+  use fmg?              = 0
+  access_level          = 0
+  print_level           = 2
+
+  max number of levels  = 3
+  min coarse            = 2
+  number of levels      = 3
+  skip down cycle       = 1
+  periodic              = 0
+  relax_only_cg         = 0
+  finalFCRelax          = 0
+  number of refinements = 0
+
+  level   time-pts   cfactor   nrelax   Crelax Wt
+      0      8192       16        1        1.00
+      1       512        4        1        1.00
+      2       128  
+
+  wall time = 4.691603
+
