@@ -1,0 +1,27 @@
+This machine is ruby134
+My jobid is 9293516
+Timestamp START: Wed Aug 10 10:38:29 PDT 2022
+srun -N 1 -n 1 -o ./ks_ml1 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 1
+srun -N 40 -n 16 -o ./ks_theta_nc16 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 2 -theta
+srun -N 40 -n 16 -o ./ks_Delta9_nc16_ml3 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 3 -theta -Delta -rank 9
+srun -N 40 -n 16 -o ./ks_Delta9_nc16_ml4 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 4 -theta -Delta -rank 9
+srun -N 40 -n 32 -o ./ks_theta_nc32 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 2 -theta
+srun -N 40 -n 32 -o ./ks_Delta9_nc32_ml3 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 3 -theta -Delta -rank 9
+srun -N 40 -n 32 -o ./ks_Delta9_nc32_ml4 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 4 -theta -Delta -rank 9
+srun -N 40 -n 64 -o ./ks_theta_nc64 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 2 -theta
+srun -N 40 -n 64 -o ./ks_Delta9_nc64_ml3 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 3 -theta -Delta -rank 9
+srun -N 40 -n 64 -o ./ks_Delta9_nc64_ml4 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 4 -theta -Delta -rank 9
+srun -N 40 -n 128 -o ./ks_theta_nc128 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 2 -theta
+srun -N 40 -n 128 -o ./ks_Delta9_nc128_ml3 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 3 -theta -Delta -rank 9
+srun -N 40 -n 128 -o ./ks_Delta9_nc128_ml4 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 4 -theta -Delta -rank 9
+srun -N 40 -n 256 -o ./ks_theta_nc256 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 2 -theta
+srun -N 40 -n 256 -o ./ks_Delta9_nc256_ml3 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 3 -theta -Delta -rank 9
+srun -N 40 -n 256 -o ./ks_Delta9_nc256_ml4 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 4 -theta -Delta -rank 9
+srun -N 40 -n 512 -o ./ks_theta_nc512 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 2 -theta
+srun -N 40 -n 512 -o ./ks_Delta9_nc512_ml3 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 3 -theta -Delta -rank 9
+srun -N 40 -n 512 -o ./ks_Delta9_nc512_ml4 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 4 -theta -Delta -rank 9
+srun -N 40 -n 1024 -o ./ks_theta_nc1024 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 2 -theta
+srun -N 40 -n 1024 -o ./ks_Delta9_nc1024_ml3 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 3 -theta -Delta -rank 9
+srun -N 40 -n 1024 -o ./ks_Delta9_nc1024_ml4 ../../../drive-ks -tf 8 -nt 16384 -nx 256 -cf 4 -cf0 16 -tol 1e-8 -mi 25 -cglv -ml 4 -theta -Delta -rank 9
+Done
+Timestamp END: Wed Aug 10 10:45:45 PDT 2022
