@@ -291,21 +291,21 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &p
    pstatus.GetNLevels(&nlevels);
 
    // tolerance for Newton's method
-   // double tol = 1e-13/std::sqrt(disc.nx);
+   double tol = 1e-14/std::sqrt(disc.nx);
    // this actually seems to hurt more than helps for chaotic problems
-   double tol, tight{1e-13/std::sqrt(disc.nx)}, loose{1e-11/std::sqrt(disc.nx)};
-   if (level > 0)
-   {
-      tol = tight;
-   }
-   else
-   {
-      pstatus.GetSpatialAccuracy(loose, tight, &tol);
-   }
-   if (nlevels == 1)
-   {
-      tol = tight;
-   }
+   // double tol, tight{1e-13/std::sqrt(disc.nx)}, loose{1e-11/std::sqrt(disc.nx)};
+   // if (level > 0)
+   // {
+   //    tol = tight;
+   // }
+   // else
+   // {
+   //    pstatus.GetSpatialAccuracy(loose, tight, &tol);
+   // }
+   // if (nlevels == 1)
+   // {
+   //    tol = tight;
+   // }
 
    // limit newton iterations only on coarse grids
    int iters = newton_iters;
@@ -950,9 +950,15 @@ int main(int argc, char *argv[])
       std::cout << "Using theta method\n";
    }
 
+   // make sure we do enough iterations on one level
+   if (max_levels == 1)
+   {
+      newton_iters = 10;
+   }
+
    // get initial data
-   // VEC u0 = FourierMode(1, nx, len);
-   VEC u0 = smoothed_noise(nx, nx/4);
+   VEC u0 = FourierMode(1, nx, len);
+   // VEC u0 = smoothed_noise(nx, nx/4);
 
    // set up app structure
    MyBraidApp app(MPI_COMM_WORLD, rank, tstart, tstop, nt, cfactor, cf0, useDelta, DeltaLvl, DeltaRank, cglv, useTheta, newton_iters, max_levels, nx, len, ord, u0);
