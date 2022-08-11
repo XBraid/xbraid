@@ -51,6 +51,7 @@ VEC smoothed_noise(int nx, int width);
 VEC FourierMode(int wavenum, const int nx, const double len);
 void setFourierMatrix(MAT &A, const int nx, const double len);
 void GramSchmidt(MAT& A);
+double inf_norm(const VEC &u);
 
 // time steppers
 void getGuessTheta2(VEC &guess, const VEC &u, const VEC &ustop, const KSDiscretization &disc, double dt);

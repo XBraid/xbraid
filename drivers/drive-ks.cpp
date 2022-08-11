@@ -291,7 +291,7 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &p
    pstatus.GetNLevels(&nlevels);
 
    // tolerance for Newton's method
-   double tol = 1e-14/std::sqrt(disc.nx);
+   double tol = 1e-10;
    // this actually seems to hurt more than helps for chaotic problems
    // double tol, tight{1e-13/std::sqrt(disc.nx)}, loose{1e-11/std::sqrt(disc.nx)};
    // if (level > 0)

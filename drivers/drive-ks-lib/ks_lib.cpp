@@ -137,6 +137,11 @@ VEC smoothed_noise(int nx, int width)
     return G * out;
 }
 
+double inf_norm(const VEC &u)
+{
+    return u.lpNorm<Eigen::Infinity>();
+}
+
 KSDiscretization::KSDiscretization(int nx_, double length, Stencil d1, Stencil d2, Stencil d4)
 {
     nx = nx_;
@@ -185,6 +190,7 @@ VEC theta2(const VEC &u, VEC &guess, const KSDiscretization &disc, double dt, do
     a22 = (th_A + th_C) / 2;
 
     VEC k(guess);
+    VEC p(guess);
     VEC u1(u), u2(u);
 
     SPMAT A(stages * nx, stages * nx);
@@ -200,7 +206,16 @@ VEC theta2(const VEC &u, VEC &guess, const KSDiscretization &disc, double dt, do
         rhs << k.head(nx) - dt * disc.f_ks(u1),
             k.tail(nx) - dt * disc.f_ks(u2);
 
-        if (rhs.norm()/std::sqrt(nx) <= tol)
+        // if (i == 0)
+        // {
+        //     rel_res = inf_norm(rhs);
+        // }
+
+        // if (inf_norm(rhs) <= 1e-2*tol)
+        // {
+        //     break;
+        // }
+        if (i > 0 && inf_norm(p) <= tol)
         {
             break;
         }
@@ -214,7 +229,8 @@ VEC theta2(const VEC &u, VEC &guess, const KSDiscretization &disc, double dt, do
                        nx);
 
         solver.compute(A);
-        k -= solver.solve(rhs);
+        p = solver.solve(rhs);
+        k -= p;
     }
     if (P_tan)
     {
