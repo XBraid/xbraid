@@ -14,7 +14,7 @@ echo -n 'My jobid is '; echo $SLURM_JOBID
 echo -n 'Timestamp START: ';date
 
 # number of cores
-# ncores="16 32 64 128 256 512 1024 2048"
+ncores="16 32 64 128 256 512 1024 2048"
 # ncores="2048 4096"
 
 # Delta ranks
@@ -33,9 +33,8 @@ outd="."
 outn="ks"
 
 # serial run
-# mpirun -n 1 ${ex} ${fargs} -ml 1 > ${outd}/${outn}_ml1
-# echo "srun -N 1 -n 1 -o ${outd}/${outn}_ml1 ${ex} ${fargs} -ml 1"
-# srun -N 1 -n 1 -o       ${outd}/${outn}_ml1 ${ex} ${fargs} -ml 1
+echo "srun -N 1 -n 1 -o ${outd}/${outn}_ml1 ${ex} ${fargs} -ml 1"
+srun -N 1 -n 1 -o       ${outd}/${outn}_ml1 ${ex} ${fargs} -ml 1
 
 for nc in $ncores; do
    # echo "srun -N 40 -n ${nc} -o ${outd}/${outn}_nc${nc}       ${ex} ${fargs} -ml 2"
