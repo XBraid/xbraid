@@ -33,22 +33,25 @@ outd="."
 outn="ks"
 
 # serial run
-echo "srun -N 1 -n 1 -o ${outd}/${outn}_ml1 ${ex} ${fargs} -ml 1"
-srun -N 1 -n 1 -o       ${outd}/${outn}_ml1 ${ex} ${fargs} -ml 1
+# echo "srun -N 1 -n 1 -o ${outd}/${outn}_ml1 ${ex} ${fargs} -ml 1"
+# srun -N 1 -n 1 -o       ${outd}/${outn}_ml1 ${ex} ${fargs} -ml 1
 
 for nc in $ncores; do
    # echo "srun -N 40 -n ${nc} -o ${outd}/${outn}_nc${nc}       ${ex} ${fargs} -ml 2"
    # srun  -N 40 -n ${nc} -o ${outd}/${outn}_nc${nc}            ${ex} ${fargs} -ml 2
 
-   echo "srun -N 40 -n ${nc} -o ${outd}/${outn}_theta_nc${nc} ${ex} ${fargs} -ml 2 -theta"
-   srun -N 40 -n ${nc} -o ${outd}/${outn}_theta_nc${nc}       ${ex} ${fargs} -ml 2 -theta
+   # echo "srun -N 40 -n ${nc} -o ${outd}/${outn}_theta_nc${nc} ${ex} ${fargs} -ml 2 -theta"
+   # srun -N 40 -n ${nc} -o ${outd}/${outn}_theta_nc${nc}       ${ex} ${fargs} -ml 2 -theta
 
    for rank in $ranks; do
-      echo "srun -N 40 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}_ml3 ${ex} ${fargs} -ml 3 -theta -Delta -rank ${rank}"
-      srun -N 40 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}_ml3       ${ex} ${fargs} -ml 3 -theta -Delta -rank ${rank} 
+      # echo "srun -N 40 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}_ml3 ${ex} ${fargs} -ml 3 -theta -Delta -rank ${rank}"
+      # srun -N 40 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}_ml3       ${ex} ${fargs} -ml 3 -theta -Delta -rank ${rank} 
 
-      echo "srun -N 40 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}_ml4 ${ex} ${fargs} -ml 4 -theta -Delta -rank ${rank}"
-      srun -N 40 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}_ml4       ${ex} ${fargs} -ml 4 -theta -Delta -rank ${rank} 
+      # echo "srun -N 40 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}_ml4 ${ex} ${fargs} -ml 4 -theta -Delta -rank ${rank}"
+      # srun -N 40 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}_ml4       ${ex} ${fargs} -ml 4 -theta -Delta -rank ${rank} 
+
+      echo "srun -N 40 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}_ml4_fmg ${ex} ${fargs} -ml 4 -theta -Delta -rank ${rank} -fmg"
+      srun -N 40 -n ${nc} -o ${outd}/${outn}_Delta${rank}_nc${nc}_ml4_fmg       ${ex} ${fargs} -ml 4 -theta -Delta -rank ${rank} -fmg
    done
 done
 

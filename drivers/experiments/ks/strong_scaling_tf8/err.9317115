@@ -1,0 +1,4 @@
+srun: Warning: can't run 16 processes on 40 nodes, setting nnodes to 16
+srun: Warning: can't run 32 processes on 40 nodes, setting nnodes to 32
+srun: Job 9317115 step creation temporarily disabled, retrying (Requested nodes are busy)
+srun: Step created for job 9317115
