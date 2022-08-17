@@ -176,7 +176,7 @@ void getGuessTheta2(VEC &guess, const VEC &u, const VEC &ustop, const KSDiscreti
     guess.head(nx) = 2 * (ustop - u) - guess.tail(nx);
 }
 
-VEC theta2(const VEC &u, VEC &guess, const KSDiscretization &disc, double dt, double th_A, double th_B, double th_C, MAT *P_tan, int newton_iters, double tol)
+VEC theta2(const VEC &u, VEC &guess, const KSDiscretization &disc, double dt, double th_A, double th_B, double th_C, MAT *P_tan, int newton_iters, double tol, double *err_est)
 {
     const int stages = 2;
     int nx = u.size();
@@ -206,15 +206,6 @@ VEC theta2(const VEC &u, VEC &guess, const KSDiscretization &disc, double dt, do
         rhs << k.head(nx) - dt * disc.f_ks(u1),
             k.tail(nx) - dt * disc.f_ks(u2);
 
-        // if (i == 0)
-        // {
-        //     rel_res = inf_norm(rhs);
-        // }
-
-        // if (inf_norm(rhs) <= 1e-2*tol)
-        // {
-        //     break;
-        // }
         if (i > 0 && inf_norm(p) <= tol)
         {
             break;
@@ -235,7 +226,7 @@ VEC theta2(const VEC &u, VEC &guess, const KSDiscretization &disc, double dt, do
     if (P_tan)
     {
         // here we assume that the columns of P_tan contain tangent vectors to propagate
-        // and we propagate them implicitely without forming the full lin. of Phi.
+        // and we propagate them implicitly without forming the full lin. of Phi.
         // VEC tmp(stages * nx); // just used to store solution vectors
         // VEC rhs(stages * nx);
         MAT tmp(stages * nx, P_tan->cols());
@@ -257,9 +248,17 @@ VEC theta2(const VEC &u, VEC &guess, const KSDiscretization &disc, double dt, do
         tmp = solver.solve(rhs);
         *P_tan += (tmp.topRows(nx) + tmp.bottomRows(nx)) / 2.;
     }
+
     // std::cout << "guess accuracy: " << (k - guess).norm() << '\n';
     guess = k;
-    return u + (k.head(nx) + k.tail(nx)) / 2;
+    u2 = u + (k.head(nx) + k.tail(nx)) / 2;
+    if (err_est)
+    {
+        // use embedded 1st order method to estimate (3rd order) local discretization error
+        u1 = u + k.head(nx);
+        *err_est = (u1 - u2).lpNorm<Eigen::Infinity>();
+    }
+    return u2;
 }
 
 void getGuessTheta4(VEC &guess, const VEC &u, const VEC &ustop, const KSDiscretization &disc, double dt, double th_A, double th_B, double th_C)

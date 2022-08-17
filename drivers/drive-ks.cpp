@@ -136,6 +136,7 @@ public:
                 VEC &ustop,
                 double dt,
                 BraidStepStatus &pstatus,
+                double *err_est = nullptr,
                 MAT *P_tan_ptr = nullptr);
 
    // computes the dot product between the derivative of the step function
@@ -284,7 +285,7 @@ double MyBraidApp::getTheta(int level)
    return thetas[level];
 }
 
-VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &pstatus, MAT *P_tan_ptr)
+VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &pstatus, double *err_est, MAT *P_tan_ptr)
 {
    int level, nlevels;
    pstatus.GetLevel(&level);
@@ -319,7 +320,7 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &p
    {
       if (level == 0 || !useTheta)
       {
-         return theta2(u, guess, disc, dt, 0., 0., 1., P_tan_ptr, iters, std::sqrt(disc.nx) * tol);
+         return theta2(u, guess, disc, dt, 0., 0., 1., P_tan_ptr, iters, std::sqrt(disc.nx) * tol, err_est);
       }
       double theta = getTheta(level);
       double cf = cfactor0*intpow(cfactor, level-1);
@@ -422,13 +423,13 @@ int MyBraidApp::Step(braid_Vector u_,
       u->guess = VEC::Zero(stages * nx);
    }
 
-
+   double err_est = -1.;
    VEC utmp(u->state);
 
    // if (!useDelta || level < DeltaLevel)
    if (!useDelta || level < DeltaLevel || (coarseGrid && !cglv)) // default behavior, no Psi propagation
    {
-      utmp = baseStep(u->state, u->guess, dt, pstatus);
+      utmp = baseStep(u->state, u->guess, dt, pstatus, &err_est);
       if (f)
       {
          utmp += f->state;
@@ -446,7 +447,7 @@ int MyBraidApp::Step(braid_Vector u_,
    }
    // else:
    MAT Psitmp(u->Psi);
-   utmp = baseStep(u->state, u->guess, dt, pstatus, &Psitmp);
+   utmp = baseStep(u->state, u->guess, dt, pstatus, &err_est, &Psitmp);
 
    // never overwrite initial guess at C-points
    if (!useGuess)
@@ -516,7 +517,7 @@ int MyBraidApp::Residual(braid_Vector u_,
 
    VEC utmp(r->state);
    MAT Psitmp(r->Psi);
-   utmp = baseStep(r->state, guess, dt, pstatus, &Psitmp);
+   utmp = baseStep(r->state, guess, dt, pstatus, nullptr, &Psitmp);
 
    if (!useDelta || level < DeltaLevel || (level == DeltaLevel && up))
    {
@@ -816,10 +817,11 @@ int main(int argc, char *argv[])
             printf("  -niters     : set number of newton iters for theta method\n");
             printf("  -fmg        : use FMG cycling\n");
             printf("  -Delta      : use delta correction\n");
-            printf("  -Deltalvl   : delta correction is deferred until this level\n");
+            printf("  -Deltalvl   : Delta correction is deferred until this level\n");
             printf("  -cglv       : Propagate Lyapunov Vectors on the coarsest grid\n");
             printf("  -rank       : set rank of delta correction (Default: 3)\n");
             printf("  -theta      : use first order theta method\n");
+            printf("  -refine     : use global refinement to approximate true FMG cycle\n");
             printf("  -out        : write output to file (for visualization)\n");
             printf("  -test       : run wrapper tests\n");
             printf("\n");

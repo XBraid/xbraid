@@ -55,7 +55,7 @@ double inf_norm(const VEC &u);
 
 // time steppers
 void getGuessTheta2(VEC &guess, const VEC &u, const VEC &ustop, const KSDiscretization &disc, double dt);
-VEC theta2(const VEC &u, VEC &guess, const KSDiscretization& disc, double dt, double th_A = 0., double th_B = 0., double th_C = 0., MAT *P_tan = nullptr, int newton_iters = 10, double tol = 1e-12);
+VEC theta2(const VEC &u, VEC &guess, const KSDiscretization& disc, double dt, double th_A = 0., double th_B = 0., double th_C = 0., MAT *P_tan = nullptr, int newton_iters = 10, double tol = 1e-12, double* err_est = nullptr);
 VEC theta4(const VEC &u, VEC &guess, const KSDiscretization& disc, double dt, double th_A = 0., double th_B = 0., double th_C = 0., MAT *P_tan = nullptr, int newton_iters = 10, double tol = 1e-12);
 
 // braid helpers
