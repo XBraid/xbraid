@@ -254,9 +254,9 @@ VEC theta2(const VEC &u, VEC &guess, const KSDiscretization &disc, double dt, do
     u2 = u + (k.head(nx) + k.tail(nx)) / 2;
     if (err_est)
     {
-        // use embedded 1st order method to estimate (3rd order) local discretization error
+        // use embedded 1st order method to estimate relative local discretization error
         u1 = u + k.head(nx);
-        *err_est = (u1 - u2).lpNorm<Eigen::Infinity>();
+        *err_est = (u1 - u2).lpNorm<Eigen::Infinity>()/u2.lpNorm<Eigen::Infinity>();
     }
     return u2;
 }

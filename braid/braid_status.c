@@ -745,6 +745,7 @@ _braid_StepStatusInit(braid_Real       tstart,
 
    return _braid_error_flag;
 }
+ACCESSOR_FUNCTION_GET2_IN1(Step, TIUL,         Int, Int, Int)
 ACCESSOR_FUNCTION_GET1(Step, T,             Real)
 ACCESSOR_FUNCTION_GET1(Step, TIndex,        Int)
 ACCESSOR_FUNCTION_GET1(Step, Iter,          Int)

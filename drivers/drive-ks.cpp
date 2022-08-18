@@ -89,11 +89,15 @@ public:
    int newton_iters;
    int DeltaRank;
    int DeltaLevel;
+   int max_levels;
    bool cglv;
    bool useDelta;
    bool useTheta;
+   bool doRefine;
    int stages;
    std::vector<double> thetas;
+   std::vector<double> err_ests;
+   double est_norm;
 
    int nx;
    KSDiscretization disc;
@@ -105,6 +109,7 @@ public:
               double tstart_,
               double tstop_,
               int ntime_,
+              int target_nt_,
               int cfactor_,
               int cfactor0_,
               bool useDelta_,
@@ -112,8 +117,9 @@ public:
               int DeltaRank_,
               bool cglv_,
               bool useTheta_,
+              bool doRefine_,
               int newton_iters_,
-              int max_levels,
+              int max_levels_,
               int nx,
               double length,
               int order,
@@ -136,7 +142,6 @@ public:
                 VEC &ustop,
                 double dt,
                 BraidStepStatus &pstatus,
-                double *err_est = nullptr,
                 MAT *P_tan_ptr = nullptr);
 
    // computes the dot product between the derivative of the step function
@@ -195,6 +200,8 @@ public:
                         braid_Vector r_,
                         BraidStepStatus &pstatus);
 
+   virtual int Sync(BraidSyncStatus &status);
+
    // not needed:
    virtual int Coarsen(braid_Vector fu_,
                        braid_Vector *cu_ptr,
@@ -206,7 +213,7 @@ public:
 };
 
 // Braid App Constructor
-MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop_, int ntime_, int cfactor_, int cfactor0_, bool useDelta_, int DeltaLevel_, int DeltaRank_, bool cglv_, bool useTheta_, int newton_iters_, int max_levels, int nx, double length, int order, const VEC &initial_data_)
+MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop_, int ntime_, int target_nt, int cfactor_, int cfactor0_, bool useDelta_, int DeltaLevel_, int DeltaRank_, bool cglv_, bool useTheta_, bool doRefine_, int newton_iters_, int max_levels_, int nx, double length, int order, const VEC &initial_data_)
     : BraidApp(comm_t_, tstart_, tstop_, ntime_)
 {
    rank = rank_;
@@ -218,6 +225,13 @@ MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop
    DeltaLevel = DeltaLevel_;
    cglv = cglv_;
    useTheta = useTheta_;
+   doRefine = doRefine_;
+   max_levels = max_levels_;
+   est_norm = -1.;
+   int worldsize, time_chunk;
+   MPI_Comm_size(comm_t, &worldsize);
+   time_chunk = target_nt/worldsize + 1;
+   err_ests.assign(time_chunk, 0.);
 
    switch (order)
    {
@@ -241,13 +255,15 @@ MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop
    disc = KSDiscretization(nx, length, d1, d2, d4);
    initial_data = initial_data_;
 
+   // compute theta based on effective grid level
    thetas.assign(max_levels, 1.);
    if (useTheta)
    {
       double total_cf;
       for (int level = 1; level < max_levels; level++)
       {
-         total_cf = cfactor0*intpow(cfactor, level-1);
+         total_cf = cfactor0 * intpow(cfactor, level - 1);
+
          if (order == 2)
          {
             thetas[level] = (total_cf - sqrt(3 * total_cf * total_cf + 6) / 3) / total_cf; // theta2
@@ -285,11 +301,23 @@ double MyBraidApp::getTheta(int level)
    return thetas[level];
 }
 
-VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &pstatus, double *err_est, MAT *P_tan_ptr)
+VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &pstatus, MAT *P_tan_ptr)
 {
-   int level, nlevels;
+   int level, lvl_eff, nlevels, nrefine;
+   double err_est;
+   int done;
    pstatus.GetLevel(&level);
    pstatus.GetNLevels(&nlevels);
+   pstatus.GetNRefine(&nrefine);
+   pstatus.GetDone(&done);
+   // get effective level
+   lvl_eff = level;
+   if (doRefine)
+   {
+      lvl_eff = (level - nrefine) + (max_levels - 2);
+   }
+
+   VEC out(u);
 
    // tolerance for Newton's method
    double tol = 1e-10;
@@ -318,31 +346,79 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &p
    // second order theta method
    if (stages == 2)
    {
-      if (level == 0 || !useTheta)
+      if (lvl_eff == 0 || !useTheta)
       {
-         return theta2(u, guess, disc, dt, 0., 0., 1., P_tan_ptr, iters, std::sqrt(disc.nx) * tol, err_est);
+         out = theta2(u, guess, disc, dt, 0., 0., 1., P_tan_ptr, iters, std::sqrt(disc.nx) * tol, &err_est);
       }
-      double theta = getTheta(level);
-      double cf = cfactor0*intpow(cfactor, level-1);
-      return theta2(u, guess, disc, dt, theta, theta, 2. / 3 + 1 / (3 * cf * cf) - theta, P_tan_ptr, iters, std::sqrt(disc.nx) * tol);
+      else
+      {
+         double theta = getTheta(lvl_eff);
+         double cf = cfactor0 * intpow(cfactor, lvl_eff - 1);
+         out = theta2(u, guess, disc, dt, theta, theta, 2. / 3 + 1 / (3 * cf * cf) - theta, P_tan_ptr, iters, std::sqrt(disc.nx) * tol, &err_est);
+      }
    }
-   // else:
+   else
+   {
+      // fourth order theta method **not fully implemented**
+      // TODO: Get this working
+      if (lvl_eff == 0 || !useTheta)
+      {
+         out = theta4(u, guess, disc, dt, 0., 0., 1., P_tan_ptr, iters, std::sqrt(disc.nx) * tol);
+      }
+      else
+      {
+         double cf = cfactor0 * intpow(cfactor, lvl_eff - 1);
+         double theta = getTheta(lvl_eff);
+         double cf_4 = cf * cf * cf * cf;
+         bool overflow = (cf_4 == 0.);
+         double th_C = 7. / 10 - theta;
+         if (!overflow)
+         {
+            th_C += 3. / (10 * cf_4);
+         }
+         out = theta4(u, guess, disc, dt, theta, theta, th_C, P_tan_ptr, iters, std::sqrt(disc.nx) * tol);
+      }
+   }
 
-   // fourth order theta method
-   if (level == 0 || !useTheta)
+   // refinement/error estimate control
+
+   if (level > 0)
    {
-      return theta4(u, guess, disc, dt, 0., 0., 1., P_tan_ptr, iters, std::sqrt(disc.nx) * tol);
+      // no refinement, or error estimate
+      pstatus.SetRFactor(1);
+      return out;
    }
-   double cf = cfactor0*intpow(cfactor, level-1);
-   double theta = getTheta(level);
-   double cf_4 = cf * cf * cf * cf;
-   bool overflow = (cf_4 == 0.);
-   double th_C = 7. / 10 - theta;
-   if (!overflow)
+
+   int tu, tl, T_index, T_irel;
+   pstatus.GetTIUL(&tu, &tl, level);
+   pstatus.GetTIndex(&T_index);
+   T_irel = T_index;
+   if (rank > 0)
    {
-      th_C += 3. / (10 * cf_4);
+      T_irel = T_index - tl + 1;
    }
-   return theta4(u, guess, disc, dt, theta, theta, th_C, P_tan_ptr, iters, std::sqrt(disc.nx) * tol);
+
+   err_ests[T_irel] = err_est;
+
+   // refine based on comparison of the residual to the local discretization error
+   int nrequest = -2;
+   double *rnorm = (double *)(malloc(4 * sizeof(double)));
+   pstatus.GetRNorms(&nrequest, rnorm);
+
+   // if rnorm is -1, we don't have residual yet; if max estimate is -1, we haven't called sync yet
+   if (*rnorm > 0. && est_norm > 0. && *rnorm <= est_norm)
+   {
+      if (lvl_eff == 1)
+      {
+         pstatus.SetRFactor(cfactor0);
+      }
+      else
+      {
+         pstatus.SetRFactor(cfactor);
+      }
+   }
+   free(rnorm);
+   return out;
 }
 
 // TODO: think about removing this:
@@ -381,24 +457,29 @@ int MyBraidApp::Step(braid_Vector u_,
 
    double tstart; // current time
    double tstop;  // evolve to this time
-   int level, nlevels, T_index, calling_fnc;
+   int level, lvl_eff, nlevels, nrefine, T_index, calling_fnc;
 
    pstatus.GetTstartTstop(&tstart, &tstop);
    pstatus.GetLevel(&level);
+   pstatus.GetNRefine(&nrefine);
    pstatus.GetNLevels(&nlevels);
    pstatus.GetTIndex(&T_index); // this is the index of tstart
    pstatus.GetCallingFunction(&calling_fnc);
 
+   // get effective level:
+   lvl_eff = level;
+   if (doRefine)
+   {
+      lvl_eff = (level - nrefine) + (max_levels - 2);
+   }
+
    double dt = tstop - tstart;
 
-   // no refinement
-   pstatus.SetRFactor(1);
-
    bool DeltaCorrect, computeDeltas, normalize, useGuess, toCPoint, coarseGrid;
-   toCPoint = IsCPoint(T_index + 1, level);
+   toCPoint = IsCPoint(T_index + 1, lvl_eff);
    coarseGrid = (level == nlevels - 1);
 
-   DeltaCorrect = (useDelta) && (level > DeltaLevel);
+   DeltaCorrect = (useDelta) && (lvl_eff > DeltaLevel);
 
    // only compute Deltas when in FRestrict
    computeDeltas = (calling_fnc == braid_ASCaller_FRestrict);
@@ -423,13 +504,12 @@ int MyBraidApp::Step(braid_Vector u_,
       u->guess = VEC::Zero(stages * nx);
    }
 
-   double err_est = -1.;
    VEC utmp(u->state);
 
    // if (!useDelta || level < DeltaLevel)
-   if (!useDelta || level < DeltaLevel || (coarseGrid && !cglv)) // default behavior, no Psi propagation
+   if (!useDelta || lvl_eff < DeltaLevel || (coarseGrid && !cglv)) // default behavior, no Psi propagation
    {
-      utmp = baseStep(u->state, u->guess, dt, pstatus, &err_est);
+      utmp = baseStep(u->state, u->guess, dt, pstatus);
       if (f)
       {
          utmp += f->state;
@@ -443,41 +523,42 @@ int MyBraidApp::Step(braid_Vector u_,
       {
          u->guess = ustop->guess; // the old value
       }
-      return 0;
    }
-   // else:
-   MAT Psitmp(u->Psi);
-   utmp = baseStep(u->state, u->guess, dt, pstatus, &err_est, &Psitmp);
-
-   // never overwrite initial guess at C-points
-   if (!useGuess)
+   else
    {
-      u->guess = ustop->guess; // the old value
-   }
-   if (f)
-   {
-      // tau = state - action
-      utmp += LRDeltaDot(u->state, f->Delta, f->Psi) + f->state - f->action;
-      // when using low rank Delta correction, no tau correction is needed for Psi
-      Psitmp += LRDeltaDot(u->Psi, f->Delta, f->Psi);
-   }
+      MAT Psitmp(u->Psi);
+      utmp = baseStep(u->state, u->guess, dt, pstatus, &Psitmp);
 
-   // store state and Psi at previous C-point
-   if (computeDeltas && IsCPoint(T_index, level))
-   {
-      // Need to store the value at the previous c-point for tau correction later
-      u->action = u->state;
-      u->Delta = u->Psi;
-   }
+      // never overwrite initial guess at C-points
+      if (!useGuess)
+      {
+         u->guess = ustop->guess; // the old value
+      }
+      if (f)
+      {
+         // tau = state - action
+         utmp += LRDeltaDot(u->state, f->Delta, f->Psi) + f->state - f->action;
+         // when using low rank Delta correction, no tau correction is needed for Psi
+         Psitmp += LRDeltaDot(u->Psi, f->Delta, f->Psi);
+      }
 
-   // normalize Psi at c-points:
-   if (normalize)
-   {
-      GramSchmidt(Psitmp);
-   }
+      // store state and Psi at previous C-point
+      if (computeDeltas && IsCPoint(T_index, lvl_eff))
+      {
+         // Need to store the value at the previous c-point for tau correction later
+         u->action = u->state;
+         u->Delta = u->Psi;
+      }
 
-   u->state = utmp;
-   u->Psi = Psitmp;
+      // normalize Psi at c-points:
+      if (normalize)
+      {
+         GramSchmidt(Psitmp);
+      }
+
+      u->state = utmp;
+      u->Psi = Psitmp;
+   }
 
    return 0;
 }
@@ -493,13 +574,21 @@ int MyBraidApp::Residual(braid_Vector u_,
 
    double tstart; // current time
    double tstop;  // evolve to this time
-   int level, nlevels, T_index, calling_fnc;
+   int level, lvl_eff, nlevels, T_index, calling_fnc, nrefine;
 
    pstatus.GetTstartTstop(&tstart, &tstop);
    pstatus.GetLevel(&level);
    pstatus.GetNLevels(&nlevels);
    pstatus.GetTIndex(&T_index);
    pstatus.GetCallingFunction(&calling_fnc);
+   pstatus.GetNRefine(&nrefine);
+
+   // get effective level:
+   lvl_eff = level;
+   if (doRefine)
+   {
+      lvl_eff = (level - nrefine) + (max_levels - 2);
+   }
 
    double dt = tstop - tstart;
 
@@ -516,11 +605,10 @@ int MyBraidApp::Residual(braid_Vector u_,
    bool up = (calling_fnc == braid_ASCaller_Residual);
 
    VEC utmp(r->state);
-   MAT Psitmp(r->Psi);
-   utmp = baseStep(r->state, guess, dt, pstatus, nullptr, &Psitmp);
 
-   if (!useDelta || level < DeltaLevel || (level == DeltaLevel && up))
+   if (!useDelta || lvl_eff < DeltaLevel || (lvl_eff == DeltaLevel && up))
    {
+      utmp = baseStep(r->state, guess, dt, pstatus);
       if (f)
       { // do tau correction
          utmp += f->state;
@@ -531,6 +619,8 @@ int MyBraidApp::Residual(braid_Vector u_,
       return 0;
    }
    // else:
+   MAT Psitmp(r->Psi);
+   utmp = baseStep(r->state, guess, dt, pstatus, &Psitmp);
 
    if (up)
    { // this is called on the coarse grid right after restriction
@@ -571,8 +661,6 @@ int MyBraidApp::Init(double t,
 int MyBraidApp::Clone(braid_Vector u_,
                       braid_Vector *v_ptr)
 {
-   // std::cout << "Clone called" << '\n';
-
    BraidVector *u = (BraidVector *)u_;
    BraidVector *v = new BraidVector(*u);
    *v_ptr = (braid_Vector)v;
@@ -592,7 +680,6 @@ int MyBraidApp::Sum(double alpha,
                     double beta,
                     braid_Vector y_)
 {
-   // std::cout << "Sum called" << '\n';
    BraidVector *x = (BraidVector *)x_;
    BraidVector *y = (BraidVector *)y_;
    (y->state) = alpha * (x->state) + beta * (y->state);
@@ -609,7 +696,6 @@ int MyBraidApp::Sum(double alpha,
 int MyBraidApp::SpatialNorm(braid_Vector u_,
                             double *norm_ptr)
 {
-   // std::cout << "Norm called" << '\n';
    BraidVector *u = (BraidVector *)u_;
    *norm_ptr = u->state.norm() / std::sqrt(disc.nx); // normalized like l2 norm
    return 0;
@@ -673,7 +759,6 @@ int MyBraidApp::BufUnpack(void *buffer,
 int MyBraidApp::Access(braid_Vector u_,
                        BraidAccessStatus &astatus)
 {
-   // std::cout << "Access called" << '\n';
    char filename[255];
    char lv_fname[255];
    std::ofstream file;
@@ -684,7 +769,6 @@ int MyBraidApp::Access(braid_Vector u_,
    double t;
    astatus.GetTILD(&t, &iter, &level, &done);
    astatus.GetTIndex(&index);
-   // int nt = MyBraidApp::ntime;
 
    // Print information to file
    if (done && level == 0 && IsCPoint(index, level))
@@ -698,6 +782,46 @@ int MyBraidApp::Access(braid_Vector u_,
       file.open(lv_fname);
       pack_darray(file, u->Psi);
       file.close();
+   }
+
+   return 0;
+}
+
+int MyBraidApp::Sync(BraidSyncStatus &status)
+{
+   /* Sync can be called from two places, at the top of each Braid Cycle or,
+    * from inside of Refine.  Here, we don't care, but show you this for your
+    * reference. This is how you detect your calling function */
+   braid_Int calling_fcn;
+   status.GetCallingFunction(&calling_fcn);
+
+   if ((calling_fcn == braid_ASCaller_Drive_TopCycle) || (calling_fcn == braid_ASCaller_FRefine_AfterInitHier))
+   {
+
+      /*
+       * Find the global max of the error estimate
+       *
+       * Note: if there is spatial parallelism, then you would have to take a
+       * max over the spatial communicator, and then over the temporal
+       * communicator.
+       *
+       * */
+      double my_max = 0.;
+      for (auto &&est : err_ests)
+      {
+         if (est > my_max)
+         {
+            my_max = est;
+         }
+      }
+
+      MPI_Allreduce(&my_max, &(est_norm), 1, MPI_DOUBLE, MPI_MAX, comm_t);
+      // est_norm = std::sqrt(est_norm);
+
+      if (rank == 0 && (calling_fcn == braid_ASCaller_FRefine_AfterInitHier))
+      {
+         printf("  Braid: || est || =  %1.5e\n", est_norm);
+      }
    }
 
    return 0;
@@ -778,6 +902,7 @@ int main(int argc, char *argv[])
    int DeltaLvl = 1;
    int DeltaRank = 1;
    bool useTheta = false;
+   bool doRefine = false;
    bool wrapperTests = false;
    bool output = false;
    int ord = 2;
@@ -792,6 +917,13 @@ int main(int argc, char *argv[])
    // Initialize MPI
    MPI_Init(&argc, &argv);
    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+   if (rank == 0)
+   {
+      int world_size;
+      MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+      std::cout << "nprocs: " << world_size << '\n';
+   }
 
    // Parse command line
    arg_index = 1;
@@ -923,6 +1055,11 @@ int main(int argc, char *argv[])
          arg_index++;
          useTheta = true;
       }
+      else if (strcmp(argv[arg_index], "-refine") == 0)
+      {
+         arg_index++;
+         doRefine = true;
+      }
       else if (strcmp(argv[arg_index], "-out") == 0)
       {
          arg_index++;
@@ -952,10 +1089,39 @@ int main(int argc, char *argv[])
       std::cout << "Using theta method\n";
    }
 
-   // make sure we do enough iterations on one level
+   // make sure we do enough iterations when sequential time-stepping
    if (max_levels == 1)
    {
       newton_iters = 10;
+   }
+
+   // calculate min coarse grid size:
+   double max_dt = 1.5;
+   if (useTheta)
+   {
+      max_dt = 3.;
+   }
+
+   int min_cg = std::ceil(tstop / max_dt);
+   int cnt = nt/cf0;
+   int actual_lvls = max_levels;
+
+   // figure out how many levels we will actually have
+   for (int i = 1; i < max_levels; i++)
+   {
+      cnt /= cfactor;
+      if (cnt < min_cg)
+      {
+         actual_lvls = i+1;
+         break;
+      }
+   }
+   cnt *= cfactor*cfactor;
+
+   int nt_init = nt;
+   if (doRefine)
+   {
+      nt_init = cnt;
    }
 
    // get initial data
@@ -963,7 +1129,7 @@ int main(int argc, char *argv[])
    // VEC u0 = smoothed_noise(nx, nx/4);
 
    // set up app structure
-   MyBraidApp app(MPI_COMM_WORLD, rank, tstart, tstop, nt, cfactor, cf0, useDelta, DeltaLvl, DeltaRank, cglv, useTheta, newton_iters, max_levels, nx, len, ord, u0);
+   MyBraidApp app(MPI_COMM_WORLD, rank, tstart, tstop, nt_init, nt, cfactor, cf0, useDelta, DeltaLvl, DeltaRank, cglv, useTheta, doRefine, newton_iters, actual_lvls, nx, len, ord, u0);
 
    // wrapper tests
    if (wrapperTests)
@@ -997,24 +1163,31 @@ int main(int argc, char *argv[])
       core.SetNFMG(1);
    }
    core.SetPrintLevel(2);
-   core.SetMaxLevels(max_levels);
+   core.SetMinCoarse(min_cg);
+   core.SetMaxLevels(actual_lvls);
+   if (doRefine)
+   {
+      core.SetMaxLevels(2);
+      core.SetIncrMaxLevels();
+   }
    core.SetMaxIter(max_iter);
    core.SetAbsTol(tol);
    core.SetCFactor(-1, cfactor);
    core.SetCFactor(0, cf0);
    core.SetNRelax(-1, nrelax);
    core.SetNRelax(0, nrelax0);
+   core.SetRefine(doRefine);
+   core.SetMaxRefinements(max_levels - 2);
+   core.SetTPointsCutoff(nt);
    core.SetSkip(1);
    core.SetStorage(0);
-   core.SetTemporalNorm(2);
-
+   core.SetTemporalNorm(3);
+   core.SetAccessLevel(output);
+   core.SetSync();
+   core.SetAccessLevel(0);
    if (output)
    {
       core.SetAccessLevel(1);
-   }
-   else
-   {
-      core.SetAccessLevel(0);
    }
 
    // Run Simulation

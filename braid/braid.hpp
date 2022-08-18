@@ -266,6 +266,10 @@ class BraidStepStatus
       { braid_StepStatusGetRNorms(pstatus, nrequest_ptr, rnorms); }
       void GetTstartTstop(braid_Real *tstart_ptr, braid_Real *tstop_ptr)
       { braid_StepStatusGetTstartTstop(pstatus, tstart_ptr, tstop_ptr); }
+      void GetTIUL(braid_Int *i_upper,
+                   braid_Int *i_lower,
+                   braid_Int  level)
+      { braid_StepStatusGetTIUL(pstatus, i_upper, i_lower, level); }
       void GetT(braid_Real *tstart_ptr)                  { braid_StepStatusGetT(pstatus, tstart_ptr); }
       void GetTstop(braid_Real *tstop_ptr)               { braid_StepStatusGetTstop(pstatus, tstop_ptr); }
       void GetDone(braid_Int *done)                      { braid_StatusGetDone((braid_Status) pstatus, done); }

@@ -124,7 +124,7 @@ my_Step(braid_App        app,
 
    /* XBraid only accepts refinements on level 0, and it's also a good idea to
     * cap the number of possible refinements (here capped at 8) */
-   if ((level == 0) && (nrefine < 8))
+   if ((level == 0) && (nrefine < 4))
    {
       int rf = 1;
       if (app->refine == 1)
@@ -139,7 +139,8 @@ my_Step(braid_App        app,
       }
       else if (app->refine == 2)
       {
-         rf = (int)(ceil(sqrt(0.5*LTE/(u->value)/(app->tol))));
+         // rf = (int)(ceil(sqrt(0.5*LTE/(u->value)/(app->tol))));
+         rf = 4;
       }
       else if (app->refine == 3)
       {

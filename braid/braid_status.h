@@ -626,6 +626,7 @@ ACCESSOR_HEADER_GET5(CoarsenRef, TpriorTstop, Real, Real, Real, Real, Real)
  * StepStatus Prototypes: They just wrap the corresponding Status accessors
  *--------------------------------------------------------------------------*/
 
+ACCESSOR_HEADER_GET2_IN1(Step, TIUL,      Int, Int, Int)
 ACCESSOR_HEADER_GET1(Step, T,             Real)
 ACCESSOR_HEADER_GET1(Step, TIndex,        Int)
 ACCESSOR_HEADER_GET1(Step, Iter,          Int)
