@@ -37,7 +37,7 @@ if __name__=="__main__":
     Tf = 8*T_lyap
 
     # plot trajectories
-    ratio = (8, 4)
+    ratio = (10, 5)
     cmap = "plasma"
     # cmap = "cool_r"
     stride = max(nt//( nx*ratio[0]//ratio[1] )//cf, 1)
@@ -47,7 +47,7 @@ if __name__=="__main__":
     interp = "bilinear"
     # axs.imshow(integrate(u[::cf*stride]), cmap=cmap, extent=extent, aspect="auto", interpolation=interp)
     axs.imshow(u[::cf*stride].T, cmap=cmap, extent=extent, aspect="auto", interpolation=interp)
-    axs.set_xlabel("$t_\lambda$")
+    axs.set_xlabel("$T_\lambda$")
     axs.set_ylabel("x")
     fig.tight_layout()
     axs.grid()

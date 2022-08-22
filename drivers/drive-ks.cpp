@@ -406,7 +406,7 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &p
    pstatus.GetRNorms(&nrequest, rnorm);
 
    // if rnorm is -1, we don't have residual yet; if max estimate is -1, we haven't called sync yet
-   if (*rnorm > 0. && est_norm > 0. && *rnorm <= est_norm)
+   if (*rnorm > 0. && est_norm > 0. && *rnorm <= 0.5*est_norm)
    {
       if (lvl_eff == 1)
       {
@@ -806,16 +806,13 @@ int MyBraidApp::Sync(BraidSyncStatus &status)
        * communicator.
        *
        * */
-      double my_max = 0.;
+      double my_sum = 0.;
       for (auto &&est : err_ests)
       {
-         if (est > my_max)
-         {
-            my_max = est;
-         }
+         my_sum += est * est;
       }
 
-      MPI_Allreduce(&my_max, &(est_norm), 1, MPI_DOUBLE, MPI_MAX, comm_t);
+      MPI_Allreduce(&my_sum, &(est_norm), 1, MPI_DOUBLE, MPI_SUM, comm_t);
       // est_norm = std::sqrt(est_norm);
 
       if (rank == 0 && (calling_fcn == braid_ASCaller_FRefine_AfterInitHier))
@@ -1181,7 +1178,7 @@ int main(int argc, char *argv[])
    core.SetTPointsCutoff(nt);
    core.SetSkip(1);
    core.SetStorage(0);
-   core.SetTemporalNorm(3);
+   core.SetTemporalNorm(2);
    core.SetAccessLevel(output);
    core.SetSync();
    core.SetAccessLevel(0);

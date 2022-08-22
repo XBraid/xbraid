@@ -1,0 +1,17 @@
+# Fdb version 3
+["pdflatex"] 1660838421 "/home/cadaverous/Projects/LSS_Braid/xbraid/docs/user_manual_header.tex" "user_manual_header.pdf" "user_manual_header" 1660838421
+  "/etc/texmf/web2c/texmf.cnf" 1660792959 475 c0e671620eb5563b2130f56340a5fde8 ""
+  "/home/cadaverous/Projects/LSS_Braid/xbraid/docs/user_manual_header.tex" 1652808999 8088 b78e762e15fa5fd4e0a433dfa1e604b3 ""
+  "/usr/share/texlive/texmf-dist/tex/latex/base/article.cls" 1636758526 20144 8a7de377ae7a11ee924a7499611f5a9d ""
+  "/usr/share/texlive/texmf-dist/tex/latex/base/fixltx2e.sty" 1622581934 15509 65400902b2e6707ab32a38c8e9251f39 ""
+  "/usr/share/texlive/texmf-dist/tex/latex/base/size10.clo" 1636758526 8448 96f18c76bf608a36ee6fbf021ac1dd32 ""
+  "/usr/share/texlive/texmf-dist/tex/latex/tools/calc.sty" 1622581934 10214 00ce62e730d0cfe22b35e8f1c84949c7 ""
+  "/usr/share/texlive/texmf-dist/web2c/texmf.cnf" 1644012257 39432 7155514e09a3d69036fac785183a21c2 ""
+  "/usr/share/texmf/web2c/texmf.cnf" 1644012257 39432 7155514e09a3d69036fac785183a21c2 ""
+  "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1660801376 2800828 d5961e936bc4b3f4517f14be986528ea ""
+  "doxygen.sty" 0 -1 0 ""
+  "user_manual_header.aux" 1660838421 32 3985256e7290058c681f74d7a3565a19 ""
+  "user_manual_header.tex" 1652808999 8088 b78e762e15fa5fd4e0a433dfa1e604b3 ""
+  (generated)
+  "user_manual_header.log"
+  "user_manual_header.pdf"
