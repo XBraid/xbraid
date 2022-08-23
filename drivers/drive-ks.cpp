@@ -94,6 +94,8 @@ public:
    bool useDelta;
    bool useTheta;
    bool doRefine;
+   bool getInit;
+   bool output;
    int stages;
    std::vector<double> thetas;
    std::vector<double> err_ests;
@@ -118,6 +120,8 @@ public:
               bool cglv_,
               bool useTheta_,
               bool doRefine_,
+              bool getInit_,
+              bool output_,
               int newton_iters_,
               int max_levels_,
               int nx,
@@ -213,8 +217,29 @@ public:
 };
 
 // Braid App Constructor
-MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop_, int ntime_, int target_nt, int cfactor_, int cfactor0_, bool useDelta_, int DeltaLevel_, int DeltaRank_, bool cglv_, bool useTheta_, bool doRefine_, int newton_iters_, int max_levels_, int nx, double length, int order, const VEC &initial_data_)
-    : BraidApp(comm_t_, tstart_, tstop_, ntime_)
+MyBraidApp::MyBraidApp(MPI_Comm comm_t_,
+                            int rank_,
+                         double tstart_,
+                         double tstop_,
+                            int ntime_,
+                            int target_nt,
+                            int cfactor_,
+                            int cfactor0_,
+                            bool useDelta_,
+                            int DeltaLevel_,
+                            int DeltaRank_,
+                            bool cglv_,
+                            bool useTheta_,
+                            bool doRefine_,
+                            bool getInit_,
+                            bool output_,
+                            int newton_iters_,
+                            int max_levels_,
+                            int nx,
+                            double length,
+                            int order,
+                            const VEC &initial_data_
+                       ) : BraidApp(comm_t_, tstart_, tstop_, ntime_)
 {
    rank = rank_;
    cfactor = cfactor_;
@@ -226,6 +251,8 @@ MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop
    cglv = cglv_;
    useTheta = useTheta_;
    doRefine = doRefine_;
+   getInit = getInit_;
+   output = output_;
    max_levels = max_levels_;
    est_norm = -1.;
    int worldsize, time_chunk;
@@ -239,9 +266,10 @@ MyBraidApp::MyBraidApp(MPI_Comm comm_t_, int rank_, double tstart_, double tstop
       stages = 2;
       break;
 
-   case 4:
-      stages = 3;
-      break;
+   // todo: implement 4th order method
+   // case 4:
+   //    stages = 3;
+   //    break;
 
    default:
       throw std::invalid_argument("Order not implemented");
@@ -765,13 +793,22 @@ int MyBraidApp::Access(braid_Vector u_,
    BraidVector *u = (BraidVector *)u_;
 
    // Extract information from astatus
-   int done, level, iter, index;
+   int done, level, iter, index, nt;
    double t;
    astatus.GetTILD(&t, &iter, &level, &done);
+   astatus.GetNTPoints(&nt);
    astatus.GetTIndex(&index);
 
    // Print information to file
-   if (done && level == 0 && IsCPoint(index, level))
+   if (getInit && done && level == 0 && index == nt)
+   {
+      sprintf(filename, "drive-ks-init-nx%d.out", disc.nx);
+      file.open(filename);
+      pack_array(file, u->state);
+      file.close();
+   }
+   
+   if (output && done && level == 0 && IsCPoint(index, level))
    {
       sprintf(filename, "%s.%04d", "drive-ks.out", index);
       file.open(filename);
@@ -827,6 +864,29 @@ int MyBraidApp::Sync(BraidSyncStatus &status)
 // --------------------------------------------------------------------------
 // Main driver
 // --------------------------------------------------------------------------
+
+VEC read_init(std::string fname, int nx)
+{
+   std::ifstream inf;
+   std::string entry;
+
+   inf.open(fname);
+   if (!inf)
+   {
+      std::cout << "!!!init file not found!!!\n";
+      return VEC::Zero(nx);
+   }
+
+
+   VEC out(nx);
+   for (int i = 0; i < nx; i++)
+   {
+      getline(inf, entry, ',');
+      out[i] = std::stof(entry); 
+   }
+
+   return out;
+}
 
 int del_extra(int nt, int cfactor, std::string fname)
 {
@@ -901,6 +961,7 @@ int main(int argc, char *argv[])
    bool useTheta = false;
    bool doRefine = false;
    bool wrapperTests = false;
+   bool getInit = false;
    bool output = false;
    int ord = 2;
    bool cglv = false;
@@ -953,6 +1014,7 @@ int main(int argc, char *argv[])
             printf("  -refine     : use global refinement to approximate true FMG cycle\n");
             printf("  -out        : write output to file (for visualization)\n");
             printf("  -test       : run wrapper tests\n");
+            printf("  -getInit   : write solution at final time to file\n");
             printf("\n");
          }
          exit(0);
@@ -1062,6 +1124,11 @@ int main(int argc, char *argv[])
          arg_index++;
          output = true;
       }
+      else if (strcmp(argv[arg_index], "-getInit") == 0)
+      {
+         arg_index++;
+         getInit = true;
+      }
       else if (strcmp(argv[arg_index], "-test") == 0)
       {
          arg_index++;
@@ -1122,11 +1189,27 @@ int main(int argc, char *argv[])
    }
 
    // get initial data
-   VEC u0 = FourierMode(1, nx, len);
-   // VEC u0 = smoothed_noise(nx, nx/4);
+   VEC u0;
+   if (getInit)
+   {
+      u0 = FourierMode(1, nx, len);
+   }
+   else
+   {
+      using namespace Eigen;
+      int init_nx = 1024;
+      int cfx = init_nx/nx;
+      VEC u0fine = read_init("drive-ks-init-nx1024.out", init_nx);
+      u0 = u0fine(seq(0, last, cfx));
+   }
 
    // set up app structure
-   MyBraidApp app(MPI_COMM_WORLD, rank, tstart, tstop, nt_init, nt, cfactor, cf0, useDelta, DeltaLvl, DeltaRank, cglv, useTheta, doRefine, newton_iters, actual_lvls, nx, len, ord, u0);
+   MyBraidApp app(MPI_COMM_WORLD,
+                  rank, tstart, tstop, nt_init, nt, cfactor, cf0,
+                  useDelta, DeltaLvl, DeltaRank, cglv,
+                  useTheta, doRefine, getInit, output,
+                  newton_iters, actual_lvls,
+                  nx, len, ord, u0);
 
    // wrapper tests
    if (wrapperTests)
@@ -1179,18 +1262,13 @@ int main(int argc, char *argv[])
    core.SetSkip(1);
    core.SetStorage(0);
    core.SetTemporalNorm(2);
-   core.SetAccessLevel(output);
+   core.SetAccessLevel(output || getInit);
    core.SetSync();
-   core.SetAccessLevel(0);
-   if (output)
-   {
-      core.SetAccessLevel(1);
-   }
 
    // Run Simulation
    core.Drive();
 
-   if (rank == 0 && output)
+   if (rank == 0 && (output))
    {
       collate_files(nt, cf0, "drive-ks");
       collate_files(nt, cf0, "drive-ks-lv");
@@ -1199,5 +1277,5 @@ int main(int argc, char *argv[])
    // Clean up
    MPI_Finalize();
 
-   return (0);
+   return 0;
 }
