@@ -333,11 +333,12 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &p
 {
    int level, lvl_eff, nlevels, nrefine;
    double err_est;
-   int done;
+   int done, calling_func;
    pstatus.GetLevel(&level);
    pstatus.GetNLevels(&nlevels);
    pstatus.GetNRefine(&nrefine);
    pstatus.GetDone(&done);
+   pstatus.GetCallingFunction(&calling_func);
    // get effective level
    lvl_eff = level;
    if (doRefine)
@@ -348,7 +349,7 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &p
    VEC out(u);
 
    // tolerance for Newton's method
-   double tol = 1e-10;
+   double tol = 1e-9;
    // this actually seems to hurt more than helps for chaotic problems
    // double tol, tight{1e-13/std::sqrt(disc.nx)}, loose{1e-11/std::sqrt(disc.nx)};
    // if (level > 0)
@@ -366,6 +367,10 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &p
 
    // limit newton iterations only on coarse grids
    int iters = newton_iters;
+   // if (calling_func == braid_ASCaller_FCRelax)
+   // {
+   //    iters = newton_iters-1;
+   // }
    // if (level == 0)
    // {
    //    iters = 10;
@@ -409,7 +414,6 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &p
    }
 
    // refinement/error estimate control
-
    if (level > 0)
    {
       // no refinement, or error estimate
@@ -432,9 +436,14 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &p
    int nrequest = -2;
    double *rnorm = (double *)(malloc(4 * sizeof(double)));
    pstatus.GetRNorms(&nrequest, rnorm);
+   double last_norm = rnorm[1];
+   if (rnorm[1] < 0)
+   {
+      last_norm = rnorm[0];
+   }
 
    // if rnorm is -1, we don't have residual yet; if max estimate is -1, we haven't called sync yet
-   if (*rnorm > 0. && est_norm > 0. && *rnorm <= 0.5*est_norm)
+   if (last_norm > 0. && est_norm > 0. && last_norm <= 2*est_norm)
    {
       if (lvl_eff == 1)
       {
@@ -510,7 +519,7 @@ int MyBraidApp::Step(braid_Vector u_,
    DeltaCorrect = (useDelta) && (lvl_eff > DeltaLevel);
 
    // only compute Deltas when in FRestrict
-   computeDeltas = (calling_fnc == braid_ASCaller_FRestrict);
+   computeDeltas = (calling_fnc == braid_ASCaller_FRestrict && lvl_eff >= DeltaLevel);
 
    // only normalize at C-points, or on the coarsest grid, or when in finterp
    normalize = (toCPoint || coarseGrid || calling_fnc == braid_ASCaller_FInterp);
@@ -534,8 +543,9 @@ int MyBraidApp::Step(braid_Vector u_,
 
    VEC utmp(u->state);
 
-   // if (!useDelta || level < DeltaLevel)
-   if (!useDelta || lvl_eff < DeltaLevel || (coarseGrid && !cglv)) // default behavior, no Psi propagation
+   if (!useDelta 
+      || lvl_eff < DeltaLevel 
+      || (coarseGrid && !cglv)) // default behavior, no Psi propagation
    {
       utmp = baseStep(u->state, u->guess, dt, pstatus);
       if (f)
@@ -831,10 +841,14 @@ int MyBraidApp::Sync(BraidSyncStatus &status)
     * reference. This is how you detect your calling function */
    braid_Int calling_fcn;
    status.GetCallingFunction(&calling_fcn);
-
-   if ((calling_fcn == braid_ASCaller_Drive_TopCycle) || (calling_fcn == braid_ASCaller_FRefine_AfterInitHier))
+   if (calling_fcn == braid_ASCaller_FRefine_AfterInitHier)
    {
+      est_norm = -1;
+      return 0;
+   }
 
+   if (calling_fcn == braid_ASCaller_Drive_TopCycle)
+   {
       /*
        * Find the global max of the error estimate
        *
@@ -850,14 +864,13 @@ int MyBraidApp::Sync(BraidSyncStatus &status)
       }
 
       MPI_Allreduce(&my_sum, &(est_norm), 1, MPI_DOUBLE, MPI_SUM, comm_t);
-      // est_norm = std::sqrt(est_norm);
+      est_norm = std::sqrt(est_norm);
 
-      if (rank == 0 && (calling_fcn == braid_ASCaller_FRefine_AfterInitHier))
-      {
-         printf("  Braid: || est || =  %1.5e\n", est_norm);
-      }
+      // if (rank == 0)
+      // {
+      //    printf("  Braid: || est || =  %1.5e\n", est_norm);
+      // }
    }
-
    return 0;
 }
 
@@ -949,7 +962,7 @@ int main(int argc, char *argv[])
    int max_levels = 4;
    int nrelax = 1;
    int nrelax0 = 1;
-   double tol = 1e-9;
+   double tol = 1e-8;
    int cfactor = 4;
    int cf0 = 4;
    int max_iter = 25;
@@ -1014,7 +1027,7 @@ int main(int argc, char *argv[])
             printf("  -refine     : use global refinement to approximate true FMG cycle\n");
             printf("  -out        : write output to file (for visualization)\n");
             printf("  -test       : run wrapper tests\n");
-            printf("  -getInit   : write solution at final time to file\n");
+            printf("  -getInit    : write solution at final time to file\n");
             printf("\n");
          }
          exit(0);
