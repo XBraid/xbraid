@@ -333,12 +333,14 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &p
 {
    int level, lvl_eff, nlevels, nrefine;
    double err_est;
-   int done, calling_func;
+   int done, calling_func, mgrit_iter;
    pstatus.GetLevel(&level);
    pstatus.GetNLevels(&nlevels);
    pstatus.GetNRefine(&nrefine);
    pstatus.GetDone(&done);
    pstatus.GetCallingFunction(&calling_func);
+   pstatus.GetIter(&mgrit_iter);
+
    // get effective level
    lvl_eff = level;
    if (doRefine)
@@ -349,7 +351,7 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &p
    VEC out(u);
 
    // tolerance for Newton's method
-   double tol = 1e-9;
+   double tol = 1e-10;
    // this actually seems to hurt more than helps for chaotic problems
    // double tol, tight{1e-13/std::sqrt(disc.nx)}, loose{1e-11/std::sqrt(disc.nx)};
    // if (level > 0)
@@ -443,7 +445,7 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &p
    }
 
    // if rnorm is -1, we don't have residual yet; if max estimate is -1, we haven't called sync yet
-   if (last_norm > 0. && est_norm > 0. && last_norm <= 2*est_norm)
+   if (last_norm > 0. && est_norm > 0. && last_norm <= est_norm)
    {
       if (lvl_eff == 1)
       {
@@ -978,6 +980,7 @@ int main(int argc, char *argv[])
    bool output = false;
    int ord = 2;
    bool cglv = false;
+   double weight = 1.;
 
    // KS parameters
    double len = 64;
@@ -1028,6 +1031,7 @@ int main(int argc, char *argv[])
             printf("  -out        : write output to file (for visualization)\n");
             printf("  -test       : run wrapper tests\n");
             printf("  -getInit    : write solution at final time to file\n");
+            printf("  -weight     : weight for weighted relaxation\n");
             printf("\n");
          }
          exit(0);
@@ -1146,6 +1150,11 @@ int main(int argc, char *argv[])
       {
          arg_index++;
          wrapperTests = true;
+      }
+      else if (strcmp(argv[arg_index], "-weight") == 0)
+      {
+         arg_index++;
+         weight = atof(argv[arg_index++]);
       }
       else
       {
@@ -1277,6 +1286,7 @@ int main(int argc, char *argv[])
    core.SetTemporalNorm(2);
    core.SetAccessLevel(output || getInit);
    core.SetSync();
+   core.SetCRelaxWt(-1, weight);
 
    // Run Simulation
    core.Drive();
