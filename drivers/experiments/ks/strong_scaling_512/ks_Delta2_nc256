@@ -1,18 +1,18 @@
+nprocs: 256
 Using Delta correction
 Using theta method
 
   Braid: Begin simulation, 8192 time steps
-  Braid: || r_0 || not available, wall time = 1.46e-02
-  Braid: || r_1 || = 1.630176e-01, conv factor = 1.00e+00, wall time = 3.10e-01
-  Braid: || r_2 || = 8.152256e-01, conv factor = 5.00e+00, wall time = 6.90e-01
-  Braid: || r_3 || = 1.921678e-01, conv factor = 2.36e-01, wall time = 1.06e+00
-  Braid: || r_4 || = 2.809464e-02, conv factor = 1.46e-01, wall time = 1.43e+00
-  Braid: || r_5 || = 3.249099e-03, conv factor = 1.16e-01, wall time = 1.76e+00
-  Braid: || r_6 || = 1.846616e-04, conv factor = 5.68e-02, wall time = 2.06e+00
-  Braid: || r_7 || = 8.012848e-06, conv factor = 4.34e-02, wall time = 2.34e+00
-  Braid: || r_8 || = 2.731152e-07, conv factor = 3.41e-02, wall time = 2.59e+00
-  Braid: || r_9 || = 4.755321e-09, conv factor = 1.74e-02, wall time = 2.83e+00
-  Braid: || r_10 || = 1.278319e-10, conv factor = 2.69e-02, wall time = 3.02e+00
+  Braid: || r_0 || not available, wall time = 1.47e-01
+  Braid: || r_1 || = 1.652876e-01, conv factor = 1.00e+00, wall time = 5.19e-01
+  Braid: || r_2 || = 6.358046e-02, conv factor = 3.85e-01, wall time = 9.13e-01
+  Braid: || r_3 || = 8.004460e-03, conv factor = 1.26e-01, wall time = 1.28e+00
+  Braid: || r_4 || = 1.372390e-03, conv factor = 1.71e-01, wall time = 1.63e+00
+  Braid: || r_5 || = 6.716521e-05, conv factor = 4.89e-02, wall time = 1.92e+00
+  Braid: || r_6 || = 6.516744e-06, conv factor = 9.70e-02, wall time = 2.20e+00
+  Braid: || r_7 || = 7.286303e-07, conv factor = 1.12e-01, wall time = 2.45e+00
+  Braid: || r_8 || = 1.601733e-08, conv factor = 2.20e-02, wall time = 2.68e+00
+  Braid: || r_9 || = 2.329466e-09, conv factor = 1.45e-01, wall time = 2.91e+00
 
   Braid Solver Stats:
   start time = 0.000000e+00
@@ -23,10 +23,10 @@ Using theta method
   storage               = 0
 
   max iterations        = 25
-  iterations            = 11
+  iterations            = 10
 
-  residual norm         = 1.278319e-10
-  stopping tolerance    = 1.000000e-09
+  residual norm         = 2.329466e-09
+  stopping tolerance    = 1.000000e-08
   use relative tol?     = 0
                                           --> 2-norm TemporalNorm 
 
@@ -35,7 +35,7 @@ Using theta method
   print_level           = 2
 
   max number of levels  = 4
-  min coarse            = 2
+  min coarse            = 31
   number of levels      = 4
   skip down cycle       = 1
   periodic              = 0
@@ -49,5 +49,5 @@ Using theta method
       2       128        4        1        1.00
       3        32  
 
-  wall time = 3.121634
+  wall time = 2.910192
 

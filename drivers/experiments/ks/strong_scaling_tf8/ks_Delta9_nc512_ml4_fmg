@@ -1,13 +1,15 @@
+nprocs: 512
 Using Delta correction
 Using theta method
 
   Braid: Begin simulation, 16384 time steps
-  Braid: || r_0 || not available, wall time = 1.26e-01
-  Braid: || r_1 || = 4.545366e-01, conv factor = 1.00e+00, wall time = 7.78e-01
-  Braid: || r_2 || = 4.113838e-01, conv factor = 9.05e-01, wall time = 1.53e+00
-  Braid: || r_3 || = 1.440500e-02, conv factor = 3.50e-02, wall time = 2.32e+00
-  Braid: || r_4 || = 2.391298e-06, conv factor = 1.66e-04, wall time = 2.99e+00
-  Braid: || r_5 || = 5.927408e-09, conv factor = 2.48e-03, wall time = 3.59e+00
+  Braid: || r_0 || not available, wall time = 5.51e-01
+  Braid: || r_1 || = 2.565572e-01, conv factor = 1.00e+00, wall time = 1.16e+00
+  Braid: || r_2 || = 3.976014e-01, conv factor = 1.55e+00, wall time = 1.92e+00
+  Braid: || r_3 || = 9.651922e-02, conv factor = 2.43e-01, wall time = 2.62e+00
+  Braid: || r_4 || = 3.860213e-05, conv factor = 4.00e-04, wall time = 3.26e+00
+  Braid: || r_5 || = 9.222943e-08, conv factor = 2.39e-03, wall time = 3.86e+00
+  Braid: || r_6 || = 2.959806e-10, conv factor = 3.21e-03, wall time = 4.43e+00
 
   Braid Solver Stats:
   start time = 0.000000e+00
@@ -18,9 +20,9 @@ Using theta method
   storage               = 0
 
   max iterations        = 25
-  iterations            = 6
+  iterations            = 7
 
-  residual norm         = 5.927408e-09
+  residual norm         = 2.959806e-10
   stopping tolerance    = 1.000000e-08
   use relative tol?     = 0
                                           --> 2-norm TemporalNorm 
@@ -32,7 +34,7 @@ Using theta method
   print_level           = 2
 
   max number of levels  = 4
-  min coarse            = 2
+  min coarse            = 62
   number of levels      = 4
   skip down cycle       = 1
   periodic              = 0
@@ -46,5 +48,5 @@ Using theta method
       2       256        4        1        1.00
       3        64  
 
-  wall time = 3.868904
+  wall time = 4.429577
 

@@ -1,6 +1,10 @@
 srun: Warning: can't run 16 processes on 40 nodes, setting nnodes to 16
 srun: Warning: can't run 16 processes on 40 nodes, setting nnodes to 16
 srun: Warning: can't run 16 processes on 40 nodes, setting nnodes to 16
+srun: Warning: can't run 16 processes on 40 nodes, setting nnodes to 16
+srun: Warning: can't run 16 processes on 40 nodes, setting nnodes to 16
+srun: Warning: can't run 32 processes on 40 nodes, setting nnodes to 32
+srun: Warning: can't run 32 processes on 40 nodes, setting nnodes to 32
 srun: Warning: can't run 32 processes on 40 nodes, setting nnodes to 32
 srun: Warning: can't run 32 processes on 40 nodes, setting nnodes to 32
 srun: Warning: can't run 32 processes on 40 nodes, setting nnodes to 32

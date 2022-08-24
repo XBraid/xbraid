@@ -1,3 +1,4 @@
+nprocs: 1
 
   Braid: Begin simulation, 8192 time steps
 
@@ -13,7 +14,7 @@
   iterations            = 0
 
   residual norm         = -1.000000e+00
-  stopping tolerance    = 1.000000e-09
+  stopping tolerance    = 1.000000e-08
   use relative tol?     = 0
                                           --> 2-norm TemporalNorm 
 
@@ -22,7 +23,7 @@
   print_level           = 2
 
   max number of levels  = 1
-  min coarse            = 2
+  min coarse            = 62
   number of levels      = 1
   skip down cycle       = 1
   periodic              = 0
@@ -33,5 +34,5 @@
   level   time-pts   cfactor   nrelax   Crelax Wt
       0      8192  
 
-  wall time = 14.494529
+  wall time = 14.923448
 

@@ -1219,9 +1219,9 @@ int main(int argc, char *argv[])
    else
    {
       using namespace Eigen;
-      int init_nx = 1024;
+      int init_nx = 512;
       int cfx = init_nx/nx;
-      VEC u0fine = read_init("drive-ks-init-nx1024.out", init_nx);
+      VEC u0fine = read_init("drive-ks-init-nx512.out", init_nx);
       u0 = u0fine(seq(0, last, cfx));
    }
 

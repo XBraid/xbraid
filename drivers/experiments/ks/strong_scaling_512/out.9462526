@@ -1,6 +1,6 @@
-This machine is ruby26
-My jobid is 9295297
-Timestamp START: Wed Aug 10 18:38:12 PDT 2022
+This machine is ruby51
+My jobid is 9462526
+Timestamp START: Tue Aug 23 19:15:46 PDT 2022
 srun -N 1 -n 1 -o ./ks_ml1 ../../../drive-ks -tf 4 -nt 8192 -nx 256 -cf0 16 -ml 1
 srun -N 19 -n 16 -o ./ks_nc16       ../../../drive-ks -tf 4 -nt 8192 -nx 256 -cf0 16 -ml 3
 srun -N 19 -n 16 -o ./ks_theta_nc16 ../../../drive-ks -tf 4 -nt 8192 -nx 256 -cf0 16 -ml 4 -theta
@@ -66,4 +66,4 @@ srun -N 19 -n 1024 -o ./ks_Delta16_nc1024 ../../../drive-ks -tf 4 -nt 8192 -nx 2
 srun -N 19 -n 1024 -o ./ks_Delta32_nc1024 ../../../drive-ks -tf 4 -nt 8192 -nx 256 -cf0 16 -ml 4 -theta -Delta -Deltalvl 2 -rank 32
 srun -N 19 -n 1024 -o ./ks_Delta64_nc1024 ../../../drive-ks -tf 4 -nt 8192 -nx 256 -cf0 16 -ml 4 -theta -Delta -Deltalvl 2 -rank 64
 Done
-Timestamp END: Wed Aug 10 18:49:17 PDT 2022
+Timestamp END: Tue Aug 23 19:25:39 PDT 2022

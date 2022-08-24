@@ -1,3 +1,4 @@
+nprocs: 1
 
   Braid: Begin simulation, 16384 time steps
 
@@ -22,7 +23,7 @@
   print_level           = 2
 
   max number of levels  = 1
-  min coarse            = 2
+  min coarse            = 123
   number of levels      = 1
   skip down cycle       = 1
   periodic              = 0
@@ -33,5 +34,5 @@
   level   time-pts   cfactor   nrelax   Crelax Wt
       0     16384  
 
-  wall time = 29.531664
+  wall time = 29.846177
 
