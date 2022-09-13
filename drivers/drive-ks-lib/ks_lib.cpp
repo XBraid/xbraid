@@ -1,3 +1,4 @@
+#include <limits>
 #include "ks_lib.hpp"
 
 // internal functions
@@ -120,7 +121,7 @@ void setFourierMatrix(MAT &A, const int nx, const double len)
 {
     for (Index j = 0; j < A.cols(); j++)
     {
-        A.col(j) = FourierMode(j + 1, nx, len);
+        A.col(j) = FourierMode(j, nx, len);
         A.col(j).normalize();
     }
 }
@@ -381,8 +382,11 @@ void GramSchmidt(MAT &A)
     }
 }
 
+typedef std::numeric_limits<double> dbl;
+
 void pack_array(std::ofstream &f, const VEC &u)
 {
+    f.precision(dbl::max_digits10);
     for (Index i = 0; i < u.size() - 1; i++)
     {
         f << u(i) << ',';
@@ -392,6 +396,7 @@ void pack_array(std::ofstream &f, const VEC &u)
 
 void pack_darray(std::ofstream &f, const MAT &u)
 {
+    f.precision(dbl::max_digits10);
     using Eigen::last;
     for (Index j = 0; j < u.cols() - 1; j++)
     {

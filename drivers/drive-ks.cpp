@@ -98,12 +98,14 @@ public:
    bool getInit;
    bool output;
    int stages;
+   std::vector<int> sclevels;
    std::vector<double> thetas;
    std::vector<double> err_ests;
    double est_norm;
 
    int nx;
    KSDiscretization disc;
+   std::vector<KSDiscretization> DiscTable;
    VEC initial_data;
 
    // Constructor
@@ -163,6 +165,8 @@ public:
                   const MAT &Delta,
                   const MAT &Psi);
 
+   int spatialLevel(int level);
+
    // Define all the Braid Wrapper routines
    // Note: braid_Vector == BraidVector*
    virtual int Step(braid_Vector u_,
@@ -207,14 +211,13 @@ public:
 
    virtual int Sync(BraidSyncStatus &status);
 
-   // not needed:
    virtual int Coarsen(braid_Vector fu_,
                        braid_Vector *cu_ptr,
-                       BraidCoarsenRefStatus &status) { return 0; }
+                       BraidCoarsenRefStatus &status);
 
    virtual int Refine(braid_Vector cu_,
                       braid_Vector *fu_ptr,
-                      BraidCoarsenRefStatus &status) { return 0; }
+                      BraidCoarsenRefStatus &status);
 };
 
 // Braid App Constructor
@@ -368,16 +371,7 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &p
    //    tol = tight;
    // }
 
-   // limit newton iterations only on coarse grids
    int iters = newton_iters;
-   // if (calling_func == braid_ASCaller_FCRelax)
-   // {
-   //    iters = newton_iters-1;
-   // }
-   // if (level == 0)
-   // {
-   //    iters = 10;
-   // }
 
    // second order theta method
    if (stages == 2)
@@ -423,17 +417,6 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &p
       pstatus.SetRFactor(1);
       return out;
    }
-
-   // else
-   // if (lvl_eff == 1)
-   // {
-   //    pstatus.SetRFactor(cfactor0);
-   // }
-   // else
-   // {
-   //    pstatus.SetRFactor(cfactor);
-   // }
-   // return out;
 
    int tu, tl, T_index, T_irel;
    pstatus.GetTIUL(&tu, &tl, level);
@@ -525,6 +508,12 @@ int MyBraidApp::Step(braid_Vector u_,
       lvl_eff = (level - nrefine) + (max_levels - 2);
    }
 
+   if (calling_fnc == braid_ASCaller_FCRelax)
+   {
+      std::cout << "hi\n";
+   }
+   
+
    double dt = tstop - tstart;
 
    bool DeltaCorrect, computeDeltas, normalize, useGuess, toCPoint, coarseGrid;
@@ -542,6 +531,8 @@ int MyBraidApp::Step(braid_Vector u_,
    // the initial guess is only valid for f-points on fine-grids
    useGuess = (coarseGrid || !toCPoint);
 
+   // We want the coarse grid to be cheap, so we save the best
+   // initial guess for the coarse grid at C-points
    if (useGuess)
    {
       u->guess = ustop->guess;
@@ -557,8 +548,10 @@ int MyBraidApp::Step(braid_Vector u_,
    }
 
    VEC utmp(u->state);
-
-   if (!useDelta || lvl_eff < DeltaLevel || (coarseGrid && !cglv) || iter < delayDelta) // default behavior, no Psi propagation
+   
+   // bool dont_prop_psi = (!useDelta || lvl_eff < DeltaLevel || (coarseGrid && !cglv) || iter < delayDelta || (cglv && calling_fnc == braid_ASCaller_FCRelax));
+   bool dont_prop_psi = (!useDelta || lvl_eff < DeltaLevel || (coarseGrid && !cglv) || iter < delayDelta);
+   if (dont_prop_psi) // default behavior, no Psi propagation
    {
       utmp = baseStep(u->state, u->guess, dt, pstatus);
       if (f)
@@ -567,9 +560,11 @@ int MyBraidApp::Step(braid_Vector u_,
          if (DeltaCorrect)
          {
             utmp += LRDeltaDot(u->state, f->Delta, f->Psi) - f->action;
+
          }
       }
       u->state = utmp;
+      u->Psi = ustop->Psi;
       if (!useGuess)
       {
          u->guess = ustop->guess; // the old value
@@ -808,6 +803,22 @@ int MyBraidApp::BufUnpack(void *buffer,
    return 0;
 }
 
+int MyBraidApp::Coarsen(braid_Vector fu_,
+                        braid_Vector *cu_ptr,
+                        BraidCoarsenRefStatus &status)
+{
+   Clone(fu_, cu_ptr);
+   return 0;
+}
+
+int MyBraidApp::Refine(braid_Vector cu_,
+                       braid_Vector *fu_ptr,
+                       BraidCoarsenRefStatus &status)
+{
+   Clone(cu_, fu_ptr);
+   return 0;
+}
+
 int MyBraidApp::Access(braid_Vector u_,
                        BraidAccessStatus &astatus)
 {
@@ -855,11 +866,11 @@ int MyBraidApp::Sync(BraidSyncStatus &status)
     * reference. This is how you detect your calling function */
    braid_Int calling_fcn;
    status.GetCallingFunction(&calling_fcn);
-   // if (calling_fcn == braid_ASCaller_FRefine_AfterInitHier)
-   // {
-   //    est_norm = -1;
-   //    return 0;
-   // }
+   if (calling_fcn == braid_ASCaller_FRefine_AfterInitHier)
+   {
+      est_norm = -1;
+      return 0;
+   }
 
    if (calling_fcn == braid_ASCaller_Drive_TopCycle)
    {
@@ -892,8 +903,9 @@ int MyBraidApp::Sync(BraidSyncStatus &status)
 // Main driver
 // --------------------------------------------------------------------------
 
-VEC read_init(std::string fname, int nx)
+int read_init(std::string fname, VEC &out, int nx)
 {
+   out.resize(nx);
    std::ifstream inf;
    std::string entry;
 
@@ -901,17 +913,15 @@ VEC read_init(std::string fname, int nx)
    if (!inf)
    {
       std::cout << "!!!init file not found!!!\n";
-      return VEC::Zero(nx);
+      return 0;
    }
 
-   VEC out(nx);
    for (int i = 0; i < nx; i++)
    {
       getline(inf, entry, ',');
       out[i] = std::stof(entry);
    }
-
-   return out;
+   return 1;
 }
 
 int del_extra(int nt, int cfactor, std::string fname)
@@ -989,6 +999,8 @@ int main(int argc, char *argv[])
    bool wrapperTests = false;
    bool getInit = false;
    bool output = false;
+   std::vector<int> sclevels;
+   sclevels.reserve(100);
    int ord = 2;
    bool cglv = false;
    double weight = 1.;
@@ -1032,14 +1044,15 @@ int main(int argc, char *argv[])
             printf("  -cf         : set coarsening factor\n");
             printf("  -cf0        : set coarsening factor on level 0\n");
             printf("  -mi         : set max iterations\n");
-            printf("  -niters     : set number of newton iters for theta method\n");
-            printf("  -fmg        : use FMG cycling\n");
-            printf("  -Delta      : use delta correction\n");
+            printf("  -niters     : set number of newton iters for spatial solver\n");
+            printf("  -fmg        : use F cycles\n");
+            printf("  -Delta      : use Delta correction\n");
             printf("  -Deltalvl   : Delta correction is deferred until this level\n");
             printf("  -cglv       : Propagate Lyapunov Vectors on the coarsest grid\n");
-            printf("  -rank       : set rank of delta correction (Default: 3)\n");
+            printf("  -rank       : set rank of delta correction\n");
             printf("  -theta      : use first order theta method\n");
             printf("  -refine     : use global refinement to approximate true FMG cycle\n");
+            printf("  -sclevels   : levels on which to coarsen in space (comma separated, e.g. '1,3,5', no spaces\n");
             printf("  -out        : write output to file (for visualization)\n");
             printf("  -test       : run wrapper tests\n");
             printf("  -getInit    : write solution at final time to file\n");
@@ -1149,6 +1162,18 @@ int main(int argc, char *argv[])
          arg_index++;
          doRefine = true;
       }
+      else if (strcmp(argv[arg_index], "-sclevels") == 0)
+      {
+         arg_index++;
+         // create a string stream and read the values from it
+         std::stringstream s_stream(argv[arg_index++]);
+         while (s_stream.good())
+         {
+            std::string substr;
+            std::getline(s_stream, substr, ',');
+            sclevels.push_back(std::stoi(substr));
+         }
+      }
       else if (strcmp(argv[arg_index], "-out") == 0)
       {
          arg_index++;
@@ -1184,6 +1209,15 @@ int main(int argc, char *argv[])
    tstart = 0.0;
    tstop = Tf_lyap * T_lyap;
 
+   if (!sclevels.empty())
+   {
+      std::cout << "using spatial coarsening on levels: ";
+      for (auto &&i : sclevels)
+      {
+         std::cout << i << ", ";
+      }
+      std::cout << '\n';
+   }
    if (useDelta && rank == 0)
    {
       std::cout << "Using Delta correction\n";
@@ -1230,17 +1264,17 @@ int main(int argc, char *argv[])
 
    // get initial data
    VEC u0;
-   if (getInit)
-   {
-      u0 = FourierMode(1, nx, len);
-   }
-   else
+   u0 = FourierMode(1, nx, len) + smoothed_noise(nx, 4);
+   if (!getInit)
    {
       using namespace Eigen;
       int init_nx = 512;
       int cfx = init_nx / nx;
-      VEC u0fine = read_init("drive-ks-init-nx512.out", init_nx);
-      u0 = u0fine(seq(0, last, cfx));
+      VEC u0fine;
+      if (read_init("drive-ks-init-nx512.out", u0fine, init_nx))
+      {
+         u0 = u0fine(seq(0, last, cfx));
+      }
    }
 
    // set up app structure
