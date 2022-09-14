@@ -367,6 +367,118 @@ braid_TestSpatialNorm( braid_App              app,
 }
 
 braid_Int
+braid_TestInnerProd( braid_App              app, 
+                     MPI_Comm               comm_x,
+                     FILE                  *fp,
+                     braid_Real             t1,
+                     braid_Real             t2,
+                     braid_PtFcnInit        myinit,
+                     braid_PtFcnFree        myfree,
+                     braid_PtFcnSum         sum,
+                     braid_PtFcnInnerProd   inner_prod)
+{
+   braid_Vector u, v;
+   braid_Real   result1, result2;
+   braid_Int    myid_x, zero_flag1, zero_flag2;
+
+   double wiggle = 1e-12;
+
+   MPI_Comm_rank(comm_x, &myid_x);
+
+   /* Initialize the flags */
+   braid_Int correct = 1;
+   zero_flag1 = 0;
+   zero_flag2 = 0;
+
+   /* Print intro */
+   _braid_ParFprintfFlush(fp, myid_x, "\nStarting braid_TestInnerProd\n\n");
+   
+   /* Test 1 */
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   Starting Test 1\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   u = init(t=%1.2e)\n", t1);
+   myinit(app, t1, &u);
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   inner_prod(u, u)\n");
+   inner_prod(app, u, u, &result1);
+
+   if( fabs(result1) == 0.0)
+   {
+      zero_flag1 = 1;
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   Warning:  inner_prod(u, u) = 0.0\n"); 
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   Test 1 Inconclusive (make sure u is not the zero vector)\n"); 
+   }
+   else if( _braid_isnan(result1) )
+   {
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   Warning:  inner_prod(u, u) = nan\n");
+      correct = 0;
+   }
+
+   if (!zero_flag1)
+   {
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   u = u / sqrt(inner_prod(u, u))\n");
+      sum(app, 0., u, 1/sqrt(result1), u);
+
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   inner_prod(u, u)\n");
+      inner_prod(app, u, u, &result2);
+      
+      if( (fabs(1. - result2) > wiggle) || _braid_isnan(result2) )
+      {
+         correct = 0;
+         _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   Test 1 Failed\n");
+      }
+      else
+      {
+         _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   Test 1 Passed\n");
+      }
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   actual output:    inner_prod(u, u) = %1.2e  \n", result2);
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   expected output:  inner_prod(u, u) = 1.0 \n\n");
+   }
+
+   /* Test 2 */
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   Starting Test 2\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   v = init(t=%1.2e)\n", t2);
+   myinit(app, t2, &v);
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   inner_prod(u, v)\n");
+   inner_prod(app, u, v, &result1);
+
+   if( fabs(result1) == 0.0 )
+   {
+      zero_flag2 = 1;
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   Warning:  inner_prod(u, v) = 0.0\n"); 
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   Test 2 Inconclusive (make sure v is not the zero vector and is not orthogonal to u)\n"); 
+   }
+   else if( _braid_isnan(result1) )
+   {
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   Warning:  inner_prod(u, v) = nan\n");
+      correct = 0;
+   }
+
+   if ( !zero_flag1 && !zero_flag2 )
+   {
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   v = v - inner_prod(u, v)*u\n");
+      sum(app, -result1, u, 1., v);
+
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   inner_prod(u, v)\n");
+      inner_prod(app, u, v, &result2);
+      
+      if( (fabs(result2) > wiggle) || _braid_isnan(result2) )
+      {
+         correct = 0;
+         _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   Test 2 Failed\n");
+      }
+      else
+      {
+         _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   Test 2 Passed\n");
+      }
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   actual output:    inner_prod(u, v) = %1.2e  \n", result2);
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   expected output:  inner_prod(u, v) = 0. \n\n");
+   }
+
+   return correct;
+} 
+
+braid_Int
 braid_TestBuf( braid_App              app,
                MPI_Comm               comm_x,
                FILE                   *fp, 
@@ -775,8 +887,6 @@ braid_TestResidual( braid_App              app,
    
    return 0;
 }
-
-
 
 braid_Int
 braid_TestAll( braid_App            app,

@@ -1230,6 +1230,18 @@ braid_SetSync(braid_Core      core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
+braid_SetInnerProd(braid_Core             core,
+                   braid_PtFcnInnerProd   inner_prod)
+{
+   _braid_CoreElt(core, inner_prod) = inner_prod;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
 braid_SetShell(braid_Core          core,
                braid_PtFcnSInit    sinit,
                braid_PtFcnSClone   sclone,

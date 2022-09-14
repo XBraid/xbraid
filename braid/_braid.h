@@ -106,22 +106,25 @@ void _braid_ErrorHandler(const char *filename, braid_Int line, braid_Int ierr, c
 /** 
  * Braid Vector Structures:
  *
- * There are three vector structures
- *   _braid_VectorBar      Defined below
- *   braid_Vector          Defined in braid.h
+ * There are four vector structures
  *   braid_BaseVector      Defined below
+ *   braid_Vector          Defined in braid.h
+ *   _braid_VectorBar      Defined below
+ *   braid_Basis           Defined in braid.h
  *
  * The braid_BaseVector is the main internal Vector class, which is 
  * stored at each time point.  It basically wraps the Vector and 
  * braid_VectorBar (see below).  The braid_VectorBar is only used if the
  * adjoint capability is used, when it stores adjoint variables.  It's 
  * basically a smart pointer wrapper around a braid_Vector. Note that it
- * is always the braid_Vector that's passed to user-routines.   
- *
+ * is always the braid_Vector that's passed to user-routines. The braid_Basis
+ * wraps (braid_Vector*) and can be considered a two-dimensional array. It is
+ * only used for Delta correction and when estimating the Lyapunov vectors.
  */
 
+
 /**
- * Shared pointer implementation for storing the intermediat AD-bar variables while taping.
+ * Shared pointer implementation for storing the intermediate AD-bar variables while taping.
  * This is essentially the same as a userVector, except we need shared pointer 
  * capabilities to know when to delete.
  */
@@ -142,6 +145,7 @@ struct _braid_BaseVector_struct
 {
    braid_Vector    userVector;      /**< holds the users primal vector */
    braid_VectorBar bar;             /**< holds the bar vector (shared pointer implementation) */
+   braid_Basis     Psi;             /**< local basis of variable rank, stored as the user's vector type */
 };
 typedef struct _braid_BaseVector_struct *braid_BaseVector;
 
@@ -256,6 +260,7 @@ typedef struct _braid_Core_struct
    braid_PtFcnBufPack     bufpack;          /**< pack a buffer */
    braid_PtFcnBufUnpack   bufunpack;        /**< unpack a buffer */
    braid_PtFcnResidual    residual;         /**< (optional) compute residual */
+   braid_PtFcnInnerProd   inner_prod;       /**< (optional) compute an inner product between two vectors */
    braid_PtFcnSCoarsen    scoarsen;         /**< (optional) return a spatially coarsened vector */
    braid_PtFcnSRefine     srefine;          /**< (optional) return a spatially refined vector */
    braid_PtFcnSync        sync;             /**< (optional) user access to app once-per-processor */

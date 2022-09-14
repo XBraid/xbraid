@@ -120,6 +120,31 @@ braid_TestSpatialNorm( braid_App              app,         /**< User defined App
                        braid_PtFcnSum         sum,         /**< Compute vector sum of two braid_Vectors */
                        braid_PtFcnSpatialNorm spatialnorm  /**< Compute norm of a braid_Vector, this is a norm only over space */
                        );
+
+
+/**
+ * Test the inner_prod function.\n
+ * A vector is initialized at time *t1*, then the vector is normalized under the
+ * norm induced by inner_prod. A second vector is initialized at time *t2*, and the
+ * Gram Schmidt process removes the component of the second vector along the 
+ * direction of the first. The test is inconclusive unless both vectors are nonzero 
+ * and not orthogonal.
+ *
+ * - Returns 0 if the tests fail
+ * - Returns 1 if the tests pass
+ * - Check the log messages to see details of which tests failed.
+ **/
+braid_Int
+braid_TestInnerProd( braid_App              app,        /**< User defined App structure */
+                     MPI_Comm               comm_x,     /**< Spatial communicator */  
+                     FILE                  *fp,         /**< File pointer (could be stdout or stderr) for log messages */
+                     braid_Real             t1,         /**< Time value used to initialize the 1st vector */
+                     braid_Real             t2,         /**< Time value used to initialize the 2nd vector (t1 != t2) */
+                     braid_PtFcnInit        init,       /**< Initialize a braid_Vector on finest temporal grid */
+                     braid_PtFcnFree        free,       /**< Free a braid_Vector */
+                     braid_PtFcnSum         sum,        /**< Compute vector sum of two braid_Vectors */ 
+                     braid_PtFcnInnerProd   inner_prod  /**< Compute inner product of two braid_Vectors */
+                     );
               
 /**
  * Test the BufPack, BufUnpack and BufSize functions.\n

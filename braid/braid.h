@@ -116,6 +116,20 @@ struct _braid_Vector_struct;
 typedef struct _braid_Vector_struct *braid_Vector;
 
 /**
+ * This contains an array of @ref braid_Vector objects which should be thought of 
+ * as a basis for the state space, along with the number of vectors stored.
+ * Only initialized when using Delta correction. The vectors should be initialized
+ * using the user's Init function.
+ * Defined here to expose the braid_Basis typedef to the user
+ */
+struct _braid_Basis_struct
+{
+   braid_Vector *userVectors;
+   braid_Int     cols;
+};
+typedef struct _braid_Basis_struct *braid_Basis;
+
+/**
  * Defines the central time stepping function that the user must write.
  *
  * The user must advance the vector *u* from time *tstart* to *tstop*.  The time
@@ -178,7 +192,7 @@ typedef braid_Int
 /** 
  * Carry out a spatial norm by taking the norm of a braid_Vector 
  * *norm_ptr* = || *u* || 
- * A common choice is the standard Eucliden norm, but many other choices are
+ * A common choice is the standard Euclidean norm, but many other choices are
  * possible, such as an L2-norm based on a finite element space.  See
  * [braid_SetTemporalNorm](@ref braid_SetTemporalNorm) for information on how the
  * spatial norm is combined over time for a global space-time residual norm.
@@ -191,18 +205,34 @@ typedef braid_Int
                           );
 
 /**
+ * Compute an inner (scalar) product between two braid_Vectors
+ * *prod_ptr* = <*u*, *v*>
+ * Only needed when using Delta correction
+ * 
+ * The most common choice would be the standard dot product.
+ * Vectors are normalized under the norm induced by this inner product,
+ * *not* the function defined in SpatialNorm, which is only used for halting
+ */
+typedef braid_Int
+(*braid_PtFcnInnerProd)(braid_App        app,       /**< user-defined _braid_App structure */
+                        braid_Vector     u,         /**< first vector */
+                        braid_Vector     v,         /**< second vector */
+                        braid_Real      *prod_ptr   /**< output, result of inner product */
+                        );
+
+/**
  * Gives user access to XBraid and to the current vector *u* at time *t*.  Most
  * commonly, this lets the user write the vector to screen, file, etc...  The
  * user decides what is appropriate.  Note how you are told the time value *t*
  * of the vector *u* and other information in *status*.  This lets you tailor
  * the output, e.g., for only certain time values at certain XBraid iterations.
- * Querrying status for such information is done through
+ * Querying status for such information is done through
  * _braid_AccessStatusGet**(..)_ routines.
  * 
  * The frequency of XBraid's calls to *access* is controlled through
  * [braid_SetAccessLevel](@ref braid_SetAccessLevel).  For instance, if
  * access_level is set to 3, then *access* is called every XBraid iteration and
- * on every XBraid level.  In this case, querrying *status* to determine the
+ * on every XBraid level.  In this case, querying *status* to determine the
  * current XBraid level and iteration will be useful. This scenario allows for
  * even more detailed tracking of the simulation.
  *
@@ -802,6 +832,15 @@ braid_Int
 braid_SetSync(braid_Core      core, /**< braid_Core (_braid_Core) struct*/
               braid_PtFcnSync sync  /**< function pointer to sync routine */
               );
+
+/**
+ * Set InnerProd routine with user-defined routine.
+ * 
+ */
+braid_Int
+braid_SetInnerProd(braid_Core             core,       /**< braid_Core (_braid_Core) struct*/
+                   braid_PtFcnInnerProd   inner_prod  /**< function pointer to inner product routine */
+                  );
 
 /**
  * Set print level for XBraid.  This controls how much information is 

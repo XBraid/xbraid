@@ -91,7 +91,7 @@ my_Step(braid_App        app,
 
    /* Use backward Euler to propagate solution */
    (u->value) = 1./(1. + tstop-tstart)*(u->value);
-   
+
    return 0;
 }
 

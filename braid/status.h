@@ -27,7 +27,6 @@
 #ifndef _braid_status_HEADER
 #define _braid_status_HEADER
 
-#include "braid_status.h"
 #include "_braid.h"
 
 #ifdef __cplusplus
