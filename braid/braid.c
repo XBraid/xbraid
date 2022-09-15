@@ -379,7 +379,9 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, timer_MPI_wait)  = 0.0;
    _braid_CoreElt(core, timer_MPI_wait_coarse)  = 0.0;
    _braid_CoreElt(core, timer_MPI_send)  = 0.0;
-   _braid_CoreElt(core, timer_printfile)  = NULL;
+   _braid_CoreElt(core, timer_file_stem_len) = 13; /* length of file stem, not including the null terminator */
+   _braid_CoreElt(core, timer_file_stem)  = malloc(14 * sizeof(char));
+   sprintf(_braid_CoreElt(core, timer_file_stem), "braid_timings");
 
    braid_SetMaxLevels(core, max_levels);
    braid_SetMaxIter(core, max_iter);
@@ -458,13 +460,14 @@ braid_Destroy(braid_Core  core)
 {
    if (core)
    {
-      braid_App               app        = _braid_CoreElt(core, app);
-      braid_Int               nlevels    = _braid_CoreElt(core, nlevels);
-      _braid_Grid           **grids      = _braid_CoreElt(core, grids);
-      braid_Int               cfactor    = _braid_GridElt(grids[0], cfactor);
-      braid_Int               gupper     = _braid_CoreElt(core, gupper);
-      braid_Int               richardson = _braid_CoreElt(core, richardson);
-      braid_Int               est_error  = _braid_CoreElt(core, est_error); 
+      braid_App               app             = _braid_CoreElt(core, app);
+      braid_Int               nlevels         = _braid_CoreElt(core, nlevels);
+      _braid_Grid           **grids           = _braid_CoreElt(core, grids);
+      braid_Int               cfactor         = _braid_GridElt(grids[0], cfactor);
+      braid_Int               gupper          = _braid_CoreElt(core, gupper);
+      braid_Int               richardson      = _braid_CoreElt(core, richardson);
+      braid_Int               est_error       = _braid_CoreElt(core, est_error); 
+      char                   *timer_file_stem = _braid_CoreElt(core, timer_file_stem);
       braid_Int               level;
 
       _braid_TFree(_braid_CoreElt(core, nrels));
@@ -511,12 +514,20 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(grids);
 
       _braid_TFree(core);
+   
+      if (timer_file_stem != NULL)
+      {
+         _braid_TFree(timer_file_stem);
+      }
+
    }
 
    if (_braid_printfile != NULL)
    {
       fclose(_braid_printfile);
    }
+   
+
 
    return _braid_error_flag;
 }
@@ -684,15 +695,38 @@ braid_SetTimerFile(braid_Core     core,
                    braid_Int      length,
                    const char    *filestem)
 {
+   _braid_CoreElt(core, timer_file_stem) = malloc((length + 1) * sizeof(char));
+   char *timer_file_stem = _braid_CoreElt(core, timer_file_stem);
    
-   braid_Int myid = _braid_CoreElt(core, myid_world);
+   _braid_CoreElt(core, timer_file_stem_len) = length;
+   
+   for(braid_Int i = 0; i < length; i++)
+   {
+      timer_file_stem[i] = filestem[i];
+   }
+   
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+braid_Int
+braid_PrintTimers(braid_Core  core)
+{
+    
+   braid_Int myid          = _braid_CoreElt(core, myid_world);
+   char *timer_file_stem   = _braid_CoreElt(core, timer_file_stem);
+   braid_Int length        = _braid_CoreElt(core, timer_file_stem_len);
+   FILE *fp; 
+   
+   /* create rank specific filename */
    char filename[length+10];
    char rank[] = "0000";
    sprintf(rank, "%04d", myid);
 
    for(braid_Int i = 0; i < length; i++)
    {
-      filename[i] = filestem[i];
+      filename[i] = timer_file_stem[i];
    }
    filename[length] = '_';
    filename[length+1] = rank[0];
@@ -705,29 +739,10 @@ braid_SetTimerFile(braid_Core     core,
    filename[length+8] = 't';
    filename[length+9] = '\0'; 
    
-   if ((_braid_CoreElt(core, timer_printfile) = fopen(filename, "w")) == NULL)
+   if ((fp = fopen(filename, "w")) == NULL)
    {
       _braid_printf("  Braid: Error: can't open timer output file %s\n", filename);
       exit(1);
-   }
-
-   return _braid_error_flag;
-}
-
-/*--------------------------------------------------------------------------
- *--------------------------------------------------------------------------*/
-braid_Int
-braid_PrintTimers(braid_Core  core)
-{
-    
-   braid_Int myid = _braid_CoreElt(core, myid_world);
-   FILE *fp = _braid_CoreElt(core, timer_printfile);
-
-   if(fp == NULL)
-   {
-       char filename[] = "braid_timings_0000.txt";
-       sprintf(filename, "braid_timings_%04d.txt", myid);
-       fp = fopen(filename, "w");
    }
 
    fprintf(fp, "\nTimings for rank %d\n", myid); 

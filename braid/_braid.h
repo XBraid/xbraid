@@ -391,7 +391,8 @@ typedef struct _braid_Core_struct
    braid_Real  timer_user_scoarsen;
    braid_Real  timer_user_srefine;
    braid_Real  timer_user_sync;
-   FILE       *timer_printfile;
+   char       *timer_file_stem;
+   braid_Int   timer_file_stem_len;
 } _braid_Core;
 
 /*--------------------------------------------------------------------------
