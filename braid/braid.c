@@ -703,6 +703,7 @@ braid_SetTimerFile(braid_Core     core,
    filename[length+6] = 't';
    filename[length+7] = 'x';
    filename[length+8] = 't';
+   filename[length+9] = '\0'; 
    
    if ((_braid_CoreElt(core, timer_printfile) = fopen(filename, "w")) == NULL)
    {
