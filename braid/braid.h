@@ -534,6 +534,17 @@ braid_PrintStats(braid_Core  core           /**< braid_Core (_braid_Core) struct
                  );
 
 /** 
+ * Set file name stem for timing infomation output. Timings are output 
+ * to timerfile_name_####.txt, where #### is MPI rank.  Default is
+ * braid_timings_####.txt
+ **/
+braid_Int
+braid_SetTimerFile(braid_Core     core,
+                   braid_Int      length,       /**< length of file name string */
+                   const char    *filestem      /**< file name stem for timing output */
+                  );
+
+/** 
  * Print timers after a XBraid run, note these timers do not include any
  * adjoint routines or Richardson routines
  **/

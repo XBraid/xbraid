@@ -379,6 +379,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, timer_MPI_wait)  = 0.0;
    _braid_CoreElt(core, timer_MPI_wait_coarse)  = 0.0;
    _braid_CoreElt(core, timer_MPI_send)  = 0.0;
+   _braid_CoreElt(core, timer_printfile)  = NULL;
 
    braid_SetMaxLevels(core, max_levels);
    braid_SetMaxIter(core, max_iter);
@@ -677,16 +678,57 @@ braid_PrintStats(braid_Core  core)
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetTimerFile(braid_Core     core,
+                   braid_Int      length,
+                   const char    *filestem)
+{
+   
+   braid_Int myid = _braid_CoreElt(core, myid_world);
+   char filename[length+10];
+   char rank[] = "0000";
+   sprintf(rank, "%04d", myid);
+
+   for(braid_Int i = 0; i < length; i++)
+   {
+      filename[i] = filestem[i];
+   }
+   filename[length] = '_';
+   filename[length+1] = rank[0];
+   filename[length+2] = rank[1];
+   filename[length+3] = rank[2];
+   filename[length+4] = rank[3];
+   filename[length+5] = '.';
+   filename[length+6] = 't';
+   filename[length+7] = 'x';
+   filename[length+8] = 't';
+   
+   if ((_braid_CoreElt(core, timer_printfile) = fopen(filename, "w")) == NULL)
+   {
+      _braid_printf("  Braid: Error: can't open timer output file %s\n", filename);
+      exit(1);
+   }
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
 braid_Int
 braid_PrintTimers(braid_Core  core)
 {
-   braid_Int     myid          = _braid_CoreElt(core, myid_world);
-   FILE *fp;
-   char filename[] = "braid_timings_0000.txt";
+    
+   braid_Int myid = _braid_CoreElt(core, myid_world);
+   FILE *fp = _braid_CoreElt(core, timer_printfile);
 
-   sprintf(filename, "braid_timings_%04d.txt", myid);
-   fp = fopen(filename, "w");
-   
+   if(fp == NULL)
+   {
+       char filename[] = "braid_timings_0000.txt";
+       sprintf(filename, "braid_timings_%04d.txt", myid);
+       fp = fopen(filename, "w");
+   }
+
    fprintf(fp, "\nTimings for rank %d\n", myid); 
    fprintf(fp, "   drive_init       %1.3e\n",  _braid_CoreElt(core, timer_drive_init)); 
    fprintf(fp, "   coarse solve     %1.3e\n",  _braid_CoreElt(core, timer_coarse_solve)); 
