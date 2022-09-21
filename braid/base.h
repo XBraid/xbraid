@@ -91,15 +91,13 @@ _braid_BaseClone(braid_Core         core,     /**< braid_Core structure */
                  );
 
 /**
- * This initializes a braid_BaseVector and calls the user's clone routine.
- * If (adjoint): also record the action, initialize a barVector with zero and push
- * to the bar tape
+ * This initializes a braid_Basis and calls the user's clone routine on each column.
  */
 braid_Int
 _braid_BaseCloneBasis(braid_Core         core,     /**< braid_Core structure */
                       braid_App          app,      /**< user-defined _braid_App structure */ 
-                      braid_BaseVector   A,        /**< basis to clone */ 
-                      braid_BaseVector  *B_ptr     /**< output, newly allocated and cloned basis */ 
+                      braid_Basis        A,        /**< basis to clone */ 
+                      braid_Basis       *B_ptr     /**< output, newly allocated and cloned basis */ 
                       );
 
 /**
@@ -133,6 +131,18 @@ _braid_BaseSum(braid_Core        core,       /**< braid_Core structure */
                braid_Real        beta,       /**< scalar for AXPY */ 
                braid_BaseVector  y           /**< output and vector for AXPY */ 
                );
+
+/**
+ * This calls the user's sum routine on the columns of the bases A, B.
+ */
+braid_Int
+_braid_BaseSumBasis(braid_Core  core,   /**< braid_Core structure */
+                    braid_App   app,    /**< user-defined _braid_App structure */ 
+                    braid_Real  alpha,  /**< scalar for AXPY */ 
+                    braid_Basis A,      /**< basis for AXPY */
+                    braid_Real  beta,   /**< scalar for AXPY */ 
+                    braid_Basis B       /**< output and basis for AXPY */ 
+                    );
 
 /**
  * This calls the user's SpatialNorm routine. 
@@ -356,6 +366,7 @@ _braid_BaseClone_diff(_braid_Action *action      /**< _braid_Action structure, h
 braid_Int
 _braid_BaseSum_diff(_braid_Action *action      /**< _braid_Action structure, holds information about the primal XBraid action */
                     );
+
 
 /**
  * This pops state and bar vectors from the tape, and then 

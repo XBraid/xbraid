@@ -222,7 +222,7 @@ _braid_BaseClone(braid_Core         core,
    _braid_CoreFcn(core, clone)(app, u->userVector, &(v->userVector) );
 
    /* Allocate and clone the basis */
-   if ( delta_correct )
+   if ( u->basis )
    {
       _braid_BaseCloneBasis(core, app, u->basis, &(v->basis));
    }
@@ -388,11 +388,20 @@ _braid_BaseSum(braid_Core        core,
     /* Sum up the user's vector */
    _braid_CoreFcn(core, sum)(app, alpha, x->userVector, beta, y->userVector);
 
-   /* Sum over the basis vectors */
-   if ( _braid_CoreElt(core, delta_correct) )
-   {
-      _braid_BaseSumBasis(core, app, alpha, x->basis, beta, y->basis);
-   }
+   // /* Sum over the basis vectors */
+   // if ( x->basis && y->basis )
+   // {  /* Add together the bases if they both exist */
+   //    _braid_BaseSumBasis(core, app, alpha, x->basis, beta, y->basis);
+   // }
+   // else if ( y->basis )
+   // {  /* if only y exists, treat x as zero */
+   //    _braid_BaseSumBasis(core, app, 0., y->basis, beta, y->basis);
+   // }
+   // else if ( x->basis )
+   // {  /* if only x exists, initialize y as zero */
+   //    _braid_BaseCloneBasis(core, app, x->basis, &(y->basis));
+   //    _braid_BaseSumBasis(core, app, alpha, x->basis, 0., y->basis);
+   // }
 
    return _braid_error_flag;
 }

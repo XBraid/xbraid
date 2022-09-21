@@ -82,7 +82,7 @@ _braid_FInterp(braid_Core  core,
          if( (access_level >= 3) )
          {
             _braid_AccessStatusInit(ta[fi-ilower], fi, rnorm, iter, level, nrefine, gupper,
-                                    0, 0, braid_ASCaller_FInterp, astatus);
+                                    0, 0, braid_ASCaller_FInterp, u->basis, astatus);
             _braid_AccessVector(core, astatus, u);
          }
          e = va[fi-ilower];
@@ -97,7 +97,7 @@ _braid_FInterp(braid_Core  core,
          if( (access_level >= 3) && (f_level == 0) )
          {
             _braid_AccessStatusInit(ta[fi-ilower], f_index, rnorm, iter, f_level, nrefine, gupper,
-                                    0, 0, braid_ASCaller_FInterp, astatus);
+                                    0, 0, braid_ASCaller_FInterp, u->basis, astatus);
             _braid_AccessVector(core, astatus, f_u);
          }
 
@@ -115,7 +115,7 @@ _braid_FInterp(braid_Core  core,
          if( (access_level >= 3) )
          {
             _braid_AccessStatusInit(ta[ci-ilower], ci, rnorm, iter, level, nrefine, gupper,
-                                    0, 0, braid_ASCaller_FInterp, astatus);
+                                    0, 0, braid_ASCaller_FInterp, u->basis, astatus);
             _braid_AccessVector(core, astatus, u);
          }
          e = va[ci-ilower];
@@ -130,7 +130,7 @@ _braid_FInterp(braid_Core  core,
          if( (access_level >= 3) && (f_level == 0) )
          {
             _braid_AccessStatusInit(ta[ci-ilower], f_index, rnorm, iter, f_level, nrefine, gupper,
-                                    0, 0, braid_ASCaller_FInterp, astatus);
+                                    0, 0, braid_ASCaller_FInterp, u->basis, astatus);
             _braid_AccessVector(core, astatus, f_u);
          }
 

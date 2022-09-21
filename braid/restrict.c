@@ -243,6 +243,18 @@ _braid_FRestrict(braid_Core   core,
             /* Finalize update of c_va[-1] */
             _braid_CommWait(core, &recv_handle);
          }
+
+         /* Delta correction: need to store some values at c_ii-1 */
+         braid_Int    delta_correct;
+         braid_Basis  ba = _braid_GridElt(grids[level], ba);
+         braid_Vector delta_action;
+         if ( _braid_CoreElt(core, delta_correct ))
+         {
+            _braid_BaseCloneBasis(core, app, c_va[c_ii-1]->basis, &(ba[c_ii]));
+            /* also need an extra copy of c_va[c_ii-1] */
+            _braid_CoreFcn(core, clone)(app, c_va[c_ii-1]->userVector, &delta_action);
+         }
+
          _braid_BaseClone(core, app,  c_va[c_ii-1], &c_u);
          _braid_Residual(core, c_level, c_i, braid_ASCaller_Residual, c_va[c_ii], c_u);
          
@@ -272,6 +284,15 @@ _braid_FRestrict(braid_Core   core,
          else
          {
             _braid_BaseSum(core, app,  1.0, c_u, 1.0, c_fa[c_ii]);
+            if ( delta_correct )
+            {
+               /* get Delta correction */
+               _braid_BaseSumBasis(core, app, 1.0, c_u->basis, 1.0, c_fa[c_ii]->basis);
+
+               /* get the action of Delta on u_{i-1} */
+               _braid_LRDeltaDot(core, app, delta_action, c_fa[c_ii]->basis, ba);
+               _braid_BaseSum(core, app, 1.0, delta_action, 1.0, c_fa[c_ii]);
+            }
          }
 
          /* Compute Richardson error estimator */

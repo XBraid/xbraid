@@ -51,18 +51,32 @@ _braid_Step(braid_Core         core,
    braid_Int    delta_correct = _braid_CoreElt(core, delta_correct);
    braid_Int    delta_rank    = _braid_CoreElt(core, delta_rank);
    braid_BaseVector delta;  /* temporary storage for Delta correction */
+   // TODO: Is there a way to avoid having to clone u_start??
 
    braid_Int ii;
 
    ii = index-ilower;
-   _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, u->basis, status);
+   // for now, only propagate Lyapunov vectors in F-restrict:
+   braid_Int prop_lyap = delta_correct && ( calling_function == braid_ASCaller_FInterp);
+
+   if ( prop_lyap )
+   {  /* Give the user access to the Lyapunov vectors through StepStatusGetBasisVec */
+      _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, u->basis, status);
+   }
+   else
+   {
+      _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, NULL, status);
+   }
 
    if (delta_correct && fa[ii] != NULL)
    {
       /* compute the Delta correction for the state and Lyapunov vectors */
       _braid_BaseClone(core, app, u, &delta);
       _braid_LRDeltaDot(core, app, delta->userVector, fa[ii]->basis, ba[ii]);
-      _braid_LRDeltaDotMat(core, app, delta->basis, fa[ii]->basis, ba[ii]);
+      if ( prop_lyap )
+      {
+         _braid_LRDeltaDotMat(core, app, delta->basis, fa[ii]->basis, ba[ii]);
+      }
    }
 
    /* If ustop is set to NULL, use a default approach for setting it */
@@ -83,12 +97,15 @@ _braid_Step(braid_Core         core,
          if(fa[ii] != NULL)
          {
             _braid_BaseSum(core, app,  1.0, fa[ii], 1.0, u);
-            /* the user's step function should propagate u->basis,
-             * we just need to add the Delta correction terms
-             */
+
+             /* we need to add the Delta correction terms */
             if (delta_correct)
             {
                _braid_BaseSum(core, app, 1.0, delta, 1.0, u);
+               if ( prop_lyap )
+               {
+                  _braid_BaseSumBasis(core, app, 1.0, delta->basis, 1.0, u->basis);
+               }
             }
          }
       }
@@ -99,6 +116,11 @@ _braid_Step(braid_Core         core,
       }
    }
 
+   /* need to free the memory used by Delta correction */
+   if ( delta_correct )
+   {
+      _braid_BaseFree(core, app, delta);
+   }
    return _braid_error_flag;
 }
 

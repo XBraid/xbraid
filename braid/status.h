@@ -1,5 +1,5 @@
 /*BHEADER**********************************************************************
- * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
+ * Copyright (c) 2013, Lawrence Livermore National Security, LLC.
  * Produced at the Lawrence Livermore National Laboratory.
  * 
  * This file is part of XBraid. For support, post issues to the XBraid Github page.
@@ -145,7 +145,7 @@ _braid_StepStatusInit(braid_Real        tstart,           /**< current time valu
                       braid_Int         nrefine,          /**< number of refinements done */
                       braid_Int         gupper,           /**< global size of the fine grid */
                       braid_Int         calling_function, /**< from which function are we accessing braid */
-                      braid_Basis       lvectors,         /**< if Delta correction is set, tangent vectors to propagate across the interval */
+                      braid_Basis       basis,            /**< if Delta correction is set, tangent vectors to propagate across the interval */
                       braid_StepStatus  status            /**< structure to initialize */
                       );
 
