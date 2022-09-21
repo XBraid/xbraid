@@ -151,16 +151,6 @@ public:
                 BraidStepStatus &pstatus,
                 MAT *P_tan_ptr = nullptr);
 
-   // computes the dot product between the derivative of the step function
-   // dPhi/du and the vector, v. Isn't aware of the Delta correction.
-   MAT baseStepDiffDot(const MAT &v,
-                       const VEC &u,
-                       const VEC &ustop,
-                       double dt,
-                       int level,
-                       int nlevels,
-                       MAT *P_tan_ptr = nullptr);
-
    MAT LRDeltaDot(const MAT &u,
                   const MAT &Delta,
                   const MAT &Psi);
@@ -455,23 +445,6 @@ VEC MyBraidApp::baseStep(const VEC &u, VEC &guess, double dt, BraidStepStatus &p
    return out;
 }
 
-// TODO: think about removing this:
-MAT MyBraidApp::baseStepDiffDot(const MAT &v,
-                                const VEC &u,
-                                const VEC &ustop,
-                                const double dt,
-                                const int level,
-                                const int nlevels,
-                                MAT *P_tan_ptr)
-{
-   // use full precomputed linear tangent propagator
-   if (P_tan_ptr)
-   {
-      return (*P_tan_ptr) * v;
-   }
-   return v;
-}
-
 MAT MyBraidApp::LRDeltaDot(const MAT &u,
                            const MAT &Delta,
                            const MAT &Psi)
@@ -507,12 +480,6 @@ int MyBraidApp::Step(braid_Vector u_,
    {
       lvl_eff = (level - nrefine) + (max_levels - 2);
    }
-
-   if (calling_fnc == braid_ASCaller_FCRelax)
-   {
-      std::cout << "hi\n";
-   }
-   
 
    double dt = tstop - tstart;
 
@@ -560,7 +527,6 @@ int MyBraidApp::Step(braid_Vector u_,
          if (DeltaCorrect)
          {
             utmp += LRDeltaDot(u->state, f->Delta, f->Psi) - f->action;
-
          }
       }
       u->state = utmp;

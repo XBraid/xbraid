@@ -32,7 +32,6 @@ _braid_Residual(braid_Core        core,
                 braid_Int         index,
                 braid_Int         calling_function,
                 braid_BaseVector  ustop,
-                braid_BaseVector  fstop,
                 braid_BaseVector  r)
 {
    braid_App        app      = _braid_CoreElt(core, app);
@@ -45,11 +44,14 @@ _braid_Residual(braid_Core        core,
    braid_Int        ilower   = _braid_GridElt(grids[level], ilower);
    braid_Real      *ta       = _braid_GridElt(grids[level], ta);
 
+   braid_Int  delta_correct = _braid_CoreElt(core, delta_correct);
+   braid_Int  delta_rank    = _braid_CoreElt(core, delta_rank);
+
    braid_BaseVector rstop;
    braid_Int        ii;
 
    ii = index-ilower;
-   _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, status);
+   _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, r->basis, status);
    if ( _braid_CoreElt(core, residual) == NULL )
    {
       /* By default: r = ustop - \Phi(ustart)*/
@@ -60,7 +62,7 @@ _braid_Residual(braid_Core        core,
    else
    {
       /* Call the user's residual routine */
-      _braid_BaseResidual(core, app, ustop, fstop, r, status);
+      _braid_BaseResidual(core, app, ustop, r, status);
    }
 
    return _braid_error_flag;
@@ -82,35 +84,17 @@ _braid_FASResidual(braid_Core        core,
    braid_Int          ilower = _braid_GridElt(grids[level], ilower);
    braid_BaseVector  *fa     = _braid_GridElt(grids[level], fa);
 
-   braid_Int        ii;
+   braid_Int ii;
 
-   ii = index-ilower;
+   _braid_Residual(core, level, index, braid_ASCaller_FASResidual, ustop, r);
 
-   // I'm expecting the user's Residual function to appropriately handle the tau correction
-   if (level == 0)
-   {
-      _braid_Residual(core, level, index, braid_ASCaller_FASResidual, ustop, NULL, r);
-
-   }
-   else
-   {
-      _braid_Residual(core, level, index, braid_ASCaller_FASResidual, ustop, fa[ii], r);
-   }
-
-   if ((level == 0) || (_braid_CoreElt(core, residual) != NULL))
+   if ( (level == 0) || ((ii = index-ilower) && (fa[ii] == NULL)) )
    {
       _braid_BaseSum(core, app,  0.0, r, -1.0, r);
    }
    else
    {
-      if(fa[ii] == NULL)
-      {
-         _braid_BaseSum(core, app,  0.0, r, -1.0, r);
-      }
-      else
-      {
-         _braid_BaseSum(core, app,  1.0, fa[ii], -1.0, r);
-      }
+      _braid_BaseSum(core, app,  1.0, fa[ii], -1.0, r);
    }
 
    return _braid_error_flag;

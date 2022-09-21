@@ -116,20 +116,6 @@ struct _braid_Vector_struct;
 typedef struct _braid_Vector_struct *braid_Vector;
 
 /**
- * This contains an array of @ref braid_Vector objects which should be thought of 
- * as a basis for the state space, along with the number of vectors stored.
- * Only initialized when using Delta correction. The vectors should be initialized
- * using the user's Init function.
- * Defined here to expose the braid_Basis typedef to the user
- */
-struct _braid_Basis_struct
-{
-   braid_Vector *userVectors;
-   braid_Int     cols;
-};
-typedef struct _braid_Basis_struct *braid_Basis;
-
-/**
  * Defines the central time stepping function that the user must write.
  *
  * The user must advance the vector *u* from time *tstart* to *tstop*.  The time
@@ -148,7 +134,7 @@ typedef braid_Int
 (*braid_PtFcnStep)(braid_App        app,    /**< user-defined _braid_App structure */
                    braid_Vector     ustop,  /**< input, u vector at *tstop* */
                    braid_Vector     fstop,  /**< input, right-hand-side at *tstop* */
-                   braid_Vector     u     , /**< input/output, initially u vector at *tstart*, upon exit, u vector at *tstop* */
+                   braid_Vector     u,      /**< input/output, initially u vector at *tstart*, upon exit, u vector at *tstop* */
                    braid_StepStatus status  /**< query this struct for info about u (e.g., tstart and tstop), allows for steering (e.g., set rfactor) */ 
                    );
 
@@ -160,6 +146,16 @@ typedef braid_Int
                    braid_Real     t,             /**< time value for *u_ptr* */
                    braid_Vector  *u_ptr          /**< output, newly allocated and initialized vector */
                    );
+
+/**
+ * (optional) Initializes a vector *u_ptr* at time *t*
+ **/
+typedef braid_Int
+(*braid_PtFcnInitBasis)(braid_App      app,           /**< user-defined _braid_App structure */
+                        braid_Real     t,             /**< time value for *u_ptr* */
+                        braid_Int      index,         /**< spatial index of basis vector */
+                        braid_Vector  *u_ptr          /**< output, newly allocated and initialized vector */
+                        );
 
 /**
  * Clone *u* into *v_ptr*
@@ -205,7 +201,7 @@ typedef braid_Int
                           );
 
 /**
- * Compute an inner (scalar) product between two braid_Vectors
+ * (optional) Compute an inner (scalar) product between two braid_Vectors
  * *prod_ptr* = <*u*, *v*>
  * Only needed when using Delta correction
  * 
@@ -303,7 +299,6 @@ typedef braid_Int
 typedef braid_Int
 (*braid_PtFcnResidual)(braid_App        app,    /**< user-defined _braid_App structure */
                        braid_Vector     ustop,  /**< input, u vector at *tstop* */
-                       braid_Vector     fstop,  /**< input, right-hand side at *tstop* */
                        braid_Vector     r     , /**< output, residual at *tstop* (at input, equals *u* at *tstart*) */
                        braid_StepStatus status  /**< query this struct for info about u (e.g., tstart and tstop) */ 
                        );
@@ -1201,6 +1196,32 @@ braid_SetRichardsonEstimation(braid_Core core,                /**< braid_Core (_
                               braid_Int  richardson,          /**< Boolean, if 1 carry out Richardson-based extrapolation to enhance accuracy on the fine-grid, if 0, then do not*/
                               braid_Int  local_order          /**< Local order of the time integration scheme, e.g., local _order=2 for backward Euler */
                               );
+
+/** 
+ * Turn on low-rank Delta correction. This uses Jacobians of the fine-grid time-stepper as a linear correction to the coarse time-stepper. 
+ * This can potentially greatly accelerate convergence for nonlinear systems.
+ * 
+ * The action of the Jacobian will be computed on a (low-rank) time-dependent basis initialized by the user.
+ * TODO: Finish this entry
+ */
+braid_Int
+braid_SetDeltaCorrection(braid_Core           core,        /**< braid_Core (_braid_Core) struct*/
+                         braid_Int            rank,        /**< Integer, sets number of Lyapunov vectors to store*/
+                         braid_PtFcnInitBasis basis_init,  /**< Function pointer to routine for initializing basis vectors */
+                         braid_PtFcnInnerProd inner_prod   /**< Function pointer to routine for computing inner product between two vectors (needed for Gram-Schmidt orthonormalization) */
+                         );
+
+/** 
+ * Turn on Lyapunov vector estimation for Delta correction. The computed backward Lyapunov vectors will be used to update the
+ * time-dependent basis used by the low-rank Delta correction, and may be retrieved via the user's Access function.
+ * This can work particularly well for chaotic systems, where the Lyapunov vectors converge to a basis for the unstable manifold
+ * of the system, thus the Delta correction can target problematic unstable modes.
+ * TODO: Finish this entry
+ */
+braid_Int
+braid_SetLyapunovEstimation(braid_Core  core    /**< braid_Core (_braid_Core) struct*/
+                            );
+
 
 
 /** @}*/

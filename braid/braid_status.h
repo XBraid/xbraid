@@ -42,6 +42,8 @@ extern "C" {
 /** Macros allowing for auto-generation of `inherited' StatusGet functions */
 #define ACCESSOR_HEADER_GET1(stype,param,vtype1) \
   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1);
+#define ACCESSOR_HEADER_GET1_IN1(stype,param,vtype1,vtype2) \
+   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 v2);
 #define ACCESSOR_HEADER_GET1_IN2(stype,param,vtype1,vtype2,vtype3) \
    braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 v2, braid_##vtype3 v3);
 #define ACCESSOR_HEADER_GET1_IN3(stype,param,vtype1,vtype2,vtype3,vtype4) \
@@ -586,6 +588,8 @@ ACCESSOR_HEADER_GET4(Access, TILD,            Real, Int, Int, Int)
 ACCESSOR_HEADER_GET1(Access, WrapperTest,     Int)
 ACCESSOR_HEADER_GET1(Access, CallingFunction, Int)
 ACCESSOR_HEADER_GET1(Access, SingleErrorEstAccess, Real)
+ACCESSOR_HEADER_GET1(Access, DeltaRank, Int)
+ACCESSOR_HEADER_GET1_IN1(Access, BasisVec, Vector, Int)
 
 /*--------------------------------------------------------------------------
  * SyncStatus Prototypes: They just wrap the corresponding Status accessors
@@ -646,6 +650,8 @@ ACCESSOR_HEADER_SET1(Step, RSpace,        Real)
 ACCESSOR_HEADER_GET1(Step, Done,          Int)
 ACCESSOR_HEADER_GET1(Step, SingleErrorEstStep, Real)
 ACCESSOR_HEADER_GET1(Step, CallingFunction,    Int)
+ACCESSOR_HEADER_GET1(Step, DeltaRank, Int)
+ACCESSOR_HEADER_GET1_IN1(Step, BasisVec, Vector, Int)
 
 /*--------------------------------------------------------------------------
  * BufferStatus Prototypes: They just wrap the corresponding Status accessors

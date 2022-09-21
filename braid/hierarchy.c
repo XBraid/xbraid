@@ -75,6 +75,7 @@ _braid_InitHierarchy(braid_Core    core,
    braid_BaseVector *ua;
    braid_BaseVector *va;
    braid_BaseVector *fa;
+   braid_Basis      *ba;
 
    _braid_Grid      *grid;
    braid_Real       *f_ta;
@@ -105,7 +106,7 @@ _braid_InitHierarchy(braid_Core    core,
    }
    _braid_CoreElt(core, rfactors) = rfactors;
 
-   /* Allocate array of refiment dt values, initialized with NULL */
+   /* Allocate array of refinement dt values, initialized with NULL */
    rdtvalues = _braid_CTAlloc(braid_Real*, iupper-ilower+2); /* Ensures non-NULL */
    _braid_CoreElt(core, rdtvalues) = rdtvalues;
 
@@ -212,7 +213,7 @@ _braid_InitHierarchy(braid_Core    core,
    nlevels = level+1;
    _braid_CoreElt(core, nlevels) = nlevels;
 
-   /* Allocate ua, va, and fa here */
+   /* Allocate ua, va, fa, and ba here */
    for (level = 0; level < nlevels; level++)
    {
       grid = grids[level];
@@ -226,6 +227,14 @@ _braid_InitHierarchy(braid_Core    core,
          _braid_GridElt(grid, fa_alloc) = fa;
          _braid_GridElt(grid, va)       = va+1;  /* shift */
          _braid_GridElt(grid, fa)       = fa+1;  /* shift */
+         
+         /* Only allocate bases if we are doing Delta correction */
+         if ( _braid_CoreElt(core, delta_correct ))
+         {
+            ba = _braid_CTAlloc(braid_Basis, iupper-ilower+2);
+            _braid_GridElt(grid, ba_alloc) = ba;
+            _braid_GridElt(grid, ba)       = ba+1;  /* shift */
+         }
       }
 
       // If on level that only stores C-points and not using the shell vector feature
@@ -518,7 +527,6 @@ _braid_CopyFineToCoarse(braid_Core  core)
             // We free the data in u, keeping the shell
             _braid_BaseSFree(core,  app, u);
          }
- 
       }
    }
 

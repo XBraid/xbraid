@@ -142,7 +142,7 @@ _braid_FRestrict(braid_Core   core,
          if( (access_level >= 3) )
          {
             _braid_AccessStatusInit(ta[fi-f_ilower], fi, rnm, iter, level, nrefine, gupper,
-                                    0, 0, braid_ASCaller_FRestrict, astatus);
+                                    0, 0, braid_ASCaller_FRestrict, &(r->basis), astatus);
             _braid_AccessVector(core, astatus, r);
          }
 
@@ -159,7 +159,7 @@ _braid_FRestrict(braid_Core   core,
       if( (access_level>= 3) && (ci > -1) )
       {
          _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper,
-                                 0, 0, braid_ASCaller_FRestrict, astatus);
+                                 0, 0, braid_ASCaller_FRestrict, u->basis, astatus);
          _braid_UGetVectorRef(core, level, ci, &u);
          _braid_AccessVector(core, astatus, u);
       }
@@ -229,7 +229,7 @@ _braid_FRestrict(braid_Core   core,
    /* Allocate temporary error estimate array */
    if ( level == 0 && est_error )
    {
-        estimate = _braid_CTAlloc(braid_Real, c_iupper-c_ilower + 1 );
+        estimate = _braid_CTAlloc(braid_Real, c_iupper-c_ilower + 1);
    }
 
    /* Start with rightmost point */
@@ -244,10 +244,10 @@ _braid_FRestrict(braid_Core   core,
             _braid_CommWait(core, &recv_handle);
          }
          _braid_BaseClone(core, app,  c_va[c_ii-1], &c_u);
-         _braid_Residual(core, c_level, c_i, braid_ASCaller_Residual, c_va[c_ii], NULL, c_u);
+         _braid_Residual(core, c_level, c_i, braid_ASCaller_Residual, c_va[c_ii], c_u);
          
          /* Richardson computes norm here, and recombines solution at C-points for higher accuracy */
-         if ( level == 0 && richardson  ) 
+         if ( level == 0 && richardson ) 
          {    
                dtk = dtk_core[c_ii];
                DTK = pow( ta_c[c_ii] - ta_c[c_ii-1], order );
@@ -298,7 +298,7 @@ _braid_FRestrict(braid_Core   core,
              estimate[ c_ii ] = est_temp; 
          }
 
-         _braid_BaseFree(core, app,  c_u);
+         _braid_BaseFree(core, app, c_u);
       }
    }
    _braid_CommWait(core, &send_handle);

@@ -63,6 +63,8 @@ braid_Drive(braid_Core  core)
       _braid_AdjointFeatureCheck(core);
    }
 
+   /* TODO: check for unsupported Delta features */
+
    if (myid == 0 )
    {
       if (!warm_restart && print_level > 0)
@@ -228,6 +230,9 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              skip            = 1;              /* Default skip value, skips all work on first down-cycle */
    braid_Int              max_refinements = 200;            /* Maximum number of F-refinements */
    braid_Int              tpoints_cutoff  = braid_Int_Max;  /* Maximum number of time steps, controls FRefine()*/
+   braid_Int              delta_correct   = 0;              /* Default Delta correction: Turned off */
+   braid_Int              delta_rank      = 0;              /* Default Delta correction rank (always set by setDelta())*/
+   braid_Int              estimate_lyap   = 0;              /* Default estimation of Lyapunov vectors is turned off*/
    braid_Int              adjoint         = 0;              /* Default adjoint run: Turned off */
    braid_Int              record          = 0;              /* Default action recording: Turned off */
    braid_Int              obj_only        = 0;              /* Default objective only: Turned off */
@@ -254,12 +259,14 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, step)            = step;
    _braid_CoreElt(core, init)            = init;
    _braid_CoreElt(core, sinit)           = NULL;
+   _braid_CoreElt(core, init_basis)      = NULL;
    _braid_CoreElt(core, clone)           = clone;
    _braid_CoreElt(core, sclone)          = NULL;
    _braid_CoreElt(core, free)            = free;
    _braid_CoreElt(core, sfree)           = NULL;
    _braid_CoreElt(core, sum)             = sum;
    _braid_CoreElt(core, spatialnorm)     = spatialnorm;
+   _braid_CoreElt(core, inner_prod)      = NULL;
    _braid_CoreElt(core, access)          = access;
    _braid_CoreElt(core, bufsize)         = bufsize;
    _braid_CoreElt(core, bufpack)         = bufpack;
@@ -317,6 +324,12 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, skip)            = skip;
 
+   /* Delta correction */
+   _braid_CoreElt(core, delta_correct)   = delta_correct;
+   _braid_CoreElt(core, delta_rank)      = delta_rank;
+   _braid_CoreElt(core, estimate_lyap)   = estimate_lyap;
+
+   /* Adjoint */
    _braid_CoreElt(core, adjoint)               = adjoint;
    _braid_CoreElt(core, record)                = record;
    _braid_CoreElt(core, obj_only)              = obj_only;
@@ -1659,3 +1672,36 @@ braid_SetRichardsonEstimation(braid_Core core,
    return _braid_error_flag;
 }
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetDeltaCorrection(braid_Core           core,      
+                         braid_Int            rank,      
+                         braid_PtFcnInitBasis init_basis,
+                         braid_PtFcnInnerProd inner_prod)
+{
+   /* TODO: compatibility checks */
+
+   _braid_CoreElt(core, delta_correct) = 1;
+   _braid_CoreElt(core, delta_rank)    = rank;
+   _braid_CoreElt(core, init_basis)    = init_basis;
+   _braid_CoreElt(core, inner_prod)    = inner_prod;
+
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_SetLyapunovEstimation(braid_Core  core)
+{
+   /* TODO: compatibility checks */
+   /**
+    * TODO: compatibility checks
+    * We could allow to turn this on even if Delta correction is off,
+    * although you really should take advantage of the LVs if you have them
+    */
+
+   _braid_CoreElt(core, estimate_lyap) = 1;
+
+   return _braid_error_flag;
+}

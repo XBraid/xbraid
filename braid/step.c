@@ -45,10 +45,25 @@ _braid_Step(braid_Core         core,
    braid_Real        *ta       = _braid_GridElt(grids[level], ta);
    braid_BaseVector  *fa       = _braid_GridElt(grids[level], fa);
 
-   braid_Int        ii;
+
+   /* Needed for Delta correction */
+   braid_Basis *ba            = _braid_GridElt(grids[level], ba);
+   braid_Int    delta_correct = _braid_CoreElt(core, delta_correct);
+   braid_Int    delta_rank    = _braid_CoreElt(core, delta_rank);
+   braid_BaseVector delta;  /* temporary storage for Delta correction */
+
+   braid_Int ii;
 
    ii = index-ilower;
-   _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, status);
+   _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, u->basis, status);
+
+   if (delta_correct && fa[ii] != NULL)
+   {
+      /* compute the Delta correction for the state and Lyapunov vectors */
+      _braid_BaseClone(core, app, u, &delta);
+      _braid_LRDeltaDot(core, app, delta->userVector, fa[ii]->basis, ba[ii]);
+      _braid_LRDeltaDotMat(core, app, delta->basis, fa[ii]->basis, ba[ii]);
+   }
 
    /* If ustop is set to NULL, use a default approach for setting it */
    if (ustop == NULL)
@@ -68,10 +83,18 @@ _braid_Step(braid_Core         core,
          if(fa[ii] != NULL)
          {
             _braid_BaseSum(core, app,  1.0, fa[ii], 1.0, u);
+            /* the user's step function should propagate u->basis,
+             * we just need to add the Delta correction terms
+             */
+            if (delta_correct)
+            {
+               _braid_BaseSum(core, app, 1.0, delta, 1.0, u);
+            }
          }
       }
       else
       {
+         /* can this be made compatible with Delta correction? */
          _braid_BaseStep(core, app,  ustop, fa[ii], u, level, status);
       }
    }

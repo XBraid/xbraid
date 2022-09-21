@@ -110,11 +110,11 @@ void _braid_ErrorHandler(const char *filename, braid_Int line, braid_Int ierr, c
  *   braid_BaseVector      Defined below
  *   braid_Vector          Defined in braid.h
  *   _braid_VectorBar      Defined below
- *   braid_Basis           Defined in braid.h
+ *   braid_Basis           Defined below
  *
  * The braid_BaseVector is the main internal Vector class, which is 
- * stored at each time point.  It basically wraps the Vector and 
- * braid_VectorBar (see below).  The braid_VectorBar is only used if the
+ * stored at each time point.  It wraps the Vector, braid_VectorBar, and 
+ * braid_Basis objects. The braid_VectorBar is only used if the
  * adjoint capability is used, when it stores adjoint variables.  It's 
  * basically a smart pointer wrapper around a braid_Vector. Note that it
  * is always the braid_Vector that's passed to user-routines. The braid_Basis
@@ -135,17 +135,36 @@ struct _braid_VectorBar_struct
 }; 
 typedef struct _braid_VectorBar_struct *braid_VectorBar;
 
+/**
+ * This contains two arrays of @ref braid_Vector objects which should be thought of 
+ * as a basis for the state space, as well as a stored action on that basis,
+ * along with the number of vectors stored in each (rank).
+ * Only initialized when using Delta correction. The vectors should be initialized
+ * using the user's InitBasis function.
+ */
+struct _braid_Basis_struct
+{
+   braid_Vector *userVecs;
+   braid_Int     rank;
+};
+typedef struct _braid_Basis_struct *braid_Basis;
+
 /** 
  * Braid vector used for storage of all state and (if needed) adjoint
- * information.  Stores both the user's primal vector (braid_Vector type) and
+ * information.  Stores the user's primal vector (braid_Vector type) and
  * the associated bar vector (braid_VectorBar type) if the adjoint
- * functionality is being used.  If adjoint is not being used, bar==NULL. 
+ * functionality is being used, as well as basis vectors used by Delta correction.
+ * If adjoint is not being used, bar==NULL, and if Delta correction is not used,
+ * basis == basis_action == NULL.
+ * 
+ * For Delta correction, *basis* stores the unmodified basis vectors, while basis_action
+ * stores the
  */
 struct _braid_BaseVector_struct
 {
    braid_Vector    userVector;      /**< holds the users primal vector */
    braid_VectorBar bar;             /**< holds the bar vector (shared pointer implementation) */
-   braid_Basis     Psi;             /**< local basis of variable rank, stored as the user's vector type */
+   braid_Basis     basis;           /**< local basis of variable rank, stored as the user's vector type */
 };
 typedef struct _braid_BaseVector_struct *braid_BaseVector;
 
@@ -215,6 +234,7 @@ typedef struct
    braid_Real        *ta;            /**< time values                (all points) */
    braid_BaseVector  *va;            /**< restricted unknown vectors (all points, NULL on level 0) */
    braid_BaseVector  *fa;            /**< rhs vectors f              (all points, NULL on level 0) */
+   braid_Basis       *ba;            /**< time-dependent bases       (all points, NULL if not delta_correct or on level 0) */
 
    braid_Int          recv_index;    /**<  -1 means no receive */
    braid_Int          send_index;    /**<  -1 means no send */
@@ -225,6 +245,7 @@ typedef struct
    braid_Real        *ta_alloc;      /**< original memory allocation for ta */
    braid_BaseVector  *va_alloc;      /**< original memory allocation for va */
    braid_BaseVector  *fa_alloc;      /**< original memory allocation for fa */
+   braid_Basis       *ba_alloc;      /**< original memory allocation for ba */
 
    braid_BaseVector   ulast;         /**< stores vector at last time step, only set in FAccess and FCRelax if done is True */
 
@@ -248,6 +269,7 @@ typedef struct _braid_Core_struct
 
    braid_PtFcnStep        step;             /**< apply step function */
    braid_PtFcnInit        init;             /**< return an initialized braid_BaseVector */
+   braid_PtFcnInitBasis   init_basis;       /**< (optional) return an initialized braid_Vector for initializing braid_Basis */
    braid_PtFcnSInit       sinit;            /**< (optional) return an initialized shell of braid_BaseVector */
    braid_PtFcnClone       clone;            /**< clone a vector */
    braid_PtFcnSClone      sclone;           /**< (optional) clone the shell of a vector */
@@ -255,12 +277,12 @@ typedef struct _braid_Core_struct
    braid_PtFcnSFree       sfree;            /**< (optional) free up the data of a vector, keep the shell */
    braid_PtFcnSum         sum;              /**< vector sum */
    braid_PtFcnSpatialNorm spatialnorm;      /**< Compute norm of a braid_BaseVector, this is a norm only over space */
+   braid_PtFcnInnerProd   inner_prod;       /**< (optional) compute a spatial inner product between two vectors */
    braid_PtFcnAccess      access;           /**< user access function to XBraid and current vector */
    braid_PtFcnBufSize     bufsize;          /**< return buffer size */
    braid_PtFcnBufPack     bufpack;          /**< pack a buffer */
    braid_PtFcnBufUnpack   bufunpack;        /**< unpack a buffer */
    braid_PtFcnResidual    residual;         /**< (optional) compute residual */
-   braid_PtFcnInnerProd   inner_prod;       /**< (optional) compute an inner product between two vectors */
    braid_PtFcnSCoarsen    scoarsen;         /**< (optional) return a spatially coarsened vector */
    braid_PtFcnSRefine     srefine;          /**< (optional) return a spatially refined vector */
    braid_PtFcnSync        sync;             /**< (optional) user access to app once-per-processor */
@@ -321,6 +343,11 @@ typedef struct _braid_Core_struct
    braid_Real             localtime;        /**< local wall time for braid_Drive() */
    braid_Real             globaltime;       /**< global wall time for braid_Drive() */
 
+   /** Delta correction and Lyapunov vector estimation*/
+   braid_Int              delta_correct;    /**< turns on Delta correction to potentially accelerate convergence */
+   braid_Int              delta_rank;       /**< for low rank Delta correction */
+   braid_Int              estimate_lyap;    /**< turns on estimation of Lyapunov vectors, otherwise the basis at each C-point remains fixed */      
+
    /** Richardson-based error estimation and refinement*/
    braid_Int              richardson;       /**< turns on Richardson extrapolation for accuracy */
    braid_Int              est_error;        /**< turns on embedded error estimation, e.g., for refinement */
@@ -370,6 +397,7 @@ typedef struct _braid_Core_struct
    braid_Real    old_fine_tolx;    /**< Allows for storing the previously used fine tolerance from GetSpatialAccuracy */
    braid_Int     tight_fine_tolx;  /**< Boolean, indicating whether the tightest fine tolx has been used, condition for halting */
    braid_Int     rfactor;          /**< if set by user, allows for subdivision of this interval for better time accuracy */
+   braid_Basis  *lvectors;         /**< if Delta correction is set, contains reference to the tangent vectors to be propagated across the c-interval */
    /** BufferStatus properties */
    braid_Int    messagetype;       /**< message type, 0: for Step(), 1: for load balancing */
    braid_Int    size_buffer;       /**< if set by user, send buffer will be "size" bytes in length */
@@ -678,7 +706,6 @@ _braid_Residual(braid_Core       core,
                 braid_Int        index,
                 braid_Int        calling_function,
                 braid_BaseVector ustop,
-                braid_BaseVector fstop,
                 braid_BaseVector r);
 
 /**
@@ -994,6 +1021,7 @@ _braid_Drive(braid_Core core,
 #include "status.h"
 #include "base.h"
 #include "adjoint.h"
+#include "delta.h"
 
 #endif
 

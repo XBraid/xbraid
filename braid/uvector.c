@@ -401,6 +401,8 @@ _braid_UCommInit(braid_Core  core,
    _braid_CommHandle   *recv_handle = NULL;
    _braid_CommHandle   *send_handle = NULL;
    braid_Int            iu, sflag;
+
+   braid_Int delta_correct = _braid_CoreElt(core, delta_correct);
    
    /* Note that this routine works for the case of all points being C-points, 
     * i.e., cfactor = 1.  A send and receive are always posted. */

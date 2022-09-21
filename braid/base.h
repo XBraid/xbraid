@@ -67,6 +67,17 @@ _braid_BaseInit(braid_Core         core,     /**< braid_Core structure */
                 braid_BaseVector  *u_ptr     /**< output, newly allocated and initialized vector */
                 );
 
+
+/**
+ * This initializes a braid_Basis and calls the user's InitBasis routine. 
+ */
+braid_Int
+_braid_BaseInitBasis(braid_Core   core,     /**< braid_Core structure */
+                     braid_App    app,      /**< user-defined _braid_App structure */ 
+                     braid_Real   t,        /**< current time value for *u_ptr* */
+                     braid_Basis *psi_ptr   /**< output, newly allocated and initialized basis */
+                     );
+
 /**
  * This initializes a braid_BaseVector and calls the user's clone routine.
  * If (adjoint): also record the action, initialize a barVector with zero and push
@@ -78,6 +89,19 @@ _braid_BaseClone(braid_Core         core,     /**< braid_Core structure */
                  braid_BaseVector   u,        /**< vector to clone */ 
                  braid_BaseVector  *v_ptr     /**< output, newly allocated and cloned vector */ 
                  );
+
+/**
+ * This initializes a braid_BaseVector and calls the user's clone routine.
+ * If (adjoint): also record the action, initialize a barVector with zero and push
+ * to the bar tape
+ */
+braid_Int
+_braid_BaseCloneBasis(braid_Core         core,     /**< braid_Core structure */
+                      braid_App          app,      /**< user-defined _braid_App structure */ 
+                      braid_BaseVector   A,        /**< basis to clone */ 
+                      braid_BaseVector  *B_ptr     /**< output, newly allocated and cloned basis */ 
+                      );
+
 /**
  * This calls the user's free routine.
  * If (adjoint): also record the action, and free the bar vector. 
@@ -87,6 +111,15 @@ _braid_BaseFree(braid_Core        core,      /**< braid_Core structure */
                 braid_App         app,       /**< user-defined _braid_App structure */
                 braid_BaseVector  u          /**< vector to free */ 
                 );
+
+/**
+ * This calls the user's free routine on each vector in the braid_Basis.
+ */ 
+braid_Int
+_braid_BaseFreeBasis(braid_Core    core,     /**< braid_Core structure */
+                     braid_App     app,      /**< user-defined _braid_App structure */
+                     braid_Basis   b         /**< basis to free */ 
+                     ); 
 
 /**
  * This calls the user's sum routine.
@@ -111,6 +144,18 @@ _braid_BaseSpatialNorm(braid_Core        core,      /**< braid_Core structure */
                        braid_BaseVector  u,         /**< vector to norm */
                        braid_Real       *norm_ptr   /**< output, norm of braid_Vector (this is a spatial norm) */
                        );
+
+
+/**
+ * This calls the user's InnerProd routine 
+ */
+braid_Int
+_braid_BaseInnerProd(braid_Core        core,        /**< braid_Core structure */
+                     braid_App         app,         /**< user-defined _braid_App structure */
+                     braid_Vector      u,           /**< first vector for inner product */
+                     braid_Vector      v,           /**< second vector for inner product */
+                     braid_Real       *prod_ptr     /**< output, result of inner product */
+                     );
 
 /**
  * This calls the user's Access routine. 
@@ -191,7 +236,6 @@ braid_Int
 _braid_BaseResidual(braid_Core       core,             /**< braid_Core structure */
                     braid_App        app,              /**< user-defined _braid_App structure */
                     braid_BaseVector ustop,            /**< input, *u* vector at *tstop* */
-                    braid_BaseVector fstop,            /**< input, *f* vector (rhs) at *tstop* */
                     braid_BaseVector r,                /**< output, residual at *tstop* (at input, equals *u* at *tstart*) */
                     braid_StepStatus status            /**< braid_Status structure (pointer to the core) */ 
                     );
@@ -205,7 +249,6 @@ _braid_BaseFullResidual(braid_Core        core,        /**< braid_Core structure
                         braid_App         app,         /**< user-defined _braid_App structure */
                         braid_BaseVector  r,           /**< output, residual at *tstop* */
                         braid_BaseVector  u,           /**< input, *u* vector at *tstop* */
-                        braid_BaseVector  f,           /**< input, *u* vector at *tstop* */
                         braid_StepStatus  status       /**< braid_Status structure (pointer to the core) */ 
                        );    
 

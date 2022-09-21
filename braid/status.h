@@ -99,6 +99,7 @@ _braid_AccessStatusInit(braid_Real          t,                /**< current time 
                         braid_Int           done,             /**< boolean describing whether XBraid has finished */
                         braid_Int           wrapper_test,     /**< boolean describing whether this call is only a wrapper test */
                         braid_Int           calling_function, /**< from which function are we accessing the vector */
+                        braid_Basis         basis,           /**< if Delta correction is set, basis vectors at this point */
                         braid_AccessStatus  status            /**< structure to initialize */
                         );
 
@@ -144,6 +145,7 @@ _braid_StepStatusInit(braid_Real        tstart,           /**< current time valu
                       braid_Int         nrefine,          /**< number of refinements done */
                       braid_Int         gupper,           /**< global size of the fine grid */
                       braid_Int         calling_function, /**< from which function are we accessing braid */
+                      braid_Basis       lvectors,         /**< if Delta correction is set, tangent vectors to propagate across the interval */
                       braid_StepStatus  status            /**< structure to initialize */
                       );
 
