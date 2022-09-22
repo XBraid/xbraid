@@ -795,6 +795,7 @@ _braid_FRefine(braid_Core   core,
    {
       unum = recv_unums[m]; /* Number of u-vectors being received */
       recv_size = unum*(1 + max_usize);
+      /* TODO instead of _braid_CTAlloc, use  something like   _braid_BaseBufAlloc(core, app, &(recv_buffers[m]), recv_size*sizeof(braid_Real)) */
       recv_buffers[m] = _braid_CTAlloc(braid_Real, recv_size);
       timer = MPI_Wtime();
       MPI_Irecv(recv_buffers[m], recv_size, braid_MPI_REAL, recv_procs[m], 5, comm,
@@ -814,6 +815,7 @@ _braid_FRefine(braid_Core   core,
       unum = send_unums[m]; /* Number of u-vectors being sent */
       ii   = send_iis[m];
       send_size = unum*(1 + max_usize);
+      /* TODO instead of _braid_CTAlloc, use  something like   _braid_BaseBufAlloc(core, app, &(send_buffers[m]), recv_size*sizeof(braid_Real)) */
       send_buffers[m] = _braid_CTAlloc(braid_Real, send_size);
       send_size = 0; /* Recompute send_size and realloc buffer */
       bptr = send_buffers[m];
@@ -836,6 +838,8 @@ _braid_FRefine(braid_Core   core,
          }
          ii++;
       }
+      /* TODO for the user-allocated MPI buffers, do we need the TReAlloc?  I mean, the send_size here should be less than the user's bufsize... 
+       *      it doesn't make sense for the user to write a ReAlloc function too.  Maybe, only call TReAlloc if the user-defined BufAlloc == NULL */
       send_buffers[m] = _braid_TReAlloc(send_buffers[m], braid_Real, send_size);
       timer = MPI_Wtime();
       MPI_Isend(send_buffers[m], send_size, braid_MPI_REAL, send_procs[m], 5, comm,
@@ -901,6 +905,7 @@ _braid_FRefine(braid_Core   core,
    _braid_TFree(send_iis);
    for (m = 0; m < nsends; m++)
    {
+      /* TODO instead of _braid_TFree  use  something like  _braid_BaseBufFree(core, app,  &(send_buffers[m])); */
       _braid_TFree(send_buffers[m]);
    }
    _braid_TFree(send_buffers);
@@ -909,6 +914,7 @@ _braid_FRefine(braid_Core   core,
    _braid_TFree(recv_f_iis);
    for (m = 0; m < nrecvs; m++)
    {
+      /* TODO instead of _braid_TFree  use  something like  _braid_BaseBufFree(core, app,  &(recv_buffers[m])); */
       _braid_TFree(recv_buffers[m]);
    }
    _braid_TFree(recv_buffers);

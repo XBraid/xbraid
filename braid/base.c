@@ -543,6 +543,50 @@ _braid_BaseBufUnpack(braid_Core          core,
  *----------------------------------------------------------------------------*/
 
 braid_Int
+_braid_BaseBufAlloc(braid_Core          core,
+                    braid_App           app,    
+                    void              **buffer,
+                    braid_Int           bytes)
+{
+   /* Call the user's buffer allocate function */
+   if( _braid_CoreFcn(core, bufalloc) != NULL)
+   {
+      _braid_CoreFcn(core, bufalloc)(app, buffer, bytes);
+   }
+   else
+   {
+      *buffer = malloc(bytes);
+   }
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_BaseBufFree(braid_Core          core,
+                   braid_App           app,    
+                   void              **buffer)
+{
+   /* Call the user's buffer free function */
+   if( _braid_CoreFcn(core, buffree) != NULL)
+   {
+      _braid_CoreFcn(core, buffree)(app, buffer);
+   }
+   else
+   {
+      free((char *) *buffer);
+   }
+
+   *buffer = NULL;
+   return _braid_error_flag;
+}
+
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Int
 _braid_BaseObjectiveT(braid_Core             core,
                       braid_App              app,
                       braid_BaseVector       u,

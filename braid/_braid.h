@@ -260,6 +260,8 @@ typedef struct _braid_Core_struct
    braid_PtFcnSRefine     srefine;          /**< (optional) return a spatially refined vector */
    braid_PtFcnSync        sync;             /**< (optional) user access to app once-per-processor */
    braid_PtFcnTimeGrid    tgrid;            /**< (optional) return time point values on level 0 */
+   braid_PtFcnBufAlloc    bufalloc;         /**< (optional) user-allocated MPI buffer for a certain number of bytes */
+   braid_PtFcnBufFree     buffree;          /**< (optional) free a user-allocated MPI buffer */
    braid_Int              periodic;         /**< determines if periodic */
    braid_Int              initiali;         /**< initial condition grid index (0: default; -1: periodic ) */
 

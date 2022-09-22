@@ -278,6 +278,8 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, srefine)         = NULL;
    _braid_CoreElt(core, tgrid)           = NULL;
    _braid_CoreElt(core, sync)            = NULL;
+   _braid_CoreElt(core, bufalloc)        = NULL;
+   _braid_CoreElt(core, buffree)         = NULL;
 
    _braid_CoreElt(core, access_level)    = access_level;
    _braid_CoreElt(core, finalFCrelax)    = finalFCrelax;
@@ -989,6 +991,20 @@ braid_Int
 braid_SetFinalFCRelax(braid_Core core)
 {
    _braid_CoreElt(core, finalFCrelax) = 1;
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetBufAllocFree(braid_Core             core,
+                      braid_PtFcnBufAlloc    bufalloc,
+                      braid_PtFcnBufFree     buffree)
+{
+   _braid_CoreElt(core, bufalloc) = bufalloc;
+   _braid_CoreElt(core, buffree) = buffree;
+
    return _braid_error_flag;
 }
 

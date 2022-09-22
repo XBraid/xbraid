@@ -356,6 +356,26 @@ my_BufUnpack(braid_App          app,
    return 0;
 }
 
+int
+my_BufAlloc(braid_App          app,
+            void               **buffer,
+            braid_Int          bytes)
+{
+   printf("Using bufalloc  alloc\n");
+   *buffer = malloc(bytes);
+   return 0;
+}
+
+int
+my_BufFree(braid_App          app,
+           void               **buffer)
+{
+   printf("Using bufalloc  free\n");
+   free((char *) *buffer);
+   *buffer = NULL;
+   return 0;
+}
+
 int my_Sync(braid_App        app,
             braid_SyncStatus status)
 {
@@ -392,6 +412,7 @@ int main (int argc, char *argv[])
    int           sync          = 0;
    int           periodic      = 0;
    int           relax_only_cg = 0;
+   int           bufalloc     = 0;
 
    int           arg_index;
    int           rank;
@@ -428,6 +449,7 @@ int main (int argc, char *argv[])
             printf("  -res              : use my residual\n");
             printf("  -sync             : enable calls to the sync function\n");
             printf("  -periodic         : solve a periodic problem\n");
+            printf("  -bufalloc         : user-defined MPI buffer allocation\n");
             printf("  -tg <mydt>        : use user-specified time grid as global fine time grid, options are\n");
             printf("                      1 - uniform time grid\n");
             printf("                      2 - nonuniform time grid, where dt*0.5 for n = 1, ..., nt/2; dt*1.5 for n = nt/2+1, ..., nt\n\n");
@@ -500,6 +522,11 @@ int main (int argc, char *argv[])
          arg_index++;
          periodic = 1;
       }
+      else if( strcmp(argv[arg_index], "-bufalloc") == 0 )
+      {
+         arg_index++;
+         bufalloc = 1;
+      }
       else if( strcmp(argv[arg_index], "-relax_only_cg") == 0 )
       {
          arg_index++;
@@ -568,6 +595,11 @@ int main (int argc, char *argv[])
    if (relax_only_cg)
    {
       braid_SetRelaxOnlyCG(core, relax_only_cg);
+   }
+   if (bufalloc)
+   {
+      printf("Using bufalloc\n");
+      braid_SetBufAllocFree(core, my_BufAlloc, my_BufFree);
    }
 
    /* Run simulation, and then clean up */
