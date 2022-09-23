@@ -72,6 +72,7 @@ _braid_Residual(braid_Core        core,
    else
    {
       /* Call the user's residual routine */
+      /* can we make this compatible with Delta correction? */
       _braid_BaseResidual(core, app, ustop, r, status);
    }
 

@@ -39,7 +39,7 @@ _braid_CommRecvInit(braid_Core           core,
    MPI_Request        *requests;
    MPI_Status         *status;
    braid_Int           proc, size, num_requests;
-   braid_BufferStatus bstatus = (braid_BufferStatus)core;
+   braid_BufferStatus  bstatus = (braid_BufferStatus)core;
 
    _braid_GetProc(core, level, index, &proc);
    if (proc > -1)

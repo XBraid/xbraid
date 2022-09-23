@@ -218,7 +218,7 @@ _braid_ComputeFullRNorm(braid_Core  core,
 
          /* Update local processor norm. */
          ii = fi-ilower;
-         _braid_StepStatusInit(ta[ii-1], ta[ii], fi-1, tol, iter, level, nrefine, gupper, braid_ASCaller_ComputeFullRNorm, status);
+         _braid_StepStatusInit(ta[ii-1], ta[ii], fi-1, tol, iter, level, nrefine, gupper, braid_ASCaller_ComputeFullRNorm, NULL, status);
          _braid_BaseFullResidual(core, app, u, r, NULL, status);
          _braid_BaseSpatialNorm(core, app,  r, &rnorm_temp); 
          if(tnorm == 1)       /* one-norm */ 
@@ -251,7 +251,7 @@ _braid_ComputeFullRNorm(braid_Core  core,
       {
          /* Update local processor norm. */
          ii = ci-ilower;
-         _braid_StepStatusInit(ta[ii-1], ta[ii], ci-1, tol, iter, level, nrefine, gupper, braid_ASCaller_ComputeFullRNorm, status);
+         _braid_StepStatusInit(ta[ii-1], ta[ii], ci-1, tol, iter, level, nrefine, gupper, braid_ASCaller_ComputeFullRNorm, NULL, status);
          _braid_UGetVector(core, level, ci, &r);
          _braid_BaseFullResidual(core, app, r, u, NULL, status);
          _braid_BaseSpatialNorm(core, app,  u, &rnorm_temp);

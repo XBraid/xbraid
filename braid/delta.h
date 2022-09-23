@@ -46,12 +46,26 @@ extern "C"
                      braid_Basis delta,
                      braid_Basis basis);
 
+   /*----------------------------------------------------------------------------
+    * Compute the action of the low-rank approximation to Delta on a basis
+    *----------------------------------------------------------------------------*/
+
    braid_Int
    _braid_LRDeltaDotMat(braid_Core core,
                         braid_App app,
                         braid_Basis psi,
                         braid_Basis delta,
                         braid_Basis basis);
+
+                     
+   /*----------------------------------------------------------------------------
+    * Perform modified Gram-Schmidt orthonormalization on a basis
+    *----------------------------------------------------------------------------*/
+   braid_Int
+   _braid_GramSchmidt(braid_Core core,
+                      braid_App  app,
+                      braid_Basis basis);
+
 
 #ifdef __cplusplus
 }

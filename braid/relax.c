@@ -176,7 +176,7 @@ _braid_FCRelax(braid_Core  core,
             if( (access_level >= 3) || (done == 1) )
             {
                _braid_AccessStatusInit(ta[fi-f_ilower], fi, rnm, iter, level, nrefine, gupper_zero,
-                                       done, 0, braid_ASCaller_FCRelax, astatus);
+                                       done, 0, braid_ASCaller_FCRelax, NULL, astatus);
                _braid_AccessVector(core, astatus, u);
             }
 
@@ -217,7 +217,7 @@ _braid_FCRelax(braid_Core  core,
                 * way, and hence cannot use _braid_Step(...). */
                _braid_StepStatusInit(time_left, ta[ci-ilower], ci-cfactor-1, tol,
                                      iter, level, nrefine, gupper, 
-                                     braid_ASCaller_FCRelax, status);
+                                     braid_ASCaller_FCRelax, NULL, status);
                _braid_BaseStep(core, app, u, NULL, bigstep, level, status);
 
                _braid_BaseSum(core, app, a, u, b, bigstep );
@@ -235,7 +235,7 @@ _braid_FCRelax(braid_Core  core,
             if( (access_level >= 3) || (done == 1) )
             {
                _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper_zero,
-                                       done, 0, braid_ASCaller_FCRelax, astatus);
+                                       done, 0, braid_ASCaller_FCRelax, NULL, astatus);
                
 	       /* If Richardson, then vector u is not up-to-date, so be safe
                 * and get fresh reference for user access */
@@ -251,7 +251,7 @@ _braid_FCRelax(braid_Core  core,
             braid_BaseVector uref;
             _braid_UGetVectorRef(core, level, ci, &uref);
             _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper_zero,
-                                    done, 0, braid_ASCaller_FCRelax, astatus);
+                                    done, 0, braid_ASCaller_FCRelax, NULL, astatus);
             _braid_AccessVector(core, astatus, uref);
          }
 

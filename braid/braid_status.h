@@ -29,6 +29,7 @@
 #ifndef braid_status_HEADER
 #define braid_status_HEADER
 
+#include "_braid.h"
 #include "braid_defs.h"
 
 #ifdef __cplusplus
@@ -484,6 +485,16 @@ braid_StatusSetSize(braid_Status status,                   /**< structure contai
                     braid_Real   size                      /**< input, size of the send buffer */
                     );
 
+/**
+ * Set the size of the buffer for basis vectors. 
+ * If set by user, the send buffer will
+ * be "size" bytes in length. If not, BufSize is used.
+ **/
+braid_Int
+braid_StatusSetBasisSize(braid_Status status,                   /**< structure containing current simulation info */
+                         braid_Real   size                      /**< input, size of the send buffer */
+                         );
+
 /** 
  * Get the Richardson based error estimate at the single time point currently
  * being "Stepped", i.e., return the current error estimate for the time point
@@ -659,6 +670,7 @@ ACCESSOR_HEADER_GET1_IN1(Step, BasisVec, Vector, Int)
 
 ACCESSOR_HEADER_GET1(Buffer, MessageType, Int)
 ACCESSOR_HEADER_SET1(Buffer, Size,        Real)
+ACCESSOR_HEADER_SET1(Buffer, BasisSize,   Real)
 
 /*--------------------------------------------------------------------------
  * ObjectiveStatus Prototypes: They just wrap the corresponding Status accessors

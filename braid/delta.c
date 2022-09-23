@@ -64,7 +64,41 @@ _braid_LRDeltaDotMat(braid_Core core,
    for (braid_Int i = 0; i < rank; i++)
    {
       _braid_LRDeltaDot(core, app, psi->userVecs[i], delta, basis);
-
-      return _braid_error_flag;
    }
+
+   return _braid_error_flag;
+}
+
+braid_Int
+_braid_Normalize(braid_Core   core,
+                 braid_App    app,
+                 braid_Vector u)
+{
+   braid_Real norm;
+   _braid_BaseInnerProd(core, app, u, u, &norm);
+   _braid_BaseSum(core, app, 0., u, 1/norm, u);
+
+   return _braid_error_flag;
+}
+
+braid_Int
+_braid_GramSchmidt(braid_Core core,
+                   braid_App  app,
+                   braid_Basis basis)
+{
+   for (braid_Int i = 0; i < basis->rank; i++)
+   {
+      /* subtract projections of the columns on the left */
+      for (braid_Int j = 0; j < i; j++)
+      {
+         braid_Real prod;
+         _braid_BaseInnerProd(core, app, basis->userVecs[i], basis->userVecs[j], &prod);
+         _braid_BaseSum(core, app, -prod, basis->userVecs[j], 1., basis->userVecs[j]);
+
+      }
+      /* normalize this column */
+      _braid_Normalize(core, app, basis->userVecs[i]);
+   }
+
+   return _braid_error_flag;
 }

@@ -191,6 +191,7 @@ _braid_BaseSync(braid_Core          core,        /**< braid_Core structure */
 /** 
  * This calls the user's BufSize routine.
  * If (adjoint): nothing
+ * If (Delta correction): compute extra space needed for basis vectors
  */
 braid_Int
 _braid_BaseBufSize(braid_Core          core,          /**< braid_Core structure */

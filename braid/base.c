@@ -526,6 +526,23 @@ _braid_BaseBufSize(braid_Core          core,
 
    /* Call the users BufSize function */
    _braid_CoreFcn(core, bufsize)(app, size_ptr, status);
+   _braid_StatusElt(core, size_uvec) = *size_ptr;
+
+   /* extend buffer to fit basis vectors */
+   if ( _braid_CoreElt(core, delta_correct) )
+   {
+      braid_Int rank = _braid_CoreElt(core, delta_rank);
+      braid_Int size_basis = _braid_StatusElt(status, size_basis);
+      if ( size_basis > 0)
+      {
+         *size_ptr = *size_ptr + rank * size_basis;
+      }
+      else // not set, use default
+      {
+         _braid_StatusElt(status, size_basis) = *size_ptr;
+         *size_ptr = *size_ptr * (1 + rank);
+      }
+   }
 
    return _braid_error_flag;
 }
@@ -547,8 +564,8 @@ _braid_BaseBufPack(braid_Core          core,
    braid_Int        record       = _braid_CoreElt(core, record);
    braid_Int        sender       = _braid_CoreElt(core, send_recv_rank);
 
-   braid_Int        basis        = _braid_CoreElt(core, delta_correct);
-   braid_Int        rank         = _braid_CoreElt(core, delta_rank);
+   braid_Int delta_correct = _braid_CoreElt(core, delta_correct);
+   braid_Int delta_rank    = _braid_CoreElt(core, delta_rank);
 
    if ( verbose_adj ) _braid_printf("%d: BUFPACK\n",  myid );
 
@@ -559,7 +576,7 @@ _braid_BaseBufPack(braid_Core          core,
       action                 = _braid_CTAlloc(_braid_Action, 1);
       action->braidCall      = BUFPACK;
       action->core           = core;
-      action->send_recv_rank = sender; 
+      action->send_recv_rank = sender;
       action->messagetype    = _braid_StatusElt(status, messagetype);
       action->size_buffer    = _braid_StatusElt(status, size_buffer);
       action->myid           = myid;
@@ -569,11 +586,27 @@ _braid_BaseBufPack(braid_Core          core,
       _braid_VectorBarCopy(u->bar, &ubar_copy);
       _braid_CoreElt(core, barTape) = _braid_TapePush(_braid_CoreElt(core, barTape), ubar_copy);
    }
-   
+
+   braid_Int size_uvec  = _braid_StatusElt(status, size_uvec);
+   braid_Int size_basis = _braid_StatusElt(status, size_basis);
+
    /* BufPack the user's vector */
    _braid_CoreFcn(core, bufpack)(app, u->userVector, buffer, status);
-
-   // TODO: extend buffer size and write basis vecs to buffer
+   _braid_StatusElt(status, size_buffer) = _braid_StatusElt(status, size_uvec);
+   
+   if ( delta_correct )
+   {
+      /* ignore user set size */
+      braid_Int i = size_uvec;
+      for (braid_Int rank = 0; rank < delta_rank; rank++)
+      {
+         _braid_CoreFcn(core, bufpack)(app, u->basis->userVecs[i], buffer + i, status);
+         i += size_basis;
+      }
+      
+      /* set new total buffer size */
+      _braid_StatusElt(status, size_buffer) = size_uvec + delta_rank * size_basis;
+   }
 
    return _braid_error_flag;
 }
@@ -583,9 +616,9 @@ _braid_BaseBufPack(braid_Core          core,
 
 braid_Int
 _braid_BaseBufUnpack(braid_Core          core,
-                     braid_App           app,    
-                     void               *buffer, 
-                     braid_BaseVector   *u_ptr,  
+                     braid_App           app,
+                     void               *buffer,
+                     braid_BaseVector   *u_ptr,
                      braid_BufferStatus  status )
 {
    _braid_Action   *action;
@@ -607,6 +640,22 @@ _braid_BaseBufUnpack(braid_Core          core,
 
    /* BufUnpack the user's vector */
    _braid_CoreFcn(core, bufunpack)(app, buffer, &(u->userVector), status);
+
+   if (_braid_CoreElt(core, delta_correct))
+   {
+      /* BufUnpack the basis vectors */
+      braid_Int size_tot;
+      _braid_BaseBufSize(core, app, &size_tot, status);
+      braid_Int size_uvec  = _braid_StatusElt(status, size_uvec);
+      braid_Int size_basis = _braid_StatusElt(status, size_basis);
+
+      braid_Int i = size_uvec;
+      for (braid_Int rank = 0; rank < _braid_CoreElt(core, delta_rank); rank++)
+      {
+         _braid_CoreFcn(core, bufunpack)(app, buffer + i, &(u->basis->userVecs[rank]), status);
+         i += size_basis;
+      }
+   }
 
    if ( adjoint )
    {

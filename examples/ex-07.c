@@ -405,6 +405,10 @@ int
 my_BufSize(braid_App app, int *size_ptr, braid_BufferStatus bstatus)
 {
    *size_ptr = VecSize * sizeof(double);
+   
+   /* tell braid the size of the basis vectors */
+   braid_BufferStatusSetBasisSize(bstatus, VecSize * sizeof(double));
+   /* Note: this isn't necessary here, but for more complicated examples the buffer-size may be different */
    return 0;
 }
 

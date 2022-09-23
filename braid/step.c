@@ -41,6 +41,7 @@ _braid_Step(braid_Core         core,
    braid_StepStatus   status   = (braid_StepStatus)core;
    braid_Int          nrefine  = _braid_CoreElt(core, nrefine);
    braid_Int          gupper   = _braid_CoreElt(core, gupper);
+   braid_Int          cfactor  = _braid_GridElt(grids[level], cfactor);
    braid_Int          ilower   = _braid_GridElt(grids[level], ilower);
    braid_Real        *ta       = _braid_GridElt(grids[level], ta);
    braid_BaseVector  *fa       = _braid_GridElt(grids[level], fa);
@@ -116,9 +117,15 @@ _braid_Step(braid_Core         core,
       }
    }
 
-   /* need to free the memory used by Delta correction */
+   /* need to finalize Delta correction */
    if ( delta_correct )
    {
+      /* orthonormalize basis at C-points and in f-interp */
+      if ( _braid_IsCPoint(index, cfactor) || calling_function == braid_ASCaller_FInterp )
+      {
+         _braid_GramSchmidt(core, app, u->basis);
+      }
+
       _braid_BaseFree(core, app, delta);
    }
    return _braid_error_flag;
