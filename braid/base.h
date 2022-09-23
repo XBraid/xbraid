@@ -176,7 +176,7 @@ braid_Int
 _braid_BaseBufAlloc(braid_Core          core,      /**< braid_Core structure */   
                     braid_App           app,       /**< user-defined _braid_App structure */   
                     void              **buffer,    /**< MPI buffer for user to allocate */
-                    braid_Int           bytes      /**< number of bytes to allocate */
+                    braid_Int           nbytes     /**< number of bytes to allocate */
                     );
 
 /** 

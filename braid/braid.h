@@ -270,7 +270,7 @@ typedef braid_Int
 typedef braid_Int
 (*braid_PtFcnBufAlloc)(braid_App            app,           /**< user-defined _braid_App structure */
                        void               **buffer,        /**< pointer to the void * MPI Buffer */
-                       braid_Int            bytes          /**< number of bytes to allocate */
+                       braid_Int            nbytes         /**< number of bytes to allocate */
                        );
 
 /** 
