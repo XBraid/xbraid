@@ -361,7 +361,6 @@ my_BufAlloc(braid_App          app,
             void               **buffer,
             braid_Int          nbytes)
 {
-   printf("poop1\n");
    *buffer = malloc(nbytes);
    return 0;
 }
@@ -370,7 +369,6 @@ int
 my_BufFree(braid_App          app,
            void               **buffer)
 {
-   printf("poop2\n");
    free((char *) *buffer);
    *buffer = NULL;
    return 0;
