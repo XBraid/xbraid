@@ -121,7 +121,11 @@ TESTS=( "$RunString -np 1 $example_dir/ex-01" \
         "$RunString -np 2 $example_dir/ex-01-expanded -ntime 24 -ml 3 -mi 2 -nu0 1 -nu 2 -nuc 2 -relax_only_cg -skip 0" \
         "$RunString -np 1 $example_dir/ex-01-expanded -ntime 24 -ml 3 -mi 2 -nu0 1 -nu 1 -nuc 1 -relax_only_cg -skip 1" \
         "$RunString -np 1 $example_dir/ex-01-expanded -ntime 24 -ml 3 -mi 2 -nu0 1 -nu 2 -skip 1" \
-        "$RunString -np 1 $example_dir/ex-01-expanded -ntime 24 -ml 3 -mi 2 -nu0 1 -nu 2 -skip 0" )
+        "$RunString -np 1 $example_dir/ex-01-expanded -ntime 24 -ml 3 -mi 2 -nu0 1 -nu 2 -skip 0" \
+        "$RunString -np 1 $example_dir/ex-01-expanded -ntime 48 -ml 3 -mi 3 -cf 2 " \
+        "$RunString -np 1 $example_dir/ex-01-expanded -ntime 48 -ml 3 -mi 3 -cf 2 -bufalloc" \
+        "$RunString -np 2 $example_dir/ex-01-expanded -ntime 48 -ml 3 -mi 3 -cf 2 -bufalloc" \
+        "$RunString -np 3 $example_dir/ex-01-expanded -ntime 48 -ml 3 -mi 3 -cf 2 -bufalloc" )
 
 # The below commands will then dump each of the tests to the output files 
 #   $output_dir/unfiltered.std.out.0, 

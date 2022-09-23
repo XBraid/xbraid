@@ -174,4 +174,27 @@ Finished braid_TestAll: no fails detected, however some results must be
   residual norm         = 1.420885e-02
   max number of levels  = 3
   number of levels      = 3
-
+# Begin Test 30
+  time steps = 48
+  iterations            = 3
+  residual norm         = 2.454379e-03
+  max number of levels  = 3
+  number of levels      = 3
+# Begin Test 31
+  time steps = 48
+  iterations            = 3
+  residual norm         = 2.454379e-03
+  max number of levels  = 3
+  number of levels      = 3
+# Begin Test 32
+  time steps = 48
+  iterations            = 3
+  residual norm         = 2.454379e-03
+  max number of levels  = 3
+  number of levels      = 3
+# Begin Test 33
+  time steps = 48
+  iterations            = 3
+  residual norm         = 2.454379e-03
+  max number of levels  = 3
+  number of levels      = 3
