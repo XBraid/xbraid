@@ -105,7 +105,6 @@ _braid_FCRelax(braid_Core  core,
             _braid_BufferStatusInit( 0, 0, bstatus );
             _braid_BaseBufSize(core, app,  &size, bstatus);
             _braid_BaseBufAlloc(core, app, &recv_buff, size);
-            /* TODO delete recv_buff = malloc(size); */
              
              MPI_Irecv(recv_buff, size, MPI_BYTE, proc, 84, comm, &recv_request);
          }
@@ -116,7 +115,6 @@ _braid_FCRelax(braid_Core  core,
             _braid_BufferStatusInit( 0 ,0 ,bstatus );
             _braid_BaseBufSize(core, app,  &size, bstatus);
             _braid_BaseBufAlloc(core, app, &send_buff, size);
-            /* TODO delete send_buff = malloc(size); */
            
             braid_Int iu, is_stored;
             _braid_UGetIndex(core, level, cupper, &iu, &is_stored);
@@ -152,7 +150,6 @@ _braid_FCRelax(braid_Core  core,
                _braid_BufferStatusInit(0,0,bstatus);
                _braid_BaseBufUnpack(core, app, recv_buff, &bigstep, bstatus);
                _braid_BaseBufFree(core, app,  &recv_buff);
-               /* TODO delete _braid_TFree(recv_buff); */
               
                ta_c = _braid_GridElt(grids[1], ta );
                time_left = ta_c[-1];
@@ -271,7 +268,6 @@ _braid_FCRelax(braid_Core  core,
    {
        MPI_Wait( &send_request, MPI_STATUS_IGNORE);
        _braid_BaseBufFree(core, app,  &send_buff);
-       /* TODO delete _braid_TFree( send_buff ); */
    }
 
    return _braid_error_flag;
