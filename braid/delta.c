@@ -40,14 +40,14 @@ _braid_LRDeltaDot(braid_Core core,
    /* project u onto the basis */
    for (braid_Int i = 0; i < rank; i++)
    {
-      _braid_BaseInnerProd(core, app, basis->userVecs[i], u, &coords[i]);
+      _braid_CoreFcn(core, inner_prod)(app, basis->userVecs[i], u, &coords[i]);
    }
 
    /* compute the dot product of action with the new coordinate vector */
-   _braid_BaseSum(core, app, coords[0], delta->userVecs[0], 0., u);
+   _braid_CoreFcn(core, sum)(app, coords[0], delta->userVecs[0], 0., u);
    for (braid_Int i = 1; i < rank; i++)
    {
-      _braid_BaseSum(core, app, coords[0], delta->userVecs[i], 1., u);
+      _braid_CoreFcn(core, sum)(app, coords[0], delta->userVecs[i], 1., u);
    }
 
    return _braid_error_flag;
@@ -75,8 +75,8 @@ _braid_Normalize(braid_Core   core,
                  braid_Vector u)
 {
    braid_Real norm;
-   _braid_BaseInnerProd(core, app, u, u, &norm);
-   _braid_BaseSum(core, app, 0., u, 1/norm, u);
+   _braid_CoreFcn(core, inner_prod)(app, u, u, &norm);
+   _braid_CoreFcn(core, sum)(app, 0., u, 1/norm, u);
 
    return _braid_error_flag;
 }
@@ -92,8 +92,8 @@ _braid_GramSchmidt(braid_Core core,
       for (braid_Int j = 0; j < i; j++)
       {
          braid_Real prod;
-         _braid_BaseInnerProd(core, app, basis->userVecs[i], basis->userVecs[j], &prod);
-         _braid_BaseSum(core, app, -prod, basis->userVecs[j], 1., basis->userVecs[j]);
+         _braid_CoreFcn(core, inner_prod)(app, basis->userVecs[i], basis->userVecs[j], &prod);
+         _braid_CoreFcn(core, sum)(app, -prod, basis->userVecs[j], 1., basis->userVecs[j]);
 
       }
       /* normalize this column */

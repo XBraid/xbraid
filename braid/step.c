@@ -50,7 +50,6 @@ _braid_Step(braid_Core         core,
    /* Needed for Delta correction */
    braid_Basis *ba            = _braid_GridElt(grids[level], ba);
    braid_Int    delta_correct = _braid_CoreElt(core, delta_correct);
-   braid_Int    delta_rank    = _braid_CoreElt(core, delta_rank);
    braid_BaseVector delta;  /* temporary storage for Delta correction */
    // TODO: Is there a way to avoid having to clone u_start??
 

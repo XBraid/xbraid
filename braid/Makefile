@@ -48,6 +48,7 @@ BRAID_FILES =\
  braid_F90_iface.c\
  braid_test.c\
  communication.c\
+ delta.c\
  distribution.c\
  drive.c\
  grid.c\

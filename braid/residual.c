@@ -45,7 +45,6 @@ _braid_Residual(braid_Core        core,
    braid_Real      *ta       = _braid_GridElt(grids[level], ta);
 
    braid_Int    delta_correct = _braid_CoreElt(core, delta_correct);
-   braid_Int    delta_rank    = _braid_CoreElt(core, delta_rank);
 
    braid_BaseVector rstop;
    braid_Int        ii;
@@ -105,7 +104,7 @@ _braid_FASResidual(braid_Core        core,
    braid_Int delta_correct = _braid_CoreElt(core, delta_correct);
    braid_BaseVector delta;    /* temporary storage for delta correction */
 
-   braid_Int ii;
+   braid_Int ii = index-ilower;;
 
    delta_correct = delta_correct && (fa[ii] != NULL);
    if (delta_correct)
@@ -118,7 +117,7 @@ _braid_FASResidual(braid_Core        core,
 
    _braid_Residual(core, level, index, braid_ASCaller_FASResidual, ustop, r);
 
-   if ( (level == 0) || ((ii = index-ilower) && (fa[ii] == NULL)) )
+   if ( (level == 0) || (fa[ii] == NULL) )
    {
       _braid_BaseSum(core, app,  0.0, r, -1.0, r);
    }

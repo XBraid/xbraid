@@ -199,7 +199,7 @@ Lorenz_du(const VEC u, MAT J)
 }
 
 /*
- * Computes a time-step with RK4
+ * Computes a time-step with euler's method
  * Optionally computes the jacobian of the time-step and
  * writes the result in Psi (if not NULL)
  */
@@ -216,7 +216,7 @@ Euler(VEC u0, double h, MAT *F)
 
       // F = I + hJ(u0)
       Lorenz_du(u0, J);
-      MatAxpy(h, J, F);
+      MatAxpy(h, J, *F);
    }
 
    // u1 = u0 + hf(u0)
@@ -246,7 +246,7 @@ my_Step(braid_App app,
    }
 
    h = tstop - tstart;
-   RK4((u->values), h, LinProp);
+   Euler((u->values), h, LinProp);
 
    for (int i = 0; i < rank; i++)
    {
@@ -256,7 +256,7 @@ my_Step(braid_App app,
 
       // propagate the basis vector from tstart to tstop
       // Here, we are using the full Jacobian
-      MatVec(LinProp, psi->values);
+      MatVec(*LinProp, psi->values);
    }
 
    /* no refinement */
@@ -331,7 +331,10 @@ my_Sum(braid_App app,
        double beta,
        braid_Vector y)
 {
-   VecAxpby(alpha, (x->values), beta, (y->values));
+   for (int i = 0; i < VecSize; i++)
+   {
+      y->values[i] = alpha * x->values[i] + beta * y->values[i];
+   }
 
    return 0;
 }
@@ -388,7 +391,7 @@ my_Access(braid_App app, braid_Vector u, braid_AccessStatus astatus)
    for (int j = 0; j < rank; j++)
    {
       my_Vector *psi;
-      braid_AccessStatusGetBasisVec(astatus, psi, j);
+      braid_AccessStatusGetBasisVec(astatus, &psi, j);
       for (i = 0; i < VecSize; i++)
       {
          fprintf(file, " %.14e", (psi->values[i]));

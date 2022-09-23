@@ -116,13 +116,11 @@ _braid_BaseInit(braid_Core        core,
    _braid_Action    *action;
    braid_BaseVector  u;
    braid_VectorBar   ubar;
-   braid_Basis       u_basis;
    braid_Int         myid          = _braid_CoreElt(core, myid);
    braid_Int         verbose_adj   = _braid_CoreElt(core, verbose_adj);
    braid_Int         record        = _braid_CoreElt(core, record);
    braid_Int         adjoint       = _braid_CoreElt(core, adjoint);
    braid_Int         delta_correct = _braid_CoreElt(core, delta_correct);
-   braid_Int         delta_rank    = _braid_CoreElt(core, delta_rank);
     
    if (verbose_adj) _braid_printf("%d INIT\n", myid);
 
@@ -184,9 +182,11 @@ _braid_BaseInitBasis(braid_Core   core,
    for (braid_Int i = 0; i < u_basis->rank; i++)
    {
       /* Allocate and initialize userVector for each column */
-      _braid_CoreFcn(core, init_basis)(app, t, i, u_basis->userVecs[i]);
+      _braid_CoreFcn(core, init_basis)(app, t, i, &(u_basis->userVecs[i]));
    }
    *psi_ptr = u_basis;
+
+   return _braid_error_flag;
 }
 
 /*----------------------------------------------------------------------------
@@ -207,8 +207,6 @@ _braid_BaseClone(braid_Core         core,
    braid_Int         verbose_adj  = _braid_CoreElt(core, verbose_adj);
    braid_Int         record       = _braid_CoreElt(core, record);
    braid_Int         adjoint      = _braid_CoreElt(core, adjoint);
-
-   braid_Int delta_correct = _braid_CoreElt(core, delta_correct);
 
    if (verbose_adj) _braid_printf("%d: CLONE\n", myid);
 
@@ -262,6 +260,7 @@ _braid_BaseClone(braid_Core         core,
 /*----------------------------------------------------------------------------
  *----------------------------------------------------------------------------*/
 
+braid_Int
 _braid_BaseCloneBasis(braid_Core    core,
                       braid_App     app,  
                       braid_Basis   A,    
@@ -273,9 +272,11 @@ _braid_BaseCloneBasis(braid_Core    core,
    for (braid_Int i = 0; i < basis->rank; i++)
    {
       /* Allocate and clone userVector for each column */
-      _braid_CoreFcn(core, clone)(app, A->userVecs[i], basis->userVecs[i]);
+      _braid_CoreFcn(core, clone)(app, A->userVecs[i], &(basis->userVecs[i]));
    }
    *B_ptr = basis;
+
+   return _braid_error_flag;
 }
 
 /*----------------------------------------------------------------------------
@@ -450,7 +451,7 @@ _braid_BaseInnerProd(braid_Core        core,
                      braid_Real       *prod_ptr )
 {
    /* Compute the inner product between two user vectors */
-   _braid_CoreFcn(core, inner_prod);
+   _braid_CoreFcn(core, inner_prod)(app, u, v, prod_ptr);
 
    return _braid_error_flag;
 }

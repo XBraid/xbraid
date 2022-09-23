@@ -142,7 +142,7 @@ _braid_FRestrict(braid_Core   core,
          if( (access_level >= 3) )
          {
             _braid_AccessStatusInit(ta[fi-f_ilower], fi, rnm, iter, level, nrefine, gupper,
-                                    0, 0, braid_ASCaller_FRestrict, &(r->basis), astatus);
+                                    0, 0, braid_ASCaller_FRestrict, r->basis, astatus);
             _braid_AccessVector(core, astatus, r);
          }
 
@@ -245,10 +245,10 @@ _braid_FRestrict(braid_Core   core,
          }
 
          /* Delta correction: need to store some values at c_ii-1 */
-         braid_Int    delta_correct;
-         braid_Basis  ba = _braid_GridElt(grids[level], ba);
+         braid_Int    delta_correct = _braid_CoreElt(core, delta_correct);
+         braid_Basis *ba = _braid_GridElt(grids[level], ba);
          braid_Vector delta_action;
-         if ( _braid_CoreElt(core, delta_correct ))
+         if ( delta_correct )
          {
             _braid_BaseCloneBasis(core, app, c_va[c_ii-1]->basis, &(ba[c_ii]));
             /* also need an extra copy of c_va[c_ii-1] */
@@ -290,8 +290,8 @@ _braid_FRestrict(braid_Core   core,
                _braid_BaseSumBasis(core, app, 1.0, c_u->basis, 1.0, c_fa[c_ii]->basis);
 
                /* get the action of Delta on u_{i-1} */
-               _braid_LRDeltaDot(core, app, delta_action, c_fa[c_ii]->basis, ba);
-               _braid_BaseSum(core, app, 1.0, delta_action, 1.0, c_fa[c_ii]);
+               _braid_LRDeltaDot(core, app, delta_action, c_fa[c_ii]->basis, ba[c_ii]);
+               _braid_CoreFcn(core, sum)(app, 1., delta_action, 1., c_fa[c_ii]->userVector);
             }
          }
 

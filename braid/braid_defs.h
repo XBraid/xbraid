@@ -65,6 +65,15 @@ typedef double braid_Real;
 #define braid_MPI_INT   MPI_INT
 #define braid_MPI_Comm  MPI_Comm
 
+
+struct _braid_Vector_struct;
+/**
+ * This defines (roughly) a state vector at a certain time value.  
+ * It could also contain any other information related to this vector which is 
+ * needed to evolve the vector to the next time value, like mesh information.
+ **/
+typedef struct _braid_Vector_struct *braid_Vector;
+
 #ifdef __cplusplus
 }
 #endif

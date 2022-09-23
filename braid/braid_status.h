@@ -29,7 +29,6 @@
 #ifndef braid_status_HEADER
 #define braid_status_HEADER
 
-#include "_braid.h"
 #include "braid_defs.h"
 
 #ifdef __cplusplus
@@ -81,7 +80,6 @@ struct _braid_Status_struct;
  * structures. This class is accessed only inside XBraid code.
  */
 typedef struct _braid_Status_struct *braid_Status;
-
 
 /**
  * AccessStatus structure which defines the status of XBraid at a given instant

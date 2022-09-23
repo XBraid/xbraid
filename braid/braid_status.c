@@ -232,7 +232,16 @@ braid_StatusGetDeltaRank(braid_Status status,
                          braid_Int   *rank_ptr
                          )
 {
-   *rank_ptr = _braid_StatusElt(status, delta_rank);
+   braid_Basis ba = _braid_StatusElt(status, lvectors);
+   if (ba != NULL)
+   {
+      *rank_ptr = ba->rank;
+   }
+   else
+   {
+      *rank_ptr = 0;
+   }
+   return _braid_error_flag;
 }
 
 braid_Int
