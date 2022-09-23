@@ -361,7 +361,6 @@ my_BufAlloc(braid_App          app,
             void               **buffer,
             braid_Int          bytes)
 {
-   printf("Using bufalloc  alloc\n");
    *buffer = malloc(bytes);
    return 0;
 }
@@ -370,7 +369,6 @@ int
 my_BufFree(braid_App          app,
            void               **buffer)
 {
-   printf("Using bufalloc  free\n");
    free((char *) *buffer);
    *buffer = NULL;
    return 0;
@@ -598,7 +596,6 @@ int main (int argc, char *argv[])
    }
    if (bufalloc)
    {
-      printf("Using bufalloc\n");
       braid_SetBufAllocFree(core, my_BufAlloc, my_BufFree);
    }
 
