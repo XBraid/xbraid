@@ -79,7 +79,6 @@ public:
        @see braid_PtFcnResidual.
    */
    virtual braid_Int Residual(braid_Vector     u_,
-                              braid_Vector     f_,
                               braid_Vector     r_,
                               BraidStepStatus &pstatus) = 0;
 
@@ -396,13 +395,12 @@ static braid_Int _BraidAppStep(braid_App       _app,
 
 static braid_Int _BraidAppResidual(braid_App     _app,
                               braid_Vector  _ustop,
-                              braid_Vector  _fstop,
                               braid_Vector  _r,
                               braid_StepStatus _pstatus)
 {
    BraidApp *app = (BraidApp*)_app;
    BraidStepStatus pstatus(_pstatus);
-   return app -> Residual(_ustop, _fstop, _r, pstatus);
+   return app -> Residual(_ustop, _r, pstatus);
 }
 
 

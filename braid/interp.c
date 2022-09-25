@@ -41,7 +41,7 @@ _braid_FInterp(braid_Core  core,
    braid_Int            ncpoints     = _braid_GridElt(grids[level], ncpoints);
    braid_BaseVector    *va           = _braid_GridElt(grids[level], va);
    braid_Real          *ta           = _braid_GridElt(grids[level], ta);
-   
+
    braid_Real         rnorm;
    braid_Int          f_level, f_cfactor, f_index;
    braid_BaseVector       f_u, f_e;
@@ -97,7 +97,7 @@ _braid_FInterp(braid_Core  core,
          if( (access_level >= 3) && (f_level == 0) )
          {
             _braid_AccessStatusInit(ta[fi-ilower], f_index, rnorm, iter, f_level, nrefine, gupper,
-                                    0, 0, braid_ASCaller_FInterp, u->basis, astatus);
+                                    0, 0, braid_ASCaller_FInterp, f_u->basis, astatus);
             _braid_AccessVector(core, astatus, f_u);
          }
 

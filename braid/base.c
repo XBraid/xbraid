@@ -179,11 +179,15 @@ _braid_BaseInitBasis(braid_Core   core,
    braid_Basis u_basis = (braid_Basis) malloc(sizeof(braid_Basis));
    u_basis->rank = _braid_CoreElt(core, delta_rank);
    u_basis->userVecs = _braid_TAlloc(braid_Vector, u_basis->rank);
+
    for (braid_Int i = 0; i < u_basis->rank; i++)
    {
       /* Allocate and initialize userVector for each column */
       _braid_CoreFcn(core, init_basis)(app, t, i, &(u_basis->userVecs[i]));
    }
+   /* orthonormalize the columns */
+   _braid_GramSchmidt(core, app, u_basis);
+
    *psi_ptr = u_basis;
 
    return _braid_error_flag;
@@ -294,8 +298,6 @@ _braid_BaseFree(braid_Core       core,
    braid_Int      adjoint     = _braid_CoreElt(core, adjoint);
    braid_Int      record      = _braid_CoreElt(core, record);
 
-   braid_Int delta_correct = _braid_CoreElt(core, delta_correct);
-
    if (verbose_adj) _braid_printf("%d: FREE\n", myid);
 
    /* Record to the tape */
@@ -312,7 +314,7 @@ _braid_BaseFree(braid_Core       core,
    /* Free the user's vector */
    _braid_CoreFcn(core, free)(app, u->userVector);
 
-   if ( delta_correct )
+   if ( u->basis )
    {
       /* Free the basis/Lyapunov vectors */
       _braid_BaseFreeBasis(core, app, u->basis);
@@ -343,6 +345,7 @@ _braid_BaseFreeBasis(braid_Core    core,
    {
       _braid_CoreFcn(core, free)(app, b->userVecs[i]);
    }
+   free(b->userVecs);
 
    return _braid_error_flag;
 }
@@ -389,20 +392,20 @@ _braid_BaseSum(braid_Core        core,
     /* Sum up the user's vector */
    _braid_CoreFcn(core, sum)(app, alpha, x->userVector, beta, y->userVector);
 
-   // /* Sum over the basis vectors */
-   // if ( x->basis && y->basis )
-   // {  /* Add together the bases if they both exist */
-   //    _braid_BaseSumBasis(core, app, alpha, x->basis, beta, y->basis);
-   // }
-   // else if ( y->basis )
-   // {  /* if only y exists, treat x as zero */
-   //    _braid_BaseSumBasis(core, app, 0., y->basis, beta, y->basis);
-   // }
-   // else if ( x->basis )
-   // {  /* if only x exists, initialize y as zero */
-   //    _braid_BaseCloneBasis(core, app, x->basis, &(y->basis));
-   //    _braid_BaseSumBasis(core, app, alpha, x->basis, 0., y->basis);
-   // }
+   /* Sum over the basis vectors */
+   if ( x->basis && y->basis )
+   {  /* Add together the bases if they both exist */
+      _braid_BaseSumBasis(core, app, alpha, x->basis, beta, y->basis);
+   }
+   else if ( y->basis )
+   {  /* if only y exists, treat x as zero */
+      _braid_BaseSumBasis(core, app, 0., y->basis, beta, y->basis);
+   }
+   else if ( x->basis )
+   {  /* if only x exists, initialize y as zero */
+      _braid_BaseCloneBasis(core, app, x->basis, &(y->basis));
+      _braid_BaseSumBasis(core, app, alpha, x->basis, 0., y->basis);
+   }
 
    return _braid_error_flag;
 }

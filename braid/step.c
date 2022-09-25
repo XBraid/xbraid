@@ -46,44 +46,71 @@ _braid_Step(braid_Core         core,
    braid_Real        *ta       = _braid_GridElt(grids[level], ta);
    braid_BaseVector  *fa       = _braid_GridElt(grids[level], fa);
 
-
-   /* Needed for Delta correction */
-   braid_Basis *ba            = _braid_GridElt(grids[level], ba);
-   braid_Int    delta_correct = _braid_CoreElt(core, delta_correct);
-   braid_BaseVector delta;  /* temporary storage for Delta correction */
-   // TODO: Is there a way to avoid having to clone u_start??
-
-   braid_Int ii;
-
-   ii = index-ilower;
-   // for now, only propagate Lyapunov vectors in F-restrict:
-   braid_Int prop_lyap = delta_correct && ( calling_function == braid_ASCaller_FInterp);
-
-   if ( prop_lyap )
-   {  /* Give the user access to the Lyapunov vectors through StepStatusGetBasisVec */
-      _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, u->basis, status);
-   }
-   else
-   {
-      _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, NULL, status);
-   }
-
-   if (delta_correct && fa[ii] != NULL)
-   {
-      /* compute the Delta correction for the state and Lyapunov vectors */
-      _braid_BaseClone(core, app, u, &delta);
-      _braid_LRDeltaDot(core, app, delta->userVector, fa[ii]->basis, ba[ii]);
-      if ( prop_lyap )
-      {
-         _braid_LRDeltaDotMat(core, app, delta->basis, fa[ii]->basis, ba[ii]);
-      }
-   }
+   braid_Int ii = index-ilower;
 
    /* If ustop is set to NULL, use a default approach for setting it */
    if (ustop == NULL)
    {
       _braid_GetUInit(core, level, index, u, &ustop);
    }
+
+   if (_braid_CoreElt(core, delta_correct))
+   {
+      braid_Basis *ba            = _braid_GridElt(grids[level], ba);
+      braid_Int    est_lyap      = _braid_CoreElt(core, estimate_lyap);
+      braid_BaseVector delta;  /* temporary storage for Delta correction */
+      // TODO: Is there a way to avoid having to clone u_start??
+
+      /* only propagate Lyapunov vectors when necessary */
+      braid_Int prop_lyap = est_lyap || ( calling_function == braid_ASCaller_FRestrict);
+
+      if ( prop_lyap )
+      {  /* Give the user access to the Lyapunov vectors through StepStatusGetBasisVec */
+         _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, u->basis, status);
+      }
+      else
+      {
+         _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, NULL, status);
+
+         /* don't overwrite the Lyapunov vectors at ustop! */
+         _braid_BaseSumBasis(core, app, 1., ustop->basis, 0., u->basis);
+      }
+
+      braid_Int delta_correct = (level > 0) && (fa[ii] != NULL);
+      if ( delta_correct )
+      {
+         /* compute the Delta correction for the state and Lyapunov vectors */
+         _braid_BaseClone(core, app, u, &delta);
+         _braid_LRDeltaDot(core, app, delta->userVector, fa[ii]->basis, ba[ii]);
+         if ( prop_lyap )
+         {
+            _braid_LRDeltaDotMat(core, app, delta->basis, fa[ii]->basis, ba[ii]);
+         }
+      }
+
+      _braid_BaseStep(core, app,  ustop, NULL, u, level, status);
+
+      if ( delta_correct )
+      {
+         /* tau correction */
+         _braid_CoreFcn(core, sum)(app, 1.0, fa[ii]->userVector, 1.0, u->userVector);
+         /* delta correction */
+         _braid_CoreFcn(core, sum)(app, 1.0, delta->userVector, 1.0, u->userVector);
+         if ( prop_lyap )
+         {
+            _braid_BaseSumBasis(core, app, 1.0, delta->basis, 1.0, u->basis);
+ 
+            /* orthonormalize basis at C-points and in f-interp */
+            if ( _braid_IsCPoint(index, cfactor) || calling_function == braid_ASCaller_FInterp )
+            {
+               _braid_GramSchmidt(core, app, u->basis);
+            }
+         }
+         _braid_BaseFree(core, app, delta);
+      }
+      return _braid_error_flag;
+   }
+   /* else, default behavior */
 
    if (level == 0)
    {
@@ -97,36 +124,14 @@ _braid_Step(braid_Core         core,
          if(fa[ii] != NULL)
          {
             _braid_BaseSum(core, app,  1.0, fa[ii], 1.0, u);
-
-             /* we need to add the Delta correction terms */
-            if (delta_correct)
-            {
-               _braid_BaseSum(core, app, 1.0, delta, 1.0, u);
-               if ( prop_lyap )
-               {
-                  _braid_BaseSumBasis(core, app, 1.0, delta->basis, 1.0, u->basis);
-               }
-            }
          }
       }
       else
       {
-         /* can this be made compatible with Delta correction? */
          _braid_BaseStep(core, app,  ustop, fa[ii], u, level, status);
       }
    }
 
-   /* need to finalize Delta correction */
-   if ( delta_correct )
-   {
-      /* orthonormalize basis at C-points and in f-interp */
-      if ( _braid_IsCPoint(index, cfactor) || calling_function == braid_ASCaller_FInterp )
-      {
-         _braid_GramSchmidt(core, app, u->basis);
-      }
-
-      _braid_BaseFree(core, app, delta);
-   }
    return _braid_error_flag;
 }
 
@@ -147,9 +152,8 @@ _braid_GetUInit(braid_Core         core,
    braid_Int           storage  = _braid_CoreElt(core, storage);
    braid_BaseVector   *va       = _braid_GridElt(grids[level], va);
    braid_BaseVector    ustop    = *ustop_ptr;
-   braid_Int        ii;
 
-   ii = index-ilower;
+   braid_Int ii = index-ilower;;
 
    _braid_UGetVectorRef(core, level, index, &ustop);
 

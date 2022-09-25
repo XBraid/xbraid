@@ -71,6 +71,7 @@ struct _braid_Vector_struct;
  * This defines (roughly) a state vector at a certain time value.  
  * It could also contain any other information related to this vector which is 
  * needed to evolve the vector to the next time value, like mesh information.
+ * *reproduced here from braid.h to give braid_status access to the braid_Vector typedef*
  **/
 typedef struct _braid_Vector_struct *braid_Vector;
 

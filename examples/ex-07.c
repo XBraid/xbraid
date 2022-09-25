@@ -154,13 +154,15 @@ my_App_Init(my_App *app,
          double tstart_,
          double tstop_,
          int ntime_,
-         FILE *file)
+         FILE *file,
+         FILE *file_lv)
 {
    (app->comm) = comm_;
    (app->tstart) = tstart_;
    (app->tstop) = tstop_;
    (app->ntime) = ntime_;
    (app->file) = file;
+   (app->file_lv) = file_lv;
    return 0;
 }
 
@@ -232,35 +234,38 @@ my_Step(braid_App app,
 {
    double tstart; /* current time */
    double tstop;  /* evolve to this time */
-   double h;      /* dt value */
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+
+   double h;      /* dt value */
+   h = tstop - tstart;
 
    // get the number of Lyapunov vectors we need to propagate
    int rank; /* rank of Delta correction */
    braid_StepStatusGetDeltaRank(status, &rank);
-   MAT *LinProp;
+   MAT LinProp = {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}};
 
-   if (rank == 0) // we are not propagating Lyapunov vectors
+   if (rank > 0) // we are propagating Lyapunov vectors
    {
-      LinProp = NULL;
+      Euler((u->values), h, &LinProp);
    }
-
-   h = tstop - tstart;
-   Euler((u->values), h, LinProp);
+   else
+   {
+      Euler((u->values), h, NULL);
+   }
 
    for (int i = 0; i < rank; i++)
    {
-      my_Vector *psi; // will point to the i-th basis vector
-
+      // Get a reference to the ith Lyapunov vector
+      my_Vector *psi;
       braid_StepStatusGetBasisVec(status, &psi, i);
 
-      // propagate the basis vector from tstart to tstop
-      // Here, we are using the full Jacobian
-      MatVec(*LinProp, psi->values);
+      // propagate the vector from tstart to tstop
+      // here, we are using the full Jacobian
+      MatVec(LinProp, psi->values);
    }
 
    /* no refinement */
-   braid_StepStatusSetRFactor(status, 1);
+   // braid_StepStatusSetRFactor(status, 1);
 
    return 0;
 }
@@ -298,7 +303,13 @@ my_InitBasis(braid_App app, double t, int index, braid_Vector *u_ptr)
    // TODO: should we require these to be ortho-normal, or should we
    //       do Gram-schmidt on these after initializing?
    VecSet(u->values, 0.);
-   u->values[index] = 1.;
+   u->values[index] += 1.;
+   if (t > 0.0001 && index > 0)
+   {
+      u->values[index-1] += 0.5;
+   }
+
+   *u_ptr = u;
 
    return 0;
 }
@@ -392,13 +403,16 @@ my_Access(braid_App app, braid_Vector u, braid_AccessStatus astatus)
    {
       my_Vector *psi;
       braid_AccessStatusGetBasisVec(astatus, &psi, j);
-      for (i = 0; i < VecSize; i++)
+      if (psi)
       {
-         fprintf(file, " %.14e", (psi->values[i]));
+         for (i = 0; i < VecSize; i++)
+         {
+            fprintf(file, " %.14e", (psi->values[i]));
+         }
       }
-      fprintf(file, "\n");
-      fflush(file);
    }
+   fprintf(file, "\n ");
+   fflush(file);
    
 
    return 0;
@@ -473,11 +487,12 @@ main(int argc, char *argv[])
    int cfactor = 2;
    int max_iter = 100;
    int fmg = 0;
-   int test = 1;
+   int test = 0;
+   int delta_rank = VecSize;
 
    int arg_index, myid, nprocs;
-   char filename[255];
-   FILE *file;
+   char filename[255], filename_lv[255];
+   FILE *file, *file_lv;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -511,6 +526,7 @@ main(int argc, char *argv[])
             printf("  -mi  <max_iter>   : set max iterations\n");
             printf("  -fmg              : use FMG cycling\n");
             printf("  -test             : run wrapper tests\n");
+            printf("  -rank             : rank of Delta correction (integer values in [0, 3])");
             printf("\n");
          }
          exit(1);
@@ -573,23 +589,43 @@ main(int argc, char *argv[])
    }
 
    /* initialize the output file */
-   sprintf(filename, "%s.%05d", "ex-lorenz.out", myid);
-   file = fopen(filename, "w");
+   sprintf(filename, "%s.%05d", "ex-07.out", myid);
+   sprintf(filename_lv, "%s.%05d", "ex-07-lv.out", myid);
+   if (test)
+   {
+      file = stdout;
+      file_lv = stdout;
+   }
+   else
+   {
+      file = fopen(filename, "w");
+      file_lv = fopen(filename_lv, "w");
+   }
 
    /* set up app structure */
    app = (my_App *)malloc(sizeof(my_App));
-   my_App_Init(app, MPI_COMM_WORLD, tstart, tstop, ntime, file);
+   my_App_Init(app, MPI_COMM_WORLD, tstart, tstop, ntime, file, file_lv);
+
+   if (test)
+   {
+      braid_TestInitAccess(app, MPI_COMM_WORLD, stdout, 0., my_Init, my_Access, my_Free);
+      braid_TestInitAccess(app, MPI_COMM_WORLD, stdout, 1., my_Init, my_Access, my_Free);
+      braid_TestClone(app, MPI_COMM_WORLD, stdout, 0., my_Init, my_Access, my_Free, my_Clone);
+      braid_TestSum(app, MPI_COMM_WORLD, stdout, 0., my_Init, my_Access, my_Free, my_Clone, my_Sum);
+      braid_TestSpatialNorm(app, MPI_COMM_WORLD, stdout, 0., my_Init, my_Free, my_Clone, my_Sum, my_SpatialNorm);
+      braid_TestBuf(app, MPI_COMM_WORLD, stdout, 0., my_Init, my_Free, my_Sum, my_SpatialNorm, my_BufSize, my_BufPack, my_BufUnpack);
+      /* if the basic wrapper tests pass, test the routines specific to Delta correction */
+      braid_TestDelta(app, MPI_COMM_WORLD, stdout, 0., 0.01, VecSize, my_Init, my_InitBasis, my_Access, my_Free, my_Clone, my_Sum, my_InnerProd, my_Step);
+
+      MPI_Finalize();
+      free(app);
+
+      return 0;
+   }
 
    braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app, my_Step,
               my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, my_Access,
               my_BufSize, my_BufPack, my_BufUnpack, &core);
-
-   /**
-    * this allows braid to perform Gram-Schmidt orthonormalization on
-    * a set of my_Vector objects, which is required for the estimation
-    * of the Lyapunov vectors
-    */
-   //   braid_SetInnerProd(core, my_InnerProd);
 
    braid_SetDeltaCorrection(core, VecSize, my_InitBasis, my_InnerProd);
 
@@ -608,21 +644,6 @@ main(int argc, char *argv[])
       braid_SetFMG(core);
    }
 
-   if (test)
-   {
-      braid_TestInitAccess(app, MPI_COMM_WORLD, stdout, 0., my_Init, my_Access, my_Free);
-      braid_TestInitAccess(app, MPI_COMM_WORLD, stdout, 1., my_Init, my_Access, my_Free);
-      braid_TestClone(app, MPI_COMM_WORLD, stdout, 0., my_Init, my_Access, my_Free, my_Clone);
-      braid_TestSum(app, MPI_COMM_WORLD, stdout, 0., my_Init, my_Access, my_Free, my_Clone, my_Sum);
-      braid_TestSpatialNorm(app, MPI_COMM_WORLD, stdout, 0., my_Init, my_Free, my_Clone, my_Sum, my_SpatialNorm);
-      braid_TestBuf(app, MPI_COMM_WORLD, stdout, 0., my_Init, my_Free, my_Sum, my_SpatialNorm, my_BufSize, my_BufPack, my_BufUnpack);
-      braid_TestInnerProd(app, MPI_COMM_WORLD, stdout, 0., 1., my_Init, my_Free, my_Sum, my_InnerProd);
-
-      braid_Destroy(core);
-      MPI_Finalize();
-
-      return 0;
-   }
 
    braid_Drive(core);
 
@@ -631,11 +652,15 @@ main(int argc, char *argv[])
    /* reorder the output file */
    if (myid == 0)
    {
-      int ti, index, i, npoints = (ntime + 1);
+      int ti, index, i, j, npoints = (ntime + 1);
       VEC *solution;
+      VEC *lyapunov;
       fclose(file);
+      fclose(file_lv);
       solution = (VEC *)malloc(npoints * sizeof(VEC));
+      lyapunov = (VEC *)malloc(npoints * delta_rank * sizeof(VEC));
       file = fopen(filename, "r");
+      file_lv = fopen(filename_lv, "r");
       for (ti = 0; ti < npoints; ti++)
       {
          fscanf(file, "%d", &index);
@@ -643,9 +668,20 @@ main(int argc, char *argv[])
          {
             fscanf(file, "%le", &solution[index][i]);
          }
+
+         fscanf(file_lv, "%d", &index);
+         for (size_t j = 0; j < delta_rank; j++)
+         {
+            for (i = 0; i < VecSize; i++)
+            {
+               fscanf(file_lv, "%le", &lyapunov[index*delta_rank + j][i]);
+            }
+         }
       }
       fclose(file);
-      file = fopen("ex-lorenz.out", "w");
+      fclose(file_lv);
+      file = fopen("ex-07.out", "w");
+      file_lv = fopen("ex-07-lv.out", "w");
       for (ti = 0; ti < ntime; ti++)
       {
          for (i = 0; i < VecSize; i++)
@@ -653,9 +689,20 @@ main(int argc, char *argv[])
             fprintf(file, " %.14e", solution[ti][i]);
          }
          fprintf(file, "\n");
+
+         for (j = 0; j < delta_rank; j++)
+         {
+            for (i = 0; i < VecSize; i++)
+            {
+               fprintf(file_lv, " %.14e", solution[ti*delta_rank + j][i]);
+            }
+         }
+         fprintf(file_lv, "\n");
       }
       free(solution);
+      free(lyapunov);
       fclose(file);
+      fclose(file_lv);
    }
 
    /* Finalize MPI */

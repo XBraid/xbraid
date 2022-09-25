@@ -250,6 +250,35 @@ braid_TestAll( braid_App                app,         /**< User defined App struc
                braid_PtFcnStep          step         /**< Compute a time step with a braid_Vector */
                );
 
+
+/**
+ * Test functions required for Delta correction.
+ * Initializes a braid_Vector and braid_Basis at time 0, then
+ * tests the inner product function with braid_TestInnerProd,
+ * then checks that the basis vectors are not linearly dependent
+ * with the Gram Schmidt process. Finally, compares the user
+ * propagation of tangent vectors against a finite difference
+ * approximation:
+ * [step_du(u)] Psi_i - (step(u + eps Psi_i) - step(u)/eps ~= 0 
+ * 
+ */
+braid_Int
+braid_TestDelta(braid_App               app,          /**< User defined App structure */
+                MPI_Comm                comm_x,       /**< Spatial communicator */
+                FILE                   *fp,           /**< File pointer (could be stdout or stderr) for log messages*/
+                braid_Real              t,            /**< Time value to initialize test vectors with*/
+                braid_Real              dt,           /**< time step size */
+                braid_Int               rank,         /**< rank (number of columns) of basis */
+                braid_PtFcnInit         myinit,       /**< Initialize a braid_Vector*/
+                braid_PtFcnInitBasis    myinit_basis, /**< Initialize the ith column of a basis set of braid_Vectors */
+                braid_PtFcnAccess       myaccess,     /**< Allows access to XBraid and current braid_Vector and braid_Basis */ 
+                braid_PtFcnFree         myfree,       /**< Free a braid_Vector*/
+                braid_PtFcnClone        myclone,      /**< Clone a braid_Vector */
+                braid_PtFcnSum          mysum,        /**< Compute vector sum of two braid_Vectors */
+                braid_PtFcnInnerProd    myinner_prod, /**< Compute inner product of two braid_Vectors */
+                braid_PtFcnStep         mystep        /**< Compute a time step with a braid_Vector */
+                );
+
 /** @}*/
 
 #ifdef __cplusplus

@@ -251,7 +251,7 @@ braid_StatusGetBasisVec(braid_Status  status,
                         )
 {
    braid_Basis ba = _braid_StatusElt(status, lvectors);
-   if ((ba != NULL) && (index < _braid_StatusElt(status, delta_rank)))
+   if ((ba != NULL) && (index < ba->rank))
    {
       *v_ptr = ba->userVecs[index];
    }

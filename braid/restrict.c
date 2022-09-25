@@ -95,6 +95,11 @@ _braid_FRestrict(braid_Core   core,
    braid_Real          *estimate;    
    braid_Real           factor, dtk, DTK;
 
+   /* Required for Delta correction */
+   braid_Int    delta_correct = _braid_CoreElt(core, delta_correct);
+   braid_Basis *ba = _braid_GridElt(grids[level], ba);
+   braid_Vector delta_action;
+
    braid_Int            c_level, c_ilower, c_iupper, c_index, c_i, c_ii;
    braid_BaseVector     c_u, *c_va, *c_fa;
 
@@ -152,15 +157,14 @@ _braid_FRestrict(braid_Core   core,
             _braid_ObjectiveStatusInit(ta[fi-f_ilower], fi, iter, level, nrefine, gupper, ostatus);
             _braid_AddToObjective(core, r, ostatus);
          }
-
       }
 
       /* Allow user to process current C-point */
       if( (access_level>= 3) && (ci > -1) )
       {
+         _braid_UGetVectorRef(core, level, ci, &u);
          _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper,
                                  0, 0, braid_ASCaller_FRestrict, u->basis, astatus);
-         _braid_UGetVectorRef(core, level, ci, &u);
          _braid_AccessVector(core, astatus, u);
       }
 
@@ -244,12 +248,9 @@ _braid_FRestrict(braid_Core   core,
             _braid_CommWait(core, &recv_handle);
          }
 
-         /* Delta correction: need to store some values at c_ii-1 */
-         braid_Int    delta_correct = _braid_CoreElt(core, delta_correct);
-         braid_Basis *ba = _braid_GridElt(grids[level], ba);
-         braid_Vector delta_action;
          if ( delta_correct )
          {
+            /* need a copy of the basis used to compute the Delta correction */
             _braid_BaseCloneBasis(core, app, c_va[c_ii-1]->basis, &(ba[c_ii]));
             /* also need an extra copy of c_va[c_ii-1] */
             _braid_CoreFcn(core, clone)(app, c_va[c_ii-1]->userVector, &delta_action);
@@ -283,15 +284,22 @@ _braid_FRestrict(braid_Core   core,
          }    
          else
          {
-            _braid_BaseSum(core, app,  1.0, c_u, 1.0, c_fa[c_ii]);
             if ( delta_correct )
             {
+               _braid_CoreFcn(core, sum)(app, 1.0, c_u, 1.0, c_fa[c_ii]);
+
                /* get Delta correction */
                _braid_BaseSumBasis(core, app, 1.0, c_u->basis, 1.0, c_fa[c_ii]->basis);
 
                /* get the action of Delta on u_{i-1} */
                _braid_LRDeltaDot(core, app, delta_action, c_fa[c_ii]->basis, ba[c_ii]);
                _braid_CoreFcn(core, sum)(app, 1., delta_action, 1., c_fa[c_ii]->userVector);
+
+               _braid_CoreFcn(core, free)(app, delta_action);
+            }
+            else
+            {
+               _braid_BaseSum(core, app,  1.0, c_u, 1.0, c_fa[c_ii]);
             }
          }
 
