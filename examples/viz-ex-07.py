@@ -5,7 +5,7 @@ def read_data(fname):
     u = []
     with open(fname, 'r') as f:
         for line in f:
-            u.append(np.array(line.split(' '), dtype=np.double))
+            u.append(np.array(line.split(' ')[1:], dtype=np.double))
     return np.stack(u)
 
 if __name__=="__main__":
@@ -20,5 +20,5 @@ if __name__=="__main__":
     ax = plt.axes(projection='3d')
     ax.plot3D(*u.T)
     for d in range(dim):
-        ax.quiver(*u.T, *tan[:, d, :].T, color=f"C{1+d}")
+        ax.quiver(*u[::16].T, *tan[::16, d, :].T, color=f"C{1+d}")
     plt.show()

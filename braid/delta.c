@@ -93,7 +93,7 @@ _braid_GramSchmidt(braid_Core core,
       {
          braid_Real prod;
          _braid_CoreFcn(core, inner_prod)(app, basis->userVecs[i], basis->userVecs[j], &prod);
-         _braid_CoreFcn(core, sum)(app, -prod, basis->userVecs[j], 1., basis->userVecs[j]);
+         _braid_CoreFcn(core, sum)(app, -prod, basis->userVecs[j], 1., basis->userVecs[i]);
 
       }
       /* normalize this column */

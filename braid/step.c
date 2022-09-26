@@ -188,4 +188,3 @@ _braid_GetUInit(braid_Core         core,
 
    return _braid_error_flag;
 }
-

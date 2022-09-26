@@ -375,15 +375,12 @@ my_SpatialNorm(braid_App app, braid_Vector u, double *norm_ptr)
 int
 my_Access(braid_App app, braid_Vector u, braid_AccessStatus astatus)
 {
-   double tstart = (app->tstart);
-   double tstop = (app->tstop);
-   int ntime = (app->ntime);
    FILE *file = (app->file);
    int index, i;
    double t;
 
    braid_AccessStatusGetT(astatus, &t);
-   index = ((t - tstart) / ((tstop - tstart) / ntime) + 0.1);
+   braid_AccessStatusGetTIndex(astatus, &index);
 
    fprintf(file, "%d", index);
    for (i = 0; i < VecSize; i++)
@@ -488,7 +485,7 @@ main(int argc, char *argv[])
    int max_iter = 100;
    int fmg = 0;
    int test = 0;
-   int delta_rank = VecSize;
+   int delta_rank = 3;
 
    int arg_index, myid, nprocs;
    char filename[255], filename_lv[255];
@@ -501,7 +498,7 @@ main(int argc, char *argv[])
    comm = MPI_COMM_WORLD;
    ntime = 1024;
    tstart = 0.0;
-   tstop = 20.0;
+   tstop = 5.;
 
    MPI_Comm_rank(comm, &myid);
    MPI_Comm_size(comm, &nprocs);
@@ -525,8 +522,8 @@ main(int argc, char *argv[])
             printf("  -cf  <cfactor>    : set coarsening factor\n");
             printf("  -mi  <max_iter>   : set max iterations\n");
             printf("  -fmg              : use FMG cycling\n");
-            printf("  -test             : run wrapper tests\n");
             printf("  -rank             : rank of Delta correction (integer values in [0, 3])");
+            printf("  -test             : run wrapper tests\n");
             printf("\n");
          }
          exit(1);
@@ -576,6 +573,11 @@ main(int argc, char *argv[])
          arg_index++;
          fmg = 1;
       }
+      else if (strcmp(argv[arg_index], "-rank") == 0)
+      {
+         arg_index++;
+         delta_rank = atoi(argv[arg_index++]);
+      }
       else if (strcmp(argv[arg_index], "-test") == 0)
       {
          arg_index++;
@@ -615,7 +617,7 @@ main(int argc, char *argv[])
       braid_TestSpatialNorm(app, MPI_COMM_WORLD, stdout, 0., my_Init, my_Free, my_Clone, my_Sum, my_SpatialNorm);
       braid_TestBuf(app, MPI_COMM_WORLD, stdout, 0., my_Init, my_Free, my_Sum, my_SpatialNorm, my_BufSize, my_BufPack, my_BufUnpack);
       /* if the basic wrapper tests pass, test the routines specific to Delta correction */
-      braid_TestDelta(app, MPI_COMM_WORLD, stdout, 0., 0.01, VecSize, my_Init, my_InitBasis, my_Access, my_Free, my_Clone, my_Sum, my_InnerProd, my_Step);
+      braid_TestDelta(app, MPI_COMM_WORLD, stdout, 0., 0.01, delta_rank, my_Init, my_InitBasis, my_Access, my_Free, my_Clone, my_Sum, my_InnerProd, my_Step);
 
       MPI_Finalize();
       free(app);
@@ -627,7 +629,11 @@ main(int argc, char *argv[])
               my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, my_Access,
               my_BufSize, my_BufPack, my_BufUnpack, &core);
 
-   braid_SetDeltaCorrection(core, VecSize, my_InitBasis, my_InnerProd);
+   if (delta_rank > 0)
+   {
+      braid_SetDeltaCorrection(core, delta_rank, my_InitBasis, my_InnerProd);
+      braid_SetLyapunovEstimation(core);
+   }
 
    braid_SetPrintLevel(core, 2);
    braid_SetMaxLevels(core, max_levels);
@@ -682,7 +688,7 @@ main(int argc, char *argv[])
       fclose(file_lv);
       file = fopen("ex-07.out", "w");
       file_lv = fopen("ex-07-lv.out", "w");
-      for (ti = 0; ti < ntime; ti++)
+      for (ti = 0; ti < npoints; ti++)
       {
          for (i = 0; i < VecSize; i++)
          {
@@ -694,7 +700,7 @@ main(int argc, char *argv[])
          {
             for (i = 0; i < VecSize; i++)
             {
-               fprintf(file_lv, " %.14e", solution[ti*delta_rank + j][i]);
+               fprintf(file_lv, " %.14e", lyapunov[ti*delta_rank + j][i]);
             }
          }
          fprintf(file_lv, "\n");

@@ -76,17 +76,10 @@ _braid_Residual(braid_Core        core,
          _braid_BaseSum(core, app, 1.0, ustop, -1.0, r);
       }
    }
-   else
+   else   /* can we make residual option compatible with Delta correction? */
    {
       /* Call the user's residual routine */
-      /* can we make this compatible with Delta correction? */
       _braid_BaseResidual(core, app, ustop, r, status);
-   }
-
-   /* the Lyapunov vectors are handled slightly differently */
-   if ( delta_correct )
-   {
-      _braid_BaseSumBasis(core, app, 0., r->basis, -1.0, r->basis);
    }
 
    return _braid_error_flag;
