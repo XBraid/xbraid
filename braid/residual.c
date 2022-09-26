@@ -129,9 +129,10 @@ _braid_FASResidual(braid_Core        core,
       if ( delta_correct )
       {
          /* tau correction */
-         _braid_CoreFcn(core, sum)(app, 1.0, fa[ii]->userVector, -1.0, r->userVector);
-         /* Delta correction */
-         _braid_CoreFcn(core, sum)(app, 1.0, delta->userVector, 1.0, r->userVector);
+         _braid_CoreFcn(core, sum)(app, 1.0, fa[ii]->userVector, 1.0, delta->userVector);
+
+         /* tau correction */
+         _braid_CoreFcn(core, sum)(app, 1.0, delta->userVector, -1.0, r->userVector);
          _braid_BaseSumBasis(core, app, 1.0, delta->basis, -1.0, r->basis);
 
          _braid_BaseFree(core, app, delta);

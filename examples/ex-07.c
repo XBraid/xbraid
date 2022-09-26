@@ -276,17 +276,12 @@ my_Init(braid_App app, double t, braid_Vector *u_ptr)
    my_Vector *u;
 
    u = (my_Vector *)malloc(sizeof(my_Vector));
-   if (t == 0.0)
-   {
-      /* Initial condition */
-      VecSet(u->values, 0.1);
-   }
-   else
-   {
-      /* Initial guess at all other time points */
-      VecSet(u->values, 0.1);
-      u->values[0] = 0.2;
-   }
+
+   /* Initial condition */
+   u->values[0] = -1.8430428; 
+   u->values[1] = -0.07036326; 
+   u->values[2] = 23.15614636;
+
    *u_ptr = u;
 
    return 0;
@@ -632,7 +627,7 @@ main(int argc, char *argv[])
    if (delta_rank > 0)
    {
       braid_SetDeltaCorrection(core, delta_rank, my_InitBasis, my_InnerProd);
-      braid_SetLyapunovEstimation(core);
+      // braid_SetLyapunovEstimation(core);
    }
 
    braid_SetPrintLevel(core, 2);

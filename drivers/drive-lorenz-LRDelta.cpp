@@ -347,7 +347,7 @@ int MyBraidApp::Step(braid_Vector u_,
    if (f)
    {
       // tau = state - action
-      utmp += LRDeltaDot(u->state, f->Delta, f->Psi) + f->state - f->action;
+      utmp += LRDeltaDot(u->state, f->Delta, f->Psi) - f->action + f->state;
       // when using low rank Delta correction, no tau correction is needed for Psi
       Psitmp += LRDeltaDot(u->Psi, f->Delta, f->Psi);
    }

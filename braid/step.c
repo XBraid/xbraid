@@ -111,6 +111,7 @@ _braid_Step(braid_Core         core,
       return _braid_error_flag;
    }
    /* else, default behavior */
+   _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, NULL, status);
 
    if (level == 0)
    {

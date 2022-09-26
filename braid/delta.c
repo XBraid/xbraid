@@ -47,7 +47,7 @@ _braid_LRDeltaDot(braid_Core core,
    _braid_CoreFcn(core, sum)(app, coords[0], delta->userVecs[0], 0., u);
    for (braid_Int i = 1; i < rank; i++)
    {
-      _braid_CoreFcn(core, sum)(app, coords[0], delta->userVecs[i], 1., u);
+      _braid_CoreFcn(core, sum)(app, coords[i], delta->userVecs[i], 1., u);
    }
 
    return _braid_error_flag;
