@@ -37,13 +37,14 @@
  *
  * Description:   Solve the chaotic Lorenz system,
  * 
- *                  {x' = sigma (y - x),    x(0) = 0.1,
- *                  {y' = x (rho - z) - y,  y(0) = 0.1,
- *                  {z' = xy - beta z,      z(0) = 0.1.
+ *                  {x' = sigma (y - x),    x(0) = -1.8430428,
+ *                  {y' = x (rho - z) - y,  y(0) = -0.07036326,
+ *                  {z' = xy - beta z,      z(0) = 23.15614636.
  * 
  *                with sigma=10, beta=8/3, and rho=28,
  *                and estimate the backward Lyapunov vectors along the trajectory
  *                parallel-in-time using MGRIT equipped with Delta correction.
+ *                The initial condition should be a point close to the strange attractor.
  *                
  *                TODO: Give some high-level info about the algorithm.
  * 
@@ -278,9 +279,10 @@ my_Init(braid_App app, double t, braid_Vector *u_ptr)
    u = (my_Vector *)malloc(sizeof(my_Vector));
 
    /* Initial condition */
-   u->values[0] = -1.8430428; 
-   u->values[1] = -0.07036326; 
+   u->values[0] = -1.8430428;
+   u->values[1] = -0.07036326;
    u->values[2] = 23.15614636;
+   // VecSet(u->values, 0.1);
 
    *u_ptr = u;
 
@@ -299,9 +301,9 @@ my_InitBasis(braid_App app, double t, int index, braid_Vector *u_ptr)
    //       do Gram-schmidt on these after initializing?
    VecSet(u->values, 0.);
    u->values[index] += 1.;
-   if (t > 0.0001 && index > 0)
+   if (index < VecSize-1)
    {
-      u->values[index-1] += 0.5;
+      u->values[index+1] = .5;
    }
 
    *u_ptr = u;
@@ -480,6 +482,7 @@ main(int argc, char *argv[])
    int max_iter = 100;
    int fmg = 0;
    int test = 0;
+   int lyap = 1;
    int delta_rank = 3;
 
    int arg_index, myid, nprocs;
@@ -491,9 +494,9 @@ main(int argc, char *argv[])
 
    /* ntime time intervals */
    comm = MPI_COMM_WORLD;
-   ntime = 1024;
+   ntime = 2048;
    tstart = 0.0;
-   tstop = 5.;
+   tstop = 10.;
 
    MPI_Comm_rank(comm, &myid);
    MPI_Comm_size(comm, &nprocs);
@@ -518,6 +521,7 @@ main(int argc, char *argv[])
             printf("  -mi  <max_iter>   : set max iterations\n");
             printf("  -fmg              : use FMG cycling\n");
             printf("  -rank             : rank of Delta correction (integer values in [0, 3])");
+            printf("  -noLyap           : turn off estimation of Lyapunov vectors (static basis)");
             printf("  -test             : run wrapper tests\n");
             printf("\n");
          }
@@ -573,6 +577,11 @@ main(int argc, char *argv[])
          arg_index++;
          delta_rank = atoi(argv[arg_index++]);
       }
+      else if (strcmp(argv[arg_index], "-noLyap") == 0)
+      {
+         arg_index++;
+         lyap = 0;
+      }
       else if (strcmp(argv[arg_index], "-test") == 0)
       {
          arg_index++;
@@ -627,7 +636,10 @@ main(int argc, char *argv[])
    if (delta_rank > 0)
    {
       braid_SetDeltaCorrection(core, delta_rank, my_InitBasis, my_InnerProd);
-      // braid_SetLyapunovEstimation(core);
+      if ( lyap )
+      {
+         braid_SetLyapunovEstimation(core);
+      }
    }
 
    braid_SetPrintLevel(core, 2);
@@ -664,18 +676,22 @@ main(int argc, char *argv[])
       file_lv = fopen(filename_lv, "r");
       for (ti = 0; ti < npoints; ti++)
       {
-         fscanf(file, "%d", &index);
-         for (i = 0; i < VecSize; i++)
-         {
-            fscanf(file, "%le", &solution[index][i]);
-         }
-
-         fscanf(file_lv, "%d", &index);
-         for (size_t j = 0; j < delta_rank; j++)
+         if ( fscanf(file, "%d", &index) )
          {
             for (i = 0; i < VecSize; i++)
             {
-               fscanf(file_lv, "%le", &lyapunov[index*delta_rank + j][i]);
+               fscanf(file, "%le", &solution[index][i]);
+            }
+         }
+
+         if ( fscanf(file_lv, "%d", &index) )
+         {
+            for (size_t j = 0; j < delta_rank; j++)
+            {
+               for (i = 0; i < VecSize; i++)
+               {
+                  fscanf(file_lv, "%le", &lyapunov[index*delta_rank + j][i]);
+               }
             }
          }
       }

@@ -17,8 +17,11 @@ if __name__=="__main__":
     tan = tan.reshape((tan.shape[0], dim, 3))
 
     # plot the trajectory and tangent vectors in 3D
+    plt.figure(figsize=(8,8))
     ax = plt.axes(projection='3d')
     ax.plot3D(*u.T)
     for d in range(dim):
-        ax.quiver(*u[::16].T, *tan[::16, d, :].T, color=f"C{1+d}")
+        ax.quiver(*u[::16].T, *tan[::16, d, :].T, color=f"C{1+d}", length=1.7)
+        # ax.quiver( *u.T, *tan[:, d, :].T, color=f"C{1+d}" )
+    plt.tight_layout()
     plt.show()

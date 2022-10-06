@@ -1084,6 +1084,9 @@ braid_TestDelta(braid_App               app,
          mysum(app, 0., B->userVecs[i], 1/sqrt(prod), B->userVecs[i]);
       }
    }
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitBasis:   access(u, B) \n");
+   myaccess(app, u, astatus);
+
    if (correct)
    {
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitBasis:   test 2 passed\n");

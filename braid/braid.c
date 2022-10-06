@@ -1694,7 +1694,6 @@ braid_SetDeltaCorrection(braid_Core           core,
 braid_Int
 braid_SetLyapunovEstimation(braid_Core  core)
 {
-   /* TODO: compatibility checks */
    /**
     * TODO: compatibility checks
     * We could allow to turn this on even if Delta correction is off,

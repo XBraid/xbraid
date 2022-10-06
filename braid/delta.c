@@ -76,7 +76,8 @@ _braid_Normalize(braid_Core   core,
 {
    braid_Real norm;
    _braid_CoreFcn(core, inner_prod)(app, u, u, &norm);
-   _braid_CoreFcn(core, sum)(app, 0., u, 1/norm, u);
+   _braid_CoreFcn(core, sum)(app, 0., u, 1/sqrt(norm), u);
+   
 
    return _braid_error_flag;
 }

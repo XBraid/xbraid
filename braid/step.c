@@ -62,7 +62,7 @@ _braid_Step(braid_Core         core,
       // TODO: Is there a way to avoid having to clone u_start??
 
       /* only propagate Lyapunov vectors when necessary */
-      braid_Int prop_lyap = est_lyap || ( calling_function == braid_ASCaller_FRestrict);
+      braid_Int prop_lyap = est_lyap || ( calling_function == braid_ASCaller_FRestrict );
 
       if ( prop_lyap )
       {  /* Give the user access to the Lyapunov vectors through StepStatusGetBasisVec */
@@ -77,9 +77,10 @@ _braid_Step(braid_Core         core,
       }
 
       braid_Int delta_correct = (level > 0) && (fa[ii] != NULL);
+
+      /* need to precompute the Delta correction terms */
       if ( delta_correct )
       {
-         /* compute the Delta correction for the state and Lyapunov vectors */
          _braid_BaseClone(core, app, u, &delta);
          _braid_LRDeltaDot(core, app, delta->userVector, fa[ii]->basis, ba[ii]);
          if ( prop_lyap )
@@ -88,29 +89,39 @@ _braid_Step(braid_Core         core,
          }
       }
 
+      /* calls the user's step function, which propagates the Lyapunov vectors */
       _braid_BaseStep(core, app,  ustop, NULL, u, level, status);
 
+      /* now apply the Delta and tau corrections */
       if ( delta_correct )
       {
          /* tau correction */
          _braid_CoreFcn(core, sum)(app, 1.0, fa[ii]->userVector, 1.0, u->userVector);
+
          /* delta correction */
          _braid_CoreFcn(core, sum)(app, 1.0, delta->userVector, 1.0, u->userVector);
          if ( prop_lyap )
          {
             _braid_BaseSumBasis(core, app, 1.0, delta->basis, 1.0, u->basis);
  
-            /* orthonormalize basis at C-points and in f-interp */
-            if ( _braid_IsCPoint(index, cfactor) || calling_function == braid_ASCaller_FInterp )
-            {
-               _braid_GramSchmidt(core, app, u->basis);
-            }
          }
          _braid_BaseFree(core, app, delta);
       }
+
+      /* orthonormalize basis vectors at C-points, on the coarse grid, and in f-interp */
+      if ( prop_lyap )
+      {
+         if ( _braid_IsCPoint(index, cfactor) 
+           || calling_function == braid_ASCaller_FInterp
+           || level == _braid_CoreElt(core, nlevels)-1 )
+         {
+            _braid_GramSchmidt(core, app, u->basis);
+         }
+      }
+
       return _braid_error_flag;
    }
-   /* else, default behavior */
+   /* else, default braid_Step */
    _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, NULL, status);
 
    if (level == 0)
