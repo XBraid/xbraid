@@ -97,12 +97,13 @@ _braid_CommSendInit(braid_Core           core,
       /* Allocate buffer through user routine */
       _braid_BufferStatusInit( 0, 0, bstatus );
       _braid_BaseBufSize(core, app,  &size, bstatus);
+
       buffer = malloc(size);
 
       /* Store the receiver rank in the status */
       _braid_StatusElt(bstatus, send_recv_rank) = proc;
 
-      /* Note that bufpack may return a size smaller than bufsize */ 
+      /* Note that bufpack may return a size smaller than bufsize */
       _braid_StatusElt(bstatus, size_buffer) = size;
       _braid_BaseBufPack(core, app,  vector, buffer, bstatus);
       size = _braid_StatusElt( bstatus, size_buffer );

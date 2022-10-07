@@ -833,6 +833,7 @@ _braid_BufferStatusInit(braid_Int        messagetype,
    _braid_StatusElt(status, messagetype)    = messagetype;
    _braid_StatusElt(status, size_buffer)    = size;
    _braid_StatusElt(status, size_basis)     = 0;
+   _braid_StatusElt(status, size_uvec)      = 0;
    return _braid_error_flag;
 }
 ACCESSOR_FUNCTION_GET1(Buffer, MessageType, Int)

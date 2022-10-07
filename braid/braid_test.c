@@ -1001,10 +1001,12 @@ braid_TestDelta(braid_App               app,
                 braid_PtFcnFree         myfree,
                 braid_PtFcnClone        myclone,
                 braid_PtFcnSum          mysum,
+                braid_PtFcnBufSize      bufsize,
+                braid_PtFcnBufPack      bufpack,
+                braid_PtFcnBufUnpack    bufunpack,
                 braid_PtFcnInnerProd    myinner_prod,
                 braid_PtFcnStep         mystep)
 {
-   braid_Int correct = 1;
 
    braid_Vector          u;
    braid_Vector          v;
@@ -1013,9 +1015,13 @@ braid_TestDelta(braid_App               app,
    braid_Status          status = _braid_CTAlloc(_braid_Status, 1);
    braid_AccessStatus    astatus = (braid_AccessStatus)status;
    braid_StepStatus      sstatus = (braid_StepStatus)status;
-   braid_Int             myid_x = 0;
+   braid_BufferStatus    bstatus = (braid_BufferStatus)status;
+   braid_Int             myid_x, size, basis_size;
 
-   double                wiggle = 1e-12;
+   void     *buffer;
+   double    wiggle = 1e-12;
+   braid_Int correct = 1;
+
    
    A = (braid_Basis)malloc(sizeof(braid_Basis));
    B = (braid_Basis)malloc(sizeof(braid_Basis));
@@ -1093,6 +1099,7 @@ braid_TestDelta(braid_App               app,
    }
    _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestInitBasisAccess\n");
 
+
    /*---------------------------------*
     * test step with Lyapunov vectors *
     *---------------------------------*/
@@ -1117,7 +1124,7 @@ braid_TestDelta(braid_App               app,
    mysum(app, eps, A->userVecs[0], 1., u);
    mystep(app, u, NULL, u, sstatus);
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   v = B_0 - (u - v)/eps \n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   v = B_0 - (u - v)/eps\n");
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:  (v = step_dv(u)*A_0 - (step(u + eps*A_0) - step(u))/eps) \n");
    mysum(app, 1/eps, u, -1/eps, v);
    mysum(app, 1., B->userVecs[0], -1., v);
@@ -1127,6 +1134,63 @@ braid_TestDelta(braid_App               app,
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   actual output:    result approx. %1.2e \n", result);
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   expected output:  positive, near zero \n\n");
    _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestStepDiff\n");
+
+   /*---------------------------------*
+    * test bufpack/unpack with basis  *
+    *---------------------------------*/
+   _braid_ParFprintfFlush(fp, myid_x, "\nStarting braid_TestBufBasis\n\n");
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   size = bufsize()\n");
+   bufsize(app, &size, bstatus);
+   basis_size = _braid_StatusElt(bstatus, size_basis);
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   size = rank * size\n");
+   size = rank * basis_size;
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   buffer = malloc(size)\n");
+   buffer = malloc(size);
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   buffer = bufpack(A, buffer))\n");
+   for (braid_Int i = 0; i < rank; i++)
+   {
+      _braid_StatusElt(bstatus, size_buffer) = basis_size;
+      bufpack(app, A->userVecs[i], buffer + i*basis_size, bstatus);
+   }
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   B = bufunpack(buffer))\n");
+   for (braid_Int i = 0; i < rank; i++)
+   {
+      bufunpack(app, buffer + i*basis_size, &B->userVecs[i], bstatus);
+   }
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   B = A - B\n");
+   for (braid_Int i = 0; i < rank; i++)
+   {
+      mysum(app, 1.0, A->userVecs[i], -1.0, B->userVecs[i]);
+   }
+   
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   Frobenius_norm(B)\n");
+   result = 0;
+   for (braid_Int i = 0; i < rank; i++)
+   {
+      double prod;
+      myinner_prod(app, B->userVecs[i], B->userVecs[i], &prod);
+      result += prod;
+   }
+   result = sqrt(result);
+   if (result > wiggle || _braid_isnan(result))
+   {
+      correct = 0;
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   Test Failed\n");
+   }
+   else
+   {
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   Test Passed\n");
+   }
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   actual output:    Frobenius_norm(B) = %1.2e  \n", result);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   expected output:  Frobenius_norm(B) = 0.0 \n\n");
+   
+   _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestBufBasis\n\n");
 
    /* Free variables */
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestDelta:   free(u) \n");

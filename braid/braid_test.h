@@ -275,6 +275,9 @@ braid_TestDelta(braid_App               app,          /**< User defined App stru
                 braid_PtFcnFree         myfree,       /**< Free a braid_Vector*/
                 braid_PtFcnClone        myclone,      /**< Clone a braid_Vector */
                 braid_PtFcnSum          mysum,        /**< Compute vector sum of two braid_Vectors */
+                braid_PtFcnBufSize      bufsize,      /**< Computes size in bytes for one braid_Vector MPI buffer */
+                braid_PtFcnBufPack      bufpack,      /**< Packs MPI buffer to contain one braid_Vector */
+                braid_PtFcnBufUnpack    bufunpack,    /**< Unpacks MPI buffer containing one braid_Vector */
                 braid_PtFcnInnerProd    myinner_prod, /**< Compute inner product of two braid_Vectors */
                 braid_PtFcnStep         mystep        /**< Compute a time step with a braid_Vector */
                 );

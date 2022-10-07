@@ -95,6 +95,7 @@ public:
    virtual braid_Int Init(braid_Real    t,
                           braid_Vector *u_ptr) = 0;
 
+
    /// De-allocate the vector @a u_.
    /// @see braid_PtFcnFree.
    virtual braid_Int Free(braid_Vector u_) = 0;
@@ -128,6 +129,36 @@ public:
    virtual braid_Int BufUnpack(void              *buffer,
                                braid_Vector      *u_ptr,
                                BraidBufferStatus &bstatus) = 0;
+
+
+   /** @brief (optional) Allocate a new basis vector in @a *u_ptr and 
+      initialize it with an initial guess appropriate for time @a t
+      and for column @a index. For example, column @a index of the 
+      identity matrix. To turn on Delta correction, use 
+      core.SetDeltaCorrection()
+       @see braid_PtFcnInitBasis. */
+   virtual braid_Int InitBasis(braid_Real    t,
+                               braid_Int     index,
+                               braid_Vector *u_ptr)
+   {
+      fprintf(stderr, "Braid C++ Wrapper Warning: turn off Delta correction "
+                      "until InitBasis has been user implemented\n");
+      Init(t, u_ptr);
+      return 0;
+   }
+
+   /** @brief (optional) Compute an inner product between two
+      vectors and store the result in *prod_ptr. The standard
+      choice would be the dot product.
+       @see braid_PtFcnInnerProd. */
+   virtual braid_Int InnerProd(braid_Vector    u,
+                               braid_Vector    v,
+                               braid_Real     *prod_ptr)
+   {
+      fprintf(stderr, "Braid C++ Wrapper Warning: turn off Delta correction "
+                      "until InnerProd has been user implemented\n");
+      return 0;
+   }
 
    // These two functions may be optionally defined by the user, if spatial
    // coarsening is desired (see documentation for more details).  To turn on
@@ -200,6 +231,8 @@ class BraidAccessStatus
       {
          braid_AccessStatusGetCallingFunction(astatus, callingfcn_ptr);
       }
+      void GetDeltaRank(braid_Int *rank_ptr)                 { braid_AccessStatusGetDeltaRank(astatus, rank_ptr); }
+      void GetBasisVec(braid_Vector *v_ptr, braid_Int index) { braid_AccessStatusGetBasisVec(astatus, v_ptr, index); }
 
       // The braid_AccessStatus structure is deallocated inside of Braid
       // This class is just to make code consistently look object oriented
@@ -290,6 +323,8 @@ class BraidStepStatus
       {
          braid_StepStatusGetCallingFunction(pstatus, callingfcn_ptr);
       }
+      void GetDeltaRank(braid_Int *rank_ptr)                 { braid_StepStatusGetDeltaRank(pstatus, rank_ptr); }
+      void GetBasisVec(braid_Vector *v_ptr, braid_Int index) { braid_StepStatusGetBasisVec(pstatus, v_ptr, index); }
 
          // The braid_StepStatus structure is deallocated inside of Braid
       // This class is just to make code consistently look object oriented
@@ -351,6 +386,7 @@ class BraidBufferStatus
 
       void GetMessageType( braid_Int *messagetype_ptr ) { braid_BufferStatusGetMessageType( bstatus, messagetype_ptr); }
       void SetSize( braid_Int size ) { braid_BufferStatusSetSize( bstatus, size ); }
+      void SetBasisSize( braid_Int size ) { braid_BufferStatusSetBasisSize( bstatus, size ); }
       ~BraidBufferStatus() {} 
 };
 

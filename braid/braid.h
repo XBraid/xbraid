@@ -149,6 +149,7 @@ typedef braid_Int
 
 /**
  * (optional) Initializes a vector *u_ptr* at time *t*
+ * and spatial index *index*
  **/
 typedef braid_Int
 (*braid_PtFcnInitBasis)(braid_App      app,           /**< user-defined _braid_App structure */

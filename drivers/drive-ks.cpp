@@ -195,7 +195,6 @@ public:
                       BraidAccessStatus &astatus);
 
    virtual int Residual(braid_Vector u_,
-                        braid_Vector f_,
                         braid_Vector r_,
                         BraidStepStatus &pstatus);
 
@@ -572,89 +571,6 @@ int MyBraidApp::Step(braid_Vector u_,
       u->Psi = Psitmp;
    }
 
-   return 0;
-}
-
-int MyBraidApp::Residual(braid_Vector u_,
-                         braid_Vector f_,
-                         braid_Vector r_,
-                         BraidStepStatus &pstatus)
-{
-   BraidVector *u = (BraidVector *)u_;
-   BraidVector *f = (BraidVector *)f_;
-   BraidVector *r = (BraidVector *)r_;
-
-   double tstart; // current time
-   double tstop;  // evolve to this time
-   int level, lvl_eff, nlevels, T_index, calling_fnc, nrefine, iter;
-
-   pstatus.GetTstartTstop(&tstart, &tstop);
-   pstatus.GetLevel(&level);
-   pstatus.GetNLevels(&nlevels);
-   pstatus.GetTIndex(&T_index);
-   pstatus.GetNRefine(&nrefine);
-   pstatus.GetIter(&iter);
-   pstatus.GetCallingFunction(&calling_fnc);
-
-   // get effective level:
-   lvl_eff = level;
-   if (doRefine)
-   {
-      lvl_eff = (level - nrefine) + (max_levels - 2);
-   }
-
-   double dt = tstop - tstart;
-
-   // get initial guess
-   VEC guess(u->guess);
-   if (level < nlevels - 1)
-   {
-      if (stages == 2)
-      {
-         getGuessTheta2(guess, r->state, u->state, disc, dt);
-      }
-   }
-
-   bool up = (calling_fnc == braid_ASCaller_Residual);
-
-   VEC utmp(r->state);
-
-   if (!useDelta || lvl_eff < DeltaLevel || (lvl_eff == DeltaLevel && up) || iter < delayDelta)
-   {
-      utmp = baseStep(r->state, guess, dt, pstatus);
-      if (f)
-      { // do tau correction
-         utmp += f->state;
-      }
-
-      r->state = u->state - utmp;
-
-      return 0;
-   }
-   // else:
-   MAT Psitmp(r->Psi);
-   utmp = baseStep(r->state, guess, dt, pstatus, &Psitmp);
-
-   if (up)
-   { // this is called on the coarse grid right after restriction
-      r->action = -LRDeltaDot(r->state, Psitmp, r->Psi);
-      r->Delta = -Psitmp;
-      r->state = u->state - utmp;
-      r->Psi.setZero();
-      return 0;
-   }
-
-   // else this is called on the fine grid right after F-relax
-   if (f)
-   { // do delta correction and tau correction
-      Psitmp += LRDeltaDot(r->Psi, f->Delta, f->Psi);
-      utmp += LRDeltaDot(r->state, f->Delta, f->Psi) + (f->state - f->action);
-   }
-
-   r->state = u->state - utmp;                           // u_i - Phi^m(u_{i-m})
-   r->action = -LRDeltaDot(r->action, Psitmp, r->Delta); // -([D Phi^m] \Psi_{i-m}) \Psi_{i-m}^T u_{i-m}
-   r->Psi = -r->Delta;                                   // -\Psi_{i-m}
-   r->Delta = -Psitmp;                                   // -[D \Phi^m] \Psi_{i-m}
    return 0;
 }
 

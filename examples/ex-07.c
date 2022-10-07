@@ -418,8 +418,8 @@ my_BufSize(braid_App app, int *size_ptr, braid_BufferStatus bstatus)
    *size_ptr = VecSize * sizeof(double);
    
    /* tell braid the size of the basis vectors */
+   /* Note: this isn't necessary here, but for more complicated applications the buffer-size may be different */
    braid_BufferStatusSetBasisSize(bstatus, VecSize * sizeof(double));
-   /* Note: this isn't necessary here, but for more complicated examples the buffer-size may be different */
    return 0;
 }
 
@@ -494,9 +494,9 @@ main(int argc, char *argv[])
 
    /* ntime time intervals */
    comm = MPI_COMM_WORLD;
-   ntime = 2048;
+   ntime = 1024;
    tstart = 0.0;
-   tstop = 10.;
+   tstop = 5.;
 
    MPI_Comm_rank(comm, &myid);
    MPI_Comm_size(comm, &nprocs);
@@ -621,7 +621,7 @@ main(int argc, char *argv[])
       braid_TestSpatialNorm(app, MPI_COMM_WORLD, stdout, 0., my_Init, my_Free, my_Clone, my_Sum, my_SpatialNorm);
       braid_TestBuf(app, MPI_COMM_WORLD, stdout, 0., my_Init, my_Free, my_Sum, my_SpatialNorm, my_BufSize, my_BufPack, my_BufUnpack);
       /* if the basic wrapper tests pass, test the routines specific to Delta correction */
-      braid_TestDelta(app, MPI_COMM_WORLD, stdout, 0., 0.01, delta_rank, my_Init, my_InitBasis, my_Access, my_Free, my_Clone, my_Sum, my_InnerProd, my_Step);
+      braid_TestDelta(app, MPI_COMM_WORLD, stdout, 0., 0.01, delta_rank, my_Init, my_InitBasis, my_Access, my_Free, my_Clone, my_Sum, my_BufSize, my_BufPack, my_BufUnpack, my_InnerProd, my_Step);
 
       MPI_Finalize();
       free(app);
@@ -657,7 +657,6 @@ main(int argc, char *argv[])
       braid_SetFMG(core);
    }
 
-
    braid_Drive(core);
 
    braid_Destroy(core);
@@ -676,22 +675,18 @@ main(int argc, char *argv[])
       file_lv = fopen(filename_lv, "r");
       for (ti = 0; ti < npoints; ti++)
       {
-         if ( fscanf(file, "%d", &index) )
+         fscanf(file, "%d", &index);
+         for (i = 0; i < VecSize; i++)
+         {
+            fscanf(file, "%le", &solution[index][i]);
+         }
+
+         fscanf(file_lv, "%d", &index);
+         for (size_t j = 0; j < delta_rank; j++)
          {
             for (i = 0; i < VecSize; i++)
             {
-               fscanf(file, "%le", &solution[index][i]);
-            }
-         }
-
-         if ( fscanf(file_lv, "%d", &index) )
-         {
-            for (size_t j = 0; j < delta_rank; j++)
-            {
-               for (i = 0; i < VecSize; i++)
-               {
-                  fscanf(file_lv, "%le", &lyapunov[index*delta_rank + j][i]);
-               }
+               fscanf(file_lv, "%le", &lyapunov[index*delta_rank + j][i]);
             }
          }
       }

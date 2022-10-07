@@ -198,6 +198,7 @@ my_BufSize(braid_App          app,
            braid_BufferStatus bstatus)
 {
    *size_ptr = sizeof(double);
+   braid_BufferStatusSetBasisSize(bstatus, sizeof(double));
    return 0;
 }
 
@@ -294,6 +295,7 @@ int main (int argc, char *argv[])
    braid_SetCFactor(core, -1, 2);
    braid_SetNRelax(core, -1, 0);
 
+   braid_SetSkip(core, 0);
    braid_SetDeltaCorrection(core, 1, my_BasisInit, my_InnerProd);
    
    /* Run simulation, and then clean up */

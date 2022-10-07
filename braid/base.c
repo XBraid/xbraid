@@ -539,12 +539,12 @@ _braid_BaseBufSize(braid_Core          core,
       braid_Int size_basis = _braid_StatusElt(status, size_basis);
       if ( size_basis > 0)
       {
-         *size_ptr = *size_ptr + rank * size_basis;
+         *size_ptr += rank * size_basis;
       }
       else // not set, use default
       {
          _braid_StatusElt(status, size_basis) = *size_ptr;
-         *size_ptr = *size_ptr * (1 + rank);
+         *size_ptr *= 1 + rank;
       }
    }
 
@@ -601,11 +601,9 @@ _braid_BaseBufPack(braid_Core          core,
    if ( delta_correct )
    {
       /* ignore user set size */
-      braid_Int i = size_uvec;
-      for (braid_Int rank = 0; rank < delta_rank; rank++)
+      for (braid_Int i = 0; i < delta_rank; i++)
       {
-         _braid_CoreFcn(core, bufpack)(app, u->basis->userVecs[i], buffer + i, status);
-         i += size_basis;
+         _braid_CoreFcn(core, bufpack)(app, u->basis->userVecs[i], buffer + size_uvec + i*size_basis, status);
       }
       
       /* set new total buffer size */
@@ -638,26 +636,30 @@ _braid_BaseBufUnpack(braid_Core          core,
    if ( verbose_adj ) _braid_printf("%d: BUFUNPACK\n", myid);
 
    /* Allocate the braid_BaseVector */
-   u = (braid_BaseVector) malloc(sizeof(braid_Vector) + sizeof(braid_VectorBar));
-   u->userVector  = NULL;
+   u = (braid_BaseVector) malloc(sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(braid_Basis));
+   u->userVector = NULL;
    u->bar = NULL;
+   u->basis = NULL;
 
    /* BufUnpack the user's vector */
    _braid_CoreFcn(core, bufunpack)(app, buffer, &(u->userVector), status);
 
-   if (_braid_CoreElt(core, delta_correct))
+   if ( _braid_CoreElt(core, delta_correct) )
    {
-      /* BufUnpack the basis vectors */
+      /* allocate the basis */
+      u->basis = (braid_Basis)malloc(sizeof(braid_Basis));
+      u->basis->rank = _braid_CoreElt(core, delta_rank);
+      u->basis->userVecs = _braid_TAlloc(braid_Vector, u->basis->rank);
+
       braid_Int size_tot;
       _braid_BaseBufSize(core, app, &size_tot, status);
       braid_Int size_uvec  = _braid_StatusElt(status, size_uvec);
       braid_Int size_basis = _braid_StatusElt(status, size_basis);
 
-      braid_Int i = size_uvec;
-      for (braid_Int rank = 0; rank < _braid_CoreElt(core, delta_rank); rank++)
+      /* BufUnpack the basis vectors */
+      for (braid_Int i = 0; i < _braid_CoreElt(core, delta_rank); i++)
       {
-         _braid_CoreFcn(core, bufunpack)(app, buffer + i, &(u->basis->userVecs[rank]), status);
-         i += size_basis;
+         _braid_CoreFcn(core, bufunpack)(app, buffer + size_uvec + i*size_basis, &(u->basis->userVecs[i]), status);
       }
    }
 
