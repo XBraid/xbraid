@@ -71,6 +71,10 @@
 typedef double VEC[VecSize];
 typedef double MAT[VecSize][VecSize];
 
+const double sigma = 10.0;
+const double beta = 8.0 / 3.0;
+const double rho = 28.0;
+
 void
 VecCopy(const VEC x, VEC y)
 {
@@ -137,6 +141,60 @@ MatVec(const MAT A, VEC x)
  | my integration routines |
  *-------------------------*/
 
+
+// returns the derivative at point *u*
+void
+Lorenz(const VEC u, VEC u_out)
+{
+   u_out[0] = sigma * (u[1] - u[0]);
+   u_out[1] = u[0] * (rho - u[2]) - u[1];
+   u_out[2] = u[0] * u[1] - beta * u[2];
+}
+
+// returns the Jacobian at point *u*
+void
+Lorenz_du(const VEC u, MAT J)
+{
+   J[0][0] = -sigma;
+   J[0][1] = sigma;
+   J[0][2] = 0.;
+   J[1][0] = rho - u[2];
+   J[1][1] = -1.;
+   J[1][2] = -u[0];
+   J[2][0] = u[1];
+   J[2][1] = u[0];
+   J[2][2] = -beta;
+}
+
+/*
+ * Computes a time-step with euler's method
+ * Optionally computes the jacobian of the time-step and
+ * writes the result in F (if not NULL)
+ */
+void
+Euler(VEC u0, double h, MAT *F)
+{
+   VEC k1;
+   Lorenz(u0, k1);
+
+   if (F) // compute Jacobian of the time-step
+   {
+      MAT J;
+      MatSetEye(*F);
+
+      // F = I + hJ(u0)
+      Lorenz_du(u0, J);
+      MatAxpy(h, J, *F);
+   }
+
+   // u1 = u0 + hf(u0)
+   VecAxpy(h, k1, u0);
+}
+
+/*--------------------------------------------------------------------------
+ * User-defined routines and structures required by Braid
+ *--------------------------------------------------------------------------*/
+
 /* can put anything in my app and name it anything as well */
 typedef struct _braid_App_struct
 {
@@ -173,58 +231,6 @@ typedef struct _braid_Vector_struct
    VEC values;
 } my_Vector;
 
-const double sigma = 10.0;
-const double beta = 8.0 / 3.0;
-const double rho = 28.0;
-
-// returns the derivative at point *u*
-void
-Lorenz(const VEC u, VEC u_out)
-{
-   u_out[0] = sigma * (u[1] - u[0]);
-   u_out[1] = u[0] * (rho - u[2]) - u[1];
-   u_out[2] = u[0] * u[1] - beta * u[2];
-}
-
-// returns the time-step scaled Jacobian at point *u*
-void
-Lorenz_du(const VEC u, MAT J)
-{
-   J[0][0] = -sigma;
-   J[0][1] = sigma;
-   J[0][2] = 0.;
-   J[1][0] = rho - u[2];
-   J[1][1] = -1.;
-   J[1][2] = -u[0];
-   J[2][0] = u[1];
-   J[2][1] = u[0];
-   J[2][2] = -beta;
-}
-
-/*
- * Computes a time-step with euler's method
- * Optionally computes the jacobian of the time-step and
- * writes the result in Psi (if not NULL)
- */
-void
-Euler(VEC u0, double h, MAT *F)
-{
-   VEC k1;
-   Lorenz(u0, k1);
-
-   if (F) // compute Jacobian of the time-step
-   {
-      MAT J;
-      MatSetEye(*F);
-
-      // F = I + hJ(u0)
-      Lorenz_du(u0, J);
-      MatAxpy(h, J, *F);
-   }
-
-   // u1 = u0 + hf(u0)
-   VecAxpy(h, k1, u0);
-}
 
 int
 my_Step(braid_App app,
@@ -256,17 +262,19 @@ my_Step(braid_App app,
 
    for (int i = 0; i < rank; i++)
    {
-      // Get a reference to the ith Lyapunov vector
+      // get a reference to the ith Lyapunov vector
       my_Vector *psi;
       braid_StepStatusGetBasisVec(status, &psi, i);
 
       // propagate the vector from tstart to tstop
-      // here, we are using the full Jacobian
-      MatVec(LinProp, psi->values);
+      if (psi)
+      {
+         MatVec(LinProp, psi->values);
+      }
    }
 
    /* no refinement */
-   // braid_StepStatusSetRFactor(status, 1);
+   braid_StepStatusSetRFactor(status, 1);
 
    return 0;
 }
@@ -282,7 +290,6 @@ my_Init(braid_App app, double t, braid_Vector *u_ptr)
    u->values[0] = -1.8430428;
    u->values[1] = -0.07036326;
    u->values[2] = 23.15614636;
-   // VecSet(u->values, 0.1);
 
    *u_ptr = u;
 
@@ -408,7 +415,6 @@ my_Access(braid_App app, braid_Vector u, braid_AccessStatus astatus)
    fprintf(file, "\n ");
    fflush(file);
    
-
    return 0;
 }
 
@@ -416,9 +422,9 @@ int
 my_BufSize(braid_App app, int *size_ptr, braid_BufferStatus bstatus)
 {
    *size_ptr = VecSize * sizeof(double);
-   
+ 
    /* tell braid the size of the basis vectors */
-   /* Note: this isn't necessary here, but for more complicated applications the buffer-size may be different */
+   /* Note: this isn't necessary here, but for more complicated applications this size may be different */
    braid_BufferStatusSetBasisSize(bstatus, VecSize * sizeof(double));
    return 0;
 }
@@ -430,9 +436,8 @@ my_BufPack(braid_App app,
            braid_BufferStatus bstatus)
 {
    double *dbuffer = buffer;
-   int i;
 
-   for (i = 0; i < VecSize; i++)
+   for (int i = 0; i < VecSize; i++)
    {
       dbuffer[i] = (u->values[i]);
    }
@@ -449,10 +454,9 @@ my_BufUnpack(braid_App app,
 {
    double *dbuffer = buffer;
    my_Vector *u;
-   int i;
 
    u = (my_Vector *)malloc(sizeof(my_Vector));
-   for (i = 0; i < VecSize; i++)
+   for (int i = 0; i < VecSize; i++)
    {
       (u->values[i]) = dbuffer[i];
    }
@@ -475,7 +479,7 @@ main(int argc, char *argv[])
    int ntime;
 
    int max_levels = 2;
-   int nrelax = 1;
+   int nrelax = 0;
    int nrelax0 = -1;
    double tol = 1.0e-06;
    int cfactor = 2;

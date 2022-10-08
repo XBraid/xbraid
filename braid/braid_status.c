@@ -499,7 +499,7 @@ braid_StatusSetSize(braid_Status status,
                     braid_Real   size
                     )
 {
-   _braid_StatusElt(status, size_uvec ) = size;
+   _braid_StatusElt(status, size_buffer ) = size;
    return _braid_error_flag;
 }
 
@@ -833,7 +833,6 @@ _braid_BufferStatusInit(braid_Int        messagetype,
    _braid_StatusElt(status, messagetype)    = messagetype;
    _braid_StatusElt(status, size_buffer)    = size;
    _braid_StatusElt(status, size_basis)     = 0;
-   _braid_StatusElt(status, size_uvec)      = 0;
    return _braid_error_flag;
 }
 ACCESSOR_FUNCTION_GET1(Buffer, MessageType, Int)

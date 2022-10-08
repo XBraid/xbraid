@@ -95,7 +95,7 @@ _braid_CommSendInit(braid_Core           core,
       handle = _braid_TAlloc(_braid_CommHandle, 1);
 
       /* Allocate buffer through user routine */
-      _braid_BufferStatusInit( 0, 0, bstatus );
+      _braid_BufferStatusInit(0, 0, bstatus);
       _braid_BaseBufSize(core, app,  &size, bstatus);
 
       buffer = malloc(size);
@@ -104,7 +104,6 @@ _braid_CommSendInit(braid_Core           core,
       _braid_StatusElt(bstatus, send_recv_rank) = proc;
 
       /* Note that bufpack may return a size smaller than bufsize */
-      _braid_StatusElt(bstatus, size_buffer) = size;
       _braid_BaseBufPack(core, app,  vector, buffer, bstatus);
       size = _braid_StatusElt( bstatus, size_buffer );
 
@@ -151,7 +150,7 @@ _braid_CommWait(braid_Core          core,
          _braid_BufferStatusInit( 0, 0, bstatus );
          braid_BaseVector  *vector_ptr = _braid_CommHandleElt(handle, vector_ptr);
          
-         /* Store the sender rank the bufferStatus */   
+         /* Store the sender rank the bufferStatus */
          _braid_StatusElt(bstatus, send_recv_rank ) = status->MPI_SOURCE;
          
          _braid_BaseBufUnpack(core, app,  buffer, vector_ptr, bstatus);

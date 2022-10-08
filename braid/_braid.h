@@ -401,9 +401,8 @@ typedef struct _braid_Core_struct
    /** BufferStatus properties */
    braid_Int    messagetype;       /**< message type, 0: for Step(), 1: for load balancing */
    braid_Int    size_buffer;       /**< size of buffer, in bytes */
-   braid_Int    size_uvec;         /**< if set by user, send buffer will be "size" bytes in length */
    braid_Int    size_basis;        /**< if Delta correction, send buffer will be of length (size_buffer + rank*size_basis) */
-   braid_Int    send_recv_rank;    /***< holds the rank of the source / receiver from MPI_Send / MPI_Recv calls. */
+   braid_Int    send_recv_rank;    /**< holds the rank of the source / receiver from MPI_Send / MPI_Recv calls. */
 } _braid_Core;
 
 /*--------------------------------------------------------------------------

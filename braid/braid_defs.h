@@ -49,6 +49,12 @@ typedef int    braid_Int;
 #define braid_Int_Min INT_MIN;
 
 /**
+ * Defines byte type
+ * (can be any type, but sizeof(braid_Byte) MUST be 1)
+ */
+typedef char braid_Byte;
+
+/**
  * Defines floating point type
  * Switch beween single and double precision by un-/commenting lines. 
  **/

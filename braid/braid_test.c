@@ -1016,11 +1016,34 @@ braid_TestDelta(braid_App               app,
    braid_AccessStatus    astatus = (braid_AccessStatus)status;
    braid_StepStatus      sstatus = (braid_StepStatus)status;
    braid_BufferStatus    bstatus = (braid_BufferStatus)status;
-   braid_Int             myid_x, size, basis_size;
+   braid_Int             myid_x, size, size_basis, head_size;
 
-   void     *buffer;
-   double    wiggle = 1e-12;
-   braid_Int correct = 1;
+    /*
+    * We must initialize status so that the user may call
+    * braid_StepStatusSetRFactor() from inside of step(), which many users will
+    * do.  Calling braid_StepStatusSetRFactor() requires that status (which is
+    * really a braid_Core) to have allocated two pieces of data, 
+    * (1) core->rfactors and (2) core->grids[0]->ilower
+    */
+   braid_Core              core    = (braid_Core) status;
+   _braid_Grid          **grids    = _braid_CoreElt(core, grids);
+   braid_Int              *rfactors;
+   _braid_Grid            *fine_grid;
+   /* 1) Initialize array of grids and fine-grid, then set ilower */ 
+   grids    = _braid_TReAlloc(grids, _braid_Grid *, 1);
+   fine_grid = _braid_CTAlloc(_braid_Grid, 1);
+   _braid_GridElt(fine_grid, ilower) = 0;
+   grids[0] = fine_grid;
+   _braid_CoreElt(core, grids) = grids;
+   /* 2) Initialize rfactors */
+   rfactors = _braid_CTAlloc(braid_Int, 4); 
+   _braid_CoreElt(core, rfactors) = rfactors;
+
+   void       *buffer;
+   braid_Byte *data_buf;
+   braid_Int  *header;
+   double      wiggle = 1e-12;
+   braid_Int   correct = 1;
 
    
    A = (braid_Basis)malloc(sizeof(braid_Basis));
@@ -1140,35 +1163,87 @@ braid_TestDelta(braid_App               app,
     *---------------------------------*/
    _braid_ParFprintfFlush(fp, myid_x, "\nStarting braid_TestBufBasis\n\n");
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   size = bufsize()\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   size, size_basis = bufsize()\n");
+   _braid_BufferStatusInit(0, 0, bstatus);
    bufsize(app, &size, bstatus);
-   basis_size = _braid_StatusElt(bstatus, size_basis);
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   size = rank * size\n");
-   size = rank * basis_size;
+   size_basis = _braid_StatusElt(bstatus, size_basis);
+   if (size_basis <= 0)
+   {
+      size_basis = size;
+   }
+   head_size = sizeof(braid_Int) * (2 + rank); /* total number of vectors plus size of each vector */
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   buffer = malloc(size)\n");
-   buffer = malloc(size);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   buffer = malloc(size + rank * size_basis)\n");
+   /* need to allocate memory for the header and the user data */
+   buffer = malloc(head_size + size + rank * size_basis);
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   buffer = bufpack(A, buffer))\n");
+   /* header pointer offset by one, so header[-1] stores number of vectors, header[i] stores size of ith vector */
+   header = ((braid_Int*)buffer) + 1;
+   header[-1] = rank + 1;
+   data_buf = ((braid_Byte*)buffer) + head_size; /* data buffer is braid_Byte to enable pointer arithmetic */
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   buffer = bufpack(u, buffer[:size]))\n");
+   bufpack(app, u, (void*)data_buf, bstatus);
+
+   /* get size actually written and write it to the header */
+   header[0] = _braid_StatusElt(bstatus, size_buffer);
+   data_buf += header[0]; /* increment the data pointer */
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   buffer = bufpack(A, buffer[size:]))\n");
    for (braid_Int i = 0; i < rank; i++)
    {
-      _braid_StatusElt(bstatus, size_buffer) = basis_size;
-      bufpack(app, A->userVecs[i], buffer + i*basis_size, bstatus);
+      _braid_StatusElt(bstatus, size_buffer) = size_basis;
+      bufpack(app, A->userVecs[i], (void*)data_buf, bstatus);
+      header[i+1] = _braid_StatusElt(bstatus, size_buffer);
+      if (i+1 >= head_size)
+      {
+         _braid_ParFprintfFlush(fp, myid_x, "braid_TestBufBasis:   (DEV) overwrote header into user data!\n");
+      }
+      data_buf += header[i+1];
    }
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   B = bufunpack(buffer))\n");
+   /* pretend we only have access to the original buffer after send... */
+   header = NULL;
+   data_buf = NULL;
+   head_size = 0;
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   v = bufunpack(buffer[:size]))\n");
+   header = ((braid_Int*)buffer) + 1;
+   head_size = (header[-1] + 1) * sizeof(braid_Int);
+   data_buf = ((braid_Byte*)buffer) + head_size;
+   bufunpack(app, (void*)data_buf, &v, bstatus);
+   data_buf += header[0];
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   B = bufunpack(buffer[size:]))\n");
    for (braid_Int i = 0; i < rank; i++)
    {
-      bufunpack(app, buffer + i*basis_size, &B->userVecs[i], bstatus);
+      bufunpack(app, (void*)data_buf, &(B->userVecs[i]), bstatus);
+      data_buf += header[i+1];
    }
 
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   v = u - v\n");
+   mysum(app, 1.0, u, -1.0, v);
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   B = A - B\n");
    for (braid_Int i = 0; i < rank; i++)
    {
       mysum(app, 1.0, A->userVecs[i], -1.0, B->userVecs[i]);
    }
    
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   inner_prod(v, v)\n");
+   myinner_prod(app, v, v, &result);
+   if (result > wiggle || _braid_isnan(result))
+   {
+      correct = 0;
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   Test 1 Failed\n");
+   }
+   else
+   {
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   Test 1 Passed\n");
+   }
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   actual output:    inner_prod(v, v) = %1.2e  \n", result);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   expected output:  inner_prod(v, v) = 0.0 \n\n");
+
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   Frobenius_norm(B)\n");
    result = 0;
    for (braid_Int i = 0; i < rank; i++)
@@ -1181,11 +1256,11 @@ braid_TestDelta(braid_App               app,
    if (result > wiggle || _braid_isnan(result))
    {
       correct = 0;
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   Test Failed\n");
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   Test 2 Failed\n");
    }
    else
    {
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   Test Passed\n");
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   Test 2 Passed\n");
    }
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   actual output:    Frobenius_norm(B) = %1.2e  \n", result);
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   expected output:  Frobenius_norm(B) = 0.0 \n\n");
@@ -1208,6 +1283,14 @@ braid_TestDelta(braid_App               app,
    free(B->userVecs);
    
    _braid_StatusDestroy(status);
+
+   _braid_TFree(rfactors);
+   _braid_TFree(grids);
+   _braid_TFree(fine_grid);
+
+   data_buf = NULL;
+   header = NULL;
+   free(buffer);
    
    _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestDelta\n");
 
