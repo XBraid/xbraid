@@ -775,6 +775,36 @@ braid_PrintTimers(braid_Core  core)
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
+braid_Int
+braid_ResetTimer(braid_Core  core)
+{
+
+    _braid_CoreElt(core, timer_coarse_solve) = 0.0;
+    _braid_CoreElt(core, timer_drive_init)  = 0.0;
+    _braid_CoreElt(core, timer_user_step)  = 0.0;
+    //_braid_CoreElt(core, timer_user_init)  = 0.0; /* This timer measures only initial operation. */
+    _braid_CoreElt(core, timer_user_clone)  = 0.0;
+    _braid_CoreElt(core, timer_user_free)  = 0.0;
+    _braid_CoreElt(core, timer_user_sum)  = 0.0;
+    _braid_CoreElt(core, timer_user_spatialnorm)  = 0.0;
+    _braid_CoreElt(core, timer_user_access)  = 0.0;
+    _braid_CoreElt(core, timer_user_sync)  = 0.0;
+    _braid_CoreElt(core, timer_user_bufsize)  = 0.0;
+    _braid_CoreElt(core, timer_user_bufpack)  = 0.0;
+    _braid_CoreElt(core, timer_user_bufunpack)  = 0.0;
+    _braid_CoreElt(core, timer_user_residual)  = 0.0;
+    _braid_CoreElt(core, timer_user_scoarsen)  = 0.0;
+    _braid_CoreElt(core, timer_user_srefine)  = 0.0;
+    _braid_CoreElt(core, timer_MPI_recv)  = 0.0;
+    _braid_CoreElt(core, timer_MPI_wait)  = 0.0;
+    _braid_CoreElt(core, timer_MPI_wait_coarse)  = 0.0;
+    _braid_CoreElt(core, timer_MPI_send)  = 0.0;
+
+    return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
  
 braid_Int
 braid_WriteConvHistory(braid_Core core,    
