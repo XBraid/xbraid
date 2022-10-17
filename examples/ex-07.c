@@ -524,8 +524,8 @@ main(int argc, char *argv[])
             printf("  -cf  <cfactor>    : set coarsening factor\n");
             printf("  -mi  <max_iter>   : set max iterations\n");
             printf("  -fmg              : use FMG cycling\n");
-            printf("  -rank             : rank of Delta correction (integer values in [0, 3])");
-            printf("  -noLyap           : turn off estimation of Lyapunov vectors (static basis)");
+            printf("  -rank             : rank of Delta correction (integer values in [0, 3])\n");
+            printf("  -noLyap           : turn off estimation of Lyapunov vectors (static basis)\n");
             printf("  -test             : run wrapper tests\n");
             printf("\n");
          }
