@@ -1692,6 +1692,15 @@ braid_SetDeltaCorrection(braid_Core           core,
 }
 
 braid_Int
+braid_SetDeferDelta(braid_Core core,
+                    braid_Int  level,
+                    braid_Int  iter)
+{
+   _braid_CoreElt(core, delta_defer_lvl)  = level;
+   _braid_CoreElt(core, delta_defer_iter) = iter;
+}
+
+braid_Int
 braid_SetLyapunovEstimation(braid_Core  core)
 {
    /**

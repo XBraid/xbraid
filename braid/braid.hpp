@@ -458,6 +458,16 @@ static braid_Int _BraidAppInit(braid_App     _app,
 }
 
 
+static braid_Int _BraidAppInitBasis(braid_App     _app,
+                                    braid_Real    t,
+                                    braid_Int     index,
+                                    braid_Vector *u_ptr)
+{
+   BraidApp *app = (BraidApp*)_app;
+   return app -> InitBasis(t, index, u_ptr);
+}
+
+
 static braid_Int _BraidAppFree(braid_App    _app,
                                braid_Vector _u)
 {
@@ -483,6 +493,17 @@ static braid_Int _BraidAppSpatialNorm(braid_App     _app,
 {
    BraidApp *app = (BraidApp*)_app;
    return app -> SpatialNorm(_u, norm_ptr);
+}
+
+
+static braid_Int _BraidAppInnerProd(braid_App     _app,
+                                    braid_Vector  _u,
+                                    braid_Vector  _v,
+                                    braid_Real   *prod_ptr
+                                    )
+{
+   BraidApp *app = (BraidApp*)_app;
+   return app -> InnerProd(_u, _v, prod_ptr);
 }
 
 
@@ -654,6 +675,10 @@ public:
 
    void SetRichardsonEstimation(braid_Int est_error, braid_Int richardson, braid_Int local_order) { braid_SetRichardsonEstimation(core, est_error, richardson, local_order); }
 
+   void SetDeltaCorrection(braid_Int rank) { braid_SetDeltaCorrection(core, rank, _BraidAppInitBasis, _BraidAppInnerProd); }
+
+   void SetLyapunovEstimation() { braid_SetLyapunovEstimation(core); }
+
    void SetFileIOLevel(braid_Int   io_level) { braid_SetFileIOLevel(core, io_level); }
 
    void SetDefaultPrintFile() { braid_SetDefaultPrintFile(core); }
@@ -796,6 +821,18 @@ public:
          _BraidAppSum, _BraidAppSpatialNorm, _BraidAppBufSize,
          _BraidAppBufPack, _BraidAppBufUnpack, _BraidAppCoarsen,
          _BraidAppRefine, _BraidAppResidual, _BraidAppStep); }
+
+   braid_Int TestDelta(BraidApp   *app,
+                     MPI_Comm    comm_x,
+                     FILE       *fp,
+                     braid_Real  t,
+                     braid_Real  dt,
+                     braid_Int   rank)
+   { return braid_TestDelta((braid_App) app, comm_x, fp, t, dt, rank,
+         _BraidAppInit, _BraidAppInitBasis, _BraidAppAccess,
+         _BraidAppFree, _BraidAppClone, _BraidAppSum,
+         _BraidAppBufSize, _BraidAppBufPack, _BraidAppBufUnpack,
+         _BraidAppInnerProd, _BraidAppStep); }
 
    ~BraidUtil() { }
 };

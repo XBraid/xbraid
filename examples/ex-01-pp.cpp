@@ -321,6 +321,9 @@ int main (int argc, char *argv[])
    // set up app structure
    MyBraidApp app(MPI_COMM_WORLD, rank, tstart, tstop, ntime);
 
+   BraidUtil Util = BraidUtil();
+   Util.TestBuf(&app, MPI_COMM_WORLD, stdout, 0.);
+
    // Initialize Braid Core Object and set some solver options
    BraidCore core(MPI_COMM_WORLD, &app);
    core.SetPrintLevel(2);

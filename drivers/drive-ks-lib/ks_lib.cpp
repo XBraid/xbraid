@@ -14,11 +14,36 @@ void _setdiag(SPMAT &A, const VEC &u)
     A.setFromTriplets(coefficients.begin(), coefficients.end());
 }
 
-void _setup_nxnbmat(SPMAT &out, const std::vector<std::vector<SPMAT>> blocks, const int nx)
+
+Index _clip(Index i, int n)
+{
+    if (i < 0)
+    {
+        return i + n;
+    }
+    return i % n;
+}
+
+ArrayXd _pascals_row(int n)
+{
+    if (n == 1)
+    {
+        return ArrayXd::Ones(1);
+    }
+    ArrayXd out = ArrayXd::Zero(n);
+    ArrayXd up = _pascals_row(n - 1);
+    out.head(n - 1) = up;
+    out.tail(n - 1) += up;
+    // std::cout << out.transpose() << '\n';
+    return out;
+}
+
+// exported functions
+void setup_nxnbmat(SPMAT &out, const std::vector<std::vector<SPMAT>> blocks, const int nx)
 {
     // e.g.
     // SPMAT A(Identity(nx, nx)), B(Zero(nx, nx)), C(Zero(nx, nx)), D(Identity(nx, nx));
-    // _setup_nxnbmat(A, {{A, B}, {C, D}}, nx);
+    // setup_nxnbmat(A, {{A, B}, {C, D}}, nx);
 
     int nnz = 0;
     std::vector<T> nz;
@@ -52,30 +77,6 @@ void _setup_nxnbmat(SPMAT &out, const std::vector<std::vector<SPMAT>> blocks, co
     out.makeCompressed();
 }
 
-Index _clip(Index i, int n)
-{
-    if (i < 0)
-    {
-        return i + n;
-    }
-    return i % n;
-}
-
-ArrayXd _pascals_row(int n)
-{
-    if (n == 1)
-    {
-        return ArrayXd::Ones(1);
-    }
-    ArrayXd out = ArrayXd::Zero(n);
-    ArrayXd up = _pascals_row(n - 1);
-    out.head(n - 1) = up;
-    out.tail(n - 1) += up;
-    // std::cout << out.transpose() << '\n';
-    return out;
-}
-
-// exported functions
 SPMAT circulant_from_stencil(Stencil stencil, int n)
 {
     // e.g.
@@ -106,15 +107,27 @@ SPMAT circulant_from_stencil(ArrayXd stencil, int n)
     return circulant_from_stencil(Stencil(stencil.data(), stencil.data() + stencil.size()), n);
 }
 
-VEC FourierMode(int wavenum, int nx, double len)
+VEC FourierMode(int index, int nx, double len)
 {
-    if (wavenum == 0)
+    if (index == 0)
     {
         return VEC::Ones(nx) / (double)nx;
     }
+    int wavenum;
+
     VEC x = VEC::LinSpaced(nx, 0., len - len / nx);
-    x *= 2 * wavenum * M_PI / len;
-    return Eigen::sin(x.array());
+    x *= 2 * M_PI / len;
+
+    if (index % 2 == 0)
+    {
+        wavenum = index / 2;
+        return Eigen::sin(wavenum * x.array());
+    }
+    else
+    {
+        wavenum = (index + 1) / 2;
+        return Eigen::cos(wavenum * x.array());
+    }
 }
 
 void setFourierMatrix(MAT &A, const int nx, const double len)
@@ -167,100 +180,6 @@ SPMAT KSDiscretization::f_ks_du(const VEC &u) const
     return -(L + N + U * Dx).pruned();
 }
 
-void getGuessTheta2(VEC &guess, const VEC &u, const VEC &ustop, const KSDiscretization &disc, double dt)
-{
-    const int stages = 2;
-    int nx = u.size();
-    assert(guess.size() == stages * nx);
-
-    guess.tail(nx) = dt * disc.f_ks(ustop);
-    guess.head(nx) = 2 * (ustop - u) - guess.tail(nx);
-}
-
-VEC theta2(const VEC &u, VEC &guess, const KSDiscretization &disc, double dt, double th_A, double th_B, double th_C, MAT *P_tan, int newton_iters, double tol, double *err_est)
-{
-    const int stages = 2;
-    int nx = u.size();
-    assert(guess.size() == stages * nx);
-
-    double th_Cs, a11, a12, a21, a22;
-    th_Cs = 1. - th_A - th_B - th_C;
-    a11 = (th_B + th_C) / 2;
-    a12 = -(th_C) / 2;
-    a21 = (th_A + th_B + th_C) / 2 + th_Cs;
-    a22 = (th_A + th_C) / 2;
-
-    VEC k(guess);
-    VEC p(guess);
-    VEC u1(u), u2(u);
-
-    SPMAT A(stages * nx, stages * nx);
-    Eigen::UmfPackLU<SPMAT> solver; // best option I have tried so far!
-    SPMAT eye(nx, nx);
-    eye.setIdentity();
-    VEC rhs(stages * nx);
-    for (int i = 0; i < newton_iters; i++)
-    {
-        u1 = u + a11 * k.head(nx) + a12 * k.tail(nx);
-        u2 = u + a21 * k.head(nx) + a22 * k.tail(nx);
-
-        rhs << k.head(nx) - dt * disc.f_ks(u1),
-            k.tail(nx) - dt * disc.f_ks(u2);
-
-        if (i > 0 && inf_norm(p) <= tol)
-        {
-            break;
-        }
-
-        // solve block system
-        SPMAT B1 = dt * disc.f_ks_du(u1);
-        SPMAT B2 = dt * disc.f_ks_du(u2);
-        _setup_nxnbmat(A,
-                       {{eye - a11 * B1, -a12 * B1},
-                        {-a21 * B2, eye - a22 * B2}},
-                       nx);
-
-        solver.compute(A);
-        p = solver.solve(rhs);
-        k -= p;
-    }
-    if (P_tan)
-    {
-        // here we assume that the columns of P_tan contain tangent vectors to propagate
-        // and we propagate them implicitly without forming the full lin. of Phi.
-        // VEC tmp(stages * nx); // just used to store solution vectors
-        // VEC rhs(stages * nx);
-        MAT tmp(stages * nx, P_tan->cols());
-        MAT rhs(stages * nx, P_tan->cols());
-        SPMAT K1 = dt * disc.f_ks_du(u1);
-        SPMAT K2 = dt * disc.f_ks_du(u2);
-
-        _setup_nxnbmat(A, {{eye - a11 * K1, -a12 * K1}, {-a21 * K2, eye - a22 * K2}}, nx);
-        solver.compute(A); // does the factorization
-
-        // solve for P_tan one column at a time
-        // for (Index j = 0; j < P_tan->cols(); j++)
-        // {
-        //     rhs << K1 * P_tan->col(j), K2 * P_tan->col(j);
-        //     tmp = solver.solve(rhs);
-        //     P_tan->col(j) += (tmp.head(nx) + tmp.tail(nx)) / 2.;
-        // }
-        rhs << K1 * (*P_tan), K2 * (*P_tan);
-        tmp = solver.solve(rhs);
-        *P_tan += (tmp.topRows(nx) + tmp.bottomRows(nx)) / 2.;
-    }
-
-    // std::cout << "guess accuracy: " << (k - guess).norm() << '\n';
-    guess = k;
-    u2 = u + (k.head(nx) + k.tail(nx)) / 2;
-    if (err_est)
-    {
-        // use embedded 1st order method to estimate relative local discretization error
-        u1 = u + k.head(nx);
-        *err_est = (u1 - u2).lpNorm<Eigen::Infinity>()/u2.lpNorm<Eigen::Infinity>();
-    }
-    return u2;
-}
 
 void getGuessTheta4(VEC &guess, const VEC &u, const VEC &ustop, const KSDiscretization &disc, double dt, double th_A, double th_B, double th_C)
 {
@@ -328,7 +247,7 @@ VEC theta4(const VEC &u, VEC &guess, const KSDiscretization &disc, double dt, do
         SPMAT B1 = dt * disc.f_ks_du(u1);
         SPMAT B2 = dt * disc.f_ks_du(u2);
         SPMAT B3 = dt * disc.f_ks_du(u3);
-        _setup_nxnbmat(LHS,
+        setup_nxnbmat(LHS,
                        {{eye - A(0, 0) * B1, -A(0, 1) * B1, -A(0, 2) * B1},
                         {-A(1, 0) * B2, eye - A(1, 1) * B2, -A(1, 2) * B3},
                         {-A(2, 0) * B3, -A(2, 1) * B3, eye - A(2, 2) * B3}},
@@ -344,7 +263,7 @@ VEC theta4(const VEC &u, VEC &guess, const KSDiscretization &disc, double dt, do
         SPMAT K2 = dt * disc.f_ks_du(u2);
         SPMAT K3 = dt * disc.f_ks_du(u3);
 
-        _setup_nxnbmat(LHS,
+        setup_nxnbmat(LHS,
                        {{eye - A(0, 0) * K1, -A(0, 1) * K1, -A(0, 2) * K1},
                         {-A(1, 0) * K2, eye - A(1, 1) * K2, -A(1, 2) * K3},
                         {-A(2, 0) * K3, -A(2, 1) * K3, eye - A(2, 2) * K3}},

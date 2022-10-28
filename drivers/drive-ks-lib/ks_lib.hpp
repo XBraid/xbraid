@@ -45,6 +45,7 @@ public:
 };
 
 // KS helpers
+void setup_nxnbmat(SPMAT &out, const std::vector<std::vector<SPMAT>> blocks, const int nx);
 SPMAT circulant_from_stencil(std::vector<double> stencil, int n);
 SPMAT circulant_from_stencil(ArrayXd stencil, int n);
 VEC smoothed_noise(int nx, int width);

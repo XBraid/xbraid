@@ -1183,14 +1183,14 @@ braid_TestDelta(braid_App               app,
    header[-1] = rank + 1;
    data_buf = ((braid_Byte*)buffer) + head_size; /* data buffer is braid_Byte to enable pointer arithmetic */
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   buffer = bufpack(u, buffer[:size]))\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   buffer[:size] = bufpack(u)\n");
    bufpack(app, u, (void*)data_buf, bstatus);
 
    /* get size actually written and write it to the header */
    header[0] = _braid_StatusElt(bstatus, size_buffer);
    data_buf += header[0]; /* increment the data pointer */
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   buffer = bufpack(A, buffer[size:]))\n");
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   buffer[size:] = bufpack(A)\n");
    for (braid_Int i = 0; i < rank; i++)
    {
       _braid_StatusElt(bstatus, size_buffer) = size_basis;

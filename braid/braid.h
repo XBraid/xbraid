@@ -1212,6 +1212,19 @@ braid_SetDeltaCorrection(braid_Core           core,        /**< braid_Core (_bra
                          braid_PtFcnInnerProd inner_prod   /**< Function pointer to routine for computing inner product between two vectors (needed for Gram-Schmidt orthonormalization) */
                          );
 
+
+/**
+ * Defer the low-rank Delta correction to a coarse level or to a later iteration. 
+ * To mitigate some of the cost of Delta correction, it may be turned off on the first few fine-grids,
+ * or turned off for the first few iterations.
+ * 
+ */
+braid_Int
+braid_SetDeferDelta(braid_Core core,   /**< braid_Core (_braid_Core) struct*/
+                    braid_Int  level,  /**< Integer, Delta correction will be deferred to this level (Default 1)*/
+                    braid_Int  iter    /**< Integer, Delta correction will be deferred until this iteration (Default 1) */
+                    );
+
 /** 
  * Turn on Lyapunov vector estimation for Delta correction. The computed backward Lyapunov vectors will be used to update the
  * time-dependent basis used by the low-rank Delta correction, and may be retrieved via the user's Access function.
@@ -1222,7 +1235,6 @@ braid_SetDeltaCorrection(braid_Core           core,        /**< braid_Core (_bra
 braid_Int
 braid_SetLyapunovEstimation(braid_Core  core    /**< braid_Core (_braid_Core) struct*/
                             );
-
 
 
 /** @}*/

@@ -346,6 +346,8 @@ typedef struct _braid_Core_struct
    /** Delta correction and Lyapunov vector estimation*/
    braid_Int              delta_correct;    /**< turns on Delta correction to potentially accelerate convergence */
    braid_Int              delta_rank;       /**< for low rank Delta correction */
+   braid_Int              delta_defer_lvl;  /**< Delta correction will be turned off until this coarse level */
+   braid_Int              delta_defer_iter; /**< Delta correction will be turned off until this iteration */
    braid_Int              estimate_lyap;    /**< turns on estimation of Lyapunov vectors, otherwise the basis at each C-point remains fixed */      
 
    /** Richardson-based error estimation and refinement*/
