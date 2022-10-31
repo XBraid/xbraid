@@ -54,7 +54,7 @@ _braid_Step(braid_Core         core,
       _braid_GetUInit(core, level, index, u, &ustop);
    }
 
-   if (_braid_CoreElt(core, delta_correct))
+   if ( _braid_CoreElt(core, delta_correct) && iter >= _braid_CoreElt(core, delta_defer_iter) )
    {
       braid_Basis *ba            = _braid_GridElt(grids[level], ba);
       braid_Int    est_lyap      = _braid_CoreElt(core, estimate_lyap);
@@ -63,6 +63,7 @@ _braid_Step(braid_Core         core,
 
       /* only propagate Lyapunov vectors when necessary */
       braid_Int prop_lyap = est_lyap || ( calling_function == braid_ASCaller_FRestrict );
+      prop_lyap = prop_lyap && ( level >= _braid_CoreElt(core, delta_defer_lvl) );
 
       if ( prop_lyap )
       {  /* Give the user access to the Lyapunov vectors through StepStatusGetBasisVec */
@@ -103,7 +104,6 @@ _braid_Step(braid_Core         core,
          if ( prop_lyap )
          {
             _braid_BaseSumBasis(core, app, 1.0, delta->basis, 1.0, u->basis);
- 
          }
          _braid_BaseFree(core, app, delta);
       }

@@ -207,37 +207,39 @@ braid_Init(MPI_Comm               comm_world,
    _braid_Core           *core;
 
    /* Braid default values */
-   braid_Int              cfdefault       = 2;              /* Default coarsening factor */
-   braid_Int              nrdefault       = 1;              /* Default number of FC sweeps on each level */
-   braid_Real             CWt_default     = 1.0;            /* Default C-relaxtion weight  */
-   braid_Int              fmg             = 0;              /* Default fmg (0 is off) */
-   braid_Int              nfmg            = -1;             /* Default fmg cycles is -1, indicating all fmg-cycles (if fmg=1) */
-   braid_Int              nfmg_Vcyc       = 1;              /* Default num V-cycles at each fmg level is 1 */
-   braid_Int              max_iter        = 100;            /* Default max_iter */
-   braid_Int              max_levels      = 30;             /* Default max_levels */
-   braid_Int              incr_max_levels = 0;              /* Default increment max levels is false */
-   braid_Int              min_coarse      = 2;              /* Default min_coarse */
-   braid_Int              relax_only_cg   = 0;              /* Default to no relaxation on coarsest grid (alternative to serial solve) */
-   braid_Int              seq_soln        = 0;              /* Default initial guess is from user's Init() function */
-   braid_Int              print_level     = 2;              /* Default print level */
-   braid_Int              io_level        = 1;              /* Default output-to-file level */
-   braid_Int              access_level    = 1;              /* Default access level */
-   braid_Int              finalFCrelax    = 0;              /* Default final FCrelax */
-   braid_Int              tnorm           = 2;              /* Default temporal norm */
-   braid_Real             tol             = 1.0e-09;        /* Default absolute tolerance */
-   braid_Int              warm_restart    = 0;              /* Default is no warm restart */
-   braid_Int              rtol            = 1;              /* Use relative tolerance */
-   braid_Int              skip            = 1;              /* Default skip value, skips all work on first down-cycle */
-   braid_Int              max_refinements = 200;            /* Maximum number of F-refinements */
-   braid_Int              tpoints_cutoff  = braid_Int_Max;  /* Maximum number of time steps, controls FRefine()*/
-   braid_Int              delta_correct   = 0;              /* Default Delta correction: Turned off */
-   braid_Int              delta_rank      = 0;              /* Default Delta correction rank (always set by setDelta())*/
-   braid_Int              estimate_lyap   = 0;              /* Default estimation of Lyapunov vectors is turned off*/
-   braid_Int              adjoint         = 0;              /* Default adjoint run: Turned off */
-   braid_Int              record          = 0;              /* Default action recording: Turned off */
-   braid_Int              obj_only        = 0;              /* Default objective only: Turned off */
-   braid_Int              reverted_ranks  = 0;              /* Default objective only: Turned off */
-   braid_Int              verbose_adj     = 0;              /* Default adjoint verbosity Turned off */
+   braid_Int              cfdefault        = 2;              /* Default coarsening factor */
+   braid_Int              nrdefault        = 1;              /* Default number of FC sweeps on each level */
+   braid_Real             CWt_default      = 1.0;            /* Default C-relaxtion weight  */
+   braid_Int              fmg              = 0;              /* Default fmg (0 is off) */
+   braid_Int              nfmg             = -1;             /* Default fmg cycles is -1, indicating all fmg-cycles (if fmg=1) */
+   braid_Int              nfmg_Vcyc        = 1;              /* Default num V-cycles at each fmg level is 1 */
+   braid_Int              max_iter         = 100;            /* Default max_iter */
+   braid_Int              max_levels       = 30;             /* Default max_levels */
+   braid_Int              incr_max_levels  = 0;              /* Default increment max levels is false */
+   braid_Int              min_coarse       = 2;              /* Default min_coarse */
+   braid_Int              relax_only_cg    = 0;              /* Default to no relaxation on coarsest grid (alternative to serial solve) */
+   braid_Int              seq_soln         = 0;              /* Default initial guess is from user's Init() function */
+   braid_Int              print_level      = 2;              /* Default print level */
+   braid_Int              io_level         = 1;              /* Default output-to-file level */
+   braid_Int              access_level     = 1;              /* Default access level */
+   braid_Int              finalFCrelax     = 0;              /* Default final FCrelax */
+   braid_Int              tnorm            = 2;              /* Default temporal norm */
+   braid_Real             tol              = 1.0e-09;        /* Default absolute tolerance */
+   braid_Int              warm_restart     = 0;              /* Default is no warm restart */
+   braid_Int              rtol             = 1;              /* Use relative tolerance */
+   braid_Int              skip             = 1;              /* Default skip value, skips all work on first down-cycle */
+   braid_Int              max_refinements  = 200;            /* Maximum number of F-refinements */
+   braid_Int              tpoints_cutoff   = braid_Int_Max;  /* Maximum number of time steps, controls FRefine()*/
+   braid_Int              delta_correct    = 0;              /* Default Delta correction: Turned off */
+   braid_Int              delta_rank       = 0;              /* Default Delta correction rank (always set by setDelta())*/
+   braid_Int              estimate_lyap    = 0;              /* Default estimation of Lyapunov vectors is turned off*/
+   braid_Int              delta_defer_lvl  = 0;              /* Default Delta correction defer level (set by setDeltaDefer())*/
+   braid_Int              delta_defer_iter = 0;              /* Default Delta correction defer iteration (set by setDeltaDefer())*/
+   braid_Int              adjoint          = 0;              /* Default adjoint run: Turned off */
+   braid_Int              record           = 0;              /* Default action recording: Turned off */
+   braid_Int              obj_only         = 0;              /* Default objective only: Turned off */
+   braid_Int              reverted_ranks   = 0;              /* Default objective only: Turned off */
+   braid_Int              verbose_adj      = 0;              /* Default adjoint verbosity Turned off */
 
    braid_Int              myid_world,  myid;
 
@@ -325,9 +327,12 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, skip)            = skip;
 
    /* Delta correction */
-   _braid_CoreElt(core, delta_correct)   = delta_correct;
-   _braid_CoreElt(core, delta_rank)      = delta_rank;
-   _braid_CoreElt(core, estimate_lyap)   = estimate_lyap;
+   _braid_CoreElt(core, delta_correct)    = delta_correct;
+   _braid_CoreElt(core, delta_rank)       = delta_rank;
+   _braid_CoreElt(core, estimate_lyap)    = estimate_lyap;
+   _braid_CoreElt(core, delta_defer_iter) = delta_defer_iter;
+   _braid_CoreElt(core, delta_defer_lvl)  = delta_defer_lvl;
+   
 
    /* Adjoint */
    _braid_CoreElt(core, adjoint)               = adjoint;
@@ -1698,6 +1703,8 @@ braid_SetDeferDelta(braid_Core core,
 {
    _braid_CoreElt(core, delta_defer_lvl)  = level;
    _braid_CoreElt(core, delta_defer_iter) = iter;
+
+   return _braid_error_flag;
 }
 
 braid_Int

@@ -984,7 +984,7 @@ main(int argc, char *argv[])
             printf("  -Deltalvl   : Delta correction is deferred until this level\n");
             printf("  -cglv       : Propagate Lyapunov Vectors on the coarsest grid\n");
             printf("  -rank       : set rank of delta correction\n");
-            printf("  -theta      : use first order theta method\n");
+            printf("  -theta      : use theta method\n");
             printf("  -refine     : use global refinement to approximate true FMG cycle\n");
             printf("  -sclevels   : levels on which to coarsen in space (comma separated, e.g. '1,3,5', no spaces\n");
             printf("  -out        : write output to file (for visualization)\n");

@@ -488,6 +488,8 @@ main(int argc, char *argv[])
    int test = 0;
    int lyap = 1;
    int delta_rank = 3;
+   int defer_lvl  = 0;
+   int defer_iter = 0;
 
    int arg_index, myid, nprocs;
    char filename[255], filename_lv[255];
@@ -526,6 +528,8 @@ main(int argc, char *argv[])
             printf("  -fmg              : use FMG cycling\n");
             printf("  -rank             : rank of Delta correction (integer values in [0, 3])\n");
             printf("  -noLyap           : turn off estimation of Lyapunov vectors (static basis)\n");
+            printf("  -defer-lvl        : defer Delta correction to given level (default 0)");
+            printf("  -defer-iter       : defer Delta correction until given iteration (default 0)");
             printf("  -test             : run wrapper tests\n");
             printf("\n");
          }
@@ -586,6 +590,16 @@ main(int argc, char *argv[])
          arg_index++;
          lyap = 0;
       }
+      else if (strcmp(argv[arg_index], "-defer-lvl") == 0)
+      {
+         arg_index++;
+         defer_lvl = atoi(argv[arg_index++]);
+      }
+      else if (strcmp(argv[arg_index], "-defer-iter") == 0)
+      {
+         arg_index++;
+         defer_iter = atoi(argv[arg_index++]);
+      }
       else if (strcmp(argv[arg_index], "-test") == 0)
       {
          arg_index++;
@@ -640,6 +654,7 @@ main(int argc, char *argv[])
    if (delta_rank > 0)
    {
       braid_SetDeltaCorrection(core, delta_rank, my_InitBasis, my_InnerProd);
+      braid_SetDeferDelta(core, defer_lvl, defer_iter);
       if ( lyap )
       {
          braid_SetLyapunovEstimation(core);
