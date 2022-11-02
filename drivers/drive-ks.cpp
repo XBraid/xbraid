@@ -35,7 +35,7 @@
 //
 // Sample run:    mpirun -np 2 drive-ks
 //
-// Description:   solve the Kuramoto-Shivasinsky equation using 4th order finite differencing and Lobatto IIIC with optional low rank Delta correction
+// Description:   solve the Kuramoto-Shivasinsky equation using 4th order finite differencing in space and Lobatto IIIC in time with optional low rank Delta correction
 //
 //
 
@@ -467,8 +467,9 @@ MyBraidApp::Step(braid_Vector u_,
    }
    else
    {
-      u->guess = VEC::Zero(stages * nx);
+      u->guess = VEC::Zero(stages * disc.nx);
    }
+   // u->guess = VEC::Zero(stages * disc.nx);
 
    // tolerance for Newton's method
    double tol = std::sqrt(disc.nx) * 1e-10;
@@ -926,7 +927,7 @@ main(int argc, char *argv[])
    int max_iter = 25;
    int newton_iters = 3;
    bool useFMG = false;
-   int DeltaLvl = 0;
+   int DeltaLvl = 1;
    int DeltaRank = 0;
    bool useTheta = false;
    bool doRefine = false;
@@ -980,10 +981,9 @@ main(int argc, char *argv[])
             printf("  -mi         : set max iterations\n");
             printf("  -niters     : set number of newton iters for spatial solver\n");
             printf("  -fmg        : use F cycles\n");
-            printf("  -Delta      : use Delta correction\n");
+            printf("  -rank       : set rank of Delta correction (default: 0)\n");
             printf("  -Deltalvl   : Delta correction is deferred until this level\n");
             printf("  -cglv       : Propagate Lyapunov Vectors on the coarsest grid\n");
-            printf("  -rank       : set rank of delta correction\n");
             printf("  -theta      : use theta method\n");
             printf("  -refine     : use global refinement to approximate true FMG cycle\n");
             printf("  -sclevels   : levels on which to coarsen in space (comma separated, e.g. '1,3,5', no spaces\n");
@@ -1147,7 +1147,7 @@ main(int argc, char *argv[])
       }
       std::cout << '\n';
    }
-   if (rank == 0 && DeltaLvl > 0)
+   if (rank == 0 && DeltaRank > 0)
    {
       std::cout << "Using Delta correction\n";
    }
@@ -1250,6 +1250,7 @@ main(int argc, char *argv[])
    if (DeltaRank > 0)
    {
       core.SetDeltaCorrection(DeltaRank);
+      core.SetDeferDelta(DeltaLvl, 0);
       if (cglv)
       {
          core.SetLyapunovEstimation();

@@ -285,7 +285,7 @@ _braid_FRestrict(braid_Core   core,
          }    
          else
          {
-            if ( delta_correct )
+            if ( delta_correct && iter >= _braid_CoreElt(core, delta_defer_iter) && level >= _braid_CoreElt(core, delta_defer_lvl) )
             {
                /* tau correction */
                _braid_CoreFcn(core, sum)(app, 1.0, c_u->userVector, 1.0, c_fa[c_ii]->userVector);

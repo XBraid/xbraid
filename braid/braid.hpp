@@ -677,6 +677,8 @@ public:
 
    void SetDeltaCorrection(braid_Int rank) { braid_SetDeltaCorrection(core, rank, _BraidAppInitBasis, _BraidAppInnerProd); }
 
+   void SetDeferDelta(braid_Int level, braid_Int iter) { braid_SetDeferDelta(core, level, iter); }
+
    void SetLyapunovEstimation() { braid_SetLyapunovEstimation(core); }
 
    void SetFileIOLevel(braid_Int   io_level) { braid_SetFileIOLevel(core, io_level); }
