@@ -62,9 +62,10 @@ extern "C"
     * Perform modified Gram-Schmidt orthonormalization on a basis
     *----------------------------------------------------------------------------*/
    braid_Int
-   _braid_GramSchmidt(braid_Core core,
-                      braid_App  app,
-                      braid_Basis basis);
+   _braid_GramSchmidt(braid_Core   core,
+                      braid_App    app,
+                      braid_Basis  basis,
+                      braid_Real  *exps);
 
 
 #ifdef __cplusplus

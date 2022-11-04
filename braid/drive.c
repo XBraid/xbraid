@@ -660,19 +660,31 @@ _braid_Drive(braid_Core  core,
       _braid_FRestrict(core, level);
    }
 
-
    /* Allow final access to Braid by carrying out a relaxation to generate points */
-   if ( _braid_CoreElt(core, finalFCrelax) )
+   if ( _braid_CoreElt(core, finalFCrelax) || _braid_CoreElt(core, lyap_exp) )
    {
       /* Do one final F-C-Relaxation sweep in order to:
        * - Relax the final coarse-grid correction, while giving user access to solution
        * - Store the last time-point vector as ulast, see _braid_UGetLast()
        * - Gather gradient information when solving adjoint equation with XBraid. The users 'my_step' 
-       *   function should compute gradients only if braid's 'done' flag is true */
+       *   function should compute gradients only if braid's 'done' flag is true 
+       * - Compute Lyapunov exponents if estimating Lyapunov vectors */
 
       braid_Int nrelax_orig = _braid_CoreElt(core, nrels)[0];
       _braid_CoreElt(core, nrels)[0] = 1;
-      _braid_FCRelax(core, 0);
+
+      if ( _braid_CoreElt(core, delta_defer_lvl) == 0 && _braid_CoreElt(core, lyap_exp) )
+      {
+         braid_Int relax_lyap_orig = _braid_CoreElt(core, relax_lyap);
+         _braid_CoreElt(core, relax_lyap) = 1;
+         _braid_FCRelax(core, 0);
+         _braid_CoreElt(core, relax_lyap) = relax_lyap_orig;
+      }
+      else
+      {
+         _braid_FCRelax(core, 0);
+      }
+
       _braid_CoreElt(core, nrels)[0] = nrelax_orig;
    }
    /* Call FAccess if (only 1 level and not solving coarse-grid by relaxation) 

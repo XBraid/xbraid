@@ -348,7 +348,10 @@ typedef struct _braid_Core_struct
    braid_Int              delta_rank;       /**< for low rank Delta correction */
    braid_Int              delta_defer_lvl;  /**< Delta correction will be turned off until this coarse level */
    braid_Int              delta_defer_iter; /**< Delta correction will be turned off until this iteration */
-   braid_Int              estimate_lyap;    /**< turns on estimation of Lyapunov vectors, otherwise the basis at each C-point remains fixed */      
+   braid_Int              estimate_lyap;    /**< turns on estimation of Lyapunov vectors, via coarse grid solve, otherwise the basis at each C-point remains fixed */ 
+   braid_Int              relax_lyap;       /**< turns on propagation of Lyapunov vectors during FCRelax (to hopefully better resolve Lyapunov vectors) */
+   braid_Int              lyap_exp;         /**< turns on estimation of Lyapunov exponents */
+   braid_Real           **local_exponents;  /**< holds local Lyapunov exponents at each C-point */
 
    /** Richardson-based error estimation and refinement*/
    braid_Int              richardson;       /**< turns on Richardson extrapolation for accuracy */

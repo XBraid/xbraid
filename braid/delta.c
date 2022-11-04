@@ -70,35 +70,48 @@ _braid_LRDeltaDotMat(braid_Core core,
 }
 
 braid_Int
-_braid_Normalize(braid_Core   core,
-                 braid_App    app,
-                 braid_Vector u)
+_braid_Normalize(braid_Core    core,
+                 braid_App     app,
+                 braid_Vector  u,
+                 braid_Real   *norm_ptr)
 {
    braid_Real norm;
    _braid_CoreFcn(core, inner_prod)(app, u, u, &norm);
    _braid_CoreFcn(core, sum)(app, 0., u, 1/sqrt(norm), u);
-   
+
+   if (norm_ptr)
+   {
+      *norm_ptr = norm;
+   } 
 
    return _braid_error_flag;
 }
 
 braid_Int
-_braid_GramSchmidt(braid_Core core,
-                   braid_App  app,
-                   braid_Basis basis)
+_braid_GramSchmidt(braid_Core   core,
+                   braid_App    app,
+                   braid_Basis  basis,
+                   braid_Real  *exps)
 {
    for (braid_Int i = 0; i < basis->rank; i++)
    {
-      /* subtract projections of the columns on the left */
+      braid_Real prod;
+      /* subtract projections of the columns to the left */
       for (braid_Int j = 0; j < i; j++)
       {
-         braid_Real prod;
          _braid_CoreFcn(core, inner_prod)(app, basis->userVecs[i], basis->userVecs[j], &prod);
          _braid_CoreFcn(core, sum)(app, -prod, basis->userVecs[j], 1., basis->userVecs[i]);
-
       }
+
       /* normalize this column */
-      _braid_Normalize(core, app, basis->userVecs[i]);
+      _braid_CoreFcn(core, inner_prod)(app, basis->userVecs[i], basis->userVecs[i], &prod);
+      _braid_CoreFcn(core, sum)(app, 0., basis->userVecs[i], 1/sqrt(prod), basis->userVecs[i]);
+
+      if (exps)
+      {
+         /* save local exponents (diagonals of R) */
+         exps[i] = log(fabs(prod));
+      }
    }
 
    return _braid_error_flag;

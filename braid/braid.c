@@ -233,6 +233,8 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              delta_correct    = 0;              /* Default Delta correction: Turned off */
    braid_Int              delta_rank       = 0;              /* Default Delta correction rank (always set by setDelta())*/
    braid_Int              estimate_lyap    = 0;              /* Default estimation of Lyapunov vectors is turned off*/
+   braid_Int              relax_lyap       = 0;              /* Default propagation of Lyapunov vectors during FCRelax is turned off*/
+   braid_Int              lyap_exp         = 0;              /* Default Lyapunov exponents are not saved */
    braid_Int              delta_defer_lvl  = 0;              /* Default Delta correction defer level (set by setDeltaDefer())*/
    braid_Int              delta_defer_iter = 0;              /* Default Delta correction defer iteration (set by setDeltaDefer())*/
    braid_Int              adjoint          = 0;              /* Default adjoint run: Turned off */
@@ -330,6 +332,8 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, delta_correct)    = delta_correct;
    _braid_CoreElt(core, delta_rank)       = delta_rank;
    _braid_CoreElt(core, estimate_lyap)    = estimate_lyap;
+   _braid_CoreElt(core, relax_lyap)       = relax_lyap;
+   _braid_CoreElt(core, lyap_exp)         = lyap_exp;
    _braid_CoreElt(core, delta_defer_iter) = delta_defer_iter;
    _braid_CoreElt(core, delta_defer_lvl)  = delta_defer_lvl;
    
@@ -461,6 +465,26 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
       _braid_TFree(_braid_CoreElt(core, rdtvalues));
+
+      /* Destroy stored Lyapunov exponents */
+      if (_braid_CoreElt(core, lyap_exp))
+      {
+
+         braid_Int npoints; 
+         if (nlevels == 1)
+         {
+            npoints = _braid_GridElt(grids[0], iupper) - _braid_GridElt(grids[0], ilower);
+         }
+         else
+         {
+            npoints = _braid_GridElt(grids[0], ncpoints);
+         }
+         for (braid_Int i = 0; i < npoints; i++)
+         {
+            _braid_TFree(_braid_CoreElt(core, local_exponents)[i]);
+         }
+         _braid_TFree(_braid_CoreElt(core, local_exponents));
+      }
 
       /* Destroy the optimization structure */
       _braid_CoreElt(core, record) = 0;
@@ -1708,7 +1732,11 @@ braid_SetDeferDelta(braid_Core core,
 }
 
 braid_Int
-braid_SetLyapunovEstimation(braid_Core  core)
+braid_SetLyapunovEstimation(braid_Core core,
+                            braid_Int  relax,
+                            braid_Int  cglv,
+                            braid_Int  exponents
+                            )
 {
    /**
     * TODO: compatibility checks
@@ -1716,7 +1744,9 @@ braid_SetLyapunovEstimation(braid_Core  core)
     * although you really should take advantage of the LVs if you have them
     */
 
-   _braid_CoreElt(core, estimate_lyap) = 1;
+   _braid_CoreElt(core, estimate_lyap) = cglv;
+   _braid_CoreElt(core, relax_lyap)    = relax;
+   _braid_CoreElt(core, lyap_exp)      = exponents;
 
    return _braid_error_flag;
 }

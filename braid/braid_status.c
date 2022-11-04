@@ -263,6 +263,31 @@ braid_StatusGetBasisVec(braid_Status  status,
 }
 
 braid_Int
+braid_StatusGetLocalLyapExponents(braid_Status   status,
+                                  braid_Real    *exp_ptr,
+                                  braid_Int     *num_returned)
+{
+   _braid_Grid **grids = _braid_StatusElt(status, grids);
+   braid_Int level   = _braid_StatusElt(status, level);
+   braid_Int nlevels = _braid_StatusElt(status, nlevels);
+   braid_Int index   = _braid_StatusElt(status, idx);
+   braid_Int cfactor = _braid_GridElt(grids[level], cfactor);
+
+   if (_braid_StatusElt(status, level) > 0 || (_braid_IsFPoint(index, cfactor) && nlevels > 1))
+   {
+      *num_returned = 0;
+      return _braid_error_flag;
+   }
+
+   braid_Int clower = _braid_GridElt(grids[0], clower);
+   braid_Int i_c    = (index - clower)/_braid_GridElt(grids[0], cfactor);
+   braid_Real *exps = _braid_StatusElt(status, local_exponents)[i_c];
+   _braid_GetNEntries(exps, _braid_StatusElt(status, delta_rank), num_returned, exp_ptr);
+
+   return _braid_error_flag;
+}
+
+braid_Int
 braid_StatusGetCTprior(braid_Status status,
                        braid_Real  *ctprior_ptr
                        )
@@ -688,6 +713,7 @@ ACCESSOR_FUNCTION_GET1(Access, WrapperTest,     Int)
 ACCESSOR_FUNCTION_GET1(Access, CallingFunction, Int)
 ACCESSOR_FUNCTION_GET1(Access, SingleErrorEstAccess,  Real)
 ACCESSOR_FUNCTION_GET1(Access, DeltaRank,       Int)
+ACCESSOR_FUNCTION_GET2(Access, LocalLyapExponents, Real, Int)
 ACCESSOR_FUNCTION_GET1_IN1(Access, BasisVec, Vector, Int)
 
 /*--------------------------------------------------------------------------
@@ -828,11 +854,13 @@ ACCESSOR_FUNCTION_GET1_IN1(Step, BasisVec, Vector, Int)
 braid_Int
 _braid_BufferStatusInit(braid_Int        messagetype,
                         braid_Int        size,
+                        braid_Int        level,
                         braid_BufferStatus status)
 {
    _braid_StatusElt(status, messagetype)    = messagetype;
    _braid_StatusElt(status, size_buffer)    = size;
    _braid_StatusElt(status, size_basis)     = 0;
+   _braid_StatusElt(status, level)          = level;
    return _braid_error_flag;
 }
 ACCESSOR_FUNCTION_GET1(Buffer, MessageType, Int)

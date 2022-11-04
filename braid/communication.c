@@ -47,7 +47,7 @@ _braid_CommRecvInit(braid_Core           core,
       handle = _braid_TAlloc(_braid_CommHandle, 1);
 
       /* Allocate buffer through user routine */
-      _braid_BufferStatusInit( 0, 0, bstatus );
+      _braid_BufferStatusInit(0, 0, level, bstatus);
       _braid_BaseBufSize(core, app,  &size, bstatus);
       buffer = malloc(size);
 
@@ -95,8 +95,8 @@ _braid_CommSendInit(braid_Core           core,
       handle = _braid_TAlloc(_braid_CommHandle, 1);
 
       /* Allocate buffer through user routine */
-      _braid_BufferStatusInit(0, 0, bstatus);
-      _braid_BaseBufSize(core, app,  &size, bstatus);
+      _braid_BufferStatusInit(0, 0, level, bstatus);
+      _braid_BaseBufSize(core, app, &size, bstatus);
 
       buffer = malloc(size);
 
@@ -147,7 +147,7 @@ _braid_CommWait(braid_Core          core,
       
       if (request_type == 1) /* recv type */
       {
-         _braid_BufferStatusInit( 0, 0, bstatus );
+         _braid_BufferStatusInit(0, 0, 0, bstatus);
          braid_BaseVector  *vector_ptr = _braid_CommHandleElt(handle, vector_ptr);
          
          /* Store the sender rank the bufferStatus */

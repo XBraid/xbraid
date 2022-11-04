@@ -295,6 +295,33 @@ braid_StatusGetCallingFunction(braid_Status status,        /**< structure contai
                                );
 
 /**
+ * Return the current rank of Delta correction being used
+ */
+braid_Int
+braid_StatusGetDeltaRank(braid_Status status,   /**< structure containing current simulation info */
+                         braid_Int   *rank_ptr  /**< output, rank of Delta correction, number of tracked basis vectors */
+                         );
+
+/**
+ * Return a reference to the basis vector at the current time value and given spatial index
+ */
+braid_Int
+braid_StatusGetBasisVec(braid_Status  status,  /**< structure containing current simulation info */
+                        braid_Vector *v_ptr,   /**< output, reference to basis vector */
+                        braid_Int     index    /**< input, spatial index (column) of desired basis vector */
+                        );
+
+/**
+ * Return a reference to an array of local exponents, with each exponent *j* corresponding to the total growth over the previous C-interval
+ * in the direction of the *j*th Lyapunov exponent (These are only available after the final FCRelax)
+ */
+braid_Int
+braid_StatusGetLocalLyapExponents(braid_Status   status,       /**< structure containing the current simulation info */
+                                  braid_Real    *exp_ptr,      /**< output, reference to array containing (num_returned) exponents */
+                                  braid_Int     *num_returned  /**< output, number of exponents contained in exp_ptr */
+                                  );
+
+/**
  * Return the **coarse grid** time value to the left of the current time value from
  * the Status structure.
  **/
@@ -598,6 +625,7 @@ ACCESSOR_HEADER_GET1(Access, WrapperTest,     Int)
 ACCESSOR_HEADER_GET1(Access, CallingFunction, Int)
 ACCESSOR_HEADER_GET1(Access, SingleErrorEstAccess, Real)
 ACCESSOR_HEADER_GET1(Access, DeltaRank, Int)
+ACCESSOR_HEADER_GET2(Access, LocalLyapExponents, Real, Int)
 ACCESSOR_HEADER_GET1_IN1(Access, BasisVec, Vector, Int)
 
 /*--------------------------------------------------------------------------

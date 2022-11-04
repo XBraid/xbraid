@@ -186,7 +186,7 @@ _braid_BaseInitBasis(braid_Core   core,
       _braid_CoreFcn(core, init_basis)(app, t, i, &(u_basis->userVecs[i]));
    }
    /* orthonormalize the columns */
-   _braid_GramSchmidt(core, app, u_basis);
+   _braid_GramSchmidt(core, app, u_basis, NULL);
 
    *psi_ptr = u_basis;
 
@@ -525,6 +525,7 @@ _braid_BaseBufSize(braid_Core          core,
 {
    braid_Int  myid         = _braid_CoreElt(core, myid);
    braid_Int  verbose_adj  = _braid_CoreElt(core, verbose_adj);
+   // braid_Int  level        = _braid_StatusElt(status, level);
 
    if ( verbose_adj ) _braid_printf("%d: BUFSIZE\n", myid);
 
@@ -1193,7 +1194,7 @@ _braid_BaseBufPack_diff(_braid_Action *action )
    MPI_Recv(buffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), MPI_STATUS_IGNORE); 
 
    /* Initialize the bstatus */
-   _braid_BufferStatusInit( messagetype, size_buffer, bstatus);
+   _braid_BufferStatusInit( messagetype, size_buffer, 0, bstatus);
 
    /* Unpack the buffer into u */
    _braid_CoreFcn(core, bufunpack)(app, buffer, &u, bstatus);
@@ -1246,7 +1247,7 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
    }
 
    /* Initialize the bufferstatus */
-   _braid_BufferStatusInit( messagetype, size_buffer, bstatus);
+   _braid_BufferStatusInit( messagetype, size_buffer, 0, bstatus);
 
    /* Pack the buffer */
    sendbuffer = _braid_CoreElt(core, optim)->sendbuffer;

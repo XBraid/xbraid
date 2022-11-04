@@ -98,11 +98,11 @@ _braid_FCRelax(braid_Core  core,
       /* Richardson option requires access to the C-point in the left-most interval, so send it */
       if ( richardson )
       {
-         if ( ilower > _braid_CoreElt(core, initiali))
+         if ( ilower > _braid_CoreElt(core, initiali) )
          {
             //Need to post a recv for a C-point from the left. 
             _braid_GetProc(core, level, clower-cfactor, &proc);
-            _braid_BufferStatusInit( 0, 0, bstatus );
+            _braid_BufferStatusInit(0, 0, level, bstatus);
             _braid_BaseBufSize(core, app,  &size, bstatus);
              recv_buff = malloc(size);
              
@@ -112,7 +112,7 @@ _braid_FCRelax(braid_Core  core,
          {
             //Need to post a send of ciupper         
             _braid_GetProc(core, level, cupper+cfactor, &proc); 
-            _braid_BufferStatusInit( 0 ,0 ,bstatus );
+            _braid_BufferStatusInit(0, 0, level, bstatus);
             _braid_BaseBufSize(core, app,  &size, bstatus);
             send_buff = malloc(size);
            
@@ -147,7 +147,7 @@ _braid_FCRelax(braid_Core  core,
             {
               /* The needed C-point is coming as a message. Wait and unpack */
                MPI_Wait( &recv_request, MPI_STATUS_IGNORE);
-               _braid_BufferStatusInit(0,0,bstatus);
+               _braid_BufferStatusInit(0, 0, level, bstatus);
                _braid_BaseBufUnpack(core, app, recv_buff, &bigstep, bstatus);
                _braid_TFree(recv_buff);                  
               
@@ -176,10 +176,9 @@ _braid_FCRelax(braid_Core  core,
             if( (access_level >= 3) || (done == 1) )
             {
                _braid_AccessStatusInit(ta[fi-f_ilower], fi, rnm, iter, level, nrefine, gupper_zero,
-                                       done, 0, braid_ASCaller_FCRelax, NULL, astatus);
+                                       done, 0, braid_ASCaller_FCRelax, u->basis, astatus);
                _braid_AccessVector(core, astatus, u);
             }
-
          }
 
          /* C-relaxation */
@@ -231,19 +230,38 @@ _braid_FCRelax(braid_Core  core,
                _braid_BaseFree(core, app,  bigstep);
             }
 
+            // /* Time-Average the computed Lyapunov exponents */
+            // if (done && level == 0 && _braid_CoreElt(core, lyap_exp))
+            // {
+            //    braid_Real *exps = _braid_CoreElt(core, local_exponents)[interval];
+            //    braid_Real dt;
+            //    if (ci == clower)
+            //    {
+            //       ta_c = _braid_GridElt(grids[1], ta);
+            //       dt = ta[ci-ilower] - ta_c[-1];
+            //    }
+            //    else
+            //    {
+            //       dt = ta[ci-ilower] - ta[ci-cfactor-ilower];
+            //    }
+            //    for (braid_Int j = 0; j < _braid_CoreElt(core, delta_rank); j++)
+            //    {
+            //       exps[j] /= dt;
+            //    }
+            // }
+
             /* Allow user to process current vector */
             if( (access_level >= 3) || (done == 1) )
             {
-               _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper_zero,
-                                       done, 0, braid_ASCaller_FCRelax, NULL, astatus);
-               
-	       /* If Richardson, then vector u is not up-to-date, so be safe
+               /* If Richardson, then vector u is not up-to-date, so be safe
                 * and get fresh reference for user access */
                braid_BaseVector uref;
                _braid_UGetVectorRef(core, level, ci, &uref);
+
+               _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper_zero,
+                                       done, 0, braid_ASCaller_FCRelax, uref->basis, astatus);
                _braid_AccessVector(core, astatus, uref);
             }
-         
          }
          else if( (level == 0) && (ci == _braid_CoreElt(core, initiali)) && done)
          {

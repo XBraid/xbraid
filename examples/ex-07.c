@@ -203,7 +203,7 @@ typedef struct _braid_App_struct
    double tstop;
    int ntime;
    FILE *file;    // saves the state vectors
-   FILE *file_lv; // saves the Lyapunov vectors 
+   FILE *file_lv; // saves the Lyapunov vectors and exponents
 
 } my_App;
 
@@ -304,14 +304,8 @@ my_InitBasis(braid_App app, double t, int index, braid_Vector *u_ptr)
    u = (my_Vector *)malloc(sizeof(my_Vector));
 
    // initialize with the columns of the identity matrix
-   // TODO: should we require these to be ortho-normal, or should we
-   //       do Gram-schmidt on these after initializing?
    VecSet(u->values, 0.);
-   u->values[index] += 1.;
-   if (index < VecSize-1)
-   {
-      u->values[index+1] = .5;
-   }
+   u->values[index] = 1.;
 
    *u_ptr = u;
 
@@ -396,8 +390,11 @@ my_Access(braid_App app, braid_Vector u, braid_AccessStatus astatus)
 
    /* write the lyapunov vectors to file */
    file = app->file_lv;
-   int rank;
+   int rank, num_exp;
    braid_AccessStatusGetDeltaRank(astatus, &rank);
+   num_exp = rank;
+   double *exponents = malloc(rank * sizeof(double));
+   braid_AccessStatusGetLocalLyapExponents(astatus, exponents, &num_exp);
 
    fprintf(file, "%d", index);
    for (int j = 0; j < rank; j++)
@@ -406,6 +403,14 @@ my_Access(braid_App app, braid_Vector u, braid_AccessStatus astatus)
       braid_AccessStatusGetBasisVec(astatus, &psi, j);
       if (psi)
       {
+         if (j < num_exp)
+         {
+            fprintf(file, " %.14e", exponents[j]);
+         }
+         else
+         {
+            fprintf(file, " %.14e", 0.);
+         }
          for (i = 0; i < VecSize; i++)
          {
             fprintf(file, " %.14e", (psi->values[i]));
@@ -414,6 +419,7 @@ my_Access(braid_App app, braid_Vector u, braid_AccessStatus astatus)
    }
    fprintf(file, "\n ");
    fflush(file);
+   free(exponents);
    
    return 0;
 }
@@ -478,7 +484,7 @@ main(int argc, char *argv[])
    double tstart, tstop;
    int ntime;
 
-   int max_levels = 2;
+   int max_levels = 1;
    int nrelax = 0;
    int nrelax0 = -1;
    double tol = 1.0e-06;
@@ -487,7 +493,8 @@ main(int argc, char *argv[])
    int fmg = 0;
    int test = 0;
    int lyap = 1;
-   int delta_rank = 3;
+   int relax_lyap = 0;
+   int delta_rank = 2;
    int defer_lvl  = 0;
    int defer_iter = 0;
 
@@ -528,6 +535,7 @@ main(int argc, char *argv[])
             printf("  -fmg              : use FMG cycling\n");
             printf("  -rank             : rank of Delta correction (integer values in [0, 3])\n");
             printf("  -noLyap           : turn off estimation of Lyapunov vectors (static basis)\n");
+            printf("  -fcfLyap          : turn on relaxation of Lyapunov vectors \n");
             printf("  -defer-lvl        : defer Delta correction to given level (default 0)");
             printf("  -defer-iter       : defer Delta correction until given iteration (default 0)");
             printf("  -test             : run wrapper tests\n");
@@ -589,6 +597,11 @@ main(int argc, char *argv[])
       {
          arg_index++;
          lyap = 0;
+      }
+      else if (strcmp(argv[arg_index], "-fcfLyap") == 0)
+      {
+         arg_index++;
+         relax_lyap = 1;
       }
       else if (strcmp(argv[arg_index], "-defer-lvl") == 0)
       {
@@ -655,10 +668,7 @@ main(int argc, char *argv[])
    {
       braid_SetDeltaCorrection(core, delta_rank, my_InitBasis, my_InnerProd);
       braid_SetDeferDelta(core, defer_lvl, defer_iter);
-      if ( lyap )
-      {
-         braid_SetLyapunovEstimation(core);
-      }
+      braid_SetLyapunovEstimation(core, relax_lyap, lyap, 1);
    }
 
    braid_SetPrintLevel(core, 2);
@@ -686,10 +696,12 @@ main(int argc, char *argv[])
       int ti, index, i, j, npoints = (ntime + 1);
       VEC *solution;
       VEC *lyapunov;
+      double *exponents;
       fclose(file);
       fclose(file_lv);
       solution = (VEC *)malloc(npoints * sizeof(VEC));
       lyapunov = (VEC *)malloc(npoints * delta_rank * sizeof(VEC));
+      exponents = malloc(npoints * delta_rank * sizeof(double));
       file = fopen(filename, "r");
       file_lv = fopen(filename_lv, "r");
       for (ti = 0; ti < npoints; ti++)
@@ -703,6 +715,7 @@ main(int argc, char *argv[])
          fscanf(file_lv, "%d", &index);
          for (size_t j = 0; j < delta_rank; j++)
          {
+            fscanf(file_lv, "%le", &exponents[index*delta_rank + j]);
             for (i = 0; i < VecSize; i++)
             {
                fscanf(file_lv, "%le", &lyapunov[index*delta_rank + j][i]);
@@ -723,6 +736,7 @@ main(int argc, char *argv[])
 
          for (j = 0; j < delta_rank; j++)
          {
+            fprintf(file_lv, " %.14e", exponents[ti*delta_rank + j]);
             for (i = 0; i < VecSize; i++)
             {
                fprintf(file_lv, " %.14e", lyapunov[ti*delta_rank + j][i]);
@@ -732,6 +746,7 @@ main(int argc, char *argv[])
       }
       free(solution);
       free(lyapunov);
+      free(exponents);
       fclose(file);
       fclose(file_lv);
    }

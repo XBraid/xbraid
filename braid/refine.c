@@ -771,7 +771,7 @@ _braid_FRefine(braid_Core   core,
    requests = _braid_CTAlloc(MPI_Request, (nsends+nrecvs));
    statuses = _braid_CTAlloc(MPI_Status,  (nsends+nrecvs));
 
-   _braid_BufferStatusInit( 1, 0, bstatus );
+   _braid_BufferStatusInit( 1, 0, 0, bstatus );
    _braid_BaseBufSize(core, app,  &max_usize, bstatus); /* max buffer size */
    _braid_NBytesToNReals(max_usize, max_usize);
 

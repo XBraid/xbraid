@@ -213,6 +213,26 @@ _braid_InitHierarchy(braid_Core    core,
    nlevels = level+1;
    _braid_CoreElt(core, nlevels) = nlevels;
 
+   /* Allocate space for storage of Lyapunov exponents at each C-point */
+   if(_braid_CoreElt(core, delta_correct) && _braid_CoreElt(core, lyap_exp))
+   {
+      if (nlevels == 1)
+      {
+         _braid_CoreElt(core, local_exponents) = _braid_CTAlloc(braid_Real*, iupper-ilower);
+      }
+      else
+      {
+         _braid_CoreElt(core, local_exponents) = _braid_CTAlloc(braid_Real*, ncpoints);
+      }
+
+      braid_Real **exps = _braid_CoreElt(core, local_exponents);
+      braid_Int delta_rank = _braid_CoreElt(core, delta_rank);
+      for (braid_Int i = 0; i < ncpoints; i++)
+      {
+         exps[i] = _braid_CTAlloc(braid_Real, delta_rank);
+      }
+   }
+
    /* Allocate ua, va, fa, and ba here */
    for (level = 0; level < nlevels; level++)
    {
@@ -229,7 +249,7 @@ _braid_InitHierarchy(braid_Core    core,
          _braid_GridElt(grid, fa)       = fa+1;  /* shift */
          
          /* Only allocate bases if we are doing Delta correction */
-         if ( _braid_CoreElt(core, delta_correct ))
+         if ( _braid_CoreElt(core, delta_correct) )
          {
             ba = _braid_CTAlloc(braid_Basis, iupper-ilower+2);
             _braid_GridElt(grid, ba_alloc) = ba;

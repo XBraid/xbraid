@@ -1206,8 +1206,8 @@ braid_SetRichardsonEstimation(braid_Core core,                /**< braid_Core (_
  * TODO: Finish this entry
  */
 braid_Int
-braid_SetDeltaCorrection(braid_Core           core,        /**< braid_Core (_braid_Core) struct*/
-                         braid_Int            rank,        /**< Integer, sets number of Lyapunov vectors to store*/
+braid_SetDeltaCorrection(braid_Core           core,        /**< braid_Core (_braid_Core) struct */
+                         braid_Int            rank,        /**< Integer, sets number of Lyapunov vectors to store */
                          braid_PtFcnInitBasis basis_init,  /**< Function pointer to routine for initializing basis vectors */
                          braid_PtFcnInnerProd inner_prod   /**< Function pointer to routine for computing inner product between two vectors (needed for Gram-Schmidt orthonormalization) */
                          );
@@ -1230,10 +1230,17 @@ braid_SetDeferDelta(braid_Core core,   /**< braid_Core (_braid_Core) struct*/
  * time-dependent basis used by the low-rank Delta correction, and may be retrieved via the user's Access function.
  * This can work particularly well for chaotic systems, where the Lyapunov vectors converge to a basis for the unstable manifold
  * of the system, thus the Delta correction can target problematic unstable modes.
- * TODO: Finish this entry
+ *
+ * if Delta correction is not set, this will have no effect.
+ * if relax is set to 1, the Lyapunov vectors will be propagated during FCRelax, potentially resolving them enough to be useful.
+ * if cglv is set to 1, the Lyapunov vectors will be propagated during the sequential solve on the coarse grid, and they will be much better estimates.
+ * if both are set to 0, no estimation of Lyapunov vectors will be computed, and the basis vectors will only be propagated during FRestrict.
  */
 braid_Int
-braid_SetLyapunovEstimation(braid_Core  core    /**< braid_Core (_braid_Core) struct*/
+braid_SetLyapunovEstimation(braid_Core core,       /**< braid_Core (_braid_Core) struct*/
+                            braid_Int  relax,      /**< Integer, if 1, turns on propagation of Lyapunov vectors during FCRelax (default 0) */
+                            braid_Int  cglv,       /**< Integer, if 1, turns on propagation of Lyapunov vectors during coarse-grid solve (default 1)*/
+                            braid_Int  exponents  /**< Integer, if 1, turns on estimation of Lyapunov exponents at C-points on the finest grid (default 0)*/
                             );
 
 
