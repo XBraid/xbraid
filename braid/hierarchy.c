@@ -216,6 +216,7 @@ _braid_InitHierarchy(braid_Core    core,
    /* Allocate space for storage of Lyapunov exponents at each C-point */
    if(_braid_CoreElt(core, delta_correct) && _braid_CoreElt(core, lyap_exp))
    {
+      ncpoints = _braid_GridElt(grids[0], ncpoints);
       if (nlevels == 1)
       {
          _braid_CoreElt(core, local_exponents) = _braid_CTAlloc(braid_Real*, iupper-ilower);

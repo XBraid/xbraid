@@ -273,7 +273,7 @@ braid_StatusGetLocalLyapExponents(braid_Status   status,
    braid_Int index   = _braid_StatusElt(status, idx);
    braid_Int cfactor = _braid_GridElt(grids[level], cfactor);
 
-   if (_braid_StatusElt(status, level) > 0 || (_braid_IsFPoint(index, cfactor) && nlevels > 1))
+   if (!_braid_StatusElt(status, lyap_exp) ||_braid_StatusElt(status, level) > 0 || (_braid_IsFPoint(index, cfactor) && nlevels > 1))
    {
       *num_returned = 0;
       return _braid_error_flag;

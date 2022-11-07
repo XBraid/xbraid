@@ -110,7 +110,7 @@ _braid_GramSchmidt(braid_Core   core,
       if (exps)
       {
          /* save local exponents (diagonals of R) */
-         exps[i] = log(fabs(prod));
+         exps[i] = log(fabs(prod))/2;
       }
    }
 

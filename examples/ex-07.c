@@ -287,9 +287,12 @@ my_Init(braid_App app, double t, braid_Vector *u_ptr)
    u = (my_Vector *)malloc(sizeof(my_Vector));
 
    /* Initial condition */
-   u->values[0] = -1.8430428;
-   u->values[1] = -0.07036326;
-   u->values[2] = 23.15614636;
+   // u->values[0] = -1.8430428;
+   // u->values[1] = -0.07036326;
+   // u->values[2] = 23.15614636;
+   u->values[0] =  9.614521163788712;
+   u->values[1] = 17.519127090401067;
+   u->values[2] = 13.94230712158098;
 
    *u_ptr = u;
 
@@ -484,17 +487,18 @@ main(int argc, char *argv[])
    double tstart, tstop;
    int ntime;
 
-   int max_levels = 1;
+   double tlyap = 4.;
+   int max_levels = 2;
    int nrelax = 0;
    int nrelax0 = -1;
    double tol = 1.0e-06;
    int cfactor = 2;
    int max_iter = 100;
-   int fmg = 0;
-   int test = 0;
+   int fmg  = 0;
+   int test = 1;
    int lyap = 1;
    int relax_lyap = 0;
-   int delta_rank = 2;
+   int delta_rank = 3;
    int defer_lvl  = 0;
    int defer_iter = 0;
 
@@ -507,9 +511,9 @@ main(int argc, char *argv[])
 
    /* ntime time intervals */
    comm = MPI_COMM_WORLD;
-   ntime = 1024;
+   ntime = 2048;
    tstart = 0.0;
-   tstop = 5.;
+   tstop = log(10.)/0.9 * tlyap;
 
    MPI_Comm_rank(comm, &myid);
    MPI_Comm_size(comm, &nprocs);
@@ -525,7 +529,7 @@ main(int argc, char *argv[])
          {
             printf("\n");
             printf("  -ntime <ntime>    : set num time points (default %d)\n", ntime);
-            printf("  -tstop <tstop>    : set end time (default %lf)\n", tstop);
+            printf("  -tstop <tstop>    : set end time in Lyapunov time (default %lf)\n", tlyap);
             printf("  -ml  <max_levels> : set max levels\n");
             printf("  -nu  <nrelax>     : set num F-C relaxations\n");
             printf("  -nu0 <nrelax>     : set num F-C relaxations on level 0\n");
@@ -535,9 +539,9 @@ main(int argc, char *argv[])
             printf("  -fmg              : use FMG cycling\n");
             printf("  -rank             : rank of Delta correction (integer values in [0, 3])\n");
             printf("  -noLyap           : turn off estimation of Lyapunov vectors (static basis)\n");
-            printf("  -fcfLyap          : turn on relaxation of Lyapunov vectors \n");
-            printf("  -defer-lvl        : defer Delta correction to given level (default 0)");
-            printf("  -defer-iter       : defer Delta correction until given iteration (default 0)");
+            printf("  -fcfLyap          : turn on relaxation of Lyapunov vectors\n");
+            printf("  -defer-lvl        : defer Delta correction to given level (default 0)\n");
+            printf("  -defer-iter       : defer Delta correction until given iteration (default 0)\n");
             printf("  -test             : run wrapper tests\n");
             printf("\n");
          }
@@ -551,7 +555,8 @@ main(int argc, char *argv[])
       else if (strcmp(argv[arg_index], "-tstop") == 0)
       {
          arg_index++;
-         tstop = atof(argv[arg_index++]);
+         tlyap = atof(argv[arg_index++]);
+         tstop = log(10.)/0.9 * tlyap;  /* the leading Lyapunov exponent is ~0.9 */
       }
       else if (strcmp(argv[arg_index], "-ml") == 0)
       {
@@ -668,9 +673,10 @@ main(int argc, char *argv[])
    {
       braid_SetDeltaCorrection(core, delta_rank, my_InitBasis, my_InnerProd);
       braid_SetDeferDelta(core, defer_lvl, defer_iter);
-      braid_SetLyapunovEstimation(core, relax_lyap, lyap, 1);
+      braid_SetLyapunovEstimation(core, relax_lyap, lyap, relax_lyap || lyap);
    }
 
+   braid_SetSkip(core, 0);
    braid_SetPrintLevel(core, 2);
    braid_SetMaxLevels(core, max_levels);
    braid_SetNRelax(core, -1, nrelax);
