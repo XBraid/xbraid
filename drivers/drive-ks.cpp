@@ -916,8 +916,8 @@ main(int argc, char *argv[])
    double tstart, tstop;
    int rank;
 
-   int nt = 2048;
-   double Tf_lyap = 4;
+   int nt = 4096;
+   double Tf_lyap = 8;
    int max_levels = 4;
    int nrelax = 1;
    int nrelax0 = 1;
@@ -927,9 +927,9 @@ main(int argc, char *argv[])
    int max_iter = 25;
    int newton_iters = 3;
    bool useFMG = false;
-   int DeltaLvl = 1;
+   int DeltaLvl = 0;
    int DeltaRank = 0;
-   bool useTheta = false;
+   bool useTheta = true;
    bool doRefine = false;
    bool wrapperTests = false;
    bool getInit = false;
@@ -1251,10 +1251,7 @@ main(int argc, char *argv[])
    {
       core.SetDeltaCorrection(DeltaRank);
       core.SetDeferDelta(DeltaLvl, 0);
-      if (cglv)
-      {
-         core.SetLyapunovEstimation();
-      }
+      core.SetLyapunovEstimation(!cglv, cglv, 0);
    }
    if (useFMG)
    {

@@ -44,14 +44,15 @@ _braid_Residual(braid_Core        core,
    braid_Int        ilower   = _braid_GridElt(grids[level], ilower);
    braid_Real      *ta       = _braid_GridElt(grids[level], ta);
 
-   braid_Int    delta_correct = _braid_CoreElt(core, delta_correct);
-   /* This logic decides whether Delta correction needs to be computed on this level,
+   /* this decides whether Delta correction needs to be computed on this level,
    *  which depends on from where the residual is called
    */
-   delta_correct = delta_correct &&  ( iter  >= _braid_CoreElt(core, delta_defer_iter) )
-                                 &&  ( level >= _braid_CoreElt(core, delta_defer_lvl) )
-                                 && !( calling_function == braid_ASCaller_Residual
-                                    && level == _braid_CoreElt(core, delta_defer_lvl) );
+   braid_Int delta_correct;
+   delta_correct = _braid_CoreElt(core, delta_correct)
+                   &&  ( iter  >= _braid_CoreElt(core, delta_defer_iter) )
+                   &&  ( level >= _braid_CoreElt(core, delta_defer_lvl) )
+                   && !( calling_function == braid_ASCaller_Residual
+                      && level == _braid_CoreElt(core, delta_defer_lvl) );
 
    braid_BaseVector rstop;
    braid_Int        ii;
@@ -110,13 +111,14 @@ _braid_FASResidual(braid_Core        core,
    braid_Basis       *ba     = _braid_GridElt(grids[level], ba);
 
 
-   braid_Int ii = index-ilower;;
+   braid_Int ii = index-ilower;
 
-   /* && short circuits, so (fa[ii] != NULL) is never evaluated if (level > 0) is false */
+   /* && short circuits, so (fa[ii] != NULL) is never evaluated if (level == 0) */
    braid_Int delta_correct = _braid_CoreElt(core, delta_correct)
                              && (_braid_CoreElt(core, niter) >= _braid_CoreElt(core, delta_defer_iter))
-                             && (level > 0) && (fa[ii] != NULL)
-                             && (level >= _braid_CoreElt(core, delta_defer_lvl));
+                             && (level > _braid_CoreElt(core, delta_defer_lvl))
+                             && (fa[ii] != NULL);
+
    braid_BaseVector delta;    /* temporary storage for delta correction */
 
    if ( delta_correct )

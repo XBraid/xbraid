@@ -1711,6 +1711,30 @@ braid_SetDeltaCorrection(braid_Core           core,
                          braid_PtFcnInnerProd inner_prod)
 {
    /* TODO: compatibility checks */
+   if (_braid_CoreElt(core, richardson))
+   {
+      _braid_printf("  Braid: Delta correction is not currently compatible with Richardson error estimation, (feature coming soon?) disabling Richardson\n");
+      braid_SetRichardsonEstimation(core, 0, 0, 0);
+   }
+
+   if (_braid_CoreElt(core, adjoint))
+   {
+      _braid_printf("  Braid: Delta correction is not currently compatible with the adjoint feature, (coming soon?) not enabling Delta correction\n");
+      return _braid_error_flag;
+   }
+
+   if (_braid_CoreElt(core, residual))
+   {
+      _braid_printf("  Braid: Delta correction is not currently compatible with the residual feature, disabling residual\n");
+      braid_SetResidual(core, NULL);
+   }
+
+   if (_braid_CoreElt(core, scoarsen) || _braid_CoreElt(core, srefine))
+   {
+      _braid_printf("  Braid: Delta correction is not currently compatible with spatial coarsen/refine features, (coming soon) disabling spatial coarsen/refine\n");
+      braid_SetSpatialCoarsen(core, NULL);
+      braid_SetSpatialRefine(core, NULL);
+   }
 
    _braid_CoreElt(core, delta_correct) = 1;
    _braid_CoreElt(core, delta_rank)    = rank;
@@ -1743,6 +1767,12 @@ braid_SetLyapunovEstimation(braid_Core core,
     * We could allow to turn this on even if Delta correction is off,
     * although you really should take advantage of the LVs if you have them
     */
+
+   if (!_braid_CoreElt(core, delta_correct))
+   {
+      _braid_printf("  Braid: Estimation of Lyapunov vectors requires SetDeltaCorrection, ignoring SetLyapunovEstimation \n");
+      return _braid_error_flag;
+   }
 
    _braid_CoreElt(core, estimate_lyap) = cglv;
    _braid_CoreElt(core, relax_lyap)    = relax;

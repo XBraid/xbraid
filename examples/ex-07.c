@@ -499,7 +499,7 @@ main(int argc, char *argv[])
    int lyap = 1;
    int relax_lyap = 0;
    int delta_rank = 3;
-   int defer_lvl  = 2;
+   int defer_lvl  = 0;
    int defer_iter = 0;
 
    int arg_index, myid, nprocs;

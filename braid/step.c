@@ -55,13 +55,13 @@ _braid_Step(braid_Core         core,
       _braid_GetUInit(core, level, index, u, &ustop);
    }
 
-   if ( _braid_CoreElt(core, delta_correct) && iter >= _braid_CoreElt(core, delta_defer_iter) )
+   if (_braid_CoreElt(core, delta_correct) && iter >= _braid_CoreElt(core, delta_defer_iter) && level >= _braid_CoreElt(core, delta_defer_lvl))
    {
       braid_Basis *ba            = _braid_GridElt(grids[level], ba);
       braid_BaseVector delta;  /* temporary storage for Delta correction */
       // TODO: Is there a way to avoid having to clone u_start??
 
-      /* this decides when to propagate Lyapunov vectors other than in FRestrict, during which they are always handled */
+      /* this decides when to propagate Lyapunov vectors other than in FRestrict */
       braid_Int est_lyap = _braid_CoreElt(core, estimate_lyap) && (level == nlevels-1 || calling_function == braid_ASCaller_FInterp);
       braid_Int rlx_lyap = _braid_CoreElt(core, relax_lyap) && (calling_function == braid_ASCaller_FCRelax || calling_function == braid_ASCaller_FInterp);
 
@@ -103,7 +103,7 @@ _braid_Step(braid_Core         core,
          }
       }
 
-      /* calls the user's step function, which propagates the Lyapunov vectors */
+      /* calls the user's step function, which also propagates the Lyapunov vectors */
       _braid_BaseStep(core, app,  ustop, NULL, u, level, status);
 
       /* now apply the Delta and tau corrections */
