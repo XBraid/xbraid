@@ -267,6 +267,12 @@ braid_StatusGetLocalLyapExponents(braid_Status   status,
                                   braid_Real    *exp_ptr,
                                   braid_Int     *num_returned)
 {
+   if (_braid_StatusElt(status, wrapper_test))
+   {
+      *num_returned = 0;
+      return _braid_error_flag;
+   }
+
    _braid_Grid **grids = _braid_StatusElt(status, grids);
    braid_Int level   = _braid_StatusElt(status, level);
    braid_Int nlevels = _braid_StatusElt(status, nlevels);

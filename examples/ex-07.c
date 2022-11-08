@@ -487,19 +487,19 @@ main(int argc, char *argv[])
    double tstart, tstop;
    int ntime;
 
-   double tlyap = 4.;
-   int max_levels = 2;
+   double tlyap = 1.;
+   int max_levels = 4;
    int nrelax = 0;
    int nrelax0 = -1;
    double tol = 1.0e-06;
    int cfactor = 2;
    int max_iter = 100;
    int fmg  = 0;
-   int test = 1;
+   int test = 0;
    int lyap = 1;
    int relax_lyap = 0;
    int delta_rank = 3;
-   int defer_lvl  = 0;
+   int defer_lvl  = 2;
    int defer_iter = 0;
 
    int arg_index, myid, nprocs;
