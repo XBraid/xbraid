@@ -356,6 +356,24 @@ my_BufUnpack(braid_App          app,
    return 0;
 }
 
+int
+my_BufAlloc(braid_App          app,
+            void               **buffer,
+            braid_Int          nbytes)
+{
+   *buffer = malloc(nbytes);
+   return 0;
+}
+
+int
+my_BufFree(braid_App          app,
+           void               **buffer)
+{
+   free((char *) *buffer);
+   *buffer = NULL;
+   return 0;
+}
+
 int my_Sync(braid_App        app,
             braid_SyncStatus status)
 {
@@ -385,6 +403,7 @@ int main (int argc, char *argv[])
    double        tol           = 1.0e-06;
    int           cfactor       = 2;
    int           max_iter      = 100;
+   int           timings       = 0;
    int           fmg           = 0;
    int           skip          = 1;
    int           res           = 0;
@@ -392,6 +411,7 @@ int main (int argc, char *argv[])
    int           sync          = 0;
    int           periodic      = 0;
    int           relax_only_cg = 0;
+   int           bufalloc      = 0;
 
    int           arg_index;
    int           rank;
@@ -424,10 +444,12 @@ int main (int argc, char *argv[])
             printf("  -cf  <cfactor>    : set coarsening factor\n");
             printf("  -mi  <max_iter>   : set max iterations\n");
             printf("  -skip <set_skip>  : set skip relaxations on first down-cycle; 0: no skip;  1: skip\n");
+            printf("  -timings <bool>   : turn XBraid internal timings on/off\n");
             printf("  -fmg              : use FMG cycling\n");
             printf("  -res              : use my residual\n");
             printf("  -sync             : enable calls to the sync function\n");
             printf("  -periodic         : solve a periodic problem\n");
+            printf("  -bufalloc         : user-defined MPI buffer allocation\n");
             printf("  -tg <mydt>        : use user-specified time grid as global fine time grid, options are\n");
             printf("                      1 - uniform time grid\n");
             printf("                      2 - nonuniform time grid, where dt*0.5 for n = 1, ..., nt/2; dt*1.5 for n = nt/2+1, ..., nt\n\n");
@@ -475,6 +497,11 @@ int main (int argc, char *argv[])
          arg_index++;
          max_iter = atoi(argv[arg_index++]);
       }
+      else if ( strcmp(argv[arg_index], "-timings") == 0 )
+      {
+         arg_index++;
+         timings = atoi(argv[arg_index++]);
+      }
       else if ( strcmp(argv[arg_index], "-fmg") == 0 )
       {
          arg_index++;
@@ -499,6 +526,11 @@ int main (int argc, char *argv[])
       {
          arg_index++;
          periodic = 1;
+      }
+      else if( strcmp(argv[arg_index], "-bufalloc") == 0 )
+      {
+         arg_index++;
+         bufalloc = 1;
       }
       else if( strcmp(argv[arg_index], "-relax_only_cg") == 0 )
       {
@@ -543,6 +575,7 @@ int main (int argc, char *argv[])
    braid_SetAbsTol(core, tol);
    braid_SetCFactor(core, -1, cfactor);
    braid_SetMaxIter(core, max_iter);
+   braid_SetTimings(core, timings);
    braid_SetSkip(core, skip);
    if (fmg)
    {
@@ -568,6 +601,10 @@ int main (int argc, char *argv[])
    if (relax_only_cg)
    {
       braid_SetRelaxOnlyCG(core, relax_only_cg);
+   }
+   if (bufalloc)
+   {
+      braid_SetBufAllocFree(core, my_BufAlloc, my_BufFree);
    }
 
    /* Run simulation, and then clean up */

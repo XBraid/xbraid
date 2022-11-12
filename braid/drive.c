@@ -346,7 +346,7 @@ _braid_DrivePrintStatus(braid_Core  core,
       return _braid_error_flag;
    }
 
-   wtime = MPI_Wtime() - localtime;
+   wtime = _braid_MPI_Wtime(core) - localtime;
 
    if (_braid_CoreElt(core, adjoint))
    {
@@ -445,6 +445,7 @@ _braid_Drive(braid_Core  core,
    braid_Int      nlevels;
    braid_Int      ilower, iupper;
    braid_Real     rnorm_adj;
+   braid_Real     timer;
 
    /* Cycle state variables */
    _braid_CycleState  cycle;
@@ -527,6 +528,9 @@ _braid_Drive(braid_Core  core,
 
          if (level > 0)
          {
+            /* Set core->level to dummy value signifying coarsest grid solve. Must reset core->level after FInterp below */
+            _braid_CoreElt(core, level) = -11;
+
             /* Solve with relaxation on coarsest grid IF ( periodic OR explicitly choosing relaxation on coarsest grid ) */
             if ( (level == (nlevels-1)) && (_braid_CoreElt(core, periodic) || relax_only_cg) )
             {
@@ -539,9 +543,16 @@ _braid_Drive(braid_Core  core,
             }
 
             /* F-relax then interpolate */
+            if(level == (nlevels-1)){
+               timer = _braid_MPI_Wtime(core);
+            }
             _braid_FInterp(core, level);
+            if(level == (nlevels-1)){
+               _braid_CoreElt(core, timer_coarse_solve) += _braid_MPI_Wtime(core) - timer;
+            }
 
             level--;
+            _braid_CoreElt(core, level) = level;
          }
          else
          {

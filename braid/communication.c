@@ -40,6 +40,7 @@ _braid_CommRecvInit(braid_Core           core,
    MPI_Status         *status;
    braid_Int           proc, size, num_requests;
    braid_BufferStatus bstatus = (braid_BufferStatus)core;
+   braid_Real         timer   = 0.0;
 
    _braid_GetProc(core, level, index, &proc);
    if (proc > -1)
@@ -49,12 +50,14 @@ _braid_CommRecvInit(braid_Core           core,
       /* Allocate buffer through user routine */
       _braid_BufferStatusInit( 0, 0, bstatus );
       _braid_BaseBufSize(core, app,  &size, bstatus);
-      buffer = malloc(size);
+      _braid_BaseBufAlloc(core, app, &buffer, size);
 
       num_requests = 1;
       requests = _braid_CTAlloc(MPI_Request, num_requests);
       status   = _braid_CTAlloc(MPI_Status, num_requests);
+      timer = _braid_MPI_Wtime(core);
       MPI_Irecv(buffer, size, MPI_BYTE, proc, 0, comm, &requests[0]);
+      _braid_CoreElt(core, timer_MPI_recv) += _braid_MPI_Wtime(core) - timer;
 
       _braid_CommHandleElt(handle, request_type) = 1; /* recv type = 1 */
       _braid_CommHandleElt(handle, num_requests) = num_requests;
@@ -87,6 +90,7 @@ _braid_CommSendInit(braid_Core           core,
    MPI_Status         *status;
    braid_Int           proc, size, num_requests;
    braid_BufferStatus  bstatus   = (braid_BufferStatus)core;
+   braid_Real          timer     = 0.0;
    
 
    _braid_GetProc(core, level, index+1, &proc);
@@ -97,7 +101,7 @@ _braid_CommSendInit(braid_Core           core,
       /* Allocate buffer through user routine */
       _braid_BufferStatusInit( 0, 0, bstatus );
       _braid_BaseBufSize(core, app,  &size, bstatus);
-      buffer = malloc(size);
+      _braid_BaseBufAlloc(core, app, &buffer, size);
 
       /* Store the receiver rank in the status */
       _braid_StatusElt(bstatus, send_recv_rank) = proc;
@@ -110,7 +114,9 @@ _braid_CommSendInit(braid_Core           core,
       num_requests = 1;
       requests = _braid_CTAlloc(MPI_Request, num_requests);
       status   = _braid_CTAlloc(MPI_Status, num_requests);
+      timer = _braid_MPI_Wtime(core);
       MPI_Isend(buffer, size, MPI_BYTE, proc, 0, comm, &requests[0]);
+      _braid_CoreElt(core, timer_MPI_send) += _braid_MPI_Wtime(core) - timer;
 
       _braid_CommHandleElt(handle, request_type) = 0; /* send type = 0 */
       _braid_CommHandleElt(handle, num_requests) = num_requests;
@@ -133,6 +139,7 @@ _braid_CommWait(braid_Core          core,
 {
    braid_App           app    = _braid_CoreElt(core, app);
    _braid_CommHandle  *handle = *handle_ptr;
+   braid_Real          timer     = 0.0;
 
    if (handle != NULL)
    {
@@ -143,7 +150,15 @@ _braid_CommWait(braid_Core          core,
       void          *buffer       = _braid_CommHandleElt(handle, buffer);
       braid_BufferStatus bstatus  = (braid_BufferStatus)core;
 
+      // Wait on all communication, timing result for coarsest-grid separately 
+      timer = _braid_MPI_Wtime(core);
       MPI_Waitall(num_requests, requests, status);
+      if (_braid_CoreElt(core, level) == -11){// (_braid_CoreElt(core, nlevels)-1) ) {
+         _braid_CoreElt(core, timer_MPI_wait_coarse) += _braid_MPI_Wtime(core) - timer;
+      }
+      else {
+         _braid_CoreElt(core, timer_MPI_wait) += _braid_MPI_Wtime(core) - timer;
+      }
       
       if (request_type == 1) /* recv type */
       {
@@ -159,7 +174,7 @@ _braid_CommWait(braid_Core          core,
       _braid_TFree(requests);
       _braid_TFree(status);
       _braid_TFree(handle);
-      _braid_TFree(buffer);
+      _braid_BaseBufFree(core, app,  &buffer);
 
       *handle_ptr = NULL;
    }
