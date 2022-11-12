@@ -308,10 +308,10 @@ _braid_DriveCheckConvergence(braid_Core  core,
 
    if (iter == max_iter-1 )
    {
-    //if (myid == 0)
-    //{
-    //   _braid_printf("  Braid: Max. iterations reached.\n\n"); 
-    //}
+      if (myid == 0)
+      {
+         _braid_printf("  Braid: Max. iterations reached.\n\n"); 
+      }
       done = 1;
    }
 
