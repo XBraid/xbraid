@@ -572,7 +572,7 @@ braid_PrintTimers(braid_Core  core           /**< braid_Core (_braid_Core) struc
                  );
 
 /**
- * Reset timers
+ * Reset timers to 0
  **/
 braid_Int
 braid_ResetTimer(braid_Core  core           /**< braid_Core (_braid_Core) struct*/
