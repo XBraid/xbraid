@@ -700,6 +700,11 @@ braid_SetTimerFile(braid_Core     core,
                    braid_Int      length,
                    const char    *filestem)
 {
+   if (_braid_CoreElt(core, timer_file_stem) != NULL)
+   {
+      _braid_TFree(timer_file_stem);
+   }
+
    _braid_CoreElt(core, timer_file_stem) = malloc((length + 1) * sizeof(char));
    char *timer_file_stem = _braid_CoreElt(core, timer_file_stem);
    
