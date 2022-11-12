@@ -373,6 +373,7 @@ typedef struct _braid_Core_struct
    braid_Int    send_recv_rank;    /***< holds the rank of the source / receiver from MPI_Send / MPI_Recv calls. */
 
    /** Timers for various key parts of the code */
+   braid_Int   timings;            /***< boolean controlling whether we turn timings on, or not */
    braid_Real  timer_MPI_wait;
    braid_Real  timer_MPI_wait_coarse;
    braid_Real  timer_MPI_send;

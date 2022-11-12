@@ -1216,6 +1216,12 @@ braid_SetRichardsonEstimation(braid_Core core,                /**< braid_Core (_
                               braid_Int  local_order          /**< Local order of the time integration scheme, e.g., local _order=2 for backward Euler */
                               );
 
+/**
+ * Turn braid timings of internal function on/off with boolean flag 
+ */
+braid_Int
+braid_SetTimings(braid_Core core,
+                 braid_Int  boolean);
 
 /** @}*/
 

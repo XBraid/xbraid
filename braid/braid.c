@@ -58,7 +58,7 @@ braid_Drive(braid_Core  core)
    braid_Real     localtime, globaltime;
    braid_Real     timer_drive_init;
 
-   timer_drive_init = MPI_Wtime();
+   timer_drive_init = _braid_MPI_Wtime(core);
    /* Check for non-supported adjoint features */
    if (adjoint)
    {
@@ -88,7 +88,7 @@ braid_Drive(braid_Core  core)
    }
 
    /* Start timer */
-   localtime = MPI_Wtime();
+   localtime = _braid_MPI_Wtime(core);
 
    /* Allocate and initialize grids */
    if ( !warm_restart )
@@ -157,7 +157,7 @@ braid_Drive(braid_Core  core)
          _braid_CoreElt(core, record) = 1;
       }
    }
-   _braid_CoreElt(core, timer_drive_init) += MPI_Wtime() - timer_drive_init;
+   _braid_CoreElt(core, timer_drive_init) += _braid_MPI_Wtime(core) - timer_drive_init;
 
    /* Reset from previous calls to braid_drive() */
    _braid_CoreElt(core, done) = 0;
@@ -169,7 +169,7 @@ braid_Drive(braid_Core  core)
    _braid_CoreElt(core, warm_restart) = 1;
 
    /* Stop timer */
-   localtime = MPI_Wtime() - localtime;
+   localtime = _braid_MPI_Wtime(core) - localtime;
    MPI_Allreduce(&localtime, &globaltime, 1, braid_MPI_REAL, MPI_MAX, comm_world);
    _braid_CoreElt(core, localtime)  = localtime;
    _braid_CoreElt(core, globaltime) = globaltime;
@@ -180,8 +180,8 @@ braid_Drive(braid_Core  core)
       braid_PrintStats(core);
    }
 
-   /* Print basic timing information */
-   if (print_level > 0)
+   /* Print basic timing information, only if timings are enabled */
+   if ((print_level > 0) &&  (_braid_CoreElt(core, timings) == 1) )
    {
       braid_PrintTimers(core);
    }
@@ -361,6 +361,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, estimate)        = NULL;  /* Set in _braid_InitHierarchy */
 
    /* Timers for key parts of code */
+   _braid_CoreElt(core, timings) = 0;
    _braid_CoreElt(core, timer_coarse_solve) = 0.0;
    _braid_CoreElt(core, timer_drive_init)  = 0.0;
    _braid_CoreElt(core, timer_user_step)  = 0.0;
@@ -571,6 +572,7 @@ braid_PrintStats(braid_Core  core)
    braid_Int     finalFCRelax  = _braid_CoreElt(core, finalFCrelax);
    braid_Int     periodic      = _braid_CoreElt(core, periodic);
    braid_Int     adjoint       = _braid_CoreElt(core, adjoint);
+   braid_Int     timings       = _braid_CoreElt(core, timings);
    braid_Optim   optim         = _braid_CoreElt(core, optim);
 
    braid_Real    tol_adj;
@@ -660,6 +662,7 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  periodic              = %d\n", periodic);
       _braid_printf("  relax_only_cg         = %d\n", relax_only_cg);
       _braid_printf("  finalFCRelax          = %d\n", finalFCRelax);
+      _braid_printf("  tracking timings      = %d\n", timings);
       _braid_printf("  number of refinements = %d\n", nrefine);
       _braid_printf("\n");
       _braid_printf("  level   time-pts   cfactor   nrelax   Crelax Wt\n");
@@ -1816,6 +1819,18 @@ braid_SetRichardsonEstimation(braid_Core core,
    _braid_CoreElt(core, est_error)  = est_error;
    _braid_CoreElt(core, richardson) = richardson;
    _braid_CoreElt(core, order)      = local_order;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetTimings(braid_Core core,
+                 braid_Int  boolean)
+{
+   _braid_CoreElt(core, timings)  = boolean;
 
    return _braid_error_flag;
 }
