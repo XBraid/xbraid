@@ -457,6 +457,8 @@ _braid_BaseBufPack(braid_Core          core,
       action->send_recv_rank = sender; 
       action->messagetype    = _braid_StatusElt(status, messagetype);
       action->size_buffer    = _braid_StatusElt(status, size_buffer);
+      action->inTimeIdx      = _braid_StatusElt(status, idx);
+      action->level          = _braid_StatusElt(status, level);
       action->myid           = myid;
       _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
 
@@ -527,6 +529,8 @@ _braid_BaseBufUnpack(braid_Core          core,
       action->myid           = myid;
       action->messagetype    = _braid_StatusElt(status, messagetype);
       action->size_buffer    = _braid_StatusElt(status, size_buffer);
+      action->inTimeIdx      = _braid_StatusElt(status, idx);
+      action->level          = _braid_StatusElt(status, level);
       _braid_CoreElt(core, actionTape) = _braid_TapePush( _braid_CoreElt(core, actionTape) , action);
 
       /* Copy and push the bar vector to the bar tape */
@@ -1027,6 +1031,8 @@ _braid_BaseBufPack_diff(_braid_Action *action )
    braid_Real         send_recv_rank  = action->send_recv_rank;
    braid_Int          messagetype     = action->messagetype;
    braid_Int          size_buffer     = action->size_buffer;
+   braid_Int          level           = action->level;
+   braid_Int          index           = action->inTimeIdx;
    braid_App          app             = _braid_CoreElt(core, app);
    braid_Int          verbose_adj     = _braid_CoreElt(core, verbose_adj);
    braid_Int          myid            = _braid_CoreElt(core, myid);
@@ -1046,7 +1052,7 @@ _braid_BaseBufPack_diff(_braid_Action *action )
    MPI_Recv(buffer, size, MPI_BYTE, send_recv_rank, 0, _braid_CoreElt(core, comm), MPI_STATUS_IGNORE); 
 
    /* Initialize the bstatus */
-   _braid_BufferStatusInit( messagetype, size_buffer, bstatus);
+   _braid_BufferStatusInit( messagetype, index, level, size_buffer, bstatus);
 
    /* Unpack the buffer into u */
    _braid_CoreFcn(core, bufunpack)(app, buffer, &u, bstatus);
@@ -1076,6 +1082,8 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
    braid_Real          send_recv_rank = action->send_recv_rank;
    braid_Int           messagetype    = action->messagetype;
    braid_Int           size_buffer    = action->size_buffer;
+   braid_Int           level          = action->level;
+   braid_Int           index          = action->inTimeIdx;
    braid_BufferStatus  bstatus        = (braid_BufferStatus) core;
    braid_App           app            = _braid_CoreElt(core, app);
    braid_Int           verbose_adj    = _braid_CoreElt(core, verbose_adj);
@@ -1099,7 +1107,7 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
    }
 
    /* Initialize the bufferstatus */
-   _braid_BufferStatusInit( messagetype, size_buffer, bstatus);
+   _braid_BufferStatusInit( messagetype, index, level, size_buffer, bstatus);
 
    /* Pack the buffer */
    sendbuffer = _braid_CoreElt(core, optim)->sendbuffer;

@@ -102,7 +102,7 @@ _braid_FCRelax(braid_Core  core,
          {
             //Need to post a recv for a C-point from the left. 
             _braid_GetProc(core, level, clower-cfactor, &proc);
-            _braid_BufferStatusInit( 0, 0, bstatus );
+            _braid_BufferStatusInit(0, clower-cfactor, level, 0, bstatus);
             _braid_BaseBufSize(core, app,  &size, bstatus);
             _braid_BaseBufAlloc(core, app, &recv_buff, size);
              
@@ -112,7 +112,7 @@ _braid_FCRelax(braid_Core  core,
          {
             //Need to post a send of ciupper         
             _braid_GetProc(core, level, cupper+cfactor, &proc); 
-            _braid_BufferStatusInit( 0 ,0 ,bstatus );
+            _braid_BufferStatusInit(0, cupper+cfactor, level, 0, bstatus);
             _braid_BaseBufSize(core, app,  &size, bstatus);
             _braid_BaseBufAlloc(core, app, &send_buff, size);
            
@@ -147,7 +147,7 @@ _braid_FCRelax(braid_Core  core,
             {
               /* The needed C-point is coming as a message. Wait and unpack */
                MPI_Wait( &recv_request, MPI_STATUS_IGNORE);
-               _braid_BufferStatusInit(0,0,bstatus);
+               _braid_BufferStatusInit(0, ci, level, 0, bstatus);
                _braid_BaseBufUnpack(core, app, recv_buff, &bigstep, bstatus);
                _braid_BaseBufFree(core, app,  &recv_buff);
               

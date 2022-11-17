@@ -786,7 +786,13 @@ _braid_FRefine(braid_Core   core,
    requests = _braid_CTAlloc(MPI_Request, (nsends+nrecvs));
    statuses = _braid_CTAlloc(MPI_Status,  (nsends+nrecvs));
 
-   _braid_BufferStatusInit( 1, 0, bstatus );
+   // Pass best possible information to BufferStatusInit 
+   if( nrecvs > 0){
+      _braid_BufferStatusInit(1, recv_f_iis[0] + f_ilower, -1, 0, bstatus);
+   }
+   else {
+      _braid_BufferStatusInit(1, 0, -1, 0, bstatus);
+   }
    _braid_BaseBufSize(core, app,  &max_usize, bstatus); /* max buffer size */
    _braid_NBytesToNReals(max_usize, max_usize);
 
@@ -825,6 +831,7 @@ _braid_FRefine(braid_Core   core,
          {
             /* Pack u into buffer, adjust size, and put size into buffer */
             buffer = &bptr[1];
+            _braid_BufferStatusInit(1, ilower+ii, 0, 0, bstatus);
             _braid_BaseBufSize(core, app,  &size, bstatus);
             _braid_StatusElt( bstatus, size_buffer ) = size;
             _braid_BaseBufPack(core, app,  send_ua[ii], buffer, bstatus);
@@ -879,6 +886,7 @@ _braid_FRefine(braid_Core   core,
          {
             /* Unpack buffer into u-vector */
             buffer = &bptr[1];
+            _braid_BufferStatusInit(1, f_ilower+f_ii, -1, 0, bstatus);
             _braid_BaseBufUnpack(core, app, buffer, &recv_ua[f_ii], bstatus);
             size = (braid_Int) bptr[0];
             bptr += (1+size);

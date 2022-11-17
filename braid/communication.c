@@ -48,7 +48,7 @@ _braid_CommRecvInit(braid_Core           core,
       handle = _braid_TAlloc(_braid_CommHandle, 1);
 
       /* Allocate buffer through user routine */
-      _braid_BufferStatusInit( 0, 0, bstatus );
+      _braid_BufferStatusInit(0, index, level, 0, bstatus);
       _braid_BaseBufSize(core, app,  &size, bstatus);
       _braid_BaseBufAlloc(core, app, &buffer, size);
 
@@ -61,6 +61,8 @@ _braid_CommRecvInit(braid_Core           core,
 
       _braid_CommHandleElt(handle, request_type) = 1; /* recv type = 1 */
       _braid_CommHandleElt(handle, num_requests) = num_requests;
+      _braid_CommHandleElt(handle, index)        = index;
+      _braid_CommHandleElt(handle, level)        = level;
       _braid_CommHandleElt(handle, requests)     = requests;
       _braid_CommHandleElt(handle, status)       = status;
       _braid_CommHandleElt(handle, buffer)       = buffer;
@@ -99,7 +101,7 @@ _braid_CommSendInit(braid_Core           core,
       handle = _braid_TAlloc(_braid_CommHandle, 1);
 
       /* Allocate buffer through user routine */
-      _braid_BufferStatusInit( 0, 0, bstatus );
+      _braid_BufferStatusInit(0, index, level, 0, bstatus);
       _braid_BaseBufSize(core, app,  &size, bstatus);
       _braid_BaseBufAlloc(core, app, &buffer, size);
 
@@ -120,6 +122,8 @@ _braid_CommSendInit(braid_Core           core,
 
       _braid_CommHandleElt(handle, request_type) = 0; /* send type = 0 */
       _braid_CommHandleElt(handle, num_requests) = num_requests;
+      _braid_CommHandleElt(handle, index)        = index;
+      _braid_CommHandleElt(handle, level)        = level;
       _braid_CommHandleElt(handle, requests)     = requests;
       _braid_CommHandleElt(handle, status)       = status;
       _braid_CommHandleElt(handle, buffer)       = buffer;
@@ -145,6 +149,8 @@ _braid_CommWait(braid_Core          core,
    {
       braid_Int      request_type = _braid_CommHandleElt(handle, request_type);
       braid_Int      num_requests = _braid_CommHandleElt(handle, num_requests);
+      braid_Int      level        = _braid_CommHandleElt(handle, level);
+      braid_Int      index        = _braid_CommHandleElt(handle, index);
       MPI_Request   *requests     = _braid_CommHandleElt(handle, requests);
       MPI_Status    *status       = _braid_CommHandleElt(handle, status);
       void          *buffer       = _braid_CommHandleElt(handle, buffer);
@@ -162,7 +168,7 @@ _braid_CommWait(braid_Core          core,
       
       if (request_type == 1) /* recv type */
       {
-         _braid_BufferStatusInit( 0, 0, bstatus );
+         _braid_BufferStatusInit(0, index, level, 0, bstatus);
          braid_BaseVector  *vector_ptr = _braid_CommHandleElt(handle, vector_ptr);
          
          /* Store the sender rank the bufferStatus */   
