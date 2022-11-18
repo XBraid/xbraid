@@ -801,7 +801,7 @@ _braid_FRefine(braid_Core   core,
    {
       unum = recv_unums[m]; /* Number of u-vectors being received */
       recv_size = unum*(1 + max_usize);
-      /* TODO instead of _braid_CTAlloc, use  something like   _braid_BaseBufAlloc(core, app, &(recv_buffers[m]), recv_size*sizeof(braid_Real)) */
+      /* TODO instead of _braid_CTAlloc, use  something like   _braid_BaseBufAlloc(core, app, &(recv_buffers[m]), recv_size*sizeof(braid_Real), bstatus) */
       recv_buffers[m] = _braid_CTAlloc(braid_Real, recv_size);
       timer = _braid_MPI_Wtime(core);
       MPI_Irecv(recv_buffers[m], recv_size, braid_MPI_REAL, recv_procs[m], 5, comm,
@@ -821,7 +821,7 @@ _braid_FRefine(braid_Core   core,
       unum = send_unums[m]; /* Number of u-vectors being sent */
       ii   = send_iis[m];
       send_size = unum*(1 + max_usize);
-      /* TODO instead of _braid_CTAlloc, use  something like   _braid_BaseBufAlloc(core, app, &(send_buffers[m]), recv_size*sizeof(braid_Real)) */
+      /* TODO instead of _braid_CTAlloc, use  something like   _braid_BaseBufAlloc(core, app, &(send_buffers[m]), recv_size*sizeof(braid_Real), bstatus) */
       send_buffers[m] = _braid_CTAlloc(braid_Real, send_size);
       send_size = 0; /* Recompute send_size and realloc buffer */
       bptr = send_buffers[m];

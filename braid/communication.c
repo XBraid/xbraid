@@ -50,7 +50,7 @@ _braid_CommRecvInit(braid_Core           core,
       /* Allocate buffer through user routine */
       _braid_BufferStatusInit(0, index, level, 0, bstatus);
       _braid_BaseBufSize(core, app,  &size, bstatus);
-      _braid_BaseBufAlloc(core, app, &buffer, size);
+      _braid_BaseBufAlloc(core, app, &buffer, size, bstatus);
 
       num_requests = 1;
       requests = _braid_CTAlloc(MPI_Request, num_requests);
@@ -103,7 +103,7 @@ _braid_CommSendInit(braid_Core           core,
       /* Allocate buffer through user routine */
       _braid_BufferStatusInit(0, index, level, 0, bstatus);
       _braid_BaseBufSize(core, app,  &size, bstatus);
-      _braid_BaseBufAlloc(core, app, &buffer, size);
+      _braid_BaseBufAlloc(core, app, &buffer, size, bstatus);
 
       /* Store the receiver rank in the status */
       _braid_StatusElt(bstatus, send_recv_rank) = proc;

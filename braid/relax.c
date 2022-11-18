@@ -104,7 +104,7 @@ _braid_FCRelax(braid_Core  core,
             _braid_GetProc(core, level, clower-cfactor, &proc);
             _braid_BufferStatusInit(0, clower-cfactor, level, 0, bstatus);
             _braid_BaseBufSize(core, app,  &size, bstatus);
-            _braid_BaseBufAlloc(core, app, &recv_buff, size);
+            _braid_BaseBufAlloc(core, app, &recv_buff, size, bstatus);
              
              MPI_Irecv(recv_buff, size, MPI_BYTE, proc, 84, comm, &recv_request);
          }
@@ -114,7 +114,7 @@ _braid_FCRelax(braid_Core  core,
             _braid_GetProc(core, level, cupper+cfactor, &proc); 
             _braid_BufferStatusInit(0, cupper+cfactor, level, 0, bstatus);
             _braid_BaseBufSize(core, app,  &size, bstatus);
-            _braid_BaseBufAlloc(core, app, &send_buff, size);
+            _braid_BaseBufAlloc(core, app, &send_buff, size, bstatus);
            
             braid_Int iu, is_stored;
             _braid_UGetIndex(core, level, cupper, &iu, &is_stored);

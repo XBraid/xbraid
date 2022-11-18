@@ -550,12 +550,13 @@ braid_Int
 _braid_BaseBufAlloc(braid_Core          core,
                     braid_App           app,    
                     void              **buffer,
-                    braid_Int           nbytes)
+                    braid_Int           nbytes,
+                    braid_BufferStatus  status )
 {
    /* Call the user's buffer allocate function */
    if( _braid_CoreFcn(core, bufalloc) != NULL)
    {
-      _braid_CoreFcn(core, bufalloc)(app, buffer, nbytes);
+      _braid_CoreFcn(core, bufalloc)(app, buffer, nbytes, status);
    }
    else
    {
