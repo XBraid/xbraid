@@ -120,8 +120,7 @@ my_Init(braid_App     app,
    }
    else /* All other time points set to arbitrary value */
    {
-      // (u->value) = 0.456;
-      (u->value) = 1.0;
+      (u->value) = 0.456;
    }
    *u_ptr = u;
 
@@ -293,10 +292,7 @@ int main (int argc, char *argv[])
    braid_SetMaxLevels(core, 2);
    braid_SetAbsTol(core, 1.0e-06);
    braid_SetCFactor(core, -1, 2);
-   braid_SetNRelax(core, -1, 0);
-
-   // braid_SetSkip(core, 0);
-   braid_SetDeltaCorrection(core, 1, my_BasisInit, my_InnerProd);
+   // braid_SetDeltaCorrection(core, 1, my_BasisInit, my_InnerProd);
    
    /* Run simulation, and then clean up */
    braid_Drive(core);

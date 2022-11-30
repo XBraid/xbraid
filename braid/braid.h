@@ -1240,7 +1240,7 @@ braid_Int
 braid_SetLyapunovEstimation(braid_Core core,       /**< braid_Core (_braid_Core) struct*/
                             braid_Int  relax,      /**< Integer, if 1, turns on propagation of Lyapunov vectors during FCRelax (default 0) */
                             braid_Int  cglv,       /**< Integer, if 1, turns on propagation of Lyapunov vectors during coarse-grid solve (default 1)*/
-                            braid_Int  exponents  /**< Integer, if 1, turns on estimation of Lyapunov exponents at C-points on the finest grid (default 0)*/
+                            braid_Int  exponents   /**< Integer, if 1, turns on estimation of Lyapunov exponents at C-points on the finest grid (default 0)*/
                             );
 
 

@@ -59,30 +59,28 @@ _braid_Residual(braid_Core        core,
 
    ii = index-ilower;
    
-   /* initialize status struct */
    if ( delta_correct )
    {  /* Give the user access to the basis vectors through StepStatusGetBasisVec */
       _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, r->basis, status);
-   }
-   else
-   {
-      _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, NULL, status);
-   }
 
+      /* By default: r = ustop - \Phi(ustart)*/
+      _braid_GetUInit(core, level, index, r, &rstop);
+      _braid_BaseStep(core, app, rstop, NULL, r, level, status);
+      _braid_CoreFcn(core, sum)(app, 1.0, ustop->userVector, -1.0, r->userVector);
+      _braid_BaseSumBasis(core, app, 0., r->basis, -1.0, r->basis);
+
+      return _braid_error_flag;
+   }
+   /* else, default behavior */
+
+   /* initialize status struct */
+   _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, NULL, status);
    if ( _braid_CoreElt(core, residual) == NULL )
    {
       /* By default: r = ustop - \Phi(ustart)*/
       _braid_GetUInit(core, level, index, r, &rstop);
       _braid_BaseStep(core, app, rstop, NULL, r, level, status);
-      if (delta_correct)
-      {
-         _braid_CoreFcn(core, sum)(app, 1.0, ustop->userVector, -1.0, r->userVector);
-         _braid_BaseSumBasis(core, app, 0., r->basis, -1.0, r->basis);
-      }
-      else
-      {
-         _braid_BaseSum(core, app, 1.0, ustop, -1.0, r);
-      }
+      _braid_BaseSum(core, app, 1.0, ustop, -1.0, r);
    }
    else   /* can we make residual option compatible with Delta correction? */
    {

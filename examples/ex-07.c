@@ -5,20 +5,20 @@
  * Dobrev, et al. LLNL-CODE-660355. All rights reserved.
  *
  * This file is part of XBraid. For support, post issues to the XBraid Github
- *page.
+ * page.
  *
  * This program is free software; you can redistribute it and/or modify it
- *under the terms of the GNU General Public License (as published by the Free
- *Software Foundation) version 2.1 dated February 1999.
+ * under the terms of the GNU General Public License (as published by the Free
+ * Software Foundation) version 2.1 dated February 1999.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
- *ANY WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or FITNESS
- *FOR A PARTICULAR PURPOSE. See the terms and conditions of the GNU General
- *Public License for more details.
+ * ANY WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the terms and conditions of the GNU General
+ * Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- *along with this program; if not, write to the Free Software Foundation, Inc.,
- *59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ * along with this program; if not, write to the Free Software Foundation, Inc.,
+ * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  ***********************************************************************EHEADER*/
 
@@ -487,8 +487,8 @@ main(int argc, char *argv[])
    double tstart, tstop;
    int ntime;
 
-   double tlyap = 1.;
-   int max_levels = 4;
+   double tlyap = 4.;
+   int max_levels = 3;
    int nrelax = 0;
    int nrelax0 = -1;
    double tol = 1.0e-06;

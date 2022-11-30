@@ -581,7 +581,7 @@ int
 MyBraidApp::Init(double t,
                  braid_Vector *u_ptr)
 {
-   // initial the state and intial guess vectors for Newton's method
+   // initialize the state and intial guess vectors for Newton's method
    BraidVector *u = new BraidVector(disc.nx, stages);
    u->state = initial_data;
 
@@ -916,8 +916,8 @@ main(int argc, char *argv[])
    double tstart, tstop;
    int rank;
 
-   int nt = 4096;
-   double Tf_lyap = 8;
+   int nt = 2048;
+   double Tf_lyap = 4;
    int max_levels = 4;
    int nrelax = 1;
    int nrelax0 = 1;
@@ -929,7 +929,7 @@ main(int argc, char *argv[])
    bool useFMG = false;
    int DeltaLvl = 0;
    int DeltaRank = 0;
-   bool useTheta = true;
+   bool useTheta = false;
    bool doRefine = false;
    bool wrapperTests = false;
    bool getInit = false;
@@ -1193,7 +1193,8 @@ main(int argc, char *argv[])
 
    // get initial data
    VEC u0;
-   u0 = FourierMode(1, nx, len) + smoothed_noise(nx, 4);
+   // u0 = FourierMode(1, nx, len) + smoothed_noise(nx, 4);
+   u0 = FourierMode(1, nx, len);
    if (!getInit)
    {
       using namespace Eigen;

@@ -21,7 +21,7 @@ if __name__=="__main__":
     tan  = tan[:, :, 1:]
 
     # find the time-average of the exponents
-    mean_exp = exps.sum(axis=0)/(1*np.log(10.)/0.9) # assuming tstop = 4 T_\lambda.
+    mean_exp = exps.sum(axis=0)/(4*np.log(10.)/0.9) # assuming tstop = 4 T_\lambda.
     print(f"average Lyapunov exponents: {mean_exp}")
 
     # plot the trajectory and tangent vectors in 3D
