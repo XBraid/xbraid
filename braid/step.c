@@ -189,7 +189,7 @@ _braid_GetUInit(braid_Core         core,
    braid_BaseVector   *va       = _braid_GridElt(grids[level], va);
    braid_BaseVector    ustop    = *ustop_ptr;
 
-   braid_Int ii = index-ilower;;
+   braid_Int ii = index-ilower;
 
    _braid_UGetVectorRef(core, level, index, &ustop);
 
