@@ -290,26 +290,26 @@ _braid_DriveCheckConvergence(braid_Core  core,
          }
       }
    }
-   else if ( (print_level > 0) && _braid_isnan(rnorm) )
+   else if ( _braid_isnan(rnorm) )
    {
-      if (myid == 0)
+      if ( (myid == 0) && (print_level > 0) )
       {
          _braid_printf("  Braid: Iterations diverged.\n");
       }
       done = 1;
    }
-   else if ( (print_level > 0) && adjoint && _braid_isnan(rnorm_adj) )
+   else if ( adjoint && _braid_isnan(rnorm_adj) )
    {
-      if (myid == 0)
+      if ( (myid == 0) && (print_level > 0) )
       {
          _braid_printf("  Braid: Adjoint iterations diverged.\n");
       }
       done = 1;
    }
 
-   if ((print_level > 0) && (iter == max_iter-1) )
+   if ( iter == max_iter-1 )
    {
-      if (myid == 0)
+      if ( (myid == 0) && (print_level > 0) )
       {
          _braid_printf("  Braid: Max. iterations reached.\n\n"); 
       }
