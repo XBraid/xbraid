@@ -181,7 +181,7 @@ braid_Drive(braid_Core  core)
    }
 
    /* Print basic timing information, only if timings are enabled */
-   if ((print_level > 0) &&  (_braid_CoreElt(core, timings) == 1) )
+   if (_braid_CoreElt(core, timings) == 1)
    {
       braid_PrintTimers(core);
    }
