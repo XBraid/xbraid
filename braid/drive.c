@@ -232,6 +232,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
    braid_Optim          optim           = _braid_CoreElt(core, optim);
    braid_Int            adjoint         = _braid_CoreElt(core, adjoint);
    braid_Int            obj_only        = _braid_CoreElt(core, obj_only);
+   braid_Int            print_level     = _braid_CoreElt(core, print_level);
    braid_Real           rnorm, rnorm0;
    braid_Real           rnorm_adj, rnorm0_adj;
    braid_Real           tol_adj, rtol_adj;
@@ -291,7 +292,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
    }
    else if ( _braid_isnan(rnorm) )
    {
-      if (myid == 0)
+      if ( (myid == 0) && (print_level > 0) )
       {
          _braid_printf("  Braid: Iterations diverged.\n");
       }
@@ -299,16 +300,16 @@ _braid_DriveCheckConvergence(braid_Core  core,
    }
    else if ( adjoint && _braid_isnan(rnorm_adj) )
    {
-      if (myid == 0)
+      if ( (myid == 0) && (print_level > 0) )
       {
          _braid_printf("  Braid: Adjoint iterations diverged.\n");
       }
       done = 1;
    }
 
-   if (iter == max_iter-1 )
+   if ( iter == max_iter-1 )
    {
-      if (myid == 0)
+      if ( (myid == 0) && (print_level > 0) )
       {
          _braid_printf("  Braid: Max. iterations reached.\n\n"); 
       }

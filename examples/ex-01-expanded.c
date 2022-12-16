@@ -359,7 +359,8 @@ my_BufUnpack(braid_App          app,
 int
 my_BufAlloc(braid_App          app,
             void               **buffer,
-            braid_Int          nbytes)
+            braid_Int          nbytes,
+            braid_BufferStatus bstatus)
 {
    *buffer = malloc(nbytes);
    return 0;

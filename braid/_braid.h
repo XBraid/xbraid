@@ -182,6 +182,8 @@ typedef struct
 {
    braid_Int         request_type;    /**< two values: recv type = 1, and send type = 0 */
    braid_Int         num_requests;    /**< number of active requests for this handle, usually 1 */
+   braid_Int         index;           /**< time index of the time point corresponding to this handle */
+   braid_Int         level;           /**< level of the time point corresponding to this handle */
    MPI_Request      *requests;        /**< MPI request structure */
    MPI_Status       *status;          /**< MPI status */
    void             *buffer;          /**< Buffer for message */

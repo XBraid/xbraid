@@ -152,6 +152,8 @@ _braid_StepStatusInit(braid_Real        tstart,      /**< current time value  */
  */
 braid_Int
 _braid_BufferStatusInit(braid_Int           messagetype,  /**< message type, 0: for Step(), 1: for load balancing */
+                        braid_Int           idx,          /**< time point index value corresponding to this buffer */
+                        braid_Int           level,        /**< current level in XBraid */
                         braid_Int           size,         /**< if set by user, size of send buffer is "size" bytes */
                         braid_BufferStatus  status        /**< structure to initialize */
                         );
