@@ -332,6 +332,111 @@ getGuessTheta2(VEC &guess, const VEC &u, const VEC &ustop, const KSDiscretizatio
    guess.head(nx) = 2 * (ustop - u) - guess.tail(nx);
 }
 
+void
+getGuessThetaNew(VEC &guess, const VEC &u, const VEC &ustop, const KSDiscretization &disc, double dt, int cf)
+{
+   // this is exact for any cf!
+   const int stages = 2;
+   int nx = u.size();
+   assert(guess.size() == stages * nx);
+
+   double th2, msqr;
+   msqr = cf*cf;
+   th2 = (3*msqr) / (4*msqr + 2);
+
+   guess.tail(nx) = dt * disc.f_ks(ustop);
+   guess.head(nx) = ((ustop - u) - (1.-th2) * guess.tail(nx)) * 1. / th2;
+}
+
+VEC
+theta_new(const VEC &u, VEC &guess, const KSDiscretization &disc, BraidStepStatus &pstatus, double dt, int cf, int newton_iters, double tol, double *err_est)
+{
+   const int stages = 2;
+   int nx = u.size();
+   assert(guess.size() == stages * nx);
+
+   double th1, th2, a1, msqr;
+   msqr = cf*cf;
+   th1 = (msqr - 1) / (3*msqr);
+   th2 = (3*msqr) / (4*msqr + 2);
+   a1  = (msqr + 2)*(msqr + 2) / (12*msqr + 6) / msqr;
+   double a11, a12, a21, a22;
+   a11 = a1 + th1;
+   a12 = -a1;
+   a21 = th2;
+   a22 = 1. - th2;
+
+   VEC k(guess);
+   VEC p(guess);
+   VEC u1(u), u2(u);
+
+   SPMAT A(stages * nx, stages * nx);
+   Eigen::UmfPackLU<SPMAT> solver; // best option I have tried so far!
+   SPMAT eye(nx, nx);
+   eye.setIdentity();
+   VEC rhs(stages * nx);
+   for (int i = 0; i < newton_iters; i++)
+   {
+      u1 = u + a11 * k.head(nx) + a12 * k.tail(nx);
+      u2 = u + a21 * k.head(nx) + a22 * k.tail(nx);
+
+      rhs << k.head(nx) - dt * disc.f_ks(u1),
+             k.tail(nx) - dt * disc.f_ks(u2);
+
+      if (i > 0 && inf_norm(p) <= tol)
+      {
+         break;
+      }
+
+      // solve block system
+      SPMAT B1 = dt * disc.f_ks_du(u1);
+      SPMAT B2 = dt * disc.f_ks_du(u2);
+      setup_nxnbmat(A,
+                    { { eye - a11 * B1, -a12 * B1 },
+                      { -a21 * B2, eye - a22 * B2 } },
+                    nx);
+
+      solver.compute(A);
+      p = solver.solve(rhs);
+      k -= p;
+   }
+   // propagate tangent vectors
+   int delta_rank;
+   pstatus.GetDeltaRank(&delta_rank);
+   if (delta_rank > 0)
+   {
+      // here we propagate tangent vectors implicitly without forming the full lin. of Phi.
+      BraidVector* col;
+      VEC tmp(stages * nx);
+      SPMAT K1 = dt * disc.f_ks_du(u1);
+      SPMAT K2 = dt * disc.f_ks_du(u2);
+
+      setup_nxnbmat(A, { { eye - a11 * K1, -a12 * K1 }, { -a21 * K2, eye - a22 * K2 } }, nx);
+      solver.compute(A); // does the factorization
+
+      // solve one column at a time
+      for (Index j = 0; j < delta_rank; j++)
+      {
+         pstatus.GetBasisVec(((braid_Vector*)&col), j);
+
+         rhs << K1 * col->state, K2 * col->state;
+         tmp = solver.solve(rhs);
+         col->state += a21*tmp.head(nx) + a22*tmp.tail(nx);
+      }
+   }
+
+   std::cout << "guess accuracy: " << (k - guess).norm() << '\n';
+   guess = k;
+   u2 = u + a21*k.head(nx) + a22*k.tail(nx);
+   if (err_est)
+   {
+      // use embedded 1st order method to estimate relative local discretization error
+      u1 = u + k.head(nx);
+      *err_est = (u1 - u2).lpNorm<Eigen::Infinity>() / u2.lpNorm<Eigen::Infinity>();
+   }
+   return u2;
+}
+
 VEC
 theta2(const VEC &u, VEC &guess, const KSDiscretization &disc, BraidStepStatus &pstatus, double dt, double th_A, double th_B, double th_C, int newton_iters, double tol, double *err_est)
 {
@@ -446,6 +551,7 @@ MyBraidApp::Step(braid_Vector u_,
       lvl_eff = (level - nrefine) + (max_levels - 2);
    }
    double dt = tstop - tstart;
+   double cf = cfactor0 * intpow(cfactor, lvl_eff - 1);
 
    bool useGuess, toCPoint, coarseGrid;
    toCPoint = IsCPoint(T_index + 1, lvl_eff);
@@ -453,6 +559,7 @@ MyBraidApp::Step(braid_Vector u_,
 
    // the initial guess is only valid for f-points on fine-grids
    useGuess = (coarseGrid || !toCPoint);
+   // useGuess = false;
 
    // We want the coarse grid to be cheap, so we save the best
    // initial guess for the coarse grid at C-points
@@ -464,6 +571,7 @@ MyBraidApp::Step(braid_Vector u_,
    {
       // this is exact on the fine-grid, a lot closer on coarse grids
       getGuessTheta2(u->guess, u->state, ustop->state, disc, dt);
+      // getGuessThetaNew(u->guess, u->state, ustop->state, disc, dt, cf);
    }
    else
    {
@@ -496,12 +604,13 @@ MyBraidApp::Step(braid_Vector u_,
       if (lvl_eff == 0 || !useTheta)
       {
          u->state = theta2(u->state, u->guess, disc, pstatus, dt, 0., 0., 1., iters, tol, &err_est);
+         // u->state = theta_new(u->state, u->guess, disc, pstatus, dt, 1, iters, tol, &err_est);
       }
       else
       {
          double theta = getTheta(lvl_eff);
-         double cf = cfactor0 * intpow(cfactor, lvl_eff - 1);
          u->state = theta2(u->state, u->guess, disc, pstatus, dt, theta, theta, 2. / 3 + 1 / (3 * cf * cf) - theta, iters, tol, &err_est);
+         // u->state = theta_new(u->state, u->guess, disc, pstatus, dt, cf, iters, tol, &err_est);
       }
    }
    else
@@ -630,7 +739,10 @@ MyBraidApp::Sum(double alpha,
    BraidVector *x = (BraidVector *)x_;
    BraidVector *y = (BraidVector *)y_;
    (y->state) = alpha * (x->state) + beta * (y->state);
-   // (y->guess) = alpha * (x->guess) + beta * (y->guess);
+   if (x->guess.size() > 0 && y->guess.size() > 0)
+   {
+      (y->guess) = alpha * (x->guess) + beta * (y->guess);
+   }
    return 0;
 }
 
@@ -1276,7 +1388,6 @@ main(int argc, char *argv[])
    core.SetRefine(doRefine);
    core.SetMaxRefinements(max_levels - 2);
    core.SetTPointsCutoff(nt);
-   core.SetSkip(1);
    core.SetStorage(0);
    core.SetTemporalNorm(2);
    core.SetAccessLevel(output || getInit);
