@@ -1195,17 +1195,17 @@ main(int argc, char *argv[])
    VEC u0;
    // u0 = FourierMode(1, nx, len) + smoothed_noise(nx, 4);
    u0 = FourierMode(1, nx, len);
-   if (!getInit)
-   {
-      using namespace Eigen;
-      int init_nx = 512;
-      int cfx = init_nx / nx;
-      VEC u0fine;
-      if (read_init("drive-ks-init-nx512.out", u0fine, init_nx))
-      {
-         u0 = u0fine(seq(0, last, cfx));
-      }
-   }
+   // if (!getInit)
+   // {
+   //    using namespace Eigen;
+   //    int init_nx = 512;
+   //    int cfx = init_nx / nx;
+   //    VEC u0fine;
+   //    if (read_init("drive-ks-init-nx512.out", u0fine, init_nx))
+   //    {
+   //       u0 = u0fine(seq(0, last, cfx));
+   //    }
+   // }
 
    // set up app structure
    MyBraidApp app(MPI_COMM_WORLD,
