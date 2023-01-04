@@ -1305,8 +1305,8 @@ main(int argc, char *argv[])
 
    // get initial data
    VEC u0;
-   // u0 = FourierMode(1, nx, len) + smoothed_noise(nx, 4);
-   u0 = FourierMode(1, nx, len);
+   // u0 = FourierMode(2, nx, len) + smoothed_noise(nx, 4);
+   u0 = FourierMode(2, nx, len);
    // if (!getInit)
    // {
    //    using namespace Eigen;
