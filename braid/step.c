@@ -63,7 +63,7 @@ _braid_Step(braid_Core         core,
 
       /* this decides when to propagate Lyapunov vectors other than in FRestrict */
       braid_Int est_lyap = _braid_CoreElt(core, estimate_lyap) && (level == nlevels-1 || calling_function == braid_ASCaller_FInterp);
-      braid_Int rlx_lyap = _braid_CoreElt(core, relax_lyap) && (calling_function == braid_ASCaller_FCRelax || calling_function == braid_ASCaller_FInterp);
+      braid_Int rlx_lyap = _braid_CoreElt(core, relax_lyap) && level < nlevels-1 && (calling_function == braid_ASCaller_FCRelax || calling_function == braid_ASCaller_FInterp);
 
       /* only propagate Lyapunov vectors when necessary (always in FRestrict) */
       braid_Int prop_lyap = ( calling_function == braid_ASCaller_FRestrict ) || est_lyap || rlx_lyap;

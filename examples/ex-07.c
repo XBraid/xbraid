@@ -26,8 +26,8 @@
  * Example:       ex-07.c
  *
  * Interface:     C
- * 
- * Requires:      only C-language support     
+ *
+ * Requires:      only C-language support
  *
  * Compile with:  make ex-07
  *
@@ -36,21 +36,21 @@
  * Sample run:    mpirun -np 2 ex-07 -rank 3
  *
  * Description:   Solve the chaotic Lorenz system,
- * 
+ *
  *                  {x' = sigma (y - x),    x(0) = -1.8430428,
  *                  {y' = x (rho - z) - y,  y(0) = -0.07036326,
  *                  {z' = xy - beta z,      z(0) = 23.15614636.
- * 
+ *
  *                with sigma=10, beta=8/3, and rho=28,
  *                and estimate the backward Lyapunov vectors along the trajectory
  *                parallel-in-time using MGRIT equipped with Delta correction.
  *                The initial condition should be a point close to the strange attractor.
- *                
+ *
  *                TODO: Give some high-level info about the algorithm.
- * 
+ *
  *                See (https://arxiv.org/abs/2208.12629) for a detailed introduction
  *                to the technique used here.
- * 
+ *
  * Visualize with: python viz-ex-07.py (requires NumPy and MatPlotLib)
  *
  **/
@@ -75,8 +75,7 @@ const double sigma = 10.0;
 const double beta = 8.0 / 3.0;
 const double rho = 28.0;
 
-void
-VecCopy(const VEC x, VEC y)
+void VecCopy(const VEC x, VEC y)
 {
    for (int i = 0; i < VecSize; i++)
    {
@@ -84,8 +83,7 @@ VecCopy(const VEC x, VEC y)
    }
 }
 
-void
-VecSet(VEC x, double alpha)
+void VecSet(VEC x, double alpha)
 {
    for (int i = 0; i < VecSize; i++)
    {
@@ -93,8 +91,7 @@ VecSet(VEC x, double alpha)
    }
 }
 
-void
-MatSetEye(MAT I)
+void MatSetEye(MAT I)
 {
    for (size_t i = 0; i < VecSize; i++)
    {
@@ -103,8 +100,7 @@ MatSetEye(MAT I)
    }
 }
 
-void
-VecAxpy(const double alpha, const VEC x, VEC y)
+void VecAxpy(const double alpha, const VEC x, VEC y)
 {
    for (int i = 0; i < VecSize; i++)
    {
@@ -112,8 +108,7 @@ VecAxpy(const double alpha, const VEC x, VEC y)
    }
 }
 
-void
-MatAxpy(const double alpha, const MAT A, MAT B)
+void MatAxpy(const double alpha, const MAT A, MAT B)
 {
    for (int i = 0; i < VecSize; i++)
    {
@@ -121,8 +116,7 @@ MatAxpy(const double alpha, const MAT A, MAT B)
    }
 }
 
-void
-MatVec(const MAT A, VEC x)
+void MatVec(const MAT A, VEC x)
 {
    VEC tmp;
    VecCopy(x, tmp);
@@ -141,10 +135,8 @@ MatVec(const MAT A, VEC x)
  | my integration routines |
  *-------------------------*/
 
-
 // returns the derivative at point *u*
-void
-Lorenz(const VEC u, VEC u_out)
+void Lorenz(const VEC u, VEC u_out)
 {
    u_out[0] = sigma * (u[1] - u[0]);
    u_out[1] = u[0] * (rho - u[2]) - u[1];
@@ -152,8 +144,7 @@ Lorenz(const VEC u, VEC u_out)
 }
 
 // returns the Jacobian at point *u*
-void
-Lorenz_du(const VEC u, MAT J)
+void Lorenz_du(const VEC u, MAT J)
 {
    J[0][0] = -sigma;
    J[0][1] = sigma;
@@ -171,8 +162,7 @@ Lorenz_du(const VEC u, MAT J)
  * Optionally computes the jacobian of the time-step and
  * writes the result in F (if not NULL)
  */
-void
-Euler(VEC u0, double h, MAT *F)
+void Euler(VEC u0, double h, MAT *F)
 {
    VEC k1;
    Lorenz(u0, k1);
@@ -202,26 +192,34 @@ typedef struct _braid_App_struct
    double tstart;
    double tstop;
    int ntime;
-   FILE *file;    // saves the state vectors
-   FILE *file_lv; // saves the Lyapunov vectors and exponents
+   int rank;
+   double lyap_exps[VecSize]; // temporary storage for lyapunov exponents
+   FILE *file;                // saves the state vectors
+   FILE *file_lv;             // saves the Lyapunov vectors and exponents
 
 } my_App;
 
-int
-my_App_Init(my_App *app,
-         MPI_Comm comm_,
-         double tstart_,
-         double tstop_,
-         int ntime_,
-         FILE *file,
-         FILE *file_lv)
+int my_App_Init(my_App *app,
+                MPI_Comm comm_,
+                double tstart_,
+                double tstop_,
+                int ntime_,
+                int rank_,
+                FILE *file,
+                FILE *file_lv)
 {
    (app->comm) = comm_;
    (app->tstart) = tstart_;
    (app->tstop) = tstop_;
    (app->ntime) = ntime_;
+   (app->rank) = rank_;
    (app->file) = file;
    (app->file_lv) = file_lv;
+   for (int i = 0; i < rank_; i++)
+   {
+      (app->lyap_exps)[i] = 0.;
+   }
+
    return 0;
 }
 
@@ -231,19 +229,17 @@ typedef struct _braid_Vector_struct
    VEC values;
 } my_Vector;
 
-
-int
-my_Step(braid_App app,
-        braid_Vector ustop,
-        braid_Vector fstop,
-        braid_Vector u,
-        braid_StepStatus status)
+int my_Step(braid_App app,
+            braid_Vector ustop,
+            braid_Vector fstop,
+            braid_Vector u,
+            braid_StepStatus status)
 {
    double tstart; /* current time */
    double tstop;  /* evolve to this time */
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
 
-   double h;      /* dt value */
+   double h; /* dt value */
    h = tstop - tstart;
 
    // get the number of Lyapunov vectors we need to propagate
@@ -279,8 +275,7 @@ my_Step(braid_App app,
    return 0;
 }
 
-int
-my_Init(braid_App app, double t, braid_Vector *u_ptr)
+int my_Init(braid_App app, double t, braid_Vector *u_ptr)
 {
    my_Vector *u;
 
@@ -290,7 +285,7 @@ my_Init(braid_App app, double t, braid_Vector *u_ptr)
    // u->values[0] = -1.8430428;
    // u->values[1] = -0.07036326;
    // u->values[2] = 23.15614636;
-   u->values[0] =  9.614521163788712;
+   u->values[0] = 9.614521163788712;
    u->values[1] = 17.519127090401067;
    u->values[2] = 13.94230712158098;
 
@@ -299,8 +294,7 @@ my_Init(braid_App app, double t, braid_Vector *u_ptr)
    return 0;
 }
 
-int
-my_InitBasis(braid_App app, double t, int index, braid_Vector *u_ptr)
+int my_InitBasis(braid_App app, double t, int index, braid_Vector *u_ptr)
 {
    my_Vector *u;
 
@@ -315,8 +309,7 @@ my_InitBasis(braid_App app, double t, int index, braid_Vector *u_ptr)
    return 0;
 }
 
-int
-my_Clone(braid_App app, braid_Vector u, braid_Vector *v_ptr)
+int my_Clone(braid_App app, braid_Vector u, braid_Vector *v_ptr)
 {
    my_Vector *v;
 
@@ -328,20 +321,18 @@ my_Clone(braid_App app, braid_Vector u, braid_Vector *v_ptr)
    return 0;
 }
 
-int
-my_Free(braid_App app, braid_Vector u)
+int my_Free(braid_App app, braid_Vector u)
 {
    free(u);
 
    return 0;
 }
 
-int
-my_Sum(braid_App app,
-       double alpha,
-       braid_Vector x,
-       double beta,
-       braid_Vector y)
+int my_Sum(braid_App app,
+           double alpha,
+           braid_Vector x,
+           double beta,
+           braid_Vector y)
 {
    for (int i = 0; i < VecSize; i++)
    {
@@ -351,8 +342,7 @@ my_Sum(braid_App app,
    return 0;
 }
 
-int
-my_InnerProd(braid_App app, braid_Vector u, braid_Vector v, double *prod_ptr)
+int my_InnerProd(braid_App app, braid_Vector u, braid_Vector v, double *prod_ptr)
 {
    double dot = 0.;
 
@@ -364,8 +354,7 @@ my_InnerProd(braid_App app, braid_Vector u, braid_Vector v, double *prod_ptr)
    return 0;
 }
 
-int
-my_SpatialNorm(braid_App app, braid_Vector u, double *norm_ptr)
+int my_SpatialNorm(braid_App app, braid_Vector u, double *norm_ptr)
 {
    /* our inner product induces the Euclidean norm */
    my_InnerProd(app, u, u, norm_ptr);
@@ -373,8 +362,7 @@ my_SpatialNorm(braid_App app, braid_Vector u, double *norm_ptr)
    return 0;
 }
 
-int
-my_Access(braid_App app, braid_Vector u, braid_AccessStatus astatus)
+int my_Access(braid_App app, braid_Vector u, braid_AccessStatus astatus)
 {
    FILE *file = (app->file);
    int index, i;
@@ -393,14 +381,14 @@ my_Access(braid_App app, braid_Vector u, braid_AccessStatus astatus)
 
    /* write the lyapunov vectors to file */
    file = app->file_lv;
-   int rank, num_exp;
-   braid_AccessStatusGetDeltaRank(astatus, &rank);
-   num_exp = rank;
-   double *exponents = malloc(rank * sizeof(double));
+   int local_rank, num_exp;
+   braid_AccessStatusGetDeltaRank(astatus, &local_rank);
+   num_exp = local_rank;
+   double *exponents = malloc(local_rank * sizeof(double));
    braid_AccessStatusGetLocalLyapExponents(astatus, exponents, &num_exp);
 
    fprintf(file, "%d", index);
-   for (int j = 0; j < rank; j++)
+   for (int j = 0; j < local_rank; j++)
    {
       my_Vector *psi;
       braid_AccessStatusGetBasisVec(astatus, &psi, j);
@@ -408,6 +396,7 @@ my_Access(braid_App app, braid_Vector u, braid_AccessStatus astatus)
       {
          if (j < num_exp)
          {
+            (app->lyap_exps)[j] += exponents[j];
             fprintf(file, " %.14e", exponents[j]);
          }
          else
@@ -423,26 +412,24 @@ my_Access(braid_App app, braid_Vector u, braid_AccessStatus astatus)
    fprintf(file, "\n ");
    fflush(file);
    free(exponents);
-   
+
    return 0;
 }
 
-int
-my_BufSize(braid_App app, int *size_ptr, braid_BufferStatus bstatus)
+int my_BufSize(braid_App app, int *size_ptr, braid_BufferStatus bstatus)
 {
    *size_ptr = VecSize * sizeof(double);
- 
+
    /* tell braid the size of the basis vectors */
    /* Note: this isn't necessary here, but for more complicated applications this size may be different */
    braid_BufferStatusSetBasisSize(bstatus, VecSize * sizeof(double));
    return 0;
 }
 
-int
-my_BufPack(braid_App app,
-           braid_Vector u,
-           void *buffer,
-           braid_BufferStatus bstatus)
+int my_BufPack(braid_App app,
+               braid_Vector u,
+               void *buffer,
+               braid_BufferStatus bstatus)
 {
    double *dbuffer = buffer;
 
@@ -455,11 +442,10 @@ my_BufPack(braid_App app,
    return 0;
 }
 
-int
-my_BufUnpack(braid_App app,
-             void *buffer,
-             braid_Vector *u_ptr,
-             braid_BufferStatus status)
+int my_BufUnpack(braid_App app,
+                 void *buffer,
+                 braid_Vector *u_ptr,
+                 braid_BufferStatus status)
 {
    double *dbuffer = buffer;
    my_Vector *u;
@@ -478,8 +464,7 @@ my_BufUnpack(braid_App app,
  * Main driver
  *--------------------------------------------------------------------------*/
 
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
    braid_Core core;
    my_App *app;
@@ -494,12 +479,12 @@ main(int argc, char *argv[])
    double tol = 1.0e-06;
    int cfactor = 2;
    int max_iter = 100;
-   int fmg  = 0;
+   int fmg = 0;
    int test = 0;
    int lyap = 1;
    int relax_lyap = 0;
    int delta_rank = 3;
-   int defer_lvl  = 0;
+   int defer_lvl = 0;
    int defer_iter = 0;
 
    int arg_index, myid, nprocs;
@@ -513,7 +498,7 @@ main(int argc, char *argv[])
    comm = MPI_COMM_WORLD;
    ntime = 2048;
    tstart = 0.0;
-   tstop = log(10.)/0.9 * tlyap;
+   tstop = log(10.) / 0.9 * tlyap;
 
    MPI_Comm_rank(comm, &myid);
    MPI_Comm_size(comm, &nprocs);
@@ -556,7 +541,7 @@ main(int argc, char *argv[])
       {
          arg_index++;
          tlyap = atof(argv[arg_index++]);
-         tstop = log(10.)/0.9 * tlyap;  /* the leading Lyapunov exponent is ~0.9 */
+         tstop = log(10.) / 0.9 * tlyap; /* the leading Lyapunov exponent is ~0.9 */
       }
       else if (strcmp(argv[arg_index], "-ml") == 0)
       {
@@ -646,7 +631,7 @@ main(int argc, char *argv[])
 
    /* set up app structure */
    app = (my_App *)malloc(sizeof(my_App));
-   my_App_Init(app, MPI_COMM_WORLD, tstart, tstop, ntime, file, file_lv);
+   my_App_Init(app, MPI_COMM_WORLD, tstart, tstop, ntime, delta_rank, file, file_lv);
 
    if (test)
    {
@@ -694,6 +679,29 @@ main(int argc, char *argv[])
 
    braid_Drive(core);
 
+   /* get average Lyapunov exponents */
+   if (app->rank > 0)
+   {
+      double global_exps[VecSize];
+      MPI_Reduce(&(app->lyap_exps), &global_exps, VecSize, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+      // if (1)
+      if (myid == 0)
+      {  
+         /* print the average Lyapunov exponents */
+         printf("  Average Lyapunov Exponents: [");
+         for (int i = 0; i < app->rank; i++)
+         {
+            global_exps[i] /= tstop;
+            printf("%4f", global_exps[i]);
+            if (i != app->rank - 1)
+            {
+               printf(", ");
+            }
+         }
+         printf("]\n");
+      }
+   }
+
    braid_Destroy(core);
 
    /* reorder the output file */
@@ -721,10 +729,10 @@ main(int argc, char *argv[])
          fscanf(file_lv, "%d", &index);
          for (size_t j = 0; j < delta_rank; j++)
          {
-            fscanf(file_lv, "%le", &exponents[index*delta_rank + j]);
+            fscanf(file_lv, "%le", &exponents[index * delta_rank + j]);
             for (i = 0; i < VecSize; i++)
             {
-               fscanf(file_lv, "%le", &lyapunov[index*delta_rank + j][i]);
+               fscanf(file_lv, "%le", &lyapunov[index * delta_rank + j][i]);
             }
          }
       }
@@ -742,10 +750,10 @@ main(int argc, char *argv[])
 
          for (j = 0; j < delta_rank; j++)
          {
-            fprintf(file_lv, " %.14e", exponents[ti*delta_rank + j]);
+            fprintf(file_lv, " %.14e", exponents[ti * delta_rank + j]);
             for (i = 0; i < VecSize; i++)
             {
-               fprintf(file_lv, " %.14e", lyapunov[ti*delta_rank + j][i]);
+               fprintf(file_lv, " %.14e", lyapunov[ti * delta_rank + j][i]);
             }
          }
          fprintf(file_lv, "\n");

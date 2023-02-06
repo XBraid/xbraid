@@ -1,0 +1,151 @@
+# Begin Test 0
+
+Starting braid_TestInitAccess
+   braid_TestInitAccess:   Starting Test 1
+   braid_TestInitAccess:   u = init(t=0.00e+00)
+   braid_TestInitAccess:   access(u) 
+    braid_TestInitAccess:   check output: wrote u for initial condition at t=0.00e+00. 
+   braid_TestInitAccess:   free(u) 
+Finished braid_TestInitAccess
+Starting braid_TestInitAccess
+   braid_TestInitAccess:   Starting Test 1
+   braid_TestInitAccess:   u = init(t=1.00e+00)
+   braid_TestInitAccess:   access(u) 
+    braid_TestInitAccess:   check output: wrote u for initial condition at t=1.00e+00. 
+   braid_TestInitAccess:   free(u) 
+Finished braid_TestInitAccess
+Starting braid_TestClone
+   braid_TestClone:   Starting Test 1
+   braid_TestClone:   u = init(t=0.00e+00)
+   braid_TestClone:   v = clone(u)
+   braid_TestClone:   access(u)
+    braid_TestClone:   access(v)
+    braid_TestClone:   check output:  wrote u and v for initial condition at t=0.00e+00.
+   braid_TestClone:   free(u)
+   braid_TestClone:   free(v)
+Finished braid_TestClone
+Starting braid_TestSum
+   braid_TestSum:   Starting Test 1
+   braid_TestSum:   u = init(t=0.00e+00)
+   braid_TestSum:   v = clone(u)
+   braid_TestSum:   v = u - v
+   braid_TestSum:   access(v)
+    braid_TestSum:   check output:  v should equal the zero vector
+   braid_TestSum:   Starting Test 2
+   braid_TestSum:   v = 2*u + v
+   braid_TestSum:   access(v)
+    braid_TestSum:   access(u)
+    braid_TestSum:   check output:  v should equal 2*u 
+   braid_TestSum:   free(u)
+   braid_TestSum:   free(v)
+Finished braid_TestSum
+Starting braid_TestSpatialNorm
+   braid_TestSpatialNorm:   Starting Test 1
+   braid_TestSpatialNorm:   u = init(t=0.00e+00)
+   braid_TestSpatialNorm:   spatialnorm(u) 
+   braid_TestSpatialNorm:   v = clone(u)
+   braid_TestSpatialNorm:   v = u - v 
+   braid_TestSpatialNorm:   spatialnorm(v) 
+   braid_TestSpatialNorm:   Test 1 Passed
+   braid_TestSpatialNorm:   actual output:    spatialnorm(v) = 0.00e+00  
+   braid_TestSpatialNorm:   expected output:  spatialnorm(v) = 0.0 
+   braid_TestSpatialNorm:   Starting Test 2
+   braid_TestSpatialNorm:   w = clone(u)
+   braid_TestSpatialNorm:   w = u + w 
+   braid_TestSpatialNorm:   spatialnorm(u)
+   braid_TestSpatialNorm:   spatialnorm(w)
+   braid_TestSpatialNorm:   Test 2 Passed
+   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 4.87e+01 / 2.44e+01 = 2.00e+00 
+   braid_TestSpatialNorm:   expected output:  spatialnorm(w) / spatialnorm(u) = 2.0 
+   braid_TestSpatialNorm:   Starting Test 3
+   braid_TestSpatialNorm:   free(w)
+   braid_TestSpatialNorm:   w = clone(u)
+   braid_TestSpatialNorm:   w = 0.0*u + 0.5*w 
+   braid_TestSpatialNorm:   spatialnorm(u)
+   braid_TestSpatialNorm:   spatialnorm(w)
+   braid_TestSpatialNorm:   Test 3 Passed
+   braid_TestSpatialNorm:   actual output:    spatialnorm(w) / spatialnorm(u) = 1.22e+01 / 2.44e+01 = 5.00e-01 
+   braid_TestSpatialNorm:   expected output:  spatialnorm(w) / spatialnorm(u) = 0.5 
+   braid_TestSpatialNorm:   free(u)
+   braid_TestSpatialNorm:   free(v)
+   braid_TestSpatialNorm:   free(w)
+Finished braid_TestSpatialNorm: all tests passed successfully
+Starting braid_TestBuf
+   braid_TestBuf:   Starting Test 1
+   braid_TestBuf:   u = init(t=0.00e+00)
+   braid_TestBuf:   spatialnorm(u) 
+   braid_TestBuf:   size = bufsize()
+   braid_TestBuf:   buffer = malloc(size)
+   braid_TestBuf:   buffer = bufpack(u, buffer))
+   braid_TestBuf:   v = bufunpack(buffer)
+   braid_TestBuf:   v = u - v 
+   braid_TestBuf:   spatialnorm(v) 
+   braid_TestBuf:   Test 1 Passed
+   braid_TestBuf:   actual output:    spatialnorm(v) = 0.00e+00  
+   braid_TestBuf:   expected output:  spatialnorm(v) = 0.0 
+   braid_TestBuf:   free(u)
+   braid_TestBuf:   free(v)
+Finished braid_TestBuf: all tests passed successfully
+Starting braid_TestDelta
+Starting braid_TestInnerProd
+   braid_TestInnerProd:   Starting Test 1
+   braid_TestInnerProd:   u = init_basis(t=0.00e+00, i=0)
+   braid_TestInnerProd:   inner_prod(u, u)
+   braid_TestInnerProd:   u = u / sqrt(inner_prod(u, u))
+   braid_TestInnerProd:   inner_prod(u, u)
+   braid_TestInnerProd:   Test 1 Passed
+   braid_TestInnerProd:   actual output:    inner_prod(u, u) = 1.00e+00  
+   braid_TestInnerProd:   expected output:  inner_prod(u, u) = 1.0 
+   braid_TestInnerProd:   Starting Test 2
+   braid_TestInnerProd:   v = init(t=0.00e+00, i=1)
+   braid_TestInnerProd:   inner_prod(u, v)
+   braid_TestInnerProd:   inner_prod(u, v) = 0.0
+   braid_TestInnerProd:   (make sure v is not the zero vector, else v is orthogonal to u)
+Starting braid_TestInitBasis
+   braid_TestInitBasis:   Starting Test 1
+   braid_TestInitBasis:   u = init(t=0.00e+00)
+   braid_TestInitBasis:   B = init_basis(t=0.00e+00)
+   braid_TestInitBasis:   access(u, B) 
+    braid_TestInitBasis:   check output: wrote u, B for initial condition at t=0.00e+00. 
+   braid_TestInitBasis:   Starting Test 2
+   braid_TestInitBasis:   GramSchmidt(B) 
+   braid_TestInitBasis:   access(u, B) 
+    braid_TestInitBasis:   test 2 passed
+Finished braid_TestInitBasisAccess
+Starting braid_TestStepDiff
+   braid_TestStepDiff:   Starting Test 1
+   braid_TestStepDiff:   A = clone(B) 
+   braid_TestStepDiff:   v = clone(u) 
+   braid_TestStepDiff:   v = step(v)
+   braid_TestStepDiff:   B = step_dv(v)*B
+   braid_TestStepDiff:   u = step(u + eps*A_0) 
+   braid_TestStepDiff:   v = B_0 - (u - v)/eps
+   braid_TestStepDiff:  (v = step_dv(u)*A_0 - (step(u + eps*A_0) - step(u))/eps) 
+   braid_TestStepDiff:   result = inner_prod(v, v) 
+   braid_TestStepDiff:   actual output:    result approx. 6.57e-19 
+   braid_TestStepDiff:   expected output:  positive, near zero 
+Finished braid_TestStepDiff
+Starting braid_TestBufBasis
+   braid_TestBufBasis:   size, size_basis = bufsize()
+   braid_TestBufBasis:   buffer = malloc(size + rank * size_basis)
+   braid_TestBufBasis:   buffer[:size] = bufpack(u)
+   braid_TestBufBasis:   buffer[size:] = bufpack(A)
+   braid_TestBufBasis:   v = bufunpack(buffer[:size]))
+   braid_TestBufBasis:   B = bufunpack(buffer[size:]))
+   braid_TestBufBasis:   v = u - v
+   braid_TestBufBasis:   B = A - B
+   braid_TestBufBasis:   inner_prod(v, v)
+   braid_TestBufBasis:   Test 1 Passed
+   braid_TestBufBasis:   actual output:    inner_prod(v, v) = 0.00e+00  
+   braid_TestBufBasis:   expected output:  inner_prod(v, v) = 0.0 
+   braid_TestBufBasis:   Frobenius_norm(B)
+   braid_TestBufBasis:   Test 2 Passed
+   braid_TestBufBasis:   actual output:    Frobenius_norm(B) = 0.00e+00  
+   braid_TestBufBasis:   expected output:  Frobenius_norm(B) = 0.0 
+Finished braid_TestBufBasis
+   braid_TestDelta:   free(u) 
+   braid_TestDelta:   free(v) 
+   braid_TestDelta:   free(A) 
+   braid_TestDelta:   free(B) 
+Finished braid_TestDelta
+
