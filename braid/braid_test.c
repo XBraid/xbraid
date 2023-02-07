@@ -500,7 +500,7 @@ braid_TestBuf( braid_App              app,
    
    braid_Status            status = _braid_CTAlloc(_braid_Status, 1);
    braid_BufferStatus      bstatus = (braid_BufferStatus)status;
-   _braid_BufferStatusInit( 0, 0, 0, bstatus );
+   _braid_BufferStatusInit( 0, 0, 0, 0, bstatus );
    /* Initialize the correct flag */
    correct = 1;
 
@@ -1164,7 +1164,7 @@ braid_TestDelta(braid_App               app,
    _braid_ParFprintfFlush(fp, myid_x, "\nStarting braid_TestBufBasis\n\n");
 
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   size, size_basis = bufsize()\n");
-   _braid_BufferStatusInit(0, 0, 0, bstatus);
+   _braid_BufferStatusInit(0, 0, 0, 0, bstatus);
    bufsize(app, &size, bstatus);
 
    size_basis = _braid_StatusElt(bstatus, size_basis);

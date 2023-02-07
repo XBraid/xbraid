@@ -289,6 +289,26 @@ typedef braid_Int
                         braid_BufferStatus   status         /**< can be querried for info on the current message type */
                         );
 
+/** 
+ * This allows the user (not XBraid) to allocate the MPI buffer for a certain number of bytes.
+ * This routine is optional, but can be useful, if the MPI buffer needs to be
+ * allocated in a special way, e.g., on a device/accelerator 
+ **/
+typedef braid_Int
+(*braid_PtFcnBufAlloc)(braid_App            app,           /**< user-defined _braid_App structure */
+                       void               **buffer,        /**< pointer to the void * MPI Buffer */
+                       braid_Int            nbytes,         /**< number of bytes to allocate */
+                       braid_BufferStatus   status         /**< can be querried for info on the current message type */
+                       );
+
+/** 
+ * This allows XBraid to free a user allocated MPI buffer 
+ **/
+typedef braid_Int
+(*braid_PtFcnBufFree)(braid_App            app,           /**< user-defined _braid_App structure */
+                      void               **buffer         /**< pointer to the void * MPI Buffer */
+                       );
+
 /**
  * This function (optional) computes the residual *r* at time *tstop*.  On
  * input, *r* holds the value of *u* at *tstart*, and *ustop* is the value of
@@ -560,6 +580,31 @@ braid_Int
 braid_PrintStats(braid_Core  core           /**< braid_Core (_braid_Core) struct*/
                  );
 
+/** 
+ * Set file name stem for timing infomation output. Timings are output 
+ * to timerfile_name_####.txt, where #### is MPI rank.  Default is
+ * braid_timings_####.txt
+ **/
+braid_Int
+braid_SetTimerFile(braid_Core     core,
+                   braid_Int      length,       /**< length of file name string, not including null terminator */
+                   const char    *filestem      /**< file name stem for timing output */
+                  );
+
+/** 
+ * Print timers after a XBraid run, note these timers do not include any
+ * adjoint routines or Richardson routines
+ **/
+braid_Int
+braid_PrintTimers(braid_Core  core           /**< braid_Core (_braid_Core) struct*/
+                 );
+
+/**
+ * Reset timers to 0
+ **/
+braid_Int
+braid_ResetTimer(braid_Core  core           /**< braid_Core (_braid_Core) struct*/
+);
 
 /**
  * After Drive() finishes, this function can be called to write out the convergence history 
@@ -917,6 +962,16 @@ braid_Int
 braid_SetFinalFCRelax(braid_Core core);
 
 /**
+ * Set user-defined allocation and free routines for the MPI buffer. If these 
+ * routines are not set, the default is to malloc and free with standard C.
+ **/
+braid_Int
+braid_SetBufAllocFree(braid_Core             core,        /**< braid_Core (_braid_Core) struct*/ 
+                      braid_PtFcnBufAlloc    bufalloc,    /**< (optional) user-allocate an MPI buffer for a certain number of bytes */
+                      braid_PtFcnBufFree     buffree      /**< (optional) free a user-allocated MPI buffer */ 
+                      );
+
+/**
  * Split MPI commworld into *comm_x* and *comm_t*, the 
  * spatial and temporal communicators.  The total number of processors
  * will equal Px*Pt, there Px is the number of procs in space, and Pt is 
@@ -1243,6 +1298,12 @@ braid_SetLyapunovEstimation(braid_Core core,       /**< braid_Core (_braid_Core)
                             braid_Int  exponents   /**< Integer, if 1, turns on estimation of Lyapunov exponents at C-points on the finest grid (default 0)*/
                             );
 
+/**
+ * Turn braid timings of internal function on/off with boolean flag 
+ */
+braid_Int
+braid_SetTimings(braid_Core core,
+                 braid_Int  boolean);
 
 /** @}*/
 

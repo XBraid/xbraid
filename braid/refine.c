@@ -248,6 +248,7 @@ _braid_FRefine(braid_Core   core,
    braid_Int          access_level    = _braid_CoreElt(core, access_level);
    _braid_Grid      **grids           = _braid_CoreElt(core, grids);
    braid_Int          ncpoints        = _braid_GridElt(grids[0], ncpoints);
+   braid_Real         timer           = 0.0;
 
    braid_Real         rnorm;
 
@@ -436,17 +437,23 @@ _braid_FRefine(braid_Core   core,
       /* Post r_ta receive */
       if ((iupper < gupper) || periodic)
       {
+         timer = _braid_MPI_Wtime(core);
          MPI_Irecv(&r_ta[r_npoints], 1, braid_MPI_REAL, MPI_ANY_SOURCE, 2, comm,
                    &requests[ncomms++]);
+         _braid_CoreElt(core, timer_MPI_recv) += _braid_MPI_Wtime(core) - timer;
       }
 
       /* Post r_ta send (to the left) */
       if ((ilower > 0) || periodic)
       {
          _braid_GetBlockDistProc((gupper+1), nprocs, (ilower-1), periodic, &prevproc);
+         timer = _braid_MPI_Wtime(core);
          MPI_Isend(&r_ta[0], 1, braid_MPI_REAL, prevproc, 2, comm, &requests[ncomms++]);
+         _braid_CoreElt(core, timer_MPI_send) += _braid_MPI_Wtime(core) - timer;
       }
+      timer = _braid_MPI_Wtime(core);
       MPI_Waitall(ncomms, requests, statuses);
+      _braid_CoreElt(core, timer_MPI_wait) += _braid_MPI_Wtime(core) - timer;
    }
    _braid_TFree(requests);
    _braid_TFree(statuses);
@@ -463,7 +470,9 @@ _braid_FRefine(braid_Core   core,
       f_next = f_gupper+1;
       if (f_iupper < f_gupper)
       {
+         timer = _braid_MPI_Wtime(core);
          MPI_Irecv(&f_next, 1, braid_MPI_INT, MPI_ANY_SOURCE, 3, comm, &request);
+         _braid_CoreElt(core, timer_MPI_recv) += _braid_MPI_Wtime(core) - timer;
       }
    }
 
@@ -544,7 +553,9 @@ _braid_FRefine(braid_Core   core,
       size = send_sizes[m];
       proc = send_procs[m];
       bptr[0] = (braid_Real) size; /* insert size at the beginning */
+      timer = _braid_MPI_Wtime(core);
       MPI_Isend(bptr, (1+size), braid_MPI_REAL, proc, 4, comm, &requests[m]);
+      _braid_CoreElt(core, timer_MPI_send) += _braid_MPI_Wtime(core) - timer;
       bptr += (1+size);
    }
 
@@ -589,12 +600,16 @@ _braid_FRefine(braid_Core   core,
    }
 
    /* Finish sends and f_next receive */
+   timer = _braid_MPI_Wtime(core);
    MPI_Waitall(nsends, requests, statuses);
+   _braid_CoreElt(core, timer_MPI_wait) += _braid_MPI_Wtime(core) - timer;
    if (f_npoints > 0)
    {
       if (f_iupper < f_gupper)
       {
+         timer = _braid_MPI_Wtime(core);
          MPI_Wait(&request, &status);
+         _braid_CoreElt(core, timer_MPI_wait) += _braid_MPI_Wtime(core) - timer;
       }
    }
 
@@ -771,7 +786,13 @@ _braid_FRefine(braid_Core   core,
    requests = _braid_CTAlloc(MPI_Request, (nsends+nrecvs));
    statuses = _braid_CTAlloc(MPI_Status,  (nsends+nrecvs));
 
-   _braid_BufferStatusInit( 1, 0, 0, bstatus );
+   // Pass best possible information to BufferStatusInit 
+   if( nrecvs > 0){
+      _braid_BufferStatusInit(1, recv_f_iis[0] + f_ilower, -1, 0, bstatus);
+   }
+   else {
+      _braid_BufferStatusInit(1, 0, -1, 0, bstatus);
+   }
    _braid_BaseBufSize(core, app,  &max_usize, bstatus); /* max buffer size */
    _braid_NBytesToNReals(max_usize, max_usize);
 
@@ -780,9 +801,12 @@ _braid_FRefine(braid_Core   core,
    {
       unum = recv_unums[m]; /* Number of u-vectors being received */
       recv_size = unum*(1 + max_usize);
+      /* TODO instead of _braid_CTAlloc, use  something like   _braid_BaseBufAlloc(core, app, &(recv_buffers[m]), recv_size*sizeof(braid_Real), bstatus) */
       recv_buffers[m] = _braid_CTAlloc(braid_Real, recv_size);
+      timer = _braid_MPI_Wtime(core);
       MPI_Irecv(recv_buffers[m], recv_size, braid_MPI_REAL, recv_procs[m], 5, comm,
                 &requests[m]);
+      _braid_CoreElt(core, timer_MPI_recv) += _braid_MPI_Wtime(core) - timer;
 
 #if DEBUG
       proc = recv_procs[m];
@@ -797,6 +821,7 @@ _braid_FRefine(braid_Core   core,
       unum = send_unums[m]; /* Number of u-vectors being sent */
       ii   = send_iis[m];
       send_size = unum*(1 + max_usize);
+      /* TODO instead of _braid_CTAlloc, use  something like   _braid_BaseBufAlloc(core, app, &(send_buffers[m]), recv_size*sizeof(braid_Real), bstatus) */
       send_buffers[m] = _braid_CTAlloc(braid_Real, send_size);
       send_size = 0; /* Recompute send_size and realloc buffer */
       bptr = send_buffers[m];
@@ -806,6 +831,7 @@ _braid_FRefine(braid_Core   core,
          {
             /* Pack u into buffer, adjust size, and put size into buffer */
             buffer = &bptr[1];
+            _braid_BufferStatusInit(1, ilower+ii, 0, 0, bstatus);
             _braid_BaseBufSize(core, app,  &size, bstatus);
             _braid_StatusElt( bstatus, size_buffer ) = size;
             _braid_BaseBufPack(core, app,  send_ua[ii], buffer, bstatus);
@@ -819,9 +845,13 @@ _braid_FRefine(braid_Core   core,
          }
          ii++;
       }
+      /* TODO for the user-allocated MPI buffers, do we need the TReAlloc?  I mean, the send_size here should be less than the user's bufsize... 
+       *      it doesn't make sense for the user to write a ReAlloc function too.  Maybe, only call TReAlloc if the user-defined BufAlloc == NULL */
       send_buffers[m] = _braid_TReAlloc(send_buffers[m], braid_Real, send_size);
+      timer = _braid_MPI_Wtime(core);
       MPI_Isend(send_buffers[m], send_size, braid_MPI_REAL, send_procs[m], 5, comm,
                 &requests[m + nrecvs]);
+      _braid_CoreElt(core, timer_MPI_send) += _braid_MPI_Wtime(core) - timer;
 
 #if DEBUG
       unum = send_unums[m];
@@ -836,7 +866,9 @@ _braid_FRefine(braid_Core   core,
 #endif
 
    /* Finish communication */
+   timer = _braid_MPI_Wtime(core);
    MPI_Waitall((nsends+nrecvs), requests, statuses);
+   _braid_CoreElt(core, timer_MPI_wait) += _braid_MPI_Wtime(core) - timer;
 
 #if DEBUG
    printf("%d %d: 4\n", FRefine_count, myproc);
@@ -854,6 +886,7 @@ _braid_FRefine(braid_Core   core,
          {
             /* Unpack buffer into u-vector */
             buffer = &bptr[1];
+            _braid_BufferStatusInit(1, f_ilower+f_ii, -1, 0, bstatus);
             _braid_BaseBufUnpack(core, app, buffer, &recv_ua[f_ii], bstatus);
             size = (braid_Int) bptr[0];
             bptr += (1+size);
@@ -880,6 +913,7 @@ _braid_FRefine(braid_Core   core,
    _braid_TFree(send_iis);
    for (m = 0; m < nsends; m++)
    {
+      /* TODO instead of _braid_TFree  use  something like  _braid_BaseBufFree(core, app,  &(send_buffers[m])); */
       _braid_TFree(send_buffers[m]);
    }
    _braid_TFree(send_buffers);
@@ -888,6 +922,7 @@ _braid_FRefine(braid_Core   core,
    _braid_TFree(recv_f_iis);
    for (m = 0; m < nrecvs; m++)
    {
+      /* TODO instead of _braid_TFree  use  something like  _braid_BaseBufFree(core, app,  &(recv_buffers[m])); */
       _braid_TFree(recv_buffers[m]);
    }
    _braid_TFree(recv_buffers);

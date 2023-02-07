@@ -859,17 +859,21 @@ ACCESSOR_FUNCTION_GET1_IN1(Step, BasisVec, Vector, Int)
 
 braid_Int
 _braid_BufferStatusInit(braid_Int        messagetype,
-                        braid_Int        size,
+                        braid_Int        idx,
                         braid_Int        level,
+                        braid_Int        size,
                         braid_BufferStatus status)
 {
    _braid_StatusElt(status, messagetype)    = messagetype;
+   _braid_StatusElt(status, idx)            = idx;
+   _braid_StatusElt(status, level)          = level;
    _braid_StatusElt(status, size_buffer)    = size;
    _braid_StatusElt(status, size_basis)     = 0;
-   _braid_StatusElt(status, level)          = level;
    return _braid_error_flag;
 }
 ACCESSOR_FUNCTION_GET1(Buffer, MessageType, Int)
+ACCESSOR_FUNCTION_GET1(Buffer, TIndex,      Int)
+ACCESSOR_FUNCTION_GET1(Buffer, Level,       Int)
 ACCESSOR_FUNCTION_SET1(Buffer, Size,        Real)
 ACCESSOR_FUNCTION_SET1(Buffer, BasisSize,   Real)
 

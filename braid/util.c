@@ -270,3 +270,16 @@ _braid_GetNEntries(braid_Real   *_array,
 }
 
 
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Real
+_braid_MPI_Wtime(braid_Core   core)
+{
+   if( _braid_CoreElt(core, timings) == 1) {
+      return MPI_Wtime();
+   }
+   else{
+      return -1.0;
+   }
+}

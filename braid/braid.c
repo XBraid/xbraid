@@ -56,7 +56,9 @@ braid_Drive(braid_Core  core)
    braid_Real    *ta;
    _braid_Grid   *grid;
    braid_Real     localtime, globaltime;
+   braid_Real     timer_drive_init;
 
+   timer_drive_init = _braid_MPI_Wtime(core);
    /* Check for non-supported adjoint features */
    if (adjoint)
    {
@@ -88,7 +90,7 @@ braid_Drive(braid_Core  core)
    }
 
    /* Start timer */
-   localtime = MPI_Wtime();
+   localtime = _braid_MPI_Wtime(core);
 
    /* Allocate and initialize grids */
    if ( !warm_restart )
@@ -157,6 +159,7 @@ braid_Drive(braid_Core  core)
          _braid_CoreElt(core, record) = 1;
       }
    }
+   _braid_CoreElt(core, timer_drive_init) += _braid_MPI_Wtime(core) - timer_drive_init;
 
    /* Reset from previous calls to braid_drive() */
    _braid_CoreElt(core, done) = 0;
@@ -168,7 +171,7 @@ braid_Drive(braid_Core  core)
    _braid_CoreElt(core, warm_restart) = 1;
 
    /* Stop timer */
-   localtime = MPI_Wtime() - localtime;
+   localtime = _braid_MPI_Wtime(core) - localtime;
    MPI_Allreduce(&localtime, &globaltime, 1, braid_MPI_REAL, MPI_MAX, comm_world);
    _braid_CoreElt(core, localtime)  = localtime;
    _braid_CoreElt(core, globaltime) = globaltime;
@@ -177,6 +180,12 @@ braid_Drive(braid_Core  core)
    if ( (print_level > 1) && (myid == 0) )
    {
       braid_PrintStats(core);
+   }
+
+   /* Print basic timing information, only if timings are enabled */
+   if (_braid_CoreElt(core, timings) == 1)
+   {
+      braid_PrintTimers(core);
    }
 
    return _braid_error_flag;
@@ -280,6 +289,8 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, srefine)         = NULL;
    _braid_CoreElt(core, tgrid)           = NULL;
    _braid_CoreElt(core, sync)            = NULL;
+   _braid_CoreElt(core, bufalloc)        = NULL;
+   _braid_CoreElt(core, buffree)         = NULL;
 
    _braid_CoreElt(core, access_level)    = access_level;
    _braid_CoreElt(core, finalFCrelax)    = finalFCrelax;
@@ -371,6 +382,32 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, dtk)             = NULL;  /* Set in _braid_InitHierarchy */
    _braid_CoreElt(core, estimate)        = NULL;  /* Set in _braid_InitHierarchy */
 
+   /* Timers for key parts of code */
+   _braid_CoreElt(core, timings) = 0;
+   _braid_CoreElt(core, timer_coarse_solve) = 0.0;
+   _braid_CoreElt(core, timer_drive_init)  = 0.0;
+   _braid_CoreElt(core, timer_user_step)  = 0.0;
+   _braid_CoreElt(core, timer_user_init)  = 0.0;
+   _braid_CoreElt(core, timer_user_clone)  = 0.0;
+   _braid_CoreElt(core, timer_user_free)  = 0.0;
+   _braid_CoreElt(core, timer_user_sum)  = 0.0;
+   _braid_CoreElt(core, timer_user_spatialnorm)  = 0.0;
+   _braid_CoreElt(core, timer_user_access)  = 0.0;
+   _braid_CoreElt(core, timer_user_sync)  = 0.0;
+   _braid_CoreElt(core, timer_user_bufsize)  = 0.0;
+   _braid_CoreElt(core, timer_user_bufpack)  = 0.0;
+   _braid_CoreElt(core, timer_user_bufunpack)  = 0.0;
+   _braid_CoreElt(core, timer_user_residual)  = 0.0;
+   _braid_CoreElt(core, timer_user_scoarsen)  = 0.0;
+   _braid_CoreElt(core, timer_user_srefine)  = 0.0;
+   _braid_CoreElt(core, timer_MPI_recv)  = 0.0;
+   _braid_CoreElt(core, timer_MPI_wait)  = 0.0;
+   _braid_CoreElt(core, timer_MPI_wait_coarse)  = 0.0;
+   _braid_CoreElt(core, timer_MPI_send)  = 0.0;
+   _braid_CoreElt(core, timer_file_stem_len) = 13; /* length of file stem, not including the null terminator */
+   _braid_CoreElt(core, timer_file_stem)  = malloc(14 * sizeof(char));
+   sprintf(_braid_CoreElt(core, timer_file_stem), "braid_timings");
+
    braid_SetMaxLevels(core, max_levels);
    braid_SetMaxIter(core, max_iter);
    braid_SetPeriodic(core, 0);
@@ -448,13 +485,14 @@ braid_Destroy(braid_Core  core)
 {
    if (core)
    {
-      braid_App               app        = _braid_CoreElt(core, app);
-      braid_Int               nlevels    = _braid_CoreElt(core, nlevels);
-      _braid_Grid           **grids      = _braid_CoreElt(core, grids);
-      braid_Int               cfactor    = _braid_GridElt(grids[0], cfactor);
-      braid_Int               gupper     = _braid_CoreElt(core, gupper);
-      braid_Int               richardson = _braid_CoreElt(core, richardson);
-      braid_Int               est_error  = _braid_CoreElt(core, est_error); 
+      braid_App               app             = _braid_CoreElt(core, app);
+      braid_Int               nlevels         = _braid_CoreElt(core, nlevels);
+      _braid_Grid           **grids           = _braid_CoreElt(core, grids);
+      braid_Int               cfactor         = _braid_GridElt(grids[0], cfactor);
+      braid_Int               gupper          = _braid_CoreElt(core, gupper);
+      braid_Int               richardson      = _braid_CoreElt(core, richardson);
+      braid_Int               est_error       = _braid_CoreElt(core, est_error); 
+      char                   *timer_file_stem = _braid_CoreElt(core, timer_file_stem);
       braid_Int               level;
 
       _braid_TFree(_braid_CoreElt(core, nrels));
@@ -521,12 +559,20 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(grids);
 
       _braid_TFree(core);
+   
+      if (timer_file_stem != NULL)
+      {
+         _braid_TFree(timer_file_stem);
+      }
+
    }
 
    if (_braid_printfile != NULL)
    {
       fclose(_braid_printfile);
    }
+   
+
 
    return _braid_error_flag;
 }
@@ -568,6 +614,7 @@ braid_PrintStats(braid_Core  core)
    braid_Int     finalFCRelax  = _braid_CoreElt(core, finalFCrelax);
    braid_Int     periodic      = _braid_CoreElt(core, periodic);
    braid_Int     adjoint       = _braid_CoreElt(core, adjoint);
+   braid_Int     timings       = _braid_CoreElt(core, timings);
    braid_Optim   optim         = _braid_CoreElt(core, optim);
 
    braid_Real    tol_adj;
@@ -657,6 +704,7 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  periodic              = %d\n", periodic);
       _braid_printf("  relax_only_cg         = %d\n", relax_only_cg);
       _braid_printf("  finalFCRelax          = %d\n", finalFCRelax);
+      _braid_printf("  tracking timings      = %d\n", timings);
       _braid_printf("  number of refinements = %d\n", nrefine);
       _braid_printf("\n");
       _braid_printf("  level   time-pts   cfactor   nrelax   Crelax Wt\n");
@@ -689,6 +737,125 @@ braid_PrintStats(braid_Core  core)
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 
+braid_Int
+braid_SetTimerFile(braid_Core     core,
+                   braid_Int      length,
+                   const char    *filestem)
+{
+   if (_braid_CoreElt(core, timer_file_stem) != NULL)
+   {
+      _braid_TFree( _braid_CoreElt(core, timer_file_stem) );
+   }
+
+   _braid_CoreElt(core, timer_file_stem) = malloc((length + 1) * sizeof(char));
+   char *timer_file_stem = _braid_CoreElt(core, timer_file_stem);
+   
+   _braid_CoreElt(core, timer_file_stem_len) = length;
+   
+   for(braid_Int i = 0; i < length; i++)
+   {
+      timer_file_stem[i] = filestem[i];
+   }
+   
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+braid_Int
+braid_PrintTimers(braid_Core  core)
+{
+    
+   braid_Int myid          = _braid_CoreElt(core, myid_world);
+   char *timer_file_stem   = _braid_CoreElt(core, timer_file_stem);
+   braid_Int length        = _braid_CoreElt(core, timer_file_stem_len);
+   FILE *fp; 
+   
+   /* create rank specific filename */
+   char filename[length+10];
+   char rank[] = "0000";
+   sprintf(rank, "%04d", myid);
+
+   for(braid_Int i = 0; i < length; i++)
+   {
+      filename[i] = timer_file_stem[i];
+   }
+   filename[length] = '_';
+   filename[length+1] = rank[0];
+   filename[length+2] = rank[1];
+   filename[length+3] = rank[2];
+   filename[length+4] = rank[3];
+   filename[length+5] = '.';
+   filename[length+6] = 't';
+   filename[length+7] = 'x';
+   filename[length+8] = 't';
+   filename[length+9] = '\0'; 
+   
+   if ((fp = fopen(filename, "w")) == NULL)
+   {
+      _braid_printf("  Braid: Error: can't open timer output file %s\n", filename);
+      exit(1);
+   }
+
+   fprintf(fp, "\nTimings for rank %d\n", myid); 
+   fprintf(fp, "   drive_init       %1.3e\n",  _braid_CoreElt(core, timer_drive_init)); 
+   fprintf(fp, "   coarse solve     %1.3e\n",  _braid_CoreElt(core, timer_coarse_solve)); 
+   fprintf(fp, "   step             %1.3e\n",  _braid_CoreElt(core, timer_user_step)); 
+   fprintf(fp, "   init             %1.3e\n",  _braid_CoreElt(core, timer_user_init)); 
+   fprintf(fp, "   clone            %1.3e\n",  _braid_CoreElt(core, timer_user_clone)); 
+   fprintf(fp, "   free             %1.3e\n",  _braid_CoreElt(core, timer_user_free)); 
+   fprintf(fp, "   sum              %1.3e\n",  _braid_CoreElt(core, timer_user_sum)); 
+   fprintf(fp, "   spatialnorm      %1.3e\n",  _braid_CoreElt(core, timer_user_spatialnorm)); 
+   fprintf(fp, "   bufsize          %1.3e\n",  _braid_CoreElt(core, timer_user_bufsize)); 
+   fprintf(fp, "   bufpack          %1.3e\n",  _braid_CoreElt(core, timer_user_bufpack)); 
+   fprintf(fp, "   bufunpack        %1.3e\n\n",  _braid_CoreElt(core, timer_user_bufunpack)); 
+   fprintf(fp, "   access           %1.3e\n",  _braid_CoreElt(core, timer_user_access)); 
+   fprintf(fp, "   sync             %1.3e\n",  _braid_CoreElt(core, timer_user_sync)); 
+   fprintf(fp, "   residual         %1.3e\n",  _braid_CoreElt(core, timer_user_residual)); 
+   fprintf(fp, "   scoarsen         %1.3e\n",  _braid_CoreElt(core, timer_user_scoarsen)); 
+   fprintf(fp, "   srefine          %1.3e\n\n",  _braid_CoreElt(core, timer_user_srefine)); 
+   fprintf(fp, "   MPI_recv         %1.3e\n",  _braid_CoreElt(core, timer_MPI_recv)); 
+   fprintf(fp, "   MPI_send         %1.3e\n",  _braid_CoreElt(core, timer_MPI_send)); 
+   fprintf(fp, "   MPI_wait         %1.3e\n",  _braid_CoreElt(core, timer_MPI_wait)); 
+   fprintf(fp, "   MPI_wait_coarse  %1.3e\n",  _braid_CoreElt(core, timer_MPI_wait_coarse)); 
+
+   fclose(fp);
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+braid_Int
+braid_ResetTimer(braid_Core  core)
+{
+
+    _braid_CoreElt(core, timer_coarse_solve) = 0.0;
+    _braid_CoreElt(core, timer_drive_init)  = 0.0;
+    _braid_CoreElt(core, timer_user_step)  = 0.0;
+    //_braid_CoreElt(core, timer_user_init)  = 0.0; /* This timer measures only initial operation. */
+    _braid_CoreElt(core, timer_user_clone)  = 0.0;
+    _braid_CoreElt(core, timer_user_free)  = 0.0;
+    _braid_CoreElt(core, timer_user_sum)  = 0.0;
+    _braid_CoreElt(core, timer_user_spatialnorm)  = 0.0;
+    _braid_CoreElt(core, timer_user_access)  = 0.0;
+    _braid_CoreElt(core, timer_user_sync)  = 0.0;
+    _braid_CoreElt(core, timer_user_bufsize)  = 0.0;
+    _braid_CoreElt(core, timer_user_bufpack)  = 0.0;
+    _braid_CoreElt(core, timer_user_bufunpack)  = 0.0;
+    _braid_CoreElt(core, timer_user_residual)  = 0.0;
+    _braid_CoreElt(core, timer_user_scoarsen)  = 0.0;
+    _braid_CoreElt(core, timer_user_srefine)  = 0.0;
+    _braid_CoreElt(core, timer_MPI_recv)  = 0.0;
+    _braid_CoreElt(core, timer_MPI_wait)  = 0.0;
+    _braid_CoreElt(core, timer_MPI_wait_coarse)  = 0.0;
+    _braid_CoreElt(core, timer_MPI_send)  = 0.0;
+
+    return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+ 
 braid_Int
 braid_WriteConvHistory(braid_Core core,    
                        const char* filename)
@@ -904,6 +1071,20 @@ braid_Int
 braid_SetFinalFCRelax(braid_Core core)
 {
    _braid_CoreElt(core, finalFCrelax) = 1;
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetBufAllocFree(braid_Core             core,
+                      braid_PtFcnBufAlloc    bufalloc,
+                      braid_PtFcnBufFree     buffree)
+{
+   _braid_CoreElt(core, bufalloc) = bufalloc;
+   _braid_CoreElt(core, buffree) = buffree;
+
    return _braid_error_flag;
 }
 
@@ -1697,6 +1878,18 @@ braid_SetRichardsonEstimation(braid_Core core,
    _braid_CoreElt(core, est_error)  = est_error;
    _braid_CoreElt(core, richardson) = richardson;
    _braid_CoreElt(core, order)      = local_order;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetTimings(braid_Core core,
+                 braid_Int  boolean)
+{
+   _braid_CoreElt(core, timings)  = boolean;
 
    return _braid_error_flag;
 }

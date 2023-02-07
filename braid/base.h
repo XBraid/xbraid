@@ -226,6 +226,27 @@ _braid_BaseBufUnpack(braid_Core           core,      /**< braid_Core structure *
                      );
 
 /** 
+ * This calls the user's BufAlloc routine for MPI buffer allocation
+ */
+braid_Int
+_braid_BaseBufAlloc(braid_Core          core,      /**< braid_Core structure */   
+                    braid_App           app,       /**< user-defined _braid_App structure */   
+                    void              **buffer,    /**< MPI buffer for user to allocate */
+                    braid_Int           nbytes,    /**< number of bytes to allocate */
+                    braid_BufferStatus  status     /**< can be querried for info about the message type */
+                    );
+
+/** 
+ * This calls the user's BufFree routine for MPI buffer de-allocation
+ */
+braid_Int
+_braid_BaseBufFree(braid_Core          core,       /**< braid_Core structure */   
+                   braid_App           app,        /**< user-defined _braid_App structure */   
+                   void              **buffer      /**< user-allocated MPI buffer to free */
+                   );
+
+
+/** 
  * If (adjoint): This calls the user's ObjectiveT routine, records the action, and 
  *               pushes to the state and bar tapes. 
  */

@@ -695,6 +695,8 @@ ACCESSOR_HEADER_GET1_IN1(Step, BasisVec, Vector, Int)
  *--------------------------------------------------------------------------*/
 
 ACCESSOR_HEADER_GET1(Buffer, MessageType, Int)
+ACCESSOR_HEADER_GET1(Buffer, TIndex,      Int)
+ACCESSOR_HEADER_GET1(Buffer, Level,       Int)
 ACCESSOR_HEADER_SET1(Buffer, Size,        Real)
 ACCESSOR_HEADER_SET1(Buffer, BasisSize,   Real)
 
