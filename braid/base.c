@@ -282,11 +282,14 @@ _braid_BaseCloneBasis(braid_Core    core,
    braid_Basis basis = (braid_Basis) malloc(sizeof(braid_Basis));
    basis->rank = A->rank;
    basis->userVecs = _braid_TAlloc(braid_Vector, basis->rank);
+
+   braid_Real timer = _braid_MPI_Wtime(core);
    for (braid_Int i = 0; i < basis->rank; i++)
    {
       /* Allocate and clone userVector for each column */
       _braid_CoreFcn(core, clone)(app, A->userVecs[i], &(basis->userVecs[i]));
    }
+   _braid_CoreElt(core, timer_user_clone) += _braid_MPI_Wtime(core) - timer;
    *B_ptr = basis;
 
    return _braid_error_flag;
@@ -324,13 +327,13 @@ _braid_BaseFree(braid_Core       core,
    /* Free the user's vector */
    timer = _braid_MPI_Wtime(core);
    _braid_CoreFcn(core, free)(app, u->userVector);
+   _braid_CoreElt(core, timer_user_free) += _braid_MPI_Wtime(core) - timer;
 
    if ( u->basis )
    {
       /* Free the basis/Lyapunov vectors */
       _braid_BaseFreeBasis(core, app, u->basis);
    }
-   _braid_CoreElt(core, timer_user_free) += _braid_MPI_Wtime(core) - timer;
 
    if ( adjoint )
    {
@@ -352,11 +355,13 @@ _braid_BaseFreeBasis(braid_Core    core,
                      braid_App     app,
                      braid_Basis   b) 
 {
+   braid_Real timer = _braid_MPI_Wtime(core);
    /* Free the basis vectors */
    for (braid_Int i = 0; i < b->rank; i++)
    {
       _braid_CoreFcn(core, free)(app, b->userVecs[i]);
    }
+   _braid_CoreElt(core, timer_user_free) += _braid_MPI_Wtime(core) - timer;
    free(b->userVecs);
 
    return _braid_error_flag;
@@ -405,6 +410,7 @@ _braid_BaseSum(braid_Core        core,
     /* Sum up the user's vector */
    timer = _braid_MPI_Wtime(core);
    _braid_CoreFcn(core, sum)(app, alpha, x->userVector, beta, y->userVector);
+   _braid_CoreElt(core, timer_user_sum) += _braid_MPI_Wtime(core) - timer;
 
    /* Sum over the basis vectors */
    if ( x->basis && y->basis )
@@ -420,44 +426,27 @@ _braid_BaseSum(braid_Core        core,
       _braid_BaseCloneBasis(core, app, x->basis, &(y->basis));
       _braid_BaseSumBasis(core, app, alpha, x->basis, 0., y->basis);
    }
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_BaseSumBasis(braid_Core  core,
+                    braid_App   app,
+                    braid_Real  alpha,  
+                    braid_Basis A,
+                    braid_Real  beta,
+                    braid_Basis B )
+{
+   braid_Real timer = _braid_MPI_Wtime(core);
+   for (braid_Int i = 0; i < A->rank; i++)
+   {
+      _braid_CoreFcn(core, sum)(app, alpha, A->userVecs[i], beta, B->userVecs[i]);
+   }
    _braid_CoreElt(core, timer_user_sum) += _braid_MPI_Wtime(core) - timer;
-
-   return _braid_error_flag;
-}
-
-/*----------------------------------------------------------------------------
- *----------------------------------------------------------------------------*/
-
-braid_Int
-_braid_BaseSumBasis(braid_Core  core,
-                    braid_App   app,
-                    braid_Real  alpha,  
-                    braid_Basis A,
-                    braid_Real  beta,
-                    braid_Basis B )
-{
-   for (braid_Int i = 0; i < A->rank; i++)
-   {
-      _braid_CoreFcn(core, sum)(app, alpha, A->userVecs[i], beta, B->userVecs[i]);
-   }
-   return _braid_error_flag;
-}
-
-/*----------------------------------------------------------------------------
- *----------------------------------------------------------------------------*/
-
-braid_Int
-_braid_BaseSumBasis(braid_Core  core,
-                    braid_App   app,
-                    braid_Real  alpha,  
-                    braid_Basis A,
-                    braid_Real  beta,
-                    braid_Basis B )
-{
-   for (braid_Int i = 0; i < A->rank; i++)
-   {
-      _braid_CoreFcn(core, sum)(app, alpha, A->userVecs[i], beta, B->userVecs[i]);
-   }
    return _braid_error_flag;
 }
 
@@ -490,8 +479,12 @@ _braid_BaseInnerProd(braid_Core        core,
                      braid_Vector      v,
                      braid_Real       *prod_ptr )
 {
+   braid_Real       timer       = 0.0;
+   
    /* Compute the inner product between two user vectors */
+   timer = _braid_MPI_Wtime(core);
    _braid_CoreFcn(core, inner_prod)(app, u, v, prod_ptr);
+   _braid_CoreElt(core, timer_user_innerprod) += _braid_MPI_Wtime(core) - timer;
 
    return _braid_error_flag;
 }
