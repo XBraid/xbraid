@@ -80,6 +80,7 @@ typedef struct _braid_App_struct
    int       periodic;
    double    tol;
    int       num_syncs;
+   int       print_buffer_info;
 } my_App;
 
 /* Vector structure can contain anything, and be name anything as well */
@@ -281,6 +282,15 @@ my_BufSize(braid_App          app,
            int                *size_ptr,
            braid_BufferStatus bstatus)
 {
+   int idx, level;
+
+   braid_BufferStatusGetTIndex(bstatus, &idx);
+   braid_BufferStatusGetLevel(bstatus, &level);
+   if(app->print_buffer_info && (app->rank == 0)){
+      printf("Rank %d:  Computing MPI buffer size on level %d for index %d\n", app->rank, level, idx); 
+      fflush(stdout);
+   }
+
    *size_ptr = sizeof(double);
    return 0;
 }
@@ -292,6 +302,14 @@ my_BufPack(braid_App          app,
            braid_BufferStatus bstatus)
 {
    double *dbuffer = buffer;
+   int idx, level;
+
+   braid_BufferStatusGetTIndex(bstatus, &idx);
+   braid_BufferStatusGetLevel(bstatus, &level);
+   if(app->print_buffer_info && (app->rank == 0)){
+      printf("Rank %d:  Packing MPI buffer on level %d for index %d\n", app->rank, level, idx);
+      fflush(stdout);
+   }
 
    dbuffer[0] = (u->value);
    braid_BufferStatusSetSize( bstatus, sizeof(double) );
@@ -307,6 +325,14 @@ my_BufUnpack(braid_App          app,
 {
    double    *dbuffer = buffer;
    my_Vector *u;
+   int idx, level;
+
+   braid_BufferStatusGetTIndex(bstatus, &idx);
+   braid_BufferStatusGetLevel(bstatus, &level);
+   if(app->print_buffer_info && (app->rank == 0)){
+      printf("Rank %d:  Unpacking MPI buffer on level %d for index %d\n", app->rank, level, idx);
+      fflush(stdout);
+   }
 
    u = (my_Vector *) malloc(sizeof(my_Vector));
    (u->value) = dbuffer[0];
@@ -340,7 +366,7 @@ int main (int argc, char *argv[])
    my_App       *app;
    double        tstart, tstop, tol;
    int           ntime, rank, limit_rfactor, arg_index, print_usage;
-   int           refine, output, storage, fmg, sync, incMaxLvl, periodic, max_levels;
+   int           refine, output, storage, fmg, sync, incMaxLvl, periodic, max_levels, max_num_refine, print_buffer_info;
 
    /* Define time domain: ntime intervals */
    ntime  = 100;
@@ -357,6 +383,8 @@ int main (int argc, char *argv[])
    incMaxLvl = 0;
    periodic = 0;
    max_levels = 15;
+   max_num_refine = 0;
+   print_buffer_info = 0;
 
    /* Initialize MPI */
    MPI_Init(&argc, &argv);
@@ -421,10 +449,20 @@ int main (int argc, char *argv[])
          arg_index++;
          max_levels = atoi(argv[arg_index++]);
       }
+      else if ( strcmp(argv[arg_index], "-MaxTotalRefine") == 0 )
+      {
+         arg_index++;
+         max_num_refine = atoi(argv[arg_index++]);
+      }
       else if ( strcmp(argv[arg_index], "-fmg") == 0 )
       {
          arg_index++;
          fmg = 1;
+      }
+      else if ( strcmp(argv[arg_index], "-print_buffer_info") == 0 )
+      {
+         arg_index++;
+         print_buffer_info = 1;
       }
       else
       {
@@ -456,6 +494,7 @@ int main (int argc, char *argv[])
       printf("  -storage <level>                   : full storage on levels >= level\n");
       printf("  -sync                              : enable calls to the sync function\n");
       printf("  -incMaxLvl                         : increase max number of Braid levels after each FRefine\n");
+      printf("  -MaxTotalRefine                    : maximum total number of times XBraid will refine the time grid\n");
       printf("  -periodic                          : solve a periodic problem\n");
       printf("  -ml  <max_levels>                  : set max levels\n");
       printf("  -no_output                         : do not save the solution in output files\n");
@@ -477,6 +516,7 @@ int main (int argc, char *argv[])
    (app->periodic) = periodic;
    (app->tol) = tol;
    (app->num_syncs) = 0;
+   (app->print_buffer_info) = print_buffer_info;
 
    if (periodic)
    {
@@ -517,6 +557,10 @@ int main (int argc, char *argv[])
    if (periodic)
    {
       braid_SetPeriodic(core, periodic);
+   }
+   if (max_num_refine)
+   {
+      braid_SetMaxRefinements(core, max_num_refine);
    }
 
    /* Run simulation, and then clean up */

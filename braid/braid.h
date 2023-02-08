@@ -134,7 +134,7 @@ typedef braid_Int
 (*braid_PtFcnStep)(braid_App        app,    /**< user-defined _braid_App structure */
                    braid_Vector     ustop,  /**< input, u vector at *tstop* */
                    braid_Vector     fstop,  /**< input, right-hand-side at *tstop* */
-                   braid_Vector     u     , /**< input/output, initially u vector at *tstart*, upon exit, u vector at *tstop* */
+                   braid_Vector     u,      /**< input/output, initially u vector at *tstart*, upon exit, u vector at *tstop* */
                    braid_StepStatus status  /**< query this struct for info about u (e.g., tstart and tstop), allows for steering (e.g., set rfactor) */ 
                    );
 
@@ -146,6 +146,17 @@ typedef braid_Int
                    braid_Real     t,             /**< time value for *u_ptr* */
                    braid_Vector  *u_ptr          /**< output, newly allocated and initialized vector */
                    );
+
+/**
+ * (optional) Initializes a vector *u_ptr* at time *t*
+ * and spatial index *index*
+ **/
+typedef braid_Int
+(*braid_PtFcnInitBasis)(braid_App      app,           /**< user-defined _braid_App structure */
+                        braid_Real     t,             /**< time value for *u_ptr* */
+                        braid_Int      index,         /**< spatial index of basis vector */
+                        braid_Vector  *u_ptr          /**< output, newly allocated and initialized vector */
+                        );
 
 /**
  * Clone *u* into *v_ptr*
@@ -178,7 +189,7 @@ typedef braid_Int
 /** 
  * Carry out a spatial norm by taking the norm of a braid_Vector 
  * *norm_ptr* = || *u* || 
- * A common choice is the standard Eucliden norm, but many other choices are
+ * A common choice is the standard Euclidean norm, but many other choices are
  * possible, such as an L2-norm based on a finite element space.  See
  * [braid_SetTemporalNorm](@ref braid_SetTemporalNorm) for information on how the
  * spatial norm is combined over time for a global space-time residual norm.
@@ -191,18 +202,34 @@ typedef braid_Int
                           );
 
 /**
+ * (optional) Compute an inner (scalar) product between two braid_Vectors
+ * *prod_ptr* = <*u*, *v*>
+ * Only needed when using Delta correction
+ * 
+ * The most common choice would be the standard dot product.
+ * Vectors are normalized under the norm induced by this inner product,
+ * *not* the function defined in SpatialNorm, which is only used for halting
+ */
+typedef braid_Int
+(*braid_PtFcnInnerProd)(braid_App        app,       /**< user-defined _braid_App structure */
+                        braid_Vector     u,         /**< first vector */
+                        braid_Vector     v,         /**< second vector */
+                        braid_Real      *prod_ptr   /**< output, result of inner product */
+                        );
+
+/**
  * Gives user access to XBraid and to the current vector *u* at time *t*.  Most
  * commonly, this lets the user write the vector to screen, file, etc...  The
  * user decides what is appropriate.  Note how you are told the time value *t*
  * of the vector *u* and other information in *status*.  This lets you tailor
  * the output, e.g., for only certain time values at certain XBraid iterations.
- * Querrying status for such information is done through
+ * Querying status for such information is done through
  * _braid_AccessStatusGet**(..)_ routines.
  * 
  * The frequency of XBraid's calls to *access* is controlled through
  * [braid_SetAccessLevel](@ref braid_SetAccessLevel).  For instance, if
  * access_level is set to 3, then *access* is called every XBraid iteration and
- * on every XBraid level.  In this case, querrying *status* to determine the
+ * on every XBraid level.  In this case, querying *status* to determine the
  * current XBraid level and iteration will be useful. This scenario allows for
  * even more detailed tracking of the simulation.
  *
@@ -261,6 +288,26 @@ typedef braid_Int
                         braid_Vector        *u_ptr,         /**< output, braid_Vector containing buffer's data */
                         braid_BufferStatus   status         /**< can be querried for info on the current message type */
                         );
+
+/** 
+ * This allows the user (not XBraid) to allocate the MPI buffer for a certain number of bytes.
+ * This routine is optional, but can be useful, if the MPI buffer needs to be
+ * allocated in a special way, e.g., on a device/accelerator 
+ **/
+typedef braid_Int
+(*braid_PtFcnBufAlloc)(braid_App            app,           /**< user-defined _braid_App structure */
+                       void               **buffer,        /**< pointer to the void * MPI Buffer */
+                       braid_Int            nbytes,         /**< number of bytes to allocate */
+                       braid_BufferStatus   status         /**< can be querried for info on the current message type */
+                       );
+
+/** 
+ * This allows XBraid to free a user allocated MPI buffer 
+ **/
+typedef braid_Int
+(*braid_PtFcnBufFree)(braid_App            app,           /**< user-defined _braid_App structure */
+                      void               **buffer         /**< pointer to the void * MPI Buffer */
+                       );
 
 /**
  * This function (optional) computes the residual *r* at time *tstop*.  On
@@ -533,6 +580,31 @@ braid_Int
 braid_PrintStats(braid_Core  core           /**< braid_Core (_braid_Core) struct*/
                  );
 
+/** 
+ * Set file name stem for timing infomation output. Timings are output 
+ * to timerfile_name_####.txt, where #### is MPI rank.  Default is
+ * braid_timings_####.txt
+ **/
+braid_Int
+braid_SetTimerFile(braid_Core     core,
+                   braid_Int      length,       /**< length of file name string, not including null terminator */
+                   const char    *filestem      /**< file name stem for timing output */
+                  );
+
+/** 
+ * Print timers after a XBraid run, note these timers do not include any
+ * adjoint routines or Richardson routines
+ **/
+braid_Int
+braid_PrintTimers(braid_Core  core           /**< braid_Core (_braid_Core) struct*/
+                 );
+
+/**
+ * Reset timers to 0
+ **/
+braid_Int
+braid_ResetTimer(braid_Core  core           /**< braid_Core (_braid_Core) struct*/
+);
 
 /**
  * After Drive() finishes, this function can be called to write out the convergence history 
@@ -803,6 +875,15 @@ braid_SetSync(braid_Core      core, /**< braid_Core (_braid_Core) struct*/
               );
 
 /**
+ * Set InnerProd routine with user-defined routine.
+ * 
+ */
+braid_Int
+braid_SetInnerProd(braid_Core             core,       /**< braid_Core (_braid_Core) struct*/
+                   braid_PtFcnInnerProd   inner_prod  /**< function pointer to inner product routine */
+                  );
+
+/**
  * Set print level for XBraid.  This controls how much information is 
  * printed to the XBraid print file (@ref braid_SetPrintFile).
  * 
@@ -879,6 +960,16 @@ braid_SetAccessLevel(braid_Core  core,          /**< braid_Core (_braid_Core) st
  */
 braid_Int
 braid_SetFinalFCRelax(braid_Core core);
+
+/**
+ * Set user-defined allocation and free routines for the MPI buffer. If these 
+ * routines are not set, the default is to malloc and free with standard C.
+ **/
+braid_Int
+braid_SetBufAllocFree(braid_Core             core,        /**< braid_Core (_braid_Core) struct*/ 
+                      braid_PtFcnBufAlloc    bufalloc,    /**< (optional) user-allocate an MPI buffer for a certain number of bytes */
+                      braid_PtFcnBufFree     buffree      /**< (optional) free a user-allocated MPI buffer */ 
+                      );
 
 /**
  * Split MPI commworld into *comm_x* and *comm_t*, the 
@@ -1162,6 +1253,57 @@ braid_SetRichardsonEstimation(braid_Core core,                /**< braid_Core (_
                               braid_Int  local_order          /**< Local order of the time integration scheme, e.g., local _order=2 for backward Euler */
                               );
 
+/** 
+ * Turn on low-rank Delta correction. This uses Jacobians of the fine-grid time-stepper as a linear correction to the coarse time-stepper. 
+ * This can potentially greatly accelerate convergence for nonlinear systems.
+ * 
+ * The action of the Jacobian will be computed on a (low-rank) time-dependent basis initialized by the user.
+ * TODO: Finish this entry
+ */
+braid_Int
+braid_SetDeltaCorrection(braid_Core           core,        /**< braid_Core (_braid_Core) struct */
+                         braid_Int            rank,        /**< Integer, sets number of Lyapunov vectors to store */
+                         braid_PtFcnInitBasis basis_init,  /**< Function pointer to routine for initializing basis vectors */
+                         braid_PtFcnInnerProd inner_prod   /**< Function pointer to routine for computing inner product between two vectors (needed for Gram-Schmidt orthonormalization) */
+                         );
+
+
+/**
+ * Defer the low-rank Delta correction to a coarse level or to a later iteration. 
+ * To mitigate some of the cost of Delta correction, it may be turned off on the first few fine-grids,
+ * or turned off for the first few iterations.
+ * 
+ */
+braid_Int
+braid_SetDeferDelta(braid_Core core,   /**< braid_Core (_braid_Core) struct*/
+                    braid_Int  level,  /**< Integer, Delta correction will be deferred to this level (Default 1)*/
+                    braid_Int  iter    /**< Integer, Delta correction will be deferred until this iteration (Default 1) */
+                    );
+
+/** 
+ * Turn on Lyapunov vector estimation for Delta correction. The computed backward Lyapunov vectors will be used to update the
+ * time-dependent basis used by the low-rank Delta correction, and may be retrieved via the user's Access function.
+ * This can work particularly well for chaotic systems, where the Lyapunov vectors converge to a basis for the unstable manifold
+ * of the system, thus the Delta correction can target problematic unstable modes.
+ *
+ * if Delta correction is not set, this will have no effect.
+ * if relax is set to 1, the Lyapunov vectors will be propagated during FCRelax, potentially resolving them enough to be useful.
+ * if cglv is set to 1, the Lyapunov vectors will be propagated during the sequential solve on the coarse grid, and they will be much better estimates.
+ * if both are set to 0, no estimation of Lyapunov vectors will be computed, and the basis vectors will only be propagated during FRestrict.
+ */
+braid_Int
+braid_SetLyapunovEstimation(braid_Core core,       /**< braid_Core (_braid_Core) struct*/
+                            braid_Int  relax,      /**< Integer, if 1, turns on propagation of Lyapunov vectors during FCRelax (default 0) */
+                            braid_Int  cglv,       /**< Integer, if 1, turns on propagation of Lyapunov vectors during coarse-grid solve (default 1)*/
+                            braid_Int  exponents   /**< Integer, if 1, turns on estimation of Lyapunov exponents at C-points on the finest grid (default 0)*/
+                            );
+
+/**
+ * Turn braid timings of internal function on/off with boolean flag 
+ */
+braid_Int
+braid_SetTimings(braid_Core core,
+                 braid_Int  boolean);
 
 /** @}*/
 

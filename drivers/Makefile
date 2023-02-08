@@ -34,9 +34,10 @@ include ../makefile.inc
 # Build exmaples 
 ##################################################################
 
-HYPRE_DIR = ../../hypre/src/hypre
+HYPRE_DIR = ../../../hypre/src/hypre
 HYPRE_FLAGS = -I$(HYPRE_DIR)/include
 HYPRE_LIB = -L$(HYPRE_DIR)/lib -lHYPRE
+SUITE_SPARSE = /usr/include/suitesparse/
 
 MFEM_INTERFACE = ./braid_mfem.hpp ./braid_mfem_block.hpp ../braid/braid.hpp
 MFEM_DIR = ../../mfem
@@ -63,13 +64,37 @@ ALL_EXAMPLES := $(patsubst %.c,%,$(ALL_EXAMPLES))
 .SUFFIXES: .c .cpp
 
 # put this rule first so it becomes the default
-all: $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES)
+all: $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES) $(CXX_MFEM_EXAMPLES)
+
+# Rule for compiling drive-lorenz
+drive-lorenz: drive-lorenz.c $(BRAID_LIB_FILE)
+	@echo "Building" $@ "..."
+	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $< -o $@\
+ $(BRAID_LIB_FILE) $(LFLAGS)
+	
+# Rule for compiling drive-lorenz-Delta
+drive-lorenz-Delta: drive-lorenz-Delta.cpp $(BRAID_LIB_FILE)
+	@echo "Building" $@ "..."
+	$(MPICXX) $(CXXFLAGS) $(BRAID_FLAGS) -Idrive-lorenz-Delta-lib -IEigen \
+ $< -o $@ $(BRAID_LIB_FILE) drive-lorenz-Delta-lib/lorenz_lib.cpp $(LFLAGS)
+
+drive-lorenz-LRDelta: drive-lorenz-LRDelta.cpp $(BRAID_LIB_FILE)
+	@echo "Building" $@ "..."
+	$(MPICXX) $(CXXFLAGS) $(BRAID_FLAGS) -Idrive-lorenz-Delta-lib -IEigen \
+ $< -o $@ $(BRAID_LIB_FILE) drive-lorenz-Delta-lib/lorenz_lib.cpp $(LFLAGS)
+
+drive-ks: drive-ks.cpp $(BRAID_LIB_FILE)
+	@echo "Building" $@ "..."
+	$(MPICXX) $(CXXFLAGS) $(BRAID_FLAGS) -Idrive-ks-lib -IEigen -I$(SUITE_SPARSE) \
+ $< -o $@ $(BRAID_LIB_FILE) drive-ks-lib/ks_lib.cpp $(LFLAGS) -lumfpack
+
 
 # Rule for compiling .c files
 %: %.c $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
 	$(MPICC) $(CFLAGS) $(BRAID_FLAGS) $(HYPRE_FLAGS) $< -o $@\
  $(BRAID_LIB_FILE) $(HYPRE_LIB) $(LFLAGS)
+
 
 # Rule for compiling .cpp files; links with mfem
 %: %.cpp $(BRAID_LIB_FILE) $(MFEM_LIB_FILE) $(MFEM_CONFIG_MK) $(MFEM_INTERFACE)

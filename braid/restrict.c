@@ -95,6 +95,13 @@ _braid_FRestrict(braid_Core   core,
    braid_Real          *estimate;    
    braid_Real           factor, dtk, DTK;
 
+   /* Required for Delta correction */
+   braid_Int    delta_correct = (_braid_CoreElt(core, delta_correct) 
+                                 && iter >= _braid_CoreElt(core, delta_defer_iter) 
+                                 && level >= _braid_CoreElt(core, delta_defer_lvl) );
+   braid_Basis *c_ba;
+   braid_Vector delta_action;
+
    braid_Int            c_level, c_ilower, c_iupper, c_index, c_i, c_ii;
    braid_BaseVector     c_u, *c_va, *c_fa;
 
@@ -107,6 +114,7 @@ _braid_FRestrict(braid_Core   core,
    c_iupper = _braid_GridElt(grids[c_level], iupper);
    c_va     = _braid_GridElt(grids[c_level], va);
    c_fa     = _braid_GridElt(grids[c_level], fa);
+   c_ba     = _braid_GridElt(grids[c_level], ba);
 
    rnorm = 0.0;
 
@@ -134,7 +142,7 @@ _braid_FRestrict(braid_Core   core,
       _braid_GetRNorm(core, -1, &rnm);
       for (fi = flo; fi <= fhi; fi++)
       {
-         _braid_Step(core, level, fi, NULL, r);
+         _braid_Step(core, level, fi, braid_ASCaller_FRestrict, NULL, r);
          _braid_USetVector(core, level, fi, r, 0);
          
          /* Allow user to process current vector, note that r here is
@@ -142,7 +150,7 @@ _braid_FRestrict(braid_Core   core,
          if( (access_level >= 3) )
          {
             _braid_AccessStatusInit(ta[fi-f_ilower], fi, rnm, iter, level, nrefine, gupper,
-                                    0, 0, braid_ASCaller_FRestrict, astatus);
+                                    0, 0, braid_ASCaller_FRestrict, r->basis, astatus);
             _braid_AccessVector(core, astatus, r);
          }
 
@@ -152,15 +160,14 @@ _braid_FRestrict(braid_Core   core,
             _braid_ObjectiveStatusInit(ta[fi-f_ilower], fi, iter, level, nrefine, gupper, ostatus);
             _braid_AddToObjective(core, r, ostatus);
          }
-
       }
 
       /* Allow user to process current C-point */
       if( (access_level>= 3) && (ci > -1) )
       {
-         _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper,
-                                 0, 0, braid_ASCaller_FRestrict, astatus);
          _braid_UGetVectorRef(core, level, ci, &u);
+         _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper,
+                                 0, 0, braid_ASCaller_FRestrict, u->basis, astatus);
          _braid_AccessVector(core, astatus, u);
       }
 
@@ -229,7 +236,7 @@ _braid_FRestrict(braid_Core   core,
    /* Allocate temporary error estimate array */
    if ( level == 0 && est_error )
    {
-        estimate = _braid_CTAlloc(braid_Real, c_iupper-c_ilower + 1 );
+        estimate = _braid_CTAlloc(braid_Real, c_iupper-c_ilower + 1);
    }
 
    /* Start with rightmost point */
@@ -243,11 +250,20 @@ _braid_FRestrict(braid_Core   core,
             /* Finalize update of c_va[-1] */
             _braid_CommWait(core, &recv_handle);
          }
+
+         if ( delta_correct )
+         {
+            /* need to store a copy of the basis used to compute the Delta correction */
+            _braid_BaseCloneBasis(core, app, c_va[c_ii-1]->basis, &(c_ba[c_ii]));
+            /* also need an extra copy of c_va[c_ii-1] */
+            _braid_CoreFcn(core, clone)(app, c_va[c_ii-1]->userVector, &delta_action);
+         }
+
          _braid_BaseClone(core, app,  c_va[c_ii-1], &c_u);
-         _braid_Residual(core, c_level, c_i, c_va[c_ii], c_u);
+         _braid_Residual(core, c_level, c_i, braid_ASCaller_Residual, c_va[c_ii], c_u);
          
          /* Richardson computes norm here, and recombines solution at C-points for higher accuracy */
-         if ( level == 0 && richardson  ) 
+         if ( level == 0 && richardson ) 
          {    
                dtk = dtk_core[c_ii];
                DTK = pow( ta_c[c_ii] - ta_c[c_ii-1], order );
@@ -271,7 +287,24 @@ _braid_FRestrict(braid_Core   core,
          }    
          else
          {
-            _braid_BaseSum(core, app,  1.0, c_u, 1.0, c_fa[c_ii]);
+            if ( delta_correct )
+            {
+               /* tau correction */
+               _braid_CoreFcn(core, sum)(app, 1.0, c_u->userVector, 1.0, c_fa[c_ii]->userVector);
+
+               /* get Delta correction */
+               _braid_BaseSumBasis(core, app, 1.0, c_u->basis, 1.0, c_fa[c_ii]->basis);
+
+               /* get the action of Delta on u_{i-1} */
+               _braid_LRDeltaDot(core, app, delta_action, c_fa[c_ii]->basis, c_ba[c_ii]);
+               _braid_CoreFcn(core, sum)(app, -1., delta_action, 1., c_fa[c_ii]->userVector);
+
+               _braid_CoreFcn(core, free)(app, delta_action);
+            }
+            else
+            {
+               _braid_BaseSum(core, app,  1.0, c_u, 1.0, c_fa[c_ii]);
+            }
          }
 
          /* Compute Richardson error estimator */
@@ -298,7 +331,7 @@ _braid_FRestrict(braid_Core   core,
              estimate[ c_ii ] = est_temp; 
          }
 
-         _braid_BaseFree(core, app,  c_u);
+         _braid_BaseFree(core, app, c_u);
       }
    }
    _braid_CommWait(core, &send_handle);

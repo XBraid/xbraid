@@ -69,9 +69,7 @@ typedef struct _braid_App_struct
 typedef struct _braid_Vector_struct
 {
    Vec values;
-
 } my_Vector;
-
 double sigma = 10.0;
 double beta  = 8.0/3.0;
 double rho   = 28.0;
@@ -362,7 +360,7 @@ int main (int argc, char *argv[])
    double        tstart, tstop;
    int           ntime;
 
-   int           max_levels = 1;
+   int           max_levels = 2;
    int           nrelax     = 1;
    int           nrelax0    = -1;
    double        tol        = 1.0e-06;
@@ -380,9 +378,9 @@ int main (int argc, char *argv[])
 
    /* ntime time intervals with spacing 1 */
    comm   = MPI_COMM_WORLD;
-   ntime  = 10000;
+   ntime  = 1024;
    tstart =   0.0;
-   tstop  = 100.0;
+   tstop  = 20.0;
 
    MPI_Comm_rank(comm, &myid);
    MPI_Comm_size(comm, &nprocs);

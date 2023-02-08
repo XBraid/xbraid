@@ -232,6 +232,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
    braid_Optim          optim           = _braid_CoreElt(core, optim);
    braid_Int            adjoint         = _braid_CoreElt(core, adjoint);
    braid_Int            obj_only        = _braid_CoreElt(core, obj_only);
+   braid_Int            print_level     = _braid_CoreElt(core, print_level);
    braid_Real           rnorm, rnorm0;
    braid_Real           rnorm_adj, rnorm0_adj;
    braid_Real           tol_adj, rtol_adj;
@@ -291,7 +292,7 @@ _braid_DriveCheckConvergence(braid_Core  core,
    }
    else if ( _braid_isnan(rnorm) )
    {
-      if (myid == 0)
+      if ( (myid == 0) && (print_level > 0) )
       {
          _braid_printf("  Braid: Iterations diverged.\n");
       }
@@ -299,16 +300,16 @@ _braid_DriveCheckConvergence(braid_Core  core,
    }
    else if ( adjoint && _braid_isnan(rnorm_adj) )
    {
-      if (myid == 0)
+      if ( (myid == 0) && (print_level > 0) )
       {
          _braid_printf("  Braid: Adjoint iterations diverged.\n");
       }
       done = 1;
    }
 
-   if (iter == max_iter-1 )
+   if ( iter == max_iter-1 )
    {
-      if (myid == 0)
+      if ( (myid == 0) && (print_level > 0) )
       {
          _braid_printf("  Braid: Max. iterations reached.\n\n"); 
       }
@@ -346,7 +347,7 @@ _braid_DrivePrintStatus(braid_Core  core,
       return _braid_error_flag;
    }
 
-   wtime = MPI_Wtime() - localtime;
+   wtime = _braid_MPI_Wtime(core) - localtime;
 
    if (_braid_CoreElt(core, adjoint))
    {
@@ -445,6 +446,7 @@ _braid_Drive(braid_Core  core,
    braid_Int      nlevels;
    braid_Int      ilower, iupper;
    braid_Real     rnorm_adj;
+   braid_Real     timer;
 
    /* Cycle state variables */
    _braid_CycleState  cycle;
@@ -527,6 +529,9 @@ _braid_Drive(braid_Core  core,
 
          if (level > 0)
          {
+            /* Set core->level to dummy value signifying coarsest grid solve. Must reset core->level after FInterp below */
+            _braid_CoreElt(core, level) = -11;
+
             /* Solve with relaxation on coarsest grid IF ( periodic OR explicitly choosing relaxation on coarsest grid ) */
             if ( (level == (nlevels-1)) && (_braid_CoreElt(core, periodic) || relax_only_cg) )
             {
@@ -539,9 +544,16 @@ _braid_Drive(braid_Core  core,
             }
 
             /* F-relax then interpolate */
+            if(level == (nlevels-1)){
+               timer = _braid_MPI_Wtime(core);
+            }
             _braid_FInterp(core, level);
+            if(level == (nlevels-1)){
+               _braid_CoreElt(core, timer_coarse_solve) += _braid_MPI_Wtime(core) - timer;
+            }
 
             level--;
+            _braid_CoreElt(core, level) = level;
          }
          else
          {
@@ -660,19 +672,31 @@ _braid_Drive(braid_Core  core,
       _braid_FRestrict(core, level);
    }
 
-
    /* Allow final access to Braid by carrying out a relaxation to generate points */
-   if ( _braid_CoreElt(core, finalFCrelax) )
+   if ( _braid_CoreElt(core, finalFCrelax) || _braid_CoreElt(core, lyap_exp) )
    {
       /* Do one final F-C-Relaxation sweep in order to:
        * - Relax the final coarse-grid correction, while giving user access to solution
        * - Store the last time-point vector as ulast, see _braid_UGetLast()
        * - Gather gradient information when solving adjoint equation with XBraid. The users 'my_step' 
-       *   function should compute gradients only if braid's 'done' flag is true */
+       *   function should compute gradients only if braid's 'done' flag is true 
+       * - Compute Lyapunov exponents if estimating Lyapunov vectors */
 
       braid_Int nrelax_orig = _braid_CoreElt(core, nrels)[0];
       _braid_CoreElt(core, nrels)[0] = 1;
-      _braid_FCRelax(core, 0);
+
+      if ( _braid_CoreElt(core, delta_defer_lvl) == 0 && _braid_CoreElt(core, lyap_exp) )
+      {
+         braid_Int relax_lyap_orig = _braid_CoreElt(core, relax_lyap);
+         _braid_CoreElt(core, relax_lyap) = 1;
+         _braid_FCRelax(core, 0);
+         _braid_CoreElt(core, relax_lyap) = relax_lyap_orig;
+      }
+      else
+      {
+         _braid_FCRelax(core, 0);
+      }
+
       _braid_CoreElt(core, nrels)[0] = nrelax_orig;
    }
    /* Call FAccess if (only 1 level and not solving coarse-grid by relaxation) 

@@ -1,22 +1,32 @@
+# output files
+*.cycle
+*.out
+*.out.*
+*.csv
+
 # binaries
 *.o
-libbraid.a
+*.a
+drivers/drive-lorenz-Delta-lib/Eigen
 ex-01
 ex-01-adjoint
 ex-01-expanded
 ex-01-expanded-bdf2
+ex-01-optimization
 ex-01-pp
 ex-01-refinement
-ex-01-optimization
 ex-02
+ex-03
+ex-03-serial
 ex-04
 ex-04-serial
 ex-06
-
-# output files
-*.out
-*.out.*
+ex-07
+drive-lorenz-LRDelta
+drive-lorenz-Delta
+drive-lorenz
+drive-ks
+wrapperTests.txt
 
 # etc.
-Eigen/
-
+Eigen

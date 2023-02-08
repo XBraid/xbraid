@@ -485,6 +485,7 @@ _braid_AdjointFeatureCheck(braid_Core core)
    braid_Int            storage   = _braid_CoreElt(core, storage);  
    braid_Int            useshell  = _braid_CoreElt(core, useshell);
    braid_Int            trefine   = _braid_CoreElt(core, refine);
+   braid_Int            delta     = _braid_CoreElt(core, delta_correct);
    braid_Int err;
    char* err_char;
 
@@ -532,6 +533,11 @@ _braid_AdjointFeatureCheck(braid_Core core)
    if ( sync != NULL )
    {
       err_char = "Sync";
+      err = 1;
+   }
+   if ( delta )
+   {
+      err_char = "Delta Correction";
       err = 1;
    }
 

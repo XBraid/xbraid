@@ -49,6 +49,12 @@ typedef int    braid_Int;
 #define braid_Int_Min INT_MIN;
 
 /**
+ * Defines byte type
+ * (can be any type, but sizeof(braid_Byte) MUST be 1)
+ */
+typedef char braid_Byte;
+
+/**
  * Defines floating point type
  * Switch beween single and double precision by un-/commenting lines. 
  **/
@@ -64,6 +70,16 @@ typedef double braid_Real;
 #define braid_MPI_REAL  MPI_DOUBLE
 #define braid_MPI_INT   MPI_INT
 #define braid_MPI_Comm  MPI_Comm
+
+
+struct _braid_Vector_struct;
+/**
+ * This defines (roughly) a state vector at a certain time value.  
+ * It could also contain any other information related to this vector which is 
+ * needed to evolve the vector to the next time value, like mesh information.
+ * *reproduced here from braid.h to give braid_status access to the braid_Vector typedef*
+ **/
+typedef struct _braid_Vector_struct *braid_Vector;
 
 #ifdef __cplusplus
 }
