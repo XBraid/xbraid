@@ -648,9 +648,9 @@ Wrapping and debugging a code with XBraid typically follows a few steps.
 One detail that can rarely affect the fixed-point test (and other tests)
 concerns the time-step size computation in XBraid. XBraid computes the 
 time-step value with the formula
-
-    \f[t_i = t_0 + (i/N)*(T - t_0), \;\; i = 1,2 \dots, N \f]
-
+\f[
+  t_i = t_0 + (i/N)*(T - t_0), \;\; i = 1,2 \dots, N 
+\f]
 where \f$N\f$ is the number of time-steps (not counting \f$t_0\f$), the integer
 division with \f$N\f$ is cast as a float, \f$t_0\f$ is the global start time,
 and \f$T\f$ is the global end time.  This formula guarantees that the last
