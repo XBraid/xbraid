@@ -119,6 +119,22 @@ else ifeq ($(findstring vulcan,$(HOSTNAME)),vulcan)
       CXXFLAGS = -O -Wall -fPIC
       FORTFLAGS = -O1 -Wall
    endif
+else ifeq ($(findstring cadaverous,$(HOSTNAME)),cadaverous)
+   # David's desktop (specifically need to use system compilers
+   # since condas are bad)
+   MPICC = /usr/bin/mpicc
+   MPICXX = /usr/bin/mpicxx
+   MPIF90 = /usr/bin/mpif90
+   LFLAGS = -lm
+   ifeq ($(optlevel),DEBUG)
+      CFLAGS = -g -Wall -fPIC
+      CXXFLAGS = -g -Wall -fPIC
+      FORTFLAGS = -g -Wall
+   else
+      CFLAGS = -O3 -Wall -fPIC
+      CXXFLAGS = -O3 -Wall -fPIC
+      FORTFLAGS = -O1 -Wall
+   endif
 else ifeq ($(shell uname -s),Linux)
    MPICC = mpicc
    MPICXX = mpicxx

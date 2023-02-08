@@ -47,6 +47,9 @@ cdef extern from "braid_status.h":
     int braid_StepStatusGetRNorms (braid_StepStatus status, int *nrequest_ptr, double *rnorms_ptr)
     int braid_StepStatusGetOldFineTolx (braid_StepStatus status, double *old_fine_tolx_ptr)
     int braid_StepStatusGetSingleErrorEstStep (braid_StepStatus status, double *estimate)
+    int braid_StepStatusGetCallingFunction (braid_StepStatus status, int *cfunction_ptr)
+    int braid_StepStatusGetDeltaRank (braid_StepStatus status, int *rank_ptr)
+    int braid_StepStatusGetBasisVec (braid_StepStatus status, braid_Vector *v_ptr, int index)
     int braid_StepStatusSetOldFineTolx (braid_StepStatus status, double old_fine_tolx)
     int braid_StepStatusSetTightFineTolx (braid_StepStatus status, double tight_fine_tolx)
     int braid_StepStatusSetRFactor (braid_StepStatus status, double rfactor)
@@ -67,6 +70,10 @@ cdef extern from "braid_status.h":
     int braid_AccessStatusGetWrapperTest (braid_AccessStatus status, int *wtest_ptr)
     int braid_AccessStatusGetCallingFunction (braid_AccessStatus status, int *cfunction_ptr)
     int braid_AccessStatusGetSingleErrorEstAccess (braid_AccessStatus status, double *estimate)
+    int braid_AccessStatusGetDeltaRank (braid_AccessStatus status, int *rank_ptr)
+    int braid_AccessStatusGetLocalLyapExponents (braid_AccessStatus status, double *exp_ptr, int *num_returned)
+    int braid_AccessStatusGetBasisVec (braid_AccessStatus status, braid_Vector *v_ptr, int index)
+
 
     ##
     # Wrap CoarsenRefStatus Routines
@@ -86,7 +93,10 @@ cdef extern from "braid_status.h":
     ##
     # Wrap BufferStatus Routines
     int braid_BufferStatusGetMessageType (braid_BufferStatus status, int *messagetype_ptr)
+    int braid_BufferStatusGetTIndex ( braid_BufferStatus status, int *idx_ptr);
+    int braid_BufferStatusGetLevel ( braid_BufferStatus status, int *level_ptr);
     int braid_BufferStatusSetSize ( braid_BufferStatus status, int size);
+    int braid_BufferStatusSetBasisSize ( braid_BufferStatus status, int size);
 
     ##
     # Wrap SyncStatus Routines
@@ -115,6 +125,8 @@ cdef extern from "braid.h":
     ctypedef int (*braid_PtFcnStep)(braid_App app, braid_Vector ustop, braid_Vector fstop, braid_Vector u, braid_StepStatus status)
 
     ctypedef int (*braid_PtFcnInit)(braid_App app, double t, braid_Vector *u_ptr)
+
+    ctypedef int (*braid_PtFcnInitBasis)(braid_App app, double t, int index, braid_Vector *u_ptr)
     
     ctypedef int (*braid_PtFcnClone)(braid_App app, braid_Vector u, braid_Vector *v_ptr)
 
@@ -123,6 +135,8 @@ cdef extern from "braid.h":
     ctypedef int (*braid_PtFcnSum)(braid_App app, double alpha, braid_Vector x, double beta, braid_Vector y)
 
     ctypedef int (*braid_PtFcnSpatialNorm)(braid_App app, braid_Vector u, double *norm_ptr)
+
+    ctypedef int (*braid_PtFcnInnerProd)(braid_App app, braid_Vector u, braid_Vector v, double *prod_ptr)
 
     ctypedef int (*braid_PtFcnAccess)(braid_App app, braid_Vector u, braid_AccessStatus status)
 
@@ -180,6 +194,9 @@ cdef extern from "braid.h":
     int braid_SplitCommworld (const libmpi.MPI_Comm *comm_world, int px, libmpi.MPI_Comm *comm_x, libmpi.MPI_Comm *comm_t)
     int braid_SetShell (braid_Core core, braid_PtFcnSInit sinit, braid_PtFcnSClone sclone, braid_PtFcnSFree sfree)
     int braid_SetRichardsonEstimation (braid_Core core, int est_error, int richardson, int local_order)
+    int braid_SetDeltaCorrection (braid_Core core, int rank, braid_PtFcnInitBasis basis_init, braid_PtFcnInnerProd inner_prod)
+    int braid_SetDeferDelta (braid_Core core, int level, int iter)
+    int braid_SetLyapunovEstimation (braid_Core core, int relax, int cglv, int exponents)
     
     ##
     # Wrap BraidGet Routines
