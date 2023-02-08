@@ -956,7 +956,10 @@ _braid_BaseSCoarsen(braid_Core              core,
 
    if ( verbose_adj ) _braid_printf("%d: SCOARSEN\n", myid);
 
-   cu = (braid_BaseVector) malloc(sizeof(braid_BaseVector));
+   cu = (braid_BaseVector) malloc(sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(braid_Basis));
+   cu->userVector = NULL;
+   cu->bar        = NULL;
+   cu->basis      = NULL;
 
    /* Call the users SCoarsen Function */
    timer = _braid_MPI_Wtime(core);
@@ -985,7 +988,10 @@ _braid_BaseSRefine(braid_Core                 core,
 
    if ( verbose_adj ) _braid_printf("%d: SREFINE\n", myid);
 
-   fu = (braid_BaseVector) malloc(sizeof(braid_BaseVector));
+   fu = (braid_BaseVector) malloc(sizeof(braid_Vector) + sizeof(braid_VectorBar) + sizeof(braid_Basis));
+   fu->userVector = NULL;
+   fu->bar        = NULL;
+   fu->basis      = NULL;
 
    /* Call the users SRefine */
    timer = _braid_MPI_Wtime(core);
