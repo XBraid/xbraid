@@ -58,7 +58,7 @@ braid_Drive(braid_Core  core)
    braid_Real     localtime, globaltime;
    braid_Real     timer_drive_init;
 
-   timer_drive_init = _braid_MPI_Wtime(core);
+   timer_drive_init = _braid_MPI_Wtime(core, 2);
    /* Check for non-supported adjoint features */
    if (adjoint)
    {
@@ -88,7 +88,7 @@ braid_Drive(braid_Core  core)
    }
 
    /* Start timer */
-   localtime = _braid_MPI_Wtime(core);
+   localtime = _braid_MPI_Wtime(core, 1);
 
    /* Allocate and initialize grids */
    if ( !warm_restart )
@@ -157,7 +157,7 @@ braid_Drive(braid_Core  core)
          _braid_CoreElt(core, record) = 1;
       }
    }
-   _braid_CoreElt(core, timer_drive_init) += _braid_MPI_Wtime(core) - timer_drive_init;
+   _braid_CoreElt(core, timer_drive_init) += _braid_MPI_Wtime(core, 2) - timer_drive_init;
 
    /* Reset from previous calls to braid_drive() */
    _braid_CoreElt(core, done) = 0;
@@ -169,7 +169,7 @@ braid_Drive(braid_Core  core)
    _braid_CoreElt(core, warm_restart) = 1;
 
    /* Stop timer */
-   localtime = _braid_MPI_Wtime(core) - localtime;
+   localtime = _braid_MPI_Wtime(core, 1) - localtime;
    MPI_Allreduce(&localtime, &globaltime, 1, braid_MPI_REAL, MPI_MAX, comm_world);
    _braid_CoreElt(core, localtime)  = localtime;
    _braid_CoreElt(core, globaltime) = globaltime;
@@ -180,8 +180,8 @@ braid_Drive(braid_Core  core)
       braid_PrintStats(core);
    }
 
-   /* Print basic timing information, only if timings are enabled */
-   if (_braid_CoreElt(core, timings) == 1)
+   /* Print more intrusive timing information, only if level is >= 2 */
+   if (_braid_CoreElt(core, timings) >= 2)
    {
       braid_PrintTimers(core);
    }
@@ -361,7 +361,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, estimate)        = NULL;  /* Set in _braid_InitHierarchy */
 
    /* Timers for key parts of code */
-   _braid_CoreElt(core, timings) = 0;
+   _braid_CoreElt(core, timings) = 1;
    _braid_CoreElt(core, timer_coarse_solve) = 0.0;
    _braid_CoreElt(core, timer_drive_init)  = 0.0;
    _braid_CoreElt(core, timer_user_step)  = 0.0;
@@ -1833,9 +1833,9 @@ braid_SetRichardsonEstimation(braid_Core core,
 
 braid_Int
 braid_SetTimings(braid_Core core,
-                 braid_Int  boolean)
+                 braid_Int  timing_level)
 {
-   _braid_CoreElt(core, timings)  = boolean;
+   _braid_CoreElt(core, timings)  = timing_level;
 
    return _braid_error_flag;
 }

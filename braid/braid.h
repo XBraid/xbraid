@@ -1218,11 +1218,15 @@ braid_SetRichardsonEstimation(braid_Core core,                /**< braid_Core (_
                               );
 
 /**
- * Turn braid timings of internal function on/off with boolean flag 
+ * Control level of Braid internal timings. 
+ * timing_level == 0, no timings are taken anywhere in Braid
+ * timing_level == 1, timings are taken only around Braid iterations 
+ * timing_level == 2, more intrusive timings are taken of individual 
+ * user routines and printed to file 
  */
 braid_Int
 braid_SetTimings(braid_Core core,
-                 braid_Int  boolean);
+                 braid_Int  timing_level);
 
 /** @}*/
 
