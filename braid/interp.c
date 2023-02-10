@@ -85,7 +85,17 @@ _braid_FInterp(braid_Core  core,
                                     0, 0, braid_ASCaller_FInterp, u->basis, astatus);
             _braid_AccessVector(core, astatus, u);
          }
-         e = va[fi-ilower];
+         if (_braid_CoreElt(core, delta_correct))
+         {
+            /* can't overwrite va[fi-ilower], since it may be needed for
+             * Delta correction at the next time-point 
+             */
+            _braid_BaseClone(core, app, va[fi-ilower], &e);
+         }
+         else
+         {
+            e = va[fi-ilower];
+         }
          _braid_BaseSum(core, app,  1.0, u, -1.0, e);
          _braid_MapCoarseToFine(fi, f_cfactor, f_index);
          _braid_Refine(core, f_level, f_index, fi, e, &f_e);
@@ -93,6 +103,10 @@ _braid_FInterp(braid_Core  core,
          _braid_BaseSum(core, app,  1.0, f_e, 1.0, f_u);
          _braid_USetVectorRef(core, f_level, f_index, f_u);
          _braid_BaseFree(core, app,  f_e);
+         if (_braid_CoreElt(core, delta_correct))
+         {
+            _braid_BaseFree(core, app, e);
+         }
          /* Allow user to process current vector on the FINEST level*/
          if( (access_level >= 3) && (f_level == 0) )
          {
@@ -100,7 +114,6 @@ _braid_FInterp(braid_Core  core,
                                     0, 0, braid_ASCaller_FInterp, f_u->basis, astatus);
             _braid_AccessVector(core, astatus, f_u);
          }
-
       }
       if (flo <= fhi)
       {
@@ -133,7 +146,6 @@ _braid_FInterp(braid_Core  core,
                                     0, 0, braid_ASCaller_FInterp, u->basis, astatus);
             _braid_AccessVector(core, astatus, f_u);
          }
-
       }
    }
 

@@ -57,7 +57,7 @@ _braid_Step(braid_Core         core,
 
    if (_braid_CoreElt(core, delta_correct) && iter >= _braid_CoreElt(core, delta_defer_iter) && level >= _braid_CoreElt(core, delta_defer_lvl))
    {
-      braid_Basis *ba            = _braid_GridElt(grids[level], ba);
+      braid_BaseVector *va       = _braid_GridElt(grids[level], va);
       braid_BaseVector delta;  /* temporary storage for Delta correction */
       // TODO: Is there a way to avoid having to clone u_start??
 
@@ -96,10 +96,10 @@ _braid_Step(braid_Core         core,
       if ( delta_correct )
       {
          _braid_BaseClone(core, app, u, &delta); // I'd like to get rid of this clone if possible...
-         _braid_LRDeltaDot(core, app, delta->userVector, fa[ii]->basis, ba[ii]);
+         _braid_LRDeltaDot(core, app, delta->userVector, fa[ii]->basis, va[ii-1]->basis);
          if ( prop_lyap )
          {
-            _braid_LRDeltaDotMat(core, app, delta->basis, fa[ii]->basis, ba[ii]);
+            _braid_LRDeltaDotMat(core, app, delta->basis, fa[ii]->basis, va[ii-1]->basis);
          }
       }
 
