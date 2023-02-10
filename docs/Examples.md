@@ -657,23 +657,22 @@ The two data structures are:
         app->man->dt
 
    is the current time step size.  The app is defined as 
-      
   
-      typedef struct _braid_App_struct {
-         MPI_Comm             comm;             /* global communicator */
-         MPI_Comm             comm_t;           /* communicator for parallelizing in time  */
-         MPI_Comm             comm_x;           /* communicator for parallelizing in space  */
-         int                  pt;               /* number of processors in time  */
-         simulation_manager  *man;              /* user's simulation manager structure */
-         HYPRE_SStructVector  e;                /* temporary vector used for error computations */
-         int                  nA;               /* number of spatial matrices created */
-         HYPRE_SStructMatrix *A;                /* array of spatial matrices, size nA, one per level*/
-         double              *dt_A;             /* array of time step sizes, size nA, one per level*/
-         HYPRE_StructSolver  *solver;           /* array of PFMG solvers, size nA, one per level*/
-         int                  use_rand;         /* binary value, use random or zero initial guess */
-         int                 *runtime_max_iter; /* runtime info for number of PFMG iterations*/
-         int                 *max_iter_x;       /* maximum iteration limits for PFMG */
-      } my_App;
+        typedef struct _braid_App_struct {
+           MPI_Comm             comm;             /* global communicator */
+           MPI_Comm             comm_t;           /* communicator for parallelizing in time  */
+           MPI_Comm             comm_x;           /* communicator for parallelizing in space  */
+           int                  pt;               /* number of processors in time  */
+           simulation_manager  *man;              /* user's simulation manager structure */
+           HYPRE_SStructVector  e;                /* temporary vector used for error computations */
+           int                  nA;               /* number of spatial matrices created */
+           HYPRE_SStructMatrix *A;                /* array of spatial matrices, size nA, one per level*/
+           double              *dt_A;             /* array of time step sizes, size nA, one per level*/
+           HYPRE_StructSolver  *solver;           /* array of PFMG solvers, size nA, one per level*/
+           int                  use_rand;         /* binary value, use random or zero initial guess */
+           int                 *runtime_max_iter; /* runtime info for number of PFMG iterations*/
+           int                 *max_iter_x;       /* maximum iteration limits for PFMG */
+        } my_App;
 
    The app contains all the information needed to take a time step with the
    user code for an arbitrary time step size.  See the *Step* function below
@@ -1200,9 +1199,9 @@ In order to evaluate the time-independent part of the objective function (e.g. t
 
 These routines are optional for XBraid_Adjoint. Therefore, they need to be passed to XBraid_Adjoint after the initialization with `braid_Init(...)` and `braid_InitAdjoint(...)` in the user's *main* file:
 
-      /* Optional: Set the tracking type objective function and derivative */
-      braid_SetPostprocessObjective(core, my_PostprocessObjective);
-      braid_SetPostprocessObjective_diff(core, my_PostprocessObjective_diff);
+         /* Optional: Set the tracking type objective function and derivative */
+         braid_SetPostprocessObjective(core, my_PostprocessObjective);
+         braid_SetPostprocessObjective_diff(core, my_PostprocessObjective_diff);
 
 
 ## Running an Optimization Cycle with XBraid_Adjoint 
