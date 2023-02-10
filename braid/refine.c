@@ -437,23 +437,23 @@ _braid_FRefine(braid_Core   core,
       /* Post r_ta receive */
       if ((iupper < gupper) || periodic)
       {
-         timer = _braid_MPI_Wtime(core);
+         timer = _braid_MPI_Wtime(core, 2);
          MPI_Irecv(&r_ta[r_npoints], 1, braid_MPI_REAL, MPI_ANY_SOURCE, 2, comm,
                    &requests[ncomms++]);
-         _braid_CoreElt(core, timer_MPI_recv) += _braid_MPI_Wtime(core) - timer;
+         _braid_CoreElt(core, timer_MPI_recv) += _braid_MPI_Wtime(core, 2) - timer;
       }
 
       /* Post r_ta send (to the left) */
       if ((ilower > 0) || periodic)
       {
          _braid_GetBlockDistProc((gupper+1), nprocs, (ilower-1), periodic, &prevproc);
-         timer = _braid_MPI_Wtime(core);
+         timer = _braid_MPI_Wtime(core, 2);
          MPI_Isend(&r_ta[0], 1, braid_MPI_REAL, prevproc, 2, comm, &requests[ncomms++]);
-         _braid_CoreElt(core, timer_MPI_send) += _braid_MPI_Wtime(core) - timer;
+         _braid_CoreElt(core, timer_MPI_send) += _braid_MPI_Wtime(core, 2) - timer;
       }
-      timer = _braid_MPI_Wtime(core);
+      timer = _braid_MPI_Wtime(core, 2);
       MPI_Waitall(ncomms, requests, statuses);
-      _braid_CoreElt(core, timer_MPI_wait) += _braid_MPI_Wtime(core) - timer;
+      _braid_CoreElt(core, timer_MPI_wait) += _braid_MPI_Wtime(core, 2) - timer;
    }
    _braid_TFree(requests);
    _braid_TFree(statuses);
@@ -470,9 +470,9 @@ _braid_FRefine(braid_Core   core,
       f_next = f_gupper+1;
       if (f_iupper < f_gupper)
       {
-         timer = _braid_MPI_Wtime(core);
+         timer = _braid_MPI_Wtime(core, 2);
          MPI_Irecv(&f_next, 1, braid_MPI_INT, MPI_ANY_SOURCE, 3, comm, &request);
-         _braid_CoreElt(core, timer_MPI_recv) += _braid_MPI_Wtime(core) - timer;
+         _braid_CoreElt(core, timer_MPI_recv) += _braid_MPI_Wtime(core, 2) - timer;
       }
    }
 
@@ -553,9 +553,9 @@ _braid_FRefine(braid_Core   core,
       size = send_sizes[m];
       proc = send_procs[m];
       bptr[0] = (braid_Real) size; /* insert size at the beginning */
-      timer = _braid_MPI_Wtime(core);
+      timer = _braid_MPI_Wtime(core, 2);
       MPI_Isend(bptr, (1+size), braid_MPI_REAL, proc, 4, comm, &requests[m]);
-      _braid_CoreElt(core, timer_MPI_send) += _braid_MPI_Wtime(core) - timer;
+      _braid_CoreElt(core, timer_MPI_send) += _braid_MPI_Wtime(core, 2) - timer;
       bptr += (1+size);
    }
 
@@ -600,16 +600,16 @@ _braid_FRefine(braid_Core   core,
    }
 
    /* Finish sends and f_next receive */
-   timer = _braid_MPI_Wtime(core);
+   timer = _braid_MPI_Wtime(core, 2);
    MPI_Waitall(nsends, requests, statuses);
-   _braid_CoreElt(core, timer_MPI_wait) += _braid_MPI_Wtime(core) - timer;
+   _braid_CoreElt(core, timer_MPI_wait) += _braid_MPI_Wtime(core, 2) - timer;
    if (f_npoints > 0)
    {
       if (f_iupper < f_gupper)
       {
-         timer = _braid_MPI_Wtime(core);
+         timer = _braid_MPI_Wtime(core, 2);
          MPI_Wait(&request, &status);
-         _braid_CoreElt(core, timer_MPI_wait) += _braid_MPI_Wtime(core) - timer;
+         _braid_CoreElt(core, timer_MPI_wait) += _braid_MPI_Wtime(core, 2) - timer;
       }
    }
 
@@ -803,10 +803,10 @@ _braid_FRefine(braid_Core   core,
       recv_size = unum*(1 + max_usize);
       /* TODO instead of _braid_CTAlloc, use  something like   _braid_BaseBufAlloc(core, app, &(recv_buffers[m]), recv_size*sizeof(braid_Real), bstatus) */
       recv_buffers[m] = _braid_CTAlloc(braid_Real, recv_size);
-      timer = _braid_MPI_Wtime(core);
+      timer = _braid_MPI_Wtime(core, 2);
       MPI_Irecv(recv_buffers[m], recv_size, braid_MPI_REAL, recv_procs[m], 5, comm,
                 &requests[m]);
-      _braid_CoreElt(core, timer_MPI_recv) += _braid_MPI_Wtime(core) - timer;
+      _braid_CoreElt(core, timer_MPI_recv) += _braid_MPI_Wtime(core, 2) - timer;
 
 #if DEBUG
       proc = recv_procs[m];
@@ -848,10 +848,10 @@ _braid_FRefine(braid_Core   core,
       /* TODO for the user-allocated MPI buffers, do we need the TReAlloc?  I mean, the send_size here should be less than the user's bufsize... 
        *      it doesn't make sense for the user to write a ReAlloc function too.  Maybe, only call TReAlloc if the user-defined BufAlloc == NULL */
       send_buffers[m] = _braid_TReAlloc(send_buffers[m], braid_Real, send_size);
-      timer = _braid_MPI_Wtime(core);
+      timer = _braid_MPI_Wtime(core, 2);
       MPI_Isend(send_buffers[m], send_size, braid_MPI_REAL, send_procs[m], 5, comm,
                 &requests[m + nrecvs]);
-      _braid_CoreElt(core, timer_MPI_send) += _braid_MPI_Wtime(core) - timer;
+      _braid_CoreElt(core, timer_MPI_send) += _braid_MPI_Wtime(core, 2) - timer;
 
 #if DEBUG
       unum = send_unums[m];
@@ -866,9 +866,9 @@ _braid_FRefine(braid_Core   core,
 #endif
 
    /* Finish communication */
-   timer = _braid_MPI_Wtime(core);
+   timer = _braid_MPI_Wtime(core, 2);
    MPI_Waitall((nsends+nrecvs), requests, statuses);
-   _braid_CoreElt(core, timer_MPI_wait) += _braid_MPI_Wtime(core) - timer;
+   _braid_CoreElt(core, timer_MPI_wait) += _braid_MPI_Wtime(core, 2) - timer;
 
 #if DEBUG
    printf("%d %d: 4\n", FRefine_count, myproc);

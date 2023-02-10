@@ -99,7 +99,6 @@ _braid_FRestrict(braid_Core   core,
    braid_Int    delta_correct = (_braid_CoreElt(core, delta_correct) 
                                  && iter >= _braid_CoreElt(core, delta_defer_iter) 
                                  && level >= _braid_CoreElt(core, delta_defer_lvl) );
-   braid_Basis *c_ba;
    braid_Vector delta_action;
 
    braid_Int            c_level, c_ilower, c_iupper, c_index, c_i, c_ii;
@@ -114,7 +113,6 @@ _braid_FRestrict(braid_Core   core,
    c_iupper = _braid_GridElt(grids[c_level], iupper);
    c_va     = _braid_GridElt(grids[c_level], va);
    c_fa     = _braid_GridElt(grids[c_level], fa);
-   c_ba     = _braid_GridElt(grids[c_level], ba);
 
    rnorm = 0.0;
 
@@ -253,9 +251,7 @@ _braid_FRestrict(braid_Core   core,
 
          if ( delta_correct )
          {
-            /* need to store a copy of the basis used to compute the Delta correction */
-            _braid_BaseCloneBasis(core, app, c_va[c_ii-1]->basis, &(c_ba[c_ii]));
-            /* also need an extra copy of c_va[c_ii-1] */
+            /* need an extra copy of c_va[c_ii-1] */
             _braid_CoreFcn(core, clone)(app, c_va[c_ii-1]->userVector, &delta_action);
          }
 
@@ -296,7 +292,7 @@ _braid_FRestrict(braid_Core   core,
                _braid_BaseSumBasis(core, app, 1.0, c_u->basis, 1.0, c_fa[c_ii]->basis);
 
                /* get the action of Delta on u_{i-1} */
-               _braid_LRDeltaDot(core, app, delta_action, c_fa[c_ii]->basis, c_ba[c_ii]);
+               _braid_LRDeltaDot(core, app, delta_action, c_fa[c_ii]->basis, c_va[c_ii-1]->basis);
                _braid_CoreFcn(core, sum)(app, -1., delta_action, 1., c_fa[c_ii]->userVector);
 
                _braid_CoreFcn(core, free)(app, delta_action);

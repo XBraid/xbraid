@@ -72,11 +72,9 @@ _braid_GridClean(braid_Core    core,
    braid_BaseVector  *ua       = _braid_GridElt(grid, ua);
    braid_BaseVector  *va       = _braid_GridElt(grid, va);
    braid_BaseVector  *fa       = _braid_GridElt(grid, fa);
-   braid_Basis       *ba       = _braid_GridElt(grid, ba);
    braid_BaseVector  *ua_alloc = _braid_GridElt(grid, ua_alloc);
    braid_BaseVector  *va_alloc = _braid_GridElt(grid, va_alloc);
    braid_BaseVector  *fa_alloc = _braid_GridElt(grid, fa_alloc);
-   braid_Basis       *ba_alloc = _braid_GridElt(grid, ba_alloc);
    
    braid_Int      ii;
 
@@ -114,18 +112,6 @@ _braid_GridClean(braid_Core    core,
       }
    }
 
-   if (ba_alloc)
-   {
-      for (ii = -1; ii <= (iupper-ilower); ii++)
-      {
-         if (fa[ii] != NULL)
-         {
-            _braid_BaseFreeBasis(core, app,  ba[ii]);
-            ba[ii] = NULL;
-         }
-      }
-   }
-
    return _braid_error_flag;
 }
 
@@ -142,7 +128,6 @@ _braid_GridDestroy(braid_Core    core,
       braid_Real        *ta_alloc = _braid_GridElt(grid, ta_alloc);
       braid_BaseVector  *va_alloc = _braid_GridElt(grid, va_alloc);
       braid_BaseVector  *fa_alloc = _braid_GridElt(grid, fa_alloc);
-      braid_Basis       *ba_alloc = _braid_GridElt(grid, ba_alloc);
 
       _braid_GridClean(core, grid);
 
@@ -161,10 +146,6 @@ _braid_GridDestroy(braid_Core    core,
       if (fa_alloc)
       {
          _braid_TFree(fa_alloc);
-      }
-      if (ba_alloc)
-      {
-         _braid_TFree(ba_alloc);
       }
 
       _braid_TFree(grid);

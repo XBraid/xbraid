@@ -75,7 +75,6 @@ _braid_InitHierarchy(braid_Core    core,
    braid_BaseVector *ua;
    braid_BaseVector *va;
    braid_BaseVector *fa;
-   braid_Basis      *ba;
 
    _braid_Grid      *grid;
    braid_Real       *f_ta;
@@ -248,14 +247,6 @@ _braid_InitHierarchy(braid_Core    core,
          _braid_GridElt(grid, fa_alloc) = fa;
          _braid_GridElt(grid, va)       = va+1;  /* shift */
          _braid_GridElt(grid, fa)       = fa+1;  /* shift */
-         
-         /* Only allocate bases if we are doing Delta correction */
-         if ( _braid_CoreElt(core, delta_correct) )
-         {
-            ba = _braid_CTAlloc(braid_Basis, iupper-ilower+2);
-            _braid_GridElt(grid, ba_alloc) = ba;
-            _braid_GridElt(grid, ba)       = ba+1;  /* shift */
-         }
       }
 
       // If on level that only stores C-points and not using the shell vector feature

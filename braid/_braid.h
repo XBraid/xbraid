@@ -136,9 +136,8 @@ struct _braid_VectorBar_struct
 typedef struct _braid_VectorBar_struct *braid_VectorBar;
 
 /**
- * This contains two arrays of @ref braid_Vector objects which should be thought of 
- * as a basis for the state space, as well as a stored action on that basis,
- * along with the number of vectors stored in each (rank).
+ * This contains an array of @ref braid_Vector objects which should be thought of 
+ * as a basis for the state space, along with the number of vectors stored in each (rank).
  * Only initialized when using Delta correction. The vectors should be initialized
  * using the user's InitBasis function.
  */
@@ -155,10 +154,9 @@ typedef struct _braid_Basis_struct *braid_Basis;
  * the associated bar vector (braid_VectorBar type) if the adjoint
  * functionality is being used, as well as basis vectors used by Delta correction.
  * If adjoint is not being used, bar==NULL, and if Delta correction is not used,
- * basis == basis_action == NULL.
+ * basis==NULL.
  * 
- * For Delta correction, *basis* stores the unmodified basis vectors, while basis_action
- * stores the
+ * For Delta correction, *basis* stores the Lyapunov vectors and low-rank Delta corrections.
  */
 struct _braid_BaseVector_struct
 {
@@ -236,7 +234,6 @@ typedef struct
    braid_Real        *ta;            /**< time values                (all points) */
    braid_BaseVector  *va;            /**< restricted unknown vectors (all points, NULL on level 0) */
    braid_BaseVector  *fa;            /**< rhs vectors f              (all points, NULL on level 0) */
-   braid_Basis       *ba;            /**< time-dependent bases       (all points, NULL if not delta_correct or on level 0) */
 
    braid_Int          recv_index;    /**<  -1 means no receive */
    braid_Int          send_index;    /**<  -1 means no send */
@@ -247,7 +244,6 @@ typedef struct
    braid_Real        *ta_alloc;      /**< original memory allocation for ta */
    braid_BaseVector  *va_alloc;      /**< original memory allocation for va */
    braid_BaseVector  *fa_alloc;      /**< original memory allocation for fa */
-   braid_Basis       *ba_alloc;      /**< original memory allocation for ba */
 
    braid_BaseVector   ulast;         /**< stores vector at last time step, only set in FAccess and FCRelax if done is True */
 

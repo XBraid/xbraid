@@ -90,19 +90,8 @@ my_Step(braid_App        app,
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
 
    /* Use backward Euler to propagate solution */
-   double phi = 1./(1. + tstop-tstart);
-   (u->value) = phi*(u->value);
-
-   /* propagate "lyapunov vector" */
-   int rank;
-   my_Vector *psi;
-   braid_StepStatusGetDeltaRank(status, &rank);
-   if (rank > 0)
-   {
-      braid_StepStatusGetBasisVec(status, &psi, 0);
-      psi->value *= phi;
-   }
-
+   (u->value) = 1./(1. + tstop-tstart)*(u->value);
+   
    return 0;
 }
 
@@ -197,7 +186,6 @@ my_BufSize(braid_App          app,
            braid_BufferStatus bstatus)
 {
    *size_ptr = sizeof(double);
-   braid_BufferStatusSetBasisSize(bstatus, sizeof(double));
    return 0;
 }
 
@@ -231,33 +219,6 @@ my_BufUnpack(braid_App          app,
    return 0;
 }
 
-int
-my_InnerProd(braid_App     app,
-             braid_Vector  u,
-             braid_Vector  v,
-             double       *prod_ptr
-             )
-{
-   *prod_ptr = u->value * v->value;
-   return 0;
-}
-
-int
-my_BasisInit(braid_App     app,
-             double        t,
-             int           index,
-             braid_Vector *v_ptr
-             )
-{
-   my_Vector *v;
-
-   v = (my_Vector *) malloc(sizeof(my_Vector));
-   v->value = 1.;
-
-   *v_ptr = v;
-   return 0;
-}
-
 /*--------------------------------------------------------------------------
  * Main driver
  *--------------------------------------------------------------------------*/
@@ -284,7 +245,7 @@ int main (int argc, char *argv[])
    
    /* initialize XBraid and set options */
    braid_Init(MPI_COMM_WORLD, MPI_COMM_WORLD, tstart, tstop, ntime, app,
-             my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm,
+             my_Step, my_Init, my_Clone, my_Free, my_Sum, my_SpatialNorm, 
              my_Access, my_BufSize, my_BufPack, my_BufUnpack, &core);
    
    /* Set some typical Braid parameters */
@@ -292,7 +253,6 @@ int main (int argc, char *argv[])
    braid_SetMaxLevels(core, 2);
    braid_SetAbsTol(core, 1.0e-06);
    braid_SetCFactor(core, -1, 2);
-   // braid_SetDeltaCorrection(core, 1, my_BasisInit, my_InnerProd);
    
    /* Run simulation, and then clean up */
    braid_Drive(core);

@@ -347,7 +347,7 @@ _braid_DrivePrintStatus(braid_Core  core,
       return _braid_error_flag;
    }
 
-   wtime = _braid_MPI_Wtime(core) - localtime;
+   wtime = _braid_MPI_Wtime(core, 1) - localtime;
 
    if (_braid_CoreElt(core, adjoint))
    {
@@ -545,11 +545,11 @@ _braid_Drive(braid_Core  core,
 
             /* F-relax then interpolate */
             if(level == (nlevels-1)){
-               timer = _braid_MPI_Wtime(core);
+               timer = _braid_MPI_Wtime(core, 2);
             }
             _braid_FInterp(core, level);
             if(level == (nlevels-1)){
-               _braid_CoreElt(core, timer_coarse_solve) += _braid_MPI_Wtime(core) - timer;
+               _braid_CoreElt(core, timer_coarse_solve) += _braid_MPI_Wtime(core, 2) - timer;
             }
 
             level--;
