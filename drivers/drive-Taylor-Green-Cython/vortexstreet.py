@@ -6,33 +6,42 @@ Vortices start appearing after a couple of hundred steps.
 # from phi.flow import *  # minimal dependencies
 from phi.torch.flow import *
 import matplotlib.pyplot as plt
+from progressbar import progressbar
 # from phi.tf.flow import *
 # from phi.jax.flow import *
 # assert backend.default_backend().set_default_device('GPU')
 
-SPEED = 20.
+SPEED = 30.
 OFFSET = 1e-6
 v0 = tensor([(SPEED, 0), (SPEED, 0)], batch("init"), channel(vector='x,y'))
 
-nx, ny = (64, 64)
-DOMAIN = {"extrapolation": extrapolation.PERIODIC, 'x': nx, 'y': ny, "bounds": Box(x=20, y=20)}
+nx, ny = (128, 64)
+DOMAIN = {"extrapolation": extrapolation.BOUNDARY, 'x': nx, 'y': ny, "bounds": Box(x=40, y=20)}
 velocity = StaggeredGrid(v0, **DOMAIN)
-noise = StaggeredGrid(Noise(), **DOMAIN)
-velocity += noise
+noise_both = Noise().at(velocity)
+noise_offset = OFFSET * StaggeredGrid(math.random_normal(velocity), **DOMAIN)
+velocity += noise_both
 CYLINDER = Obstacle(geom.infinite_cylinder(x=10, y=10, radius=3, inf_dim=None))
 BOX = Obstacle(geom.Cuboid(x=10, y=10))
 BOUNDARY_MASK = StaggeredGrid(Box(x=(-INF, 0.5), y=None), velocity.extrapolation, velocity.bounds, velocity.resolution)
 vort = field.curl(velocity.with_extrapolation(extrapolation.BOUNDARY))
 pressure = None
 
+
 @jit_compile  # Only for PyTorch, TensorFlow and Jax
 def step(v, p, dt=.1):
     v = advect.semi_lagrangian(v, v, dt)
-    # v = v * (1 - BOUNDARY_MASK) + BOUNDARY_MASK * (SPEED, 0)
+    v = v * (1 - BOUNDARY_MASK) + BOUNDARY_MASK * (SPEED, 0)
     v, p = fluid.make_incompressible(v, [CYLINDER], Solve('auto', 1e-5, 0, x0=p))
     # v, p = fluid.make_incompressible(v, [BOX], Solve('auto', 1e-5, 0, x0=p))
     return v, p
 
+# reach mean flow
+print("stepping to mean flow")
+for _ in progressbar(range(100)):
+    velocity, pressure = step(velocity, pressure)
+    
+velocity += noise_offset
 diff = []
 cmap="plasma"
 fig, (ax1, ax2, ax3) = plt.subplots(3,1)
