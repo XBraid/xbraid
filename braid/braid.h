@@ -148,7 +148,7 @@ typedef braid_Int
                    );
 
 /**
- * (optional) Initializes a vector *u_ptr* at time *t*
+ * (optional) Initializes a Delta correction basis vector *u_ptr* at time *t*
  * and spatial index *index*
  **/
 typedef braid_Int
@@ -1258,7 +1258,6 @@ braid_SetRichardsonEstimation(braid_Core core,                /**< braid_Core (_
  * This can potentially greatly accelerate convergence for nonlinear systems.
  * 
  * The action of the Jacobian will be computed on a (low-rank) time-dependent basis initialized by the user.
- * TODO: Finish this entry
  */
 braid_Int
 braid_SetDeltaCorrection(braid_Core           core,        /**< braid_Core (_braid_Core) struct */

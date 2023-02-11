@@ -35,37 +35,38 @@ extern "C"
 {
 #endif
 
-   /*----------------------------------------------------------------------------
-    * Compute the action of the low-rank approximation to Delta on a vector
-    *----------------------------------------------------------------------------*/
+/**
+ * Compute the action of the low-rank approximation to Delta on a vector
+ */
 
-   braid_Int
-   _braid_LRDeltaDot(braid_Core core,
+braid_Int
+_braid_LRDeltaDot(braid_Core core,
+                  braid_App app,
+                  braid_Vector u,
+                  braid_Basis delta,
+                  braid_Basis basis);
+
+/**
+ * Compute the action of the low-rank approximation to Delta on a basis
+ */
+
+braid_Int
+_braid_LRDeltaDotMat(braid_Core core,
                      braid_App app,
-                     braid_Vector u,
+                     braid_Basis psi,
                      braid_Basis delta,
                      braid_Basis basis);
 
-   /*----------------------------------------------------------------------------
-    * Compute the action of the low-rank approximation to Delta on a basis
-    *----------------------------------------------------------------------------*/
-
-   braid_Int
-   _braid_LRDeltaDotMat(braid_Core core,
-                        braid_App app,
-                        braid_Basis psi,
-                        braid_Basis delta,
-                        braid_Basis basis);
-
-                     
-   /*----------------------------------------------------------------------------
-    * Perform modified Gram-Schmidt orthonormalization on a basis
-    *----------------------------------------------------------------------------*/
-   braid_Int
-   _braid_GramSchmidt(braid_Core   core,
-                      braid_App    app,
-                      braid_Basis  basis,
-                      braid_Real  *exps);
+                  
+/**
+ * Perform modified Gram-Schmidt orthonormalization on a basis, while also
+ * computing local Lyapunov exponents
+ */
+braid_Int
+_braid_GramSchmidt(braid_Core   core,
+                     braid_App    app,
+                     braid_Basis  basis,
+                     braid_Real  *exps);
 
 
 #ifdef __cplusplus

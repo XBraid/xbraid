@@ -1905,7 +1905,6 @@ braid_SetDeltaCorrection(braid_Core           core,
                          braid_PtFcnInitBasis init_basis,
                          braid_PtFcnInnerProd inner_prod)
 {
-   /* TODO: compatibility checks */
    if (_braid_CoreElt(core, richardson))
    {
       _braid_printf("  Braid: Delta correction is not currently compatible with Richardson error estimation, (feature coming soon?) disabling Richardson\n");
@@ -1958,7 +1957,6 @@ braid_SetLyapunovEstimation(braid_Core core,
                             )
 {
    /**
-    * TODO: compatibility checks
     * We could allow to turn this on even if Delta correction is off,
     * although you really should take advantage of the LVs if you have them
     */

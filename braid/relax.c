@@ -269,7 +269,7 @@ _braid_FCRelax(braid_Core  core,
             braid_BaseVector uref;
             _braid_UGetVectorRef(core, level, ci, &uref);
             _braid_AccessStatusInit(ta[ci-f_ilower], ci, rnm, iter, level, nrefine, gupper_zero,
-                                    done, 0, braid_ASCaller_FCRelax, NULL, astatus);
+                                    done, 0, braid_ASCaller_FCRelax, uref->basis, astatus);
             _braid_AccessVector(core, astatus, uref);
          }
 

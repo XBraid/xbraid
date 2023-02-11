@@ -91,7 +91,8 @@ _braid_BaseClone(braid_Core         core,     /**< braid_Core structure */
                  );
 
 /**
- * This initializes a braid_Basis and calls the user's clone routine on each column.
+ * This initializes a braid_Basis and calls the user's clone routine to initialize each 
+ * column vector, cloning *A* into *B*.
  */
 braid_Int
 _braid_BaseCloneBasis(braid_Core         core,     /**< braid_Core structure */

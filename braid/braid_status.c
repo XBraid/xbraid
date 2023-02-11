@@ -285,8 +285,9 @@ braid_StatusGetLocalLyapExponents(braid_Status   status,
       return _braid_error_flag;
    }
 
-   braid_Int clower = _braid_GridElt(grids[0], clower);
-   braid_Int i_c    = (index - clower)/_braid_GridElt(grids[0], cfactor);
+   braid_Int i_c;
+   braid_Int clower  = _braid_GridElt(grids[0], clower);
+   _braid_MapFineToCoarse(index - clower, cfactor, i_c);
    braid_Real *exps = _braid_StatusElt(status, local_exponents)[i_c];
    _braid_GetNEntries(exps, _braid_StatusElt(status, delta_rank), num_returned, exp_ptr);
 
@@ -705,22 +706,22 @@ _braid_AccessStatusInit(braid_Real           t,
    _braid_StatusElt(status, lvectors)         = basis;
    return _braid_error_flag;
 }
-ACCESSOR_FUNCTION_GET1(Access, T,               Real)
-ACCESSOR_FUNCTION_GET1(Access, TIndex,          Int)
-ACCESSOR_FUNCTION_GET1(Access, Iter,            Int)
-ACCESSOR_FUNCTION_GET1(Access, Level,           Int)
-ACCESSOR_FUNCTION_GET1(Access, NLevels,         Int)
-ACCESSOR_FUNCTION_GET1(Access, NRefine,         Int)
-ACCESSOR_FUNCTION_GET1(Access, NTPoints,        Int)
-ACCESSOR_FUNCTION_GET1(Access, Residual,        Real)
-ACCESSOR_FUNCTION_GET1(Access, Done,            Int)
-ACCESSOR_FUNCTION_GET4(Access, TILD,            Real, Int, Int, Int)
-ACCESSOR_FUNCTION_GET1(Access, WrapperTest,     Int)
-ACCESSOR_FUNCTION_GET1(Access, CallingFunction, Int)
+ACCESSOR_FUNCTION_GET1(Access, T,                     Real)
+ACCESSOR_FUNCTION_GET1(Access, TIndex,                Int)
+ACCESSOR_FUNCTION_GET1(Access, Iter,                  Int)
+ACCESSOR_FUNCTION_GET1(Access, Level,                 Int)
+ACCESSOR_FUNCTION_GET1(Access, NLevels,               Int)
+ACCESSOR_FUNCTION_GET1(Access, NRefine,               Int)
+ACCESSOR_FUNCTION_GET1(Access, NTPoints,              Int)
+ACCESSOR_FUNCTION_GET1(Access, Residual,              Real)
+ACCESSOR_FUNCTION_GET1(Access, Done,                  Int)
+ACCESSOR_FUNCTION_GET4(Access, TILD,                  Real, Int, Int, Int)
+ACCESSOR_FUNCTION_GET1(Access, WrapperTest,           Int)
+ACCESSOR_FUNCTION_GET1(Access, CallingFunction,       Int)
 ACCESSOR_FUNCTION_GET1(Access, SingleErrorEstAccess,  Real)
-ACCESSOR_FUNCTION_GET1(Access, DeltaRank,       Int)
-ACCESSOR_FUNCTION_GET2(Access, LocalLyapExponents, Real, Int)
-ACCESSOR_FUNCTION_GET1_IN1(Access, BasisVec, Vector, Int)
+ACCESSOR_FUNCTION_GET1(Access, DeltaRank,             Int)
+ACCESSOR_FUNCTION_GET2(Access, LocalLyapExponents,    Real, Int)
+ACCESSOR_FUNCTION_GET1_IN1(Access, BasisVec,          Vector, Int)
 
 /*--------------------------------------------------------------------------
  * SyncStatus Routines
@@ -830,28 +831,28 @@ _braid_StepStatusInit(braid_Real       tstart,
 
    return _braid_error_flag;
 }
-ACCESSOR_FUNCTION_GET2_IN1(Step, TIUL,         Int, Int, Int)
-ACCESSOR_FUNCTION_GET1(Step, T,             Real)
-ACCESSOR_FUNCTION_GET1(Step, TIndex,        Int)
-ACCESSOR_FUNCTION_GET1(Step, Iter,          Int)
-ACCESSOR_FUNCTION_GET1(Step, Level,         Int)
-ACCESSOR_FUNCTION_GET1(Step, NLevels,       Int)
-ACCESSOR_FUNCTION_GET1(Step, NRefine,       Int)
-ACCESSOR_FUNCTION_GET1(Step, NTPoints,      Int)
-ACCESSOR_FUNCTION_GET1(Step, Tstop,         Real)
-ACCESSOR_FUNCTION_GET2(Step, TstartTstop,   Real, Real)
-ACCESSOR_FUNCTION_GET1(Step, Tol,           Real)
-ACCESSOR_FUNCTION_GET2(Step, RNorms,        Int,  Real)
-ACCESSOR_FUNCTION_GET1(Step, OldFineTolx,   Real)
-ACCESSOR_FUNCTION_SET1(Step, OldFineTolx,   Real)
-ACCESSOR_FUNCTION_SET1(Step, TightFineTolx, Real)
-ACCESSOR_FUNCTION_SET1(Step, RFactor,       Real)
-ACCESSOR_FUNCTION_SET1(Step, RSpace,        Real)
-ACCESSOR_FUNCTION_GET1(Step, Done,          Int)
-ACCESSOR_FUNCTION_GET1(Step, SingleErrorEstStep, Real)
-ACCESSOR_FUNCTION_GET1(Step, CallingFunction,    Int)
-ACCESSOR_FUNCTION_GET1(Step, DeltaRank,     Int)
-ACCESSOR_FUNCTION_GET1_IN1(Step, BasisVec, Vector, Int)
+ACCESSOR_FUNCTION_GET2_IN1(Step, TIUL,             Int, Int, Int)
+ACCESSOR_FUNCTION_GET1(Step, T,                    Real)
+ACCESSOR_FUNCTION_GET1(Step, TIndex,               Int)
+ACCESSOR_FUNCTION_GET1(Step, Iter,                 Int)
+ACCESSOR_FUNCTION_GET1(Step, Level,                Int)
+ACCESSOR_FUNCTION_GET1(Step, NLevels,              Int)
+ACCESSOR_FUNCTION_GET1(Step, NRefine,              Int)
+ACCESSOR_FUNCTION_GET1(Step, NTPoints,             Int)
+ACCESSOR_FUNCTION_GET1(Step, Tstop,                Real)
+ACCESSOR_FUNCTION_GET2(Step, TstartTstop,          Real, Real)
+ACCESSOR_FUNCTION_GET1(Step, Tol,                  Real)
+ACCESSOR_FUNCTION_GET2(Step, RNorms,               Int,  Real)
+ACCESSOR_FUNCTION_GET1(Step, OldFineTolx,          Real)
+ACCESSOR_FUNCTION_SET1(Step, OldFineTolx,          Real)
+ACCESSOR_FUNCTION_SET1(Step, TightFineTolx,        Real)
+ACCESSOR_FUNCTION_SET1(Step, RFactor,              Real)
+ACCESSOR_FUNCTION_SET1(Step, RSpace,               Real)
+ACCESSOR_FUNCTION_GET1(Step, Done,                 Int)
+ACCESSOR_FUNCTION_GET1(Step, SingleErrorEstStep,   Real)
+ACCESSOR_FUNCTION_GET1(Step, CallingFunction,      Int)
+ACCESSOR_FUNCTION_GET1(Step, DeltaRank,            Int)
+ACCESSOR_FUNCTION_GET1_IN1(Step, BasisVec,         Vector, Int)
 
 /*--------------------------------------------------------------------------
  * BufferStatus Routines

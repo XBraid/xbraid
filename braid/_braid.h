@@ -402,7 +402,7 @@ typedef struct _braid_Core_struct
    braid_Real    old_fine_tolx;    /**< Allows for storing the previously used fine tolerance from GetSpatialAccuracy */
    braid_Int     tight_fine_tolx;  /**< Boolean, indicating whether the tightest fine tolx has been used, condition for halting */
    braid_Int     rfactor;          /**< if set by user, allows for subdivision of this interval for better time accuracy */
-   braid_Basis   lvectors;         /**< if Delta correction is set, contains reference to the tangent vectors to be propagated across the c-interval */
+   braid_Basis   lvectors;         /**< if Delta correction is set, contains reference to a braid_Basis object for giving user access to lyapunov vectors */
    /** BufferStatus properties */
    braid_Int    messagetype;       /**< message type, 0: for Step(), 1: for load balancing */
    braid_Int    size_buffer;       /**< size of buffer, in bytes */

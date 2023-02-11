@@ -50,6 +50,8 @@ _braid_LRDeltaDot(braid_Core core,
       _braid_CoreFcn(core, sum)(app, coords[i], delta->userVecs[i], 1., u);
    }
 
+   _braid_TFree(coords);
+
    return _braid_error_flag;
 }
 

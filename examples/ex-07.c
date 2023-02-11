@@ -385,7 +385,10 @@ int my_Access(braid_App app, braid_Vector u, braid_AccessStatus astatus)
    braid_AccessStatusGetDeltaRank(astatus, &local_rank);
    num_exp = local_rank;
    double *exponents = malloc(local_rank * sizeof(double));
-   braid_AccessStatusGetLocalLyapExponents(astatus, exponents, &num_exp);
+   if (num_exp > 0)
+   {
+      braid_AccessStatusGetLocalLyapExponents(astatus, exponents, &num_exp);
+   }
 
    fprintf(file, "%d", index);
    for (int j = 0; j < local_rank; j++)
@@ -512,7 +515,7 @@ int main(int argc, char *argv[])
       {
          if (myid == 0)
          {
-            printf("\n");
+            printf("Solve the Lorenz system with the following parameters\n");
             printf("  -ntime <ntime>    : set num time points (default %d)\n", ntime);
             printf("  -tstop <tstop>    : set end time in Lyapunov time (default %lf)\n", tlyap);
             printf("  -ml  <max_levels> : set max levels\n");
@@ -707,7 +710,8 @@ int main(int argc, char *argv[])
    /* reorder the output file */
    if (myid == 0)
    {
-      int ti, index, i, j, npoints = (ntime + 1);
+      int findex = 0;
+      int npoints = (ntime + 1);
       VEC *solution;
       VEC *lyapunov;
       double *exponents;
@@ -718,21 +722,21 @@ int main(int argc, char *argv[])
       exponents = malloc(npoints * delta_rank * sizeof(double));
       file = fopen(filename, "r");
       file_lv = fopen(filename_lv, "r");
-      for (ti = 0; ti < npoints; ti++)
+      for (size_t ti = 0; ti < npoints; ti++)
       {
-         fscanf(file, "%d", &index);
-         for (i = 0; i < VecSize; i++)
+         fscanf(file, "%d", &findex);
+         for (size_t i = 0; i < VecSize; i++)
          {
-            fscanf(file, "%le", &solution[index][i]);
+            fscanf(file, "%le", &solution[findex][i]);
          }
 
-         fscanf(file_lv, "%d", &index);
+         fscanf(file_lv, "%d", &findex);
          for (size_t j = 0; j < delta_rank; j++)
          {
-            fscanf(file_lv, "%le", &exponents[index * delta_rank + j]);
-            for (i = 0; i < VecSize; i++)
+            fscanf(file_lv, "%le", &exponents[findex * delta_rank + j]);
+            for (size_t i = 0; i < VecSize; i++)
             {
-               fscanf(file_lv, "%le", &lyapunov[index * delta_rank + j][i]);
+               fscanf(file_lv, "%le", &lyapunov[findex * delta_rank + j][i]);
             }
          }
       }
@@ -740,23 +744,29 @@ int main(int argc, char *argv[])
       fclose(file_lv);
       file = fopen("ex-07.out", "w");
       file_lv = fopen("ex-07-lv.out", "w");
-      for (ti = 0; ti < npoints; ti++)
+      for (size_t ti = 0; ti < npoints; ti++)
       {
-         for (i = 0; i < VecSize; i++)
+         if (file)
          {
-            fprintf(file, " %.14e", solution[ti][i]);
-         }
-         fprintf(file, "\n");
-
-         for (j = 0; j < delta_rank; j++)
-         {
-            fprintf(file_lv, " %.14e", exponents[ti * delta_rank + j]);
-            for (i = 0; i < VecSize; i++)
+            for (size_t i = 0; i < VecSize; i++)
             {
-               fprintf(file_lv, " %.14e", lyapunov[ti * delta_rank + j][i]);
+               fprintf(file, " %.14e", solution[ti][i]);
             }
+            fprintf(file, "\n");
          }
-         fprintf(file_lv, "\n");
+
+         if (file_lv)
+         {
+            for (size_t j = 0; j < delta_rank; j++)
+            {
+               fprintf(file_lv, " %.14e", exponents[ti * delta_rank + j]);
+               for (size_t i = 0; i < VecSize; i++)
+               {
+                  fprintf(file_lv, " %.14e", lyapunov[ti * delta_rank + j][i]);
+               }
+            }
+            fprintf(file_lv, "\n");
+         }
       }
       free(solution);
       free(lyapunov);
