@@ -36,6 +36,18 @@ extern "C"
 #endif
 
 /**
+ * macro for determining when to compute Delta correction
+ */
+#define _braid_DoDeltaCorrect(core, level, niter) \
+( _braid_CoreElt(core, delta_correct) && niter >= _braid_CoreElt(core, delta_defer_iter) && level >= _braid_CoreElt(core, delta_defer_lvl) )
+
+/**
+ * macro for determining when we can use computed Delta correction
+ */
+#define _braid_UseDeltaCorrect(core, level, niter) \
+( _braid_CoreElt(core, delta_correct) && niter >= _braid_CoreElt(core, delta_defer_iter) && level > _braid_CoreElt(core, delta_defer_lvl) )
+
+/**
  * Compute the action of the low-rank approximation to Delta on a vector
  */
 

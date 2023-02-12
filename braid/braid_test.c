@@ -473,6 +473,10 @@ braid_TestInnerProd( braid_App              app,
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   actual output:    inner_prod(u, v) = %1.2e  \n", result2);
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   expected output:  inner_prod(u, v) = 0. \n\n");
    }
+   else
+   {
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   Test 2 Inconclusive\n");
+   }
 
    return correct;
 } 
@@ -1118,7 +1122,7 @@ braid_TestDelta(braid_App               app,
 
    if (correct)
    {
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitBasis:   test 2 passed\n");
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitBasis:   Test 2 Passed\n");
    }
    _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestInitBasisAccess\n");
 

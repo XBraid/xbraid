@@ -96,9 +96,7 @@ _braid_FRestrict(braid_Core   core,
    braid_Real           factor, dtk, DTK;
 
    /* Required for Delta correction */
-   braid_Int    delta_correct = (_braid_CoreElt(core, delta_correct) 
-                                 && iter >= _braid_CoreElt(core, delta_defer_iter) 
-                                 && level >= _braid_CoreElt(core, delta_defer_lvl) );
+   braid_Int    delta_correct = _braid_DoDeltaCorrect(core, level, iter);
    braid_Vector delta_action;
 
    braid_Int            c_level, c_ilower, c_iupper, c_index, c_i, c_ii;
