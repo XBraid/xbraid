@@ -57,7 +57,7 @@ _braid_Step(braid_Core         core,
 
    if (_braid_CoreElt(core, delta_correct) && iter >= _braid_CoreElt(core, delta_defer_iter) && level >= _braid_CoreElt(core, delta_defer_lvl))
    {
-      braid_BaseVector *va       = _braid_GridElt(grids[level], va);
+      braid_BaseVector *va = _braid_GridElt(grids[level], va);
       braid_BaseVector delta;  /* temporary storage for Delta correction */
       // TODO: Is there a way to avoid having to clone u_start??
 

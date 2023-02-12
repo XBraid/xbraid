@@ -75,13 +75,26 @@ void _braid_ErrorHandler(const char *filename, braid_Int line, braid_Int ierr, c
  * Re-allocation macro 
  **/
 #define _braid_TReAlloc(ptr, type, count) \
-( (type *)realloc((char *)ptr, (size_t)(sizeof(type) * (count))) )
+( (type *)realloc((braid_Byte *)ptr, (size_t)(sizeof(type) * (count))) )
 
 /** 
  * Free memory macro 
  **/
 #define _braid_TFree(ptr) \
-( free((char *)ptr), ptr = NULL )
+( free((braid_Byte *)ptr), ptr = NULL )
+
+/**
+ * sizeof macro for braid struct typedefs
+ * e.g. _braid_SizeOf(braid_Vector) -> sizeof(struct _braid_Vector_struct)
+ **/
+#define _braid_SizeOf(type) \
+( sizeof(struct _ ## type ## _struct) )
+
+/**
+ * macro for dynamic allocation of braid structs
+ **/
+#define _braid_AllocBraidType(type) \
+( (type)malloc(_braid_SizeOf(type)) )
 
 /*--------------------------------------------------------------------------
  * Miscellaneous macros and functions 

@@ -251,7 +251,7 @@ _braid_FRestrict(braid_Core   core,
 
          if ( delta_correct )
          {
-            /* need an extra copy of c_va[c_ii-1] */
+            /* need an extra copy of c_va[c_ii-1] for tau-correction later */
             _braid_CoreFcn(core, clone)(app, c_va[c_ii-1]->userVector, &delta_action);
          }
 

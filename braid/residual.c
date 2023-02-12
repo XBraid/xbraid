@@ -107,8 +107,6 @@ _braid_FASResidual(braid_Core        core,
    braid_Int          ilower = _braid_GridElt(grids[level], ilower);
    braid_BaseVector  *fa     = _braid_GridElt(grids[level], fa);
    braid_BaseVector  *va     = _braid_GridElt(grids[level], va);
-   // braid_Basis       *ba     = _braid_GridElt(grids[level], ba);
-
 
    braid_Int ii = index-ilower;
 
@@ -123,8 +121,6 @@ _braid_FASResidual(braid_Core        core,
    if ( delta_correct )
    {  /* compute the Delta correction for the state and Lyapunov vectors */
       _braid_BaseClone(core, app, r, &delta);
-      // _braid_LRDeltaDot(core, app, delta->userVector, fa[ii]->basis, ba[ii]);
-      // _braid_LRDeltaDotMat(core, app, delta->basis, fa[ii]->basis, ba[ii]);
       _braid_LRDeltaDot(core, app, delta->userVector, fa[ii]->basis, va[ii-1]->basis);
       _braid_LRDeltaDotMat(core, app, delta->basis, fa[ii]->basis, va[ii-1]->basis);
    }

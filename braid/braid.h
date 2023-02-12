@@ -1275,7 +1275,7 @@ braid_SetDeltaCorrection(braid_Core           core,        /**< braid_Core (_bra
  */
 braid_Int
 braid_SetDeferDelta(braid_Core core,   /**< braid_Core (_braid_Core) struct*/
-                    braid_Int  level,  /**< Integer, Delta correction will be deferred to this level (Default 1)*/
+                    braid_Int  level,  /**< Integer, Delta correction will be deferred to this level (Default 0)*/
                     braid_Int  iter    /**< Integer, Delta correction will be deferred until this iteration (Default 1) */
                     );
 
