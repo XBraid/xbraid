@@ -935,7 +935,7 @@ A routine for testing the user provided inner product function is provided in [b
 
 ## Getting Started
 
-To familiarize yourself with XBraid Delta correction, please see the example @ref exampleseven, located in 'examples/ex-07.c', which demonstrates solving the chaotic Lorenz system using Delta correction and Lyapunov estimation. 
+To familiarize yourself with XBraid Delta correction, please see the example [Lorenz System with Delta Correction](@ref exampleseven), located in 'examples/ex-07.c', which demonstrates solving the chaotic Lorenz system using Delta correction and Lyapunov estimation. 
 
 # Citing XBraid {#braidcite}
 

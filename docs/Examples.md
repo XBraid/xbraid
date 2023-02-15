@@ -1291,11 +1291,11 @@ corresponding XBraid_Adjoint implementation.
 
 # Chaotic Lorenz System With Delta Correction and Lyapunov Estimation {#exampleseven}
 
-This example demonstrates acceleration of XBraid convergence and Lyapunov analysis of a system with Delta correction. Familiarity with example @ref exampleone is assumed. The example solves the chaotic Lorenz system in three dimensions, defined by the system
+This example demonstrates acceleration of XBraid convergence and Lyapunov analysis of a system with Delta correction. Familiarity with @ref exampleone is assumed. This example solves the chaotic Lorenz system in three dimensions, defined by the system
 \f[
    \begin{cases}
-      x' = \sigma (y - x),
-      y' = x (\rho - z) - y,
+      x' = \sigma (y - x),   \\
+      y' = x (\rho - z) - y, \\
       z' = xy - \beta z,
    \end{cases}
 \f]
