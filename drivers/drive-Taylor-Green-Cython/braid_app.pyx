@@ -4,19 +4,24 @@ from mpi4py import MPI
 cimport mpi4py.MPI as MPI
 cimport mpi4py.libmpi as libmpi
 import numpy as np 
+from phi.torch.flow import *
+from serial import step, richardson_step, DOMAIN, taylor_green_velocity
 
 
 #
-# Example:       ex_01.pyx
+# Driver:       TaylorGreen3D.pyx
 #
 # Interface:     Cython
 # 
-# Requires:      Python 3, Cython, C-language support     
+# Requires:      Python 3, Cython, phiflow, pytorch, C-language support
 #
-# Description:   Solve the scalar ODE 
-#                   u' = lambda u, 
-#                   with lambda=-1 and y(0) = 1
-#                in a very simplified XBraid setting.
+# Description:   Solve the incompressible 3D Navier Stokes equations: (in advective form)
+#                   v' + (v * ∇) v = - ∇p + 1/Re ∇^2 v,
+#                            ∇ * v = 0
+#                   with Re = 10000 and periodic boundary conditions
+#                using phiflow and XBraid equipped with Delta correction 
+#                for time-parallelism and Lyapunov analysis
+#                
 #
 #                This example uses a higher-level more Python-style syntax than
 #                the other basic Cython example in examples/ex-01-cython-alt
@@ -27,47 +32,16 @@ import numpy as np
 #                If you move this example to another directory, you must 
 #                set the correct relative location for "braid.pyx" below.
 #
-# Help with:     This is the simplest Cython example available, read the source
+# Help with:     
 #
-# Sample run:    From inside Python 3,     
+# Sample run:    From inside Python 3,
 #                >>> import ex_01
 #                >>> core, app = ex_01.InitCoreApp()
 #                >>> ex_01.run_Braid(core, app)
 #
-#                Print output with
-#                >>> import os; os.system("cat ex-01.out.00*")
-#                1.00000000000000e+00
-#                6.66666666666667e-01
-#                4.44444444444444e-01
-#                2.96296296296296e-01
-#                1.97530864197531e-01
-#                1.31687242798354e-01
-#                8.77914951989026e-02
-#                5.85276634659351e-02
-#                3.90184423106234e-02
-#                2.60122948737489e-02
-#                1.73415299158326e-02
-#                0
-#
 # Sample 
 # Parallel run:  See the file ex_01_run.py.  Run it from the shell with, 
 #                $ mpirun -np 2  python3 ex_01_run.py
-#
-#                Print output with
-#                $ cat ex-01.out.00*
-#                1.00000000000000e+00
-#                6.66666666666667e-01
-#                4.44444444444444e-01
-#                2.96296296296296e-01
-#                1.97530864197531e-01
-#                1.31687242798354e-01
-#                8.77914951989026e-02
-#                5.85276634659351e-02
-#                3.90184423106234e-02
-#                2.60122948737489e-02
-#                1.73415299158326e-02
-#
-#                
 
 
 ##
@@ -85,13 +59,14 @@ cdef class PyBraid_Vector:
     '''
 
     # This generic object can be set to a python object, like a numpy array
-    cdef object value
+    cdef object velocity
+    cdef object pressure
 
     def __cinit__(self): 
-        self.value = np.array((11.1,), dtype='float') 
+        self.velocity = StaggeredGrid(0, **DOMAIN)
 
 
-    cdef void SetVectorPtr(self, braid_Vector *u_ptr):
+    cdef void setVectorPtr(self, braid_Vector *u_ptr):
         ''' 
         This member function assigns the pointer value u_ptr to point to
         this vector. 
@@ -141,9 +116,7 @@ cdef int my_step(braid_App app, braid_Vector ustop, braid_Vector fstop, braid_Ve
     # Cast app as a PyBraid_App
     pyApp = <PyBraid_App> app
 
-    #print("Step " + str(pyU.value))
-    pyU.value[0] = 1./(1. + tstop-tstart)*pyU.value[0]
-    #print("   Step Done" + str(pyU.value))
+    pyU.velocity_field, pyU.pressure_field = step(pyU.velocity_field, pyU.pressure_field)
 
     return 0
 
@@ -152,11 +125,8 @@ cdef int my_init(braid_App app, double t, braid_Vector *u_ptr):
     
     # Allocate new vector
     pyU = PyBraid_Vector() 
-    
-    if (t == 0.0):
-        pyU.value[0] = 1.0
-    else:
-        pyU.value[0] = 0.456
+    pyU.velocity = StaggeredGrid(taylor_green_velocity, **DOMAIN)
+    pyU.velocity, pyU.pressure = fluid.make_incompressible(pyU.velocity)
     
     # Must increment smart pointer for pyU, or else Python will delete it 
     Py_INCREF(pyU)
@@ -176,15 +146,15 @@ cdef int my_clone(braid_App app, braid_Vector u, braid_Vector *v_ptr):
     pyU = <PyBraid_Vector> u
     
     # Assign pyU's value to clone pyV
-    pyV.value[0] = pyU.value[0]
+    pyV.velocity = pyU.velocity
+    pyV.pressure = pyU.pressure
     
     # Must increment smart pointer for pyU, or else Python will delete it 
     Py_INCREF(pyV)
     
     # Set output, so that u_ptr points to pyU
     pyV.SetVectorPtr(v_ptr)
-    
-    #print("Clone  " + str(pyU.value) + "  " + str(pyV.value))
+
     return 0
  
 cdef int my_free(braid_App app, braid_Vector u):
@@ -194,7 +164,7 @@ cdef int my_free(braid_App app, braid_Vector u):
     # Decrement the smart pointer
     Py_DECREF(pyU)
 
-    del pyU 
+    del pyU
     
     return 0
 
@@ -204,9 +174,9 @@ cdef int my_sum(braid_App app, double alpha, braid_Vector x, double beta, braid_
     pyY = <PyBraid_Vector> y
     
     # Compute AXPY
-    pyY.value[0] = alpha*pyX.value[0] + beta*pyY.value[0]
+    pyY.velocity = alpha*pyX.velocity + beta*pyY.velocity
+    pyY.pressure = alpha*pyX.pressure + beta*pyY.pressure
 
-    #print("Sum " + str(pyY.value[0]) + ",  " + str(pyX.value[0]))
     return 0
 
 cdef int my_norm(braid_App app, braid_Vector u, double *norm_ptr):
@@ -214,10 +184,8 @@ cdef int my_norm(braid_App app, braid_Vector u, double *norm_ptr):
     pyU = <PyBraid_Vector> u
     
     # Compute norm 
-    #  Note norm_ptr is a double array of size 1, and we index in at location [0]
-    norm_ptr[0] = np.sqrt(np.dot(pyU.value, pyU.value))
+    norm_ptr[0] = math.sqrt(field.l2_loss()).numpy('x')[0]
     
-    #print("Norm " + str(norm_ptr[0]) + ",  " + str(pyU.value[0]))
     return 0
 
 cdef int my_access(braid_App app, braid_Vector u, braid_AccessStatus status):
@@ -236,9 +204,9 @@ cdef int my_access(braid_App app, braid_Vector u, braid_AccessStatus status):
     # braid_AccessStatusGetT(status, &t)
     
     # Write this solution value to file
-    filename = "%s.%04d.%03d"%("ex-01.out", tindex, pyApp.rank)
-    f = open(filename, "w")
-    f.write( "%.14e\n"%pyU.value);
+    # filename = "%s.%04d.%03d"%("ex-01.out", tindex, pyApp.rank)
+    # f = open(filename, "w")
+    # f.write( "%.14e\n"%pyU.velocity);
     
     return 0
 
@@ -297,7 +265,7 @@ def InitCoreApp():
     rank = comm.Get_rank()
 
     # Declare app object
-    pyApp = PyBraid_App(rank) 
+    pyApp = PyBraid_App(rank)
     # Must increment smart pointer for app, or else Python will delete it 
     Py_INCREF(pyApp)
 

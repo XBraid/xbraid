@@ -11,7 +11,7 @@ from progressbar import progressbar
 # from phi.jax.flow import *
 # assert backend.default_backend().set_default_device('GPU')
 
-SPEED = 30.
+SPEED = 60.
 OFFSET = 1e-6
 v0 = tensor([(SPEED, 0), (SPEED, 0)], batch("init"), channel(vector='x,y'))
 
@@ -29,7 +29,7 @@ pressure = None
 
 
 @jit_compile  # Only for PyTorch, TensorFlow and Jax
-def step(v, p, dt=.1):
+def step(v, p, dt=.05):
     v = advect.semi_lagrangian(v, v, dt)
     v = v * (1 - BOUNDARY_MASK) + BOUNDARY_MASK * (SPEED, 0)
     v, p = fluid.make_incompressible(v, [CYLINDER], Solve('auto', 1e-5, 0, x0=p))
