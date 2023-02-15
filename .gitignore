@@ -4,6 +4,7 @@
 *.out
 *.out.*
 *.csv
+*.gif
 wrapperTests.txt
 
 # binaries
