@@ -1088,6 +1088,85 @@ braid_SetSeqSoln(braid_Core  core,          /**< braid_Core (_braid_Core) struct
                  braid_Int   seq_soln       /**< 1: Init with sequential time stepping soln, 0: Use user's Init()*/
                  );
 
+/** Turn on built-in Richardson-based error estimation and/or extrapolation
+ * with XBraid.  When enabled, the Richardson extrapolation (RE) option
+ * (richardson == 1) is used to improve the accuracy of the solution at the
+ * C-points on the finest level.  When the built-in error estimate option is
+ * turned on (est_error == 1), RE is used to estimate the local truncation
+ * error at each point. These estimates can be accessed through StepStatus and
+ * AccessStatus functions. 
+ *
+ * The last parameter is local_order, which represents the LOCAL order of the
+ * time integration scheme. e.g. local_order = 2 for Backward Euler.  
+ *
+ * Also, the Richardson error estimate is only available after roughly 1 Braid
+ * iteration.  The estimate is given a dummy value of -1.0, until an actual
+ * estimate is available.  Thus after an adaptive refinement, and a new
+ * hierarchy is formed, another iteration must pass before the error estimates
+ * are available again.
+ **/
+braid_Int
+braid_SetRichardsonEstimation(braid_Core core,                /**< braid_Core (_braid_Core) struct*/
+                              braid_Int  est_error,           /**< Boolean, if 1 compute Richardson-based error estimates, if 0, then do not */
+                              braid_Int  richardson,          /**< Boolean, if 1 carry out Richardson-based extrapolation to enhance accuracy on the fine-grid, if 0, then do not*/
+                              braid_Int  local_order          /**< Local order of the time integration scheme, e.g., local _order=2 for backward Euler */
+                              );
+
+/** 
+ * Turn on low-rank Delta correction. This uses Jacobians of the fine-grid time-stepper as a linear correction to the coarse time-stepper. 
+ * This can potentially greatly accelerate convergence for nonlinear systems.
+ * 
+ * The action of the Jacobian will be computed on a (low-rank) time-dependent basis initialized by the user.
+ */
+braid_Int
+braid_SetDeltaCorrection(braid_Core           core,        /**< braid_Core (_braid_Core) struct */
+                         braid_Int            rank,        /**< Integer, sets number of Lyapunov vectors to store */
+                         braid_PtFcnInitBasis basis_init,  /**< Function pointer to routine for initializing basis vectors */
+                         braid_PtFcnInnerProd inner_prod   /**< Function pointer to routine for computing inner product between two vectors (needed for Gram-Schmidt orthonormalization) */
+                         );
+
+
+/**
+ * Defer the low-rank Delta correction to a coarse level or to a later iteration. 
+ * To mitigate some of the cost of Delta correction, it may be turned off on the first few fine-grids,
+ * or turned off for the first few iterations.
+ * 
+ */
+braid_Int
+braid_SetDeferDelta(braid_Core core,   /**< braid_Core (_braid_Core) struct*/
+                    braid_Int  level,  /**< Integer, Delta correction will be deferred to this level (Default 0)*/
+                    braid_Int  iter    /**< Integer, Delta correction will be deferred until this iteration (Default 1) */
+                    );
+
+/** 
+ * Turn on Lyapunov vector estimation for Delta correction. The computed backward Lyapunov vectors will be used to update the
+ * time-dependent basis used by the low-rank Delta correction, and may be retrieved via the user's Access function.
+ * This can work particularly well for chaotic systems, where the Lyapunov vectors converge to a basis for the unstable manifold
+ * of the system, thus the Delta correction can target problematic unstable modes.
+ *
+ * if Delta correction is not set, this will have no effect.
+ * if relax is set to 1, the Lyapunov vectors will be propagated during FCRelax, potentially resolving them enough to be useful.
+ * if cglv is set to 1, the Lyapunov vectors will be propagated during the sequential solve on the coarse grid, and they will be much better estimates.
+ * if both are set to 0, no estimation of Lyapunov vectors will be computed, and the basis vectors will only be propagated during FRestrict.
+ */
+braid_Int
+braid_SetLyapunovEstimation(braid_Core core,       /**< braid_Core (_braid_Core) struct */
+                            braid_Int  relax,      /**< Integer, if 1, turns on propagation of Lyapunov vectors during FCRelax (default 0) */
+                            braid_Int  cglv,       /**< Integer, if 1, turns on propagation of Lyapunov vectors during coarse-grid solve (default 1)*/
+                            braid_Int  exponents   /**< Integer, if 1, turns on estimation of Lyapunov exponents at C-points on the finest grid (default 0)*/
+                            );
+
+/**
+ * Control level of Braid internal timings. 
+ * timing_level == 0, no timings are taken anywhere in Braid
+ * timing_level == 1, timings are taken only around Braid iterations 
+ * timing_level == 2, more intrusive timings are taken of individual 
+ * user routines and printed to file 
+ */
+braid_Int
+braid_SetTimings(braid_Core core,
+                 braid_Int  timing_level);
+
 /**
  * Get the processor's rank.
  */                       
@@ -1228,85 +1307,6 @@ braid_Int
 braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
                       braid_Real  *rnorm_adj   /**< output: adjoint residual norm of last iteration */
                      );
-
-/** Turn on built-in Richardson-based error estimation and/or extrapolation
- * with XBraid.  When enabled, the Richardson extrapolation (RE) option
- * (richardson == 1) is used to improve the accuracy of the solution at the
- * C-points on the finest level.  When the built-in error estimate option is
- * turned on (est_error == 1), RE is used to estimate the local truncation
- * error at each point. These estimates can be accessed through StepStatus and
- * AccessStatus functions. 
- *
- * The last parameter is local_order, which represents the LOCAL order of the
- * time integration scheme. e.g. local_order = 2 for Backward Euler.  
- *
- * Also, the Richardson error estimate is only available after roughly 1 Braid
- * iteration.  The estimate is given a dummy value of -1.0, until an actual
- * estimate is available.  Thus after an adaptive refinement, and a new
- * hierarchy is formed, another iteration must pass before the error estimates
- * are available again.
- **/
-braid_Int
-braid_SetRichardsonEstimation(braid_Core core,                /**< braid_Core (_braid_Core) struct*/
-                              braid_Int  est_error,           /**< Boolean, if 1 compute Richardson-based error estimates, if 0, then do not */
-                              braid_Int  richardson,          /**< Boolean, if 1 carry out Richardson-based extrapolation to enhance accuracy on the fine-grid, if 0, then do not*/
-                              braid_Int  local_order          /**< Local order of the time integration scheme, e.g., local _order=2 for backward Euler */
-                              );
-
-/** 
- * Turn on low-rank Delta correction. This uses Jacobians of the fine-grid time-stepper as a linear correction to the coarse time-stepper. 
- * This can potentially greatly accelerate convergence for nonlinear systems.
- * 
- * The action of the Jacobian will be computed on a (low-rank) time-dependent basis initialized by the user.
- */
-braid_Int
-braid_SetDeltaCorrection(braid_Core           core,        /**< braid_Core (_braid_Core) struct */
-                         braid_Int            rank,        /**< Integer, sets number of Lyapunov vectors to store */
-                         braid_PtFcnInitBasis basis_init,  /**< Function pointer to routine for initializing basis vectors */
-                         braid_PtFcnInnerProd inner_prod   /**< Function pointer to routine for computing inner product between two vectors (needed for Gram-Schmidt orthonormalization) */
-                         );
-
-
-/**
- * Defer the low-rank Delta correction to a coarse level or to a later iteration. 
- * To mitigate some of the cost of Delta correction, it may be turned off on the first few fine-grids,
- * or turned off for the first few iterations.
- * 
- */
-braid_Int
-braid_SetDeferDelta(braid_Core core,   /**< braid_Core (_braid_Core) struct*/
-                    braid_Int  level,  /**< Integer, Delta correction will be deferred to this level (Default 0)*/
-                    braid_Int  iter    /**< Integer, Delta correction will be deferred until this iteration (Default 1) */
-                    );
-
-/** 
- * Turn on Lyapunov vector estimation for Delta correction. The computed backward Lyapunov vectors will be used to update the
- * time-dependent basis used by the low-rank Delta correction, and may be retrieved via the user's Access function.
- * This can work particularly well for chaotic systems, where the Lyapunov vectors converge to a basis for the unstable manifold
- * of the system, thus the Delta correction can target problematic unstable modes.
- *
- * if Delta correction is not set, this will have no effect.
- * if relax is set to 1, the Lyapunov vectors will be propagated during FCRelax, potentially resolving them enough to be useful.
- * if cglv is set to 1, the Lyapunov vectors will be propagated during the sequential solve on the coarse grid, and they will be much better estimates.
- * if both are set to 0, no estimation of Lyapunov vectors will be computed, and the basis vectors will only be propagated during FRestrict.
- */
-braid_Int
-braid_SetLyapunovEstimation(braid_Core core,       /**< braid_Core (_braid_Core) struct*/
-                            braid_Int  relax,      /**< Integer, if 1, turns on propagation of Lyapunov vectors during FCRelax (default 0) */
-                            braid_Int  cglv,       /**< Integer, if 1, turns on propagation of Lyapunov vectors during coarse-grid solve (default 1)*/
-                            braid_Int  exponents   /**< Integer, if 1, turns on estimation of Lyapunov exponents at C-points on the finest grid (default 0)*/
-                            );
-
-/**
- * Control level of Braid internal timings. 
- * timing_level == 0, no timings are taken anywhere in Braid
- * timing_level == 1, timings are taken only around Braid iterations 
- * timing_level == 2, more intrusive timings are taken of individual 
- * user routines and printed to file 
- */
-braid_Int
-braid_SetTimings(braid_Core core,
-                 braid_Int  timing_level);
 
 /** @}*/
 

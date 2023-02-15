@@ -22,7 +22,7 @@
 /** \file delta.h
  * \brief Define internal XBraid headers for Delta correction.
  *
- * This file contains the internal XBriad headers for Delta correction,
+ * This file contains the internal XBraid headers for Delta correction,
  */
 
 #ifndef _braid_DELTA_HEADER

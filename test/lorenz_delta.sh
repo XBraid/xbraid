@@ -103,9 +103,9 @@ TESTS=( "$RunString -np 1 $example_dir/ex-07 -test" \
         "$RunString -np 4 $example_dir/ex-07 $fixed_args -ml 3 -cf 2 -rank 1 -defer-lvl 1" \
         "$RunString -np 4 $example_dir/ex-07 $fixed_args -ml 3 -cf 2 -rank 2 -defer-lvl 1" \
         "$RunString -np 4 $example_dir/ex-07 $fixed_args -ml 3 -cf 2 -rank 3 -defer-lvl 1" \
-        "$RunString -np 4 $example_dir/ex-07 $fixed_args -ml 3 -cf 2 -rank 1 -defer-iter 1" \
-        "$RunString -np 4 $example_dir/ex-07 $fixed_args -ml 3 -cf 2 -rank 2 -defer-iter 1" \
-        "$RunString -np 4 $example_dir/ex-07 $fixed_args -ml 3 -cf 2 -rank 3 -defer-iter 1" \
+        "$RunString -np 4 $example_dir/ex-07 $fixed_args -ml 3 -cf 2 -rank 1 -defer-iter 1 -mi 3" \
+        "$RunString -np 4 $example_dir/ex-07 $fixed_args -ml 3 -cf 2 -rank 2 -defer-iter 1 -mi 3" \
+        "$RunString -np 4 $example_dir/ex-07 $fixed_args -ml 3 -cf 2 -rank 3 -defer-iter 1 -mi 3" \
         "$RunString -np 4 $example_dir/ex-07 $fixed_args -ml 3 -cf 2 -rank 1 -nu 1" \
         "$RunString -np 4 $example_dir/ex-07 $fixed_args -ml 3 -cf 2 -rank 2 -nu 1 -fcfLyap -noLyap" \
         "$RunString -np 4 $example_dir/ex-07 $fixed_args -ml 3 -cf 2 -rank 3 -noLyap" \

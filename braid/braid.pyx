@@ -93,10 +93,10 @@ cdef extern from "braid_status.h":
     ##
     # Wrap BufferStatus Routines
     int braid_BufferStatusGetMessageType (braid_BufferStatus status, int *messagetype_ptr)
-    int braid_BufferStatusGetTIndex ( braid_BufferStatus status, int *idx_ptr);
-    int braid_BufferStatusGetLevel ( braid_BufferStatus status, int *level_ptr);
-    int braid_BufferStatusSetSize ( braid_BufferStatus status, int size);
-    int braid_BufferStatusSetBasisSize ( braid_BufferStatus status, int size);
+    int braid_BufferStatusGetTIndex ( braid_BufferStatus status, int *idx_ptr)
+    int braid_BufferStatusGetLevel ( braid_BufferStatus status, int *level_ptr)
+    int braid_BufferStatusSetSize ( braid_BufferStatus status, int size)
+    int braid_BufferStatusSetBasisSize ( braid_BufferStatus status, int size)
 
     ##
     # Wrap SyncStatus Routines

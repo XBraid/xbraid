@@ -72,24 +72,6 @@ _braid_LRDeltaDotMat(braid_Core core,
 }
 
 braid_Int
-_braid_Normalize(braid_Core    core,
-                 braid_App     app,
-                 braid_Vector  u,
-                 braid_Real   *norm_ptr)
-{
-   braid_Real norm;
-   _braid_CoreFcn(core, inner_prod)(app, u, u, &norm);
-   _braid_CoreFcn(core, sum)(app, 0., u, 1/sqrt(norm), u);
-
-   if (norm_ptr)
-   {
-      *norm_ptr = norm;
-   } 
-
-   return _braid_error_flag;
-}
-
-braid_Int
 _braid_GramSchmidt(braid_Core   core,
                    braid_App    app,
                    braid_Basis  basis,

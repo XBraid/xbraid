@@ -87,14 +87,14 @@ void _braid_ErrorHandler(const char *filename, braid_Int line, braid_Int ierr, c
  * sizeof macro for braid struct typedefs
  * e.g. _braid_SizeOf(braid_Vector) -> sizeof(struct _braid_Vector_struct)
  **/
-#define _braid_SizeOf(type) \
+#define _braid_SizeOfStructType(type) \
 ( sizeof(struct _ ## type ## _struct) )
 
 /**
  * macro for dynamic allocation of braid structs
  **/
-#define _braid_AllocBraidType(type) \
-( (type)malloc(_braid_SizeOf(type)) )
+#define _braid_AllocStructType(type) \
+( (type)malloc(_braid_SizeOfStructType(type)) )
 
 /*--------------------------------------------------------------------------
  * Miscellaneous macros and functions 

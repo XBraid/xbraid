@@ -1109,7 +1109,7 @@ braid_TestDelta(braid_App               app,
          {
 
             _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitBasis:   B has linearly dependent columns!\n");
-            _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitBasis:   test 2 failed\n");
+            _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitBasis:   Test 2 Failed\n");
             correct = 0;
             // actual_rank = i;
             break;
@@ -1128,7 +1128,7 @@ braid_TestDelta(braid_App               app,
 
 
    /*---------------------------------*
-    * test step with Lyapunov vectors *
+    * Test step with Lyapunov vectors *
     *---------------------------------*/
    _braid_ParFprintfFlush(fp, myid_x, "\nStarting braid_TestStepDiff\n\n");
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   Starting Test 1\n");
@@ -1163,7 +1163,7 @@ braid_TestDelta(braid_App               app,
    _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestStepDiff\n");
 
    /*---------------------------------*
-    * test bufpack/unpack with basis  *
+    * Test bufpack/unpack with basis  *
     *---------------------------------*/
    _braid_ParFprintfFlush(fp, myid_x, "\nStarting braid_TestBufBasis\n\n");
 
