@@ -39,43 +39,43 @@
 # Begin Test 4
   time steps = 256
   iterations            = 5
-  state   residual norm =  1.280174e-10  (-> abs. stopping tol. = 1.00e-06)
-  adjoint residual norm =  2.653335e-07  (-> abs. stopping tol. = 1.00e-06)
+  state   residual norm =  3.078509e-11  (-> abs. stopping tol. = 1.00e-06)
+  adjoint residual norm =  6.158820e-08  (-> abs. stopping tol. = 1.00e-06)
   number of levels      = 4
 
 # Begin Test 5
   time steps = 256
-  iterations            = 8
-  state   residual norm =  9.503415e-10  (-> abs. stopping tol. = 1.00e-06)
-  adjoint residual norm =  5.124178e-09  (-> abs. stopping tol. = 1.00e-06)
+  iterations            = 6
+  state   residual norm =  2.235127e-11  (-> abs. stopping tol. = 1.00e-06)
+  adjoint residual norm =  1.406573e-07  (-> abs. stopping tol. = 1.00e-06)
   number of levels      = 4
 
 # Begin Test 6
   time steps = 256
-  iterations            = 8
-  state   residual norm =  9.810409e-10  (-> abs. stopping tol. = 1.00e-06)
-  adjoint residual norm =  4.597810e-09  (-> abs. stopping tol. = 1.00e-06)
+  iterations            = 6
+  state   residual norm =  2.235134e-11  (-> abs. stopping tol. = 1.00e-06)
+  adjoint residual norm =  1.406574e-07  (-> abs. stopping tol. = 1.00e-06)
   number of levels      = 4
 
 # Begin Test 7
   time steps = 256
   iterations            = 1
-  state   residual norm =  4.600405e+02  (-> abs. stopping tol. = 1.00e-06)
-  adjoint residual norm =  2.111702e+00  (-> abs. stopping tol. = 1.00e-06)
+  state   residual norm =  1.879412e-01  (-> abs. stopping tol. = 1.00e-06)
+  adjoint residual norm =  1.266202e-03  (-> abs. stopping tol. = 1.00e-06)
   number of levels      = 4
 
 # Begin Test 8
   time steps = 256
-  iterations            = 3
-  state   residual norm =  4.734708e-03  (-> abs. stopping tol. = 1.00e+02)
-  adjoint residual norm =  4.923417e-01  (-> abs. stopping tol. = 1.00e+01)
+  iterations            = 1
+  state   residual norm =  1.879412e-01  (-> abs. stopping tol. = 1.00e+02)
+  adjoint residual norm =  1.266202e-03  (-> abs. stopping tol. = 1.00e+01)
   number of levels      = 4
 
 # Begin Test 9
   time steps = 256
-  iterations            = 8
-  state   residual norm =  3.492460e-10  (-> abs. stopping tol. = 1.00e-06)
-  adjoint residual norm =  1.465389e-08  (-> abs. stopping tol. = 1.00e-06)
+  iterations            = 7
+  state   residual norm =  2.711258e-13  (-> abs. stopping tol. = 1.00e-06)
+  adjoint residual norm =  2.059812e-09  (-> abs. stopping tol. = 1.00e-06)
   number of levels      = 3
 
 # Begin Test 10
