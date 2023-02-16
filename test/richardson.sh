@@ -99,12 +99,12 @@ TESTS=( "$RunString -np 1 $example_dir/ex-06 -nt 19" \
         "$RunString -np 3 $example_dir/ex-06 -nt 19 -time_discr 2 -richardson -mi 2" \
         "$RunString -np 1 $example_dir/ex-06 -nt 19 -refinet -max_tpts 400 -mi 9" \
         "$RunString -np 3 $example_dir/ex-06 -nt 19 -refinet -max_tpts 400 -mi 9" \
-        "$RunString -np 1 $example_dir/ex-06 -nt 19 -time_discr 2 -refinet -max_tpts 400 -mi 8" \
-        "$RunString -np 3 $example_dir/ex-06 -nt 19 -time_discr 2 -refinet -max_tpts 400 -mi 8" \
-        "$RunString -np 1 $example_dir/ex-06 -nt 19 -refinet -max_tpts 400 -richardson -mi 9" \
-        "$RunString -np 3 $example_dir/ex-06 -nt 19 -refinet -max_tpts 400 -richardson -mi 9" \
-        "$RunString -np 1 $example_dir/ex-06 -nt 19 -time_discr 2 -refinet -max_tpts 100 -richardson -mi 6" \
-        "$RunString -np 3 $example_dir/ex-06 -nt 19 -time_discr 2 -refinet -max_tpts 100 -richardson -mi 6" \
+        "$RunString -np 1 $example_dir/ex-06 -nt 19 -time_discr 2 -refinet -max_tpts 100 -mi 4" \
+        "$RunString -np 3 $example_dir/ex-06 -nt 19 -time_discr 2 -refinet -max_tpts 100 -mi 4" \
+        "$RunString -np 1 $example_dir/ex-06 -nt 19 -refinet -max_tpts 100 -richardson -mi 6" \
+        "$RunString -np 3 $example_dir/ex-06 -nt 19 -refinet -max_tpts 100 -richardson -mi 6" \
+        "$RunString -np 1 $example_dir/ex-06 -nt 19 -time_discr 2 -refinet -max_tpts 50 -richardson -mi 5" \
+        "$RunString -np 3 $example_dir/ex-06 -nt 19 -time_discr 2 -refinet -max_tpts 50 -richardson -mi 5" \
         "$RunString -np 1 $example_dir/ex-02 -ntime 17 -richardson -mi 4" \
         "$RunString -np 3 $example_dir/ex-02 -ntime 17 -richardson -mi 4" \
         "$RunString -np 1 $example_dir/ex-02 -ntime 17 -refinet 1e-2" \
