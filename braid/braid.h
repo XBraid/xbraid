@@ -388,7 +388,7 @@ typedef braid_Int
 
 /**
  * This routine evaluates the time-dependent part of the objective function, 
- * at a current time *t*, i.e. the integrand. Query the @ref braid_ObjectiveStatus 
+ * at a current time *t*, i.e. the integrand. Query the braid_ObjectiveStatus
  * structure for information about the current time and status of XBraid_Adjoint. 
  **/
 typedef braid_Int
@@ -559,7 +559,7 @@ braid_PrintStats(braid_Core  core           /**< braid_Core (_braid_Core) struct
  * braid_timings_####.txt
  **/
 braid_Int
-braid_SetTimerFile(braid_Core     core,
+braid_SetTimerFile(braid_Core     core,         /**< braid_Core (_braid_Core) struct*/
                    braid_Int      length,       /**< length of file name string, not including null terminator */
                    const char    *filestem      /**< file name stem for timing output */
                   );

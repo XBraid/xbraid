@@ -53,8 +53,8 @@ _braid_BaseStep(braid_Core       core,       /**< braid_Core structure */
                 braid_BaseVector fstop,      /**< input, right-hand-side at *tstop* */
                 braid_BaseVector u,          /**< input/output, initially *u* vector at *tstart*, upon exit, *u* vector at *tstop* */   
                 braid_Int        level,      /**< current time grid level */ 
-                braid_StepStatus status );   /**< braid_Status structure (pointer to the core) */    
-
+                braid_StepStatus status      /**< braid_Status structure (pointer to the core) */
+                );
 
 /**
  * This initializes a braid_BaseVector and calls the user's init routine. 
