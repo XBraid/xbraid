@@ -89,6 +89,10 @@ _braid_GramSchmidt(braid_Core   core,
 
       /* normalize this column */
       _braid_CoreFcn(core, inner_prod)(app, basis->userVecs[i], basis->userVecs[i], &prod);
+      if (prod == 0)
+      {
+         _braid_Error(braid_ERROR_GENERIC, "Division by zero in _braid_GramSchmidt. Check that your basis vectors are not linearly dependent\n");
+      }
       _braid_CoreFcn(core, sum)(app, 0., basis->userVecs[i], 1/sqrt(prod), basis->userVecs[i]);
 
       if (exps)

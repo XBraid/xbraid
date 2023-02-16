@@ -1050,8 +1050,8 @@ braid_TestDelta(braid_App               app,
    braid_Int   correct = 1;
 
    
-   A = (braid_Basis)malloc(sizeof(braid_Basis));
-   B = (braid_Basis)malloc(sizeof(braid_Basis));
+   A = _braid_TAlloc(_braid_Basis, 1);
+   B = _braid_TAlloc(_braid_Basis, 1);
    A->rank = rank;
    B->rank = rank;
    A->userVecs = _braid_TAlloc(braid_Vector, rank);

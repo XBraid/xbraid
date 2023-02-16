@@ -83,19 +83,6 @@ void _braid_ErrorHandler(const char *filename, braid_Int line, braid_Int ierr, c
 #define _braid_TFree(ptr) \
 ( free((braid_Byte *)ptr), ptr = NULL )
 
-/**
- * sizeof macro for braid struct typedefs
- * e.g. _braid_SizeOf(braid_Vector) -> sizeof(struct _braid_Vector_struct)
- **/
-#define _braid_SizeOfStructType(type) \
-( sizeof(struct _ ## type ## _struct) )
-
-/**
- * macro for dynamic allocation of braid structs
- **/
-#define _braid_AllocStructType(type) \
-( (type)malloc(_braid_SizeOfStructType(type)) )
-
 /*--------------------------------------------------------------------------
  * Miscellaneous macros and functions 
  *--------------------------------------------------------------------------*/
@@ -141,12 +128,12 @@ void _braid_ErrorHandler(const char *filename, braid_Int line, braid_Int ierr, c
  * This is essentially the same as a userVector, except we need shared pointer 
  * capabilities to know when to delete.
  */
-struct _braid_VectorBar_struct
+typedef struct _braid_VectorBar_struct
 {
    braid_Vector userVector;         /**< holds the u_bar data */
    braid_Int    useCount;           /**< counts the number of pointers to this struct */
-}; 
-typedef struct _braid_VectorBar_struct *braid_VectorBar;
+} _braid_VectorBar; 
+typedef _braid_VectorBar *braid_VectorBar;
 
 /**
  * This contains an array of @ref braid_Vector objects which should be thought of 
@@ -154,12 +141,12 @@ typedef struct _braid_VectorBar_struct *braid_VectorBar;
  * Only initialized when using Delta correction. The vectors should be initialized
  * using the user's InitBasis function.
  */
-struct _braid_Basis_struct
+typedef struct _braid_Basis_struct
 {
    braid_Vector *userVecs;
    braid_Int     rank;
-};
-typedef struct _braid_Basis_struct *braid_Basis;
+} _braid_Basis;
+typedef _braid_Basis *braid_Basis;
 
 /** 
  * Braid vector used for storage of all state and (if needed) adjoint
@@ -171,13 +158,13 @@ typedef struct _braid_Basis_struct *braid_Basis;
  * 
  * For Delta correction, *basis* stores the Lyapunov vectors and low-rank Delta corrections.
  */
-struct _braid_BaseVector_struct
+typedef struct _braid_BaseVector_struct
 {
    braid_Vector    userVector;      /**< holds the users primal vector */
    braid_VectorBar bar;             /**< holds the bar vector (shared pointer implementation) */
    braid_Basis     basis;           /**< local basis of variable rank, stored as the user's vector type */
-};
-typedef struct _braid_BaseVector_struct *braid_BaseVector;
+} _braid_BaseVector;
+typedef _braid_BaseVector *braid_BaseVector;
 
 /** 
  * Data structure for storing the optimization variables
