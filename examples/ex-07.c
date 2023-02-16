@@ -37,21 +37,23 @@
  *
  * Description:   Solve the chaotic Lorenz system,
  *
- *                  {x' = sigma (y - x),    x(0) = -1.8430428,
- *                  {y' = x (rho - z) - y,  y(0) = -0.07036326,
- *                  {z' = xy - beta z,      z(0) = 23.15614636.
+ *                  {x' = σ (y - x),        x(0) = 9.614521163788712,
+ *                  {y' = x (ρ - z) - y,    y(0) = 17.519127090401067,
+ *                  {z' = xy - β z,         z(0) = 13.94230712158098,
  *
  *                with sigma=10, beta=8/3, and rho=28,
  *                and estimate the backward Lyapunov vectors along the trajectory
  *                parallel-in-time using MGRIT equipped with Delta correction.
  *                The initial condition should be a point close to the strange attractor.
  *
- *                TODO: Give some high-level info about the algorithm.
- *
- *                See (https://arxiv.org/abs/2208.12629) for a detailed introduction
- *                to the technique used here.
+ *                See the user manual for more information about this example.
+ *                See (https://arxiv.org/abs/2208.12629) for a more detailed introduction
+ *                to the Delta correction technique used here.
  *
  * Visualize with: python viz-ex-07.py (requires NumPy and MatPlotLib)
+ *
+ *                 This will plot the trajectory, along with any estimate Lyapunov vectors
+ *                 computed by XBraid.
  *
  **/
 
@@ -235,6 +237,10 @@ int my_Step(braid_App app,
             braid_Vector u,
             braid_StepStatus status)
 {
+   /* for Delta correction, the user must propagate the solution vector (as in a traditional Braid code)
+    * as well as the Lyapunov vectors. The Lyapunov vectors are available through the StepStatus structure,
+    * and are propagated by the Jacobian of the time-step function. (see below)
+    */
    double tstart; /* current time */
    double tstop;  /* evolve to this time */
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
@@ -245,11 +251,11 @@ int my_Step(braid_App app,
    // get the number of Lyapunov vectors we need to propagate
    int rank; /* rank of Delta correction */
    braid_StepStatusGetDeltaRank(status, &rank);
-   MAT LinProp = {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}};
+   MAT Jacobian = {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}};
 
    if (rank > 0) // we are propagating Lyapunov vectors
    {
-      Euler((u->values), h, &LinProp);
+      Euler((u->values), h, &Jacobian);
    }
    else
    {
@@ -265,7 +271,7 @@ int my_Step(braid_App app,
       // propagate the vector from tstart to tstop
       if (psi)
       {
-         MatVec(LinProp, psi->values);
+         MatVec(Jacobian, psi->values);
       }
    }
 
@@ -282,9 +288,6 @@ int my_Init(braid_App app, double t, braid_Vector *u_ptr)
    u = (my_Vector *)malloc(sizeof(my_Vector));
 
    /* Initial condition */
-   // u->values[0] = -1.8430428;
-   // u->values[1] = -0.07036326;
-   // u->values[2] = 23.15614636;
    u->values[0] = 9.614521163788712;
    u->values[1] = 17.519127090401067;
    u->values[2] = 13.94230712158098;
@@ -296,6 +299,11 @@ int my_Init(braid_App app, double t, braid_Vector *u_ptr)
 
 int my_InitBasis(braid_App app, double t, int index, braid_Vector *u_ptr)
 {
+   /*
+    *  For Delta correction, an initial guess is needed for the Lyapunov basis vectors.
+    *  This function initializes the basis vector with spatial index *index* at time *t*.
+    *  Note that the vectors at each index *index* must be linearly independent.
+    */
    my_Vector *u;
 
    u = (my_Vector *)malloc(sizeof(my_Vector));
@@ -344,6 +352,11 @@ int my_Sum(braid_App app,
 
 int my_InnerProd(braid_App app, braid_Vector u, braid_Vector v, double *prod_ptr)
 {
+   /*
+    *  For Delta correction, braid needs to be able to compute an inner product between two user vectors,
+    *  which is used to project the user's vector onto the Lyapunov basis for low-rank Delta correction.
+    *  This function should define a valid inner product between the vectors *u* and *v*.
+    */
    double dot = 0.;
 
    for (int i = 0; i < VecSize; i++)
@@ -385,7 +398,10 @@ int my_Access(braid_App app, braid_Vector u, braid_AccessStatus astatus)
    braid_AccessStatusGetDeltaRank(astatus, &local_rank);
    num_exp = local_rank;
    double *exponents = malloc(local_rank * sizeof(double));
-   braid_AccessStatusGetLocalLyapExponents(astatus, exponents, &num_exp);
+   if (num_exp > 0)
+   {
+      braid_AccessStatusGetLocalLyapExponents(astatus, exponents, &num_exp);
+   }
 
    fprintf(file, "%d", index);
    for (int j = 0; j < local_rank; j++)
@@ -418,10 +434,14 @@ int my_Access(braid_App app, braid_Vector u, braid_AccessStatus astatus)
 
 int my_BufSize(braid_App app, int *size_ptr, braid_BufferStatus bstatus)
 {
+   /* Tell Braid the size of a state vector */
    *size_ptr = VecSize * sizeof(double);
 
-   /* tell braid the size of the basis vectors */
-   /* Note: this isn't necessary here, but for more complicated applications this size may be different */
+   /* 
+    * In contrast with traditional Braid, you may also specify the size of a single Lyapunov basis vector, 
+    * in case it is different from the size of a state vector.
+    * Note: this isn't necessary here, but for more complicated applications this size may be different.
+    */
    braid_BufferStatusSetBasisSize(bstatus, VecSize * sizeof(double));
    return 0;
 }
@@ -431,6 +451,7 @@ int my_BufPack(braid_App app,
                void *buffer,
                braid_BufferStatus bstatus)
 {
+   /* This function is used to pack both the state vector and Lyapunov basis vectors */
    double *dbuffer = buffer;
 
    for (int i = 0; i < VecSize; i++)
@@ -447,6 +468,7 @@ int my_BufUnpack(braid_App app,
                  braid_Vector *u_ptr,
                  braid_BufferStatus status)
 {
+   /* This function is used to unpack both the state vector and Lyapunov basis vectors */
    double *dbuffer = buffer;
    my_Vector *u;
 
@@ -512,7 +534,7 @@ int main(int argc, char *argv[])
       {
          if (myid == 0)
          {
-            printf("\n");
+            printf("Solve the Lorenz system with the following parameters\n");
             printf("  -ntime <ntime>    : set num time points (default %d)\n", ntime);
             printf("  -tstop <tstop>    : set end time in Lyapunov time (default %lf)\n", tlyap);
             printf("  -ml  <max_levels> : set max levels\n");
@@ -707,7 +729,8 @@ int main(int argc, char *argv[])
    /* reorder the output file */
    if (myid == 0)
    {
-      int ti, index, i, j, npoints = (ntime + 1);
+      int findex = 0;
+      int npoints = (ntime + 1);
       VEC *solution;
       VEC *lyapunov;
       double *exponents;
@@ -718,21 +741,21 @@ int main(int argc, char *argv[])
       exponents = malloc(npoints * delta_rank * sizeof(double));
       file = fopen(filename, "r");
       file_lv = fopen(filename_lv, "r");
-      for (ti = 0; ti < npoints; ti++)
+      for (size_t ti = 0; ti < npoints; ti++)
       {
-         fscanf(file, "%d", &index);
-         for (i = 0; i < VecSize; i++)
+         fscanf(file, "%d", &findex);
+         for (size_t i = 0; i < VecSize; i++)
          {
-            fscanf(file, "%le", &solution[index][i]);
+            fscanf(file, "%le", &solution[findex][i]);
          }
 
-         fscanf(file_lv, "%d", &index);
+         fscanf(file_lv, "%d", &findex);
          for (size_t j = 0; j < delta_rank; j++)
          {
-            fscanf(file_lv, "%le", &exponents[index * delta_rank + j]);
-            for (i = 0; i < VecSize; i++)
+            fscanf(file_lv, "%le", &exponents[findex * delta_rank + j]);
+            for (size_t i = 0; i < VecSize; i++)
             {
-               fscanf(file_lv, "%le", &lyapunov[index * delta_rank + j][i]);
+               fscanf(file_lv, "%le", &lyapunov[findex * delta_rank + j][i]);
             }
          }
       }
@@ -740,23 +763,29 @@ int main(int argc, char *argv[])
       fclose(file_lv);
       file = fopen("ex-07.out", "w");
       file_lv = fopen("ex-07-lv.out", "w");
-      for (ti = 0; ti < npoints; ti++)
+      for (size_t ti = 0; ti < npoints; ti++)
       {
-         for (i = 0; i < VecSize; i++)
+         if (file)
          {
-            fprintf(file, " %.14e", solution[ti][i]);
-         }
-         fprintf(file, "\n");
-
-         for (j = 0; j < delta_rank; j++)
-         {
-            fprintf(file_lv, " %.14e", exponents[ti * delta_rank + j]);
-            for (i = 0; i < VecSize; i++)
+            for (size_t i = 0; i < VecSize; i++)
             {
-               fprintf(file_lv, " %.14e", lyapunov[ti * delta_rank + j][i]);
+               fprintf(file, " %.14e", solution[ti][i]);
             }
+            fprintf(file, "\n");
          }
-         fprintf(file_lv, "\n");
+
+         if (file_lv)
+         {
+            for (size_t j = 0; j < delta_rank; j++)
+            {
+               fprintf(file_lv, " %.14e", exponents[ti * delta_rank + j]);
+               for (size_t i = 0; i < VecSize; i++)
+               {
+                  fprintf(file_lv, " %.14e", lyapunov[ti * delta_rank + j][i]);
+               }
+            }
+            fprintf(file_lv, "\n");
+         }
       }
       free(solution);
       free(lyapunov);

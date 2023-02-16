@@ -111,7 +111,7 @@ For the Cython examples, see the corresponding *.pyx file.
       
                 examples/ex-05-cython/ex_05-setup.py
 
-6. ex-06 solve a simple scalar ODE, but allows for use of the built-in
+6. ex-06 solves a simple scalar ODE, but allows for use of the built-in
    Richardson-based error estimator and accuracy improving extrapolation. With
    the "-refinet" option, the error estimator allows for adaptive refinement in
    time, and with the "-richardson" option, Richardson extrapolation is used
@@ -132,3 +132,22 @@ For the Cython examples, see the corresponding *.pyx file.
    estimate isn't available, Braid returns a value of -1.  See this example and
    the comments therein for more details.
 
+7. ex-07 solves the chaotic Lorenz system, utilizing the Delta correction
+   feature to accelerate Braid convergence while estimating the Lyapunov vectors
+   and Lyapunov exponents.
+
+   The viz script,
+
+               examples/viz-ex-07.py
+   
+   Plots the solution trajectory in 3D along with the estimated Lyapunov basis
+   vectors computed by Braid. The Lyapunov vectors define a basis for the stable,
+   neutral, and unstable manifolds of the system, and the Lyapunov exponents give
+   qualitative information about the dynamics of the system.
+
+   The command line argument "-rank" controls the number of Lyapunov vectors
+   which are tracked, with "-rank 0" turning Delta correction off, and "-rank 3"
+   giving a full-rank Delta correction, since the Lorenz system is 3-dimensional.
+   The "-defer-lvl" and "-defer-iter" arguments control whether the Delta
+   correction is deferred to a coarse level, or later iteration, respectively.
+   For more information about these options, use "$ examples/ex-07 -help".

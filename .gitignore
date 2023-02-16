@@ -11,7 +11,6 @@ wrapperTests.txt
 # as these are build-dependent, binaries should not be committed
 *.o
 *.a
-drivers/drive-lorenz-Delta-lib/Eigen
 ex-01
 ex-01-adjoint
 ex-01-expanded
@@ -28,7 +27,6 @@ ex-06
 ex-07
 drive-lorenz-LRDelta
 drive-lorenz-Delta
-drive-lorenz
 drive-ks
 
 # etc.

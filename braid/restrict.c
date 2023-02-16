@@ -96,9 +96,7 @@ _braid_FRestrict(braid_Core   core,
    braid_Real           factor, dtk, DTK;
 
    /* Required for Delta correction */
-   braid_Int    delta_correct = (_braid_CoreElt(core, delta_correct) 
-                                 && iter >= _braid_CoreElt(core, delta_defer_iter) 
-                                 && level >= _braid_CoreElt(core, delta_defer_lvl) );
+   braid_Int    delta_correct = _braid_DoDeltaCorrect(core, level, iter);
    braid_Vector delta_action;
 
    braid_Int            c_level, c_ilower, c_iupper, c_index, c_i, c_ii;
@@ -251,7 +249,7 @@ _braid_FRestrict(braid_Core   core,
 
          if ( delta_correct )
          {
-            /* need an extra copy of c_va[c_ii-1] */
+            /* need an extra copy of c_va[c_ii-1] for tau-correction later */
             _braid_CoreFcn(core, clone)(app, c_va[c_ii-1]->userVector, &delta_action);
          }
 

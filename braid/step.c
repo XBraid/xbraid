@@ -36,7 +36,7 @@ _braid_Step(braid_Core         core,
 {
    braid_App          app      = _braid_CoreElt(core, app);
    braid_Real         tol      = _braid_CoreElt(core, tol);
-   braid_Int          iter     = _braid_CoreElt(core, niter);
+   braid_Int          niter    = _braid_CoreElt(core, niter);
    _braid_Grid      **grids    = _braid_CoreElt(core, grids);
    braid_StepStatus   status   = (braid_StepStatus)core;
    braid_Int          nrefine  = _braid_CoreElt(core, nrefine);
@@ -55,27 +55,27 @@ _braid_Step(braid_Core         core,
       _braid_GetUInit(core, level, index, u, &ustop);
    }
 
-   if (_braid_CoreElt(core, delta_correct) && iter >= _braid_CoreElt(core, delta_defer_iter) && level >= _braid_CoreElt(core, delta_defer_lvl))
+   if (_braid_DoDeltaCorrect(core, level, niter))
    {
-      braid_BaseVector *va       = _braid_GridElt(grids[level], va);
+      braid_BaseVector *va = _braid_GridElt(grids[level], va);
       braid_BaseVector delta;  /* temporary storage for Delta correction */
       // TODO: Is there a way to avoid having to clone u_start??
 
       /* this decides when to propagate Lyapunov vectors other than in FRestrict */
-      braid_Int est_lyap = _braid_CoreElt(core, estimate_lyap) && (level == nlevels-1 || calling_function == braid_ASCaller_FInterp);
-      braid_Int rlx_lyap = _braid_CoreElt(core, relax_lyap) && level < nlevels-1 && (calling_function == braid_ASCaller_FCRelax || calling_function == braid_ASCaller_FInterp);
+      braid_Int estimate_lyap = _braid_CoreElt(core, estimate_lyap) && (level == nlevels-1 || calling_function == braid_ASCaller_FInterp);
+      braid_Int relax_lyap = _braid_CoreElt(core, relax_lyap) && level < nlevels-1 && (calling_function == braid_ASCaller_FCRelax || calling_function == braid_ASCaller_FInterp);
 
       /* only propagate Lyapunov vectors when necessary (always in FRestrict) */
-      braid_Int prop_lyap = ( calling_function == braid_ASCaller_FRestrict ) || est_lyap || rlx_lyap;
+      braid_Int prop_lyap = ( calling_function == braid_ASCaller_FRestrict ) || estimate_lyap || relax_lyap;
       prop_lyap = prop_lyap && ( level >= _braid_CoreElt(core, delta_defer_lvl) );
 
       if ( prop_lyap )
       {  /* Give the user access to the Lyapunov vectors through StepStatusGetBasisVec */
-         _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, u->basis, status);
+         _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, niter, level, nrefine, gupper, calling_function, u->basis, status);
       }
       else
       {
-         _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, NULL, status);
+         _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, niter, level, nrefine, gupper, calling_function, NULL, status);
 
          /* don't overwrite the Lyapunov vectors at ustop! */
          if ( calling_function == braid_ASCaller_FInterp )
@@ -90,7 +90,7 @@ _braid_Step(braid_Core         core,
       }
 
       braid_Int tau_correct   = (level > 0) && (fa[ii] != NULL);
-      braid_Int delta_correct = tau_correct && (level > _braid_CoreElt(core, delta_defer_lvl));
+      braid_Int delta_correct = tau_correct && _braid_UseDeltaCorrect(core, level, niter);
 
       /* need to precompute the Delta correction terms */
       if ( delta_correct )
@@ -142,29 +142,30 @@ _braid_Step(braid_Core         core,
             }
          }
       }
-
-      return _braid_error_flag;
    }
-   /* else, default braid_Step */
-   _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, NULL, status);
-
-   if (level == 0)
-   {
-      _braid_BaseStep(core, app,  ustop, NULL, u, level, status);
-   }     
    else
    {
-      if ( _braid_CoreElt(core, residual) == NULL )
+      /* default braid_Step */
+      _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, niter, level, nrefine, gupper, calling_function, NULL, status);
+
+      if (level == 0)
       {
          _braid_BaseStep(core, app,  ustop, NULL, u, level, status);
-         if(fa[ii] != NULL)
-         {
-            _braid_BaseSum(core, app,  1.0, fa[ii], 1.0, u);
-         }
-      }
+      }     
       else
       {
-         _braid_BaseStep(core, app,  ustop, fa[ii], u, level, status);
+         if ( _braid_CoreElt(core, residual) == NULL )
+         {
+            _braid_BaseStep(core, app,  ustop, NULL, u, level, status);
+            if(fa[ii] != NULL)
+            {
+               _braid_BaseSum(core, app,  1.0, fa[ii], 1.0, u);
+            }
+         }
+         else
+         {
+            _braid_BaseStep(core, app,  ustop, fa[ii], u, level, status);
+         }
       }
    }
 

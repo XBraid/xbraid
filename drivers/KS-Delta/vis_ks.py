@@ -2,7 +2,13 @@ from math import ceil
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import linregress
-from vis_lorenz_LRDelta import read_csv
+
+def read_csv(fname):
+    u = []
+    with open(fname, 'r') as f:
+        for line in f:
+            u.append(np.array(line.split(','), dtype=np.double))
+    return np.stack(u)
 
 def baseline(u):
     v = np.copy(u)

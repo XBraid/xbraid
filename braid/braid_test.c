@@ -473,6 +473,10 @@ braid_TestInnerProd( braid_App              app,
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   actual output:    inner_prod(u, v) = %1.2e  \n", result2);
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   expected output:  inner_prod(u, v) = 0. \n\n");
    }
+   else
+   {
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   Test 2 Inconclusive\n");
+   }
 
    return correct;
 } 
@@ -1046,8 +1050,8 @@ braid_TestDelta(braid_App               app,
    braid_Int   correct = 1;
 
    
-   A = (braid_Basis)malloc(sizeof(braid_Basis));
-   B = (braid_Basis)malloc(sizeof(braid_Basis));
+   A = _braid_TAlloc(_braid_Basis, 1);
+   B = _braid_TAlloc(_braid_Basis, 1);
    A->rank = rank;
    B->rank = rank;
    A->userVecs = _braid_TAlloc(braid_Vector, rank);
@@ -1105,7 +1109,7 @@ braid_TestDelta(braid_App               app,
          {
 
             _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitBasis:   B has linearly dependent columns!\n");
-            _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitBasis:   test 2 failed\n");
+            _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitBasis:   Test 2 Failed\n");
             correct = 0;
             // actual_rank = i;
             break;
@@ -1118,13 +1122,13 @@ braid_TestDelta(braid_App               app,
 
    if (correct)
    {
-      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitBasis:   test 2 passed\n");
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitBasis:   Test 2 Passed\n");
    }
    _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestInitBasisAccess\n");
 
 
    /*---------------------------------*
-    * test step with Lyapunov vectors *
+    * Test step with Lyapunov vectors *
     *---------------------------------*/
    _braid_ParFprintfFlush(fp, myid_x, "\nStarting braid_TestStepDiff\n\n");
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   Starting Test 1\n");
@@ -1159,7 +1163,7 @@ braid_TestDelta(braid_App               app,
    _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestStepDiff\n");
 
    /*---------------------------------*
-    * test bufpack/unpack with basis  *
+    * Test bufpack/unpack with basis  *
     *---------------------------------*/
    _braid_ParFprintfFlush(fp, myid_x, "\nStarting braid_TestBufBasis\n\n");
 

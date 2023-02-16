@@ -22,7 +22,7 @@
 /** \file delta.h
  * \brief Define internal XBraid headers for Delta correction.
  *
- * This file contains the internal XBriad headers for Delta correction,
+ * This file contains the internal XBraid headers for Delta correction,
  */
 
 #ifndef _braid_DELTA_HEADER
@@ -35,37 +35,50 @@ extern "C"
 {
 #endif
 
-   /*----------------------------------------------------------------------------
-    * Compute the action of the low-rank approximation to Delta on a vector
-    *----------------------------------------------------------------------------*/
+/**
+ * macro for determining when to compute Delta correction
+ */
+#define _braid_DoDeltaCorrect(core, level, niter) \
+( _braid_CoreElt(core, delta_correct) && niter >= _braid_CoreElt(core, delta_defer_iter) && level >= _braid_CoreElt(core, delta_defer_lvl) )
 
-   braid_Int
-   _braid_LRDeltaDot(braid_Core core,
+/**
+ * macro for determining when we can use computed Delta correction
+ */
+#define _braid_UseDeltaCorrect(core, level, niter) \
+( _braid_CoreElt(core, delta_correct) && niter >= _braid_CoreElt(core, delta_defer_iter) && level > _braid_CoreElt(core, delta_defer_lvl) )
+
+/**
+ * Compute the action of the low-rank approximation to Delta on a vector
+ */
+
+braid_Int
+_braid_LRDeltaDot(braid_Core core,
+                  braid_App app,
+                  braid_Vector u,
+                  braid_Basis delta,
+                  braid_Basis basis);
+
+/**
+ * Compute the action of the low-rank approximation to Delta on a basis
+ */
+
+braid_Int
+_braid_LRDeltaDotMat(braid_Core core,
                      braid_App app,
-                     braid_Vector u,
+                     braid_Basis psi,
                      braid_Basis delta,
                      braid_Basis basis);
 
-   /*----------------------------------------------------------------------------
-    * Compute the action of the low-rank approximation to Delta on a basis
-    *----------------------------------------------------------------------------*/
-
-   braid_Int
-   _braid_LRDeltaDotMat(braid_Core core,
-                        braid_App app,
-                        braid_Basis psi,
-                        braid_Basis delta,
-                        braid_Basis basis);
-
-                     
-   /*----------------------------------------------------------------------------
-    * Perform modified Gram-Schmidt orthonormalization on a basis
-    *----------------------------------------------------------------------------*/
-   braid_Int
-   _braid_GramSchmidt(braid_Core   core,
-                      braid_App    app,
-                      braid_Basis  basis,
-                      braid_Real  *exps);
+                  
+/**
+ * Perform modified Gram-Schmidt orthonormalization on a basis, while also
+ * computing local Lyapunov exponents
+ */
+braid_Int
+_braid_GramSchmidt(braid_Core   core,
+                     braid_App    app,
+                     braid_Basis  basis,
+                     braid_Real  *exps);
 
 
 #ifdef __cplusplus

@@ -512,8 +512,8 @@ braid_StatusSetSize(braid_Status status,                   /**< structure contai
 
 /**
  * Set the size of the buffer for basis vectors. 
- * If set by user, the send buffer will
- * be "size" bytes in length. If not, BufSize is used.
+ * If set by user, the send buffer will allocate "size" bytes of space for each basis vector.
+ * If not, BufSize is used for the size of each basis vector
  **/
 braid_Int
 braid_StatusSetBasisSize(braid_Status status,                   /**< structure containing current simulation info */
@@ -667,28 +667,28 @@ ACCESSOR_HEADER_GET5(CoarsenRef, TpriorTstop, Real, Real, Real, Real, Real)
  * StepStatus Prototypes: They just wrap the corresponding Status accessors
  *--------------------------------------------------------------------------*/
 
-ACCESSOR_HEADER_GET2_IN1(Step, TIUL,      Int, Int, Int)
-ACCESSOR_HEADER_GET1(Step, T,             Real)
-ACCESSOR_HEADER_GET1(Step, TIndex,        Int)
-ACCESSOR_HEADER_GET1(Step, Iter,          Int)
-ACCESSOR_HEADER_GET1(Step, Level,         Int)
-ACCESSOR_HEADER_GET1(Step, NLevels,       Int)
-ACCESSOR_HEADER_GET1(Step, NRefine,       Int)
-ACCESSOR_HEADER_GET1(Step, NTPoints,      Int)
-ACCESSOR_HEADER_GET1(Step, Tstop,         Real)
-ACCESSOR_HEADER_GET2(Step, TstartTstop,   Real, Real)
-ACCESSOR_HEADER_GET1(Step, Tol,           Real)
-ACCESSOR_HEADER_GET2(Step, RNorms,        Int,  Real)
-ACCESSOR_HEADER_GET1(Step, OldFineTolx,   Real)
-ACCESSOR_HEADER_SET1(Step, OldFineTolx,   Real)
-ACCESSOR_HEADER_SET1(Step, TightFineTolx, Real)
-ACCESSOR_HEADER_SET1(Step, RFactor,       Real)
-ACCESSOR_HEADER_SET1(Step, RSpace,        Real)
-ACCESSOR_HEADER_GET1(Step, Done,          Int)
+ACCESSOR_HEADER_GET2_IN1(Step, TIUL,           Int, Int, Int)
+ACCESSOR_HEADER_GET1(Step, T,                  Real)
+ACCESSOR_HEADER_GET1(Step, TIndex,             Int)
+ACCESSOR_HEADER_GET1(Step, Iter,               Int)
+ACCESSOR_HEADER_GET1(Step, Level,              Int)
+ACCESSOR_HEADER_GET1(Step, NLevels,            Int)
+ACCESSOR_HEADER_GET1(Step, NRefine,            Int)
+ACCESSOR_HEADER_GET1(Step, NTPoints,           Int)
+ACCESSOR_HEADER_GET1(Step, Tstop,              Real)
+ACCESSOR_HEADER_GET2(Step, TstartTstop,        Real, Real)
+ACCESSOR_HEADER_GET1(Step, Tol,                Real)
+ACCESSOR_HEADER_GET2(Step, RNorms,             Int,  Real)
+ACCESSOR_HEADER_GET1(Step, OldFineTolx,        Real)
+ACCESSOR_HEADER_SET1(Step, OldFineTolx,        Real)
+ACCESSOR_HEADER_SET1(Step, TightFineTolx,      Real)
+ACCESSOR_HEADER_SET1(Step, RFactor,            Real)
+ACCESSOR_HEADER_SET1(Step, RSpace,             Real)
+ACCESSOR_HEADER_GET1(Step, Done,               Int)
 ACCESSOR_HEADER_GET1(Step, SingleErrorEstStep, Real)
 ACCESSOR_HEADER_GET1(Step, CallingFunction,    Int)
-ACCESSOR_HEADER_GET1(Step, DeltaRank, Int)
-ACCESSOR_HEADER_GET1_IN1(Step, BasisVec, Vector, Int)
+ACCESSOR_HEADER_GET1(Step, DeltaRank,          Int)
+ACCESSOR_HEADER_GET1_IN1(Step, BasisVec,       Vector, Int)
 
 /*--------------------------------------------------------------------------
  * BufferStatus Prototypes: They just wrap the corresponding Status accessors

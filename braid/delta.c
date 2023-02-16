@@ -50,6 +50,8 @@ _braid_LRDeltaDot(braid_Core core,
       _braid_CoreFcn(core, sum)(app, coords[i], delta->userVecs[i], 1., u);
    }
 
+   _braid_TFree(coords);
+
    return _braid_error_flag;
 }
 
@@ -65,24 +67,6 @@ _braid_LRDeltaDotMat(braid_Core core,
    {
       _braid_LRDeltaDot(core, app, psi->userVecs[i], delta, basis);
    }
-
-   return _braid_error_flag;
-}
-
-braid_Int
-_braid_Normalize(braid_Core    core,
-                 braid_App     app,
-                 braid_Vector  u,
-                 braid_Real   *norm_ptr)
-{
-   braid_Real norm;
-   _braid_CoreFcn(core, inner_prod)(app, u, u, &norm);
-   _braid_CoreFcn(core, sum)(app, 0., u, 1/sqrt(norm), u);
-
-   if (norm_ptr)
-   {
-      *norm_ptr = norm;
-   } 
 
    return _braid_error_flag;
 }
@@ -105,6 +89,10 @@ _braid_GramSchmidt(braid_Core   core,
 
       /* normalize this column */
       _braid_CoreFcn(core, inner_prod)(app, basis->userVecs[i], basis->userVecs[i], &prod);
+      if (prod == 0)
+      {
+         _braid_Error(braid_ERROR_GENERIC, "Division by zero in _braid_GramSchmidt. Check that your basis vectors are not linearly dependent\n");
+      }
       _braid_CoreFcn(core, sum)(app, 0., basis->userVecs[i], 1/sqrt(prod), basis->userVecs[i]);
 
       if (exps)

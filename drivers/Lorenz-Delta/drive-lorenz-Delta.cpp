@@ -38,6 +38,7 @@
 // Sample run:    mpirun -np 2 drive-lorenz-Delta
 //
 // Description:   solve the Lorenz system using forward Euler and Delta correction
+//                (currently not working)
 //
 //
 
@@ -48,7 +49,7 @@
 #include <fstream>
 
 #include "braid.hpp"
-#include "drive-lorenz-Delta-lib/lorenz_lib.hpp"
+#include "lorenz_lib.hpp"
 
 // --------------------------------------------------------------------------
 // User-defined routines and objects
@@ -160,7 +161,6 @@ public:
                       BraidAccessStatus &astatus);
 
    virtual int Residual(braid_Vector u_,
-                        braid_Vector f_,
                         braid_Vector r_,
                         BraidStepStatus &pstatus);
 

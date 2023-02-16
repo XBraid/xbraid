@@ -75,13 +75,13 @@ void _braid_ErrorHandler(const char *filename, braid_Int line, braid_Int ierr, c
  * Re-allocation macro 
  **/
 #define _braid_TReAlloc(ptr, type, count) \
-( (type *)realloc((char *)ptr, (size_t)(sizeof(type) * (count))) )
+( (type *)realloc((braid_Byte *)ptr, (size_t)(sizeof(type) * (count))) )
 
 /** 
  * Free memory macro 
  **/
 #define _braid_TFree(ptr) \
-( free((char *)ptr), ptr = NULL )
+( free((braid_Byte *)ptr), ptr = NULL )
 
 /*--------------------------------------------------------------------------
  * Miscellaneous macros and functions 
@@ -128,12 +128,12 @@ void _braid_ErrorHandler(const char *filename, braid_Int line, braid_Int ierr, c
  * This is essentially the same as a userVector, except we need shared pointer 
  * capabilities to know when to delete.
  */
-struct _braid_VectorBar_struct
+typedef struct _braid_VectorBar_struct
 {
    braid_Vector userVector;         /**< holds the u_bar data */
    braid_Int    useCount;           /**< counts the number of pointers to this struct */
-}; 
-typedef struct _braid_VectorBar_struct *braid_VectorBar;
+} _braid_VectorBar; 
+typedef _braid_VectorBar *braid_VectorBar;
 
 /**
  * This contains an array of @ref braid_Vector objects which should be thought of 
@@ -141,12 +141,12 @@ typedef struct _braid_VectorBar_struct *braid_VectorBar;
  * Only initialized when using Delta correction. The vectors should be initialized
  * using the user's InitBasis function.
  */
-struct _braid_Basis_struct
+typedef struct _braid_Basis_struct
 {
    braid_Vector *userVecs;
    braid_Int     rank;
-};
-typedef struct _braid_Basis_struct *braid_Basis;
+} _braid_Basis;
+typedef _braid_Basis *braid_Basis;
 
 /** 
  * Braid vector used for storage of all state and (if needed) adjoint
@@ -158,13 +158,13 @@ typedef struct _braid_Basis_struct *braid_Basis;
  * 
  * For Delta correction, *basis* stores the Lyapunov vectors and low-rank Delta corrections.
  */
-struct _braid_BaseVector_struct
+typedef struct _braid_BaseVector_struct
 {
    braid_Vector    userVector;      /**< holds the users primal vector */
    braid_VectorBar bar;             /**< holds the bar vector (shared pointer implementation) */
    braid_Basis     basis;           /**< local basis of variable rank, stored as the user's vector type */
-};
-typedef struct _braid_BaseVector_struct *braid_BaseVector;
+} _braid_BaseVector;
+typedef _braid_BaseVector *braid_BaseVector;
 
 /** 
  * Data structure for storing the optimization variables
@@ -402,7 +402,7 @@ typedef struct _braid_Core_struct
    braid_Real    old_fine_tolx;    /**< Allows for storing the previously used fine tolerance from GetSpatialAccuracy */
    braid_Int     tight_fine_tolx;  /**< Boolean, indicating whether the tightest fine tolx has been used, condition for halting */
    braid_Int     rfactor;          /**< if set by user, allows for subdivision of this interval for better time accuracy */
-   braid_Basis   lvectors;         /**< if Delta correction is set, contains reference to the tangent vectors to be propagated across the c-interval */
+   braid_Basis   lvectors;         /**< if Delta correction is set, contains reference to a braid_Basis object for giving user access to lyapunov vectors */
    /** BufferStatus properties */
    braid_Int    messagetype;       /**< message type, 0: for Step(), 1: for load balancing */
    braid_Int    size_buffer;       /**< size of buffer, in bytes */

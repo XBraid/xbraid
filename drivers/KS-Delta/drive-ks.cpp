@@ -47,7 +47,7 @@
 #include <vector>
 
 #include "braid.hpp"
-#include "drive-ks-lib/ks_lib.hpp"
+#include "ks_lib.hpp"
 
 // --------------------------------------------------------------------------
 // User-defined routines and objects
@@ -371,6 +371,7 @@ theta_new(const VEC &u, VEC &guess, const KSDiscretization &disc, BraidStepStatu
    VEC u1(u), u2(u);
 
    SPMAT A(stages * nx, stages * nx);
+   // Eigen::SparseLU<SPMAT> solver;  // more portable option
    Eigen::UmfPackLU<SPMAT> solver; // best option I have tried so far!
    SPMAT eye(nx, nx);
    eye.setIdentity();

@@ -38,6 +38,7 @@
 // Sample run:    mpirun -np 2 drive-lorenz-LRDelta
 //
 // Description:   solve the Lorenz system using forward Euler and low rank Delta correction
+//                (currently not working)
 //
 //
 
