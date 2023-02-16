@@ -46,12 +46,14 @@
  *                parallel-in-time using MGRIT equipped with Delta correction.
  *                The initial condition should be a point close to the strange attractor.
  *
- *                TODO: Give some high-level info about the algorithm.
- *
- *                See (https://arxiv.org/abs/2208.12629) for a detailed introduction
- *                to the technique used here.
+ *                See the user manual for more information about this example.
+ *                See (https://arxiv.org/abs/2208.12629) for a more detailed introduction
+ *                to the Delta correction technique used here.
  *
  * Visualize with: python viz-ex-07.py (requires NumPy and MatPlotLib)
+ *
+ *                 This will plot the trajectory, along with any estimate Lyapunov vectors
+ *                 computed by XBraid.
  *
  **/
 
