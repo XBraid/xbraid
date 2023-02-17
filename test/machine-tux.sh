@@ -72,6 +72,7 @@ TESTS=( "diffusion1D.sh " \
         "ode1D.sh"\
         "cython_tests.sh"\
         "richardson.sh"\
+        "lorenz_delta.sh"\
 	     "ode1D-refine-periodic.sh")
 
 # Run regression tests
