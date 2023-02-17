@@ -50,6 +50,7 @@ braid_Drive(braid_Core  core)
    braid_App            app             = _braid_CoreElt(core, app);
    braid_Int            obj_only        = _braid_CoreElt(core, obj_only);
    braid_Int            adjoint         = _braid_CoreElt(core, adjoint);
+   braid_Int            delta           = _braid_CoreElt(core, delta_correct);
    braid_SyncStatus     sstatus         = (braid_SyncStatus)core;
 
    braid_Int      ilower, iupper, i;
@@ -64,8 +65,11 @@ braid_Drive(braid_Core  core)
    {
       _braid_AdjointFeatureCheck(core);
    }
-
-   /* TODO: check for unsupported Delta features */
+   /* Check for non-supported Delta correction features */
+   if (delta)
+   {
+      _braid_DeltaFeatureCheck(core);
+   }
 
    if (myid == 0 )
    {
