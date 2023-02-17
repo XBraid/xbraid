@@ -61,11 +61,11 @@ extern "C" {
 /** Turn on the optional user-defined spatial coarsening and refinement functions */ 
 #define braid_Fortran_SpatialCoarsen 0
 /** Turn on the optional user-defined residual function */ 
-#define braid_Fortran_Residual 1
+#define braid_Fortran_Residual 0
 /** Turn on the optional user-defined time-grid function */ 
-#define braid_Fortran_TimeGrid 1
+#define braid_Fortran_TimeGrid 0
 /** Turn on the optional user-defined sync function */
-#define braid_Fortran_Sync 1
+#define braid_Fortran_Sync 0
 
 /** @} */
 
@@ -1309,6 +1309,9 @@ braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
                      );
 
 /** @}*/
+
+braid_Int
+braid_Hello();
 
 #ifdef __cplusplus
 }

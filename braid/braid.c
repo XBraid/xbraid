@@ -1973,3 +1973,10 @@ braid_SetLyapunovEstimation(braid_Core core,
 
    return _braid_error_flag;
 }
+
+braid_Int
+braid_Hello()
+{
+   _braid_printf("Hello world!\n");
+   return _braid_error_flag;
+}

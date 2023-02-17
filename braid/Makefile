@@ -89,8 +89,12 @@ libbraid.a: $(BRAID_HEADERS) $(BRAID_OBJ)
 	ar cruv libbraid.a $(BRAID_OBJ)
 	ranlib libbraid.a
 
+libbraid.so: $(BRAID_HEADERS) $(BRAID_OBJ)
+	@echo "Building" $@ "..."
+	$(MPICC) $(SEQFLAGS) $(CFLAGS) -shared -fPIC $(BRAID_OBJ) -o $@
+
 all: libbraid.a 
 
 clean:
-	rm -f *.o libbraid.a
+	rm -f *.o libbraid.a libbraid.so
 
