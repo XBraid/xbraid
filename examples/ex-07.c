@@ -137,7 +137,7 @@ void MatVec(const MAT A, VEC x)
  | my integration routines |
  *-------------------------*/
 
-// returns the derivative at point *u*
+/* returns the derivative at point *u*  */
 void Lorenz(const VEC u, VEC u_out)
 {
    u_out[0] = sigma * (u[1] - u[0]);
@@ -145,7 +145,7 @@ void Lorenz(const VEC u, VEC u_out)
    u_out[2] = u[0] * u[1] - beta * u[2];
 }
 
-// returns the Jacobian at point *u*
+/* returns the Jacobian at point *u*  */
 void Lorenz_du(const VEC u, MAT J)
 {
    J[0][0] = -sigma;
@@ -160,8 +160,8 @@ void Lorenz_du(const VEC u, MAT J)
 }
 
 /*
- * Computes a time-step with euler's method
- * Optionally computes the jacobian of the time-step and
+ * Computes a time-step with Euler's method
+ * Optionally computes the Jacobian of the time-step and
  * writes the result in F (if not NULL)
  */
 void Euler(VEC u0, double h, MAT *F)
@@ -187,7 +187,8 @@ void Euler(VEC u0, double h, MAT *F)
  * User-defined routines and structures required by Braid
  *--------------------------------------------------------------------------*/
 
-/* can put anything in my app and name it anything as well */
+/* Can put anything in my app and name it anything as well.
+ * App is typically used for time-independent information. */
 typedef struct _braid_App_struct
 {
    MPI_Comm comm;
@@ -225,7 +226,8 @@ int my_App_Init(my_App *app,
    return 0;
 }
 
-/* can put anything in my vector and name it anything as well */
+/* Can put anything in my vector and name it anything as well. 
+ * Vector is typically used for time-dependent information. */
 typedef struct _braid_Vector_struct
 {
    VEC values;
