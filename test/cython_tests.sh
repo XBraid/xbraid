@@ -86,25 +86,25 @@ echo "Compiling Cython regression test drivers"
 export PYTHONPATH=""
 cd $example_dir1
 rm -rf build
-python3 ex_01-setup.py install --prefix=$HOME/.local
+python3 ex_01-setup.py install --prefix=$HOME/.local 2> /dev/null  # cython compilation can generate a lot of warnings, so ignore them
 echo " "
 echo " "
 cd $test_dir
 cd $example_dir2
 rm -rf build
-python3 ex_01_alt-setup.py install --prefix=$HOME/.local
+python3 ex_01_alt-setup.py install --prefix=$HOME/.local 2> /dev/null  # cython compilation can generate a lot of warnings, so ignore them
 echo " "
 echo " "
 cd $test_dir
 cd $example_dir3
 rm -rf build
-python3 ex_05-setup.py install --prefix=$HOME/.local
+python3 ex_05-setup.py install --prefix=$HOME/.local 2> /dev/null  # cython compilation can generate a lot of warnings, so ignore them
 echo " "
 echo " "
 cd $test_dir
 cd $driver_dir1
 rm -rf build
-python3 drive_adv_diff_1D-setup.py install --prefix=$HOME/.local
+python3 drive_adv_diff_1D-setup.py install --prefix=$HOME/.local 2> /dev/null  # cython compilation can generate a lot of warnings, so ignore them
 #
 export PYTHONPATH="$HOME/.local/lib/python3.6"
 export PYTHONPATH="$HOME/.local/lib/python3.6/site-packages:$PYTHONPATH"
