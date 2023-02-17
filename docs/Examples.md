@@ -539,13 +539,14 @@ be implemented in some of the following examples.
 15. **Delta Correction and Lyapunov Vector Estimation**: These options (see
     [braid_SetDeltaCorrection](@ref braid_SetDeltaCorrection) and
     [braid_SetLyapunovEstimation](@ref braid_SetLyapunovEstimation)) allow
-    XBraid to accelerate convergence by using Delta correction, i.e. 
-    low rank approximations to the Jacobian of the fine grid time-stepper 
+    XBraid to accelerate convergence by using Delta correction, which was 
+    originally designed for use with chaotic systems.  The feature works by 
+    using low rank approximations to the Jacobian of the fine grid time-stepper 
     as a linear correction to the coarse grid time-stepper. This can 
     converge quadratically in some cases. LyapunovEstimation is not required
     for Delta correction, but for chaotic systems, the unstable modes of 
     error, corresponding with the first few Lyapunov vectors, are often the 
-    slowest to converge, so Lyapunov estimation targets these modes by
+    slowest to converge.  Thus, Lyapunov estimation targets these modes by
     computing estimates to the backward Lyapunov vectors of the system, then
     computing the Delta correction using these vectors as a basis.
 
@@ -1306,15 +1307,15 @@ where \f$\sigma = 10\f$, \f$\rho = 28\f$, and \f$\beta = 8/3\f$. This system is 
 Most of the user defined structures and wrappers are defined exactly as in previous examples, with the exception of *Step()*, *BufSize()*, and *Access()*, which are modified to accomodate the Lyapunov vectors, and *InnerProd()* and *InitBasis()*, which are new functions required by Delta correction.
 
 1. **Step**: Here the *Step* function is required to do two things:
-   1. Propagate the state vector (as in regular XBraid)
-      \f[
-            u \gets \Phi(u)
-      \f]
-   2. Propagate a number of basis vectors using the Jacobian vector product (new functionality required by Delta correction)
-      \f[
-            \psi_j \gets \left(\frac{d \Phi}{d u}\right) \psi_j
-      \f]
-   The number of basis vectors to be propagated is accessed via [braid_StepStatusGetDeltaRank](@ref braid_StatusGetDeltaRank), and references to the vectors themselves are accessed via [braid_StepStatusGetBasisVec](@ref braid_StatusGetBasisVec). In this example, the full Jacobian of *Step* is used to propagate the basis vectors, but finite differencing or even forward-mode automatic differentiation are other ways of propagating the basis vectors.
+  - Propagate the state vector (as in regular XBraid)
+    \f[
+          u \gets \Phi(u)
+    \f]
+  - Propagate a number of basis vectors using the Jacobian vector product (new functionality required by Delta correction)
+    \f[
+          \psi_j \gets \left(\frac{d \Phi}{d u}\right) \psi_j
+    \f]
+    The number of basis vectors to be propagated is accessed via [braid_StepStatusGetDeltaRank](@ref braid_StatusGetDeltaRank), and references to the vectors themselves are accessed via [braid_StepStatusGetBasisVec](@ref braid_StatusGetBasisVec). In this example, the full Jacobian of *Step* is used to propagate the basis vectors, but finite differencing or even forward-mode automatic differentiation are other ways of propagating the basis vectors.
 
          int my_Step(braid_App app,
                      braid_Vector ustop,
@@ -1322,10 +1323,13 @@ Most of the user defined structures and wrappers are defined exactly as in previ
                      braid_Vector u,
                      braid_StepStatus status)
          {
-            /* for Delta correction, the user must propagate the solution vector (as in a traditional Braid code)
-            * as well as the Lyapunov vectors. The Lyapunov vectors are available through the StepStatus structure,
+            
+            /* for Delta correction, the user must propagate the solution vector 
+            * (as in a traditional Braid code) as well as the Lyapunov vectors. 
+            * The Lyapunov vectors are available through the StepStatus structure,
             * and are propagated by the Jacobian of the time-step function. (see below)
             */
+
             double tstart; /* current time */
             double tstop;  /* evolve to this time */
             braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
@@ -1375,16 +1379,17 @@ Most of the user defined structures and wrappers are defined exactly as in previ
             *size_ptr = VecSize * sizeof(double);
 
             /* 
-            * In contrast with traditional Braid, you may also specify the size of a single Lyapunov basis vector, 
-            * in case it is different from the size of a state vector.
-            * Note: this isn't necessary here, but for more complicated applications this size may be different.
+            * In contrast with traditional Braid, you may also specify the size of a single
+            * Lyapunov basis vector,in case it is different from the size of a state vector.
+            * Note: this isn't necessary here, but for more complicated applications this 
+            * size may be different.
             */
             braid_BufferStatusSetBasisSize(bstatus, VecSize * sizeof(double));
             return 0;
          }
 
 3. **Access**: Here, the *Access* function is used to access the Lyapunov
-   vector estimates via the same api as for *Step*. Also, the local Lyapunov
+   vector estimates via the same API as for *Step*. Also, the local Lyapunov
    exponents are accessed via [braid_AccessStatusGetLocalLyapExponents](@ref braid_StatusGetLocalLyapExponents).
 
          int my_Access(braid_App app, braid_Vector u, braid_AccessStatus astatus)
@@ -1444,16 +1449,17 @@ Most of the user defined structures and wrappers are defined exactly as in previ
             return 0;
          }
 
-4. **InnerProd**: This function tells XBraid how to compute the inner product between two *Vector*s.
+4. **InnerProd**: This function tells XBraid how to compute the inner product between two *Vector* structures.
    This is required by Delta correction in order to project user vectors onto the basis vectors, and
    for orthonormalization of the basis vectors. Here, the standard dot product is used.
 
          int my_InnerProd(braid_App app, braid_Vector u, braid_Vector v, double *prod_ptr)
          {
            /*
-            *  For Delta correction, braid needs to be able to compute an inner product between two user vectors,
-            *  which is used to project the user's vector onto the Lyapunov basis for low-rank Delta correction.
-            *  This function should define a valid inner product between the vectors *u* and *v*.
+            *  For Delta correction, braid needs to be able to compute an inner product
+            *  between two user vectors, which is used to project the user's vector onto
+            *  the Lyapunov basis for low-rank Delta correction. This function should 
+            *  define a valid inner product between the vectors *u* and *v*.
             */
             double dot = 0.;
 
@@ -1466,8 +1472,8 @@ Most of the user defined structures and wrappers are defined exactly as in previ
          }
 
 5. **InitBasis**: This function tells XBraid how to initialize a single basis vector, with spatial
-   index *j* at time *t*. This initializes the *j*th column of the matrix \f$\Psi\f$ whose
-   columns are the basis vectors used for Delta correction. Here, we simply use the *j*th column
+   index *j* at time *t*. This initializes the column *j* of the matrix \f$\Psi\f$ whose
+   columns are the basis vectors used for Delta correction. Here, we simply use column *j*
    of the identity matrix. It is important that the vectors initialized by this function are
    linearly independent, or Lyapunov estimation will not work.
 
@@ -1493,7 +1499,7 @@ Most of the user defined structures and wrappers are defined exactly as in previ
 
 ## Running XBraid with Delta correction and Lyapunov Estimation
 
-XBraid is initialized as before, and most XBraid features are compatible, not including Richardson extrapolation, the XBraid_Adjoint feature, the *Residual* option, and spatial coarsening. Delta correction and Lyapunov estimation are turned on by calls to [braid_SetDeltaCorrection](@ref braid_SetDeltaCorrection) and [braid_SetLyapunovEstimation](@ref braid_SetDeltaCorrection), respectively, where the number of basis vectors desired (rank of low-rank Delta correction) and additional wrapper functions *InnerProd* and *InitBasis* are passed to XBraid and options regarding the estimation of Lyapunov vectors and exponents are set. Further, the function [braid_SetDeferDelta](@ref braid_SetDeferDelta) gives more options allowing Delta correction to be deferred to a later iteration, or a coarser grid. This is illustrated in the folowing exerpt from the *main()* function:
+XBraid is initialized as before, and most XBraid features are compatible, however, this does not include Richardson extrapolation, the XBraid_Adjoint feature, the *Residual* option, and spatial coarsening. Delta correction and Lyapunov estimation are turned on by calls to [braid_SetDeltaCorrection](@ref braid_SetDeltaCorrection) and [braid_SetLyapunovEstimation](@ref braid_SetDeltaCorrection), respectively, where the number of basis vectors desired (rank of low-rank Delta correction) and additional wrapper functions *InnerProd* and *InitBasis* are passed to XBraid and options regarding the estimation of Lyapunov vectors and exponents are set. Further, the function [braid_SetDeferDelta](@ref braid_SetDeferDelta) gives more options allowing Delta correction to be deferred to a later iteration, or a coarser grid. This is illustrated in the folowing exerpt from this example's *main()* function:
 
          ...
          if (delta_rank > 0)
