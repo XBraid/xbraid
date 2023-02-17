@@ -894,7 +894,7 @@ While using the full Jacobian of the time-stepping operators yields quadratic co
 \f[
    u_i = \Phi_\Delta(u_{i-m}) + \Delta_i \Psi_i \Psi_i^T u_{i-m} + \tau_i
 \f]
-where the \f$k \times n_x\f$ matrices \f$(\Delta_i \Psi_i)\f$ and \f$\Psi_i\f$ are stored as seperate factors. This reduces the overall work of computing the Delta correction to \f$\matcal{O}(k n_x)\f$.
+where the \f$k \times n_x\f$ matrices \f$(\Delta_i \Psi_i)\f$ and \f$\Psi_i\f$ are stored as seperate factors. This reduces the overall work of computing the Delta correction to \f$\mathcal{O}(k n_x)\f$.
 
 By default, Delta correction will use the user initialized basis, but the Lyapunov estimation option allows Braid to compute estimates to the first \f$k\f$ backward Lyapunov vectors of the system, using the initialized basis as an initial guess, and the Delta correction will be computed on the computed Lyapunov basis, meaning that the corrections will target the unstable manifold of the system first. This is especially useful for chaotic systems, where the dimension of the unstable manifold is often much smaller than the total number of spatial dimensions. The Lyapunov vectors are orthonormalized at the C points using modified Gram-Schmidt, according to the recurrance
 \f[

@@ -149,7 +149,8 @@ typedef braid_Int
 
 /**
  * (optional) Initializes a Delta correction basis vector *u_ptr* at time *t*
- * and spatial index *index*
+ * and spatial index *index*.  The spatial index is simply used to distinguish
+ * between the different basis vectors at a given time point.
  **/
 typedef braid_Int
 (*braid_PtFcnInitBasis)(braid_App      app,           /**< user-defined _braid_App structure */
@@ -586,7 +587,7 @@ braid_PrintStats(braid_Core  core           /**< braid_Core (_braid_Core) struct
  * braid_timings_####.txt
  **/
 braid_Int
-braid_SetTimerFile(braid_Core     core,
+braid_SetTimerFile(braid_Core     core,         /**< braid_Core (_braid_Core) struct*/
                    braid_Int      length,       /**< length of file name string, not including null terminator */
                    const char    *filestem      /**< file name stem for timing output */
                   );
