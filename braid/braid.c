@@ -347,7 +347,6 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, lyap_exp)         = lyap_exp;
    _braid_CoreElt(core, delta_defer_iter) = delta_defer_iter;
    _braid_CoreElt(core, delta_defer_lvl)  = delta_defer_lvl;
-   
 
    /* Adjoint */
    _braid_CoreElt(core, adjoint)               = adjoint;
@@ -1975,8 +1974,10 @@ braid_SetLyapunovEstimation(braid_Core core,
 }
 
 braid_Int
-braid_Hello()
+braid_Hello(MPI_Comm comm)
 {
-   _braid_printf("Hello world!\n");
+   braid_Int my_rank;
+   MPI_Comm_rank(comm, &my_rank);
+   printf("Hello world, from rank %d!\n", my_rank);
    return _braid_error_flag;
 }

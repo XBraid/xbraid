@@ -1311,7 +1311,7 @@ braid_GetRNormAdjoint(braid_Core  core,        /**< braid_Core struct */
 /** @}*/
 
 braid_Int
-braid_Hello();
+braid_Hello(MPI_Comm comm);
 
 #ifdef __cplusplus
 }

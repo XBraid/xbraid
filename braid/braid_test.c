@@ -39,6 +39,10 @@ braid_TestInitAccess( braid_App           app,
                      braid_PtFcnAccess   myaccess,
                      braid_PtFcnFree     myfree)
 {
+   if (!fp)
+   {
+      fp = stdout;
+   }
    
    braid_Vector          u ;
    braid_Status          status = _braid_CTAlloc(_braid_Status, 1);
@@ -84,6 +88,10 @@ braid_TestClone( braid_App        app,
               braid_PtFcnFree     myfree,
               braid_PtFcnClone    clone)
 {
+   if (!fp)
+   {
+      fp = stdout;
+   }
    
    braid_Vector        u, v;
    braid_Status        status = _braid_CTAlloc(_braid_Status, 1);
@@ -143,6 +151,10 @@ braid_TestSum( braid_App        app,
             braid_PtFcnClone    clone,
             braid_PtFcnSum      sum )
 {
+   if (!fp)
+   {
+      fp = stdout;
+   }
    
    braid_Vector        u, v;
    braid_Status        status  = _braid_CTAlloc(_braid_Status, 1);
@@ -215,6 +227,11 @@ braid_TestSpatialNorm( braid_App              app,
                        braid_PtFcnSum         sum,  
                        braid_PtFcnSpatialNorm spatialnorm) 
 {   
+   if (!fp)
+   {
+      fp = stdout;
+   }
+
    braid_Vector  u, v, w;
    braid_Real    result1, result2;
    braid_Int     myid_x, correct;
@@ -376,6 +393,11 @@ braid_TestInnerProd( braid_App              app,
                      braid_PtFcnSum         sum,
                      braid_PtFcnInnerProd   inner_prod)
 {
+   if (!fp)
+   {
+      fp = stdout;
+   }
+
    braid_Vector u, v;
    braid_Real   result1, result2;
    braid_Int    myid_x, zero_flag1, zero_flag2;
@@ -494,6 +516,11 @@ braid_TestBuf( braid_App              app,
                braid_PtFcnBufPack     bufpack,
                braid_PtFcnBufUnpack   bufunpack)
 {   
+   if (!fp)
+   {
+      fp = stdout;
+   }
+
    braid_Vector  u, v;
    braid_Real    result1;
    braid_Int     myid_x, size, correct;
@@ -592,6 +619,11 @@ braid_TestCoarsenRefine( braid_App           app,
                       braid_PtFcnSCoarsen    coarsen,
                       braid_PtFcnSRefine     refine)
  {   
+   if (!fp)
+   {
+      fp = stdout;
+   }
+
    braid_Vector            u, v, w, uc, vc, wc;
    braid_Real              result1;
    braid_Int               myid_x, level, correct;
@@ -770,6 +802,11 @@ braid_TestResidual( braid_App              app,
                     braid_PtFcnResidual    residual,
                     braid_PtFcnStep        step)
  {   
+   if (!fp)
+   {
+      fp = stdout;
+   }
+
    braid_Vector            u, unext, ustop, fstop;
    braid_Real              result1;
    braid_Int               myid_x, result_int;
@@ -912,6 +949,11 @@ braid_TestAll( braid_App            app,
             braid_PtFcnStep         step)
 
 {
+   if (!fp)
+   {
+      fp = stdout;
+   }
+
    braid_Int    myid_x, flag = 0, correct = 1;
    MPI_Comm_rank( comm_x, &myid_x );
    
@@ -1011,6 +1053,10 @@ braid_TestDelta(braid_App               app,
                 braid_PtFcnInnerProd    myinner_prod,
                 braid_PtFcnStep         mystep)
 {
+   if (!fp)
+   {
+      fp = stdout;
+   }
 
    braid_Vector          u;
    braid_Vector          v;
