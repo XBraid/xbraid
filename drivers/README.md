@@ -50,14 +50,7 @@ To run the examples, type
 
    See also *viz-burgers.py* for visualizing the output.
 
-3. *drive-lorenz* implements the Lorenz equation, with it's trademark attractors.
-   This problem has not been researched very extensively, and XBraid's behavior
-   is not yet well understood.  Convergence stagnates, but is the solution 
-   "good enough" from a statistical point-of-view?
-   
-   See also *viz-lorenz.py* for visualizing the output.
-
-4. *drive-diffusion* is a sophisticated test bed for finite element discretizations of the 
+3. *drive-diffusion* is a sophisticated test bed for finite element discretizations of the 
    heat equation. It relies on the [mfem](http://mfem.org)
    package to create general finite element discretizations for the spatial problem.
    Other packages must be installed in this order.
@@ -102,7 +95,7 @@ To run the examples, type
          Glvis will listen on a port to which drive-diffusion will dump visualization 
          information.
 
-5. The other drive-.cpp files use MFEM to implement other PDEs
+4. The other drive-.cpp files use MFEM to implement other PDEs
 
      + *drive-adv-diff-DG*:  implements advection(-diffusion) with a discontinuous Galerkin
        discretization.  This driver is under developement.
@@ -128,7 +121,7 @@ To run the examples, type
      + *drive-nonlin-elasticity*:  implements time-dependent nonlinear elasticity and is under
        development.
 
-6. Directory drive-adv-diff-1D-Cython/  solves a simple 1D advection-diffussion equation 
+5. Directory drive-adv-diff-1D-Cython/  solves a simple 1D advection-diffussion equation 
    using the Cython interface and numerous spatial and temporal discretizations
    
                 drivers/drive-adv-diff-1D-Cython/drive_adv_diff_1D.pyx
@@ -137,5 +130,13 @@ To run the examples, type
       
                 drivers/drive-adv-diff-1D-Cython/drive_adv_diff_1D-setup.py
 
+6. Directory drive-Lorenz-Delta/ implements the chaotic Lorenz system, with its trademark
+   butterfly shaped attractor. The driver uses Delta optional Delta correction and Lyapunov 
+   estimation to solve for the backward Lyapunov vectors of the system and to accelerate
+   XBraid convergence. Visualize the solution and the Lyapunov vectors with *vis_lorenz_LRDelta.py*
+   Also see example 7 (examples/ex-07.c). *This driver is in a broken state, and needs*   *updating for compatibility with new Delta correction implementation.*
 
-
+7. Directory drive-KS-Delta/ solves the chaotic Kuramoto-Sivashinsky equation in 1D, using 
+   fourth order finite differencing in space and the Lobatto IIIC fully implicit RK method 
+   in time. The driver also uses Delta correction and Lyapunov estimation to accelerate
+   convergence and to generate estimates to the unstable Lyapunov vectors for the system.

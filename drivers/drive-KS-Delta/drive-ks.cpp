@@ -321,6 +321,8 @@ MyBraidApp::getTheta(int level)
    return thetas[level];
 }
 
+// Function which produces an initial guess for the intermediate stage derivatives *k1* and *k2*,
+// given u and ustop, for the second order theta method (inexact on coarse grids, exact on the fine-grid)
 void
 getGuessTheta2(VEC &guess, const VEC &u, const VEC &ustop, const KSDiscretization &disc, double dt)
 {
@@ -332,6 +334,8 @@ getGuessTheta2(VEC &guess, const VEC &u, const VEC &ustop, const KSDiscretizatio
    guess.head(nx) = 2 * (ustop - u) - guess.tail(nx);
 }
 
+// Function which produces an initial guess for the intermediate stage derivatives *k1* and *k2*,
+// given u and ustop, for the new second order theta method (exact on all levels)
 void
 getGuessThetaNew(VEC &guess, const VEC &u, const VEC &ustop, const KSDiscretization &disc, double dt, int cf)
 {
@@ -348,6 +352,8 @@ getGuessThetaNew(VEC &guess, const VEC &u, const VEC &ustop, const KSDiscretizat
    guess.head(nx) = ((ustop - u) - (1.-th2) * guess.tail(nx)) * 1. / th2;
 }
 
+// This is a new version of the second order theta method, based on matching terms of the B-series of the fine and coarse grid methods.
+// The old method only matches terms of the Taylor series of the stability function, and thus doesn't guarantee a higher order approximation.
 VEC
 theta_new(const VEC &u, VEC &guess, const KSDiscretization &disc, BraidStepStatus &pstatus, double dt, int cf, int newton_iters, double tol, double *err_est)
 {
@@ -438,6 +444,7 @@ theta_new(const VEC &u, VEC &guess, const KSDiscretization &disc, BraidStepStatu
    return u2;
 }
 
+// This is a family of implicit methods which are designed to approximate the fine-grid time-stepper better than rediscretization alone
 VEC
 theta2(const VEC &u, VEC &guess, const KSDiscretization &disc, BraidStepStatus &pstatus, double dt, double th_A, double th_B, double th_C, int newton_iters, double tol, double *err_est)
 {
