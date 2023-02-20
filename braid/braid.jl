@@ -25,9 +25,8 @@ C_stdout = Libc.FILE(Libc.RawFD(1), "w")  # corresponds to C standard output
 XBraid = "./libbraid.so"
 
 #=
- |  For this to work, XBraid must be compiled as a shared library, using 
- |  $ cd braid/
- |  $ make libbraid.so
+ |  For this to work, XBraid must be compiled as a shared library.
+ |  $ make braid shared=yes
  |  and the Fortran flags braid_Fortran_SpatialCoarsen, braid_Fortran_Residual,
  |  braid_Fortran_TimeGrid, and braid_Fortran_Sync must all be set to zero in
  |  braid.h before compiling. (TODO: figure out why this is...)
@@ -36,7 +35,8 @@ XBraid = "./libbraid.so"
 #= 
  | This interface uses the braid_app as an internal structure that is not exposed to the user.
  | This is so that the user interface only uses memory safe function calls
- | User defined data structures that are not time-dependent should be stored in globally scoped variables
+ | User defined data structures that are not time-dependent should be declared as globally scoped 
+ | values. Time-dependent data should be returned by the user's init() function.
  =#
 mutable struct _jl_braid_app
     comm::MPI.Comm    # global mpi communicator
@@ -58,18 +58,17 @@ mutable struct _jl_braid_app
     bufsize_lyap::Integer
 end
 
-
-mutable struct _jl_braid_core
-end
+# this wraps the braid_core object returned by braid_Init()
+mutable struct _jl_braid_core end
 
 #= 
- | stores internal structures _braid_core and _braid_app,
+ | stores internal structures _braid_core and _braid_app, and is returned by Init().
+ | This should be passed as the first argument to all XBraid routines.
  =#
 struct braid_core
     # internal values
     _braid_core::Ptr{_jl_braid_core}
     _braid_app::_jl_braid_app
-
 end
 
 # This can contain anything
@@ -77,13 +76,20 @@ mutable struct _jl_braid_vector
     user_vector
 end
 
-# some constructors
-function _jl_braid_app(comm::MPI.Comm, step::Function, init::Function, sum::Function, norm::Function, access::Function) 
-    _jl_braid_app(comm, comm, step, init, sum, norm, access, nothing, nothing, IdDict(), 0, 0)
+function _jl_braid_app(comm::MPI.Comm, comm_t::MPI.Comm, step::Function, init::Function, sum::Function, norm::Function, access::Function, basis_init::Function, inner_prod::Function)
+    _jl_braid_app(comm, comm_t, step, init, sum, norm, access, basis_init, inner_prod, IdDict(), 0, 0)
 end
 
-function _jl_braid_app(comm::MPI.Comm, comm_t::MPI.Comm, step::Function, init::Function, sum::Function, norm::Function, access::Function) 
-    _jl_braid_app(comm, comm_t, step, init, sum, norm, access, nothing, nothing, IdDict(), 0, 0)
+function _jl_braid_app(comm::MPI.Comm, step::Function, init::Function, sum::Function, norm::Function, access::Function, basis_init::Function, inner_prod::Function)
+    _jl_braid_app(comm, comm, step, init, sum, norm, access, basis_init, inner_prod)
+end
+
+function _jl_braid_app(comm::MPI.Comm, comm_t::MPI.Comm, step::Function, init::Function, sum::Function, norm::Function, access::Function)
+    _jl_braid_app(comm, comm_t, step, init, sum, norm, access, nothing, nothing)
+end
+
+function _jl_braid_app(comm::MPI.Comm, step::Function, init::Function, sum::Function, norm::Function, access::Function)
+    _jl_braid_app(comm, comm_t, step, init, sum, norm, access)
 end
 
 # Used to add/remove a reference to the vector u to the IdDict stored in the app.
@@ -109,7 +115,10 @@ function _jl_step!(_app::Ptr{Cvoid},
     u = unsafe_pointer_to_objref(_u)
     ustop = unsafe_pointer_to_objref(_ustop)
     tstart, tstop = Ref(0.0), Ref(0.0) # guaranteed to not be garbage collected until dereferenced
+    delta_rank = Ref(0)
     @ccall XBraid.braid_StepStatusGetTstartTstop(status::Ptr{Cvoid}, tstart::Ref{Cdouble}, tstop::Ref{Cdouble})::Cint
+    @ccall XBraid.braid_StepStatusGetDeltaRank(status::Ptr{Cvoid}, delta_rank::Ref{Cint})::Cin
+
     if _fstop !== C_NULL
         fstop = unsafe_pointer_to_objref(_fstop)
         app.step(u.user_vector, ustop.user_vector, fstop.user_vector, tstart[], tstop[])
@@ -138,7 +147,8 @@ function _jl_init!(_app::Ptr{Cvoid}, t::Cdouble, u_ptr::Ptr{Ptr{Cvoid}})::Cint
         app.bufsize = buffer.ptr
     end
 
-    # TODO: figure out how to actually do this properly
+    # TODO: figure out how to put an upper bound on the size of the serialized object
+    # without serializing it first
     # u_size = Base.summarysize(Ref(u)) + 9
     # if u_size > app.bufsize
     #     app.bufsize = u_size
@@ -479,6 +489,37 @@ function TestBuf(app::_jl_braid_app, t::Real)
     println(app.ref_ids)
 end
 
+function TestDelta(app::_jl_braid_app, t::Real)
+    app.basis_init::Function
+    app.inner_prod::Function
+    # if app.basis_init === nothing || app.inner_prod === nothing
+    #     error("User-defined functions inner_prod(u, v) and basis_init(t, index) must not be nothing.")
+    # end
+
+    @ccall XBraid.braid_TestDelta(
+        app::Ref{_jl_braid_app},
+        app.comm::MPI.MPI_Comm,
+        C_stdout::Base.Libc.FILE,
+        t::Cdouble,
+        dt::Cdouble,
+        rank::Cint,
+        _c_init::Ptr{Cvoid},
+        _c_init_basis::Ptr{Cvoid},
+        _c_access::Ptr{Cvoid},
+        _c_free::Ptr{Cvoid},
+        _c_clone::Ptr{Cvoid},
+        _c_sum::Ptr{Cvoid},
+        _c_bufsize::Ptr{Cvoid},
+        _c_bufpack::Ptr{Cvoid},
+        _c_bufunpack::Ptr{Cvoid},
+        _c_inner_prod::Ptr{Cvoid},
+        _c_step::Ptr{Cvoid}
+    )::Cint
+    print('\n')
+    println("Check output for objects not freed:")
+    println(app.ref_ids)
+end 
+
 # main ex-01
 MPI.Init()
 comm = MPI.COMM_WORLD
@@ -487,6 +528,8 @@ function my_step(u, ustop, fstop, tstart, tstop)
     # backward Euler
     u[] = 1. / (1. + tstop-tstart) * u[]
 end
+
+function my_step(u, ustop, fstop, tstart, tstop)
 
 function my_init_basis(t, i)
     return Ref(1.)
@@ -512,6 +555,7 @@ my_norm(u) = abs(u[])
 my_innerprod(u, v) = u[] * v[]
 
 app = _jl_braid_app(comm, my_step, my_init, my_sum, my_norm, my_access)
+app = _jl_braid_app(comm, comm, my_step, my_init, my_sum, my_norm, my_access, my_init_basis, my_innerprod)
 
 TestInitAccess(app, 0.)
 TestClone(app, 0.)
