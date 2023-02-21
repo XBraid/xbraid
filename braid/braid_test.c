@@ -215,6 +215,7 @@ braid_TestSpatialNorm( braid_App              app,
                        braid_PtFcnSum         sum,  
                        braid_PtFcnSpatialNorm spatialnorm) 
 {   
+
    braid_Vector  u, v, w;
    braid_Real    result1, result2;
    braid_Int     myid_x, correct;
@@ -376,6 +377,7 @@ braid_TestInnerProd( braid_App              app,
                      braid_PtFcnSum         sum,
                      braid_PtFcnInnerProd   inner_prod)
 {
+
    braid_Vector u, v;
    braid_Real   result1, result2;
    braid_Int    myid_x, zero_flag1, zero_flag2;
@@ -478,6 +480,13 @@ braid_TestInnerProd( braid_App              app,
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   Test 2 Inconclusive\n");
    }
 
+   /* Free variables */
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   free(u)\n");
+   myfree(app, u);
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   free(v)\n");
+   myfree(app, v);
+
    return correct;
 } 
 
@@ -494,6 +503,7 @@ braid_TestBuf( braid_App              app,
                braid_PtFcnBufPack     bufpack,
                braid_PtFcnBufUnpack   bufunpack)
 {   
+
    braid_Vector  u, v;
    braid_Real    result1;
    braid_Int     myid_x, size, correct;
@@ -592,6 +602,7 @@ braid_TestCoarsenRefine( braid_App           app,
                       braid_PtFcnSCoarsen    coarsen,
                       braid_PtFcnSRefine     refine)
  {   
+
    braid_Vector            u, v, w, uc, vc, wc;
    braid_Real              result1;
    braid_Int               myid_x, level, correct;
@@ -770,6 +781,7 @@ braid_TestResidual( braid_App              app,
                     braid_PtFcnResidual    residual,
                     braid_PtFcnStep        step)
  {   
+
    braid_Vector            u, unext, ustop, fstop;
    braid_Real              result1;
    braid_Int               myid_x, result_int;
@@ -912,6 +924,7 @@ braid_TestAll( braid_App            app,
             braid_PtFcnStep         step)
 
 {
+
    braid_Int    myid_x, flag = 0, correct = 1;
    MPI_Comm_rank( comm_x, &myid_x );
    
@@ -1161,6 +1174,15 @@ braid_TestDelta(braid_App               app,
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   actual output:    result approx. %1.2e \n", result);
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   expected output:  positive, near zero \n\n");
    _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestStepDiff\n");
+
+   /* Free variables */
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestDelta:   free(v) \n");
+   myfree(app, v);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestDelta:   free(B) \n");
+   for (braid_Int i = 0; i < rank; i++)
+   {
+      myfree(app, B->userVecs[i]);
+   }
 
    /*---------------------------------*
     * Test bufpack/unpack with basis  *
