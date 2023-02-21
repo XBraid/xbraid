@@ -24,6 +24,12 @@ using MPI
 C_stdout = Libc.FILE(Libc.RawFD(1), "w")  # corresponds to C standard output
 XBraid = "./libbraid.so"
 
+function get_null_double_ptr(Type) 
+    pp = reinterpret(Ptr{Ptr{Type}}, pointer_from_objref(Ref(0)))
+    unsafe_store!(pp, C_NULL)
+    return pp
+end
+
 #=
  |  For this to work, XBraid must be compiled as a shared library.
  |  $ make braid shared=yes
@@ -80,16 +86,12 @@ function _jl_braid_app(comm::MPI.Comm, comm_t::MPI.Comm, step::Function, init::F
     _jl_braid_app(comm, comm_t, step, init, sum, norm, access, basis_init, inner_prod, IdDict(), 0, 0)
 end
 
-function _jl_braid_app(comm::MPI.Comm, step::Function, init::Function, sum::Function, norm::Function, access::Function, basis_init::Function, inner_prod::Function)
-    _jl_braid_app(comm, comm, step, init, sum, norm, access, basis_init, inner_prod)
-end
-
 function _jl_braid_app(comm::MPI.Comm, comm_t::MPI.Comm, step::Function, init::Function, sum::Function, norm::Function, access::Function)
-    _jl_braid_app(comm, comm_t, step, init, sum, norm, access, nothing, nothing)
+    _jl_braid_app(comm, comm_t, step, init, sum, norm, access, nothing, nothing, IdDict(), 0, 0)
 end
 
 function _jl_braid_app(comm::MPI.Comm, step::Function, init::Function, sum::Function, norm::Function, access::Function)
-    _jl_braid_app(comm, comm_t, step, init, sum, norm, access)
+    _jl_braid_app(comm, comm, step, init, sum, norm, access)
 end
 
 # Used to add/remove a reference to the vector u to the IdDict stored in the app.
@@ -114,14 +116,35 @@ function _jl_step!(_app::Ptr{Cvoid},
     app = unsafe_pointer_to_objref(_app)
     u = unsafe_pointer_to_objref(_u)
     ustop = unsafe_pointer_to_objref(_ustop)
-    tstart, tstop = Ref(0.0), Ref(0.0) # guaranteed to not be garbage collected until dereferenced
-    delta_rank = Ref(0)
+    tstart, tstop = Ref{Cdouble}(0.0), Ref{Cdouble}(0.0) # guaranteed to not be garbage collected until dereferenced
+    delta_rank = Ref{Cint}(0)
     @ccall XBraid.braid_StepStatusGetTstartTstop(status::Ptr{Cvoid}, tstart::Ref{Cdouble}, tstop::Ref{Cdouble})::Cint
-    @ccall XBraid.braid_StepStatusGetDeltaRank(status::Ptr{Cvoid}, delta_rank::Ref{Cint})::Cin
+    @ccall XBraid.braid_StepStatusGetDeltaRank(status::Ptr{Cvoid}, delta_rank::Ref{Cint})::Cint
+    if delta_rank[] > 0
+        basis_vecs = []
+        for i in 1:delta_rank[]
+            # double pointer to NULL
+            pp = get_null_double_ptr(Cvoid)
+            show(pp)
+            println()
+            show(unsafe_load(pp))
+            println()
+            @ccall XBraid.braid_StepStatusGetBasisVec(status::Ptr{Cvoid}, pp::Ptr{Ptr{Cvoid}}, (i-1)::Cint)::Cint
+            show(pp)
+            println()
+            ψ_ptr = unsafe_load(pp)
+            show(ψ_ptr)
+            println()
+            ψ = unsafe_pointer_to_objref(ψ_ptr)
+            push!(basis_vecs, ψ.user_vector)
+        end
+    end
 
     if _fstop !== C_NULL
         fstop = unsafe_pointer_to_objref(_fstop)
         app.step(u.user_vector, ustop.user_vector, fstop.user_vector, tstart[], tstop[])
+    elseif delta_rank[] > 0
+        app.step(u.user_vector, ustop.user_vector, nothing, tstart[], tstop[], basis_vecs)
     else
         app.step(u.user_vector, ustop.user_vector, nothing, tstart[], tstop[])
     end
@@ -160,7 +183,7 @@ _c_init = @cfunction(_jl_init!, Cint, (Ptr{Cvoid}, Cdouble, Ptr{Ptr{Cvoid}}))
 
 function _jl_init_basis!(_app::Ptr{Cvoid}, t::Cdouble, index::Cint, u_ptr::Ptr{Ptr{Cvoid}})::Cint
     app = unsafe_pointer_to_objref(_app)
-    u = _jl_braid_vector(app.init_basis(t, index))
+    u = _jl_braid_vector(app.basis_init(t, index))
     _register_vector(app, u)
     unsafe_store!(u_ptr, pointer_from_objref(u))
 
@@ -303,7 +326,8 @@ function Init(comm_world::MPI.Comm, comm_t::MPI.Comm,
               init::Function, sum::Function, spatialnorm::Function, access::Function)::braid_core
     _app = _jl_braid_app(comm_world, comm_t, step, init, sum, spatialnorm, access)
 
-    _core_ptr = reinterpret(Ptr{Ptr{_jl_braid_core}}, pointer_from_objref(Ref(C_NULL)))
+    # this monstrosity initializes a pointer (with a valid address) to a null pointer
+    _core_ptr = get_null_double_ptr(_jl_braid_core)
     @ccall XBraid.braid_Init(_app.comm::MPI.MPI_Comm, _app.comm_t::MPI.MPI_Comm, tstart::Cdouble, tstop::Cdouble, ntime::Cint,
                              _app::Ref{_jl_braid_app}, _c_step::Ptr{Cvoid}, _c_init::Ptr{Cvoid}, _c_clone::Ptr{Cvoid},
                              _c_free::Ptr{Cvoid}, _c_sum::Ptr{Cvoid}, _c_norm::Ptr{Cvoid}, _c_access::Ptr{Cvoid},
@@ -489,7 +513,7 @@ function TestBuf(app::_jl_braid_app, t::Real)
     println(app.ref_ids)
 end
 
-function TestDelta(app::_jl_braid_app, t::Real)
+function TestDelta(app::_jl_braid_app, t::Real, dt::Real, rank::Integer)
     app.basis_init::Function
     app.inner_prod::Function
     # if app.basis_init === nothing || app.inner_prod === nothing
@@ -521,6 +545,7 @@ function TestDelta(app::_jl_braid_app, t::Real)
 end 
 
 # main ex-01
+using ForwardDiff
 MPI.Init()
 comm = MPI.COMM_WORLD
 
@@ -529,7 +554,12 @@ function my_step(u, ustop, fstop, tstart, tstop)
     u[] = 1. / (1. + tstop-tstart) * u[]
 end
 
-function my_step(u, ustop, fstop, tstart, tstop)
+# propagates lyapunov vectors
+function my_step(u, ustop, fstop, tstart, tstop, Ψ)
+    ψ = Ψ[1]
+    my_step(u, ustop, fstop, tstart, tstop)
+    ψ[] = 1. / (1. + tstop-tstart) * ψ[]
+end
 
 function my_init_basis(t, i)
     return Ref(1.)
@@ -554,7 +584,6 @@ end
 my_norm(u) = abs(u[])
 my_innerprod(u, v) = u[] * v[]
 
-app = _jl_braid_app(comm, my_step, my_init, my_sum, my_norm, my_access)
 app = _jl_braid_app(comm, comm, my_step, my_init, my_sum, my_norm, my_access, my_init_basis, my_innerprod)
 
 TestInitAccess(app, 0.)
@@ -562,7 +591,7 @@ TestClone(app, 0.)
 TestSum(app, 0.)
 TestSpatialNorm(app, 0.)
 TestBuf(app, 0.)
-
+TestDelta(app, 0., 0.1, 1)
 
 ntime = 10
 tstart = 0.0

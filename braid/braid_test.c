@@ -500,6 +500,13 @@ braid_TestInnerProd( braid_App              app,
       _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   Test 2 Inconclusive\n");
    }
 
+   /* Free variables */
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   free(u)\n");
+   myfree(app, u);
+
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInnerProd:   free(v)\n");
+   myfree(app, v);
+
    return correct;
 } 
 
@@ -1207,6 +1214,15 @@ braid_TestDelta(braid_App               app,
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   actual output:    result approx. %1.2e \n", result);
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   expected output:  positive, near zero \n\n");
    _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestStepDiff\n");
+
+   /* Free variables */
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestDelta:   free(v) \n");
+   myfree(app, v);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestDelta:   free(B) \n");
+   for (braid_Int i = 0; i < rank; i++)
+   {
+      myfree(app, B->userVecs[i]);
+   }
 
    /*---------------------------------*
     * Test bufpack/unpack with basis  *

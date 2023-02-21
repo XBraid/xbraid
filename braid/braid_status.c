@@ -255,7 +255,7 @@ braid_StatusGetBasisVec(braid_Status  status,
    {
       *v_ptr = ba->userVecs[index];
    }
-   else // gracefully return NULL
+   else
    {
       v_ptr = NULL;
    }
