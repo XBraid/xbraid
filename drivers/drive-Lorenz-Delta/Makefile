@@ -1,6 +1,9 @@
 #BHEADER**********************************************************************
+#
 # Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
-# Produced at the Lawrence Livermore National Laboratory.
+# Produced at the Lawrence Livermore National Laboratory. Written by 
+# Jacob Schroder, Rob Falgout, Tzanio Kolev, Ulrike Yang, Veselin 
+# Dobrev, et al. LLNL-CODE-660355. All rights reserved.
 # 
 # This file is part of XBraid. For support, post issues to the XBraid Github page.
 # 
@@ -23,74 +26,47 @@
 # Import machine specific compilers, options, flags, etc.. 
 ##################################################################
 
-include ../makefile.inc
+BRAID_DIR=../../braid
+include ../../makefile.inc
+
 
 ##################################################################
-# Targets
+# Build
 ##################################################################
 
-BRAID_HEADERS =\
- _braid.h\
- base.h\
- status.h\
- tape.h\
- util.h\
- braid.h\
- braid_status.h\
- braid_test.h
+SUITE_SPARSE = /usr/include/suitesparse/
 
-BRAID_FILES =\
- access.c\
- adjoint.c\
- base.c\
- braid.c\
- braid_status.c\
- braid_F90_iface.c\
- braid_test.c\
- communication.c\
- delta.c\
- distribution.c\
- drive.c\
- grid.c\
- hierarchy.c\
- interp.c\
- mpistubs.c\
- norm.c\
- refine.c\
- relax.c\
- residual.c\
- restrict.c\
- space.c\
- step.c\
- tape.c\
- util.c\
- uvector.c
+MFEM_INTERFACE = ./braid_mfem.hpp ./braid_mfem_block.hpp ../braid/braid.hpp
+MFEM_DIR = ../../mfem
+MFEM_CONFIG_MK = $(MFEM_DIR)/config/config.mk
+MFEM_LIB_FILE = mfem_is_not_built
+-include $(MFEM_CONFIG_MK)
 
-ifeq ($(sequential),yes)
-	BRAID_HEADERS += mpistubs.h
-	BRAID_FILES += mpistubs.c
-	SEQFLAGS = -Dbraid_SEQUENTIAL
-else
-	SEQFLAGS = 
-endif
+BRAID_FLAGS = -I$(BRAID_DIR) -Wno-deprecated-declarations
+BRAID_LIB_FILE = $(BRAID_DIR)/libbraid.a
 
-BRAID_OBJ = $(BRAID_FILES:.c=.o)
+# clean all possible
+ALL_EXAMPLES := $(patsubst %.cpp,%,$(wildcard *.c *.cpp))
+ALL_EXAMPLES := $(patsubst %.c,%,$(ALL_EXAMPLES))
 
-.PHONY: all clean
+.PHONY: all clean cleanout
+
 .SUFFIXES:
-.SUFFIXES: .c .o
+.SUFFIXES: .c .cpp
 
-# Rule for compiling .c files
-%.o: %.c $(BRAID_HEADERS)
-	$(MPICC) $(SEQFLAGS) $(CFLAGS) -c $< -o $@
-
-libbraid.a: $(BRAID_HEADERS) $(BRAID_OBJ)
+drive-lorenz-Delta: drive-lorenz-Delta.cpp $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."
-	ar cruv libbraid.a $(BRAID_OBJ)
-	ranlib libbraid.a
+	$(MPICXX) $(CXXFLAGS) $(BRAID_FLAGS) -Idrive-lorenz-Delta-lib -IEigen \
+ $< -o $@ $(BRAID_LIB_FILE) lorenz_lib.cpp $(LFLAGS)
 
-all: libbraid.a 
+drive-lorenz-LRDelta: drive-lorenz-LRDelta.cpp $(BRAID_LIB_FILE)
+	@echo "Building" $@ "..."
+	$(MPICXX) $(CXXFLAGS) $(BRAID_FLAGS) -Idrive-lorenz-Delta-lib -IEigen \
+ $< -o $@ $(BRAID_LIB_FILE) lorenz_lib.cpp $(LFLAGS)
 
-clean:
-	rm -f *.o libbraid.a
+clean: cleanout
+	rm -f *.o $(ALL_EXAMPLES) *ror_norm* *_err_* *_sol_*
+	rm -rf *.dSYM
 
+cleanout:
+	rm -f drive*.out.*

@@ -95,6 +95,7 @@ public:
    virtual braid_Int Init(braid_Real    t,
                           braid_Vector *u_ptr) = 0;
 
+
    /// De-allocate the vector @a u_.
    /// @see braid_PtFcnFree.
    virtual braid_Int Free(braid_Vector u_) = 0;
@@ -128,6 +129,36 @@ public:
    virtual braid_Int BufUnpack(void              *buffer,
                                braid_Vector      *u_ptr,
                                BraidBufferStatus &bstatus) = 0;
+
+
+   /** @brief (optional) Allocate a new basis vector in @a *u_ptr and 
+      initialize it with an initial guess appropriate for time @a t
+      and for column @a index. For example, column @a index of the 
+      identity matrix. To turn on Delta correction, use 
+      core.SetDeltaCorrection()
+       @see braid_PtFcnInitBasis. */
+   virtual braid_Int InitBasis(braid_Real    t,
+                               braid_Int     index,
+                               braid_Vector *u_ptr)
+   {
+      fprintf(stderr, "Braid C++ Wrapper Warning: turn off Delta correction "
+                      "until InitBasis has been user implemented\n");
+      Init(t, u_ptr);
+      return 0;
+   }
+
+   /** @brief (optional) Compute an inner product between two
+      vectors and store the result in *prod_ptr. The standard
+      choice would be the dot product.
+       @see braid_PtFcnInnerProd. */
+   virtual braid_Int InnerProd(braid_Vector    u,
+                               braid_Vector    v,
+                               braid_Real     *prod_ptr)
+   {
+      fprintf(stderr, "Braid C++ Wrapper Warning: turn off Delta correction "
+                      "until InnerProd has been user implemented\n");
+      return 0;
+   }
 
    // These two functions may be optionally defined by the user, if spatial
    // coarsening is desired (see documentation for more details).  To turn on
@@ -200,6 +231,8 @@ class BraidAccessStatus
       {
          braid_AccessStatusGetCallingFunction(astatus, callingfcn_ptr);
       }
+      void GetDeltaRank(braid_Int *rank_ptr)                 { braid_AccessStatusGetDeltaRank(astatus, rank_ptr); }
+      void GetBasisVec(braid_Vector *v_ptr, braid_Int index) { braid_AccessStatusGetBasisVec(astatus, v_ptr, index); }
 
       // The braid_AccessStatus structure is deallocated inside of Braid
       // This class is just to make code consistently look object oriented
@@ -265,6 +298,10 @@ class BraidStepStatus
       { braid_StepStatusGetRNorms(pstatus, nrequest_ptr, rnorms); }
       void GetTstartTstop(braid_Real *tstart_ptr, braid_Real *tstop_ptr)
       { braid_StepStatusGetTstartTstop(pstatus, tstart_ptr, tstop_ptr); }
+      void GetTIUL(braid_Int *i_upper,
+                   braid_Int *i_lower,
+                   braid_Int  level)
+      { braid_StepStatusGetTIUL(pstatus, i_upper, i_lower, level); }
       void GetT(braid_Real *tstart_ptr)                  { braid_StepStatusGetT(pstatus, tstart_ptr); }
       void GetTstop(braid_Real *tstop_ptr)               { braid_StepStatusGetTstop(pstatus, tstop_ptr); }
       void GetDone(braid_Int *done)                      { braid_StatusGetDone((braid_Status) pstatus, done); }
@@ -282,6 +319,12 @@ class BraidStepStatus
       void SetTightFineTolx(braid_Real tight_fine_tolx)   { braid_StepStatusSetTightFineTolx(pstatus, tight_fine_tolx); }
       void GetSingleErrorEstStep(braid_Real *estimate_ptr)   { braid_StepStatusGetSingleErrorEstStep(pstatus, estimate_ptr); }
       void GetSpatialAccuracy( braid_Real loose_tol, braid_Real tight_tol, braid_Real *tol_ptr) { braid_GetSpatialAccuracy(pstatus, loose_tol, tight_tol, tol_ptr); }
+      void GetCallingFunction(braid_Int *callingfcn_ptr)
+      {
+         braid_StepStatusGetCallingFunction(pstatus, callingfcn_ptr);
+      }
+      void GetDeltaRank(braid_Int *rank_ptr)                 { braid_StepStatusGetDeltaRank(pstatus, rank_ptr); }
+      void GetBasisVec(braid_Vector *v_ptr, braid_Int index) { braid_StepStatusGetBasisVec(pstatus, v_ptr, index); }
 
          // The braid_StepStatus structure is deallocated inside of Braid
       // This class is just to make code consistently look object oriented
@@ -343,6 +386,7 @@ class BraidBufferStatus
 
       void GetMessageType( braid_Int *messagetype_ptr ) { braid_BufferStatusGetMessageType( bstatus, messagetype_ptr); }
       void SetSize( braid_Int size ) { braid_BufferStatusSetSize( bstatus, size ); }
+      void SetBasisSize( braid_Int size ) { braid_BufferStatusSetBasisSize( bstatus, size ); }
       ~BraidBufferStatus() {} 
 };
 
@@ -392,7 +436,7 @@ static braid_Int _BraidAppResidual(braid_App     _app,
 {
    BraidApp *app = (BraidApp*)_app;
    BraidStepStatus pstatus(_pstatus);
-   return app -> Residual(_ustop,_r, pstatus);
+   return app -> Residual(_ustop, _r, pstatus);
 }
 
 
@@ -411,6 +455,16 @@ static braid_Int _BraidAppInit(braid_App     _app,
 {
    BraidApp *app = (BraidApp*)_app;
    return app -> Init(t, u_ptr);
+}
+
+
+static braid_Int _BraidAppInitBasis(braid_App     _app,
+                                    braid_Real    t,
+                                    braid_Int     index,
+                                    braid_Vector *u_ptr)
+{
+   BraidApp *app = (BraidApp*)_app;
+   return app -> InitBasis(t, index, u_ptr);
 }
 
 
@@ -439,6 +493,17 @@ static braid_Int _BraidAppSpatialNorm(braid_App     _app,
 {
    BraidApp *app = (BraidApp*)_app;
    return app -> SpatialNorm(_u, norm_ptr);
+}
+
+
+static braid_Int _BraidAppInnerProd(braid_App     _app,
+                                    braid_Vector  _u,
+                                    braid_Vector  _v,
+                                    braid_Real   *prod_ptr
+                                    )
+{
+   BraidApp *app = (BraidApp*)_app;
+   return app -> InnerProd(_u, _v, prod_ptr);
 }
 
 
@@ -610,7 +675,13 @@ public:
 
    void SetRichardsonEstimation(braid_Int est_error, braid_Int richardson, braid_Int local_order) { braid_SetRichardsonEstimation(core, est_error, richardson, local_order); }
 
-   void SetFileIOLevel(braid_Int   io_level) { braid_SetFileIOLevel(core, io_level); }
+   void SetDeltaCorrection(braid_Int rank) { braid_SetDeltaCorrection(core, rank, _BraidAppInitBasis, _BraidAppInnerProd); }
+
+   void SetDeferDelta(braid_Int level, braid_Int iter) { braid_SetDeferDelta(core, level, iter); }
+
+   void SetLyapunovEstimation(braid_Int relax, braid_Int cglv, braid_Int exponents) { braid_SetLyapunovEstimation(core, relax, cglv, exponents); }
+
+   void SetFileIOLevel(braid_Int io_level) { braid_SetFileIOLevel(core, io_level); }
 
    void SetDefaultPrintFile() { braid_SetDefaultPrintFile(core); }
 
@@ -752,6 +823,18 @@ public:
          _BraidAppSum, _BraidAppSpatialNorm, _BraidAppBufSize,
          _BraidAppBufPack, _BraidAppBufUnpack, _BraidAppCoarsen,
          _BraidAppRefine, _BraidAppResidual, _BraidAppStep); }
+
+   braid_Int TestDelta(BraidApp   *app,
+                     MPI_Comm    comm_x,
+                     FILE       *fp,
+                     braid_Real  t,
+                     braid_Real  dt,
+                     braid_Int   rank)
+   { return braid_TestDelta((braid_App) app, comm_x, fp, t, dt, rank,
+         _BraidAppInit, _BraidAppInitBasis, _BraidAppAccess,
+         _BraidAppFree, _BraidAppClone, _BraidAppSum,
+         _BraidAppBufSize, _BraidAppBufPack, _BraidAppBufUnpack,
+         _BraidAppInnerProd, _BraidAppStep); }
 
    ~BraidUtil() { }
 };

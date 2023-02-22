@@ -63,13 +63,13 @@ _braid_FAccess(braid_Core     core,
       }
       for (fi = flo; fi <= fhi; fi++)
       {
-         _braid_Step(core, level, fi, NULL, u);
+         _braid_Step(core, level, fi, braid_ASCaller_FAccess, NULL, u);
          _braid_USetVector(core, level, fi, u, 0);
 
          if (access_level >= 1)
          {
             _braid_AccessStatusInit( ta[fi-ilower], fi, rnorm, iter, level, nrefine, gupper,
-                                     done, 0, braid_ASCaller_FAccess, astatus);
+                                     done, 0, braid_ASCaller_FAccess, u->basis, astatus);
             _braid_AccessVector(core, astatus, u);
          }
 
@@ -95,7 +95,7 @@ _braid_FAccess(braid_Core     core,
          if ( access_level >= 1 )
          {
             _braid_AccessStatusInit( ta[ci-ilower], ci, rnorm, iter, level, nrefine, gupper,
-                                     done, 0, braid_ASCaller_FAccess, astatus);
+                                     done, 0, braid_ASCaller_FAccess, u->basis, astatus);
             _braid_AccessVector(core, astatus, u);
          }
 

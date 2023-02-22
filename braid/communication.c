@@ -108,8 +108,7 @@ _braid_CommSendInit(braid_Core           core,
       /* Store the receiver rank in the status */
       _braid_StatusElt(bstatus, send_recv_rank) = proc;
 
-      /* Note that bufpack may return a size smaller than bufsize */ 
-      _braid_StatusElt(bstatus, size_buffer) = size;
+      /* Note that bufpack may return a size smaller than bufsize */
       _braid_BaseBufPack(core, app,  vector, buffer, bstatus);
       size = _braid_StatusElt( bstatus, size_buffer );
 
@@ -171,7 +170,7 @@ _braid_CommWait(braid_Core          core,
          _braid_BufferStatusInit(0, index, level, 0, bstatus);
          braid_BaseVector  *vector_ptr = _braid_CommHandleElt(handle, vector_ptr);
          
-         /* Store the sender rank the bufferStatus */   
+         /* Store the sender rank the bufferStatus */
          _braid_StatusElt(bstatus, send_recv_rank ) = status->MPI_SOURCE;
          
          _braid_BaseBufUnpack(core, app,  buffer, vector_ptr, bstatus);

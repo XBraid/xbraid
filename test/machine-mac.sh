@@ -76,6 +76,7 @@ TESTS=( "diffusion1D.sh " \
         "shellvector_bdf2.sh "\
         "richardson.sh"\
         # "memcheck-tux-jacob.sh "\
+        "lorenz_delta.sh"\
         "docs.sh " )
 
 # Run regression tests

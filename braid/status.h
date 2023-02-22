@@ -1,5 +1,5 @@
 /*BHEADER**********************************************************************
- * Copyright (c) 2013, Lawrence Livermore National Security, LLC. 
+ * Copyright (c) 2013, Lawrence Livermore National Security, LLC.
  * Produced at the Lawrence Livermore National Laboratory.
  * 
  * This file is part of XBraid. For support, post issues to the XBraid Github page.
@@ -100,6 +100,7 @@ _braid_AccessStatusInit(braid_Real          t,                /**< current time 
                         braid_Int           done,             /**< boolean describing whether XBraid has finished */
                         braid_Int           wrapper_test,     /**< boolean describing whether this call is only a wrapper test */
                         braid_Int           calling_function, /**< from which function are we accessing the vector */
+                        braid_Basis         basis,           /**< if Delta correction is set, basis vectors at this point */
                         braid_AccessStatus  status            /**< structure to initialize */
                         );
 
@@ -136,15 +137,17 @@ _braid_CoarsenRefStatusInit(braid_Real              tstart,      /**< time value
  * Initialize a braid_StepStatus structure
  */
 braid_Int
-_braid_StepStatusInit(braid_Real        tstart,      /**< current time value  */
-                      braid_Real        tstop,       /**< time value to evolve towards, time value to the right of tstart */
-                      braid_Int         idx,         /**< time point index value corresponding to tstart on the global time grid */
-                      braid_Real        tol,         /**< Current XBraid stopping tolerance */
-                      braid_Int         iter,        /**< Current XBraid iteration (also equal to length of rnorms) */
-                      braid_Int         level,       /**< current level in XBraid */
-                      braid_Int         nrefine,     /**< number of refinements done */
-                      braid_Int         gupper,      /**< global size of the fine grid */
-                      braid_StepStatus  status       /**< structure to initialize */
+_braid_StepStatusInit(braid_Real        tstart,           /**< current time value  */
+                      braid_Real        tstop,            /**< time value to evolve towards, time value to the right of tstart */
+                      braid_Int         idx,              /**< time point index value corresponding to tstart on the global time grid */
+                      braid_Real        tol,              /**< Current XBraid stopping tolerance */
+                      braid_Int         iter,             /**< Current XBraid iteration (also equal to length of rnorms) */
+                      braid_Int         level,            /**< current level in XBraid */
+                      braid_Int         nrefine,          /**< number of refinements done */
+                      braid_Int         gupper,           /**< global size of the fine grid */
+                      braid_Int         calling_function, /**< from which function are we accessing braid */
+                      braid_Basis       basis,            /**< if Delta correction is set, tangent vectors to propagate across the interval */
+                      braid_StepStatus  status            /**< structure to initialize */
                       );
 
 /**

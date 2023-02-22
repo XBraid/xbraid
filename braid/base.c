@@ -31,7 +31,7 @@
 
 braid_Int 
 _braid_BaseStep(braid_Core       core,
-                braid_App        app,    
+                braid_App        app,
                 braid_BaseVector ustop,
                 braid_BaseVector fstop, 
                 braid_BaseVector u, 
@@ -119,28 +119,36 @@ _braid_BaseInit(braid_Core        core,
    _braid_Action    *action;
    braid_BaseVector  u;
    braid_VectorBar   ubar;
-   braid_Int         myid        = _braid_CoreElt(core, myid);
-   braid_Int         verbose_adj = _braid_CoreElt(core, verbose_adj);
-   braid_Int         record      = _braid_CoreElt(core, record);
-   braid_Int         adjoint     = _braid_CoreElt(core, adjoint);
+   braid_Int         myid          = _braid_CoreElt(core, myid);
+   braid_Int         verbose_adj   = _braid_CoreElt(core, verbose_adj);
+   braid_Int         record        = _braid_CoreElt(core, record);
+   braid_Int         adjoint       = _braid_CoreElt(core, adjoint);
+   braid_Int         delta_correct = _braid_CoreElt(core, delta_correct);
    braid_Real        timer       = 0.0;
     
-   if (verbose_adj) _braid_printf("%d INIT\n", myid);
+   if (verbose_adj) _braid_printf("%d: INIT\n", myid);
 
    /* Allocate the braid_BaseVector */
-   u = (braid_BaseVector) malloc(sizeof(braid_Vector) + sizeof(braid_VectorBar));
+   u = _braid_TAlloc(_braid_BaseVector, 1);
    u->userVector = NULL;
    u->bar        = NULL;
+   u->basis      = NULL;
 
    /* Allocate and initialize the userVector */
    timer = _braid_MPI_Wtime(core, 2);
    _braid_CoreFcn(core, init)(app, t, &(u->userVector));
+
+   /* Allocate and initialize the basis vectors */
+   if ( delta_correct )
+   {
+      _braid_BaseInitBasis(core, app, t, &(u->basis));
+   }
    _braid_CoreElt(core, timer_user_init) += _braid_MPI_Wtime(core, 2) - timer;
    
    /* Allocate and initialize the bar vector */
    if ( adjoint ) 
    {
-      ubar = (braid_VectorBar) malloc(sizeof(braid_Vector) + sizeof(int));
+      ubar = _braid_TAlloc(_braid_VectorBar, 1);
       ubar->useCount = 1;
       _braid_CoreFcn(core, init)(app, t, &(ubar->userVector));
       _braid_CoreFcn(core, sum)(app, -1.0, ubar->userVector, 1.0, ubar->userVector);
@@ -169,6 +177,33 @@ _braid_BaseInit(braid_Core        core,
  *----------------------------------------------------------------------------*/
 
 braid_Int
+_braid_BaseInitBasis(braid_Core   core,
+                     braid_App    app,
+                     braid_Real   t,
+                     braid_Basis *psi_ptr )
+{
+   braid_Basis u_basis;
+   u_basis = _braid_TAlloc(_braid_Basis, 1);
+   u_basis->rank = _braid_CoreElt(core, delta_rank);
+   u_basis->userVecs = _braid_TAlloc(braid_Vector, u_basis->rank);
+
+   for (braid_Int i = 0; i < u_basis->rank; i++)
+   {
+      /* Allocate and initialize userVector for each column */
+      _braid_CoreFcn(core, init_basis)(app, t, i, &(u_basis->userVecs[i]));
+   }
+   /* orthonormalize the columns */
+   _braid_GramSchmidt(core, app, u_basis, NULL);
+
+   *psi_ptr = u_basis;
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Int
 _braid_BaseClone(braid_Core         core,
                  braid_App          app,  
                  braid_BaseVector   u,    
@@ -188,25 +223,31 @@ _braid_BaseClone(braid_Core         core,
    if (verbose_adj) _braid_printf("%d: CLONE\n", myid);
 
    /* Allocate the braid_BaseVector */
-   v = (braid_BaseVector) malloc(sizeof(braid_Vector) + sizeof(braid_VectorBar));
-   v->userVector  = NULL;
-   v->bar = NULL;
+   v = _braid_TAlloc(_braid_BaseVector, 1);
+   v->userVector = NULL;
+   v->bar        = NULL;
+   v->basis      = NULL;
 
    /* Allocate and copy the userVector */
    timer = _braid_MPI_Wtime(core, 2);
    _braid_CoreFcn(core, clone)(app, u->userVector, &(v->userVector) );
    _braid_CoreElt(core, timer_user_clone) += _braid_MPI_Wtime(core, 2) - timer;
 
-   /* Allocate and initialize the bar vector to zero*/
+   /* Allocate and clone the basis */
+   if ( u->basis )
+   {
+      _braid_BaseCloneBasis(core, app, u->basis, &(v->basis));
+   }
+
+   /* Allocate and initialize the bar vector to zero */
    if ( adjoint )
    {
-      ubar = (braid_VectorBar) malloc(sizeof(braid_Vector) + sizeof(int));
+      ubar = _braid_TAlloc(_braid_VectorBar, 1);
       ubar->useCount = 1;
       _braid_CoreFcn(core, clone)(app, u->bar->userVector, &(ubar->userVector));
       _braid_CoreFcn(core, sum)(app, -1.0, ubar->userVector, 1.0, ubar->userVector);
       v->bar = ubar;
    } 
-
 
    /* Record to the tape */
    if ( record ) 
@@ -226,6 +267,32 @@ _braid_BaseClone(braid_Core         core,
    }
 
    *v_ptr = v;
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_BaseCloneBasis(braid_Core    core,
+                      braid_App     app,  
+                      braid_Basis   A,    
+                      braid_Basis  *B_ptr)
+{
+   braid_Basis basis;
+   basis = _braid_TAlloc(_braid_Basis, 1);
+   basis->rank = A->rank;
+   basis->userVecs = _braid_TAlloc(braid_Vector, basis->rank);
+
+   braid_Real timer = _braid_MPI_Wtime(core, 2);
+   for (braid_Int i = 0; i < basis->rank; i++)
+   {
+      /* Allocate and clone userVector for each column */
+      _braid_CoreFcn(core, clone)(app, A->userVecs[i], &(basis->userVecs[i]));
+   }
+   _braid_CoreElt(core, timer_user_clone) += _braid_MPI_Wtime(core, 2) - timer;
+   *B_ptr = basis;
 
    return _braid_error_flag;
 }
@@ -264,6 +331,12 @@ _braid_BaseFree(braid_Core       core,
    _braid_CoreFcn(core, free)(app, u->userVector);
    _braid_CoreElt(core, timer_user_free) += _braid_MPI_Wtime(core, 2) - timer;
 
+   if ( u->basis )
+   {
+      /* Free the basis/Lyapunov vectors */
+      _braid_BaseFreeBasis(core, app, u->basis);
+   }
+
    if ( adjoint )
    {
       /* Free the bar vector */
@@ -272,6 +345,27 @@ _braid_BaseFree(braid_Core       core,
 
    /* Free the braid_BaseVector */
    free(u);
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_BaseFreeBasis(braid_Core    core,
+                     braid_App     app,
+                     braid_Basis   b)
+{
+   braid_Real timer = _braid_MPI_Wtime(core, 2);
+   /* Free the basis vectors */
+   for (braid_Int i = 0; i < b->rank; i++)
+   {
+      _braid_CoreFcn(core, free)(app, b->userVecs[i]);
+   }
+   _braid_CoreElt(core, timer_user_free) += _braid_MPI_Wtime(core, 2) - timer;
+   _braid_TFree(b->userVecs);
+   free(b);
 
    return _braid_error_flag;
 }
@@ -321,6 +415,32 @@ _braid_BaseSum(braid_Core        core,
    _braid_CoreFcn(core, sum)(app, alpha, x->userVector, beta, y->userVector);
    _braid_CoreElt(core, timer_user_sum) += _braid_MPI_Wtime(core, 2) - timer;
 
+   /* Sum over the basis vectors */
+   if ( x->basis && y->basis )
+   {  /* Add together the bases if they both exist */
+      _braid_BaseSumBasis(core, app, alpha, x->basis, beta, y->basis);
+   }
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_BaseSumBasis(braid_Core  core,
+                    braid_App   app,
+                    braid_Real  alpha,  
+                    braid_Basis A,
+                    braid_Real  beta,
+                    braid_Basis B )
+{
+   braid_Real timer = _braid_MPI_Wtime(core, 2);
+   for (braid_Int i = 0; i < A->rank; i++)
+   {
+      _braid_CoreFcn(core, sum)(app, alpha, A->userVecs[i], beta, B->userVecs[i]);
+   }
+   _braid_CoreElt(core, timer_user_sum) += _braid_MPI_Wtime(core, 2) - timer;
    return _braid_error_flag;
 }
 
@@ -339,6 +459,26 @@ _braid_BaseSpatialNorm(braid_Core        core,
    timer = _braid_MPI_Wtime(core, 2);
    _braid_CoreFcn(core, spatialnorm)(app, u->userVector, norm_ptr);
    _braid_CoreElt(core, timer_user_spatialnorm) += _braid_MPI_Wtime(core, 2) - timer;
+
+   return _braid_error_flag;
+}
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_BaseInnerProd(braid_Core        core,
+                     braid_App         app,
+                     braid_Vector      u,
+                     braid_Vector      v,
+                     braid_Real       *prod_ptr )
+{
+   braid_Real       timer       = 0.0;
+   
+   /* Compute the inner product between two user vectors */
+   timer = _braid_MPI_Wtime(core, 2);
+   _braid_CoreFcn(core, inner_prod)(app, u, v, prod_ptr);
+   _braid_CoreElt(core, timer_user_innerprod) += _braid_MPI_Wtime(core, 2) - timer;
 
    return _braid_error_flag;
 }
@@ -424,6 +564,26 @@ _braid_BaseBufSize(braid_Core          core,
    _braid_CoreFcn(core, bufsize)(app, size_ptr, status);
    _braid_CoreElt(core, timer_user_bufsize) += _braid_MPI_Wtime(core, 2) - timer;
 
+   _braid_StatusElt(status, size_buffer) = *size_ptr;
+
+   /* extend buffer to fit basis vectors and add header information */
+   if ( _braid_CoreElt(core, delta_correct) )
+   {
+      braid_Int rank = _braid_CoreElt(core, delta_rank);
+      braid_Int size_basis = _braid_StatusElt(status, size_basis);
+      if ( size_basis > 0)
+      {
+         *size_ptr += rank * size_basis;
+      }
+      else // not set, use default
+      {
+         _braid_StatusElt(status, size_basis) = *size_ptr;
+         *size_ptr *= 1 + rank;
+      }
+      /* room for header (number of vectors, size uvec, size each basis vec) */
+      *size_ptr += (2 + rank) * sizeof(braid_Int);
+   }
+
    return _braid_error_flag;
 }
 
@@ -432,9 +592,9 @@ _braid_BaseBufSize(braid_Core          core,
 
 braid_Int
 _braid_BaseBufPack(braid_Core          core,
-                   braid_App           app,       
-                   braid_BaseVector    u,         
-                   void               *buffer,    
+                   braid_App           app,
+                   braid_BaseVector    u,
+                   void               *buffer,
                    braid_BufferStatus  status )
 {
    _braid_Action   *action;
@@ -443,6 +603,7 @@ _braid_BaseBufPack(braid_Core          core,
    braid_Int        verbose_adj  = _braid_CoreElt(core, verbose_adj);
    braid_Int        record       = _braid_CoreElt(core, record);
    braid_Int        sender       = _braid_CoreElt(core, send_recv_rank);
+
    braid_Real       timer        = 0.0;
 
    if ( verbose_adj ) _braid_printf("%d: BUFPACK\n",  myid );
@@ -454,7 +615,7 @@ _braid_BaseBufPack(braid_Core          core,
       action                 = _braid_CTAlloc(_braid_Action, 1);
       action->braidCall      = BUFPACK;
       action->core           = core;
-      action->send_recv_rank = sender; 
+      action->send_recv_rank = sender;
       action->messagetype    = _braid_StatusElt(status, messagetype);
       action->size_buffer    = _braid_StatusElt(status, size_buffer);
       action->inTimeIdx      = _braid_StatusElt(status, idx);
@@ -466,6 +627,54 @@ _braid_BaseBufPack(braid_Core          core,
       _braid_VectorBarCopy(u->bar, &ubar_copy);
       _braid_CoreElt(core, barTape) = _braid_TapePush(_braid_CoreElt(core, barTape), ubar_copy);
    }
+
+   if ( _braid_CoreElt(core, delta_correct) )
+   {
+      /*
+       * Delta correction requires sending a full set of basis vectors alongside every state vector.
+       * Using a header prepended to the buffer, we can efficiently pack all of these vectors contiguously
+       * in one message.
+      */
+      braid_Int *header, head_size, tot_size;
+      braid_Byte* data_buf;
+
+      /*
+       * header pointer is offset by one, so
+       * header[-1] stores number of vectors,
+       * header[0] stores size of user vector 
+       * header[i] stores size of ith basis vector 
+       */
+      header = ((braid_Int*)buffer) + 1;
+      header[-1] = u->basis->rank + 1;                   /* total number of vectors */
+      head_size = (header[-1] + 1) * sizeof(braid_Int);  /* header[-1] + size of each vector */
+
+      data_buf = ((braid_Byte*)buffer) + head_size;      /* buffer must have type for legal pointer arithmetic */
+
+      /* BufPack the user's vector */
+      timer = _braid_MPI_Wtime(core, 2);
+      _braid_CoreFcn(core, bufpack)(app, u->userVector, (void*)data_buf, status);
+
+      /* get size actually written and write it to the header */
+      header[0] = _braid_StatusElt(status, size_buffer);
+      data_buf += header[0]; /* increment the data pointer */
+      tot_size = head_size + header[0];
+
+      for (braid_Int i = 0; i < u->basis->rank; i++)
+      {
+         _braid_StatusElt(status, size_buffer) = _braid_StatusElt(status, size_basis);
+         _braid_CoreFcn(core, bufpack)(app, u->basis->userVecs[i], (void*)data_buf, status);
+         header[i+1] = _braid_StatusElt(status, size_buffer);
+         data_buf += header[i+1];
+         tot_size += header[i+1];
+      }
+      _braid_CoreElt(core, timer_user_bufpack) += _braid_MPI_Wtime(core, 2) - timer;
+
+      /* set actual total size of the buffer for MPI */
+      _braid_StatusElt(status, size_buffer) = tot_size;
+
+      return _braid_error_flag;
+   }
+   /* else default behavior */
    
    /* BufPack the user's vector */
    timer = _braid_MPI_Wtime(core, 2);
@@ -480,9 +689,9 @@ _braid_BaseBufPack(braid_Core          core,
 
 braid_Int
 _braid_BaseBufUnpack(braid_Core          core,
-                     braid_App           app,    
-                     void               *buffer, 
-                     braid_BaseVector   *u_ptr,  
+                     braid_App           app,
+                     void               *buffer,
+                     braid_BaseVector   *u_ptr,
                      braid_BufferStatus  status )
 {
    _braid_Action   *action;
@@ -499,19 +708,54 @@ _braid_BaseBufUnpack(braid_Core          core,
    if ( verbose_adj ) _braid_printf("%d: BUFUNPACK\n", myid);
 
    /* Allocate the braid_BaseVector */
-   u = (braid_BaseVector) malloc(sizeof(braid_Vector) + sizeof(braid_VectorBar));
-   u->userVector  = NULL;
+   u = _braid_TAlloc(_braid_BaseVector, 1);
+   u->userVector = NULL;
    u->bar = NULL;
+   u->basis = NULL;
 
-   /* BufUnpack the user's vector */
-   timer = _braid_MPI_Wtime(core, 2);
-   _braid_CoreFcn(core, bufunpack)(app, buffer, &(u->userVector), status);
-   _braid_CoreElt(core, timer_user_bufunpack) += _braid_MPI_Wtime(core, 2) - timer;
+   if ( _braid_CoreElt(core, delta_correct) )
+   {
+      /* allocate the basis */
+      u->basis = _braid_TAlloc(_braid_Basis, 1);
+
+      /*  see BaseBufPack for information on how the header is written */
+      braid_Int  *header, head_size;
+      braid_Byte *data_buf;
+
+      header = ((braid_Int*)buffer) + 1;
+      u->basis->rank = header[-1] - 1;
+      head_size = (header[-1] + 1) * sizeof(braid_Int);  /* total number of vectors + size of each vector */
+
+      data_buf = ((braid_Byte*)buffer) + head_size;  /* buffer needs to have type to enable legal pointer arithmetic */
+
+      /* allocate the user vectors */
+      u->basis->userVecs = _braid_TAlloc(braid_Vector, u->basis->rank);
+
+      /* BufUnpack the user's vector */
+      timer = _braid_MPI_Wtime(core, 2);
+      _braid_CoreFcn(core, bufunpack)(app, (void*)data_buf, &(u->userVector), status);
+      data_buf += header[0];
+
+      /* BufUnpack the basis vectors */
+      for (braid_Int i = 0; i < u->basis->rank; i++)
+      {
+         _braid_CoreFcn(core, bufunpack)(app, (void*)data_buf, &(u->basis->userVecs[i]), status);
+         data_buf += header[i+1];
+      }
+      _braid_CoreElt(core, timer_user_bufunpack) += _braid_MPI_Wtime(core, 2) - timer;
+   }
+   else
+   {
+      /* BufUnpack the user's vector */
+      timer = _braid_MPI_Wtime(core, 2);
+      _braid_CoreFcn(core, bufunpack)(app, buffer, &(u->userVector), status);
+      _braid_CoreElt(core, timer_user_bufunpack) += _braid_MPI_Wtime(core, 2) - timer;
+   }
 
    if ( adjoint )
    {
       /* Allocate and initialize the bar vector with zero*/
-      ubar = (braid_VectorBar) malloc(sizeof(braid_Vector) + sizeof(int));
+      ubar = _braid_TAlloc(_braid_VectorBar, 1);
       ubar->useCount = 1;
       _braid_CoreFcn(core, init)(app, -1.0, &(ubar->userVector));
       _braid_CoreFcn(core, sum)(app, -1.0, ubar->userVector, 1.0, ubar->userVector);
@@ -706,7 +950,10 @@ _braid_BaseSCoarsen(braid_Core              core,
 
    if ( verbose_adj ) _braid_printf("%d: SCOARSEN\n", myid);
 
-   cu = (braid_BaseVector) malloc(sizeof(braid_BaseVector));
+   cu = _braid_TAlloc(_braid_BaseVector, 1);
+   cu->userVector = NULL;
+   cu->bar        = NULL;
+   cu->basis      = NULL;
 
    /* Call the users SCoarsen Function */
    timer = _braid_MPI_Wtime(core, 2);
@@ -722,11 +969,11 @@ _braid_BaseSCoarsen(braid_Core              core,
  *----------------------------------------------------------------------------*/
 
 braid_Int
-_braid_BaseSRefine(braid_Core                 core,
-                   braid_App                  app,    
-                      braid_BaseVector        cu,     
-                      braid_BaseVector       *fu_ptr, 
-                      braid_CoarsenRefStatus  status )
+_braid_BaseSRefine(braid_Core              core,
+                   braid_App               app,    
+                   braid_BaseVector        cu,     
+                   braid_BaseVector       *fu_ptr, 
+                   braid_CoarsenRefStatus  status )
 {
    braid_BaseVector fu;
    braid_Int        verbose_adj  = _braid_CoreElt(core, verbose_adj);
@@ -735,7 +982,10 @@ _braid_BaseSRefine(braid_Core                 core,
 
    if ( verbose_adj ) _braid_printf("%d: SREFINE\n", myid);
 
-   fu = (braid_BaseVector) malloc(sizeof(braid_BaseVector));
+   fu = _braid_TAlloc(_braid_BaseVector, 1);
+   fu->userVector = NULL;
+   fu->bar        = NULL;
+   fu->basis      = NULL;
 
    /* Call the users SRefine */
    timer = _braid_MPI_Wtime(core, 2);
@@ -762,7 +1012,7 @@ _braid_BaseSInit(braid_Core        core,
 
    if ( verbose_adj ) _braid_printf("%d: SINIT\n", myid);
 
-   u = (braid_BaseVector) malloc(sizeof(braid_BaseVector));
+   u = _braid_TAlloc(_braid_BaseVector, 1);
 
    /* Call the users SInit */
    _braid_CoreFcn(core, sinit)(app, t, &(u->userVector));
@@ -788,7 +1038,7 @@ _braid_BaseSClone(braid_Core        core,
 
    if ( verbose_adj ) _braid_printf("%d: SCLONE\n", myid);
 
-   v = (braid_BaseVector) malloc(sizeof(braid_BaseVector));
+   v = _braid_TAlloc(_braid_BaseVector, 1);
 
    /* Call the users SClone */
    _braid_CoreFcn(core, sclone)(app, u->userVector, &(v->userVector));
@@ -877,7 +1127,7 @@ _braid_BaseStep_diff(_braid_Action *action)
 
 
    /* Set up the status structure */
-   _braid_StepStatusInit(inTime, outTime, tidx, tol, iter, level, nrefine, gupper, status);
+   _braid_StepStatusInit(inTime, outTime, tidx, tol, iter, level, nrefine, gupper, braid_ASCaller_BaseStep_diff, NULL, status);
 
    /* Call the users's differentiated step function */
    _braid_CoreFcn(core, step_diff)(app, ustop, u, ustopbar->userVector, ubar->userVector, status);
@@ -1129,4 +1379,3 @@ _braid_BaseBufUnpack_diff(_braid_Action *action)
 
    return _braid_error_flag;
 }
-

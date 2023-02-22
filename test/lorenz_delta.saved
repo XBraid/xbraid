@@ -1,0 +1,121 @@
+# Begin Test 0
+
+   braid_TestSpatialNorm:   Test 1 Passed
+   braid_TestSpatialNorm:   Test 2 Passed
+   braid_TestSpatialNorm:   Test 3 Passed
+Finished braid_TestSpatialNorm: all tests passed successfully
+   braid_TestBuf:   Test 1 Passed
+Finished braid_TestBuf: all tests passed successfully
+   braid_TestInnerProd:   Test 1 Passed
+    braid_TestInitBasis:   Test 2 Passed
+   braid_TestBufBasis:   Test 1 Passed
+   braid_TestBufBasis:   Test 2 Passed
+
+# Begin Test 1
+
+  residual norm         = 1.644808e-05
+
+# Begin Test 2
+
+  residual norm         = 9.050928e-06
+  Average Lyapunov Exponents: [0.008363]
+
+# Begin Test 3
+
+  residual norm         = 5.292711e-05
+  Average Lyapunov Exponents: [0.008363, -0.417301]
+
+# Begin Test 4
+
+  residual norm         = 1.881353e-06
+  Average Lyapunov Exponents: [0.008363, -0.417301, -13.208420]
+
+# Begin Test 5
+
+  residual norm         = 5.667689e-05
+  Average Lyapunov Exponents: [0.008366]
+
+# Begin Test 6
+
+  residual norm         = 5.161799e-05
+  Average Lyapunov Exponents: [0.008363, -0.417300]
+
+# Begin Test 7
+
+  residual norm         = 2.395636e-06
+  Average Lyapunov Exponents: [0.008363, -0.417301, -13.208420]
+
+# Begin Test 8
+
+  residual norm         = 1.317903e-05
+
+# Begin Test 9
+
+  residual norm         = 5.455146e-05
+  Average Lyapunov Exponents: [0.008367]
+
+# Begin Test 10
+
+  residual norm         = 5.100602e-05
+  Average Lyapunov Exponents: [0.008362, -0.417300]
+
+# Begin Test 11
+
+  residual norm         = 5.100602e-05
+  Average Lyapunov Exponents: [0.008362, -0.417300]
+
+# Begin Test 12
+
+  residual norm         = 4.301596e-06
+  Average Lyapunov Exponents: [0.008363, -0.417301, -13.208420]
+
+# Begin Test 13
+
+  residual norm         = 6.612330e-05
+  Average Lyapunov Exponents: [0.000000]
+
+# Begin Test 14
+
+  residual norm         = 4.859796e-05
+  Average Lyapunov Exponents: [0.000000, 0.000000]
+
+# Begin Test 15
+
+  residual norm         = 6.134727e-05
+  Average Lyapunov Exponents: [0.000000, 0.000000, 0.000000]
+
+# Begin Test 16
+
+  residual norm         = 2.857796e+00
+  Average Lyapunov Exponents: [-0.715693]
+
+# Begin Test 17
+
+  residual norm         = 3.066251e+00
+  Average Lyapunov Exponents: [-0.035072, -0.322583]
+
+# Begin Test 18
+
+  residual norm         = 1.478867e+00
+  Average Lyapunov Exponents: [-0.004943, -0.401681, -13.209429]
+
+# Begin Test 19
+
+  residual norm         = 1.406401e-05
+  Average Lyapunov Exponents: [0.008355]
+
+# Begin Test 20
+
+  residual norm         = 7.675146e-05
+  Average Lyapunov Exponents: [0.263353, -3.731620]
+
+# Begin Test 21
+
+  residual norm         = 4.301596e-06
+  Average Lyapunov Exponents: [0.000000, 0.000000, 0.000000]
+
+# Begin Test 22
+
+  residual norm         = 4.301596e-06
+  Average Lyapunov Exponents: [-8.416132, -1.601542, -3.599683]
+

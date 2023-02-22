@@ -34,9 +34,10 @@ include ../makefile.inc
 # Build exmaples 
 ##################################################################
 
-HYPRE_DIR = ../../hypre/src/hypre
+HYPRE_DIR = ../../../hypre/src/hypre
 HYPRE_FLAGS = -I$(HYPRE_DIR)/include
 HYPRE_LIB = -L$(HYPRE_DIR)/lib -lHYPRE
+SUITE_SPARSE = /usr/include/suitesparse/
 
 MFEM_INTERFACE = ./braid_mfem.hpp ./braid_mfem_block.hpp ../braid/braid.hpp
 MFEM_DIR = ../../mfem
@@ -47,7 +48,7 @@ MFEM_LIB_FILE = mfem_is_not_built
 BRAID_FLAGS = -I$(BRAID_DIR) -Wno-deprecated-declarations
 BRAID_LIB_FILE = $(BRAID_DIR)/libbraid.a
 
-C_EXAMPLES = drive-burgers-1D drive-diffusion-2D drive-lorenz drive-solve-adjoint-with-xbraid
+C_EXAMPLES = drive-burgers-1D drive-diffusion-2D drive-solve-adjoint-with-xbraid
 # Note: .cpp examples will be linked with mfem
 CXX_EXAMPLES = drive-diffusion-1D-moving-mesh drive-diffusion-1D-moving-mesh-serial \
 					drive-diffusion-ben drive-diffusion drive-lin-elasticity \
@@ -63,8 +64,8 @@ ALL_EXAMPLES := $(patsubst %.c,%,$(ALL_EXAMPLES))
 .SUFFIXES: .c .cpp
 
 # put this rule first so it becomes the default
-all: $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES)
-
+all: $(C_NOHYPRE) $(C_EXAMPLES) $(CXX_EXAMPLES) $(CXX_MFEM_EXAMPLES)
+	
 # Rule for compiling .c files
 %: %.c $(BRAID_LIB_FILE)
 	@echo "Building" $@ "..."

@@ -105,7 +105,7 @@ _braid_InitHierarchy(braid_Core    core,
    }
    _braid_CoreElt(core, rfactors) = rfactors;
 
-   /* Allocate array of refiment dt values, initialized with NULL */
+   /* Allocate array of refinement dt values, initialized with NULL */
    rdtvalues = _braid_CTAlloc(braid_Real*, iupper-ilower+2); /* Ensures non-NULL */
    _braid_CoreElt(core, rdtvalues) = rdtvalues;
 
@@ -212,7 +212,28 @@ _braid_InitHierarchy(braid_Core    core,
    nlevels = level+1;
    _braid_CoreElt(core, nlevels) = nlevels;
 
-   /* Allocate ua, va, and fa here */
+   /* Allocate space for storage of Lyapunov exponents at each C-point */
+   if(_braid_CoreElt(core, delta_correct) && _braid_CoreElt(core, lyap_exp))
+   {
+      ncpoints = _braid_GridElt(grids[0], ncpoints);
+      if (nlevels == 1)
+      {
+         _braid_CoreElt(core, local_exponents) = _braid_CTAlloc(braid_Real*, iupper-ilower);
+      }
+      else
+      {
+         _braid_CoreElt(core, local_exponents) = _braid_CTAlloc(braid_Real*, ncpoints);
+      }
+
+      braid_Real **exps = _braid_CoreElt(core, local_exponents);
+      braid_Int delta_rank = _braid_CoreElt(core, delta_rank);
+      for (braid_Int i = 0; i < ncpoints; i++)
+      {
+         exps[i] = _braid_CTAlloc(braid_Real, delta_rank);
+      }
+   }
+
+   /* Allocate ua, va, fa, and ba here */
    for (level = 0; level < nlevels; level++)
    {
       grid = grids[level];
@@ -416,7 +437,7 @@ _braid_InitGuess(braid_Core  core,
       /* Initialize all points on the finest grid with sequential time marching */
       for(i = ilower; i <= iupper; i++)
       {
-         _braid_Step(core, 0, i, NULL, u);       /* Step forward */
+         _braid_Step(core, 0, i, braid_ASCaller_InitGuess, NULL, u);       /* Step forward */
          _braid_USetVector(core, 0, i, u, 0);    /* Store: copy u into core,
                                                     sending to left if needed */
       }
@@ -518,7 +539,6 @@ _braid_CopyFineToCoarse(braid_Core  core)
             // We free the data in u, keeping the shell
             _braid_BaseSFree(core,  app, u);
          }
- 
       }
    }
 

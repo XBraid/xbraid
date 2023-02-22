@@ -23,13 +23,14 @@
 #include "util.h"
 
 /*----------------------------------------------------------------------------
- * Compute residual
+ * Compute residual 
  *----------------------------------------------------------------------------*/
 
 braid_Int
 _braid_Residual(braid_Core        core,
                 braid_Int         level,
                 braid_Int         index,
+                braid_Int         calling_function,
                 braid_BaseVector  ustop,
                 braid_BaseVector  r)
 {
@@ -43,22 +44,47 @@ _braid_Residual(braid_Core        core,
    braid_Int        ilower   = _braid_GridElt(grids[level], ilower);
    braid_Real      *ta       = _braid_GridElt(grids[level], ta);
 
+   /* this decides whether Delta correction needs to be computed on this level
+    * If step is called from FRestrict, right after restriction to the coarse grid 
+    * (ie calling_function == braid_ASCaller_Residual)
+    * and the current coarse level == delta_defer_lvl,
+    * then we *don't* need to do anything for Delta correction here.
+    */
+   braid_Int delta_correct;
+   delta_correct = _braid_DoDeltaCorrect(core, level, iter) && !( calling_function == braid_ASCaller_Residual && level == _braid_CoreElt(core, delta_defer_lvl) );
+
    braid_BaseVector rstop;
    braid_Int        ii;
 
    ii = index-ilower;
-   _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, status);
-   if ( _braid_CoreElt(core, residual) == NULL )
-   {
-      /* By default: r = ustop - \Phi(ustart)*/
+   
+   if ( delta_correct )
+   {  /* Give the user access to the basis vectors through StepStatusGetBasisVec */
+      _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, r->basis, status);
+
+      /* By default: r = ustop - \Phi(ustart) */
       _braid_GetUInit(core, level, index, r, &rstop);
-      _braid_BaseStep(core, app,  rstop, NULL, r, level, status);
-      _braid_BaseSum(core, app,  1.0, ustop, -1.0, r);
+      _braid_BaseStep(core, app, rstop, NULL, r, level, status);
+      _braid_CoreFcn(core, sum)(app, 1.0, ustop->userVector, -1.0, r->userVector);
+      _braid_BaseSumBasis(core, app, 0., r->basis, -1.0, r->basis);
+
    }
-   else
+   else /* default behavior */
    {
-      /* Call the user's residual routine */
-      _braid_BaseResidual(core, app, ustop, r, status);
+      /* initialize status struct */
+      _braid_StepStatusInit(ta[ii-1], ta[ii], index-1, tol, iter, level, nrefine, gupper, calling_function, NULL, status);
+      if ( _braid_CoreElt(core, residual) == NULL )
+      {
+         /* By default: r = ustop - \Phi(ustart)*/
+         _braid_GetUInit(core, level, index, r, &rstop);
+         _braid_BaseStep(core, app, rstop, NULL, r, level, status);
+         _braid_BaseSum(core, app, 1.0, ustop, -1.0, r);
+      }
+      else   /* can we make residual option compatible with Delta correction? */
+      {
+         /* Call the user's residual routine */
+         _braid_BaseResidual(core, app, ustop, r, status);
+      }
    }
 
    return _braid_error_flag;
@@ -77,26 +103,48 @@ _braid_FASResidual(braid_Core        core,
 {
    braid_App          app    = _braid_CoreElt(core, app);
    _braid_Grid      **grids  = _braid_CoreElt(core, grids);
+   braid_Int          niter  = _braid_CoreElt(core, niter);
    braid_Int          ilower = _braid_GridElt(grids[level], ilower);
    braid_BaseVector  *fa     = _braid_GridElt(grids[level], fa);
+   braid_BaseVector  *va     = _braid_GridElt(grids[level], va);
 
-   braid_Int        ii;
+   braid_Int ii = index-ilower;
 
-   _braid_Residual(core, level, index, ustop, r);
-   if (level == 0)
+   /* && short circuits, so (fa[ii] != NULL) is never evaluated if (level == 0) */
+   braid_Int delta_correct = _braid_UseDeltaCorrect(core, level, niter) && (fa[ii] != NULL);
+   braid_BaseVector delta;    /* temporary storage for delta correction */
+
+   if ( delta_correct )
+   {  /* compute the Delta correction for the state and Lyapunov vectors */
+      _braid_BaseClone(core, app, r, &delta);
+      _braid_LRDeltaDot(core, app, delta->userVector, fa[ii]->basis, va[ii-1]->basis);
+      _braid_LRDeltaDotMat(core, app, delta->basis, fa[ii]->basis, va[ii-1]->basis);
+   }
+
+   _braid_Residual(core, level, index, braid_ASCaller_FASResidual, ustop, r);
+
+   /* || short circuits, so (fa[ii] == NULL) is never evaluated if level == 0 is true */
+   if ( (level == 0) || (fa[ii] == NULL) )
    {
-      _braid_BaseSum(core, app,  0.0, r, -1.0, r);
+      _braid_BaseSum(core, app, 0.0, r, -1.0, r);
    }
    else
    {
-      ii = index-ilower;
-      if(fa[ii] == NULL)
+      if ( delta_correct )
       {
-         _braid_BaseSum(core, app,  0.0, r, -1.0, r);
+         /* delta correction */
+         _braid_CoreFcn(core, sum)(app, 1.0, fa[ii]->userVector, 1.0, delta->userVector);
+
+         /* tau correction */
+         _braid_CoreFcn(core, sum)(app, 1.0, delta->userVector, -1.0, r->userVector);
+         _braid_BaseSumBasis(core, app, 1.0, delta->basis, -1.0, r->basis);
+
+         _braid_BaseFree(core, app, delta);
       }
       else
       {
-         _braid_BaseSum(core, app,  1.0, fa[ii], -1.0, r);
+         /* tau correction */
+         _braid_BaseSum(core, app, 1.0, fa[ii], -1.0, r);
       }
    }
 

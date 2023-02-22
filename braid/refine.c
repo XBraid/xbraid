@@ -669,7 +669,7 @@ _braid_FRefine(braid_Core   core,
          _braid_UGetVector(core, 0, flo-1, &u);
          for (fi = flo; fi <= fhi; fi++)
          {
-            _braid_Step(core, 0, fi, NULL, u);
+            _braid_Step(core, 0, fi, braid_ASCaller_FRefine, NULL, u);
             _braid_USetVector(core, 0, fi, u, 0); /* needed for communication */
 
             /* Set send_ua */
@@ -688,7 +688,7 @@ _braid_FRefine(braid_Core   core,
             if( (access_level >= 3) )
             {
                _braid_AccessStatusInit(ta[ii], fi, rnorm, iter, 0, nrefine, gupper,
-                                       0, 0, braid_ASCaller_FRefine, astatus);
+                                       0, 0, braid_ASCaller_FRefine, NULL, astatus);
                _braid_AccessVector(core, astatus, u);
             }
          }
@@ -713,7 +713,7 @@ _braid_FRefine(braid_Core   core,
          if( (access_level >= 3) )
          {
             _braid_AccessStatusInit(ta[ii], ci, rnorm, iter, 0, nrefine, gupper,
-                                    0, 0, braid_ASCaller_FRefine, astatus);
+                                    0, 0, braid_ASCaller_FRefine, NULL, astatus);
             _braid_AccessVector(core, astatus, u);
          }
       }
@@ -1035,7 +1035,7 @@ _braid_FRefine(braid_Core   core,
             for ( ; f_j < f_hi; f_j++)
             {
                _braid_USetVector(core, 0, f_j, u, 0);
-               _braid_Step(core, 0, f_j+1, NULL, u);
+               _braid_Step(core, 0, f_j+1, braid_ASCaller_FRefine, NULL, u);
                /* Free rdtvalue if it has just been set */
                int iii = f_j+1 - f_ilower;
                if (_braid_CoreElt(core, rdtvalues)[iii] != NULL)

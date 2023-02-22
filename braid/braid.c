@@ -50,6 +50,7 @@ braid_Drive(braid_Core  core)
    braid_App            app             = _braid_CoreElt(core, app);
    braid_Int            obj_only        = _braid_CoreElt(core, obj_only);
    braid_Int            adjoint         = _braid_CoreElt(core, adjoint);
+   braid_Int            delta           = _braid_CoreElt(core, delta_correct);
    braid_SyncStatus     sstatus         = (braid_SyncStatus)core;
 
    braid_Int      ilower, iupper, i;
@@ -63,6 +64,11 @@ braid_Drive(braid_Core  core)
    if (adjoint)
    {
       _braid_AdjointFeatureCheck(core);
+   }
+   /* Check for non-supported Delta correction features */
+   if (delta)
+   {
+      _braid_DeltaFeatureCheck(core);
    }
 
    if (myid == 0 )
@@ -130,7 +136,7 @@ braid_Drive(braid_Core  core)
    }
 
    /* Initialize sensitivity computation */
-   if ( adjoint)
+   if ( adjoint )
    {
       if (!warm_restart)
       {
@@ -214,34 +220,41 @@ braid_Init(MPI_Comm               comm_world,
    _braid_Core           *core;
 
    /* Braid default values */
-   braid_Int              cfdefault       = 2;              /* Default coarsening factor */
-   braid_Int              nrdefault       = 1;              /* Default number of FC sweeps on each level */
-   braid_Real             CWt_default     = 1.0;            /* Default C-relaxtion weight  */
-   braid_Int              fmg             = 0;              /* Default fmg (0 is off) */
-   braid_Int              nfmg            = -1;             /* Default fmg cycles is -1, indicating all fmg-cycles (if fmg=1) */
-   braid_Int              nfmg_Vcyc       = 1;              /* Default num V-cycles at each fmg level is 1 */
-   braid_Int              max_iter        = 100;            /* Default max_iter */
-   braid_Int              max_levels      = 30;             /* Default max_levels */
-   braid_Int              incr_max_levels = 0;              /* Default increment max levels is false */
-   braid_Int              min_coarse      = 2;              /* Default min_coarse */
-   braid_Int              relax_only_cg   = 0;              /* Default to no relaxation on coarsest grid (alternative to serial solve) */
-   braid_Int              seq_soln        = 0;              /* Default initial guess is from user's Init() function */
-   braid_Int              print_level     = 2;              /* Default print level */
-   braid_Int              io_level        = 1;              /* Default output-to-file level */
-   braid_Int              access_level    = 1;              /* Default access level */
-   braid_Int              finalFCrelax    = 0;              /* Default final FCrelax */
-   braid_Int              tnorm           = 2;              /* Default temporal norm */
-   braid_Real             tol             = 1.0e-09;        /* Default absolute tolerance */
-   braid_Int              warm_restart    = 0;              /* Default is no warm restart */
-   braid_Int              rtol            = 1;              /* Use relative tolerance */
-   braid_Int              skip            = 1;              /* Default skip value, skips all work on first down-cycle */
-   braid_Int              max_refinements = 200;            /* Maximum number of F-refinements */
-   braid_Int              tpoints_cutoff  = braid_Int_Max;  /* Maximum number of time steps, controls FRefine()*/
-   braid_Int              adjoint         = 0;              /* Default adjoint run: Turned off */
-   braid_Int              record          = 0;              /* Default action recording: Turned off */
-   braid_Int              obj_only        = 0;              /* Default objective only: Turned off */
-   braid_Int              reverted_ranks  = 0;              /* Default objective only: Turned off */
-   braid_Int              verbose_adj     = 0;              /* Default adjoint verbosity Turned off */
+   braid_Int              cfdefault        = 2;              /* Default coarsening factor */
+   braid_Int              nrdefault        = 1;              /* Default number of FC sweeps on each level */
+   braid_Real             CWt_default      = 1.0;            /* Default C-relaxtion weight  */
+   braid_Int              fmg              = 0;              /* Default fmg (0 is off) */
+   braid_Int              nfmg             = -1;             /* Default fmg cycles is -1, indicating all fmg-cycles (if fmg=1) */
+   braid_Int              nfmg_Vcyc        = 1;              /* Default num V-cycles at each fmg level is 1 */
+   braid_Int              max_iter         = 100;            /* Default max_iter */
+   braid_Int              max_levels       = 30;             /* Default max_levels */
+   braid_Int              incr_max_levels  = 0;              /* Default increment max levels is false */
+   braid_Int              min_coarse       = 2;              /* Default min_coarse */
+   braid_Int              relax_only_cg    = 0;              /* Default to no relaxation on coarsest grid (alternative to serial solve) */
+   braid_Int              seq_soln         = 0;              /* Default initial guess is from user's Init() function */
+   braid_Int              print_level      = 2;              /* Default print level */
+   braid_Int              io_level         = 1;              /* Default output-to-file level */
+   braid_Int              access_level     = 1;              /* Default access level */
+   braid_Int              finalFCrelax     = 0;              /* Default final FCrelax */
+   braid_Int              tnorm            = 2;              /* Default temporal norm */
+   braid_Real             tol              = 1.0e-09;        /* Default absolute tolerance */
+   braid_Int              warm_restart     = 0;              /* Default is no warm restart */
+   braid_Int              rtol             = 1;              /* Use relative tolerance */
+   braid_Int              skip             = 1;              /* Default skip value, skips all work on first down-cycle */
+   braid_Int              max_refinements  = 200;            /* Maximum number of F-refinements */
+   braid_Int              tpoints_cutoff   = braid_Int_Max;  /* Maximum number of time steps, controls FRefine()*/
+   braid_Int              delta_correct    = 0;              /* Default Delta correction: Turned off */
+   braid_Int              delta_rank       = 0;              /* Default Delta correction rank (always set by setDelta())*/
+   braid_Int              estimate_lyap    = 0;              /* Default estimation of Lyapunov vectors is turned off*/
+   braid_Int              relax_lyap       = 0;              /* Default propagation of Lyapunov vectors during FCRelax is turned off*/
+   braid_Int              lyap_exp         = 0;              /* Default Lyapunov exponents are not saved */
+   braid_Int              delta_defer_lvl  = 0;              /* Default Delta correction defer level (set by setDeltaDefer())*/
+   braid_Int              delta_defer_iter = 0;              /* Default Delta correction defer iteration (set by setDeltaDefer())*/
+   braid_Int              adjoint          = 0;              /* Default adjoint run: Turned off */
+   braid_Int              record           = 0;              /* Default action recording: Turned off */
+   braid_Int              obj_only         = 0;              /* Default objective only: Turned off */
+   braid_Int              reverted_ranks   = 0;              /* Default objective only: Turned off */
+   braid_Int              verbose_adj      = 0;              /* Default adjoint verbosity Turned off */
 
    braid_Int              myid_world,  myid;
 
@@ -263,12 +276,14 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, step)            = step;
    _braid_CoreElt(core, init)            = init;
    _braid_CoreElt(core, sinit)           = NULL;
+   _braid_CoreElt(core, init_basis)      = NULL;
    _braid_CoreElt(core, clone)           = clone;
    _braid_CoreElt(core, sclone)          = NULL;
    _braid_CoreElt(core, free)            = free;
    _braid_CoreElt(core, sfree)           = NULL;
    _braid_CoreElt(core, sum)             = sum;
    _braid_CoreElt(core, spatialnorm)     = spatialnorm;
+   _braid_CoreElt(core, inner_prod)      = NULL;
    _braid_CoreElt(core, access)          = access;
    _braid_CoreElt(core, bufsize)         = bufsize;
    _braid_CoreElt(core, bufpack)         = bufpack;
@@ -328,6 +343,17 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, skip)            = skip;
 
+   /* Delta correction */
+   _braid_CoreElt(core, delta_correct)    = delta_correct;
+   _braid_CoreElt(core, delta_rank)       = delta_rank;
+   _braid_CoreElt(core, estimate_lyap)    = estimate_lyap;
+   _braid_CoreElt(core, relax_lyap)       = relax_lyap;
+   _braid_CoreElt(core, lyap_exp)         = lyap_exp;
+   _braid_CoreElt(core, delta_defer_iter) = delta_defer_iter;
+   _braid_CoreElt(core, delta_defer_lvl)  = delta_defer_lvl;
+   
+
+   /* Adjoint */
    _braid_CoreElt(core, adjoint)               = adjoint;
    _braid_CoreElt(core, record)                = record;
    _braid_CoreElt(core, obj_only)              = obj_only;
@@ -378,6 +404,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, timer_user_residual)  = 0.0;
    _braid_CoreElt(core, timer_user_scoarsen)  = 0.0;
    _braid_CoreElt(core, timer_user_srefine)  = 0.0;
+   _braid_CoreElt(core, timer_user_innerprod)  = 0.0;
    _braid_CoreElt(core, timer_MPI_recv)  = 0.0;
    _braid_CoreElt(core, timer_MPI_wait)  = 0.0;
    _braid_CoreElt(core, timer_MPI_wait_coarse)  = 0.0;
@@ -481,6 +508,26 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, rfactors));
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
       _braid_TFree(_braid_CoreElt(core, rdtvalues));
+
+      /* Destroy stored Lyapunov exponents */
+      if (_braid_CoreElt(core, lyap_exp))
+      {
+
+         braid_Int npoints; 
+         if (nlevels == 1)
+         {
+            npoints = _braid_GridElt(grids[0], iupper) - _braid_GridElt(grids[0], ilower);
+         }
+         else
+         {
+            npoints = _braid_GridElt(grids[0], ncpoints);
+         }
+         for (braid_Int i = 0; i < npoints; i++)
+         {
+            _braid_TFree(_braid_CoreElt(core, local_exponents)[i]);
+         }
+         _braid_TFree(_braid_CoreElt(core, local_exponents));
+      }
 
       /* Destroy the optimization structure */
       _braid_CoreElt(core, record) = 0;
@@ -764,6 +811,7 @@ braid_PrintTimers(braid_Core  core)
    fprintf(fp, "   free             %1.3e\n",  _braid_CoreElt(core, timer_user_free)); 
    fprintf(fp, "   sum              %1.3e\n",  _braid_CoreElt(core, timer_user_sum)); 
    fprintf(fp, "   spatialnorm      %1.3e\n",  _braid_CoreElt(core, timer_user_spatialnorm)); 
+   fprintf(fp, "   innerprod        %1.3e\n",  _braid_CoreElt(core, timer_user_innerprod)); 
    fprintf(fp, "   bufsize          %1.3e\n",  _braid_CoreElt(core, timer_user_bufsize)); 
    fprintf(fp, "   bufpack          %1.3e\n",  _braid_CoreElt(core, timer_user_bufpack)); 
    fprintf(fp, "   bufunpack        %1.3e\n\n",  _braid_CoreElt(core, timer_user_bufunpack)); 
@@ -1411,6 +1459,18 @@ braid_SetSync(braid_Core      core,
  *--------------------------------------------------------------------------*/
 
 braid_Int
+braid_SetInnerProd(braid_Core             core,
+                   braid_PtFcnInnerProd   inner_prod)
+{
+   _braid_CoreElt(core, inner_prod) = inner_prod;
+
+   return _braid_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
 braid_SetShell(braid_Core          core,
                braid_PtFcnSInit    sinit,
                braid_PtFcnSClone   sclone,
@@ -1840,3 +1900,80 @@ braid_SetTimings(braid_Core core,
    return _braid_error_flag;
 }
 
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetDeltaCorrection(braid_Core           core,      
+                         braid_Int            rank,      
+                         braid_PtFcnInitBasis init_basis,
+                         braid_PtFcnInnerProd inner_prod)
+{
+   if (_braid_CoreElt(core, richardson))
+   {
+      _braid_printf("  Braid: Delta correction is not currently compatible with Richardson error estimation, (feature coming soon?) disabling Richardson\n");
+      braid_SetRichardsonEstimation(core, 0, 0, 0);
+   }
+
+   if (_braid_CoreElt(core, adjoint))
+   {
+      _braid_printf("  Braid: Delta correction is not currently compatible with the adjoint feature, (coming soon?) not enabling Delta correction\n");
+      return _braid_error_flag;
+   }
+
+   if (_braid_CoreElt(core, residual))
+   {
+      _braid_printf("  Braid: Delta correction is not currently compatible with the residual feature, disabling residual\n");
+      braid_SetResidual(core, NULL);
+   }
+
+   if (_braid_CoreElt(core, scoarsen) || _braid_CoreElt(core, srefine))
+   {
+      _braid_printf("  Braid: Delta correction is not currently compatible with spatial coarsen/refine features, (coming soon) disabling spatial coarsen/refine\n");
+      braid_SetSpatialCoarsen(core, NULL);
+      braid_SetSpatialRefine(core, NULL);
+   }
+
+   _braid_CoreElt(core, delta_correct) = 1;
+   _braid_CoreElt(core, delta_rank)    = rank;
+   _braid_CoreElt(core, init_basis)    = init_basis;
+   _braid_CoreElt(core, inner_prod)    = inner_prod;
+
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_SetDeferDelta(braid_Core core,
+                    braid_Int  level,
+                    braid_Int  iter)
+{
+   _braid_CoreElt(core, delta_defer_lvl)  = level;
+   _braid_CoreElt(core, delta_defer_iter) = iter;
+
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_SetLyapunovEstimation(braid_Core core,
+                            braid_Int  relax,
+                            braid_Int  cglv,
+                            braid_Int  exponents
+                            )
+{
+   /**
+    * We could allow to turn this on even if Delta correction is off,
+    * although you really should take advantage of the LVs if you have them
+    */
+
+   if (!_braid_CoreElt(core, delta_correct))
+   {
+      _braid_printf("  Braid: Estimation of Lyapunov vectors requires SetDeltaCorrection, ignoring SetLyapunovEstimation \n");
+      return _braid_error_flag;
+   }
+
+   _braid_CoreElt(core, estimate_lyap) = cglv;
+   _braid_CoreElt(core, relax_lyap)    = relax;
+   _braid_CoreElt(core, lyap_exp)      = exponents;
+
+   return _braid_error_flag;
+}
