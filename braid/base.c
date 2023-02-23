@@ -310,6 +310,7 @@ _braid_BaseFree(braid_Core       core,
    braid_Int      myid        = _braid_CoreElt(core, myid);
    braid_Int      verbose_adj = _braid_CoreElt(core, verbose_adj);
    braid_Int      adjoint     = _braid_CoreElt(core, adjoint);
+   braid_Int      delta       = _braid_CoreElt(core, delta_correct);
    braid_Int      record      = _braid_CoreElt(core, record);
    braid_Real     timer       = 0.0;
 
@@ -331,7 +332,7 @@ _braid_BaseFree(braid_Core       core,
    _braid_CoreFcn(core, free)(app, u->userVector);
    _braid_CoreElt(core, timer_user_free) += _braid_MPI_Wtime(core, 2) - timer;
 
-   if ( u->basis )
+   if ( u->basis && delta )
    {
       /* Free the basis/Lyapunov vectors */
       _braid_BaseFreeBasis(core, app, u->basis);
