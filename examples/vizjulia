@@ -1,0 +1,4 @@
+#!/bin/sh
+cat $1.out.u.* | sort | awk -F: '{print $2}' > $1.out.u.julia
+cat $1.out.v.* | sort | awk -F: '{print $2}' > $1.out.v.julia
+cat $1.out.w.* | sort | awk -F: '{print $2}' > $1.out.w.julia
