@@ -27,6 +27,7 @@ module XBraid
 using Serialization: serialize, deserialize # used to pack arbitrary julia objects into buffers
 using MPI
 
+include("status.jl")
 include("wrapper_functions.jl")
 
 #=
@@ -80,38 +81,6 @@ mutable struct BraidApp
     bufsize_lyap::Integer
 end
 
-# This can contain anything (TODO: do I even need this?)
-mutable struct BraidVector
-    user_vector
-end
-
-"""
-stores internal structures _braid_core and _braid_app, and is returned by Init().
-This should be passed as the first argument to all XBraid routines.
-"""
-mutable struct BraidCore
-    # internal values
-    _braid_core::Ptr{C_NULL}
-    _braid_app::BraidApp
-    function BraidCore(_braid_core, _braid_app)
-        x = new(_braid_core, _braid_app)
-        finalizer(x) do core
-            @ccall libbraid.braid_Destroy(core._braid_core::Ptr{C_NULL})::Cint
-        end
-    end
-end
-# this lets julia deallocate anything that was allocated in C
-# finalizer(braid_Core) do core
-#     core::braid_Core
-#     ccall(:jl_safe_printf, Cvoid, (Cstring, Cstring), "Destroying braid_Core: %s\n", repr(core))
-#     @ccall XBraid.braid_Destroy(core._braid_core::Ptr{_jl_braid_core})::Cint
-#     # julia will destroy the rest
-# end
-
-# function Destroy!(core::BraidCore)
-#     @ccall libbraid.braid_Destroy(core._braid_core::Ptr{_jl_braid_core})::Cint
-# end
-
 # default constructor
 function BraidApp(app, comm::MPI.Comm, comm_t::MPI.Comm, step::Function, init::Function, sum::Function, norm::Function, access::Function, basis_init::Function, inner_prod::Function)
     BraidApp(app, comm, comm_t, step, init, sum, norm, access, basis_init, inner_prod, IdDict(), 0, 0)
@@ -124,6 +93,30 @@ end
 function BraidApp(app, comm::MPI.Comm, step::Function, init::Function, sum::Function, norm::Function, access::Function)
     BraidApp(app, comm, comm, step, init, sum, norm, access)
 end
+
+# This can contain anything (TODO: do I even need this?)
+mutable struct BraidVector
+    user_vector
+end
+
+"""
+wraps the pointer to braid status structures,
+automatically calling braid_Destroy(core) when
+this is garbage collected
+"""
+mutable struct BraidCore
+    # internal values
+    _braid_core::Ptr{C_NULL}
+    _braid_app::BraidApp
+    function BraidCore(_braid_core, _braid_app)
+        x = new(_braid_core, _braid_app)
+        finalizer(x) do core
+            @async println("Destroying BraidCore")
+            @ccall libbraid.braid_Destroy(core._braid_core::Ptr{C_NULL})::Cint
+        end
+    end
+end
+
 
 # Used to add/remove a reference to the vector u to the IdDict stored in the app.
 # this keeps all newly allocated braid_vectors in the global scope, preventing them
@@ -242,7 +235,7 @@ function SetDeferDelta(core::BraidCore, level::Integer, iter::Integer)
 end
 
 function SetLyapunovEstimation(core::BraidCore, relax::Bool, cglv::Bool, exponents::Bool)
-    @ccall libbraid.braid_SetLyapunovEstimation(core._braid_core::Ptr{C_NULL}, relax::Cint, cglv::Cint, exponents::Bool)::Cint
+    @ccall libbraid.braid_SetLyapunovEstimation(core._braid_core::Ptr{C_NULL}, relax::Cint, cglv::Cint, exponents::Cint)::Cint
 end
 
 # Still missing spatial coarsening, sync, residual, and adjoint

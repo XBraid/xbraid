@@ -1,7 +1,7 @@
 # main ex-01
 include("XBraid.jl")
 using .XBraid
-using ForwardDiff, MPI
+using ForwardDiff, MPI, BenchmarkTools
 
 MPI.Init()
 comm = MPI.COMM_WORLD
@@ -31,7 +31,7 @@ function my_init(app, t)
 end
 
 # This must mutate u in place
-function my_step!(app, u, ustop, tstart, tstop)
+function my_step!(app, status, u, ustop, tstart, tstop)
     # backward Euler
     u[] = 1.0 / (1.0 + tstop - tstart) * u[]
 end
@@ -49,13 +49,16 @@ end
     called by the solver to give access to 
     solution values.
 =#
-function my_access(app, u)
+function my_access(app, status, u)
+    t = XBraid.status_GetT(status)
+    ti = XBraid.status_GetTIndex(status)
+    print("t: $(t[]),\tu: ")
     println(u[])
 end
 
 my_norm(app, u) = abs(u[])
 
-test_app = XBraid.BraidApp(nothing, comm, my_step, my_init, my_sum, my_norm, my_access)
+test_app = XBraid.BraidApp(nothing, comm, my_step!, my_init, my_sum!, my_norm, my_access)
 
 XBraid.testInitAccess(test_app, 0.0)
 XBraid.testClone(test_app, 0.0)
@@ -66,12 +69,14 @@ XBraid.testBuf(test_app, 0.0)
 ntime = 10
 tstart = 0.0
 tstop = tstart + ntime / 2.0;
-core = XBraid.Init(comm, comm, tstart, tstop, ntime, my_step, my_init, my_sum, my_norm, my_access)
+core = XBraid.Init(comm, comm, tstart, tstop, ntime, my_step!, my_init, my_sum!, my_norm, my_access)
 
 XBraid.SetPrintLevel(core, 2)
 XBraid.SetMaxLevels(core, 2)
 XBraid.SetAbsTol(core, 1.e-6)
 XBraid.SetCFactor(core, -1, 2)
 
-XBraid.Drive(core)
+@time begin
+    XBraid.Drive(core)
+end
 # no need for braid_Destroy(core), julia will take care of it :)

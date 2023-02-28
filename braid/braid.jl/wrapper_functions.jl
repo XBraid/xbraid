@@ -1,4 +1,22 @@
 
+"""
+Where'd all my data go?
+This extends Base to include a buffer which throws away the data written to it
+(useful for measuring the serialized size of an object)
+"""
+mutable struct BlackHoleBuffer <: IO
+    ptr::Int
+end
+BlackHoleBuffer() = BlackHoleBuffer(0)
+
+function Base.read(from::BlackHoleBuffer, T::Type{UInt8})
+    throw(ArgumentError("BlackHoleBuffer is not readable)"))
+end
+function Base.write(to::BlackHoleBuffer, x::UInt8)
+    to.ptr += 1
+    return sizeof(UInt8)
+end
+
 # these are internal functions which directly interface with XBraid
 # TODO: get the status structures working
 # Do we want to unpack all possible values it could contain into a julia struct?
@@ -35,11 +53,11 @@ function _jl_step!(_app::Ptr{Cvoid},
     try
         if _fstop !== C_NULL
             fstop = unsafe_pointer_to_objref(_fstop)::BraidVector
-            app.step(app.user_app, u.user_vector, ustop.user_vector, fstop.user_vector, tstart[], tstop[])
+            app.step(app.user_app, status, u.user_vector, ustop.user_vector, fstop.user_vector, tstart[], tstop[])
         elseif delta_rank[] > 0
-            app.step(app.user_app, u.user_vector, ustop.user_vector, tstart[], tstop[], basis_vecs)
+            app.step(app.user_app, status, u.user_vector, ustop.user_vector, tstart[], tstop[], basis_vecs)
         else
-            app.step(app.user_app, u.user_vector, ustop.user_vector, tstart[], tstop[])
+            app.step(app.user_app, status, u.user_vector, ustop.user_vector, tstart[], tstop[])
         end
     catch err
         # we don't want julia exceptions to cause XBraid to exit in an undefined state...
@@ -71,7 +89,9 @@ function _jl_init!(_app::Ptr{Cvoid}, t::Cdouble, u_ptr::Ptr{Ptr{Cvoid}})::Cint
 
     # store max size of all initialized vectors
     if app.bufsize == 0
-        buffer = IOBuffer()
+        # This serializes u but doesn't actually
+        # store the data
+        buffer = BlackHoleBuffer()
         serialize(buffer, u)
         app.bufsize = buffer.ptr
     end
@@ -197,15 +217,17 @@ _c_inner_prod = @cfunction(_jl_inner_prod!, Cint, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{C
 function _jl_access!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, status::Ptr{Cvoid})::Cint
     # println("access")
     app = unsafe_pointer_to_objref(_app)::BraidApp
-    u = unsafe_pointer_to_objref(_u)::BraidVector
+
     if !isnothing(app.access)
+        u = unsafe_pointer_to_objref(_u)::BraidVector
         try
-            app.access(app.user_app, u.user_vector)
+            app.access(app.user_app, status, u.user_vector)
         catch err
             print("Error in user Access: ")
             println(err)
         end
     end
+
     return 0
 end
 _c_access = @cfunction(_jl_access!, Cint, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}))

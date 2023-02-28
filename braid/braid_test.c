@@ -1065,8 +1065,7 @@ braid_TestDelta(braid_App               app,
       fp = stdout;
    }
 
-   braid_Vector          u;
-   braid_Vector          v;
+   braid_Vector          u, v, w;
    braid_Basis           A, B;
    // braid_Int             actual_rank = rank;
    braid_Status          status = _braid_CTAlloc(_braid_Status, 1);
@@ -1160,7 +1159,6 @@ braid_TestDelta(braid_App               app,
          myinner_prod(app, B->userVecs[i], B->userVecs[i], &prod);
          if ((prod < wiggle) && (prod > -wiggle))
          {
-
             _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitBasis:   B has linearly dependent columns!\n");
             _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitBasis:   Test 2 Failed\n");
             correct = 0;
@@ -1192,6 +1190,8 @@ braid_TestDelta(braid_App               app,
    }
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   v = clone(u) \n");
    myclone(app, u, &v);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   w = clone(u) \n");
+   myclone(app, u, &w);
 
    _braid_StepStatusInit(t, t + dt, 0, wiggle, 0, 0, 0, 0, braid_ASCaller_Residual, B, sstatus);
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   v = step(v)\n");
@@ -1199,25 +1199,34 @@ braid_TestDelta(braid_App               app,
    mystep(app, u, NULL, v, sstatus);
 
    braid_Real eps = sqrt(wiggle);
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   u = step(u + eps*A_0) \n");
    _braid_StepStatusInit(t, t + dt, 0, wiggle, 0, 0, 0, 0, braid_ASCaller_Residual, NULL, sstatus);
-   mysum(app, eps, A->userVecs[0], 1., u);
-   mystep(app, u, NULL, u, sstatus);
+   for (braid_Int i = 0; i < rank; i++)
+   {
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   for i = %d \n", i);
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   w = step(u + eps*A[i]) \n");
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   v = B_0 - (u - v)/eps\n");
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:  (v = step_dv(u)*A_0 - (step(u + eps*A_0) - step(u))/eps) \n");
-   mysum(app, 1/eps, u, -1/eps, v);
-   mysum(app, 1., B->userVecs[0], -1., v);
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   result = inner_prod(v, v) \n");
-   braid_Real result;
-   myinner_prod(app, v, v, &result);
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   actual output:    result approx. %1.2e \n", result);
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   expected output:  positive, near zero \n\n");
+      mysum(app, 1., u, 0., w);
+      mysum(app, eps, A->userVecs[i], 1., w);
+      mystep(app, w, NULL, w, sstatus);
+
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   w = B[i] - (w - v)/eps\n");
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:  (w = step_dv(u)*A[i] - (step(u + eps*A[i]) - step(u))/eps) \n");
+      mysum(app, -1/eps, v, 1/eps, w);
+      mysum(app, 1., B->userVecs[i], -1., w);
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   result = inner_prod(w, w) \n");
+      braid_Real result;
+      myinner_prod(app, w, w, &result);
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   actual output:    result approx. %1.2e \n", result);
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   expected output:  positive, near zero \n\n");
+   }
+   
    _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestStepDiff\n");
 
    /* Free variables */
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestDelta:   free(v) \n");
    myfree(app, v);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestDelta:   free(w) \n");
+   myfree(app, w);
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestDelta:   free(B) \n");
    for (braid_Int i = 0; i < rank; i++)
    {
@@ -1297,6 +1306,7 @@ braid_TestDelta(braid_App               app,
    }
    
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   inner_prod(v, v)\n");
+   braid_Real result;
    myinner_prod(app, v, v, &result);
    if (result > wiggle || _braid_isnan(result))
    {
