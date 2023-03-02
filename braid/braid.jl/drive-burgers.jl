@@ -13,7 +13,7 @@ struct burger_app
     # preallocated caches that support ForwardDiff:
     x_d::DiffCache
     y_d::DiffCache
-    solution # stores the total solution vecdtor over space-time
+    solution # stores the total solution vector over space-time
     lyap_vecs # stores the lyapunov vectors
     lyap_exps # stores the lyapunov exponents
     times

@@ -200,16 +200,16 @@ SetDefaultPrintFile(core::BraidCore) = @ccall libbraid.braid_SetDefaultPrintFile
 SetAccessLevel(core::BraidCore, access_level::Integer) = @ccall libbraid.braid_SetAccessLevel(core._braid_core::Ptr{C_NULL}, access_level::Cint)::Cint
 SetFinalFCRelax(core::BraidCore) = @ccall libbraid.braid_SetFinalFCRelax(core._braid_core::Ptr{C_NULL})::Cint
 function GetNumIter(core::BraidCore)
-    niter = Ref(0)
+    niter = Ref{Cint}(0)
     @ccall libbraid.braid_GetNumIter(core._braid_core::Ptr{C_NULL}, niter::Ref{Cint})::Cint
     return niter[] # dereference
 end
 
 function GetRNorms(core::BraidCore)
-    nrequest = Ref(GetNumIter(core))
-    rnorms = zeros(nrequest)
+    nrequest = Ref{Cint}(GetNumIter(core))
+    rnorms = zeros(nrequest[])
     @ccall libbraid.braid_GetRNorms(core._braid_core::Ptr{C_NULL}, nrequest::Ref{Cint}, rnorms::Ref{Cdouble})::Cint
-    return rnorms
+    return rnorms[nrequest[]]
 end
 
 function GetNLevels(core::BraidCore)
