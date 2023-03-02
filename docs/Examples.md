@@ -516,7 +516,7 @@ be implemented in some of the following examples.
 
    See ``examples/ex-01-expanded-bdf2.c``.
 
-14. **Storage**:  This option (see [braid_SetStorage](@ref braid_SetStorage))
+14. **Storage**: This option (see [braid_SetStorage](@ref braid_SetStorage))
     allows the user to specify storage at all time points (C and F) or only at
     C-points.  This extra storage is useful for implicit methods, where the
     solution value from the *previous XBraid iteration* for time step \f$i\f$
@@ -535,6 +535,23 @@ be implemented in some of the following examples.
    it will equal the solution from the previous time step.
 
    See ``examples/ex-03`` for an example which uses this feature.
+
+15. **Delta Correction and Lyapunov Vector Estimation**: These options (see
+    [braid_SetDeltaCorrection](@ref braid_SetDeltaCorrection) and
+    [braid_SetLyapunovEstimation](@ref braid_SetLyapunovEstimation)) allow
+    XBraid to accelerate convergence by using Delta correction, which was 
+    originally designed for use with chaotic systems.  The feature works by 
+    using low rank approximations to the Jacobian of the fine grid time-stepper 
+    as a linear correction to the coarse grid time-stepper. This can 
+    converge quadratically in some cases. LyapunovEstimation is not required
+    for Delta correction, but for chaotic systems, the unstable modes of 
+    error, corresponding with the first few Lyapunov vectors, are often the 
+    slowest to converge.  Thus, Lyapunov estimation targets these modes by
+    computing estimates to the backward Lyapunov vectors of the system, then
+    computing the Delta correction using these vectors as a basis.
+
+    See ``examples/ex-07`` for an example which uses these features.
+
 
 # Simplest example expanded {#exampleoneexapanded}
 
@@ -657,23 +674,22 @@ The two data structures are:
         app->man->dt
 
    is the current time step size.  The app is defined as 
-      
   
-      typedef struct _braid_App_struct {
-         MPI_Comm             comm;             /* global communicator */
-         MPI_Comm             comm_t;           /* communicator for parallelizing in time  */
-         MPI_Comm             comm_x;           /* communicator for parallelizing in space  */
-         int                  pt;               /* number of processors in time  */
-         simulation_manager  *man;              /* user's simulation manager structure */
-         HYPRE_SStructVector  e;                /* temporary vector used for error computations */
-         int                  nA;               /* number of spatial matrices created */
-         HYPRE_SStructMatrix *A;                /* array of spatial matrices, size nA, one per level*/
-         double              *dt_A;             /* array of time step sizes, size nA, one per level*/
-         HYPRE_StructSolver  *solver;           /* array of PFMG solvers, size nA, one per level*/
-         int                  use_rand;         /* binary value, use random or zero initial guess */
-         int                 *runtime_max_iter; /* runtime info for number of PFMG iterations*/
-         int                 *max_iter_x;       /* maximum iteration limits for PFMG */
-      } my_App;
+        typedef struct _braid_App_struct {
+           MPI_Comm             comm;             /* global communicator */
+           MPI_Comm             comm_t;           /* communicator for parallelizing in time  */
+           MPI_Comm             comm_x;           /* communicator for parallelizing in space  */
+           int                  pt;               /* number of processors in time  */
+           simulation_manager  *man;              /* user's simulation manager structure */
+           HYPRE_SStructVector  e;                /* temporary vector used for error computations */
+           int                  nA;               /* number of spatial matrices created */
+           HYPRE_SStructMatrix *A;                /* array of spatial matrices, size nA, one per level*/
+           double              *dt_A;             /* array of time step sizes, size nA, one per level*/
+           HYPRE_StructSolver  *solver;           /* array of PFMG solvers, size nA, one per level*/
+           int                  use_rand;         /* binary value, use random or zero initial guess */
+           int                 *runtime_max_iter; /* runtime info for number of PFMG iterations*/
+           int                 *max_iter_x;       /* maximum iteration limits for PFMG */
+        } my_App;
 
    The app contains all the information needed to take a time step with the
    user code for an arbitrary time step size.  See the *Step* function below
@@ -1200,9 +1216,9 @@ In order to evaluate the time-independent part of the objective function (e.g. t
 
 These routines are optional for XBraid_Adjoint. Therefore, they need to be passed to XBraid_Adjoint after the initialization with `braid_Init(...)` and `braid_InitAdjoint(...)` in the user's *main* file:
 
-      /* Optional: Set the tracking type objective function and derivative */
-      braid_SetPostprocessObjective(core, my_PostprocessObjective);
-      braid_SetPostprocessObjective_diff(core, my_PostprocessObjective_diff);
+         /* Optional: Set the tracking type objective function and derivative */
+         braid_SetPostprocessObjective(core, my_PostprocessObjective);
+         braid_SetPostprocessObjective_diff(core, my_PostprocessObjective_diff);
 
 
 ## Running an Optimization Cycle with XBraid_Adjoint 
@@ -1274,11 +1290,229 @@ corresponding XBraid_Adjoint implementation.
   that most of the important code setting up the user-defined data structures and
   wrapper routines are simply lifted from the serial simulation.
 
+# Chaotic Lorenz System With Delta Correction and Lyapunov Estimation {#exampleseven}
 
+This example demonstrates acceleration of XBraid convergence and Lyapunov analysis of a system with Delta correction. Familiarity with @ref exampleone is assumed. This example solves the chaotic Lorenz system in three dimensions, defined by the system
+\f[
+   \begin{cases}
+      x' = \sigma (y - x),   \\
+      y' = x (\rho - z) - y, \\
+      z' = xy - \beta z,
+   \end{cases}
+\f]
+where \f$\sigma = 10\f$, \f$\rho = 28\f$, and \f$\beta = 8/3\f$. This system is chaotic, with the greatest Lyapunov exponent being \f$\approx 0.9\f$. Here, Delta correction is used to accelerate convergence to the solution, while Lyapunov estimation is used to simultaneously compute the Lyapunov vectors and Lyapunov exponents along the trajectory.
+
+## User Defined Structures and Wrappers
+
+Most of the user defined structures and wrappers are defined exactly as in previous examples, with the exception of *Step()*, *BufSize()*, and *Access()*, which are modified to accomodate the Lyapunov vectors, and *InnerProd()* and *InitBasis()*, which are new functions required by Delta correction.
+
+1. **Step**: Here the *Step* function is required to do two things:
+  - Propagate the state vector (as in regular XBraid)
+    \f[
+          u \gets \Phi(u)
+    \f]
+  - Propagate a number of basis vectors using the Jacobian vector product (new functionality required by Delta correction)
+    \f[
+          \psi_j \gets \left(\frac{d \Phi}{d u}\right) \psi_j
+    \f]
+    The number of basis vectors to be propagated is accessed via [braid_StepStatusGetDeltaRank](@ref braid_StatusGetDeltaRank), and references to the vectors themselves are accessed via [braid_StepStatusGetBasisVec](@ref braid_StatusGetBasisVec). In this example, the full Jacobian of *Step* is used to propagate the basis vectors, but finite differencing or even forward-mode automatic differentiation are other ways of propagating the basis vectors.
+
+         int my_Step(braid_App app,
+                     braid_Vector ustop,
+                     braid_Vector fstop,
+                     braid_Vector u,
+                     braid_StepStatus status)
+         {
+            
+            /* for Delta correction, the user must propagate the solution vector 
+            * (as in a traditional Braid code) as well as the Lyapunov vectors. 
+            * The Lyapunov vectors are available through the StepStatus structure,
+            * and are propagated by the Jacobian of the time-step function. (see below)
+            */
+
+            double tstart; /* current time */
+            double tstop;  /* evolve to this time */
+            braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+
+            double h; /* dt value */
+            h = tstop - tstart;
+
+            // get the number of Lyapunov vectors we need to propagate
+            int rank; /* rank of Delta correction */
+            braid_StepStatusGetDeltaRank(status, &rank);
+            MAT Jacobian = {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}};
+
+            if (rank > 0) // we are propagating Lyapunov vectors
+            {
+               Euler((u->values), h, &Jacobian);
+            }
+            else
+            {
+               Euler((u->values), h, NULL);
+            }
+
+            for (int i = 0; i < rank; i++)
+            {
+               // get a reference to the ith Lyapunov vector
+               my_Vector *psi;
+               braid_StepStatusGetBasisVec(status, &psi, i);
+
+               // propagate the vector from tstart to tstop
+               if (psi)
+               {
+                  MatVec(Jacobian, psi->values);
+               }
+            }
+
+            /* no refinement */
+            braid_StepStatusSetRFactor(status, 1);
+
+            return 0;
+         }
+
+2. **BufSize()**: There is an additional option to set the size of a single basis 
+   vector here, via [braid_BufferStatusSetBasisSize](@ref braid_StatusSetBasisSize).
+
+         int my_BufSize(braid_App app, int *size_ptr, braid_BufferStatus bstatus)
+         {
+            /* Tell Braid the size of a state vector */
+            *size_ptr = VecSize * sizeof(double);
+
+            /* 
+            * In contrast with traditional Braid, you may also specify the size of a single
+            * Lyapunov basis vector,in case it is different from the size of a state vector.
+            * Note: this isn't necessary here, but for more complicated applications this 
+            * size may be different.
+            */
+            braid_BufferStatusSetBasisSize(bstatus, VecSize * sizeof(double));
+            return 0;
+         }
+
+3. **Access**: Here, the *Access* function is used to access the Lyapunov
+   vector estimates via the same API as for *Step*. Also, the local Lyapunov
+   exponents are accessed via [braid_AccessStatusGetLocalLyapExponents](@ref braid_StatusGetLocalLyapExponents).
+
+         int my_Access(braid_App app, braid_Vector u, braid_AccessStatus astatus)
+         {
+            FILE *file = (app->file);
+            int index, i;
+            double t;
+
+            braid_AccessStatusGetT(astatus, &t);
+            braid_AccessStatusGetTIndex(astatus, &index);
+
+            fprintf(file, "%d", index);
+            for (i = 0; i < VecSize; i++)
+            {
+               fprintf(file, " %.14e", (u->values[i]));
+            }
+            fprintf(file, "\n");
+            fflush(file);
+
+            /* write the lyapunov vectors to file */
+            file = app->file_lv;
+            int local_rank, num_exp;
+            braid_AccessStatusGetDeltaRank(astatus, &local_rank);
+            num_exp = local_rank;
+            double *exponents = malloc(local_rank * sizeof(double));
+            if (num_exp > 0)
+            {
+               braid_AccessStatusGetLocalLyapExponents(astatus, exponents, &num_exp);
+            }
+
+            fprintf(file, "%d", index);
+            for (int j = 0; j < local_rank; j++)
+            {
+               my_Vector *psi;
+               braid_AccessStatusGetBasisVec(astatus, &psi, j);
+               if (psi)
+               {
+                  if (j < num_exp)
+                  {
+                     (app->lyap_exps)[j] += exponents[j];
+                     fprintf(file, " %.14e", exponents[j]);
+                  }
+                  else
+                  {
+                     fprintf(file, " %.14e", 0.);
+                  }
+                  for (i = 0; i < VecSize; i++)
+                  {
+                     fprintf(file, " %.14e", (psi->values[i]));
+                  }
+               }
+            }
+            fprintf(file, "\n ");
+            fflush(file);
+            free(exponents);
+
+            return 0;
+         }
+
+4. **InnerProd**: This function tells XBraid how to compute the inner product between two *Vector* structures.
+   This is required by Delta correction in order to project user vectors onto the basis vectors, and
+   for orthonormalization of the basis vectors. Here, the standard dot product is used.
+
+         int my_InnerProd(braid_App app, braid_Vector u, braid_Vector v, double *prod_ptr)
+         {
+           /*
+            *  For Delta correction, braid needs to be able to compute an inner product
+            *  between two user vectors, which is used to project the user's vector onto
+            *  the Lyapunov basis for low-rank Delta correction. This function should 
+            *  define a valid inner product between the vectors *u* and *v*.
+            */
+            double dot = 0.;
+
+            for (int i = 0; i < VecSize; i++)
+            {
+               dot += (u->values[i]) * (v->values[i]);
+            }
+            *prod_ptr = dot;
+            return 0;
+         }
+
+5. **InitBasis**: This function tells XBraid how to initialize a single basis vector, with spatial
+   index *j* at time *t*. This initializes the column *j* of the matrix \f$\Psi\f$ whose
+   columns are the basis vectors used for Delta correction. Here, we simply use column *j*
+   of the identity matrix. It is important that the vectors initialized by this function are
+   linearly independent, or Lyapunov estimation will not work.
+
+         int my_InitBasis(braid_App app, double t, int index, braid_Vector *u_ptr)
+         {
+            /*
+            *  For Delta correction, an initial guess is needed for the Lyapunov basis vectors.
+            *  This function initializes the basis vector with spatial index *index* at time *t*.
+            *  Note that the vectors at each index *index* must be linearly independent.
+            */
+            my_Vector *u;
+
+            u = (my_Vector *)malloc(sizeof(my_Vector));
+
+            // initialize with the columns of the identity matrix
+            VecSet(u->values, 0.);
+            u->values[index] = 1.;
+
+            *u_ptr = u;
+
+            return 0;
+         }
+
+## Running XBraid with Delta correction and Lyapunov Estimation
+
+XBraid is initialized as before, and most XBraid features are compatible, however, this does not include Richardson extrapolation, the XBraid_Adjoint feature, the *Residual* option, and spatial coarsening. Delta correction and Lyapunov estimation are turned on by calls to [braid_SetDeltaCorrection](@ref braid_SetDeltaCorrection) and [braid_SetLyapunovEstimation](@ref braid_SetDeltaCorrection), respectively, where the number of basis vectors desired (rank of low-rank Delta correction) and additional wrapper functions *InnerProd* and *InitBasis* are passed to XBraid and options regarding the estimation of Lyapunov vectors and exponents are set. Further, the function [braid_SetDeferDelta](@ref braid_SetDeferDelta) gives more options allowing Delta correction to be deferred to a later iteration, or a coarser grid. This is illustrated in the folowing exerpt from this example's *main()* function:
+
+         ...
+         if (delta_rank > 0)
+         {
+            braid_SetDeltaCorrection(core, delta_rank, my_InitBasis, my_InnerProd);
+            braid_SetDeferDelta(core, defer_lvl, defer_iter);
+            braid_SetLyapunovEstimation(core, relax_lyap, lyap, relax_lyap || lyap);
+         }
+         ...
 
 # Running and Testing XBraid {#testingxbraid}
 
-The best overall test for XBraid, is to set the maximum number of levels to 1 
+The best overall test for XBraid, is to set the maximum number of levels to 1
 (see [braid_SetMaxLevels](@ref braid_SetMaxLevels) ) which will carry out a
 sequential time stepping test.  Take the output given to you by your *Access*
 function and compare it to output from a non-XBraid run.  Is everything OK?
@@ -1317,6 +1551,16 @@ can return a boolean variable to indicate correctness.
                           my_Access, my_Free, my_Clone, my_Sum, my_SpatialNorm, 
                           my_CoarsenBilinear, my_Refine);
 
+    /**
+     * Test innerprod(), initbasis(), step(), bufsize(), bufpack(), bufunpack() 
+     * for use with Delta correction
+     */
+    correct = braid_TestInnerProd(app, comm_x, stdout, 0.0, 1.0,
+                                  my_Init, my_Free, my_Sum, my_InnerProd);
+    correct = braid_TestDelta(app, comm_x, stdout, 0.0, dt, delta_rank, my_Init,
+                              my_InitBasis, my_Access, my_Free, my_Sum, my_BufSize,
+                              my_BufPack, my_BufUnpack, my_InnerProd, my_Step);
+
 # Fortan90 Interface, C++ Interface, Python Interface, and More Complicated Examples {#complicatedexamples}
 
 We have Fortran90, C++, and Python interfaces.  For Fortran 90, see ``examples/ex-01f.f90``.
@@ -1328,5 +1572,3 @@ and ``examples/ex-01-cython-alt``.
 For a discussion of more complex problems please see our project
 [publications website](http://computation.llnl.gov/projects/parallel-time-integration-multigrid/publications)
 for our recent publications concerning some of these varied applications. 
-
-

@@ -42,6 +42,8 @@ extern "C" {
 /** Macros allowing for auto-generation of `inherited' StatusGet functions */
 #define ACCESSOR_HEADER_GET1(stype,param,vtype1) \
   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1);
+#define ACCESSOR_HEADER_GET1_IN1(stype,param,vtype1,vtype2) \
+   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 v2);
 #define ACCESSOR_HEADER_GET1_IN2(stype,param,vtype1,vtype2,vtype3) \
    braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 v2, braid_##vtype3 v3);
 #define ACCESSOR_HEADER_GET1_IN3(stype,param,vtype1,vtype2,vtype3,vtype4) \
@@ -78,7 +80,6 @@ struct _braid_Status_struct;
  * structures. This class is accessed only inside XBraid code.
  */
 typedef struct _braid_Status_struct *braid_Status;
-
 
 /**
  * AccessStatus structure which defines the status of XBraid at a given instant
@@ -294,6 +295,33 @@ braid_StatusGetCallingFunction(braid_Status status,        /**< structure contai
                                );
 
 /**
+ * Return the current rank of Delta correction being used
+ */
+braid_Int
+braid_StatusGetDeltaRank(braid_Status status,   /**< structure containing current simulation info */
+                         braid_Int   *rank_ptr  /**< output, rank of Delta correction, number of tracked basis vectors */
+                         );
+
+/**
+ * Return a reference to the basis vector at the current time value and given spatial index
+ */
+braid_Int
+braid_StatusGetBasisVec(braid_Status  status,  /**< structure containing current simulation info */
+                        braid_Vector *v_ptr,   /**< output, reference to basis vector */
+                        braid_Int     index    /**< input, spatial index (column) of desired basis vector */
+                        );
+
+/**
+ * Return a reference to an array of local exponents, with each exponent *j* corresponding to the total growth over the previous C-interval
+ * in the direction of the *j*th Lyapunov exponent (These are only available after the final FCRelax)
+ */
+braid_Int
+braid_StatusGetLocalLyapExponents(braid_Status   status,       /**< structure containing the current simulation info */
+                                  braid_Real    *exp_ptr,      /**< output, reference to array containing (num_returned) exponents */
+                                  braid_Int     *num_returned  /**< output, number of exponents contained in exp_ptr */
+                                  );
+
+/**
  * Return the **coarse grid** time value to the left of the current time value from
  * the Status structure.
  **/
@@ -482,6 +510,16 @@ braid_StatusSetSize(braid_Status status,                   /**< structure contai
                     braid_Real   size                      /**< input, size of the send buffer */
                     );
 
+/**
+ * Set the size of the buffer for basis vectors. 
+ * If set by user, the send buffer will allocate "size" bytes of space for each basis vector.
+ * If not, BufSize is used for the size of each basis vector
+ **/
+braid_Int
+braid_StatusSetBasisSize(braid_Status status,                   /**< structure containing current simulation info */
+                         braid_Real   size                      /**< input, size of the send buffer */
+                         );
+
 /** 
  * Get the Richardson based error estimate at the single time point currently
  * being "Stepped", i.e., return the current error estimate for the time point
@@ -586,6 +624,9 @@ ACCESSOR_HEADER_GET4(Access, TILD,            Real, Int, Int, Int)
 ACCESSOR_HEADER_GET1(Access, WrapperTest,     Int)
 ACCESSOR_HEADER_GET1(Access, CallingFunction, Int)
 ACCESSOR_HEADER_GET1(Access, SingleErrorEstAccess, Real)
+ACCESSOR_HEADER_GET1(Access, DeltaRank, Int)
+ACCESSOR_HEADER_GET2(Access, LocalLyapExponents, Real, Int)
+ACCESSOR_HEADER_GET1_IN1(Access, BasisVec, Vector, Int)
 
 /*--------------------------------------------------------------------------
  * SyncStatus Prototypes: They just wrap the corresponding Status accessors
@@ -626,31 +667,38 @@ ACCESSOR_HEADER_GET5(CoarsenRef, TpriorTstop, Real, Real, Real, Real, Real)
  * StepStatus Prototypes: They just wrap the corresponding Status accessors
  *--------------------------------------------------------------------------*/
 
-ACCESSOR_HEADER_GET1(Step, T,             Real)
-ACCESSOR_HEADER_GET1(Step, TIndex,        Int)
-ACCESSOR_HEADER_GET1(Step, Iter,          Int)
-ACCESSOR_HEADER_GET1(Step, Level,         Int)
-ACCESSOR_HEADER_GET1(Step, NLevels,       Int)
-ACCESSOR_HEADER_GET1(Step, NRefine,       Int)
-ACCESSOR_HEADER_GET1(Step, NTPoints,      Int)
-ACCESSOR_HEADER_GET1(Step, Tstop,         Real)
-ACCESSOR_HEADER_GET2(Step, TstartTstop,   Real, Real)
-ACCESSOR_HEADER_GET1(Step, Tol,           Real)
-ACCESSOR_HEADER_GET2(Step, RNorms,        Int,  Real)
-ACCESSOR_HEADER_GET1(Step, OldFineTolx,   Real)
-ACCESSOR_HEADER_SET1(Step, OldFineTolx,   Real)
-ACCESSOR_HEADER_SET1(Step, TightFineTolx, Real)
-ACCESSOR_HEADER_SET1(Step, RFactor,       Real)
-ACCESSOR_HEADER_SET1(Step, RSpace,        Real)
-ACCESSOR_HEADER_GET1(Step, Done,          Int)
+ACCESSOR_HEADER_GET2_IN1(Step, TIUL,           Int, Int, Int)
+ACCESSOR_HEADER_GET1(Step, T,                  Real)
+ACCESSOR_HEADER_GET1(Step, TIndex,             Int)
+ACCESSOR_HEADER_GET1(Step, Iter,               Int)
+ACCESSOR_HEADER_GET1(Step, Level,              Int)
+ACCESSOR_HEADER_GET1(Step, NLevels,            Int)
+ACCESSOR_HEADER_GET1(Step, NRefine,            Int)
+ACCESSOR_HEADER_GET1(Step, NTPoints,           Int)
+ACCESSOR_HEADER_GET1(Step, Tstop,              Real)
+ACCESSOR_HEADER_GET2(Step, TstartTstop,        Real, Real)
+ACCESSOR_HEADER_GET1(Step, Tol,                Real)
+ACCESSOR_HEADER_GET2(Step, RNorms,             Int,  Real)
+ACCESSOR_HEADER_GET1(Step, OldFineTolx,        Real)
+ACCESSOR_HEADER_SET1(Step, OldFineTolx,        Real)
+ACCESSOR_HEADER_SET1(Step, TightFineTolx,      Real)
+ACCESSOR_HEADER_SET1(Step, RFactor,            Real)
+ACCESSOR_HEADER_SET1(Step, RSpace,             Real)
+ACCESSOR_HEADER_GET1(Step, Done,               Int)
 ACCESSOR_HEADER_GET1(Step, SingleErrorEstStep, Real)
+ACCESSOR_HEADER_GET1(Step, CallingFunction,    Int)
+ACCESSOR_HEADER_GET1(Step, DeltaRank,          Int)
+ACCESSOR_HEADER_GET1_IN1(Step, BasisVec,       Vector, Int)
 
 /*--------------------------------------------------------------------------
  * BufferStatus Prototypes: They just wrap the corresponding Status accessors
  *--------------------------------------------------------------------------*/
 
 ACCESSOR_HEADER_GET1(Buffer, MessageType, Int)
+ACCESSOR_HEADER_GET1(Buffer, TIndex,      Int)
+ACCESSOR_HEADER_GET1(Buffer, Level,       Int)
 ACCESSOR_HEADER_SET1(Buffer, Size,        Real)
+ACCESSOR_HEADER_SET1(Buffer, BasisSize,   Real)
 
 /*--------------------------------------------------------------------------
  * ObjectiveStatus Prototypes: They just wrap the corresponding Status accessors
@@ -696,6 +744,16 @@ ACCESSOR_HEADER_GET1(Objective, Tol,           Real)
 #define braid_ASCaller_FCRelax 6
 /** When CallingFunction equals 7, Braid just finished initialization */
 #define braid_ASCaller_Drive_AfterInit 7
+/** When CallingFunction equals 8, Braid is in BaseStep_diff */
+#define braid_ASCaller_BaseStep_diff 8
+/** When CallingFunction equals 9, Braid is in ComputeFullRNorm */
+#define braid_ASCaller_ComputeFullRNorm 9
+/** When CallingFunction equals 10, Braid is in FASResidual */
+#define braid_ASCaller_FASResidual 10
+/** When CallingFunction equals 11, Braid is in Residual, immediately after restriction */
+#define braid_ASCaller_Residual 11
+/** When CallingFunction equals 12, Braid is in InitGuess */
+#define braid_ASCaller_InitGuess 12
 
 /** @}*/
 

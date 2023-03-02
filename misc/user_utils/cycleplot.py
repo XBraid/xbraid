@@ -19,7 +19,7 @@
 # Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 
-from scipy import loadtxt, array, zeros, sqrt, arange, log10, setdiff1d
+from numpy import loadtxt, array, zeros, sqrt, arange, log10, setdiff1d
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from sys import argv, exit
@@ -54,7 +54,7 @@ def return_rcparams(fig_width=5, fig_height=5, fontsize=28, fontfamily='sans-ser
 if __name__ == "__main__":
    
    if( (len(argv) == 2)  and (argv[1] == '-help' or argv[1] == '--help' or argv[1] == 'help')):
-         print ''' 
+         print(''' 
                Cycle plotting visualization for XBraid
 
                Usage 1
@@ -97,7 +97,7 @@ if __name__ == "__main__":
                If you need to change the cycling output file, then edit the script 
                to change "fname".
                
-               '''
+               ''')
          exit()
    elif( len(argv) == 2 ):
       interactive = float(argv[1])
@@ -155,8 +155,8 @@ if __name__ == "__main__":
          niter   = data[:,2].max()
          nlevels = data[:,0].max() - data[:,0].min()
 
-      fontsize = 22
-      fig_size = [niter*1.7, nlevels*1.0]
+      fontsize = 16
+      fig_size = [niter*4.0, nlevels*1.0]
       if counter == 0:
          fig, ax = plt.subplots(1,1, figsize=fig_size)
       ## For some reason, these functions don't work
@@ -193,7 +193,8 @@ if __name__ == "__main__":
       ##
       # yticks (on the left) are just the level
       yticks = range(int(min(level)), int(max(level)+1))
-      ax.set_yticks(yticks, ["%d"%(-k) for k in yticks])
+      ax.set_yticks(yticks)
+      ax.set_yticklabels(["%d"%(-k) for k in yticks])
       ax.set_ylabel('Level', color='k')
       ax.set_xlabel('Iteration')
       ax.figure.canvas.draw()
@@ -218,7 +219,8 @@ if __name__ == "__main__":
          mi = min( tols[tols>0].min()/500., r_to_print.min())
          ma = r_to_print.max()
          yticks = [ma, 10**((log10(mi)+log10(ma))*1./3.), 10**((log10(mi)+log10(ma))*2./3.), mi ]
-         ax2.set_yticks(yticks, ["%1.1e"%tick for tick in yticks])
+         ax2.set_yticks(yticks)
+         ax2.set_yticklabels(["%1.1e"%tick for tick in yticks], fontsize=fontsize-5)
          for tl in ax2.get_yticklabels():
             tl.set_color('b')
          ##

@@ -53,8 +53,8 @@ _braid_BaseStep(braid_Core       core,       /**< braid_Core structure */
                 braid_BaseVector fstop,      /**< input, right-hand-side at *tstop* */
                 braid_BaseVector u,          /**< input/output, initially *u* vector at *tstart*, upon exit, *u* vector at *tstop* */   
                 braid_Int        level,      /**< current time grid level */ 
-                braid_StepStatus status );   /**< braid_Status structure (pointer to the core) */    
-
+                braid_StepStatus status      /**< braid_Status structure (pointer to the core) */
+                );
 
 /**
  * This initializes a braid_BaseVector and calls the user's init routine. 
@@ -67,6 +67,17 @@ _braid_BaseInit(braid_Core         core,     /**< braid_Core structure */
                 braid_BaseVector  *u_ptr     /**< output, newly allocated and initialized vector */
                 );
 
+
+/**
+ * This initializes a braid_Basis and calls the user's InitBasis routine. 
+ */
+braid_Int
+_braid_BaseInitBasis(braid_Core   core,     /**< braid_Core structure */
+                     braid_App    app,      /**< user-defined _braid_App structure */ 
+                     braid_Real   t,        /**< current time value for *u_ptr* */
+                     braid_Basis *psi_ptr   /**< output, newly allocated and initialized basis */
+                     );
+
 /**
  * This initializes a braid_BaseVector and calls the user's clone routine.
  * If (adjoint): also record the action, initialize a barVector with zero and push
@@ -78,6 +89,18 @@ _braid_BaseClone(braid_Core         core,     /**< braid_Core structure */
                  braid_BaseVector   u,        /**< vector to clone */ 
                  braid_BaseVector  *v_ptr     /**< output, newly allocated and cloned vector */ 
                  );
+
+/**
+ * This initializes a braid_Basis and calls the user's clone routine to initialize each 
+ * column vector, cloning *A* into *B*.
+ */
+braid_Int
+_braid_BaseCloneBasis(braid_Core         core,     /**< braid_Core structure */
+                      braid_App          app,      /**< user-defined _braid_App structure */ 
+                      braid_Basis        A,        /**< basis to clone */ 
+                      braid_Basis       *B_ptr     /**< output, newly allocated and cloned basis */ 
+                      );
+
 /**
  * This calls the user's free routine.
  * If (adjoint): also record the action, and free the bar vector. 
@@ -87,6 +110,15 @@ _braid_BaseFree(braid_Core        core,      /**< braid_Core structure */
                 braid_App         app,       /**< user-defined _braid_App structure */
                 braid_BaseVector  u          /**< vector to free */ 
                 );
+
+/**
+ * This calls the user's free routine on each vector in the braid_Basis.
+ */ 
+braid_Int
+_braid_BaseFreeBasis(braid_Core    core,     /**< braid_Core structure */
+                     braid_App     app,      /**< user-defined _braid_App structure */
+                     braid_Basis   b         /**< basis to free */ 
+                     ); 
 
 /**
  * This calls the user's sum routine.
@@ -102,6 +134,18 @@ _braid_BaseSum(braid_Core        core,       /**< braid_Core structure */
                );
 
 /**
+ * This calls the user's sum routine on the columns of the bases A, B.
+ */
+braid_Int
+_braid_BaseSumBasis(braid_Core  core,   /**< braid_Core structure */
+                    braid_App   app,    /**< user-defined _braid_App structure */ 
+                    braid_Real  alpha,  /**< scalar for AXPY */ 
+                    braid_Basis A,      /**< basis for AXPY */
+                    braid_Real  beta,   /**< scalar for AXPY */ 
+                    braid_Basis B       /**< output and basis for AXPY */ 
+                    );
+
+/**
  * This calls the user's SpatialNorm routine. 
  * If (adjoint): nothing
  */ 
@@ -111,6 +155,18 @@ _braid_BaseSpatialNorm(braid_Core        core,      /**< braid_Core structure */
                        braid_BaseVector  u,         /**< vector to norm */
                        braid_Real       *norm_ptr   /**< output, norm of braid_Vector (this is a spatial norm) */
                        );
+
+
+/**
+ * This calls the user's InnerProd routine 
+ */
+braid_Int
+_braid_BaseInnerProd(braid_Core        core,        /**< braid_Core structure */
+                     braid_App         app,         /**< user-defined _braid_App structure */
+                     braid_Vector      u,           /**< first vector for inner product */
+                     braid_Vector      v,           /**< second vector for inner product */
+                     braid_Real       *prod_ptr     /**< output, result of inner product */
+                     );
 
 /**
  * This calls the user's Access routine. 
@@ -136,6 +192,7 @@ _braid_BaseSync(braid_Core          core,        /**< braid_Core structure */
 /** 
  * This calls the user's BufSize routine.
  * If (adjoint): nothing
+ * If (Delta correction): compute extra space needed for basis vectors
  */
 braid_Int
 _braid_BaseBufSize(braid_Core          core,          /**< braid_Core structure */
@@ -168,6 +225,27 @@ _braid_BaseBufUnpack(braid_Core           core,      /**< braid_Core structure *
                      braid_BaseVector    *u_ptr,     /**< output, braid_Vector containing buffer's data */
                      braid_BufferStatus   status     /**< can be querried for info about the message type */
                      );
+
+/** 
+ * This calls the user's BufAlloc routine for MPI buffer allocation
+ */
+braid_Int
+_braid_BaseBufAlloc(braid_Core          core,      /**< braid_Core structure */   
+                    braid_App           app,       /**< user-defined _braid_App structure */   
+                    void              **buffer,    /**< MPI buffer for user to allocate */
+                    braid_Int           nbytes,    /**< number of bytes to allocate */
+                    braid_BufferStatus  status     /**< can be querried for info about the message type */
+                    );
+
+/** 
+ * This calls the user's BufFree routine for MPI buffer de-allocation
+ */
+braid_Int
+_braid_BaseBufFree(braid_Core          core,       /**< braid_Core structure */   
+                   braid_App           app,        /**< user-defined _braid_App structure */   
+                   void              **buffer      /**< user-allocated MPI buffer to free */
+                   );
+
 
 /** 
  * If (adjoint): This calls the user's ObjectiveT routine, records the action, and 
@@ -311,6 +389,7 @@ _braid_BaseClone_diff(_braid_Action *action      /**< _braid_Action structure, h
 braid_Int
 _braid_BaseSum_diff(_braid_Action *action      /**< _braid_Action structure, holds information about the primal XBraid action */
                     );
+
 
 /**
  * This pops state and bar vectors from the tape, and then 

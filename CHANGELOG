@@ -1,4 +1,55 @@
 ----------------------------
+Version 3.1.0, 3/2023
+----------------------------
+
+This version contains some major new features, including a new capability for
+chaotic problems (Delta correction), more detailed timers for performance
+analysis, and changes to more easily allow for distributed control variables
+during optimization.  Specifically, this release includes
+
+- New Delta correction feature to accelerate MGRIT for nonlinear problems,
+    especially chaotic ones.  See user manual and examples/ex-07 for more details,
+    including on (i) the reduced rank (storage) option and (ii) deferring Delta
+    correction to coarse levels for better efficiency.  This new feature
+    builds a basis for the unstable Lyapunov manifold to accurately capture
+    the chaotic dynamics.
+
+- Option for user-allocated MPI buffers.  This is important if you need to
+    allocate buffers on a device/accelerator (GPU). See braid_SetBufAllocFree().
+
+- Optional user sync function is called at the end (top) of each V-cycle, but
+    now with access to the temporal communicator for easier global analyses, e.g.,
+    of error estimates over the time dimension.
+
+- Option to solve coarsest grid with relaxation only, which is particularly useful
+    for parabolic problems, see braid_SetRelaxOnlyCG().
+
+- Option for more detailed timings.  See braid_SetTimings(), where option 2
+    times all user functions and certain important parts of the MGRIT algorithm
+    like the coarse-grid solve and MPI Wait.
+
+- Enhancements for easier distributed storage of control variables during while doing
+   optimization with MGRIT.
+   -> New ability to automatically always store last time point (whether F or C),
+      using ulast, see _braid_UGetLast()
+   -> New FinalFCRelax feature, that allows for a final FCRelax after Braid
+      cycling is finished.  The done flag is True during this FCRelax, and thus
+      allows for easy computation of gradient information after Braid cycling.
+		If this feature is not used, the user still gets access to the solution
+		after Braid halts, but the coarse-grid correction from the final MGRIT
+		iteration has not been fully integrated on the finest grid.
+   -> New option for easily reverting processor ranks, to allow for backward sweeps
+      in time, see braid_SetRevertedRanks()
+   -> Adjoint variables are initialized with a non-physical time value of -1.0, to aid
+      in programming
+   -> braid_defs.h have commented out lines to allow for switch to single precision
+
+- Reduced sensitivity of regression tests to numerical noise.
+
+- Updated documentation to discuss new features, especially Delta correction.
+
+
+----------------------------
 Version 3.0.0, 8/2020
 ----------------------------
 
