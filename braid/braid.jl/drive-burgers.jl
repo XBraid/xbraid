@@ -1,5 +1,8 @@
 using LinearAlgebra, PreallocationTools, ForwardDiff, DiffResults
-using MPI
+using MPI, SparseArrays, Interpolations, IterativeSolvers
+using BenchmarkTools, Plots
+unicodeplots()
+theme(:dark)
 
 include("XBraid.jl")
 using .XBraid
@@ -21,10 +24,16 @@ end
 burger_app(x, x_d, y_d) = burger_app(x, x_d, y_d, [], [], [], [])
 
 # system parameters (globally scoped)
-const nₓ = 64
-const Δx = 2π / nₓ
-const Δt = 0.1
+nₓ = 128
+Δx = 2π / nₓ
+Δt = 0.1
+η = .2
 x = Array(range(0.0, 2π - Δx, nₓ))
+
+euler_mat = spdiagm(-1 => ones(nₓ-1), 0 => -2*ones(nₓ), 1 => ones(nₓ-1))
+euler_mat[1, end] = 1
+euler_mat[end, 1] = 1
+euler_mat = spdiagm(ones(nₓ)) - Δt * η * euler_mat
 
 # preallocations (performance critical, passed as arguments)
 x_new = zeros(nₓ)
@@ -32,12 +41,12 @@ y_new = zeros(nₓ)
 
 # user routines:
 function interp_periodic(coord, f)
-    bound = nₓ
+    f_circ = CircularArray(f)
     scaled = coord / Δx
-    i = trunc(scaled)
+    i = trunc(Int64, scaled)
     r = scaled - i
-    i = mod1(Int(i + 1), bound)
-    (1 - r) * f[i] + r * f[mod1(i + 1, bound)]
+    i = i + 1
+    (1 - r) * f_circ[i] + r * f_circ[i + 1]
 end
 
 function semi_lagrangian!(burger::burger_app, y, Δt)
@@ -45,20 +54,32 @@ function semi_lagrangian!(burger::burger_app, y, Δt)
     y_intp = get_tmp(burger.y_d, y)
 
     x_back .= x .- Δt * y
-    y_intp .= interp_periodic.(x_back, Ref(y))
+    itp = interpolate(y, BSpline(Linear(Periodic())))
+    sitp = scale(itp, range(0., 2π - Δx, nₓ))
+    extp = extrapolate(sitp, Periodic())
+    # y_intp .= interp_periodic.(x_back, Ref(y))
+    y_intp .= extp.(x_back)
     y .= y_intp
+    return y
+end
+
+function diffuse_beuler!(burger::burger_app, y, Δt)
+    y_tmp = get_tmp(burger.y_d, y)
+    y_tmp .= y
+    cg!(y, euler_mat, y_tmp)
     return y
 end
 
 function my_init(burger, t)
     u = similar(burger.x)
-    u .= sin.(x) .+ 1e-2*randn(length(x))
+    u .= sin.(burger.x)
     # u .= sin.(x)
     return u
 end
 
 function my_basis_init(burger, t, k)
-    ψ = similar(burger.x)
+    x = burger.x
+    ψ = similar(x)
     if k % 2 == 0
         @. ψ = cos(k/2*x)
     else
@@ -70,6 +91,7 @@ end
 function my_step!(burger, status, u, ustop, tstart, tstop)
     Δt = tstop - tstart
     u = semi_lagrangian!(burger, u, Δt)
+    u = diffuse_beuler!(burger, u, Δt)
     return
 end
 
@@ -77,12 +99,11 @@ function my_step!(burger, status, u, ustop, tstart, tstop, Ψ)
     Δt = tstop - tstart
     rank = length(Ψ)
     Ψ_new = reduce(hcat, Ψ)
-    # perturb(r) = semi_lagrangian!(burger, u + Ψ_new * r, Δt)
-    perturb(r) = semi_lagrangian!(burger, u + r' * Ψ, Δt)
+    perturb(r) = diffuse_beuler!(burger, semi_lagrangian!(burger, u + r' * Ψ, Δt), Δt)
 
     result = DiffResults.DiffResult(u, Ψ_new)
     result = ForwardDiff.jacobian!(result, perturb, zeros(rank))
-    for i in 1:length(Ψ)
+    for i in eachindex(Ψ)
         Ψ[i] .= Ψ_new[:, i]
     end
 end
@@ -116,13 +137,13 @@ if true
 
     XBraid.testBuf(test_app, 0.0)
     XBraid.testSpatialNorm(test_app, 0.0)
-    XBraid.testDelta(test_app, 0.0, Δt, delta_rank)
+    XBraid.testDelta(test_app, 0.0, Δt, 3)
 end
 
 burger = burger_app(x, DiffCache(x_new), DiffCache(y_new));
 tstart = 0.0
 tstop = 4.0
-ntime = 128
+ntime = 256
 delta_rank = 1
 
 core = XBraid.Init(
@@ -130,10 +151,15 @@ core = XBraid.Init(
     my_step!, my_init, my_sum!, my_norm, my_access; app=burger
 )
 
-XBraid.SetDeltaCorrection(core, delta_rank, my_basis_init, my_innerprod)
-XBraid.SetLyapunovEstimation(core, false, true, true)
+# XBraid.SetDeltaCorrection(core, delta_rank, my_basis_init, my_innerprod)
+# XBraid.SetLyapunovEstimation(core, false, true, true)
 XBraid.SetMaxLevels(core, 3)
-XBraid.SetCFactor(core, -1, 2)
+XBraid.SetCFactor(core, -1, 4)
 XBraid.SetAccessLevel(core, 1)
-XBraid.SetNRelax(core, -1, 0)
-XBraid.Drive(core)
+XBraid.SetNRelax(core, -1, 1)
+XBraid.SetAbsTol(core, 1e-6)
+
+@time XBraid.Drive(core)
+
+p = sortperm(burger.times)
+plot(burger.solution[p][1:64:end])

@@ -65,6 +65,14 @@ function _jl_step!(_app::Ptr{Cvoid},
         print("Error in user Step: ")
         println(err)
     end
+    # if _fstop !== C_NULL
+    #     fstop = unsafe_pointer_to_objref(_fstop)::BraidVector
+    #     app.step(app.user_app, status, u.user_vector, ustop.user_vector, fstop.user_vector, tstart[], tstop[])
+    # elseif delta_rank[] > 0
+    #     app.step(app.user_app, status, u.user_vector, ustop.user_vector, tstart[], tstop[], basis_vecs)
+    # else
+    #     app.step(app.user_app, status, u.user_vector, ustop.user_vector, tstart[], tstop[])
+    # end
 
     return 0
 end
@@ -75,14 +83,15 @@ function _jl_init!(_app::Ptr{Cvoid}, t::Cdouble, u_ptr::Ptr{Ptr{Cvoid}})::Cint
     # println("init")
     app = unsafe_pointer_to_objref(_app)::BraidApp
     # initialize u and register a reference with IdDict
-    u = nothing
-    try
-        u = BraidVector(app.init(app.user_app, t))
-    catch err
-        print("Error in user Init: ")
-        println(err)
-        return 1
-    end
+    # u = nothing
+    # try
+    #     u = BraidVector(app.init(app.user_app, t))
+    # catch err
+    #     print("Error in user Init: ")
+    #     println(err)
+    #     return 1
+    # end
+    u = BraidVector(app.init(app.user_app, t))
     _register_vector(app, u)
 
     unsafe_store!(u_ptr, pointer_from_objref(u))
@@ -110,14 +119,15 @@ _c_init = @cfunction(_jl_init!, Cint, (Ptr{Cvoid}, Cdouble, Ptr{Ptr{Cvoid}}))
 function _jl_init_basis!(_app::Ptr{Cvoid}, t::Cdouble, index::Cint, u_ptr::Ptr{Ptr{Cvoid}})::Cint
     app = unsafe_pointer_to_objref(_app)::BraidApp
 
-    u = nothing
-    try
-        u = BraidVector(app.basis_init(app.user_app, t, index))
-    catch err
-        print("Error in user InitBasis: ")
-        println(err)
-        return 1
-    end
+    # u = nothing
+    # try
+    #     u = BraidVector(app.basis_init(app.user_app, t, index))
+    # catch err
+    #     print("Error in user InitBasis: ")
+    #     println(err)
+    #     return 1
+    # end
+    u = BraidVector(app.basis_init(app.user_app, t, index))
     _register_vector(app, u)
     unsafe_store!(u_ptr, pointer_from_objref(u))
 
@@ -169,13 +179,14 @@ function _jl_sum!(_app::Ptr{Cvoid},
     app = unsafe_pointer_to_objref(_app)::BraidApp
     x = unsafe_pointer_to_objref(_x)::BraidVector
     y = unsafe_pointer_to_objref(_y)::BraidVector
-    try
-        app.sum(app.user_app, alpha, x.user_vector, beta, y.user_vector)
-    catch err
-        print("Error in user Sum: ")
-        println(err)
-    end
+    # try
+    #     app.sum(app.user_app, alpha, x.user_vector, beta, y.user_vector)
+    # catch err
+    #     print("Error in user Sum: ")
+    #     println(err)
+    # end
     # y.user_vector = alpha * x.user_vector + beta * y.user_vector
+    app.sum(app.user_app, alpha, x.user_vector, beta, y.user_vector)
     return 0
 end
 _c_sum = @cfunction(_jl_sum!, Cint, (Ptr{Cvoid}, Cdouble, Ptr{Cvoid}, Cdouble, Ptr{Cvoid}))
@@ -185,12 +196,13 @@ function _jl_norm!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, norm_ptr::Ptr{Cdouble})::Ci
     app = unsafe_pointer_to_objref(_app)::BraidApp
     u = unsafe_pointer_to_objref(_u)::BraidVector
     norm = NaN
-    try
-        norm = app.spatialnorm(app.user_app, u.user_vector)
-    catch err
-        print("Error in user Norm: ")
-        println(err)
-    end
+    # try
+    #     norm = app.spatialnorm(app.user_app, u.user_vector)
+    # catch err
+    #     print("Error in user Norm: ")
+    #     println(err)
+    # end
+    norm = app.spatialnorm(app.user_app, u.user_vector)
     unsafe_store!(norm_ptr, norm)
 
     return 0
@@ -201,13 +213,14 @@ function _jl_inner_prod!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, _v::Ptr{Cvoid}, norm_
     app = unsafe_pointer_to_objref(_app)::BraidApp
     u = unsafe_pointer_to_objref(_u)::BraidVector
     v = unsafe_pointer_to_objref(_v)::BraidVector
-    prod = NaN
-    try
-        prod = app.inner_prod(app.user_app, u.user_vector, v.user_vector)
-    catch err
-        print("Error in user InnerProd: ")
-        println(err)
-    end
+    # prod = NaN
+    # try
+    #     prod = app.inner_prod(app.user_app, u.user_vector, v.user_vector)
+    # catch err
+    #     print("Error in user InnerProd: ")
+    #     println(err)
+    # end
+    prod = app.inner_prod(app.user_app, u.user_vector, v.user_vector)
     unsafe_store!(norm_ptr, prod)
 
     return 0
@@ -220,12 +233,13 @@ function _jl_access!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, status::Ptr{Cvoid})::Cint
 
     if !isnothing(app.access)
         u = unsafe_pointer_to_objref(_u)::BraidVector
-        try
-            app.access(app.user_app, status, u.user_vector)
-        catch err
-            print("Error in user Access: ")
-            println(err)
-        end
+        # try
+        #     app.access(app.user_app, status, u.user_vector)
+        # catch err
+        #     print("Error in user Access: ")
+        #     println(err)
+        # end
+        app.access(app.user_app, status, u.user_vector)
     end
 
     return 0
