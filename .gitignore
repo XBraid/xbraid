@@ -9,6 +9,7 @@ wrapperTests.txt
 
 # binaries
 # as these are build-dependent, binaries should not be committed
+*.so
 *.o
 *.a
 ex-01
