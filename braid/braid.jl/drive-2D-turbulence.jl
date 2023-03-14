@@ -1,6 +1,7 @@
 using ForwardDiff, DiffResults, LinearAlgebra, PreallocationTools
 using IterativeSolvers, LinearMaps, SparseArrays, Interpolations
 using MPI, BenchmarkTools, Plots, LaTeXStrings
+using Statistics: mean
 
 include("XBraid.jl")
 using .XBraid
@@ -221,8 +222,10 @@ end
 
 function my_basis_init(app, t, i)
 	ψ_arr = zeros(Float, 2 * nₓ^2)
+	# ψ_arr = randn(Float, 2*nₓ^2)
 	ψ = get_views(ψ_arr)
     fourierMode2DVec!(ψ, i+1)
+	# ψ_arr += 1e-1*randn(Float, 2*nₓ^2)
 	# TaylorGreen!(ψ, i + 1)
 	return ψ_arr
 end
@@ -265,7 +268,7 @@ function my_access(app::TGApp, status, u)
 	end
 end
 
-my_norm(app, u) = LinearAlgebra.norm2(u)
+my_norm(app, u) = LinearAlgebra.normInf(u)
 my_innerprod(app, u, v) = u' * v
 
 nₓ = 64
@@ -302,7 +305,7 @@ function test()
 	heatmap(curl')
 end
 
-function main(;tstop=64.0, ntime=512, delta_rank=1, ml=1)
+function main(;tstop=64.0, ntime=512, delta_rank=1, ml=1, maxiter=10, fcf=0, relax_lyap=false, savegif=true)
     # preallocations
     x_d = zeros(Float, 2 * nₓ^2)
     u_d = zeros(Float, 2 * nₓ^2)
@@ -320,38 +323,50 @@ function main(;tstop=64.0, ntime=512, delta_rank=1, ml=1)
 
     if delta_rank > 0
         XBraid.SetDeltaCorrection(core, delta_rank, my_basis_init, my_innerprod)
-        XBraid.SetLyapunovEstimation(core, false, true, true)
+		XBraid.SetLyapunovEstimation(core; relax=relax_lyap, exponents=true)
     end
     XBraid.SetMaxLevels(core, ml)
+	XBraid.SetMaxIter(core, maxiter)
     XBraid.SetCFactor(core, -1, 2)
     XBraid.SetAccessLevel(core, 1)
-    XBraid.SetNRelax(core, -1, 0)
+    XBraid.SetNRelax(core, -1, fcf)
     XBraid.SetAbsTol(core, 1e-6)
 
     @time XBraid.Drive(core)
 
     p = sortperm(my_app.times)
     
-    heatmapArgs = Dict(:ticks => false, :colorbar => false, :aspect_ratio => :equal)
-    anim = @animate for i in p
-        u = get_views(my_app.solution[i])
-        # plots = [heatmap(∇_dot(u)'; heatmapArgs...)]
-        plots = [heatmap(∇X(u)'; heatmapArgs...)]
-        # plots = [heatmap(∇X(u)', title=L"u", showaxis=false)]
-        for j in 1:min(8, delta_rank)
-            ψⱼ = get_views(my_app.lyapunov_vecs[i][:, j])
-            # push!(plots, heatmap(∇_dot(ψⱼ)'; heatmapArgs...))
-            push!(plots, heatmap(∇X(ψⱼ)'; heatmapArgs...))
-            # push!(plots, heatmap(∇X(ψⱼ)', title=L"\psi_%$(j)", showaxis=false))
-        end
-        plot(plots...; size=(600,600))
-    end
-    gif(anim, "kolmo_$(nₓ)_$(ntime).gif", fps=20)
+	if savegif
+		heatmapArgs = Dict(:ticks => false, :colorbar => false, :aspect_ratio => :equal)
+		anim = @animate for i in p
+			u = get_views(my_app.solution[i])
+			# plots = [heatmap(∇_dot(u)'; heatmapArgs...)]
+			plots = [heatmap(∇X(u)'; heatmapArgs...)]
+			for j in 1:min(8, delta_rank)
+				ψⱼ = get_views(my_app.lyapunov_vecs[i][:, j])
+				# push!(plots, heatmap(∇_dot(ψⱼ)'; heatmapArgs...))
+				push!(plots, heatmap(∇X(ψⱼ)'; heatmapArgs...))
+			end
+			plot(plots...; size=(600,600))
+		end
+		gif(anim, "kolmo_$(nₓ)_$(ntime)_ml$(ml).gif", fps=20)
+	end
 
-    println("Lyap Exps: ", sum(my_app.lyapunov_exps)./tstop)
-    exps = reduce(hcat, my_app.lyapunov_exps)'
-    exps_plot = plot(exps, ylim=(-0.1, 0.1))
-    savefig(exps_plot, "lyapunov_exps.png")
+	if delta_rank > 0
+		movingaverage(g, n) = [i < n ? mean(g[begin:i]) : mean(g[i-n+1:i]) for i in eachindex(g)]
+		println("Lyap Exps: ", sum(my_app.lyapunov_exps)./tstop)
+		exps = reduce(hcat, my_app.lyapunov_exps[p])'
+		nt = size(exps)[1]
+		Δt = tstop/nt
+		exps = movingaverage.([exps[:, i]./Δt for i ∈ 1:size(exps)[2]], length(exps[:, 1]))
+		exps_plot = plot(exps; legend=false)
+		savefig(exps_plot, "lyapunov_exps.png")
+	end
 
+	# explicitely call garbage collection to clean up Braid Core
+	# in case this script is run interactively, this hopefully prevents
+	# some rare segfaults
+	core = nothing
+	GC.gc()
     return my_app
 end

@@ -12,6 +12,12 @@ function status_GetTIndex(status)
     return ti[]
 end
 
+function status_GetLevel(status)
+    l = Ref{Cint}()
+    @ccall libbraid.braid_StatusGetLevel(status::Ptr{Cvoid}, l::Ref{Cint})::Cint
+    return l[]
+end
+
 function status_GetDeltaRank(status)
     rank = Ref{Cint}()
     @ccall libbraid.braid_StatusGetDeltaRank(status::Ptr{Cvoid}, rank::Ref{Cint})::Cint
