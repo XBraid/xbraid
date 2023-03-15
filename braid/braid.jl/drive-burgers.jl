@@ -14,6 +14,7 @@ comm = MPI.COMM_WORLD
 struct burger_app
     x::Vector{Float64}
     cf::Integer
+    useTheta::Bool
     # preallocated caches that support ForwardDiff:
     x_d::DiffCache
     y_d::DiffCache
@@ -22,8 +23,8 @@ struct burger_app
     lyap_exps
     times
 end
-function burger_app(x::Vector{Float64}, cf::Integer, x_d::DiffCache, y_d::DiffCache)
-    burger_app(x, cf, x_d, y_d, [], [], [], [])
+function burger_app(x::Vector{Float64}, cf::Integer, useTheta::Bool, x_d::DiffCache, y_d::DiffCache)
+    burger_app(x, cf, useTheta, x_d, y_d, [], [], [], [])
 end
 
 # system parameters (globally scoped)
@@ -91,8 +92,8 @@ y_new = zeros(nₓ)
 # user routines:
 function my_init(burger, t)
     u = similar(burger.x)
-    # u .= sin.(2π/lengthScale * burger.x)
-    @. u = exp(-(x - lengthScale/2)^2)
+    u .= sin.(2π/lengthScale * burger.x)
+    # @. u = exp(-(x - lengthScale/2)^2)
     return u
 end
 
@@ -116,8 +117,7 @@ end
 function my_step!(burger, status, u, ustop, tstart, tstop)
     Δt = tstop - tstart
     level = XBraid.status_GetLevel(status)
-    # if level == 0
-    if true
+    if !burger.useTheta || level == 0
         base_step!(burger, u, Δt; init_guess=ustop)
     else
         # richardson based θ method
@@ -167,7 +167,7 @@ my_innerprod(burger, u, v) = u' * v
 
 # test user routines:
 function test()
-    burger = burger_app(x, 4, DiffCache(x_new), DiffCache(y_new));
+    burger = burger_app(x, 4, false, DiffCache(x_new), DiffCache(y_new));
     test_app = XBraid.BraidApp(
         burger, comm, comm,
         my_step!, my_init,
@@ -181,17 +181,17 @@ function test()
     plot!(burger.lyap_vecs[1][1])
 end
 
-function main(;tstop=5., ntime=256, delta_rank=0, ml=1, cf=4)
+function main(;tstop=5., ntime=256, deltaRank=0, useTheta=false, ml=1, cf=4)
     tstart = 0.0
-    burger = burger_app(x, cf, DiffCache(x_new), DiffCache(y_new));
+    burger = burger_app(x, cf, useTheta, DiffCache(x_new), DiffCache(y_new));
 
     core = XBraid.Init(
         comm, comm, tstart, tstop, ntime,
         my_step!, my_init, my_sum!, my_norm, my_access; app=burger
     )
 
-    if delta_rank > 0
-        XBraid.SetDeltaCorrection(core, delta_rank, my_basis_init, my_innerprod)
+    if deltaRank > 0
+        XBraid.SetDeltaCorrection(core, deltaRank, my_basis_init, my_innerprod)
         XBraid.SetLyapunovEstimation(core; exponents=true)
     end
     XBraid.SetMaxIter(core, 45)
@@ -203,11 +203,11 @@ function main(;tstop=5., ntime=256, delta_rank=0, ml=1, cf=4)
 
     @time XBraid.Drive(core)
 
-    if delta_rank > 0
+    if deltaRank > 0
         print(sum(burger.lyap_exps)/tstop)
     end
-
     p = sortperm(burger.times)
+
     plot(burger.solution[p][1:64:end])
 
     return burger
