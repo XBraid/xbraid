@@ -2,7 +2,6 @@ using LinearAlgebra, PreallocationTools, ForwardDiff, DiffResults
 using MPI, Interpolations, IterativeSolvers
 using SparseArrays, ToeplitzMatrices
 using BenchmarkTools, Plots
-unicodeplots()
 theme(:dark)
 
 include("XBraid.jl")
@@ -28,7 +27,7 @@ function burger_app(x::Vector{Float64}, cf::Integer, x_d::DiffCache, y_d::DiffCa
 end
 
 # system parameters (globally scoped)
-lengthScale = 64.
+lengthScale = 2π
 nₓ = 128
 Δx = lengthScale / nₓ
 η = .2
@@ -43,7 +42,7 @@ function stencil_to_circulant(stencil::Vector{T}, nx::Integer) where T
     return Circulant(v)
 end
 
-function euler_mat(Δt; μ=1.)
+function euler_mat(Δt; μ=.00001)
     # diffusion
     # A = spdiagm(-1 => ones(nₓ-1), 0 => -2*ones(nₓ), 1 => ones(nₓ-1))
     # A[1, end] = 1
@@ -51,11 +50,12 @@ function euler_mat(Δt; μ=1.)
     # A = sparse(I, (nₓ, nₓ)) - Δt/Δx^2 * μ * A
 
     # KS operator
-    bilaplacianStencil = [1, -4, 6, -4, 1]
-    laplacianStencil = [0, 1, -2, 1, 0]
-    eyeStencil = [0, 0, 1, 0, 0]
-    ksStencil = @. eyeStencil - (-Δt/Δx^4 * bilaplacianStencil - Δt/Δx^2 * laplacianStencil)
-    stencil_to_circulant(ksStencil, nₓ)
+    ∇⁴ = [1, -4, 6, -4, 1]
+    ∇² = [0, 1, -2, 1, 0]
+    I  = [0, 0, 1, 0, 0]
+    stencil = @. I - Δt*(-1/Δx^4 * ∇⁴ - 1/Δx^2 * ∇²)
+    # stencil = @. I - Δt(-μ/Δx^4 * ∇⁴)
+    stencil_to_circulant(stencil, nₓ)
 end
 
 function semi_lagrangian!(burger::burger_app, y, Δt)
@@ -91,7 +91,8 @@ y_new = zeros(nₓ)
 # user routines:
 function my_init(burger, t)
     u = similar(burger.x)
-    u .= sin.(2π/lengthScale * burger.x) + 1e-1*randn(nₓ)
+    # u .= sin.(2π/lengthScale * burger.x)
+    @. u = exp(-(x - lengthScale/2)^2)
     return u
 end
 
@@ -107,9 +108,9 @@ function my_basis_init(burger, t, k)
 end
 
 function base_step!(burger, u, Δt; init_guess=nothing)
-    diffuse_beuler!(burger, u, Δt/2; init_guess=init_guess)
+    # diffuse_beuler!(burger, u, Δt/2; init_guess=init_guess)
     u = semi_lagrangian!(burger, u, Δt)
-    diffuse_beuler!(burger, u, Δt/2; init_guess=init_guess)
+    # diffuse_beuler!(burger, u, Δt; init_guess=init_guess)
 end
 
 function my_step!(burger, status, u, ustop, tstart, tstop)
@@ -122,6 +123,7 @@ function my_step!(burger, status, u, ustop, tstart, tstop)
         # richardson based θ method
         m = burger.cf^level
         θ = 2(m - 1)/m
+        # θ = 2
         u_sub = deepcopy(u)
         base_step!(burger, u_sub, Δt/2; init_guess=(ustop .- u)./2)
         base_step!(burger, u_sub, Δt/2; init_guess=ustop)
@@ -175,6 +177,8 @@ function test()
     XBraid.testBuf(test_app, 0.0)
     XBraid.testSpatialNorm(test_app, 0.0)
     XBraid.testDelta(test_app, 0.0, 0.1, 3)
+    plot(burger.solution[1])
+    plot!(burger.lyap_vecs[1][1])
 end
 
 function main(;tstop=5., ntime=256, delta_rank=0, ml=1, cf=4)
@@ -190,7 +194,7 @@ function main(;tstop=5., ntime=256, delta_rank=0, ml=1, cf=4)
         XBraid.SetDeltaCorrection(core, delta_rank, my_basis_init, my_innerprod)
         XBraid.SetLyapunovEstimation(core; exponents=true)
     end
-    XBraid.SetMaxIter(core, 30)
+    XBraid.SetMaxIter(core, 45)
     XBraid.SetMaxLevels(core, ml)
     XBraid.SetCFactor(core, -1, cf)
     XBraid.SetAccessLevel(core, 1)
@@ -205,9 +209,6 @@ function main(;tstop=5., ntime=256, delta_rank=0, ml=1, cf=4)
 
     p = sortperm(burger.times)
     plot(burger.solution[p][1:64:end])
-
-    core = nothing
-    GC.gc()
 
     return burger
 end

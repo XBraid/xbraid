@@ -20,6 +20,8 @@ struct TGApp
 	u_d::DiffCache
 	ϕ_d::DiffCache
 	Δ_s::SparseMatrixCSC
+	cf::Integer
+	useTheta::Bool
 	solution::Any
 	lyapunov_vecs::Any
 	lyapunov_exps::Any
@@ -27,8 +29,8 @@ struct TGApp
 end
 
 # default constructor
-function TGApp(x::AbstractArray, u::AbstractArray, ϕ::AbstractArray, Δ::SparseMatrixCSC)
-	TGApp(DiffCache(x), DiffCache(u), DiffCache(ϕ), Δ, [], [], [], [])
+function TGApp(x::AbstractArray, u::AbstractArray, ϕ::AbstractArray, Δ::SparseMatrixCSC, cf::Integer, useTheta::Bool)
+	TGApp(DiffCache(x), DiffCache(u), DiffCache(ϕ), Δ, cf, useTheta, [], [], [], [])
 end
 
 """
@@ -88,7 +90,7 @@ function TaylorGreen!(u, k = 1)
 	return
 end
 
-function kolmogorovForce!(u, Δt, ; k=2, μ=1.)
+function kolmogorovForce!(u, Δt; k=2, μ=1.)
 	# Fₖ(x, y) = (0, sin(ky))
 	@. @views u[1] += μ * Δt * sin(k * coords[2])
 	return u
@@ -201,7 +203,7 @@ function project_incompressible!(app::TGApp, u_arr)
 	return u_arr
 end
 
-function base_step(app::TGApp, u_arr, Δt)
+function base_step!(app::TGApp, u_arr, Δt)
 	kolmogorovForce!(get_views(u_arr), Δt)
 	advect_semi_lagrangian!(app, u_arr, Δt)
 	# diffuse_backward_Euler!(u_arr, Δt) # numerical diffusion may be enough
@@ -231,15 +233,28 @@ function my_basis_init(app, t, i)
 end
 
 function my_step!(app, status, u, ustop, tstart, tstop)
-	u = base_step(app, u, tstop - tstart)
-	return
+	Δt = tstop-tstart
+	level = XBraid.status_GetLevel(status)
+	if !app.useTheta || level == 0
+		u = base_step!(app, u, Δt)
+	else
+		# richardson based θ method
+		m = app.cf^level
+		θ = 2(m-1)/m
+		# θ = 2
+		u_sub = deepcopy(u)
+		base_step!(app, u_sub, Δt/2)
+		base_step!(app, u_sub, Δt/2)
+		base_step!(app, u, Δt)
+        @. u = θ*u_sub + (1-θ)*u
+	end
+	return u
 end
 
 function my_step!(app, status, u, ustop, tstart, tstop, Ψ)
-	Δt = tstop - tstart
 	rank = length(Ψ)
 	Ψ_new = reduce(hcat, Ψ)
-	perturb(r) = base_step(app, u + r' * Ψ, Δt)
+	perturb(r) = my_step!(app, status, u + r' * Ψ, ustop, tstart, tstop)
 
 	result = DiffResults.DiffResult(u, Ψ_new)
 	result = ForwardDiff.jacobian!(result, perturb, zeros(rank))
@@ -271,7 +286,7 @@ end
 my_norm(app, u) = LinearAlgebra.normInf(u)
 my_innerprod(app, u, v) = u' * v
 
-nₓ = 64
+nₓ = 48
 Δx = 2π / nₓ
 
 coords_arr = zeros(Float, 2 * nₓ^2)
@@ -288,7 +303,7 @@ function test()
     ϕ_d = zeros(Float, nₓ^2)
     Δ = my_poisson_mat(nₓ)
 
-    my_app = TGApp(x_d, u_d, ϕ_d, Δ)
+    my_app = TGApp(x_d, u_d, ϕ_d, Δ, 1, false)
 	test_app = XBraid.BraidApp(
 		my_app, comm, comm,
 		my_step!, my_init,
@@ -305,14 +320,14 @@ function test()
 	heatmap(curl')
 end
 
-function main(;tstop=64.0, ntime=512, delta_rank=1, ml=1, maxiter=10, fcf=0, relax_lyap=false, savegif=true)
+function main(;tstop=64.0, ntime=512, delta_rank=0, ml=1, cf=2, maxiter=10, fcf=1, relax_lyap=false, savegif=true, useTheta=false, deferDelta=(1, 1))
     # preallocations
     x_d = zeros(Float, 2 * nₓ^2)
     u_d = zeros(Float, 2 * nₓ^2)
     ϕ_d = zeros(Float, nₓ^2)
     Δ = my_poisson_mat(nₓ)
 
-    my_app = TGApp(x_d, u_d, ϕ_d, Δ)
+    my_app = TGApp(x_d, u_d, ϕ_d, Δ, cf, useTheta)
 
     tstart = 0.0
 
@@ -323,13 +338,14 @@ function main(;tstop=64.0, ntime=512, delta_rank=1, ml=1, maxiter=10, fcf=0, rel
 
     if delta_rank > 0
         XBraid.SetDeltaCorrection(core, delta_rank, my_basis_init, my_innerprod)
+		XBraid.SetDeferDelta(core, deferDelta...)
 		XBraid.SetLyapunovEstimation(core; relax=relax_lyap, exponents=true)
     end
     XBraid.SetMaxLevels(core, ml)
 	XBraid.SetMaxIter(core, maxiter)
-    XBraid.SetCFactor(core, -1, 2)
-    XBraid.SetAccessLevel(core, 1)
+    XBraid.SetCFactor(core, -1, cf)
     XBraid.SetNRelax(core, -1, fcf)
+    XBraid.SetAccessLevel(core, 1)
     XBraid.SetAbsTol(core, 1e-6)
 
     @time XBraid.Drive(core)
@@ -337,7 +353,7 @@ function main(;tstop=64.0, ntime=512, delta_rank=1, ml=1, maxiter=10, fcf=0, rel
     p = sortperm(my_app.times)
     
 	if savegif
-		heatmapArgs = Dict(:ticks => false, :colorbar => false, :aspect_ratio => :equal)
+		heatmapArgs = Dict(:ticks => false, :colorbar => false, :aspect_ratio => :equal, :c => :plasma)
 		anim = @animate for i in p
 			u = get_views(my_app.solution[i])
 			# plots = [heatmap(∇_dot(u)'; heatmapArgs...)]
