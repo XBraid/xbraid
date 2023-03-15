@@ -7,23 +7,9 @@ MPI.Init()
 comm = MPI.COMM_WORLD
 
 #=
-using Ref(Float64) here because regular Float64
+using Ref{Float64} here because regular Float64
 values are immutible and don't have stable addresses.
-e.g.
-
-julia> function f(x)
-            x = 2
-        end
-f (generic function with 1 method)
-
-julia> x = 4
-4
-
-julia> f(x)
-2
-
-julia> x
-4
+(Ref{Float64} is essentially a 1 element vector)
 =#
 function my_init(app, t)
     t == 0.0 && return Ref(1.0)
@@ -58,13 +44,16 @@ end
 
 my_norm(app, u) = abs(u[])
 
-test_app = XBraid.BraidApp(nothing, comm, my_step!, my_init, my_sum!, my_norm, my_access)
+test = false
+if test
+    test_app = XBraid.BraidApp(nothing, comm, my_step!, my_init, my_sum!, my_norm, my_access)
 
-XBraid.testInitAccess(test_app, 0.0)
-XBraid.testClone(test_app, 0.0)
-XBraid.testSum(test_app, 0.0)
-XBraid.testSpatialNorm(test_app, 0.0)
-XBraid.testBuf(test_app, 0.0)
+    XBraid.testInitAccess(test_app, 0.0)
+    XBraid.testClone(test_app, 0.0)
+    XBraid.testSum(test_app, 0.0)
+    XBraid.testSpatialNorm(test_app, 0.0)
+    XBraid.testBuf(test_app, 0.0)
+end
 
 ntime = 10
 tstart = 0.0

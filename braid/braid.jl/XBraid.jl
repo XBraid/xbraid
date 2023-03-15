@@ -40,9 +40,10 @@ include("wrapper_functions.jl")
 libbraid = "../libbraid.so"
 
 C_stdout = Libc.FILE(Libc.RawFD(1), "w")  # corresponds to C standard output
-function get_null_double_ptr(T::Type)
-	pp = reinterpret(Ptr{Ptr{T}}, pointer_from_objref(Ref(0)))
-	unsafe_store!(pp, C_NULL)
+function malloc_null_double_ptr(T::Type)
+	pp = Base.Libc.malloc(sizeof(Ptr{Cvoid}))
+	pp = reinterpret(Ptr{Ptr{T}}, pp)
+	# unsafe_store!(pp, C_NULL)
 	return pp
 end
 
@@ -111,8 +112,7 @@ mutable struct BraidCore
 	function BraidCore(_braid_core, _braid_app)
 		x = new(_braid_core, _braid_app)
 		finalizer(x) do core
-			core._braid_core == C_NULL && return
-			@async println("Destroying BraidCore")
+			@async println("Destroying BraidCore $(core._braid_core)")
 			@ccall libbraid.braid_Destroy(core._braid_core::Ptr{Cvoid})::Cint
 		end
 	end
@@ -136,14 +136,21 @@ function Init(comm_world::MPI.Comm, comm_t::MPI.Comm,
 )::BraidCore
 	_app = BraidApp(app, comm_world, comm_t, step, init, sum, spatialnorm, access)
 
-	_core_ptr = get_null_double_ptr(Cvoid)
-	@ccall libbraid.braid_Init(_app.comm::MPI.MPI_Comm, _app.comm_t::MPI.MPI_Comm, tstart::Cdouble, tstop::Cdouble, ntime::Cint,
-		_app::Ref{BraidApp}, _c_step::Ptr{Cvoid}, _c_init::Ptr{Cvoid}, _c_clone::Ptr{Cvoid},
-		_c_free::Ptr{Cvoid}, _c_sum::Ptr{Cvoid}, _c_norm::Ptr{Cvoid}, _c_access::Ptr{Cvoid},
-		_c_bufsize::Ptr{Cvoid}, _c_bufpack::Ptr{Cvoid}, _c_bufunpack::Ptr{Cvoid},
-		_core_ptr::Ptr{Ptr{Cvoid}})::Cint
+	_core_ptr = malloc_null_double_ptr(Cvoid)
+	GC.@preserve _core_ptr begin
+		@ccall libbraid.braid_Init(
+			_app.comm::MPI.MPI_Comm, _app.comm_t::MPI.MPI_Comm,
+			tstart::Cdouble, tstop::Cdouble, ntime::Cint,
+			_app::Ref{BraidApp}, _c_step::Ptr{Cvoid}, _c_init::Ptr{Cvoid}, _c_clone::Ptr{Cvoid},
+			_c_free::Ptr{Cvoid}, _c_sum::Ptr{Cvoid}, _c_norm::Ptr{Cvoid}, _c_access::Ptr{Cvoid},
+			_c_bufsize::Ptr{Cvoid}, _c_bufpack::Ptr{Cvoid}, _c_bufunpack::Ptr{Cvoid},
+			_core_ptr::Ptr{Ptr{Cvoid}}
+		)::Cint
+	end
 
 	_core = unsafe_load(_core_ptr)
+	println(_core)
+	Base.Libc.free(_core_ptr)
 	return BraidCore(_core, _app)
 end
 

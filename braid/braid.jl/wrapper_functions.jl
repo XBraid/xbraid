@@ -31,33 +31,19 @@ function _jl_step!(_app::Ptr{Cvoid},
     app = unsafe_pointer_to_objref(_app)::BraidApp
     u = unsafe_pointer_to_objref(_u)::BraidVector
     ustop = unsafe_pointer_to_objref(_ustop)::BraidVector
-    tstart, tstop = Ref{Cdouble}(0.0), Ref{Cdouble}(0.0) # guaranteed to not be garbage collected until dereferenced
-    delta_rank = Ref{Cint}(0)
-    @ccall libbraid.braid_StepStatusGetTstartTstop(status::Ptr{Cvoid}, tstart::Ref{Cdouble}, tstop::Ref{Cdouble})::Cint
-    @ccall libbraid.braid_StepStatusGetDeltaRank(status::Ptr{Cvoid}, delta_rank::Ref{Cint})::Cint
-    if delta_rank[] > 0
-        basis_vecs = []
-        for i in 1:delta_rank[]
-            # double pointer to NULL
-            pp = get_null_double_ptr(Cvoid)
-            @ccall libbraid.braid_StepStatusGetBasisVec(status::Ptr{Cvoid}, pp::Ptr{Ptr{Cvoid}}, (i-1)::Cint)::Cint
-            ψ_ptr = unsafe_load(pp)
-            if ψ_ptr !== C_NULL
-                ψ = unsafe_pointer_to_objref(ψ_ptr)
-                push!(basis_vecs, ψ.user_vector)
-            end
-        end
-    end
+    tstart, tstop = status_GetTstartTstop(status)
+    delta_rank = status_GetDeltaRank(status)
 
     # call the user's function
     try
         if _fstop !== C_NULL
             fstop = unsafe_pointer_to_objref(_fstop)::BraidVector
-            app.step(app.user_app, status, u.user_vector, ustop.user_vector, fstop.user_vector, tstart[], tstop[])
-        elseif delta_rank[] > 0
-            app.step(app.user_app, status, u.user_vector, ustop.user_vector, tstart[], tstop[], basis_vecs)
+            app.step(app.user_app, status, u.user_vector, ustop.user_vector, fstop.user_vector, tstart, tstop)
+        elseif delta_rank > 0
+            basis_vecs = status_GetBasisVectors(status)
+            app.step(app.user_app, status, u.user_vector, ustop.user_vector, tstart, tstop, basis_vecs)
         else
-            app.step(app.user_app, status, u.user_vector, ustop.user_vector, tstart[], tstop[])
+            app.step(app.user_app, status, u.user_vector, ustop.user_vector, tstart, tstop)
         end
     catch err
         # we don't want julia exceptions to cause XBraid to exit in an undefined state...
