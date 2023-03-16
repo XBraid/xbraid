@@ -1,17 +1,19 @@
 using LinearAlgebra, PreallocationTools, ForwardDiff, DiffResults
 using MPI, Interpolations, IterativeSolvers
 using SparseArrays, ToeplitzMatrices
-using BenchmarkTools, Plots
-theme(:dark)
+using BenchmarkTools, MethodAnalysis
+# using Plots
+# theme(:dracula)
 
+println("include(\"XBraid.jl\")")
 include("XBraid.jl")
 using .XBraid
 
+println("MPI.Init()")
 MPI.Init()
 comm = MPI.COMM_WORLD
 
-
-struct burger_app
+struct BurgerApp
     x::Vector{Float64}
     cf::Integer
     useTheta::Bool
@@ -23,16 +25,14 @@ struct burger_app
     lyap_exps
     times
 end
-function burger_app(x::Vector{Float64}, cf::Integer, useTheta::Bool, x_d::DiffCache, y_d::DiffCache)
-    burger_app(x, cf, useTheta, x_d, y_d, [], [], [], [])
+function BurgerApp(x::Vector{Float64}, cf::Integer, useTheta::Bool, x_d::DiffCache, y_d::DiffCache)
+    BurgerApp(x, cf, useTheta, x_d, y_d, [], [], [], [])
 end
 
 # system parameters (globally scoped)
-lengthScale = 2π
-nₓ = 128
-Δx = lengthScale / nₓ
-η = .2
-x = Array(range(0.0, lengthScale - Δx, nₓ))
+const lengthScale = 2π
+const nₓ = 64
+const Δx = lengthScale / nₓ
 
 function stencil_to_circulant(stencil::Vector{T}, nx::Integer) where T
     @assert isodd(length(stencil)) "stencil should have odd number of entries"
@@ -43,7 +43,7 @@ function stencil_to_circulant(stencil::Vector{T}, nx::Integer) where T
     return Circulant(v)
 end
 
-function euler_mat(Δt; μ=.00001)
+function euler_mat(Δt::Float64; μ::Float64=.00001)
     # diffusion
     # A = spdiagm(-1 => ones(nₓ-1), 0 => -2*ones(nₓ), 1 => ones(nₓ-1))
     # A[1, end] = 1
@@ -59,11 +59,11 @@ function euler_mat(Δt; μ=.00001)
     stencil_to_circulant(stencil, nₓ)
 end
 
-function semi_lagrangian!(burger::burger_app, y, Δt)
+function semi_lagrangian!(burger::BurgerApp, y, Δt)
     x_back = get_tmp(burger.x_d, y)
     y_intp = get_tmp(burger.y_d, y)
 
-    x_back .= x .- Δt * y
+    x_back .= burger.x .- Δt * y
     itp = interpolate(y, BSpline(Linear(Periodic())))
     sitp = scale(itp, range(0., lengthScale - Δx, nₓ))
     extp = extrapolate(sitp, Periodic())
@@ -73,7 +73,7 @@ function semi_lagrangian!(burger::burger_app, y, Δt)
     return y
 end
 
-function diffuse_beuler!(burger::burger_app, y, Δt; init_guess=nothing)
+function diffuse_beuler!(burger::BurgerApp, y, Δt::Float64; init_guess=nothing)
     y_tmp = get_tmp(burger.y_d, y)
     y_tmp .= y
 
@@ -85,19 +85,18 @@ function diffuse_beuler!(burger::burger_app, y, Δt; init_guess=nothing)
     return y
 end
 
-# preallocations (performance critical, passed as arguments)
-x_new = zeros(nₓ)
-y_new = zeros(nₓ)
-
 # user routines:
-function my_init(burger, t)
+function my_init(burger::BurgerApp, t::Float64)
     u = similar(burger.x)
     u .= sin.(2π/lengthScale * burger.x)
+    if t == 0.
+        u .+= 1e-2*randn(nₓ)
+    end
     # @. u = exp(-(x - lengthScale/2)^2)
     return u
 end
 
-function my_basis_init(burger, t, k)
+function my_basis_init(burger::BurgerApp, t::Float64, k::Int32)
     x = burger.x
     ψ = similar(x)
     if k % 2 == 0
@@ -108,13 +107,16 @@ function my_basis_init(burger, t, k)
     return ψ
 end
 
-function base_step!(burger, u, Δt; init_guess=nothing)
+function base_step!(burger::BurgerApp, u, Δt::Float64; init_guess=nothing)
     # diffuse_beuler!(burger, u, Δt/2; init_guess=init_guess)
     u = semi_lagrangian!(burger, u, Δt)
-    # diffuse_beuler!(burger, u, Δt; init_guess=init_guess)
+    u = diffuse_beuler!(burger, u, Δt; init_guess=init_guess)
 end
 
-function my_step!(burger, status, u, ustop, tstart, tstop)
+function my_step!(
+    burger::BurgerApp, status::Ptr{Cvoid}, 
+    u, ustop, tstart::Float64, tstop::Float64
+)
     Δt = tstop - tstart
     level = XBraid.status_GetLevel(status)
     if !burger.useTheta || level == 0
@@ -133,7 +135,7 @@ function my_step!(burger, status, u, ustop, tstart, tstop)
     return u
 end
 
-function my_step!(burger, status, u, ustop, tstart, tstop, Ψ)
+function my_step!(burger::BurgerApp, status::Ptr{Cvoid}, u, ustop, tstart::Float64, tstop::Float64, Ψ)
     rank = length(Ψ)
     Ψ_new = reduce(hcat, Ψ)
     # perturb(r) = base_step!(burger, u + r' * Ψ, Δt)
@@ -152,9 +154,9 @@ end
 
 function my_access(burger, status, u)
     push!(burger.solution, deepcopy(u))
-    t = XBraid.status_GetT(status)
+    # t = XBraid.status_GetT(status)
     ti = XBraid.status_GetTIndex(status)
-    push!(burger.times, t)
+    push!(burger.times, ti)
     Ψ = XBraid.status_GetBasisVectors(status)
     push!(burger.lyap_vecs, deepcopy(Ψ))
     λ = XBraid.status_GetLocalLyapExponents(status)
@@ -164,28 +166,38 @@ end
 my_norm(burger, u) = LinearAlgebra.norm2(u)
 my_innerprod(burger, u, v) = u' * v
 
-
 # test user routines:
 function test()
-    burger = burger_app(x, 4, false, DiffCache(x_new), DiffCache(y_new));
+    x_new = zeros(nₓ)
+    y_new = zeros(nₓ)
+    x = Array(range(0., 2π-Δx, nₓ))
+    burger = BurgerApp(x, 4, false, DiffCache(x_new), DiffCache(y_new));
     test_app = XBraid.BraidApp(
         burger, comm, comm,
         my_step!, my_init,
         my_sum!, my_norm, my_access,
         my_basis_init, my_innerprod)
 
-    XBraid.testBuf(test_app, 0.0)
-    XBraid.testSpatialNorm(test_app, 0.0)
-    XBraid.testDelta(test_app, 0.0, 0.1, 3)
-    plot(burger.solution[1])
-    plot!(burger.lyap_vecs[1][1])
+    open("drive-burgers.test.out", "w") do file
+        cfile = Libc.FILE(file)
+        XBraid.testBuf(test_app, 0.0, cfile)
+        XBraid.testSpatialNorm(test_app, 0.0, cfile)
+        XBraid.testDelta(test_app, 0.0, 0.1, 3, cfile)
+    end
+    # plot(burger.solution[1])
+    # plot!(burger.lyap_vecs[1][1])
 end
 
-function main(;tstop=5., ntime=256, deltaRank=0, useTheta=false, ml=1, cf=4)
-    tstart = 0.0
-    burger = burger_app(x, cf, useTheta, DiffCache(x_new), DiffCache(y_new));
+function main(;tstop=5., ntime=128, deltaRank=1, useTheta=false, ml=3, cf=4, saveGif=false)
+    x_new = zeros(nₓ)
+    y_new = zeros(nₓ)
+    x = Array(range(0., 2π-Δx, nₓ))
 
-    core = XBraid.Init(
+    tstart = 0.0
+    burger = BurgerApp(x, cf, useTheta, DiffCache(x_new), DiffCache(y_new));
+
+    println("XBraid.Init()")
+    @time core = XBraid.Init(
         comm, comm, tstart, tstop, ntime,
         my_step!, my_init, my_sum!, my_norm, my_access; app=burger
     )
@@ -194,6 +206,10 @@ function main(;tstop=5., ntime=256, deltaRank=0, useTheta=false, ml=1, cf=4)
         XBraid.SetDeltaCorrection(core, deltaRank, my_basis_init, my_innerprod)
         XBraid.SetLyapunovEstimation(core; exponents=true)
     end
+
+    println("Wrapper test:")
+    @time test()
+
     XBraid.SetMaxIter(core, 45)
     XBraid.SetMaxLevels(core, ml)
     XBraid.SetCFactor(core, -1, cf)
@@ -201,14 +217,40 @@ function main(;tstop=5., ntime=256, deltaRank=0, useTheta=false, ml=1, cf=4)
     XBraid.SetNRelax(core, -1, 1)
     XBraid.SetAbsTol(core, 1e-6)
 
+    # methods = methodinstances()
+    # methods = methodinstances()
+    println("Drive:")
+    XBraid.SetTimings(core, 2)
     @time XBraid.Drive(core)
+    XBraid.PrintTimers(core)
+    # println(setdiff(methods, methodinstances()))
 
     if deltaRank > 0
-        print(sum(burger.lyap_exps)/tstop)
+        exponents = sum(burger.lyap_exps)
+        exponents = MPI.Allreduce(exponents, (+), comm)
+        exponents ./= tstop
+        if MPI.Comm_rank(comm) == 0
+            println("exponents: ", exponents)
+        end
     end
-    p = sortperm(burger.times)
 
-    plot(burger.solution[p][1:64:end])
+    # if saveGif
+    #     for (ti, u) in zip(burger.times, burger.solution)
+    #         plt = plot(u)
+    #         savefig(plt, "burgers_gif/$(lpad(ti, 6, "0")).png")
+    #     end
+    #     MPI.Barrier(comm)
 
-    return burger
+    #     if MPI.Comm_rank(comm) == 0
+    #         println("animating...")
+    #         fnames = [lpad(i, 6, "0") for i in 0:ntime]
+    #         anim = Animation("burgers_gif", fnames)
+    #         Plots.buildanimation(anim, "burgers_gif/anim.gif", fps=30)
+    #     end
+    # end
+
+    return burger, XBraid.GetRNorms(core)
 end
+
+test()
+main();

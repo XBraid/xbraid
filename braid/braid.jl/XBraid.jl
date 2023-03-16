@@ -26,6 +26,7 @@ module XBraid
 # BEGIN MODULE XBraid
 using Serialization: serialize, deserialize # used to pack arbitrary julia objects into buffers
 using MPI
+using MethodAnalysis
 
 include("status.jl")
 include("wrapper_functions.jl")
@@ -39,12 +40,17 @@ include("wrapper_functions.jl")
  =#
 libbraid = "../libbraid.so"
 
-C_stdout = Libc.FILE(Libc.RawFD(1), "w")  # corresponds to C standard output
+c_stdout = Libc.FILE(Libc.RawFD(1), "w")  # corresponds to C standard output
 function malloc_null_double_ptr(T::Type)
 	pp = Base.Libc.malloc(sizeof(Ptr{Cvoid}))
 	pp = reinterpret(Ptr{Ptr{T}}, pp)
 	# unsafe_store!(pp, C_NULL)
 	return pp
+end
+
+# This can contain anything (TODO: do I even need this?)
+mutable struct BraidVector
+	user_vector::Any
 end
 
 """
@@ -60,45 +66,44 @@ Large, preallocate arrays should be packed into this object, since operations
 involving globally scoped variables are slower than local variables.
 struct braid_App end
  """
+OptionalFunction = Union{Function, Nothing}
 mutable struct BraidApp
 	user_app::Any     # user defined app data structure (can be anything)
 
 	comm::MPI.Comm    # global mpi communicator
 	comm_t::MPI.Comm  # temporal mpi communicator
 
-	# required user functions
+	# user functions
 	step::Function
 	init::Function
 	sum::Function
 	spatialnorm::Function
 	access::Function
 
-	# optional user functions
-	basis_init::Union{Function, Nothing}
-	inner_prod::Union{Function, Nothing}
+	basis_init::OptionalFunction
+	inner_prod::OptionalFunction
 
-	ref_ids::IdDict   # dictionary to store globally scoped references to allocated braid_vector objects
+	ref_ids::IdDict{UInt64, BraidVector}   # dictionary to store globally scoped references to allocated braid_vector objects
 	bufsize::Integer  # expected serialized size of user's braid_vector object
 	bufsize_lyap::Integer
+	user_AppType::Type
+	user_VecType::Type
+	user_BasType::Type
 end
 
 # default constructor
 function BraidApp(app, comm::MPI.Comm, comm_t::MPI.Comm, step::Function, init::Function, sum::Function, norm::Function, access::Function, basis_init::Function, inner_prod::Function)
-	BraidApp(app, comm, comm_t, step, init, sum, norm, access, basis_init, inner_prod, IdDict(), 0, 0)
+	BraidApp(app, comm, comm_t, step, init, sum, norm, access, basis_init, inner_prod, IdDict(), 0, 0, Nothing, Nothing, Nothing)
 end
 
 function BraidApp(app, comm::MPI.Comm, comm_t::MPI.Comm, step::Function, init::Function, sum::Function, norm::Function, access::Function)
-	BraidApp(app, comm, comm_t, step, init, sum, norm, access, nothing, nothing, IdDict(), 0, 0)
+	BraidApp(app, comm, comm_t, step, init, sum, norm, access, nothing, nothing, IdDict(), 0, 0, Nothing, Nothing, Nothing)
 end
 
 function BraidApp(app, comm::MPI.Comm, step::Function, init::Function, sum::Function, norm::Function, access::Function)
 	BraidApp(app, comm, comm, step, init, sum, norm, access)
 end
 
-# This can contain anything (TODO: do I even need this?)
-mutable struct BraidVector
-	user_vector::Any
-end
 
 """
 wraps the pointer to braid status structures,
@@ -112,7 +117,7 @@ mutable struct BraidCore
 	function BraidCore(_braid_core, _braid_app)
 		x = new(_braid_core, _braid_app)
 		finalizer(x) do core
-			@async println("Destroying BraidCore $(core._braid_core)")
+			# @async println("Destroying BraidCore $(core._braid_core)")
 			@ccall libbraid.braid_Destroy(core._braid_core::Ptr{Cvoid})::Cint
 		end
 	end
@@ -126,17 +131,76 @@ function _register_vector(app::BraidApp, u::BraidVector)
 end
 
 function _deregister_vector(app::BraidApp, u::BraidVector)
-	pop!(app.ref_ids, objectid(u))
+	id = objectid(u)::UInt64
+	pop!(app.ref_ids, id)
+end
+
+function postInitPrecompile(app::BraidApp)
+	# This is a hack to make sure every processor knows how big the user's vector will be.
+	# We can also take this time to precompile the user's step function so it doesn't happen
+	# in serial on the coarse grid.
+	GC.enable(false) # disable garbage collection
+	app_ptr = pointer_from_objref(app)::Ptr{Cvoid}
+	pp = malloc_null_double_ptr(Cvoid)
+
+	_jl_init!(app_ptr, 0., pp)
+	u_ptr = unsafe_load(pp)
+	u = unsafe_pointer_to_objref(u_ptr)::BraidVector
+	VecType = typeof(u.user_vector)
+	AppType = typeof(app.user_app)
+	println("precompiling user functions")
+	!precompile(app.step, 	    (AppType, Ptr{Cvoid}, VecType, VecType, Float64, Float64)) && println("failed to precompile step")
+	!precompile(app.spatialnorm, (AppType, VecType)) && println("failed to precompile norm")
+	!precompile(app.sum,         (AppType, Float64, VecType, Float64, VecType)) && println("failed to precompile sum")
+	if app.access !== nothing 
+		!precompile(app.access,  (AppType, Ptr{Cvoid}, VecType)) && println("failed to precompile access")
+	end
+
+	# some julia Base functions that can be precompiled
+	precompile(deepcopy, (BraidVector,))
+	precompile(unsafe_store!, (Ptr{Float64}, Float64,))
+
+	_jl_free!(app_ptr, u_ptr)
+	Base.Libc.free(pp)
+	GC.enable(true) # re-enable garbage collection
+
+	app.user_AppType = AppType
+	app.user_VecType = VecType
+end
+
+function deltaPrecompile(app::BraidApp)
+	GC.enable(false)
+	app_ptr = pointer_from_objref(app)::Ptr{Cvoid}
+	pp = malloc_null_double_ptr(Cvoid)
+	AppType = app.user_AppType
+	VecType = app.user_VecType
+
+	_jl_init_basis!(app_ptr, 0., Int32(0), pp)
+	ψ_ptr = unsafe_load(pp)
+	ψ = unsafe_pointer_to_objref(ψ_ptr)
+	BasType = typeof(ψ.user_vector)
+	println("precompiling user Delta functions")
+	!precompile(app.step,       (AppType, Ptr{Cvoid}, VecType, VecType, Float64, Float64, Vector{BasType})) && println("failed to compile step_du")
+	!precompile(app.inner_prod, (AppType, VecType, VecType)) && println("failed to compile inner_prod u⋅u")
+	!precompile(app.inner_prod, (AppType, BasType, VecType)) && println("failed to compile inner_prod ψ⋅u")
+	!precompile(app.inner_prod, (AppType, VecType, BasType)) && println("failed to compile inner_prod u⋅ψ")
+	!precompile(app.inner_prod, (AppType, BasType, BasType)) && println("failed to compile inner_prod ψ⋅ψ")
+
+	_jl_free!(app_ptr, ψ_ptr)
+	Base.Libc.free(pp)
+	GC.enable(true)
+
+	app.user_BasType = BasType
 end
 
 function Init(comm_world::MPI.Comm, comm_t::MPI.Comm,
-	tstart::Real, tstop::Real, ntime::Int,
+	tstart::Real, tstop::Real, ntime::Integer,
 	step::Function, init::Function, sum::Function, spatialnorm::Function, access::Function;
 	app = nothing,
 )::BraidCore
 	_app = BraidApp(app, comm_world, comm_t, step, init, sum, spatialnorm, access)
-
 	_core_ptr = malloc_null_double_ptr(Cvoid)
+
 	GC.@preserve _core_ptr begin
 		@ccall libbraid.braid_Init(
 			_app.comm::MPI.MPI_Comm, _app.comm_t::MPI.MPI_Comm,
@@ -144,13 +208,14 @@ function Init(comm_world::MPI.Comm, comm_t::MPI.Comm,
 			_app::Ref{BraidApp}, _c_step::Ptr{Cvoid}, _c_init::Ptr{Cvoid}, _c_clone::Ptr{Cvoid},
 			_c_free::Ptr{Cvoid}, _c_sum::Ptr{Cvoid}, _c_norm::Ptr{Cvoid}, _c_access::Ptr{Cvoid},
 			_c_bufsize::Ptr{Cvoid}, _c_bufpack::Ptr{Cvoid}, _c_bufunpack::Ptr{Cvoid},
-			_core_ptr::Ptr{Ptr{Cvoid}}
+			_core_ptr::Ptr{Ptr{Cvoid}},
 		)::Cint
 	end
 
 	_core = unsafe_load(_core_ptr)
-	println(_core)
 	Base.Libc.free(_core_ptr)
+
+	postInitPrecompile(_app)
 	return BraidCore(_core, _app)
 end
 
@@ -176,7 +241,7 @@ end
 
 function PrintTimers(core::BraidCore)
 	GC.@preserve core begin
-		@ccall libbraid.braid_SetTimerFile(core._braid_core::Ptr{Cvoid})::Cint
+		@ccall libbraid.braid_PrintTimers(core._braid_core::Ptr{Cvoid})::Cint
 	end
 end
 
@@ -186,7 +251,7 @@ function ResetTimer(core::BraidCore)
 	end
 end
 
-function braid_SetTimings(core::BraidCore, timing_level::Integer)
+function SetTimings(core::BraidCore, timing_level::Integer)
 	GC.@preserve core begin
 		@ccall libbraid.braid_SetTimings(core._braid_core::Ptr{Cvoid}, timing_level::Cint)::Cint
 	end
@@ -363,16 +428,18 @@ function GetNumIter(core::BraidCore)
 	GC.@preserve core begin
 		@ccall libbraid.braid_GetNumIter(core._braid_core::Ptr{Cvoid}, niter::Ref{Cint})::Cint
 	end
-	return niter[] # dereference
+	return niter[]
 end
 
 function GetRNorms(core::BraidCore)
-	nrequest = Ref{Cint}(GetNumIter(core))
+	nrequest = Ref{Cint}()
+	nrequest[] = GetNumIter(core)
 	rnorms = zeros(nrequest[])
 	GC.@preserve core begin
 		@ccall libbraid.braid_GetRNorms(core._braid_core::Ptr{Cvoid}, nrequest::Ref{Cint}, rnorms::Ref{Cdouble})::Cint
 	end
-	return rnorms[nrequest[]]
+	nrequest[] == 0 && return Float64[]
+	return rnorms[1:nrequest[]]
 end
 
 function GetNLevels(core::BraidCore)
@@ -398,6 +465,8 @@ end
 function SetDeltaCorrection(core::BraidCore, rank::Integer, basis_init::Function, inner_prod::Function)
 	core._braid_app.basis_init = basis_init
 	core._braid_app.inner_prod = inner_prod
+	deltaPrecompile(core._braid_app)
+
 	GC.@preserve core begin
 		@ccall libbraid.braid_SetDeltaCorrection(core._braid_core::Ptr{Cvoid}, rank::Cint, _c_init_basis::Ptr{Cvoid}, _c_inner_prod::Ptr{Cvoid})::Cint
 	end
@@ -418,27 +487,29 @@ end
 # Still missing spatial coarsening, sync, residual, and adjoint
 
 # braid_test
-function testInitAccess(app::BraidApp, t::Real)
+function testInitAccess(app::BraidApp, t::Real, outputFile::Libc.FILE)
 	@ccall libbraid.braid_TestInitAccess(
 		app::Ref{BraidApp},
 		app.comm::MPI.MPI_Comm,
-		C_stdout::Base.Libc.FILE,
+		outputFile::Libc.FILE,
 		t::Cdouble,
 		_c_init::Ptr{Cvoid},
 		_c_access::Ptr{Cvoid},
 		_c_free::Ptr{Cvoid},
 	)::Cint
 
-	println("Serialized size of user vector: $(app.bufsize)")
-	println("Check output for objects not properly freed:")
-	println(app.ref_ids)
+	# println("Serialized size of user vector: $(app.bufsize)")
+	# println("Check output for objects not properly freed:")
+	# println(app.ref_ids)
 end
+testInitAccess(app::BraidApp, t::Real, outputFile::IO) = testInitAccess(app, t, Libc.FILE(outputFile))
+testInitAccess(app::BraidApp, t::Real) = testInitAccess(app, t, c_stdout)
 
-function testClone(app::BraidApp, t::Real)
+function testClone(app::BraidApp, t::Real, outputFile::Libc.FILE)
 	@ccall libbraid.braid_TestClone(
 		app::Ref{BraidApp},
 		app.comm::MPI.MPI_Comm,
-		C_stdout::Base.Libc.FILE,
+		outputFile::Libc.FILE,
 		t::Cdouble,
 		_c_init::Ptr{Cvoid},
 		_c_access::Ptr{Cvoid},
@@ -446,12 +517,14 @@ function testClone(app::BraidApp, t::Real)
 		_c_clone::Ptr{Cvoid},
 	)::Cint
 end
+testClone(app::BraidApp, t::Real, outputFile::IO) = testClone(app, t, Libc.FILE(outputFile))
+testClone(app::BraidApp, t::Real) = testClone(app, t, c_stdout)
 
-function testSum(app::BraidApp, t::Real)
+function testSum(app::BraidApp, t::Real, outputFile::Libc.FILE)
 	@ccall libbraid.braid_TestSum(
 		app::Ref{BraidApp},
 		app.comm::MPI.MPI_Comm,
-		C_stdout::Base.Libc.FILE,
+		outputFile::Libc.FILE,
 		t::Cdouble,
 		_c_init::Ptr{Cvoid},
 		_c_access::Ptr{Cvoid},
@@ -460,12 +533,14 @@ function testSum(app::BraidApp, t::Real)
 		_c_sum::Ptr{Cvoid},
 	)::Cint
 end
+testSum(app::BraidApp, t::Real, outputFile::IO) = testSum(app, t, Libc.FILE(outputFile))
+testSum(app::BraidApp, t::Real) = testSum(app, t, c_stdout)
 
-function testSpatialNorm(app::BraidApp, t::Real)
+function testSpatialNorm(app::BraidApp, t::Real, outputFile::Libc.FILE)
 	@ccall libbraid.braid_TestSpatialNorm(
 		app::Ref{BraidApp},
 		app.comm::MPI.MPI_Comm,
-		C_stdout::Base.Libc.FILE,
+		outputFile::Libc.FILE,
 		t::Cdouble,
 		_c_init::Ptr{Cvoid},
 		_c_free::Ptr{Cvoid},
@@ -474,12 +549,14 @@ function testSpatialNorm(app::BraidApp, t::Real)
 		_c_norm::Ptr{Cvoid},
 	)::Cint
 end
+testSpatialNorm(app::BraidApp, t::Real, outputFile::IO) = testSpatialNorm(app, t, Libc.FILE(outputFile))
+testSpatialNorm(app::BraidApp, t::Real) = testSpatialNorm(app, t, c_stdout)
 
-function testBuf(app::BraidApp, t::Real)
+function testBuf(app::BraidApp, t::Real, outputFile::Libc.FILE)
 	@ccall libbraid.braid_TestBuf(
 		app::Ref{BraidApp},
 		app.comm::MPI.MPI_Comm,
-		C_stdout::Base.Libc.FILE,
+		outputFile::Libc.FILE,
 		t::Cdouble,
 		_c_init::Ptr{Cvoid},
 		_c_free::Ptr{Cvoid},
@@ -490,17 +567,19 @@ function testBuf(app::BraidApp, t::Real)
 		_c_bufunpack::Ptr{Cvoid},
 	)::Cint
 	print('\n')
-	println("Check output for objects not freed:")
-	println(app.ref_ids)
+	# println("Check output for objects not freed:")
+	# println(app.ref_ids)
 end
+testBuf(app::BraidApp, t::Real, outputFile::IO) = testBuf(app, t, Libc.FILE(outputFile))
+testBuf(app::BraidApp, t::Real) = testBuf(app, t, c_stdout)
 
-function testDelta(app::BraidApp, t::Real, dt::Real, rank::Integer)
+function testDelta(app::BraidApp, t::Real, dt::Real, rank::Integer, outputFile::Libc.FILE)
 	app.basis_init::Function
 	app.inner_prod::Function
 	@ccall libbraid.braid_TestDelta(
 		app::Ref{BraidApp},
 		app.comm::MPI.MPI_Comm,
-		C_stdout::Base.Libc.FILE,
+		outputFile::Libc.FILE,
 		t::Cdouble,
 		dt::Cdouble,
 		rank::Cint,
@@ -517,9 +596,11 @@ function testDelta(app::BraidApp, t::Real, dt::Real, rank::Integer)
 		_c_step::Ptr{Cvoid},
 	)::Cint
 	print('\n')
-	println("Check output for objects not freed:")
-	println(app.ref_ids)
+	# println("Check output for objects not freed:")
+	# println(app.ref_ids)
 end
+testDelta(app::BraidApp, t::Real, dt::Real, rank::Integer, outputFile::IO) = testDelta(app, t, dt, rank, Libc.FILE(outputFile))
+testDelta(app::BraidApp, t::Real, dt::Real, rank::Integer) = testDelta(app, t, dt, rank, c_stdout)
 
 # END MODULE XBraid
 end

@@ -1,14 +1,14 @@
 # main ex-01
 include("XBraid.jl")
 using .XBraid
-using ForwardDiff, MPI, BenchmarkTools
+using MPI
 
 MPI.Init()
 comm = MPI.COMM_WORLD
 
 #=
 using Ref{Float64} here because regular Float64
-values are immutible and don't have stable addresses.
+values are immutable and don't have stable addresses.
 (Ref{Float64} is essentially a 1 element vector)
 =#
 function my_init(app, t)
@@ -38,8 +38,7 @@ end
 function my_access(app, status, u)
     t = XBraid.status_GetT(status)
     ti = XBraid.status_GetTIndex(status)
-    print("t: $(t[]),\tu: ")
-    println(u[])
+    print("t: $(t[]),\tu: $(u[])\n")
 end
 
 my_norm(app, u) = abs(u[])
@@ -47,12 +46,17 @@ my_norm(app, u) = abs(u[])
 test = false
 if test
     test_app = XBraid.BraidApp(nothing, comm, my_step!, my_init, my_sum!, my_norm, my_access)
+    XBraid.postInitPrecompile(test_app)
 
-    XBraid.testInitAccess(test_app, 0.0)
-    XBraid.testClone(test_app, 0.0)
-    XBraid.testSum(test_app, 0.0)
-    XBraid.testSpatialNorm(test_app, 0.0)
-    XBraid.testBuf(test_app, 0.0)
+    open("ex_01.test.out", "w") do file
+        cfile = Libc.FILE(file)
+        XBraid.testInitAccess(test_app, 0.0, cfile)
+        XBraid.testClone(test_app, 0.0, cfile)
+        XBraid.testSum(test_app, 0.0, cfile)
+        XBraid.testSpatialNorm(test_app, 0.0, cfile)
+        XBraid.testBuf(test_app, 0.0, cfile)
+    end
+    MPI.Barrier(comm)
 end
 
 ntime = 10
@@ -65,7 +69,7 @@ XBraid.SetMaxLevels(core, 2)
 XBraid.SetAbsTol(core, 1.e-6)
 XBraid.SetCFactor(core, -1, 2)
 
-@time begin
-    XBraid.Drive(core)
-end
+XBraid.SetTimings(core, 2)
+XBraid.Drive(core)
+XBraid.PrintTimers(core)
 # no need for braid_Destroy(core), julia will take care of it :)

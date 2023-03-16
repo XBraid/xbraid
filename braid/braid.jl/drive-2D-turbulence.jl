@@ -48,36 +48,36 @@ end
 Base.mod1(I::CartesianIndex, J::CartesianIndex) = CartesianIndex(broadcast(mod1, Tuple(I), Tuple(J)))
 δ(I::CartesianIndex{N}, dim) where N = CartesianIndex(ntuple(i -> i == dim ? 1 : 0, N))
 
-oneball(n) = [(n+1-i, i) for i ∈ 1:n]
+oneball(n) = [(n + 1 - i, i) for i ∈ 1:n]
 wavenumbers(shell) = reduce(hcat, [oneball(i) for i ∈ 1:shell])
-is_in_shell(i, shell) = i <= trunc(Int, shell*(shell+1)/2)
+is_in_shell(i, shell) = i <= trunc(Int, shell * (shell + 1) / 2)
 function get_wavenumber2D(i)
-    shell = 1
-    for _ ∈ 1:i
-        is_in_shell(i, shell) && break
-        shell += 1
-    end
-    shell_start = trunc(Int, shell*(shell-1)/2)
-    rel_i = i - shell_start
-    return oneball(shell)[rel_i]
+	shell = 1
+	for _ ∈ 1:i
+		is_in_shell(i, shell) && break
+		shell += 1
+	end
+	shell_start = trunc(Int, shell * (shell - 1) / 2)
+	rel_i = i - shell_start
+	return oneball(shell)[rel_i]
 end
 
 function fourierMode1D(x::Real, k::Integer)
-    k % 2 == 1 && return cos(trunc(k/2)*x)
-    k % 2 == 0 && return sin(trunc((k+1)/2)*x)
+	k % 2 == 1 && return cos(trunc(k / 2) * x)
+	k % 2 == 0 && return sin(trunc((k + 1) / 2) * x)
 end
 
 function fourierMode2D!(u_field, i)
-    kx, ky = get_wavenumber2D(i)
-    x, y = coords
-    @. u_field = fourierMode1D(x, kx)*fourierMode1D(y, ky)
+	kx, ky = get_wavenumber2D(i)
+	x, y = coords
+	@. u_field = fourierMode1D(x, kx) * fourierMode1D(y, ky)
 end
 
 function fourierMode2DVec!(u, i)
-    ux, uy = u
-    kx, ky = get_wavenumber2D(i)
-    fourierMode2D!(ux, kx)
-    fourierMode2D!(uy, ky)
+	ux, uy = u
+	kx, ky = get_wavenumber2D(i)
+	fourierMode2D!(ux, kx)
+	fourierMode2D!(uy, ky)
 end
 
 function TaylorGreen!(u, k = 1)
@@ -90,7 +90,7 @@ function TaylorGreen!(u, k = 1)
 	return
 end
 
-function kolmogorovForce!(u, Δt; k=2, μ=1.)
+function kolmogorovForce!(u, Δt; k = 2, μ = 1.0)
 	# Fₖ(x, y) = (0, sin(ky))
 	@. @views u[1] += μ * Δt * sin(k * coords[2])
 	return u
@@ -189,7 +189,7 @@ Solve Poisson problem for incompressible velocity field
 Δϕ = ∇⋅u
 u = u - ∇ϕ
 """
-function project_incompressible!(app::TGApp, u_arr)
+function project_incompressible!(app::TGApp, u_arr::Vector{Float})
 	u = get_views(u_arr)
 	ϕ_arr = get_tmp(app.ϕ_d, u_arr)
 	ϕ_arr .= 0.0
@@ -203,7 +203,7 @@ function project_incompressible!(app::TGApp, u_arr)
 	return u_arr
 end
 
-function base_step!(app::TGApp, u_arr, Δt)
+function base_step!(app::TGApp, u_arr::Vector{Float}, Δt::Float)
 	kolmogorovForce!(get_views(u_arr), Δt)
 	advect_semi_lagrangian!(app, u_arr, Δt)
 	# diffuse_backward_Euler!(u_arr, Δt) # numerical diffusion may be enough
@@ -212,46 +212,55 @@ function base_step!(app::TGApp, u_arr, Δt)
 end
 
 
-function my_init(app, t)
+function my_init(app::TGApp, t::Float)
 	u_arr = zeros(Float, 2 * nₓ^2)
 	u = get_views(u_arr)
 	TaylorGreen!(u)
-    # kolmogorovForce!(u, 1.; μ=1.)
-    # u_arr .+= 1e-2*randn(Float, 2*nₓ^2)
+	# kolmogorovForce!(u, 1.; μ=1.)
+	# u_arr .+= 1e-2*randn(Float, 2*nₓ^2)
 	return u_arr
 end
 
 
-function my_basis_init(app, t, i)
+function my_basis_init(app::TGApp, t::Float, i::Int)
 	ψ_arr = zeros(Float, 2 * nₓ^2)
 	# ψ_arr = randn(Float, 2*nₓ^2)
 	ψ = get_views(ψ_arr)
-    fourierMode2DVec!(ψ, i+1)
+	fourierMode2DVec!(ψ, i + 1)
 	# ψ_arr += 1e-1*randn(Float, 2*nₓ^2)
 	# TaylorGreen!(ψ, i + 1)
 	return ψ_arr
 end
 
-function my_step!(app, status, u, ustop, tstart, tstop)
-	Δt = tstop-tstart
+function my_step!(
+	app::TGApp, status::Ptr{Cvoid},
+	u::Vector{Float}, ustop::Vector{Float},
+	tstart::Float, tstop::Float,
+)
+	Δt = tstop - tstart
 	level = XBraid.status_GetLevel(status)
 	if !app.useTheta || level == 0
 		u = base_step!(app, u, Δt)
 	else
 		# richardson based θ method
 		m = app.cf^level
-		θ = 2(m-1)/m
+		θ = 2(m - 1) / m
 		# θ = 2
 		u_sub = deepcopy(u)
-		base_step!(app, u_sub, Δt/2)
-		base_step!(app, u_sub, Δt/2)
+		base_step!(app, u_sub, Δt / 2)
+		base_step!(app, u_sub, Δt / 2)
 		base_step!(app, u, Δt)
-        @. u = θ*u_sub + (1-θ)*u
+		@. u = θ * u_sub + (1 - θ) * u
 	end
 	return u
 end
 
-function my_step!(app, status, u, ustop, tstart, tstop, Ψ)
+function my_step!(
+	app::TGApp, status::Ptr{Cvoid},
+	u::Vector{Float}, ustop::Vector{Float},
+	tstart::Float, tstop::Float,
+	Ψ::Vector{Vector{Float}},
+)
 	rank = length(Ψ)
 	Ψ_new = reduce(hcat, Ψ)
 	perturb(r) = my_step!(app, status, u + r' * Ψ, ustop, tstart, tstop)
@@ -273,20 +282,20 @@ function my_access(app::TGApp, status, u)
 	if index % 2 == 0
 		push!(app.solution, deepcopy(u))
 		push!(app.times, index)
-        rank = XBraid.status_GetDeltaRank(status)
-        if rank > 0
-            exps = XBraid.status_GetLocalLyapExponents(status)
-            vecs = XBraid.status_GetBasisVectors(status)
-            push!(app.lyapunov_exps, exps)
-            push!(app.lyapunov_vecs, deepcopy(reduce(hcat, vecs)))
-        end
+		rank = XBraid.status_GetDeltaRank(status)
+		if rank > 0
+			exps = XBraid.status_GetLocalLyapExponents(status)
+			vecs = XBraid.status_GetBasisVectors(status)
+			push!(app.lyapunov_exps, exps)
+			push!(app.lyapunov_vecs, deepcopy(reduce(hcat, vecs)))
+		end
 	end
 end
 
 my_norm(app, u) = LinearAlgebra.normInf(u)
 my_innerprod(app, u, v) = u' * v
 
-nₓ = 48
+nₓ = 128
 Δx = 2π / nₓ
 
 coords_arr = zeros(Float, 2 * nₓ^2)
@@ -297,13 +306,13 @@ coords[1] .= [x for x ∈ x_range, y ∈ x_range]
 coords[2] .= [y for x ∈ x_range, y ∈ x_range]
 
 function test()
-    # preallocations
-    x_d = zeros(Float, 2 * nₓ^2)
-    u_d = zeros(Float, 2 * nₓ^2)
-    ϕ_d = zeros(Float, nₓ^2)
-    Δ = my_poisson_mat(nₓ)
+	# preallocations
+	x_d = zeros(Float, 2 * nₓ^2)
+	u_d = zeros(Float, 2 * nₓ^2)
+	ϕ_d = zeros(Float, nₓ^2)
+	Δ = my_poisson_mat(nₓ)
 
-    my_app = TGApp(x_d, u_d, ϕ_d, Δ, 1, false)
+	my_app = TGApp(x_d, u_d, ϕ_d, Δ, 1, false)
 	test_app = XBraid.BraidApp(
 		my_app, comm, comm,
 		my_step!, my_init,
@@ -320,38 +329,38 @@ function test()
 	heatmap(curl')
 end
 
-function main(;tstop=64.0, ntime=512, delta_rank=0, ml=1, cf=2, maxiter=10, fcf=1, relax_lyap=false, savegif=true, useTheta=false, deferDelta=(1, 1))
-    # preallocations
-    x_d = zeros(Float, 2 * nₓ^2)
-    u_d = zeros(Float, 2 * nₓ^2)
-    ϕ_d = zeros(Float, nₓ^2)
-    Δ = my_poisson_mat(nₓ)
+function main(; tstop = 64.0, ntime = 512, delta_rank = 0, ml = 1, cf = 2, maxiter = 10, fcf = 1, relax_lyap = false, savegif = true, useTheta = false, deferDelta = (1, 1))
+	# preallocations
+	x_d = zeros(Float, 2 * nₓ^2)
+	u_d = zeros(Float, 2 * nₓ^2)
+	ϕ_d = zeros(Float, nₓ^2)
+	Δ = my_poisson_mat(nₓ)
 
-    my_app = TGApp(x_d, u_d, ϕ_d, Δ, cf, useTheta)
+	my_app = TGApp(x_d, u_d, ϕ_d, Δ, cf, useTheta)
 
-    tstart = 0.0
+	tstart = 0.0
 
-    core = XBraid.Init(
-        comm, comm, tstart, tstop, ntime,
-        my_step!, my_init, my_sum!, my_norm, my_access; app = my_app,
-    )
+	core = XBraid.Init(
+		comm, comm, tstart, tstop, ntime,
+		my_step!, my_init, my_sum!, my_norm, my_access; app = my_app,
+	)
 
-    if delta_rank > 0
-        XBraid.SetDeltaCorrection(core, delta_rank, my_basis_init, my_innerprod)
-		XBraid.SetDeferDelta(core, deferDelta...)
-		XBraid.SetLyapunovEstimation(core; relax=relax_lyap, exponents=true)
-    end
-    XBraid.SetMaxLevels(core, ml)
+	if delta_rank > 0
+		XBraid.SetDeltaCorrection(core, delta_rank, my_basis_init, my_innerprod)
+		# XBraid.SetDeferDelta(core, deferDelta...)
+		XBraid.SetLyapunovEstimation(core; relax = relax_lyap, exponents = true)
+	end
+	XBraid.SetMaxLevels(core, ml)
 	XBraid.SetMaxIter(core, maxiter)
-    XBraid.SetCFactor(core, -1, cf)
-    XBraid.SetNRelax(core, -1, fcf)
-    XBraid.SetAccessLevel(core, 1)
-    XBraid.SetAbsTol(core, 1e-6)
+	XBraid.SetCFactor(core, -1, cf)
+	XBraid.SetNRelax(core, -1, fcf)
+	XBraid.SetAccessLevel(core, 1)
+	XBraid.SetAbsTol(core, 1e-6)
 
-    @time XBraid.Drive(core)
+	@time XBraid.Drive(core)
 
-    p = sortperm(my_app.times)
-    
+	p = sortperm(my_app.times)
+
 	if savegif
 		heatmapArgs = Dict(:ticks => false, :colorbar => false, :aspect_ratio => :equal, :c => :plasma)
 		anim = @animate for i in p
@@ -363,26 +372,21 @@ function main(;tstop=64.0, ntime=512, delta_rank=0, ml=1, cf=2, maxiter=10, fcf=
 				# push!(plots, heatmap(∇_dot(ψⱼ)'; heatmapArgs...))
 				push!(plots, heatmap(∇X(ψⱼ)'; heatmapArgs...))
 			end
-			plot(plots...; size=(600,600))
+			plot(plots...; size = (600, 600))
 		end
-		gif(anim, "kolmo_$(nₓ)_$(ntime)_ml$(ml).gif", fps=20)
+		gif(anim, "kolmo_$(nₓ)_$(ntime)_ml$(ml).gif", fps = 20)
 	end
 
 	if delta_rank > 0
 		movingaverage(g, n) = [i < n ? mean(g[begin:i]) : mean(g[i-n+1:i]) for i in eachindex(g)]
-		println("Lyap Exps: ", sum(my_app.lyapunov_exps)./tstop)
+		println("Lyap Exps: ", sum(my_app.lyapunov_exps) ./ tstop)
 		exps = reduce(hcat, my_app.lyapunov_exps[p])'
 		nt = size(exps)[1]
-		Δt = tstop/nt
-		exps = movingaverage.([exps[:, i]./Δt for i ∈ 1:size(exps)[2]], length(exps[:, 1]))
-		exps_plot = plot(exps; legend=false)
+		Δt = tstop / nt
+		exps = movingaverage.([exps[:, i] ./ Δt for i ∈ 1:size(exps)[2]], length(exps[:, 1]))
+		exps_plot = plot(exps; legend = false)
 		savefig(exps_plot, "lyapunov_exps.png")
 	end
 
-	# explicitely call garbage collection to clean up Braid Core
-	# in case this script is run interactively, this hopefully prevents
-	# some rare segfaults
-	core = nothing
-	GC.gc()
-    return my_app
+	return my_app
 end
