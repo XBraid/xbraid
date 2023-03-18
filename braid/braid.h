@@ -604,7 +604,7 @@ braid_PrintTimers(braid_Core  core           /**< braid_Core (_braid_Core) struc
  **/
 braid_Int
 braid_ResetTimer(braid_Core  core           /**< braid_Core (_braid_Core) struct*/
-);
+                );
 
 /**
  * After Drive() finishes, this function can be called to write out the convergence history 

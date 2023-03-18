@@ -95,6 +95,10 @@ function _jl_init!(_app::Ptr{Cvoid}, t::Cdouble, u_ptr::Ptr{Ptr{Cvoid}})::Cint
         app.bufsize = buffer.ptr + sizeof(Int)
     end
 
+    if app.user_VecType == Nothing
+        app.user_VecType = u.VecType
+    end
+
     # TODO: figure out how to put an upper bound on the size of the serialized object
     # without serializing it first
     # u_size = Base.summarysize(Ref(u)) + 9
@@ -107,6 +111,7 @@ end
 _c_init = @cfunction(_jl_init!, Cint, (Ptr{Cvoid}, Cdouble, Ptr{Ptr{Cvoid}}))
 
 function _jl_init_basis!(_app::Ptr{Cvoid}, t::Cdouble, index::Cint, u_ptr::Ptr{Ptr{Cvoid}})::Cint
+    # println("init_basis")
     app = unsafe_pointer_to_objref(_app)::BraidApp
     # try
     #     u = BraidVector(app.basis_init(app.user_app, t, index))
@@ -124,6 +129,11 @@ function _jl_init_basis!(_app::Ptr{Cvoid}, t::Cdouble, index::Cint, u_ptr::Ptr{P
         buffer = IOBuffer()
         serialize(buffer, u)
         app.bufsize_lyap = buffer.ptr + sizeof(Int)
+    end
+
+    # store type of initialized vector
+    if app.user_BasType == Nothing
+        app.user_BasType = u.VecType
     end
 
     return 0
@@ -203,6 +213,7 @@ precompile(_jl_norm!, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cdouble}))
 _c_norm = @cfunction(_jl_norm!, Cint, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cdouble}))
 
 function _jl_inner_prod!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, _v::Ptr{Cvoid}, norm_ptr::Ptr{Cdouble})::Cint
+    # println("inner_prod")
     app = unsafe_pointer_to_objref(_app)::BraidApp
     u = unsafe_pointer_to_objref(_u)::BraidVector
     v = unsafe_pointer_to_objref(_v)::BraidVector
@@ -279,14 +290,14 @@ function _jl_bufunpack!(_app::Ptr{Cvoid}, _buffer::Ptr{Cvoid}, u_ptr::Ptr{Ptr{Cv
     app = unsafe_pointer_to_objref(_app)::BraidApp
     # get size of buffer we are unpacking:
     header = reinterpret(Ptr{Int}, _buffer)
-    bufsize = unsafe_load(header)
+    bufsize = unsafe_load(header)::Int
     buff_arr = unsafe_wrap(Vector{UInt8}, Base.unsafe_convert(Ptr{UInt8}, _buffer), bufsize)
     buffer = IOBuffer(buff_arr, read=true, write=true, maxsize=bufsize)
     # buffer = wrap_buffer(_buffer, bufsize)
     seek(buffer, sizeof(Int))
 
     # unpack the buffer into a new julia object, then register with IdDict
-    u = deserialize(buffer)
+    u = deserialize(buffer)::BraidVector{app.user_VecType}
     _register_vector(app, u)
 
     # store u in provided pointer

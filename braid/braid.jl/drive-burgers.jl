@@ -1,37 +1,39 @@
 using LinearAlgebra, PreallocationTools, ForwardDiff, DiffResults
 using MPI, Interpolations, IterativeSolvers
 using SparseArrays, ToeplitzMatrices
-using BenchmarkTools, MethodAnalysis
-# using Plots
+using FFTW
+using Plots
 # theme(:dracula)
 
-println("include(\"XBraid.jl\")")
 include("XBraid.jl")
 using .XBraid
 
-println("MPI.Init()")
 MPI.Init()
 comm = MPI.COMM_WORLD
 
 struct BurgerApp
     x::Vector{Float64}
+    κ::Frequencies{Float64}
     cf::Integer
     useTheta::Bool
     # preallocated caches that support ForwardDiff:
     x_d::DiffCache
     y_d::DiffCache
+    # storage for solution values
     solution
     lyap_vecs
     lyap_exps
     times
+    # pre-planned fourier transform
+    P̂
 end
-function BurgerApp(x::Vector{Float64}, cf::Integer, useTheta::Bool, x_d::DiffCache, y_d::DiffCache)
-    BurgerApp(x, cf, useTheta, x_d, y_d, [], [], [], [])
+function BurgerApp(x::Vector{Float64}, κ::Frequencies{Float64}, cf::Integer, useTheta::Bool, x_d::DiffCache, y_d::DiffCache)
+    BurgerApp(x, κ, cf, useTheta, x_d, y_d, [], [], [], [], plan_fft(x))
 end
 
 # system parameters (globally scoped)
-const lengthScale = 2π
-const nₓ = 64
+const lengthScale = 64.
+const nₓ = 1024
 const Δx = lengthScale / nₓ
 
 function stencil_to_circulant(stencil::Vector{T}, nx::Integer) where T
@@ -85,14 +87,25 @@ function diffuse_beuler!(burger::BurgerApp, y, Δt::Float64; init_guess=nothing)
     return y
 end
 
+function diffuse_fft!(burger::BurgerApp, y, Δt::Float64; init_guess=nothing, μ=1e-4)
+    P̂ = burger.P̂
+    κ = burger.κ
+    # y .= real(P̂ \ (exp.(Δt*(κ.^2 - κ.^4))))
+    ŷ = P̂ * y
+    # @. ŷ *= exp(-μ * Δt * κ^2) # standard diffusion
+    @. ŷ *= exp(Δt*(κ^2 - κ^4)) # KS-equation operator
+    y .= real(P̂ \ ŷ)
+    return y
+end
+
 # user routines:
 function my_init(burger::BurgerApp, t::Float64)
     u = similar(burger.x)
     u .= sin.(2π/lengthScale * burger.x)
     if t == 0.
-        u .+= 1e-2*randn(nₓ)
+        u .*= randn(nₓ)
     end
-    # @. u = exp(-(x - lengthScale/2)^2)
+    # @. u = exp(-(burger.x - lengthScale/2)^2)
     return u
 end
 
@@ -108,9 +121,10 @@ function my_basis_init(burger::BurgerApp, t::Float64, k::Int32)
 end
 
 function base_step!(burger::BurgerApp, u, Δt::Float64; init_guess=nothing)
-    # diffuse_beuler!(burger, u, Δt/2; init_guess=init_guess)
-    u = semi_lagrangian!(burger, u, Δt)
-    u = diffuse_beuler!(burger, u, Δt; init_guess=init_guess)
+    # diffuse_fft!(burger, u, Δt/2)
+    semi_lagrangian!(burger, u, Δt)
+    diffuse_fft!(burger, u, Δt)
+    # diffuse_beuler!(burger, u, Δt; init_guess=init_guess)
 end
 
 function my_step!(
@@ -153,14 +167,16 @@ function my_sum!(burger, a, x, b, y)
 end
 
 function my_access(burger, status, u)
-    push!(burger.solution, deepcopy(u))
-    # t = XBraid.status_GetT(status)
+    XBraid.status_GetWrapperTest(status) && return
     ti = XBraid.status_GetTIndex(status)
+    push!(burger.solution, deepcopy(u))
     push!(burger.times, ti)
-    Ψ = XBraid.status_GetBasisVectors(status)
-    push!(burger.lyap_vecs, deepcopy(Ψ))
-    λ = XBraid.status_GetLocalLyapExponents(status)
-    push!(burger.lyap_exps, deepcopy(λ))
+    if XBraid.status_GetDeltaRank(status) > 0
+        Ψ = XBraid.status_GetBasisVectors(status)
+        λ = XBraid.status_GetLocalLyapExponents(status)
+        push!(burger.lyap_vecs, deepcopy(reduce(hcat, Ψ)))
+        push!(burger.lyap_exps, deepcopy(λ))
+    end
 end
 
 my_norm(burger, u) = LinearAlgebra.norm2(u)
@@ -170,8 +186,9 @@ my_innerprod(burger, u, v) = u' * v
 function test()
     x_new = zeros(nₓ)
     y_new = zeros(nₓ)
-    x = Array(range(0., 2π-Δx, nₓ))
-    burger = BurgerApp(x, 4, false, DiffCache(x_new), DiffCache(y_new));
+    x = Array(range(0., lengthScale-Δx, nₓ))
+    κ = 2π/lengthScale .* fftfreq(nₓ, nₓ)
+    burger = BurgerApp(x, κ, 4, false, DiffCache(x_new), DiffCache(y_new));
     test_app = XBraid.BraidApp(
         burger, comm, comm,
         my_step!, my_init,
@@ -188,16 +205,15 @@ function test()
     # plot!(burger.lyap_vecs[1][1])
 end
 
-function main(;tstop=5., ntime=128, deltaRank=1, useTheta=false, ml=3, cf=4, saveGif=false)
+function main(;tstop=20., ntime=128, deltaRank=0, useTheta=false, ml=1, cf=4, saveGif=false)
     x_new = zeros(nₓ)
     y_new = zeros(nₓ)
-    x = Array(range(0., 2π-Δx, nₓ))
+    x = Array(range(0., lengthScale-Δx, nₓ))
+    κ = 2π/lengthScale .* fftfreq(nₓ, nₓ)
+    burger = BurgerApp(x, κ, 4, useTheta, DiffCache(x_new), DiffCache(y_new));
 
     tstart = 0.0
-    burger = BurgerApp(x, cf, useTheta, DiffCache(x_new), DiffCache(y_new));
-
-    println("XBraid.Init()")
-    @time core = XBraid.Init(
+    core = XBraid.Init(
         comm, comm, tstart, tstop, ntime,
         my_step!, my_init, my_sum!, my_norm, my_access; app=burger
     )
@@ -207,23 +223,19 @@ function main(;tstop=5., ntime=128, deltaRank=1, useTheta=false, ml=3, cf=4, sav
         XBraid.SetLyapunovEstimation(core; exponents=true)
     end
 
-    println("Wrapper test:")
-    @time test()
+    # println("Wrapper test:")
+    # @time test()
 
-    XBraid.SetMaxIter(core, 45)
+    XBraid.SetMaxIter(core, 30)
     XBraid.SetMaxLevels(core, ml)
     XBraid.SetCFactor(core, -1, cf)
     XBraid.SetAccessLevel(core, 1)
     XBraid.SetNRelax(core, -1, 1)
     XBraid.SetAbsTol(core, 1e-6)
 
-    # methods = methodinstances()
-    # methods = methodinstances()
-    println("Drive:")
     XBraid.SetTimings(core, 2)
-    @time XBraid.Drive(core)
+    XBraid.Drive(core; warmup=true)
     XBraid.PrintTimers(core)
-    # println(setdiff(methods, methodinstances()))
 
     if deltaRank > 0
         exponents = sum(burger.lyap_exps)
@@ -234,23 +246,24 @@ function main(;tstop=5., ntime=128, deltaRank=1, useTheta=false, ml=3, cf=4, sav
         end
     end
 
-    # if saveGif
-    #     for (ti, u) in zip(burger.times, burger.solution)
-    #         plt = plot(u)
-    #         savefig(plt, "burgers_gif/$(lpad(ti, 6, "0")).png")
-    #     end
-    #     MPI.Barrier(comm)
+    if saveGif
+        for (ti, u) in zip(burger.times, burger.solution)
+            plt = plot(burger.x, u; ylim=(-1.5, 1.5))
+            savefig(plt, "burgers_gif/$(lpad(ti, 6, "0")).png")
+        end
+        MPI.Barrier(comm)
 
-    #     if MPI.Comm_rank(comm) == 0
-    #         println("animating...")
-    #         fnames = [lpad(i, 6, "0") for i in 0:ntime]
-    #         anim = Animation("burgers_gif", fnames)
-    #         Plots.buildanimation(anim, "burgers_gif/anim.gif", fps=30)
-    #     end
-    # end
+        if MPI.Comm_rank(comm) == 0
+            println("animating...")
+            fnames = [lpad(i, 6, "0") for i in 0:ntime]
+            anim = Animation("burgers_gif", fnames)
+            Plots.buildanimation(anim, "burgers_gif/anim.gif", fps=30)
+        end
+    end
 
     return burger, XBraid.GetRNorms(core)
 end
 
-test()
+# test()
 main();
+nothing

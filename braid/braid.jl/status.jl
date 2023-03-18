@@ -24,6 +24,12 @@ function status_GetLevel(status)
     return level[]
 end
 
+function status_GetWrapperTest(status)
+    wtest = Ref{Cint}()
+    @ccall libbraid.braid_StatusGetWrapperTest(status::Ptr{Cvoid}, wtest::Ref{Cint})::Cint
+    return (wtest[] > 0)
+end
+
 function status_GetDeltaRank(status)
     rank = Ref{Cint}()
     @ccall libbraid.braid_StatusGetDeltaRank(status::Ptr{Cvoid}, rank::Ref{Cint})::Cint
@@ -53,7 +59,7 @@ function status_GetBasisVectors(status)
         end
         p = unsafe_load(pp)
         if p !== C_NULL
-            φ = unsafe_pointer_to_objref(p)
+            φ = unsafe_pointer_to_objref(p)::BraidVector
             push!(Ψ, φ.user_vector)
         end
         Base.Libc.free(pp)

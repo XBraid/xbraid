@@ -1,5 +1,5 @@
 using ForwardDiff, DiffResults, LinearAlgebra, PreallocationTools
-using IterativeSolvers, LinearMaps, SparseArrays, Interpolations
+using IterativeSolvers, SparseArrays, Interpolations
 using MPI, BenchmarkTools, Plots, LaTeXStrings
 using Statistics: mean
 
@@ -13,19 +13,19 @@ Float = Float64
 
 """
 struct to package preallocated caches for storing temp coords and velocity
-as well as the sparse poisson matrix needed by project_incompressible!()
+as well as the sparse poisson matrix needed by project_incompressible!
 """
 struct TGApp
-	x_d::DiffCache
-	u_d::DiffCache
-	ϕ_d::DiffCache
-	Δ_s::SparseMatrixCSC
-	cf::Integer
+	x_d::DiffCache{Vector{Float}}
+	u_d::DiffCache{Vector{Float}}
+	ϕ_d::DiffCache{Vector{Float}}
+	Δ_s::SparseMatrixCSC{Float, Int}
+	cf::Int
 	useTheta::Bool
-	solution::Any
-	lyapunov_vecs::Any
-	lyapunov_exps::Any
-	times::Any
+	solution::Vector{Vector{Float}}
+	lyapunov_vecs::Vector{Matrix{Float}}
+	lyapunov_exps::Vector{Vector{Float}}
+	times::Vector{Int}
 end
 
 # default constructor
@@ -90,7 +90,7 @@ function TaylorGreen!(u, k = 1)
 	return
 end
 
-function kolmogorovForce!(u, Δt; k = 2, μ = 1.0)
+function kolmogorovForce!(u, Δt; k = 4, μ = 1.0)
 	# Fₖ(x, y) = (0, sin(ky))
 	@. @views u[1] += μ * Δt * sin(k * coords[2])
 	return u
@@ -189,7 +189,7 @@ Solve Poisson problem for incompressible velocity field
 Δϕ = ∇⋅u
 u = u - ∇ϕ
 """
-function project_incompressible!(app::TGApp, u_arr::Vector{Float})
+function project_incompressible!(app::TGApp, u_arr::Vector{<: Number})
 	u = get_views(u_arr)
 	ϕ_arr = get_tmp(app.ϕ_d, u_arr)
 	ϕ_arr .= 0.0
@@ -203,7 +203,7 @@ function project_incompressible!(app::TGApp, u_arr::Vector{Float})
 	return u_arr
 end
 
-function base_step!(app::TGApp, u_arr::Vector{Float}, Δt::Float)
+function base_step!(app::TGApp, u_arr::Vector{<: Number}, Δt::Float)
 	kolmogorovForce!(get_views(u_arr), Δt)
 	advect_semi_lagrangian!(app, u_arr, Δt)
 	# diffuse_backward_Euler!(u_arr, Δt) # numerical diffusion may be enough
@@ -215,14 +215,14 @@ end
 function my_init(app::TGApp, t::Float)
 	u_arr = zeros(Float, 2 * nₓ^2)
 	u = get_views(u_arr)
-	TaylorGreen!(u)
+	TaylorGreen!(u; k=3)
 	# kolmogorovForce!(u, 1.; μ=1.)
 	# u_arr .+= 1e-2*randn(Float, 2*nₓ^2)
 	return u_arr
 end
 
 
-function my_basis_init(app::TGApp, t::Float, i::Int)
+function my_basis_init(app::TGApp, t::Float, i::Integer)
 	ψ_arr = zeros(Float, 2 * nₓ^2)
 	# ψ_arr = randn(Float, 2*nₓ^2)
 	ψ = get_views(ψ_arr)
@@ -234,7 +234,7 @@ end
 
 function my_step!(
 	app::TGApp, status::Ptr{Cvoid},
-	u::Vector{Float}, ustop::Vector{Float},
+	u::Vector{<: Number}, ustop::Vector{<: Number},
 	tstart::Float, tstop::Float,
 )
 	Δt = tstop - tstart
@@ -259,7 +259,7 @@ function my_step!(
 	app::TGApp, status::Ptr{Cvoid},
 	u::Vector{Float}, ustop::Vector{Float},
 	tstart::Float, tstop::Float,
-	Ψ::Vector{Vector{Float}},
+	Ψ::Vector{Any},
 )
 	rank = length(Ψ)
 	Ψ_new = reduce(hcat, Ψ)
@@ -278,8 +278,9 @@ function my_sum!(app, a, x, b, y)
 end
 
 function my_access(app::TGApp, status, u)
+	XBraid.status_GetWrapperTest(status) && return
 	index = XBraid.status_GetTIndex(status)
-	if index % 2 == 0
+	if index % app.cf == 0
 		push!(app.solution, deepcopy(u))
 		push!(app.times, index)
 		rank = XBraid.status_GetDeltaRank(status)
@@ -329,7 +330,7 @@ function test()
 	heatmap(curl')
 end
 
-function main(; tstop = 64.0, ntime = 512, delta_rank = 0, ml = 1, cf = 2, maxiter = 10, fcf = 1, relax_lyap = false, savegif = true, useTheta = false, deferDelta = (1, 1))
+function main(; tstop = 64.0, ntime = 512, deltaRank = 0, ml = 1, cf = 2, maxiter = 10, fcf = 1, relaxLyap = false, savegif = true, useTheta = false, deferDelta = (1, 1))
 	# preallocations
 	x_d = zeros(Float, 2 * nₓ^2)
 	u_d = zeros(Float, 2 * nₓ^2)
@@ -345,10 +346,10 @@ function main(; tstop = 64.0, ntime = 512, delta_rank = 0, ml = 1, cf = 2, maxit
 		my_step!, my_init, my_sum!, my_norm, my_access; app = my_app,
 	)
 
-	if delta_rank > 0
-		XBraid.SetDeltaCorrection(core, delta_rank, my_basis_init, my_innerprod)
+	if deltaRank > 0
+		XBraid.SetDeltaCorrection(core, deltaRank, my_basis_init, my_innerprod)
 		# XBraid.SetDeferDelta(core, deferDelta...)
-		XBraid.SetLyapunovEstimation(core; relax = relax_lyap, exponents = true)
+		XBraid.SetLyapunovEstimation(core; relax = relaxLyap, exponents = true)
 	end
 	XBraid.SetMaxLevels(core, ml)
 	XBraid.SetMaxIter(core, maxiter)
@@ -357,7 +358,9 @@ function main(; tstop = 64.0, ntime = 512, delta_rank = 0, ml = 1, cf = 2, maxit
 	XBraid.SetAccessLevel(core, 1)
 	XBraid.SetAbsTol(core, 1e-6)
 
-	@time XBraid.Drive(core)
+	XBraid.SetTimings(core, 2)
+	XBraid.Drive(core)
+	XBraid.PrintTimers(core)
 
 	p = sortperm(my_app.times)
 
@@ -367,17 +370,26 @@ function main(; tstop = 64.0, ntime = 512, delta_rank = 0, ml = 1, cf = 2, maxit
 			u = get_views(my_app.solution[i])
 			# plots = [heatmap(∇_dot(u)'; heatmapArgs...)]
 			plots = [heatmap(∇X(u)'; heatmapArgs...)]
-			for j in 1:min(8, delta_rank)
+			for j in 1:min(8, deltaRank)
 				ψⱼ = get_views(my_app.lyapunov_vecs[i][:, j])
 				# push!(plots, heatmap(∇_dot(ψⱼ)'; heatmapArgs...))
 				push!(plots, heatmap(∇X(ψⱼ)'; heatmapArgs...))
 			end
 			plot(plots...; size = (600, 600))
 		end
-		gif(anim, "kolmo_$(nₓ)_$(ntime)_ml$(ml).gif", fps = 20)
+		gif(anim, "kflow_gif/kolmo_$(nₓ)_$(ntime)_ml$(ml).gif", fps = 20)
 	end
 
-	if delta_rank > 0
+    # if deltaRank > 0
+    #     exponents = sum(my_app.lyapunov_exps)
+    #     exponents = MPI.Allreduce(exponents, (+), comm)
+    #     exponents ./= tstop
+    #     if MPI.Comm_rank(comm) == 0
+    #         println("exponents: ", exponents)
+    #     end
+    # end
+
+	if deltaRank > 0
 		movingaverage(g, n) = [i < n ? mean(g[begin:i]) : mean(g[i-n+1:i]) for i in eachindex(g)]
 		println("Lyap Exps: ", sum(my_app.lyapunov_exps) ./ tstop)
 		exps = reduce(hcat, my_app.lyapunov_exps[p])'

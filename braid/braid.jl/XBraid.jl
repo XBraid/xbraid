@@ -24,7 +24,7 @@ module XBraid
 # export Init, Drive, etc.
 
 # BEGIN MODULE XBraid
-using Serialization: serialize, deserialize # used to pack arbitrary julia objects into buffers
+using Serialization: serialize, deserialize, Serializer # used to pack arbitrary julia objects into buffers
 using MPI
 using MethodAnalysis
 
@@ -49,9 +49,11 @@ function malloc_null_double_ptr(T::Type)
 end
 
 # This can contain anything (TODO: do I even need this?)
-mutable struct BraidVector
-	user_vector::Any
+mutable struct BraidVector{T}
+	user_vector::T
+	VecType::Type
 end
+BraidVector(u::T) where T = BraidVector(u, T)
 
 """
 This is an internal structure that is not exposed to the user.
@@ -114,8 +116,11 @@ mutable struct BraidCore
 	# internal values
 	_braid_core::Ptr{Cvoid}
 	_braid_app::BraidApp
-	function BraidCore(_braid_core, _braid_app)
-		x = new(_braid_core, _braid_app)
+	tstart::Real
+	tstop::Real
+	ntime::Integer
+	function BraidCore(_braid_core, _braid_app, tstart, tstop, ntime)
+		x = new(_braid_core, _braid_app, tstart, tstop, ntime)
 		finalizer(x) do core
 			# @async println("Destroying BraidCore $(core._braid_core)")
 			@ccall libbraid.braid_Destroy(core._braid_core::Ptr{Cvoid})::Cint
@@ -148,7 +153,7 @@ function postInitPrecompile(app::BraidApp)
 	u = unsafe_pointer_to_objref(u_ptr)::BraidVector
 	VecType = typeof(u.user_vector)
 	AppType = typeof(app.user_app)
-	println("precompiling user functions")
+	
 	!precompile(app.step, 	    (AppType, Ptr{Cvoid}, VecType, VecType, Float64, Float64)) && println("failed to precompile step")
 	!precompile(app.spatialnorm, (AppType, VecType)) && println("failed to precompile norm")
 	!precompile(app.sum,         (AppType, Float64, VecType, Float64, VecType)) && println("failed to precompile sum")
@@ -156,14 +161,19 @@ function postInitPrecompile(app::BraidApp)
 		!precompile(app.access,  (AppType, Ptr{Cvoid}, VecType)) && println("failed to precompile access")
 	end
 
-	# some julia Base functions that can be precompiled
-	precompile(deepcopy, (BraidVector,))
+	# some julia functions that can be precompiled
+	precompile(deepcopy, (BraidVector{VecType},))
 	precompile(unsafe_store!, (Ptr{Float64}, Float64,))
+	precompile(Tuple{typeof(Base.getproperty), BraidVector{VecType}, Symbol})
+	precompile(Tuple{typeof(Base.unsafe_store!), Ptr{Int32}, Int64})
+	precompile(Tuple{typeof(deserialize), Serializer{Base.GenericIOBuffer{Array{UInt8, 1}}}, DataType})
+	precompile(Tuple{typeof(Base.unsafe_wrap), Type{Array{UInt8, 1}}, Ptr{UInt8}, Int64})
+	precompile(Tuple{Type{NamedTuple{(:read, :write, :maxsize), T} where T<:Tuple}, Tuple{Bool, Bool, Int64}})
 
 	_jl_free!(app_ptr, u_ptr)
 	Base.Libc.free(pp)
 	GC.enable(true) # re-enable garbage collection
-
+	
 	app.user_AppType = AppType
 	app.user_VecType = VecType
 end
@@ -195,8 +205,8 @@ end
 
 function Init(comm_world::MPI.Comm, comm_t::MPI.Comm,
 	tstart::Real, tstop::Real, ntime::Integer,
-	step::Function, init::Function, sum::Function, spatialnorm::Function, access::Function;
-	app = nothing,
+	step::Function, init::Function, sum::Function, spatialnorm::Function, access::OptionalFunction;
+	app = nothing
 )::BraidCore
 	_app = BraidApp(app, comm_world, comm_t, step, init, sum, spatialnorm, access)
 	_core_ptr = malloc_null_double_ptr(Cvoid)
@@ -215,14 +225,59 @@ function Init(comm_world::MPI.Comm, comm_t::MPI.Comm,
 	_core = unsafe_load(_core_ptr)
 	Base.Libc.free(_core_ptr)
 
-	postInitPrecompile(_app)
-	return BraidCore(_core, _app)
+	return BraidCore(_core, _app, tstart, tstop, ntime)
 end
 
-function Drive(core::BraidCore)
+function Warmup(core::BraidCore)
+	_app = core._braid_app
+	# precompile all user functions by calling them from braid_Warmup
+	# if any user functions have side-effects, this may behave unexpectedly
+	fdt = (core.tstop - core.tstart) / (core.ntime+1)
+	cdt = 2fdt
+
+	if (_app.basis_init !== nothing) && (_app.inner_prod !== nothing)
+		@ccall libbraid.braid_Warmup(
+			_app::Ref{BraidApp}, _app.comm::MPI.MPI_Comm, core.tstart::Cdouble, fdt::Cdouble, cdt::Cdouble,
+			_c_init::Ptr{Cvoid}, _c_access::Ptr{Cvoid}, _c_free::Ptr{Cvoid},
+			_c_clone::Ptr{Cvoid}, _c_sum::Ptr{Cvoid}, _c_norm::Ptr{Cvoid},
+			_c_bufsize::Ptr{Cvoid}, _c_bufpack::Ptr{Cvoid}, _c_bufunpack::Ptr{Cvoid},
+			C_NULL::Ptr{Cvoid}, C_NULL::Ptr{Cvoid}, _c_step::Ptr{Cvoid},
+			_c_init_basis::Ptr{Cvoid}, _c_inner_prod::Ptr{Cvoid}
+		)::Cint
+	else
+		@ccall libbraid.braid_Warmup(
+			_app::Ref{BraidApp}, _app.comm::MPI.MPI_Comm, core.tstart::Cdouble, fdt::Cdouble, cdt::Cdouble,
+			_c_init::Ptr{Cvoid}, _c_access::Ptr{Cvoid}, _c_free::Ptr{Cvoid},
+			_c_clone::Ptr{Cvoid}, _c_sum::Ptr{Cvoid}, _c_norm::Ptr{Cvoid},
+			_c_bufsize::Ptr{Cvoid}, _c_bufpack::Ptr{Cvoid}, _c_bufunpack::Ptr{Cvoid},
+			C_NULL::Ptr{Cvoid}, C_NULL::Ptr{Cvoid}, _c_step::Ptr{Cvoid},
+			C_NULL::Ptr{Cvoid}, C_NULL::Ptr{Cvoid}
+		)::Cint
+	end
+end
+
+function _Drive(core::BraidCore)
 	GC.@preserve core begin
 		@ccall libbraid.braid_Drive(core._braid_core::Ptr{Cvoid})::Cint
 	end
+end
+
+function Drive(core::BraidCore; warmup=true)
+	if warmup
+		# println("Calling Warmup")
+		Warmup(core)
+	else
+		_app = core._braid_app
+		# println("Calling Precompile")
+		# cheaper precompile option, but less effective
+		begin
+			postInitPrecompile(_app)
+			if (_app.basis_init !== nothing) && (_app.inner_prod !== nothing)
+				deltaPrecompile(_app)
+			end
+		end
+	end
+	_Drive(core)
 end
 
 
@@ -465,7 +520,7 @@ end
 function SetDeltaCorrection(core::BraidCore, rank::Integer, basis_init::Function, inner_prod::Function)
 	core._braid_app.basis_init = basis_init
 	core._braid_app.inner_prod = inner_prod
-	deltaPrecompile(core._braid_app)
+	# deltaPrecompile(core._braid_app)
 
 	GC.@preserve core begin
 		@ccall libbraid.braid_SetDeltaCorrection(core._braid_core::Ptr{Cvoid}, rank::Cint, _c_init_basis::Ptr{Cvoid}, _c_inner_prod::Ptr{Cvoid})::Cint
@@ -566,7 +621,7 @@ function testBuf(app::BraidApp, t::Real, outputFile::Libc.FILE)
 		_c_bufpack::Ptr{Cvoid},
 		_c_bufunpack::Ptr{Cvoid},
 	)::Cint
-	print('\n')
+	# print('\n')
 	# println("Check output for objects not freed:")
 	# println(app.ref_ids)
 end
