@@ -1,5 +1,5 @@
 using ForwardDiff, DiffResults, LinearAlgebra, PreallocationTools
-using IterativeSolvers, SparseArrays, Interpolations
+using Interpolations, FFTW
 using MPI, BenchmarkTools, Plots, LaTeXStrings
 using Statistics: mean
 
@@ -15,38 +15,38 @@ Float = Float64
 struct to package preallocated caches for storing temp coords and velocity
 as well as the sparse poisson matrix needed by project_incompressible!
 """
-struct TGApp
-	x_d::DiffCache{Vector{Float}}
-	u_d::DiffCache{Vector{Float}}
-	ϕ_d::DiffCache{Vector{Float}}
-	Δ_s::SparseMatrixCSC{Float, Int}
+struct KFlowApp
 	cf::Int
 	useTheta::Bool
-	solution::Vector{Vector{Float}}
-	lyapunov_vecs::Vector{Matrix{Float}}
+    deltaRank::Int
+    coords::Array{Float, 3}
+	κ::Frequencies{Float}
+	solution::Vector{Array{Float, 3}}
+	lyapunov_vecs::Vector{Vector{Array{Float, 3}}}
 	lyapunov_exps::Vector{Vector{Float}}
 	times::Vector{Int}
+	x_d::DiffCache{Array{Float, 3}}
+	u_d::DiffCache{Array{Float, 3}}
+	ϕ_d::DiffCache{Array{Complex{Float}, 2}}
+    P̂::FFTW.FFTWPlan
 end
 
 # default constructor
-function TGApp(x::AbstractArray, u::AbstractArray, ϕ::AbstractArray, Δ::SparseMatrixCSC, cf::Integer, useTheta::Bool)
-	TGApp(DiffCache(x), DiffCache(u), DiffCache(ϕ), Δ, cf, useTheta, [], [], [], [])
+function KFlowApp(cf::Integer, useTheta::Bool, deltaRank::Integer)
+    coords = zeros(Float, nₓ, nₓ, 2)
+    x_bound = 2π - Δx
+    x_range = range(0, x_bound, nₓ)
+    @views @inbounds for x ∈ x_range, y ∈ x_range 
+        coords[x, y, 1] = x
+        coords[x, y, 2] = y
+    end
+    κ = fftfreq(nₓ, nₓ)
+	# preallocations
+	x_d = zeros(Float, nₓ, nₓ, 2)
+	u_d = zeros(Float, nₓ, nₓ, 2)
+	ϕ_d = zeros(Float, nₓ, nₓ)
+	KFlowApp(cf, useTheta, deltaRank, coords, κ, [], [], [], [], DiffCache(x_d), DiffCache(u_d), DiffCache(ϕ_d))
 end
-
-"""
-reshapes 1D array into vector of 2D arrays, with no allocation
-"""
-function get_views(u)
-	@views begin
-		u_x = reshape(u[1:nₓ^2], (nₓ, nₓ))
-		u_y = reshape(u[nₓ^2+1:2*nₓ^2], (nₓ, nₓ))
-	end
-	return [u_x, u_y]
-end
-
-# some helpers for doing modulo arithmetic with CartesianIndex
-Base.mod1(I::CartesianIndex, J::CartesianIndex) = CartesianIndex(broadcast(mod1, Tuple(I), Tuple(J)))
-δ(I::CartesianIndex{N}, dim) where N = CartesianIndex(ntuple(i -> i == dim ? 1 : 0, N))
 
 oneball(n) = [(n + 1 - i, i) for i ∈ 1:n]
 wavenumbers(shell) = reduce(hcat, [oneball(i) for i ∈ 1:shell])
@@ -74,17 +74,18 @@ function fourierMode2D!(u_field, i)
 end
 
 function fourierMode2DVec!(u, i)
-	ux, uy = u
+	ux, uy = u[:, :, 1], u[:, :, 2]
 	kx, ky = get_wavenumber2D(i)
 	fourierMode2D!(ux, kx)
 	fourierMode2D!(uy, ky)
 end
 
-function TaylorGreen!(u, k = 1)
+function TaylorGreen!(app::KFlowApp, u, k = 1)
+    coords = app.coords
 	kx = trunc(Int, k / 2) + k % 2
 	ky = trunc(Int, k / 2) + 1
-	u_x, u_y = u
-	x, y = coords
+	@views u_x, u_y = u[:, :, 1], u[:, :, 3]
+	@views x, y = coords[:, :, 1], coords[:, :, 2]
 	@. u_x = sin(kx * x) * cos(ky * y)
 	@. u_y = -cos(kx * x) * sin(ky * y)
 	return
@@ -92,84 +93,20 @@ end
 
 function kolmogorovForce!(u, Δt; k = 4, μ = 1.0)
 	# Fₖ(x, y) = (0, sin(ky))
-	@. @views u[1] += μ * Δt * sin(k * coords[2])
+	@views @. u[:, :, 1] += μ * Δt * sin(k * coords[:, :, 2])
 	return u
-end
-
-"""
-finite difference approx first derivative
-of A wrt dimension *dim*
-"""
-function ∂(A, dim; h = Δx)
-	# This works for A of arbitrary dimension
-	out = similar(A)
-	R = CartesianIndices(A)
-	bound = last(R)
-	for I ∈ R
-		# second order
-		I⁻ = mod1(I - δ(I, dim), bound)
-		I⁺ = mod1(I + δ(I, dim), bound)
-		out[I] = 1 / 2h * (A[I⁺] - A[I⁻])
-	end
-	return out
-end
-
-# divergence, curl, gradient, and laplacian
-∇_dot(V) =
-	sum(enumerate(V)) do (i, V_i)
-		∂(V_i, i)
-	end
-function ∇X(V)
-	out = zeros(nₓ, nₓ)
-	Vx, Vy = V
-	x, y = 1:2
-	out .= ∂(Vy, x) - ∂(Vx, y)
-	return out
-end
-∇(F) = [∂(F, i) for i ∈ 1:3]
-# Δ(F) = ∇_dot(∇(F)) # this is asymmetric...
-
-function my_poisson_mat(nₓ)
-	flat_index(I::CartesianIndex) = I[1] + (I[2] - 1) * nₓ
-	rowinds = Array{Int}([])
-	colinds = Array{Int}([])
-	nzs = Array{Float}([])
-	function make_connection!(I_r, I_c, nz)
-		push!(rowinds, flat_index(I_r))
-		push!(colinds, flat_index(I_c))
-		push!(nzs, nz)
-	end
-	diag = -4 / Δx^2
-	offd = 1 / Δx^2
-	bound = CartesianIndex((nₓ, nₓ))
-	for I in CartesianIndices((1:nₓ, 1:nₓ))
-		make_connection!(I, I, diag)
-		for dim ∈ 1:2
-			I⁺ = mod1(I + δ(I, dim), bound)
-			I⁻ = mod1(I - δ(I, dim), bound)
-			make_connection!(I, I⁺, offd)
-			make_connection!(I, I⁻, offd)
-		end
-	end
-	# point condition u(0,0) = 0., else system is singular
-	nzs[1] += 1.0
-	return sparse(rowinds, colinds, nzs)
 end
 
 """
 compute self advection of u
 """
-function advect_semi_lagrangian!(app::TGApp, u_arr, Δt)
+function advect_semi_lagrangian!(app::KFlowApp, u, Δt)
 	# get cached arrays (either real or dual, depending on typeof(u))
-	coords_new_arr = get_tmp(app.x_d, u_arr)
-	u_new_arr = get_tmp(app.u_d, u_arr)
-
-	u = get_views(u_arr)
-	u_new = get_views(u_new_arr)
+	coords_new = get_tmp(app.x_d, u)
+	u_new = get_tmp(app.u_d, u)
 
 	# (1) trace each grid point backwards along u
-	@. coords_new_arr = coords_arr - Δt * u_arr
-	coords_new = get_views(coords_new_arr)
+	@. coords_new = coords - Δt * u
 
 	# (2) interpolate the velocity field at the new grid points
 	x_range = range(0.0, 2π - Δx, nₓ)
@@ -178,10 +115,10 @@ function advect_semi_lagrangian!(app::TGApp, u_arr, Δt)
 		sitp = scale(itp, x_range, x_range)
 		extp = extrapolate(sitp, Periodic())
 
-		u_new[i] .= extp.(coords_new...)
+		u_new[i] .= @views extp.(coords_new[:, :, 1], coords_new[:, :, 2])
 	end
-	u_arr .= u_new_arr
-	return u_arr
+	u .= u_new
+	return u
 end
 
 """
@@ -189,51 +126,62 @@ Solve Poisson problem for incompressible velocity field
 Δϕ = ∇⋅u
 u = u - ∇ϕ
 """
-function project_incompressible!(app::TGApp, u_arr::Vector{<:Number})
-	u = get_views(u_arr)
-	ϕ_arr = get_tmp(app.ϕ_d, u_arr)
-	ϕ_arr .= 0.0
-	rhs = reshape(∇_dot(u), nₓ^2)
-	cg!(ϕ_arr, app.Δ_s, rhs; reltol = 1 / 2 * Δx^2)
-	# cg!(ϕ_arr, app.Δ_s, rhs)
-	ϕ = reshape(ϕ_arr, (nₓ, nₓ))
-	for i in 1:2
-		u[i] .-= ∂(ϕ, i)
-	end
-	return u_arr
+function project_incompressible!(app::KFlowApp, u::AbstractArray)
+    κ = get_tmp(app.x_d, u)
+	ϕ = get_tmp(app.ϕ_d, u)
+    P̂ = app.P̂
+    for κ_x ∈ app.κ, κ_y ∈ app.κ
+        κ[x, y, 1] = κ_x
+        κ[x, y, 2] = κ_y
+    end
+    û = P̂ * u
+    @views κ_x, κ_y = κ[:, :, 1], κ[:, :, 2]
+    @views û_x, û_y = û[:, :, 1], û[:, :, 2]
+    # ϕ = inv(Δ)∇⋅u
+    @. ϕ = -(1.0im*κ_x*û_x + 1.0im*κ_y*û_y)/(κ_x^2 + k_y^2)
+    # u = u - ∇ϕ
+    @. u -= [1.0im*κ_x*ϕ ;;; 1.0im*κ_y*ϕ]
+
+	return u
 end
 
-function base_step!(app::TGApp, u_arr::Vector{<: Number}, Δt::Float)
-	kolmogorovForce!(get_views(u_arr), Δt)
-	advect_semi_lagrangian!(app, u_arr, Δt)
-	# diffuse_backward_Euler!(u_arr, Δt) # numerical diffusion may be enough
-	project_incompressible!(app, u_arr)
-	return u_arr
+function ∇X(app::KFlowApp, V)
+    κ = get_tmp(app.x_d, u)
+    for κ_x ∈ app.κ, κ_y ∈ app.κ
+        κ[x, y, 1] = κ_x
+        κ[x, y, 2] = κ_y
+    end
+	f = get_tmp(app.ϕ_d, u)
+    V̂ = app.P̂ * V
+	@views V̂x, V̂y = V̂[:, :, 1], V̂[:, :, 2]
+	@views κx, κy = κ[:, :, 1], κ[:, :, 1]
+	out = @. 1.0im*κx*V̂y - 1.0im*κy*V̂x
+	return real(ifft(out))
 end
 
-function my_init(app::TGApp, t::Float)
-	u_arr = zeros(Float, 2 * nₓ^2)
-	u = get_views(u_arr)
-	TaylorGreen!(u; k=3)
-	# kolmogorovForce!(u, 1.; μ=1.)
-	# u_arr .+= 1e-2*randn(Float, 2*nₓ^2)
-	return u_arr
+function base_step!(app::KFlowApp, u::Vector{<: Number}, Δt::Float)
+	kolmogorovForce!(u, Δt)
+	advect_semi_lagrangian!(app, u, Δt)
+	project_incompressible!(app, u)
+	return u
+end
+
+function my_init(app::KFlowApp, t::Float)
+	u = zeros(Float, nₓ, nₓ, 2)
+	TaylorGreen!(app, u)
+	return u
 end
 
 
-function my_basis_init(app::TGApp, t::Float, i::Integer)
-	ψ_arr = zeros(Float, 2 * nₓ^2)
-	# ψ_arr = randn(Float, 2*nₓ^2)
-	ψ = get_views(ψ_arr)
+function my_basis_init(app::KFlowApp, t::Float, i::Integer)
+	ψ = zeros(Float, nₓ, nₓ, 2)
 	fourierMode2DVec!(ψ, i + 1)
-	# ψ_arr += 1e-1*randn(Float, 2*nₓ^2)
-	# TaylorGreen!(ψ, i + 1)
-	return ψ_arr
+	return ψ
 end
 
 function my_step!(
-	app::TGApp, status::Ptr{Cvoid},
-	u::Vector{<: Number}, ustop::Vector{<: Number},
+	app::KFlowApp, status::Ptr{Cvoid},
+	u, ustop,
 	tstart::Float, tstop::Float,
 )
 	Δt = tstop - tstart
@@ -255,7 +203,7 @@ function my_step!(
 end
 
 function my_step!(
-	app::TGApp, status::Ptr{Cvoid},
+	app::KFlowApp, status::Ptr{Cvoid},
 	u::Vector{Float}, ustop::Vector{Float},
 	tstart::Float, tstop::Float,
 	Ψ::Vector{Any},
@@ -276,7 +224,7 @@ function my_sum!(app, a, x, b, y)
 	@. y = a * x + b * y
 end
 
-function my_access(app::TGApp, status, u)
+function my_access(app::KFlowApp, status, u)
 	XBraid.status_GetWrapperTest(status) && return
 	index = XBraid.status_GetTIndex(status)
 	if index % app.cf == 0
@@ -287,32 +235,20 @@ function my_access(app::TGApp, status, u)
 			exps = XBraid.status_GetLocalLyapExponents(status)
 			vecs = XBraid.status_GetBasisVectors(status)
 			push!(app.lyapunov_exps, exps)
-			push!(app.lyapunov_vecs, deepcopy(reduce(hcat, vecs)))
+			push!(app.lyapunov_vecs, deepcopy(vecs))
 		end
 	end
 end
 
 my_norm(app, u) = LinearAlgebra.normInf(u)
-my_innerprod(app, u, v) = u' * v
+my_innerprod(app, u, v) = vec(u)' * vec(v)
 
-nₓ = 128
-Δx = 2π / nₓ
-
-coords_arr = zeros(Float, 2 * nₓ^2)
-coords = get_views(coords_arr)
-x_bound = 2π - Δx
-x_range = range(0, x_bound, nₓ)
-coords[1] .= [x for x ∈ x_range, y ∈ x_range]
-coords[2] .= [y for x ∈ x_range, y ∈ x_range]
+const nₓ = 128
+const Δx = 2π / nₓ
 
 function test()
-	# preallocations
-	x_d = zeros(Float, 2 * nₓ^2)
-	u_d = zeros(Float, 2 * nₓ^2)
-	ϕ_d = zeros(Float, nₓ^2)
-	Δ = my_poisson_mat(nₓ)
 
-	my_app = TGApp(x_d, u_d, ϕ_d, Δ, 1, false)
+	my_app = KFlowApp(x_d, u_d, ϕ_d, Δ, 1, false)
 	test_app = XBraid.BraidApp(
 		my_app, comm, comm,
 		my_step!, my_init,
@@ -336,7 +272,7 @@ function main(; tstop = 64.0, ntime = 512, deltaRank = 0, ml = 1, cf = 2, maxite
 	ϕ_d = zeros(Float, nₓ^2)
 	Δ = my_poisson_mat(nₓ)
 
-	my_app = TGApp(x_d, u_d, ϕ_d, Δ, cf, useTheta)
+	my_app = KFlowApp(x_d, u_d, ϕ_d, Δ, cf, useTheta)
 
 	tstart = 0.0
 

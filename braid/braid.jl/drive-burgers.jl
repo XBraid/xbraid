@@ -14,26 +14,26 @@ comm = MPI.COMM_WORLD
 struct BurgerApp
     x::Vector{Float64}
     κ::Frequencies{Float64}
-    cf::Integer
+    cf::Int
     useTheta::Bool
     # preallocated caches that support ForwardDiff:
     x_d::DiffCache
     y_d::DiffCache
     # storage for solution values
-    solution
-    lyap_vecs
-    lyap_exps
-    times
+    solution::Vector{Vector{Float64}}
+    lyap_vecs::Vector{Union{Matrix{Float64}, Vector{Float64}}}
+    lyap_exps::Vector{Vector{Float64}}
+    times::Vector{Int}
     # pre-planned fourier transform
     P̂
 end
-function BurgerApp(x::Vector{Float64}, κ::Frequencies{Float64}, cf::Integer, useTheta::Bool, x_d::DiffCache, y_d::DiffCache)
-    BurgerApp(x, κ, cf, useTheta, x_d, y_d, [], [], [], [], plan_fft(x))
+function BurgerApp(x::Vector{<:Real}, κ::Frequencies{<:Real}, cf::Integer, useTheta::Bool, x_cache::AbstractArray, y_cache::AbstractArray)
+    BurgerApp(x, κ, cf, useTheta, DiffCache(x_cache), DiffCache(y_cache), [], [], [], [], plan_fft(x))
 end
 
 # system parameters (globally scoped)
 const lengthScale = 64.
-const nₓ = 1024
+const nₓ = 128
 const Δx = lengthScale / nₓ
 
 function stencil_to_circulant(stencil::Vector{T}, nx::Integer) where T
@@ -87,7 +87,7 @@ function diffuse_beuler!(burger::BurgerApp, y, Δt::Float64; init_guess=nothing)
     return y
 end
 
-function diffuse_fft!(burger::BurgerApp, y, Δt::Float64; init_guess=nothing, μ=1e-4)
+function diffuse_fft!(burger::BurgerApp, y::AbstractArray, Δt::Real; init_guess=nothing, μ=1e-4)
     P̂ = burger.P̂
     κ = burger.κ
     # y .= real(P̂ \ (exp.(Δt*(κ.^2 - κ.^4))))
@@ -95,6 +95,18 @@ function diffuse_fft!(burger::BurgerApp, y, Δt::Float64; init_guess=nothing, μ
     # @. ŷ *= exp(-μ * Δt * κ^2) # standard diffusion
     @. ŷ *= exp(Δt*(κ^2 - κ^4)) # KS-equation operator
     y .= real(P̂ \ ŷ)
+    return y
+end
+
+# this enables ForwardDiff through the FFT where it normally doesn't work
+function diffuse_fft!(burger::BurgerApp, y::Vector{ForwardDiff.Dual{T,V,P}}, Δt::Real; μ=1e-4) where {T, V, P}
+    vs = ForwardDiff.value.(y)
+    ps = mapreduce(ForwardDiff.partials, hcat, y)'
+    diffuse_fft!(burger, vs, Δt; μ=μ)
+    map(eachcol(ps)) do p diffuse_fft!(burger, p, Δt; μ=μ) end
+    y .= map(vs, eachrow(ps)) do v, p
+        ForwardDiff.Dual{T}(v, p...)
+    end
     return y
 end
 
@@ -188,7 +200,7 @@ function test()
     y_new = zeros(nₓ)
     x = Array(range(0., lengthScale-Δx, nₓ))
     κ = 2π/lengthScale .* fftfreq(nₓ, nₓ)
-    burger = BurgerApp(x, κ, 4, false, DiffCache(x_new), DiffCache(y_new));
+    burger = BurgerApp(x, κ, 4, false, x_new, y_new);
     test_app = XBraid.BraidApp(
         burger, comm, comm,
         my_step!, my_init,
@@ -210,7 +222,7 @@ function main(;tstop=20., ntime=128, deltaRank=0, useTheta=false, ml=1, cf=4, sa
     y_new = zeros(nₓ)
     x = Array(range(0., lengthScale-Δx, nₓ))
     κ = 2π/lengthScale .* fftfreq(nₓ, nₓ)
-    burger = BurgerApp(x, κ, 4, useTheta, DiffCache(x_new), DiffCache(y_new));
+    burger = BurgerApp(x, κ, 4, useTheta, x_new, y_new);
 
     tstart = 0.0
     core = XBraid.Init(
@@ -234,7 +246,8 @@ function main(;tstop=20., ntime=128, deltaRank=0, useTheta=false, ml=1, cf=4, sa
     XBraid.SetAbsTol(core, 1e-6)
 
     XBraid.SetTimings(core, 2)
-    XBraid.Drive(core; warmup=true)
+    XBraid.Warmup(core)
+    XBraid.Drive(core; warmup=false)
     XBraid.PrintTimers(core)
 
     if deltaRank > 0
@@ -265,5 +278,5 @@ function main(;tstop=20., ntime=128, deltaRank=0, useTheta=false, ml=1, cf=4, sa
 end
 
 # test()
-main();
+# main();
 nothing
