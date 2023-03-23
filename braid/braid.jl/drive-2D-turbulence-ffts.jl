@@ -21,6 +21,7 @@ struct KFlowApp
     deltaRank::Int
     coords::Array{Float, 3}
 	κ::Frequencies{Float}
+	ℜ::Float
 	solution::Vector{Array{Float, 3}}
 	lyapunov_vecs::Vector{Vector{Array{Float, 3}}}
 	lyapunov_exps::Vector{Vector{Float}}
@@ -32,20 +33,19 @@ struct KFlowApp
 end
 
 # default constructor
-function KFlowApp(cf::Integer, useTheta::Bool, deltaRank::Integer)
+function KFlowApp(cf::Integer, useTheta::Bool, deltaRank::Integer, ℜ::Real)
     coords = zeros(Float, nₓ, nₓ, 2)
-    x_bound = 2π - Δx
-    x_range = range(0, x_bound, nₓ)
-    @views @inbounds for x ∈ x_range, y ∈ x_range 
-        coords[x, y, 1] = x
-        coords[x, y, 2] = y
+    x_range = range(0, lengthScale - Δx, nₓ)
+    @views @inbounds for (i,x) ∈ enumerate(x_range), (j,y) ∈ enumerate(x_range)
+        coords[i, j, 1] = x
+        coords[i, j, 2] = y
     end
-    κ = fftfreq(nₓ, nₓ)
+    κ = 2π/lengthScale .* fftfreq(nₓ, nₓ)
 	# preallocations
 	x_d = zeros(Float, nₓ, nₓ, 2)
 	u_d = zeros(Float, nₓ, nₓ, 2)
-	ϕ_d = zeros(Float, nₓ, nₓ)
-	KFlowApp(cf, useTheta, deltaRank, coords, κ, [], [], [], [], DiffCache(x_d), DiffCache(u_d), DiffCache(ϕ_d))
+	ϕ_d = zeros(Complex{Float}, nₓ, nₓ)
+	KFlowApp(cf, useTheta, deltaRank, coords, κ, ℜ, [], [], [], [], DiffCache(x_d), DiffCache(u_d), DiffCache(ϕ_d), plan_fft(coords, [1,2]))
 end
 
 oneball(n) = [(n + 1 - i, i) for i ∈ 1:n]
@@ -63,59 +63,59 @@ function get_wavenumber2D(i)
 end
 
 function fourierMode1D(x::Real, k::Integer)
-	k % 2 == 1 && return cos(trunc(k / 2) * x)
-	k % 2 == 0 && return sin(trunc((k + 1) / 2) * x)
+	k % 2 == 1 && return cos(trunc(k / 2) * 2π/lengthScale * x)
+	k % 2 == 0 && return sin(trunc((k + 1) / 2) * 2π/lengthScale * x)
 end
 
-function fourierMode2D!(u_field, i)
+function fourierMode2D!(app::KFlowApp, u_field, i::Integer)
 	kx, ky = get_wavenumber2D(i)
-	x, y = coords
+	@views x, y = app.coords[:, :, 1], app.coords[:, :, 2]
 	@. u_field = fourierMode1D(x, kx) * fourierMode1D(y, ky)
 end
 
-function fourierMode2DVec!(u, i)
-	ux, uy = u[:, :, 1], u[:, :, 2]
+function fourierMode2DVec!(app::KFlowApp, u, i::Integer)
+	@views ux, uy = u[:, :, 1], u[:, :, 2]
 	kx, ky = get_wavenumber2D(i)
-	fourierMode2D!(ux, kx)
-	fourierMode2D!(uy, ky)
+	fourierMode2D!(app, ux, kx)
+	fourierMode2D!(app, uy, ky)
 end
 
 function TaylorGreen!(app::KFlowApp, u, k = 1)
     coords = app.coords
 	kx = trunc(Int, k / 2) + k % 2
 	ky = trunc(Int, k / 2) + 1
-	@views u_x, u_y = u[:, :, 1], u[:, :, 3]
+	@views u_x, u_y = u[:, :, 1], u[:, :, 2]
 	@views x, y = coords[:, :, 1], coords[:, :, 2]
 	@. u_x = sin(kx * x) * cos(ky * y)
 	@. u_y = -cos(kx * x) * sin(ky * y)
 	return
 end
 
-function kolmogorovForce!(u, Δt; k = 4, μ = 1.0)
+function kolmogorovForce!(app::KFlowApp, u, Δt; k = 2, μ = 1.0)
 	# Fₖ(x, y) = (0, sin(ky))
-	@views @. u[:, :, 1] += μ * Δt * sin(k * coords[:, :, 2])
+	@views @. u[:, :, 1] += μ * Δt * sin(k * app.coords[:, :, 2])
 	return u
 end
 
 """
 compute self advection of u
 """
-function advect_semi_lagrangian!(app::KFlowApp, u, Δt)
+function advect_semi_lagrangian!(app::KFlowApp, u::AbstractArray, Δt::Real)
 	# get cached arrays (either real or dual, depending on typeof(u))
 	coords_new = get_tmp(app.x_d, u)
 	u_new = get_tmp(app.u_d, u)
 
 	# (1) trace each grid point backwards along u
-	@. coords_new = coords - Δt * u
+	@. coords_new = app.coords - Δt * u
 
 	# (2) interpolate the velocity field at the new grid points
-	x_range = range(0.0, 2π - Δx, nₓ)
+	x_range = range(0.0, lengthScale - Δx, nₓ)
 	for i in 1:2
-		itp = interpolate(u[i], BSpline(Linear(Periodic())))
+		itp = interpolate(u[:, :, i], BSpline(Linear(Periodic())))
 		sitp = scale(itp, x_range, x_range)
 		extp = extrapolate(sitp, Periodic())
 
-		u_new[i] .= @views extp.(coords_new[:, :, 1], coords_new[:, :, 2])
+		u_new[:, :, i] .= @views extp.(coords_new[:, :, 1], coords_new[:, :, 2])
 	end
 	u .= u_new
 	return u
@@ -126,63 +126,102 @@ Solve Poisson problem for incompressible velocity field
 Δϕ = ∇⋅u
 u = u - ∇ϕ
 """
-function project_incompressible!(app::KFlowApp, u::AbstractArray)
+function project_incompressible!(app::KFlowApp, u::AbstractArray, Δt::Real)
     κ = get_tmp(app.x_d, u)
 	ϕ = get_tmp(app.ϕ_d, u)
     P̂ = app.P̂
-    for κ_x ∈ app.κ, κ_y ∈ app.κ
-        κ[x, y, 1] = κ_x
-        κ[x, y, 2] = κ_y
+	ℜ = app.ℜ
+    for (i,κ_x) ∈ enumerate(app.κ), (j,κ_y) ∈ enumerate(app.κ)
+        κ[i, j, 1] = κ_x
+        κ[i, j, 2] = κ_y
     end
     û = P̂ * u
     @views κ_x, κ_y = κ[:, :, 1], κ[:, :, 2]
     @views û_x, û_y = û[:, :, 1], û[:, :, 2]
-    # ϕ = inv(Δ)∇⋅u
-    @. ϕ = -(1.0im*κ_x*û_x + 1.0im*κ_y*û_y)/(κ_x^2 + k_y^2)
-    # u = u - ∇ϕ
-    @. u -= [1.0im*κ_x*ϕ ;;; 1.0im*κ_y*ϕ]
+	# diffusion
+	# @. û_x *= exp(-Δt/ℜ*(κ_x^2 + κ_y^2))
+	# @. û_y *= exp(-Δt/ℜ*(κ_x^2 + κ_y^2))
 
+	# KS equation: uₜ + u(∇u) = - Δu - Δ²u
+	@. û_x *= exp(Δt*(κ_x^2 + κ_y^2 - (κ_x^2 + κ_y^2)^2))
+	@. û_y *= exp(Δt*(κ_x^2 + κ_y^2 - (κ_x^2 + κ_y^2)^2))
+	
+	# incompressible projection
+    # ϕ = inv(Δ)∇⋅u
+    @. ϕ = -(1.0im*κ_x*û_x + 1.0im*κ_y*û_y)/(κ_x^2 + κ_y^2)
+    # @. ϕ = (1.0im*κ_x*û_x + 1.0im*κ_y*û_y)
+	ϕ[1, 1] = 0.0 + 0.0im # pressure is unique up to a constant
+    # u = u - ∇ϕ
+	@. û_x -= 1.0im*κ_x*ϕ
+	@. û_y -= 1.0im*κ_y*ϕ
+	u .= real(P̂ \ û)
 	return u
 end
 
-function ∇X(app::KFlowApp, V)
+# this enables ForwardDiff through the FFT where it normally doesn't work
+function project_incompressible!(app::KFlowApp, u::Array{ForwardDiff.Dual{T,V,P}}, Δt::Real) where {T, V, P}
+    vs = ForwardDiff.value.(u)
+    ps = mapreduce(ForwardDiff.partials, hcat, vec(u))'
+	ps = reshape(ps, (nₓ, nₓ, 2, size(ps)[2]))
+    project_incompressible!(app, vs, Δt)
+    map(eachslice(ps, dims=4)) do p project_incompressible!(app, p, Δt) end
+	for i ∈	CartesianIndices(u)
+		u[i] = ForwardDiff.Dual{T}(vs[i], ps[i, :]...)
+	end
+	return u
+end
+
+function ∇_dot(app, u)
     κ = get_tmp(app.x_d, u)
-    for κ_x ∈ app.κ, κ_y ∈ app.κ
-        κ[x, y, 1] = κ_x
-        κ[x, y, 2] = κ_y
+    for (i,κ_x) ∈ enumerate(app.κ), (j,κ_y) ∈ enumerate(app.κ)
+        κ[i, j, 1] = κ_x
+        κ[i, j, 2] = κ_y
+	end
+	@views κx, κy = κ[:,:,1], κ[:,:,2]
+	û = app.P̂ * u
+	out = @. 1.0im*κx*û[:,:,1] + 1.0im*κy*û[:,:,2]
+	return real(ifft(out))
+end
+
+function ∇X(app::KFlowApp, V)
+    κ = get_tmp(app.x_d, V)
+    for (i,κ_x) ∈ enumerate(app.κ), (j,κ_y) ∈ enumerate(app.κ)
+        κ[i, j, 1] = κ_x
+        κ[i, j, 2] = κ_y
     end
-	f = get_tmp(app.ϕ_d, u)
+	f = get_tmp(app.ϕ_d, V)
     V̂ = app.P̂ * V
 	@views V̂x, V̂y = V̂[:, :, 1], V̂[:, :, 2]
-	@views κx, κy = κ[:, :, 1], κ[:, :, 1]
+	@views κx, κy = κ[:, :, 1], κ[:, :, 2]
 	out = @. 1.0im*κx*V̂y - 1.0im*κy*V̂x
 	return real(ifft(out))
 end
 
-function base_step!(app::KFlowApp, u::Vector{<: Number}, Δt::Float)
-	kolmogorovForce!(u, Δt)
+function base_step!(app::KFlowApp, u::AbstractArray, Δt::Float)
+	# kolmogorovForce!(app, u, Δt)
 	advect_semi_lagrangian!(app, u, Δt)
-	project_incompressible!(app, u)
+	project_incompressible!(app, u, Δt)
 	return u
 end
 
 function my_init(app::KFlowApp, t::Float)
 	u = zeros(Float, nₓ, nₓ, 2)
 	TaylorGreen!(app, u)
+	u .+= 1e-1*randn(Float, nₓ, nₓ, 2)
 	return u
 end
 
 
 function my_basis_init(app::KFlowApp, t::Float, i::Integer)
 	ψ = zeros(Float, nₓ, nₓ, 2)
-	fourierMode2DVec!(ψ, i + 1)
+	fourierMode2DVec!(app, ψ, i + 1)
 	return ψ
 end
 
 function my_step!(
 	app::KFlowApp, status::Ptr{Cvoid},
-	u, ustop,
-	tstart::Float, tstop::Float,
+	u::AbstractArray, ustop::AbstractArray,
+	tstart::Real, tstop::Real
 )
 	Δt = tstop - tstart
 	level = XBraid.status_GetLevel(status)
@@ -204,18 +243,18 @@ end
 
 function my_step!(
 	app::KFlowApp, status::Ptr{Cvoid},
-	u::Vector{Float}, ustop::Vector{Float},
-	tstart::Float, tstop::Float,
-	Ψ::Vector{Any},
+	u::AbstractArray, ustop::AbstractArray,
+	tstart::Real, tstop::Real,
+	Ψ::Vector{Any}
 )
 	rank = length(Ψ)
-	Ψ_new = reduce(hcat, Ψ)
+	Ψ_new = reduce((a,b)->cat(a,b, dims=4), Ψ)
 	perturb(r) = my_step!(app, status, u + r' * Ψ, ustop, tstart, tstop)
 
 	result = DiffResults.DiffResult(u, Ψ_new)
 	result = ForwardDiff.jacobian!(result, perturb, zeros(rank))
 	for i in 1:rank
-		Ψ[i] .= Ψ_new[:, i]
+		Ψ[i] .= Ψ_new[:, :, :, i]
 	end
 	return
 end
@@ -243,12 +282,13 @@ end
 my_norm(app, u) = LinearAlgebra.normInf(u)
 my_innerprod(app, u, v) = vec(u)' * vec(v)
 
+const lengthScale = 64.
 const nₓ = 128
-const Δx = 2π / nₓ
+const Δx = lengthScale / nₓ
 
 function test()
+	my_app = KFlowApp(2, false, 3, 1600)
 
-	my_app = KFlowApp(x_d, u_d, ϕ_d, Δ, 1, false)
 	test_app = XBraid.BraidApp(
 		my_app, comm, comm,
 		my_step!, my_init,
@@ -259,26 +299,20 @@ function test()
 	XBraid.testClone(test_app, 0.0)
 	XBraid.testSpatialNorm(test_app, 0.0)
 	XBraid.testBuf(test_app, 0.0)
-	@time XBraid.testDelta(test_app, 0.0, 0.1, 3)
+	XBraid.testDelta(test_app, 0.0, 0.1, my_app.deltaRank)
 
-	curl = ∇X(get_views(my_app.solution[1]))
-	heatmap(curl')
+	# curl = ∇X(my_app, my_app.solution[1])
+	# heatmap(curl')
 end
 
-function main(; tstop = 64.0, ntime = 512, deltaRank = 0, ml = 1, cf = 2, maxiter = 10, fcf = 1, relaxLyap = false, savegif = true, useTheta = false, deferDelta = (1, 1))
-	# preallocations
-	x_d = zeros(Float, 2 * nₓ^2)
-	u_d = zeros(Float, 2 * nₓ^2)
-	ϕ_d = zeros(Float, nₓ^2)
-	Δ = my_poisson_mat(nₓ)
-
-	my_app = KFlowApp(x_d, u_d, ϕ_d, Δ, cf, useTheta)
+function main(; tstop = 20.0, ntime = 512, deltaRank = 0, ml = 1, cf = 2, maxiter = 10, fcf = 1, relaxLyap = false, savegif = true, useTheta = false, ℜ=500, deferDelta = (1, 1))
+	my_app = KFlowApp(cf, useTheta, deltaRank, ℜ)
 
 	tstart = 0.0
 
 	core = XBraid.Init(
 		comm, comm, tstart, tstop, ntime,
-		my_step!, my_init, my_sum!, my_norm, my_access; app = my_app,
+		my_step!, my_init, my_sum!, my_norm, my_access; app = my_app
 	)
 
 	if deltaRank > 0
@@ -302,13 +336,14 @@ function main(; tstop = 64.0, ntime = 512, deltaRank = 0, ml = 1, cf = 2, maxite
 	if savegif
 		heatmapArgs = Dict(:ticks => false, :colorbar => false, :aspect_ratio => :equal, :c => :plasma)
 		anim = @animate for i in p
-			u = get_views(my_app.solution[i])
+			u = my_app.solution[i]
 			# plots = [heatmap(∇_dot(u)'; heatmapArgs...)]
-			plots = [heatmap(∇X(u)'; heatmapArgs...)]
+			plots = [heatmap(∇X(my_app, u)'; heatmapArgs...)]
+			# plots = [heatmap(u[:,:,1]; heatmapArgs...), heatmap(u[:,:,2]; heatmapArgs...)]
 			for j in 1:min(8, deltaRank)
-				ψⱼ = get_views(my_app.lyapunov_vecs[i][:, j])
+				ψⱼ = my_app.lyapunov_vecs[i][j]
 				# push!(plots, heatmap(∇_dot(ψⱼ)'; heatmapArgs...))
-				push!(plots, heatmap(∇X(ψⱼ)'; heatmapArgs...))
+				push!(plots, heatmap(∇X(my_app, ψⱼ)'; heatmapArgs...))
 			end
 			plot(plots...; size = (600, 600))
 		end
