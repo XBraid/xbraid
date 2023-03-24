@@ -98,15 +98,27 @@ function diffuse_fft!(burger::BurgerApp, y::AbstractArray, Δt::Real; init_guess
     return y
 end
 
+function extractPartials(y::Vector{ForwardDiff.Dual{T,V,P}}) where {T,V,P}
+    ps = zeros(V, size(y)..., P)
+    for i ∈ eachindex(y), j ∈ 1:P
+        @inbounds ps[i, j] = ForwardDiff.partials(y[i], j)
+    end
+    return ps
+end
+
+function fillDualArray!(y::Vector{ForwardDiff.Dual{T,V,P}}, vs, ps) where {T,V,P}
+    checkbounds(ps, firstindex(y), 1:P)
+    for i ∈ eachindex(y)
+        @inbounds y[i] = ForwardDiff.Dual{T}(vs[i], ntuple(j -> @inbounds(ps[i, j]), P))
+end
+
 # this enables ForwardDiff through the FFT where it normally doesn't work
 function diffuse_fft!(burger::BurgerApp, y::Vector{ForwardDiff.Dual{T,V,P}}, Δt::Real; μ=1e-4) where {T, V, P}
     vs = ForwardDiff.value.(y)
-    ps = mapreduce(ForwardDiff.partials, hcat, y)'
+    ps = extractPartials(y)
     diffuse_fft!(burger, vs, Δt; μ=μ)
     map(eachcol(ps)) do p diffuse_fft!(burger, p, Δt; μ=μ) end
-    y .= map(vs, eachrow(ps)) do v, p
-        ForwardDiff.Dual{T}(v, p...)
-    end
+    fillDualArray!(y, vs, ps)
     return y
 end
 

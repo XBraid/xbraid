@@ -30,6 +30,71 @@ function status_GetWrapperTest(status)
     return (wtest[] > 0)
 end
 
+function status_GetIter(status)
+    iter = Ref{Cint}()
+    @ccall libbraid.braid_StatusGetIter(status::Ptr{Cvoid}, iter::Ref{Cint})::Cint
+    return iter[]
+end
+
+function status_GetNLevels(status)
+    nlevels = Ref{Cint}()
+    @ccall libbraid.braid_StatusGetNLevels(status::Ptr{Cvoid}, nlevels::Ref{Cint})::Cint
+    return nlevels[]
+end
+
+function status_GetNTPoints(status)
+    ntpoints = Ref{Cint}()
+    @ccall libbraid.braid_StatusGetNTPoints(status::Ptr{Cvoid}, ntpoints::Ref{Cint})::Cint
+    return ntpoints[]
+end
+
+function status_GetResidual(status)
+    res = Ref{Cdouble}()
+    @ccall libbraid.braid_StatusGetResidual(status::Ptr{Cvoid}, res::Ref{Cdouble})::Cint
+    return res[]
+end
+
+function status_GetDone(status)
+    done = Ref{Cint}()
+    @ccall libbraid.braid_StatusGetDone(status::Ptr{Cvoid}, done::Ref{Cint})::Cint
+    return (done[] > 0)
+end
+
+function status_GetTILD(status)
+    time = Ref{Cdouble}()
+    iter = Ref{Cint}()
+    level = Ref{Cint}()
+    done = Ref{Cint}()
+    @ccall libbraid.braid_StatusGetTILD(status::Ptr{Cvoid}, time::Ref{Cdouble}, iter::Ref{Cint}, level::Ref{Cint}, done::Ref{Cint})::Cint
+    return time[], iter[], level[], (done[] > 0)
+end
+
+function status_GetCallingFunction(status)
+    func = Ref{Cint}()
+    @ccall libbraid.braid_StatusGetCallingFunction(status::Ptr{Cvoid}, func::Ref{Cint})::Cint
+    return func[]
+end
+
+function status_GetTol(status)
+    tol = Ref{Cdouble}()
+    @ccall libbraid.braid_StatusGetTol(status::Ptr{Cvoid}, tol::Ref{Cdouble})::Cint
+    return tol[]
+end
+
+function status_GetRNorms(status)
+    iters = status_GetIter(status)
+    nrequest = Ref{Cint}(iters)
+    norms = zeros(Cdouble, iters)
+    @ccall libbraid.braid_StatusGetRNorms(status::Ptr{Cvoid}, nrequest::Ref{Cint}, norms::Ref{Cdouble})::Cint
+    return norms
+end
+
+function status_GetProc(status)
+    proc = Ref{Cint}()
+    @ccall libbraid.braid_StatusGetProc(status::Ptr{Cvoid}, proc::Ref{Cint})::Cint
+    return proc[]
+end
+
 function status_GetDeltaRank(status)
     rank = Ref{Cint}()
     @ccall libbraid.braid_StatusGetDeltaRank(status::Ptr{Cvoid}, rank::Ref{Cint})::Cint
