@@ -25,6 +25,7 @@ module XBraid
 
 # BEGIN MODULE XBraid
 using Serialization: serialize, deserialize, Serializer # used to pack arbitrary julia objects into buffers
+using LinearAlgebra: norm2
 using MPI
 using MethodAnalysis
 
@@ -55,22 +56,27 @@ mutable struct BraidVector{T}
 end
 BraidVector(u::T) where T = BraidVector(u, T)
 
+OptionalFunction = Union{Function, Nothing}
 """
-This is an internal structure that is not exposed to the user.
+This is an internal structure that is not generally exposed to the user.
 This enables the user interface to only use memory safe function calls.
 User defined data structures that are not time-dependent can be declared in 
 the global scope, or they can be packed into a user defined object and passed to
-Init(), in which case the object will be passed as the first argument in every user
-defined function call.
-_app.user_app is passed as the first argument to every user defined function.
+Init(), in which case the object will be passed as the first argument in step, sum, spatialnorm, and access.
+_app.user_app is passed as the first argument to some user defined function.
 Stores any time-independent data the user may need to compute a time-step.
 Large, preallocate arrays should be packed into this object, since operations
 involving globally scoped variables are slower than local variables.
 struct braid_App end
+
+This may be manually contructed in order to pass to test functions.
+
+julia> app = BraidApp(my_app, MPI.COMM_WORLD, MPI.COMM_WORLD, my_step, my_init, my_sum, my_norm, my_access);
+
+julia> testSpatialNorm(app, 0.);
  """
-OptionalFunction = Union{Function, Nothing}
 mutable struct BraidApp
-	user_app::Any     # user defined app data structure (can be anything)
+	user_app::Any     # user defined app data structure
 
 	comm::MPI.Comm    # global mpi communicator
 	comm_t::MPI.Comm  # temporal mpi communicator
@@ -85,12 +91,27 @@ mutable struct BraidApp
 	basis_init::OptionalFunction
 	inner_prod::OptionalFunction
 
-	ref_ids::IdDict{UInt64, BraidVector}   # dictionary to store globally scoped references to allocated braid_vector objects
-	bufsize::Integer  # expected serialized size of user's braid_vector object
+	# dictionary to store globally scoped references to allocated braid_vector objects
+	ref_ids::IdDict{UInt64, BraidVector}   
+	bufsize::Integer  # expected serialized size of user's vector
 	bufsize_lyap::Integer
 	user_AppType::Type
 	user_VecType::Type
 	user_BasType::Type
+end
+
+# some default functions assuming the user's vector is a julia array
+function default_sum!(app, α::Real, x::AbstractArray, β::Real, y::AbstractArray)
+	y .= α .* x .+ β .* y
+	return
+end
+
+function default_norm(app, u::AbstractArray)
+	return norm2(u)
+end
+
+function default_inner_prod(app, u::AbstractArray, v::AbstractArray)
+	return dot(u, v)
 end
 
 # default constructor
@@ -106,11 +127,21 @@ function BraidApp(app, comm::MPI.Comm, step::Function, init::Function, sum::Func
 	BraidApp(app, comm, comm, step, init, sum, norm, access)
 end
 
+function BraidApp(app, comm::MPI.Comm, step, init, access)
+	BraidApp(app, comm, comm, step, init, default_sum!, default_norm, access)
+end
+
+function BraidApp(app, comm::MPI.Comm, step, init, access, basis_init)
+	BraidApp(app, comm, comm, step, init, default_sum!, default_norm, access, basis_init, default_inner_prod)
+end
 
 """
-wraps the pointer to braid status structures,
-automatically calling braid_Destroy(core) when
-this is garbage collected
+Stores all the information needed to run XBraid. Create this object with Init(), then pass this to Drive() to run XBraid.
+
+julia> core = XBraid.Init(MPI.COMM_WORLD, MPI.COMM_WORLD, 
+
+julia> XBraid.Drive(core);
+
 """
 mutable struct BraidCore
 	# internal values
@@ -128,9 +159,10 @@ mutable struct BraidCore
 	end
 end
 
-# Used to add/remove a reference to the vector u to the IdDict stored in the app.
-# this keeps all newly allocated braid_vectors in the global scope, preventing them
-# from being garbage collected!
+"""
+Used to add/remove a reference to the vector u to the IdDict stored in the app.
+this keeps all newly allocated braid_vectors in the global scope, preventing them from being garbage collected. 
+"""
 function _register_vector(app::BraidApp, u::BraidVector)
 	app.ref_ids[objectid(u)] = u
 end
@@ -141,9 +173,11 @@ function _deregister_vector(app::BraidApp, u::BraidVector)
 end
 
 function postInitPrecompile(app::BraidApp)
+	#= 
 	# This is a hack to make sure every processor knows how big the user's vector will be.
 	# We can also take this time to precompile the user's step function so it doesn't happen
 	# in serial on the coarse grid.
+	=#
 	GC.enable(false) # disable garbage collection
 	app_ptr = pointer_from_objref(app)::Ptr{Cvoid}
 	pp = malloc_null_double_ptr(Cvoid)
@@ -203,6 +237,9 @@ function deltaPrecompile(app::BraidApp)
 	app.user_BasType = BasType
 end
 
+"""
+Create a new BraidCore object. The BraidCore object is used to run the XBraid solver, and is destroyed when the object is garbage collected.
+"""
 function Init(comm_world::MPI.Comm, comm_t::MPI.Comm,
 	tstart::Real, tstop::Real, ntime::Integer,
 	step::Function, init::Function, sum::Function, spatialnorm::Function, access::OptionalFunction;
@@ -228,6 +265,21 @@ function Init(comm_world::MPI.Comm, comm_t::MPI.Comm,
 	return BraidCore(_core, _app, tstart, tstop, ntime)
 end
 
+function Init(comm_world::MPI.Comm, tstart::Real, tstop::Real, ntime::Integer, step::Function, init::Function, access::OptionalFunction)
+	Init(comm_world, comm_world, tstart, tstop, ntime, step, init, default_sum!, default_norm, access)
+end
+
+"""
+Warmup the BraidCore object. XBraid.Drive calls this function automatically, but it can be called manually to precompile all user functions.
+
+This function is not necessary for XBraid to run, but it can significantly reduce the time to run the first time step. Note that this function calls all user functions, so if any user functions have side-effects, this may behave unexpectedly
+
+julia> XBraid.Warmup(core)
+
+Julia> XBraid.Drive(core; warmup=false)
+
+See also: XBraid.Drive
+"""
 function Warmup(core::BraidCore)
 	_app = core._braid_app
 	# precompile all user functions by calling them from braid_Warmup
@@ -254,14 +306,21 @@ function Warmup(core::BraidCore)
 			C_NULL::Ptr{Cvoid}, C_NULL::Ptr{Cvoid}
 		)::Cint
 	end
+	nothing
 end
 
+"""
+Wraps the XBraid braid_Drive function. This function is called by XBraid.Drive, and should not be called directly.
+"""
 function _Drive(core::BraidCore)
 	GC.@preserve core begin
 		@ccall libbraid.braid_Drive(core._braid_core::Ptr{Cvoid})::Cint
 	end
 end
 
+"""
+Run the XBraid solver. This function calls XBraid.Warmup by default, but this can be disabled by setting warmup=false, in which case a less expensive (but less effective) option is used to precompile the user functions.
+"""
 function Drive(core::BraidCore; warmup=true)
 	if warmup
 		# println("Calling Warmup")
@@ -466,6 +525,15 @@ function SetDefaultPrintFile(core::BraidCore)
 	end
 end
 
+"""
+Set access level for XBraid. This controls how often the user's access function is called.
+
+	- 0: Never call access function
+	- 1: Call access function only when XBraid is finished
+	- 2: Call access function at every XBraid iteration, on every level
+
+Default is 1.
+"""
 function SetAccessLevel(core::BraidCore, access_level::Integer)
 	GC.@preserve core begin
 		@ccall libbraid.braid_SetAccessLevel(core._braid_core::Ptr{Cvoid}, access_level::Cint)::Cint

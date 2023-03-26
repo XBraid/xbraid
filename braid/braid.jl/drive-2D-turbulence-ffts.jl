@@ -23,6 +23,7 @@ struct KFlowApp
 	κ::Frequencies{Float}
 	ℜ::Float
 	solution::Vector{Array{Float, 3}}
+	solTf::Vector{Array{Float, 3}}
 	lyapunov_vecs::Vector{Vector{Array{Float, 3}}}
 	lyapunov_exps::Vector{Vector{Float}}
 	times::Vector{Int}
@@ -45,7 +46,7 @@ function KFlowApp(cf::Integer, useTheta::Bool, deltaRank::Integer, ℜ::Real)
 	x_d = zeros(Float, nₓ, nₓ, 2)
 	u_d = zeros(Float, nₓ, nₓ, 2)
 	ϕ_d = zeros(Complex{Float}, nₓ, nₓ)
-	KFlowApp(cf, useTheta, deltaRank, coords, κ, ℜ, [], [], [], [], DiffCache(x_d), DiffCache(u_d), DiffCache(ϕ_d), plan_fft(coords, [1, 2]))
+	KFlowApp(cf, useTheta, deltaRank, coords, κ, ℜ, [], [], [], [], [], DiffCache(x_d), DiffCache(u_d), DiffCache(ϕ_d), plan_fft(coords, [1, 2]))
 end
 
 oneball(n) = [(n + 1 - i, i) for i ∈ 1:n]
@@ -251,7 +252,7 @@ function base_step!(app::KFlowApp, u::AbstractArray, Δt::Float)
 end
 
 function my_init(app::KFlowApp, t::Float)
-	Random.seed!(1)
+	seed!(1)
 	# u = zeros(Float, nₓ, nₓ, 2)
 	u = randn(Float, nₓ, nₓ, 2)
 	# TaylorGreen!(app, u)
@@ -315,8 +316,11 @@ end
 
 function my_access(app::KFlowApp, status, u)
 	XBraid.status_GetWrapperTest(status) && return
+	ntime = XBraid.status_GetNTPoints(status)
 	index = XBraid.status_GetTIndex(status)
-	if index % app.cf == 0
+	level, done = XBraid.status_GetLevel(status), XBraid.status_GetDone(status)
+
+	if level == 0 && done && index % app.cf == 0
 		push!(app.solution, deepcopy(u))
 		push!(app.times, index)
 		rank = XBraid.status_GetDeltaRank(status)
@@ -326,6 +330,11 @@ function my_access(app::KFlowApp, status, u)
 			push!(app.lyapunov_exps, exps)
 			push!(app.lyapunov_vecs, deepcopy(vecs))
 		end
+	end
+
+	if level == 0 && index == ntime-1
+		# last time step
+		push!(app.solTf, deepcopy(u))
 	end
 end
 
@@ -374,7 +383,7 @@ function main(;tstop=20.0, ntime=512, deltaRank=0, ml=1, cf=2, maxiter=10, fcf=1
 	XBraid.SetMaxIter(core, maxiter)
 	XBraid.SetCFactor(core, -1, cf)
 	XBraid.SetNRelax(core, -1, fcf)
-	XBraid.SetAccessLevel(core, 1)
+	XBraid.SetAccessLevel(core, 2)
 	XBraid.SetAbsTol(core, 1e-6)
 
 	XBraid.SetTimings(core, 2)
@@ -421,5 +430,5 @@ function main(;tstop=20.0, ntime=512, deltaRank=0, ml=1, cf=2, maxiter=10, fcf=1
 		savefig(exps_plot, "lyapunov_exps.png")
 	end
 
-	return my_app
+	return my_app, core
 end

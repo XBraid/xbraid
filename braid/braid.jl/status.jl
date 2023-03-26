@@ -6,6 +6,12 @@ function status_GetT(status)
     return t[]
 end
 
+function status_GetTStop(status)
+    tstop = Ref{Cdouble}()
+    @ccall libbraid.braid_StatusGetTStop(status::Ptr{Cvoid}, tstop::Ref{Cdouble})::Cint
+    return tstop[]
+end
+
 function status_GetTstartTstop(status::Ptr{Cvoid})
     tstart, tstop = Ref{Cdouble}(), Ref{Cdouble}()
     @ccall libbraid.braid_StepStatusGetTstartTstop(status::Ptr{Cvoid}, tstart::Ref{Cdouble}, tstop::Ref{Cdouble})::Cint
