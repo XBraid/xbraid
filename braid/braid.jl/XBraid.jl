@@ -265,8 +265,8 @@ function Init(comm_world::MPI.Comm, comm_t::MPI.Comm,
 	return BraidCore(_core, _app, tstart, tstop, ntime)
 end
 
-function Init(comm_world::MPI.Comm, tstart::Real, tstop::Real, ntime::Integer, step::Function, init::Function, access::OptionalFunction)
-	Init(comm_world, comm_world, tstart, tstop, ntime, step, init, default_sum!, default_norm, access)
+function Init(comm_world::MPI.Comm, tstart::Real, tstop::Real, ntime::Integer, step::Function, init::Function, access::OptionalFunction; app=nothing)
+	Init(comm_world, comm_world, tstart, tstop, ntime, step, init, default_sum!, default_norm, access; app=app)
 end
 
 """

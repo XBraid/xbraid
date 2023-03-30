@@ -3,6 +3,7 @@ using Interpolations, FFTW
 using MPI, BenchmarkTools, Plots, LaTeXStrings
 using Statistics: mean
 using Random: seed!
+using LinearAlgebra: norm
 
 include("XBraid.jl")
 using .XBraid
@@ -21,6 +22,7 @@ struct KFlowApp
 	deltaRank::Int
 	coords::Array{Float, 3}
 	κ::Frequencies{Float}
+	k_num::Int
 	ℜ::Float
 	solution::Vector{Array{Float, 3}}
 	solTf::Vector{Array{Float, 3}}
@@ -34,7 +36,7 @@ struct KFlowApp
 end
 
 # default constructor
-function KFlowApp(cf::Integer, useTheta::Bool, deltaRank::Integer, ℜ::Real)
+function KFlowApp(cf::Integer, useTheta::Bool, deltaRank::Integer, k_num::Integer, ℜ::Real)
 	coords = zeros(Float, nₓ, nₓ, 2)
 	x_range = range(0, lengthScale - Δx, nₓ)
 	@views @inbounds for (i, x) ∈ enumerate(x_range), (j, y) ∈ enumerate(x_range)
@@ -46,7 +48,7 @@ function KFlowApp(cf::Integer, useTheta::Bool, deltaRank::Integer, ℜ::Real)
 	x_d = zeros(Float, nₓ, nₓ, 2)
 	u_d = zeros(Float, nₓ, nₓ, 2)
 	ϕ_d = zeros(Complex{Float}, nₓ, nₓ)
-	KFlowApp(cf, useTheta, deltaRank, coords, κ, ℜ, [], [], [], [], [], DiffCache(x_d), DiffCache(u_d), DiffCache(ϕ_d), plan_fft(coords, [1, 2]))
+	KFlowApp(cf, useTheta, deltaRank, coords, κ, k_num, ℜ, [], [], [], [], [], DiffCache(x_d), DiffCache(u_d), DiffCache(ϕ_d), plan_fft(coords, [1, 2]))
 end
 
 oneball(n) = [(n + 1 - i, i) for i ∈ 1:n]
@@ -111,7 +113,8 @@ end
 """
 compute the forcing term
 """
-function kolmogorovForce!(app::KFlowApp, u, Δt; k = 4, μ = 0.5)
+function kolmogorovForce!(app::KFlowApp, u, Δt; μ = .5)
+	k = app.k_num
 	# Fₖ(x, y) = (0, sin(ky))
 	@views @. u[:, :, 1] += μ * Δt * sin(k * app.coords[:, :, 2])
 	return u
@@ -120,18 +123,19 @@ end
 """
 compute self advection of u
 """
-function advect_semi_lagrangian!(app::KFlowApp, u::AbstractArray, Δt::Real)
+function advect_semi_lagrangian!(app::KFlowApp, u::AbstractArray, v::AbstractArray, Δt::Real)
 	# get cached arrays (either real or dual, depending on typeof(u))
 	coords_new = get_tmp(app.x_d, u)
 	u_new = get_tmp(app.u_d, u)
 
 	# (1) trace each grid point backwards along u
-	@. coords_new = app.coords - Δt * u
+	@. coords_new = app.coords - Δt * v
 
 	# (2) interpolate the velocity field at the new grid points
 	x_range = range(0.0, lengthScale - Δx, nₓ)
 	for i in 1:2
 		itp = interpolate(u[:, :, i], BSpline(Linear(Periodic())))
+		# itp = interpolate(u[:, :, i], BSpline(Cubic(Periodic(OnCell()))))
 		sitp = scale(itp, x_range, x_range)
 		extp = extrapolate(sitp, Periodic())
 
@@ -173,6 +177,7 @@ function project_incompressible!(app::KFlowApp, u::AbstractArray, Δt::Real)
 	# u = u - ∇ϕ
 	@. û_x -= 1.0im * κ_x * ϕ
 	@. û_y -= 1.0im * κ_y * ϕ
+
 	u .= real(P̂ \ û)
 	return u
 end
@@ -246,19 +251,24 @@ end
 
 function base_step!(app::KFlowApp, u::AbstractArray, Δt::Float)
 	kolmogorovForce!(app, u, Δt)
-	advect_semi_lagrangian!(app, u, Δt)
+	# u_mid = deepcopy(u)
+	# advect_semi_lagrangian!(app, u_mid, u, Δt/2)
+	# advect_semi_lagrangian!(app, u, u_mid, Δt)
+	advect_semi_lagrangian!(app, u, u, Δt)
 	project_incompressible!(app, u, Δt)
 	return u
 end
 
 function my_init(app::KFlowApp, t::Float)
 	seed!(1)
-	# u = zeros(Float, nₓ, nₓ, 2)
-	u = randn(Float, nₓ, nₓ, 2)
-	# TaylorGreen!(app, u)
+	u = zeros(Float, nₓ, nₓ, 2)
+	# u = randn(Float, nₓ, nₓ, 2)
+	TaylorGreen!(app, u)
 	# u .+= 1e-1*randn(Float, nₓ, nₓ, 2)
-	project_incompressible!(app, u, 1e-1app.ℜ)
-	u ./= my_norm(app, u)
+	# project_incompressible!(app, u, 1e-1app.ℜ)
+	# u[:, :, 1] .-= mean(u[:, :, 1])
+	# u[:, :, 2] .-= mean(u[:, :, 2])
+	# u ./= my_norm(app, u)
 	return u
 end
 
@@ -276,12 +286,14 @@ function my_step!(
 	Δt = tstop - tstart
 	level = XBraid.status_GetLevel(status)
 	iter = XBraid.status_GetIter(status)
-	if !app.useTheta || level == 0 || iter < 2
+	if !app.useTheta || level == 0
 		u = base_step!(app, u, Δt)
 	else
 		# richardson based θ method
-		m = app.cf^level
-		θ = 2(m - 1) / m
+		m = app.cf ^ level
+		p = 1.0
+		# p = 0.8
+		θ = 2^p * (m^p - 1) / (m^p * (2^p - 1))
 		# θ = 2
 		u_sub = deepcopy(u)
 		base_step!(app, u_sub, Δt / 2)
@@ -346,7 +358,7 @@ const nₓ = 99
 const Δx = lengthScale / nₓ
 
 function test()
-	my_app = KFlowApp(2, false, 3, 1600)
+	my_app = KFlowApp(2, false, 3, 2, 1600)
 
 	test_app = XBraid.BraidApp(
 		my_app, comm, comm,
@@ -364,8 +376,8 @@ function test()
 	# heatmap(curl')
 end
 
-function main(;tstop=20.0, ntime=512, deltaRank=0, ml=1, cf=2, maxiter=10, fcf=1, relaxLyap=false, savegif=true, useTheta=false, ℜ=1600, deferDelta=(1, 1))
-	my_app = KFlowApp(cf, useTheta, deltaRank, ℜ)
+function main(;tstop=20.0, ntime=512, deltaRank=0, ml=1, cf=2, maxiter=10, fcf=1, relaxLyap=false, savegif=false, useTheta=false, k=4, ℜ=1600, deferDelta=(1, 1))
+	my_app = KFlowApp(cf, useTheta, deltaRank, k, ℜ)
 
 	tstart = 0.0
 
@@ -392,24 +404,6 @@ function main(;tstop=20.0, ntime=512, deltaRank=0, ml=1, cf=2, maxiter=10, fcf=1
 
 	p = sortperm(my_app.times)
 
-	if savegif
-		preprocess(app, u) = spectralInterpolation(∇X(app, u), 256)'
-		heatmapArgs = Dict(:ticks => false, :colorbar => false, :aspect_ratio => :equal, :c => :plasma)
-		anim = @animate for i in p
-			u = my_app.solution[i]
-			# plots = [heatmap(∇_dot(u)'; heatmapArgs...)]
-			plots = [heatmap(preprocess(my_app, u); heatmapArgs...)]
-			# plots = [heatmap(u[:,:,1]; heatmapArgs...), heatmap(u[:,:,2]; heatmapArgs...)]
-			for j in 1:min(8, deltaRank)
-				ψⱼ = my_app.lyapunov_vecs[i][j]
-				# push!(plots, heatmap(∇_dot(ψⱼ)'; heatmapArgs...))
-				push!(plots, heatmap(preprocess(my_app, ψⱼ); heatmapArgs...))
-			end
-			plot(plots...; size = (600, 600))
-		end
-		gif(anim, "kflow_gif/kolmo_$(nₓ)_$(ntime)_ml$(ml).gif", fps = 20)
-	end
-
 	# if deltaRank > 0
 	#     exponents = sum(my_app.lyapunov_exps)
 	#     exponents = MPI.Allreduce(exponents, (+), comm)
@@ -430,5 +424,39 @@ function main(;tstop=20.0, ntime=512, deltaRank=0, ml=1, cf=2, maxiter=10, fcf=1
 		savefig(exps_plot, "lyapunov_exps.png")
 	end
 
+	if savegif
+		preprocess(app, u) = spectralInterpolation(∇X(app, u), 128)'
+		heatmapArgs = Dict(:ticks => false, :colorbar => false, :aspect_ratio => :equal)
+		anim = @animate for i in p
+			u = my_app.solution[i]
+			# plots = [heatmap(∇_dot(u)'; heatmapArgs...)]
+			plots = [heatmap(preprocess(my_app, u); heatmapArgs...)]
+			# plots = [heatmap(u[:,:,1]; heatmapArgs...), heatmap(u[:,:,2]; heatmapArgs...)]
+			for j in 1:min(8, deltaRank)
+				ψⱼ = my_app.lyapunov_vecs[i][j]
+				# push!(plots, heatmap(∇_dot(ψⱼ)'; heatmapArgs...))
+				push!(plots, heatmap(preprocess(my_app, ψⱼ); heatmapArgs...))
+			end
+			plot(plots...; size = (600, 600))
+		end
+		gif(anim, "kflow_gif/kolmo_$(nₓ)_$(ntime)_ml$(ml).gif", fps = 20)
+	end
+
+
 	return my_app, core
+end
+
+function checkOrder(μ=0.)
+    ntimes = [2^i for i in 5:10]
+    solutions = [zeros(nₓ, nₓ, 2) for i in 1:length(ntimes)]
+    for (i, ntime) in enumerate(ntimes)
+        app, core = main(tstop=2π, ntime=ntime, ml=1)
+        solutions[i] .= app.solTf[end]
+    end
+    u_exact = solutions[end]
+    errs = [norm(u_exact - u) for u in solutions[1:end-1]]
+    slope = (log2(errs[end]) - log2(errs[1])) / (log2(ntimes[end]) - log2(ntimes[1]))
+    println("approximate order: ", -slope)
+    p = plot(ntimes[1:end-1], errs; xscale=:log10, yscale=:log10, label="error")
+    return p, solutions
 end

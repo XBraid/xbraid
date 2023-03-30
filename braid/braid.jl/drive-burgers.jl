@@ -3,6 +3,8 @@ using MPI, Interpolations, IterativeSolvers
 using SparseArrays, ToeplitzMatrices
 using FFTW
 using Plots
+using LinearAlgebra: norm2
+using Random: seed!
 # theme(:dracula)
 
 include("XBraid.jl")
@@ -14,6 +16,7 @@ comm = MPI.COMM_WORLD
 struct BurgerApp
     x::Vector{Float64}
     κ::Frequencies{Float64}
+    μ::Float64
     cf::Int
     useTheta::Bool
     # preallocated caches that support ForwardDiff:
@@ -27,20 +30,21 @@ struct BurgerApp
     # pre-planned fourier transform
     P̂
 end
-function BurgerApp(x::Vector{<:Real}, κ::Frequencies{<:Real}, cf::Integer, useTheta::Bool, x_cache::AbstractArray, y_cache::AbstractArray)
-    BurgerApp(x, κ, cf, useTheta, DiffCache(x_cache), DiffCache(y_cache), [], [], [], [], plan_fft(x))
+
+function BurgerApp(x::Vector{<:Real}, κ::Frequencies{<:Real}, μ::Real, cf::Integer, useTheta::Bool, x_cache::AbstractArray, y_cache::AbstractArray)
+    BurgerApp(x, κ, μ, cf, useTheta, DiffCache(x_cache), DiffCache(y_cache), [], [], [], [], plan_fft(x))
 end
 
 # system parameters (globally scoped)
-const lengthScale = 64.
-const nₓ = 128
+const lengthScale = 2π
+const nₓ = 1024
 const Δx = lengthScale / nₓ
 
 function stencil_to_circulant(stencil::Vector{T}, nx::Integer) where T
     @assert isodd(length(stencil)) "stencil should have odd number of entries"
     stencilWidth = length(stencil)
     center = ceil(Int, length(stencil)/2)
-    columnView = reverse(stencil)
+    columnView = @view(stencil[end:-1:1])
     v = [columnView[center:end]; zeros(T, nx-stencilWidth); columnView[1:center-1]]
     return Circulant(v)
 end
@@ -61,14 +65,34 @@ function euler_mat(Δt::Float64; μ::Float64=.00001)
     stencil_to_circulant(stencil, nₓ)
 end
 
-function semi_lagrangian!(burger::BurgerApp, y, Δt)
+function semi_lagrangian!(burger::BurgerApp, y, v, Δt)
     x_back = get_tmp(burger.x_d, y)
     y_intp = get_tmp(burger.y_d, y)
 
-    x_back .= burger.x .- Δt * y
+    # initialize interpolation
     itp = interpolate(y, BSpline(Linear(Periodic())))
     sitp = scale(itp, range(0., lengthScale - Δx, nₓ))
     extp = extrapolate(sitp, Periodic())
+
+    # forward euler
+    x_back .= burger.x .- Δt * v
+
+    # backward euler
+    # max_newton = 1000
+    # av_iters = 0.
+    # for i ∈ eachindex(x_back)
+    #     for iter ∈ 1:max_newton
+    #         p = extp(x_back[i])
+    #         p_prime = Interpolations.gradient(extp, x_back[i])[]
+    #         x_back[i] -= (x_back[i] + Δt * p - burger.x[i]) / (1 + Δt * p_prime)
+    #         if abs(x_back[i] + Δt * p - burger.x[i]) < 1e-10
+    #             # av_iters += iter/nₓ
+    #             break
+    #         end
+    #     end
+    # end
+    # println(av_iters)
+    
     # y_intp .= interp_periodic.(x_back, Ref(y))
     y_intp .= extp.(x_back)
     y .= y_intp
@@ -87,13 +111,13 @@ function diffuse_beuler!(burger::BurgerApp, y, Δt::Float64; init_guess=nothing)
     return y
 end
 
-function diffuse_fft!(burger::BurgerApp, y::AbstractArray, Δt::Real; init_guess=nothing, μ=1e-4)
+function diffuse_fft!(burger::BurgerApp, y::AbstractArray, Δt::Real; init_guess=nothing)
     P̂ = burger.P̂
     κ = burger.κ
     # y .= real(P̂ \ (exp.(Δt*(κ.^2 - κ.^4))))
     ŷ = P̂ * y
-    # @. ŷ *= exp(-μ * Δt * κ^2) # standard diffusion
-    @. ŷ *= exp(Δt*(κ^2 - κ^4)) # KS-equation operator
+    @. ŷ *= exp(-burger.μ * Δt * κ^2) # standard diffusion
+    # @. ŷ *= exp(Δt*(κ^2 - κ^4)) # KS-equation operator
     y .= real(P̂ \ ŷ)
     return y
 end
@@ -110,6 +134,7 @@ function fillDualArray!(y::Vector{ForwardDiff.Dual{T,V,P}}, vs, ps) where {T,V,P
     checkbounds(ps, firstindex(y), 1:P)
     for i ∈ eachindex(y)
         @inbounds y[i] = ForwardDiff.Dual{T}(vs[i], ntuple(j -> @inbounds(ps[i, j]), P))
+    end
 end
 
 # this enables ForwardDiff through the FFT where it normally doesn't work
@@ -124,11 +149,14 @@ end
 
 # user routines:
 function my_init(burger::BurgerApp, t::Float64)
-    u = similar(burger.x)
-    u .= sin.(2π/lengthScale * burger.x)
-    if t == 0.
-        u .*= randn(nₓ)
-    end
+    # sin
+    u = sin.(2π/lengthScale * burger.x)
+    # gaussian
+    # u = exp.(-(burger.x .- lengthScale/2).^2 / (lengthScale/5)^2)
+    # if t == 0
+    #     seed!(1234)
+    #     u .+= 1e-1randn(nₓ) .* u
+    # end
     # @. u = exp(-(burger.x - lengthScale/2)^2)
     return u
 end
@@ -145,14 +173,18 @@ function my_basis_init(burger::BurgerApp, t::Float64, k::Int32)
 end
 
 function base_step!(burger::BurgerApp, u, Δt::Float64; init_guess=nothing)
-    # diffuse_fft!(burger, u, Δt/2)
-    semi_lagrangian!(burger, u, Δt)
-    diffuse_fft!(burger, u, Δt)
-    # diffuse_beuler!(burger, u, Δt; init_guess=init_guess)
+    u_mid = deepcopy(u)
+    semi_lagrangian!(burger, u_mid, u, Δt/2)
+    semi_lagrangian!(burger, u, u_mid, Δt) # u(∇ u)
+    # semi_lagrangian!(burger, u, sin.(burger.x), Δt) # ∇ u
+    # semi_lagrangian!(burger, u, u, Δt) # u(∇ u)
+    if burger.μ > 0.
+        diffuse_fft!(burger, u, Δt) # Δu
+    end
 end
 
 function my_step!(
-    burger::BurgerApp, status::Ptr{Cvoid}, 
+    burger::BurgerApp, status::Ptr{Cvoid},
     u, ustop, tstart::Float64, tstop::Float64
 )
     Δt = tstop - tstart
@@ -163,6 +195,9 @@ function my_step!(
         # richardson based θ method
         m = burger.cf^level
         θ = 2(m - 1)/m
+        # p = 0.86
+        # p = 1.
+        # θ = 2^p * (m^p - 1) / (m^p * (2^p - 1))
         # θ = 2
         u_sub = deepcopy(u)
         base_step!(burger, u_sub, Δt/2; init_guess=(ustop .- u)./2)
@@ -212,7 +247,7 @@ function test()
     y_new = zeros(nₓ)
     x = Array(range(0., lengthScale-Δx, nₓ))
     κ = 2π/lengthScale .* fftfreq(nₓ, nₓ)
-    burger = BurgerApp(x, κ, 4, false, x_new, y_new);
+    burger = BurgerApp(x, κ, 0., 4, false, x_new, y_new);
     test_app = XBraid.BraidApp(
         burger, comm, comm,
         my_step!, my_init,
@@ -225,16 +260,16 @@ function test()
         XBraid.testSpatialNorm(test_app, 0.0, cfile)
         XBraid.testDelta(test_app, 0.0, 0.1, 3, cfile)
     end
-    # plot(burger.solution[1])
     # plot!(burger.lyap_vecs[1][1])
+    plot(burger.solution[1])
 end
 
-function main(;tstop=20., ntime=128, deltaRank=0, useTheta=false, ml=1, cf=4, saveGif=false)
+function main(;tstop=π, ntime=128, deltaRank=0, useTheta=false, fmg=false, ml=1, cf=4, saveGif=false, maxiter=30, μ=0.)
     x_new = zeros(nₓ)
     y_new = zeros(nₓ)
     x = Array(range(0., lengthScale-Δx, nₓ))
     κ = 2π/lengthScale .* fftfreq(nₓ, nₓ)
-    burger = BurgerApp(x, κ, 4, useTheta, x_new, y_new);
+    burger = BurgerApp(x, κ, μ, 4, useTheta, x_new, y_new);
 
     tstart = 0.0
     core = XBraid.Init(
@@ -250,12 +285,17 @@ function main(;tstop=20., ntime=128, deltaRank=0, useTheta=false, ml=1, cf=4, sa
     # println("Wrapper test:")
     # @time test()
 
-    XBraid.SetMaxIter(core, 30)
+    XBraid.SetMaxIter(core, maxiter)
     XBraid.SetMaxLevels(core, ml)
     XBraid.SetCFactor(core, -1, cf)
     XBraid.SetAccessLevel(core, 1)
     XBraid.SetNRelax(core, -1, 1)
     XBraid.SetAbsTol(core, 1e-6)
+    XBraid.SetSkip(core, false)
+    if fmg
+        XBraid.SetFMG(core)
+        XBraid.SetNFMG(core, 1)
+    end
 
     XBraid.SetTimings(core, 2)
     XBraid.Warmup(core)
@@ -287,6 +327,21 @@ function main(;tstop=20., ntime=128, deltaRank=0, useTheta=false, ml=1, cf=4, sa
     end
 
     return burger, XBraid.GetRNorms(core)
+end
+
+function checkOrder(μ=0.)
+    ntimes = [2^i for i in 4:12]
+    solutions = [zeros(nₓ) for i in 1:length(ntimes)]
+    for (i, ntime) in enumerate(ntimes)
+        burger, rnorms = main(tstop=2π, ntime=ntime, ml=1, saveGif=false, μ=μ)
+        solutions[i] .= burger.solution[sortperm(burger.times)[end]]
+    end
+    u_exact = solutions[end]
+    errs = [norm2(u_exact - u) for u in solutions[1:end-1]]
+    slope = (log2(errs[end]) - log2(errs[1])) / (log2(ntimes[end]) - log2(ntimes[1]))
+    println("approximate order: ", -slope)
+    p = plot(ntimes[1:end-1], errs; xscale=:log10, yscale=:log10, label="error")
+    return p, solutions
 end
 
 # test()
