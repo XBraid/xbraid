@@ -1,6 +1,7 @@
 using ForwardDiff, DiffResults, LinearAlgebra, PreallocationTools
 using Interpolations, FFTW
-using MPI, BenchmarkTools, Plots, LaTeXStrings
+using MPI, Base.Threads
+using BenchmarkTools, Plots, LaTeXStrings
 using Statistics: mean
 using Random: seed!
 using LinearAlgebra: norm
@@ -135,7 +136,6 @@ function advect_semi_lagrangian!(app::KFlowApp, u::AbstractArray, v::AbstractArr
 	x_range = range(0.0, lengthScale - Δx, nₓ)
 	for i in 1:2
 		itp = interpolate(u[:, :, i], BSpline(Linear(Periodic())))
-		# itp = interpolate(u[:, :, i], BSpline(Cubic(Periodic(OnCell()))))
 		sitp = scale(itp, x_range, x_range)
 		extp = extrapolate(sitp, Periodic())
 
@@ -191,7 +191,7 @@ function extractPartials(u::AbstractArray{ForwardDiff.Dual{T, V, P}}) where {T, 
 end
 
 function fillArrayOfDuals!(u::AbstractArray{ForwardDiff.Dual{T, V, P}}, vs::AbstractArray{V}, ps::AbstractArray{V}) where {T, V, P}
-	checkbounds(ps, first(CartesianIndices(u)), 1:P) # make 2nd inbounds safe
+	checkbounds(ps, first(CartesianIndices(u)), 1:P) # make inbounds safe
 	for I ∈ CartesianIndices(u)
 		@inbounds u[I] = ForwardDiff.Dual{T}(vs[I], ntuple(j -> @inbounds(ps[I, j]), P))
 	end
@@ -291,8 +291,7 @@ function my_step!(
 	else
 		# richardson based θ method
 		m = app.cf ^ level
-		p = 1.0
-		# p = 0.8
+		p = 1
 		θ = 2^p * (m^p - 1) / (m^p * (2^p - 1))
 		# θ = 2
 		u_sub = deepcopy(u)
@@ -308,7 +307,7 @@ function my_step!(
 	app::KFlowApp, status::Ptr{Cvoid},
 	u::AbstractArray, ustop::AbstractArray,
 	tstart::Real, tstop::Real,
-	Ψ::Vector{Any},
+	Ψ::Vector{Any}
 )
 	rank = length(Ψ)
 	Ψ_new = reduce((a, b) -> cat(a, b, dims = 4), Ψ)

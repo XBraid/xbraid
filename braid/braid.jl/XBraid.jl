@@ -611,7 +611,7 @@ end
 
 # braid_test
 function testInitAccess(app::BraidApp, t::Real, outputFile::Libc.FILE)
-	@ccall libbraid.braid_TestInitAccess(
+	pass = @ccall libbraid.braid_TestInitAccess(
 		app::Ref{BraidApp},
 		app.comm::MPI.MPI_Comm,
 		outputFile::Libc.FILE,
@@ -620,6 +620,7 @@ function testInitAccess(app::BraidApp, t::Real, outputFile::Libc.FILE)
 		_c_access::Ptr{Cvoid},
 		_c_free::Ptr{Cvoid},
 	)::Cint
+	return pass > 0
 
 	# println("Serialized size of user vector: $(app.bufsize)")
 	# println("Check output for objects not properly freed:")
@@ -629,7 +630,7 @@ testInitAccess(app::BraidApp, t::Real, outputFile::IO) = testInitAccess(app, t, 
 testInitAccess(app::BraidApp, t::Real) = testInitAccess(app, t, c_stdout)
 
 function testClone(app::BraidApp, t::Real, outputFile::Libc.FILE)
-	@ccall libbraid.braid_TestClone(
+	pass = @ccall libbraid.braid_TestClone(
 		app::Ref{BraidApp},
 		app.comm::MPI.MPI_Comm,
 		outputFile::Libc.FILE,
@@ -639,12 +640,13 @@ function testClone(app::BraidApp, t::Real, outputFile::Libc.FILE)
 		_c_free::Ptr{Cvoid},
 		_c_clone::Ptr{Cvoid},
 	)::Cint
+	return pass > 0
 end
 testClone(app::BraidApp, t::Real, outputFile::IO) = testClone(app, t, Libc.FILE(outputFile))
 testClone(app::BraidApp, t::Real) = testClone(app, t, c_stdout)
 
 function testSum(app::BraidApp, t::Real, outputFile::Libc.FILE)
-	@ccall libbraid.braid_TestSum(
+	pass = @ccall libbraid.braid_TestSum(
 		app::Ref{BraidApp},
 		app.comm::MPI.MPI_Comm,
 		outputFile::Libc.FILE,
@@ -655,12 +657,13 @@ function testSum(app::BraidApp, t::Real, outputFile::Libc.FILE)
 		_c_clone::Ptr{Cvoid},
 		_c_sum::Ptr{Cvoid},
 	)::Cint
+	return pass > 0
 end
 testSum(app::BraidApp, t::Real, outputFile::IO) = testSum(app, t, Libc.FILE(outputFile))
 testSum(app::BraidApp, t::Real) = testSum(app, t, c_stdout)
 
 function testSpatialNorm(app::BraidApp, t::Real, outputFile::Libc.FILE)
-	@ccall libbraid.braid_TestSpatialNorm(
+	pass = @ccall libbraid.braid_TestSpatialNorm(
 		app::Ref{BraidApp},
 		app.comm::MPI.MPI_Comm,
 		outputFile::Libc.FILE,
@@ -671,12 +674,13 @@ function testSpatialNorm(app::BraidApp, t::Real, outputFile::Libc.FILE)
 		_c_sum::Ptr{Cvoid},
 		_c_norm::Ptr{Cvoid},
 	)::Cint
+	return pass > 0
 end
 testSpatialNorm(app::BraidApp, t::Real, outputFile::IO) = testSpatialNorm(app, t, Libc.FILE(outputFile))
 testSpatialNorm(app::BraidApp, t::Real) = testSpatialNorm(app, t, c_stdout)
 
 function testBuf(app::BraidApp, t::Real, outputFile::Libc.FILE)
-	@ccall libbraid.braid_TestBuf(
+	pass = @ccall libbraid.braid_TestBuf(
 		app::Ref{BraidApp},
 		app.comm::MPI.MPI_Comm,
 		outputFile::Libc.FILE,
@@ -689,6 +693,7 @@ function testBuf(app::BraidApp, t::Real, outputFile::Libc.FILE)
 		_c_bufpack::Ptr{Cvoid},
 		_c_bufunpack::Ptr{Cvoid},
 	)::Cint
+	return pass > 0
 	# print('\n')
 	# println("Check output for objects not freed:")
 	# println(app.ref_ids)
@@ -699,7 +704,7 @@ testBuf(app::BraidApp, t::Real) = testBuf(app, t, c_stdout)
 function testDelta(app::BraidApp, t::Real, dt::Real, rank::Integer, outputFile::Libc.FILE)
 	app.basis_init::Function
 	app.inner_prod::Function
-	@ccall libbraid.braid_TestDelta(
+	pass = @ccall libbraid.braid_TestDelta(
 		app::Ref{BraidApp},
 		app.comm::MPI.MPI_Comm,
 		outputFile::Libc.FILE,
@@ -718,7 +723,7 @@ function testDelta(app::BraidApp, t::Real, dt::Real, rank::Integer, outputFile::
 		_c_inner_prod::Ptr{Cvoid},
 		_c_step::Ptr{Cvoid},
 	)::Cint
-	print('\n')
+	return pass > 0
 	# println("Check output for objects not freed:")
 	# println(app.ref_ids)
 end
