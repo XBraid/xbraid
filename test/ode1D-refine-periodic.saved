@@ -250,6 +250,156 @@
   residual norm         = 1.475453e-01
   max number of levels  = 15
   number of levels      = 7
-
+# Begin Test 28
+Rank 0:  Computing MPI buffer size on level 2 for index 1
+Rank 0:  Packing MPI buffer on level 2 for index 1
+Rank 0:  Computing MPI buffer size on level 1 for index 2
+Rank 0:  Packing MPI buffer on level 1 for index 2
+Rank 0:  Computing MPI buffer size on level 0 for index 4
+Rank 0:  Packing MPI buffer on level 0 for index 4
+Rank 0:  Computing MPI buffer size on level 0 for index 4
+Rank 0:  Packing MPI buffer on level 0 for index 4
+Rank 0:  Computing MPI buffer size on level 1 for index 2
+Rank 0:  Packing MPI buffer on level 1 for index 2
+Rank 0:  Computing MPI buffer size on level 1 for index 2
+Rank 0:  Packing MPI buffer on level 1 for index 2
+Rank 0:  Computing MPI buffer size on level 1 for index 2
+Rank 0:  Packing MPI buffer on level 1 for index 2
+Rank 0:  Computing MPI buffer size on level 2 for index 1
+Rank 0:  Packing MPI buffer on level 2 for index 1
+Rank 0:  Computing MPI buffer size on level 2 for index 1
+Rank 0:  Packing MPI buffer on level 2 for index 1
+Rank 0:  Computing MPI buffer size on level 1 for index 2
+Rank 0:  Packing MPI buffer on level 1 for index 2
+Rank 0:  Computing MPI buffer size on level 0 for index 4
+Rank 0:  Packing MPI buffer on level 0 for index 4
+Rank 0:  Computing MPI buffer size on level -1 for index 0
+Rank 0:  Computing MPI buffer size on level 0 for index 5
+Rank 0:  Packing MPI buffer on level 0 for index 5
+  Braid: Temporal refinement occurred, 11 time steps
+Rank 0:  Computing MPI buffer size on level 0 for index 5
+Rank 0:  Packing MPI buffer on level 0 for index 5
+Rank 0:  Computing MPI buffer size on level 0 for index 5
+Rank 0:  Packing MPI buffer on level 0 for index 5
+Rank 0:  Computing MPI buffer size on level 1 for index 2
+Rank 0:  Packing MPI buffer on level 1 for index 2
+Rank 0:  Computing MPI buffer size on level 1 for index 2
+Rank 0:  Packing MPI buffer on level 1 for index 2
+Rank 0:  Computing MPI buffer size on level 1 for index 2
+Rank 0:  Packing MPI buffer on level 1 for index 2
+Rank 0:  Computing MPI buffer size on level 2 for index 1
+Rank 0:  Packing MPI buffer on level 2 for index 1
+Rank 0:  Computing MPI buffer size on level 2 for index 1
+Rank 0:  Packing MPI buffer on level 2 for index 1
+Rank 0:  Computing MPI buffer size on level 1 for index 2
+Rank 0:  Packing MPI buffer on level 1 for index 2
+Rank 0:  Computing MPI buffer size on level -1 for index 0
+  Braid: Temporal refinement occurred, 13 time steps
+Rank 0:  Computing MPI buffer size on level 0 for index 6
+Rank 0:  Packing MPI buffer on level 0 for index 6
+Rank 0:  Computing MPI buffer size on level 0 for index 6
+Rank 0:  Packing MPI buffer on level 0 for index 6
+Rank 0:  Computing MPI buffer size on level 1 for index 3
+Rank 0:  Packing MPI buffer on level 1 for index 3
+Rank 0:  Computing MPI buffer size on level 1 for index 3
+Rank 0:  Packing MPI buffer on level 1 for index 3
+Rank 0:  Computing MPI buffer size on level 1 for index 3
+Rank 0:  Packing MPI buffer on level 1 for index 3
+Rank 0:  Computing MPI buffer size on level 2 for index 1
+Rank 0:  Packing MPI buffer on level 2 for index 1
+Rank 0:  Computing MPI buffer size on level 2 for index 1
+Rank 0:  Packing MPI buffer on level 2 for index 1
+Rank 0:  Computing MPI buffer size on level 0 for index 6
+Rank 0:  Packing MPI buffer on level 0 for index 6
+Rank 0:  Computing MPI buffer size on level 0 for index 6
+Rank 0:  Packing MPI buffer on level 0 for index 6
+Rank 0:  Computing MPI buffer size on level 1 for index 3
+Rank 0:  Packing MPI buffer on level 1 for index 3
+Rank 0:  Computing MPI buffer size on level 1 for index 3
+Rank 0:  Packing MPI buffer on level 1 for index 3
+Rank 0:  Computing MPI buffer size on level 1 for index 3
+Rank 0:  Packing MPI buffer on level 1 for index 3
+Rank 0:  Computing MPI buffer size on level 2 for index 1
+Rank 0:  Packing MPI buffer on level 2 for index 1
+Rank 0:  Computing MPI buffer size on level 2 for index 1
+Rank 0:  Packing MPI buffer on level 2 for index 1
+  time steps = 13
+  iterations            = 3
+  residual norm         = 0.000000e+00
+  max number of levels  = 3
+  number of levels      = 3
+# Begin Test 29
+Rank 0:  Computing MPI buffer size on level 2 for index 0
+Rank 0:  Packing MPI buffer on level 2 for index 0
+Rank 0:  Computing MPI buffer size on level 0 for index 3
+Rank 0:  Packing MPI buffer on level 0 for index 3
+Rank 0:  Computing MPI buffer size on level 0 for index 3
+Rank 0:  Packing MPI buffer on level 0 for index 3
+Rank 0:  Computing MPI buffer size on level 1 for index 1
+Rank 0:  Packing MPI buffer on level 1 for index 1
+Rank 0:  Computing MPI buffer size on level 1 for index 1
+Rank 0:  Packing MPI buffer on level 1 for index 1
+Rank 0:  Computing MPI buffer size on level 1 for index 1
+Rank 0:  Packing MPI buffer on level 1 for index 1
+Rank 0:  Computing MPI buffer size on level 2 for index 0
+Rank 0:  Packing MPI buffer on level 2 for index 0
+Rank 0:  Computing MPI buffer size on level 2 for index 0
+Rank 0:  Packing MPI buffer on level 2 for index 0
+Rank 0:  Computing MPI buffer size on level -1 for index 0
+  Braid: Temporal refinement occurred, 11 time steps
+Rank 0:  Computing MPI buffer size on level 0 for index 3
+Rank 0:  Packing MPI buffer on level 0 for index 3
+Rank 0:  Computing MPI buffer size on level 0 for index 3
+Rank 0:  Packing MPI buffer on level 0 for index 3
+Rank 0:  Computing MPI buffer size on level 1 for index 1
+Rank 0:  Packing MPI buffer on level 1 for index 1
+Rank 0:  Computing MPI buffer size on level 1 for index 1
+Rank 0:  Packing MPI buffer on level 1 for index 1
+Rank 0:  Computing MPI buffer size on level 1 for index 1
+Rank 0:  Packing MPI buffer on level 1 for index 1
+Rank 0:  Computing MPI buffer size on level 2 for index 0
+Rank 0:  Packing MPI buffer on level 2 for index 0
+Rank 0:  Computing MPI buffer size on level 2 for index 0
+Rank 0:  Packing MPI buffer on level 2 for index 0
+Rank 0:  Computing MPI buffer size on level -1 for index 4
+Rank 0:  Unpacking MPI buffer on level -1 for index 4
+  Braid: Temporal refinement occurred, 13 time steps
+Rank 0:  Computing MPI buffer size on level 0 for index 4
+Rank 0:  Packing MPI buffer on level 0 for index 4
+Rank 0:  Computing MPI buffer size on level 0 for index 4
+Rank 0:  Packing MPI buffer on level 0 for index 4
+Rank 0:  Computing MPI buffer size on level 1 for index 2
+Rank 0:  Packing MPI buffer on level 1 for index 2
+Rank 0:  Computing MPI buffer size on level 1 for index 2
+Rank 0:  Packing MPI buffer on level 1 for index 2
+Rank 0:  Computing MPI buffer size on level 1 for index 2
+Rank 0:  Packing MPI buffer on level 1 for index 2
+Rank 0:  Computing MPI buffer size on level 2 for index 1
+Rank 0:  Packing MPI buffer on level 2 for index 1
+Rank 0:  Computing MPI buffer size on level 2 for index 1
+Rank 0:  Packing MPI buffer on level 2 for index 1
+Rank 0:  Computing MPI buffer size on level 1 for index 2
+Rank 0:  Packing MPI buffer on level 1 for index 2
+Rank 0:  Computing MPI buffer size on level 0 for index 4
+Rank 0:  Packing MPI buffer on level 0 for index 4
+Rank 0:  Computing MPI buffer size on level 0 for index 4
+Rank 0:  Packing MPI buffer on level 0 for index 4
+Rank 0:  Computing MPI buffer size on level 1 for index 2
+Rank 0:  Packing MPI buffer on level 1 for index 2
+Rank 0:  Computing MPI buffer size on level 1 for index 2
+Rank 0:  Packing MPI buffer on level 1 for index 2
+Rank 0:  Computing MPI buffer size on level 1 for index 2
+Rank 0:  Packing MPI buffer on level 1 for index 2
+Rank 0:  Computing MPI buffer size on level 2 for index 1
+Rank 0:  Packing MPI buffer on level 2 for index 1
+Rank 0:  Computing MPI buffer size on level 2 for index 1
+Rank 0:  Packing MPI buffer on level 2 for index 1
+Rank 0:  Computing MPI buffer size on level 1 for index 2
+Rank 0:  Packing MPI buffer on level 1 for index 2
+  time steps = 13
+  iterations            = 3
+  residual norm         = 0.000000e+00
+  max number of levels  = 3
+  number of levels      = 3
 
 

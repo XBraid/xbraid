@@ -63,7 +63,7 @@ TESTS=( "diffusion1D.sh " \
         "diffusion2D_storage.sh " \
         "diffusion2D_scaling.sh " \
         "diffusion2D_scaling_storage.sh " \
-        #"diffusion2D_check_rnorm.sh " \
+        "diffusion2D_check_rnorm.sh " \
         "diffusion2D_check_rnorm_storage.sh " \
         "compare_examples_drivers.sh " \
         "compare_examples_drivers_storage.sh " \
@@ -76,6 +76,7 @@ TESTS=( "diffusion1D.sh " \
         "shellvector_bdf2.sh "\
         "richardson.sh"\
         # "memcheck-tux-jacob.sh "\
+        "lorenz_delta.sh"\
         "docs.sh " )
 
 # Run regression tests

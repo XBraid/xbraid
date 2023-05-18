@@ -19,13 +19,13 @@
 % Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 % Latex header for doxygen 1.8.13
-\documentclass[twoside]{article}
+\documentclass[twoside,export]{article}
 
 % Packages required by doxygen
 \usepackage{fixltx2e}
 \usepackage{calc}
 \usepackage{doxygen}
-\usepackage[export]{adjustbox} % also loads graphicx
+\usepackage{adjustbox} % also loads graphicx
 \usepackage{graphicx}
 \usepackage[utf8]{inputenc}
 \usepackage{makeidx}
@@ -35,6 +35,7 @@
 \usepackage{textcomp}
 \usepackage[nointegrals]{wasysym}
 \usepackage[table]{xcolor}
+\usepackage{ifthen}
 
 % Font selection
 \usepackage[T1]{fontenc}
@@ -180,7 +181,7 @@
 
 ~\\~\\~\\~\\
 \begin{tabular*}{6.5in}{l@{\extracolsep{\fill}} l}
-\multirow{2}{*}{{\huge Users' Manual} }   & {\Large Version 3.0.0} \\
+\multirow{2}{*}{{\huge Users' Manual} }   & {\Large Version 3.1.0} \\
                                           & {\Large \today} \\
 \end{tabular*}
 \rule{\textwidth}{3pt}

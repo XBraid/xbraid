@@ -35,6 +35,9 @@
 #define ACCESSOR_FUNCTION_GET1(stype,param,vtype1) \
    braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1) \
    {return braid_StatusGet##param((braid_Status)s, v1);}
+#define ACCESSOR_FUNCTION_GET1_IN1(stype,param,vtype1,vtype2) \
+   braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 v2) \
+   {return braid_StatusGet##param((braid_Status)s, v1, v2);}
 #define ACCESSOR_FUNCTION_GET1_IN2(stype,param,vtype1,vtype2,vtype3) \
    braid_Int braid_##stype##StatusGet##param(braid_##stype##Status s, braid_##vtype1 *v1, braid_##vtype2 v2, braid_##vtype3 v3) \
    {return braid_StatusGet##param((braid_Status)s, v1, v2, v3);}
@@ -221,6 +224,73 @@ braid_StatusGetCallingFunction(braid_Status status,
                                )
 {
    *cfunction_ptr = _braid_StatusElt(status, calling_function);
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_StatusGetDeltaRank(braid_Status status,
+                         braid_Int   *rank_ptr
+                         )
+{
+   braid_Basis ba = _braid_StatusElt(status, lvectors);
+   if (ba != NULL)
+   {
+      *rank_ptr = ba->rank;
+   }
+   else
+   {
+      *rank_ptr = 0;
+   }
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_StatusGetBasisVec(braid_Status  status,
+                        braid_Vector *v_ptr,
+                        braid_Int     index
+                        )
+{
+   braid_Basis ba = _braid_StatusElt(status, lvectors);
+   if ((ba != NULL) && (index < ba->rank))
+   {
+      *v_ptr = ba->userVecs[index];
+   }
+   else // gracefully return NULL
+   {
+      v_ptr = NULL;
+   }
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_StatusGetLocalLyapExponents(braid_Status   status,
+                                  braid_Real    *exp_ptr,
+                                  braid_Int     *num_returned)
+{
+   if (_braid_StatusElt(status, wrapper_test))
+   {
+      *num_returned = 0;
+      return _braid_error_flag;
+   }
+
+   _braid_Grid **grids = _braid_StatusElt(status, grids);
+   braid_Int level   = _braid_StatusElt(status, level);
+   braid_Int nlevels = _braid_StatusElt(status, nlevels);
+   braid_Int index   = _braid_StatusElt(status, idx);
+   braid_Int cfactor = _braid_GridElt(grids[level], cfactor);
+
+   if (!_braid_StatusElt(status, lyap_exp) ||_braid_StatusElt(status, level) > 0 || (_braid_IsFPoint(index, cfactor) && nlevels > 1))
+   {
+      *num_returned = 0;
+      return _braid_error_flag;
+   }
+
+   braid_Int i_c;
+   braid_Int clower  = _braid_GridElt(grids[0], clower);
+   _braid_MapFineToCoarse(index - clower, cfactor, i_c);
+   braid_Real *exps = _braid_StatusElt(status, local_exponents)[i_c];
+   _braid_GetNEntries(exps, _braid_StatusElt(status, delta_rank), num_returned, exp_ptr);
+
    return _braid_error_flag;
 }
 
@@ -465,6 +535,15 @@ braid_StatusSetSize(braid_Status status,
    return _braid_error_flag;
 }
 
+braid_Int
+braid_StatusSetBasisSize(braid_Status status,
+                         braid_Real   size
+                         )
+{
+   _braid_StatusElt(status, size_basis ) = size;
+   return _braid_error_flag;
+}
+
 
 /* Local helper function for braid_StatusGetSingleErrorEstStep and 
 braid_StatusGetSingleErrorEstAccess.  This function avoids repeat code */
@@ -611,6 +690,7 @@ _braid_AccessStatusInit(braid_Real           t,
                         braid_Int            done,
                         braid_Int            wrapper_test,
                         braid_Int            calling_function,
+                        braid_Basis          basis,
                         braid_AccessStatus   status)
 {
    _braid_StatusElt(status, t)            = t;
@@ -623,21 +703,25 @@ _braid_AccessStatusInit(braid_Real           t,
    _braid_StatusElt(status, niter)        = iter;
    _braid_StatusElt(status, wrapper_test) = wrapper_test;
    _braid_StatusElt(status, calling_function) = calling_function;
+   _braid_StatusElt(status, lvectors)         = basis;
    return _braid_error_flag;
 }
-ACCESSOR_FUNCTION_GET1(Access, T,               Real)
-ACCESSOR_FUNCTION_GET1(Access, TIndex,          Int)
-ACCESSOR_FUNCTION_GET1(Access, Iter,            Int)
-ACCESSOR_FUNCTION_GET1(Access, Level,           Int)
-ACCESSOR_FUNCTION_GET1(Access, NLevels,         Int)
-ACCESSOR_FUNCTION_GET1(Access, NRefine,         Int)
-ACCESSOR_FUNCTION_GET1(Access, NTPoints,        Int)
-ACCESSOR_FUNCTION_GET1(Access, Residual,        Real)
-ACCESSOR_FUNCTION_GET1(Access, Done,            Int)
-ACCESSOR_FUNCTION_GET4(Access, TILD,            Real, Int, Int, Int)
-ACCESSOR_FUNCTION_GET1(Access, WrapperTest,     Int)
-ACCESSOR_FUNCTION_GET1(Access, CallingFunction, Int)
+ACCESSOR_FUNCTION_GET1(Access, T,                     Real)
+ACCESSOR_FUNCTION_GET1(Access, TIndex,                Int)
+ACCESSOR_FUNCTION_GET1(Access, Iter,                  Int)
+ACCESSOR_FUNCTION_GET1(Access, Level,                 Int)
+ACCESSOR_FUNCTION_GET1(Access, NLevels,               Int)
+ACCESSOR_FUNCTION_GET1(Access, NRefine,               Int)
+ACCESSOR_FUNCTION_GET1(Access, NTPoints,              Int)
+ACCESSOR_FUNCTION_GET1(Access, Residual,              Real)
+ACCESSOR_FUNCTION_GET1(Access, Done,                  Int)
+ACCESSOR_FUNCTION_GET4(Access, TILD,                  Real, Int, Int, Int)
+ACCESSOR_FUNCTION_GET1(Access, WrapperTest,           Int)
+ACCESSOR_FUNCTION_GET1(Access, CallingFunction,       Int)
 ACCESSOR_FUNCTION_GET1(Access, SingleErrorEstAccess,  Real)
+ACCESSOR_FUNCTION_GET1(Access, DeltaRank,             Int)
+ACCESSOR_FUNCTION_GET2(Access, LocalLyapExponents,    Real, Int)
+ACCESSOR_FUNCTION_GET1_IN1(Access, BasisVec,          Vector, Int)
 
 /*--------------------------------------------------------------------------
  * SyncStatus Routines
@@ -729,6 +813,8 @@ _braid_StepStatusInit(braid_Real       tstart,
                       braid_Int        level,
                       braid_Int        nrefine,
                       braid_Int        gupper,
+                      braid_Int        calling_function,
+                      braid_Basis      basis,
                       braid_StepStatus status)
 {
    _braid_StatusElt(status, t)         = tstart;
@@ -740,27 +826,33 @@ _braid_StepStatusInit(braid_Real       tstart,
    _braid_StatusElt(status, nrefine)   = nrefine;
    _braid_StatusElt(status, gupper)    = gupper;
    _braid_StatusElt(status, r_space)   = 0;
+   _braid_StatusElt(status, calling_function) = calling_function;
+   _braid_StatusElt(status, lvectors)         = basis;
 
    return _braid_error_flag;
 }
-ACCESSOR_FUNCTION_GET1(Step, T,             Real)
-ACCESSOR_FUNCTION_GET1(Step, TIndex,        Int)
-ACCESSOR_FUNCTION_GET1(Step, Iter,          Int)
-ACCESSOR_FUNCTION_GET1(Step, Level,         Int)
-ACCESSOR_FUNCTION_GET1(Step, NLevels,       Int)
-ACCESSOR_FUNCTION_GET1(Step, NRefine,       Int)
-ACCESSOR_FUNCTION_GET1(Step, NTPoints,      Int)
-ACCESSOR_FUNCTION_GET1(Step, Tstop,         Real)
-ACCESSOR_FUNCTION_GET2(Step, TstartTstop,   Real, Real)
-ACCESSOR_FUNCTION_GET1(Step, Tol,           Real)
-ACCESSOR_FUNCTION_GET2(Step, RNorms,        Int,  Real)
-ACCESSOR_FUNCTION_GET1(Step, OldFineTolx,   Real)
-ACCESSOR_FUNCTION_SET1(Step, OldFineTolx,   Real)
-ACCESSOR_FUNCTION_SET1(Step, TightFineTolx, Real)
-ACCESSOR_FUNCTION_SET1(Step, RFactor,       Real)
-ACCESSOR_FUNCTION_SET1(Step, RSpace,        Real)
-ACCESSOR_FUNCTION_GET1(Step, Done,          Int)
-ACCESSOR_FUNCTION_GET1(Step, SingleErrorEstStep, Real)
+ACCESSOR_FUNCTION_GET2_IN1(Step, TIUL,             Int, Int, Int)
+ACCESSOR_FUNCTION_GET1(Step, T,                    Real)
+ACCESSOR_FUNCTION_GET1(Step, TIndex,               Int)
+ACCESSOR_FUNCTION_GET1(Step, Iter,                 Int)
+ACCESSOR_FUNCTION_GET1(Step, Level,                Int)
+ACCESSOR_FUNCTION_GET1(Step, NLevels,              Int)
+ACCESSOR_FUNCTION_GET1(Step, NRefine,              Int)
+ACCESSOR_FUNCTION_GET1(Step, NTPoints,             Int)
+ACCESSOR_FUNCTION_GET1(Step, Tstop,                Real)
+ACCESSOR_FUNCTION_GET2(Step, TstartTstop,          Real, Real)
+ACCESSOR_FUNCTION_GET1(Step, Tol,                  Real)
+ACCESSOR_FUNCTION_GET2(Step, RNorms,               Int,  Real)
+ACCESSOR_FUNCTION_GET1(Step, OldFineTolx,          Real)
+ACCESSOR_FUNCTION_SET1(Step, OldFineTolx,          Real)
+ACCESSOR_FUNCTION_SET1(Step, TightFineTolx,        Real)
+ACCESSOR_FUNCTION_SET1(Step, RFactor,              Real)
+ACCESSOR_FUNCTION_SET1(Step, RSpace,               Real)
+ACCESSOR_FUNCTION_GET1(Step, Done,                 Int)
+ACCESSOR_FUNCTION_GET1(Step, SingleErrorEstStep,   Real)
+ACCESSOR_FUNCTION_GET1(Step, CallingFunction,      Int)
+ACCESSOR_FUNCTION_GET1(Step, DeltaRank,            Int)
+ACCESSOR_FUNCTION_GET1_IN1(Step, BasisVec,         Vector, Int)
 
 /*--------------------------------------------------------------------------
  * BufferStatus Routines
@@ -768,15 +860,23 @@ ACCESSOR_FUNCTION_GET1(Step, SingleErrorEstStep, Real)
 
 braid_Int
 _braid_BufferStatusInit(braid_Int        messagetype,
+                        braid_Int        idx,
+                        braid_Int        level,
                         braid_Int        size,
                         braid_BufferStatus status)
 {
    _braid_StatusElt(status, messagetype)    = messagetype;
+   _braid_StatusElt(status, idx)            = idx;
+   _braid_StatusElt(status, level)          = level;
    _braid_StatusElt(status, size_buffer)    = size;
+   _braid_StatusElt(status, size_basis)     = 0;
    return _braid_error_flag;
 }
 ACCESSOR_FUNCTION_GET1(Buffer, MessageType, Int)
+ACCESSOR_FUNCTION_GET1(Buffer, TIndex,      Int)
+ACCESSOR_FUNCTION_GET1(Buffer, Level,       Int)
 ACCESSOR_FUNCTION_SET1(Buffer, Size,        Real)
+ACCESSOR_FUNCTION_SET1(Buffer, BasisSize,   Real)
 
 
 /*--------------------------------------------------------------------------

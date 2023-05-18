@@ -88,7 +88,7 @@ TESTS=( "cd $docs_dir; make clean; make developer_manual " \
 # The unfiltered output is the direct output of the script, whereas std.out.*
 # is filtered by a grep for the lines that are to be checked.  
 #
-lines_to_check=".*Error.*|.*error.*|.*pdf is appropriately sized|.*pdf is too small"
+lines_to_check=".*Fatal Error.*|.*Fatal error.*|.*pdf is appropriately sized|.*pdf is too small"
 lines_to_ignore="errorcodes"
 #
 # Then, each std.out.num is compared against stored correct output in 

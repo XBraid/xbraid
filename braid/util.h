@@ -119,6 +119,14 @@ _braid_GetNEntries(braid_Real   *_array,
                    braid_Int    *k_ptr, 
                    braid_Real   *array);
 
+/**
+ * Wrap MPI_Wtime.  If core->timings >= timing_level, then
+ * return MPI_Wtime(), otherwise, return -1.  This allows us
+ * to time Braid more intrusively, as timing_level increases.
+ **/
+braid_Real
+_braid_MPI_Wtime(braid_Core core, braid_Int timing_level);
+
 
 
 #endif
