@@ -1,5 +1,14 @@
 
 """
+Displays a caught error message, including stacktrace, without throwing
+"""
+function stacktrace_warn(msg::String, err)
+    err_msg = sprint(showerror, err)
+    trace = sprint((io,v) -> show(io, "text/plain", v), stacktrace(catch_backtrace()))
+    @warn "$(msg):\n$(err_msg)\n$(trace)"
+end
+
+"""
 Where'd all my data go?
 This extends Base to include a buffer which throws away the data written to it
 (useful for measuring the serialized size of an object)
@@ -14,52 +23,45 @@ function Base.read(from::BlackHoleBuffer, T::Type{UInt8})
 end
 function Base.write(to::BlackHoleBuffer, x::UInt8)
     to.ptr += 1
-    return sizeof(UInt8)
+    return 1
+end
+function Base.write(to::BlackHoleBuffer, x::Array{T}) where T
+    to.ptr += sizeof(x)
+    return sizeof(x)
 end
 
 # these are internal functions which directly interface with XBraid
-# TODO: get the status structures working
-# Do we want to unpack all possible values it could contain into a julia struct?
-# Or do we want to pass a pointer to the user functions that they can call StatusGet on?
 
 function _jl_step!(_app::Ptr{Cvoid},
                    _ustop::Ptr{Cvoid},
                    _fstop::Ptr{Cvoid},
                    _u::Ptr{Cvoid},
-                   status::Ptr{Cvoid})::Cint
+                   _status::Ptr{Cvoid})::Cint
     # println("step")
     app = unsafe_pointer_to_objref(_app)::BraidApp
     u = unsafe_pointer_to_objref(_u)::BraidVector
     ustop = unsafe_pointer_to_objref(_ustop)::BraidVector
     tstart, tstop = status_GetTstartTstop(status)
     delta_rank = status_GetDeltaRank(status)
+    status = StepStatus(_status)
 
     # call the user's function
     try
+        # residual option
         if _fstop !== C_NULL
             fstop = unsafe_pointer_to_objref(_fstop)::BraidVector
             app.step(app.user_app, status, u.user_vector, ustop.user_vector, fstop.user_vector, tstart, tstop)
+        # Delta correction
         elseif delta_rank > 0
             basis_vecs = status_GetBasisVectors(status)
             app.step(app.user_app, status, u.user_vector, ustop.user_vector, tstart, tstop, basis_vecs)
+        # Default
         else
             app.step(app.user_app, status, u.user_vector, ustop.user_vector, tstart, tstop)
         end
     catch err
-        # we don't want julia exceptions to cause XBraid to exit in an undefined state...
-        # so just print the message and move on
-        print("Error in user Step: ")
-        # println(err)
-        throw(err)
+        stacktrace_warn("Error in user Step", err)
     end
-    # if _fstop !== C_NULL
-    #     fstop = unsafe_pointer_to_objref(_fstop)::BraidVector
-    #     app.step(app.user_app, status, u.user_vector, ustop.user_vector, fstop.user_vector, tstart[], tstop[])
-    # elseif delta_rank[] > 0
-    #     app.step(app.user_app, status, u.user_vector, ustop.user_vector, tstart[], tstop[], basis_vecs)
-    # else
-    #     app.step(app.user_app, status, u.user_vector, ustop.user_vector, tstart[], tstop[])
-    # end
 
     return 0
 end
@@ -75,12 +77,9 @@ function _jl_init!(_app::Ptr{Cvoid}, t::Cdouble, u_ptr::Ptr{Ptr{Cvoid}})::Cint
     try
         u = BraidVector(app.init(app.user_app, t))
     catch err
-        print("Error in user Init: ")
-        # println(err)
-        throw(err)
+        stacktrace_warn("Error in user Init", err)
         return 1
     end
-    # u = BraidVector(app.init(app.user_app, t))
     _register_vector(app, u)
 
     unsafe_store!(u_ptr, pointer_from_objref(u))
@@ -89,8 +88,7 @@ function _jl_init!(_app::Ptr{Cvoid}, t::Cdouble, u_ptr::Ptr{Ptr{Cvoid}})::Cint
     if app.bufsize == 0
         # This serializes u but doesn't actually
         # store the data
-        # buffer = BlackHoleBuffer()
-        buffer = IOBuffer()
+        buffer = BlackHoleBuffer()
         serialize(buffer, u)
         app.bufsize = buffer.ptr + sizeof(Int)
     end
@@ -113,20 +111,20 @@ _c_init = @cfunction(_jl_init!, Cint, (Ptr{Cvoid}, Cdouble, Ptr{Ptr{Cvoid}}))
 function _jl_init_basis!(_app::Ptr{Cvoid}, t::Cdouble, index::Cint, u_ptr::Ptr{Ptr{Cvoid}})::Cint
     # println("init_basis")
     app = unsafe_pointer_to_objref(_app)::BraidApp
-    # try
-    #     u = BraidVector(app.basis_init(app.user_app, t, index))
-    # catch err
-    #     print("Error in user InitBasis: ")
-    #     println(err)
-    #     return 1
-    # end
-    u = BraidVector(app.basis_init(app.user_app, t, index))
+    u = nothing
+    try
+        u = BraidVector(app.basis_init(app.user_app, t, index))
+    catch err
+        stacktrace_warn("Error in user InitBasis", err)
+        return 1
+    end
+
     _register_vector(app, u)
     unsafe_store!(u_ptr, pointer_from_objref(u))
 
     # store max size of all initialized vectors
     if app.bufsize == 0
-        buffer = IOBuffer()
+        buffer = BlackHoleBuffer()
         serialize(buffer, u)
         app.bufsize_lyap = buffer.ptr + sizeof(Int)
     end
@@ -148,7 +146,8 @@ function _jl_clone!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, v_ptr::Ptr{Ptr{Cvoid}})::C
     v = nothing
     try
         v = deepcopy(u)
-    catch
+    catch err
+        stacktrace_warn("Clone error", err)
         return 1
     end
 
@@ -175,36 +174,28 @@ _c_free = @cfunction(_jl_free!, Cint, (Ptr{Cvoid}, Ptr{Cvoid}))
 function _jl_sum!(_app::Ptr{Cvoid},
     alpha::Cdouble, _x::Ptr{Cvoid},
     beta::Cdouble, _y::Ptr{Cvoid})::Cint
-    # println("sum")
     app = unsafe_pointer_to_objref(_app)::BraidApp
     x = unsafe_pointer_to_objref(_x)::BraidVector
     y = unsafe_pointer_to_objref(_y)::BraidVector
     try
         app.sum(app.user_app, alpha, x.user_vector, beta, y.user_vector)
     catch err
-        print("Error in user Sum: ")
-        # println(err)
-        throw(err)
+        stacktrace_warn("Error in user Sum", err)
     end
-    # app.sum(app.user_app, alpha, x.user_vector, beta, y.user_vector)
     return 0
 end
 precompile(_jl_sum!, (Ptr{Cvoid}, Cdouble, Ptr{Cvoid}, Cdouble, Ptr{Cvoid}))
 _c_sum = @cfunction(_jl_sum!, Cint, (Ptr{Cvoid}, Cdouble, Ptr{Cvoid}, Cdouble, Ptr{Cvoid}))
 
 function _jl_norm!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, norm_ptr::Ptr{Cdouble})::Cint
-    # println("norm")
     app = unsafe_pointer_to_objref(_app)::BraidApp
     u = unsafe_pointer_to_objref(_u)::BraidVector
     norm = NaN
     try
         norm = app.spatialnorm(app.user_app, u.user_vector)
     catch err
-        print("Error in user Norm: ")
-        throw(err)
-        # println(err)
+        stacktrace_warn("Error in user Norm", err)
     end
-    # norm = app.spatialnorm(app.user_app, u.user_vector)
     unsafe_store!(norm_ptr, norm)
 
     return 0
@@ -213,7 +204,6 @@ precompile(_jl_norm!, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cdouble}))
 _c_norm = @cfunction(_jl_norm!, Cint, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cdouble}))
 
 function _jl_inner_prod!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, _v::Ptr{Cvoid}, norm_ptr::Ptr{Cdouble})::Cint
-    # println("inner_prod")
     app = unsafe_pointer_to_objref(_app)::BraidApp
     u = unsafe_pointer_to_objref(_u)::BraidVector
     v = unsafe_pointer_to_objref(_v)::BraidVector
@@ -221,11 +211,8 @@ function _jl_inner_prod!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, _v::Ptr{Cvoid}, norm_
     try
         prod = app.inner_prod(app.user_app, u.user_vector, v.user_vector)
     catch err
-        print("Error in user InnerProd: ")
-        # println(err)
-        throw(err)
+        stacktrace_warn("Error in user InnerProd", err)
     end
-    # prod = app.inner_prod(app.user_app, u.user_vector, v.user_vector)
     unsafe_store!(norm_ptr, prod)
 
     return 0
@@ -233,20 +220,17 @@ end
 precompile(_jl_inner_prod!, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cdouble}))
 _c_inner_prod = @cfunction(_jl_inner_prod!, Cint, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cdouble}))
 
-function _jl_access!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, status::Ptr{Cvoid})::Cint
-    # println("access")
+function _jl_access!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, _status::Ptr{Cvoid})::Cint
     app = unsafe_pointer_to_objref(_app)::BraidApp
+    status = AccessStatus(_status)
 
     if !isnothing(app.access)
         u = unsafe_pointer_to_objref(_u)::BraidVector
         try
             app.access(app.user_app, status, u.user_vector)
         catch err
-            print("Error in user Access: ")
-            # println(err)
-            throw(err)
+            stacktrace_warn("Error in user Access", err)
         end
-        # app.access(app.user_app, status, u.user_vector)
     end
 
     return 0
@@ -255,7 +239,6 @@ precompile(_jl_access!, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}))
 _c_access = @cfunction(_jl_access!, Cint, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}))
 
 function _jl_bufsize!(_app::Ptr{Cvoid}, size_ptr::Ptr{Cint}, status::Ptr{Cvoid})::Cint
-    # println("bufsize")
     app = unsafe_pointer_to_objref(_app)
     unsafe_store!(size_ptr, app.bufsize)
     return 0
@@ -263,15 +246,15 @@ end
 _c_bufsize = @cfunction(_jl_bufsize!, Cint, (Ptr{Cvoid}, Ptr{Cint}, Ptr{Cvoid}))
 
 function _jl_bufpack!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, _buffer::Ptr{Cvoid}, status::Ptr{Cvoid})::Cint
-    # println("bufpack")
     app = unsafe_pointer_to_objref(_app)::BraidApp
     u = unsafe_pointer_to_objref(_u)::BraidVector
-    # buffer = wrap_buffer(_buffer, app.bufsize + sizeof(Int))
     buff_arr = unsafe_wrap(Vector{UInt8}, Base.unsafe_convert(Ptr{UInt8}, _buffer), app.bufsize)
     buffer = IOBuffer(buff_arr, read=true, write=true, maxsize=app.bufsize)
+
     # store u in buffer
     seek(buffer, sizeof(Int))
     serialize(buffer, u)
+
     # also store the total size of the buffer
     seek(buffer, 0)
     write(buffer, buffer.size)
@@ -285,7 +268,6 @@ precompile(_jl_bufpack!, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}))
 _c_bufpack = @cfunction(_jl_bufpack!, Cint, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}))
 
 function _jl_bufunpack!(_app::Ptr{Cvoid}, _buffer::Ptr{Cvoid}, u_ptr::Ptr{Ptr{Cvoid}}, status::Ptr{Cvoid})::Cint
-    # println("bufunpack")
     @assert _buffer !== C_NULL "tried to unpack null buffer"
     app = unsafe_pointer_to_objref(_app)::BraidApp
     # get size of buffer we are unpacking:
@@ -293,7 +275,6 @@ function _jl_bufunpack!(_app::Ptr{Cvoid}, _buffer::Ptr{Cvoid}, u_ptr::Ptr{Ptr{Cv
     bufsize = unsafe_load(header)::Int
     buff_arr = unsafe_wrap(Vector{UInt8}, Base.unsafe_convert(Ptr{UInt8}, _buffer), bufsize)
     buffer = IOBuffer(buff_arr, read=true, write=true, maxsize=bufsize)
-    # buffer = wrap_buffer(_buffer, bufsize)
     seek(buffer, sizeof(Int))
 
     # unpack the buffer into a new julia object, then register with IdDict

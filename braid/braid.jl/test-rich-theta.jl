@@ -25,6 +25,7 @@ function AdvDifApp(nx::Integer, Δx::Real, ν::Real, α::Real, useTheta::Bool, u
     # ∇ = (1/Δx)Toeplitz([0, -1/2, zeros(nx-2)...], [0, 1/2, zeros(nx-2)...])
     Δ = (1/Δx^2)Circulant([-2, 1, zeros(nx-3)..., 1])
     ∇ = (1/Δx)Circulant([0, -1/2, zeros(nx-3)..., 1/2])
+    # ∇ = (1/Δx)Circulant([-1, 1, zeros(nx-2)...])
     A = ν*Δ - α*∇
     AdvDifApp(nx, Δx, A, I, useTheta, useRich, cf, order, [], [])
 end

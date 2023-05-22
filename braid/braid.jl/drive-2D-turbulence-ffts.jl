@@ -114,9 +114,9 @@ end
 """
 compute the forcing term
 """
-function kolmogorovForce!(app::KFlowApp, u, Δt; μ = .5)
+function kolmogorovForce!(app::KFlowApp, u, Δt; μ = 1.)
 	k = app.k_num
-	# Fₖ(x, y) = (0, sin(ky))
+	# Fₖ(x, y) = (sin(ky), 0)
 	@views @. u[:, :, 1] += μ * Δt * sin(k * app.coords[:, :, 2])
 	return u
 end
@@ -263,12 +263,12 @@ function my_init(app::KFlowApp, t::Float)
 	seed!(1)
 	u = zeros(Float, nₓ, nₓ, 2)
 	# u = randn(Float, nₓ, nₓ, 2)
-	TaylorGreen!(app, u)
-	# u .+= 1e-1*randn(Float, nₓ, nₓ, 2)
-	# project_incompressible!(app, u, 1e-1app.ℜ)
-	# u[:, :, 1] .-= mean(u[:, :, 1])
-	# u[:, :, 2] .-= mean(u[:, :, 2])
-	# u ./= my_norm(app, u)
+	# TaylorGreen!(app, u)
+	u .+= 1e-1*randn(Float, nₓ, nₓ, 2)
+	project_incompressible!(app, u, 1e-1app.ℜ)
+	u[:, :, 1] .-= mean(u[:, :, 1])
+	u[:, :, 2] .-= mean(u[:, :, 2])
+	u ./= my_norm(app, u)
 	return u
 end
 
@@ -426,7 +426,9 @@ function main(;tstop=20.0, ntime=512, deltaRank=0, ml=1, cf=2, maxiter=10, fcf=1
 	if savegif
 		preprocess(app, u) = spectralInterpolation(∇X(app, u), 128)'
 		heatmapArgs = Dict(:ticks => false, :colorbar => false, :aspect_ratio => :equal)
-		anim = @animate for i in p
+		# anim = @animate for i in p[1:cf:end]
+		count = 1
+		for i in p
 			u = my_app.solution[i]
 			# plots = [heatmap(∇_dot(u)'; heatmapArgs...)]
 			plots = [heatmap(preprocess(my_app, u); heatmapArgs...)]
@@ -436,9 +438,11 @@ function main(;tstop=20.0, ntime=512, deltaRank=0, ml=1, cf=2, maxiter=10, fcf=1
 				# push!(plots, heatmap(∇_dot(ψⱼ)'; heatmapArgs...))
 				push!(plots, heatmap(preprocess(my_app, ψⱼ); heatmapArgs...))
 			end
-			plot(plots...; size = (600, 600))
+			fig = plot(plots...; size = (600, 600))
+			savefig(fig, "kflow_gif/beamer/kolmo_$(nₓ)_$(ntime)_ml$(ml)-$(count).png")
+			count += 1
 		end
-		gif(anim, "kflow_gif/kolmo_$(nₓ)_$(ntime)_ml$(ml).gif", fps = 20)
+		# gif(anim, "kflow_gif/kolmo_$(nₓ)_$(ntime)_ml$(ml).gif", fps = 20)
 	end
 
 
@@ -446,7 +450,7 @@ function main(;tstop=20.0, ntime=512, deltaRank=0, ml=1, cf=2, maxiter=10, fcf=1
 end
 
 function checkOrder(μ=0.)
-    ntimes = [2^i for i in 5:10]
+    ntimes = [2^i for i in 5:12]
     solutions = [zeros(nₓ, nₓ, 2) for i in 1:length(ntimes)]
     for (i, ntime) in enumerate(ntimes)
         app, core = main(tstop=2π, ntime=ntime, ml=1)

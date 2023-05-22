@@ -27,7 +27,6 @@ module XBraid
 using Serialization: serialize, deserialize, Serializer # used to pack arbitrary julia objects into buffers
 using LinearAlgebra: norm2
 using MPI
-using MethodAnalysis
 
 include("status.jl")
 include("wrapper_functions.jl")
@@ -147,9 +146,9 @@ mutable struct BraidCore
 	# internal values
 	_braid_core::Ptr{Cvoid}
 	_braid_app::BraidApp
-	tstart::Real
-	tstop::Real
-	ntime::Integer
+	tstart::Float64
+	tstop::Float64
+	ntime::Int32
 	function BraidCore(_braid_core, _braid_app, tstart, tstop, ntime)
 		x = new(_braid_core, _braid_app, tstart, tstop, ntime)
 		finalizer(x) do core
@@ -323,11 +322,9 @@ Run the XBraid solver. This function calls XBraid.Warmup by default, but this ca
 """
 function Drive(core::BraidCore; warmup=true)
 	if warmup
-		# println("Calling Warmup")
 		Warmup(core)
 	else
 		_app = core._braid_app
-		# println("Calling Precompile")
 		# cheaper precompile option, but less effective
 		begin
 			postInitPrecompile(_app)
@@ -338,7 +335,6 @@ function Drive(core::BraidCore; warmup=true)
 	end
 	_Drive(core)
 end
-
 
 function PrintStats(core::BraidCore)
 	GC.@preserve core begin

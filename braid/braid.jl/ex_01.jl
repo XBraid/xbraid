@@ -62,8 +62,7 @@ XBraid.SetMaxLevels(core, 2)
 XBraid.SetAbsTol(core, 1.e-6)
 XBraid.SetCFactor(core, -1, 2)
 
-XBraid.Warmup(core)
-XBraid.SetTimings(core, 2)
-XBraid.Drive(core; warmup=false)
-XBraid.PrintTimers(core)
+XBraid.Drive(core)
+
 # no need for braid_Destroy(core), julia will take care of it :)
+MPI.Finalize()
