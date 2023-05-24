@@ -34,7 +34,7 @@ cdef extern from "status.h":
 cdef extern from "braid_status.h":
     ##
     # Wrap StepStatus Routines
-    ibraid_StepStatusGetT (braid_StepStatus status, double *t_ptr)
+    int braid_StepStatusGetT (braid_StepStatus status, double *t_ptr)
     int braid_StepStatusGetTIndex (braid_StepStatus status, int *idx_ptr)
     int braid_StepStatusGetIter (braid_StepStatus status, int *iter_ptr)
     int braid_StepStatusGetLevel (braid_StepStatus status, int *level_ptr)
