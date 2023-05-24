@@ -146,3 +146,7 @@ function status_GetBasisVectors(status::Union{StepStatus, AccessStatus})
 
     return Ψ
 end
+
+function status_SetRFactor(status::StepStatus, rfactor::Real)
+    @ccall libbraid.braid_StatusSetRFactor(status.ptr::Ptr{Cvoid}, rfactor::Cdouble)::Cint
+end

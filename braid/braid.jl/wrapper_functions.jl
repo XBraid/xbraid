@@ -41,9 +41,10 @@ function _jl_step!(_app::Ptr{Cvoid},
     app = unsafe_pointer_to_objref(_app)::BraidApp
     u = unsafe_pointer_to_objref(_u)::BraidVector
     ustop = unsafe_pointer_to_objref(_ustop)::BraidVector
+    status = StepStatus(_status)
+
     tstart, tstop = status_GetTstartTstop(status)
     delta_rank = status_GetDeltaRank(status)
-    status = StepStatus(_status)
 
     # call the user's function
     try

@@ -20,7 +20,7 @@
  ***********************************************************************EHEADER=#
 
 module XBraid
-# Not sure I want to export anything...
+# Not sure we want to export anything...
 # export Init, Drive, etc.
 
 # BEGIN MODULE XBraid
@@ -38,13 +38,12 @@ include("wrapper_functions.jl")
  |  braid_Fortran_TimeGrid, and braid_Fortran_Sync must all be set to zero in
  |  braid.h before compiling. (TODO: figure out why this is...)
  =#
-libbraid = "../libbraid.so"
+libbraid = joinpath(dirname(@__DIR__), "libbraid.so")
 
 c_stdout = Libc.FILE(Libc.RawFD(1), "w")  # corresponds to C standard output
 function malloc_null_double_ptr(T::Type)
 	pp = Base.Libc.malloc(sizeof(Ptr{Cvoid}))
 	pp = reinterpret(Ptr{Ptr{T}}, pp)
-	# unsafe_store!(pp, C_NULL)
 	return pp
 end
 
@@ -91,7 +90,7 @@ mutable struct BraidApp
 	inner_prod::OptionalFunction
 
 	# dictionary to store globally scoped references to allocated braid_vector objects
-	ref_ids::IdDict{UInt64, BraidVector}   
+	ref_ids::IdDict{UInt64, BraidVector}
 	bufsize::Integer  # expected serialized size of user's vector
 	bufsize_lyap::Integer
 	user_AppType::Type
@@ -110,7 +109,7 @@ function default_norm(app, u::AbstractArray)
 end
 
 function default_inner_prod(app, u::AbstractArray, v::AbstractArray)
-	return dot(u, v)
+	return u ⋅ v
 end
 
 # default constructor
@@ -159,13 +158,16 @@ mutable struct BraidCore
 end
 
 """
-Used to add/remove a reference to the vector u to the IdDict stored in the app.
+Used to add a reference to the vector u to the IdDict stored in the app.
 this keeps all newly allocated braid_vectors in the global scope, preventing them from being garbage collected. 
 """
 function _register_vector(app::BraidApp, u::BraidVector)
 	app.ref_ids[objectid(u)] = u
 end
 
+"""
+Used to remove a reference to the vector u to the IdDict stored in the app.
+"""
 function _deregister_vector(app::BraidApp, u::BraidVector)
 	id = objectid(u)::UInt64
 	pop!(app.ref_ids, id)

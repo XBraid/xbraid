@@ -57,7 +57,7 @@ extern "C" {
  */
 
 /** Define Fortran name-mangling schema, there are four supported options, see braid_F90_iface.c */
-#define braid_FMANGLE 1
+#define braid_FMANGLE 0
 /** Turn on the optional user-defined spatial coarsening and refinement functions */ 
 #define braid_Fortran_SpatialCoarsen 0
 /** Turn on the optional user-defined residual function */ 
