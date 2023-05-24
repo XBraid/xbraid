@@ -91,7 +91,7 @@ libbraid.a: $(BRAID_HEADERS) $(BRAID_OBJ)
 
 libbraid.so: $(BRAID_HEADERS) $(BRAID_OBJ)
 	@echo "Building" $@ "..."
-	$(MPICC) $(SEQFLAGS) $(CFLAGS) -shared -fPIC $(BRAID_OBJ) -o $@
+	$(MPICC) $(SEQFLAGS) $(CFLAGS) $(SHAREDFLAGS) $(BRAID_OBJ) -o $@
 
 all: libbraid.a 
 

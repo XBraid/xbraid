@@ -61,6 +61,7 @@ ifeq ($(findstring tux408,$(HOSTNAME)),tux408)
    MPICXX = mpicxx
    MPIF90 = mpif90
    LFLAGS = -lm
+   SHAREDFLAGS = -shared
    ifeq ($(optlevel),DEBUG)
       CFLAGS = -g -Wall -lm -fPIC
       CXXFLAGS = -g -Wall -Wno-reorder -lm -fPIC
@@ -81,6 +82,7 @@ else ifeq ($(shell uname -s), Darwin)
    MPICXX = mpicxx
    MPIF90 = mpif90
    LFLAGS = -lm -lstdc++
+   SHAREDFLAGS = -shared -undefined dynamic_lookup
    ifeq ($(optlevel),DEBUG)
       CFLAGS = -g -Wall -fPIC
       CXXFLAGS = -g -Wall -fPIC
@@ -96,6 +98,7 @@ else ifeq ($(findstring cab,$(HOSTNAME)),cab)
    MPICXX = mpiicpc
    MPIF90 = mpif90
    LFLAGS = -lm
+   SHAREDFLAGS = -shared
    ifeq ($(optlevel),DEBUG)
       CFLAGS = -g -Wall -fPIC
       CXXFLAGS = -g -Wall -fPIC
@@ -111,6 +114,7 @@ else ifeq ($(findstring vulcan,$(HOSTNAME)),vulcan)
    MPICXX = mpixlcxx
    MPIF90 = mpixlf90
    LFLAGS = -lm
+   SHAREDFLAGS = -shared
    ifeq ($(optlevel),DEBUG)
       CFLAGS = -g -Wall -fPIC
       CXXFLAGS = -g -Wall -fPIC
@@ -127,6 +131,7 @@ else ifeq ($(findstring cadaverous,$(HOSTNAME)),cadaverous)
    MPICXX = /usr/bin/mpicxx
    MPIF90 = /usr/bin/mpif90
    LFLAGS = -lm
+   SHAREDFLAGS = -shared
    ifeq ($(optlevel),DEBUG)
       CFLAGS = -g -Wall -fPIC
       CXXFLAGS = -g -Wall -fPIC
@@ -141,6 +146,7 @@ else ifeq ($(shell uname -s),Linux)
    MPICXX = mpicxx
    MPIF90 = mpif90
    LFLAGS = -lm
+   SHAREDFLAGS = -shared
    ifeq ($(optlevel),DEBUG)
       CFLAGS = -g -Wall -fPIC
       CXXFLAGS = -g -Wall -fPIC
@@ -158,6 +164,7 @@ else
    MPICXX = mpicxx
    MPIF90 = mpif90
    LFLAGS = -lm
+   SHAREDFLAGS = -shared
    ifeq ($(optlevel),DEBUG)
       CFLAGS = -g -Wall -fPIC
       CXXFLAGS = -g -Wall -fPIC
@@ -175,6 +182,7 @@ ifeq ($(sequential),YES)
    MPICXX = g++
    MPIF90 = gfortran
    LFLAGS = -lm
+   SHAREDFLAGS = -shared
    ifeq ($(optlevel),DEBUG)
       CFLAGS = -g -Wall -D braid_SEQUENTIAL
       CXXFLAGS = -g -Wall -D braid_SEQUENTIAL
