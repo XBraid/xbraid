@@ -9,6 +9,7 @@ wrapperTests.txt
 # binaries
 # as these are build-dependent, binaries should not be committed
 *.o
+*.so
 *.a
 ex-01
 ex-01-adjoint

@@ -57,15 +57,15 @@ extern "C" {
  */
 
 /** Define Fortran name-mangling schema, there are four supported options, see braid_F90_iface.c */
-#define braid_FMANGLE 1
+#define braid_FMANGLE 0
 /** Turn on the optional user-defined spatial coarsening and refinement functions */ 
 #define braid_Fortran_SpatialCoarsen 0
 /** Turn on the optional user-defined residual function */ 
-#define braid_Fortran_Residual 1
+#define braid_Fortran_Residual 0
 /** Turn on the optional user-defined time-grid function */ 
-#define braid_Fortran_TimeGrid 1
+#define braid_Fortran_TimeGrid 0
 /** Turn on the optional user-defined sync function */
-#define braid_Fortran_Sync 1
+#define braid_Fortran_Sync 0
 
 /** @} */
 
@@ -605,7 +605,7 @@ braid_PrintTimers(braid_Core  core           /**< braid_Core (_braid_Core) struc
  **/
 braid_Int
 braid_ResetTimer(braid_Core  core           /**< braid_Core (_braid_Core) struct*/
-);
+                );
 
 /**
  * After Drive() finishes, this function can be called to write out the convergence history 

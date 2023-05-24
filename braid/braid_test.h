@@ -146,6 +146,32 @@ braid_TestInnerProd( braid_App              app,        /**< User defined App st
                      braid_PtFcnInnerProd   inner_prod  /**< Compute inner product of two braid_Vectors */
                      );
               
+
+
+/**
+ * Test the inner_prod function.\n
+ * A vector is initialized at time *t1*, then the vector is normalized under the
+ * norm induced by inner_prod. A second vector is initialized at time *t2*, and the
+ * Gram Schmidt process removes the component of the second vector along the 
+ * direction of the first. The test is inconclusive unless both vectors are nonzero 
+ * and not orthogonal.
+ *
+ * - Returns 0 if the tests fail
+ * - Returns 1 if the tests pass
+ * - Check the log messages to see details of which tests failed.
+ **/
+braid_Int
+braid_TestInnerProd( braid_App              app,        /**< User defined App structure */
+                     MPI_Comm               comm_x,     /**< Spatial communicator */  
+                     FILE                  *fp,         /**< File pointer (could be stdout or stderr) for log messages */
+                     braid_Real             t1,         /**< Time value used to initialize the 1st vector */
+                     braid_Real             t2,         /**< Time value used to initialize the 2nd vector (t1 != t2) */
+                     braid_PtFcnInit        init,       /**< Initialize a braid_Vector on finest temporal grid */
+                     braid_PtFcnFree        free,       /**< Free a braid_Vector */
+                     braid_PtFcnSum         sum,        /**< Compute vector sum of two braid_Vectors */ 
+                     braid_PtFcnInnerProd   inner_prod  /**< Compute inner product of two braid_Vectors */
+                     );
+              
 /**
  * Test the BufPack, BufUnpack and BufSize functions.\n
  * A vector is initialized at time *t*, packed into a buffer, then unpacked from a buffer.
@@ -282,6 +308,32 @@ braid_TestDelta(braid_App               app,          /**< User defined App stru
                 braid_PtFcnStep         mystep        /**< Compute a time step with a braid_Vector */
                 );
 
+/**
+ * Warmup calls all user functions once with sensible arguments.
+ * This is especially useful for the Julia wrapper, since Julia is JIT compiled,
+ * and this force compiles all the functions used in braid_Drive.
+ */
+braid_Int
+braid_Warmup( braid_App                app,         /**< User defined App structure */
+              MPI_Comm                 comm_x,      /**< Spatial communicator */
+              braid_Real               t,           /**< Time value to initialize test vectors with*/
+              braid_Real               fdt,         /**< Fine time step value that you spatially coarsen from */
+              braid_Real               cdt,         /**< Coarse time step value that you coarsen to */
+              braid_PtFcnInit          init,        /**< Initialize a braid_Vector on finest temporal grid*/
+              braid_PtFcnAccess        access,      /**< Allows access to XBraid and current braid_Vector (can be NULL for no writing)*/
+              braid_PtFcnFree          free,        /**< Free a braid_Vector*/
+              braid_PtFcnClone         clone,       /**< Clone a braid_Vector */
+              braid_PtFcnSum           sum,         /**< Compute vector sum of two braid_Vectors */
+              braid_PtFcnSpatialNorm   spatialnorm, /**< Compute norm of a braid_Vector, this is a norm only over space */
+              braid_PtFcnBufSize       bufsize,     /**< Computes size in bytes for one braid_Vector MPI buffer */
+              braid_PtFcnBufPack       bufpack,     /**< Packs MPI buffer to contain one braid_Vector */
+              braid_PtFcnBufUnpack     bufunpack,   /**< Unpacks MPI buffer into a braid_Vector */
+              braid_PtFcnSCoarsen      coarsen,     /**< Spatially coarsen a vector. If NULL, skipped.*/
+              braid_PtFcnSRefine       refine,      /**< Spatially refine a vector. If NULL, skipped.*/
+              braid_PtFcnStep          step,        /**< Compute a time step with a braid_Vector */
+              braid_PtFcnInitBasis     init_basis,  /**< Initialize a basis vector at time t and spatial index i. If NULL, skipped */
+              braid_PtFcnInnerProd     innerprod    /**< Compute the inner product between two braid_Vectors. If NULL, skipped. */
+              );
 /** @}*/
 
 #ifdef __cplusplus

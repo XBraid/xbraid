@@ -39,6 +39,10 @@ braid_TestInitAccess( braid_App           app,
                      braid_PtFcnAccess   myaccess,
                      braid_PtFcnFree     myfree)
 {
+   if (!fp)
+   {
+      fp = stdout;
+   }
    
    braid_Vector          u ;
    braid_Status          status = _braid_CTAlloc(_braid_Status, 1);
@@ -84,6 +88,10 @@ braid_TestClone( braid_App        app,
               braid_PtFcnFree     myfree,
               braid_PtFcnClone    clone)
 {
+   if (!fp)
+   {
+      fp = stdout;
+   }
    
    braid_Vector        u, v;
    braid_Status        status = _braid_CTAlloc(_braid_Status, 1);
@@ -143,6 +151,10 @@ braid_TestSum( braid_App        app,
             braid_PtFcnClone    clone,
             braid_PtFcnSum      sum )
 {
+   if (!fp)
+   {
+      fp = stdout;
+   }
    
    braid_Vector        u, v;
    braid_Status        status  = _braid_CTAlloc(_braid_Status, 1);
@@ -215,6 +227,10 @@ braid_TestSpatialNorm( braid_App              app,
                        braid_PtFcnSum         sum,  
                        braid_PtFcnSpatialNorm spatialnorm) 
 {   
+   if (!fp)
+   {
+      fp = stdout;
+   }
 
    braid_Vector  u, v, w;
    braid_Real    result1, result2;
@@ -377,6 +393,10 @@ braid_TestInnerProd( braid_App              app,
                      braid_PtFcnSum         sum,
                      braid_PtFcnInnerProd   inner_prod)
 {
+   if (!fp)
+   {
+      fp = stdout;
+   }
 
    braid_Vector u, v;
    braid_Real   result1, result2;
@@ -503,6 +523,10 @@ braid_TestBuf( braid_App              app,
                braid_PtFcnBufPack     bufpack,
                braid_PtFcnBufUnpack   bufunpack)
 {   
+   if (!fp)
+   {
+      fp = stdout;
+   }
 
    braid_Vector  u, v;
    braid_Real    result1;
@@ -602,6 +626,10 @@ braid_TestCoarsenRefine( braid_App           app,
                       braid_PtFcnSCoarsen    coarsen,
                       braid_PtFcnSRefine     refine)
  {   
+   if (!fp)
+   {
+      fp = stdout;
+   }
 
    braid_Vector            u, v, w, uc, vc, wc;
    braid_Real              result1;
@@ -781,6 +809,10 @@ braid_TestResidual( braid_App              app,
                     braid_PtFcnResidual    residual,
                     braid_PtFcnStep        step)
  {   
+   if (!fp)
+   {
+      fp = stdout;
+   }
 
    braid_Vector            u, unext, ustop, fstop;
    braid_Real              result1;
@@ -924,6 +956,10 @@ braid_TestAll( braid_App            app,
             braid_PtFcnStep         step)
 
 {
+   if (!fp)
+   {
+      fp = stdout;
+   }
 
    braid_Int    myid_x, flag = 0, correct = 1;
    MPI_Comm_rank( comm_x, &myid_x );
@@ -1024,9 +1060,12 @@ braid_TestDelta(braid_App               app,
                 braid_PtFcnInnerProd    myinner_prod,
                 braid_PtFcnStep         mystep)
 {
+   if (!fp)
+   {
+      fp = stdout;
+   }
 
-   braid_Vector          u;
-   braid_Vector          v;
+   braid_Vector          u, v, w;
    braid_Basis           A, B;
    // braid_Int             actual_rank = rank;
    braid_Status          status = _braid_CTAlloc(_braid_Status, 1);
@@ -1120,7 +1159,6 @@ braid_TestDelta(braid_App               app,
          myinner_prod(app, B->userVecs[i], B->userVecs[i], &prod);
          if ((prod < wiggle) && (prod > -wiggle))
          {
-
             _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitBasis:   B has linearly dependent columns!\n");
             _braid_ParFprintfFlush(fp, myid_x, "   braid_TestInitBasis:   Test 2 Failed\n");
             correct = 0;
@@ -1152,6 +1190,8 @@ braid_TestDelta(braid_App               app,
    }
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   v = clone(u) \n");
    myclone(app, u, &v);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   w = clone(u) \n");
+   myclone(app, u, &w);
 
    _braid_StepStatusInit(t, t + dt, 0, wiggle, 0, 0, 0, 0, braid_ASCaller_Residual, B, sstatus);
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   v = step(v)\n");
@@ -1159,25 +1199,34 @@ braid_TestDelta(braid_App               app,
    mystep(app, u, NULL, v, sstatus);
 
    braid_Real eps = sqrt(wiggle);
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   u = step(u + eps*A_0) \n");
    _braid_StepStatusInit(t, t + dt, 0, wiggle, 0, 0, 0, 0, braid_ASCaller_Residual, NULL, sstatus);
-   mysum(app, eps, A->userVecs[0], 1., u);
-   mystep(app, u, NULL, u, sstatus);
+   for (braid_Int i = 0; i < rank; i++)
+   {
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   for i = %d \n", i);
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   w = step(u + eps*A[i]) \n");
 
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   v = B_0 - (u - v)/eps\n");
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:  (v = step_dv(u)*A_0 - (step(u + eps*A_0) - step(u))/eps) \n");
-   mysum(app, 1/eps, u, -1/eps, v);
-   mysum(app, 1., B->userVecs[0], -1., v);
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   result = inner_prod(v, v) \n");
-   braid_Real result;
-   myinner_prod(app, v, v, &result);
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   actual output:    result approx. %1.2e \n", result);
-   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   expected output:  positive, near zero \n\n");
+      mysum(app, 1., u, 0., w);
+      mysum(app, eps, A->userVecs[i], 1., w);
+      mystep(app, w, NULL, w, sstatus);
+
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   w = B[i] - (w - v)/eps\n");
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:  (w = step_dv(u)*A[i] - (step(u + eps*A[i]) - step(u))/eps) \n");
+      mysum(app, -1/eps, v, 1/eps, w);
+      mysum(app, 1., B->userVecs[i], -1., w);
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   result = inner_prod(w, w) \n");
+      braid_Real result;
+      myinner_prod(app, w, w, &result);
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   actual output:    result approx. %1.2e \n", result);
+      _braid_ParFprintfFlush(fp, myid_x, "   braid_TestStepDiff:   expected output:  positive, near zero \n\n");
+   }
+   
    _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestStepDiff\n");
 
    /* Free variables */
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestDelta:   free(v) \n");
    myfree(app, v);
+   _braid_ParFprintfFlush(fp, myid_x, "   braid_TestDelta:   free(w) \n");
+   myfree(app, w);
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestDelta:   free(B) \n");
    for (braid_Int i = 0; i < rank; i++)
    {
@@ -1257,6 +1306,7 @@ braid_TestDelta(braid_App               app,
    }
    
    _braid_ParFprintfFlush(fp, myid_x, "   braid_TestBufBasis:   inner_prod(v, v)\n");
+   braid_Real result;
    myinner_prod(app, v, v, &result);
    if (result > wiggle || _braid_isnan(result))
    {
@@ -1321,4 +1371,98 @@ braid_TestDelta(braid_App               app,
    _braid_ParFprintfFlush(fp, myid_x, "Finished braid_TestDelta\n");
 
    return correct;
+}
+
+braid_Int
+braid_Warmup(braid_App              app,
+             MPI_Comm               comm_x,
+             braid_Real             t,
+             braid_Real             fdt,
+             braid_Real             cdt,
+             braid_PtFcnInit        init,
+             braid_PtFcnAccess      access,
+             braid_PtFcnFree        myfree,
+             braid_PtFcnClone       clone,
+             braid_PtFcnSum         sum,
+             braid_PtFcnSpatialNorm spatialnorm,
+             braid_PtFcnBufSize     bufsize,
+             braid_PtFcnBufPack     bufpack,
+             braid_PtFcnBufUnpack   bufunpack,
+             braid_PtFcnSCoarsen    coarsen,
+             braid_PtFcnSRefine     refine,
+             braid_PtFcnStep        step,
+             braid_PtFcnInitBasis   init_basis,
+             braid_PtFcnInnerProd   innerprod)
+{
+   braid_Vector       u, v;
+   braid_Status       status  = _braid_CTAlloc(_braid_Status, 1);
+   braid_AccessStatus astatus = (braid_AccessStatus)status;
+
+   /* init/access */
+   _braid_AccessStatusInit(t, 0, 0.0, 0, 0, 0, 0, 0, 1, -1, NULL, astatus);
+   init(app, t, &u);
+   if(access != NULL)
+   {
+      access(app, u, astatus);
+   }
+
+   braid_Int  size;
+   braid_Real throwaway;
+   void      *buffer;
+
+   /* bufsize, bufpack, bufunpack */
+   braid_BufferStatus bstatus = (braid_BufferStatus)status;
+   _braid_BufferStatusInit(0, 0, 0, 0, bstatus);
+   bufsize(app, &size, bstatus);
+   buffer = malloc(size);
+   _braid_StatusElt(bstatus, size_buffer) = size;
+   bufpack(app, u, buffer, bstatus);
+   bufunpack(app, buffer, &v, bstatus);
+   free(buffer);
+
+   /* free, clone, sum, spatialnorm */
+   myfree(app, v);
+   clone(app, u, &v);
+   sum(app, 1.0, u, -1.0, v);
+   spatialnorm(app, v, &throwaway);
+
+   /* step */
+   braid_StepStatus sstatus = (braid_StepStatus)status;
+   _braid_StepStatusInit(t, t+fdt, 0, 1e-16, 0, 0, 0, 2, 0, NULL, sstatus);
+   step(app, v, NULL, u, sstatus);
+
+   /* coarsen, refine */
+   if ( (coarsen != NULL) && (refine != NULL) )
+   {
+      braid_CoarsenRefStatus cstatus = (braid_CoarsenRefStatus)status;
+   
+      _braid_CoarsenRefStatusInit(t, t-fdt, t+fdt, t-cdt, t+cdt, 0, 0, 0, 0, cstatus);
+      myfree(app, v);
+      coarsen(app, u, &v, cstatus);
+      myfree(app, u);
+      refine(app, v, &u, cstatus);
+   }
+
+   /* Delta functions: init_basis, innerprod, step with basis */
+   if ( (init_basis != NULL) && (innerprod != NULL))
+   {
+      braid_Basis B;
+      B = _braid_TAlloc(_braid_Basis, 1);
+      B->rank = 1;
+      B->userVecs = _braid_TAlloc(braid_Vector, 1);
+      init_basis(app, t, 0, &(B->userVecs[0]));
+      innerprod(app, u, B->userVecs[0], &throwaway);
+      _braid_StepStatusInit(t, t+fdt, 0, 1e-16, 0, 0, 0, 2, 0, B, sstatus);
+      step(app, v, NULL, u, sstatus);
+
+      myfree(app, B->userVecs[0]);
+      _braid_TFree(B);
+   }
+
+   /* Free variables */
+   myfree(app, u);
+   myfree(app, v);
+   _braid_StatusDestroy(status);
+
+   return _braid_error_flag;
 }
