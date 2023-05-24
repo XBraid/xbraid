@@ -174,7 +174,3 @@ _braid_DeltaFeatureCheck(braid_Core core)
 
    return _braid_error_flag;
 }
- 
-
-   return _braid_error_flag;
-}
