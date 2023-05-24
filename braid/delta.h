@@ -80,6 +80,11 @@ _braid_GramSchmidt(braid_Core   core,
                      braid_Basis  basis,
                      braid_Real  *exps);
 
+/**
+ * Sanity check for non-supported Delta correction features
+ */
+braid_Int
+_braid_DeltaFeatureCheck(braid_Core core);
 
 #ifdef __cplusplus
 }

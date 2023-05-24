@@ -863,9 +863,9 @@ In order to save some computational work while computing the perturbed objective
 `examples/ex-01-adjoint.c`, which implements XBraid_Adjoint sensitivity computation for a scalar ODE.
 
 
-# Accelerating XBraid Convergence and Estimating Lyapunov Vectors with XBraid Delta Correction {#xbraid_deltacorrection}
+# XBraid Delta Correction: Accelerating Convergence and Estimating Lyapunov Vectors {#xbraid_deltacorrection}
 
-Certain systems, especially chaotic systems, exhibit sensitivity to perturbations along a trajectory, where such perturbations can grow exponentially fast in time. While this sensitivity may go unnoticed in a serial time-marching simulation, it can seriously degrade the convergence rate of XBraid. The propagation of small perturbations along a trajectory is governed by the *linear tangent propagator*, \f$F_i\f$, which for a discrete time system, corresponds with the Jacobian of the time-stepping operator, \f$\frac{d \Phi}{d u_i}\f$. i.e. if \f$v_i\f$ is a small perturbation to the solution \f$u_i\f$ at time \f$i\f$, then
+Certain systems, especially chaotic systems, exhibit sensitivity to perturbations along a trajectory, where such perturbations can grow exponentially fast in time. While this sensitivity may go unnoticed in a serial time-marching simulation, it can seriously degrade the convergence rate of XBraid. The propagation of small perturbations along such an unstable trajectory is governed by the *linear tangent propagator*, \f$F_i\f$, which for a discrete time system, corresponds with the Jacobian of the time-stepping operator, \f$\frac{d \Phi}{d u_i}\f$. i.e. if \f$v_i\f$ is a small perturbation to the solution \f$u_i\f$ at time \f$i\f$, then
 \f[
    \Phi(u_i + v_i) \approx \Phi(u_i) + \frac{d \Phi}{d u} \cdot v_i = u_{i+1} + v_{i+1},
 \f]
@@ -873,33 +873,34 @@ and we see that the propagation of \f$v\f$ along a fixed trajectory \f$u\f$ is d
 \f[
    \Delta_i = \frac{d \Phi^m}{d u_{i-m}} - \frac{d \Phi_\Delta}{d u_{i-m}},
 \f]
-and it is used to correct the coarse grid time-stepping operator like
+and it is used to correct the coarse grid time-stepping operator \f$\Phi_\Delta\f$ like
 \f[
-   u_i = \Phi_\Delta(u_{i-m}) + \Delta_i u_{i-m} + \tau_i.
+   u_i = \Phi_\Delta(u_{i-m}) + \Delta_i u_{i-m} + \tau_i,
 \f]
+where \f$\tau_i\f$ is the FAS tau-correction term.
 This ensures that, as the solution \f$u\f$ converges, the linear tangent propagator on the coarse grid will approach that of the fine-grid.
 
-The Xbraid Delta correction option can potentially accelerate convergence, (converging quadratically in special cases) at the cost of each iteration being more costly. It is intended to be used for chaotic, unsteady, or otherwise challenging systems, but it is very unlikely to provide convergence when the basic XBraid iteration is unstable, and in some cases it may cause XBraid to diverge when it otherwise wouldn't. The option also provides estimates for the Lyapunov vectors and exponents of the system, which are explained in more detail below.
+The Xbraid Delta correction option can potentially accelerate convergence, (converging quadratically in special cases) at the cost of each iteration being more costly. It is intended to be used for chaotic, unsteady, or otherwise challenging systems, but it is very unlikely to provide convergence when the basic XBraid iteration is unstable. Care should be exercised when using this option, see the paper https://arxiv.org/abs/2208.12629. The option also provides estimates for the Lyapunov vectors and exponents of the system, which are explained in more detail below.
 
 ## The Lyapunov Spectrum
 
-The *Lyapunov exponents* (LEs) of a system characterize the average growth rate of these perturbations, and the associated *Lyapunov vectors* (LVs) give the directions along which these perturbations grow with that particular rate. A system has as many LEs and associated LVs as spatial degrees of freedom. A positive LE, \f$\lambda_j > 0\f$, indicates that a perturbation in the direction of the associated LV, \f$\psi_j\f$ will grow exponentially fast, with average rate \f$\lambda_j\f$. Likewise, a negative LE indicates exponential decay of perturbations in the direction of the associated LV, and a vanishing LE indicates that, on average, a perturbation along in the associated direction does not grow or decay. The full Lyapunov spectrum of a system qualitatively describes the nonlinear system, and a chaotic system will have at least one LE which is positive. The subsets of LVs having positive, vanishing, and negative exponents are called the unstable, neutral, and stable manifolds, respectively.
+The *Lyapunov exponents* (LEs) of a system characterize the average growth rate of these perturbations, and the associated *Lyapunov vectors* (LVs) give the directions along which these perturbations grow with that particular rate. A system has as many LEs and associated LVs as spatial degrees of freedom. A positive LE, \f$\lambda_j > 0\f$, indicates that a perturbation in the direction of the associated LV, \f$\psi_j\f$ will grow exponentially fast, with average rate \f$\lambda_j\f$. Likewise, a negative LE indicates exponential decay of perturbations in the direction of the associated LV, and a vanishing LE indicates that, on average, a perturbation along in the associated direction does not grow or decay. The full Lyapunov spectrum of a system qualitatively describes the nonlinear system, and a chaotic system will have at least one LE which is positive. The subsets of LVs having positive, vanishing, and negative exponents are called the unstable, neutral, and stable manifolds, respectively.  Note, the \f$\psi_j\f$ are functions of time.
 
-In many cases, the Lyapunov spectrum on the coarse grid, induced by \f$\Phi_\Delta\f$, will not match that of the fine grid, since they will have different linear tangent propagators. The result of this is that, for a chaotic system, a small error may grow very large during the coarse grid solve, where it will grow along LVs which don't match those of the fine grid, causing degradation of convergence and stalling.
+In many cases, the Lyapunov spectrum on the coarse grid, induced by \f$\Phi_\Delta\f$, will not match that of the fine grid, since they will have different linear tangent propagators. The result of this is that, for a chaotic system, a small error may grow very large during the coarse grid solve, where it will grow along the unstable LVs which don't match those of the fine grid, causing degradation of convergence and stalling.
 
 ## Overview of the Low-Rank Delta Correction Algorithm
 
-While using the full Jacobian of the time-stepping operators yields quadratic convergence, the computation of the Jacobian is too expensive for systems with many spatial dimensions, since the Jacobian for a system having \f$n_x\f$ spatial degrees of freedom will require \f$\mathcal{O}(n_x^2)\f$ work. For this reason, XBraid instead computes the *action* of the Jacobian on a small number \f$k\f$, of basis vectors, \f$\Psi_i\f$ which are initialized by the user, then a low rank approximation (of rank \f$k\f$) of \f$\Delta_i\f$ is used in place of the full matrix, i.e. the correction on the coarse grid becomes
+While using the full Jacobian of the time-stepping operators yields quadratic convergence, the computation of the Jacobian is too expensive for systems with many spatial dimensions, since computing the Jacobian for a system having \f$n_x\f$ spatial degrees of freedom will require \f$\mathcal{O}(n_x^2)\f$ work. For this reason, XBraid instead computes the *action* of the Jacobian on a small number \f$k\f$, of basis vectors, \f$\Psi_i\f$ which are initialized by the user. Then a low rank approximation (of rank \f$k\f$) of \f$\Delta_i\f$ is used in place of the full matrix, i.e. the correction on the coarse grid becomes
 \f[
    u_i = \Phi_\Delta(u_{i-m}) + \Delta_i \Psi_i \Psi_i^T u_{i-m} + \tau_i
 \f]
-where the \f$k \times n_x\f$ matrices \f$\Delta_i \Psi_i\f$ and \f$\Psi_i\f$ are stored as seperate factors. This reduces the overall work of computing the Delta correction to \f$\matcal{O}(k n_x)\f$.
+where the \f$k \times n_x\f$ matrices \f$(\Delta_i \Psi_i)\f$ and \f$\Psi_i\f$ are stored as seperate factors. This reduces the overall work of computing the Delta correction to \f$\mathcal{O}(k n_x)\f$.
 
 By default, Delta correction will use the user initialized basis, but the Lyapunov estimation option allows Braid to compute estimates to the first \f$k\f$ backward Lyapunov vectors of the system, using the initialized basis as an initial guess, and the Delta correction will be computed on the computed Lyapunov basis, meaning that the corrections will target the unstable manifold of the system first. This is especially useful for chaotic systems, where the dimension of the unstable manifold is often much smaller than the total number of spatial dimensions. The Lyapunov vectors are orthonormalized at the C points using modified Gram-Schmidt, according to the recurrance
 \f[
    \Psi_i R_i = \left(\frac{d \Phi}{d u_{i-1}}\right) \Psi_{i-1},
 \f]
-where \f$R_i\f$ is an upper triangular matrix. Repeated iteration of this, as \f$i \to \infty\f$ will cause the \f$k\f$ columns of \f$\Psi_i\f$ to converge to the first \f$k\f$ backward LVs, while the diagonal entries of each \f$R_i\f$ will contain the local Lyapunov exponents, whose average over time yields the true LEs. Lyapunov estimation in XBraid essentially applies the MGRIT algorithm to the above recurrance relationship, solving for them in parallel time, simultaneously with the state solution, while using these estimated LVs to provide a basis for Delta correction which targets the slowest converging modes of error, those along the unstable and neutral manifolds.
+where \f$R_i\f$ is an upper triangular matrix. Repeated iteration of this, as \f$i \to \infty\f$ will cause the \f$k\f$ columns of \f$\Psi_i\f$ to converge to the first \f$k\f$ backward LVs, while the diagonal entries of each \f$R_i\f$ will contain the local Lyapunov exponents, whose average over time yields the true LEs. Lyapunov estimation in XBraid essentially applies the MGRIT algorithm to the above recurrance relationship, solving for the LVs and LEs parallel-in-time, simultaneously with the state solution.  These estimated LVs then provide a basis for Delta correction, which targets the slowest converging modes of error, which are along the unstable and neutral manifolds.
 
 ## Overview of the Delta Correction Code
 
@@ -911,19 +912,19 @@ To mitigate some of the extra cost of Delta correction, while still maintaining 
 
 ### Step Function Jacobian Vector Product
 
-The user's step function can access references to the \f$k\f$ Lyapunov basis vectors from the StepStatus structure, and for each basis vector \f$\psi_j\f$, the step function should be able to compute the Jacobian-vector product
+The user's step function can access references to the \f$k\f$ Lyapunov basis vectors from the StepStatus structure (see also ``examples/ex-07``), and for each basis vector \f$\psi_j\f$, the step function should be able to compute the Jacobian-vector product
 \f[
    \psi_j \gets \left( \frac{d \Phi}{d u} \right) \psi_j.
 \f]
-While some innacuracy here is acceptable, (so e.g. finite difference approximations may be used) if the Jacobian product is too innacurate, there may be no benefit from using Delta correction, since the correction will be innacurate. It is very important that the set of vectors \f$\psi_j\f$ remain linearly independentt after being propagated by the user's step function, so it is advised not to use an approximation of rank lower than the number of basis vectors used, e.g. a Krylov subspace approximation of the Jacobian of dimension less than \f$k\f$ should not be used for this purpose.
+While some innacuracy here is acceptable, (so e.g. finite difference approximations may be used), if the Jacobian product is too innacurate, there may be no benefit from using Delta correction, since the correction will be innacurate. It is very important that the set of vectors \f$\psi_j\f$ remain linearly independentt after being propagated by the user's step function, so it is advised not to use an approximation of rank lower than the number of basis vectors used, e.g. a Krylov subspace approximation of the Jacobian of dimension less than \f$k\f$ should not be used for this purpose.
 
 ### Inner Product Function
 
-The user must provide a function [braid_PtFcnInnerProd](@ref braid_PtFcnInnerProd) which computes an inner product between two user vectors and returns a scalar result. The typical dot product between two vectors is an example. This function is used to project the state vector onto the basis vectors and for Gram-Schmidt orthonormalization of basis vectors.
+The user must provide a function [braid_PtFcnInnerProd](@ref braid_PtFcnInnerProd) which computes an inner product between two user vectors and returns a scalar result. The Euclidean dot product between two vectors is an example. This function is used to project the state vector onto the basis vectors and for Gram-Schmidt orthonormalization of basis vectors.
 
 ### Basis Vector Initialization Function
 
-The user must provide a function [braid_PtFcnInitBasis](@ref braid_PtFcnInitBasis) which initializes a single basis vector, at a given time with a given spatial index. The basis vectors may be the columns of the identity matrix, a Fourier basis, or any other linearly independent basis of physical relevance to the system. While the vectors need not be orthonormal, they must be linearly independent, since they will be orthonormalized using modified Gram-Schmidt.
+The user must provide a function [braid_PtFcnInitBasis](@ref braid_PtFcnInitBasis) which initializes a single basis vector, at a given time with a given spatial index. The spatial index is simply used to distinguish between the different basis vectors at a given time point. The basis vectors may be the columns of the identity matrix, a Fourier basis, or any other linearly independent basis of physical relevance to the system. While the vectors need not be orthonormal, they must be linearly independent, since they will be orthonormalized using modified Gram-Schmidt.
 
 ### Buffer Size Function
 
@@ -935,7 +936,7 @@ A routine for testing the user provided inner product function is provided in [b
 
 ## Getting Started
 
-To familiarize yourself with XBraid Delta correction, please see the example [Lorenz System with Delta Correction](@ref exampleseven), located in 'examples/ex-07.c', which demonstrates solving the chaotic Lorenz system using Delta correction and Lyapunov estimation. 
+To familiarize yourself with XBraid Delta correction, please see the example [Lorenz System with Delta Correction](@ref exampleseven), located in ``examples/ex-07.c``, which demonstrates solving the chaotic Lorenz system using Delta correction and Lyapunov estimation. 
 
 # Citing XBraid {#braidcite}
 

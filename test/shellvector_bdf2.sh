@@ -146,4 +146,5 @@ if [ -n $MACHINES_FILE ] ; then
    rm $MACHINES_FILE 2> /dev/null
 fi
 rm braid.out.cycle 2> /dev/null
+rm braid_timings.* 2> /dev/null
 rm ex-01*.out.* 2> /dev/null

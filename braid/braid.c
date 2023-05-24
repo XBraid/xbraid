@@ -50,6 +50,7 @@ braid_Drive(braid_Core  core)
    braid_App            app             = _braid_CoreElt(core, app);
    braid_Int            obj_only        = _braid_CoreElt(core, obj_only);
    braid_Int            adjoint         = _braid_CoreElt(core, adjoint);
+   braid_Int            delta           = _braid_CoreElt(core, delta_correct);
    braid_SyncStatus     sstatus         = (braid_SyncStatus)core;
 
    braid_Int      ilower, iupper, i;
@@ -64,8 +65,11 @@ braid_Drive(braid_Core  core)
    {
       _braid_AdjointFeatureCheck(core);
    }
-
-   /* TODO: check for unsupported Delta features */
+   /* Check for non-supported Delta correction features */
+   if (delta)
+   {
+      _braid_DeltaFeatureCheck(core);
+   }
 
    if (myid == 0 )
    {
@@ -347,6 +351,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, lyap_exp)         = lyap_exp;
    _braid_CoreElt(core, delta_defer_iter) = delta_defer_iter;
    _braid_CoreElt(core, delta_defer_lvl)  = delta_defer_lvl;
+   
 
    /* Adjoint */
    _braid_CoreElt(core, adjoint)               = adjoint;
@@ -1971,14 +1976,5 @@ braid_SetLyapunovEstimation(braid_Core core,
    _braid_CoreElt(core, relax_lyap)    = relax;
    _braid_CoreElt(core, lyap_exp)      = exponents;
 
-   return _braid_error_flag;
-}
-
-braid_Int
-braid_Hello(MPI_Comm comm)
-{
-   braid_Int my_rank;
-   MPI_Comm_rank(comm, &my_rank);
-   printf("Hello world, from rank %d!\n", my_rank);
    return _braid_error_flag;
 }

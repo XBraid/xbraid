@@ -33,6 +33,3 @@ drive-ks
 # etc.
 Eigen
 __pycache__
-
-# my own ignores
-burgers_gif/

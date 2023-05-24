@@ -104,3 +104,77 @@ _braid_GramSchmidt(braid_Core   core,
 
    return _braid_error_flag;
 }
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+_braid_DeltaFeatureCheck(braid_Core core)
+{
+
+   braid_PtFcnResidual  residual  = _braid_CoreElt(core, residual);
+   braid_PtFcnResidual  fullres   = _braid_CoreElt(core, full_rnorm_res);
+   braid_PtFcnSCoarsen  scoarsen  = _braid_CoreElt(core, scoarsen);
+   braid_PtFcnSRefine   srefine   = _braid_CoreElt(core, srefine);
+   braid_Int            useshell  = _braid_CoreElt(core, useshell);
+   braid_Int            trefine   = _braid_CoreElt(core, refine);
+   braid_Int            adjoint   = _braid_CoreElt(core, adjoint);
+   braid_Int            richardson= _braid_CoreElt(core, richardson);
+   braid_Int err;
+   char* err_char;
+
+   err = 0;
+   if ( residual != NULL ) 
+   {
+      err_char = "User-defined residual" ;
+      err = 1;
+   }
+   if ( fullres  != NULL ) 
+   {
+      err_char = "User-defined full residual";
+      err = 1;
+   }
+   if ( scoarsen != NULL ) 
+   {
+      err_char = "Spatial coarsening";
+      err = 1;
+   }
+   if ( srefine  != NULL ) 
+   {
+      err_char = "Spatial refinement";
+      err = 1;
+   }
+   if ( useshell ) 
+   {
+      err_char = "Shell-vector feature";
+      err = 1;
+   }
+   if ( trefine )  
+   {
+      err_char = "Time refinement";
+      err = 1;
+   }
+   if ( adjoint )  
+   {
+      err_char = "Adjoint feature";
+      err = 1;
+   }
+   if ( richardson )  
+   {
+      err_char = "Richardson feature";
+      err = 1;
+   }
+
+   // Print error message if needed 
+   if ( err )
+   {
+      _braid_printf(" \n\n WARNING! %s is not yet supported for Delta correction (or at least not tested).\n", err_char); 
+      _braid_printf("          If the code still runs, check solution carefully!\n\n\n", err_char); 
+   }
+
+   return _braid_error_flag;
+}
+ 
+
+   return _braid_error_flag;
+}

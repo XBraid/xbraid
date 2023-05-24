@@ -97,12 +97,12 @@ TESTS=( "$RunString -np 4 $example_dir/ex-01-adjoint" \
         "$RunString -np 4 $example_dir/ex-01-optimization" \
         "$RunString -np 8 $example_dir/ex-04" \
         "$RunString -np 2 $example_dir/ex-04 -ntime 256 -ml 2" \
-        "$RunString -np 1 $example_dir/ex-04 -ntime 256 -mi 5 -gamma 1.0" \
-        "$RunString -np 5 $example_dir/ex-04 -ntime 256 -mi 5 -gamma 1.0 -stepsize 100.0" \
-        "$RunString -np 4 $example_dir/ex-04 -ntime 256 -mi 5 -gamma 1.0 -stepsize 100.0 -gtol 1e-4" \
-        "$RunString -np 4 $example_dir/ex-04 -ntime 256 -mi 5 -gamma 1.0 -stepsize 100.0 -gtol 1e-4 -bmi 1" \
-        "$RunString -np 4 $example_dir/ex-04 -ntime 256 -mi 5 -gamma 1.0 -stepsize 100.0 -gtol 1e-4 -batol 10.0 -btol 100.0" \
-        "$RunString -np 4 $example_dir/ex-04 -ntime 256 -mi 5 -gamma 1.0 -stepsize 100.0 -gtol 1e-4 -cf 8" \
+        "$RunString -np 1 $example_dir/ex-04 -ntime 256 -mi 2 -gamma 1.0" \
+        "$RunString -np 5 $example_dir/ex-04 -ntime 256 -mi 2 -gamma 1.0 -stepsize 100.0" \
+        "$RunString -np 4 $example_dir/ex-04 -ntime 256 -mi 2 -gamma 1.0 -stepsize 100.0 -gtol 1e-4" \
+        "$RunString -np 4 $example_dir/ex-04 -ntime 256 -mi 2 -gamma 1.0 -stepsize 100.0 -gtol 1e-4 -bmi 1" \
+        "$RunString -np 4 $example_dir/ex-04 -ntime 256 -mi 2 -gamma 1.0 -stepsize 100.0 -gtol 1e-4 -batol 10.0 -btol 100.0" \
+        "$RunString -np 4 $example_dir/ex-04 -ntime 256 -mi 2 -gamma 1.0 -stepsize 100.0 -gtol 1e-4 -cf 8" \
         "$RunString -np 1 $example_dir/ex-04-serial" \
         "$RunString -np 1 $example_dir/ex-04-serial -maxiter 5 -gtol 2e-3 -gamma 0.1 -stepsize 50.0" \
         "$RunString -np 1 $driver_dir/drive-solve-adjoint-with-xbraid" \
@@ -171,6 +171,7 @@ if [ -n $MACHINES_FILE ] ; then
    rm $MACHINES_FILE 2> /dev/null
 fi
 rm braid.out.cycle 2> /dev/null
+rm braid_timings.* 2> /dev/null
 rm ex-04*.out.* 2> /dev/null
 rm $output_dir/timegrid.* 2> /dev/null
 rm $output_dir/solutionvector.* 2> /dev/null

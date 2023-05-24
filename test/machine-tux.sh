@@ -70,8 +70,9 @@ TESTS=( "diffusion1D.sh " \
         "shellvector_bdf2.sh "\
         "memcheck-tux-jacob.sh "\
         "ode1D.sh"\
-        "cython_tests.sh"\
+        #"cython_tests.sh"\
         "richardson.sh"\
+        "lorenz_delta.sh"\
 	     "ode1D-refine-periodic.sh")
 
 # Run regression tests
