@@ -29,6 +29,7 @@ _braid_LRDeltaDot(braid_Core core,
                   braid_Basis delta,
                   braid_Basis basis)
 {
+   braid_Real time = 0.;
    braid_Int rank = _braid_CoreElt(core, delta_rank);
    braid_Real *coords = _braid_TAlloc(braid_Real, rank);
 
@@ -38,17 +39,21 @@ _braid_LRDeltaDot(braid_Core core,
    }
 
    /* project u onto the basis */
+   time = _braid_MPI_Wtime(core, 2);
    for (braid_Int i = 0; i < rank; i++)
    {
       _braid_CoreFcn(core, inner_prod)(app, basis->userVecs[i], u, &coords[i]);
    }
+   _braid_CoreElt(core, timer_user_innerprod) += _braid_MPI_Wtime(core, 2) - time;
 
    /* compute the dot product of action with the new coordinate vector */
+   time = _braid_MPI_Wtime(core, 2);
    _braid_CoreFcn(core, sum)(app, coords[0], delta->userVecs[0], 0., u);
    for (braid_Int i = 1; i < rank; i++)
    {
       _braid_CoreFcn(core, sum)(app, coords[i], delta->userVecs[i], 1., u);
    }
+   _braid_CoreElt(core, timer_user_sum) += _braid_MPI_Wtime(core, 2) - time;
 
    _braid_TFree(coords);
 
@@ -77,23 +82,37 @@ _braid_GramSchmidt(braid_Core   core,
                    braid_Basis  basis,
                    braid_Real  *exps)
 {
+   braid_Real innerprod_time = 0.; 
+   braid_Real sum_time       = 0.;
+   braid_Real time;
+
    for (braid_Int i = 0; i < basis->rank; i++)
    {
       braid_Real prod;
       /* subtract projections of the columns to the left */
       for (braid_Int j = 0; j < i; j++)
       {
+         time = _braid_MPI_Wtime(core, 2);
          _braid_CoreFcn(core, inner_prod)(app, basis->userVecs[i], basis->userVecs[j], &prod);
+         innerprod_time += _braid_MPI_Wtime(core, 2) - time;
+
+         time = _braid_MPI_Wtime(core, 2);
          _braid_CoreFcn(core, sum)(app, -prod, basis->userVecs[j], 1., basis->userVecs[i]);
+         sum_time += _braid_MPI_Wtime(core, 2) - time;
       }
 
       /* normalize this column */
+      time = _braid_MPI_Wtime(core, 2);
       _braid_CoreFcn(core, inner_prod)(app, basis->userVecs[i], basis->userVecs[i], &prod);
+      innerprod_time += _braid_MPI_Wtime(core, 2) - time;
+
       if (prod == 0)
       {
          _braid_Error(braid_ERROR_GENERIC, "Division by zero in _braid_GramSchmidt. Check that your basis vectors are not linearly dependent\n");
       }
+      time = _braid_MPI_Wtime(core, 2);
       _braid_CoreFcn(core, sum)(app, 0., basis->userVecs[i], 1/sqrt(prod), basis->userVecs[i]);
+      sum_time += _braid_MPI_Wtime(core, 2) - time;
 
       if (exps)
       {
@@ -101,6 +120,9 @@ _braid_GramSchmidt(braid_Core   core,
          exps[i] = log(fabs(prod))/2;
       }
    }
+
+   _braid_CoreElt(core, timer_user_innerprod) += innerprod_time;
+   _braid_CoreElt(core, timer_user_sum)       += sum_time;
 
    return _braid_error_flag;
 }
