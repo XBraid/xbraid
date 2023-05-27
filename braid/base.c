@@ -479,7 +479,7 @@ _braid_BaseInnerProd(braid_Core        core,
    /* Compute the inner product between two user vectors */
    timer = _braid_MPI_Wtime(core, 2);
    _braid_CoreFcn(core, inner_prod)(app, u, v, prod_ptr);
-   _braid_CoreElt(core, timer_user_innerprod) += _braid_MPI_Wtime(core, 2) - timer;
+   _braid_CoreElt(core, timer_user_inner_prod) += _braid_MPI_Wtime(core, 2) - timer;
 
    return _braid_error_flag;
 }

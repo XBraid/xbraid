@@ -44,7 +44,7 @@ _braid_LRDeltaDot(braid_Core core,
    {
       _braid_CoreFcn(core, inner_prod)(app, basis->userVecs[i], u, &coords[i]);
    }
-   _braid_CoreElt(core, timer_user_innerprod) += _braid_MPI_Wtime(core, 2) - time;
+   _braid_CoreElt(core, timer_user_inner_prod) += _braid_MPI_Wtime(core, 2) - time;
 
    /* compute the dot product of action with the new coordinate vector */
    time = _braid_MPI_Wtime(core, 2);
@@ -121,7 +121,7 @@ _braid_GramSchmidt(braid_Core   core,
       }
    }
 
-   _braid_CoreElt(core, timer_user_innerprod) += innerprod_time;
+   _braid_CoreElt(core, timer_user_inner_prod) += innerprod_time;
    _braid_CoreElt(core, timer_user_sum)       += sum_time;
 
    return _braid_error_flag;
