@@ -342,7 +342,7 @@ braid_Warmup(braid_App              app,
 
    /* step */
    braid_StepStatus sstatus = (braid_StepStatus)status;
-   _braid_StepStatusInit(t, t+fdt, 0, 1e-16, 0, 0, 0, 2, 0, NULL, sstatus);
+   _braid_StepStatusInit(t, t+fdt, 0, 1e-16, 0, 0, 0, 2, braid_ASCaller_Warmup, NULL, sstatus);
    step(app, v, NULL, u, sstatus);
 
    /* coarsen, refine */
@@ -366,7 +366,7 @@ braid_Warmup(braid_App              app,
       B->userVecs = _braid_TAlloc(braid_Vector, 1);
       init_basis(app, t, 0, &(B->userVecs[0]));
       innerprod(app, u, B->userVecs[0], &throwaway);
-      _braid_StepStatusInit(t, t+fdt, 0, 1e-16, 0, 0, 0, 2, 0, B, sstatus);
+      _braid_StepStatusInit(t, t+fdt, 0, 1e-16, 0, 0, 0, 2, braid_ASCaller_Warmup, B, sstatus);
       step(app, v, NULL, u, sstatus);
 
       myfree(app, B->userVecs[0]);

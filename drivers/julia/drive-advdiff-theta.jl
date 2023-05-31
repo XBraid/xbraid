@@ -64,7 +64,7 @@ function θSDIRK2!(app, u, Δt, m)
     return u
 end
 
-function base_step!(app, u, Δt, level)
+function base_step!(app, u, Δt, level; step_scaling=1)
     if app.order == 2
         if app.useTheta
             throw("Theta method not implemented for order 2")
@@ -73,7 +73,7 @@ function base_step!(app, u, Δt, level)
     end
 
     if app.useTheta && level > 0
-        return θSDIRK2!(app, u, Δt, app.cf^level)
+        return θSDIRK2!(app, u, Δt, app.cf^level ÷ step_scaling)
         # return θ_euler!(app, u, Δt, app.cf^level)
     end
 
@@ -82,7 +82,7 @@ end
 
 function my_step!(app, status, u, ustop, tstart, tstop)
     Δt = tstop - tstart
-    level = XBraid.status_GetLevel(status)
+    level = XBraid.Status.getLevel(status)
     if !app.useRich || level == 0
         return base_step!(app, u, Δt, level)
     end
@@ -93,17 +93,17 @@ function my_step!(app, status, u, ustop, tstart, tstop)
     end
     θ = 2^p * (m^p - 1) / (m^p * (2^p - 1))
     u_sub = deepcopy(u)
-    base_step!(app, u_sub, Δt/2, level)
-    base_step!(app, u_sub, Δt/2, level)
+    base_step!(app, u_sub, Δt/2, level; step_scaling=2)
+    base_step!(app, u_sub, Δt/2, level; step_scaling=2)
     base_step!(app, u, Δt, level)
     @. u = θ*u_sub + (1-θ)*u
     return u
 end
 
 function my_access(app, status, u)
-    XBraid.status_GetWrapperTest(status) && return
-    ti = XBraid.status_GetTIndex(status)
-    ntime = XBraid.status_GetNTPoints(status)
+    XBraid.Status.getWrapperTest(status) && return
+    ti = XBraid.Status.getTIndex(status)
+    ntime = XBraid.Status.getNTPoints(status)
     if ti == ntime
         push!(app.solTf, deepcopy(u))
     end

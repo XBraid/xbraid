@@ -48,9 +48,9 @@ called by the solver to give access to
 solution values.
 =#
 function my_access(app, status, u)
-    XBraid.status_GetWrapperTest(status) && return
-    t = XBraid.status_GetT(status)
-    ti = XBraid.status_GetTIndex(status)
+    XBraid.Status.getWrapperTest(status) && throw("Test error")
+    t = XBraid.Status.getT(status)
+    ti = XBraid.Status.getTIndex(status)
     print("t: $(t[]),\tu: $(u[])\n")
 end
 
@@ -79,10 +79,10 @@ tstart = 0.0
 tstop = tstart + ntime / 2.0;
 core = XBraid.Init(comm, tstart, tstop, ntime, my_step!, my_init, my_access)
 
-XBraid.SetPrintLevel(core, 2)
-XBraid.SetMaxLevels(core, 2)
-XBraid.SetAbsTol(core, 1.e-6)
-XBraid.SetCFactor(core, -1, 2)
+XBraid.setPrintLevel(core, 2)
+XBraid.setMaxLevels(core, 2)
+XBraid.setAbsTol(core, 1.e-6)
+XBraid.setCFactor(core, -1, 2)
 
 XBraid.Drive(core)
 

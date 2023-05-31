@@ -244,9 +244,9 @@ function my_sum!(app, a, x, b, y)
 end
 
 function my_access(app, status, u)
-	index = XBraid.status_GetTIndex(status)
-	lyap_exps = XBraid.status_GetLocalLyapExponents(status)
-	lyap_vecs = XBraid.status_GetBasisVectors(status)
+	index = XBraid.Status.getTIndex(status)
+	lyap_exps = XBraid.Status.getLocalLyapExponents(status)
+	lyap_vecs = XBraid.Status.getBasisVectors(status)
 	if length(lyap_vecs) > 0
 		push!(app.lyapunov_vecs, deepcopy(reduce(hcat, lyap_vecs)))
 		push!(app.lyapunov_exps, lyap_exps)

@@ -74,24 +74,7 @@ function semi_lagrangian!(burger::BurgerApp, y, v, Δt)
     sitp = scale(itp, range(0., lengthScale - Δx, nₓ))
     extp = extrapolate(sitp, Periodic())
 
-    # forward euler
     x_back .= burger.x .- Δt * v
-
-    # backward euler
-    # max_newton = 1000
-    # av_iters = 0.
-    # for i ∈ eachindex(x_back)
-    #     for iter ∈ 1:max_newton
-    #         p = extp(x_back[i])
-    #         p_prime = Interpolations.gradient(extp, x_back[i])[]
-    #         x_back[i] -= (x_back[i] + Δt * p - burger.x[i]) / (1 + Δt * p_prime)
-    #         if abs(x_back[i] + Δt * p - burger.x[i]) < 1e-10
-    #             # av_iters += iter/nₓ
-    #             break
-    #         end
-    #     end
-    # end
-    # println(av_iters)
     
     # y_intp .= interp_periodic.(x_back, Ref(y))
     y_intp .= extp.(x_back)
@@ -111,7 +94,7 @@ function diffuse_beuler!(burger::BurgerApp, y, Δt::Float64; init_guess=nothing)
     return y
 end
 
-function diffuse_fft!(burger::BurgerApp, y::AbstractArray, Δt::Real; init_guess=nothing)
+function diffuse_fft!(burger::BurgerApp, y::AbstractArray, Δt::Real)
     P̂ = burger.P̂
     κ = burger.κ
     # y .= real(P̂ \ (exp.(Δt*(κ.^2 - κ.^4))))
@@ -138,11 +121,11 @@ function fillDualArray!(y::Vector{ForwardDiff.Dual{T,V,P}}, vs, ps) where {T,V,P
 end
 
 # this enables ForwardDiff through the FFT where it normally doesn't work
-function diffuse_fft!(burger::BurgerApp, y::Vector{ForwardDiff.Dual{T,V,P}}, Δt::Real; μ=1e-4) where {T, V, P}
+function diffuse_fft!(burger::BurgerApp, y::Vector{ForwardDiff.Dual{T,V,P}}, Δt::Real) where {T, V, P}
     vs = ForwardDiff.value.(y)
     ps = extractPartials(y)
-    diffuse_fft!(burger, vs, Δt; μ=μ)
-    map(eachcol(ps)) do p diffuse_fft!(burger, p, Δt; μ=μ) end
+    diffuse_fft!(burger, vs, Δt)
+    map(eachcol(ps)) do p diffuse_fft!(burger, p, Δt) end
     fillDualArray!(y, vs, ps)
     return y
 end
@@ -174,21 +157,21 @@ end
 
 function base_step!(burger::BurgerApp, u, Δt::Float64; init_guess=nothing)
     u_mid = deepcopy(u)
-    semi_lagrangian!(burger, u_mid, u, Δt/2)
-    semi_lagrangian!(burger, u, u_mid, Δt) # u(∇ u)
+    # semi_lagrangian!(burger, u_mid, u, Δt/2)
+    # semi_lagrangian!(burger, u, u_mid, Δt) # u(∇ u)
     # semi_lagrangian!(burger, u, sin.(burger.x), Δt) # ∇ u
-    # semi_lagrangian!(burger, u, u, Δt) # u(∇ u)
+    semi_lagrangian!(burger, u, u, Δt) # u(∇ u)
     if burger.μ > 0.
         diffuse_fft!(burger, u, Δt) # Δu
     end
 end
 
 function my_step!(
-    burger::BurgerApp, status::XBraid.StepStatus,
+    burger::BurgerApp, status::XBraid.Status.StepStatus,
     u, ustop, tstart::Float64, tstop::Float64
 )
     Δt = tstop - tstart
-    level = XBraid.status_GetLevel(status)
+    level = XBraid.Status.getLevel(status)
     if !burger.useTheta || level == 0
         base_step!(burger, u, Δt; init_guess=ustop)
     else
@@ -208,7 +191,7 @@ function my_step!(
     return u
 end
 
-function my_step!(burger::BurgerApp, status::XBraid.StepStatus, u, ustop, tstart::Float64, tstop::Float64, Ψ)
+function my_step!(burger::BurgerApp, status::XBraid.Status.StepStatus, u, ustop, tstart::Float64, tstop::Float64, Ψ)
     rank = length(Ψ)
     Ψ_new = reduce(hcat, Ψ)
     # perturb(r) = base_step!(burger, u + r' * Ψ, Δt)
@@ -225,21 +208,18 @@ function my_sum!(burger, a, x, b, y)
     @. y = a*x + b*y
 end
 
-function my_access(burger::BurgerApp, status::XBraid.AccessStatus, u)
-    XBraid.status_GetWrapperTest(status) && return
-    ti = XBraid.status_GetTIndex(status)
+function my_access(burger::BurgerApp, status::XBraid.Status.AccessStatus, u)
+    XBraid.Status.getWrapperTest(status) && return
+    ti = XBraid.Status.getTIndex(status)
     push!(burger.solution, deepcopy(u))
     push!(burger.times, ti)
-    if XBraid.status_GetDeltaRank(status) > 0
-        Ψ = XBraid.status_GetBasisVectors(status)
-        λ = XBraid.status_GetLocalLyapExponents(status)
+    if XBraid.Status.getDeltaRank(status) > 0
+        Ψ = XBraid.Status.getBasisVectors(status)
+        λ = XBraid.Status.getLocalLyapExponents(status)
         push!(burger.lyap_vecs, deepcopy(reduce(hcat, Ψ)))
         push!(burger.lyap_exps, deepcopy(λ))
     end
 end
-
-my_norm(burger, u) = LinearAlgebra.norm2(u)
-my_innerprod(burger, u, v) = u' * v
 
 # test user routines:
 function test()
@@ -247,12 +227,8 @@ function test()
     y_new = zeros(nₓ)
     x = Array(range(0., lengthScale-Δx, nₓ))
     κ = 2π/lengthScale .* fftfreq(nₓ, nₓ)
-    burger = BurgerApp(x, κ, 0., 4, false, x_new, y_new);
-    test_app = XBraid.BraidApp(
-        burger, comm, comm,
-        my_step!, my_init,
-        my_sum!, my_norm, my_access,
-        my_basis_init, my_innerprod)
+    burger = BurgerApp(x, κ, 1e-3, 4, false, x_new, y_new);
+    test_app = XBraid.BraidApp(burger, comm, my_step!, my_init, my_access; basis_init=my_basis_init)
 
     open("drive-burgers.test.out", "w") do file
         cfile = Libc.FILE(file)
@@ -261,10 +237,10 @@ function test()
         XBraid.testDelta(test_app, 0.0, 0.1, 3, cfile)
     end
     # plot!(burger.lyap_vecs[1][1])
-    plot(burger.solution[1])
+    # plot(burger.solution[1])
 end
 
-function main(;tstop=π, ntime=128, deltaRank=0, useTheta=false, fmg=false, ml=1, cf=4, saveGif=false, maxiter=30, μ=0.)
+function main(;tstop=π, ntime=nₓ, deltaRank=0, useTheta=false, fmg=false, ml=1, cf=4, saveGif=false, maxiter=30, μ=0.)
     x_new = zeros(nₓ)
     y_new = zeros(nₓ)
     x = Array(range(0., lengthScale-Δx, nₓ))
@@ -272,35 +248,31 @@ function main(;tstop=π, ntime=128, deltaRank=0, useTheta=false, fmg=false, ml=1
     burger = BurgerApp(x, κ, μ, 4, useTheta, x_new, y_new);
 
     tstart = 0.0
-    core = XBraid.Init(
-        comm, comm, tstart, tstop, ntime,
-        my_step!, my_init, my_sum!, my_norm, my_access; app=burger
-    )
+    core = XBraid.Init(comm, tstart, tstop, ntime, my_step!, my_init, my_access; app=burger)
 
     if deltaRank > 0
-        XBraid.SetDeltaCorrection(core, deltaRank, my_basis_init, my_innerprod)
-        XBraid.SetLyapunovEstimation(core; exponents=true)
+        XBraid.setDeltaCorrection(core, deltaRank, my_basis_init)
+        XBraid.setLyapunovEstimation(core; exponents=true)
     end
 
     # println("Wrapper test:")
     # @time test()
 
-    XBraid.SetMaxIter(core, maxiter)
-    XBraid.SetMaxLevels(core, ml)
-    XBraid.SetCFactor(core, -1, cf)
-    XBraid.SetAccessLevel(core, 1)
-    XBraid.SetNRelax(core, -1, 1)
-    XBraid.SetAbsTol(core, 1e-6)
-    XBraid.SetSkip(core, false)
+    XBraid.setMaxIter(core, maxiter)
+    XBraid.setMaxLevels(core, ml)
+    XBraid.setCFactor(core, -1, cf)
+    XBraid.setAccessLevel(core, 1)
+    XBraid.setNRelax(core, -1, 1)
+    XBraid.setAbsTol(core, 1e-6)
+    XBraid.setSkip(core, false)
     if fmg
-        XBraid.SetFMG(core)
-        XBraid.SetNFMG(core, 1)
+        XBraid.setFMG(core)
+        XBraid.setNFMG(core, 1)
     end
 
-    XBraid.SetTimings(core, 2)
-    XBraid.Warmup(core)
-    XBraid.Drive(core; warmup=false)
-    XBraid.PrintTimers(core)
+    XBraid.setTimings(core, 2)
+    XBraid.Drive(core)
+    XBraid.printTimers(core)
 
     if deltaRank > 0
         exponents = sum(burger.lyap_exps)
@@ -326,7 +298,7 @@ function main(;tstop=π, ntime=128, deltaRank=0, useTheta=false, fmg=false, ml=1
         end
     end
 
-    return burger, XBraid.GetRNorms(core)
+    return burger, XBraid.getRNorms(core)
 end
 
 # test()

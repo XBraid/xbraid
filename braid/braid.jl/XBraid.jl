@@ -23,13 +23,12 @@ module XBraid
 # Not sure we want to export anything...
 # export Init, Drive, etc.
 
-# BEGIN MODULE XBraid
 using Serialization: serialize, deserialize, Serializer # used to pack arbitrary julia objects into buffers
-using LinearAlgebra: norm2
+using LinearAlgebra: norm2, dot
 using MPI
 
-include("status.jl")
-include("wrapper_functions.jl")
+include("BraidUtils.jl")
+using .BraidUtils
 
 #=
  |  For this to work, XBraid must be compiled as a shared library.
@@ -38,23 +37,16 @@ include("wrapper_functions.jl")
  |  braid_Fortran_TimeGrid, and braid_Fortran_Sync must all be set to zero in
  |  braid.h before compiling. (TODO: figure out why this is...)
  =#
-libbraid = joinpath(dirname(@__DIR__), "libbraid.so")
-
-c_stdout = Libc.FILE(Libc.RawFD(1), "w")  # corresponds to C standard output
-function malloc_null_double_ptr(T::Type)
-	pp = Base.Libc.malloc(sizeof(Ptr{Cvoid}))
-	pp = reinterpret(Ptr{Ptr{T}}, pp)
-	return pp
-end
 
 # This can contain anything (TODO: do I even need this?)
 mutable struct BraidVector{T}
-	user_vector::T
-	VecType::Type
+    user_vector::T
+    VecType::Type
 end
-BraidVector(u::T) where T = BraidVector(u, T)
+BraidVector(u::T) where {T} = BraidVector(u, T)
 
-OptionalFunction = Union{Function, Nothing}
+OptionalFunction = Union{Function,Nothing}
+
 """
 This is an internal structure that is not generally exposed to the user.
 This enables the user interface to only use memory safe function calls.
@@ -74,64 +66,41 @@ julia> app = BraidApp(my_app, MPI.COMM_WORLD, MPI.COMM_WORLD, my_step, my_init, 
 julia> testSpatialNorm(app, 0.);
  """
 mutable struct BraidApp
-	user_app::Any     # user defined app data structure
+    user_app::Any     # user defined app data structure
 
-	comm::MPI.Comm    # global mpi communicator
-	comm_t::MPI.Comm  # temporal mpi communicator
+    comm::MPI.Comm    # global mpi communicator
+    comm_t::MPI.Comm  # temporal mpi communicator
 
-	# user functions
-	step::Function
-	init::Function
-	sum::Function
-	spatialnorm::Function
-	access::Function
+    # user functions
+    step::Function
+    init::Function
+    sum::Function
+    spatialnorm::Function
+    access::Function
 
-	basis_init::OptionalFunction
-	inner_prod::OptionalFunction
+    sync::OptionalFunction
+    basis_init::OptionalFunction
+    inner_prod::OptionalFunction
 
-	# dictionary to store globally scoped references to allocated braid_vector objects
-	ref_ids::IdDict{UInt64, BraidVector}
-	bufsize::Integer  # expected serialized size of user's vector
-	bufsize_lyap::Integer
-	user_AppType::Type
-	user_VecType::Type
-	user_BasType::Type
-end
-
-# some default functions assuming the user's vector is a julia array
-function default_sum!(app, α::Real, x::AbstractArray, β::Real, y::AbstractArray)
-	y .= α .* x .+ β .* y
-	return
-end
-
-function default_norm(app, u::AbstractArray)
-	return norm2(u)
-end
-
-function default_inner_prod(app, u::AbstractArray, v::AbstractArray)
-	return u ⋅ v
+    # dictionary to store globally scoped references to allocated braid_vector objects
+    ref_ids::IdDict{UInt64,BraidVector}
+    bufsize::Integer  # expected serialized size of user's vector
+    bufsize_lyap::Integer
+    user_AppType::Type
+    user_VecType::Type
+    user_BasType::Type
 end
 
 # default constructor
-function BraidApp(app, comm::MPI.Comm, comm_t::MPI.Comm, step::Function, init::Function, sum::Function, norm::Function, access::Function, basis_init::Function, inner_prod::Function)
-	BraidApp(app, comm, comm_t, step, init, sum, norm, access, basis_init, inner_prod, IdDict(), 0, 0, Nothing, Nothing, Nothing)
+function BraidApp(app, comm::MPI.Comm, comm_t::MPI.Comm, step::Function, init::Function, sum::Function, norm::Function, access::Function, sync::OptionalFunction, basis_init::OptionalFunction, inner_prod::OptionalFunction)
+    BraidApp(app, comm, comm_t, step, init, sum, norm, access, sync, basis_init, inner_prod, IdDict(), 0, 0, Nothing, Nothing, Nothing)
 end
 
-function BraidApp(app, comm::MPI.Comm, comm_t::MPI.Comm, step::Function, init::Function, sum::Function, norm::Function, access::Function)
-	BraidApp(app, comm, comm_t, step, init, sum, norm, access, nothing, nothing, IdDict(), 0, 0, Nothing, Nothing, Nothing)
+function BraidApp(app, comm::MPI.Comm, step, init, access; comm_t=comm, sum=default_sum!, spatialnorm=default_norm, sync=nothing, basis_init=nothing, inner_prod=default_inner_prod)
+    BraidApp(app, comm, comm_t, step, init, sum, spatialnorm, access, sync, basis_init, inner_prod)
 end
 
-function BraidApp(app, comm::MPI.Comm, step::Function, init::Function, sum::Function, norm::Function, access::Function)
-	BraidApp(app, comm, comm, step, init, sum, norm, access)
-end
 
-function BraidApp(app, comm::MPI.Comm, step, init, access)
-	BraidApp(app, comm, comm, step, init, default_sum!, default_norm, access)
-end
-
-function BraidApp(app, comm::MPI.Comm, step, init, access, basis_init)
-	BraidApp(app, comm, comm, step, init, default_sum!, default_norm, access, basis_init, default_inner_prod)
-end
 
 """
 Stores all the information needed to run XBraid. Create this object with Init(), then pass this to Drive() to run XBraid.
@@ -142,132 +111,134 @@ julia> XBraid.Drive(core);
 
 """
 mutable struct BraidCore
-	# internal values
-	_braid_core::Ptr{Cvoid}
-	_braid_app::BraidApp
-	tstart::Float64
-	tstop::Float64
-	ntime::Int32
-	function BraidCore(_braid_core, _braid_app, tstart, tstop, ntime)
-		x = new(_braid_core, _braid_app, tstart, tstop, ntime)
-		finalizer(x) do core
-			# @async println("Destroying BraidCore $(core._braid_core)")
-			@ccall libbraid.braid_Destroy(core._braid_core::Ptr{Cvoid})::Cint
-		end
-	end
+    # internal values
+    _braid_core::Ptr{Cvoid}
+    _braid_app::BraidApp
+    tstart::Float64
+    tstop::Float64
+    ntime::Int32
+    function BraidCore(_braid_core, _braid_app, tstart, tstop, ntime)
+        x = new(_braid_core, _braid_app, tstart, tstop, ntime)
+        finalizer(x) do core
+            # @async println("Destroying BraidCore $(core._braid_core)")
+            @ccall libbraid.braid_Destroy(core._braid_core::Ptr{Cvoid})::Cint
+        end
+    end
 end
 
-"""
-Used to add a reference to the vector u to the IdDict stored in the app.
-this keeps all newly allocated braid_vectors in the global scope, preventing them from being garbage collected. 
-"""
-function _register_vector(app::BraidApp, u::BraidVector)
-	app.ref_ids[objectid(u)] = u
-end
 
-"""
-Used to remove a reference to the vector u to the IdDict stored in the app.
-"""
-function _deregister_vector(app::BraidApp, u::BraidVector)
-	id = objectid(u)::UInt64
-	pop!(app.ref_ids, id)
-end
+# import wrapper functions and status structures
+include("Status.jl")
+include("Wrappers.jl")
+using .Status, .Wrappers
 
 function postInitPrecompile(app::BraidApp)
-	#= 
-	# This is a hack to make sure every processor knows how big the user's vector will be.
-	# We can also take this time to precompile the user's step function so it doesn't happen
-	# in serial on the coarse grid.
-	=#
-	GC.enable(false) # disable garbage collection
-	app_ptr = pointer_from_objref(app)::Ptr{Cvoid}
-	pp = malloc_null_double_ptr(Cvoid)
+    #= 
+    	# This is a hack to make sure every processor knows how big the user's vector will be.
+    	# We can also take this time to precompile the user's step function so it doesn't happen
+    	# in serial on the coarse grid.
+    	=#
+    GC.enable(false) # disable garbage collection
+    app_ptr = pointer_from_objref(app)::Ptr{Cvoid}
+    pp = malloc_null_double_ptr(Cvoid)
 
-	_jl_init!(app_ptr, 0., pp)
-	u_ptr = unsafe_load(pp)
-	u = unsafe_pointer_to_objref(u_ptr)::BraidVector
-	VecType = typeof(u.user_vector)
-	AppType = typeof(app.user_app)
-	
-	!precompile(app.step, 	    (AppType, Ptr{Cvoid}, VecType, VecType, Float64, Float64)) && println("failed to precompile step")
-	!precompile(app.spatialnorm, (AppType, VecType)) && println("failed to precompile norm")
-	!precompile(app.sum,         (AppType, Float64, VecType, Float64, VecType)) && println("failed to precompile sum")
-	if app.access !== nothing 
-		!precompile(app.access,  (AppType, Ptr{Cvoid}, VecType)) && println("failed to precompile access")
-	end
+    _jl_init!(app_ptr, 0.0, pp)
+    u_ptr = unsafe_load(pp)
+    u = unsafe_pointer_to_objref(u_ptr)::BraidVector
+    VecType = typeof(u.user_vector)
+    AppType = typeof(app.user_app)
 
-	# some julia functions that can be precompiled
-	precompile(deepcopy, (BraidVector{VecType},))
-	precompile(unsafe_store!, (Ptr{Float64}, Float64,))
-	precompile(Tuple{typeof(Base.getproperty), BraidVector{VecType}, Symbol})
-	precompile(Tuple{typeof(Base.unsafe_store!), Ptr{Int32}, Int64})
-	precompile(Tuple{typeof(deserialize), Serializer{Base.GenericIOBuffer{Array{UInt8, 1}}}, DataType})
-	precompile(Tuple{typeof(Base.unsafe_wrap), Type{Array{UInt8, 1}}, Ptr{UInt8}, Int64})
-	precompile(Tuple{Type{NamedTuple{(:read, :write, :maxsize), T} where T<:Tuple}, Tuple{Bool, Bool, Int64}})
+    !precompile(app.step, (AppType, Status.StepStatus, VecType, VecType, Float64, Float64)) && println("failed to precompile step")
+    !precompile(app.spatialnorm, (AppType, VecType)) && println("failed to precompile norm")
+    !precompile(app.sum, (AppType, Float64, VecType, Float64, VecType)) && println("failed to precompile sum")
+    if app.access !== nothing
+        !precompile(app.access, (AppType, Status.AccessStatus, VecType)) && println("failed to precompile access")
+    end
 
-	_jl_free!(app_ptr, u_ptr)
-	Base.Libc.free(pp)
-	GC.enable(true) # re-enable garbage collection
-	
-	app.user_AppType = AppType
-	app.user_VecType = VecType
+    # some julia functions that can be precompiled
+    precompile(deepcopy, (BraidVector{VecType},))
+    precompile(unsafe_store!, (Ptr{Float64}, Float64,))
+    precompile(Tuple{typeof(Base.getproperty),BraidVector{VecType},Symbol})
+    precompile(Tuple{typeof(Base.unsafe_store!),Ptr{Int32},Int64})
+    precompile(Tuple{typeof(deserialize),Serializer{Base.GenericIOBuffer{Array{UInt8,1}}},DataType})
+    precompile(Tuple{typeof(Base.unsafe_wrap),Type{Array{UInt8,1}},Ptr{UInt8},Int64})
+    precompile(Tuple{Type{NamedTuple{(:read, :write, :maxsize),T} where T<:Tuple},Tuple{Bool,Bool,Int64}})
+
+    _jl_free!(app_ptr, u_ptr)
+    Base.Libc.free(pp)
+    GC.enable(true) # re-enable garbage collection
+
+    app.user_AppType = AppType
+    app.user_VecType = VecType
 end
 
 function deltaPrecompile(app::BraidApp)
-	GC.enable(false)
-	app_ptr = pointer_from_objref(app)::Ptr{Cvoid}
-	pp = malloc_null_double_ptr(Cvoid)
-	AppType = app.user_AppType
-	VecType = app.user_VecType
+    GC.enable(false)
+    app_ptr = pointer_from_objref(app)::Ptr{Cvoid}
+    pp = malloc_null_double_ptr(Cvoid)
+    AppType = app.user_AppType
+    VecType = app.user_VecType
 
-	_jl_init_basis!(app_ptr, 0., Int32(0), pp)
-	ψ_ptr = unsafe_load(pp)
-	ψ = unsafe_pointer_to_objref(ψ_ptr)
-	BasType = typeof(ψ.user_vector)
-	println("precompiling user Delta functions")
-	!precompile(app.step,       (AppType, Ptr{Cvoid}, VecType, VecType, Float64, Float64, Vector{BasType})) && println("failed to compile step_du")
-	!precompile(app.inner_prod, (AppType, VecType, VecType)) && println("failed to compile inner_prod u⋅u")
-	!precompile(app.inner_prod, (AppType, BasType, VecType)) && println("failed to compile inner_prod ψ⋅u")
-	!precompile(app.inner_prod, (AppType, VecType, BasType)) && println("failed to compile inner_prod u⋅ψ")
-	!precompile(app.inner_prod, (AppType, BasType, BasType)) && println("failed to compile inner_prod ψ⋅ψ")
+    _jl_init_basis!(app_ptr, 0.0, Int32(0), pp)
+    ψ_ptr = unsafe_load(pp)
+    ψ = unsafe_pointer_to_objref(ψ_ptr)
+    BasType = typeof(ψ.user_vector)
+    !precompile(app.step, (AppType, Status.StepStatus, VecType, VecType, Float64, Float64, Vector{BasType})) && println("failed to compile step_du")
+    !precompile(app.inner_prod, (AppType, VecType, VecType)) && println("failed to compile inner_prod u⋅u")
+    !precompile(app.inner_prod, (AppType, BasType, VecType)) && println("failed to compile inner_prod ψ⋅u")
+    !precompile(app.inner_prod, (AppType, VecType, BasType)) && println("failed to compile inner_prod u⋅ψ")
+    !precompile(app.inner_prod, (AppType, BasType, BasType)) && println("failed to compile inner_prod ψ⋅ψ")
 
-	_jl_free!(app_ptr, ψ_ptr)
-	Base.Libc.free(pp)
-	GC.enable(true)
+    _jl_free!(app_ptr, ψ_ptr)
+    Base.Libc.free(pp)
+    GC.enable(true)
 
-	app.user_BasType = BasType
+    app.user_BasType = BasType
 end
 
 """
 Create a new BraidCore object. The BraidCore object is used to run the XBraid solver, and is destroyed when the object is garbage collected.
 """
-function Init(comm_world::MPI.Comm, comm_t::MPI.Comm,
-	tstart::Real, tstop::Real, ntime::Integer,
-	step::Function, init::Function, sum::Function, spatialnorm::Function, access::OptionalFunction;
-	app = nothing
+function Init(
+    comm_world::MPI.Comm,
+    tstart::Real,
+    tstop::Real,
+    ntime::Integer,
+    step::Function,
+    init::Function,
+    access::Function;
+    sum              = default_sum!,
+    spatialnorm      = default_norm,
+    sync             = nothing,
+    comm_t::MPI.Comm = comm_world,
+    app              = nothing
 )::BraidCore
-	_app = BraidApp(app, comm_world, comm_t, step, init, sum, spatialnorm, access)
-	_core_ptr = malloc_null_double_ptr(Cvoid)
+    _app = BraidApp(app, comm_world, comm_t, step, init, sum, spatialnorm, access, sync, nothing, nothing)
+    _core_ptr = malloc_null_double_ptr(Cvoid)
 
-	GC.@preserve _core_ptr begin
-		@ccall libbraid.braid_Init(
-			_app.comm::MPI.MPI_Comm, _app.comm_t::MPI.MPI_Comm,
-			tstart::Cdouble, tstop::Cdouble, ntime::Cint,
-			_app::Ref{BraidApp}, _c_step::Ptr{Cvoid}, _c_init::Ptr{Cvoid}, _c_clone::Ptr{Cvoid},
-			_c_free::Ptr{Cvoid}, _c_sum::Ptr{Cvoid}, _c_norm::Ptr{Cvoid}, _c_access::Ptr{Cvoid},
-			_c_bufsize::Ptr{Cvoid}, _c_bufpack::Ptr{Cvoid}, _c_bufunpack::Ptr{Cvoid},
-			_core_ptr::Ptr{Ptr{Cvoid}},
-		)::Cint
-	end
+    GC.@preserve _core_ptr begin
+        @ccall libbraid.braid_Init(
+            _app.comm::MPI.MPI_Comm, _app.comm_t::MPI.MPI_Comm,
+            tstart::Cdouble, tstop::Cdouble, ntime::Cint,
+            _app::Ref{BraidApp}, _c_step::Ptr{Cvoid}, _c_init::Ptr{Cvoid}, _c_clone::Ptr{Cvoid},
+            _c_free::Ptr{Cvoid}, _c_sum::Ptr{Cvoid}, _c_norm::Ptr{Cvoid}, _c_access::Ptr{Cvoid},
+            _c_bufsize::Ptr{Cvoid}, _c_bufpack::Ptr{Cvoid}, _c_bufunpack::Ptr{Cvoid},
+            _core_ptr::Ptr{Ptr{Cvoid}},
+        )::Cint
+    end
 
-	_core = unsafe_load(_core_ptr)
-	Base.Libc.free(_core_ptr)
+    _core = unsafe_load(_core_ptr)
+    Base.Libc.free(_core_ptr)
 
-	return BraidCore(_core, _app, tstart, tstop, ntime)
-end
+    if sync !== nothing
+        GC.@preserve _core begin
+            @ccall libbraid.braid_SetSync(
+                _core::Ptr{Cvoid}, _c_sync::Ptr{Cvoid}
+            )::Cint
+        end
+    end
 
-function Init(comm_world::MPI.Comm, tstart::Real, tstop::Real, ntime::Integer, step::Function, init::Function, access::OptionalFunction; app=nothing)
-	Init(comm_world, comm_world, tstart, tstop, ntime, step, init, default_sum!, default_norm, access; app=app)
+    return BraidCore(_core, _app, tstart, tstop, ntime)
 end
 
 """
@@ -282,245 +253,243 @@ Julia> XBraid.Drive(core; warmup=false)
 See also: XBraid.Drive
 """
 function Warmup(core::BraidCore)
-	_app = core._braid_app
-	# precompile all user functions by calling them from braid_Warmup
-	# if any user functions have side-effects, this may behave unexpectedly
-	fdt = (core.tstop - core.tstart) / (core.ntime+1)
-	cdt = 2fdt
+    _app = core._braid_app
+    # precompile all user functions by calling them from braid_Warmup
+    # if any user functions have side-effects, this may behave unexpectedly
+    fdt = (core.tstop - core.tstart) / (core.ntime + 1)
+    cdt = 2fdt
 
-	if (_app.basis_init !== nothing) && (_app.inner_prod !== nothing)
-		@ccall libbraid.braid_Warmup(
-			_app::Ref{BraidApp}, _app.comm::MPI.MPI_Comm, core.tstart::Cdouble, fdt::Cdouble, cdt::Cdouble,
-			_c_init::Ptr{Cvoid}, _c_access::Ptr{Cvoid}, _c_free::Ptr{Cvoid},
-			_c_clone::Ptr{Cvoid}, _c_sum::Ptr{Cvoid}, _c_norm::Ptr{Cvoid},
-			_c_bufsize::Ptr{Cvoid}, _c_bufpack::Ptr{Cvoid}, _c_bufunpack::Ptr{Cvoid},
-			C_NULL::Ptr{Cvoid}, C_NULL::Ptr{Cvoid}, _c_step::Ptr{Cvoid},
-			_c_init_basis::Ptr{Cvoid}, _c_inner_prod::Ptr{Cvoid}
-		)::Cint
-	else
-		@ccall libbraid.braid_Warmup(
-			_app::Ref{BraidApp}, _app.comm::MPI.MPI_Comm, core.tstart::Cdouble, fdt::Cdouble, cdt::Cdouble,
-			_c_init::Ptr{Cvoid}, _c_access::Ptr{Cvoid}, _c_free::Ptr{Cvoid},
-			_c_clone::Ptr{Cvoid}, _c_sum::Ptr{Cvoid}, _c_norm::Ptr{Cvoid},
-			_c_bufsize::Ptr{Cvoid}, _c_bufpack::Ptr{Cvoid}, _c_bufunpack::Ptr{Cvoid},
-			C_NULL::Ptr{Cvoid}, C_NULL::Ptr{Cvoid}, _c_step::Ptr{Cvoid},
-			C_NULL::Ptr{Cvoid}, C_NULL::Ptr{Cvoid}
-		)::Cint
-	end
-	nothing
+    if (_app.basis_init !== nothing) && (_app.inner_prod !== nothing)
+        @ccall libbraid.braid_Warmup(
+            _app::Ref{BraidApp}, _app.comm::MPI.MPI_Comm, core.tstart::Cdouble, fdt::Cdouble, cdt::Cdouble,
+            _c_init::Ptr{Cvoid}, _c_access::Ptr{Cvoid}, _c_free::Ptr{Cvoid},
+            _c_clone::Ptr{Cvoid}, _c_sum::Ptr{Cvoid}, _c_norm::Ptr{Cvoid},
+            _c_bufsize::Ptr{Cvoid}, _c_bufpack::Ptr{Cvoid}, _c_bufunpack::Ptr{Cvoid},
+            C_NULL::Ptr{Cvoid}, C_NULL::Ptr{Cvoid}, _c_step::Ptr{Cvoid},
+            _c_init_basis::Ptr{Cvoid}, _c_inner_prod::Ptr{Cvoid}
+        )::Cint
+    else
+        @ccall libbraid.braid_Warmup(
+            _app::Ref{BraidApp}, _app.comm::MPI.MPI_Comm, core.tstart::Cdouble, fdt::Cdouble, cdt::Cdouble,
+            _c_init::Ptr{Cvoid}, _c_access::Ptr{Cvoid}, _c_free::Ptr{Cvoid},
+            _c_clone::Ptr{Cvoid}, _c_sum::Ptr{Cvoid}, _c_norm::Ptr{Cvoid},
+            _c_bufsize::Ptr{Cvoid}, _c_bufpack::Ptr{Cvoid}, _c_bufunpack::Ptr{Cvoid},
+            C_NULL::Ptr{Cvoid}, C_NULL::Ptr{Cvoid}, _c_step::Ptr{Cvoid},
+            C_NULL::Ptr{Cvoid}, C_NULL::Ptr{Cvoid}
+        )::Cint
+    end
+    nothing
 end
 
 """
 Wraps the XBraid braid_Drive function. This function is called by XBraid.Drive, and should not be called directly.
 """
 function _Drive(core::BraidCore)
-	GC.@preserve core begin
-		@ccall libbraid.braid_Drive(core._braid_core::Ptr{Cvoid})::Cint
-	end
+    GC.@preserve core begin
+        @ccall libbraid.braid_Drive(core._braid_core::Ptr{Cvoid})::Cint
+    end
 end
 
 """
 Run the XBraid solver. This function calls XBraid.Warmup by default, but this can be disabled by setting warmup=false, in which case a less expensive (but less effective) option is used to precompile the user functions.
 """
 function Drive(core::BraidCore; warmup=true)
-	if warmup
-		Warmup(core)
-	else
-		_app = core._braid_app
-		# cheaper precompile option, but less effective
-		begin
-			postInitPrecompile(_app)
-			if (_app.basis_init !== nothing) && (_app.inner_prod !== nothing)
-				deltaPrecompile(_app)
-			end
-		end
-	end
-	_Drive(core)
+    if warmup
+        Warmup(core)
+    else
+        _app = core._braid_app
+        # cheaper precompile option, but less effective
+        begin
+            postInitPrecompile(_app)
+            if (_app.basis_init !== nothing) && (_app.inner_prod !== nothing)
+                deltaPrecompile(_app)
+            end
+        end
+    end
+    _Drive(core)
 end
 
-function PrintStats(core::BraidCore)
-	GC.@preserve core begin
-		@ccall libbraid.braid_PrintStats(core._braid_core::Ptr{Cvoid})::Cint
-	end
+function printStats(core::BraidCore)
+    GC.@preserve core begin
+        @ccall libbraid.braid_PrintStats(core._braid_core::Ptr{Cvoid})::Cint
+    end
 end
 
-function SetTimerFile(core::BraidCore, filestem::String)
-	len = @ccall strlen(filestem::Cstring)::Cint
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetTimerFile(core._braid_core::Ptr{Cvoid}, len::Cint, filestem::Cstring)::Cint
-	end
+function setTimerFile(core::BraidCore, filestem::String)
+    len = @ccall strlen(filestem::Cstring)::Cint
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetTimerFile(core._braid_core::Ptr{Cvoid}, len::Cint, filestem::Cstring)::Cint
+    end
 end
 
-function PrintTimers(core::BraidCore)
-	GC.@preserve core begin
-		@ccall libbraid.braid_PrintTimers(core._braid_core::Ptr{Cvoid})::Cint
-	end
+function printTimers(core::BraidCore)
+    GC.@preserve core begin
+        @ccall libbraid.braid_PrintTimers(core._braid_core::Ptr{Cvoid})::Cint
+    end
 end
 
-function ResetTimer(core::BraidCore)
-	GC.@preserve core begin
-		@ccall libbraid.braid_ResetTimer(core._braid_core::Ptr{Cvoid})::Cint
-	end
+function resetTimer(core::BraidCore)
+    GC.@preserve core begin
+        @ccall libbraid.braid_ResetTimer(core._braid_core::Ptr{Cvoid})::Cint
+    end
 end
 
-function SetTimings(core::BraidCore, timing_level::Integer)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetTimings(core._braid_core::Ptr{Cvoid}, timing_level::Cint)::Cint
-	end
+function setTimings(core::BraidCore, timing_level::Integer)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetTimings(core._braid_core::Ptr{Cvoid}, timing_level::Cint)::Cint
+    end
 end
 
-function WriteConvHistory(core::BraidCore, filename::String)
-	GC.@preserve core begin
-		@ccall libbraid.braid_WriteConvHistory(core._braid_core::Ptr{Cvoid}, filename::Cstring)::Cint
-	end
+function writeConvHistory(core::BraidCore, filename::String)
+    GC.@preserve core begin
+        @ccall libbraid.braid_WriteConvHistory(core._braid_core::Ptr{Cvoid}, filename::Cstring)::Cint
+    end
 end
 
-function SetMaxLevels(core::BraidCore, max_levels::Integer)
-	@assert max_levels > 0 "Max. levels must be an integer greater than 0"
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetMaxLevels(core._braid_core::Ptr{Cvoid}, max_levels::Cint)::Cint
-	end
+function setMaxLevels(core::BraidCore, max_levels::Integer)
+    @assert max_levels > 0 "Max. levels must be an integer greater than 0"
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetMaxLevels(core._braid_core::Ptr{Cvoid}, max_levels::Cint)::Cint
+    end
 end
 
-function SetIncrMaxLevels(core::BraidCore)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetIncrMaxLevels(core._braid_core::Ptr{Cvoid})::Cint
-	end
+function setIncrMaxLevels(core::BraidCore)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetIncrMaxLevels(core._braid_core::Ptr{Cvoid})::Cint
+    end
 end
 
-function SetSkip(core::BraidCore, skip::Bool)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetSkip(core._braid_core::Ptr{Cvoid}, skip::Cint)::Cint
-	end
+function setSkip(core::BraidCore, skip::Bool)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetSkip(core._braid_core::Ptr{Cvoid}, skip::Cint)::Cint
+    end
+end
+
+function setRefine(core::BraidCore, refine::Bool)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetRefine(core._braid_core::Ptr{Cvoid}, refine::Cint)::Cint
+    end
+end
+
+function setMaxRefinements(core::BraidCore, max_refinements::Integer)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetMaxRefinements(core._braid_core::Ptr{Cvoid}, max_refinements::Cint)::Cint
+    end
+end
+
+function setTPointsCutoff(core::BraidCore, tpoints_cutoff::Integer)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetTPointsCutoff(core._braid_core::Ptr{Cvoid}, tpoints_cutoff::Cint)::Cint
+    end
 end
 
 
-function SetRefine(core::BraidCore, refine::Bool)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetSkip(core._braid_core::Ptr{Cvoid}, refine::Cint)::Cint
-	end
+function setMinCoarse(core::BraidCore, min_coarse::Integer)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetMinCoarse(core._braid_core::Ptr{Cvoid}, min_coarse::Cint)::Cint
+    end
 end
 
-function SetMaxRefinements(core::BraidCore, max_refinements::Integer)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetMaxRefinements(core._braid_core::Ptr{Cvoid}, max_refinements::Cint)::Cint
-	end
+function setRelaxOnlyCG(core::BraidCore, relax_only_cg::Bool)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetRelaxOnlyCG(core._braid_core::Ptr{Cvoid}, relax_only_cg::Cint)::Cint
+    end
 end
 
-
-function SetTPointsCutoff(core::BraidCore, tpoints_cutoff::Integer)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetTPointsCutoff(core._braid_core::Ptr{Cvoid}, tpoints_cutoff::Cint)::Cint
-	end
+function setAbsTol(core::BraidCore, atol::Real)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetAbsTol(core._braid_core::Ptr{Cvoid}, atol::Cdouble)::Cint
+    end
 end
 
-
-function SetMinCoarse(core::BraidCore, min_coarse::Integer)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetMinCoarse(core._braid_core::Ptr{Cvoid}, min_coarse::Cint)::Cint
-	end
+function setRelTol(core::BraidCore, rtol::Real)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetRelTol(core._braid_core::Ptr{Cvoid}, rtol::Cdouble)::Cint
+    end
 end
 
-function SetRelaxOnlyCG(core::BraidCore, relax_only_cg::Bool)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetRelaxOnlyCG(core._braid_core::Ptr{Cvoid}, relax_only_cg::Cint)::Cint
-	end
+function setNRelax(core::BraidCore, level::Integer, nrelax::Integer)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetNRelax(core._braid_core::Ptr{Cvoid}, level::Cint, nrelax::Cint)::Cint
+    end
 end
 
-function SetAbsTol(core::BraidCore, atol::Real)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetAbsTol(core._braid_core::Ptr{Cvoid}, atol::Cdouble)::Cint
-	end
+function setCRelaxWt(core::BraidCore, level::Integer, Cwt::Real)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetCRelaxWt(core._braid_core::Ptr{Cvoid}, level::Cint, Cwt::Cdouble)::Cint
+    end
 end
 
-function SetRelTol(core::BraidCore, rtol::Real)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetRelTol(core._braid_core::Ptr{Cvoid}, rtol::Cdouble)::Cint
-	end
+function setCFactor(core::BraidCore, level::Integer, cfactor::Integer)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetCFactor(core._braid_core::Ptr{Cvoid}, level::Cint, cfactor::Cint)::Cint
+    end
 end
 
-function SetNRelax(core::BraidCore, level::Integer, nrelax::Integer)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetNRelax(core._braid_core::Ptr{Cvoid}, level::Cint, nrelax::Cint)::Cint
-	end
+function setMaxIter(core::BraidCore, max_iter::Integer)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetMaxIter(core._braid_core::Ptr{Cvoid}, max_iter::Cint)::Cint
+    end
 end
 
-function SetCRelaxWt(core::BraidCore, level::Integer, Cwt::Real)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetCRelaxWt(core._braid_core::Ptr{Cvoid}, level::Cint, Cwt::Cdouble)::Cint
-	end
+function setFMG(core::BraidCore)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetFMG(core._braid_core::Ptr{Cvoid})::Cint
+    end
 end
 
-function SetCFactor(core::BraidCore, level::Integer, cfactor::Integer)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetCFactor(core._braid_core::Ptr{Cvoid}, level::Cint, cfactor::Cint)::Cint
-	end
+function setNFMG(core::BraidCore, k::Integer)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetNFMG(core._braid_core::Ptr{Cvoid}, k::Cint)::Cint
+    end
 end
 
-function SetMaxIter(core::BraidCore, max_iter::Integer)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetMaxIter(core._braid_core::Ptr{Cvoid}, max_iter::Cint)::Cint
-	end
+function setNFMGVcyc(core::BraidCore, nfmg_Vcyc::Integer)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetNFMGVcyc(core._braid_core::Ptr{Cvoid}, nfmg_Vcyc::Cint)::Cint
+    end
 end
 
-function SetFMG(core::BraidCore)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetFMG(core._braid_core::Ptr{Cvoid})::Cint
-	end
+function setStorage(core::BraidCore, storage::Bool)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetStorage(core._braid_core::Ptr{Cvoid}, storage::Cint)::Cint
+    end
 end
 
-function SetNFMG(core::BraidCore, k::Integer)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetNFMG(core._braid_core::Ptr{Cvoid}, k::Cint)::Cint
-	end
+function setTemporalNorm(core::BraidCore, tnorm::Bool)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetTemporalNorm(core._braid_core::Ptr{Cvoid}, tnorm::Cint)::Cint
+    end
 end
 
-function SetNFMGVcyc(core::BraidCore, nfmg_Vcyc::Integer)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetNFMGVcyc(core._braid_core::Ptr{Cvoid}, nfmg_Vcyc::Cint)::Cint
-	end
+function setPeriodic(core::BraidCore, periodic::Bool)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetPeriodic(core._braid_core::Ptr{Cvoid}, periodic::Cint)::Cint
+    end
 end
 
-function SetStorage(core::BraidCore, storage::Bool)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetStorage(core._braid_core::Ptr{Cvoid}, storage::Cint)::Cint
-	end
+function setPrintLevel(core::BraidCore, print_level::Integer)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetPrintLevel(core._braid_core::Ptr{Cvoid}, print_level::Cint)::Cint
+    end
 end
 
-function SetTemporalNorm(core::BraidCore, tnorm::Bool)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetTemporalNorm(core._braid_core::Ptr{Cvoid}, tnorm::Cint)::Cint
-	end
+function setFileIOLevel(core::BraidCore, io_level::Integer)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetFileIOLevel(core._braid_core::Ptr{Cvoid}, io_level::Cint)::Cint
+    end
 end
 
-function SetPeriodic(core::BraidCore, periodic::Bool)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetPeriodic(core._braid_core::Ptr{Cvoid}, periodic::Cint)::Cint
-	end
+function setPrintFile(core::BraidCore, filename::String)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetPrintFile(core._braid_core::Ptr{Cvoid}, filename::Cstring)::Cint
+    end
 end
 
-function SetPrintLevel(core::BraidCore, print_level::Integer)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetPrintLevel(core._braid_core::Ptr{Cvoid}, print_level::Cint)::Cint
-	end
-end
-
-function SetFileIOLevel(core::BraidCore, io_level::Integer)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetFileIOLevel(core._braid_core::Ptr{Cvoid}, io_level::Cint)::Cint
-	end
-end
-
-function SetPrintFile(core::BraidCore, filename::String)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetPrintFile(core._braid_core::Ptr{Cvoid}, filename::Cstring)::Cint
-	end
-end
-
-function SetDefaultPrintFile(core::BraidCore)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetDefaultPrintFile(core._braid_core::Ptr{Cvoid})::Cint
-	end
+function setDefaultPrintFile(core::BraidCore)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetDefaultPrintFile(core._braid_core::Ptr{Cvoid})::Cint
+    end
 end
 
 """
@@ -532,201 +501,208 @@ Set access level for XBraid. This controls how often the user's access function 
 
 Default is 1.
 """
-function SetAccessLevel(core::BraidCore, access_level::Integer)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetAccessLevel(core._braid_core::Ptr{Cvoid}, access_level::Cint)::Cint
-	end
+function setAccessLevel(core::BraidCore, access_level::Integer)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetAccessLevel(core._braid_core::Ptr{Cvoid}, access_level::Cint)::Cint
+    end
 end
 
-function SetFinalFCRelax(core::BraidCore)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetFinalFCRelax(core._braid_core::Ptr{Cvoid})::Cint
-	end
+function setFinalFCRelax(core::BraidCore)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetFinalFCRelax(core._braid_core::Ptr{Cvoid})::Cint
+    end
 end
 
-function GetNumIter(core::BraidCore)
-	niter = Ref{Cint}(0)
-	GC.@preserve core begin
-		@ccall libbraid.braid_GetNumIter(core._braid_core::Ptr{Cvoid}, niter::Ref{Cint})::Cint
-	end
-	return niter[]
+function getNumIter(core::BraidCore)
+    niter = Ref{Cint}(0)
+    GC.@preserve core begin
+        @ccall libbraid.braid_GetNumIter(core._braid_core::Ptr{Cvoid}, niter::Ref{Cint})::Cint
+    end
+    return niter[]
 end
 
-function GetRNorms(core::BraidCore)
-	nrequest = Ref{Cint}()
-	nrequest[] = GetNumIter(core)
-	rnorms = zeros(nrequest[])
-	GC.@preserve core begin
-		@ccall libbraid.braid_GetRNorms(core._braid_core::Ptr{Cvoid}, nrequest::Ref{Cint}, rnorms::Ref{Cdouble})::Cint
-	end
-	nrequest[] == 0 && return Float64[]
-	return rnorms[1:nrequest[]]
+function getRNorms(core::BraidCore)
+    nrequest = Ref{Cint}()
+    nrequest[] = getNumIter(core)
+    rnorms = zeros(nrequest[])
+    GC.@preserve core begin
+        @ccall libbraid.braid_GetRNorms(core._braid_core::Ptr{Cvoid}, nrequest::Ref{Cint}, rnorms::Ref{Cdouble})::Cint
+    end
+    nrequest[] == 0 && return Float64[]
+    return rnorms[1:nrequest[]]
 end
 
-function GetNLevels(core::BraidCore)
-	nlevels = Ref(0)
-	GC.@preserve core begin
-		@ccall libbraid.braid_GetNLevels(core._braid_core::Ptr{Cvoid}, nlevels::Ref{Cint})::Cint
-	end
-	return nlevels[]
+function getNLevels(core::BraidCore)
+    nlevels = Ref(0)
+    GC.@preserve core begin
+        @ccall libbraid.braid_GetNLevels(core._braid_core::Ptr{Cvoid}, nlevels::Ref{Cint})::Cint
+    end
+    return nlevels[]
 end
 
-function SetSeqSoln(core::BraidCore, seq_soln::Bool)
-	GC.@preserve core begin
-		@ccall libbraid.braid_GetNLevels(core._braid_core::Ptr{Cvoid}, seq_soln::Cint)::Cint
-	end
+function setSeqSoln(core::BraidCore, seq_soln::Bool)
+    GC.@preserve core begin
+        @ccall libbraid.braid_GetNLevels(core._braid_core::Ptr{Cvoid}, seq_soln::Cint)::Cint
+    end
 end
 
-function SetRichardsonEstimation(core::BraidCore, est_error::Bool, richardson::Bool, local_order::Integer)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetRichardsonEstimation(core._braid_core::Ptr{Cvoid}, est_error::Cint, richardson::Cint, local_order::Cint)::Cint
-	end
+function setRichardsonEstimation(core::BraidCore, est_error::Bool, richardson::Bool, local_order::Integer)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetRichardsonEstimation(core._braid_core::Ptr{Cvoid}, est_error::Cint, richardson::Cint, local_order::Cint)::Cint
+    end
 end
 
-function SetDeltaCorrection(core::BraidCore, rank::Integer, basis_init::Function, inner_prod::Function)
-	core._braid_app.basis_init = basis_init
-	core._braid_app.inner_prod = inner_prod
-	# deltaPrecompile(core._braid_app)
+function setSync(core::BraidCore, sync::Function)
+    core._braid_app.sync = sync
 
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetDeltaCorrection(core._braid_core::Ptr{Cvoid}, rank::Cint, _c_init_basis::Ptr{Cvoid}, _c_inner_prod::Ptr{Cvoid})::Cint
-	end
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetSync(core._braid_core::Ptr{Cvoid}, _c_sync::Ptr{Cvoid})::Cint
+    end
 end
 
-function SetDeferDelta(core::BraidCore, level::Integer, iter::Integer)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetDeferDelta(core._braid_core::Ptr{Cvoid}, level::Cint, iter::Cint)::Cint
-	end
+function setDeltaCorrection(core::BraidCore, rank::Integer, basis_init::Function; inner_prod::Function=default_inner_prod)
+    core._braid_app.basis_init = basis_init
+    core._braid_app.inner_prod = inner_prod
+    # deltaPrecompile(core._braid_app)
+
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetDeltaCorrection(core._braid_core::Ptr{Cvoid}, rank::Cint, _c_init_basis::Ptr{Cvoid}, _c_inner_prod::Ptr{Cvoid})::Cint
+    end
 end
 
-function SetLyapunovEstimation(core::BraidCore; relax::Bool = false, cglv::Bool = true, exponents::Bool = false)
-	GC.@preserve core begin
-		@ccall libbraid.braid_SetLyapunovEstimation(core._braid_core::Ptr{Cvoid}, relax::Cint, cglv::Cint, exponents::Cint)::Cint
-	end
+function setDeferDelta(core::BraidCore, level::Integer, iter::Integer)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetDeferDelta(core._braid_core::Ptr{Cvoid}, level::Cint, iter::Cint)::Cint
+    end
 end
 
-# Still missing spatial coarsening, sync, residual, and adjoint
+function setLyapunovEstimation(core::BraidCore; relax::Bool=false, cglv::Bool=true, exponents::Bool=false)
+    GC.@preserve core begin
+        @ccall libbraid.braid_SetLyapunovEstimation(core._braid_core::Ptr{Cvoid}, relax::Cint, cglv::Cint, exponents::Cint)::Cint
+    end
+end
+
+# Still missing spatial coarsening, residual, and adjoint
 
 # braid_test
 function testInitAccess(app::BraidApp, t::Real, outputFile::Libc.FILE)
-	pass = @ccall libbraid.braid_TestInitAccess(
-		app::Ref{BraidApp},
-		app.comm::MPI.MPI_Comm,
-		outputFile::Libc.FILE,
-		t::Cdouble,
-		_c_init::Ptr{Cvoid},
-		_c_access::Ptr{Cvoid},
-		_c_free::Ptr{Cvoid},
-	)::Cint
-	return pass > 0
+    pass = @ccall libbraid.braid_TestInitAccess(
+        app::Ref{BraidApp},
+        app.comm::MPI.MPI_Comm,
+        outputFile::Libc.FILE,
+        t::Cdouble,
+        _c_init::Ptr{Cvoid},
+        _c_access::Ptr{Cvoid},
+        _c_free::Ptr{Cvoid},
+    )::Cint
+    return pass > 0
 
-	# println("Serialized size of user vector: $(app.bufsize)")
-	# println("Check output for objects not properly freed:")
-	# println(app.ref_ids)
+    # println("Serialized size of user vector: $(app.bufsize)")
+    # println("Check output for objects not properly freed:")
+    # println(app.ref_ids)
 end
 testInitAccess(app::BraidApp, t::Real, outputFile::IO) = testInitAccess(app, t, Libc.FILE(outputFile))
 testInitAccess(app::BraidApp, t::Real) = testInitAccess(app, t, c_stdout)
 
 function testClone(app::BraidApp, t::Real, outputFile::Libc.FILE)
-	pass = @ccall libbraid.braid_TestClone(
-		app::Ref{BraidApp},
-		app.comm::MPI.MPI_Comm,
-		outputFile::Libc.FILE,
-		t::Cdouble,
-		_c_init::Ptr{Cvoid},
-		_c_access::Ptr{Cvoid},
-		_c_free::Ptr{Cvoid},
-		_c_clone::Ptr{Cvoid},
-	)::Cint
-	return pass > 0
+    pass = @ccall libbraid.braid_TestClone(
+        app::Ref{BraidApp},
+        app.comm::MPI.MPI_Comm,
+        outputFile::Libc.FILE,
+        t::Cdouble,
+        _c_init::Ptr{Cvoid},
+        _c_access::Ptr{Cvoid},
+        _c_free::Ptr{Cvoid},
+        _c_clone::Ptr{Cvoid},
+    )::Cint
+    return pass > 0
 end
 testClone(app::BraidApp, t::Real, outputFile::IO) = testClone(app, t, Libc.FILE(outputFile))
 testClone(app::BraidApp, t::Real) = testClone(app, t, c_stdout)
 
 function testSum(app::BraidApp, t::Real, outputFile::Libc.FILE)
-	pass = @ccall libbraid.braid_TestSum(
-		app::Ref{BraidApp},
-		app.comm::MPI.MPI_Comm,
-		outputFile::Libc.FILE,
-		t::Cdouble,
-		_c_init::Ptr{Cvoid},
-		_c_access::Ptr{Cvoid},
-		_c_free::Ptr{Cvoid},
-		_c_clone::Ptr{Cvoid},
-		_c_sum::Ptr{Cvoid},
-	)::Cint
-	return pass > 0
+    pass = @ccall libbraid.braid_TestSum(
+        app::Ref{BraidApp},
+        app.comm::MPI.MPI_Comm,
+        outputFile::Libc.FILE,
+        t::Cdouble,
+        _c_init::Ptr{Cvoid},
+        _c_access::Ptr{Cvoid},
+        _c_free::Ptr{Cvoid},
+        _c_clone::Ptr{Cvoid},
+        _c_sum::Ptr{Cvoid},
+    )::Cint
+    return pass > 0
 end
 testSum(app::BraidApp, t::Real, outputFile::IO) = testSum(app, t, Libc.FILE(outputFile))
 testSum(app::BraidApp, t::Real) = testSum(app, t, c_stdout)
 
 function testSpatialNorm(app::BraidApp, t::Real, outputFile::Libc.FILE)
-	pass = @ccall libbraid.braid_TestSpatialNorm(
-		app::Ref{BraidApp},
-		app.comm::MPI.MPI_Comm,
-		outputFile::Libc.FILE,
-		t::Cdouble,
-		_c_init::Ptr{Cvoid},
-		_c_free::Ptr{Cvoid},
-		_c_clone::Ptr{Cvoid},
-		_c_sum::Ptr{Cvoid},
-		_c_norm::Ptr{Cvoid},
-	)::Cint
-	return pass > 0
+    pass = @ccall libbraid.braid_TestSpatialNorm(
+        app::Ref{BraidApp},
+        app.comm::MPI.MPI_Comm,
+        outputFile::Libc.FILE,
+        t::Cdouble,
+        _c_init::Ptr{Cvoid},
+        _c_free::Ptr{Cvoid},
+        _c_clone::Ptr{Cvoid},
+        _c_sum::Ptr{Cvoid},
+        _c_norm::Ptr{Cvoid},
+    )::Cint
+    return pass > 0
 end
 testSpatialNorm(app::BraidApp, t::Real, outputFile::IO) = testSpatialNorm(app, t, Libc.FILE(outputFile))
 testSpatialNorm(app::BraidApp, t::Real) = testSpatialNorm(app, t, c_stdout)
 
 function testBuf(app::BraidApp, t::Real, outputFile::Libc.FILE)
-	pass = @ccall libbraid.braid_TestBuf(
-		app::Ref{BraidApp},
-		app.comm::MPI.MPI_Comm,
-		outputFile::Libc.FILE,
-		t::Cdouble,
-		_c_init::Ptr{Cvoid},
-		_c_free::Ptr{Cvoid},
-		_c_sum::Ptr{Cvoid},
-		_c_norm::Ptr{Cvoid},
-		_c_bufsize::Ptr{Cvoid},
-		_c_bufpack::Ptr{Cvoid},
-		_c_bufunpack::Ptr{Cvoid},
-	)::Cint
-	return pass > 0
-	# print('\n')
-	# println("Check output for objects not freed:")
-	# println(app.ref_ids)
+    pass = @ccall libbraid.braid_TestBuf(
+        app::Ref{BraidApp},
+        app.comm::MPI.MPI_Comm,
+        outputFile::Libc.FILE,
+        t::Cdouble,
+        _c_init::Ptr{Cvoid},
+        _c_free::Ptr{Cvoid},
+        _c_sum::Ptr{Cvoid},
+        _c_norm::Ptr{Cvoid},
+        _c_bufsize::Ptr{Cvoid},
+        _c_bufpack::Ptr{Cvoid},
+        _c_bufunpack::Ptr{Cvoid},
+    )::Cint
+    return pass > 0
+    # print('\n')
+    # println("Check output for objects not freed:")
+    # println(app.ref_ids)
 end
 testBuf(app::BraidApp, t::Real, outputFile::IO) = testBuf(app, t, Libc.FILE(outputFile))
 testBuf(app::BraidApp, t::Real) = testBuf(app, t, c_stdout)
 
 function testDelta(app::BraidApp, t::Real, dt::Real, rank::Integer, outputFile::Libc.FILE)
-	app.basis_init::Function
-	app.inner_prod::Function
-	pass = @ccall libbraid.braid_TestDelta(
-		app::Ref{BraidApp},
-		app.comm::MPI.MPI_Comm,
-		outputFile::Libc.FILE,
-		t::Cdouble,
-		dt::Cdouble,
-		rank::Cint,
-		_c_init::Ptr{Cvoid},
-		_c_init_basis::Ptr{Cvoid},
-		_c_access::Ptr{Cvoid},
-		_c_free::Ptr{Cvoid},
-		_c_clone::Ptr{Cvoid},
-		_c_sum::Ptr{Cvoid},
-		_c_bufsize::Ptr{Cvoid},
-		_c_bufpack::Ptr{Cvoid},
-		_c_bufunpack::Ptr{Cvoid},
-		_c_inner_prod::Ptr{Cvoid},
-		_c_step::Ptr{Cvoid},
-	)::Cint
-	return pass > 0
-	# println("Check output for objects not freed:")
-	# println(app.ref_ids)
+    app.basis_init::Function
+    app.inner_prod::Function
+    pass = @ccall libbraid.braid_TestDelta(
+        app::Ref{BraidApp},
+        app.comm::MPI.MPI_Comm,
+        outputFile::Libc.FILE,
+        t::Cdouble,
+        dt::Cdouble,
+        rank::Cint,
+        _c_init::Ptr{Cvoid},
+        _c_init_basis::Ptr{Cvoid},
+        _c_access::Ptr{Cvoid},
+        _c_free::Ptr{Cvoid},
+        _c_clone::Ptr{Cvoid},
+        _c_sum::Ptr{Cvoid},
+        _c_bufsize::Ptr{Cvoid},
+        _c_bufpack::Ptr{Cvoid},
+        _c_bufunpack::Ptr{Cvoid},
+        _c_inner_prod::Ptr{Cvoid},
+        _c_step::Ptr{Cvoid},
+    )::Cint
+    return pass > 0
+    # println("Check output for objects not freed:")
+    # println(app.ref_ids)
 end
 testDelta(app::BraidApp, t::Real, dt::Real, rank::Integer, outputFile::IO) = testDelta(app, t, dt, rank, Libc.FILE(outputFile))
 testDelta(app::BraidApp, t::Real, dt::Real, rank::Integer) = testDelta(app, t, dt, rank, c_stdout)
 
-# END MODULE XBraid
-end
+end # module XBraid

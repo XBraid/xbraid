@@ -4,13 +4,11 @@ using MPI, Base.Threads
 using BenchmarkTools, Plots, LaTeXStrings
 using Statistics: mean
 using Random: seed!
-using LinearAlgebra: norm
+using LinearAlgebra: norm, normInf
 
 include("../../braid/braid.jl/XBraid.jl")
 using .XBraid
 
-MPI.Init()
-comm = MPI.COMM_WORLD
 
 Float = Float64
 
@@ -201,6 +199,7 @@ end
 function project_incompressible!(app::KFlowApp, u::AbstractArray{ForwardDiff.Dual{T, V, P}}, Δt::Real) where {T, V, P}
 	vs = ForwardDiff.value.(u)
 	ps = extractPartials(u)
+	# @info "size(ps)"
 	project_incompressible!(app, vs, Δt)
 	map(eachslice(ps, dims = 4)) do p
 		project_incompressible!(app, p, Δt)
@@ -258,30 +257,30 @@ end
 
 function my_init(app::KFlowApp, t::Float)
 	seed!(1)
-	# u = zeros(Float, nₓ, nₓ, 2)
-	u = randn(Float, nₓ, nₓ, 2)
-	# TaylorGreen!(app, u)
+	u = zeros(Float, nₓ, nₓ, 2)
+	# u = randn(Float, nₓ, nₓ, 2)
+	TaylorGreen!(app, u)
 	project_incompressible!(app, u, 1e-1app.ℜ)
 	u[:, :, 1] .-= mean(u[:, :, 1])
 	u[:, :, 2] .-= mean(u[:, :, 2])
-	u ./= my_norm(app, u)
+	u ./= my_norm(app, u)/2
 	return u
 end
 
 function my_basis_init(app::KFlowApp, t::Float, i::Integer)
 	ψ = zeros(Float, nₓ, nₓ, 2)
-	fourierMode2DVec!(app, ψ, i + 1)
+	fourierMode2DVec!(app, ψ, i)
 	return ψ
 end
 
 function my_step!(
-	app::KFlowApp, status::Ptr{Cvoid},
+	app::KFlowApp, status::XBraid.StepStatus,
 	u::AbstractArray, ustop::AbstractArray,
 	tstart::Real, tstop::Real,
 )
 	Δt = tstop - tstart
-	level = XBraid.status_GetLevel(status)
-	iter = XBraid.status_GetIter(status)
+	level = XBraid.Status.getLevel(status)
+	iter = XBraid.Status.getIter(status)
 	if !app.useTheta || level == 0
 		u = base_step!(app, u, Δt)
 	else
@@ -300,7 +299,7 @@ function my_step!(
 end
 
 function my_step!(
-	app::KFlowApp, status::Ptr{Cvoid},
+	app::KFlowApp, status::XBraid.StepStatus,
 	u::AbstractArray, ustop::AbstractArray,
 	tstart::Real, tstop::Real,
 	Ψ::Vector{Any}
@@ -317,23 +316,19 @@ function my_step!(
 	return
 end
 
-function my_sum!(app, a, x, b, y)
-	@. y = a * x + b * y
-end
-
-function my_access(app::KFlowApp, status, u)
-	XBraid.status_GetWrapperTest(status) && return
-	ntime = XBraid.status_GetNTPoints(status)
-	index = XBraid.status_GetTIndex(status)
-	level, done = XBraid.status_GetLevel(status), XBraid.status_GetDone(status)
+function my_access(app::KFlowApp, status::XBraid.AccessStatus, u)
+	XBraid.Status.getWrapperTest(status) && return
+	ntime = XBraid.Status.getNTPoints(status)
+	index = XBraid.Status.getTIndex(status)
+	level, done = XBraid.Status.getLevel(status), XBraid.Status.getDone(status)
 
 	if level == 0 && done && index % app.cf == 0
 		push!(app.solution, deepcopy(u))
 		push!(app.times, index)
-		rank = XBraid.status_GetDeltaRank(status)
+		rank = XBraid.Status.getDeltaRank(status)
 		if rank > 0
-			exps = XBraid.status_GetLocalLyapExponents(status)
-			vecs = XBraid.status_GetBasisVectors(status)
+			exps = XBraid.Status.getLocalLyapExponents(status)
+			vecs = XBraid.Status.getBasisVectors(status)
 			push!(app.lyapunov_exps, exps)
 			push!(app.lyapunov_vecs, deepcopy(vecs))
 		end
@@ -345,21 +340,19 @@ function my_access(app::KFlowApp, status, u)
 	end
 end
 
-my_norm(app, u) = LinearAlgebra.normInf(u)
-my_innerprod(app, u, v) = u ⋅ v
+my_norm(app, u) = normInf(u)
 
 const lengthScale = 2π
-const nₓ = 99
+const nₓ = 256
 const Δx = lengthScale / nₓ
+
+MPI.Init()
+comm = MPI.COMM_WORLD
 
 function test()
 	my_app = KFlowApp(2, false, 3, 2, 1600)
 
-	test_app = XBraid.BraidApp(
-		my_app, comm, comm,
-		my_step!, my_init,
-		my_sum!, my_norm, my_access,
-		my_basis_init, my_innerprod)
+	test_app = XBraid.BraidApp(my_app, comm, my_step!, my_init, my_access; spatialnorm=my_norm, basis_init=my_basis_init)
 
 	XBraid.testInitAccess(test_app, 0.0)
 	XBraid.testClone(test_app, 0.0)
@@ -371,31 +364,28 @@ function test()
 	# heatmap(curl')
 end
 
-function main(;tstop=20.0, ntime=512, deltaRank=0, ml=1, cf=2, maxiter=10, fcf=1, relaxLyap=false, savegif=false, useTheta=false, k=4, ℜ=1600, deferDelta=(1, 1))
+function main(;tstop=10.0, ntime=1024, deltaRank=0, ml=1, cf=2, maxiter=10, fcf=1, relaxLyap=false, savegif=false, expPlot=false, useTheta=false, k=4, ℜ=100, deferDelta=(1, 1))
 	my_app = KFlowApp(cf, useTheta, deltaRank, k, ℜ)
 
 	tstart = 0.0
 
-	core = XBraid.Init(
-		comm, comm, tstart, tstop, ntime,
-		my_step!, my_init, my_sum!, my_norm, my_access; app = my_app,
-	)
+	core = XBraid.Init(comm, tstart, tstop, ntime, my_step!, my_init, my_access; spatialnorm=(app, u)->normInf(u), app=my_app)
 
 	if deltaRank > 0
-		XBraid.SetDeltaCorrection(core, deltaRank, my_basis_init, my_innerprod)
-		# XBraid.SetDeferDelta(core, deferDelta...)
-		XBraid.SetLyapunovEstimation(core; relax = relaxLyap, exponents = true)
+		XBraid.setDeltaCorrection(core, deltaRank, my_basis_init)
+		# XBraid.setDeferDelta(core, deferDelta...)
+		XBraid.setLyapunovEstimation(core; relax = relaxLyap, exponents = true)
 	end
-	XBraid.SetMaxLevels(core, ml)
-	XBraid.SetMaxIter(core, maxiter)
-	XBraid.SetCFactor(core, -1, cf)
-	XBraid.SetNRelax(core, -1, fcf)
-	XBraid.SetAccessLevel(core, 2)
-	XBraid.SetAbsTol(core, 1e-6)
+	XBraid.setMaxLevels(core, ml)
+	XBraid.setMaxIter(core, maxiter)
+	XBraid.setCFactor(core, -1, cf)
+	XBraid.setNRelax(core, -1, fcf)
+	XBraid.setAccessLevel(core, 2)
+	XBraid.setAbsTol(core, 1e-6)
 
-	XBraid.SetTimings(core, 2)
+	XBraid.setTimings(core, 2)
 	XBraid.Drive(core)
-	XBraid.PrintTimers(core)
+	XBraid.printTimers(core)
 
 	p = sortperm(my_app.times)
 
@@ -408,23 +398,22 @@ function main(;tstop=20.0, ntime=512, deltaRank=0, ml=1, cf=2, maxiter=10, fcf=1
 	    end
 	end
 
-	# if deltaRank > 0
-	# 	movingaverage(g, n) = [i < n ? mean(g[begin:i]) : mean(g[i-n+1:i]) for i in eachindex(g)]
-	# 	println("Lyap Exps: ", sum(my_app.lyapunov_exps) ./ tstop)
-	# 	exps = reduce(hcat, my_app.lyapunov_exps[p])'
-	# 	nt = size(exps)[1]
-	# 	Δt = tstop / nt
-	# 	exps = movingaverage.([exps[:, i] ./ Δt for i ∈ 1:size(exps)[2]], length(exps[:, 1]))
-	# 	exps_plot = plot(exps; legend = false)
-	# 	savefig(exps_plot, "lyapunov_exps.png")
-	# end
+	if deltaRank > 0 && expPlot
+		movingaverage(g, n) = [i < n ? mean(g[begin:i]) : mean(g[i-n+1:i]) for i in eachindex(g)]
+		exps = reduce(hcat, my_app.lyapunov_exps[p])'
+		nt = size(exps)[1]
+		Δt = tstop / nt
+		exps = movingaverage.([exps[:, i] ./ Δt for i ∈ 1:size(exps)[2]], length(exps[:, 1]))
+		exps_plot = plot(exps; legend = false)
+		savefig(exps_plot, "lyapunov_exps.png")
+	end
 
 	if savegif
 		preprocess(app, u) = spectralInterpolation(∇X(app, u), 128)'
 		heatmapArgs = Dict(:ticks => false, :colorbar => false, :aspect_ratio => :equal)
-		# anim = @animate for i in p[1:cf:end]
 		count = 1
-		for i in p
+		anim = @animate for i in p[1:cf:end]
+		# for i in p
 			u = my_app.solution[i]
 			plots = [heatmap(preprocess(my_app, u); heatmapArgs...)]
 			for j in 1:min(8, deltaRank)
@@ -432,12 +421,11 @@ function main(;tstop=20.0, ntime=512, deltaRank=0, ml=1, cf=2, maxiter=10, fcf=1
 				push!(plots, heatmap(preprocess(my_app, ψⱼ); heatmapArgs...))
 			end
 			fig = plot(plots...; size = (600, 600))
-			savefig(fig, "kflow_gif/beamer/kolmo_$(nₓ)_$(ntime)_ml$(ml)-$(count).png")
+			# savefig(fig, "kflow_gif/beamer/kolmo_$(nₓ)_$(ntime)_ml$(ml)-$(count).png")
 			count += 1
 		end
-		# gif(anim, "kflow_gif/kolmo_$(nₓ)_$(ntime)_ml$(ml).gif", fps = 20)
+		gif(anim, "kflow_gif/kolmo_$(nₓ)_$(ntime)_ml$(ml).gif", fps = 20)
 	end
-
 
 	return my_app, core
 end

@@ -19,88 +19,100 @@
  *
  ***********************************************************************EHEADER=#
 
+module Wrappers
+
+using LinearAlgebra: norm2, dot
+using Serialization: serialize, deserialize
+using ..XBraid.BraidUtils
+using ..XBraid: Status, BraidApp, BraidVector
+
+# useful helpers
+
 """
-Displays a caught error message, including stacktrace, without throwing
+Macro which wraps the function call in a try-catch block which prints the stacktrace without throwing,
+since Julia functions should not throw errors when called from braid
 """
-function stacktrace_warn(msg::String, err)
-    err_msg = sprint(showerror, err)
-    trace = sprint((io,v) -> show(io, "text/plain", v), stacktrace(catch_backtrace()))
-    @warn "$(msg):\n$(err_msg)\n$(trace)"
+macro braidWrapper(expr)
+    # this error is at compile time, and therefore fine
+    expr.head == :function || error("Not a function expression.")
+    funcname = expr.args[1].args[1].args[1]
+    user_funcname = split(string(funcname), "_")[end]
+    :(
+        function $(esc(funcname))(args...; kwargs...)::Cint
+            f = $expr
+            try
+                result = f(args...; kwargs...)
+                return result
+            catch err
+                stacktrace_warn("Error in user function " * $(esc(user_funcname)), err)
+                return 1
+            end
+        end
+    )
 end
 
 """
-Where'd all my data go?
-This extends Base to include a buffer which throws away the data written to it
-(useful for measuring the serialized size of an object)
+Used to add a reference to the vector u to the IdDict stored in the app.
+this keeps all newly allocated braid_vectors in the global scope, preventing them from being garbage collected. 
 """
-mutable struct BlackHoleBuffer <: IO
-    ptr::Int
+function _register_vector(app::BraidApp, u::BraidVector)
+    app.ref_ids[objectid(u)] = u
 end
-BlackHoleBuffer() = BlackHoleBuffer(0)
 
-function Base.read(from::BlackHoleBuffer, T::Type{UInt8})
-    throw(ArgumentError("BlackHoleBuffer is not readable)"))
-end
-function Base.write(to::BlackHoleBuffer, x::UInt8)
-    to.ptr += 1
-    return 1
-end
-function Base.write(to::BlackHoleBuffer, x::Array{T}) where T
-    to.ptr += sizeof(x)
-    return sizeof(x)
+"""
+Used to remove a reference to the vector u to the IdDict stored in the app.
+"""
+function _deregister_vector(app::BraidApp, u::BraidVector)
+    id = objectid(u)::UInt64
+    pop!(app.ref_ids, id)
 end
 
 # these are internal functions which directly interface with XBraid
 
-function _jl_step!(_app::Ptr{Cvoid},
-                   _ustop::Ptr{Cvoid},
-                   _fstop::Ptr{Cvoid},
-                   _u::Ptr{Cvoid},
-                   _status::Ptr{Cvoid})::Cint
+
+# Step, Init, and Access are required
+
+@braidWrapper function _jl_step!(_app::Ptr{Cvoid},
+    _ustop::Ptr{Cvoid},
+    _fstop::Ptr{Cvoid},
+    _u::Ptr{Cvoid},
+    _status::Ptr{Cvoid}
+)::Cint
     # println("step")
     app = unsafe_pointer_to_objref(_app)::BraidApp
     u = unsafe_pointer_to_objref(_u)::BraidVector
     ustop = unsafe_pointer_to_objref(_ustop)::BraidVector
-    status = StepStatus(_status)
+    status = Status.StepStatus(_status)
 
-    tstart, tstop = status_GetTstartTstop(status)
-    delta_rank = status_GetDeltaRank(status)
+    tstart, tstop = Status.getTstartTstop(status)
+    delta_rank = Status.getDeltaRank(status)
 
     # call the user's function
-    try
-        # residual option
-        if _fstop !== C_NULL
-            fstop = unsafe_pointer_to_objref(_fstop)::BraidVector
-            app.step(app.user_app, status, u.user_vector, ustop.user_vector, fstop.user_vector, tstart, tstop)
+    # residual option
+    if _fstop !== C_NULL
+        fstop = unsafe_pointer_to_objref(_fstop)::BraidVector
+        app.step(app.user_app, status, u.user_vector, ustop.user_vector, fstop.user_vector, tstart, tstop)
         # Delta correction
-        elseif delta_rank > 0
-            basis_vecs = status_GetBasisVectors(status)
-            app.step(app.user_app, status, u.user_vector, ustop.user_vector, tstart, tstop, basis_vecs)
+    elseif delta_rank > 0
+        basis_vecs = Status.getBasisVectors(status)
+        app.step(app.user_app, status, u.user_vector, ustop.user_vector, tstart, tstop, basis_vecs)
         # Default
-        else
-            app.step(app.user_app, status, u.user_vector, ustop.user_vector, tstart, tstop)
-        end
-    catch err
-        stacktrace_warn("Error in user Step", err)
+    else
+        app.step(app.user_app, status, u.user_vector, ustop.user_vector, tstart, tstop)
     end
 
     return 0
 end
 precompile(_jl_step!, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}))
 _c_step = @cfunction(_jl_step!, Cint, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}))
+export _c_step, _jl_step!
 
-
-function _jl_init!(_app::Ptr{Cvoid}, t::Cdouble, u_ptr::Ptr{Ptr{Cvoid}})::Cint
+@braidWrapper function _jl_init!(_app::Ptr{Cvoid}, t::Cdouble, u_ptr::Ptr{Ptr{Cvoid}})::Cint
     # println("init")
     app = unsafe_pointer_to_objref(_app)::BraidApp
+
     # initialize u and register a reference with IdDict
-    u = nothing
-    try
-        u = BraidVector(app.init(app.user_app, t))
-    catch err
-        stacktrace_warn("Error in user Init", err)
-        return 1
-    end
+    u = BraidVector(app.init(app.user_app, t))
     _register_vector(app, u)
 
     unsafe_store!(u_ptr, pointer_from_objref(u))
@@ -118,27 +130,16 @@ function _jl_init!(_app::Ptr{Cvoid}, t::Cdouble, u_ptr::Ptr{Ptr{Cvoid}})::Cint
         app.user_VecType = u.VecType
     end
 
-    # TODO: figure out how to put an upper bound on the size of the serialized object
-    # without serializing it first
-    # u_size = Base.summarysize(Ref(u)) + 9
-    # if u_size > app.bufsize
-    #     app.bufsize = u_size
-    # end
-
     return 0
 end
 _c_init = @cfunction(_jl_init!, Cint, (Ptr{Cvoid}, Cdouble, Ptr{Ptr{Cvoid}}))
+export _c_init, _jl_init!
 
-function _jl_init_basis!(_app::Ptr{Cvoid}, t::Cdouble, index::Cint, u_ptr::Ptr{Ptr{Cvoid}})::Cint
+@braidWrapper function _jl_init_basis!(_app::Ptr{Cvoid}, t::Cdouble, index::Cint, u_ptr::Ptr{Ptr{Cvoid}})::Cint
     # println("init_basis")
     app = unsafe_pointer_to_objref(_app)::BraidApp
-    u = nothing
-    try
-        u = BraidVector(app.basis_init(app.user_app, t, index))
-    catch err
-        stacktrace_warn("Error in user InitBasis", err)
-        return 1
-    end
+    # julia uses 1-based indexing
+    u = BraidVector(app.basis_init(app.user_app, t, index + 1))
 
     _register_vector(app, u)
     unsafe_store!(u_ptr, pointer_from_objref(u))
@@ -158,19 +159,14 @@ function _jl_init_basis!(_app::Ptr{Cvoid}, t::Cdouble, index::Cint, u_ptr::Ptr{P
     return 0
 end
 _c_init_basis = @cfunction(_jl_init_basis!, Cint, (Ptr{Cvoid}, Cdouble, Cint, Ptr{Ptr{Cvoid}}))
+export _c_init_basis, _jl_init_basis!
 
-function _jl_clone!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, v_ptr::Ptr{Ptr{Cvoid}})::Cint
+@braidWrapper function _jl_clone!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, v_ptr::Ptr{Ptr{Cvoid}})::Cint
     # println("clone")
     app = unsafe_pointer_to_objref(_app)::BraidApp
     u = unsafe_pointer_to_objref(_u)::BraidVector
     # initialize v, and copy u into v
-    v = nothing
-    try
-        v = deepcopy(u)
-    catch err
-        stacktrace_warn("Clone error", err)
-        return 1
-    end
+    v = deepcopy(u)
 
     # then register v with IdDict and store in v_ptr
     _register_vector(app, v)
@@ -180,8 +176,9 @@ function _jl_clone!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, v_ptr::Ptr{Ptr{Cvoid}})::C
 end
 precompile(_jl_clone!, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Ptr{Cvoid}}))
 _c_clone = @cfunction(_jl_clone!, Cint, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Ptr{Cvoid}}))
+export _c_clone, _jl_clone!
 
-function _jl_free!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid})::Cint
+@braidWrapper function _jl_free!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid})::Cint
     # println("free")
     app = unsafe_pointer_to_objref(_app)::BraidApp
     u = unsafe_pointer_to_objref(_u)::BraidVector
@@ -191,82 +188,72 @@ function _jl_free!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid})::Cint
 end
 precompile(_jl_free!, (Ptr{Cvoid}, Ptr{Cvoid}))
 _c_free = @cfunction(_jl_free!, Cint, (Ptr{Cvoid}, Ptr{Cvoid}))
+export _c_free, _jl_free!
 
-function _jl_sum!(_app::Ptr{Cvoid},
-    alpha::Cdouble, _x::Ptr{Cvoid},
-    beta::Cdouble, _y::Ptr{Cvoid})::Cint
+@braidWrapper function _jl_sum!(_app::Ptr{Cvoid},
+                                alpha::Cdouble, _x::Ptr{Cvoid},
+                                beta::Cdouble, _y::Ptr{Cvoid})::Cint
     app = unsafe_pointer_to_objref(_app)::BraidApp
     x = unsafe_pointer_to_objref(_x)::BraidVector
     y = unsafe_pointer_to_objref(_y)::BraidVector
-    try
-        app.sum(app.user_app, alpha, x.user_vector, beta, y.user_vector)
-    catch err
-        stacktrace_warn("Error in user Sum", err)
-    end
+    app.sum(app.user_app, alpha, x.user_vector, beta, y.user_vector)
     return 0
 end
 precompile(_jl_sum!, (Ptr{Cvoid}, Cdouble, Ptr{Cvoid}, Cdouble, Ptr{Cvoid}))
 _c_sum = @cfunction(_jl_sum!, Cint, (Ptr{Cvoid}, Cdouble, Ptr{Cvoid}, Cdouble, Ptr{Cvoid}))
+export _c_sum, _jl_sum!
 
-function _jl_norm!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, norm_ptr::Ptr{Cdouble})::Cint
+@braidWrapper function _jl_norm!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, norm_ptr::Ptr{Cdouble})::Cint
     app = unsafe_pointer_to_objref(_app)::BraidApp
     u = unsafe_pointer_to_objref(_u)::BraidVector
-    norm = NaN
-    try
-        norm = app.spatialnorm(app.user_app, u.user_vector)
-    catch err
-        stacktrace_warn("Error in user Norm", err)
-    end
+    norm = app.spatialnorm(app.user_app, u.user_vector)
     unsafe_store!(norm_ptr, norm)
 
     return 0
 end
 precompile(_jl_norm!, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cdouble}))
 _c_norm = @cfunction(_jl_norm!, Cint, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cdouble}))
+export _c_norm, _jl_norm!
 
-function _jl_inner_prod!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, _v::Ptr{Cvoid}, norm_ptr::Ptr{Cdouble})::Cint
+@braidWrapper function _jl_inner_prod!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, _v::Ptr{Cvoid}, norm_ptr::Ptr{Cdouble})::Cint
     app = unsafe_pointer_to_objref(_app)::BraidApp
     u = unsafe_pointer_to_objref(_u)::BraidVector
     v = unsafe_pointer_to_objref(_v)::BraidVector
-    prod = NaN
-    try
-        prod = app.inner_prod(app.user_app, u.user_vector, v.user_vector)
-    catch err
-        stacktrace_warn("Error in user InnerProd", err)
-    end
+    prod = app.inner_prod(app.user_app, u.user_vector, v.user_vector)
     unsafe_store!(norm_ptr, prod)
 
     return 0
 end
 precompile(_jl_inner_prod!, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cdouble}))
 _c_inner_prod = @cfunction(_jl_inner_prod!, Cint, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cdouble}))
+export _c_inner_prod, _jl_inner_prod!
 
-function _jl_access!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, _status::Ptr{Cvoid})::Cint
+@braidWrapper function _jl_access!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, _status::Ptr{Cvoid})::Cint
     app = unsafe_pointer_to_objref(_app)::BraidApp
-    status = AccessStatus(_status)
+    status = Status.AccessStatus(_status)
 
     if !isnothing(app.access)
         u = unsafe_pointer_to_objref(_u)::BraidVector
-        try
-            app.access(app.user_app, status, u.user_vector)
-        catch err
-            stacktrace_warn("Error in user Access", err)
-        end
+        app.access(app.user_app, status, u.user_vector)
     end
 
     return 0
 end
 precompile(_jl_access!, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}))
 _c_access = @cfunction(_jl_access!, Cint, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}))
+export _c_access, _jl_access!
 
-function _jl_bufsize!(_app::Ptr{Cvoid}, size_ptr::Ptr{Cint}, status::Ptr{Cvoid})::Cint
+# buffer functions
+
+@braidWrapper function _jl_bufsize!(_app::Ptr{Cvoid}, size_ptr::Ptr{Cint}, status::Ptr{Cvoid})::Cint
     app = unsafe_pointer_to_objref(_app)
     unsafe_store!(size_ptr, app.bufsize)
     return 0
 end
 _c_bufsize = @cfunction(_jl_bufsize!, Cint, (Ptr{Cvoid}, Ptr{Cint}, Ptr{Cvoid}))
+export _c_bufsize, _jl_bufsize!
 
-function _jl_bufpack!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, _buffer::Ptr{Cvoid}, status::Ptr{Cvoid})::Cint
+@braidWrapper function _jl_bufpack!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, _buffer::Ptr{Cvoid}, status::Ptr{Cvoid})::Cint
     app = unsafe_pointer_to_objref(_app)::BraidApp
     u = unsafe_pointer_to_objref(_u)::BraidVector
     buff_arr = unsafe_wrap(Vector{UInt8}, Base.unsafe_convert(Ptr{UInt8}, _buffer), app.bufsize)
@@ -287,8 +274,9 @@ function _jl_bufpack!(_app::Ptr{Cvoid}, _u::Ptr{Cvoid}, _buffer::Ptr{Cvoid}, sta
 end
 precompile(_jl_bufpack!, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}))
 _c_bufpack = @cfunction(_jl_bufpack!, Cint, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}))
+export _c_bufpack, _jl_bufpack!
 
-function _jl_bufunpack!(_app::Ptr{Cvoid}, _buffer::Ptr{Cvoid}, u_ptr::Ptr{Ptr{Cvoid}}, status::Ptr{Cvoid})::Cint
+@braidWrapper function _jl_bufunpack!(_app::Ptr{Cvoid}, _buffer::Ptr{Cvoid}, u_ptr::Ptr{Ptr{Cvoid}}, status::Ptr{Cvoid})::Cint
     @assert _buffer !== C_NULL "tried to unpack null buffer"
     app = unsafe_pointer_to_objref(_app)::BraidApp
     # get size of buffer we are unpacking:
@@ -308,3 +296,29 @@ function _jl_bufunpack!(_app::Ptr{Cvoid}, _buffer::Ptr{Cvoid}, u_ptr::Ptr{Ptr{Cv
 end
 precompile(_jl_bufunpack!, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Ptr{Cvoid}}, Ptr{Cvoid}))
 _c_bufunpack = @cfunction(_jl_bufunpack!, Cint, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Ptr{Cvoid}}, Ptr{Cvoid}))
+export _c_bufunpack, _jl_bufunpack!
+
+# optional functions
+
+@braidWrapper function _jl_sync(_app::Ptr{Cvoid}, status::Ptr{Cvoid})::Cint
+    app = unsafe_pointer_to_objref(_app)::BraidApp
+    if app.sync !== nothing
+        app.sync(app.user_app, Status.SyncStatus(status))
+    end
+    return 0
+end
+precompile(_jl_sync, (Ptr{Cvoid}, Ptr{Cvoid}))
+_c_sync = @cfunction(_jl_sync, Cint, (Ptr{Cvoid}, Ptr{Cvoid}))
+export _c_sync, _jl_sync
+
+# default functions assuming the user's vector is a julia array
+export default_sum!, default_norm, default_inner_prod
+
+function default_sum!(app, α::Real, x::AbstractArray, β::Real, y::AbstractArray)
+    y .= α .* x .+ β .* y
+end
+default_norm(app, u::AbstractArray) = norm2(u)
+default_inner_prod(app, u::AbstractArray, v::AbstractArray) = dot(u, v)
+
+
+end # module Wrappers
