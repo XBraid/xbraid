@@ -1,4 +1,4 @@
-using ToeplitzMatrices, OffsetArrays, LinearAlgebra, IterativeSolvers
+using ToeplitzMatrices, LinearAlgebra, IterativeSolvers
 using Plots
 using MPI
 
@@ -235,12 +235,12 @@ function test(;ν=1., α=1., order=1)
     plot!(u.u, label="u1")
 end
 
-function main(;tstop=2π, ntime=512, nx=512, ν=1., α=1., useTheta=false, useRich=false, cf=2, ml=2, maxiter=10, order=1, skip=false, refine=false, maxrefine=2)
+function main(;tstop=2π, ntime=512, nx=512, ν=1., α=1., useTheta=false, useRich=false, cf=4, ml=2, maxiter=10, order=1, skip=false, refine=false, maxrefine=2, finefcf=true, tol=1e-3)
     MPI.Init()
     comm = MPI.COMM_WORLD
 
     Δx = 2π / nx
-    app = AdvDifApp(nx, Δx, ν, α, useTheta, useRich, order, cf, ml; skip=skip)
+    app = AdvDifApp(nx, Δx, ν, α, useTheta, useRich, order, cf, ml; skip=skip, spatial_tol=tol)
 
     core = XBraid.Init(comm, 0., tstop, ntime, my_step!, my_init, my_access;
                        app=app, sync=my_sync!, sum=my_sum!, spatialnorm=my_norm)
@@ -255,7 +255,9 @@ function main(;tstop=2π, ntime=512, nx=512, ν=1., α=1., useTheta=false, useRi
     XBraid.setSkip(core, skip)
     XBraid.setRefine(core, refine)
     XBraid.setMaxRefinements(core, maxrefine)
-    XBraid.setNRelax(core, 0, 0)
+    if !finefcf
+        XBraid.setNRelax(core, 0, 0)
+    end
     
     XBraid.Drive(core)
 

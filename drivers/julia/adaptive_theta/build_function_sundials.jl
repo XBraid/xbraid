@@ -71,7 +71,7 @@ function Symbolics._build_function(target::SunTarget, ex::AbstractArray, args...
                                    fname    = :diffeqf,
                                    lhsname  = :du,
                                    rhsnames = [Symbol("RHS$i") for i in 1:length(args)])
-    @info "Building function for Sundials"
+    @info "Building function _$fname for target $target"
     fname = Symbol('_' * string(fname))
     ex = hcat([row for row in eachrow(ex)]...)
     varnumbercache = Symbolics.buildvarnumbercache(args...)
