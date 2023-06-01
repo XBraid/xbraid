@@ -32,9 +32,9 @@ all: braid examples
 
 braid: 
 	cd braid; $(MAKE)
-ifeq ($(shared),yes)
-		cd braid; $(MAKE) libbraid.so
-endif
+# ifeq ($(shared),yes)
+# 		cd braid; $(MAKE) libbraid.so
+# endif
 
 examples: ./braid/libbraid.a
 	cd examples; $(MAKE)

@@ -57,14 +57,17 @@ extern "C" {
  */
 
 /** Define Fortran name-mangling schema, there are four supported options, see braid_F90_iface.c */
-#define braid_FMANGLE 0
-/** Turn on the optional user-defined spatial coarsening and refinement functions */ 
+#define braid_FMANGLE 1
+/** Turn on/off the Fortran interface (useful for avoiding undefined symbol
+ * errors in shared library builds) */
+#define braid_Fortran_Iface 0
+/** Turn on/off the optional user-defined spatial coarsening and refinement functions */
 #define braid_Fortran_SpatialCoarsen 0
-/** Turn on the optional user-defined residual function */ 
+/** Turn on/off the optional user-defined residual function */
 #define braid_Fortran_Residual 0
-/** Turn on the optional user-defined time-grid function */ 
+/** Turn on/off the optional user-defined time-grid function */
 #define braid_Fortran_TimeGrid 0
-/** Turn on the optional user-defined sync function */
+/** Turn on/off the optional user-defined sync function */
 #define braid_Fortran_Sync 0
 
 /** @} */
