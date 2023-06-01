@@ -83,7 +83,7 @@ else ifeq ($(shell uname -s), Darwin)
    MPICXX = mpicxx
    MPIF90 = mpif90
    LFLAGS = -lm -lstdc++
-   SHAREDFLAGS = -shared -undefined dynamic_lookup
+   SHAREDFLAGS = -shared
    ifeq ($(optlevel),DEBUG)
       CFLAGS = -g -Wall -fPIC
       CXXFLAGS = -g -Wall -fPIC
