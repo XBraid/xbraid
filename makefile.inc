@@ -22,11 +22,12 @@
 #
 #EHEADER**********************************************************************
 
-# four compile time options
+# five compile time options
 # make debug=yes|no
 # make valgrind=yes|no
 # make sequential=yes|no
 # make shared=yes|no
+# make fortran=yes|no
 
 # Was DEBUG specified? 
 ifeq ($(debug),no)

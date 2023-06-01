@@ -45,7 +45,6 @@ BRAID_FILES =\
  base.c\
  braid.c\
  braid_status.c\
- braid_F90_iface.c\
  braid_test.c\
  communication.c\
  delta.c\
@@ -65,6 +64,10 @@ BRAID_FILES =\
  tape.c\
  util.c\
  uvector.c
+
+ifeq ($(fortran),yes)
+	BRAID_FILES += braid_F90_iface.c
+endif
 
 ifeq ($(sequential),yes)
 	BRAID_HEADERS += mpistubs.h
