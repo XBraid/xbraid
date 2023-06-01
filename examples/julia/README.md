@@ -27,9 +27,13 @@ To run examples in this directory:
 
 2. install and configure MPI.jl: https://juliaparallel.org/MPI.jl/v0.20/
 
-    julia> using Pkg; Pkg.add(["MPI, MPIPreferences]")
+    julia> using Pkg; Pkg.add(["MPI", "MPIPreferences"])
     julia> using MPIPreferences; MPIPreferences.use_system_binary()
+
+    NOTE: It might be necessary to give the path to the system MPI library, e.g.:
+
+    julia> MPIPreferences.use_system_binary(; library_names="/opt/homebrew/lib/libmpi")
 
 3. run from the command line:
 
-    shell> mpirun -n 4 ex-01.jl
+    shell> mpirun -n 4 julia ex-01.jl

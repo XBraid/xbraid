@@ -22,11 +22,12 @@
 #
 #EHEADER**********************************************************************
 
-# four compile time options
+# five compile time options
 # make debug=yes|no
 # make valgrind=yes|no
 # make sequential=yes|no
 # make shared=yes|no
+# make fortran=yes|no
 
 # Was DEBUG specified? 
 ifeq ($(debug),no)
@@ -82,7 +83,7 @@ else ifeq ($(shell uname -s), Darwin)
    MPICXX = mpicxx
    MPIF90 = mpif90
    LFLAGS = -lm -lstdc++
-   SHAREDFLAGS = -shared -undefined dynamic_lookup
+   SHAREDFLAGS = -shared
    ifeq ($(optlevel),DEBUG)
       CFLAGS = -g -Wall -fPIC
       CXXFLAGS = -g -Wall -fPIC
