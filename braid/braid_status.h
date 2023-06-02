@@ -461,6 +461,14 @@ braid_StatusSetTightFineTolx(braid_Status status,          /**< structure contai
                              );
 
 /**
+ * Check if the status structure will accept a refinement factor.
+ * If yes, return 1, otherwise return 0.
+ **/
+braid_Int
+braid_StatusAcceptsRFactor(braid_Status status             /**< structure containing current simulation info */
+                           );
+
+/**
  * Set the rfactor, a desired refinement factor for this interval.  rfactor=1
  * indicates no refinement, otherwise, this inteval is subdivided rfactor
  * times (uniform refinement).
