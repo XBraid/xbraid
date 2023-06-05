@@ -404,7 +404,7 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, timer_user_residual)  = 0.0;
    _braid_CoreElt(core, timer_user_scoarsen)  = 0.0;
    _braid_CoreElt(core, timer_user_srefine)  = 0.0;
-   _braid_CoreElt(core, timer_user_innerprod)  = 0.0;
+   _braid_CoreElt(core, timer_user_inner_prod)  = 0.0;
    _braid_CoreElt(core, timer_MPI_recv)  = 0.0;
    _braid_CoreElt(core, timer_MPI_wait)  = 0.0;
    _braid_CoreElt(core, timer_MPI_wait_coarse)  = 0.0;
@@ -811,7 +811,7 @@ braid_PrintTimers(braid_Core  core)
    fprintf(fp, "   free             %1.3e\n",  _braid_CoreElt(core, timer_user_free)); 
    fprintf(fp, "   sum              %1.3e\n",  _braid_CoreElt(core, timer_user_sum)); 
    fprintf(fp, "   spatialnorm      %1.3e\n",  _braid_CoreElt(core, timer_user_spatialnorm)); 
-   fprintf(fp, "   innerprod        %1.3e\n",  _braid_CoreElt(core, timer_user_innerprod)); 
+   fprintf(fp, "   innerprod        %1.3e\n",  _braid_CoreElt(core, timer_user_inner_prod)); 
    fprintf(fp, "   bufsize          %1.3e\n",  _braid_CoreElt(core, timer_user_bufsize)); 
    fprintf(fp, "   bufpack          %1.3e\n",  _braid_CoreElt(core, timer_user_bufpack)); 
    fprintf(fp, "   bufunpack        %1.3e\n\n",  _braid_CoreElt(core, timer_user_bufunpack)); 
