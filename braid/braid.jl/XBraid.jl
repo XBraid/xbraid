@@ -101,7 +101,6 @@ function BraidApp(app, comm::MPI.Comm, step, init, access; comm_t=comm, sum=defa
 end
 
 
-
 """
 Stores all the information needed to run XBraid. Create this object with Init(), then pass this to Drive() to run XBraid.
 
@@ -134,10 +133,10 @@ using .Status, .Wrappers
 
 function postInitPrecompile(app::BraidApp)
     #= 
-    	# This is a hack to make sure every processor knows how big the user's vector will be.
-    	# We can also take this time to precompile the user's step function so it doesn't happen
-    	# in serial on the coarse grid.
-    	=#
+    # This is a hack to make sure every processor knows how big the user's vector will be.
+    # We can also take this time to precompile the user's step function so it doesn't happen
+    # in serial on the coarse grid.
+    =#
     GC.enable(false) # disable garbage collection
     app_ptr = pointer_from_objref(app)::Ptr{Cvoid}
     pp = malloc_null_double_ptr(Cvoid)
@@ -198,6 +197,8 @@ end
 
 """
 Create a new BraidCore object. The BraidCore object is used to run the XBraid solver, and is destroyed when the object is garbage collected.
+
+
 """
 function Init(
     comm_world::MPI.Comm,
@@ -207,11 +208,12 @@ function Init(
     step::Function,
     init::Function,
     access::Function;
-    sum              = default_sum!,
-    spatialnorm      = default_norm,
-    sync             = nothing,
-    comm_t::MPI.Comm = comm_world,
-    app              = nothing
+    sum=default_sum!,
+    spatialnorm=default_norm,
+    sync=nothing,
+    comm_t::MPI.Comm=comm_world,
+    app=nothing,
+    kwargs...
 )::BraidCore
     _app = BraidApp(app, comm_world, comm_t, step, init, sum, spatialnorm, access, sync, nothing, nothing)
     _core_ptr = malloc_null_double_ptr(Cvoid)
@@ -238,7 +240,146 @@ function Init(
         end
     end
 
-    return BraidCore(_core, _app, tstart, tstop, ntime)
+    core = BraidCore(_core, _app, tstart, tstop, ntime)
+
+    # parse kwargs
+    if haskey(kwargs, :timer_file)
+        timer_file = kwargs[:timer_file]::String
+        setTimerFile(core, timer_file)
+    end
+    if haskey(kwargs, :timing_level)
+        timing_level = kwargs[:timing_level]::Integer
+        setTimingLevel(core, timing_level)
+    end
+    if haskey(kwargs, :write_conv_hist)
+        write_conv_hist = kwargs[:write_conv_hist]::String
+        setWriteConvHistory(core, write_conv_hist)
+    end
+    if haskey(kwargs, :max_levels)
+        max_levels = kwargs[:max_levels]::Integer
+        setMaxLevels(core, max_levels)
+    end
+    if haskey(kwargs, :incr_max_levels)
+        incr_max_levels = kwargs[:incr_max_levels]::Bool
+        incr_max_levels && setIncrMaxLevels(core)
+    end
+    if haskey(kwargs, :skip)
+        skip = kwargs[:skip]::Bool
+        setSkip(core, skip)
+    end
+    if haskey(kwargs, :refine)
+        refine = kwargs[:refine]::Bool
+        setRefine(core, refine)
+    end
+    if haskey(kwargs, :max_refinements)
+        max_refinements = kwargs[:max_refinements]::Integer
+        setMaxRefinements(core, max_refinements)
+    end
+    if haskey(kwargs, :tpoints_cutoff)
+        tpoints_cutoff = kwargs[:tpoints_cutoff]::Integer
+        setTPointsCutoff(core, tpoints_cutoff)
+    end
+    if haskey(kwargs, :min_coarse)
+        min_coarse = kwargs[:min_coarse]::Integer
+        setMinCoarse(core, min_coarse)
+    end
+    if haskey(kwargs, :relax_only_cg)
+        relax_only_cg = kwargs[:relax_only_cg]::Bool
+        setRelaxOnlyCG(core, relax_only_cg)
+    end
+    if haskey(kwargs, :abs_tol)
+        abs_tol = kwargs[:abs_tol]::Float64
+        setAbsTol(core, abs_tol)
+    end
+    if haskey(kwargs, :rel_tol)
+        rel_tol = kwargs[:rel_tol]::Float64
+        setRelTol(core, rel_tol)
+    end
+    if haskey(kwargs, :n_relax_fine)
+        n_relax = kwargs[:n_relax]::Integer
+        setNRelax(core, 0, n_relax)
+    end
+    if haskey(kwargs, :cfactor)
+        cfactor = kwargs[:cfactor]
+        if isa(cfactor, Integer)
+            setCFactor(core, -1, cfactor)
+        elseif isa(cfactor, Vector{Integer})
+            for (i, cf) in enumerate(cfactor)
+                setCFactor(core, i-1, cf)
+            end
+        else
+            error("cfactor must be an Integer or Vector{Integer}")
+        end
+    end
+    if haskey(kwargs, :cfactor_fine)
+        cfactor_fine = kwargs[:cfactor_fine]::Integer
+        setCFactorFine(core, 0, cfactor_fine)
+    end
+    if haskey(kwargs, :max_iter)
+        max_iter = kwargs[:max_iter]::Integer
+        setMaxIter(core, max_iter)
+    end
+    if haskey(kwargs, :fmg)
+        fmg = kwargs[:fmg]::Bool
+        fmg && setFMG(core)
+    end
+    if haskey(kwargs, :n_fmg_vcycles)
+        fmg_cycle = kwargs[:fmg_cycle]::Integer
+        setNFMGVcyc(core, fmg_cycle)
+    end
+    if haskey(kwargs, :storage)
+        storage = kwargs[:storage]::Integer
+        setStorage(core, storage)
+    end
+    if haskey(kwargs, :temporal_norm)
+        norm = kwargs[:temporal_norm]::Symbol
+        if norm == :One
+            setTemporalNorm(core, 1)
+        elseif norm == :Two
+            setTemporalNorm(core, 2)
+        elseif norm == :Inf
+            setTemporalNorm(core, 3)
+        else
+            error("temporal_norm must be one of :One, :Two, or :Inf")
+        end
+    end
+    if haskey(kwargs, :periodic)
+        periodic = kwargs[:periodic]::Bool
+        setPeriodic(core, periodic)
+    end
+    if haskey(kwargs, :print_level)
+        print_level = kwargs[:print_level]::Integer
+        print_level < 0 && error("print_level must be non-negative")
+        setPrintLevel(core, print_level)
+    end
+    if haskey(kwargs, :file_io_level)
+        file_io_level = kwargs[:file_io_level]::Integer
+        file_io_level < 0 && error("file_io_level must be non-negative")
+        setFileIOLevel(core, file_io_level)
+    end
+    if haskey(kwargs, :save_cycle)
+        save_cycle = kwargs[:save_cycle]::Bool
+        setFileIOLevel(core, save_cycle ? 1 : 0)
+    end
+    if haskey(kwargs, :print_file)
+        print_file = kwargs[:print_file]::String
+        setPrintFile(core, print_file)
+    end
+    if haskey(kwargs, :access_level)
+        access_level = kwargs[:access_level]::Integer
+        access_level < 0 && error("access_level must be non-negative")
+        setAccessLevel(core, access_level)
+    end
+    if haskey(kwargs, :final_fc_relax)
+        final_fc_relax = kwargs[:final_fc_relax]::Bool
+        final_fc_relax && setFinalFCRelax(core)
+    end
+    if haskey(kwargs, :seq_soln)
+        seq_soln = kwargs[:seq_soln]::Bool
+        setSeqSoln(core, seq_soln)
+    end
+
+    return core
 end
 
 """
@@ -307,6 +448,7 @@ function Drive(core::BraidCore; warmup=true)
         end
     end
     _Drive(core)
+    return nothing
 end
 
 function printStats(core::BraidCore)
@@ -382,7 +524,6 @@ function setTPointsCutoff(core::BraidCore, tpoints_cutoff::Integer)
         @ccall libbraid.braid_SetTPointsCutoff(core._braid_core::Ptr{Cvoid}, tpoints_cutoff::Cint)::Cint
     end
 end
-
 
 function setMinCoarse(core::BraidCore, min_coarse::Integer)
     GC.@preserve core begin
