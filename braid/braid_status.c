@@ -123,15 +123,15 @@ braid_StatusGetCFactor(braid_Status status,
    _braid_Grid **grids  = _braid_StatusElt(status, grids);
    braid_Int    nlevels = _braid_StatusElt(status, nlevels);
 
-   if (level < 0 || level >= nlevels)
+   if (level < 0 || level >= (nlevels-1))
    {
       *cfactor_ptr = -1;
    }
    else
    {
       *cfactor_ptr = _braid_GridElt(grids[level], cfactor);
-      return _braid_error_flag;
    }
+   return _braid_error_flag;
 }
 
 braid_Int
