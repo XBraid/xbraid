@@ -115,6 +115,26 @@ braid_StatusGetLevel(braid_Status status,
 }
 
 braid_Int
+braid_StatusGetCFactor(braid_Status status,
+                       braid_Int   *cfactor_ptr,
+                       braid_Int    level
+                       )
+{
+   _braid_Grid **grids  = _braid_StatusElt(status, grids);
+   braid_Int    nlevels = _braid_StatusElt(status, nlevels);
+
+   if (level < 0 || level >= (nlevels-1))
+   {
+      *cfactor_ptr = -1;
+   }
+   else
+   {
+      *cfactor_ptr = _braid_GridElt(grids[level], cfactor);
+   }
+   return _braid_error_flag;
+}
+
+braid_Int
 braid_StatusGetNLevels(braid_Status status,
                        braid_Int   *nlevels_ptr
                        )
@@ -251,13 +271,11 @@ braid_StatusGetBasisVec(braid_Status  status,
                         )
 {
    braid_Basis ba = _braid_StatusElt(status, lvectors);
+
+   *v_ptr = NULL;
    if ((ba != NULL) && (index < ba->rank))
    {
       *v_ptr = ba->userVecs[index];
-   }
-   else // gracefully return NULL
-   {
-      v_ptr = NULL;
    }
    return _braid_error_flag;
 }
@@ -727,6 +745,7 @@ ACCESSOR_FUNCTION_GET1(Access, CallingFunction,       Int)
 ACCESSOR_FUNCTION_GET1(Access, SingleErrorEstAccess,  Real)
 ACCESSOR_FUNCTION_GET1(Access, DeltaRank,             Int)
 ACCESSOR_FUNCTION_GET2(Access, LocalLyapExponents,    Real, Int)
+ACCESSOR_FUNCTION_GET1_IN1(Access, CFactor,           Int, Int)
 ACCESSOR_FUNCTION_GET1_IN1(Access, BasisVec,          Vector, Int)
 
 /*--------------------------------------------------------------------------
@@ -858,6 +877,7 @@ ACCESSOR_FUNCTION_GET1(Step, Done,                 Int)
 ACCESSOR_FUNCTION_GET1(Step, SingleErrorEstStep,   Real)
 ACCESSOR_FUNCTION_GET1(Step, CallingFunction,      Int)
 ACCESSOR_FUNCTION_GET1(Step, DeltaRank,            Int)
+ACCESSOR_FUNCTION_GET1_IN1(Step, CFactor,          Int, Int)
 ACCESSOR_FUNCTION_GET1_IN1(Step, BasisVec,         Vector, Int)
 
 /*--------------------------------------------------------------------------

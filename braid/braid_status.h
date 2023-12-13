@@ -184,6 +184,14 @@ braid_Int
 braid_StatusGetLevel(braid_Status status,                  /**< structure containing current simulation info */
                      braid_Int   *level_ptr                /**< output, current level in XBraid */
                      );
+/**
+ * Return the coarsening factor on the given level from the Status structure.
+ **/
+braid_Int
+braid_StatusGetCFactor(braid_Status status,                /**< structure containing current simulation info */
+                       braid_Int   *cfactor_ptr,           /**< output, coarsening factor on current level */
+                       braid_Int    level                  /**< level to get coarsening factor for */
+                       );
 
 /**
  * Return the total number of XBraid levels from the Status structure.
@@ -634,6 +642,7 @@ ACCESSOR_HEADER_GET1(Access, CallingFunction, Int)
 ACCESSOR_HEADER_GET1(Access, SingleErrorEstAccess, Real)
 ACCESSOR_HEADER_GET1(Access, DeltaRank, Int)
 ACCESSOR_HEADER_GET2(Access, LocalLyapExponents, Real, Int)
+ACCESSOR_HEADER_GET1_IN1(Access, CFactor,  Int, Int)
 ACCESSOR_HEADER_GET1_IN1(Access, BasisVec, Vector, Int)
 
 /*--------------------------------------------------------------------------
@@ -696,6 +705,7 @@ ACCESSOR_HEADER_GET1(Step, Done,               Int)
 ACCESSOR_HEADER_GET1(Step, SingleErrorEstStep, Real)
 ACCESSOR_HEADER_GET1(Step, CallingFunction,    Int)
 ACCESSOR_HEADER_GET1(Step, DeltaRank,          Int)
+ACCESSOR_HEADER_GET1_IN1(Step, CFactor,        Int, Int)
 ACCESSOR_HEADER_GET1_IN1(Step, BasisVec,       Vector, Int)
 
 /*--------------------------------------------------------------------------
@@ -762,6 +772,8 @@ ACCESSOR_HEADER_GET1(Objective, Tol,           Real)
 #define braid_ASCaller_Residual 11
 /** When CallingFunction equals 12, Braid is in InitGuess */
 #define braid_ASCaller_InitGuess 12
+/** When CallingFunction equals 13, Braid is in Warmup */
+#define braid_ASCaller_Warmup 13
 
 /** @}*/
 
