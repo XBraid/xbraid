@@ -459,7 +459,7 @@ braid_StatusSetRFactor(braid_Status status,
                        braid_Real   rfactor
                        )
 {
-   if (braid_StepStatusAcceptsRFactor(status))
+   if (braid_StepStatusAcceptsRFactor((braid_StepStatus) status))
    {
       _braid_Grid      **grids    = _braid_StatusElt(status, grids);
       braid_Int         *rfactors = _braid_StatusElt(status, rfactors);
