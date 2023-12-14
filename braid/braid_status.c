@@ -446,7 +446,7 @@ braid_StatusSetTightFineTolx(braid_Status status,
 }
 
 braid_Int
-braid_StatusAcceptsRFactor(braid_Status status)
+braid_StepStatusAcceptsRFactor(braid_StepStatus status)
 {
    braid_Int level  = _braid_StatusElt(status, level);
    braid_Int caller = _braid_StatusElt(status, calling_function);

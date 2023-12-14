@@ -473,7 +473,7 @@ braid_StatusSetTightFineTolx(braid_Status status,          /**< structure contai
  * If yes, return 1, otherwise return 0.
  **/
 braid_Int
-braid_StatusAcceptsRFactor(braid_Status status             /**< structure containing current simulation info */
+braid_StepStatusAcceptsRFactor(braid_StepStatus status             /**< structure containing current simulation info */
                            );
 
 /**
