@@ -29,6 +29,8 @@
 #ifndef braid_HEADER
 #define braid_HEADER
 
+#define braid_LINEAR 1
+
 /* To enable XBraid without MPI, re-compile with
  *   make sequential=yes 
  * This will compile using the mpistubs.h */
