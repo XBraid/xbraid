@@ -123,13 +123,14 @@ braid_StatusGetCFactor(braid_Status status,
    _braid_Grid **grids  = _braid_StatusElt(status, grids);
    braid_Int    nlevels = _braid_StatusElt(status, nlevels);
 
-   if (level < 0 || level >= nlevels)
+   if (level < 0 || level >= (nlevels-1))
    {
       *cfactor_ptr = -1;
-      return 1;
    }
-
-   *cfactor_ptr = _braid_GridElt(grids[level], cfactor);
+   else
+   {
+      *cfactor_ptr = _braid_GridElt(grids[level], cfactor);
+   }
    return _braid_error_flag;
 }
 
@@ -277,8 +278,7 @@ braid_StatusGetBasisVec(braid_Status  status,
       *v_ptr = ba->userVecs[index];
       return _braid_error_flag;
    }
-   // else 
-   return 1;
+   return _braid_error_flag;
 }
 
 braid_Int
