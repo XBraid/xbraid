@@ -74,8 +74,8 @@ _braid_InitHierarchy(braid_Core    core,
    braid_Real       *ta;
    braid_BaseVector *ua;
    braid_BaseVector *va;
-   braid_BaseVector *wa;
    braid_BaseVector *fa;
+   braid_BaseVector *wa;
 
    _braid_Grid      *grid;
    braid_Real       *f_ta;
@@ -512,17 +512,19 @@ _braid_CopyFineToCoarse(braid_Core  core)
    _braid_Grid  **grids   = _braid_CoreElt(core, grids);
    braid_Int      nlevels = _braid_CoreElt(core, nlevels);
    
-   braid_Int      f_index, index, iu, is_stored, level, f_cfactor;
+   braid_Int      f_index, index, iu, is_stored, level, f_cfactor, storage;
    braid_Int      ilower, iupper;
-   braid_BaseVector   u, *va;
+   braid_BaseVector   u, *va, *wa;
 
    for(level = 1; level < nlevels; level++)
    {
 
       f_cfactor = _braid_GridElt(grids[level-1], cfactor);
+      storage   = _braid_GridElt(grids[level], storage);
       iupper    = _braid_GridElt(grids[level], iupper);
       ilower    = _braid_GridElt(grids[level], ilower);
       va        = _braid_GridElt(grids[level], va);
+      wa        = _braid_GridElt(grids[level], wa);
 
       /* Loop over all points belonging to this processor, and if a C-point,
        * then carry out spatial coarsening and copy to ua and va */
@@ -531,6 +533,10 @@ _braid_CopyFineToCoarse(braid_Core  core)
          _braid_MapCoarseToFine(index, f_cfactor, f_index);
          _braid_UGetVector(core, level-1, f_index, &u);
          _braid_Coarsen(core, level, f_index, index, u, &va[index-ilower]);
+         if (storage)
+         {
+            _braid_BaseClone(core, app, va[index-ilower], &wa[index-ilower]);
+         }
          
          _braid_BaseFree(core, app,  u);
          _braid_BaseClone(core, app,  va[index-ilower], &u);

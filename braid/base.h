@@ -43,6 +43,14 @@ extern "C" {
 #endif
 
 /**
+ * Allocates and initializes the braid_BaseVector at address u_ptr.
+ * Initializes all members to NULL
+ */
+braid_Int
+_braid_BaseVectorCreate(braid_BaseVector *u_ptr
+                        );
+
+/**
  * This calls the user's step routine.
  * If (adjoint): also record the action, and push state and bar vector to primal and bar tapes. 
  */

@@ -46,7 +46,7 @@ _braid_Step(braid_Core         core,
    braid_Int          ilower   = _braid_GridElt(grids[level], ilower);
    braid_Real        *ta       = _braid_GridElt(grids[level], ta);
    braid_BaseVector  *fa       = _braid_GridElt(grids[level], fa);
-   braid_Vector      *wa       = _braid_GridElt(grids[level], wa);
+   braid_BaseVector  *wa       = _braid_GridElt(grids[level], wa);
    braid_Int          storage  = _braid_GridElt(grids[level], storage);
 
    braid_Int ii = index-ilower;
@@ -112,7 +112,7 @@ _braid_Step(braid_Core         core,
       {
          // _braid_CoreFcn(core, free)(app, wa[ii]);
          // _braid_CoreFcn(core, clone)(app, u, &wa[ii]);
-         _braid_CoreFcn(core, sum)(app, 1., u->userVector, 0., wa[ii]);
+         _braid_CoreFcn(core, sum)(app, 1., u->userVector, 0., wa[ii]->userVector);
       }
 
       /* now apply the Delta and tau corrections */
@@ -171,7 +171,7 @@ _braid_Step(braid_Core         core,
             {
                // _braid_CoreFcn(core, free)(app, wa[ii]);
                // _braid_CoreFcn(core, clone)(app, u, &wa[ii]);
-               _braid_CoreFcn(core, sum)(app, 1., u->userVector, 0., wa[ii]);
+               _braid_CoreFcn(core, sum)(app, 1., u->userVector, 0., wa[ii]->userVector);
             }
             if (fa[ii] != NULL)
             {

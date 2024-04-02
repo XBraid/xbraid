@@ -494,8 +494,6 @@ braid_Destroy(braid_Core  core)
       braid_App               app             = _braid_CoreElt(core, app);
       braid_Int               nlevels         = _braid_CoreElt(core, nlevels);
       _braid_Grid           **grids           = _braid_CoreElt(core, grids);
-      braid_Int               cfactor         = _braid_GridElt(grids[0], cfactor);
-      braid_Int               gupper          = _braid_CoreElt(core, gupper);
       braid_Int               richardson      = _braid_CoreElt(core, richardson);
       braid_Int               est_error       = _braid_CoreElt(core, est_error); 
       char                   *timer_file_stem = _braid_CoreElt(core, timer_file_stem);

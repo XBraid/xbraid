@@ -42,7 +42,7 @@ _braid_GridInit(braid_Core     core,
    _braid_GridElt(grid, level)  = level;
    _braid_GridElt(grid, ilower) = ilower;
    _braid_GridElt(grid, iupper) = iupper;
-   _braid_GridElt(grid, storage) = (storage >= 0 || level >= storage);
+   _braid_GridElt(grid, storage) = (storage >= 0 && level >= storage);
    _braid_GridElt(grid, recv_index) = _braid_RecvIndexNull;
    _braid_GridElt(grid, send_index) = _braid_SendIndexNull;
    

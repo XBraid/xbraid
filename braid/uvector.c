@@ -64,7 +64,7 @@ _braid_UGetIndex(braid_Core   core,
          // If on level that only stores C-points
          if (!storage)
          {
-            if (is_f_point)
+            if (!is_f_point)
             {
                _braid_MapFineToCoarse(index, cfactor, ic);
                _braid_MapFineToCoarse(clower, cfactor, iclo);

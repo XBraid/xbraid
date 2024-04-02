@@ -84,6 +84,7 @@ _braid_FRestrict(braid_Core   core,
    braid_Int             ncpoints     = _braid_GridElt(grids[level], ncpoints);
    braid_Real           *ta           = _braid_GridElt(grids[level], ta);
    braid_Int             f_ilower     = _braid_GridElt(grids[level], ilower);
+   braid_Int             storage      = _braid_GridElt(grids[level], storage);
    _braid_CommHandle    *recv_handle  = NULL;
    _braid_CommHandle    *send_handle  = NULL;
 
@@ -101,8 +102,7 @@ _braid_FRestrict(braid_Core   core,
    braid_Vector delta_action;
 
    braid_Int            c_level, c_ilower, c_iupper, c_index, c_i, c_ii;
-   braid_BaseVector     c_u, *c_va, *c_fa;
-   braid_Vector        *c_wa;
+   braid_BaseVector     c_u, *c_va, *c_wa, *c_fa;
 
    braid_BaseVector     u, r;
    braid_Int            interval, flo, fhi, fi, ci;
@@ -208,9 +208,11 @@ _braid_FRestrict(braid_Core   core,
          _braid_MapFineToCoarse(ci, cfactor, c_index);
          _braid_Coarsen(core, c_level, ci, c_index, u, &c_va[c_index-c_ilower]);
          _braid_Coarsen(core, c_level, ci, c_index, r, &c_fa[c_index-c_ilower]);
-         if (c_wa[c_index-c_ilower] == NULL)
+         /* Save an improved initial guess */
+         if (storage && c_wa[c_index-c_ilower] == NULL)
          {
-            _braid_CoreFcn(core, clone)(app, c_va[c_index-c_ilower], &c_wa[c_index-c_ilower]);
+            /* TODO: Do we need an initial guess for the basis vectors? Should this be a setting? */
+            _braid_BaseClone(core, app, c_va[c_index-c_ilower], &c_wa[c_index-c_ilower]);
          }
       }
       else if (ci == 0)
@@ -218,9 +220,9 @@ _braid_FRestrict(braid_Core   core,
          /* Restrict initial condition, coarsening in space if needed */
          _braid_UGetVectorRef(core, level, 0, &u);
          _braid_Coarsen(core, c_level, 0, 0, u, &c_va[0]);
-         if (c_wa[0] == NULL)
+         if (storage && c_wa[0] == NULL)
          {
-            _braid_CoreFcn(core, clone)(app, c_va[0], &c_wa[0]);
+            _braid_BaseClone(core, app, c_va[0], &c_wa[0]);
          }
       }
 
@@ -246,7 +248,7 @@ _braid_FRestrict(braid_Core   core,
    /* Allocate temporary error estimate array */
    if ( level == 0 && est_error )
    {
-        estimate = _braid_CTAlloc(braid_Real, c_iupper-c_ilower + 1);
+      estimate = _braid_CTAlloc(braid_Real, c_iupper-c_ilower + 1);
    }
 
    /* Start with rightmost point */

@@ -48,6 +48,10 @@
 #include "braid_test.h"
 #include "ex-02-lib.c"
 
+int my_Clone(braid_App app, braid_Vector u, braid_Vector *v_ptr);
+int my_Sum(braid_App app, double alpha, braid_Vector x, double beta, braid_Vector y);
+int my_SpatialNorm(braid_App app, braid_Vector u, double *norm_ptr);
+
 /*--------------------------------------------------------------------------
  * My App and Vector structures
  *--------------------------------------------------------------------------*/
@@ -103,6 +107,8 @@ int my_Step(braid_App        app,
    double tstop;              /* evolve to this time*/
    int level, i;
    double deltaX, deltaT, error_est;
+   double guess_qual;
+   braid_Vector guess;
 
    braid_StepStatusGetLevel(status, &level);
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
@@ -117,12 +123,18 @@ int my_Step(braid_App        app,
          u->values[i] = u->values[i] + fstop->values[i];
       }
    }
+
+   my_Clone(app, ustop, &guess);
    
    /* Take backward Euler step 
     * Note: if an iterative solver were used, ustop->values would 
     *       contain the XBraid's best initial guess. */
    take_step(u->values, u->size, tstop, app->xstart, deltaX, deltaT,
          app->matrix, app->g); 
+
+   my_Sum(app, 1., u, -1, guess);
+   my_SpatialNorm(app, guess, &guess_qual);
+   printf("Level: %d, guess diff: %f\n", level, guess_qual);
 
    /* Store info on space-time grids visited during the simulation */
    (app->sc_info)[ (2*level) ] = deltaX;
@@ -240,8 +252,8 @@ my_SpatialNorm(braid_App     app,
                double       *norm_ptr)
 {
    int    i;
-   int size   = (u->size);
-   double dot = 0.0;
+   int    size = (u->size);
+   double dot  = 0.0;
 
    for (i = 0; i < size; i++)
    {
@@ -260,7 +272,7 @@ my_Access(braid_App          app,
    int        index, rank, level, done, ntime;
    char       filename[255];
    double     t, error;
-   
+ 
    braid_AccessStatusGetT(astatus, &t);
    braid_AccessStatusGetTIndex(astatus, &index);
    braid_AccessStatusGetLevel(astatus, &level);
@@ -459,14 +471,14 @@ int main (int argc, char *argv[])
    /* Define space-time domain */
    double    tstart        =  0.0;
    double    tstop         =  2*PI;
-   int       ntime         =  64;
+   int       ntime         =  16;
    double    xstart        =  0.0;
    double    xstop         =  PI;
    int       nspace        =  33;
 
    /* Define XBraid parameters 
     * See -help message for descriptions */
-   int       max_levels    = 2;
+   int       max_levels    = 4;
    int       nrelax        = 1;
    int       skip          = 0;
    double    CWt           = 1.0;
@@ -690,6 +702,7 @@ int main (int argc, char *argv[])
       braid_SetCFactor(core, -1, cfactor);
       braid_SetMaxIter(core, max_iter);
       braid_SetSeqSoln(core, use_sequential);
+      braid_SetStorage(core, 0);
       if (fmg)
       {
          braid_SetFMG(core);

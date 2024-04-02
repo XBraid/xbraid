@@ -234,7 +234,7 @@ typedef struct
    braid_Real        *ta;            /**< time values                (all points) */
    braid_BaseVector  *ua;            /**< unknown vectors            (C-points at least)*/
    braid_BaseVector  *va;            /**< restricted unknown vectors (all points, NULL on level 0) */
-   braid_Vector      *wa;            /**< most recent output of step (all points, NULL on level 0 or storage == 0) */
+   braid_BaseVector  *wa;            /**< most recent output of step (all points, NULL on level 0 or storage == 0) */
    braid_BaseVector  *fa;            /**< rhs vectors f              (all points, NULL on level 0) */
 
    braid_Int          recv_index;    /**<  -1 means no receive */

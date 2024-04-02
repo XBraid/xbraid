@@ -87,10 +87,15 @@ my_Step(braid_App        app,
 {
    double tstart;             /* current time */
    double tstop;              /* evolve to this time*/
+   int level;
    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+   braid_StepStatusGetLevel(status, &level);
+
+   double guess = ustop->value;
 
    /* Use backward Euler to propagate solution */
    (u->value) = 1./(1. + tstop-tstart)*(u->value);
+   printf("Level: %d, guess diff: %f\n", level, guess - u->value);
    
    return 0;
 }
@@ -253,6 +258,7 @@ int main (int argc, char *argv[])
    braid_SetMaxLevels(core, 2);
    braid_SetAbsTol(core, 1.0e-06);
    braid_SetCFactor(core, -1, 2);
+   braid_SetStorage(core, 1);
    
    /* Run simulation, and then clean up */
    braid_Drive(core);
