@@ -46,6 +46,8 @@ _braid_Step(braid_Core         core,
    braid_Int          ilower   = _braid_GridElt(grids[level], ilower);
    braid_Real        *ta       = _braid_GridElt(grids[level], ta);
    braid_BaseVector  *fa       = _braid_GridElt(grids[level], fa);
+   braid_Vector      *wa       = _braid_GridElt(grids[level], wa);
+   braid_Int          storage  = _braid_GridElt(grids[level], storage);
 
    braid_Int ii = index-ilower;
 
@@ -105,6 +107,13 @@ _braid_Step(braid_Core         core,
 
       /* calls the user's step function, which also propagates the Lyapunov vectors */
       _braid_BaseStep(core, app,  ustop, NULL, u, level, status);
+      /* Store the homogeneous step result */
+      if (level > 0 && storage)
+      {
+         // _braid_CoreFcn(core, free)(app, wa[ii]);
+         // _braid_CoreFcn(core, clone)(app, u, &wa[ii]);
+         _braid_CoreFcn(core, sum)(app, 1., u->userVector, 0., wa[ii]);
+      }
 
       /* now apply the Delta and tau corrections */
       if ( tau_correct )
@@ -157,7 +166,14 @@ _braid_Step(braid_Core         core,
          if ( _braid_CoreElt(core, residual) == NULL )
          {
             _braid_BaseStep(core, app,  ustop, NULL, u, level, status);
-            if(fa[ii] != NULL)
+            /* Store the homogeneous step result */
+            if (storage)
+            {
+               // _braid_CoreFcn(core, free)(app, wa[ii]);
+               // _braid_CoreFcn(core, clone)(app, u, &wa[ii]);
+               _braid_CoreFcn(core, sum)(app, 1., u->userVector, 0., wa[ii]);
+            }
+            if (fa[ii] != NULL)
             {
                _braid_BaseSum(core, app,  1.0, fa[ii], 1.0, u);
             }
@@ -184,40 +200,43 @@ _braid_GetUInit(braid_Core         core,
                 braid_BaseVector   u,
                 braid_BaseVector  *ustop_ptr)
 {
-   _braid_Grid       **grids    = _braid_CoreElt(core, grids);
-   braid_Int           ilower   = _braid_GridElt(grids[level], ilower);
-   braid_Int           storage  = _braid_CoreElt(core, storage);
-   braid_BaseVector   *va       = _braid_GridElt(grids[level], va);
-   braid_BaseVector    ustop    = *ustop_ptr;
+   _braid_Grid       **grids       = _braid_CoreElt(core, grids);
+   braid_Int           ilower      = _braid_GridElt(grids[level], ilower);
+   braid_Int           compat      = _braid_CoreElt(core, compat_mode);
+   braid_Int           storage     = _braid_GridElt(grids[level], storage);
+   braid_BaseVector   *va          = _braid_GridElt(grids[level], va);
+   braid_BaseVector   *wa          = _braid_GridElt(grids[level], wa);
+   braid_BaseVector    ustop       = *ustop_ptr;
 
    braid_Int ii = index-ilower;
 
-   _braid_UGetVectorRef(core, level, index, &ustop);
+   ustop = NULL;
 
-   /* If ustop is NULL, then storage is only at C-points on this level and this
-    * is an F-point.  See the comment block around FRestrict() for the fixed-point
-    * logic behind our choices in ustop. */
-   if( ustop == NULL)
+   if ( compat == 1 )
    {
-      if( (level == 0) || ( storage == -2 ) )
-      {
-         ustop = u;
-      }
-      else
-      {
-         ustop = va[ii];
-      }
+      /* If in compatibility mode, always use the solution from the previous time step. */
+      ustop = u;
+   }
+   else if (level == 0)
+   {
+      _braid_UGetVectorRef(core, level, index, &ustop);
+   }
+   else if (storage)
+   {
+      /* use an initial guess for a homogeneous problem if it is stored
+       * (note that on the fine grid, the problem is always homogeneous) */
+      ustop = wa[ii];
+   }
+   else 
+   {
+      /* use the restricted fine-grid solution*/
+      ustop = va[ii];
    }
 
-   /* If you have storage at this point, use it, unless you're in compatibility mode (-2). */
-   else if( storage == -2 )
+   /* If ustop is still NULL, set default */
+   /* I argue that it should be fine to return NULL here...*/
+   if (ustop == NULL)
    {
-      if ( _braid_CoreElt(core, useshell) == 1)
-      {
-         // Should not happen, ustop is never NULL with useshell option
-         // unless there are inconsistent options (i.e. useshell && storage==-2)
-         abort();
-      }
       ustop = u;
    }
 

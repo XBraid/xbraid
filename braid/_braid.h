@@ -228,11 +228,13 @@ typedef struct
    braid_Int          gupper;        /**< global size of the grid */
    braid_Int          cfactor;       /**< coarsening factor */
    braid_Int          ncpoints;      /**< number of C points */
+   braid_Int          storage;       /**< storage level */
 
    braid_Int          nupoints;      /**< number of unknown vector points */
-   braid_BaseVector  *ua;            /**< unknown vectors            (C-points at least)*/
    braid_Real        *ta;            /**< time values                (all points) */
+   braid_BaseVector  *ua;            /**< unknown vectors            (C-points at least)*/
    braid_BaseVector  *va;            /**< restricted unknown vectors (all points, NULL on level 0) */
+   braid_Vector      *wa;            /**< most recent output of step (all points, NULL on level 0 or storage == 0) */
    braid_BaseVector  *fa;            /**< rhs vectors f              (all points, NULL on level 0) */
 
    braid_Int          recv_index;    /**<  -1 means no receive */
@@ -240,9 +242,10 @@ typedef struct
    _braid_CommHandle *recv_handle;   /**<  Handle for nonblocking receives of braid_BaseVectors */
    _braid_CommHandle *send_handle;   /**<  Handle for nonblocking sends of braid_BaseVectors */
 
-   braid_BaseVector  *ua_alloc;      /**< original memory allocation for ua */
    braid_Real        *ta_alloc;      /**< original memory allocation for ta */
+   braid_BaseVector  *ua_alloc;      /**< original memory allocation for ua */
    braid_BaseVector  *va_alloc;      /**< original memory allocation for va */
+   braid_BaseVector  *wa_alloc;      /**< original memory allocation for wa */
    braid_BaseVector  *fa_alloc;      /**< original memory allocation for fa */
 
    braid_BaseVector   ulast;         /**< stores vector at last time step, only set in FAccess and FCRelax if done is True */
@@ -321,8 +324,9 @@ typedef struct _braid_Core_struct
    braid_Real             full_rnorm0;      /**< (optional) initial full residual norm */
    braid_Real            *full_rnorms;      /**< (optional) full residual norm history */
 
-   braid_Int              storage;          /**< storage = 0 (C-points), = 1 (all) */
+   braid_Int              storage;          /**< storage option (-1 => store only C-points, x>=0 full storage on all levels >= x) */
    braid_Int              useshell;         /**< activate the shell structure of vectors */
+   braid_Int              compat_mode;      /**< turn on compatibility mode (previously storage option -2)*/
 
    braid_Int              gupper;           /**< global size of the fine grid */
 

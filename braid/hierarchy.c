@@ -74,6 +74,7 @@ _braid_InitHierarchy(braid_Core    core,
    braid_Real       *ta;
    braid_BaseVector *ua;
    braid_BaseVector *va;
+   braid_BaseVector *wa;
    braid_BaseVector *fa;
 
    _braid_Grid      *grid;
@@ -233,7 +234,7 @@ _braid_InitHierarchy(braid_Core    core,
       }
    }
 
-   /* Allocate ua, va, fa, and ba here */
+   /* Allocate ua, va, wa, fa, and ba here */
    for (level = 0; level < nlevels; level++)
    {
       grid = grids[level];
@@ -247,12 +248,17 @@ _braid_InitHierarchy(braid_Core    core,
          _braid_GridElt(grid, fa_alloc) = fa;
          _braid_GridElt(grid, va)       = va+1;  /* shift */
          _braid_GridElt(grid, fa)       = fa+1;  /* shift */
+         if (_braid_GridElt(grid, storage))
+         {
+            wa = _braid_CTAlloc(braid_BaseVector, iupper-ilower+2);
+            _braid_GridElt(grid, wa_alloc) = wa;
+            _braid_GridElt(grid, wa)       = wa+1;  /* shift */
+         }
       }
 
       // If on level that only stores C-points and not using the shell vector feature
-      if ( ((_braid_CoreElt(core, storage) < 0) ||
-            (level < _braid_CoreElt(core, storage))) &&
-           (_braid_CoreElt(core, useshell)!=1) )
+      if ( (_braid_GridElt(grid, storage) == 0) &&
+           (_braid_CoreElt(core, useshell)!= 1) )
       {
          nupoints = _braid_GridElt(grid, ncpoints);   /* only C-points */
       }

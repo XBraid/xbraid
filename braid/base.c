@@ -33,8 +33,8 @@ braid_Int
 _braid_BaseStep(braid_Core       core,
                 braid_App        app,
                 braid_BaseVector ustop,
-                braid_BaseVector fstop, 
-                braid_BaseVector u, 
+                braid_BaseVector fstop,
+                braid_BaseVector u,
                 braid_Int        level,
                 braid_StepStatus status )
 {

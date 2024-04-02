@@ -67,7 +67,6 @@ _braid_Residual(braid_Core        core,
       _braid_BaseStep(core, app, rstop, NULL, r, level, status);
       _braid_CoreFcn(core, sum)(app, 1.0, ustop->userVector, -1.0, r->userVector);
       _braid_BaseSumBasis(core, app, 0., r->basis, -1.0, r->basis);
-
    }
    else /* default behavior */
    {
@@ -123,7 +122,6 @@ _braid_FASResidual(braid_Core        core,
 
    _braid_Residual(core, level, index, braid_ASCaller_FASResidual, ustop, r);
 
-   /* || short circuits, so (fa[ii] == NULL) is never evaluated if level == 0 is true */
    if ( (level == 0) || (fa[ii] == NULL) )
    {
       _braid_BaseSum(core, app, 0.0, r, -1.0, r);

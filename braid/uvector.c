@@ -40,6 +40,8 @@ _braid_UGetIndex(braid_Core   core,
    braid_Int            iupper      = _braid_GridElt(grids[level], iupper);
    braid_Int            clower      = _braid_GridElt(grids[level], clower);
    braid_Int            cfactor     = _braid_GridElt(grids[level], cfactor);
+   braid_Int            storage     = _braid_GridElt(grids[level], storage);
+   braid_Int            is_f_point  = !_braid_IsCPoint(index, cfactor);
    braid_Int            uindex, ic, iclo, store_flag;
 
    uindex = -1;
@@ -52,22 +54,17 @@ _braid_UGetIndex(braid_Core   core,
          store_flag = 0;
          // If we are not on a fully-stored point
          // then we only have a shell, the store_flag should be -1
-         if ( (_braid_CoreElt(core, storage) < 0) ||
-              (level < _braid_CoreElt(core, storage)) )
+         if (!storage && is_f_point)
          {
-            if ( !_braid_IsCPoint(index, cfactor) )
-            {
-               store_flag = -1;
-            }
+            store_flag = -1;
          }
       }
       else
       {
          // If on level that only stores C-points
-         if ( (_braid_CoreElt(core, storage) < 0) ||
-              (level < _braid_CoreElt(core, storage)) )
+         if (!storage)
          {
-            if ( _braid_IsCPoint(index, cfactor) )
+            if (is_f_point)
             {
                _braid_MapFineToCoarse(index, cfactor, ic);
                _braid_MapFineToCoarse(clower, cfactor, iclo);
@@ -212,6 +209,7 @@ _braid_UGetLast(braid_Core        core,
    _braid_Grid       **grids    = _braid_CoreElt(core, grids);
    MPI_Comm            comm     = _braid_CoreElt(core, comm);
    braid_Int           cfactor  = _braid_GridElt(grids[0], cfactor);
+   braid_Int           storage  = _braid_GridElt(grids[0], storage);
    braid_Int           gupper   = _braid_CoreElt(core, gupper);
    braid_Int           done     = _braid_CoreElt(core, done);
    braid_BaseVector    ulast;
@@ -223,7 +221,7 @@ _braid_UGetLast(braid_Core        core,
    /* If Done, get vector at last time step*/
    if(done && (myid == (num_procs-1) ) )
    {
-      if ( (_braid_CoreElt(core, storage) < 0) && !(_braid_IsCPoint(gupper, cfactor)) )
+      if ( !(storage) && !(_braid_IsCPoint(gupper, cfactor)) )
       {
          ulast  = _braid_GridElt(grids[0], ulast);
       }
@@ -262,7 +260,7 @@ _braid_USetVector(braid_Core        core,
    _braid_CommHandle   *send_handle = _braid_GridElt(grids[level], send_handle);
    braid_Int            done        = _braid_CoreElt(core, done);
    braid_Int            gupper      = _braid_CoreElt(core, gupper);
-   braid_Int            storage     = _braid_CoreElt(core, storage);
+   braid_Int            storage     = _braid_GridElt(grids[level], storage);
    braid_Int            cfactor     = _braid_GridElt(grids[level], cfactor);
    braid_Int            iu, sflag;
 
@@ -316,7 +314,7 @@ _braid_USetVector(braid_Core        core,
     * store the last time point in ulast if storage is not enabled for F-points
     * OR the last time point is not a C-point */
 
-   if (done && (index == gupper) && (level == 0) && (storage < 0) && !(_braid_IsCPoint(gupper, cfactor)))
+   if (done && (index == gupper) && (level == 0) && !(storage) && !(_braid_IsCPoint(gupper, cfactor)))
    {
       if (_braid_GridElt(grids[level], ulast) != NULL)
       {

@@ -49,6 +49,7 @@
  * ustop) The ustop values for A_c(R(u)) are set in (@ _braid_Residual) and for
  * A_c(u_c), they are set in (@ _braid_step).
  *
+ * TODO: Update this comment
  * storage == -2 implies that (@ref _braid_GetUInit()) will always use the
  * previous time step value as the initial guess, even if you have better
  * information, which is the case at C-points on the fine grid, and at all
@@ -101,6 +102,7 @@ _braid_FRestrict(braid_Core   core,
 
    braid_Int            c_level, c_ilower, c_iupper, c_index, c_i, c_ii;
    braid_BaseVector     c_u, *c_va, *c_fa;
+   braid_Vector        *c_wa;
 
    braid_BaseVector     u, r;
    braid_Int            interval, flo, fhi, fi, ci;
@@ -111,8 +113,12 @@ _braid_FRestrict(braid_Core   core,
    c_iupper = _braid_GridElt(grids[c_level], iupper);
    c_va     = _braid_GridElt(grids[c_level], va);
    c_fa     = _braid_GridElt(grids[c_level], fa);
+   c_wa     = _braid_GridElt(grids[c_level], wa);
 
    rnorm = 0.0;
+
+   /* Clean up coarse grid from previous iterations */
+   _braid_GridClean(core, grids[c_level]);
 
    _braid_UCommInit(core, level);
 
@@ -202,12 +208,20 @@ _braid_FRestrict(braid_Core   core,
          _braid_MapFineToCoarse(ci, cfactor, c_index);
          _braid_Coarsen(core, c_level, ci, c_index, u, &c_va[c_index-c_ilower]);
          _braid_Coarsen(core, c_level, ci, c_index, r, &c_fa[c_index-c_ilower]);
+         if (c_wa[c_index-c_ilower] == NULL)
+         {
+            _braid_CoreFcn(core, clone)(app, c_va[c_index-c_ilower], &c_wa[c_index-c_ilower]);
+         }
       }
       else if (ci == 0)
       {
          /* Restrict initial condition, coarsening in space if needed */
          _braid_UGetVectorRef(core, level, 0, &u);
          _braid_Coarsen(core, c_level, 0, 0, u, &c_va[0]);
+         if (c_wa[0] == NULL)
+         {
+            _braid_CoreFcn(core, clone)(app, c_va[0], &c_wa[0]);
+         }
       }
 
       if ((flo <= fhi) || (ci > _braid_CoreElt(core, initiali)))

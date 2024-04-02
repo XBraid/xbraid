@@ -325,7 +325,8 @@ braid_Init(MPI_Comm               comm_world,
    _braid_CoreElt(core, nfmg_Vcyc)       = nfmg_Vcyc;
 
    _braid_CoreElt(core, storage)         = -1;            /* only store C-points */
-   _braid_CoreElt(core, useshell)         = 0;
+   _braid_CoreElt(core, useshell)        = 0;
+   _braid_CoreElt(core, compat_mode)     = 0; /* Set with SetCompatibilityMode below */
 
    _braid_CoreElt(core, gupper)          = 0; /* Set with SetPeriodic() below */
 
@@ -538,12 +539,9 @@ braid_Destroy(braid_Core  core)
       }
 
       /* Free last time step, if set */
-      if ( (_braid_CoreElt(core, storage) < 0) && !(_braid_IsCPoint(gupper, cfactor)) )
+      if (_braid_GridElt(grids[0], ulast) != NULL)
       {
-         if (_braid_GridElt(grids[0], ulast) != NULL)
-         {
-           _braid_BaseFree(core, app, _braid_GridElt(grids[0], ulast));
-         }
+         _braid_BaseFree(core, app, _braid_GridElt(grids[0], ulast));
       }
 
       /* Destroy Richardson estimate structures */
@@ -939,7 +937,7 @@ braid_SetMaxLevels(braid_Core  core,
    for (level = old_max_levels; level < max_levels; level++)
    {
       nrels[level]    = -1;
-      CWts[level]    = -1.0;
+      CWts[level]     = -1.0;
       cfactors[level] = 0;
       grids[level]    = NULL;
    }
@@ -1344,6 +1342,19 @@ braid_SetStorage(braid_Core  core,
 
    return _braid_error_flag;
 }
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetCompatibilityMode(braid_Core  core,
+                           braid_Int   compat_mode)
+{
+   _braid_CoreElt(core, compat_mode) = compat_mode;
+
+   return _braid_error_flag;
+}
+
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/

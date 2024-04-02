@@ -779,7 +779,19 @@ braid_SetNFMGVcyc(braid_Core  core,         /**< braid_Core (_braid_Core) struct
 braid_Int
 braid_SetStorage(braid_Core  core,          /**< braid_Core (_braid_Core) struct*/
                  braid_Int   storage        /**< storage property */
-                );
+                 );
+
+/**
+ * Sets compatibility mode.
+ *   0 : default behaviour
+ *   1 : initial guess passed to step will always be the solution from the previous
+ *      time step (previously storage option -2)
+ **/
+braid_Int
+braid_SetCompatibilityMode(braid_Core  core,
+                           braid_Int   compat_mode
+                           );
+
 
 /** 
  * Sets XBraid temporal norm.

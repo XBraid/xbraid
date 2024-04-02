@@ -151,9 +151,6 @@ _braid_FInterp(braid_Core  core,
 
    _braid_UCommWait(core, level);
 
-   /* Clean up */
-   _braid_GridClean(core, grids[level]);
-
    return _braid_error_flag;
 }
 
