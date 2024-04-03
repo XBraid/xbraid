@@ -244,6 +244,11 @@ _braid_InitHierarchy(braid_Core    core,
       {
          va = _braid_CTAlloc(braid_BaseVector, iupper-ilower+2);
          fa = _braid_CTAlloc(braid_BaseVector, iupper-ilower+2);
+         for (int i = 0; i < iupper-ilower+2; i++)
+         {
+            va[i] = NULL;
+            fa[i] = NULL;
+         }
          _braid_GridElt(grid, va_alloc) = va;
          _braid_GridElt(grid, fa_alloc) = fa;
          _braid_GridElt(grid, va)       = va+1;  /* shift */
@@ -251,6 +256,10 @@ _braid_InitHierarchy(braid_Core    core,
          if (_braid_GridElt(grid, storage))
          {
             wa = _braid_CTAlloc(braid_BaseVector, iupper-ilower+2);
+            for (int i = 0; i < iupper-ilower+2; i++)
+            {
+               wa[i] = NULL;
+            }
             _braid_GridElt(grid, wa_alloc) = wa;
             _braid_GridElt(grid, wa)       = wa+1;  /* shift */
          }
@@ -268,9 +277,14 @@ _braid_InitHierarchy(braid_Core    core,
       }
 
       ua = _braid_CTAlloc(braid_BaseVector, nupoints+1);
+      for (int i = 0; i < nupoints+1; i++)
+      {
+         ua[i] = NULL;
+      }
       _braid_GridElt(grid, nupoints)  = nupoints;
       _braid_GridElt(grid, ua_alloc)  = ua;
       _braid_GridElt(grid, ua)        = ua+1;  /* shift */
+      
    }
 
    /* Communicate ta[-1] and ta[iupper-ilower+1] information */

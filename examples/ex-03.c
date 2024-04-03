@@ -214,6 +214,7 @@ my_Step(braid_App        app,
       bstop = fstop->x;
    }
    take_step(app->man, ustop->x, bstop, u->x, tstart, tstop, &iters_taken);
+   printf("Level: %d, iters: %d\n", level, iters_taken);
 
    /* Store iterations taken */
    app->runtime_max_iter[level] = max_i( (app->runtime_max_iter[level]), iters_taken);
@@ -538,7 +539,7 @@ int main (int argc, char *argv[])
    
    /* Default XBraid parameters */
    max_levels          = 15;              /* Max levels for XBraid solver */
-   skip                = 1;               /* Boolean, whether to skip all work on first down cycle */
+   skip                = 0;               /* Boolean, whether to skip all work on first down cycle */
    min_coarse          = 3;               /* Minimum possible coarse grid size */
    nrelax              = 1;               /* Number of CF relaxation sweeps on all levels */
    nrelax0             = -1;              /* Number of CF relaxations only for level 0 -- overrides nrelax */
@@ -549,7 +550,7 @@ int main (int argc, char *argv[])
    max_iter            = 100;             /* Maximum number of iterations */
    fmg                 = 0;               /* Boolean, if 1, do FMG cycle.  If 0, use a V cycle */
    res                 = 0;               /* Boolean, if 1, use my residual */
-   storage             = -1;              /* Full storage on levels >= 'storage' */
+   storage             = 1;              /* Full storage on levels >= 'storage' */
    print_level         = 2;               /* Level of XBraid printing to the screen */
    access_level        = 1;               /* Frequency of calls to access routine: 1 is for only after simulation */
    run_wrapper_tests   = 0;               /* Run no simulation, only run wrapper tests */

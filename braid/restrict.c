@@ -84,7 +84,6 @@ _braid_FRestrict(braid_Core   core,
    braid_Int             ncpoints     = _braid_GridElt(grids[level], ncpoints);
    braid_Real           *ta           = _braid_GridElt(grids[level], ta);
    braid_Int             f_ilower     = _braid_GridElt(grids[level], ilower);
-   braid_Int             storage      = _braid_GridElt(grids[level], storage);
    _braid_CommHandle    *recv_handle  = NULL;
    _braid_CommHandle    *send_handle  = NULL;
 
@@ -105,7 +104,7 @@ _braid_FRestrict(braid_Core   core,
    braid_BaseVector     c_u, *c_va, *c_wa, *c_fa;
 
    braid_BaseVector     u, r;
-   braid_Int            interval, flo, fhi, fi, ci;
+   braid_Int            storage, interval, flo, fhi, fi, ci;
    braid_Real           rnorm, grnorm, rnorm_temp, rnm;
 
    c_level  = level+1;
@@ -114,6 +113,7 @@ _braid_FRestrict(braid_Core   core,
    c_va     = _braid_GridElt(grids[c_level], va);
    c_fa     = _braid_GridElt(grids[c_level], fa);
    c_wa     = _braid_GridElt(grids[c_level], wa);
+   storage  = _braid_GridElt(grids[c_level], storage);
 
    rnorm = 0.0;
 

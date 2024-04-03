@@ -316,6 +316,10 @@ _braid_BaseFree(braid_Core       core,
                 braid_App        app,
                 braid_BaseVector u )
 {
+   // if (u == NULL)
+   // {
+   //    return _braid_error_flag;
+   // }
 
    _braid_Action *action;
    braid_Int      myid        = _braid_CoreElt(core, myid);
