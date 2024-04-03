@@ -110,12 +110,12 @@ _braid_Step(braid_Core         core,
       /* Store the homogeneous step result */
       if (level > 0 && storage)
       {
+         _braid_BaseFree(core, app, wa[ii]);
+         _braid_BaseClone(core, app, u, &wa[ii]);
          // _braid_CoreFcn(core, free)(app, wa[ii]);
          // _braid_CoreFcn(core, clone)(app, u, &wa[ii]);
-         // _braid_BaseFree(core, app, wa[ii]);
-         // _braid_BaseClone(core, app, u, &wa[ii]);
          // _braid_CoreFcn(core, sum)(app, 1., u->userVector, 0., wa[ii]->userVector);
-         _braid_BaseSum(core, app, 1, u, 0, wa[ii]);
+         // _braid_BaseSum(core, app, 1, u, 0, wa[ii]);
       }
 
       /* now apply the Delta and tau corrections */

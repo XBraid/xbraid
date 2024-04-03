@@ -34,15 +34,17 @@ _braid_Residual(braid_Core        core,
                 braid_BaseVector  ustop,
                 braid_BaseVector  r)
 {
-   braid_App        app      = _braid_CoreElt(core, app);
-   braid_Real       tol      = _braid_CoreElt(core, tol);
-   braid_Int        iter     = _braid_CoreElt(core, niter);
-   _braid_Grid    **grids    = _braid_CoreElt(core, grids);
-   braid_StepStatus status   = (braid_StepStatus)core;
-   braid_Int        nrefine  = _braid_CoreElt(core, nrefine);
-   braid_Int        gupper   = _braid_CoreElt(core, gupper);
-   braid_Int        ilower   = _braid_GridElt(grids[level], ilower);
-   braid_Real      *ta       = _braid_GridElt(grids[level], ta);
+   braid_App         app     = _braid_CoreElt(core, app);
+   braid_Real        tol     = _braid_CoreElt(core, tol);
+   braid_Int         iter    = _braid_CoreElt(core, niter);
+   _braid_Grid     **grids   = _braid_CoreElt(core, grids);
+   braid_StepStatus  status  = (braid_StepStatus)core;
+   braid_Int         nrefine = _braid_CoreElt(core, nrefine);
+   braid_Int         gupper  = _braid_CoreElt(core, gupper);
+   braid_Int         ilower  = _braid_GridElt(grids[level], ilower);
+   braid_Real       *ta      = _braid_GridElt(grids[level], ta);
+   braid_Int         storage = _braid_GridElt(grids[level], storage);
+   braid_BaseVector *wa      = _braid_GridElt(grids[level], wa);
 
    /* this decides whether Delta correction needs to be computed on this level
     * If step is called from FRestrict, right after restriction to the coarse grid 
@@ -77,6 +79,12 @@ _braid_Residual(braid_Core        core,
          /* By default: r = ustop - \Phi(ustart)*/
          _braid_GetUInit(core, level, index, r, &rstop);
          _braid_BaseStep(core, app, rstop, NULL, r, level, status);
+         if (level > 0 && storage)
+         {
+            _braid_BaseFree(core, app, wa[ii]);
+            _braid_BaseClone(core, app, r, &wa[ii]);
+         }
+
          _braid_BaseSum(core, app, 1.0, ustop, -1.0, r);
       }
       else   /* can we make residual option compatible with Delta correction? */
