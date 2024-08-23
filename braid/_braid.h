@@ -292,6 +292,7 @@ typedef struct _braid_Core_struct
 
    braid_Int              access_level;     /**< determines how often to call the user's access routine */ 
    braid_Int              finalFCrelax;     /**< determines if a final FCrelax is performed (default 0=false) */ 
+   braid_Int              resid_compute;    /**< determines if the global residual norm is computed (default 1=true) */
    braid_Int              print_level;      /**< determines amount of output printed to screen (0,1,2,3) */
    braid_Int              io_level;         /**< determines amount of output printed to files (0,1) */
    braid_Int              seq_soln;         /**< boolean, controls if the initial guess is from sequential time stepping*/

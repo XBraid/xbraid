@@ -413,6 +413,7 @@ int main (int argc, char *argv[])
    int           periodic      = 0;
    int           relax_only_cg = 0;
    int           bufalloc      = 0;
+   int           resid_compute = 1;
 
    int           arg_index;
    int           rank;
@@ -445,6 +446,7 @@ int main (int argc, char *argv[])
             printf("  -cf  <cfactor>    : set coarsening factor\n");
             printf("  -mi  <max_iter>   : set max iterations\n");
             printf("  -skip <set_skip>  : set skip relaxations on first down-cycle; 0: no skip;  1: skip\n");
+            printf("  -resid_compute    : set global residual norm computation; 0: none; 1: compute global norm each iter\n");
             printf("  -timings <bool>   : turn XBraid internal timings on/off\n");
             printf("  -fmg              : use FMG cycling\n");
             printf("  -res              : use my residual\n");
@@ -543,6 +545,11 @@ int main (int argc, char *argv[])
          arg_index++;
          skip = atoi(argv[arg_index++]);
       }
+      else if ( strcmp(argv[arg_index], "-resid_compute") == 0 )
+      {
+         arg_index++;
+         resid_compute = atoi(argv[arg_index++]);
+      }
       else
       {
          arg_index++;
@@ -578,6 +585,7 @@ int main (int argc, char *argv[])
    braid_SetMaxIter(core, max_iter);
    braid_SetTimings(core, timings);
    braid_SetSkip(core, skip);
+   braid_SetResidualComputation(core, resid_compute);
    if (fmg)
    {
       braid_SetFMG(core);

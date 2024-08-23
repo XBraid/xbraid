@@ -75,6 +75,7 @@ _braid_FRestrict(braid_Core   core,
    braid_Int             iter         = _braid_CoreElt(core, niter);
    braid_Int             print_level  = _braid_CoreElt(core, print_level);
    braid_Int             access_level = _braid_CoreElt(core, access_level);
+   braid_Int             resid_compute= _braid_CoreElt(core, resid_compute);
    braid_Int             tnorm        = _braid_CoreElt(core, tnorm);
    braid_Real           *tnorm_a      = _braid_CoreElt(core, tnorm_a);
    braid_Int             nrefine      = _braid_CoreElt(core, nrefine);
@@ -330,22 +331,29 @@ _braid_FRestrict(braid_Core   core,
    }
    _braid_CommWait(core, &send_handle);
    
-   /* Compute global rnorm (only on level 0) */
+   /* Compute global rnorm (only on level 0, and only if resid_compute is turned on) */
    if (level == 0)
    {
-      if(tnorm == 1)          /* one-norm reduction */
-      {  
-         MPI_Allreduce(&rnorm, &grnorm, 1, braid_MPI_REAL, MPI_SUM, comm);
+      if(resid_compute >= 1)
+      {
+         if(tnorm == 1)          /* one-norm reduction */
+         {
+            MPI_Allreduce(&rnorm, &grnorm, 1, braid_MPI_REAL, MPI_SUM, comm);
+         }
+         else if(tnorm == 3)     /* inf-norm reduction */
+         {
+            _braid_Max(tnorm_a, ncpoints, &rnorm);
+            MPI_Allreduce(&rnorm, &grnorm, 1, braid_MPI_REAL, MPI_MAX, comm);
+         }
+         else                    /* default two-norm reduction */
+         {
+            MPI_Allreduce(&rnorm, &grnorm, 1, braid_MPI_REAL, MPI_SUM, comm);
+            grnorm = sqrt(grnorm);
+         }
       }
-      else if(tnorm == 3)     /* inf-norm reduction */
-      {  
-         _braid_Max(tnorm_a, ncpoints, &rnorm); 
-         MPI_Allreduce(&rnorm, &grnorm, 1, braid_MPI_REAL, MPI_MAX, comm);
-      }
-      else                    /* default two-norm reduction */
-      {  
-         MPI_Allreduce(&rnorm, &grnorm, 1, braid_MPI_REAL, MPI_SUM, comm);
-         grnorm = sqrt(grnorm);
+      else
+      {
+         grnorm = -1.0;
       }
 
       /* Store new rnorm */

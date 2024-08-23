@@ -236,6 +236,7 @@ braid_Init(MPI_Comm               comm_world,
    braid_Int              io_level         = 1;              /* Default output-to-file level */
    braid_Int              access_level     = 1;              /* Default access level */
    braid_Int              finalFCrelax     = 0;              /* Default final FCrelax */
+   braid_Int              resid_compute    = 1;              /* Default computes and outputs the residual norm each iteration */
    braid_Int              tnorm            = 2;              /* Default temporal norm */
    braid_Real             tol              = 1.0e-09;        /* Default absolute tolerance */
    braid_Int              warm_restart     = 0;              /* Default is no warm restart */
@@ -298,6 +299,7 @@ braid_Init(MPI_Comm               comm_world,
 
    _braid_CoreElt(core, access_level)    = access_level;
    _braid_CoreElt(core, finalFCrelax)    = finalFCrelax;
+   _braid_CoreElt(core, resid_compute)   = resid_compute;
    _braid_CoreElt(core, tnorm)           = tnorm;
    _braid_CoreElt(core, print_level)     = print_level;
    _braid_CoreElt(core, io_level)        = io_level;
@@ -617,6 +619,7 @@ braid_PrintStats(braid_Core  core)
    braid_PtFcnResidual fullres = _braid_CoreElt(core, full_rnorm_res);
    _braid_Grid **grids         = _braid_CoreElt(core, grids);
    braid_Int     finalFCRelax  = _braid_CoreElt(core, finalFCrelax);
+   braid_Int     resid_compute = _braid_CoreElt(core, resid_compute);
    braid_Int     periodic      = _braid_CoreElt(core, periodic);
    braid_Int     adjoint       = _braid_CoreElt(core, adjoint);
    braid_Int     timings       = _braid_CoreElt(core, timings);
@@ -709,6 +712,7 @@ braid_PrintStats(braid_Core  core)
       _braid_printf("  periodic              = %d\n", periodic);
       _braid_printf("  relax_only_cg         = %d\n", relax_only_cg);
       _braid_printf("  finalFCRelax          = %d\n", finalFCRelax);
+      _braid_printf("  resid_compute         = %d\n", resid_compute);
       _braid_printf("  tracking timings      = %d\n", timings);
       _braid_printf("  number of refinements = %d\n", nrefine);
       _braid_printf("\n");
@@ -1079,6 +1083,18 @@ braid_SetFinalFCRelax(braid_Core core)
    _braid_CoreElt(core, finalFCrelax) = 1;
    return _braid_error_flag;
 }
+
+/*--------------------------------------------------------------------------
+ *--------------------------------------------------------------------------*/
+
+braid_Int
+braid_SetResidualComputation(braid_Core  core,
+                             braid_Int   resid_compute)
+{
+   _braid_CoreElt(core, resid_compute) = resid_compute;
+   return _braid_error_flag;
+}
+
 
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
