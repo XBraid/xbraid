@@ -245,3 +245,17 @@ Finished braid_TestAll: no fails detected, however some results must be
   max number of levels  = 3
   number of levels      = 3
   tracking timings      = 1
+# Begin Test 36
+  time steps = 10
+  iterations            = 6
+  residual norm         = -1.000000e+00
+  max number of levels  = 2
+  number of levels      = 2
+  tracking timings      = 0
+# Begin Test 37
+  time steps = 10
+  iterations            = 4
+  residual norm         = 0.000000e+00
+  max number of levels  = 2
+  number of levels      = 2
+  tracking timings      = 0

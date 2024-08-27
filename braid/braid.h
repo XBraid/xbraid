@@ -963,6 +963,27 @@ braid_Int
 braid_SetFinalFCRelax(braid_Core core);
 
 /**
+ * Set residual computation for XBraid.  This controls whether the global
+ * residual norm is computed each iteration.  Turning off the global residual
+ * norm computation (a value of 0) saves one global MPI all-reduce each
+ * iteration.
+ *
+ * Turning off this computation (value of 0) means that XBraid will iterate
+ * until the maximum number of iterations is reached. However, if the number of
+ * iterations is known a-priori, the MPI cost saving can be beneficial. Note that
+ * the level of printed Braid output (which controls whether the global
+ * residual norm is printed) is controlled by (@ref braid_SetPrintLevel).
+ *
+ * Options
+ * 0:  Never compute the global residual norm
+ * 1:  Every iteration, compute the global residual norm
+ **/
+braid_Int
+braid_SetResidualComputation(braid_Core  core,           /**< braid_Core (_braid_Core) struct*/
+                             braid_Int   resid_compute   /**< desired resid_compute option */
+                             );
+
+/**
  * Set user-defined allocation and free routines for the MPI buffer. If these 
  * routines are not set, the default is to malloc and free with standard C.
  **/
