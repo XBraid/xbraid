@@ -276,6 +276,7 @@ braid_StatusGetBasisVec(braid_Status  status,
    if ((ba != NULL) && (index < ba->rank))
    {
       *v_ptr = ba->userVecs[index];
+      return _braid_error_flag;
    }
    return _braid_error_flag;
 }
