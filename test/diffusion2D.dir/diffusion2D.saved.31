@@ -1,0 +1,9 @@
+# Begin Test 30
+
+  my_Access() called, iter= 4, level= 0, calling function= 3
+  time steps = 10
+  iterations            = 4
+  number of levels      = 2
+ Fine level spatial problem size  : 17 x 17
+Final discretization error (via ulast) = 1.4428e-03
+
