@@ -144,6 +144,14 @@ public:
                         BraidStepStatus &pstatus) { return 0; }
 
    // Not needed in this example
+   virtual int BufAlloc(void              **buffer,
+                        int               nbytes,
+                        BraidBufferStatus &bstatus) { return 0; }
+
+   // Not needed in this example
+   virtual braid_Int BufFree(void          **buffer) { return 0; }
+
+   // Not needed in this example
    virtual int Coarsen(braid_Vector   fu_,
                        braid_Vector  *cu_ptr,
                        BraidCoarsenRefStatus &status) { return 0; }

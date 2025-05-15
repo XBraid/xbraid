@@ -130,6 +130,31 @@ public:
                                braid_Vector      *u_ptr,
                                BraidBufferStatus &bstatus) = 0;
 
+   // @brief (optional) These two functions may be optionally defined by the
+   // user, in order to  allocate/deallocate the MPI buffers in a special way
+   // (e.g., for GPUs or other accelerators).  See documentation for more
+   // details. To turn on user-defined MPI buffer allocation, use core.SetBufAllocFree()
+   // @see braid_PtFcnBufAlloc.
+   virtual braid_Int BufAlloc(void          **buffer,
+                              braid_Int     nbytes,
+                              BraidBufferStatus &bstatus)
+   {
+      fprintf(stderr, "Braid C++ Wrapper Warning: turn off user-defined MPI "
+                      "buffer allocation until it has been user implemented\n");
+      *buffer = malloc(nbytes);
+      return 0;
+   }
+
+   // @see braid_PtFcnBufFree.
+   virtual braid_Int BufFree(void          **buffer)
+   {
+      fprintf(stderr, "Braid C++ Wrapper Warning: turn off user-defined MPI "
+                      "buffer Free until it has been user implemented\n");
+      free((char *) *buffer);
+      *buffer = NULL;
+      return 0;
+   }
+
 
    /** @brief (optional) Allocate a new basis vector in @a *u_ptr and 
       initialize it with an initial guess appropriate for time @a t
@@ -556,6 +581,25 @@ static braid_Int _BraidAppBufUnpack(braid_App     _app,
 }
 
 
+static braid_Int _BraidBufAlloc(braid_App            _app,
+                                void               **buffer,
+                                braid_Int            nbytes,
+                                braid_BufferStatus   _bstatus)
+{
+   BraidApp *app = (BraidApp*)_app;
+   BraidBufferStatus bstatus( _bstatus );
+   return app -> BufAlloc(buffer, nbytes, bstatus);
+}
+
+
+static braid_Int _BraidBufFree(braid_App            _app,
+                               void               **buffer)
+{
+   BraidApp *app = (BraidApp*)_app;
+   return app -> BufFree(buffer);
+}
+
+
 static braid_Int _BraidAppCoarsen(braid_App               _app,
                                   braid_Vector            _fu,
                                   braid_Vector           *cu_ptr,
@@ -646,6 +690,8 @@ public:
    void SetSync() { braid_SetSync(core, _BraidAppSync); }
 
    void SetResidual() { braid_SetResidual(core, _BraidAppResidual); }
+
+   void SetBufAllocFree() { braid_SetBufAllocFree(core, _BraidBufAlloc, _BraidBufFree); }
 
    void SetMaxIter(braid_Int max_iter) { braid_SetMaxIter(core, max_iter); }
 
