@@ -121,8 +121,9 @@ typedef struct _braid_Vector_struct *braid_Vector;
  * The user must advance the vector *u* from time *tstart* to *tstop*.  The time
  * step is taken assuming the right-hand-side vector *fstop* at time *tstop*.
  * The vector *ustop* may be the same vector as *u* (in the case where not all
- * unknowns are stored).  The vector *fstop* is set to NULL to indicate a zero
- * right-hand-side.
+ * unknowns are stored, for more details on *ustop*, see 
+ * [Some Advanced Features](@ref advancedfeatures) in the User Manual).  
+ * The vector *fstop* is set to NULL to indicate a zero right-hand-side.
  *
  * Query the status structure with *braid_StepStatusGetTstart(status, &tstart)*
  * and *braid_StepStatusGetTstop(status, &tstop)* to get *tstart* and *tstop*.
