@@ -739,6 +739,8 @@ public:
 
    void SetTimeGrid(braid_PtFcnTimeGrid tgrid) { braid_SetTimeGrid(core, tgrid); }
   
+   void SetTimings(braid_Int timing_level) { braid_SetTimings(core, timing_level); }
+
    void GetNumIter(braid_Int *niter_ptr) { braid_GetNumIter(core, niter_ptr); }
 
    void GetCFactor(braid_Int *cfactor_ptr) { _braid_GetCFactor(core, 0, cfactor_ptr); }
