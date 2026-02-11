@@ -283,3 +283,100 @@ _braid_MPI_Wtime(braid_Core core, braid_Int timing_level)
       return -1.0;
    }
 }
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+braid_Int
+braid_Warmup(braid_App              app,
+             MPI_Comm               comm_x,
+             braid_Real             t,
+             braid_Real             fdt,
+             braid_Real             cdt,
+             braid_PtFcnInit        init,
+             braid_PtFcnAccess      access,
+             braid_PtFcnFree        myfree,
+             braid_PtFcnClone       clone,
+             braid_PtFcnSum         sum,
+             braid_PtFcnSpatialNorm spatialnorm,
+             braid_PtFcnBufSize     bufsize,
+             braid_PtFcnBufPack     bufpack,
+             braid_PtFcnBufUnpack   bufunpack,
+             braid_PtFcnSCoarsen    coarsen,
+             braid_PtFcnSRefine     refine,
+             braid_PtFcnStep        step,
+             braid_PtFcnInitBasis   init_basis,
+             braid_PtFcnInnerProd   innerprod)
+{
+   braid_Vector       u, v;
+   braid_Status       status  = _braid_CTAlloc(_braid_Status, 1);
+   braid_AccessStatus astatus = (braid_AccessStatus)status;
+
+   /* init/access */
+   _braid_AccessStatusInit(t, 0, 0.0, 0, 0, 0, 0, 0, 1, -1, NULL, astatus);
+   init(app, t, &u);
+   if(access != NULL)
+   {
+      access(app, u, astatus);
+   }
+
+   braid_Int  size;
+   braid_Real throwaway;
+   void      *buffer;
+
+   /* bufsize, bufpack, bufunpack */
+   braid_BufferStatus bstatus = (braid_BufferStatus)status;
+   _braid_BufferStatusInit(0, 0, 0, 0, bstatus);
+   bufsize(app, &size, bstatus);
+   buffer = malloc(size);
+   _braid_StatusElt(bstatus, size_buffer) = size;
+   bufpack(app, u, buffer, bstatus);
+   bufunpack(app, buffer, &v, bstatus);
+   free(buffer);
+
+   /* free, clone, sum, spatialnorm */
+   myfree(app, v);
+   clone(app, u, &v);
+   sum(app, 1.0, u, -1.0, v);
+   spatialnorm(app, v, &throwaway);
+
+   /* step */
+   braid_StepStatus sstatus = (braid_StepStatus)status;
+   _braid_StepStatusInit(t, t+fdt, 0, 1e-16, 0, 0, 0, 2, braid_ASCaller_Warmup, NULL, sstatus);
+   step(app, v, NULL, u, sstatus);
+
+   /* coarsen, refine */
+   if ( (coarsen != NULL) && (refine != NULL) )
+   {
+      braid_CoarsenRefStatus cstatus = (braid_CoarsenRefStatus)status;
+   
+      _braid_CoarsenRefStatusInit(t, t-fdt, t+fdt, t-cdt, t+cdt, 0, 0, 0, 0, cstatus);
+      myfree(app, v);
+      coarsen(app, u, &v, cstatus);
+      myfree(app, u);
+      refine(app, v, &u, cstatus);
+   }
+
+   /* Delta functions: init_basis, innerprod, step with basis */
+   if ( (init_basis != NULL) && (innerprod != NULL))
+   {
+      braid_Basis B;
+      B = _braid_TAlloc(_braid_Basis, 1);
+      B->rank = 1;
+      B->userVecs = _braid_TAlloc(braid_Vector, 1);
+      init_basis(app, t, 0, &(B->userVecs[0]));
+      innerprod(app, u, B->userVecs[0], &throwaway);
+      _braid_StepStatusInit(t, t+fdt, 0, 1e-16, 0, 0, 0, 2, braid_ASCaller_Warmup, B, sstatus);
+      step(app, v, NULL, u, sstatus);
+
+      myfree(app, B->userVecs[0]);
+      _braid_TFree(B);
+   }
+
+   /* Free variables */
+   myfree(app, u);
+   myfree(app, v);
+   _braid_StatusDestroy(status);
+
+   return _braid_error_flag;
+}

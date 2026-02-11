@@ -9,7 +9,9 @@ wrapperTests.txt
 # binaries
 # as these are build-dependent, binaries should not be committed
 *.o
+*.so
 *.a
+*.dSYM
 ex-01
 ex-01-adjoint
 ex-01-expanded
