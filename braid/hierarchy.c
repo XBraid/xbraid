@@ -525,6 +525,11 @@ _braid_CopyFineToCoarse(braid_Core  core)
          _braid_MapCoarseToFine(index, f_cfactor, f_index);
          _braid_UGetVector(core, level-1, f_index, &u);
          _braid_Coarsen(core, level, f_index, index, u, &va[index-ilower]);
+         if (braid_LINEAR)
+         {
+            /* Set initial guess to zero on coarse grids */
+            _braid_BaseSum(core, app, -1.0, va[index-ilower], 1.0, va[index-ilower]);
+         }
          
          _braid_BaseFree(core, app,  u);
          _braid_BaseClone(core, app,  va[index-ilower], &u);
