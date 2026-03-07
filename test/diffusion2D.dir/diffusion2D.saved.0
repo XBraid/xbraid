@@ -1,0 +1,8 @@
+# Begin Test 0
+
+  my_Access() called, iter= 9, level= 0, calling function= 3
+  time steps = 256
+  iterations           = 9
+  number of levels     = 7
+ Fine level spatial problem size  : 17 x 17
+
