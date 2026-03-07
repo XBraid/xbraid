@@ -18,7 +18,9 @@
  * Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  ***********************************************************************EHEADER*/
- 
+
+/* This interface is optionally available */
+#if (braid_Fortran_Iface)
 
 /** \file _braid_F90_iface.c
  * \brief Define F90 interface for user routines.
@@ -1480,3 +1482,4 @@ braid_F90_Name(braid_set_sync_f90, BRAID_SET_SYNC_F90)(
 
 #endif
 
+#endif

@@ -45,7 +45,6 @@ BRAID_FILES =\
  base.c\
  braid.c\
  braid_status.c\
- braid_F90_iface.c\
  braid_test.c\
  communication.c\
  delta.c\
@@ -66,12 +65,22 @@ BRAID_FILES =\
  util.c\
  uvector.c
 
+ifeq ($(fortran),yes)
+	BRAID_FILES += braid_F90_iface.c
+endif
+
 ifeq ($(sequential),yes)
 	BRAID_HEADERS += mpistubs.h
 	BRAID_FILES += mpistubs.c
 	SEQFLAGS = -Dbraid_SEQUENTIAL
 else
 	SEQFLAGS = 
+endif
+
+ifeq ($(shared),yes)
+	BRAID_LIBFILES = libbraid.a libbraid.so
+else
+	BRAID_LIBFILES = libbraid.a
 endif
 
 BRAID_OBJ = $(BRAID_FILES:.c=.o)
@@ -84,13 +93,17 @@ BRAID_OBJ = $(BRAID_FILES:.c=.o)
 %.o: %.c $(BRAID_HEADERS)
 	$(MPICC) $(SEQFLAGS) $(CFLAGS) -c $< -o $@
 
+all: $(BRAID_LIBFILES)
+
 libbraid.a: $(BRAID_HEADERS) $(BRAID_OBJ)
 	@echo "Building" $@ "..."
 	ar cruv libbraid.a $(BRAID_OBJ)
 	ranlib libbraid.a
 
-all: libbraid.a 
+libbraid.so: $(BRAID_HEADERS) $(BRAID_OBJ)
+	@echo "Building" $@ "..."
+	$(MPICC) $(SEQFLAGS) $(CFLAGS) $(SHAREDFLAGS) $(BRAID_OBJ) -o $@
 
 clean:
-	rm -f *.o libbraid.a
+	rm -f *.o libbraid.a libbraid.so
 

@@ -80,6 +80,14 @@ For the Cython examples, see the corresponding *.pyx file.
       
                 examples/ex-01-cython-alt/ex_01_alt-setup.py
    
+    + *ex-01-julia/*: is a directory containing an example using the Braid-Julia
+      interface defined in braid.jl ( braid/braid.jl ).  It solves the same scalar
+      ODE equation as the ex-01 series described above.  
+      
+      For instructions on running see
+      
+                examples/ex-01-julia/README.md
+   
 2. ex-02 implements the 1D heat equation on a regular grid, using a very simple
    implementation.  This is the next example to read after the various ex-01
    cases.

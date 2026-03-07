@@ -495,7 +495,6 @@ braid_Destroy(braid_Core  core)
       braid_App               app             = _braid_CoreElt(core, app);
       braid_Int               nlevels         = _braid_CoreElt(core, nlevels);
       _braid_Grid           **grids           = _braid_CoreElt(core, grids);
-      braid_Int               cfactor         = _braid_GridElt(grids[0], cfactor);
       braid_Int               gupper          = _braid_CoreElt(core, gupper);
       braid_Int               richardson      = _braid_CoreElt(core, richardson);
       braid_Int               est_error       = _braid_CoreElt(core, est_error); 
@@ -511,24 +510,54 @@ braid_Destroy(braid_Core  core)
       _braid_TFree(_braid_CoreElt(core, tnorm_a));
       _braid_TFree(_braid_CoreElt(core, rdtvalues));
 
-      /* Destroy stored Lyapunov exponents */
-      if (_braid_CoreElt(core, lyap_exp))
+      if (grids[0] != NULL)
       {
+         braid_Int cfactor = _braid_GridElt(grids[0], cfactor);
+         /* Destroy stored Lyapunov exponents */
+         if (_braid_CoreElt(core, lyap_exp))
+         {
 
-         braid_Int npoints; 
-         if (nlevels == 1)
-         {
-            npoints = _braid_GridElt(grids[0], iupper) - _braid_GridElt(grids[0], ilower);
+            braid_Int npoints; 
+            if (nlevels == 1)
+            {
+               npoints = _braid_GridElt(grids[0], iupper) - _braid_GridElt(grids[0], ilower);
+            }
+            else
+            {
+               npoints = _braid_GridElt(grids[0], ncpoints);
+            }
+            for (braid_Int i = 0; i < npoints; i++)
+            {
+               _braid_TFree(_braid_CoreElt(core, local_exponents)[i]);
+            }
+            _braid_TFree(_braid_CoreElt(core, local_exponents));
          }
-         else
+
+
+         /* Free last time step, if set */
+         if ( (_braid_CoreElt(core, storage) < 0) && !(_braid_IsCPoint(gupper, cfactor)) )
          {
-            npoints = _braid_GridElt(grids[0], ncpoints);
+            if (_braid_GridElt(grids[0], ulast) != NULL)
+            {
+            _braid_BaseFree(core, app, _braid_GridElt(grids[0], ulast));
+            }
          }
-         for (braid_Int i = 0; i < npoints; i++)
+
+         /* Destroy Richardson estimate structures */
+         if ( richardson || est_error )
          {
-            _braid_TFree(_braid_CoreElt(core, local_exponents)[i]);
+            _braid_TFree(_braid_CoreElt(core, dtk));
+            if (est_error)
+            {
+               _braid_TFree(_braid_CoreElt(core, estimate));
+            }
          }
-         _braid_TFree(_braid_CoreElt(core, local_exponents));
+
+         for (level = 0; level < nlevels; level++)
+         {
+            _braid_GridDestroy(core, grids[level]);
+         }
+
       }
 
       /* Destroy the optimization structure */
@@ -539,47 +568,19 @@ braid_Destroy(braid_Core  core)
          _braid_TFree(_braid_CoreElt(core, optim));
       }
 
-      /* Free last time step, if set */
-      if ( (_braid_CoreElt(core, storage) < 0) && !(_braid_IsCPoint(gupper, cfactor)) )
-      {
-         if (_braid_GridElt(grids[0], ulast) != NULL)
-         {
-           _braid_BaseFree(core, app, _braid_GridElt(grids[0], ulast));
-         }
-      }
-
-      /* Destroy Richardson estimate structures */
-      if ( richardson || est_error )
-      {
-         _braid_TFree(_braid_CoreElt(core, dtk));
-         if (est_error)
-         {
-            _braid_TFree(_braid_CoreElt(core, estimate));
-         }
-      }
-
-      for (level = 0; level < nlevels; level++)
-      {
-         _braid_GridDestroy(core, grids[level]);
-      }
-
       _braid_TFree(grids);
-
       _braid_TFree(core);
    
       if (timer_file_stem != NULL)
       {
          _braid_TFree(timer_file_stem);
       }
-
    }
 
    if (_braid_printfile != NULL)
    {
       fclose(_braid_printfile);
    }
-   
-
 
    return _braid_error_flag;
 }
