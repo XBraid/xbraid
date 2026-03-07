@@ -203,12 +203,22 @@ _braid_FRestrict(braid_Core   core,
          _braid_MapFineToCoarse(ci, cfactor, c_index);
          _braid_Coarsen(core, c_level, ci, c_index, u, &c_va[c_index-c_ilower]);
          _braid_Coarsen(core, c_level, ci, c_index, r, &c_fa[c_index-c_ilower]);
+         if (braid_LINEAR)
+         {
+            /* Set initial guess to zero on coarse grids */
+            _braid_BaseSum(core, app, -1.0, c_va[c_index-c_ilower], 1.0, c_va[c_index-c_ilower]);
+         }
       }
       else if (ci == 0)
       {
          /* Restrict initial condition, coarsening in space if needed */
          _braid_UGetVectorRef(core, level, 0, &u);
          _braid_Coarsen(core, c_level, 0, 0, u, &c_va[0]);
+         if (braid_LINEAR)
+         {
+            /* Set initial guess to zero on coarse grids */
+            _braid_BaseSum(core, app, -1.0, c_va[0], 1.0, c_va[0]);
+         }
       }
 
       if ((flo <= fhi) || (ci > _braid_CoreElt(core, initiali)))
@@ -223,6 +233,12 @@ _braid_FRestrict(braid_Core   core,
    /* Set initial guess on coarse level */
    _braid_InitGuess(core, c_level);
 
+   if (braid_LINEAR)
+   {
+      /* Don't need to update the rhs in the linear case (no Richardson either) */
+   }
+   else
+   {
    /* Initialize update of c_va[-1] boundary */
    if (c_ilower <= c_iupper)
    {
@@ -330,6 +346,7 @@ _braid_FRestrict(braid_Core   core,
       }
    }
    _braid_CommWait(core, &send_handle);
+   }
    
    /* Compute global rnorm (only on level 0, and only if resid_compute is turned on) */
    if (level == 0)
@@ -367,12 +384,19 @@ _braid_FRestrict(braid_Core   core,
       _braid_PrintSpatialNorms(core, tnorm_a, ncpoints);
    }
 
+   if (braid_LINEAR)
+   {
+      /* Don't need to update the rhs in the linear case (no Richardson either) */
+   }
+   else
+   {
    /* Need to finalize the error estimates at the F-points */ 
    if ( level == 0 && est_error )
    {
       _braid_FinalizeErrorEstimates( core, estimate , c_iupper-c_ilower + 1 );
       _braid_TFree(estimate);
    } 
+   }
    
    return _braid_error_flag;
 }
